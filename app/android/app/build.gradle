@@ -26,6 +26,14 @@ def keystorePropertiesFile = rootProject.file("key.properties")
 def keystoreProperties = new Properties()
 keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 
+// 如果环境变量存在，则覆盖 key.properties 中的值
+if (System.getenv('KEYSTORE_PASSWORD')) {
+    keystoreProperties['storePassword'] = System.getenv('KEYSTORE_PASSWORD')
+}
+if (System.getenv('KEY_PASSWORD')) {
+    keystoreProperties['keyPassword'] = System.getenv('KEY_PASSWORD')
+}
+
 android {
     namespace 'com.nn.nnbdc'
     compileSdk = 35
