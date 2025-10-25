@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.sql.Timestamp;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -23,6 +24,7 @@ import org.springframework.util.DigestUtils;
 import beidanci.api.Result;
 import beidanci.api.model.DictDto;
 import beidanci.api.model.DictVo;
+import beidanci.api.model.DictStatsDto;
 import beidanci.service.dao.BaseDao;
 import beidanci.service.po.Dict;
 import beidanci.service.po.DictWord;
@@ -260,6 +262,112 @@ public class DictBo extends BaseBo<Dict> {
         dto.setPopularityLimit((Integer) result[7]);
         dto.setCreateTime((Timestamp) result[8]);
         dto.setUpdateTime((Timestamp) result[9]);
+        return dto;
+    }
+
+    /**
+     * 获取系统词典列表及其统计信息
+     */
+    public List<DictStatsDto> getSystemDictsWithStats() {
+        Session session = getSession();
+        
+        // 获取系统词典基本信息
+        String dictSql = "SELECT id, name, ownerId, isShared, isReady, visible, wordCount, createTime, updateTime " +
+                       "FROM dict WHERE ownerId = :sysUserId ORDER BY createTime DESC";
+        Query<?> dictQuery = session.createNativeQuery(dictSql);
+        dictQuery.setParameter("sysUserId", Constants.SYS_USER_SYS_ID);
+        List<?> dictResults = dictQuery.list();
+        
+        // 获取总用户数
+        String totalUsersSql = "SELECT COUNT(DISTINCT userId) FROM learning_dict";
+        Query<?> totalUsersQuery = session.createNativeQuery(totalUsersSql);
+        Long totalUsers = ((Number) totalUsersQuery.uniqueResult()).longValue();
+        
+        List<DictStatsDto> result = new ArrayList<>();
+        
+        for (Object dictResult : dictResults) {
+            Object[] dictData = (Object[]) dictResult;
+            
+            DictStatsDto dto = new DictStatsDto();
+            dto.setId((String) dictData[0]);
+            dto.setName((String) dictData[1]);
+            dto.setOwnerId((String) dictData[2]);
+            dto.setIsShared((Boolean) dictData[3]);
+            dto.setIsReady((Boolean) dictData[4]);
+            dto.setVisible((Boolean) dictData[5]);
+            dto.setWordCount((Integer) dictData[6]);
+            dto.setCreateTime((Timestamp) dictData[7]);
+            dto.setUpdateTime((Timestamp) dictData[8]);
+            dto.setTotalUsers(totalUsers);
+            
+            // 获取该词典被用户选择的数量
+            String selectionSql = "SELECT COUNT(DISTINCT userId) FROM learning_dict WHERE dictId = :dictId";
+            Query<?> selectionQuery = session.createNativeQuery(selectionSql);
+            selectionQuery.setParameter("dictId", dto.getId());
+            Long selectionCount = ((Number) selectionQuery.uniqueResult()).longValue();
+            dto.setUserSelectionCount(selectionCount);
+            
+            // 计算选择率
+            if (totalUsers > 0) {
+                dto.setSelectionRate((double) selectionCount / totalUsers * 100);
+            } else {
+                dto.setSelectionRate(0.0);
+            }
+            
+            result.add(dto);
+        }
+        
+        return result;
+    }
+    
+    /**
+     * 获取指定词典的详细统计信息
+     */
+    public DictStatsDto getDictStats(String dictId) {
+        Session session = getSession();
+        
+        // 获取词典基本信息
+        String dictSql = "SELECT id, name, ownerId, isShared, isReady, visible, wordCount, createTime, updateTime " +
+                       "FROM dict WHERE id = :dictId";
+        Query<?> dictQuery = session.createNativeQuery(dictSql);
+        dictQuery.setParameter("dictId", dictId);
+        Object[] dictData = (Object[]) dictQuery.uniqueResult();
+        
+        if (dictData == null) {
+            return null;
+        }
+        
+        DictStatsDto dto = new DictStatsDto();
+        dto.setId((String) dictData[0]);
+        dto.setName((String) dictData[1]);
+        dto.setOwnerId((String) dictData[2]);
+        dto.setIsShared((Boolean) dictData[3]);
+        dto.setIsReady((Boolean) dictData[4]);
+        dto.setVisible((Boolean) dictData[5]);
+        dto.setWordCount((Integer) dictData[6]);
+        dto.setCreateTime((Timestamp) dictData[7]);
+        dto.setUpdateTime((Timestamp) dictData[8]);
+        
+        // 获取总用户数
+        String totalUsersSql = "SELECT COUNT(DISTINCT userId) FROM learning_dict";
+        Query<?> totalUsersQuery = session.createNativeQuery(totalUsersSql);
+        Long totalUsers = ((Number) totalUsersQuery.uniqueResult()).longValue();
+        dto.setTotalUsers(totalUsers);
+        
+        // 获取该词典被用户选择的数量
+        String selectionSql = "SELECT COUNT(DISTINCT userId) FROM learning_dict WHERE dictId = :dictId";
+        Query<?> selectionQuery = session.createNativeQuery(selectionSql);
+        selectionQuery.setParameter("dictId", dictId);
+        Long selectionCount = ((Number) selectionQuery.uniqueResult()).longValue();
+        dto.setUserSelectionCount(selectionCount);
+        
+        // 计算选择率
+        if (totalUsers > 0) {
+            dto.setSelectionRate((double) selectionCount / totalUsers * 100);
+        } else {
+            dto.setSelectionRate(0.0);
+        }
+        
         return dto;
     }
 

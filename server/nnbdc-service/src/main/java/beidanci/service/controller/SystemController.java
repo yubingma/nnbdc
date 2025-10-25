@@ -9,13 +9,18 @@ import org.springframework.web.bind.annotation.RestController;
 
 import beidanci.api.Result;
 import beidanci.api.model.SysDbLogDto;
+import beidanci.api.model.DictStatsDto;
 import beidanci.service.bo.SysDbLogBo;
+import beidanci.service.bo.DictBo;
 
 @RestController
 public class SystemController {
 
     @Autowired
     private SysDbLogBo sysDbLogBo;
+    
+    @Autowired
+    private DictBo dictBo;
 
     // ============================================
     // 统一的系统数据版本控制
@@ -56,6 +61,33 @@ public class SystemController {
     @GetMapping("/getSystemDbVersion.do")
     public Result<Long> getSystemDbVersion() {
         return Result.success((long) sysDbLogBo.getSysDbVersion());
+    }
+
+    /**
+     * 获取系统词典列表及其统计信息
+     * 返回所有系统词典和每个词典被用户选择的数量
+     */
+    @GetMapping("/getSystemDictsWithStats.do")
+    public Result<List<DictStatsDto>> getSystemDictsWithStats() {
+        try {
+            List<DictStatsDto> result = dictBo.getSystemDictsWithStats();
+            return Result.success(result);
+        } catch (Exception e) {
+            return Result.fail("获取系统词典统计失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 获取指定词典的详细统计信息
+     */
+    @GetMapping("/getDictStats.do")
+    public Result<DictStatsDto> getDictStats(@RequestParam("dictId") String dictId) {
+        try {
+            DictStatsDto result = dictBo.getDictStats(dictId);
+            return Result.success(result);
+        } catch (Exception e) {
+            return Result.fail("获取词典统计失败: " + e.getMessage());
+        }
     }
 
 }

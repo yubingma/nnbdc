@@ -454,4 +454,10 @@ abstract class RestClient {
 
   @GET("/getUserRank.do")
   Future<Result<int>> getUserRank(@Query("userId") String userId);
+
+  @GET("/getSystemDictsWithStats.do")
+  Future<Result<List<DictStatsDto>>> getSystemDictsWithStats();
+
+  @GET("/getDictStats.do")
+  Future<Result<DictStatsDto>> getDictStats(@Query("dictId") String dictId);
 }

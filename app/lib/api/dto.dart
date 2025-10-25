@@ -541,3 +541,43 @@ class WordShortDescChineseDto {
   Map<String, dynamic> toJson() => _$WordShortDescChineseDtoToJson(this);
 }
 
+// 词典统计信息DTO
+@JsonSerializable()
+@CustomDateTimeConverter()
+class DictStatsDto {
+  final String id;
+  final String name;
+  final String ownerId;
+  final bool isShared;
+  final bool isReady;
+  final bool visible;
+  final int wordCount;
+  final DateTime createTime;
+  final DateTime? updateTime;
+  
+  // 统计信息
+  final int userSelectionCount; // 被用户选择的数量
+  final int totalUsers; // 总用户数
+  final double selectionRate; // 选择率
+
+  DictStatsDto({
+    required this.id,
+    required this.name,
+    required this.ownerId,
+    required this.isShared,
+    required this.isReady,
+    required this.visible,
+    required this.wordCount,
+    required this.createTime,
+    this.updateTime,
+    required this.userSelectionCount,
+    required this.totalUsers,
+    required this.selectionRate,
+  });
+
+  factory DictStatsDto.fromJson(Map<String, dynamic> json) =>
+      _$DictStatsDtoFromJson(json);
+
+  Map<String, dynamic> toJson() => _$DictStatsDtoToJson(this);
+}
+
