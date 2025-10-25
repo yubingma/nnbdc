@@ -14,22 +14,14 @@ class AdminPage extends StatefulWidget {
   State<AdminPage> createState() => _AdminPageState();
 }
 
-class _AdminPageState extends State<AdminPage> with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+class _AdminPageState extends State<AdminPage> {
   bool _isLoading = true;
   UserVo? _currentUser;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
     _checkAdminPermission();
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
   }
 
   Future<void> _checkAdminPermission() async {
@@ -116,39 +108,163 @@ class _AdminPageState extends State<AdminPage> with SingleTickerProviderStateMix
           onPressed: () => Navigator.pop(context),
           icon: const Icon(Icons.arrow_back, color: Colors.white),
         ),
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: Colors.white,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white70,
-          tabs: const [
-            Tab(
-              icon: Icon(Icons.feedback),
-              text: '意见建议',
-            ),
-            Tab(
-              icon: Icon(Icons.book),
-              text: '系统词典',
-            ),
-          ],
-        ),
       ),
-      body: TabBarView(
-        controller: _tabController,
+      body: _buildManagementGrid(),
+    );
+  }
+
+  Widget _buildManagementGrid() {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: GridView.count(
+        crossAxisCount: 2,
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
+        childAspectRatio: 1.0,
         children: [
-          _buildFeedbackManagementTab(),
-          _buildDictionaryManagementTab(),
+          _buildManagementCard(
+            title: '意见建议',
+            subtitle: '查看用户反馈',
+            icon: Icons.feedback,
+            color: const Color(0xFF4CAF50),
+            onTap: () => _navigateToFeedback(),
+          ),
+          _buildManagementCard(
+            title: '系统词典',
+            subtitle: '管理词典资源',
+            icon: Icons.book,
+            color: const Color(0xFF2196F3),
+            onTap: () => _navigateToDictionary(),
+          ),
+          _buildManagementCard(
+            title: '用户管理',
+            subtitle: '管理用户账户',
+            icon: Icons.people,
+            color: const Color(0xFFFF9800),
+            onTap: () => _showComingSoon('用户管理'),
+          ),
+          _buildManagementCard(
+            title: '系统设置',
+            subtitle: '配置系统参数',
+            icon: Icons.settings,
+            color: const Color(0xFF9C27B0),
+            onTap: () => _showComingSoon('系统设置'),
+          ),
+          _buildManagementCard(
+            title: '数据统计',
+            subtitle: '查看使用统计',
+            icon: Icons.analytics,
+            color: const Color(0xFF00BCD4),
+            onTap: () => _showComingSoon('数据统计'),
+          ),
+          _buildManagementCard(
+            title: '日志管理',
+            subtitle: '查看系统日志',
+            icon: Icons.description,
+            color: const Color(0xFF795548),
+            onTap: () => _showComingSoon('日志管理'),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildFeedbackManagementTab() {
-    return const FeedbackManagementWidget();
+  Widget _buildManagementCard({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    final isDarkMode = context.watch<DarkMode>().isDarkMode;
+    final cardColor = isDarkMode ? const Color(0xFF2D2D2D) : Colors.white;
+    final textColor = isDarkMode ? Colors.white : Colors.black87;
+
+    return Card(
+      elevation: 4,
+      color: cardColor,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  icon,
+                  size: 28,
+                  color: color,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                title,
+                textScaler: const TextScaler.linear(1.0),
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: textColor,
+                  fontFamily: 'NotoSansSC',
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                subtitle,
+                textScaler: const TextScaler.linear(1.0),
+                style: TextStyle(
+                  fontSize: 11,
+                  color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                  fontFamily: 'NotoSansSC',
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
-  Widget _buildDictionaryManagementTab() {
-    return const DictionaryManagementWidget();
+  void _navigateToFeedback() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const FeedbackManagementWidget(),
+      ),
+    );
+  }
+
+  void _navigateToDictionary() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const DictionaryManagementWidget(),
+      ),
+    );
+  }
+
+  void _showComingSoon(String feature) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('$feature 功能开发中...'),
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 
   @override

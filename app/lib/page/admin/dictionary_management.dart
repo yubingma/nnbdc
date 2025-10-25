@@ -52,51 +52,66 @@ class _DictionaryManagementWidgetState extends State<DictionaryManagementWidget>
     final backgroundColor = isDarkMode ? const Color(0xFF121212) : const Color(0xFFF8F9FA);
     final textColor = isDarkMode ? Colors.white : Colors.black87;
 
-    if (_isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
-    }
-
-    return Container(
-      color: backgroundColor,
-      child: _dictionaries.isEmpty
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.book_outlined,
-                    size: 64,
-                    color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    '暂无系统词典',
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: textColor,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '系统词典管理功能开发中...',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                    ),
-                  ),
-                ],
-              ),
+    return Scaffold(
+      backgroundColor: backgroundColor,
+      appBar: AppBar(
+        title: const Text('系统词典管理'),
+        backgroundColor: AppTheme.primaryColor,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          onPressed: () => Navigator.pop(context),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+        ),
+        actions: [
+          IconButton(
+            onPressed: _loadDictionaryData,
+            icon: const Icon(Icons.refresh, color: Colors.white),
+            tooltip: '刷新',
+          ),
+        ],
+      ),
+      body: _isLoading
+          ? const Center(
+              child: CircularProgressIndicator(),
             )
-          : ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: _dictionaries.length,
-              itemBuilder: (context, index) {
-                final dict = _dictionaries[index];
-                return _buildDictionaryCard(dict);
-              },
-            ),
+          : _dictionaries.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.book_outlined,
+                        size: 64,
+                        color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        '暂无系统词典',
+                        style: TextStyle(
+                          fontSize: 18,
+                          color: textColor,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '系统词典管理功能开发中...',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: _dictionaries.length,
+                  itemBuilder: (context, index) {
+                    final dict = _dictionaries[index];
+                    return _buildDictionaryCard(dict);
+                  },
+                ),
     );
   }
 
@@ -106,23 +121,28 @@ class _DictionaryManagementWidgetState extends State<DictionaryManagementWidget>
     final textColor = isDarkMode ? Colors.white : Colors.black87;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: cardColor,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
             color: isDarkMode 
                 ? Colors.black.withValues(alpha: 0.3) 
-                : Colors.grey.withValues(alpha: 0.1),
-            spreadRadius: 1,
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+                : Colors.grey.withValues(alpha: 0.15),
+            spreadRadius: 0,
+            blurRadius: 8,
+            offset: const Offset(0, 4),
           ),
         ],
+        border: Border.all(
+          color: isDarkMode ? Colors.grey[700]! : Colors.grey[200]!,
+          width: 1,
+        ),
       ),
-      child: Column(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
@@ -139,17 +159,21 @@ class _DictionaryManagementWidgetState extends State<DictionaryManagementWidget>
                   children: [
                     Text(
                       dict.name,
+                      textScaler: const TextScaler.linear(1.0),
                       style: TextStyle(
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w500,
                         fontSize: 16,
                         color: textColor,
+                        fontFamily: 'NotoSansSC',
                       ),
                     ),
                     Text(
                       '词典ID: ${dict.id}',
+                      textScaler: const TextScaler.linear(1.0),
                       style: TextStyle(
                         fontSize: 14,
                         color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                        fontFamily: 'NotoSansSC',
                       ),
                     ),
                   ],
@@ -164,10 +188,12 @@ class _DictionaryManagementWidgetState extends State<DictionaryManagementWidget>
                 ),
                 child: Text(
                   dict.isReady ? '就绪' : '编辑中',
+                  textScaler: const TextScaler.linear(1.0),
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 12,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w500,
+                    fontFamily: 'NotoSansSC',
                   ),
                 ),
               ),
@@ -194,10 +220,12 @@ class _DictionaryManagementWidgetState extends State<DictionaryManagementWidget>
                 ),
                 const SizedBox(height: 8),
                 Text(
+                  textScaler: const TextScaler.linear(1.0),
                   '总用户数: ${dict.totalUsers}',
                   style: TextStyle(
                     fontSize: 12,
                     color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                    fontFamily: 'NotoSansSC',
                   ),
                 ),
               ],
@@ -208,14 +236,21 @@ class _DictionaryManagementWidgetState extends State<DictionaryManagementWidget>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                '创建时间: ${DateFormat('yyyy-MM-dd').format(dict.createTime)}',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+              Expanded(
+                child: Text(
+                  '创建时间: ${DateFormat('yyyy-MM-dd').format(dict.createTime)}',
+                  textScaler: const TextScaler.linear(1.0),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                    fontFamily: 'NotoSansSC',
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
+              const SizedBox(width: 8),
               Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   TextButton.icon(
                     onPressed: () => _editDictionary(dict),
@@ -225,7 +260,7 @@ class _DictionaryManagementWidgetState extends State<DictionaryManagementWidget>
                       foregroundColor: AppTheme.primaryColor,
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 4),
                   TextButton.icon(
                     onPressed: () => _viewDictionaryDetails(dict),
                     icon: const Icon(Icons.visibility, size: 16),
@@ -239,6 +274,7 @@ class _DictionaryManagementWidgetState extends State<DictionaryManagementWidget>
             ],
           ),
         ],
+        ),
       ),
     );
   }
@@ -257,17 +293,21 @@ class _DictionaryManagementWidgetState extends State<DictionaryManagementWidget>
         const SizedBox(height: 4),
         Text(
           value,
+          textScaler: const TextScaler.linear(1.0),
           style: TextStyle(
             fontSize: 16,
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w500,
             color: textColor,
+            fontFamily: 'NotoSansSC',
           ),
         ),
         Text(
           label,
+          textScaler: const TextScaler.linear(1.0),
           style: TextStyle(
             fontSize: 12,
             color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+            fontFamily: 'NotoSansSC',
           ),
         ),
       ],
@@ -331,7 +371,11 @@ class _EditDictionaryDialogState extends State<_EditDictionaryDialog> {
       backgroundColor: backgroundColor,
       title: Text(
         '编辑词典',
-        style: TextStyle(color: textColor),
+        textScaler: const TextScaler.linear(1.0),
+        style: TextStyle(
+          color: textColor,
+          fontFamily: 'NotoSansSC',
+        ),
       ),
       content: SingleChildScrollView(
         child: Column(
@@ -340,20 +384,35 @@ class _EditDictionaryDialogState extends State<_EditDictionaryDialog> {
           children: [
             TextField(
               controller: _nameController,
-              style: TextStyle(color: textColor),
+              style: TextStyle(
+                color: textColor,
+                fontFamily: 'NotoSansSC',
+              ),
               decoration: InputDecoration(
                 labelText: '词典名称',
-                labelStyle: TextStyle(color: textColor),
+                labelStyle: TextStyle(
+                  color: textColor,
+                  fontFamily: 'NotoSansSC',
+                ),
                 border: OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 16),
             SwitchListTile(
-              title: Text('词典就绪', style: TextStyle(color: textColor)),
+              title: Text(
+                '词典就绪',
+                textScaler: const TextScaler.linear(1.0),
+                style: TextStyle(
+                  color: textColor,
+                  fontFamily: 'NotoSansSC',
+                ),
+              ),
               subtitle: Text(
                 _isReady ? '用户可以选择此词典' : '词典正在编辑中',
+                textScaler: const TextScaler.linear(1.0),
                 style: TextStyle(
                   color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                  fontFamily: 'NotoSansSC',
                 ),
               ),
               value: _isReady,
@@ -364,11 +423,20 @@ class _EditDictionaryDialogState extends State<_EditDictionaryDialog> {
               },
             ),
             SwitchListTile(
-              title: Text('词典可见', style: TextStyle(color: textColor)),
+              title: Text(
+                '词典可见',
+                textScaler: const TextScaler.linear(1.0),
+                style: TextStyle(
+                  color: textColor,
+                  fontFamily: 'NotoSansSC',
+                ),
+              ),
               subtitle: Text(
                 _visible ? '用户可以看到此词典' : '词典对用户隐藏',
+                textScaler: const TextScaler.linear(1.0),
                 style: TextStyle(
                   color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                  fontFamily: 'NotoSansSC',
                 ),
               ),
               value: _visible,
@@ -455,7 +523,11 @@ class _DictionaryDetailsDialog extends StatelessWidget {
       backgroundColor: backgroundColor,
       title: Text(
         '词典详情',
-        style: TextStyle(color: textColor),
+        textScaler: const TextScaler.linear(1.0),
+        style: TextStyle(
+          color: textColor,
+          fontFamily: 'NotoSansSC',
+        ),
       ),
       content: SingleChildScrollView(
         child: Column(
@@ -498,18 +570,24 @@ class _DictionaryDetailsDialog extends StatelessWidget {
             children: [
               SizedBox(
                 width: 80,
-                child: Text(
-                  '$label:',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: textColor,
-                  ),
-                ),
+            child: Text(
+              '$label:',
+              textScaler: const TextScaler.linear(1.0),
+              style: TextStyle(
+                fontWeight: FontWeight.w500,
+                color: textColor,
+                fontFamily: 'NotoSansSC',
+              ),
+            ),
               ),
               Expanded(
                 child: Text(
                   value,
-                  style: TextStyle(color: textColor),
+                  textScaler: const TextScaler.linear(1.0),
+                  style: TextStyle(
+                    color: textColor,
+                    fontFamily: 'NotoSansSC',
+                  ),
                 ),
               ),
             ],
