@@ -168,15 +168,21 @@ jobs:
           Copy-Item -Path "../app/build/windows/x64/runner/Release/*" -Destination "installer_temp/" -Recurse -Force
           
           # 复制资源文件（如果存在）
-          if (Test-Path "../app/assets/images/logo.png") {
-            Copy-Item "../app/assets/images/logo.png" "installer_temp/"
+          Write-Host "检查并复制资源文件..."
+          
+          # 复制 logo.png
+          $logoPath = "../app/assets/images/logo.png"
+          if (Test-Path $logoPath) {
+            Copy-Item $logoPath "installer_temp/"
             Write-Host "复制了 logo.png"
           } else {
             Write-Host "警告: logo.png 不存在，将跳过图标设置"
           }
           
-          if (Test-Path "../app/assets/privacy.html") {
-            Copy-Item "../app/assets/privacy.html" "installer_temp/"
+          # 复制 privacy.html
+          $privacyPath = "../app/assets/privacy.html"
+          if (Test-Path $privacyPath) {
+            Copy-Item $privacyPath "installer_temp/"
             Write-Host "复制了内置的 privacy.html"
           } else {
             Write-Host "警告: 内置的 privacy.html 不存在"
