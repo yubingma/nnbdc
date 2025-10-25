@@ -182,18 +182,32 @@ jobs:
           }
           
           # 编译 NSIS 安装脚本
-          # 尝试使用完整路径
-          $nsisExe = "C:\Program Files (x86)\NSIS\makensis.exe"
-          if (Test-Path $nsisExe) {
-            & $nsisExe "../platforms/windows/installer.nsi"
-          } else {
-            # 尝试从 PATH 中查找
-            $nsisPath = Get-Command makensis -ErrorAction SilentlyContinue
-            if ($nsisPath) {
-              & makensis "../platforms/windows/installer.nsi"
-            } else {
-              Write-Host "NSIS 未找到，跳过安装包创建"
-              exit 1
+          # 尝试多个可能的 NSIS 路径
+          $nsisPaths = @(
+            "C:\Program Files (x86)\NSIS\makensis.exe",
+            "C:\Program Files\NSIS\makensis.exe",
+            "makensis.exe"
+          )
+          
+          $nsisFound = $false
+          foreach ($nsisPath in $nsisPaths) {
+            if (Test-Path $nsisPath) {
+              Write-Host "找到 NSIS: $nsisPath"
+              try {
+                & $nsisPath "../platforms/windows/installer.nsi"
+                $nsisFound = $true
+                break
+              } catch {
+                Write-Host "NSIS 执行失败: $($_.Exception.Message)"
+              }
+            }
+          }
+          
+          if (-not $nsisFound) {
+            Write-Host "NSIS 未找到或执行失败，跳过安装包创建"
+            Write-Host "尝试的路径："
+            foreach ($path in $nsisPaths) {
+              Write-Host "  - $path"
             }
           }
           if (Test-Path "nnbdc-setup.exe") {
