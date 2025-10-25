@@ -19,6 +19,7 @@ public class DictDto implements Dto {
      * 该单词书的单词数量
      */
     private Integer wordCount;
+    private Integer popularityLimit;
     private Date createTime;
     private Date updateTime;
 
@@ -26,7 +27,7 @@ public class DictDto implements Dto {
     }
 
     public DictDto(String id, String name, String ownerId, Boolean isShared, Boolean isReady, Boolean visible,
-            Integer wordCount, Date createTime, Date updateTime) {
+            Integer wordCount, Integer popularityLimit, Date createTime, Date updateTime) {
         this.id = id;
         this.name = name;
         this.ownerId = ownerId;
@@ -34,6 +35,7 @@ public class DictDto implements Dto {
         this.isReady = isReady;
         this.visible = visible;
         this.wordCount = wordCount;
+        this.popularityLimit = popularityLimit;
         this.createTime = createTime;
         this.updateTime = updateTime;
     }
@@ -108,6 +110,14 @@ public class DictDto implements Dto {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public Integer getPopularityLimit() {
+        return popularityLimit;
+    }
+
+    public void setPopularityLimit(Integer popularityLimit) {
+        this.popularityLimit = popularityLimit;
     }
 
 }

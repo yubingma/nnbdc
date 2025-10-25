@@ -65,6 +65,22 @@ public class Dict extends UuidPo {
     @Column(name = "visible", nullable = false)
     private Boolean visible;
 
+    /**
+     * 过滤展示给用户的单词释义，如果某个单词没有该dict的定制释义，从而只能使用通用词典释义时，
+     * popularity大于该设定的通用词典释义项(不太常用的释义项)会被用户隐藏，避免释义项过多。
+     * 如果为null，表示不限制。
+     */
+    @Column(name = "popularityLimit", nullable = true)
+    private Integer popularityLimit;
+
+    public Integer getPopularityLimit() {
+        return popularityLimit;
+    }
+
+    public void setPopularityLimit(Integer popularityLimit) {
+        this.popularityLimit = popularityLimit;
+    }
+
     public List<DictWord> getDictWords() {
         return dictWords;
     }

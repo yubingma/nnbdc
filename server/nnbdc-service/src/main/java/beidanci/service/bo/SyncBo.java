@@ -422,6 +422,7 @@ public class SyncBo {
                     dict.setIsReady(dictDto.getIsReady());
                     dict.setVisible(dictDto.getVisible());
                     dict.setWordCount(dictDto.getWordCount());
+                    dict.setPopularityLimit(dictDto.getPopularityLimit());
                     dict.setCreateTime(dictDto.getCreateTime());
                     dict.setUpdateTime(dictDto.getUpdateTime());
                     
@@ -436,6 +437,7 @@ public class SyncBo {
                     dict.setIsReady(dictDto.getIsReady());
                     dict.setVisible(dictDto.getVisible());
                     dict.setWordCount(dictDto.getWordCount());
+                    dict.setPopularityLimit(dictDto.getPopularityLimit());
                     dict.setUpdateTime(dictDto.getUpdateTime());
                     
                     dictBo.updateEntity(dict);

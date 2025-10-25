@@ -225,6 +225,8 @@ class Dicts extends Table {
 
   BoolColumn get visible => boolean()();
 
+  IntColumn get popularityLimit => integer().nullable()();
+
   DateTimeColumn get createTime => dateTime()();
 
   DateTimeColumn get updateTime => dateTime().nullable()();

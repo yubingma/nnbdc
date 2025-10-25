@@ -240,7 +240,7 @@ public class DictBo extends BaseBo<Dict> {
 
     public DictDto getDictDto(String dictId) throws ParseException {
         // 通用词典现在是数据库中的实际记录，统一从数据库查询
-        String sql = "select id, name, ownerId, isShared, isReady, visible, wordCount, createTime, updateTime from dict where id=:dictId";
+        String sql = "select id, name, ownerId, isShared, isReady, visible, wordCount, popularityLimit, createTime, updateTime from dict where id=:dictId";
         Query<?> query = getSession().createNativeQuery(sql);
         query.setParameter("dictId", dictId);
         Object[] result = (Object[]) query.uniqueResult();
@@ -257,8 +257,9 @@ public class DictBo extends BaseBo<Dict> {
         dto.setIsReady((Boolean) result[4]);
         dto.setVisible((Boolean) result[5]);
         dto.setWordCount((Integer) result[6]);
-        dto.setCreateTime((Timestamp) result[7]);
-        dto.setUpdateTime((Timestamp) result[8]);
+        dto.setPopularityLimit((Integer) result[7]);
+        dto.setCreateTime((Timestamp) result[8]);
+        dto.setUpdateTime((Timestamp) result[9]);
         return dto;
     }
 
