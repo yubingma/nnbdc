@@ -182,21 +182,43 @@ jobs:
           }
           
           # 编译 NSIS 安装脚本
-          # 尝试多个可能的 NSIS 路径
-          $nsisPaths = @(
-            "C:\Program Files (x86)\NSIS\makensis.exe",
-            "C:\Program Files\NSIS\makensis.exe",
-            "makensis.exe"
-          )
-          
+          # 尝试多个可能的 NSIS 路径（避免数组中的路径解析问题）
           $nsisFound = $false
-          foreach ($nsisPath in $nsisPaths) {
-            if (Test-Path $nsisPath) {
-              Write-Host "找到 NSIS: $nsisPath"
+          
+          # 尝试 32位系统路径
+          $nsisPath1 = "C:\Program Files (x86)\NSIS\makensis.exe"
+          if (Test-Path $nsisPath1) {
+            Write-Host "找到 NSIS (32位): $nsisPath1"
+            try {
+              & $nsisPath1 "../platforms/windows/installer.nsi"
+              $nsisFound = $true
+            } catch {
+              Write-Host "NSIS 执行失败: $($_.Exception.Message)"
+            }
+          }
+          
+          # 尝试 64位系统路径
+          if (-not $nsisFound) {
+            $nsisPath2 = "C:\Program Files\NSIS\makensis.exe"
+            if (Test-Path $nsisPath2) {
+              Write-Host "找到 NSIS (64位): $nsisPath2"
               try {
-                & $nsisPath "../platforms/windows/installer.nsi"
+                & $nsisPath2 "../platforms/windows/installer.nsi"
                 $nsisFound = $true
-                break
+              } catch {
+                Write-Host "NSIS 执行失败: $($_.Exception.Message)"
+              }
+            }
+          }
+          
+          # 尝试从 PATH 中查找
+          if (-not $nsisFound) {
+            $nsisPath3 = Get-Command makensis -ErrorAction SilentlyContinue
+            if ($nsisPath3) {
+              Write-Host "找到 NSIS (PATH): $($nsisPath3.Source)"
+              try {
+                & makensis "../platforms/windows/installer.nsi"
+                $nsisFound = $true
               } catch {
                 Write-Host "NSIS 执行失败: $($_.Exception.Message)"
               }
@@ -205,10 +227,6 @@ jobs:
           
           if (-not $nsisFound) {
             Write-Host "NSIS 未找到或执行失败，跳过安装包创建"
-            Write-Host "尝试的路径："
-            foreach ($path in $nsisPaths) {
-              Write-Host "  - $path"
-            }
           }
           if (Test-Path "nnbdc-setup.exe") {
             Move-Item "nnbdc-setup.exe" "$DEPLOY_DIR/nnbdc-setup.exe"
