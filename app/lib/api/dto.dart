@@ -552,6 +552,7 @@ class DictStatsDto {
   final bool isReady;
   final bool visible;
   final int wordCount;
+  final int? popularityLimit;
   final DateTime createTime;
   final DateTime? updateTime;
   
@@ -568,6 +569,7 @@ class DictStatsDto {
     required this.isReady,
     required this.visible,
     required this.wordCount,
+    this.popularityLimit,
     required this.createTime,
     this.updateTime,
     required this.userSelectionCount,

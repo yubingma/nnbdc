@@ -438,6 +438,7 @@ class _EditDictionaryDialog extends StatefulWidget {
 
 class _EditDictionaryDialogState extends State<_EditDictionaryDialog> {
   late TextEditingController _nameController;
+  late TextEditingController _popularityLimitController;
   late bool _isReady;
   late bool _visible;
   bool _isLoading = false;
@@ -446,6 +447,7 @@ class _EditDictionaryDialogState extends State<_EditDictionaryDialog> {
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.dict.name);
+    _popularityLimitController = TextEditingController(text: widget.dict.popularityLimit?.toString() ?? '');
     _isReady = widget.dict.isReady;
     _visible = widget.dict.visible;
   }
@@ -453,6 +455,7 @@ class _EditDictionaryDialogState extends State<_EditDictionaryDialog> {
   @override
   void dispose() {
     _nameController.dispose();
+    _popularityLimitController.dispose();
     super.dispose();
   }
 
