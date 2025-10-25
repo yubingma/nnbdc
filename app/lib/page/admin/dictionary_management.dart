@@ -116,7 +116,10 @@ class _DictionaryManagementWidgetState extends State<DictionaryManagementWidget>
     return Scaffold(
       backgroundColor: backgroundColor,
       appBar: AppBar(
-        title: const Text('系统词典管理'),
+        title: const Text(
+          '系统词典管理',
+          textScaler: TextScaler.linear(1.0),
+        ),
         backgroundColor: AppTheme.primaryColor,
         foregroundColor: Colors.white,
         elevation: 0,
@@ -201,6 +204,7 @@ class _DictionaryManagementWidgetState extends State<DictionaryManagementWidget>
                           const SizedBox(height: 16),
                           Text(
                             _dictionaries.isEmpty ? '暂无系统词典' : '未找到匹配的词典',
+                            textScaler: const TextScaler.linear(1.0),
                             style: TextStyle(
                               fontSize: 18,
                               color: textColor,
@@ -210,6 +214,7 @@ class _DictionaryManagementWidgetState extends State<DictionaryManagementWidget>
                             const SizedBox(height: 8),
                             Text(
                               '系统词典管理功能开发中...',
+                              textScaler: const TextScaler.linear(1.0),
                               style: TextStyle(
                                 fontSize: 14,
                                 color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
@@ -279,7 +284,7 @@ class _DictionaryManagementWidgetState extends State<DictionaryManagementWidget>
                       dict.name,
                       textScaler: const TextScaler.linear(1.0),
                       style: TextStyle(
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w400,
                         fontSize: 16,
                         color: textColor,
                         fontFamily: 'NotoSansSC',
@@ -301,7 +306,7 @@ class _DictionaryManagementWidgetState extends State<DictionaryManagementWidget>
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 12,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w400,
                     fontFamily: 'NotoSansSC',
                   ),
                 ),
@@ -338,7 +343,10 @@ class _DictionaryManagementWidgetState extends State<DictionaryManagementWidget>
               TextButton.icon(
                 onPressed: () => _editDictionary(dict),
                 icon: const Icon(Icons.edit, size: 16),
-                label: const Text('编辑'),
+                label: const Text(
+                  '编辑',
+                  textScaler: TextScaler.linear(1.0),
+                ),
                 style: TextButton.styleFrom(
                   foregroundColor: AppTheme.primaryColor,
                 ),
@@ -347,7 +355,10 @@ class _DictionaryManagementWidgetState extends State<DictionaryManagementWidget>
               TextButton.icon(
                 onPressed: () => _viewDictionaryDetails(dict),
                 icon: const Icon(Icons.visibility, size: 16),
-                label: const Text('详情'),
+                label: const Text(
+                  '详情',
+                  textScaler: TextScaler.linear(1.0),
+                ),
                 style: TextButton.styleFrom(
                   foregroundColor: AppTheme.primaryColor,
                 ),
@@ -396,10 +407,13 @@ class _DictionaryManagementWidgetState extends State<DictionaryManagementWidget>
   }
 
   void _editDictionary(DictStatsDto dict) {
-    // 实现编辑词典功能
-    showDialog(
-      context: context,
-      builder: (context) => _EditDictionaryDialog(dict: dict),
+    // 实现编辑词典功能 - 使用全屏展示
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => _EditDictionaryDialog(dict: dict),
+        fullscreenDialog: true,
+      ),
     );
   }
 
@@ -448,111 +462,213 @@ class _EditDictionaryDialogState extends State<_EditDictionaryDialog> {
     final textColor = isDarkMode ? Colors.white : Colors.black87;
     final backgroundColor = isDarkMode ? const Color(0xFF121212) : const Color(0xFFF8F9FA);
 
-    return AlertDialog(
+    return Scaffold(
       backgroundColor: backgroundColor,
-      title: Text(
-        '编辑词典',
-        textScaler: const TextScaler.linear(1.0),
-        style: TextStyle(
-          color: textColor,
-          fontFamily: 'NotoSansSC',
+      appBar: AppBar(
+        backgroundColor: isDarkMode ? const Color(0xFF2D2D2D) : Colors.white,
+        foregroundColor: textColor,
+        elevation: 0,
+        leading: IconButton(
+          onPressed: () => Navigator.pop(context),
+          icon: const Icon(Icons.arrow_back),
         ),
-      ),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+        title: Row(
           children: [
-            TextField(
-              controller: _nameController,
+            const Icon(Icons.edit),
+            const SizedBox(width: 8),
+            Text(
+              '编辑词典',
+              textScaler: const TextScaler.linear(1.0),
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w400,
+                color: textColor,
+                fontFamily: 'NotoSansSC',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: _isLoading ? null : () => Navigator.pop(context),
+            child: Text(
+              '取消',
+              textScaler: const TextScaler.linear(1.0),
               style: TextStyle(
                 color: textColor,
                 fontFamily: 'NotoSansSC',
               ),
-              decoration: InputDecoration(
-                labelText: '词典名称',
-                labelStyle: TextStyle(
-                  color: textColor,
-                  fontFamily: 'NotoSansSC',
+            ),
+          ),
+          const SizedBox(width: 8),
+          ElevatedButton(
+            onPressed: _isLoading ? null : _saveChanges,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryColor,
+              foregroundColor: Colors.white,
+            ),
+            child: _isLoading
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                : const Text(
+                    '保存',
+                    textScaler: TextScaler.linear(1.0),
+                  ),
+          ),
+          const SizedBox(width: 16),
+        ],
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 词典名称输入框
+            Card(
+              color: isDarkMode ? const Color(0xFF2D2D2D) : Colors.white,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '词典名称',
+                      textScaler: const TextScaler.linear(1.0),
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w400,
+                        color: textColor,
+                        fontFamily: 'NotoSansSC',
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _nameController,
+                      style: TextStyle(
+                        color: textColor,
+                        fontFamily: 'NotoSansSC',
+                        fontSize: 16,
+                        fontWeight: FontWeight.w400,
+                      ),
+                      decoration: InputDecoration(
+                        hintText: '请输入词典名称',
+                        hintStyle: TextStyle(
+                          color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                          fontFamily: 'NotoSansSC',
+                          fontSize: 16,
+                          fontWeight: FontWeight.w400,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                border: OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 16),
-            SwitchListTile(
-              title: Text(
-                '词典就绪',
-                textScaler: const TextScaler.linear(1.0),
-                style: TextStyle(
-                  color: textColor,
-                  fontFamily: 'NotoSansSC',
+            
+            // 词典设置卡片
+            Card(
+              color: isDarkMode ? const Color(0xFF2D2D2D) : Colors.white,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '词典设置',
+                      textScaler: const TextScaler.linear(1.0),
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w400,
+                        color: textColor,
+                        fontFamily: 'NotoSansSC',
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // 词典就绪开关
+                    SwitchListTile(
+                      title: Text(
+                        '词典就绪',
+                        textScaler: const TextScaler.linear(1.0),
+                        style: TextStyle(
+                          color: textColor,
+                          fontFamily: 'NotoSansSC',
+                        ),
+                      ),
+                      subtitle: Text(
+                        _isReady ? '用户可以选择此词典' : '词典正在编辑中',
+                        textScaler: const TextScaler.linear(1.0),
+                        style: TextStyle(
+                          color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                          fontFamily: 'NotoSansSC',
+                        ),
+                      ),
+                      value: _isReady,
+                      onChanged: (value) {
+                        setState(() {
+                          _isReady = value;
+                        });
+                      },
+                    ),
+                    
+                    const Divider(),
+                    
+                    // 词典可见开关
+                    SwitchListTile(
+                      title: Text(
+                        '词典可见',
+                        textScaler: const TextScaler.linear(1.0),
+                        style: TextStyle(
+                          color: textColor,
+                          fontFamily: 'NotoSansSC',
+                        ),
+                      ),
+                      subtitle: Text(
+                        _visible ? '用户可以看到此词典' : '词典对用户隐藏',
+                        textScaler: const TextScaler.linear(1.0),
+                        style: TextStyle(
+                          color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                          fontFamily: 'NotoSansSC',
+                        ),
+                      ),
+                      value: _visible,
+                      onChanged: (value) {
+                        setState(() {
+                          _visible = value;
+                        });
+                      },
+                    ),
+                  ],
                 ),
               ),
-              subtitle: Text(
-                _isReady ? '用户可以选择此词典' : '词典正在编辑中',
-                textScaler: const TextScaler.linear(1.0),
-                style: TextStyle(
-                  color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                  fontFamily: 'NotoSansSC',
-                ),
-              ),
-              value: _isReady,
-              onChanged: (value) {
-                setState(() {
-                  _isReady = value;
-                });
-              },
-            ),
-            SwitchListTile(
-              title: Text(
-                '词典可见',
-                textScaler: const TextScaler.linear(1.0),
-                style: TextStyle(
-                  color: textColor,
-                  fontFamily: 'NotoSansSC',
-                ),
-              ),
-              subtitle: Text(
-                _visible ? '用户可以看到此词典' : '词典对用户隐藏',
-                textScaler: const TextScaler.linear(1.0),
-                style: TextStyle(
-                  color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                  fontFamily: 'NotoSansSC',
-                ),
-              ),
-              value: _visible,
-              onChanged: (value) {
-                setState(() {
-                  _visible = value;
-                });
-              },
             ),
           ],
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: _isLoading ? null : () => Navigator.pop(context),
-          child: const Text('取消'),
-        ),
-        ElevatedButton(
-          onPressed: _isLoading ? null : _saveChanges,
-          child: _isLoading
-              ? const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Text('保存'),
-        ),
-      ],
     );
   }
 
   Future<void> _saveChanges() async {
     if (_nameController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('词典名称不能为空')),
+        const SnackBar(content: Text(
+          '词典名称不能为空',
+          textScaler: TextScaler.linear(1.0),
+        )),
       );
       return;
     }
@@ -569,13 +685,19 @@ class _EditDictionaryDialogState extends State<_EditDictionaryDialog> {
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('词典信息更新成功')),
+          const SnackBar(content: Text(
+            '词典信息更新成功',
+            textScaler: TextScaler.linear(1.0),
+          )),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('更新失败: $e')),
+          SnackBar(content: Text(
+            '更新失败: $e',
+            textScaler: const TextScaler.linear(1.0),
+          )),
         );
       }
     } finally {
@@ -632,7 +754,10 @@ class _DictionaryDetailsDialog extends StatelessWidget {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('关闭'),
+          child: const Text(
+            '关闭',
+            textScaler: TextScaler.linear(1.0),
+          ),
         ),
       ],
     );
@@ -655,7 +780,7 @@ class _DictionaryDetailsDialog extends StatelessWidget {
               '$label:',
               textScaler: const TextScaler.linear(1.0),
               style: TextStyle(
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w400,
                 color: textColor,
                 fontFamily: 'NotoSansSC',
               ),
