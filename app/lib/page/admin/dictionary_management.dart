@@ -28,8 +28,12 @@ class _DictionaryManagementWidgetState extends State<DictionaryManagementWidget>
     try {
       final result = await Api.client.getSystemDictsWithStats();
       if (result.success && result.data != null) {
+        // 按选择率从高到低排序
+        final sortedDictionaries = List<DictStatsDto>.from(result.data!);
+        sortedDictionaries.sort((a, b) => b.selectionRate.compareTo(a.selectionRate));
+        
         setState(() {
-          _dictionaries = result.data!;
+          _dictionaries = sortedDictionaries;
           _isLoading = false;
         });
       } else {
@@ -167,15 +171,6 @@ class _DictionaryManagementWidgetState extends State<DictionaryManagementWidget>
                         fontFamily: 'NotoSansSC',
                       ),
                     ),
-                    Text(
-                      '词典ID: ${dict.id}',
-                      textScaler: const TextScaler.linear(1.0),
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                        fontFamily: 'NotoSansSC',
-                      ),
-                    ),
                   ],
                 ),
               ),
@@ -218,58 +213,30 @@ class _DictionaryManagementWidgetState extends State<DictionaryManagementWidget>
                     _buildStatItem('选择率', '${dict.selectionRate.toStringAsFixed(1)}%', Icons.trending_up),
                   ],
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  textScaler: const TextScaler.linear(1.0),
-                  '总用户数: ${dict.totalUsers}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                    fontFamily: 'NotoSansSC',
-                  ),
-                ),
               ],
             ),
           ),
           
           const SizedBox(height: 12),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              Expanded(
-                child: Text(
-                  '创建时间: ${DateFormat('yyyy-MM-dd').format(dict.createTime)}',
-                  textScaler: const TextScaler.linear(1.0),
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                    fontFamily: 'NotoSansSC',
-                  ),
-                  overflow: TextOverflow.ellipsis,
+              TextButton.icon(
+                onPressed: () => _editDictionary(dict),
+                icon: const Icon(Icons.edit, size: 16),
+                label: const Text('编辑'),
+                style: TextButton.styleFrom(
+                  foregroundColor: AppTheme.primaryColor,
                 ),
               ),
               const SizedBox(width: 8),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextButton.icon(
-                    onPressed: () => _editDictionary(dict),
-                    icon: const Icon(Icons.edit, size: 16),
-                    label: const Text('编辑'),
-                    style: TextButton.styleFrom(
-                      foregroundColor: AppTheme.primaryColor,
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  TextButton.icon(
-                    onPressed: () => _viewDictionaryDetails(dict),
-                    icon: const Icon(Icons.visibility, size: 16),
-                    label: const Text('详情'),
-                    style: TextButton.styleFrom(
-                      foregroundColor: AppTheme.primaryColor,
-                    ),
-                  ),
-                ],
+              TextButton.icon(
+                onPressed: () => _viewDictionaryDetails(dict),
+                icon: const Icon(Icons.visibility, size: 16),
+                label: const Text('详情'),
+                style: TextButton.styleFrom(
+                  foregroundColor: AppTheme.primaryColor,
+                ),
               ),
             ],
           ),
