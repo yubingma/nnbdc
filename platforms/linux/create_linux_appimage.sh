@@ -6,18 +6,31 @@ set -e
 echo "[INFO] ======== 创建 Linux AppImage ========"
 
 # 检查 Flutter 构建文件是否存在
-if [ ! -d "../../app/build/linux/x64/release/bundle" ]; then
+# 尝试多个可能的路径
+BUNDLE_PATH=""
+if [ -d "../../app/build/linux/x64/release/bundle" ]; then
+    BUNDLE_PATH="../../app/build/linux/x64/release/bundle"
+elif [ -d "app/build/linux/x64/release/bundle" ]; then
+    BUNDLE_PATH="app/build/linux/x64/release/bundle"
+elif [ -d "build/linux/x64/release/bundle" ]; then
+    BUNDLE_PATH="build/linux/x64/release/bundle"
+else
     echo "[ERROR] Flutter Linux 构建文件不存在"
-    echo "请先运行: cd ../../app && flutter build linux --release"
+    echo "请先运行: cd app && flutter build linux --release"
     echo "当前目录: $(pwd)"
     echo "检查构建目录结构:"
+    echo "检查 ../../app/build/linux/x64/release/:"
     ls -la ../../app/build/linux/x64/release/ 2>/dev/null || echo "release 目录不存在"
+    echo "检查 app/build/linux/x64/release/:"
+    ls -la app/build/linux/x64/release/ 2>/dev/null || echo "release 目录不存在"
+    echo "检查 build/linux/x64/release/:"
+    ls -la build/linux/x64/release/ 2>/dev/null || echo "release 目录不存在"
     exit 1
 fi
 
 echo "[INFO] 找到 Flutter Linux 构建文件"
-echo "[INFO] 构建文件位置: ../../app/build/linux/x64/release/bundle"
-ls -la "../../app/build/linux/x64/release/bundle/"
+echo "[INFO] 构建文件位置: $BUNDLE_PATH"
+ls -la "$BUNDLE_PATH/"
 
 # 创建临时目录
 TEMP_DIR="$(pwd)/appimage_temp"
@@ -29,7 +42,7 @@ mkdir -p "$TEMP_DIR"
 echo "[INFO] 准备 AppImage 内容..."
 
 # 复制应用文件
-cp -r "../../app/build/linux/x64/release/bundle"/* "$TEMP_DIR/"
+cp -r "$BUNDLE_PATH"/* "$TEMP_DIR/"
 
 # 创建 AppImage 描述文件
 cat > "$TEMP_DIR/nnbdc.desktop" << EOF

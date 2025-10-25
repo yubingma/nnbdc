@@ -84,8 +84,13 @@ jobs:
             # 验证 Linux 构建文件是否存在
             if [ ! -d "build/linux/x64/release/bundle" ]; then
               echo "错误：Linux 构建文件不存在"
+              echo "当前目录：$(pwd)"
               echo "构建目录内容："
               ls -la build/linux/x64/release/ || echo "release 目录不存在"
+              echo "检查整个 build 目录："
+              ls -la build/ || echo "build 目录不存在"
+              echo "检查 linux 目录："
+              ls -la build/linux/ || echo "linux 目录不存在"
               exit 1
             fi
             echo "Linux 构建成功，文件位置：build/linux/x64/release/bundle"
