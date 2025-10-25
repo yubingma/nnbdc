@@ -13,7 +13,6 @@ public class DictStatsDto {
     private Boolean isReady;
     private Boolean visible;
     private Integer wordCount;
-    private Integer popularityLimit;
     private Date createTime;
     private Date updateTime;
     
@@ -94,14 +93,6 @@ public class DictStatsDto {
     
     public void setWordCount(Integer wordCount) {
         this.wordCount = wordCount;
-    }
-    
-    public Integer getPopularityLimit() {
-        return popularityLimit;
-    }
-    
-    public void setPopularityLimit(Integer popularityLimit) {
-        this.popularityLimit = popularityLimit;
     }
     
     public Date getCreateTime() {

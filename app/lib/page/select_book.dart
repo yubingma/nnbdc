@@ -88,21 +88,8 @@ class SelectBookPageState extends State<SelectBookPage> {
       var dicts = await db.select(db.dicts).get();
       List<LearningDict> learningDicts = await db.learningDictsDao.getLearningDictsOfUser(userId);
 
-      Global.logger.i("获取到的分组数据: ${dictGroupsData.length} 个");
-      Global.logger.i("获取到的分组-词书关联: ${groupAndDictLinks.length} 个");
-      Global.logger.i("获取到的词书数据: ${dicts.length} 个");
-
       // 构建词书分组数据
       dictGroups = [];
-      // 1. 构建分组映射
-      final groupMap = {for (var g in dictGroupsData) g.id: g};
-
-      // 调试：打印所有分组信息
-      Global.logger.i("📋 所有分组数据:");
-      for (var g in dictGroupsData) {
-        final parent = g.parentId != null ? groupMap[g.parentId] : null;
-        Global.logger.i("  - ${g.name} (id: ${g.id}, parentId: ${g.parentId}, parent: ${parent?.name})");
-      }
 
       // 2. 基于 root 分组获取其直接子分组（不显示 root 自身）
       //    优先通过名称为 'root' 的分组定位；若不存在，则取最顶层(parentId==null)作为根
@@ -111,14 +98,10 @@ class SelectBookPageState extends State<SelectBookPage> {
         orElse: () => dictGroupsData.firstWhere((g) => g.parentId == null),
       );
 
-      var secondLevelGroups = dictGroupsData
-          .where((g) => g.parentId == rootGroup.id && !["蒲公英", "职称", "少儿", "其他"].contains(g.name))
-          .toList();
-      
+      var secondLevelGroups = dictGroupsData.where((g) => g.parentId == rootGroup.id && !["蒲公英", "职称", "少儿", "其他"].contains(g.name)).toList();
+
       // 按 displayIndex 排序
       secondLevelGroups.sort((a, b) => a.displayIndex.compareTo(b.displayIndex));
-
-      Global.logger.i("第二级分组: ${secondLevelGroups.map((g) => g.name).join(', ')}");
 
       // 3. 为每个第二级分组构建VO
       for (var group in secondLevelGroups) {
@@ -129,24 +112,20 @@ class SelectBookPageState extends State<SelectBookPage> {
 
         // 获取直接关联的词书
         var directLinks = groupAndDictLinks.where((l) => l.groupId == group.id);
-        Global.logger.i("分组 ${group.name} 直接关联的词书: ${directLinks.length} 个");
 
         for (var link in directLinks) {
           // 防止重复添加同一本词书
           if (addedDictIds.contains(link.dictId)) {
-            Global.logger.i("词书 ${link.dictId} 已经添加过，跳过");
             continue;
           }
 
           var dictList = dicts.where((d) => d.id == link.dictId).toList();
           if (dictList.isEmpty) {
-            Global.logger.w("未找到词书: ${link.dictId}");
             continue;
           }
           var dict = dictList.first;
           // 过滤掉visible为false的词典
           if (dict.visible == false) {
-            Global.logger.i("词书 ${dict.name} 被设置为不可见，已跳过");
             continue;
           }
           var vo = DictVo.c2(dict.id);
@@ -160,28 +139,23 @@ class SelectBookPageState extends State<SelectBookPage> {
 
         // 获取子分组下的词书
         var childGroups = dictGroupsData.where((g) => g.parentId == group.id);
-        Global.logger.i("分组 ${group.name} 的子分组: ${childGroups.map((g) => g.name).join(', ')}");
 
         for (var childGroup in childGroups) {
           var childLinks = groupAndDictLinks.where((l) => l.groupId == childGroup.id);
-          Global.logger.i("子分组 ${childGroup.name} 关联的词书: ${childLinks.length} 个");
 
           for (var link in childLinks) {
             // 防止重复添加同一本词书
             if (addedDictIds.contains(link.dictId)) {
-              Global.logger.i("词书 ${link.dictId} 已经添加过，跳过");
               continue;
             }
 
             var dictList = dicts.where((d) => d.id == link.dictId).toList();
             if (dictList.isEmpty) {
-              Global.logger.w("未找到词书: ${link.dictId}");
               continue;
             }
             var dict = dictList.first;
             // 过滤掉visible为false的词典
             if (dict.visible == false) {
-              Global.logger.i("词书 ${dict.name} 被设置为不可见，已跳过");
               continue;
             }
             var vo = DictVo.c2(dict.id);
@@ -193,9 +167,6 @@ class SelectBookPageState extends State<SelectBookPage> {
             addedDictIds.add(dict.id);
           }
         }
-
-        Global.logger.i(
-            "分组 ${group.name} 最终包含的词书: ${allDicts.length} 个，去重前总关联数: ${directLinks.length + childGroups.map((g) => groupAndDictLinks.where((l) => l.groupId == g.id).length).fold(0, (a, b) => a + b)} 个");
 
         // 创建分组VO
         var groupVo = DictGroupVo(group.name, allDicts);

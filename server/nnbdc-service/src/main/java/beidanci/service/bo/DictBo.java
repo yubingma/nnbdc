@@ -296,9 +296,8 @@ public class DictBo extends BaseBo<Dict> {
             dto.setIsReady((Boolean) dictData[4]);
             dto.setVisible((Boolean) dictData[5]);
             dto.setWordCount((Integer) dictData[6]);
-            dto.setPopularityLimit((Integer) dictData[7]);
-            dto.setCreateTime((Timestamp) dictData[8]);
-            dto.setUpdateTime((Timestamp) dictData[9]);
+            dto.setCreateTime((Timestamp) dictData[7]);
+            dto.setUpdateTime((Timestamp) dictData[8]);
             dto.setTotalUsers(totalUsers);
             
             // 获取该词典被用户选择的数量
@@ -376,31 +375,18 @@ public class DictBo extends BaseBo<Dict> {
      * 更新系统词典信息
      */
     public void updateSystemDict(String dictId, String name, boolean isReady, boolean visible, Integer popularityLimit) {
-        Session session = getSession();
-        
-        // 验证词典是否存在且为系统词典
-        String checkSql = "SELECT id FROM dict WHERE id = :dictId AND ownerId = :sysUserId";
-        Query<?> checkQuery = session.createNativeQuery(checkSql);
-        checkQuery.setParameter("dictId", dictId);
-        checkQuery.setParameter("sysUserId", Constants.SYS_USER_SYS_ID);
-        
-        if (checkQuery.uniqueResult() == null) {
-            throw new RuntimeException("词典不存在或不是系统词典");
+        Dict dict = findById(dictId);
+        if (dict == null) {
+            throw new RuntimeException("词典不存在: " + dictId);
         }
         
-        // 更新词典信息
-        String updateSql = "UPDATE dict SET name = :name, isReady = :isReady, visible = :visible, popularityLimit = :popularityLimit, updateTime = NOW() WHERE id = :dictId";
-        Query<?> updateQuery = session.createNativeQuery(updateSql);
-        updateQuery.setParameter("name", name);
-        updateQuery.setParameter("isReady", isReady);
-        updateQuery.setParameter("visible", visible);
-        updateQuery.setParameter("popularityLimit", popularityLimit);
-        updateQuery.setParameter("dictId", dictId);
+        dict.setName(name);
+        dict.setIsReady(isReady);
+        dict.setVisible(visible);
+        dict.setPopularityLimit(popularityLimit);
+        dict.setUpdateTime(new java.sql.Timestamp(System.currentTimeMillis()));
         
-        int updatedRows = updateQuery.executeUpdate();
-        if (updatedRows == 0) {
-            throw new RuntimeException("更新词典失败");
-        }
+        updateEntity(dict);
     }
 
 }
