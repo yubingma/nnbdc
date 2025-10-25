@@ -40,7 +40,12 @@ RequestExecutionLevel admin
 
 ; 安装程序页面
 !insertmacro MUI_PAGE_WELCOME
-!insertmacro MUI_PAGE_LICENSE "installer_temp\privacy.html"
+; 检查许可协议文件是否存在
+!if /FileExists "installer_temp\privacy.html"
+    !insertmacro MUI_PAGE_LICENSE "installer_temp\privacy.html"
+!else
+    !warning "许可协议文件不存在，跳过许可协议页面"
+!endif
 !insertmacro MUI_PAGE_DIRECTORY
 !insertmacro MUI_PAGE_INSTFILES
 !insertmacro MUI_PAGE_FINISH
@@ -64,10 +69,10 @@ VIAddVersionKey "FileVersion" "${APP_VERSION}"
 Function .onInit
     ; 检查 logo.png 是否存在
     IfFileExists "installer_temp\logo.png" +3
-        MessageBox MB_ICONEXCLAMATION "警告: 找不到 logo.png 文件，安装程序图标可能无法正常显示"
+        MessageBox MB_ICONINFORMATION "信息: 未找到 logo.png 文件，将使用默认图标"
     ; 检查 privacy.html 是否存在
     IfFileExists "installer_temp\privacy.html" +3
-        MessageBox MB_ICONEXCLAMATION "警告: 找不到 privacy.html 文件，许可协议页面将无法显示"
+        MessageBox MB_ICONINFORMATION "信息: 未找到 privacy.html 文件，将跳过许可协议页面"
 FunctionEnd
 
 ; 安装程序段

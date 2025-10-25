@@ -9,8 +9,15 @@ echo "[INFO] ======== 创建 Linux AppImage ========"
 if [ ! -d "../../app/build/linux/x64/release/bundle" ]; then
     echo "[ERROR] Flutter Linux 构建文件不存在"
     echo "请先运行: cd ../../app && flutter build linux --release"
+    echo "当前目录: $(pwd)"
+    echo "检查构建目录结构:"
+    ls -la ../../app/build/linux/x64/release/ 2>/dev/null || echo "release 目录不存在"
     exit 1
 fi
+
+echo "[INFO] 找到 Flutter Linux 构建文件"
+echo "[INFO] 构建文件位置: ../../app/build/linux/x64/release/bundle"
+ls -la "../../app/build/linux/x64/release/bundle/"
 
 # 创建临时目录
 TEMP_DIR="$(pwd)/appimage_temp"

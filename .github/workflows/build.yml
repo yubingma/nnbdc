@@ -81,6 +81,15 @@ jobs:
             flutter build macos --release
           elif [ "${{ matrix.platform }}" == "linux" ]; then
             flutter build linux --release
+            # 验证 Linux 构建文件是否存在
+            if [ ! -d "build/linux/x64/release/bundle" ]; then
+              echo "错误：Linux 构建文件不存在"
+              echo "构建目录内容："
+              ls -la build/linux/x64/release/ || echo "release 目录不存在"
+              exit 1
+            fi
+            echo "Linux 构建成功，文件位置：build/linux/x64/release/bundle"
+            ls -la build/linux/x64/release/bundle/
           fi
         shell: bash
 
@@ -144,10 +153,31 @@ jobs:
           if (Test-Path "../app/assets/images/logo.png") {
             Copy-Item "../app/assets/images/logo.png" "installer_temp/"
             Write-Host "复制了 logo.png"
+          } else {
+            Write-Host "警告: logo.png 不存在，将跳过图标设置"
           }
           if (Test-Path "../app/assets/privacy.html") {
             Copy-Item "../app/assets/privacy.html" "installer_temp/"
             Write-Host "复制了 privacy.html"
+          } else {
+            Write-Host "警告: privacy.html 不存在，将创建默认许可协议"
+            # 创建默认的许可协议文件
+            $defaultPrivacy = @"
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>隐私政策</title>
+</head>
+<body>
+    <h1>隐私政策</h1>
+    <p>本应用尊重用户隐私，不会收集或泄露用户个人信息。</p>
+    <p>详细隐私政策请访问：http://www.nnbdc.com</p>
+</body>
+</html>
+"@
+            $defaultPrivacy | Out-File -FilePath "installer_temp/privacy.html" -Encoding UTF8
+            Write-Host "创建了默认 privacy.html"
           }
           
           # 编译 NSIS 安装脚本
@@ -191,8 +221,13 @@ jobs:
           
           # 复制版本信息文件到部署目录
           if (Test-Path "ver.json") {
-            Copy-Item "ver.json" "$DEPLOY_DIR/ver.json" -Force
-            Write-Host "版本信息已更新: $VERSION_NUMBER ($BUILD_NUMBER)"
+            # 检查目标文件是否已存在，避免复制到自身
+            if (Test-Path "$DEPLOY_DIR/ver.json") {
+              Write-Host "版本信息文件已存在，跳过复制"
+            } else {
+              Copy-Item "ver.json" "$DEPLOY_DIR/ver.json" -Force
+              Write-Host "版本信息已更新: $VERSION_NUMBER ($BUILD_NUMBER)"
+            }
           } else {
             Write-Host "版本信息文件不存在，跳过复制"
           }
@@ -221,16 +256,28 @@ jobs:
               echo "macOS 构建失败"
             fi
           elif [ "${{ matrix.platform }}" == "linux" ]; then
+            # 验证 Linux 构建文件是否存在
+            if [ ! -d "app/build/linux/x64/release/bundle" ]; then
+              echo "错误：Linux 构建文件不存在，无法创建 AppImage"
+              echo "检查构建目录："
+              ls -la app/build/linux/x64/release/ || echo "release 目录不存在"
+              exit 1
+            fi
+            
             # 创建 Linux AppImage
+            echo "开始创建 Linux AppImage..."
             chmod +x platforms/linux/create_linux_appimage.sh
             ./platforms/linux/create_linux_appimage.sh
+            
             if [ -f "nnbdc-linux.AppImage" ]; then
               mv nnbdc-linux.AppImage "$DEPLOY_DIR/nnbdc-linux.AppImage"
               echo "Linux AppImage 创建成功: nnbdc-linux.AppImage"
+              echo "文件大小: $(du -h "$DEPLOY_DIR/nnbdc-linux.AppImage" | cut -f1)"
             else
               echo "Linux AppImage 创建失败，回退到 TAR.GZ 格式"
               cd app/build/linux/x64/release/bundle
               tar -czf "$DEPLOY_DIR/nnbdc-linux.tar.gz" .
+              echo "TAR.GZ 包创建成功: nnbdc-linux.tar.gz"
             fi
           fi
           
