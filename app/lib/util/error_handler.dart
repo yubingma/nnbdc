@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'package:dio/dio.dart';
 import 'package:drift/drift.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/util/toast_util.dart';
@@ -65,6 +67,80 @@ class ErrorHandler {
     }
   }
 
+  /// 判断是否为网络相关异常
+  static bool isNetworkError(dynamic error) {
+    if (error == null) return false;
+
+    // 检查 DioException 类型
+    if (error is DioException) {
+      return error.type == DioExceptionType.connectionTimeout ||
+          error.type == DioExceptionType.receiveTimeout ||
+          error.type == DioExceptionType.sendTimeout ||
+          error.type == DioExceptionType.connectionError ||
+          error.type == DioExceptionType.unknown;
+    }
+
+    // 检查 SocketException
+    if (error is SocketException) {
+      return true;
+    }
+
+    // 检查 HttpException
+    if (error is HttpException) {
+      return true;
+    }
+
+    // 检查异常消息中的关键词
+    String errorStr = error.toString().toLowerCase();
+    return errorStr.contains('network') ||
+        errorStr.contains('connection') ||
+        errorStr.contains('timeout') ||
+        errorStr.contains('socket') ||
+        errorStr.contains('http') ||
+        errorStr.contains('dns') ||
+        errorStr.contains('unreachable') ||
+        errorStr.contains('refused') ||
+        errorStr.contains('reset') ||
+        errorStr.contains('broken pipe');
+  }
+
+  /// 获取网络异常的用户友好提示
+  static String getNetworkErrorMessage(dynamic error) {
+    if (error is DioException) {
+      switch (error.type) {
+        case DioExceptionType.connectionTimeout:
+          return '连接超时，请检查网络连接';
+        case DioExceptionType.receiveTimeout:
+          return '接收数据超时，请稍后重试';
+        case DioExceptionType.sendTimeout:
+          return '发送数据超时，请稍后重试';
+        case DioExceptionType.connectionError:
+          return '网络连接失败，请检查网络设置';
+        case DioExceptionType.unknown:
+          return '网络异常，请检查网络连接';
+        default:
+          return '网络请求失败，请稍后重试';
+      }
+    }
+
+    if (error is SocketException) {
+      if (error.message.contains('Connection refused')) {
+        return '服务器连接被拒绝，请稍后重试';
+      } else if (error.message.contains('Network is unreachable')) {
+        return '网络不可达，请检查网络连接';
+      } else if (error.message.contains('No route to host')) {
+        return '无法连接到服务器，请检查网络设置';
+      }
+      return '网络连接异常，请检查网络设置';
+    }
+
+    if (error is HttpException) {
+      return 'HTTP请求失败，请稍后重试';
+    }
+
+    return '网络异常，请检查网络连接';
+  }
+
   /// 处理网络请求异常
   static void handleNetworkError(
     dynamic error,
@@ -73,10 +149,12 @@ class ErrorHandler {
     bool showToast = true,
   }) {
     final logPrefix = api != null ? '网络请求失败($api)' : '网络请求失败';
+    final userMessage = getNetworkErrorMessage(error);
+    
     handleError(
       error,
       stackTrace,
-      userMessage: '网络连接异常，请检查网络设置',
+      userMessage: userMessage,
       logPrefix: logPrefix,
       showToast: showToast,
     );

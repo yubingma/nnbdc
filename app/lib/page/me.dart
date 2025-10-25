@@ -298,8 +298,24 @@ class _MePageState extends State<MePage> {
         Global.logger.w("获取用户排名失败: ${result4.msg}");
       }
     } catch (e, stackTrace) {
-      Global.logger.e("加载数据失败: $e", error: e, stackTrace: stackTrace);
-      ToastUtil.error("加载数据失败，请刷新重试");
+      // 区分网络异常和其他异常，给用户更明确的提示
+      if (ErrorHandler.isNetworkError(e)) {
+        ErrorHandler.handleNetworkError(
+          e,
+          stackTrace,
+          api: 'loadData',
+          showToast: true,
+        );
+      } else {
+        // 非网络异常，使用通用错误处理
+        ErrorHandler.handleError(
+          e,
+          stackTrace,
+          userMessage: '加载数据失败，请刷新重试',
+          logPrefix: '加载数据失败',
+          showToast: true,
+        );
+      }
     } finally {
       // 重新启用loading提示
       Api.setLoadingDisabled(false);
