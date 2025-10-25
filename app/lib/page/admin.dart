@@ -670,16 +670,17 @@ class _ReplyDialogState extends State<_ReplyDialog> {
                     itemCount: _conversationHistory.length,
                     itemBuilder: (context, index) {
                       final msg = _conversationHistory[index];
-                      final isFromUser = msg.fromUser.id != Global.getLoggedInUser()!.id;
+                      // 判断是否为管理员消息：消息类型为adviceReply（管理员回复）
+                      final isAdminMessage = msg.msgType == 'AdviceReply';
                       
                       return Padding(
                         padding: const EdgeInsets.symmetric(vertical: 4),
                         child: Row(
-                          mainAxisAlignment: isFromUser 
-                              ? MainAxisAlignment.start 
-                              : MainAxisAlignment.end,
+                          mainAxisAlignment: isAdminMessage 
+                              ? MainAxisAlignment.end 
+                              : MainAxisAlignment.start,
                           children: [
-                            if (isFromUser) ...[
+                            if (!isAdminMessage) ...[
                               // 用户头像
                               CircleAvatar(
                                 radius: 16,
