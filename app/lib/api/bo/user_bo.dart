@@ -246,7 +246,7 @@ class UserBo {
 
 
   Future<Result> sendAdvice(String content, String userId) async {
-    return await Api.client.sendAdvice(content, getClientType().json, userId);
+    return await Api.client.sendAdvice(content, getClientType().name, userId);
   }
 
   Future<Result> updateUserInfo(
@@ -351,7 +351,7 @@ class UserBo {
   }
 
   Future<Result<String>> saveErrorReport(String word, String content) async =>
-      Api.client.saveErrorReport(word, content, getClientType().json);
+      Api.client.saveErrorReport(word, content, getClientType().name);
 
   Future<Result<List<UserDbLogDto>>> getNewDbLogs(
           int localDbVersion, String userId) async =>

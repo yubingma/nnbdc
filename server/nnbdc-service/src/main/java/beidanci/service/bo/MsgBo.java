@@ -178,16 +178,23 @@ public class MsgBo extends BaseBo<Msg> {
         msg.setCreateTime(new Date());
         
         // 设置客户端类型
+        System.out.println("DEBUG: 接收到的clientType参数: " + clientType);
         if (clientType != null && !clientType.trim().isEmpty()) {
             try {
-                msg.setClientType(ClientType.valueOf(clientType));
+                ClientType clientTypeEnum = ClientType.valueOf(clientType);
+                msg.setClientType(clientTypeEnum);
+                System.out.println("DEBUG: 成功设置clientType: " + clientTypeEnum);
             } catch (IllegalArgumentException e) {
                 // 如果客户端类型无效，设置为null
+                System.out.println("DEBUG: clientType无效: " + clientType + ", 错误: " + e.getMessage());
                 msg.setClientType(null);
             }
+        } else {
+            System.out.println("DEBUG: clientType为空或null");
         }
         
         createEntity(msg);
+        System.out.println("DEBUG: 消息已保存，clientType: " + msg.getClientType());
     }
 
     public void createMsg(String content, MsgType msgType, User fromUser, User toUser) {

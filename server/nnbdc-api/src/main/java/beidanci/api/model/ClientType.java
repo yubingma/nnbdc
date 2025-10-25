@@ -6,22 +6,25 @@ import io.swagger.annotations.ApiModelProperty;
 @ApiModel(description = "客户端类型")
 public enum ClientType {
     @ApiModelProperty("浏览器客户端")
-    Browser("浏览器"),
+    browser("浏览器"),
 
     @ApiModelProperty("安卓客户端")
-    Android("安卓"),
+    android("安卓"),
 
     @ApiModelProperty("iOS客户端")
-    IOS("IOS"),
+    ios("iOS"),
 
     @ApiModelProperty("macOS客户端")
-    MacOS("macOS"),
+    macos("macOS"),
 
     @ApiModelProperty("Linux客户端")
-    Linux("Linux"),
+    linux("Linux"),
+
+    @ApiModelProperty("Windows客户端")
+    windows("Windows"),
 
     @ApiModelProperty("JMeter客户端")
-    JMeter("JMeter");
+    jmeter("JMeter");
 
     private String description;
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:nnbdc/api/api.dart';
 import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/global.dart';
@@ -331,45 +332,28 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          message.createTime.toString(),
+                          DateFormat('yyyy-MM-dd HH:mm').format(message.createTime),
                           style: TextStyle(
                             fontSize: 12,
                             color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
                           ),
                         ),
                         if (message.clientType != null) ...[
-                          const SizedBox(width: 12),
+                          const SizedBox(width: 8),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            padding: const EdgeInsets.all(6),
                             decoration: BoxDecoration(
-                              color: _getClientTypeColor(message.clientType!),
-                              borderRadius: BorderRadius.circular(12),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: _getClientTypeColor(message.clientType!).withValues(alpha: 0.3),
-                                  blurRadius: 4,
-                                  offset: const Offset(0, 1),
-                                ),
-                              ],
+                              color: _getClientTypeColor(message.clientType!).withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: _getClientTypeColor(message.clientType!).withValues(alpha: 0.3),
+                                width: 1,
+                              ),
                             ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  _getClientTypeIcon(message.clientType!),
-                                  size: 12,
-                                  color: Colors.white,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  _getClientTypeDisplayName(message.clientType!),
-                                  style: const TextStyle(
-                                    fontSize: 10,
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
+                            child: Icon(
+                              _getClientTypeIcon(message.clientType!),
+                              size: 14,
+                              color: _getClientTypeColor(message.clientType!),
                             ),
                           ),
                         ],
@@ -534,19 +518,19 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
 
   String _getClientTypeDisplayName(String clientType) {
     switch (clientType) {
-      case 'Browser':
+      case 'browser':
         return '浏览器';
-      case 'Android':
+      case 'android':
         return '安卓';
-      case 'IOS':
+      case 'ios':
         return 'iOS';
-      case 'Windows':
+      case 'windows':
         return 'Windows';
-      case 'MacOS':
+      case 'macos':
         return 'macOS';
-      case 'Linux':
+      case 'linux':
         return 'Linux';
-      case 'JMeter':
+      case 'jmeter':
         return 'JMeter';
       default:
         return clientType;
@@ -555,19 +539,19 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
 
   Color _getClientTypeColor(String clientType) {
     switch (clientType) {
-      case 'Browser':
+      case 'browser':
         return const Color(0xFF4CAF50); // 绿色 - 浏览器
-      case 'Android':
+      case 'android':
         return const Color(0xFF3DDC84); // 安卓绿
-      case 'IOS':
+      case 'ios':
         return const Color(0xFF007AFF); // iOS蓝
-      case 'Windows':
+      case 'windows':
         return const Color(0xFF0078D4); // Windows蓝
-      case 'MacOS':
+      case 'macos':
         return const Color(0xFF8E8E93); // macOS灰
-      case 'Linux':
+      case 'linux':
         return const Color(0xFFFF6B35); // Linux橙
-      case 'JMeter':
+      case 'jmeter':
         return const Color(0xFF9C27B0); // 紫色
       default:
         return AppTheme.primaryColor;
@@ -576,19 +560,19 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
 
   IconData _getClientTypeIcon(String clientType) {
     switch (clientType) {
-      case 'Browser':
+      case 'browser':
         return Icons.web;
-      case 'Android':
+      case 'android':
         return Icons.android;
-      case 'IOS':
+      case 'ios':
         return Icons.phone_iphone;
-      case 'Windows':
+      case 'windows':
         return Icons.laptop_windows;
-      case 'MacOS':
+      case 'macos':
         return Icons.laptop_mac;
-      case 'Linux':
+      case 'linux':
         return Icons.terminal;
-      case 'JMeter':
+      case 'jmeter':
         return Icons.speed;
       default:
         return Icons.device_unknown;
@@ -608,7 +592,15 @@ class _ReplyDialog extends StatefulWidget {
 
 class _ReplyDialogState extends State<_ReplyDialog> {
   final TextEditingController _replyController = TextEditingController();
+  List<MsgVo> _conversationHistory = [];
+  bool _isLoading = true;
   bool _isSending = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadConversationHistory();
+  }
 
   @override
   void dispose() {
@@ -616,82 +608,260 @@ class _ReplyDialogState extends State<_ReplyDialog> {
     super.dispose();
   }
 
+  Future<void> _loadConversationHistory() async {
+    try {
+      // 获取该用户与系统的所有消息历史
+      final messages = await Api.client.getLastestMsgsBetweenUserAndSys(
+        widget.message.fromUser.id ?? '', 
+        50  // 获取最近50条消息
+      );
+      
+      setState(() {
+        _conversationHistory = messages;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    final backgroundColor = isDarkMode ? const Color(0xFF2D2D2D) : Colors.white;
     final textColor = isDarkMode ? Colors.white : Colors.black87;
+    final backgroundColor = isDarkMode ? const Color(0xFF121212) : const Color(0xFFF8F9FA);
 
-    return AlertDialog(
+    return Scaffold(
       backgroundColor: backgroundColor,
-      title: Text(
-        '回复用户',
-        style: TextStyle(color: textColor),
+      appBar: AppBar(
+        backgroundColor: isDarkMode ? const Color(0xFF2D2D2D) : Colors.white,
+        foregroundColor: textColor,
+        elevation: 0,
+        leading: IconButton(
+          onPressed: () => Navigator.pop(context),
+          icon: const Icon(Icons.arrow_back),
+        ),
+        title: Row(
+          children: [
+            const Icon(Icons.chat_bubble_outline),
+            const SizedBox(width: 8),
+            Text(
+              '与 ${widget.message.fromUser.nickName ?? widget.message.fromUser.userName} 的对话',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: textColor,
+              ),
+            ),
+          ],
+        ),
       ),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
+      body: Column(
         children: [
-          Text(
-            '原消息：',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: textColor,
-            ),
+          // 聊天记录区域
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : ListView.builder(
+                    reverse: false, // 最新的消息在顶部
+                    padding: const EdgeInsets.all(16),
+                    itemCount: _conversationHistory.length,
+                    itemBuilder: (context, index) {
+                      final msg = _conversationHistory[index];
+                      final isFromUser = msg.fromUser.id != Global.getLoggedInUser()!.id;
+                      
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Row(
+                          mainAxisAlignment: isFromUser 
+                              ? MainAxisAlignment.start 
+                              : MainAxisAlignment.end,
+                          children: [
+                            if (isFromUser) ...[
+                              // 用户头像
+                              CircleAvatar(
+                                radius: 16,
+                                backgroundColor: AppTheme.primaryColor,
+                                child: Text(
+                                  _getUserInitial(msg),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              // 用户消息气泡
+                              Flexible(
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 8,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: isDarkMode ? Colors.grey[800] : Colors.grey[200],
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        msg.content,
+                                        style: TextStyle(
+                                          color: textColor,
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        DateFormat('yyyy-MM-dd HH:mm').format(msg.createTime),
+                                        style: TextStyle(
+                                          color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                                          fontSize: 10,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ] else ...[
+                              // 管理员消息气泡
+                              Flexible(
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 8,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.primaryColor,
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      Text(
+                                        msg.content,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        DateFormat('yyyy-MM-dd HH:mm').format(msg.createTime),
+                                        style: const TextStyle(
+                                          color: Colors.white70,
+                                          fontSize: 10,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              // 管理员头像
+                              CircleAvatar(
+                                radius: 16,
+                                backgroundColor: Colors.grey[600],
+                                child: const Icon(
+                                  Icons.admin_panel_settings,
+                                  color: Colors.white,
+                                  size: 16,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      );
+                    },
+                  ),
           ),
-          const SizedBox(height: 8),
+          // 输入区域
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: isDarkMode ? Colors.grey[800] : Colors.grey[100],
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              widget.message.content,
-              style: TextStyle(color: textColor),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            '回复内容：',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: textColor,
-            ),
-          ),
-          const SizedBox(height: 8),
-          TextField(
-            controller: _replyController,
-            maxLines: 4,
-            style: TextStyle(color: textColor),
-            decoration: InputDecoration(
-              hintText: '请输入回复内容...',
-              hintStyle: TextStyle(
-                color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+              color: isDarkMode ? const Color(0xFF2D2D2D) : Colors.white,
+              border: Border(
+                top: BorderSide(
+                  color: isDarkMode ? Colors.grey[700]! : Colors.grey[300]!,
+                  width: 0.5,
+                ),
               ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _replyController,
+                    maxLines: 3,
+                    minLines: 1,
+                    style: TextStyle(color: textColor),
+                    decoration: InputDecoration(
+                      hintText: '输入回复内容...',
+                      hintStyle: TextStyle(
+                        color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(24),
+                        borderSide: BorderSide(
+                          color: isDarkMode ? Colors.grey[600]! : Colors.grey[300]!,
+                        ),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [
+                        AppTheme.gradientStartColor,
+                        AppTheme.gradientEndColor,
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(24),
+                      onTap: _isSending ? null : _sendReply,
+                      child: Container(
+                        width: 48,
+                        height: 48,
+                        alignment: Alignment.center,
+                        child: _isSending
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(
+                                Icons.send_rounded,
+                                color: Colors.white,
+                                size: 24,
+                              ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
       ),
-      actions: [
-        TextButton(
-          onPressed: _isSending ? null : () => Navigator.pop(context),
-          child: const Text('取消'),
-        ),
-        TextButton(
-          onPressed: _isSending ? null : _sendReply,
-          child: _isSending 
-              ? const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Text('发送'),
-        ),
-      ],
     );
   }
 
@@ -710,10 +880,11 @@ class _ReplyDialogState extends State<_ReplyDialog> {
       );
       
       if (result.success && mounted) {
-        Navigator.pop(context);
-        // 刷新消息列表
+        _replyController.clear();
+        // 重新加载对话历史
+        await _loadConversationHistory();
+        // 通知父组件刷新
         if (context.mounted) {
-          // 通知父组件刷新
           final parentState = context.findAncestorStateOfType<_FeedbackManagementWidgetState>();
           parentState?._loadMessages();
         }
@@ -731,6 +902,22 @@ class _ReplyDialogState extends State<_ReplyDialog> {
           _isSending = false;
         });
       }
+    }
+  }
+
+  String _getUserInitial(MsgVo message) {
+    final nickName = message.fromUser.nickName;
+    final userNickName = message.fromUserNickName;
+    final userName = message.fromUserName;
+
+    if (nickName != null && nickName.isNotEmpty) {
+      return nickName.substring(0, 1).toUpperCase();
+    } else if (userNickName != null && userNickName.isNotEmpty) {
+      return userNickName.substring(0, 1).toUpperCase();
+    } else if (userName != null && userName.isNotEmpty) {
+      return userName.substring(0, 1).toUpperCase();
+    } else {
+      return 'U';
     }
   }
 }

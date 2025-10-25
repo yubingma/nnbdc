@@ -36,6 +36,10 @@ public class MsgController {
     @PreAuthorize("hasAnyRole('USER','ADMIN')")
     @ResponseBody
     public Result<Void> sendAdvice(String content, String clientType, String userId) throws EmailException {
+        System.out.println("DEBUG: MsgController.sendAdvice - content: " + content);
+        System.out.println("DEBUG: MsgController.sendAdvice - clientType: " + clientType);
+        System.out.println("DEBUG: MsgController.sendAdvice - userId: " + userId);
+        
         if (StringUtils.isEmpty(content.trim())) {
             return Result.fail("内容不得为空");
         }

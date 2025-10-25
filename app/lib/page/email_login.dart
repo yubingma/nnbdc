@@ -386,7 +386,7 @@ class EmailLoginPageState extends State<EmailLoginPage> {
         email.text,
         null,
         password.text,
-        getClientType().json,
+        getClientType().name,
         Global.version,
       );
 

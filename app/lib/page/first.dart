@@ -452,7 +452,7 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
   tryAutoLogin() async {
     var user = await MyDatabase.instance.usersDao.getLastLoggedInUser();
     if (user != null && user.email != null) {
-      var result = await UserBo().checkUser(CheckBy.email, user.email!, null, user.password!, getClientType().json, Global.version);
+      var result = await UserBo().checkUser(CheckBy.email, user.email!, null, user.password!, getClientType().name, Global.version);
       if (result.success) {
         var result2 = await UserBo().getLoggedInUser();
         if (result2.success) {

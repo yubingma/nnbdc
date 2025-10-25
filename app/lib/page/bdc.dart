@@ -1616,7 +1616,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         });
 
     if (choice ?? false) {
-      var result = await Api.client.saveErrorReport(word!.spell, errorReportController.text, getClientType().json);
+      var result = await Api.client.saveErrorReport(word!.spell, errorReportController.text, getClientType().name);
       if (result.success) {
         ToastUtil.info('报错成功！感谢你付出宝贵时间');
       } else {
