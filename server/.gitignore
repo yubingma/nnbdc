@@ -1,0 +1,6 @@
+**/.idea
+**/target/
+**/.classpath
+**/*.iml
+**/rebel.xml
+/.github_token.swp

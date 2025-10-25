@@ -1,0 +1,15 @@
+meta {
+  name: deleteDeadUsers
+  type: http
+  seq: 1
+}
+
+delete {
+  url: http://localhost:5200/deleteDeadUsers.do?idleDays=1000
+  body: none
+  auth: none
+}
+
+params:query {
+  idleDays: 1000
+}

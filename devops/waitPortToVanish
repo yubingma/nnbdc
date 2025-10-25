@@ -1,0 +1,22 @@
+# Wait a tcp port to vanish.
+
+port=$1
+
+# check server address param
+if [ "$port" == "" ] ; then
+  echo "param(port) is not specified"
+  exit 1
+fi
+
+res=1  
+while [ $res -ne 0 ] ; do
+  count=`echo ""|netstat -an|grep ":$port "|wc -l`
+  if [ $count -eq 0 ] ; then
+      res=0
+      exit 0
+  fi  
+  sleep 1s
+  ((waited_time++))
+  echo "wait the port ["$port"] to vanish ...("$waited_time"s)"
+done
+

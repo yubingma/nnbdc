@@ -1,0 +1,86 @@
+pluginManagement {
+    def flutterSdkPath = {
+        def properties = new Properties()
+        file("local.properties").withInputStream { properties.load(it) }
+        def flutterSdkPath = properties.getProperty("flutter.sdk")
+        assert flutterSdkPath != null, "local.properties中未设置flutter.sdk"
+        return flutterSdkPath
+    }
+    settings.ext.flutterSdkPath = flutterSdkPath()
+
+    includeBuild("${settings.ext.flutterSdkPath}/packages/flutter_tools/gradle")
+
+    repositories {
+        def isCI = System.getenv("GITHUB_ACTIONS") == "true"
+        if (isCI) {
+            // CI 环境使用官方源
+            google()
+            mavenCentral()
+            gradlePluginPortal()
+        } else {
+            // 本地/国内使用镜像
+            maven { url 'https://maven.aliyun.com/repository/google'; allowInsecureProtocol = false }
+            maven { url 'https://maven.aliyun.com/repository/public'; allowInsecureProtocol = false }
+            maven { url 'https://maven.aliyun.com/repository/gradle-plugin'; allowInsecureProtocol = false }
+            maven { url 'https://mirrors.cloud.tencent.com/nexus/repository/maven-public/'; allowInsecureProtocol = false }
+            mavenCentral()
+            gradlePluginPortal()
+            google()
+        }
+    }
+
+    // Force Android Gradle Plugin to a consistent version and avoid resolving 8.12.x from dl.google.com
+    resolutionStrategy {
+        eachPlugin { details ->
+            def pluginId = details.requested.id.id
+            if (pluginId != null && pluginId.startsWith("com.android.")) {
+                details.useModule("com.android.tools.build:gradle:8.3.0")
+            }
+        }
+    }
+}
+
+plugins {
+    id "dev.flutter.flutter-plugin-loader" version "1.0.0"
+    id "com.android.application" version "8.3.0" apply false
+    id "org.jetbrains.kotlin.android" version "2.0.21" apply false
+}
+
+include ':app'
+
+// 确保所有Android项目都使用相同的compileSdkVersion
+gradle.beforeProject { project ->
+    if (project.name == 'url_launcher_android' && !project.hasProperty('android.compileSdkVersion')) {
+        project.ext.set('android.compileSdkVersion', 35)
+    }
+}
+
+// Ensure every subproject (including external Flutter plugins) uses mirrored repositories for buildscript classpath
+gradle.beforeProject { project ->
+    project.buildscript.repositories {
+        def isCI = System.getenv("GITHUB_ACTIONS") == "true"
+        if (isCI) {
+            google()
+            mavenCentral()
+            gradlePluginPortal()
+        } else {
+            maven { url 'https://maven.aliyun.com/repository/google'; allowInsecureProtocol = false }
+            maven { url 'https://maven.aliyun.com/repository/public'; allowInsecureProtocol = false }
+            maven { url 'https://maven.aliyun.com/repository/gradle-plugin'; allowInsecureProtocol = false }
+            maven { url 'https://mirrors.cloud.tencent.com/nexus/repository/maven-public/'; allowInsecureProtocol = false }
+            mavenCentral()
+            gradlePluginPortal()
+            google()
+        }
+    }
+}
+
+//def localPropertiesFile = new File(rootProject.projectDir, "local.properties")
+//def properties = new Properties()
+//
+//assert localPropertiesFile.exists()
+//localPropertiesFile.withReader("UTF-8") { reader -> properties.load(reader) }
+//
+//def flutterSdkPath = properties.getProperty("flutter.sdk")
+//assert flutterSdkPath != null, "flutter.sdk not set in local.properties"
+//apply from: "$flutterSdkPath/packages/flutter_tools/gradle/app_plugin_loader.gradle"

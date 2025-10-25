@@ -1,0 +1,53 @@
+# macOS system files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Build and dependency directories
+**/build/
+**/node_modules/
+**/.dart_tool/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/.packages
+**/.pub-cache/
+**/.pub/
+**/dist/
+**/.cxx/
+
+# Environment and configuration files
+.env
+.env.local
+.env.*.local
+*.log
+*.pyc
+
+# Generated files
+**/lib/api/*.g.dart
+**/lib/db/*.g.dart
+**/android/app/local.properties
+**/android/app/.gradle/config.properties
+
+# Test coverage
+coverage/
+*.lcov
+
+# Temporary files
+*.tmp
+*.temp
+*.bak 
+
+app/android/.kotlin/
+releases/
+
+app/windows/flutter/generated_plugin_registrant.cc
+app/windows/flutter/generated_plugin_registrant.h
+app/windows/flutter/generated_plugins.cmake
+app/macos/Flutter/GeneratedPluginRegistrant.swift

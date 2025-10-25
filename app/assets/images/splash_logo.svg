@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <defs></defs>
+  <!-- 透明背景画布，居中放置现有logo，缩放为56%（约 574x574），居中偏移 (225,225) -->
+  <image href="logo.svg" x="225" y="225" width="574" height="574" />
+</svg>

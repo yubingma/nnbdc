@@ -1,0 +1,90 @@
+# 每个用户的最大session数量，生产环境设为1，压力测试时可以设置为较大的值
+maxConcurrentSession: 1
+
+
+# Define the application name
+spring:
+  aop:
+    auto: true
+  jpa:
+    open-in-view: true
+  servlet:
+    multipart:
+      enabled: false # 禁用spring boot对 multipart 预处理，否则会导致老的上传代码不能工作
+  http:
+    encoding:
+      force: true
+      charset: UTF-8
+      enabled: true
+      uri-encoding: UTF-8
+  jackson:
+    default-property-inclusion: NON_NULL
+  application:
+    name: single-service
+  datasource:
+    driverClassName: com.p6spy.engine.spy.P6SpyDriver
+    url: jdbc:p6spy:mysql://${mysql_host}:${mysql_port}/${nnbdc_db}?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: ${mysql_username}
+    password: ${mysql_password}
+    type: com.zaxxer.hikari.HikariDataSource
+    hikari:
+      maxLifetime: 1765000 #一个连接的生命时长（毫秒），超时而且没被使用则被释放（retired），缺省:30分钟，建议设置比数据库超时时长少30秒以上
+      maximumPoolSize: 30 #连接池中允许的最大连接数。缺省值：10；推荐的公式：((core_count * 2) + effective_spindle_count)
+      connection-test-query: select 1 from dual
+
+# Hibernate
+hibernate:
+  dialect: org.hibernate.dialect.MySQL5InnoDBDialect
+  show_sql: false
+  format_sql: true
+  use_sql_comments: true
+  generate_statistics: false
+  packagesToScan: beidanci
+  hbm2ddl:
+    auto: none # 这里不用update，因为自动ddl虽然方便, 但是存在隐患
+  cache:
+    use_query_cache: true
+    use_second_level_cache: true
+
+# Define the port where the server would be running
+server:
+  servlet:
+    context-path: /
+  port: ${port:5200}
+  tomcat:
+    maxThreads: 20 # tomcat可并发处理的请求数
+    connection-timeout: 5000 # 连接超时时间 
+  compression:
+    enabled: false
+    mime-types: application/json, application/xml, text/html, text/plain
+    min-response-size: 1024
+
+# 阿里云短信服务配置
+aliyun:
+  sms:
+    access-key-id: ${aliyun_access_key_id}
+    access-key-secret: ${aliyun_access_key_secret}
+    sign-name: 
+    region-id: cn-hangzhou
+    template-codes:
+      register: SMS_123456789
+      login: SMS_322250684
+      reset-password: SMS_123456791
+
+# 短信验证码配置
+sms:
+  code:
+    length: 6
+    expire-minutes: 5
+    send-interval-seconds: 60 
+
+# 日志相关配置
+logging:
+  file:
+    name: /var/nnbdc/log/nnbdc-service.log
+  level:
+    ROOT: INFO
+    org.hibernate.orm.deprecation: ERROR # 不显示使用Hibernate旧API的告警
+    org.hibernate.persister.entity: ERROR
+    #org.springframework.web: DEBUG
+    #org.springframework.boot.autoconfigure.web: DEBUG

@@ -1,0 +1,283 @@
+name: Flutter Full Build
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+# 并发控制：同一分支只运行最新的构建，取消旧的构建
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    timeout-minutes: 60
+    strategy:
+      # 即使某个平台失败，其他平台继续构建
+      fail-fast: false
+      matrix:
+        platform: [android, windows, macos, linux]
+    runs-on: ${{ matrix.platform == 'windows' && 'windows-latest' ||
+      matrix.platform == 'macos' && 'macos-latest' ||
+      'ubuntu-latest' }}
+    steps:
+      # 拉取代码
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 设置 Flutter
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.32.5"
+
+      # 仅缓存 pub 包，避免缓存 .dart_tool/build 造成旧插件残留
+      - name: Cache Flutter Dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.pub-cache
+          key: ${{ runner.os }}-flutter-${{ hashFiles('app/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-flutter-
+
+      # 清理 Flutter 构建缓存，确保插件版本一致
+      - name: Flutter Clean
+        run: |
+          cd app
+          flutter clean
+
+      # 安装 Linux 构建依赖 
+      - name: Install Linux Dependencies
+        if: matrix.platform == 'linux'
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y ninja-build libgtk-3-dev \
+            libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
+            libgstreamer-plugins-good1.0-dev libgstreamer-plugins-bad1.0-dev
+
+      # 安装依赖
+      - name: Flutter Pub Get
+        run: |
+          cd app
+          flutter pub get
+
+      # 生成代码（Retrofit API、JSON 序列化、Drift 数据库）
+      - name: Generate Code
+        run: |
+          cd app
+          flutter pub run build_runner build --delete-conflicting-outputs
+
+      # 构建
+      - name: Flutter Build
+        run: |
+          cd app
+          if [ "${{ matrix.platform }}" == "android" ]; then
+            flutter build apk --release
+          elif [ "${{ matrix.platform }}" == "windows" ]; then
+            flutter build windows --release
+          elif [ "${{ matrix.platform }}" == "macos" ]; then
+            flutter build macos --release
+          elif [ "${{ matrix.platform }}" == "linux" ]; then
+            flutter build linux --release
+          fi
+        shell: bash
+
+      # Windows 构建后回到根目录
+      - name: Return to Root Directory
+        if: matrix.platform == 'windows'
+        run: |
+          cd ..
+        shell: bash
+
+      # 安装 NSIS 并创建 Windows 安装包
+      - name: Install NSIS and Create Installer
+        if: matrix.platform == 'windows'
+        run: |
+          # 安装 Chocolatey (如果未安装)
+          Set-ExecutionPolicy Bypass -Scope Process -Force
+          [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
+          iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+          
+          # 使用 Chocolatey 安装 NSIS
+          choco install nsis -y
+          
+          # 刷新环境变量
+          $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("PATH","User")
+          
+          # 验证 NSIS 安装
+          $nsisPath = Get-Command makensis -ErrorAction SilentlyContinue
+          if ($nsisPath) {
+            Write-Host "NSIS 安装成功: $($nsisPath.Source)"
+          } else {
+            Write-Host "NSIS 未找到，尝试手动添加到 PATH"
+            $nsisInstallPath = "C:\Program Files (x86)\NSIS\makensis.exe"
+            if (Test-Path $nsisInstallPath) {
+              $env:PATH += ";C:\Program Files (x86)\NSIS"
+              Write-Host "手动添加 NSIS 到 PATH"
+            } else {
+              Write-Host "NSIS 安装失败"
+              exit 1
+            }
+          }
+          
+          # 设置部署目录
+          $env:DEPLOY_DIR = "$(Get-Location)/deploy"
+          New-Item -ItemType Directory -Path $env:DEPLOY_DIR -Force
+        shell: powershell
+
+      # 准备部署文件 - Windows
+      - name: Prepare Deploy Files - Windows
+        if: matrix.platform == 'windows'
+        run: |
+          $DEPLOY_DIR = "$(Get-Location)/deploy"
+          New-Item -ItemType Directory -Path $DEPLOY_DIR -Force
+          
+          # 创建 NSIS 安装包
+          Set-Location $DEPLOY_DIR
+          # 复制构建文件到临时目录
+          New-Item -ItemType Directory -Path "installer_temp" -Force
+          Copy-Item -Path "../app/build/windows/x64/runner/Release/*" -Destination "installer_temp/" -Recurse -Force
+          
+          # 复制资源文件（如果存在）
+          if (Test-Path "../app/assets/images/logo.png") {
+            Copy-Item "../app/assets/images/logo.png" "installer_temp/"
+            Write-Host "复制了 logo.png"
+          }
+          if (Test-Path "../app/assets/privacy.html") {
+            Copy-Item "../app/assets/privacy.html" "installer_temp/"
+            Write-Host "复制了 privacy.html"
+          }
+          
+          # 编译 NSIS 安装脚本
+          # 尝试使用完整路径
+          $nsisExe = "C:\Program Files (x86)\NSIS\makensis.exe"
+          if (Test-Path $nsisExe) {
+            & $nsisExe "../platforms/windows/installer.nsi"
+          } else {
+            # 尝试从 PATH 中查找
+            $nsisPath = Get-Command makensis -ErrorAction SilentlyContinue
+            if ($nsisPath) {
+              & makensis "../platforms/windows/installer.nsi"
+            } else {
+              Write-Host "NSIS 未找到，跳过安装包创建"
+              exit 1
+            }
+          }
+          if (Test-Path "nnbdc-setup.exe") {
+            Move-Item "nnbdc-setup.exe" "$DEPLOY_DIR/nnbdc-setup.exe"
+            Write-Host "安装包创建成功: nnbdc-setup.exe"
+          } else {
+            Write-Host "安装包创建失败，创建 ZIP 包作为备用"
+            # 创建 ZIP 包作为备用
+            Compress-Archive -Path "installer_temp/*" -DestinationPath "$DEPLOY_DIR/nnbdc-windows.zip" -Force
+            Write-Host "ZIP 包创建成功: nnbdc-windows.zip"
+          }
+          
+          # 清理临时文件
+          Remove-Item -Path "installer_temp" -Recurse -Force
+          
+          # 更新版本信息文件
+          Write-Host "更新版本信息文件..."
+          $VERSION_LINE = Get-Content "../app/pubspec.yaml" | Where-Object { $_ -match "version:" }
+          $VERSION = ($VERSION_LINE -split " ")[1]
+          $BUILD_NUMBER = ($VERSION -split "\+")[1]
+          $VERSION_NUMBER = ($VERSION -split "\+")[0]
+          
+          # 创建版本信息 JSON
+          $JSON_CONTENT = "[{`"verCode`":$BUILD_NUMBER,`"verName`":`"$VERSION_NUMBER`", `"changes`":[`"修复已知问题，提升稳定性`"]}]"
+          $JSON_CONTENT | Out-File -FilePath "ver.json" -Encoding UTF8
+          
+          # 复制版本信息文件到部署目录
+          if (Test-Path "ver.json") {
+            Copy-Item "ver.json" "$DEPLOY_DIR/ver.json" -Force
+            Write-Host "版本信息已更新: $VERSION_NUMBER ($BUILD_NUMBER)"
+          } else {
+            Write-Host "版本信息文件不存在，跳过复制"
+          }
+        shell: powershell
+
+      # 准备部署文件 - 其他平台
+      - name: Prepare Deploy Files - Other Platforms
+        if: matrix.platform != 'windows'
+        run: |
+          DEPLOY_DIR="$(pwd)/deploy"
+          mkdir -p "$DEPLOY_DIR"
+          
+          if [ "${{ matrix.platform }}" == "android" ]; then
+            cp app/build/app/outputs/flutter-apk/app-release.apk "$DEPLOY_DIR/nnbdc-android.apk"
+          elif [ "${{ matrix.platform }}" == "macos" ]; then
+            # macOS 只构建 App Store 版本
+            echo "构建 macOS App Store 版本..."
+            cd app/build/macos/Build/Products/Release
+            if [ -d "nnbdc.app" ]; then
+              # 创建 App Store 版本（用于 Xcode 上传）
+              echo "准备 App Store 版本..."
+              zip -r "$DEPLOY_DIR/nnbdc-macos-appstore.zip" nnbdc.app
+              echo "App Store 版本已准备: nnbdc-macos-appstore.zip"
+              echo "注意：此版本需要通过 Xcode 上传到 App Store Connect"
+            else
+              echo "macOS 构建失败"
+            fi
+          elif [ "${{ matrix.platform }}" == "linux" ]; then
+            # 创建 Linux AppImage
+            chmod +x platforms/linux/create_linux_appimage.sh
+            ./platforms/linux/create_linux_appimage.sh
+            if [ -f "nnbdc-linux.AppImage" ]; then
+              mv nnbdc-linux.AppImage "$DEPLOY_DIR/nnbdc-linux.AppImage"
+              echo "Linux AppImage 创建成功: nnbdc-linux.AppImage"
+            else
+              echo "Linux AppImage 创建失败，回退到 TAR.GZ 格式"
+              cd app/build/linux/x64/release/bundle
+              tar -czf "$DEPLOY_DIR/nnbdc-linux.tar.gz" .
+            fi
+          fi
+          
+          # 更新版本信息文件（所有平台都需要）
+          echo "更新版本信息文件..."
+          # 从 pubspec.yaml 获取版本号
+          VERSION=$(grep "version:" app/pubspec.yaml | cut -d' ' -f2)
+          BUILD_NUMBER=$(echo $VERSION | cut -d'+' -f2)
+          VERSION_NUMBER=$(echo $VERSION | cut -d'+' -f1)
+          
+          # 创建版本信息 JSON
+          cat > ver.json << EOF
+          [{"verCode":$BUILD_NUMBER,"verName":"$VERSION_NUMBER", "changes":["修复已知问题，提升稳定性"]}]
+          EOF
+          
+          # 复制版本信息文件到部署目录
+          cp ver.json "$DEPLOY_DIR/ver.json"
+          echo "版本信息已更新: $VERSION_NUMBER ($BUILD_NUMBER)"
+        shell: bash
+
+      # 部署到服务器（如果 SSH 密钥未配置，此步骤会失败但不影响整体构建）
+      - name: Deploy to Server
+        continue-on-error: true
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          SERVER_HOST: 47.108.27.205
+          SERVER_USER: root
+          SERVER_PORT: 22
+        run: |
+          # 配置 SSH
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -p $SERVER_PORT -H $SERVER_HOST >> ~/.ssh/known_hosts
+          
+          # 确保服务器目录存在
+          ssh -p $SERVER_PORT $SERVER_USER@$SERVER_HOST "mkdir -p /var/www/html/app/latest"
+          
+          # 上传文件到服务器
+          scp -P $SERVER_PORT deploy/* $SERVER_USER@$SERVER_HOST:/var/www/html/app/latest/
+          
+          echo "✅ 部署完成！文件已上传到 $SERVER_HOST:/var/www/html/app/latest/"
+        shell: bash
+
+      # 上传构建产物（用于 GitHub Actions 归档）
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.platform }}-build
+          path: deploy/

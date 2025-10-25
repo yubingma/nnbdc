@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- 一个大泡泡，里面有一个小泡泡（无高光） -->
+  <defs>
+    <style>
+      .bubbleMain { fill: #4A90E2; stroke: #FFFFFF; stroke-width: 4; }
+      .bubbleInner { fill: #FFFFFF; stroke: #FFFFFF; stroke-width: 0; }
+    </style>
+  </defs>
+
+  <!-- 大泡泡（居中，纯蓝） -->
+  <circle class="bubbleMain" cx="100" cy="100" r="62"/>
+
+  <!-- 内部小泡泡（右上） -->
+  <circle class="bubbleInner" cx="125" cy="85" r="16"/>
+</svg>

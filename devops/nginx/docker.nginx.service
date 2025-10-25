@@ -1,0 +1,24 @@
+[Unit]
+Description=Nginx Container
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+TimeoutStartSec=0
+Restart=always
+ExecStartPre=-/usr/bin/docker stop nginx
+ExecStartPre=-/usr/bin/docker rm nginx
+ExecStart=/usr/bin/docker run --rm --name nginx --network host  \
+    -v /var/www/html:/usr/share/nginx/html \
+    -v /var/nnbdc/res/img:/var/nnbdc/res/img \
+    -v /var/nnbdc/res/sound:/var/nnbdc/res/sound \
+    -v nginxcnf:/etc/nginx \
+    -v /etc/localtime:/etc/localtime \
+    -v /etc/timezone:/etc/timezone \
+    -v /etc/letsencrypt:/etc/letsencrypt:ro \
+    nginx
+ExecStop=/usr/bin/docker stop nginx 
+
+[Install]
+WantedBy=multi-user.target

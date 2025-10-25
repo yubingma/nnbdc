@@ -1,0 +1,36 @@
+
+def isCI = System.getenv("GITHUB_ACTIONS") == "true"
+
+allprojects {
+    repositories {
+        if (isCI) {
+            // CI 环境（GitHub Actions）：使用官方源，避免国内镜像 502/不稳定
+            google()
+            mavenCentral()
+            maven { url 'https://storage.googleapis.com/download.flutter.io' }
+            maven { url 'https://jitpack.io' }
+        } else {
+            // 本地/国内环境：优先使用国内镜像以提高下载速度
+            maven { url 'https://maven.aliyun.com/repository/google' }
+            maven { url 'https://maven.aliyun.com/repository/public' }
+            maven { url 'https://maven.aliyun.com/repository/gradle-plugin' }
+            maven { url 'https://mirrors.cloud.tencent.com/nexus/repository/maven-public/' }
+            maven { url 'https://jitpack.io' }
+            maven { url 'https://storage.flutter-io.cn' }
+            mavenCentral()
+            google()
+        }
+    }
+}
+
+rootProject.buildDir = '../build'
+subprojects {
+    project.buildDir = "${rootProject.buildDir}/${project.name}"
+}
+subprojects {
+    project.evaluationDependsOn(':app')
+}
+
+tasks.register("clean", Delete) {
+    delete rootProject.buildDir
+}

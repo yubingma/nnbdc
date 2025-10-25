@@ -1,0 +1,45 @@
+#!/usr/bin/expect
+
+#登录远程服务器,通知进程退出
+spawn /sshnn
+#expect "\[root@ebs-host1 ~\]#"
+send "/nnbdc.sh -t\r"
+
+#退出远程服务器
+send "exit\r"
+interact
+
+#构建程序
+cd /home/myb/nnbdc/server
+spawn mvn clean install -Dmaven.test.skip=true
+expect "BUILD SUCCESS"
+interact
+
+#登录远程服务器
+spawn /sshnn
+#expect "\[root@host1 ~\]#"
+
+#程序备份
+send "cd /opt/nnbdc\r"
+send "cp -r nnbdc-service.jar /var/nnbdc/bak/nnbdc-service.jar.\$(date +%Y%m%d-%H%M%S)\r"
+
+#退出远程服务器
+send "exit\r"
+interact
+
+#复制程序到远程服务器
+spawn scp -P22 /home/myb/nnbdc/server/nnbdc-service/target/nnbdc-service.jar root@47.108.27.205:/opt/nnbdc/
+expect "root@47.108.27.205's password:"
+send "$env(nnbdc_server_pwd)\r"
+interact
+
+#登录远程服务器,启动程序
+spawn /sshnn
+#expect "\[root@ebs-host1 ~\]#"
+send "/nnbdc.sh\r"
+send "tail -F /var/nnbdc/log/nnbdc-service.log\r"
+interact
+
+#登录到远程服务器，手动进行后继操作
+#spawn  /sshnn
+#interact

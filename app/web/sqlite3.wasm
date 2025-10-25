@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html><head>
+<meta charset="UTF-8">
+<base href="https://sqlite.org/wasm/finfo" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' data:;  script-src 'self' 'wasm-unsafe-eval' 'unsafe-inline';  style-src 'self' 'unsafe-inline';  img-src * data:;  worker-src 'self' 'nonce-11c1681f9dae6ad923095a8009a88ff6d4df4442fb261d61';" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>No such file</title>
+<link rel="alternate" type="application/rss+xml" title="RSS Feed" \
+ href="/wasm/timeline.rss" />
+<link rel="stylesheet" href="/wasm/style.css?id=affbaa8a" type="text/css" />
+</head>
+<body class="finfo rpage-finfo cpage-finfo">
+<script nonce="11c1681f9dae6ad923095a8009a88ff6d4df4442fb261d61">
+window._siteStorage = self.localStorage || self.sessionStorage || {
+  setItem:()=>{}, getItem:()=>{}
+};
+if(+window._siteStorage.getItem('dark-mode')){
+  // do this early to try to lessen the effect of a FOUC when switching pages
+  document.firstElementChild.classList.add('dark-mode');
+}
+</script>
+<style>
+  @import url(/wasm/doc/trunk/assets/fossil-doc.css)
+</style>
+<script src="/wasm/doc/trunk/assets/highlightjs/highlight-sqlite3.min.js"></script>
+<script nonce="11c1681f9dae6ad923095a8009a88ff6d4df4442fb261d61">
+window.addEventListener('DOMContentLoaded', function(){
+  "use strict";
+  /* Set up bright/dark mode toggle */
+  const eHtml = document.firstElementChild;
+  const darkCssClass = 'dark-mode';
+  const ln = document.createElement('a');
+  ln.href = '#';
+  const updateThemeLink = function(doToggle=false){
+    if(doToggle) eHtml.classList.toggle(darkCssClass);
+    const isDark = eHtml.classList.contains(darkCssClass);
+    if(isDark) ln.innerText = "Bright Mode";
+    else ln.innerText = "Dark Mode";
+    window._siteStorage.setItem(darkCssClass, isDark ? 1 : 0);
+  };
+  updateThemeLink();
+  const eNavLinks = document.querySelector('nav#nav-links');
+  ln.addEventListener('click', (e)=>{
+    updateThemeLink(true);
+    e.stopPropagation();
+    e.preventDefault();
+    return false;
+  }, true);
+  eNavLinks.appendChild(ln);
+  if(document.body.classList.contains('doc')){
+    /* Init code specific to the /doc pages. */
+    const klassDSN = 'disable-section-numbers';
+    /** If the document has less than 2 H1 elements,
+        disable section numbering. */
+    if(!document.body.classList.contains(klassDSN)
+      && document.body.querySelectorAll('h1').length<2){
+      document.body.classList.add(klassDSN);
+    }
+    for(const klass of [ klassDSN ]) {
+      /** For each CSS class name in this list, search for a SPAN
+          element with that class. If found, delete the element and
+          add that class name to the BODY element. These are used for
+          CSS filters.
+      */
+      const e = document.body.classList.contains(klass)
+        ? false : document.body.querySelector('span.'+klass);
+      if(e){
+        e.remove();
+        document.body.classList.add(klass);
+      }
+    }
+  }/* body.doc-specific pieces */
+}, true);
+</script><header id='header-logo'>
+<a href='https://sqlite.org' class='nav-logo'><img src='/wasm/logo' alt='SQLite logo'/></a>
+<!-- maintenance reminder: ^^^^ use /logo instead of /doc/... or /raw/...
+  to get cachable image, though cache time is relatively short. -->
+<span>WebAssembly &amp; JavaScript</span>
+</header><nav class='mainmenu' id='nav-links'><a href='/wasm/doc/trunk/index.md' class=''>Home</a><a href='/wasm/doc/trunk/news.md' class=''>News</a><a href='/wasm/doc/trunk/api-index.md' class=''>API Index</a><a href='/wasm/doc/trunk/cookbook.md' class=''>Cookbook</a><a href='/wasm/doc/trunk/faq.md' class=''>FAQ</a><a href='/wasm/search' class=''>Search</a></nav><h1>No such file</h1>
+<form id='f01' method='GET' action='/wasm/finfo'>
+<input type='hidden' name='udc' value='1'>
+<div class="submenu">
+<select class='submenuctrl smc-ss' size='1' name='ss' id='submenuctrl-0'>
+<option value='m' selected>Modern View</option>
+<option value='j'>Columnar View</option>
+<option value='c'>Compact View</option>
+<option value='v'>Verbose View</option>
+<option value='x'>Classic View</option>
+</select>
+</div>
+<input type="hidden" name="name" value="jswasm/sqlite3.wasm/download">
+</form>
+<div class="content"><span id="debugMsg"></span>
+<p>Many <span class="disabled">hyperlinks are disabled.</span><br>
+Use <a href="/wasm/login?anon=1&amp;g=/finfo/jswasm/sqlite3.wasm/download">anonymous login</a>
+to enable hyperlinks.</p>
+No such file: jswasm/sqlite3.wasm/download
+</div>
+<script nonce="11c1681f9dae6ad923095a8009a88ff6d4df4442fb261d61">
+window.addEventListener('DOMContentLoaded',async function(){
+  document.querySelectorAll('a[href^="http"],a[href^="//"]').forEach(function(e){
+    // Clearly mark external links
+    e.classList.add('external');
+    // Arguable: open external links in their own tab
+    e.target = e.href;
+  });
+}, false);
+</script>
+<script nonce="11c1681f9dae6ad923095a8009a88ff6d4df4442fb261d61">/* style.c:899 */
+function debugMsg(msg){
+var n = document.getElementById("debugMsg");
+if(n){n.textContent=msg;}
+}
+</script>
+<script src='/wasm/builtin?name=menu.js&id=71f738de'></script>
+</body>
+</html>

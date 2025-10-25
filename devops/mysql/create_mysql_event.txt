@@ -1,0 +1,8 @@
+delimiter |
+CREATE EVENT `make_user_snapshot_daily` 
+ON SCHEDULE EVERY 1 day STARTS '2019-11-07 02:00:00'
+
+DO BEGIN
+  call new_bdc.makeUserSnapshotDaily();
+END |
+delimiter ;

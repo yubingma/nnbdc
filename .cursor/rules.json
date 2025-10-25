@@ -1,0 +1,97 @@
+{
+  "version": 1,
+  "rules": {
+    "architecture": {
+      "reference": [
+        "arch.md",
+        "dbsync.md"
+      ],
+      "description": "请参考整体架构文档进行开发"
+    },
+    "data_models": {
+      "po": {
+        "description": "持久化对象，与数据库表结构一一对应，并包含关联数据库对象",
+        "example": "UserPo, WordPo"
+      },
+      "vo": {
+        "description": "视图对象，用于前端展示，包含关联数据对象",
+        "example": "UserVo, WordVo"
+      },
+      "dto": {
+        "description": "数据传输对象，每个对象对应一条数据库表记录，不含关联信息",
+        "example": "UserDto, WordDto"
+      }
+    },
+    "database": {
+      "user_db": {
+        "description": "用户产生的数据，包含用户基本信息、学习数据、社交数据等",
+        "tables": [
+          "user_info",
+          "learning_progress",
+          "social_relations"
+        ]
+      },
+      "system_db": {
+        "description": "所有用户共享的数据，包含单词库、游戏数据、系统配置等",
+        "tables": [
+          "word_library",
+          "game_config",
+          "system_config"
+        ]
+      }
+    },
+    "code_style": {
+      "naming": {
+        "class": "PascalCase",
+        "method": "camelCase",
+        "variable": "camelCase",
+        "constant": "UPPER_SNAKE_CASE"
+      },
+      "file_organization": {
+        "java": {
+          "package": "beidanci.{module}.{submodule}",
+          "structure": [
+            "model",
+            "service",
+            "controller",
+            "util"
+          ]
+        },
+        "dart": {
+          "package": "nnbdc.{module}",
+          "structure": [
+            "page",
+            "widget",
+            "model",
+            "service"
+          ]
+        },
+        "vue": {
+          "structure": [
+            "components",
+            "pages",
+            "store",
+            "api"
+          ]
+        }
+      }
+    },
+    "documentation": {
+      "required": [
+        "类注释",
+        "公共方法注释",
+        "复杂逻辑注释"
+      ],
+      "format": "JSDoc风格"
+    },
+    "testing": {
+      "required": [
+        "单元测试",
+        "集成测试"
+      ],
+      "coverage": {
+        "minimum": 80
+      }
+    }
+  }
+} 
