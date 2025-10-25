@@ -488,7 +488,7 @@ public class Util {
     public static void sendSimpleEmail(String toEmail, String toName, String subject, String content) {
         new Thread(() -> {
             try {
-                log.info(String.format("向%s发送邮件，主题：%s", toEmail, subject));
+                log.info(String.format("向%s发送邮件，主题：%s", toEmail, subject)); 
                 SimpleEmail email = new SimpleEmail();
                 email.setHostName("smtp.office365.com");
                 email.setSmtpPort(587);
