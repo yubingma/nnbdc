@@ -158,120 +158,52 @@ jobs:
       - name: Prepare Deploy Files - Windows
         if: matrix.platform == 'windows'
         run: |
+          $ErrorActionPreference = 'Stop'
+
           $DEPLOY_DIR = Join-Path -Path $PWD -ChildPath 'deploy'
-          New-Item -ItemType Directory -Path $DEPLOY_DIR -Force
-          
+          New-Item -ItemType Directory -Path $DEPLOY_DIR -Force | Out-Null
+
           # 创建 NSIS 安装包
           Set-Location $DEPLOY_DIR
           # 复制构建文件到临时目录
-          New-Item -ItemType Directory -Path "installer_temp" -Force
+          New-Item -ItemType Directory -Path "installer_temp" -Force | Out-Null
           Copy-Item -Path "../app/build/windows/x64/runner/Release/*" -Destination "installer_temp/" -Recurse -Force
-          
-          # 复制资源文件（如果存在）
-          Write-Host "检查并复制资源文件..."
-          
-          # 复制 logo.png
+
+          # 资源文件可选复制
           $logoPath = "../app/assets/images/logo.png"
-          if (Test-Path $logoPath) {
-            Copy-Item $logoPath "installer_temp/"
-            Write-Host "复制了 logo.png"
-          } else {
-            Write-Host "警告: logo.png 不存在，将跳过图标设置"
-          }
-          
-          # 复制 privacy.html
+          if (Test-Path $logoPath) { Copy-Item $logoPath "installer_temp/"; Write-Host "复制了 logo.png" }
+
           $privacyPath = "../app/assets/privacy.html"
-          if (Test-Path $privacyPath) {
-            Copy-Item $privacyPath "installer_temp/"
-            Write-Host "复制了内置的 privacy.html"
-          } else {
-            Write-Host "警告: 内置的 privacy.html 不存在"
-          }
-          
-          # 编译 NSIS 安装脚本
-          # 尝试多个可能的 NSIS 路径（避免数组中的路径解析问题）
-          $nsisFound = $false
-          
-          # 尝试 32位系统路径
-          $nsisPath1 = "C:\Program Files (x86)\NSIS\makensis.exe"
-          if (Test-Path $nsisPath1) {
-            Write-Host "找到 NSIS (32位): $nsisPath1"
-            try {
-              & $nsisPath1 "../platforms/windows/installer.nsi"
-              $nsisFound = $true
-            } catch {
-              Write-Host "NSIS 执行失败: $($_.Exception.Message)"
-            }
-          }
-          
-          # 尝试 64位系统路径
-          if (-not $nsisFound) {
-            $nsisPath2 = "C:\Program Files\NSIS\makensis.exe"
-            if (Test-Path $nsisPath2) {
-              Write-Host "找到 NSIS (64位): $nsisPath2"
-              try {
-                & $nsisPath2 "../platforms/windows/installer.nsi"
-                $nsisFound = $true
-              } catch {
-                Write-Host "NSIS 执行失败: $($_.Exception.Message)"
-              }
-            }
-          }
-          
-          # 尝试从 PATH 中查找
-          if (-not $nsisFound) {
-            $nsisPath3 = Get-Command makensis -ErrorAction SilentlyContinue
-            if ($nsisPath3) {
-              Write-Host "找到 NSIS (PATH): $($nsisPath3.Source)"
-              try {
-                & makensis "../platforms/windows/installer.nsi"
-                $nsisFound = $true
-              } catch {
-                Write-Host "NSIS 执行失败: $($_.Exception.Message)"
-              }
-            }
-          }
-          
-          if (-not $nsisFound) {
-            Write-Host "NSIS 未找到或执行失败，跳过安装包创建"
-          }
-          if (Test-Path "nnbdc-setup.exe") {
-            Move-Item "nnbdc-setup.exe" "$DEPLOY_DIR/nnbdc-setup.exe"
+          if (Test-Path $privacyPath) { Copy-Item $privacyPath "installer_temp/"; Write-Host "复制了内置的 privacy.html" }
+
+          # 编译 NSIS 安装脚本（如果可用）
+          $nsisBuilt = $false
+          $makensis = Get-Command makensis -ErrorAction SilentlyContinue
+          if ($makensis) { & makensis "../platforms/windows/installer.nsi"; $nsisBuilt = Test-Path "nnbdc-setup.exe" }
+
+          if ($nsisBuilt) {
+            Move-Item "nnbdc-setup.exe" "$DEPLOY_DIR/nnbdc-setup.exe" -Force
             Write-Host "安装包创建成功: nnbdc-setup.exe"
           } else {
-            Write-Host "安装包创建失败，创建 ZIP 包作为备用"
-            # 创建 ZIP 包作为备用
+            Write-Host "安装包创建失败或 NSIS 不可用，创建 ZIP 包作为备用"
             Compress-Archive -Path "installer_temp/*" -DestinationPath "$DEPLOY_DIR/nnbdc-windows.zip" -Force
             Write-Host "ZIP 包创建成功: nnbdc-windows.zip"
           }
-          
+
           # 清理临时文件
           Remove-Item -Path "installer_temp" -Recurse -Force
-          
+
           # 更新版本信息文件
-          Write-Host "更新版本信息文件..."
-          $VERSION_LINE = Get-Content "../app/pubspec.yaml" | Where-Object { $_.Contains("version:") }
+          $VERSION_LINE = Select-String -Path "../app/pubspec.yaml" -Pattern "^version:" | Select-Object -First 1
           $VERSION = ($VERSION_LINE -split " ")[1]
           $BUILD_NUMBER = ($VERSION -split "\+")[1]
           $VERSION_NUMBER = ($VERSION -split "\+")[0]
-          
-          # 创建版本信息 JSON（使用单引号与格式化避免转义问题）
+
           $JSON_CONTENT = '[{"verCode":{0},"verName":"{1}","changes":["修复已知问题，提升稳定性"]}]' -f $BUILD_NUMBER, $VERSION_NUMBER
           $JSON_CONTENT | Out-File -FilePath "ver.json" -Encoding UTF8
-          
-          # 复制版本信息文件到部署目录
-          if (Test-Path "ver.json") {
-            # 检查目标文件是否已存在，避免复制到自身
-            if (Test-Path "$DEPLOY_DIR/ver.json") {
-              Write-Host "版本信息文件已存在，跳过复制"
-            } else {
-              Copy-Item "ver.json" "$DEPLOY_DIR/ver.json" -Force
-              Write-Host "版本信息已更新: $VERSION_NUMBER ($BUILD_NUMBER)"
-            }
-          } else {
-            Write-Host "版本信息文件不存在，跳过复制"
-          }
-        shell: powershell
+
+          if (Test-Path "ver.json") { Copy-Item "ver.json" "$DEPLOY_DIR/ver.json" -Force; Write-Host "版本信息已更新: $VERSION_NUMBER ($BUILD_NUMBER)" }
+        shell: pwsh
 
       # 准备部署文件 - 其他平台
       - name: Prepare Deploy Files - Other Platforms
