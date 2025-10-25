@@ -184,13 +184,59 @@ class LocalWordCache {
         ..orderBy([(mi) => OrderingTerm(expression: mi.popularity)]);
       final commonMeanings = await commonMeaningQuery.get();
 
+      // 如果用户有选择词书，查询这些词书的popularityLimit配置
+      Map<String, int?> dictPopularityLimits = {};
+      if (selectedDictIds.isNotEmpty && userId != null) {
+        // 查询用户选择的词书列表
+        final learningDictsQuery = db.select(db.learningDicts)..where((tbl) => tbl.userId.equals(userId));
+        final learningDicts = await learningDictsQuery.get();
+        
+        // 为每个选择的词书查询其popularityLimit
+        for (final learningDict in learningDicts) {
+          final dict = await db.dictsDao.findById(learningDict.dictId);
+          if (dict != null) {
+            dictPopularityLimits[dict.id] = dict.popularityLimit;
+          }
+        }
+      }
+
       for (final meaning in commonMeanings) {
-        // 只有当该单词没有用户词书释义时，才使用通用释义
+        // 只有当该单词没有用户词书定制释义时，才使用通用释义
         if (!wordMeanings.containsKey(meaning.wordId)) {
           wordMeanings[meaning.wordId] = [];
         }
         if (wordMeanings[meaning.wordId]!.isEmpty) {
-          wordMeanings[meaning.wordId]!.add(meaning);
+          // 检查是否需要过滤通用释义
+          bool shouldInclude = true;
+          
+          // 如果有词书配置了popularityLimit，需要检查
+          if (dictPopularityLimits.isNotEmpty) {
+            // 检查是否有任何一个词书设置了popularityLimit
+            final anyLimit = dictPopularityLimits.values.where((limit) => limit != null).isNotEmpty;
+            if (anyLimit) {
+              // 获取popularity值，如果为null则使用999作为默认值
+              final int popularity = meaning.popularity;
+              
+              // 检查是否所有词书的popularityLimit都允许该释义
+              // 如果有任何一个词书的limit允许该释义，则包含
+              shouldInclude = false;
+              for (final limit in dictPopularityLimits.values) {
+                if (limit == null) {
+                  // null表示不限制，允许显示
+                  shouldInclude = true;
+                  break;
+                } else if (popularity <= limit) {
+                  // popularity <= limit 表示允许显示
+                  shouldInclude = true;
+                  break;
+                }
+              }
+            }
+          }
+          
+          if (shouldInclude) {
+            wordMeanings[meaning.wordId]!.add(meaning);
+          }
         }
       }
 

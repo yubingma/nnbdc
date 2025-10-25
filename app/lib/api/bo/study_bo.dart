@@ -601,7 +601,50 @@ class StudyBo {
         ..where((mi) => mi.wordId.equals(wordId) & mi.dictId.equals(Global.commonDictId))
         ..orderBy([(mi) => OrderingTerm(expression: mi.popularity)]);
       final commonMeaningItems = await commonDictQuery.get();
-      meaningItems.addAll(commonMeaningItems);
+      
+      // 应用popularityLimit过滤
+      if (commonMeaningItems.isNotEmpty) {
+        // 查询用户选择的词书的popularityLimit配置
+        Map<String, int?> dictPopularityLimits = {};
+        for (final learningDict in learningDicts) {
+          final dict = await db.dictsDao.findById(learningDict.dictId);
+          if (dict != null) {
+            dictPopularityLimits[dict.id] = dict.popularityLimit;
+          }
+        }
+        
+        // 过滤通用释义
+        final filteredCommonMeanings = <MeaningItem>[];
+        for (final meaning in commonMeaningItems) {
+          bool shouldInclude = true;
+          
+          // 如果有词书配置了popularityLimit，需要检查
+          if (dictPopularityLimits.isNotEmpty) {
+            final anyLimit = dictPopularityLimits.values.where((limit) => limit != null).isNotEmpty;
+            if (anyLimit) {
+              final int popularity = meaning.popularity;
+              
+              // 检查是否所有词书的popularityLimit都允许该释义
+              shouldInclude = false;
+              for (final limit in dictPopularityLimits.values) {
+                if (limit == null) {
+                  shouldInclude = true;
+                  break;
+                } else if (popularity <= limit) {
+                  shouldInclude = true;
+                  break;
+                }
+              }
+            }
+          }
+          
+          if (shouldInclude) {
+            filteredCommonMeanings.add(meaning);
+          }
+        }
+        
+        meaningItems.addAll(filteredCommonMeanings);
+      }
     }
 
     return meaningItems;
