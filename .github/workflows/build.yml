@@ -162,21 +162,8 @@ jobs:
           } else {
             Write-Host "警告: privacy.html 不存在，将创建默认许可协议"
             # 创建默认的许可协议文件
-            $defaultPrivacy = @"
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>隐私政策</title>
-</head>
-<body>
-    <h1>隐私政策</h1>
-    <p>本应用尊重用户隐私，不会收集或泄露用户个人信息。</p>
-    <p>详细隐私政策请访问：http://www.nnbdc.com</p>
-</body>
-</html>
-"@
-            $defaultPrivacy | Out-File -FilePath "installer_temp/privacy.html" -Encoding UTF8
+            $privacyContent = "<!DOCTYPE html>`n<html>`n<head>`n    <meta charset=`"UTF-8`">`n    <title>隐私政策</title>`n</head>`n<body>`n    <h1>隐私政策</h1>`n    <p>本应用尊重用户隐私，不会收集或泄露用户个人信息。</p>`n    <p>详细隐私政策请访问：http://www.nnbdc.com</p>`n</body>`n</html>"
+            $privacyContent | Out-File -FilePath "installer_temp/privacy.html" -Encoding UTF8
             Write-Host "创建了默认 privacy.html"
           }
           
