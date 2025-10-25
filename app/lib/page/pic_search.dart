@@ -155,7 +155,7 @@ class PicSearchPageState extends State<PicSearchPage> {
                                   }
 
                                   if (imgBase64 != null) {
-                                    final result = await Api.client.uploadWordImg2(args.wordId, imgBase64, Global.getLoggedInUser()!.id);
+                                    final result = await Api.client.uploadWordImg(args.wordId, imgBase64, Global.getLoggedInUser()!.id);
                                     if (result.success) {
                                       ToastUtil.info('添加配图成功');
                                       // 写入本地 WordImages 表
