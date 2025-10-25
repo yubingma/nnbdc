@@ -460,4 +460,13 @@ abstract class RestClient {
 
   @GET("/getDictStats.do")
   Future<Result<DictStatsDto>> getDictStats(@Query("dictId") String dictId);
+
+  @PUT("/updateSystemDict.do")
+  @FormUrlEncoded()
+  Future<Result> updateSystemDict(
+      @Field("dictId") String dictId,
+      @Field("name") String name,
+      @Field("isReady") bool isReady,
+      @Field("visible") bool visible,
+      @Field("popularityLimit") String? popularityLimit);
 }

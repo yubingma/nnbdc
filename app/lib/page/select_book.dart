@@ -78,8 +78,8 @@ class SelectBookPageState extends State<SelectBookPage> {
 
       String userId = user.id!;
 
-      // 先同步系统数据库（统一通过节流服务并等待完成）
-      await ThrottledDbSyncService().requestSyncAndWait();
+      // 先同步系统数据库（立即执行，不等待节流）
+      await ThrottledDbSyncService().requestSyncAndWait(immediate: true);
 
       // 从本地数据库获取词书分组和用户选择的词书
       var db = MyDatabase.instance;
@@ -91,21 +91,6 @@ class SelectBookPageState extends State<SelectBookPage> {
       Global.logger.i("获取到的分组数据: ${dictGroupsData.length} 个");
       Global.logger.i("获取到的分组-词书关联: ${groupAndDictLinks.length} 个");
       Global.logger.i("获取到的词书数据: ${dicts.length} 个");
-
-      // 如果词书数据为空，说明同步可能失败，需要重新同步
-      if (dicts.isEmpty) {
-        Global.logger.w("词书数据为空，重新同步系统数据库");
-        await ThrottledDbSyncService().requestSyncAndWait();
-        // 重新获取数据
-        dictGroupsData = await db.select(db.dictGroups).get();
-        groupAndDictLinks = await db.select(db.groupAndDictLinks).get();
-        dicts = await db.select(db.dicts).get();
-        learningDicts = await db.learningDictsDao.getLearningDictsOfUser(userId);
-
-        Global.logger.i("重新同步后获取到的分组数据: ${dictGroupsData.length} 个");
-        Global.logger.i("重新同步后获取到的分组-词书关联: ${groupAndDictLinks.length} 个");
-        Global.logger.i("重新同步后获取到的词书数据: ${dicts.length} 个");
-      }
 
       // 构建词书分组数据
       dictGroups = [];

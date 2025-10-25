@@ -655,6 +655,65 @@ class _EditDictionaryDialogState extends State<_EditDictionaryDialog> {
                         });
                       },
                     ),
+                    
+                    const Divider(),
+                    
+                    // 流行度限制输入框
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '流行度限制',
+                            textScaler: const TextScaler.linear(1.0),
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w400,
+                              color: textColor,
+                              fontFamily: 'NotoSansSC',
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            '限制通用词典释义的流行度阈值（留空表示不限制）',
+                            textScaler: const TextScaler.linear(1.0),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                              fontFamily: 'NotoSansSC',
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          TextField(
+                            controller: _popularityLimitController,
+                            keyboardType: TextInputType.number,
+                            style: TextStyle(
+                              color: textColor,
+                              fontFamily: 'NotoSansSC',
+                              fontSize: 16,
+                              fontWeight: FontWeight.w400,
+                            ),
+                            decoration: InputDecoration(
+                              hintText: '请输入流行度限制值（如：1000）',
+                              hintStyle: TextStyle(
+                                color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                                fontFamily: 'NotoSansSC',
+                                fontSize: 16,
+                                fontWeight: FontWeight.w400,
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -681,18 +740,49 @@ class _EditDictionaryDialogState extends State<_EditDictionaryDialog> {
     });
 
     try {
-      // 这里应该调用更新词典的API
-      // 暂时显示成功消息
-      await Future.delayed(const Duration(seconds: 1));
+      // 解析流行度限制
+      int? popularityLimit;
+      if (_popularityLimitController.text.trim().isNotEmpty) {
+        popularityLimit = int.tryParse(_popularityLimitController.text.trim());
+        if (popularityLimit == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text(
+              '流行度限制必须是有效的数字',
+              textScaler: TextScaler.linear(1.0),
+            )),
+          );
+          return;
+        }
+      }
       
-      if (mounted) {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text(
-            '词典信息更新成功',
-            textScaler: TextScaler.linear(1.0),
-          )),
-        );
+      // 调用更新词典的API
+      final result = await Api.client.updateSystemDict(
+        widget.dict.id,
+        _nameController.text.trim(),
+        _isReady,
+        _visible,
+        popularityLimit?.toString(),
+      );
+      
+      if (result.success) {
+        if (mounted) {
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text(
+              '词典信息更新成功',
+              textScaler: TextScaler.linear(1.0),
+            )),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(
+              '更新失败: ${result.msg ?? "未知错误"}',
+              textScaler: const TextScaler.linear(1.0),
+            )),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {

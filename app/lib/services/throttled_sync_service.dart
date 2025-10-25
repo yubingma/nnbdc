@@ -26,11 +26,13 @@ class ThrottledDbSyncService {
   /// 如果已有同步任务安排，直接返回
   /// 如果在节流时间内，安排延迟执行
   /// 否则立即执行
-  Future<void> requestSync() async {
+  /// 
+  /// [immediate] 如果为 true，则忽略节流控制，立即执行同步
+  Future<void> requestSync({bool immediate = false}) async {
     _syncRequestCount++;
     
-    // 如果已有同步任务安排，直接返回
-    if (_syncScheduled) {
+    // 如果已有同步任务安排且不是立即执行，直接返回
+    if (_syncScheduled && !immediate) {
       Global.logger.d('⏳ 同步任务已安排，忽略此次请求 (请求计数: $_syncRequestCount)');
       return;
     }
@@ -39,7 +41,7 @@ class ThrottledDbSyncService {
 
     // 计算还要等待多长时间进行同步
     Duration delay = Duration.zero;
-    if (_lastSyncAttemptTime != null) {
+    if (!immediate && _lastSyncAttemptTime != null) {
       Duration timeSinceLastAttempt = now.difference(_lastSyncAttemptTime!);
       if (timeSinceLastAttempt < _throttleInterval) {
         delay = _throttleInterval - timeSinceLastAttempt;
@@ -58,10 +60,12 @@ class ThrottledDbSyncService {
 
 
   /// 请求同步并等待同步完成（受节流控制）
-  Future<void> requestSyncAndWait() async {
+  /// 
+  /// [immediate] 如果为 true，则忽略节流控制，立即执行同步
+  Future<void> requestSyncAndWait({bool immediate = false}) async {
     final completer = Completer<void>();
     _waiters.add(completer);
-    await requestSync();
+    await requestSync(immediate: immediate);
     return completer.future;
   }
 

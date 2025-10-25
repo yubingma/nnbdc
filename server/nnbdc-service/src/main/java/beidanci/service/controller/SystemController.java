@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -87,6 +88,33 @@ public class SystemController {
             return Result.success(result);
         } catch (Exception e) {
             return Result.fail("获取词典统计失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 更新系统词典信息
+     */
+    @PutMapping("/updateSystemDict.do")
+    public Result<String> updateSystemDict(
+            @RequestParam("dictId") String dictId,
+            @RequestParam("name") String name,
+            @RequestParam("isReady") boolean isReady,
+            @RequestParam("visible") boolean visible,
+            @RequestParam(value = "popularityLimit", required = false) String popularityLimitStr) {
+        try {
+            Integer popularityLimit = null;
+            if (popularityLimitStr != null && !popularityLimitStr.trim().isEmpty()) {
+                try {
+                    popularityLimit = Integer.parseInt(popularityLimitStr.trim());
+                } catch (NumberFormatException e) {
+                    return Result.fail("流行度限制必须是有效的数字");
+                }
+            }
+            
+            dictBo.updateSystemDict(dictId, name, isReady, visible, popularityLimit);
+            return Result.success("词典信息更新成功");
+        } catch (Exception e) {
+            return Result.fail("更新词典失败: " + e.getMessage());
         }
     }
 
