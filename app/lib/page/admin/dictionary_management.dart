@@ -71,10 +71,40 @@ class _DictionaryManagementWidgetState extends State<DictionaryManagementWidget>
     } else {
       setState(() {
         _filteredDictionaries = _dictionaries.where((dict) {
-          return dict.name.toLowerCase().contains(query);
+          return _fuzzyMatch(dict.name.toLowerCase(), query);
         }).toList();
       });
     }
+  }
+
+  bool _fuzzyMatch(String text, String query) {
+    // 直接包含匹配
+    if (text.contains(query)) {
+      return true;
+    }
+    
+    // 模糊匹配：检查查询字符串的每个字符是否在文本中按顺序出现
+    int textIndex = 0;
+    for (int i = 0; i < query.length; i++) {
+      final char = query[i];
+      bool found = false;
+      
+      // 从当前位置开始查找字符
+      while (textIndex < text.length) {
+        if (text[textIndex] == char) {
+          found = true;
+          textIndex++;
+          break;
+        }
+        textIndex++;
+      }
+      
+      if (!found) {
+        return false;
+      }
+    }
+    
+    return true;
   }
 
   @override
