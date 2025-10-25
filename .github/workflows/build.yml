@@ -250,7 +250,7 @@ jobs:
           
           # 更新版本信息文件
           Write-Host "更新版本信息文件..."
-          $VERSION_LINE = Get-Content "../app/pubspec.yaml" | Where-Object { $_ -match "version:" }
+          $VERSION_LINE = Get-Content "../app/pubspec.yaml" | Where-Object { $_.Contains("version:") }
           $VERSION = ($VERSION_LINE -split " ")[1]
           $BUILD_NUMBER = ($VERSION -split "\+")[1]
           $VERSION_NUMBER = ($VERSION -split "\+")[0]
