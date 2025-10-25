@@ -541,10 +541,10 @@ class WordShortDescChineseDto {
   Map<String, dynamic> toJson() => _$WordShortDescChineseDtoToJson(this);
 }
 
-// 词典统计信息DTO
+// 词典统计信息VO
 @JsonSerializable()
 @CustomDateTimeConverter()
-class DictStatsDto {
+class DictStatsVo {
   final String id;
   final String name;
   final String ownerId;
@@ -561,7 +561,7 @@ class DictStatsDto {
   final int totalUsers; // 总用户数
   final double selectionRate; // 选择率
 
-  DictStatsDto({
+  DictStatsVo({
     required this.id,
     required this.name,
     required this.ownerId,
@@ -577,9 +577,9 @@ class DictStatsDto {
     required this.selectionRate,
   });
 
-  factory DictStatsDto.fromJson(Map<String, dynamic> json) =>
-      _$DictStatsDtoFromJson(json);
+  factory DictStatsVo.fromJson(Map<String, dynamic> json) =>
+      _$DictStatsVoFromJson(json);
 
-  Map<String, dynamic> toJson() => _$DictStatsDtoToJson(this);
+  Map<String, dynamic> toJson() => _$DictStatsVoToJson(this);
 }
 

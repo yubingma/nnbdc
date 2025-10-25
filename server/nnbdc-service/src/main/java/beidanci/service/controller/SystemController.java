@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import beidanci.api.Result;
 import beidanci.api.model.SysDbLogDto;
-import beidanci.api.model.DictStatsDto;
+import beidanci.api.model.DictStatsVo;
 import beidanci.service.bo.SysDbLogBo;
 import beidanci.service.bo.DictBo;
 
@@ -69,9 +69,9 @@ public class SystemController {
      * 返回所有系统词典和每个词典被用户选择的数量
      */
     @GetMapping("/getSystemDictsWithStats.do")
-    public Result<List<DictStatsDto>> getSystemDictsWithStats() {
+    public Result<List<DictStatsVo>> getSystemDictsWithStats() {
         try {
-            List<DictStatsDto> result = dictBo.getSystemDictsWithStats();
+            List<DictStatsVo> result = dictBo.getSystemDictsWithStats();
             return Result.success(result);
         } catch (Exception e) {
             return Result.fail("获取系统词典统计失败: " + e.getMessage());
@@ -82,9 +82,9 @@ public class SystemController {
      * 获取指定词典的详细统计信息
      */
     @GetMapping("/getDictStats.do")
-    public Result<DictStatsDto> getDictStats(@RequestParam("dictId") String dictId) {
+    public Result<DictStatsVo> getDictStats(@RequestParam("dictId") String dictId) {
         try {
-            DictStatsDto result = dictBo.getDictStats(dictId);
+            DictStatsVo result = dictBo.getDictStats(dictId);
             return Result.success(result);
         } catch (Exception e) {
             return Result.fail("获取词典统计失败: " + e.getMessage());

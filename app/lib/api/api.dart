@@ -456,8 +456,17 @@ abstract class RestClient {
   Future<Result<int>> getUserRank(@Query("userId") String userId);
 
   @GET("/getSystemDictsWithStats.do")
-  Future<Result<List<DictStatsDto>>> getSystemDictsWithStats();
+  Future<Result<List<DictStatsVo>>> getSystemDictsWithStats();
 
   @GET("/getDictStats.do")
-  Future<Result<DictStatsDto>> getDictStats(@Query("dictId") String dictId);
+  Future<Result<DictStatsVo>> getDictStats(@Query("dictId") String dictId);
+
+  @POST("/updateSystemDict.do")
+  @FormUrlEncoded()
+  Future<Result<String>> updateSystemDict(
+      @Field("dictId") String dictId,
+      @Field("name") String name,
+      @Field("isReady") bool isReady,
+      @Field("visible") bool visible,
+      @Field("popularityLimit") int? popularityLimit);
 }

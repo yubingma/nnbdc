@@ -24,7 +24,7 @@ import org.springframework.util.DigestUtils;
 import beidanci.api.Result;
 import beidanci.api.model.DictDto;
 import beidanci.api.model.DictVo;
-import beidanci.api.model.DictStatsDto;
+import beidanci.api.model.DictStatsVo;
 import beidanci.service.dao.BaseDao;
 import beidanci.service.po.Dict;
 import beidanci.service.po.DictWord;
@@ -268,7 +268,7 @@ public class DictBo extends BaseBo<Dict> {
     /**
      * 获取系统词典列表及其统计信息
      */
-    public List<DictStatsDto> getSystemDictsWithStats() {
+    public List<DictStatsVo> getSystemDictsWithStats() {
         Session session = getSession();
         
         // 获取系统词典基本信息
@@ -283,12 +283,12 @@ public class DictBo extends BaseBo<Dict> {
         Query<?> totalUsersQuery = session.createNativeQuery(totalUsersSql);
         Long totalUsers = ((Number) totalUsersQuery.uniqueResult()).longValue();
         
-        List<DictStatsDto> result = new ArrayList<>();
+        List<DictStatsVo> result = new ArrayList<>();
         
         for (Object dictResult : dictResults) {
             Object[] dictData = (Object[]) dictResult;
             
-            DictStatsDto dto = new DictStatsDto();
+            DictStatsVo dto = new DictStatsVo();
             dto.setId((String) dictData[0]);
             dto.setName((String) dictData[1]);
             dto.setOwnerId((String) dictData[2]);
@@ -296,8 +296,9 @@ public class DictBo extends BaseBo<Dict> {
             dto.setIsReady((Boolean) dictData[4]);
             dto.setVisible((Boolean) dictData[5]);
             dto.setWordCount((Integer) dictData[6]);
-            dto.setCreateTime((Timestamp) dictData[7]);
-            dto.setUpdateTime((Timestamp) dictData[8]);
+            dto.setPopularityLimit((Integer) dictData[7]);
+            dto.setCreateTime((Timestamp) dictData[8]);
+            dto.setUpdateTime((Timestamp) dictData[9]);
             dto.setTotalUsers(totalUsers);
             
             // 获取该词典被用户选择的数量
@@ -323,11 +324,11 @@ public class DictBo extends BaseBo<Dict> {
     /**
      * 获取指定词典的详细统计信息
      */
-    public DictStatsDto getDictStats(String dictId) {
+    public DictStatsVo getDictStats(String dictId) {
         Session session = getSession();
         
         // 获取词典基本信息
-        String dictSql = "SELECT id, name, ownerId, isShared, isReady, visible, wordCount, createTime, updateTime " +
+        String dictSql = "SELECT id, name, ownerId, isShared, isReady, visible, wordCount, popularityLimit, createTime, updateTime " +
                        "FROM dict WHERE id = :dictId";
         Query<?> dictQuery = session.createNativeQuery(dictSql);
         dictQuery.setParameter("dictId", dictId);
@@ -337,7 +338,7 @@ public class DictBo extends BaseBo<Dict> {
             return null;
         }
         
-        DictStatsDto dto = new DictStatsDto();
+        DictStatsVo dto = new DictStatsVo();
         dto.setId((String) dictData[0]);
         dto.setName((String) dictData[1]);
         dto.setOwnerId((String) dictData[2]);
@@ -345,8 +346,9 @@ public class DictBo extends BaseBo<Dict> {
         dto.setIsReady((Boolean) dictData[4]);
         dto.setVisible((Boolean) dictData[5]);
         dto.setWordCount((Integer) dictData[6]);
-        dto.setCreateTime((Timestamp) dictData[7]);
-        dto.setUpdateTime((Timestamp) dictData[8]);
+        dto.setPopularityLimit((Integer) dictData[7]);
+        dto.setCreateTime((Timestamp) dictData[8]);
+        dto.setUpdateTime((Timestamp) dictData[9]);
         
         // 获取总用户数
         String totalUsersSql = "SELECT COUNT(DISTINCT userId) FROM learning_dict";
@@ -386,7 +388,11 @@ public class DictBo extends BaseBo<Dict> {
         dict.setPopularityLimit(popularityLimit);
         dict.setUpdateTime(new java.sql.Timestamp(System.currentTimeMillis()));
         
-        updateEntity(dict);
+        try {
+            updateEntity(dict);
+        } catch (Exception e) {
+            throw new RuntimeException("更新词典失败: " + e.getMessage(), e);
+        }
     }
 
 }

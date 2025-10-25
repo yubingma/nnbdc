@@ -16,8 +16,8 @@ class DictionaryManagementWidget extends StatefulWidget {
 
 class _DictionaryManagementWidgetState extends State<DictionaryManagementWidget> {
   bool _isLoading = true;
-  List<DictStatsDto> _dictionaries = [];
-  List<DictStatsDto> _filteredDictionaries = [];
+  List<DictStatsVo> _dictionaries = [];
+  List<DictStatsVo> _filteredDictionaries = [];
   final TextEditingController _searchController = TextEditingController();
 
   @override
@@ -38,7 +38,7 @@ class _DictionaryManagementWidgetState extends State<DictionaryManagementWidget>
       final result = await Api.client.getSystemDictsWithStats();
       if (result.success && result.data != null) {
         // 按选择率从高到低排序
-        final sortedDictionaries = List<DictStatsDto>.from(result.data!);
+        final sortedDictionaries = List<DictStatsVo>.from(result.data!);
         sortedDictionaries.sort((a, b) => b.selectionRate.compareTo(a.selectionRate));
         
         setState(() {
@@ -238,7 +238,7 @@ class _DictionaryManagementWidgetState extends State<DictionaryManagementWidget>
     );
   }
 
-  Widget _buildDictionaryCard(DictStatsDto dict) {
+  Widget _buildDictionaryCard(DictStatsVo dict) {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
     final cardColor = isDarkMode ? const Color(0xFF2D2D2D) : Colors.white;
     final textColor = isDarkMode ? Colors.white : Colors.black87;
@@ -406,7 +406,7 @@ class _DictionaryManagementWidgetState extends State<DictionaryManagementWidget>
     );
   }
 
-  void _editDictionary(DictStatsDto dict) {
+  void _editDictionary(DictStatsVo dict) {
     // 实现编辑词典功能 - 使用全屏展示
     Navigator.push(
       context,
@@ -417,7 +417,7 @@ class _DictionaryManagementWidgetState extends State<DictionaryManagementWidget>
     );
   }
 
-  void _viewDictionaryDetails(DictStatsDto dict) {
+  void _viewDictionaryDetails(DictStatsVo dict) {
     // 实现查看词典详情功能
     showDialog(
       context: context,
@@ -428,7 +428,7 @@ class _DictionaryManagementWidgetState extends State<DictionaryManagementWidget>
 
 // 编辑词典对话框
 class _EditDictionaryDialog extends StatefulWidget {
-  final DictStatsDto dict;
+  final DictStatsVo dict;
 
   const _EditDictionaryDialog({required this.dict});
 
@@ -742,18 +742,52 @@ class _EditDictionaryDialogState extends State<_EditDictionaryDialog> {
     });
 
     try {
-      // 这里应该调用更新词典的API
-      // 暂时显示成功消息
-      await Future.delayed(const Duration(seconds: 1));
+      // 解析popularityLimit
+      int? popularityLimit;
+      if (_popularityLimitController.text.trim().isNotEmpty) {
+        popularityLimit = int.tryParse(_popularityLimitController.text.trim());
+        if (popularityLimit == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text(
+              '流行度限制必须是有效的数字',
+              textScaler: TextScaler.linear(1.0),
+            )),
+          );
+          setState(() {
+            _isLoading = false;
+          });
+          return;
+        }
+      }
+
+      // 调用更新词典的API
+      final result = await Api.client.updateSystemDict(
+        widget.dict.id,
+        _nameController.text.trim(),
+        _isReady,
+        _visible,
+        popularityLimit,
+      );
       
-      if (mounted) {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text(
-            '词典信息更新成功',
-            textScaler: TextScaler.linear(1.0),
-          )),
-        );
+      if (result.success) {
+        if (mounted) {
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text(
+              '词典信息更新成功',
+              textScaler: TextScaler.linear(1.0),
+            )),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(
+              '更新失败: ${result.msg ?? "未知错误"}',
+              textScaler: const TextScaler.linear(1.0),
+            )),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -776,7 +810,7 @@ class _EditDictionaryDialogState extends State<_EditDictionaryDialog> {
 
 // 词典详情对话框
 class _DictionaryDetailsDialog extends StatelessWidget {
-  final DictStatsDto dict;
+  final DictStatsVo dict;
 
   const _DictionaryDetailsDialog({required this.dict});
 

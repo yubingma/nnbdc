@@ -3,9 +3,9 @@ package beidanci.api.model;
 import java.util.Date;
 
 /**
- * 词典统计信息DTO
+ * 词典统计信息VO
  */
-public class DictStatsDto {
+public class DictStatsVo {
     private String id;
     private String name;
     private String ownerId;
@@ -13,6 +13,7 @@ public class DictStatsDto {
     private Boolean isReady;
     private Boolean visible;
     private Integer wordCount;
+    private Integer popularityLimit;
     private Date createTime;
     private Date updateTime;
     
@@ -21,10 +22,10 @@ public class DictStatsDto {
     private Long totalUsers; // 总用户数
     private Double selectionRate; // 选择率
     
-    public DictStatsDto() {
+    public DictStatsVo() {
     }
     
-    public DictStatsDto(String id, String name, String ownerId, Boolean isShared, 
+    public DictStatsVo(String id, String name, String ownerId, Boolean isShared, 
                        Boolean isReady, Boolean visible, Integer wordCount, 
                        Date createTime, Date updateTime) {
         this.id = id;
@@ -93,6 +94,14 @@ public class DictStatsDto {
     
     public void setWordCount(Integer wordCount) {
         this.wordCount = wordCount;
+    }
+    
+    public Integer getPopularityLimit() {
+        return popularityLimit;
+    }
+    
+    public void setPopularityLimit(Integer popularityLimit) {
+        this.popularityLimit = popularityLimit;
     }
     
     public Date getCreateTime() {
