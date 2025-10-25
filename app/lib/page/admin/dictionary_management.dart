@@ -17,11 +17,20 @@ class DictionaryManagementWidget extends StatefulWidget {
 class _DictionaryManagementWidgetState extends State<DictionaryManagementWidget> {
   bool _isLoading = true;
   List<DictStatsDto> _dictionaries = [];
+  List<DictStatsDto> _filteredDictionaries = [];
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _loadDictionaryData();
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadDictionaryData() async {
@@ -34,18 +43,36 @@ class _DictionaryManagementWidgetState extends State<DictionaryManagementWidget>
         
         setState(() {
           _dictionaries = sortedDictionaries;
+          _filteredDictionaries = sortedDictionaries;
           _isLoading = false;
         });
       } else {
         setState(() {
           _dictionaries = [];
+          _filteredDictionaries = [];
           _isLoading = false;
         });
       }
     } catch (e) {
       setState(() {
         _dictionaries = [];
+        _filteredDictionaries = [];
         _isLoading = false;
+      });
+    }
+  }
+
+  void _onSearchChanged() {
+    final query = _searchController.text.toLowerCase().trim();
+    if (query.isEmpty) {
+      setState(() {
+        _filteredDictionaries = _dictionaries;
+      });
+    } else {
+      setState(() {
+        _filteredDictionaries = _dictionaries.where((dict) {
+          return dict.name.toLowerCase().contains(query);
+        }).toList();
       });
     }
   }
@@ -75,47 +102,104 @@ class _DictionaryManagementWidgetState extends State<DictionaryManagementWidget>
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(),
-            )
-          : _dictionaries.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.book_outlined,
-                        size: 64,
-                        color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        '暂无系统词典',
-                        style: TextStyle(
-                          fontSize: 18,
-                          color: textColor,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        '系统词典管理功能开发中...',
-                        style: TextStyle(
-                          fontSize: 14,
+      body: Column(
+        children: [
+          // 搜索框
+          Container(
+            padding: const EdgeInsets.all(16),
+            child: TextField(
+              controller: _searchController,
+              style: TextStyle(
+                color: textColor,
+                fontFamily: 'NotoSansSC',
+              ),
+              decoration: InputDecoration(
+                hintText: '搜索词典名称...',
+                hintStyle: TextStyle(
+                  color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                  fontFamily: 'NotoSansSC',
+                ),
+                prefixIcon: Icon(
+                  Icons.search,
+                  color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                ),
+                suffixIcon: _searchController.text.isNotEmpty
+                    ? IconButton(
+                        icon: Icon(
+                          Icons.clear,
                           color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
                         ),
-                      ),
-                    ],
+                        onPressed: () {
+                          _searchController.clear();
+                        },
+                      )
+                    : null,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: isDarkMode ? Colors.grey[600]! : Colors.grey[300]!,
                   ),
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: _dictionaries.length,
-                  itemBuilder: (context, index) {
-                    final dict = _dictionaries[index];
-                    return _buildDictionaryCard(dict);
-                  },
                 ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: AppTheme.primaryColor,
+                    width: 2,
+                  ),
+                ),
+                filled: true,
+                fillColor: isDarkMode ? const Color(0xFF2D2D2D) : Colors.grey[50],
+              ),
+            ),
+          ),
+          // 内容区域
+          Expanded(
+            child: _isLoading
+                ? const Center(
+                    child: CircularProgressIndicator(),
+                  )
+                : _filteredDictionaries.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                          Icon(
+                            Icons.search_off,
+                            size: 64,
+                            color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            _dictionaries.isEmpty ? '暂无系统词典' : '未找到匹配的词典',
+                            style: TextStyle(
+                              fontSize: 18,
+                              color: textColor,
+                            ),
+                          ),
+                          if (_dictionaries.isEmpty) ...[
+                            const SizedBox(height: 8),
+                            Text(
+                              '系统词典管理功能开发中...',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    )
+                    : ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: _filteredDictionaries.length,
+                        itemBuilder: (context, index) {
+                          final dict = _filteredDictionaries[index];
+                          return _buildDictionaryCard(dict);
+                        },
+                      ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -125,7 +209,7 @@ class _DictionaryManagementWidgetState extends State<DictionaryManagementWidget>
     final textColor = isDarkMode ? Colors.white : Colors.black87;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
         color: cardColor,
         borderRadius: BorderRadius.circular(16),
@@ -145,7 +229,7 @@ class _DictionaryManagementWidgetState extends State<DictionaryManagementWidget>
         ),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
         child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
