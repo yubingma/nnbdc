@@ -2,7 +2,7 @@ name: Flutter Full Build
 
 on:
   push:
-    branches: [master]
+    branches: [main]
   workflow_dispatch:
 
 # 并发控制：同一分支只运行最新的构建，取消旧的构建
