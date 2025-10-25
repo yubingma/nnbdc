@@ -7,7 +7,6 @@ import 'package:nnbdc/util/toast_util.dart';
 import 'package:provider/provider.dart';
 
 import '../global.dart';
-import '../util/utils.dart';
 import '../util/client_type.dart';
 import '../state.dart';
 import '../theme/app_theme.dart';
@@ -90,7 +89,8 @@ class MsgPageState extends State<MsgPage> {
                 child: Column(
                   children: [
                     Text(DateFormat('yyyy-MM-dd HH:mm').format(msg.createTime), style: const TextStyle(color: Colors.grey)),
-                    Util.getNickNameOfUser(msg.fromUser) == '牛牛'
+                    // 判断是否为管理员回复消息
+                    (msg.msgType == 'AdviceReply')
                         ? Row(
                             mainAxisAlignment: MainAxisAlignment.start,
                             crossAxisAlignment: CrossAxisAlignment.start,
