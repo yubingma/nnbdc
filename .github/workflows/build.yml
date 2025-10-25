@@ -242,6 +242,8 @@ jobs:
             else
               echo "macOS 构建失败"
             fi
+            # 回到项目根目录以便后续步骤能正确找到 pubspec.yaml
+            cd ../../../../..
           elif [ "${{ matrix.platform }}" == "linux" ]; then
             # 验证 Linux 构建文件是否存在
             if [ ! -d "app/build/linux/x64/release/bundle" ]; then
@@ -270,8 +272,21 @@ jobs:
           
           # 更新版本信息文件（所有平台都需要）
           echo "更新版本信息文件..."
+          # 确保在正确的目录中查找 pubspec.yaml
+          if [ -f "app/pubspec.yaml" ]; then
+            PUBSPEC_PATH="app/pubspec.yaml"
+          elif [ -f "pubspec.yaml" ]; then
+            PUBSPEC_PATH="pubspec.yaml"
+          else
+            echo "错误：找不到 pubspec.yaml 文件"
+            echo "当前目录：$(pwd)"
+            echo "目录内容："
+            ls -la
+            exit 1
+          fi
+          
           # 从 pubspec.yaml 获取版本号
-          VERSION=$(grep "version:" app/pubspec.yaml | cut -d' ' -f2)
+          VERSION=$(grep "version:" "$PUBSPEC_PATH" | cut -d' ' -f2)
           BUILD_NUMBER=$(echo $VERSION | cut -d'+' -f2)
           VERSION_NUMBER=$(echo $VERSION | cut -d'+' -f1)
           
