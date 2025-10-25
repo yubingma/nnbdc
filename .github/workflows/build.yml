@@ -150,7 +150,7 @@ jobs:
           }
           
           # 设置部署目录
-          $env:DEPLOY_DIR = "$(Get-Location)/deploy"
+          $env:DEPLOY_DIR = Join-Path -Path $PWD -ChildPath 'deploy'
           New-Item -ItemType Directory -Path $env:DEPLOY_DIR -Force
         shell: powershell
 
@@ -158,7 +158,7 @@ jobs:
       - name: Prepare Deploy Files - Windows
         if: matrix.platform == 'windows'
         run: |
-          $DEPLOY_DIR = "$(Get-Location)/deploy"
+          $DEPLOY_DIR = Join-Path -Path $PWD -ChildPath 'deploy'
           New-Item -ItemType Directory -Path $DEPLOY_DIR -Force
           
           # 创建 NSIS 安装包
@@ -255,8 +255,8 @@ jobs:
           $BUILD_NUMBER = ($VERSION -split "\+")[1]
           $VERSION_NUMBER = ($VERSION -split "\+")[0]
           
-          # 创建版本信息 JSON
-          $JSON_CONTENT = "[{`"verCode`":$BUILD_NUMBER,`"verName`":`"$VERSION_NUMBER`", `"changes`":[`"Bug fixes and stability improvements`"]}]"
+          # 创建版本信息 JSON（使用单引号与格式化避免转义问题）
+          $JSON_CONTENT = '[{"verCode":{0},"verName":"{1}","changes":["修复已知问题，提升稳定性"]}]' -f $BUILD_NUMBER, $VERSION_NUMBER
           $JSON_CONTENT | Out-File -FilePath "ver.json" -Encoding UTF8
           
           # 复制版本信息文件到部署目录
