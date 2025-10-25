@@ -176,13 +176,9 @@ jobs:
           }
           if (Test-Path "../app/assets/privacy.html") {
             Copy-Item "../app/assets/privacy.html" "installer_temp/"
-            Write-Host "复制了 privacy.html"
+            Write-Host "复制了内置的 privacy.html"
           } else {
-            Write-Host "警告: privacy.html 不存在，将创建默认许可协议"
-            # 创建默认的许可协议文件
-            $privacyContent = "<!DOCTYPE html>`n<html>`n<head>`n    <meta charset=`"UTF-8`">`n    <title>Privacy Policy</title>`n</head>`n<body>`n    <h1>Privacy Policy</h1>`n    <p>This application respects user privacy and does not collect or disclose personal information.</p>`n    <p>For detailed privacy policy, please visit: http://www.nnbdc.com</p>`n</body>`n</html>"
-            $privacyContent | Out-File -FilePath "installer_temp/privacy.html" -Encoding UTF8
-            Write-Host "创建了默认 privacy.html"
+            Write-Host "警告: 内置的 privacy.html 不存在"
           }
           
           # 编译 NSIS 安装脚本
