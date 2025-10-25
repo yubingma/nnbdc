@@ -196,4 +196,17 @@ public class MsgBo extends BaseBo<Msg> {
         // 向用户推送通知，告知最新的消息数量情况
         SocketService.getInstance().sendPersistentMsgCountToUser(userBo.getUserVoById(userId));
     }
+
+    /**
+     * 获取所有用户的意见建议消息（管理员功能）
+     *
+     * @return 意见建议消息列表
+     */
+    public List<Msg> getAllAdviceMessages() {
+        Session session = getSession();
+        String hql = "from Msg m where m.msgType = :msgType order by m.createTime desc";
+        Query<Msg> query = session.createQuery(hql, Msg.class);
+        query.setParameter("msgType", MsgType.Advice);
+        return query.list();
+    }
 }

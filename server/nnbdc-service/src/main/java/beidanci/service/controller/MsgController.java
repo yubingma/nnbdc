@@ -100,4 +100,47 @@ public class MsgController {
         return Result.success(Pair.of(msgBo.getAllPersistentMsgCountToUser(user.getId()),
                 msgBo.getUnViewedPersistentMsgCountToUser(user.getId())));
     }
+
+    /**
+     * 获取所有用户的意见建议（管理员功能）
+     *
+     * @throws IllegalAccessException
+     */
+    @GetMapping("/getAllAdviceMessages.do")
+    @PreAuthorize("hasAnyRole('ADMIN')")
+    public List<MsgVo> getAllAdviceMessages() throws IllegalAccessException {
+        List<Msg> msgs = msgBo.getAllAdviceMessages();
+        List<MsgVo> vos = BeanUtils.makeVos(msgs, MsgVo.class, new String[]{"invitedBy", "StudyGroupVo.creator",
+                "StudyGroupVo.users", "StudyGroupVo.managers", "studyGroupPosts", "userGames"});
+        // 管理员功能不需要清空用户信息，保留完整的用户数据
+        return vos;
+    }
+
+    /**
+     * 回复用户意见建议（管理员功能）
+     *
+     * @throws IllegalAccessException
+     */
+    @PostMapping("/replyAdvice.do")
+    @PreAuthorize("hasAnyRole('ADMIN')")
+    public Result<Void> replyAdvice(@RequestParam(name = "content") String content,
+                                   @RequestParam(name = "toUserId") String toUserId,
+                                   @RequestParam(name = "adminUserId") String adminUserId) throws IllegalAccessException {
+        if (StringUtils.isEmpty(content.trim())) {
+            return Result.fail("回复内容不得为空");
+        }
+        
+        User toUser = userBo.findById(toUserId);
+        if (toUser == null) {
+            return Result.fail("目标用户不存在");
+        }
+        
+        User adminUser = userBo.findById(adminUserId);
+        if (adminUser == null || !adminUser.getIsAdmin()) {
+            return Result.fail("管理员权限不足");
+        }
+        
+        msgBo.replyAdvice(content, toUser, userBo);
+        return Result.success(null);
+    }
 }

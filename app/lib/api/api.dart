@@ -405,6 +405,16 @@ abstract class RestClient {
   Future<Result> setMsgsAsViewed(
       @Field("msgIds") List<String> msgIds, @Field("userId") String userId);
 
+  @GET("/getAllAdviceMessages.do")
+  Future<List<MsgVo>> getAllAdviceMessages();
+
+  @POST("/replyAdvice.do")
+  @FormUrlEncoded()
+  Future<Result> replyAdvice(
+      @Field("content") String content,
+      @Field("toUserId") String toUserId,
+      @Field("adminUserId") String adminUserId);
+
   @GET("/getNewDbLogs.do")
   Future<Result<List<UserDbLogDto>>> getNewDbLogs(
       @Query("localDbVersion") int localDbVersion,

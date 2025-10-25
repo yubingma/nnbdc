@@ -1021,6 +1021,15 @@ class _MePageState extends State<MePage> {
                 onTap: () => showUnRegisterDlg(),
                 isDestructive: true,
               ),
+              // 管理员功能入口
+              if (loggedInUser?.isAdmin == true) ...[
+                const Divider(),
+                _buildMenuTile(
+                  icon: Icons.admin_panel_settings,
+                  title: '管理页面',
+                  onTap: () => Get.toNamed('/admin'),
+                ),
+              ],
             ],
           ),
         ),

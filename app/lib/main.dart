@@ -7,6 +7,7 @@ import 'package:get_storage/get_storage.dart';
 import 'package:nnbdc/api/api.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/global.dart';
+import 'package:nnbdc/page/admin.dart';
 import 'package:nnbdc/page/bdc.dart';
 import 'package:nnbdc/page/before_bdc.dart';
 import 'package:nnbdc/page/finish.dart';
@@ -174,6 +175,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         '/word_lists': (context) => const WordListsPage(),
         '/msg': (context) => const MsgPage(),
         '/search': (context) => const SearchPage(),
+        '/admin': (context) => const AdminPage(),
       },
     );
   }
