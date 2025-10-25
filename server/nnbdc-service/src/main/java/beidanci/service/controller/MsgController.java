@@ -35,7 +35,7 @@ public class MsgController {
     @PostMapping("/sendAdvice.do")
     @PreAuthorize("hasAnyRole('USER','ADMIN')")
     @ResponseBody
-    public Result<Void> sendAdvice(String content, String userId) throws EmailException {
+    public Result<Void> sendAdvice(String content, String clientType, String userId) throws EmailException {
         if (StringUtils.isEmpty(content.trim())) {
             return Result.fail("内容不得为空");
         }
@@ -45,7 +45,7 @@ public class MsgController {
             return Result.fail("用户未登录");
         }
         
-        msgBo.sendAdvice(content, loggedInUser);
+        msgBo.sendAdvice(content, clientType, loggedInUser);
 
         return Result.success(null);
     }

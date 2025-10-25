@@ -36,6 +36,7 @@ import '../util/utils.dart';
 import '../db/user_extensions.dart';
 import '../theme/app_theme.dart';
 import '../util/error_handler.dart';
+import '../util/client_type.dart';
 
 class BdcPageArgs {
   /// 从哪个页面进入本页面
@@ -1615,7 +1616,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         });
 
     if (choice ?? false) {
-      var result = await Api.client.saveErrorReport(word!.spell, errorReportController.text);
+      var result = await Api.client.saveErrorReport(word!.spell, errorReportController.text, getClientType().json);
       if (result.success) {
         ToastUtil.info('报错成功！感谢你付出宝贵时间');
       } else {

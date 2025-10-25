@@ -13,7 +13,7 @@ extension CheckByExt on CheckBy {
   }
 }
 
-enum ClientType { browser, android, ios, windows, macos, jmeter }
+enum ClientType { browser, android, ios, windows, macos, linux, jmeter }
 
 extension ClientTypeExt on ClientType {
   String get json {
@@ -28,6 +28,8 @@ extension ClientTypeExt on ClientType {
         return "Windows";
       case ClientType.macos:
         return "MacOS";
+      case ClientType.linux:
+        return "Linux";
       case ClientType.jmeter:
         return "JMeter";
     }

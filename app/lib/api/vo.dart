@@ -1271,6 +1271,7 @@ class MsgVo {
   String content;
   String? createTimeForDisplay; // 形如"一分钟前"、"10秒前"之类
   String msgType;
+  String? clientType;
   UserVo fromUser;
   DateTime createTime;
   bool viewed;
@@ -1285,6 +1286,7 @@ class MsgVo {
       this.content,
       this.createTimeForDisplay,
       this.msgType,
+      this.clientType,
       this.fromUser,
       this.toUser,
       this.createTime,

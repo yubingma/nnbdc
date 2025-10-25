@@ -315,7 +315,9 @@ abstract class RestClient {
   @POST("/sendAdvice.do")
   @FormUrlEncoded()
   Future<Result> sendAdvice(
-      @Field("content") String content, @Query("userId") String userId);
+      @Field("content") String content, 
+      @Field("clientType") String clientType,
+      @Query("userId") String userId);
 
   @GET("/res/getDictResById.do")
   Future<Result<DictRes>> getDictResById(@Query("dictId") String dictId);
@@ -341,7 +343,7 @@ abstract class RestClient {
   @POST("/saveErrorReport.do")
   @FormUrlEncoded()
   Future<Result<String>> saveErrorReport(
-      @Field("word") String word, @Field("content") String content);
+      @Field("word") String word, @Field("content") String content, @Field("clientType") String clientType);
 
   @POST("/saveSentence.do")
   @FormUrlEncoded()

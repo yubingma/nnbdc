@@ -16,7 +16,7 @@ ClientType getClientType() {
     return ClientType.macos;
   }
   if (PlatformUtils.isLinux) {
-    return ClientType.browser; // Linux 桌面版暂时归类为 browser
+    return ClientType.linux; // Linux 桌面版
   }
   return ClientType.browser;
 }

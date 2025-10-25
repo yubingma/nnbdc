@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 
 import '../global.dart';
 import '../util/utils.dart';
+import '../util/client_type.dart';
 import '../state.dart';
 import '../theme/app_theme.dart';
 
@@ -54,7 +55,12 @@ class MsgPageState extends State<MsgPage> {
     });
 
     try {
-      final result = await Api.client.sendAdvice(_messageController.text.trim(), Global.getLoggedInUser()!.id);
+      final clientType = getClientType();
+      final result = await Api.client.sendAdvice(
+        _messageController.text.trim(), 
+        clientType.name,
+        Global.getLoggedInUser()!.id
+      );
       if (result.success) {
         _messageController.clear();
         ToastUtil.info("发送成功");

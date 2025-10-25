@@ -9,6 +9,7 @@ import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 import beidanci.api.model.MsgType;
+import beidanci.api.model.ClientType;
 
 @Entity
 @Table(name = "msg")
@@ -30,6 +31,10 @@ public class Msg extends UuidPo {
     @Enumerated(EnumType.STRING)
     @Column(name = "msgType", nullable = false, length = 20)
     private MsgType msgType;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "clientType", length = 20)
+    private ClientType clientType;
 
     public Boolean getViewed() {
         return viewed;
@@ -85,5 +90,13 @@ public class Msg extends UuidPo {
 
     public void setMsgType(MsgType msgType) {
         this.msgType = msgType;
+    }
+
+    public ClientType getClientType() {
+        return clientType;
+    }
+
+    public void setClientType(ClientType clientType) {
+        this.clientType = clientType;
     }
 }

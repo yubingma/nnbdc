@@ -11,6 +11,7 @@ public class MsgVo extends Vo {
     private String content;
     private String createTimeForDisplay; // 形如“一分钟前”、“10秒前”之类
     private MsgType msgType;
+    private ClientType clientType;
     private UserVo fromUser;
     private UserVo toUser;
 
@@ -102,5 +103,13 @@ public class MsgVo extends Vo {
 
     public void setToUser(UserVo toUser) {
         this.toUser = toUser;
+    }
+
+    public ClientType getClientType() {
+        return clientType;
+    }
+
+    public void setClientType(ClientType clientType) {
+        this.clientType = clientType;
     }
 }

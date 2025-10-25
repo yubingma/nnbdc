@@ -13,6 +13,7 @@ import 'package:nnbdc/util/error_handler.dart';
 import 'package:drift/drift.dart';
 import 'package:nnbdc/util/app_clock.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:nnbdc/util/client_type.dart';
 
 class UserBo {
   static final UserBo _instance = UserBo._internal();
@@ -245,7 +246,7 @@ class UserBo {
 
 
   Future<Result> sendAdvice(String content, String userId) async {
-    return await Api.client.sendAdvice(content, userId);
+    return await Api.client.sendAdvice(content, getClientType().json, userId);
   }
 
   Future<Result> updateUserInfo(
@@ -350,7 +351,7 @@ class UserBo {
   }
 
   Future<Result<String>> saveErrorReport(String word, String content) async =>
-      Api.client.saveErrorReport(word, content);
+      Api.client.saveErrorReport(word, content, getClientType().json);
 
   Future<Result<List<UserDbLogDto>>> getNewDbLogs(
           int localDbVersion, String userId) async =>

@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import beidanci.api.model.ClientType;
 import beidanci.api.model.MsgType;
 import beidanci.api.model.PagedResults;
 import beidanci.service.dao.BaseDao;
@@ -156,8 +157,8 @@ public class MsgBo extends BaseBo<Msg> {
         return count;
     }
 
-    public void sendAdvice(String content, User fromUser) {
-        createMsg(content, MsgType.Advice, fromUser, userBo.getSysUser_sys(false));
+    public void sendAdvice(String content, String clientType, User fromUser) {
+        createMsg(content, MsgType.Advice, clientType, fromUser, userBo.getSysUser_sys(false));
         Util.sendEmailToNnbdcCustomerSerivce(String.format("来自[%s]的意见", fromUser.getNickName()), content);
     }
 
@@ -168,14 +169,29 @@ public class MsgBo extends BaseBo<Msg> {
         SocketService.getInstance().sendPersistentMsgCountToUser(userBo.getUserVoById(toUser.getId()));
     }
 
-    public void createMsg(String content, MsgType msgType, User fromUser, User toUser) {
+    public void createMsg(String content, MsgType msgType, String clientType, User fromUser, User toUser) {
         Msg msg = new Msg(msgType);
         msg.setFromUser(fromUser);
         msg.setToUser(toUser);
         msg.setContent(content);
         msg.setViewed(false);
         msg.setCreateTime(new Date());
+        
+        // 设置客户端类型
+        if (clientType != null && !clientType.trim().isEmpty()) {
+            try {
+                msg.setClientType(ClientType.valueOf(clientType));
+            } catch (IllegalArgumentException e) {
+                // 如果客户端类型无效，设置为null
+                msg.setClientType(null);
+            }
+        }
+        
         createEntity(msg);
+    }
+
+    public void createMsg(String content, MsgType msgType, User fromUser, User toUser) {
+        createMsg(content, msgType, null, fromUser, toUser);
     }
 
     /**

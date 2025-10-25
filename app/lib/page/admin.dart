@@ -182,6 +182,7 @@ class FeedbackManagementWidget extends StatefulWidget {
 class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
   List<MsgVo> _messages = [];
   bool _isLoading = true;
+  Map<String, int> _clientTypeStats = {};
 
   @override
   void initState() {
@@ -192,8 +193,18 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
   Future<void> _loadMessages() async {
     try {
       final messages = await Api.client.getAllAdviceMessages();
+      final stats = <String, int>{};
+      
+      // 统计客户端类型分布
+      for (final message in messages) {
+        if (message.clientType != null) {
+          stats[message.clientType!] = (stats[message.clientType!] ?? 0) + 1;
+        }
+      }
+      
       setState(() {
         _messages = messages;
+        _clientTypeStats = stats;
         _isLoading = false;
       });
     } catch (e) {
@@ -237,13 +248,22 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
                 ],
               ),
             )
-          : ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: _messages.length,
-              itemBuilder: (context, index) {
-                final message = _messages[index];
-                return _buildMessageCard(message);
-              },
+          : Column(
+              children: [
+                // 客户端类型统计
+                if (_clientTypeStats.isNotEmpty) _buildClientTypeStats(),
+                // 消息列表
+                Expanded(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: _messages.length,
+                    itemBuilder: (context, index) {
+                      final message = _messages[index];
+                      return _buildMessageCard(message);
+                    },
+                  ),
+                ),
+              ],
             ),
     );
   }
@@ -302,12 +322,58 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
                         color: textColor,
                       ),
                     ),
-                    Text(
-                      message.createTime.toString(),
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                      ),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.access_time,
+                          size: 12,
+                          color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          message.createTime.toString(),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                          ),
+                        ),
+                        if (message.clientType != null) ...[
+                          const SizedBox(width: 12),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: _getClientTypeColor(message.clientType!),
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: _getClientTypeColor(message.clientType!).withValues(alpha: 0.3),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 1),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  _getClientTypeIcon(message.clientType!),
+                                  size: 12,
+                                  color: Colors.white,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  _getClientTypeDisplayName(message.clientType!),
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ],
                 ),
@@ -349,6 +415,107 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
     );
   }
 
+  Widget _buildClientTypeStats() {
+    final isDarkMode = context.watch<DarkMode>().isDarkMode;
+    final cardColor = isDarkMode ? const Color(0xFF2D2D2D) : Colors.white;
+    final textColor = isDarkMode ? Colors.white : Colors.black87;
+
+    return Container(
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: isDarkMode 
+                ? Colors.black.withValues(alpha: 0.3) 
+                : Colors.grey.withValues(alpha: 0.1),
+            spreadRadius: 1,
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.analytics,
+                color: AppTheme.primaryColor,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '客户端类型统计',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: textColor,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: _clientTypeStats.entries.map((entry) {
+              return Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: _getClientTypeColor(entry.key).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: _getClientTypeColor(entry.key).withValues(alpha: 0.3),
+                    width: 1,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      _getClientTypeIcon(entry.key),
+                      size: 14,
+                      color: _getClientTypeColor(entry.key),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      _getClientTypeDisplayName(entry.key),
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: _getClientTypeColor(entry.key),
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: _getClientTypeColor(entry.key),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        '${entry.value}',
+                        style: const TextStyle(
+                          fontSize: 10,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+
   String _getUserInitial(MsgVo message) {
     final nickName = message.fromUser.nickName;
     final userNickName = message.fromUserNickName;
@@ -362,6 +529,69 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
       return userName.substring(0, 1).toUpperCase();
     } else {
       return 'U';
+    }
+  }
+
+  String _getClientTypeDisplayName(String clientType) {
+    switch (clientType) {
+      case 'Browser':
+        return '浏览器';
+      case 'Android':
+        return '安卓';
+      case 'IOS':
+        return 'iOS';
+      case 'Windows':
+        return 'Windows';
+      case 'MacOS':
+        return 'macOS';
+      case 'Linux':
+        return 'Linux';
+      case 'JMeter':
+        return 'JMeter';
+      default:
+        return clientType;
+    }
+  }
+
+  Color _getClientTypeColor(String clientType) {
+    switch (clientType) {
+      case 'Browser':
+        return const Color(0xFF4CAF50); // 绿色 - 浏览器
+      case 'Android':
+        return const Color(0xFF3DDC84); // 安卓绿
+      case 'IOS':
+        return const Color(0xFF007AFF); // iOS蓝
+      case 'Windows':
+        return const Color(0xFF0078D4); // Windows蓝
+      case 'MacOS':
+        return const Color(0xFF8E8E93); // macOS灰
+      case 'Linux':
+        return const Color(0xFFFF6B35); // Linux橙
+      case 'JMeter':
+        return const Color(0xFF9C27B0); // 紫色
+      default:
+        return AppTheme.primaryColor;
+    }
+  }
+
+  IconData _getClientTypeIcon(String clientType) {
+    switch (clientType) {
+      case 'Browser':
+        return Icons.web;
+      case 'Android':
+        return Icons.android;
+      case 'IOS':
+        return Icons.phone_iphone;
+      case 'Windows':
+        return Icons.laptop_windows;
+      case 'MacOS':
+        return Icons.laptop_mac;
+      case 'Linux':
+        return Icons.terminal;
+      case 'JMeter':
+        return Icons.speed;
+      default:
+        return Icons.device_unknown;
     }
   }
 }

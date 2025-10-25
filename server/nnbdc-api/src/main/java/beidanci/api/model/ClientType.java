@@ -17,6 +17,9 @@ public enum ClientType {
     @ApiModelProperty("macOS客户端")
     MacOS("macOS"),
 
+    @ApiModelProperty("Linux客户端")
+    Linux("Linux"),
+
     @ApiModelProperty("JMeter客户端")
     JMeter("JMeter");
 

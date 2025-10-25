@@ -35,7 +35,7 @@ public class ErrorReportBo extends BaseBo<ErrorReport> {
         return baseDao.queryAll(getSession(), exam, null, null);
     }
 
-    public Result<String> saveErrorReport(String spell, String content, String userId) {
+    public Result<String> saveErrorReport(String spell, String content, String userId, String clientType) {
         User user = userBo.findById(userId);
 
         if (content.trim().length() == 0) {
@@ -52,7 +52,7 @@ public class ErrorReportBo extends BaseBo<ErrorReport> {
         createEntity(errorReport);
 
         String advice = String.format("单词报错，单词[%s], 报错内容[%s]", spell, content);
-        msgBo.sendAdvice(advice, user);
+        msgBo.sendAdvice(advice, clientType, user);
 
         return Result.success(String.valueOf(errorReport.getId()), content);
     }
