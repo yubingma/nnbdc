@@ -185,6 +185,13 @@ public class WordImageBo extends BaseBo<WordImage> {
      */
     private String toJsonForLog(WordImage image) {
         try {
+            // 用于格式化日期为ISO-8601格式
+            java.text.SimpleDateFormat isoFormat = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+            isoFormat.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
+            
+            String createTimeStr = image.getCreateTime() != null ? isoFormat.format(image.getCreateTime()) : "";
+            String updateTimeStr = image.getUpdateTime() != null ? isoFormat.format(image.getUpdateTime()) : "";
+            
             return String.format(
                 "{\"id\":\"%s\",\"wordId\":\"%s\",\"imageFile\":\"%s\",\"hand\":%d,\"foot\":%d,\"author\":\"%s\",\"createTime\":\"%s\",\"updateTime\":\"%s\"}",
                 image.getId(),
@@ -193,8 +200,8 @@ public class WordImageBo extends BaseBo<WordImage> {
                 image.getHand(),
                 image.getFoot(),
                 image.getAuthor() != null ? image.getAuthor().getId() : "",
-                image.getCreateTime() != null ? image.getCreateTime().toString() : "",
-                image.getUpdateTime() != null ? image.getUpdateTime().toString() : ""
+                createTimeStr,
+                updateTimeStr
             );
         } catch (Exception e) {
             return "{}";

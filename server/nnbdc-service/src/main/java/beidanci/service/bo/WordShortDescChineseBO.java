@@ -149,6 +149,13 @@ public class WordShortDescChineseBO extends BaseBo<WordShortDescChinese> {
      */
     private String toJsonForLog(WordShortDescChinese chinese) {
         try {
+            // 用于格式化日期为ISO-8601格式
+            java.text.SimpleDateFormat isoFormat = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+            isoFormat.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
+            
+            String createTimeStr = chinese.getCreateTime() != null ? isoFormat.format(chinese.getCreateTime()) : "";
+            String updateTimeStr = chinese.getUpdateTime() != null ? isoFormat.format(chinese.getUpdateTime()) : "";
+            
             return String.format(
                 "{\"id\":\"%s\",\"wordId\":\"%s\",\"content\":\"%s\",\"hand\":%d,\"foot\":%d,\"author\":\"%s\",\"createTime\":\"%s\",\"updateTime\":\"%s\"}",
                 chinese.getId(),
@@ -157,8 +164,8 @@ public class WordShortDescChineseBO extends BaseBo<WordShortDescChinese> {
                 chinese.getHand(),
                 chinese.getFoot(),
                 chinese.getAuthor() != null ? chinese.getAuthor().getId() : "",
-                chinese.getCreateTime() != null ? chinese.getCreateTime().toString() : "",
-                chinese.getUpdateTime() != null ? chinese.getUpdateTime().toString() : ""
+                createTimeStr,
+                updateTimeStr
             );
         } catch (Exception e) {
             return "{}";

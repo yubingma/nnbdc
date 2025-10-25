@@ -206,6 +206,13 @@ public class SentenceBo extends BaseBo<Sentence> {
      */
     private String toJsonForLog(Sentence sentence) {
         try {
+            // 用于格式化日期为ISO-8601格式
+            java.text.SimpleDateFormat isoFormat = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+            isoFormat.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
+            
+            String createTimeStr = sentence.getCreateTime() != null ? isoFormat.format(sentence.getCreateTime()) : "";
+            String updateTimeStr = sentence.getUpdateTime() != null ? isoFormat.format(sentence.getUpdateTime()) : "";
+            
             return String.format(
                 "{\"id\":\"%s\",\"english\":\"%s\",\"chinese\":\"%s\",\"englishDigest\":\"%s\",\"theType\":\"%s\",\"handCount\":%d,\"footCount\":%d,\"author\":\"%s\",\"meaningItemId\":\"%s\",\"wordMeaning\":\"%s\",\"createTime\":\"%s\",\"updateTime\":\"%s\"}",
                 sentence.getId(),
@@ -218,8 +225,8 @@ public class SentenceBo extends BaseBo<Sentence> {
                 sentence.getAuthor() != null ? sentence.getAuthor().getId() : "",
                 sentence.getMeaningItem() != null ? sentence.getMeaningItem().getId() : "",
                 sentence.getWordMeaning() != null ? sentence.getWordMeaning().replace("\"", "\\\"") : "",
-                sentence.getCreateTime() != null ? sentence.getCreateTime().toString() : "",
-                sentence.getUpdateTime() != null ? sentence.getUpdateTime().toString() : ""
+                createTimeStr,
+                updateTimeStr
             );
         } catch (Exception e) {
             return "{}";
