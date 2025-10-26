@@ -17,6 +17,9 @@ class _DataDiagnosticPageState extends State<DataDiagnosticPage> {
   bool _isRunning = false;
   IntegrityCheckResult? _checkResult;
   IntegrityFixResult? _fixResult;
+  String _currentStep = '';
+  int _currentProgress = 0;
+  static const int _totalSteps = 5;
 
   @override
   Widget build(BuildContext context) {
@@ -59,13 +62,56 @@ class _DataDiagnosticPageState extends State<DataDiagnosticPage> {
   }
 
   Widget _buildLoadingState() {
-    return const Center(
+    return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          CircularProgressIndicator(),
-          SizedBox(height: 16),
-          Text('正在诊断数据完整性...'),
+          const CircularProgressIndicator(),
+          const SizedBox(height: 24),
+          Text(
+            _currentStep.isNotEmpty ? _currentStep : '正在诊断数据完整性...',
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+          ),
+          const SizedBox(height: 16),
+          // 进度条
+          Container(
+            width: 300,
+            height: 8,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(4),
+              color: Colors.grey[300],
+            ),
+            child: TweenAnimationBuilder<double>(
+              duration: const Duration(milliseconds: 300),
+              tween: Tween(begin: 0, end: _currentProgress / _totalSteps),
+              builder: (context, value, child) {
+                return FractionallySizedBox(
+                  alignment: Alignment.centerLeft,
+                  widthFactor: value,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(4),
+                      color: AppTheme.primaryColor,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 8),
+          TweenAnimationBuilder<double>(
+            duration: const Duration(milliseconds: 300),
+            tween: Tween(begin: 0, end: _currentProgress / _totalSteps * 100),
+            builder: (context, value, child) {
+              return Text(
+                '${value.toInt()}%',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey[600],
+                ),
+              );
+            },
+          ),
         ],
       ),
     );
@@ -482,6 +528,8 @@ class _DataDiagnosticPageState extends State<DataDiagnosticPage> {
       _isRunning = true;
       _checkResult = null;
       _fixResult = null;
+      _currentProgress = 0;
+      _currentStep = '正在初始化...';
     });
 
     try {
@@ -493,15 +541,29 @@ class _DataDiagnosticPageState extends State<DataDiagnosticPage> {
       
       // 使用本地数据完整性检查器进行诊断
       final checker = DataIntegrityChecker();
-      final checkResult = await checker.performUserCheck(currentUser.id);
+      
+      // 使用进度回调
+      final checkResult = await checker.performUserCheck(
+        currentUser.id,
+        onProgress: (step, message) {
+          if (mounted) {
+            setState(() {
+              _currentProgress = step;
+              _currentStep = message;
+            });
+          }
+        },
+      );
         
       setState(() {
         _checkResult = checkResult;
         _isRunning = false;
+        _currentStep = '';
       });
     } catch (e) {
       setState(() {
         _isRunning = false;
+        _currentStep = '';
       });
       
       if (mounted) {

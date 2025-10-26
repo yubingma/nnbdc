@@ -2,6 +2,9 @@ import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/global.dart';
 import 'package:drift/drift.dart';
 
+/// 进度回调函数类型
+typedef ProgressCallback = void Function(int step, String message);
+
 /// 数据完整性检查器
 class DataIntegrityChecker {
   static final DataIntegrityChecker _instance = DataIntegrityChecker._internal();
@@ -38,38 +41,51 @@ class DataIntegrityChecker {
   }
 
   /// 执行用户特定的数据完整性检查
-  Future<IntegrityCheckResult> performUserCheck(String userId) async {
+  /// [onProgress] 进度回调函数，参数为(步骤数, 消息)
+  Future<IntegrityCheckResult> performUserCheck(String userId, {ProgressCallback? onProgress}) async {
     final result = IntegrityCheckResult();
     final stopwatch = Stopwatch()..start();
     
     try {
+      onProgress?.call(0, '开始数据完整性诊断...');
+      await Future.delayed(const Duration(milliseconds: 200)); // 给UI一点时间显示
       Global.logger.d('开始数据完整性诊断...');
       
       // 1. 检查用户词典单词序号连续性
+      onProgress?.call(1, '检查词典单词序号连续性...');
+      await Future.delayed(const Duration(milliseconds: 100)); // 给UI一点时间显示
       final timer1 = Stopwatch()..start();
       await _checkUserDictWordSequences(result, userId);
       timer1.stop();
       Global.logger.d('✓ 检查序号连续性: ${timer1.elapsedMilliseconds}ms');
       
       // 2. 检查用户词典单词数量一致性
+      onProgress?.call(2, '检查词典单词数量一致性...');
+      await Future.delayed(const Duration(milliseconds: 100)); // 给UI一点时间显示
       final timer2 = Stopwatch()..start();
       await _checkUserDictWordCounts(result, userId);
       timer2.stop();
       Global.logger.d('✓ 检查单词数量一致性: ${timer2.elapsedMilliseconds}ms');
       
       // 3. 检查用户学习进度合理性
+      onProgress?.call(3, '检查学习进度合理性...');
+      await Future.delayed(const Duration(milliseconds: 100)); // 给UI一点时间显示
       final timer3 = Stopwatch()..start();
       await _checkUserLearningProgress(result, userId);
       timer3.stop();
       Global.logger.d('✓ 检查学习进度合理性: ${timer3.elapsedMilliseconds}ms');
       
       // 4. 检查用户数据库版本一致性
+      onProgress?.call(4, '检查数据库版本一致性...');
+      await Future.delayed(const Duration(milliseconds: 100)); // 给UI一点时间显示
       final timer4 = Stopwatch()..start();
       await _checkUserDbVersions(result, userId);
       timer4.stop();
       Global.logger.d('✓ 检查数据库版本一致性: ${timer4.elapsedMilliseconds}ms');
       
       // 5. 检查通用词典完整性
+      onProgress?.call(5, '检查通用词典完整性...');
+      await Future.delayed(const Duration(milliseconds: 100)); // 给UI一点时间显示
       final timer5 = Stopwatch()..start();
       await _checkCommonDictIntegrity(result);
       timer5.stop();
@@ -77,6 +93,8 @@ class DataIntegrityChecker {
       
       stopwatch.stop();
       Global.logger.d('✓ 数据完整性诊断完成，总耗时: ${stopwatch.elapsedMilliseconds}ms');
+      onProgress?.call(5, '诊断完成！');
+      await Future.delayed(const Duration(milliseconds: 100)); // 给UI一点时间显示
       
     } catch (e) {
       stopwatch.stop();
