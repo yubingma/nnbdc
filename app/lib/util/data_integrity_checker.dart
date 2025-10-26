@@ -1,5 +1,9 @@
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/global.dart';
+import 'package:nnbdc/config.dart';
+import 'package:nnbdc/util/network_util.dart';
+import 'package:nnbdc/socket_io.dart';
+import 'package:dio/dio.dart';
 import 'package:drift/drift.dart';
 
 /// 进度回调函数类型
@@ -101,9 +105,39 @@ class DataIntegrityChecker {
       onProgress?.call(5, '检查通用词典完整性...', result: result);
       await Future.delayed(const Duration(milliseconds: 200)); // 给UI时间显示结果
       
+      // 6. 检查网络连接
+      onProgress?.call(6, '检查网络连接...');
+      await Future.delayed(const Duration(milliseconds: 100));
+      final timer6 = Stopwatch()..start();
+      await _checkNetworkConnectivity(result);
+      timer6.stop();
+      Global.logger.d('✓ 检查网络连接: ${timer6.elapsedMilliseconds}ms');
+      onProgress?.call(6, '检查网络连接...', result: result);
+      await Future.delayed(const Duration(milliseconds: 200));
+      
+      // 7. 检查后端服务器连通性
+      onProgress?.call(7, '检查后端服务器连通性...');
+      await Future.delayed(const Duration(milliseconds: 100));
+      final timer7 = Stopwatch()..start();
+      await _checkBackendServer(result);
+      timer7.stop();
+      Global.logger.d('✓ 检查后端服务器: ${timer7.elapsedMilliseconds}ms');
+      onProgress?.call(7, '检查后端服务器连通性...', result: result);
+      await Future.delayed(const Duration(milliseconds: 200));
+      
+      // 8. 检查游戏服务器连通性
+      onProgress?.call(8, '检查游戏服务器连通性...');
+      await Future.delayed(const Duration(milliseconds: 100));
+      final timer8 = Stopwatch()..start();
+      await _checkGameServer(result);
+      timer8.stop();
+      Global.logger.d('✓ 检查游戏服务器: ${timer8.elapsedMilliseconds}ms');
+      onProgress?.call(8, '检查游戏服务器连通性...', result: result);
+      await Future.delayed(const Duration(milliseconds: 200));
+      
       stopwatch.stop();
       Global.logger.d('✓ 数据完整性诊断完成，总耗时: ${stopwatch.elapsedMilliseconds}ms');
-      onProgress?.call(5, '诊断完成！');
+      onProgress?.call(8, '诊断完成！');
       await Future.delayed(const Duration(milliseconds: 100)); // 给UI一点时间显示
       
     } catch (e) {
@@ -519,6 +553,81 @@ class DataIntegrityChecker {
       }
     } catch (e) {
       fixResult.addError('修复用户数据库版本时出错: $e');
+    }
+  }
+
+  /// 检查网络连接
+  Future<void> _checkNetworkConnectivity(IntegrityCheckResult result) async {
+    try {
+      final networkUtil = NetworkUtil();
+      final isConnected = await networkUtil.isConnected();
+      
+      if (!isConnected) {
+        result.addIssue('网络不可用', '设备未连接到网络或无法访问互联网', 'network_connectivity');
+      } else {
+        final connectionType = await networkUtil.getConnectionType();
+        Global.logger.d('网络连接正常，连接类型: $connectionType');
+      }
+    } catch (e) {
+      Global.logger.e('检查网络连接时出错: $e');
+      result.addIssue('网络检查失败', '无法检查网络连接状态: $e', 'network_connectivity');
+    }
+  }
+
+  /// 检查后端服务器连通性
+  Future<void> _checkBackendServer(IntegrityCheckResult result) async {
+    try {
+      // 使用 Dio 直接调用API
+      final dio = Dio(BaseOptions(
+        baseUrl: Config.serviceUrl,
+        connectTimeout: const Duration(seconds: 5),
+      ));
+      
+      // 尝试调用一个简单的API来检查后端连通性
+      final response = await dio.get(
+        '/getGameHallData.do',
+        options: Options(validateStatus: (status) => status! < 500), // 允许非200状态码
+      );
+      
+      if (response.statusCode != null && response.statusCode! < 500) {
+        Global.logger.d('后端服务器连通性正常，状态码: ${response.statusCode}');
+      } else {
+        result.addIssue('后端服务器无响应', '后端服务器返回错误状态: ${response.statusCode}', 'backend_server');
+      }
+    } catch (e) {
+      Global.logger.e('检查后端服务器时出错: $e');
+      result.addIssue('后端服务器连接失败', '无法连接到后端服务器: ${e.toString().substring(0, e.toString().length > 50 ? 50 : e.toString().length)}', 'backend_server');
+    }
+  }
+
+  /// 检查游戏服务器连通性
+  Future<void> _checkGameServer(IntegrityCheckResult result) async {
+    try {
+      // 检查 socket.io 连接状态
+      final socketClient = SocketIoClient.instance;
+      
+      // 尝试连接socket服务器
+      socketClient.connect();
+      
+      // 等待一小段时间让连接建立
+      await Future.delayed(const Duration(seconds: 2));
+      
+      // 检查连接状态
+      if (socketClient.isConnectedToSocketServer) {
+        Global.logger.d('游戏服务器连接正常');
+        // 检查完后立即断开
+        socketClient.disconnect();
+      } else {
+        result.addIssue('游戏服务器连接失败', '无法建立WebSocket连接到游戏服务器', 'game_server');
+        socketClient.disconnect();
+      }
+    } catch (e) {
+      Global.logger.e('检查游戏服务器时出错: $e');
+      result.addIssue('游戏服务器检查失败', '检查游戏服务器连接时出错: ${e.toString().substring(0, e.toString().length > 50 ? 50 : e.toString().length)}', 'game_server');
+      // 确保断开连接
+      try {
+        SocketIoClient.instance.disconnect();
+      } catch (_) {}
     }
   }
 }
