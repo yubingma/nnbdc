@@ -131,6 +131,11 @@ class _DictionaryManagementWidgetState extends State<DictionaryManagementWidget>
         ),
         actions: [
           IconButton(
+            onPressed: _showDiagnosticDialog,
+            icon: const Icon(Icons.health_and_safety, color: Colors.white),
+            tooltip: '数据诊断',
+          ),
+          IconButton(
             onPressed: _loadDictionaryData,
             icon: const Icon(Icons.refresh, color: Colors.white),
             tooltip: '刷新',
@@ -424,6 +429,40 @@ class _DictionaryManagementWidgetState extends State<DictionaryManagementWidget>
     showDialog(
       context: context,
       builder: (context) => _DictionaryDetailsDialog(dict: dict),
+    );
+  }
+
+  void _showDiagnosticDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(
+              Icons.health_and_safety,
+              color: AppTheme.primaryColor,
+            ),
+            const SizedBox(width: 8),
+            const Text(
+              '数据完整性诊断',
+              textScaler: TextScaler.linear(1.0),
+            ),
+          ],
+        ),
+        content: const Text(
+          '数据完整性诊断功能开发中...\n\n将支持以下检查：\n• 词典单词序号连续性\n• 词典单词数量一致性\n• 学习进度合理性\n• 用户数据库版本一致性\n• 通用词典完整性',
+          textScaler: TextScaler.linear(1.0),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text(
+              '关闭',
+              textScaler: TextScaler.linear(1.0),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
