@@ -63,18 +63,10 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
   }
 
   Widget _buildContent(bool isDarkMode) {
-    if (_isRunning) {
-      return _buildLoadingState(isDarkMode);
-    }
-
-    if (_checkResult == null) {
-      return _buildInitialState(isDarkMode);
-    }
-
-    return _buildResultsState(isDarkMode);
+    return _buildMainState(isDarkMode);
   }
 
-  Widget _buildLoadingState(bool isDarkMode) {
+  Widget _buildMainState(bool isDarkMode) {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -102,7 +94,7 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    '此功能将检查您的系统和数据健康状态：',
+                    '检查您的系统和数据健康状态：',
                     style: TextStyle(
                       fontSize: 14,
                       color: isDarkMode ? Colors.grey[300] : Colors.grey[700],
@@ -119,62 +111,18 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
               ),
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInitialState(bool isDarkMode) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                Row(
-                  children: [
-                    Icon(Icons.info_outline, color: AppTheme.primaryColor),
-                    const SizedBox(width: 8),
-                    Text(
-                      '健康检查',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: isDarkMode ? Colors.white : Colors.black87,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  '此功能将检查您相关的数据完整性：',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: isDarkMode ? Colors.grey[300] : Colors.grey[700],
-                  ),
-                ),
-                const SizedBox(height: 8),
-                _buildCheckItem('您的词典单词序号连续性', isDarkMode),
-                _buildCheckItem('您的词典单词数量一致性', isDarkMode),
-                _buildCheckItem('您的学习进度合理性', isDarkMode),
-                _buildCheckItem('您的数据库版本一致性', isDarkMode),
-                _buildCheckItem('通用词典完整性', isDarkMode),
-                ],
-              ),
-            ),
-          ),
+          // 显示检查结果提示
+          if (_checkResult != null) ...[
+            const SizedBox(height: 16),
+            _buildResultSummary(isDarkMode),
+          ],
           const SizedBox(height: 24),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
-              onPressed: _runDiagnostic,
-              icon: const Icon(Icons.search),
-              label: const Text('开始诊断'),
+              onPressed: _isRunning ? null : _runDiagnostic,
+              icon: Icon(_isRunning ? Icons.hourglass_empty : Icons.search),
+              label: Text(_isRunning ? '检查中...' : (_checkResult == null ? '开始检查' : '重新检查')),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.primaryColor,
                 foregroundColor: Colors.white,
@@ -183,6 +131,53 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildResultSummary(bool isDarkMode) {
+    final isHealthy = _checkResult!.isHealthy;
+    final totalIssues = _checkResult!.totalIssues;
+    
+    return Card(
+      color: isDarkMode ? const Color(0xFF2D2D2D) : Colors.white,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Icon(
+              isHealthy ? Icons.check_circle : Icons.warning,
+              color: isHealthy ? Colors.green : Colors.orange,
+              size: 24,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    isHealthy ? '检查完成，所有项目正常' : '发现 $totalIssues 个问题',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: isDarkMode ? Colors.white : Colors.black87,
+                    ),
+                  ),
+                  if (!isHealthy) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      '请查看上述检查项了解详情',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: isDarkMode ? Colors.grey[300] : Colors.grey[700],
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -258,128 +253,17 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
     );
   }
 
-  Widget _buildResultsState(bool isDarkMode) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 诊断结果概览
-          _buildResultSummary(isDarkMode),
-          const SizedBox(height: 16),
-          
-          // 错误信息
-          if (_checkResult!.hasErrors) ...[
-            _buildErrorSection(isDarkMode),
-            const SizedBox(height: 16),
-          ],
-          
-          // 问题列表
-          if (_checkResult!.hasIssues) ...[
-            _buildIssuesSection(isDarkMode),
-            const SizedBox(height: 16),
-          ],
-          
-          // 修复结果
-          if (_fixResult != null) ...[
-            _buildFixResultsSection(isDarkMode),
-            const SizedBox(height: 16),
-          ],
-          
-          // 操作按钮
-          _buildActionButtons(isDarkMode),
-        ],
-      ),
-    );
-  }
 
-  Widget _buildResultSummary(bool isDarkMode) {
-    final isHealthy = _checkResult!.isHealthy;
-    final totalIssues = _checkResult!.totalIssues;
-    
-    return Card(
-      color: isDarkMode ? const Color(0xFF2D2D2D) : Colors.white,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  isHealthy ? Icons.check_circle : Icons.warning,
-                  color: isHealthy ? Colors.green : Colors.orange,
-                  size: 24,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  isHealthy ? '数据完整性良好' : '发现数据问题',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: isDarkMode ? Colors.white : Colors.black87,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              isHealthy 
-                ? '所有数据检查通过，未发现问题。'
-                : '共发现 $totalIssues 个问题需要处理。',
-              style: TextStyle(
-                fontSize: 14,
-                color: isDarkMode ? Colors.grey[300] : Colors.grey[700],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
-  Widget _buildErrorSection(bool isDarkMode) {
-    return Card(
-      color: isDarkMode ? const Color(0xFF2D2D2D) : Colors.white,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.error, color: Colors.red, size: 20),
-                const SizedBox(width: 8),
-                Text(
-                  '检查错误 (${_checkResult!.errors.length})',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.red,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            ..._checkResult!.errors.map((error) => Padding(
-              padding: const EdgeInsets.symmetric(vertical: 2),
-              child: Text(
-                '• $error',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: isDarkMode ? Colors.grey[300] : Colors.grey[700],
-                ),
-              ),
-            )),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildIssuesSection(bool isDarkMode) {
-    return Card(
-      color: isDarkMode ? const Color(0xFF2D2D2D) : Colors.white,
+  Future<void> _runDiagnostic() async {
+    // 重置所有检查状态
+    setState(() {
+      _isRunning = true;
+      _checkResult = null;
+      _fixResult = null;
+      _checkStates.clear();
+      _checkMessages.clear();
+    });
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
