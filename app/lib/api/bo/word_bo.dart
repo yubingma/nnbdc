@@ -594,39 +594,50 @@ class WordBo {
       final wordQuery = db.select(db.words)..where((w) => w.id.isIn(wordIds));
       final wordEntries = await wordQuery.get();
       final wordMap = {for (var word in wordEntries) word.id: word};
-      final currentUser = await Global.refreshLoggedInUser();
-      if (currentUser == null || currentUser.id == null) {
-        Global.logger.e("获取词典单词失败: 用户未登录或用户ID为空");
-        return PagedResults<DictWordVo>(0);
-      }
-      final learningDictsQuery = db.select(db.learningDicts)
-        ..where((tbl) => tbl.userId.equals(currentUser.id!));
-      final learningDicts = await learningDictsQuery.get();
-      final selectedDictIds = learningDicts.map((d) => d.dictId).toList();
-      final meaningItemQuery = db.select(db.meaningItems)
-        ..where((mi) => mi.wordId.isIn(wordIds) & mi.dictId.isIn(selectedDictIds))
+      // 1) 先取本词书(dictId)的定制释义
+      final dictSpecificMeaningQuery = db.select(db.meaningItems)
+        ..where((mi) => mi.wordId.isIn(wordIds) & mi.dictId.equals(dictId))
         ..orderBy([(mi) => OrderingTerm(expression: mi.popularity)]);
-      final meaningItems = await meaningItemQuery.get();
-      final wordsWithoutMeaning = wordIds
-          .where((wordId) => !meaningItems.any((mi) => mi.wordId == wordId))
+      final dictSpecificMeaningItems = await dictSpecificMeaningQuery.get();
+
+      final meaningItemsMap = <String, List<MeaningItem>>{};
+      for (final mi in dictSpecificMeaningItems) {
+        (meaningItemsMap[mi.wordId] ??= []).add(mi);
+      }
+
+      // 2) 对没有定制释义的单词，回退到通用释义，并按本词书的 popularityLimit 进行过滤
+      final wordsWithoutCustom = wordIds
+          .where((wordId) => !meaningItemsMap.containsKey(wordId) || (meaningItemsMap[wordId]?.isEmpty ?? true))
           .toList();
-      if (wordsWithoutMeaning.isNotEmpty) {
+
+      int? popularityLimit;
+      final currDict = await db.dictsDao.findById(dictId);
+      if (currDict != null) {
+        popularityLimit = currDict.popularityLimit;
+      }
+
+      if (wordsWithoutCustom.isNotEmpty) {
         final commonDictQuery = db.select(db.meaningItems)
-          ..where((mi) => mi.wordId.isIn(wordsWithoutMeaning) & mi.dictId.equals(Global.commonDictId))
+          ..where((mi) => mi.wordId.isIn(wordsWithoutCustom) & mi.dictId.equals(Global.commonDictId))
           ..orderBy([(mi) => OrderingTerm(expression: mi.popularity)]);
         final commonMeaningItems = await commonDictQuery.get();
-        meaningItems.addAll(commonMeaningItems);
-      }
-      final meaningItemsMap = <String, List<MeaningItem>>{};
-      for (var mi in meaningItems) {
-        if (!meaningItemsMap.containsKey(mi.wordId)) {
-          meaningItemsMap[mi.wordId] = [];
+
+        for (final mi in commonMeaningItems) {
+          if (popularityLimit == null || mi.popularity <= popularityLimit) {
+            (meaningItemsMap[mi.wordId] ??= []).add(mi);
+          }
         }
-        meaningItemsMap[mi.wordId]!.add(mi);
       }
-      final meaningItemIds = meaningItems.map((mi) => mi.id).toList();
+
+      // 3) 批量查询被选中释义的例句
+      final selectedMeaningItemIds = <String>[];
+      for (final list in meaningItemsMap.values) {
+        for (final mi in list) {
+          selectedMeaningItemIds.add(mi.id);
+        }
+      }
       final sentenceQuery = db.select(db.sentences)
-        ..where((s) => s.meaningItemId.isIn(meaningItemIds));
+        ..where((s) => s.meaningItemId.isIn(selectedMeaningItemIds));
       final sentences = await sentenceQuery.get();
       final sentencesMap = <String, List<Sentence>>{};
       for (var s in sentences) {
