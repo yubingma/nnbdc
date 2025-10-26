@@ -23,7 +23,7 @@ import 'package:nnbdc/util/utils.dart';
 import "package:percent_indicator/percent_indicator.dart";
 import 'package:provider/provider.dart';
 import 'package:nnbdc/widget/dict_download_dialog.dart';
-import 'package:nnbdc/page/admin/data_diagnostic.dart';
+import 'package:nnbdc/page/admin/health_check.dart';
 
 import '../config.dart';
 import '../global.dart';
@@ -1762,7 +1762,7 @@ class _MePageState extends State<MePage> {
   void _navigateToDataDiagnostic() {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => const DataDiagnosticPage(),
+        builder: (context) => const HealthCheckPage(),
       ),
     );
   }

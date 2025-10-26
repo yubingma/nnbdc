@@ -51,9 +51,9 @@ class DataIntegrityChecker {
     final stopwatch = Stopwatch()..start();
     
     try {
-      onProgress?.call(0, '开始数据完整性诊断...');
+      onProgress?.call(0, '开始健康检查...');
       await Future.delayed(const Duration(milliseconds: 200)); // 给UI一点时间显示
-      Global.logger.d('开始数据完整性诊断...');
+      Global.logger.d('开始健康检查...');
       
       // 1. 检查用户词典单词序号连续性
       onProgress?.call(1, '检查词典单词序号连续性...');
@@ -136,8 +136,8 @@ class DataIntegrityChecker {
       await Future.delayed(const Duration(milliseconds: 200));
       
       stopwatch.stop();
-      Global.logger.d('✓ 数据完整性诊断完成，总耗时: ${stopwatch.elapsedMilliseconds}ms');
-      onProgress?.call(8, '诊断完成！');
+      Global.logger.d('✓ 健康检查完成，总耗时: ${stopwatch.elapsedMilliseconds}ms');
+      onProgress?.call(8, '检查完成！');
       await Future.delayed(const Duration(milliseconds: 100)); // 给UI一点时间显示
       
     } catch (e) {

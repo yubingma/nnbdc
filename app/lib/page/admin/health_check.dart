@@ -5,15 +5,15 @@ import 'package:nnbdc/theme/app_theme.dart';
 import 'package:nnbdc/util/data_integrity_checker.dart';
 import 'package:provider/provider.dart';
 
-/// 数据诊断页面
-class DataDiagnosticPage extends StatefulWidget {
-  const DataDiagnosticPage({super.key});
+/// 健康检查页面
+class HealthCheckPage extends StatefulWidget {
+  const HealthCheckPage({super.key});
 
   @override
-  State<DataDiagnosticPage> createState() => _DataDiagnosticPageState();
+  State<HealthCheckPage> createState() => _HealthCheckPageState();
 }
 
-class _DataDiagnosticPageState extends State<DataDiagnosticPage> {
+class _HealthCheckPageState extends State<HealthCheckPage> {
   bool _isRunning = false;
   IntegrityCheckResult? _checkResult;
   IntegrityFixResult? _fixResult;
@@ -42,7 +42,7 @@ class _DataDiagnosticPageState extends State<DataDiagnosticPage> {
     return Scaffold(
       backgroundColor: backgroundColor,
       appBar: AppBar(
-        title: const Text('故障诊断'),
+        title: const Text('健康检查'),
         backgroundColor: AppTheme.primaryColor,
         foregroundColor: Colors.white,
         leading: IconButton(
@@ -91,7 +91,7 @@ class _DataDiagnosticPageState extends State<DataDiagnosticPage> {
                       Icon(Icons.info_outline, color: AppTheme.primaryColor),
                       const SizedBox(width: 8),
                       Text(
-                        '数据完整性诊断',
+                        '健康检查',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -102,7 +102,7 @@ class _DataDiagnosticPageState extends State<DataDiagnosticPage> {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    '此功能将检查您相关的数据完整性：',
+                    '此功能将检查您的系统和数据健康状态：',
                     style: TextStyle(
                       fontSize: 14,
                       color: isDarkMode ? Colors.grey[300] : Colors.grey[700],
@@ -141,7 +141,7 @@ class _DataDiagnosticPageState extends State<DataDiagnosticPage> {
                     Icon(Icons.info_outline, color: AppTheme.primaryColor),
                     const SizedBox(width: 8),
                     Text(
-                      '数据完整性诊断',
+                      '健康检查',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,

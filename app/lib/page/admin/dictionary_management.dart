@@ -443,13 +443,13 @@ class _DictionaryManagementWidgetState extends State<DictionaryManagementWidget>
             ),
             const SizedBox(width: 8),
             const Text(
-              '数据完整性诊断',
+              '健康检查',
               textScaler: TextScaler.linear(1.0),
             ),
           ],
         ),
         content: const Text(
-          '数据完整性诊断功能开发中...\n\n将支持以下检查：\n• 词典单词序号连续性\n• 词典单词数量一致性\n• 学习进度合理性\n• 用户数据库版本一致性\n• 通用词典完整性',
+          '健康检查功能\n\n将检查以下项目：\n• 词典单词序号连续性\n• 词典单词数量一致性\n• 学习进度合理性\n• 用户数据库版本一致性\n• 通用词典完整性\n• 网络连接\n• 后端服务器连通性\n• 游戏服务器连通性',
           textScaler: TextScaler.linear(1.0),
         ),
         actions: [
