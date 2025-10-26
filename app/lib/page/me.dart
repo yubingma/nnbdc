@@ -1040,7 +1040,7 @@ class _MePageState extends State<MePage> {
               ),
               _buildMenuTile(
                 icon: Icons.health_and_safety,
-                title: '故障诊断',
+                title: '健康检查',
                 onTap: () => _navigateToDataDiagnostic(),
               ),
               if (Config.showDbButton)

@@ -514,10 +514,10 @@ public class DictBo extends BaseBo<Dict> {
             
             // 5. 检查并修复学习进度
             String fixLearningProgressSql = """
-                UPDATE learning_dict ld 
-                SET currentWordSeq = LEAST(ld.currentWordSeq, d.wordCount)
-                FROM dict d 
-                WHERE ld.dictId = d.id AND ld.dictId = ? AND ld.currentWordSeq > d.wordCount
+                UPDATE learning_dict ld
+                JOIN dict d ON ld.dictId = d.id
+                SET ld.currentWordSeq = LEAST(ld.currentWordSeq, d.wordCount)
+                WHERE ld.dictId = ? AND ld.currentWordSeq > d.wordCount
             """;
             session.createNativeQuery(fixLearningProgressSql)
                 .setParameter(1, dictId)
