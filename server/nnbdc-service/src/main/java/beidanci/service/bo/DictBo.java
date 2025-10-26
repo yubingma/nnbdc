@@ -525,4 +525,94 @@ public class DictBo extends BaseBo<Dict> {
         }
     }
 
+    // ============================================
+    // 系统健康检查相关方法
+    // ============================================
+
+    /**
+     * 获取系统词典ID列表
+     */
+    public List<String> getSystemDictIds() {
+        String hql = "SELECT d.id FROM Dict d WHERE d.owner.id = :ownerId";
+        Query<String> query = getSession().createQuery(hql, String.class);
+        query.setParameter("ownerId", Constants.SYS_USER_SYS_ID);
+        return query.list();
+    }
+
+    /**
+     * 获取用户词典ID列表
+     */
+    public List<String> getUserDictIds() {
+        String hql = "SELECT d.id FROM Dict d WHERE d.owner.id != :ownerId";
+        Query<String> query = getSession().createQuery(hql, String.class);
+        query.setParameter("ownerId", Constants.SYS_USER_SYS_ID);
+        return query.list();
+    }
+
+    /**
+     * 检查词典单词序号连续性
+     */
+    public List<Object[]> checkDictWordSequence(String dictId) {
+        String sql = """
+            SELECT dw.wordId, dw.seq, w.spell
+            FROM dict_word dw
+            JOIN word w ON dw.wordId = w.id
+            WHERE dw.dictId = :dictId
+            ORDER BY dw.seq ASC
+            """;
+        Query<Object[]> query = getSession().createNativeQuery(sql, Object[].class);
+        query.setParameter("dictId", dictId);
+        return query.list();
+    }
+
+    /**
+     * 获取词典实际单词数量
+     */
+    public Long getDictWordCount(String dictId) {
+        String hql = "SELECT COUNT(*) FROM DictWord dw WHERE dw.dict.id = :dictId";
+        Query<Long> query = getSession().createQuery(hql, Long.class);
+        query.setParameter("dictId", dictId);
+        return query.uniqueResult();
+    }
+
+    /**
+     * 获取词典记录的单词数量
+     */
+    public Integer getDictRecordedWordCount(String dictId) {
+        String hql = "SELECT d.wordCount FROM Dict d WHERE d.id = :dictId";
+        Query<Integer> query = getSession().createQuery(hql, Integer.class);
+        query.setParameter("dictId", dictId);
+        return query.uniqueResult();
+    }
+
+    /**
+     * 修复词典单词序号
+     */
+    public void fixDictWordSequence(String dictId) {
+        String sql = """
+            UPDATE dict_word dw1
+            JOIN (
+                SELECT dw2.wordId, ROW_NUMBER() OVER (ORDER BY dw2.seq) as new_seq
+                FROM dict_word dw2
+                WHERE dw2.dictId = :dictId
+            ) ranked ON dw1.wordId = ranked.wordId
+            SET dw1.seq = ranked.new_seq
+            WHERE dw1.dictId = :dictId
+            """;
+        Query<?> query = getSession().createNativeQuery(sql);
+        query.setParameter("dictId", dictId);
+        query.executeUpdate();
+    }
+
+    /**
+     * 更新词典单词数量
+     */
+    public void updateDictWordCount(String dictId, Integer newCount) {
+        String hql = "UPDATE Dict d SET d.wordCount = :newCount WHERE d.id = :dictId";
+        Query<?> query = getSession().createQuery(hql);
+        query.setParameter("newCount", newCount);
+        query.setParameter("dictId", dictId);
+        query.executeUpdate();
+    }
+
 }

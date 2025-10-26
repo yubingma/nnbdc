@@ -188,4 +188,39 @@ public class LearningDictBo extends BaseBo<LearningDict> {
         }
         return filters;
     }
+
+    // ============================================
+    // 系统健康检查相关方法
+    // ============================================
+
+    /**
+     * 查找学习进度异常的记录
+     */
+    public List<Object[]> findInvalidLearningProgress() {
+        String sql = """
+            SELECT ld.userId, ld.dictId, ld.currentWordSeq, d.wordCount
+            FROM learning_dict ld
+            JOIN dict d ON ld.dictId = d.id
+            WHERE ld.currentWordSeq > d.wordCount
+            ORDER BY ld.userId, ld.dictId
+            """;
+        Query<Object[]> query = getSession().createNativeQuery(sql, Object[].class);
+        return query.list();
+    }
+
+    /**
+     * 修复学习进度
+     */
+    public void fixLearningProgress(String userId, String dictId, Integer correctSeq) {
+        String sql = """
+            UPDATE learning_dict
+            SET currentWordSeq = :correctSeq
+            WHERE userId = :userId AND dictId = :dictId
+            """;
+        Query<?> query = getSession().createNativeQuery(sql);
+        query.setParameter("correctSeq", correctSeq);
+        query.setParameter("userId", userId);
+        query.setParameter("dictId", dictId);
+        query.executeUpdate();
+    }
 }

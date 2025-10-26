@@ -232,4 +232,27 @@ public class SentenceBo extends BaseBo<Sentence> {
             return "{}";
         }
     }
+
+    // ============================================
+    // 系统健康检查相关方法
+    // ============================================
+
+    /**
+     * 查找缺少例句的释义项
+     */
+    public List<String> findMeaningsWithoutSentences(String dictId) {
+        String sql = """
+            SELECT mi.id
+            FROM meaning_item mi
+            WHERE mi.dictId = :dictId
+            AND mi.id NOT IN (
+                SELECT s.meaningItemId
+                FROM sentence s
+                WHERE s.meaningItemId = mi.id
+            )
+            """;
+        Query<String> query = getSession().createNativeQuery(sql, String.class);
+        query.setParameter("dictId", dictId);
+        return query.list();
+    }
 }

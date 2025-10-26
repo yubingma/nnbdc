@@ -105,4 +105,27 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
         Query<?> query = getSession().createNativeQuery(sql);
         return query.executeUpdate();
     }
+
+    // ============================================
+    // 系统健康检查相关方法
+    // ============================================
+
+    /**
+     * 查找缺少释义项的单词
+     */
+    public List<String> findWordsWithoutMeanings(String dictId) {
+        String sql = """
+            SELECT dw.wordId
+            FROM dict_word dw
+            WHERE dw.dictId = :dictId
+            AND dw.wordId NOT IN (
+                SELECT mi.wordId
+                FROM meaning_item mi
+                WHERE mi.dictId = :dictId
+            )
+            """;
+        Query<String> query = getSession().createNativeQuery(sql, String.class);
+        query.setParameter("dictId", dictId);
+        return query.list();
+    }
 }

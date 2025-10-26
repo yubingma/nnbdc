@@ -85,7 +85,7 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
                         '健康检查',
                         style: TextStyle(
                           fontSize: 18,
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w400,
                           color: isDarkMode ? Colors.white : Colors.black87,
                         ),
                       ),
@@ -158,7 +158,7 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
                     isHealthy ? '检查完成，所有项目正常' : '发现 $totalIssues 个问题',
                     style: TextStyle(
                       fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w400,
                       color: isDarkMode ? Colors.white : Colors.black87,
                     ),
                   ),

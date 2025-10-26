@@ -1,8 +1,13 @@
 package beidanci.service.dao;
 
+import java.util.List;
 import java.util.Optional;
 
+import javax.annotation.Resource;
+
 import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.query.Query;
 import org.springframework.stereotype.Repository;
 
 import beidanci.service.po.User;
@@ -12,6 +17,13 @@ import beidanci.util.Constants;
 
 @Repository
 public class UserDbVersionDao extends BaseDao<UserDbVersion> {
+    
+    @Resource(name = "sessionFactory")
+    private SessionFactory sessionFactory;
+    
+    public Session getSession() {
+        return sessionFactory.getCurrentSession();
+    }
 
     /**
      * 获取用户数据库版本（不加锁，仅用于只读查询）
@@ -107,5 +119,44 @@ public class UserDbVersionDao extends BaseDao<UserDbVersion> {
                 session.flush();
             }
         }
+    }
+
+    // ============================================
+    // 系统健康检查相关方法
+    // ============================================
+
+    /**
+     * 获取所有用户的当前数据库版本
+     */
+    public List<Object[]> getAllUserVersions() {
+        String sql = """
+            SELECT udv.userId, udv.version
+            FROM user_db_version udv
+            ORDER BY udv.version DESC
+            """;
+        Query<Object[]> query = getSession().createNativeQuery(sql, Object[].class);
+        return query.list();
+    }
+
+    /**
+     * 统计用户异常日志数量
+     */
+    public Integer countInvalidLogs(String userId, Integer currentVersion) {
+        String hql = "SELECT COUNT(*) FROM UserDbLog udl WHERE udl.user.id = :userId AND udl.version > :currentVersion";
+        Query<Long> query = getSession().createQuery(hql, Long.class);
+        query.setParameter("userId", userId);
+        query.setParameter("currentVersion", currentVersion);
+        return query.uniqueResult().intValue();
+    }
+
+    /**
+     * 删除异常日志
+     */
+    public void deleteInvalidLogs(String userId, Integer currentVersion) {
+        String hql = "DELETE FROM UserDbLog udl WHERE udl.user.id = :userId AND udl.version > :currentVersion";
+        Query<?> query = getSession().createQuery(hql);
+        query.setParameter("userId", userId);
+        query.setParameter("currentVersion", currentVersion);
+        query.executeUpdate();
     }
 }

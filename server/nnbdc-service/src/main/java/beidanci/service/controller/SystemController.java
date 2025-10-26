@@ -11,8 +11,11 @@ import org.springframework.web.bind.annotation.RestController;
 import beidanci.api.Result;
 import beidanci.api.model.SysDbLogDto;
 import beidanci.api.model.DictStatsVo;
+import beidanci.api.model.SystemHealthCheckResult;
+import beidanci.api.model.SystemHealthFixResult;
 import beidanci.service.bo.SysDbLogBo;
 import beidanci.service.bo.DictBo;
+import beidanci.service.bo.SystemHealthCheckBo;
 
 @RestController
 public class SystemController {
@@ -22,6 +25,9 @@ public class SystemController {
     
     @Autowired
     private DictBo dictBo;
+    
+    @Autowired
+    private SystemHealthCheckBo systemHealthCheckBo;
 
     // ============================================
     // 统一的系统数据版本控制
@@ -149,4 +155,87 @@ public class SystemController {
         }
     }
 
+    // ============================================
+    // 系统健康检查相关API
+    // ============================================
+
+    /**
+     * 检查系统词典完整性
+     */
+    @GetMapping("/admin/checkSystemDictIntegrity.do")
+    public Result<SystemHealthCheckResult> checkSystemDictIntegrity() {
+        try {
+            SystemHealthCheckResult result = systemHealthCheckBo.checkSystemDictIntegrity();
+            return Result.success(result);
+        } catch (Exception e) {
+            return Result.fail("检查系统词典完整性失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 检查用户词典完整性
+     */
+    @GetMapping("/admin/checkUserDictIntegrity.do")
+    public Result<SystemHealthCheckResult> checkUserDictIntegrity() {
+        try {
+            SystemHealthCheckResult result = systemHealthCheckBo.checkUserDictIntegrity();
+            return Result.success(result);
+        } catch (Exception e) {
+            return Result.fail("检查用户词典完整性失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 检查学习进度合理性
+     */
+    @GetMapping("/admin/checkLearningProgress.do")
+    public Result<SystemHealthCheckResult> checkLearningProgress() {
+        try {
+            SystemHealthCheckResult result = systemHealthCheckBo.checkLearningProgress();
+            return Result.success(result);
+        } catch (Exception e) {
+            return Result.fail("检查学习进度合理性失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 检查数据库版本一致性
+     */
+    @GetMapping("/admin/checkDbVersionConsistency.do")
+    public Result<SystemHealthCheckResult> checkDbVersionConsistency() {
+        try {
+            SystemHealthCheckResult result = systemHealthCheckBo.checkDbVersionConsistency();
+            return Result.success(result);
+        } catch (Exception e) {
+            return Result.fail("检查数据库版本一致性失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 检查通用词典完整性
+     */
+    @GetMapping("/admin/checkCommonDictIntegrity.do")
+    public Result<SystemHealthCheckResult> checkCommonDictIntegrity() {
+        try {
+            SystemHealthCheckResult result = systemHealthCheckBo.checkCommonDictIntegrity();
+            return Result.success(result);
+        } catch (Exception e) {
+            return Result.fail("检查通用词典完整性失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 自动修复系统问题
+     */
+    @PostMapping("/admin/autoFixSystemIssues.do")
+    public Result<SystemHealthFixResult> autoFixSystemIssues(
+            @RequestParam("issueTypes") List<String> issueTypes
+    ) {
+        try {
+            SystemHealthFixResult result = systemHealthCheckBo.autoFixSystemIssues(issueTypes);
+            return Result.success(result);
+        } catch (Exception e) {
+            return Result.fail("自动修复系统问题失败: " + e.getMessage());
+        }
+    }
 }
