@@ -181,14 +181,7 @@ jobs:
           $makensis = Get-Command makensis -ErrorAction SilentlyContinue
           if ($makensis) { & makensis "../platforms/windows/installer.nsi"; $nsisBuilt = Test-Path "nnbdc-setup.exe" }
 
-          if ($nsisBuilt) {
-            Move-Item "nnbdc-setup.exe" "$DEPLOY_DIR/nnbdc-setup.exe" -Force
-            Write-Host "安装包创建成功: nnbdc-setup.exe"
-          } else {
-            Write-Host "安装包创建失败或 NSIS 不可用，创建 ZIP 包作为备用"
-            Compress-Archive -Path "installer_temp/*" -DestinationPath "$DEPLOY_DIR/nnbdc-windows.zip" -Force
-            Write-Host "ZIP 包创建成功: nnbdc-windows.zip"
-          }
+          if ($nsisBuilt) { Move-Item "nnbdc-setup.exe" "$DEPLOY_DIR/nnbdc-setup.exe" -Force; Write-Host "安装包创建成功: nnbdc-setup.exe" } else { Write-Host "安装包创建失败或 NSIS 不可用，创建 ZIP 包作为备用"; Compress-Archive -Path "installer_temp/*" -DestinationPath "$DEPLOY_DIR/nnbdc-windows.zip" -Force; Write-Host "ZIP 包创建成功: nnbdc-windows.zip" }
 
           # 清理临时文件
           Remove-Item -Path "installer_temp" -Recurse -Force
