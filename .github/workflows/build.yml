@@ -192,8 +192,11 @@ jobs:
           $BUILD_NUMBER = ($VERSION -split "\+")[1]
           $VERSION_NUMBER = ($VERSION -split "\+")[0]
 
-          $JSON_CONTENT = '[{"verCode":{0},"verName":"{1}","changes":["修复已知问题，提升稳定性"]}]' -f $BUILD_NUMBER, $VERSION_NUMBER
-          $JSON_CONTENT | Out-File -FilePath "ver.json" -Encoding UTF8
+          $verCode = [int]$BUILD_NUMBER
+          $verName = $VERSION_NUMBER
+          $changes = @("修复已知问题，提升稳定性")
+          $payload = @(@{ verCode = $verCode; verName = $verName; changes = $changes })
+          $payload | ConvertTo-Json -Depth 3 -Compress | Out-File -FilePath "ver.json" -Encoding UTF8
 
           if (Test-Path "ver.json") { Copy-Item "ver.json" "$DEPLOY_DIR/ver.json" -Force; Write-Host "版本信息已更新: $VERSION_NUMBER ($BUILD_NUMBER)" }
         shell: pwsh
