@@ -1060,7 +1060,7 @@ class _MePageState extends State<MePage> {
                 const Divider(),
                 _buildMenuTile(
                   icon: Icons.admin_panel_settings,
-                  title: '管理页面',
+                  title: '系统管理',
                   onTap: () => Get.toNamed('/admin'),
                 ),
               ],

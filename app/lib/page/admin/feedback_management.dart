@@ -4,6 +4,7 @@ import 'package:nnbdc/api/api.dart';
 import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/theme/app_theme.dart';
+import 'package:nnbdc/util/loading_utils.dart';
 import 'package:provider/provider.dart';
 import 'package:nnbdc/state.dart';
 
@@ -28,7 +29,11 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
 
   Future<void> _loadMessages() async {
     try {
-      final messages = await Api.client.getAllAdviceMessages();
+      // 禁用API的自动loading，使用页面自己的loading
+      final messages = await LoadingUtils.withoutApiLoading(() async {
+        return await Api.client.getAllAdviceMessages();
+      });
+      
       final stats = <String, int>{};
       
       // 统计客户端类型分布

@@ -57,7 +57,7 @@ class _AdminPageState extends State<AdminPage> {
     return Scaffold(
       backgroundColor: backgroundColor,
       appBar: AppTheme.createGradientAppBar(
-        title: '管理页面',
+        title: '系统管理',
         leading: IconButton(
           onPressed: () => Navigator.pop(context),
           icon: const Icon(Icons.arrow_back, color: Colors.white),
@@ -102,7 +102,7 @@ class _AdminPageState extends State<AdminPage> {
     return Scaffold(
       backgroundColor: backgroundColor,
       appBar: AppBar(
-        title: const Text('管理页面'),
+        title: const Text('系统管理'),
         backgroundColor: AppTheme.primaryColor,
         foregroundColor: Colors.white,
         leading: IconButton(
@@ -116,12 +116,12 @@ class _AdminPageState extends State<AdminPage> {
 
   Widget _buildManagementGrid() {
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(8),
       child: GridView.count(
-        crossAxisCount: 2,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
-        childAspectRatio: 0.85,
+        crossAxisCount: 3,
+        crossAxisSpacing: 8,
+        mainAxisSpacing: 8,
+        childAspectRatio: 0.75,
         children: [
           _buildManagementCard(
             title: '意见建议',
@@ -185,64 +185,49 @@ class _AdminPageState extends State<AdminPage> {
     required VoidCallback onTap,
   }) {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    final cardColor = isDarkMode ? const Color(0xFF2D2D2D) : Colors.white;
     final textColor = isDarkMode ? Colors.white : Colors.black87;
 
-    return Card(
-      elevation: 4,
-      color: cardColor,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  icon,
-                  size: 28,
-                  color: color,
-                ),
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(4),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 24,
+              color: color,
+            ),
+            const SizedBox(height: 3),
+            Text(
+              title,
+              textScaler: const TextScaler.linear(1.0),
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+                color: textColor,
+                fontFamily: 'NotoSansSC',
               ),
-              const SizedBox(height: 8),
-              Text(
-                title,
-                textScaler: const TextScaler.linear(1.0),
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: textColor,
-                  fontFamily: 'NotoSansSC',
-                ),
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 1),
+            Text(
+              subtitle,
+              textScaler: const TextScaler.linear(1.0),
+              style: TextStyle(
+                fontSize: 8,
+                color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                fontFamily: 'NotoSansSC',
               ),
-              const SizedBox(height: 2),
-              Text(
-                subtitle,
-                textScaler: const TextScaler.linear(1.0),
-                style: TextStyle(
-                  fontSize: 11,
-                  color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                  fontFamily: 'NotoSansSC',
-                ),
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-          ),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
         ),
       ),
     );

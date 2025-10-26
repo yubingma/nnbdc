@@ -5,6 +5,7 @@ import 'package:nnbdc/api/bo/word_bo.dart';
 import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/state.dart';
 import 'package:nnbdc/theme/app_theme.dart';
+import 'package:nnbdc/util/loading_utils.dart';
 import 'package:provider/provider.dart';
 
 // 系统词典管理组件
@@ -36,7 +37,11 @@ class _DictionaryManagementWidgetState extends State<DictionaryManagementWidget>
 
   Future<void> _loadDictionaryData() async {
     try {
-      final result = await Api.client.getSystemDictsWithStats();
+      // 禁用API的自动loading，使用页面自己的loading
+      final result = await LoadingUtils.withoutApiLoading(() async {
+        return await Api.client.getSystemDictsWithStats();
+      });
+      
       if (result.success && result.data != null) {
         // 按选择率从高到低排序
         final sortedDictionaries = List<DictStatsVo>.from(result.data!);
