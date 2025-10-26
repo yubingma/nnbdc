@@ -23,6 +23,7 @@ import 'package:nnbdc/util/utils.dart';
 import "package:percent_indicator/percent_indicator.dart";
 import 'package:provider/provider.dart';
 import 'package:nnbdc/widget/dict_download_dialog.dart';
+import 'package:nnbdc/page/admin/data_diagnostic.dart';
 
 import '../config.dart';
 import '../global.dart';
@@ -1003,6 +1004,11 @@ class _MePageState extends State<MePage> {
                 title: '切换账号',
                 onTap: () => Get.toNamed('/email_login'),
               ),
+              _buildMenuTile(
+                icon: Icons.health_and_safety,
+                title: '数据诊断',
+                onTap: () => _navigateToDataDiagnostic(),
+              ),
               if (Config.showDbButton)
                 _buildMenuTile(
                   icon: Icons.storage,
@@ -1723,6 +1729,14 @@ class _MePageState extends State<MePage> {
               ),
               body: DriftDbViewer(MyDatabase.instance),
             )));
+  }
+
+  void _navigateToDataDiagnostic() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const DataDiagnosticPage(),
+      ),
+    );
   }
 
   // 菜单项组件

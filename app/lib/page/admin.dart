@@ -6,7 +6,6 @@ import 'package:provider/provider.dart';
 import 'package:nnbdc/state.dart';
 import 'package:nnbdc/page/admin/feedback_management.dart';
 import 'package:nnbdc/page/admin/dictionary_management.dart';
-import 'package:nnbdc/page/admin/data_diagnostic.dart';
 
 class AdminPage extends StatefulWidget {
   const AdminPage({super.key});
@@ -159,13 +158,6 @@ class _AdminPageState extends State<AdminPage> {
             onTap: () => _showComingSoon('数据统计'),
           ),
           _buildManagementCard(
-            title: '数据诊断',
-            subtitle: '检查数据完整性',
-            icon: Icons.health_and_safety,
-            color: const Color(0xFF4CAF50),
-            onTap: () => _navigateToDiagnostic(),
-          ),
-          _buildManagementCard(
             title: '日志管理',
             subtitle: '查看系统日志',
             icon: Icons.description,
@@ -266,14 +258,6 @@ class _AdminPageState extends State<AdminPage> {
     );
   }
 
-  void _navigateToDiagnostic() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const DataDiagnosticPage(),
-      ),
-    );
-  }
 
   void _showComingSoon(String feature) {
     ScaffoldMessenger.of(context).showSnackBar(
