@@ -137,8 +137,8 @@ class DataIntegrityChecker {
       
       stopwatch.stop();
       Global.logger.d('✓ 健康检查完成，总耗时: ${stopwatch.elapsedMilliseconds}ms');
-      onProgress?.call(8, '检查完成！');
-      await Future.delayed(const Duration(milliseconds: 100)); // 给UI一点时间显示
+      onProgress?.call(8, '检查完成！', result: result);
+      await Future.delayed(const Duration(milliseconds: 200)); // 给UI时间显示最后一项的结果
       
     } catch (e) {
       stopwatch.stop();

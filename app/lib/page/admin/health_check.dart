@@ -16,7 +16,6 @@ class HealthCheckPage extends StatefulWidget {
 class _HealthCheckPageState extends State<HealthCheckPage> {
   bool _isRunning = false;
   IntegrityCheckResult? _checkResult;
-  IntegrityFixResult? _fixResult;
   
   // 每项检查的状态：null=未开始, false=进行中, true=通过, 'failed'=失败
   final Map<int, dynamic> _checkStates = {}; // 1=序号, 2=数量, 3=学习进度, 4=版本, 5=通用词典
@@ -182,31 +181,7 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
     );
   }
 
-  Widget _buildCheckItem(String text, bool isDarkMode) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
-      child: Row(
-        children: [
-          Icon(
-            Icons.check_circle_outline,
-            size: 16,
-            color: AppTheme.primaryColor,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              text,
-              style: TextStyle(
-                fontSize: 13,
-                color: isDarkMode ? Colors.grey[300] : Colors.grey[700],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
+ 
   Widget _buildCheckItemWithStatus(String text, dynamic status, bool isDarkMode) {
     IconData icon;
     Color iconColor;
@@ -255,217 +230,12 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
 
 
 
-  Future<void> _runDiagnostic() async {
-    // 重置所有检查状态
-    setState(() {
-      _isRunning = true;
-      _checkResult = null;
-      _fixResult = null;
-      _checkStates.clear();
-      _checkMessages.clear();
-    });
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.warning, color: Colors.orange, size: 20),
-                const SizedBox(width: 8),
-                Text(
-                  '发现问题 (${_checkResult!.issues.length})',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.orange,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            ..._checkResult!.issues.map((issue) => Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: isDarkMode ? const Color(0xFF1A1A1A) : Colors.grey[50],
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: isDarkMode ? Colors.grey[700]! : Colors.grey[300]!,
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      issue.type,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: isDarkMode ? Colors.white : Colors.black87,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      issue.description,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: isDarkMode ? Colors.grey[300] : Colors.grey[700],
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        issue.category,
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: AppTheme.primaryColor,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            )),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFixResultsSection(bool isDarkMode) {
-    return Card(
-      color: isDarkMode ? const Color(0xFF2D2D2D) : Colors.white,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.build, color: Colors.blue, size: 20),
-                const SizedBox(width: 8),
-                Text(
-                  '修复结果',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: isDarkMode ? Colors.white : Colors.black87,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            if (_fixResult!.hasFixed) ...[
-              Text(
-                '已修复项目 (${_fixResult!.fixed.length})',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.green,
-                ),
-              ),
-              const SizedBox(height: 4),
-              ..._fixResult!.fixed.map((fix) => Padding(
-                padding: const EdgeInsets.symmetric(vertical: 2),
-                child: Row(
-                  children: [
-                    Icon(Icons.check, color: Colors.green, size: 16),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        fix,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: isDarkMode ? Colors.grey[300] : Colors.grey[700],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              )),
-            ],
-            if (_fixResult!.hasErrors) ...[
-              const SizedBox(height: 8),
-              Text(
-                '修复错误 (${_fixResult!.errors.length})',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.red,
-                ),
-              ),
-              const SizedBox(height: 4),
-              ..._fixResult!.errors.map((error) => Padding(
-                padding: const EdgeInsets.symmetric(vertical: 2),
-                child: Row(
-                  children: [
-                    Icon(Icons.error, color: Colors.red, size: 16),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        error,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: isDarkMode ? Colors.grey[300] : Colors.grey[700],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              )),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildActionButtons(bool isDarkMode) {
-    return Row(
-      children: [
-        Expanded(
-          child: OutlinedButton.icon(
-            onPressed: _runDiagnostic,
-            icon: const Icon(Icons.refresh),
-            label: const Text('重新诊断'),
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-            ),
-          ),
-        ),
-        if (_checkResult!.hasIssues) ...[
-          const SizedBox(width: 12),
-          Expanded(
-            child: ElevatedButton.icon(
-              onPressed: _isRunning ? null : _runAutoFix,
-              icon: const Icon(Icons.build),
-              label: const Text('自动修复'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryColor,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-              ),
-            ),
-          ),
-        ],
-      ],
-    );
-  }
 
   Future<void> _runDiagnostic() async {
     // 重置所有检查状态
     setState(() {
       _isRunning = true;
       _checkResult = null;
-      _fixResult = null;
       _checkStates.clear();
       _checkMessages.clear();
     });
@@ -512,7 +282,16 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
         },
       );
       
+      // 检查完成后，统一更新所有项的状态
       setState(() {
+        for (var item in _checkItems) {
+          final int itemId = item['id'] as int;
+          final String category = item['category'] as String;
+          // 检查是否有这个类别的问题
+          final hasIssue = checkResult.issues.any((issue) => issue.category == category);
+          _checkStates[itemId] = !hasIssue; // true=通过, false=有问题
+        }
+        
         _checkResult = checkResult;
         _isRunning = false;
       });
@@ -545,7 +324,6 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
       final fixResult = await checker.autoFix(_checkResult!);
       
       setState(() {
-        _fixResult = fixResult;
         _isRunning = false;
       });
 
