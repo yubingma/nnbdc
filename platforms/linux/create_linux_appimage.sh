@@ -1,8 +1,7 @@
 #!/bin/bash
 # Linux AppImage 创建脚本
 
-# 移除 set -e，允许错误处理逻辑
-# set -e
+set -e
 
 echo "[INFO] ======== 创建 Linux AppImage ========"
 
@@ -66,20 +65,14 @@ fi
 APPIMAGE_TOOL="appimagetool-x86_64.AppImage"
 if [ ! -f "$APPIMAGE_TOOL" ]; then
     echo "[INFO] 下载 AppImageTool..."
-    if ! wget -O "$APPIMAGE_TOOL" "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage" 2>/dev/null; then
-        echo "[ERROR] AppImageTool 下载失败，将回退到 TAR.GZ 格式"
-        exit 1
-    fi
+    wget -O "$APPIMAGE_TOOL" "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage"
     chmod +x "$APPIMAGE_TOOL"
 fi
 
 # 创建 AppImage
 APPIMAGE_NAME="nnbdc-linux.AppImage"
 echo "[INFO] 创建 AppImage..."
-if ! ./"$APPIMAGE_TOOL" "$TEMP_DIR" "$APPIMAGE_NAME" 2>/dev/null; then
-    echo "[ERROR] AppImage 创建失败（可能是 libfuse 问题），将回退到 TAR.GZ 格式"
-    exit 1
-fi
+./"$APPIMAGE_TOOL" "$TEMP_DIR" "$APPIMAGE_NAME"
 
 if [ -f "$APPIMAGE_NAME" ]; then
     echo "[INFO] AppImage 创建成功: $APPIMAGE_NAME"
