@@ -109,6 +109,7 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
                     item['title'] as String,
                     _checkStates[item['id'] as int],
                     isDarkMode,
+                    item['category'] as String,
                   )),
                 ],
               ),
@@ -185,9 +186,10 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
     );
   }
 
-  Widget _buildCheckItemWithStatus(String text, dynamic status, bool isDarkMode) {
+  Widget _buildCheckItemWithStatus(String text, dynamic status, bool isDarkMode, String category) {
     IconData icon;
     Color iconColor;
+    bool isFailed = false;
     
     if (status == null) {
       // 尚未检查，显示灰色时钟
@@ -205,6 +207,7 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
       // 失败，显示红色叉
       icon = Icons.cancel;
       iconColor = Colors.red;
+      isFailed = true;
     }
     
     return Padding(
@@ -225,6 +228,144 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
                 color: isDarkMode ? Colors.grey[300] : Colors.grey[700],
               ),
             ),
+          ),
+          // 失败时显示详情按钮
+          if (isFailed && _checkResult != null) ...[
+            const SizedBox(width: 8),
+            TextButton(
+              onPressed: () => _showIssueDetails(category, text),
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: const Text(
+                '详情',
+                style: TextStyle(fontSize: 12),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  // 显示问题详情对话框
+  void _showIssueDetails(String category, String title) {
+    if (_checkResult == null) return;
+    
+    // 根据 category 过滤出相关的问题
+    final relatedIssues = _checkResult!.issues
+        .where((issue) => issue.category == category)
+        .toList();
+    
+    if (relatedIssues.isEmpty) {
+      return;
+    }
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: relatedIssues.map((issue) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 问题类型
+                    Text(
+                      issue.type,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    // 问题描述
+                    Text(
+                      issue.description,
+                      style: const TextStyle(fontSize: 13),
+                    ),
+                    // 如果有日志信息，显示日志
+                    if (issue.logMessage != null) ...[
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[100],
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              '日志信息:',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              issue.logMessage!,
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontFamily: 'monospace',
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                    // 如果有堆栈跟踪，显示堆栈
+                    if (issue.stackTrace != null) ...[
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.red[50],
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              '异常堆栈:',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                                color: Colors.red,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              issue.stackTrace!,
+                              style: const TextStyle(
+                                fontSize: 10,
+                                fontFamily: 'monospace',
+                                color: Colors.red,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('关闭'),
           ),
         ],
       ),
@@ -317,8 +458,15 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
           _checkStates[step] = 'failed';
         });
       }
-    } catch (e) {
-      result.addIssue('系统词典完整性', '检查系统词典完整性时出错: $e', 'system_dict_integrity');
+    } catch (e, stackTrace) {
+      Global.logger.e('检查系统词典完整性时出错: $e', error: e, stackTrace: stackTrace);
+      result.addIssue(
+        '系统词典完整性', 
+        '检查系统词典完整性时出错: $e', 
+        'system_dict_integrity',
+        stackTrace: stackTrace.toString(),
+        logMessage: '系统词典完整性检查: $e',
+      );
       setState(() {
         _checkStates[step] = 'failed';
       });
@@ -354,8 +502,15 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
           _checkStates[step] = 'failed';
         });
       }
-    } catch (e) {
-      result.addIssue('用户词典完整性', '检查用户词典完整性时出错: $e', 'user_dict_integrity');
+    } catch (e, stackTrace) {
+      Global.logger.e('检查用户词典完整性时出错: $e', error: e, stackTrace: stackTrace);
+      result.addIssue(
+        '用户词典完整性', 
+        '检查用户词典完整性时出错: $e', 
+        'user_dict_integrity',
+        stackTrace: stackTrace.toString(),
+        logMessage: '用户词典完整性检查: $e',
+      );
       setState(() {
         _checkStates[step] = 'failed';
       });
@@ -391,8 +546,15 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
           _checkStates[step] = 'failed';
         });
       }
-    } catch (e) {
-      result.addIssue('学习进度合理性', '检查学习进度合理性时出错: $e', 'learning_progress');
+    } catch (e, stackTrace) {
+      Global.logger.e('检查学习进度合理性时出错: $e', error: e, stackTrace: stackTrace);
+      result.addIssue(
+        '学习进度合理性', 
+        '检查学习进度合理性时出错: $e', 
+        'learning_progress',
+        stackTrace: stackTrace.toString(),
+        logMessage: '学习进度合理性检查: $e',
+      );
       setState(() {
         _checkStates[step] = 'failed';
       });
@@ -428,8 +590,15 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
           _checkStates[step] = 'failed';
         });
       }
-    } catch (e) {
-      result.addIssue('数据库版本一致性', '检查数据库版本一致性时出错: $e', 'db_version');
+    } catch (e, stackTrace) {
+      Global.logger.e('检查数据库版本一致性时出错: $e', error: e, stackTrace: stackTrace);
+      result.addIssue(
+        '数据库版本一致性', 
+        '检查数据库版本一致性时出错: $e', 
+        'db_version',
+        stackTrace: stackTrace.toString(),
+        logMessage: '数据库版本一致性检查: $e',
+      );
       setState(() {
         _checkStates[step] = 'failed';
       });
@@ -465,8 +634,15 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
           _checkStates[step] = 'failed';
         });
       }
-    } catch (e) {
-      result.addIssue('通用词典完整性', '检查通用词典完整性时出错: $e', 'common_dict_integrity');
+    } catch (e, stackTrace) {
+      Global.logger.e('检查通用词典完整性时出错: $e', error: e, stackTrace: stackTrace);
+      result.addIssue(
+        '通用词典完整性', 
+        '检查通用词典完整性时出错: $e', 
+        'common_dict_integrity',
+        stackTrace: stackTrace.toString(),
+        logMessage: '通用词典完整性检查: $e',
+      );
       setState(() {
         _checkStates[step] = 'failed';
       });
@@ -494,9 +670,15 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
           _checkStates[step] = true; // 通过
         });
       }
-    } catch (e) {
-      Global.logger.e('检查网络连接时出错: $e');
-      result.addIssue('网络检查失败', '无法检查网络连接状态: $e', 'network_connectivity');
+    } catch (e, stackTrace) {
+      Global.logger.e('检查网络连接时出错: $e', error: e, stackTrace: stackTrace);
+      result.addIssue(
+        '网络检查失败', 
+        '无法检查网络连接状态: $e', 
+        'network_connectivity',
+        stackTrace: stackTrace.toString(),
+        logMessage: '网络连接检查: $e',
+      );
       setState(() {
         _checkStates[step] = 'failed';
       });
@@ -532,9 +714,15 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
           _checkStates[step] = 'failed';
         });
       }
-    } catch (e) {
-      Global.logger.e('检查后端服务器时出错: $e');
-      result.addIssue('后端服务器连接失败', '无法连接到后端服务器: ${e.toString().substring(0, e.toString().length > 50 ? 50 : e.toString().length)}', 'backend_server');
+    } catch (e, stackTrace) {
+      Global.logger.e('检查后端服务器时出错: $e', error: e, stackTrace: stackTrace);
+      result.addIssue(
+        '后端服务器连接失败', 
+        '无法连接到后端服务器: ${e.toString().substring(0, e.toString().length > 50 ? 50 : e.toString().length)}', 
+        'backend_server',
+        stackTrace: stackTrace.toString(),
+        logMessage: '后端服务器检查: $e',
+      );
       setState(() {
         _checkStates[step] = 'failed';
       });
@@ -571,9 +759,15 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
           _checkStates[step] = 'failed';
         });
       }
-    } catch (e) {
-      Global.logger.e('检查游戏服务器时出错: $e');
-      result.addIssue('游戏服务器检查失败', '检查游戏服务器连接时出错: ${e.toString().substring(0, e.toString().length > 50 ? 50 : e.toString().length)}', 'game_server');
+    } catch (e, stackTrace) {
+      Global.logger.e('检查游戏服务器时出错: $e', error: e, stackTrace: stackTrace);
+      result.addIssue(
+        '游戏服务器检查失败', 
+        '检查游戏服务器连接时出错: ${e.toString().substring(0, e.toString().length > 50 ? 50 : e.toString().length)}', 
+        'game_server',
+        stackTrace: stackTrace.toString(),
+        logMessage: '游戏服务器检查: $e',
+      );
       // 确保断开连接
       try {
         SocketIoClient.instance.disconnect();
@@ -690,8 +884,8 @@ class SystemHealthResult {
     errors.add(error);
   }
 
-  void addIssue(String type, String description, String category) {
-    issues.add(SystemHealthIssue(type, description, category));
+  void addIssue(String type, String description, String category, {String? stackTrace, String? logMessage}) {
+    issues.add(SystemHealthIssue(type, description, category, stackTrace: stackTrace, logMessage: logMessage));
   }
 
   bool hasIssue(String category) {
@@ -710,6 +904,8 @@ class SystemHealthIssue {
   final String type;
   final String description;
   final String category;
+  final String? stackTrace;
+  final String? logMessage;
 
-  SystemHealthIssue(this.type, this.description, this.category);
+  SystemHealthIssue(this.type, this.description, this.category, {this.stackTrace, this.logMessage});
 }

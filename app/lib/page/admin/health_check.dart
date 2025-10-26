@@ -106,6 +106,7 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
                     item['title'] as String,
                     _checkStates[item['id'] as int],
                     isDarkMode,
+                    item['category'] as String,
                   )),
                 ],
               ),
@@ -183,9 +184,10 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
   }
 
  
-  Widget _buildCheckItemWithStatus(String text, dynamic status, bool isDarkMode) {
+  Widget _buildCheckItemWithStatus(String text, dynamic status, bool isDarkMode, String category) {
     IconData icon;
     Color iconColor;
+    bool isFailed = false;
     
     if (status == null) {
       // 尚未检查，显示灰色时钟
@@ -203,6 +205,7 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
       // 失败，显示红色叉
       icon = Icons.cancel;
       iconColor = Colors.red;
+      isFailed = true;
     }
     
     return Padding(
@@ -223,6 +226,144 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
                 color: isDarkMode ? Colors.grey[300] : Colors.grey[700],
               ),
             ),
+          ),
+          // 失败时显示详情按钮
+          if (isFailed && _checkResult != null) ...[
+            const SizedBox(width: 8),
+            TextButton(
+              onPressed: () => _showIssueDetails(category, text),
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: const Text(
+                '详情',
+                style: TextStyle(fontSize: 12),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  // 显示问题详情对话框
+  void _showIssueDetails(String category, String title) {
+    if (_checkResult == null) return;
+    
+    // 根据 category 过滤出相关的问题
+    final relatedIssues = _checkResult!.issues
+        .where((issue) => issue.category == category)
+        .toList();
+    
+    if (relatedIssues.isEmpty) {
+      return;
+    }
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: relatedIssues.map((issue) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 问题类型
+                    Text(
+                      issue.type,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    // 问题描述
+                    Text(
+                      issue.description,
+                      style: const TextStyle(fontSize: 13),
+                    ),
+                    // 如果有日志信息，显示日志
+                    if (issue.logMessage != null) ...[
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[100],
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              '日志信息:',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              issue.logMessage!,
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontFamily: 'monospace',
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                    // 如果有堆栈跟踪，显示堆栈
+                    if (issue.stackTrace != null) ...[
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.red[50],
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              '异常堆栈:',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                                color: Colors.red,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              issue.stackTrace!,
+                              style: const TextStyle(
+                                fontSize: 10,
+                                fontFamily: 'monospace',
+                                color: Colors.red,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('关闭'),
           ),
         ],
       ),
@@ -299,6 +440,20 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
     } catch (e, stackTrace) {
       setState(() {
         _isRunning = false;
+      });
+      
+      // 记录详细的错误信息到检查结果中
+      final errorResult = IntegrityCheckResult();
+      errorResult.addIssue(
+        '健康检查异常',
+        '诊断过程中出现错误: $e',
+        'general_error',
+        stackTrace: stackTrace.toString(),
+        logMessage: '健康检查: $e',
+      );
+      
+      setState(() {
+        _checkResult = errorResult;
       });
       
       ErrorHandler.handleError(e, stackTrace, logPrefix: '健康检查', userMessage: '诊断过程中出现错误', showToast: true);

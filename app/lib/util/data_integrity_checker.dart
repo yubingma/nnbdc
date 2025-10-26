@@ -645,8 +645,8 @@ class IntegrityCheckResult {
     errors.add(error);
   }
 
-  void addIssue(String type, String description, String category) {
-    issues.add(IntegrityIssue(type, description, category));
+  void addIssue(String type, String description, String category, {String? stackTrace, String? logMessage}) {
+    issues.add(IntegrityIssue(type, description, category, stackTrace: stackTrace, logMessage: logMessage));
   }
 
   bool hasIssue(String category) {
@@ -682,6 +682,8 @@ class IntegrityIssue {
   final String type;
   final String description;
   final String category;
+  final String? stackTrace;
+  final String? logMessage;
 
-  IntegrityIssue(this.type, this.description, this.category);
+  IntegrityIssue(this.type, this.description, this.category, {this.stackTrace, this.logMessage});
 }
