@@ -1005,6 +1005,40 @@ class _MePageState extends State<MePage> {
                 onTap: () => Get.toNamed('/email_login'),
               ),
               _buildMenuTile(
+                icon: Icons.delete_forever,
+                title: '注销账号',
+                onTap: () => showUnRegisterDlg(),
+                isDestructive: true,
+              ),
+              
+              // 杂项
+              Builder(
+                builder: (context) {
+                  final isDarkModeEnabled = context.watch<DarkMode>().isDarkMode;
+                  return Divider(
+                    color: isDarkModeEnabled ? Colors.grey[700] : Colors.grey[300],
+                    height: 32,
+                    thickness: 1,
+                  );
+                },
+              ),
+              Builder(
+                builder: (context) {
+                  final isDarkModeEnabled = context.watch<DarkMode>().isDarkMode;
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: Text(
+                      '杂项',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: isDarkModeEnabled ? Colors.grey[400] : const Color(0xFF7F8C8D),
+                      ),
+                    ),
+                  );
+                },
+              ),
+              _buildMenuTile(
                 icon: Icons.health_and_safety,
                 title: '故障诊断',
                 onTap: () => _navigateToDataDiagnostic(),
@@ -1019,12 +1053,6 @@ class _MePageState extends State<MePage> {
                 icon: Icons.cleaning_services,
                 title: '清空本地数据',
                 onTap: () => _showWipeLocalDataDialog(),
-                isDestructive: true,
-              ),
-              _buildMenuTile(
-                icon: Icons.delete_forever,
-                title: '注销账号',
-                onTap: () => showUnRegisterDlg(),
                 isDestructive: true,
               ),
               // 管理员功能入口
