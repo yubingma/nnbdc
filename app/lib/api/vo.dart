@@ -1339,33 +1339,3 @@ class DictStatsVo {
   Map<String, dynamic> toJson() => _$DictStatsVoToJson(this);
 }
 
-/// 诊断结果视图对象 - 用于前端展示，不是数据库表记录
-@JsonSerializable()
-class DiagnosticResultVo {
-  bool isHealthy;
-  int totalIssues;
-  List<String> errors;
-  List<DiagnosticIssue> issues;
-
-  DiagnosticResultVo(this.isHealthy, this.totalIssues, this.errors, this.issues);
-
-  factory DiagnosticResultVo.fromJson(Map<String, dynamic> json) =>
-      _$DiagnosticResultVoFromJson(json);
-
-  Map<String, dynamic> toJson() => _$DiagnosticResultVoToJson(this);
-}
-
-/// 诊断问题数据
-@JsonSerializable()
-class DiagnosticIssue {
-  String type;
-  String description;
-  String category;
-
-  DiagnosticIssue(this.type, this.description, this.category);
-
-  factory DiagnosticIssue.fromJson(Map<String, dynamic> json) =>
-      _$DiagnosticIssueFromJson(json);
-
-  Map<String, dynamic> toJson() => _$DiagnosticIssueToJson(this);
-}

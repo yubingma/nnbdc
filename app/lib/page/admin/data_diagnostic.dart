@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:nnbdc/api/api.dart';
-import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/state.dart';
 import 'package:nnbdc/theme/app_theme.dart';
@@ -493,31 +491,14 @@ class _DataDiagnosticPageState extends State<DataDiagnosticPage> {
         throw Exception('用户未登录');
       }
       
-      // 调用后端API进行用户数据诊断
-      final result = await Api.client.performUserDiagnostic(currentUser.id);
-      
-      if (result.success && result.data != null) {
-        // 将后端返回的DTO转换为前端使用的格式
-        final diagnosticDto = result.data!;
-        final checkResult = IntegrityCheckResult();
+      // 使用本地数据完整性检查器进行诊断
+      final checker = DataIntegrityChecker();
+      final checkResult = await checker.performUserCheck(currentUser.id);
         
-        // 转换错误信息
-        for (String error in diagnosticDto.errors) {
-          checkResult.addError(error);
-        }
-        
-        // 转换问题信息
-        for (DiagnosticIssue issueDto in diagnosticDto.issues) {
-          checkResult.addIssue(issueDto.type, issueDto.description, issueDto.category);
-        }
-        
-        setState(() {
-          _checkResult = checkResult;
-          _isRunning = false;
-        });
-      } else {
-        throw Exception(result.msg ?? '诊断失败');
-      }
+      setState(() {
+        _checkResult = checkResult;
+        _isRunning = false;
+      });
     } catch (e) {
       setState(() {
         _isRunning = false;
@@ -542,55 +523,26 @@ class _DataDiagnosticPageState extends State<DataDiagnosticPage> {
     });
 
     try {
-      // 将前端格式转换为后端DTO格式
-      final diagnosticDto = DiagnosticResultVo(
-        _checkResult!.isHealthy,
-        _checkResult!.totalIssues,
-        _checkResult!.errors,
-        _checkResult!.issues.map((issue) => DiagnosticIssue(
-          issue.type,
-          issue.description,
-          issue.category,
-        )).toList(),
-      );
+      // 使用本地数据完整性检查器进行自动修复
+      final checker = DataIntegrityChecker();
+      final fixResult = await checker.autoFix(_checkResult!);
       
-      // 调用后端API进行自动修复
-      final result = await Api.client.autoFixDataIssues(diagnosticDto);
-      
-      if (result.success && result.data != null) {
-        // 将后端返回的DTO转换为前端使用的格式
-        final fixResultDto = result.data!;
-        final fixResult = IntegrityFixResult();
-        
-        // 转换修复结果
-        for (String fixed in fixResultDto.fixed) {
-          fixResult.addFixed(fixed);
-        }
-        
-        // 转换错误信息
-        for (String error in fixResultDto.errors) {
-          fixResult.addError(error);
-        }
-        
-        setState(() {
-          _fixResult = fixResult;
-          _isRunning = false;
-        });
+      setState(() {
+        _fixResult = fixResult;
+        _isRunning = false;
+      });
 
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                fixResult.hasFixed 
-                  ? '已修复 ${fixResult.fixed.length} 个问题'
-                  : '没有需要修复的问题'
-              ),
-              backgroundColor: fixResult.hasFixed ? Colors.green : Colors.blue,
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              fixResult.hasFixed 
+                ? '已修复 ${fixResult.fixed.length} 个问题'
+                : '没有需要修复的问题'
             ),
-          );
-        }
-      } else {
-        throw Exception(result.msg ?? '修复失败');
+            backgroundColor: fixResult.hasFixed ? Colors.green : Colors.blue,
+          ),
+        );
       }
     } catch (e) {
       setState(() {

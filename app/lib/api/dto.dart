@@ -541,19 +541,4 @@ class WordShortDescChineseDto {
   Map<String, dynamic> toJson() => _$WordShortDescChineseDtoToJson(this);
 }
 
-/// 数据修复结果DTO
-@JsonSerializable()
-class DataFixResultDto {
-  bool hasFixed;
-  bool hasErrors;
-  List<String> fixed;
-  List<String> errors;
-
-  DataFixResultDto(this.hasFixed, this.hasErrors, this.fixed, this.errors);
-
-  factory DataFixResultDto.fromJson(Map<String, dynamic> json) =>
-      _$DataFixResultDtoFromJson(json);
-
-  Map<String, dynamic> toJson() => _$DataFixResultDtoToJson(this);
-}
 
