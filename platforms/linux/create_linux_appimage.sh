@@ -44,6 +44,37 @@ echo "[INFO] 准备 AppImage 内容..."
 # 复制应用文件
 cp -r "$BUNDLE_PATH"/* "$TEMP_DIR/"
 
+# 查找应用图标（可能在 data/flutter_assets/assets/images/ 或其他位置）
+ICON_COPIED=false
+for icon_search_path in "$TEMP_DIR/data/flutter_assets/assets/images/logo.png" "$TEMP_DIR/data/flutter_assets/logo.png" "$TEMP_DIR/logo.png"; do
+    if [ -f "$icon_search_path" ]; then
+        cp "$icon_search_path" "$TEMP_DIR/nnbdc.png"
+        echo "[INFO] 复制图标: $icon_search_path -> nnbdc.png"
+        ICON_COPIED=true
+        break
+    fi
+done
+
+# 如果未找到，尝试从项目目录查找
+if [ "$ICON_COPIED" = false ]; then
+    for logo_path in "../../app/assets/images/logo.png" "../app/assets/images/logo.png" "app/assets/images/logo.png"; do
+        if [ -f "$logo_path" ]; then
+            cp "$logo_path" "$TEMP_DIR/nnbdc.png"
+            echo "[INFO] 复制图标: $logo_path -> nnbdc.png"
+            ICON_COPIED=true
+            break
+        fi
+    done
+fi
+
+# 如果还是未找到，创建一个简单的占位图标
+if [ "$ICON_COPIED" = false ]; then
+    echo "[WARN] 未找到应用图标，创建占位图标"
+    if command -v convert >/dev/null 2>&1; then
+        convert -size 256x256 xc:white -pointsize 72 -fill black -gravity center -annotate +0+0 "N" "$TEMP_DIR/nnbdc.png" 2>/dev/null || true
+    fi
+fi
+
 # 创建 AppImage 描述文件
 cat > "$TEMP_DIR/nnbdc.desktop" << EOF
 [Desktop Entry]
@@ -55,11 +86,6 @@ Type=Application
 Categories=Education;
 StartupWMClass=nnbdc
 EOF
-
-# 创建 AppImage 图标（如果有的话）
-if [ -f "../../app/assets/images/logo.png" ]; then
-    cp "../../app/assets/images/logo.png" "$TEMP_DIR/nnbdc.png"
-fi
 
 # 下载 AppImageTool（如果不存在）
 APPIMAGE_TOOL="appimagetool-x86_64.AppImage"
