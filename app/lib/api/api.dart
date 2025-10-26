@@ -488,4 +488,25 @@ abstract class RestClient {
   Future<Result<String>> removeWordFromDict(
       @Field("dictId") String dictId,
       @Field("wordId") String wordId);
+
+  // 系统健康检查相关API
+  @GET("/admin/checkSystemDictIntegrity.do")
+  Future<Result<SystemHealthCheckResult>> checkSystemDictIntegrity();
+
+  @GET("/admin/checkUserDictIntegrity.do")
+  Future<Result<SystemHealthCheckResult>> checkUserDictIntegrity();
+
+  @GET("/admin/checkLearningProgress.do")
+  Future<Result<SystemHealthCheckResult>> checkLearningProgress();
+
+  @GET("/admin/checkDbVersionConsistency.do")
+  Future<Result<SystemHealthCheckResult>> checkDbVersionConsistency();
+
+  @GET("/admin/checkCommonDictIntegrity.do")
+  Future<Result<SystemHealthCheckResult>> checkCommonDictIntegrity();
+
+  @POST("/admin/autoFixSystemIssues.do")
+  @FormUrlEncoded()
+  Future<Result<SystemHealthFixResult>> autoFixSystemIssues(
+      @Field("issueTypes") List<String> issueTypes);
 }

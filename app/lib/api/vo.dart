@@ -1339,3 +1339,60 @@ class DictStatsVo {
   Map<String, dynamic> toJson() => _$DictStatsVoToJson(this);
 }
 
+// 系统健康检查结果VO
+@JsonSerializable()
+class SystemHealthCheckResult {
+  final bool isHealthy;
+  final List<SystemHealthIssue> issues;
+  final List<String> errors;
+
+  SystemHealthCheckResult({
+    required this.isHealthy,
+    required this.issues,
+    required this.errors,
+  });
+
+  factory SystemHealthCheckResult.fromJson(Map<String, dynamic> json) =>
+      _$SystemHealthCheckResultFromJson(json);
+
+  Map<String, dynamic> toJson() => _$SystemHealthCheckResultToJson(this);
+}
+
+// 系统健康问题VO
+@JsonSerializable()
+class SystemHealthIssue {
+  final String type;
+  final String description;
+  final String category;
+
+  SystemHealthIssue({
+    required this.type,
+    required this.description,
+    required this.category,
+  });
+
+  factory SystemHealthIssue.fromJson(Map<String, dynamic> json) =>
+      _$SystemHealthIssueFromJson(json);
+
+  Map<String, dynamic> toJson() => _$SystemHealthIssueToJson(this);
+}
+
+// 系统健康修复结果VO
+@JsonSerializable()
+class SystemHealthFixResult {
+  final int fixedCount;
+  final List<String> errors;
+  final List<String> fixed;
+
+  SystemHealthFixResult({
+    required this.fixedCount,
+    required this.errors,
+    required this.fixed,
+  });
+
+  factory SystemHealthFixResult.fromJson(Map<String, dynamic> json) =>
+      _$SystemHealthFixResultFromJson(json);
+
+  Map<String, dynamic> toJson() => _$SystemHealthFixResultToJson(this);
+}
+

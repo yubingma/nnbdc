@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:nnbdc/state.dart';
 import 'package:nnbdc/page/admin/feedback_management.dart';
 import 'package:nnbdc/page/admin/dictionary_management.dart';
+import 'package:nnbdc/page/admin/system_health_check.dart';
 
 class AdminPage extends StatefulWidget {
   const AdminPage({super.key});
@@ -120,7 +121,7 @@ class _AdminPageState extends State<AdminPage> {
         crossAxisCount: 2,
         crossAxisSpacing: 16,
         mainAxisSpacing: 16,
-        childAspectRatio: 1.0,
+        childAspectRatio: 0.85,
         children: [
           _buildManagementCard(
             title: '意见建议',
@@ -135,6 +136,13 @@ class _AdminPageState extends State<AdminPage> {
             icon: Icons.book,
             color: const Color(0xFF2196F3),
             onTap: () => _navigateToDictionary(),
+          ),
+          _buildManagementCard(
+            title: '系统健康检查',
+            subtitle: '检查系统完整性',
+            icon: Icons.health_and_safety,
+            color: const Color(0xFFE91E63),
+            onTap: () => _navigateToSystemHealthCheck(),
           ),
           _buildManagementCard(
             title: '用户管理',
@@ -254,6 +262,15 @@ class _AdminPageState extends State<AdminPage> {
       context,
       MaterialPageRoute(
         builder: (context) => const DictionaryManagementWidget(),
+      ),
+    );
+  }
+
+  void _navigateToSystemHealthCheck() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const SystemHealthCheckPage(),
       ),
     );
   }
