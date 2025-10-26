@@ -281,7 +281,7 @@ jobs:
 
       # 上传到服务器（如果 SSH 密钥未配置，此步骤会失败但不影响整体构建）
       - name: Deploy to Server
-        continue-on-error: true
+        continue-on-error: false
         env:
           SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
           SERVER_HOST: 47.108.27.205
