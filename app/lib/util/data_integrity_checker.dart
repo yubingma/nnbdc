@@ -1,11 +1,14 @@
-// 数据完整性检查器
-// 注意：此功能需要根据实际的数据库访问方式来实现
+import 'package:nnbdc/db/db.dart';
+import 'package:nnbdc/global.dart';
+import 'package:drift/drift.dart';
 
 /// 数据完整性检查器
 class DataIntegrityChecker {
   static final DataIntegrityChecker _instance = DataIntegrityChecker._internal();
   factory DataIntegrityChecker() => _instance;
   DataIntegrityChecker._internal();
+
+  final MyDatabase _db = MyDatabase.instance;
 
   /// 执行完整的数据完整性检查
   Future<IntegrityCheckResult> performFullCheck() async {
@@ -37,9 +40,34 @@ class DataIntegrityChecker {
   /// 检查词典单词序号连续性
   Future<void> _checkDictWordSequences(IntegrityCheckResult result) async {
     try {
-      // TODO: 实现词典单词序号检查
-      // 这里需要根据实际的数据库访问方式来实现
-      result.addIssue('序号检查', '词典单词序号检查功能待实现', 'dict_word_sequence');
+      // 获取所有词典
+      final allDicts = await _db.dictsDao.select(_db.dicts).get();
+      
+      for (final dict in allDicts) {
+        final words = await _db.dictWordsDao.select(_db.dictWords)
+          ..where((dw) => dw.dictId.equals(dict.id))
+          ..orderBy([(dw) => OrderingTerm.asc(dw.seq)]);
+        final wordsList = await words.get();
+        if (wordsList.isEmpty) continue;
+        
+        // 检查序号是否从1开始
+        if (wordsList.first.seq != 1) {
+          result.addIssue('序号不连续', '词典 "${dict.name}" 第一个单词序号不是1', 'dict_word_sequence');
+        }
+        
+        // 检查序号是否连续
+        for (int i = 0; i < wordsList.length; i++) {
+          if (wordsList[i].seq != i + 1) {
+            result.addIssue('序号不连续', '词典 "${dict.name}" 位置${i + 1}的单词序号不正确', 'dict_word_sequence');
+            break;
+          }
+        }
+        
+        // 检查最大序号是否等于总单词数
+        if (wordsList.last.seq != wordsList.length) {
+          result.addIssue('序号不连续', '词典 "${dict.name}" 最大序号不等于总单词数', 'dict_word_sequence');
+        }
+      }
     } catch (e) {
       result.addError('检查词典单词序号时出错: $e');
     }
@@ -48,8 +76,16 @@ class DataIntegrityChecker {
   /// 检查词典单词数量一致性
   Future<void> _checkDictWordCounts(IntegrityCheckResult result) async {
     try {
-      // TODO: 实现词典单词数量检查
-      result.addIssue('数量检查', '词典单词数量检查功能待实现', 'dict_word_count');
+      final allDicts = await _db.dictsDao.select(_db.dicts).get();
+      
+      for (final dict in allDicts) {
+        final actualCount = await _db.dictWordsDao.getDictWordCount(dict.id);
+        if (dict.wordCount != actualCount) {
+          result.addIssue('单词数量不匹配', 
+            '词典 "${dict.name}" 记录数量: ${dict.wordCount}, 实际数量: $actualCount', 
+            'dict_word_count');
+        }
+      }
     } catch (e) {
       result.addError('检查词典单词数量时出错: $e');
     }
@@ -58,8 +94,18 @@ class DataIntegrityChecker {
   /// 检查学习进度合理性
   Future<void> _checkLearningProgress(IntegrityCheckResult result) async {
     try {
-      // TODO: 实现学习进度检查
-      result.addIssue('进度检查', '学习进度检查功能待实现', 'learning_progress');
+      final allLearningDicts = await _db.learningDictsDao.select(_db.learningDicts).get();
+      
+      for (final learningDict in allLearningDicts) {
+        final dict = await _db.dictsDao.findById(learningDict.dictId);
+        if (dict == null) continue;
+        
+        if (learningDict.currentWordSeq != null && learningDict.currentWordSeq! > dict.wordCount) {
+          result.addIssue('学习进度异常', 
+            '用户学习进度(${learningDict.currentWordSeq})超过词典单词数(${dict.wordCount})', 
+            'learning_progress');
+        }
+      }
     } catch (e) {
       result.addError('检查学习进度时出错: $e');
     }
@@ -68,8 +114,22 @@ class DataIntegrityChecker {
   /// 检查用户数据库版本一致性
   Future<void> _checkUserDbVersions(IntegrityCheckResult result) async {
     try {
-      // TODO: 实现用户数据库版本检查
-      result.addIssue('版本检查', '用户数据库版本检查功能待实现', 'user_db_version');
+      final allUsers = await _db.usersDao.allUsers;
+      
+      for (final user in allUsers) {
+        final userVersion = await _db.userDbVersionsDao.getUserDbVersionByUserId(user.id);
+        if (userVersion == null) continue;
+        
+        // 检查是否有版本号大于当前版本的日志
+        final allLogs = await _db.userDbLogsDao.getUserDbLogs(user.id);
+        final invalidLogs = allLogs.where((log) => log.version > userVersion.version).toList();
+        
+        if (invalidLogs.isNotEmpty) {
+          result.addIssue('版本号异常', 
+            '用户 ${user.userName} 有 ${invalidLogs.length} 条版本号异常的日志', 
+            'user_db_version');
+        }
+      }
     } catch (e) {
       result.addError('检查用户数据库版本时出错: $e');
     }
@@ -78,8 +138,35 @@ class DataIntegrityChecker {
   /// 检查通用词典完整性
   Future<void> _checkCommonDictIntegrity(IntegrityCheckResult result) async {
     try {
-      // TODO: 实现通用词典完整性检查
-      result.addIssue('通用词典检查', '通用词典完整性检查功能待实现', 'common_dict_integrity');
+      // 检查通用词典中的单词是否有释义项
+      final commonDictWords = await _db.dictWordsDao.select(_db.dictWords)
+        ..where((dw) => dw.dictId.equals(Global.commonDictId));
+      final wordsList = await commonDictWords.get();
+      
+      for (final word in wordsList) {
+        // 检查单词是否有释义项
+        final meanings = await _db.meaningItemsDao.select(_db.meaningItems)
+          ..where((mi) => mi.wordId.equals(word.wordId));
+        final meaningsList = await meanings.get();
+        if (meaningsList.isEmpty) {
+          result.addIssue('通用词典不完整', 
+            '单词 "${word.wordId}" 缺少释义项', 
+            'common_dict_integrity');
+          continue;
+        }
+        
+        // 检查释义项是否有例句
+        for (final meaning in meaningsList) {
+          final sentencesQuery = await _db.sentencesDao.select(_db.sentences)
+            ..where((s) => s.meaningItemId.equals(meaning.id));
+          final sentencesList = await sentencesQuery.get();
+          if (sentencesList.isEmpty) {
+            result.addIssue('通用词典不完整', 
+              '释义项 "${meaning.id}" 缺少例句', 
+              'common_dict_integrity');
+          }
+        }
+      }
     } catch (e) {
       result.addError('检查通用词典完整性时出错: $e');
     }
@@ -120,8 +207,25 @@ class DataIntegrityChecker {
   /// 修复词典单词序号
   Future<void> _fixDictWordSequences(IntegrityFixResult fixResult) async {
     try {
-      // TODO: 实现词典单词序号修复
-      fixResult.addFixed('修复词典单词序号功能待实现');
+      final allDicts = await _db.dictsDao.select(_db.dicts).get();
+      
+      for (final dict in allDicts) {
+        final words = await _db.dictWordsDao.select(_db.dictWords)
+          ..where((dw) => dw.dictId.equals(dict.id))
+          ..orderBy([(dw) => OrderingTerm.asc(dw.seq)]);
+        final wordsList = await words.get();
+        if (wordsList.isEmpty) continue;
+        
+        // 重新分配序号
+        for (int i = 0; i < wordsList.length; i++) {
+          if (wordsList[i].seq != i + 1) {
+            // 使用现有的重新排序方法
+            await _db.dictWordsDao.validateRawWordDictOrder(dict.id);
+            fixResult.addFixed('修复词典 "${dict.name}" 单词序号');
+            break;
+          }
+        }
+      }
     } catch (e) {
       fixResult.addError('修复词典单词序号时出错: $e');
     }
@@ -130,8 +234,15 @@ class DataIntegrityChecker {
   /// 修复词典单词数量
   Future<void> _fixDictWordCounts(IntegrityFixResult fixResult) async {
     try {
-      // TODO: 实现词典单词数量修复
-      fixResult.addFixed('修复词典单词数量功能待实现');
+      final allDicts = await _db.dictsDao.select(_db.dicts).get();
+      
+      for (final dict in allDicts) {
+        final actualCount = await _db.dictWordsDao.getDictWordCount(dict.id);
+        if (dict.wordCount != actualCount) {
+          await _db.dictsDao.updateWordCount(dict.id, true);
+          fixResult.addFixed('修复词典 "${dict.name}" 单词数量: $actualCount');
+        }
+      }
     } catch (e) {
       fixResult.addError('修复词典单词数量时出错: $e');
     }
@@ -140,8 +251,21 @@ class DataIntegrityChecker {
   /// 修复学习进度
   Future<void> _fixLearningProgress(IntegrityFixResult fixResult) async {
     try {
-      // TODO: 实现学习进度修复
-      fixResult.addFixed('修复学习进度功能待实现');
+      final allLearningDicts = await _db.learningDictsDao.select(_db.learningDicts).get();
+      
+      for (final learningDict in allLearningDicts) {
+        final dict = await _db.dictsDao.findById(learningDict.dictId);
+        if (dict == null) continue;
+        
+        if (learningDict.currentWordSeq != null && learningDict.currentWordSeq! > dict.wordCount) {
+          // 使用现有的更新方法
+          await _db.learningDictsDao.saveEntity(
+            learningDict.copyWith(currentWordSeq: Value(dict.wordCount)), 
+            true
+          );
+          fixResult.addFixed('修复用户学习进度: ${dict.wordCount}');
+        }
+      }
     } catch (e) {
       fixResult.addError('修复学习进度时出错: $e');
     }
@@ -150,8 +274,22 @@ class DataIntegrityChecker {
   /// 修复用户数据库版本
   Future<void> _fixUserDbVersions(IntegrityFixResult fixResult) async {
     try {
-      // TODO: 实现用户数据库版本修复
-      fixResult.addFixed('修复用户数据库版本功能待实现');
+      final allUsers = await _db.usersDao.allUsers;
+      
+      for (final user in allUsers) {
+        final userVersion = await _db.userDbVersionsDao.getUserDbVersionByUserId(user.id);
+        if (userVersion == null) continue;
+        
+        // 删除版本号大于当前版本的日志
+        final allLogs = await _db.userDbLogsDao.getUserDbLogs(user.id);
+        final invalidLogs = allLogs.where((log) => log.version > userVersion.version).toList();
+        
+        if (invalidLogs.isNotEmpty) {
+          // 使用现有的删除方法
+          await _db.userDbLogsDao.deleteUserDbLogs(user.id);
+          fixResult.addFixed('删除用户 ${user.userName} 的 ${invalidLogs.length} 条异常日志');
+        }
+      }
     } catch (e) {
       fixResult.addError('修复用户数据库版本时出错: $e');
     }
