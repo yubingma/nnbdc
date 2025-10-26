@@ -883,7 +883,10 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
         if (spell != null && spell.isNotEmpty) {
           WordBo().addRawWord(spell, '游戏');
         }
-      } catch (_) {}
+      } catch (e, stackTrace) {
+        // 添加生词失败不影响游戏流程，但需要记录
+        Global.logger.w('添加生词失败', error: e, stackTrace: stackTrace);
+      }
       dropWord2Bottom(playerA);
     }
   }

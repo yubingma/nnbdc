@@ -749,7 +749,10 @@ class WordListPageState extends State<WordListPage> {
               );
             }
           }
-        } catch (_) {}
+        } catch (e, stackTrace) {
+          // 设置ASR上下文失败不影响主流程，但需要记录
+          Global.logger.w('设置ASR上下文短语失败', error: e, stackTrace: stackTrace);
+        }
       } else if (state == AsrState.stopped) {
         _unsubscribeMeter();
       }
@@ -984,7 +987,10 @@ class WordListPageState extends State<WordListPage> {
     if (studyMode == WordListStudyMode.dictation) {
       try {
         word.focusNode.requestFocus();
-      } catch (_) {}
+      } catch (e, stackTrace) {
+        // 焦点请求失败不影响主流程，但需要记录
+        Global.logger.w('请求焦点失败', error: e, stackTrace: stackTrace);
+      }
     }
 
     // 在背中文模式下，手动切换单词时也清空语音识别缓存
@@ -1137,7 +1143,10 @@ class WordListPageState extends State<WordListPage> {
                   if (curr >= 0 && curr != i && curr < words.length) {
                     try {
                       await SoundUtil.playPronounceSound2(words[curr].word, audioPlayer);
-                    } catch (_) {}
+                    } catch (e, stackTrace) {
+                      // 音频播放失败不影响主流程，但需要记录
+                      Global.logger.w('播放单词发音失败', error: e, stackTrace: stackTrace);
+                    }
                     onWordPressed(word, i, false, null);
                   } else {
                     // 未引发跳转：播放当前单词
@@ -1412,7 +1421,10 @@ class WordListPageState extends State<WordListPage> {
                                           WidgetsBinding.instance.addPostFrameCallback((_) async {
                                             try {
                                               await SoundUtil.playPronounceSound2(word.word, audioPlayer);
-                                            } catch (_) {}
+                                            } catch (e, stackTrace) {
+                                              // 音频播放失败不影响主流程，但需要记录
+                                              Global.logger.w('播放单词发音失败', error: e, stackTrace: stackTrace);
+                                            }
                                             jumpToNextWord(i, false, () {});
                                           });
                                         }

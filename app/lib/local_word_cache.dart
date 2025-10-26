@@ -97,7 +97,10 @@ class LocalWordCache {
         if (hit) {
           Global.logger.d('[LocalWordCache] 搜索命中目标词，候选数=${allWords.length}, orderedWordIds=${orderedWordIds.length}');
         }
-      } catch (_) {}
+      } catch (e, stackTrace) {
+        // 搜索命中检测失败不影响搜索结果，但需要记录
+        Global.logger.w('搜索命中检测失败', error: e, stackTrace: stackTrace);
+      }
 
       // 3. 中文释义匹配搜索（如果是中文搜索且结果不足）
       if (!isEnglish && allWords.length < 30) {
@@ -132,8 +135,8 @@ class LocalWordCache {
 
       // 批量构建WordVo对象
       return await _batchBuildWordVos(allWords, orderedWordIds, currentUser?.id);
-    } catch (e) {
-      ErrorHandler.handleDatabaseError(e, StackTrace.current, operation: '本地搜索单词', showToast: false); // 搜索失败不显示toast，返回空列表即可
+    } catch (e, stackTrace) {
+      ErrorHandler.handleDatabaseError(e, stackTrace, operation: '本地搜索单词', showToast: false); // 搜索失败不显示toast，返回空列表即可
       return [];
     }
   }
@@ -296,8 +299,8 @@ class LocalWordCache {
       }
 
       return result;
-    } catch (e) {
-      ErrorHandler.handleDatabaseError(e, StackTrace.current, operation: '批量构建WordVo', showToast: false); // 内部处理失败不显示toast
+    } catch (e, stackTrace) {
+      ErrorHandler.handleDatabaseError(e, stackTrace, operation: '批量构建WordVo', showToast: false); // 内部处理失败不显示toast
       return [];
     }
   }

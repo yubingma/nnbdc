@@ -1068,7 +1068,10 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                 asr.reset();
                 asr.initAsr(onAsrResult);
                 _setAsrContextualPhrases();
-              } catch (_) {}
+              } catch (e, stackTrace) {
+                // ASR初始化失败需要记录，但不影响后续流程
+                Global.logger.w('ASR初始化失败', error: e, stackTrace: stackTrace);
+              }
               asr.startAsr(decideAsrLanguage());
             }
           });

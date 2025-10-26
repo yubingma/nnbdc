@@ -577,7 +577,10 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
       // 确保断开连接
       try {
         SocketIoClient.instance.disconnect();
-      } catch (_) {}
+      } catch (e, stackTrace) {
+        // 断开连接失败不影响检查结果，但需要记录
+        Global.logger.w('断开Socket连接失败', error: e, stackTrace: stackTrace);
+      }
       setState(() {
         _checkStates[step] = 'failed';
       });

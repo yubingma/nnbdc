@@ -14,6 +14,7 @@ import 'package:nnbdc/page/word_list/today_new_words.dart';
 import 'package:nnbdc/page/word_list/today_old_words.dart';
 import 'package:nnbdc/page/word_list/today_words.dart';
 import 'package:nnbdc/util/toast_util.dart';
+import 'package:nnbdc/util/error_handler.dart';
 import 'package:nnbdc/state.dart';
 import 'package:provider/provider.dart';
 
@@ -125,8 +126,8 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
           ToastUtil.error(prepareResult!.msg!);
           return;
         }
-      } catch (e) {
-        ToastUtil.error('准备学习失败: $e');
+      } catch (e, stackTrace) {
+        ErrorHandler.handleError(e, stackTrace, logPrefix: '准备学习失败', userMessage: '准备学习失败，请稍后重试', showToast: true);
         return;
       }
 

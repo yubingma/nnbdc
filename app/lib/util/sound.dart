@@ -190,7 +190,10 @@ class SoundUtil {
       // 若未完成则手动停止
       try {
         await player.stop();
-      } catch (_) {}
+      } catch (e, stackTrace) {
+        // 停止播放器失败不影响流程，但需要记录
+        Global.logger.w('停止AudioPlayer失败', error: e, stackTrace: stackTrace);
+      }
       await Future.delayed(Duration(milliseconds: 60));
     } on Exception catch (e, stackTrace) {
       ErrorHandler.handleError(e, stackTrace, logPrefix: '播放音效出错', showToast: false);
@@ -210,7 +213,10 @@ class SoundUtil {
       final AudioPlayer unlockPlayer = AudioPlayer();
       try {
         await unlockPlayer.setVolume(0.0); // 静音播放用于解锁
-      } catch (_) {}
+      } catch (e, stackTrace) {
+        // 设置音量失败不影响解锁流程，但需要记录
+        Global.logger.w('设置AudioPlayer音量失败', error: e, stackTrace: stackTrace);
+      }
       try {
         await unlockPlayer.play(AssetSource('audio/bubble-pop.mp3'));
         // 等待最多 300ms，不阻塞主流程太久
@@ -224,10 +230,16 @@ class SoundUtil {
       } finally {
         try {
           await unlockPlayer.stop();
-        } catch (_) {}
+        } catch (e, stackTrace) {
+          // 停止播放器失败不影响流程，但需要记录
+          Global.logger.w('停止AudioPlayer失败', error: e, stackTrace: stackTrace);
+        }
         try {
           await unlockPlayer.dispose();
-        } catch (_) {}
+        } catch (e, stackTrace) {
+          // 释放播放器失败不影响流程，但需要记录
+          Global.logger.w('释放AudioPlayer失败', error: e, stackTrace: stackTrace);
+        }
       }
       _webAudioUnlocked = true;
     } finally {

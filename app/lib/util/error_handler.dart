@@ -6,6 +6,35 @@ import 'package:nnbdc/util/toast_util.dart';
 
 /// 统一的异常处理工具类
 class ErrorHandler {
+  // 错误统计（可用于调试和监控）
+  static int _totalErrorCount = 0;
+  static int _networkErrorCount = 0;
+  static int _databaseErrorCount = 0;
+  static final Map<String, int> _errorTypeCount = {};
+
+  /// 获取错误统计信息
+  static Map<String, dynamic> getErrorStats() {
+    return {
+      'total': _totalErrorCount,
+      'network': _networkErrorCount,
+      'database': _databaseErrorCount,
+      'byType': Map.from(_errorTypeCount),
+    };
+  }
+
+  /// 重置错误统计
+  static void resetErrorStats() {
+    _totalErrorCount = 0;
+    _networkErrorCount = 0;
+    _databaseErrorCount = 0;
+    _errorTypeCount.clear();
+  }
+
+  /// 内部方法：记录错误统计
+  static void _recordErrorStats(String errorType) {
+    _totalErrorCount++;
+    _errorTypeCount[errorType] = (_errorTypeCount[errorType] ?? 0) + 1;
+  }
   /// 处理一般异常，包含日志记录和用户提示
   static void handleError(
     dynamic error,
@@ -14,6 +43,9 @@ class ErrorHandler {
     String? logPrefix,
     bool showToast = true,
   }) {
+    // 记录统计
+    _recordErrorStats(logPrefix ?? 'general');
+    
     final logMessage = logPrefix != null ? '$logPrefix: $error' : '$error';
 
     // 使用 Global.logger 的原生功能，它会自动处理异常栈的深度
@@ -33,6 +65,10 @@ class ErrorHandler {
     String? operation,
     bool showToast = false,
   }) async {
+    // 记录统计
+    _databaseErrorCount++;
+    _recordErrorStats('database_${operation ?? "unknown"}');
+    
     // 增强日志输出，确保能看到错误信息
     final errorMessage = '数据库操作失败: ${operation ?? "未知操作"}';
 
@@ -148,6 +184,9 @@ class ErrorHandler {
     String? api,
     bool showToast = true,
   }) {
+    // 记录统计
+    _networkErrorCount++;
+    
     final logPrefix = api != null ? '网络请求失败($api)' : '网络请求失败';
     final userMessage = getNetworkErrorMessage(error);
     

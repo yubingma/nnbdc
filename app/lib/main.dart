@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -31,41 +32,90 @@ import 'package:nnbdc/state.dart';
 import 'package:nnbdc/test.dart';
 import 'package:nnbdc/theme/app_theme.dart';
 import 'package:nnbdc/util/platform_util.dart';
+import 'package:nnbdc/util/error_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:toastification/toastification.dart';
 
 import 'local_word_cache.dart';
 
 void main() async {
+  // 确保Flutter绑定已初始化
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (context) => DarkMode()),
-      ],
-      child: ToastificationWrapper(child: const MyApp()),
-    ),
+
+  // 捕获Flutter框架层的错误（同步错误）
+  FlutterError.onError = (FlutterErrorDetails details) {
+    // 记录错误到日志
+    Global.logger.e(
+      '【Flutter框架错误】${details.exceptionAsString()}',
+      error: details.exception,
+      stackTrace: details.stack,
+    );
+    
+    // 在debug模式下，也输出到控制台
+    FlutterError.presentError(details);
+  };
+
+  // 捕获平台层和异步错误
+  PlatformDispatcher.instance.onError = (error, stack) {
+    Global.logger.e(
+      '【未捕获的平台/异步错误】',
+      error: error,
+      stackTrace: stack,
+    );
+    return true; // 返回true表示错误已处理
+  };
+
+  // 使用Zone捕获所有未处理的异步异常
+  runZonedGuarded(
+    () {
+      runApp(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider(create: (context) => DarkMode()),
+          ],
+          child: ToastificationWrapper(child: const MyApp()),
+        ),
+      );
+
+      // 延迟加载初始化操作
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        try {
+          await GetStorage.init();
+
+          if (PlatformUtils.isAndroid) {
+            await FlutterDownloader.initialize(debug: true);
+          }
+
+          // 初始化加载服务
+          Api.loadingService.init();
+
+          MyDatabase.instance;
+          // SocketIoClient改为延迟连接，只在需要时才连接（如进入russia页面）
+          LocalWordCache.instance;
+
+          // 预加载当前用户数据
+          await Global.loadUserFromDb();
+        } catch (e, stackTrace) {
+          // 初始化过程中的错误
+          ErrorHandler.handleError(
+            e,
+            stackTrace,
+            logPrefix: '应用初始化失败',
+            userMessage: '应用初始化失败，请重启应用',
+            showToast: false, // 此时UI可能还未准备好
+          );
+        }
+      });
+    },
+    (error, stack) {
+      // Zone中捕获的未处理异常
+      Global.logger.e(
+        '【Zone捕获的未处理异常】',
+        error: error,
+        stackTrace: stack,
+      );
+    },
   );
-
-  // 延迟加载初始化操作
-  WidgetsBinding.instance.addPostFrameCallback((_) async {
-
-    await GetStorage.init();
-
-    if (PlatformUtils.isAndroid) {
-      await FlutterDownloader.initialize(debug: true);
-    }
-
-    // 初始化加载服务
-    Api.loadingService.init();
-
-    MyDatabase.instance;
-    // SocketIoClient改为延迟连接，只在需要时才连接（如进入russia页面）
-    LocalWordCache.instance;
-
-    // 预加载当前用户数据
-    await Global.loadUserFromDb();
-  });
 }
 
 class MyApp extends StatefulWidget {

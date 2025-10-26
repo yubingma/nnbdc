@@ -37,7 +37,8 @@ class DataIntegrityChecker {
       // 5. 检查通用词典完整性
       await _checkCommonDictIntegrity(result);
       
-    } catch (e) {
+    } catch (e, stackTrace) {
+      Global.logger.e('完整性检查过程中出现错误', error: e, stackTrace: stackTrace);
       result.addError('完整性检查过程中出现错误: $e');
     }
     
@@ -140,9 +141,9 @@ class DataIntegrityChecker {
       onProgress?.call(8, '检查完成！', result: result);
       await Future.delayed(const Duration(milliseconds: 200)); // 给UI时间显示最后一项的结果
       
-    } catch (e) {
+    } catch (e, stackTrace) {
       stopwatch.stop();
-      Global.logger.e('✗ 用户数据完整性检查过程中出现错误: $e');
+      Global.logger.e('✗ 用户数据完整性检查过程中出现错误', error: e, stackTrace: stackTrace);
       result.addError('用户数据完整性检查过程中出现错误: $e');
     }
     
@@ -627,7 +628,10 @@ class DataIntegrityChecker {
       // 确保断开连接
       try {
         SocketIoClient.instance.disconnect();
-      } catch (_) {}
+      } catch (e, stackTrace) {
+        // 断开连接失败不影响检查结果，但需要记录
+        Global.logger.w('断开Socket连接失败', error: e, stackTrace: stackTrace);
+      }
     }
   }
 }

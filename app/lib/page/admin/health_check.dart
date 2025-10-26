@@ -3,6 +3,7 @@ import 'package:nnbdc/global.dart';
 import 'package:nnbdc/state.dart';
 import 'package:nnbdc/theme/app_theme.dart';
 import 'package:nnbdc/util/data_integrity_checker.dart';
+import 'package:nnbdc/util/error_handler.dart';
 import 'package:provider/provider.dart';
 
 /// 健康检查页面
@@ -295,10 +296,12 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
         _checkResult = checkResult;
         _isRunning = false;
       });
-    } catch (e) {
+    } catch (e, stackTrace) {
       setState(() {
         _isRunning = false;
       });
+      
+      ErrorHandler.handleError(e, stackTrace, logPrefix: '健康检查', userMessage: '诊断过程中出现错误', showToast: true);
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -339,10 +342,12 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
           ),
         );
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
       setState(() {
         _isRunning = false;
       });
+      
+      ErrorHandler.handleError(e, stackTrace, logPrefix: '自动修复', userMessage: '修复过程中出现错误', showToast: true);
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
