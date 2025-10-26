@@ -3,18 +3,18 @@ package beidanci.api.model;
 import java.util.List;
 
 /**
- * 数据诊断结果DTO
+ * 诊断结果视图对象 - 用于前端展示，不是数据库表记录
  */
-public class DataDiagnosticDto implements Dto {
+public class DiagnosticResultVo {
     private boolean isHealthy;
     private int totalIssues;
     private List<String> errors;
-    private List<DiagnosticIssueDto> issues;
+    private List<DiagnosticIssue> issues;
 
-    public DataDiagnosticDto() {
+    public DiagnosticResultVo() {
     }
 
-    public DataDiagnosticDto(boolean isHealthy, int totalIssues, List<String> errors, List<DiagnosticIssueDto> issues) {
+    public DiagnosticResultVo(boolean isHealthy, int totalIssues, List<String> errors, List<DiagnosticIssue> issues) {
         this.isHealthy = isHealthy;
         this.totalIssues = totalIssues;
         this.errors = errors;
@@ -45,11 +45,11 @@ public class DataDiagnosticDto implements Dto {
         this.errors = errors;
     }
 
-    public List<DiagnosticIssueDto> getIssues() {
+    public List<DiagnosticIssue> getIssues() {
         return issues;
     }
 
-    public void setIssues(List<DiagnosticIssueDto> issues) {
+    public void setIssues(List<DiagnosticIssue> issues) {
         this.issues = issues;
     }
 }

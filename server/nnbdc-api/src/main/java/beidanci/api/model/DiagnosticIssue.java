@@ -1,17 +1,17 @@
 package beidanci.api.model;
 
 /**
- * 诊断问题DTO
+ * 诊断问题数据 - 用于传输诊断结果中的问题信息
  */
-public class DiagnosticIssueDto implements Dto {
+public class DiagnosticIssue {
     private String type;
     private String description;
     private String category;
 
-    public DiagnosticIssueDto() {
+    public DiagnosticIssue() {
     }
 
-    public DiagnosticIssueDto(String type, String description, String category) {
+    public DiagnosticIssue(String type, String description, String category) {
         this.type = type;
         this.description = description;
         this.category = category;

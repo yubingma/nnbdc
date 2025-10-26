@@ -26,7 +26,6 @@ final networkUtil = NetworkUtil();
 // 检查网络连接
 bool isConnected = await networkUtil.isConnected();
 if (isConnected) {
-  print('网络连接正常');
 } else {
   print('网络连接不可用');
 }

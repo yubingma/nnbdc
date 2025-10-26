@@ -26,7 +26,6 @@ class NetworkInterceptor extends Interceptor {
     }
 
     // 网络可用，继续请求
-    Global.logger.d('🌐 网络连接正常，允许API请求: ${options.path}');
     handler.next(options);
   }
 }

@@ -1296,3 +1296,76 @@ class MsgVo {
 
   Map<String, dynamic> toJson() => _$MsgVoToJson(this);
 }
+
+// 词典统计信息VO
+@JsonSerializable()
+@CustomDateTimeConverter()
+class DictStatsVo {
+  final String id;
+  final String name;
+  final String ownerId;
+  final bool isShared;
+  final bool isReady;
+  final bool visible;
+  final int wordCount;
+  final int? popularityLimit;
+  final DateTime createTime;
+  final DateTime? updateTime;
+  
+  // 统计信息
+  final int userSelectionCount; // 被用户选择的数量
+  final int totalUsers; // 总用户数
+  final double selectionRate; // 选择率
+
+  DictStatsVo({
+    required this.id,
+    required this.name,
+    required this.ownerId,
+    required this.isShared,
+    required this.isReady,
+    required this.visible,
+    required this.wordCount,
+    this.popularityLimit,
+    required this.createTime,
+    this.updateTime,
+    required this.userSelectionCount,
+    required this.totalUsers,
+    required this.selectionRate,
+  });
+
+  factory DictStatsVo.fromJson(Map<String, dynamic> json) =>
+      _$DictStatsVoFromJson(json);
+
+  Map<String, dynamic> toJson() => _$DictStatsVoToJson(this);
+}
+
+/// 诊断结果视图对象 - 用于前端展示，不是数据库表记录
+@JsonSerializable()
+class DiagnosticResultVo {
+  bool isHealthy;
+  int totalIssues;
+  List<String> errors;
+  List<DiagnosticIssue> issues;
+
+  DiagnosticResultVo(this.isHealthy, this.totalIssues, this.errors, this.issues);
+
+  factory DiagnosticResultVo.fromJson(Map<String, dynamic> json) =>
+      _$DiagnosticResultVoFromJson(json);
+
+  Map<String, dynamic> toJson() => _$DiagnosticResultVoToJson(this);
+}
+
+/// 诊断问题数据
+@JsonSerializable()
+class DiagnosticIssue {
+  String type;
+  String description;
+  String category;
+
+  DiagnosticIssue(this.type, this.description, this.category);
+
+  factory DiagnosticIssue.fromJson(Map<String, dynamic> json) =>
+      _$DiagnosticIssueFromJson(json);
+
+  Map<String, dynamic> toJson() => _$DiagnosticIssueToJson(this);
+}

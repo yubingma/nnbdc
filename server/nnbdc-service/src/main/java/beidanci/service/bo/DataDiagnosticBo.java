@@ -10,9 +10,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import beidanci.api.model.DataDiagnosticDto;
+import beidanci.api.model.DiagnosticResultVo;
 import beidanci.api.model.DataFixResultDto;
-import beidanci.api.model.DiagnosticIssueDto;
+import beidanci.api.model.DiagnosticIssue;
 import beidanci.service.po.Dict;
 import beidanci.service.po.DictWord;
 import beidanci.service.po.LearningDict;
@@ -40,9 +40,9 @@ public class DataDiagnosticBo {
     /**
      * 执行系统数据诊断
      */
-    public DataDiagnosticDto performSystemDiagnostic() {
+    public DiagnosticResultVo performSystemDiagnostic() {
         List<String> errors = new ArrayList<>();
-        List<DiagnosticIssueDto> issues = new ArrayList<>();
+        List<DiagnosticIssue> issues = new ArrayList<>();
         
         try {
             // 1. 检查词典单词序号连续性
@@ -61,15 +61,15 @@ public class DataDiagnosticBo {
         boolean isHealthy = errors.isEmpty() && issues.isEmpty();
         int totalIssues = errors.size() + issues.size();
         
-        return new DataDiagnosticDto(isHealthy, totalIssues, errors, issues);
+        return new DiagnosticResultVo(isHealthy, totalIssues, errors, issues);
     }
 
     /**
      * 执行用户数据诊断
      */
-    public DataDiagnosticDto performUserDiagnostic(String userId) {
+    public DiagnosticResultVo performUserDiagnostic(String userId) {
         List<String> errors = new ArrayList<>();
-        List<DiagnosticIssueDto> issues = new ArrayList<>();
+        List<DiagnosticIssue> issues = new ArrayList<>();
         
         try {
             // 1. 检查用户词典单词序号连续性
@@ -88,14 +88,14 @@ public class DataDiagnosticBo {
         boolean isHealthy = errors.isEmpty() && issues.isEmpty();
         int totalIssues = errors.size() + issues.size();
         
-        return new DataDiagnosticDto(isHealthy, totalIssues, errors, issues);
+        return new DiagnosticResultVo(isHealthy, totalIssues, errors, issues);
     }
 
     /**
      * 自动修复发现的问题
      */
     @Transactional
-    public DataFixResultDto autoFix(DataDiagnosticDto diagnosticResult) {
+    public DataFixResultDto autoFix(DiagnosticResultVo diagnosticResult) {
         List<String> fixed = new ArrayList<>();
         List<String> errors = new ArrayList<>();
         
@@ -126,7 +126,7 @@ public class DataDiagnosticBo {
     }
 
     // 私有方法实现各种检查逻辑
-    private void checkDictWordSequences(List<DiagnosticIssueDto> issues) {
+    private void checkDictWordSequences(List<DiagnosticIssue> issues) {
         try {
             List<Dict> allDicts = dictBo.queryAll(new Dict(), false);
             
@@ -141,14 +141,14 @@ public class DataDiagnosticBo {
                 
                 // 检查序号是否从1开始
                 if (wordsList.get(0).getSeq() != 1) {
-                    issues.add(new DiagnosticIssueDto("序号不连续", 
+                    issues.add(new DiagnosticIssue("序号不连续", 
                         "词典 \"" + dict.getName() + "\" 第一个单词序号不是1", "dict_word_sequence"));
                 }
                 
                 // 检查序号是否连续
                 for (int i = 0; i < wordsList.size(); i++) {
                     if (wordsList.get(i).getSeq() != i + 1) {
-                        issues.add(new DiagnosticIssueDto("序号不连续", 
+                        issues.add(new DiagnosticIssue("序号不连续", 
                             "词典 \"" + dict.getName() + "\" 位置" + (i + 1) + "的单词序号不正确", "dict_word_sequence"));
                         break;
                     }
@@ -156,16 +156,16 @@ public class DataDiagnosticBo {
                 
                 // 检查最大序号是否等于总单词数
                 if (wordsList.get(wordsList.size() - 1).getSeq() != wordsList.size()) {
-                    issues.add(new DiagnosticIssueDto("序号不连续", 
+                    issues.add(new DiagnosticIssue("序号不连续", 
                         "词典 \"" + dict.getName() + "\" 最大序号不等于总单词数", "dict_word_sequence"));
                 }
             }
         } catch (Exception e) {
-            issues.add(new DiagnosticIssueDto("检查错误", "检查词典单词序号时出错: " + e.getMessage(), "system_error"));
+            issues.add(new DiagnosticIssue("检查错误", "检查词典单词序号时出错: " + e.getMessage(), "system_error"));
         }
     }
 
-    private void checkUserDictWordSequences(List<DiagnosticIssueDto> issues, String userId) {
+    private void checkUserDictWordSequences(List<DiagnosticIssue> issues, String userId) {
         try {
             List<Dict> userDicts = dictBo.getDictsByOwnerId(userId, null);
             
@@ -180,14 +180,14 @@ public class DataDiagnosticBo {
                 
                 // 检查序号是否从1开始
                 if (wordsList.get(0).getSeq() != 1) {
-                    issues.add(new DiagnosticIssueDto("序号不连续", 
+                    issues.add(new DiagnosticIssue("序号不连续", 
                         "词典 \"" + dict.getName() + "\" 第一个单词序号不是1", "dict_word_sequence"));
                 }
                 
                 // 检查序号是否连续
                 for (int i = 0; i < wordsList.size(); i++) {
                     if (wordsList.get(i).getSeq() != i + 1) {
-                        issues.add(new DiagnosticIssueDto("序号不连续", 
+                        issues.add(new DiagnosticIssue("序号不连续", 
                             "词典 \"" + dict.getName() + "\" 位置" + (i + 1) + "的单词序号不正确", "dict_word_sequence"));
                         break;
                     }
@@ -195,16 +195,16 @@ public class DataDiagnosticBo {
                 
                 // 检查最大序号是否等于总单词数
                 if (wordsList.get(wordsList.size() - 1).getSeq() != wordsList.size()) {
-                    issues.add(new DiagnosticIssueDto("序号不连续", 
+                    issues.add(new DiagnosticIssue("序号不连续", 
                         "词典 \"" + dict.getName() + "\" 最大序号不等于总单词数", "dict_word_sequence"));
                 }
             }
         } catch (Exception e) {
-            issues.add(new DiagnosticIssueDto("检查错误", "检查用户词典单词序号时出错: " + e.getMessage(), "system_error"));
+            issues.add(new DiagnosticIssue("检查错误", "检查用户词典单词序号时出错: " + e.getMessage(), "system_error"));
         }
     }
 
-    private void checkDictWordCounts(List<DiagnosticIssueDto> issues) {
+    private void checkDictWordCounts(List<DiagnosticIssue> issues) {
         try {
             List<Dict> allDicts = dictBo.queryAll(new Dict(), false);
             
@@ -216,17 +216,17 @@ public class DataDiagnosticBo {
                 Long actualCount = query.uniqueResult();
                 
                 if (dict.getWordCount() != actualCount.intValue()) {
-                    issues.add(new DiagnosticIssueDto("单词数量不匹配", 
+                    issues.add(new DiagnosticIssue("单词数量不匹配", 
                         "词典 \"" + dict.getName() + "\" 记录数量: " + dict.getWordCount() + ", 实际数量: " + actualCount, 
                         "dict_word_count"));
                 }
             }
         } catch (Exception e) {
-            issues.add(new DiagnosticIssueDto("检查错误", "检查词典单词数量时出错: " + e.getMessage(), "system_error"));
+            issues.add(new DiagnosticIssue("检查错误", "检查词典单词数量时出错: " + e.getMessage(), "system_error"));
         }
     }
 
-    private void checkUserDictWordCounts(List<DiagnosticIssueDto> issues, String userId) {
+    private void checkUserDictWordCounts(List<DiagnosticIssue> issues, String userId) {
         try {
             List<Dict> userDicts = dictBo.getDictsByOwnerId(userId, null);
             
@@ -238,17 +238,17 @@ public class DataDiagnosticBo {
                 Long actualCount = query.uniqueResult();
                 
                 if (dict.getWordCount() != actualCount.intValue()) {
-                    issues.add(new DiagnosticIssueDto("单词数量不匹配", 
+                    issues.add(new DiagnosticIssue("单词数量不匹配", 
                         "词典 \"" + dict.getName() + "\" 记录数量: " + dict.getWordCount() + ", 实际数量: " + actualCount, 
                         "dict_word_count"));
                 }
             }
         } catch (Exception e) {
-            issues.add(new DiagnosticIssueDto("检查错误", "检查用户词典单词数量时出错: " + e.getMessage(), "system_error"));
+            issues.add(new DiagnosticIssue("检查错误", "检查用户词典单词数量时出错: " + e.getMessage(), "system_error"));
         }
     }
 
-    private void checkLearningProgress(List<DiagnosticIssueDto> issues) {
+    private void checkLearningProgress(List<DiagnosticIssue> issues) {
         try {
             List<LearningDict> allLearningDicts = learningDictBo.queryAll(new LearningDict(), false);
             
@@ -257,17 +257,17 @@ public class DataDiagnosticBo {
                 if (dict == null) continue;
                 
                 if (learningDict.getCurrentWordSeq() != null && learningDict.getCurrentWordSeq() > dict.getWordCount()) {
-                    issues.add(new DiagnosticIssueDto("学习进度异常", 
+                    issues.add(new DiagnosticIssue("学习进度异常", 
                         "用户学习进度(" + learningDict.getCurrentWordSeq() + ")超过词典单词数(" + dict.getWordCount() + ")", 
                         "learning_progress"));
                 }
             }
         } catch (Exception e) {
-            issues.add(new DiagnosticIssueDto("检查错误", "检查学习进度时出错: " + e.getMessage(), "system_error"));
+            issues.add(new DiagnosticIssue("检查错误", "检查学习进度时出错: " + e.getMessage(), "system_error"));
         }
     }
 
-    private void checkUserLearningProgress(List<DiagnosticIssueDto> issues, String userId) {
+    private void checkUserLearningProgress(List<DiagnosticIssue> issues, String userId) {
         try {
             List<LearningDict> userLearningDicts = learningDictBo.getLearningDictsOfUser(userBo.findById(userId, false));
             
@@ -276,13 +276,13 @@ public class DataDiagnosticBo {
                 if (dict == null) continue;
                 
                 if (learningDict.getCurrentWordSeq() != null && learningDict.getCurrentWordSeq() > dict.getWordCount()) {
-                    issues.add(new DiagnosticIssueDto("学习进度异常", 
+                    issues.add(new DiagnosticIssue("学习进度异常", 
                         "用户学习进度(" + learningDict.getCurrentWordSeq() + ")超过词典单词数(" + dict.getWordCount() + ")", 
                         "learning_progress"));
                 }
             }
         } catch (Exception e) {
-            issues.add(new DiagnosticIssueDto("检查错误", "检查用户学习进度时出错: " + e.getMessage(), "system_error"));
+            issues.add(new DiagnosticIssue("检查错误", "检查用户学习进度时出错: " + e.getMessage(), "system_error"));
         }
     }
 
@@ -409,7 +409,7 @@ public class DataDiagnosticBo {
         }
     }
 
-    private boolean hasIssue(DataDiagnosticDto diagnosticResult, String category) {
+    private boolean hasIssue(DiagnosticResultVo diagnosticResult, String category) {
         if (diagnosticResult.getIssues() == null) return false;
         return diagnosticResult.getIssues().stream()
             .anyMatch(issue -> category.equals(issue.getCategory()));

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:nnbdc/api/api.dart';
+import 'package:nnbdc/api/vo.dart';
+import 'package:nnbdc/global.dart';
+import 'package:nnbdc/state.dart';
 import 'package:nnbdc/theme/app_theme.dart';
 import 'package:nnbdc/util/data_integrity_checker.dart';
-import 'package:nnbdc/state.dart';
-import 'package:nnbdc/global.dart';
 import 'package:provider/provider.dart';
-import 'package:nnbdc/api/api.dart';
-import 'package:nnbdc/api/dto.dart';
 
 /// 数据诊断页面
 class DataDiagnosticPage extends StatefulWidget {
@@ -507,7 +507,7 @@ class _DataDiagnosticPageState extends State<DataDiagnosticPage> {
         }
         
         // 转换问题信息
-        for (DiagnosticIssueDto issueDto in diagnosticDto.issues) {
+        for (DiagnosticIssue issueDto in diagnosticDto.issues) {
           checkResult.addIssue(issueDto.type, issueDto.description, issueDto.category);
         }
         
@@ -543,11 +543,11 @@ class _DataDiagnosticPageState extends State<DataDiagnosticPage> {
 
     try {
       // 将前端格式转换为后端DTO格式
-      final diagnosticDto = DataDiagnosticDto(
+      final diagnosticDto = DiagnosticResultVo(
         _checkResult!.isHealthy,
         _checkResult!.totalIssues,
         _checkResult!.errors,
-        _checkResult!.issues.map((issue) => DiagnosticIssueDto(
+        _checkResult!.issues.map((issue) => DiagnosticIssue(
           issue.type,
           issue.description,
           issue.category,

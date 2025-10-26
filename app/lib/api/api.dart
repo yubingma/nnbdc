@@ -447,18 +447,18 @@ abstract class RestClient {
 
   /// 执行系统数据诊断
   @GET("/performSystemDiagnostic.do")
-  Future<Result<DataDiagnosticDto>> performSystemDiagnostic();
+  Future<Result<DiagnosticResultVo>> performSystemDiagnostic();
 
   /// 执行用户数据诊断
   @GET("/performUserDiagnostic.do")
-  Future<Result<DataDiagnosticDto>> performUserDiagnostic(@Query("userId") String userId);
+  Future<Result<DiagnosticResultVo>> performUserDiagnostic(@Query("userId") String userId);
 
   /// 自动修复发现的问题
   @POST("/autoFixDataIssues.do")
   @http.Headers(<String, dynamic>{
     "Content-Type": "application/json",
   })
-  Future<Result<DataFixResultDto>> autoFixDataIssues(@Body() DataDiagnosticDto diagnosticResult);
+  Future<Result<DataFixResultDto>> autoFixDataIssues(@Body() DiagnosticResultVo diagnosticResult);
 
   /// 记录用户登录操作
   @POST('/recordLogin.do')

@@ -1,7 +1,7 @@
 package beidanci.service.controller;
 
 import beidanci.api.Result;
-import beidanci.api.model.DataDiagnosticDto;
+import beidanci.api.model.DiagnosticResultVo;
 import beidanci.api.model.DataFixResultDto;
 import beidanci.service.bo.DataDiagnosticBo;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,9 +20,9 @@ public class DataDiagnosticController {
      * 执行系统数据诊断
      */
     @GetMapping("/performSystemDiagnostic.do")
-    public Result<DataDiagnosticDto> performSystemDiagnostic() {
+    public Result<DiagnosticResultVo> performSystemDiagnostic() {
         try {
-            DataDiagnosticDto result = dataDiagnosticBo.performSystemDiagnostic();
+            DiagnosticResultVo result = dataDiagnosticBo.performSystemDiagnostic();
             return Result.success(result);
         } catch (Exception e) {
             return Result.fail("系统数据诊断失败: " + e.getMessage());
@@ -33,9 +33,9 @@ public class DataDiagnosticController {
      * 执行用户数据诊断
      */
     @GetMapping("/performUserDiagnostic.do")
-    public Result<DataDiagnosticDto> performUserDiagnostic(@RequestParam("userId") String userId) {
+    public Result<DiagnosticResultVo> performUserDiagnostic(@RequestParam("userId") String userId) {
         try {
-            DataDiagnosticDto result = dataDiagnosticBo.performUserDiagnostic(userId);
+            DiagnosticResultVo result = dataDiagnosticBo.performUserDiagnostic(userId);
             return Result.success(result);
         } catch (Exception e) {
             return Result.fail("用户数据诊断失败: " + e.getMessage());
@@ -46,7 +46,7 @@ public class DataDiagnosticController {
      * 自动修复发现的问题
      */
     @PostMapping("/autoFixDataIssues.do")
-    public Result<DataFixResultDto> autoFixDataIssues(@RequestBody DataDiagnosticDto diagnosticResult) {
+    public Result<DataFixResultDto> autoFixDataIssues(@RequestBody DiagnosticResultVo diagnosticResult) {
         try {
             DataFixResultDto result = dataDiagnosticBo.autoFix(diagnosticResult);
             return Result.success(result);
