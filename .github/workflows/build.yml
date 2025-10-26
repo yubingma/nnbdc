@@ -236,9 +236,12 @@ jobs:
             # 创建 Linux AppImage
             echo "开始创建 Linux AppImage..."
             chmod +x platforms/linux/create_linux_appimage.sh
+            set +e  # 允许脚本失败后继续
             ./platforms/linux/create_linux_appimage.sh
+            APPIMAGE_EXIT_CODE=$?
+            set -e  # 恢复错误检测
             
-            if [ -f "nnbdc-linux.AppImage" ]; then
+            if [ -f "nnbdc-linux.AppImage" ] && [ $APPIMAGE_EXIT_CODE -eq 0 ]; then
               mv nnbdc-linux.AppImage "$DEPLOY_DIR/nnbdc-linux.AppImage"
               echo "Linux AppImage 创建成功: nnbdc-linux.AppImage"
               echo "文件大小: $(du -h "$DEPLOY_DIR/nnbdc-linux.AppImage" | cut -f1)"
