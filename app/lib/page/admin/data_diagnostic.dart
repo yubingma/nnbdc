@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:nnbdc/theme/app_theme.dart';
 import 'package:nnbdc/util/data_integrity_checker.dart';
 import 'package:nnbdc/state.dart';
+import 'package:nnbdc/global.dart';
 import 'package:provider/provider.dart';
 
 /// 数据诊断页面
@@ -98,18 +99,18 @@ class _DataDiagnosticPageState extends State<DataDiagnosticPage> {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  '此功能将检查以下数据完整性：',
+                  '此功能将检查您相关的数据完整性：',
                   style: TextStyle(
                     fontSize: 14,
                     color: isDarkMode ? Colors.grey[300] : Colors.grey[700],
                   ),
                 ),
                 const SizedBox(height: 8),
-                _buildCheckItem('词典单词序号连续性', isDarkMode),
-                _buildCheckItem('词典单词数量一致性', isDarkMode),
-                _buildCheckItem('学习进度合理性', isDarkMode),
-                _buildCheckItem('用户数据库版本一致性', isDarkMode),
-                  _buildCheckItem('通用词典完整性', isDarkMode),
+                _buildCheckItem('您的词典单词序号连续性', isDarkMode),
+                _buildCheckItem('您的词典单词数量一致性', isDarkMode),
+                _buildCheckItem('您的学习进度合理性', isDarkMode),
+                _buildCheckItem('您的数据库版本一致性', isDarkMode),
+                _buildCheckItem('通用词典完整性', isDarkMode),
                 ],
               ),
             ),
@@ -485,7 +486,13 @@ class _DataDiagnosticPageState extends State<DataDiagnosticPage> {
 
     try {
       final checker = DataIntegrityChecker();
-      final result = await checker.performFullCheck();
+      // 获取当前登录用户ID
+      final currentUser = Global.getLoggedInUser();
+      if (currentUser == null) {
+        throw Exception('用户未登录');
+      }
+      
+      final result = await checker.performUserCheck(currentUser.id);
       
       setState(() {
         _checkResult = result;
