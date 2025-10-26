@@ -303,31 +303,71 @@ class DataIntegrityChecker {
       
       Global.logger.d('开始检查通用词典完整性，共 ${wordsList.length} 个单词');
       
-      for (final word in wordsList) {
-        // 检查单词是否有释义项
-        final meaningsList = await (_db.meaningItemsDao.select(_db.meaningItems)
-          ..where((mi) => mi.wordId.equals(word.wordId))).get();
-        if (meaningsList.isEmpty) {
+      // 使用批量查询提高效率
+      final wordIds = wordsList.map((w) => w.wordId).toList();
+      
+      // 批量查询所有单词的释义项
+      // SQLite 的 IN 子句最多支持 999 个参数，需要分批查询
+      const int batchSize = 900; // 保守起见使用 900
+      Global.logger.d('查询 ${wordIds.length} 个单词的释义项（分批查询）...');
+      
+      final allMeanings = <MeaningItem>[];
+      for (int i = 0; i < wordIds.length; i += batchSize) {
+        final batch = wordIds.skip(i).take(batchSize).toList();
+        final batchMeanings = await (_db.meaningItemsDao.select(_db.meaningItems)
+          ..where((mi) => mi.wordId.isIn(batch) & mi.dictId.equals(Global.commonDictId))).get();
+        allMeanings.addAll(batchMeanings);
+      }
+      Global.logger.d('查询到 ${allMeanings.length} 条释义项');
+      
+      // 按单词分组
+      final meaningsMap = <String, List<MeaningItem>>{};
+      for (final meaning in allMeanings) {
+        (meaningsMap[meaning.wordId] ??= []).add(meaning);
+      }
+      
+      // 检查缺少释义项的单词
+      final wordsWithoutMeanings = wordIds.where((id) => !meaningsMap.containsKey(id) || meaningsMap[id]!.isEmpty).toList();
+      for (final wordId in wordsWithoutMeanings) {
+        result.addIssue('通用词典不完整', 
+          '单词 "$wordId" 缺少释义项', 
+          'common_dict_integrity');
+      }
+      
+      // 批量查询所有释义项的例句
+      final meaningIds = allMeanings.map((m) => m.id).toList();
+      Global.logger.d('查询 ${meaningIds.length} 个释义项的例句（分批查询）...');
+      
+      final allSentences = <Sentence>[];
+      for (int i = 0; i < meaningIds.length; i += batchSize) {
+        final batch = meaningIds.skip(i).take(batchSize).toList();
+        final batchSentences = await (_db.sentencesDao.select(_db.sentences)
+          ..where((s) => s.meaningItemId.isIn(batch))).get();
+        allSentences.addAll(batchSentences);
+      }
+      Global.logger.d('查询到 ${allSentences.length} 条例句');
+      
+      // 按释义项分组
+      final sentencesMap = <String, List<Sentence>>{};
+      for (final sentence in allSentences) {
+        (sentencesMap[sentence.meaningItemId] ??= []).add(sentence);
+      }
+      
+      // 检查缺少例句的释义项
+      int meaningsWithoutSentences = 0;
+      for (final meaning in allMeanings) {
+        if (!sentencesMap.containsKey(meaning.id) || sentencesMap[meaning.id]!.isEmpty) {
+          meaningsWithoutSentences++;
           result.addIssue('通用词典不完整', 
-            '单词 "${word.wordId}" 缺少释义项', 
+            '释义项 "${meaning.id}" 缺少例句', 
             'common_dict_integrity');
-          continue;
-        }
-        
-        // 检查释义项是否有例句
-        for (final meaning in meaningsList) {
-          final sentencesList = await (_db.sentencesDao.select(_db.sentences)
-            ..where((s) => s.meaningItemId.equals(meaning.id))).get();
-          if (sentencesList.isEmpty) {
-            result.addIssue('通用词典不完整', 
-              '释义项 "${meaning.id}" 缺少例句', 
-              'common_dict_integrity');
-          }
         }
       }
       
-      Global.logger.d('通用词典完整性检查完成，共检查 ${wordsList.length} 个单词');
-    } catch (e) {
+      Global.logger.d('通用词典完整性检查完成，检查了 ${wordsList.length} 个单词，发现 ${wordsWithoutMeanings.length} 个单词缺少释义项，$meaningsWithoutSentences 个释义项缺少例句');
+    } catch (e, stackTrace) {
+      Global.logger.e('检查通用词典完整性时出错: $e');
+      Global.logger.e('错误堆栈: $stackTrace');
       result.addError('检查通用词典完整性时出错: $e');
     }
   }
