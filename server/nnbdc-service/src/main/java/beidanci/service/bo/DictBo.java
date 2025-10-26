@@ -25,6 +25,7 @@ import beidanci.api.Result;
 import beidanci.api.model.DictDto;
 import beidanci.api.model.DictVo;
 import beidanci.api.model.DictStatsVo;
+import beidanci.api.model.DictWordDto;
 import beidanci.service.dao.BaseDao;
 import beidanci.service.po.Dict;
 import beidanci.service.po.DictWord;
@@ -473,35 +474,45 @@ public class DictBo extends BaseBo<Dict> {
         try {
             Session session = getSession();
             
-            // 1. 删除dict_word表中的记录
+            // 1. 首先获取被删除单词的序号（在删除前获取）
+            Integer deletedSeq = null;
+            String getDeletedSeqSql = "SELECT seq FROM dict_word WHERE dictId = ? AND wordId = ?";
+            try {
+                Object deletedSeqResult = session.createNativeQuery(getDeletedSeqSql)
+                    .setParameter(1, dictId)
+                    .setParameter(2, wordId)
+                    .getSingleResult();
+                if (deletedSeqResult != null) {
+                    deletedSeq = ((Number) deletedSeqResult).intValue();
+                }
+            } catch (Exception e) {
+                // 如果记录不存在，忽略错误
+            }
+            
+            // 2. 删除dict_word表中的记录
             String deleteDictWordSql = "DELETE FROM dict_word WHERE dictId = ? AND wordId = ?";
             session.createNativeQuery(deleteDictWordSql)
                 .setParameter(1, dictId)
                 .setParameter(2, wordId)
                 .executeUpdate();
             
-            // 2. 重新排序剩余单词的序号
-            String reorderSql = """
-                UPDATE dict_word dw1 
-                SET seq = (
-                    SELECT COUNT(*) + 1 
-                    FROM dict_word dw2 
-                    WHERE dw2.dictId = dw1.dictId AND dw2.seq < dw1.seq
-                )
-                WHERE dw1.dictId = ?
-            """;
-            session.createNativeQuery(reorderSql)
-                .setParameter(1, dictId)
-                .executeUpdate();
+            // 3. 重新排序剩余单词的序号（删除后，让序号大于被删除单词序号的记录都减1）
+            if (deletedSeq != null) {
+                String decreaseSeqSql = "UPDATE dict_word SET seq = seq - 1 WHERE dictId = ? AND seq > ?";
+                session.createNativeQuery(decreaseSeqSql)
+                    .setParameter(1, dictId)
+                    .setParameter(2, deletedSeq)
+                    .executeUpdate();
+            }
             
-            // 3. 更新词典的单词数量
+            // 4. 更新词典的单词数量
             String updateCountSql = "UPDATE dict SET wordCount = (SELECT COUNT(*) FROM dict_word WHERE dictId = ?) WHERE id = ?";
             session.createNativeQuery(updateCountSql)
                 .setParameter(1, dictId)
                 .setParameter(2, dictId)
                 .executeUpdate();
             
-            // 4. 检查并修复学习进度
+            // 5. 检查并修复学习进度
             String fixLearningProgressSql = """
                 UPDATE learning_dict ld 
                 SET currentWordSeq = LEAST(ld.currentWordSeq, d.wordCount)
@@ -512,14 +523,15 @@ public class DictBo extends BaseBo<Dict> {
                 .setParameter(1, dictId)
                 .executeUpdate();
             
-            // 5. 记录系统数据同步日志
-            java.util.Map<String, Object> record = new java.util.HashMap<>();
-            record.put("dictId", dictId);
-            record.put("wordId", wordId);
-            record.put("operation", "REMOVE");
-            record.put("timestamp", new java.sql.Timestamp(System.currentTimeMillis()));
+            // 6. 记录系统数据同步日志
+            DictWordDto dictWordDto = new DictWordDto();
+            dictWordDto.setDictId(dictId);
+            dictWordDto.setWordId(wordId);
+            dictWordDto.setSeq(deletedSeq);
+            dictWordDto.setCreateTime(null);
+            dictWordDto.setUpdateTime(new java.sql.Timestamp(System.currentTimeMillis()));
             
-            sysDbLogBo.logOperation("DELETE", "dict_word", dictId + "_" + wordId, JsonUtils.toJson(record));
+            sysDbLogBo.logOperation("DELETE", "dict_word", dictId + "_" + wordId, JsonUtils.toJson(dictWordDto));
         } catch (Exception e) {
             throw new RuntimeException("删除单词失败: " + e.getMessage(), e);
         }

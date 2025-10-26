@@ -440,7 +440,7 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
       if (apiResult.success && apiResult.data != null) {
         final data = apiResult.data!;
         
-        if (!data.isHealthy && data.issues.isNotEmpty) {
+        if ((data.isHealthy == false) && data.issues.isNotEmpty) {
           for (final issue in data.issues) {
             result.addIssue(issue.type, issue.description, 'system_dict_integrity');
           }
@@ -484,7 +484,7 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
       if (apiResult.success && apiResult.data != null) {
         final data = apiResult.data!;
         
-        if (!data.isHealthy && data.issues.isNotEmpty) {
+        if ((data.isHealthy == false) && data.issues.isNotEmpty) {
           for (final issue in data.issues) {
             result.addIssue(issue.type, issue.description, 'user_dict_integrity');
           }
@@ -528,7 +528,7 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
       if (apiResult.success && apiResult.data != null) {
         final data = apiResult.data!;
         
-        if (!data.isHealthy && data.issues.isNotEmpty) {
+        if ((data.isHealthy == false) && data.issues.isNotEmpty) {
           for (final issue in data.issues) {
             result.addIssue(issue.type, issue.description, 'learning_progress');
           }
@@ -572,7 +572,7 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
       if (apiResult.success && apiResult.data != null) {
         final data = apiResult.data!;
         
-        if (!data.isHealthy && data.issues.isNotEmpty) {
+        if ((data.isHealthy == false) && data.issues.isNotEmpty) {
           for (final issue in data.issues) {
             result.addIssue(issue.type, issue.description, 'db_version');
           }
@@ -616,7 +616,7 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
       if (apiResult.success && apiResult.data != null) {
         final data = apiResult.data!;
         
-        if (!data.isHealthy && data.issues.isNotEmpty) {
+        if ((data.isHealthy == false) && data.issues.isNotEmpty) {
           for (final issue in data.issues) {
             result.addIssue(issue.type, issue.description, 'common_dict_integrity');
           }

@@ -1342,12 +1342,12 @@ class DictStatsVo {
 // 系统健康检查结果VO
 @JsonSerializable()
 class SystemHealthCheckResult {
-  final bool isHealthy;
+  final bool? isHealthy;
   final List<SystemHealthIssue> issues;
   final List<String> errors;
 
   SystemHealthCheckResult({
-    required this.isHealthy,
+    this.isHealthy,
     required this.issues,
     required this.errors,
   });
