@@ -17,9 +17,19 @@ class _DataDiagnosticPageState extends State<DataDiagnosticPage> {
   bool _isRunning = false;
   IntegrityCheckResult? _checkResult;
   IntegrityFixResult? _fixResult;
-  String _currentStep = '';
-  int _currentProgress = 0;
-  static const int _totalSteps = 5;
+  
+  // 每项检查的状态：null=未开始, false=进行中, true=通过, 'failed'=失败
+  final Map<int, dynamic> _checkStates = {}; // 1=序号, 2=数量, 3=学习进度, 4=版本, 5=通用词典
+  final Map<int, String?> _checkMessages = {};
+  
+  // 检查项配置
+  static const List<Map<String, dynamic>> _checkItems = [
+    {'id': 1, 'title': '您的词典单词序号连续性', 'step': 1, 'category': 'dict_word_sequence'},
+    {'id': 2, 'title': '您的词典单词数量一致性', 'step': 2, 'category': 'dict_word_count'},
+    {'id': 3, 'title': '您的学习进度合理性', 'step': 3, 'category': 'learning_progress'},
+    {'id': 4, 'title': '您的数据库版本一致性', 'step': 4, 'category': 'user_db_version'},
+    {'id': 5, 'title': '通用词典完整性', 'step': 5, 'category': 'common_dict_integrity'},
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -51,7 +61,7 @@ class _DataDiagnosticPageState extends State<DataDiagnosticPage> {
 
   Widget _buildContent(bool isDarkMode) {
     if (_isRunning) {
-      return _buildLoadingState();
+      return _buildLoadingState(isDarkMode);
     }
 
     if (_checkResult == null) {
@@ -61,56 +71,50 @@ class _DataDiagnosticPageState extends State<DataDiagnosticPage> {
     return _buildResultsState(isDarkMode);
   }
 
-  Widget _buildLoadingState() {
-    return Center(
+  Widget _buildLoadingState(bool isDarkMode) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const CircularProgressIndicator(),
-          const SizedBox(height: 24),
-          Text(
-            _currentStep.isNotEmpty ? _currentStep : '正在诊断数据完整性...',
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-          ),
-          const SizedBox(height: 16),
-          // 进度条
-          Container(
-            width: 300,
-            height: 8,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(4),
-              color: Colors.grey[300],
-            ),
-            child: TweenAnimationBuilder<double>(
-              duration: const Duration(milliseconds: 300),
-              tween: Tween(begin: 0, end: _currentProgress / _totalSteps),
-              builder: (context, value, child) {
-                return FractionallySizedBox(
-                  alignment: Alignment.centerLeft,
-                  widthFactor: value,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(4),
-                      color: AppTheme.primaryColor,
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.info_outline, color: AppTheme.primaryColor),
+                      const SizedBox(width: 8),
+                      Text(
+                        '数据完整性诊断',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: isDarkMode ? Colors.white : Colors.black87,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    '此功能将检查您相关的数据完整性：',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: isDarkMode ? Colors.grey[300] : Colors.grey[700],
                     ),
                   ),
-                );
-              },
+                  const SizedBox(height: 8),
+                  // 显示每个检查项的状态
+                  ..._checkItems.map((item) => _buildCheckItemWithStatus(
+                    item['title'] as String,
+                    _checkStates[item['id'] as int],
+                    isDarkMode,
+                  )),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 8),
-          TweenAnimationBuilder<double>(
-            duration: const Duration(milliseconds: 300),
-            tween: Tween(begin: 0, end: _currentProgress / _totalSteps * 100),
-            builder: (context, value, child) {
-              return Text(
-                '${value.toInt()}%',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[600],
-                ),
-              );
-            },
           ),
         ],
       ),
@@ -189,6 +193,52 @@ class _DataDiagnosticPageState extends State<DataDiagnosticPage> {
             Icons.check_circle_outline,
             size: 16,
             color: AppTheme.primaryColor,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                fontSize: 13,
+                color: isDarkMode ? Colors.grey[300] : Colors.grey[700],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCheckItemWithStatus(String text, dynamic status, bool isDarkMode) {
+    IconData icon;
+    Color iconColor;
+    
+    if (status == null) {
+      // 尚未检查，显示灰色时钟
+      icon = Icons.access_time;
+      iconColor = Colors.grey;
+    } else if (status == false) {
+      // 正在进行中，显示蓝色时钟
+      icon = Icons.access_time;
+      iconColor = AppTheme.primaryColor;
+    } else if (status == true) {
+      // 通过，显示绿色对钩
+      icon = Icons.check_circle;
+      iconColor = Colors.green;
+    } else {
+      // 失败，显示红色叉
+      icon = Icons.cancel;
+      iconColor = Colors.red;
+    }
+    
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Icon(
+            icon,
+            size: 18,
+            color: iconColor,
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -524,12 +574,13 @@ class _DataDiagnosticPageState extends State<DataDiagnosticPage> {
   }
 
   Future<void> _runDiagnostic() async {
+    // 重置所有检查状态
     setState(() {
       _isRunning = true;
       _checkResult = null;
       _fixResult = null;
-      _currentProgress = 0;
-      _currentStep = '正在初始化...';
+      _checkStates.clear();
+      _checkMessages.clear();
     });
 
     try {
@@ -542,28 +593,45 @@ class _DataDiagnosticPageState extends State<DataDiagnosticPage> {
       // 使用本地数据完整性检查器进行诊断
       final checker = DataIntegrityChecker();
       
-      // 使用进度回调
-      final checkResult = await checker.performUserCheck(
+      final IntegrityCheckResult checkResult = await checker.performUserCheck(
         currentUser.id,
-        onProgress: (step, message) {
+        onProgress: (step, message, {IntegrityCheckResult? result}) async {
           if (mounted) {
-            setState(() {
-              _currentProgress = step;
-              _currentStep = message;
-            });
+            // 找到对应的检查项
+            final checkItem = _checkItems.firstWhere(
+              (item) => item['step'] == step,
+              orElse: () => {},
+            );
+            
+            if (checkItem.isNotEmpty) {
+              final int itemId = checkItem['id'] as int;
+              
+              if (result == null) {
+                // 刚开始检查，设置为进行中状态
+                setState(() {
+                  _checkStates[itemId] = false; // false 表示进行中
+                });
+              } else {
+                // 检查完成，设置结果
+                final String category = checkItem['category'] as String;
+                final hasIssue = result.issues.any((issue) => issue.category == category);
+                
+                setState(() {
+                  _checkStates[itemId] = !hasIssue; // true=通过, 'failed'=有问题
+                });
+              }
+            }
           }
         },
       );
-        
+      
       setState(() {
         _checkResult = checkResult;
         _isRunning = false;
-        _currentStep = '';
       });
     } catch (e) {
       setState(() {
         _isRunning = false;
-        _currentStep = '';
       });
       
       if (mounted) {
