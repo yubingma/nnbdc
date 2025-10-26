@@ -56,7 +56,7 @@ public class SysDbLogBo extends BaseBo<SysDbLog> {
         createEntity(log);
 
         // 递增版本号
-        incrementGlobalVersion(nextVersion);
+        incrementSysDbVersion(nextVersion);
     }
 
     /**
@@ -76,7 +76,7 @@ public class SysDbLogBo extends BaseBo<SysDbLog> {
      * 
      * @param newVersion 新版本号
      */
-    private void incrementGlobalVersion(int newVersion) {
+    private void incrementSysDbVersion(int newVersion) {
         String hql = "FROM SysDbVersion WHERE id = 'singleton'";
         Query<SysDbVersion> query = getSession().createQuery(hql, SysDbVersion.class);
         SysDbVersion version = query.uniqueResult();
@@ -239,7 +239,7 @@ public class SysDbLogBo extends BaseBo<SysDbLog> {
     
     private List<SysDbLogDto> generateDictLogs(int version) {
         // 只生成系统词典的日志
-        String sql = "SELECT id, name, ownerId, isShared, isReady, visible, wordCount, createTime, updateTime FROM dict WHERE ownerId='15118'";
+        String sql = "SELECT id, name, ownerId, isShared, isReady, visible, wordCount, popularityLimit, createTime, updateTime FROM dict WHERE ownerId='15118'";
         Query<?> query = getSession().createNativeQuery(sql);
         List<?> results = query.list();
         
@@ -258,8 +258,8 @@ public class SysDbLogBo extends BaseBo<SysDbLog> {
             log.setRecordId((String) tuple[0]);
             
             // 格式化日期字段
-            String createTimeStr = tuple[7] != null ? isoFormat.format(tuple[7]) : null;
-            String updateTimeStr = tuple[8] != null ? isoFormat.format(tuple[8]) : null;
+            String createTimeStr = tuple[8] != null ? isoFormat.format(tuple[8]) : null;
+            String updateTimeStr = tuple[9] != null ? isoFormat.format(tuple[9]) : null;
             
             java.util.Map<String, Object> record = new java.util.HashMap<>();
             record.put("id", tuple[0]);
@@ -269,6 +269,7 @@ public class SysDbLogBo extends BaseBo<SysDbLog> {
             record.put("isReady", tuple[4]);
             record.put("visible", tuple[5]);
             record.put("wordCount", tuple[6]);
+            record.put("popularityLimit", tuple[7]);
             record.put("createTime", createTimeStr);
             record.put("updateTime", updateTimeStr);
             log.setRecord(JsonUtils.toJson(record));

@@ -35,6 +35,7 @@ import beidanci.service.po.Word;
 import beidanci.service.store.WordCache;
 import beidanci.service.util.BeanUtils;
 import beidanci.service.util.Util;
+import beidanci.service.util.JsonUtils;
 import beidanci.util.Constants;
 
 @Service
@@ -56,6 +57,9 @@ public class DictBo extends BaseBo<Dict> {
 
     @Autowired
     WordCache wordCache;
+
+    @Autowired
+    SysDbLogBo sysDbLogBo;
 
         @PostConstruct
     public void init() {
@@ -390,6 +394,22 @@ public class DictBo extends BaseBo<Dict> {
         
         try {
             updateEntity(dict);
+            
+            // 记录系统数据同步日志，使前端能够感知到词典信息的变更
+            DictDto dictDto = new DictDto(
+                dict.getId(),
+                dict.getName(),
+                dict.getOwner().getId(),
+                dict.getIsShared(),
+                dict.getIsReady(),
+                dict.getVisible(),
+                dict.getWordCount(),
+                dict.getPopularityLimit(),
+                dict.getCreateTime(),
+                dict.getUpdateTime()
+            );
+            
+            sysDbLogBo.logOperation("UPDATE", "dict", dictId, JsonUtils.toJson(dictDto));
         } catch (Exception e) {
             throw new RuntimeException("更新词典失败: " + e.getMessage(), e);
         }

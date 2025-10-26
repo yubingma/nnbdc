@@ -32,7 +32,6 @@ class NetworkUtil {
         return false;
       }
 
-      Global.logger.d('🌐 网络连接检测：网络连接正常，允许网络操作');
       return true;
     } catch (e) {
       Global.logger.e('🌐 网络连接检测失败: $e，跳过所有网络操作');
