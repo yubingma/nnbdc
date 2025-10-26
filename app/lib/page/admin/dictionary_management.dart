@@ -1232,13 +1232,44 @@ class _WordManagementTabState extends State<_WordManagementTab> {
   }
 
   Future<void> _confirmDeleteWord(DictWordVo dictWord) async {
-    // TODO: 实现删除单词功能
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(
-        '删除单词功能开发中: ${dictWord.word.spell}',
-        textScaler: const TextScaler.linear(1.0),
-      )),
-    );
+    try {
+      // 调用删除单词的API
+      final result = await Api.client.removeWordFromDict(
+        widget.dict.id,
+        dictWord.word.id ?? '',
+      );
+      
+      if (result.success) {
+        // 重新加载单词列表
+        _loadWords();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text(
+              '单词删除成功',
+              textScaler: TextScaler.linear(1.0),
+            )),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(
+              '删除失败: ${result.msg ?? "未知错误"}',
+              textScaler: const TextScaler.linear(1.0),
+            )),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(
+            '删除失败: $e',
+            textScaler: const TextScaler.linear(1.0),
+          )),
+        );
+      }
+    }
   }
 }
 
@@ -1478,18 +1509,56 @@ class _EditWordDialogState extends State<_EditWordDialog> {
     });
 
     try {
-      // TODO: 实现保存单词修改的API调用
-      await Future.delayed(const Duration(seconds: 1)); // 模拟API调用
+      // 解析流行度
+      int? popularity;
+      if (_popularityController.text.trim().isNotEmpty) {
+        popularity = int.tryParse(_popularityController.text.trim());
+        if (popularity == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text(
+              '流行度必须是有效的数字',
+              textScaler: TextScaler.linear(1.0),
+            )),
+          );
+          setState(() {
+            _isLoading = false;
+          });
+          return;
+        }
+      }
+
+      // 调用更新单词的API
+      final result = await Api.client.updateDictWord(
+        widget.dictWord.word.id ?? '',
+        _spellController.text.trim(),
+        _shortDescController.text.trim().isEmpty ? null : _shortDescController.text.trim(),
+        _longDescController.text.trim().isEmpty ? null : _longDescController.text.trim(),
+        _pronounceController.text.trim().isEmpty ? null : _pronounceController.text.trim(),
+        _americaPronounceController.text.trim().isEmpty ? null : _americaPronounceController.text.trim(),
+        _britishPronounceController.text.trim().isEmpty ? null : _britishPronounceController.text.trim(),
+        popularity,
+      );
       
-      if (mounted) {
-        Navigator.pop(context);
-        widget.onWordUpdated();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text(
-            '单词修改成功',
-            textScaler: TextScaler.linear(1.0),
-          )),
-        );
+      if (result.success) {
+        if (mounted) {
+          Navigator.pop(context);
+          widget.onWordUpdated();
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text(
+              '单词修改成功',
+              textScaler: TextScaler.linear(1.0),
+            )),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(
+              '修改失败: ${result.msg ?? "未知错误"}',
+              textScaler: const TextScaler.linear(1.0),
+            )),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {

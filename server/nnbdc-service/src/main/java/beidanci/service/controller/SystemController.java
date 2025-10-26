@@ -110,4 +110,43 @@ public class SystemController {
         }
     }
 
+    /**
+     * 更新词典中的单词信息
+     */
+    @PostMapping("/updateDictWord.do")
+    public Result<String> updateDictWord(
+            @RequestParam("wordId") String wordId,
+            @RequestParam("spell") String spell,
+            @RequestParam(value = "shortDesc", required = false) String shortDesc,
+            @RequestParam(value = "longDesc", required = false) String longDesc,
+            @RequestParam(value = "pronounce", required = false) String pronounce,
+            @RequestParam(value = "americaPronounce", required = false) String americaPronounce,
+            @RequestParam(value = "britishPronounce", required = false) String britishPronounce,
+            @RequestParam(value = "popularity", required = false) Integer popularity
+    ) {
+        try {
+            dictBo.updateDictWord(wordId, spell, shortDesc, longDesc, pronounce, 
+                                americaPronounce, britishPronounce, popularity);
+            return Result.success("单词信息更新成功");
+        } catch (Exception e) {
+            return Result.fail("更新单词信息失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 从词典中删除单词
+     */
+    @PostMapping("/removeWordFromDict.do")
+    public Result<String> removeWordFromDict(
+            @RequestParam("dictId") String dictId,
+            @RequestParam("wordId") String wordId
+    ) {
+        try {
+            dictBo.removeWordFromDict(dictId, wordId);
+            return Result.success("单词删除成功");
+        } catch (Exception e) {
+            return Result.fail("删除单词失败: " + e.getMessage());
+        }
+    }
+
 }

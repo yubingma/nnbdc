@@ -415,4 +415,114 @@ public class DictBo extends BaseBo<Dict> {
         }
     }
 
+    /**
+     * 更新词典中的单词信息
+     */
+    public void updateDictWord(String wordId, String spell, String shortDesc, String longDesc,
+                              String pronounce, String americaPronounce, String britishPronounce, 
+                              Integer popularity) {
+        try {
+            // 更新word表
+            String updateWordSql = """
+                UPDATE word SET 
+                    spell = ?, 
+                    shortDesc = ?, 
+                    longDesc = ?, 
+                    pronounce = ?, 
+                    americaPronounce = ?, 
+                    britishPronounce = ?, 
+                    popularity = ?, 
+                    updateTime = NOW()
+                WHERE id = ?
+            """;
+            
+            Session session = getSession();
+            session.createNativeQuery(updateWordSql)
+                .setParameter(1, spell)
+                .setParameter(2, shortDesc)
+                .setParameter(3, longDesc)
+                .setParameter(4, pronounce)
+                .setParameter(5, americaPronounce)
+                .setParameter(6, britishPronounce)
+                .setParameter(7, popularity)
+                .setParameter(8, wordId)
+                .executeUpdate();
+            
+            // 记录系统数据同步日志
+            java.util.Map<String, Object> record = new java.util.HashMap<>();
+            record.put("id", wordId);
+            record.put("spell", spell);
+            record.put("shortDesc", shortDesc);
+            record.put("longDesc", longDesc);
+            record.put("pronounce", pronounce);
+            record.put("americaPronounce", americaPronounce);
+            record.put("britishPronounce", britishPronounce);
+            record.put("popularity", popularity);
+            record.put("updateTime", new java.sql.Timestamp(System.currentTimeMillis()));
+            
+            sysDbLogBo.logOperation("UPDATE", "word", wordId, JsonUtils.toJson(record));
+        } catch (Exception e) {
+            throw new RuntimeException("更新单词失败: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * 从词典中删除单词
+     */
+    public void removeWordFromDict(String dictId, String wordId) {
+        try {
+            Session session = getSession();
+            
+            // 1. 删除dict_word表中的记录
+            String deleteDictWordSql = "DELETE FROM dict_word WHERE dictId = ? AND wordId = ?";
+            session.createNativeQuery(deleteDictWordSql)
+                .setParameter(1, dictId)
+                .setParameter(2, wordId)
+                .executeUpdate();
+            
+            // 2. 重新排序剩余单词的序号
+            String reorderSql = """
+                UPDATE dict_word dw1 
+                SET seq = (
+                    SELECT COUNT(*) + 1 
+                    FROM dict_word dw2 
+                    WHERE dw2.dictId = dw1.dictId AND dw2.seq < dw1.seq
+                )
+                WHERE dw1.dictId = ?
+            """;
+            session.createNativeQuery(reorderSql)
+                .setParameter(1, dictId)
+                .executeUpdate();
+            
+            // 3. 更新词典的单词数量
+            String updateCountSql = "UPDATE dict SET wordCount = (SELECT COUNT(*) FROM dict_word WHERE dictId = ?) WHERE id = ?";
+            session.createNativeQuery(updateCountSql)
+                .setParameter(1, dictId)
+                .setParameter(2, dictId)
+                .executeUpdate();
+            
+            // 4. 检查并修复学习进度
+            String fixLearningProgressSql = """
+                UPDATE learning_dict ld 
+                SET currentWordSeq = LEAST(ld.currentWordSeq, d.wordCount)
+                FROM dict d 
+                WHERE ld.dictId = d.id AND ld.dictId = ? AND ld.currentWordSeq > d.wordCount
+            """;
+            session.createNativeQuery(fixLearningProgressSql)
+                .setParameter(1, dictId)
+                .executeUpdate();
+            
+            // 5. 记录系统数据同步日志
+            java.util.Map<String, Object> record = new java.util.HashMap<>();
+            record.put("dictId", dictId);
+            record.put("wordId", wordId);
+            record.put("operation", "REMOVE");
+            record.put("timestamp", new java.sql.Timestamp(System.currentTimeMillis()));
+            
+            sysDbLogBo.logOperation("DELETE", "dict_word", dictId + "_" + wordId, JsonUtils.toJson(record));
+        } catch (Exception e) {
+            throw new RuntimeException("删除单词失败: " + e.getMessage(), e);
+        }
+    }
+
 }

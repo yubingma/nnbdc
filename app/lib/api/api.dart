@@ -469,4 +469,22 @@ abstract class RestClient {
       @Field("isReady") bool isReady,
       @Field("visible") bool visible,
       @Field("popularityLimit") int? popularityLimit);
+
+  @POST("/updateDictWord.do")
+  @FormUrlEncoded()
+  Future<Result<String>> updateDictWord(
+      @Field("wordId") String wordId,
+      @Field("spell") String spell,
+      @Field("shortDesc") String? shortDesc,
+      @Field("longDesc") String? longDesc,
+      @Field("pronounce") String? pronounce,
+      @Field("americaPronounce") String? americaPronounce,
+      @Field("britishPronounce") String? britishPronounce,
+      @Field("popularity") int? popularity);
+
+  @POST("/removeWordFromDict.do")
+  @FormUrlEncoded()
+  Future<Result<String>> removeWordFromDict(
+      @Field("dictId") String dictId,
+      @Field("wordId") String wordId);
 }
