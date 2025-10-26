@@ -1006,7 +1006,7 @@ class _MePageState extends State<MePage> {
               ),
               _buildMenuTile(
                 icon: Icons.health_and_safety,
-                title: '数据诊断',
+                title: '故障诊断',
                 onTap: () => _navigateToDataDiagnostic(),
               ),
               if (Config.showDbButton)
@@ -2031,7 +2031,7 @@ class _DictCardState extends State<DictCard> {
               ),
               _buildDictActionButton(
                 icon: Icons.list_alt,
-                label: '查看单词',
+                label: '单词列表',
                 isActive: true,
                 onTap: () async {
                   try {

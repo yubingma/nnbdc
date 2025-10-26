@@ -583,3 +583,50 @@ class DictStatsVo {
   Map<String, dynamic> toJson() => _$DictStatsVoToJson(this);
 }
 
+/// 数据诊断结果DTO
+@JsonSerializable()
+class DataDiagnosticDto {
+  bool isHealthy;
+  int totalIssues;
+  List<String> errors;
+  List<DiagnosticIssueDto> issues;
+
+  DataDiagnosticDto(this.isHealthy, this.totalIssues, this.errors, this.issues);
+
+  factory DataDiagnosticDto.fromJson(Map<String, dynamic> json) =>
+      _$DataDiagnosticDtoFromJson(json);
+
+  Map<String, dynamic> toJson() => _$DataDiagnosticDtoToJson(this);
+}
+
+/// 诊断问题DTO
+@JsonSerializable()
+class DiagnosticIssueDto {
+  String type;
+  String description;
+  String category;
+
+  DiagnosticIssueDto(this.type, this.description, this.category);
+
+  factory DiagnosticIssueDto.fromJson(Map<String, dynamic> json) =>
+      _$DiagnosticIssueDtoFromJson(json);
+
+  Map<String, dynamic> toJson() => _$DiagnosticIssueDtoToJson(this);
+}
+
+/// 数据修复结果DTO
+@JsonSerializable()
+class DataFixResultDto {
+  bool hasFixed;
+  bool hasErrors;
+  List<String> fixed;
+  List<String> errors;
+
+  DataFixResultDto(this.hasFixed, this.hasErrors, this.fixed, this.errors);
+
+  factory DataFixResultDto.fromJson(Map<String, dynamic> json) =>
+      _$DataFixResultDtoFromJson(json);
+
+  Map<String, dynamic> toJson() => _$DataFixResultDtoToJson(this);
+}
+

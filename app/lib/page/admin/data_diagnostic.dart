@@ -4,6 +4,8 @@ import 'package:nnbdc/util/data_integrity_checker.dart';
 import 'package:nnbdc/state.dart';
 import 'package:nnbdc/global.dart';
 import 'package:provider/provider.dart';
+import 'package:nnbdc/api/api.dart';
+import 'package:nnbdc/api/dto.dart';
 
 /// 数据诊断页面
 class DataDiagnosticPage extends StatefulWidget {
@@ -26,7 +28,7 @@ class _DataDiagnosticPageState extends State<DataDiagnosticPage> {
     return Scaffold(
       backgroundColor: backgroundColor,
       appBar: AppBar(
-        title: const Text('数据诊断'),
+        title: const Text('故障诊断'),
         backgroundColor: AppTheme.primaryColor,
         foregroundColor: Colors.white,
         leading: IconButton(
@@ -485,19 +487,37 @@ class _DataDiagnosticPageState extends State<DataDiagnosticPage> {
     });
 
     try {
-      final checker = DataIntegrityChecker();
       // 获取当前登录用户ID
       final currentUser = Global.getLoggedInUser();
       if (currentUser == null) {
         throw Exception('用户未登录');
       }
       
-      final result = await checker.performUserCheck(currentUser.id);
+      // 调用后端API进行用户数据诊断
+      final result = await Api.client.performUserDiagnostic(currentUser.id);
       
-      setState(() {
-        _checkResult = result;
-        _isRunning = false;
-      });
+      if (result.success && result.data != null) {
+        // 将后端返回的DTO转换为前端使用的格式
+        final diagnosticDto = result.data!;
+        final checkResult = IntegrityCheckResult();
+        
+        // 转换错误信息
+        for (String error in diagnosticDto.errors) {
+          checkResult.addError(error);
+        }
+        
+        // 转换问题信息
+        for (DiagnosticIssueDto issueDto in diagnosticDto.issues) {
+          checkResult.addIssue(issueDto.type, issueDto.description, issueDto.category);
+        }
+        
+        setState(() {
+          _checkResult = checkResult;
+          _isRunning = false;
+        });
+      } else {
+        throw Exception(result.msg ?? '诊断失败');
+      }
     } catch (e) {
       setState(() {
         _isRunning = false;
@@ -522,25 +542,55 @@ class _DataDiagnosticPageState extends State<DataDiagnosticPage> {
     });
 
     try {
-      final checker = DataIntegrityChecker();
-      final fixResult = await checker.autoFix(_checkResult!);
+      // 将前端格式转换为后端DTO格式
+      final diagnosticDto = DataDiagnosticDto(
+        _checkResult!.isHealthy,
+        _checkResult!.totalIssues,
+        _checkResult!.errors,
+        _checkResult!.issues.map((issue) => DiagnosticIssueDto(
+          issue.type,
+          issue.description,
+          issue.category,
+        )).toList(),
+      );
       
-      setState(() {
-        _fixResult = fixResult;
-        _isRunning = false;
-      });
+      // 调用后端API进行自动修复
+      final result = await Api.client.autoFixDataIssues(diagnosticDto);
+      
+      if (result.success && result.data != null) {
+        // 将后端返回的DTO转换为前端使用的格式
+        final fixResultDto = result.data!;
+        final fixResult = IntegrityFixResult();
+        
+        // 转换修复结果
+        for (String fixed in fixResultDto.fixed) {
+          fixResult.addFixed(fixed);
+        }
+        
+        // 转换错误信息
+        for (String error in fixResultDto.errors) {
+          fixResult.addError(error);
+        }
+        
+        setState(() {
+          _fixResult = fixResult;
+          _isRunning = false;
+        });
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              fixResult.hasFixed 
-                ? '已修复 ${fixResult.fixed.length} 个问题'
-                : '没有需要修复的问题'
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                fixResult.hasFixed 
+                  ? '已修复 ${fixResult.fixed.length} 个问题'
+                  : '没有需要修复的问题'
+              ),
+              backgroundColor: fixResult.hasFixed ? Colors.green : Colors.blue,
             ),
-            backgroundColor: fixResult.hasFixed ? Colors.green : Colors.blue,
-          ),
-        );
+          );
+        }
+      } else {
+        throw Exception(result.msg ?? '修复失败');
       }
     } catch (e) {
       setState(() {

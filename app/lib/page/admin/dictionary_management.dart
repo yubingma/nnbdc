@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:nnbdc/api/api.dart';
+import 'package:nnbdc/api/bo/word_bo.dart';
 import 'package:nnbdc/api/dto.dart';
 import 'package:nnbdc/api/vo.dart';
-import 'package:nnbdc/api/bo/word_bo.dart';
+import 'package:nnbdc/state.dart';
 import 'package:nnbdc/theme/app_theme.dart';
 import 'package:provider/provider.dart';
-import 'package:nnbdc/state.dart';
 
 // 系统词典管理组件
 class DictionaryManagementWidget extends StatefulWidget {
@@ -1616,4 +1616,6 @@ class _EditWordDialogState extends State<_EditWordDialog> {
       }
     }
   }
+
+
 }
