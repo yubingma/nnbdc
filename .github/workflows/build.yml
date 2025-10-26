@@ -196,9 +196,8 @@ jobs:
           $verName = $VERSION_NUMBER
           $changes = @("修复已知问题，提升稳定性")
           $payload = @(@{ verCode = $verCode; verName = $verName; changes = $changes })
-          $payload | ConvertTo-Json -Depth 3 -Compress | Out-File -FilePath "ver.json" -Encoding UTF8
-
-          if (Test-Path "ver.json") { Copy-Item "ver.json" "$DEPLOY_DIR/ver.json" -Force; Write-Host "版本信息已更新: $VERSION_NUMBER ($BUILD_NUMBER)" }
+          $payload | ConvertTo-Json -Depth 3 -Compress | Out-File -FilePath "$DEPLOY_DIR/ver.json" -Encoding UTF8 -Force
+          Write-Host "版本信息已更新: $VERSION_NUMBER ($BUILD_NUMBER)"
         shell: pwsh
 
       # 准备部署文件 - 其他平台
