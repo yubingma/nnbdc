@@ -44,10 +44,9 @@ class DataIntegrityChecker {
       final allDicts = await _db.dictsDao.select(_db.dicts).get();
       
       for (final dict in allDicts) {
-        final words = await _db.dictWordsDao.select(_db.dictWords)
+        final wordsList = await (_db.dictWordsDao.select(_db.dictWords)
           ..where((dw) => dw.dictId.equals(dict.id))
-          ..orderBy([(dw) => OrderingTerm.asc(dw.seq)]);
-        final wordsList = await words.get();
+          ..orderBy([(dw) => OrderingTerm.asc(dw.seq)])).get();
         if (wordsList.isEmpty) continue;
         
         // 检查序号是否从1开始
@@ -139,15 +138,13 @@ class DataIntegrityChecker {
   Future<void> _checkCommonDictIntegrity(IntegrityCheckResult result) async {
     try {
       // 检查通用词典中的单词是否有释义项
-      final commonDictWords = await _db.dictWordsDao.select(_db.dictWords)
-        ..where((dw) => dw.dictId.equals(Global.commonDictId));
-      final wordsList = await commonDictWords.get();
+      final wordsList = await (_db.dictWordsDao.select(_db.dictWords)
+        ..where((dw) => dw.dictId.equals(Global.commonDictId))).get();
       
       for (final word in wordsList) {
         // 检查单词是否有释义项
-        final meanings = await _db.meaningItemsDao.select(_db.meaningItems)
-          ..where((mi) => mi.wordId.equals(word.wordId));
-        final meaningsList = await meanings.get();
+        final meaningsList = await (_db.meaningItemsDao.select(_db.meaningItems)
+          ..where((mi) => mi.wordId.equals(word.wordId))).get();
         if (meaningsList.isEmpty) {
           result.addIssue('通用词典不完整', 
             '单词 "${word.wordId}" 缺少释义项', 
@@ -157,9 +154,8 @@ class DataIntegrityChecker {
         
         // 检查释义项是否有例句
         for (final meaning in meaningsList) {
-          final sentencesQuery = await _db.sentencesDao.select(_db.sentences)
-            ..where((s) => s.meaningItemId.equals(meaning.id));
-          final sentencesList = await sentencesQuery.get();
+          final sentencesList = await (_db.sentencesDao.select(_db.sentences)
+            ..where((s) => s.meaningItemId.equals(meaning.id))).get();
           if (sentencesList.isEmpty) {
             result.addIssue('通用词典不完整', 
               '释义项 "${meaning.id}" 缺少例句', 
@@ -210,10 +206,9 @@ class DataIntegrityChecker {
       final allDicts = await _db.dictsDao.select(_db.dicts).get();
       
       for (final dict in allDicts) {
-        final words = await _db.dictWordsDao.select(_db.dictWords)
+        final wordsList = await (_db.dictWordsDao.select(_db.dictWords)
           ..where((dw) => dw.dictId.equals(dict.id))
-          ..orderBy([(dw) => OrderingTerm.asc(dw.seq)]);
-        final wordsList = await words.get();
+          ..orderBy([(dw) => OrderingTerm.asc(dw.seq)])).get();
         if (wordsList.isEmpty) continue;
         
         // 重新分配序号
