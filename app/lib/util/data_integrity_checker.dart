@@ -40,24 +40,47 @@ class DataIntegrityChecker {
   /// 执行用户特定的数据完整性检查
   Future<IntegrityCheckResult> performUserCheck(String userId) async {
     final result = IntegrityCheckResult();
+    final stopwatch = Stopwatch()..start();
     
     try {
+      Global.logger.d('开始数据完整性诊断...');
+      
       // 1. 检查用户词典单词序号连续性
+      final timer1 = Stopwatch()..start();
       await _checkUserDictWordSequences(result, userId);
+      timer1.stop();
+      Global.logger.d('✓ 检查序号连续性: ${timer1.elapsedMilliseconds}ms');
       
       // 2. 检查用户词典单词数量一致性
+      final timer2 = Stopwatch()..start();
       await _checkUserDictWordCounts(result, userId);
+      timer2.stop();
+      Global.logger.d('✓ 检查单词数量一致性: ${timer2.elapsedMilliseconds}ms');
       
       // 3. 检查用户学习进度合理性
+      final timer3 = Stopwatch()..start();
       await _checkUserLearningProgress(result, userId);
+      timer3.stop();
+      Global.logger.d('✓ 检查学习进度合理性: ${timer3.elapsedMilliseconds}ms');
       
       // 4. 检查用户数据库版本一致性
+      final timer4 = Stopwatch()..start();
       await _checkUserDbVersions(result, userId);
+      timer4.stop();
+      Global.logger.d('✓ 检查数据库版本一致性: ${timer4.elapsedMilliseconds}ms');
       
       // 5. 检查通用词典完整性
+      final timer5 = Stopwatch()..start();
       await _checkCommonDictIntegrity(result);
+      timer5.stop();
+      Global.logger.d('✓ 检查通用词典完整性: ${timer5.elapsedMilliseconds}ms');
+      
+      stopwatch.stop();
+      Global.logger.d('✓ 数据完整性诊断完成，总耗时: ${stopwatch.elapsedMilliseconds}ms');
       
     } catch (e) {
+      stopwatch.stop();
+      Global.logger.e('✗ 用户数据完整性检查过程中出现错误: $e');
       result.addError('用户数据完整性检查过程中出现错误: $e');
     }
     
@@ -278,6 +301,8 @@ class DataIntegrityChecker {
       final wordsList = await (_db.dictWordsDao.select(_db.dictWords)
         ..where((dw) => dw.dictId.equals(Global.commonDictId))).get();
       
+      Global.logger.d('开始检查通用词典完整性，共 ${wordsList.length} 个单词');
+      
       for (final word in wordsList) {
         // 检查单词是否有释义项
         final meaningsList = await (_db.meaningItemsDao.select(_db.meaningItems)
@@ -300,6 +325,8 @@ class DataIntegrityChecker {
           }
         }
       }
+      
+      Global.logger.d('通用词典完整性检查完成，共检查 ${wordsList.length} 个单词');
     } catch (e) {
       result.addError('检查通用词典完整性时出错: $e');
     }
