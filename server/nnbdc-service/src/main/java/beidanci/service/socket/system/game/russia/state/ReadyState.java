@@ -430,16 +430,16 @@ public class ReadyState extends RoomState {
             botAutoStartTask = null;
         }
 
-        // 获取系统配置（每局游戏需要支付的泡泡糖数）
+        // 获取系统配置（每局游戏需要支付的魔法泡泡数）
         // 在socket线程中无事务环境，使用newSession方式避免获取currentSession失败
         SysParam sysParam = sysParamBo.findById(SysParam.COW_DUNG_PER_GAME, true);
         final int cowDungPerGame = Integer.parseInt(sysParam.getParamValue());
 
-        // 检查用户是否有足够的泡泡糖（机器人不需要检查）
+        // 检查用户是否有足够的魔法泡泡（机器人不需要检查）
         boolean isBot = user.getUserName() != null && user.getUserName().startsWith("bot_");
         if (!isBot && user.getCowDung() < cowDungPerGame) {
             org.slf4j.LoggerFactory.getLogger(ReadyState.class)
-                    .warn(String.format("❌ 用户[%s]泡泡糖不足：需要%d，现有%d",
+                    .warn(String.format("❌ 用户[%s]魔法泡泡不足：需要%d，现有%d",
                             Util.getNickNameOfUser(user), cowDungPerGame, user.getCowDung()));
             room.sendEventToUser(user, "noEnoughCowDung", cowDungPerGame);
             return;
@@ -564,12 +564,12 @@ public class ReadyState extends RoomState {
             scheduleBotNext(botTimer, 800L, botUser, humanUser, idx);
         }
 
-        // 两位玩家各扣除若干泡泡糖（按照系统配置）
+        // 两位玩家各扣除若干魔法泡泡（按照系统配置）
         /*
          * for (UserVo userVo : room.getUsers().keySet()) {
          * User user2 = Global.getUserBo().findById(userVo.getId());
          * Global.getUserBo().adjustCowDung(user2, cowDungPerGame * (-1),
-         * "游戏开始时扣除的泡泡糖");
+         * "游戏开始时扣除的魔法泡泡");
          * }
          */
 

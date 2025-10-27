@@ -477,7 +477,7 @@ public class UserBo extends BaseBo<User> {
                 user.getDakas().clear();
                 updateEntity(user);
 
-                // 删除用户的泡泡糖收支记录
+                // 删除用户的魔法泡泡收支记录
                 for (UserCowDungLog userCowDungLog : user.getUserCowDungLogs()) {
                     userCowDungLogBo.deleteEntity(userCowDungLog);
                 }
@@ -752,7 +752,7 @@ public class UserBo extends BaseBo<User> {
     }
 
     /**
-     * 保存掷骰子得到的泡泡糖奖励
+     * 保存掷骰子得到的魔法泡泡奖励
      *
      * @param delta
      * @param reason
@@ -766,25 +766,25 @@ public class UserBo extends BaseBo<User> {
         // 不再翻倍，直接使用传入的delta值
         // delta = delta;
 
-        // 根据配置对泡泡糖数乘以一个倍数(节假日)
+        // 根据配置对魔法泡泡数乘以一个倍数(节假日)
         delta = (int) (delta * sysParamUtil.getHolidayCowDungRatio());
 
-        // 如果用户是因为掷骰子得到泡泡糖，将掷骰子机会数量减 1
+        // 如果用户是因为掷骰子得到魔法泡泡，将掷骰子机会数量减 1
         if (reason.equals("throw dice after learning")) {
             // 如果用户掷骰子的机会数都为0了，用户还在掷骰子，这样的情况应该不存在，
             // 但也可能是客户端采取了某些特殊手段
             if (user.getThrowDiceChance() == 0) {
                 logger.warn("发现异常情况：用户掷骰子的机会数都为0了，用户还在掷骰子, user: " + user.getUserName());
-                return "保存泡泡糖失败";
+                return "保存魔法泡泡失败";
             }
 
             user.setThrowDiceChance(user.getThrowDiceChance() - 1);
             updateEntity(user);
 
-            logger.info(String.format("用户[%s]打卡后掷骰子得到[%d]个泡泡糖", Util.getNickNameOfUser(user), delta));
+            logger.info(String.format("用户[%s]打卡后掷骰子得到[%d]个魔法泡泡", Util.getNickNameOfUser(user), delta));
         }
 
-        // 更新用户的泡泡糖数
+        // 更新用户的魔法泡泡数
         adjustCowDung(user, delta, reason);
 
         return null;
@@ -1018,7 +1018,7 @@ public class UserBo extends BaseBo<User> {
                 logs.add(log);
             }
 
-            // 生成用户泡泡糖日志(user_cow_dung_log)全量日志
+            // 生成用户魔法泡泡日志(user_cow_dung_log)全量日志
             List<UserCowDungLogDto> userCowDungLogDtos = userCowDungLogBo.getUserCowDungLogDtosOfUser(userId);
             for (UserCowDungLogDto dto : userCowDungLogDtos) {
                 UserDbLogDto log = new UserDbLogDto(

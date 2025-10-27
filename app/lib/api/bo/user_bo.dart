@@ -312,7 +312,7 @@ class UserBo {
         Global.logger.d('已删除学习步骤数据');
         
         await db.userCowDungLogsDao.batchDeleteUserRecords(userId);
-        Global.logger.d('已删除泡泡糖记录');
+        Global.logger.d('已删除魔法泡泡记录');
         
         await db.userDbLogsDao.deleteUserDbLogs(userId);
         Global.logger.d('已删除数据库日志');

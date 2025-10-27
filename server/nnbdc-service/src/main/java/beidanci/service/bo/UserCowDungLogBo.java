@@ -25,7 +25,7 @@ public class UserCowDungLogBo extends BaseBo<UserCowDungLog> {
     }
 
     /**
-     * 获取用户所有泡泡糖日志的DTO列表，用于全量同步
+     * 获取用户所有魔法泡泡日志的DTO列表，用于全量同步
      */
     public List<UserCowDungLogDto> getUserCowDungLogDtosOfUser(String userId) {
         String sql = "select id, userId, delta, cowDung, theTime, reason, createTime, updateTime from user_cow_dung_log where userId = :userId order by createTime";

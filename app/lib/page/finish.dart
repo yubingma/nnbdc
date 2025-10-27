@@ -130,7 +130,7 @@ class FinishPageState extends State<FinishPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text('打卡成功！\n获得积分：${todayDakaScore - extraScore} + $extraScore(连续打卡)'),
-                    Text('恭喜！你得到$cowDung颗泡泡糖')
+                    Text('恭喜！你得到$cowDung颗魔法泡泡')
                   ],
                 )
               : Text(dakaResult.msg!),

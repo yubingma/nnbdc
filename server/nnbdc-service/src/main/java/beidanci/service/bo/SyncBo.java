@@ -714,7 +714,7 @@ public class SyncBo {
     }
 
     /**
-     * 处理泡泡糖日志同步
+     * 处理魔法泡泡日志同步
      */
     private void processUserCowDungLogSync(String userId, UserDbLogDto log, String recordJson, String operation) {
         if ("BATCH_DELETE".equals(operation)) {
@@ -735,10 +735,10 @@ public class SyncBo {
                             logger.info("user_cow_dung_log 已存在，忽略重复 INSERT: id={}", cowDungLog.getId());
                         }
                     }
-                    // 注意：泡泡糖日志通常只支持INSERT操作
+                    // 注意：魔法泡泡日志通常只支持INSERT操作
                 }
             } catch (IllegalArgumentException e) {
-                logger.error("同步泡泡糖日志数据失败：" + e.getMessage(), e);
+                logger.error("同步魔法泡泡日志数据失败：" + e.getMessage(), e);
             }
         }
     }

@@ -99,10 +99,10 @@ public class SentenceController {
             }
         }
 
-        //检测用户是否有足够的泡泡糖
+        //检测用户是否有足够的魔法泡泡
         User user = userBo.findById(userId);
         if (user.getCowDung() < payCowdung) {
-            return Result.fail(String.format("你的泡泡糖数量为%d，不足%d个", user.getCowDung(), payCowdung));
+            return Result.fail(String.format("你的魔法泡泡数量为%d，不足%d个", user.getCowDung(), payCowdung));
         }
 
         Sentence sentence = sentenceBo.createSentence(english, chinese, wordId, payCowdung, currWord, userId);

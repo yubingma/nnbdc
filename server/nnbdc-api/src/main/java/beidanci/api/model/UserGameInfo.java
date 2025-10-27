@@ -12,7 +12,7 @@ public class UserGameInfo {
      */
     private int score;
     /**
-     * 用户的泡泡糖数
+     * 用户的魔法泡泡数
      */
     private int cowDung;
     private int winCount;

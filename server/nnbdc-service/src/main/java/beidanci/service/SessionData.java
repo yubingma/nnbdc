@@ -21,7 +21,7 @@ public class SessionData {
     private Map<Integer, WordIndexAndLearningMode> learningIndexMap;
 
     /**
-     * 服务端随机生成的奖励用户的泡泡糖数
+     * 服务端随机生成的奖励用户的魔法泡泡数
      */
     private int cowDung;
 

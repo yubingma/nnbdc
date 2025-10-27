@@ -229,9 +229,9 @@ class StudyBo {
 
       // 直接使用掷骰子结果，不再翻倍
       final finalCowDung = cowDung;
-      Global.logger.d('最终泡泡糖数: $finalCowDung');
+      Global.logger.d('最终魔法泡泡数: $finalCowDung');
 
-      // 更新用户的泡泡糖数和掷骰子机会
+      // 更新用户的魔法泡泡数和掷骰子机会
       await db.usersDao.saveUser(
           user.copyWith(
             cowDung: user.cowDung + finalCowDung,
@@ -239,7 +239,7 @@ class StudyBo {
           ),
           true);
 
-      // 记录泡泡糖奖励日志
+      // 记录魔法泡泡奖励日志
       final log = UserCowDungLog(
         id: AppClock.now().millisecondsSinceEpoch.toString(),
         userId: user.id,

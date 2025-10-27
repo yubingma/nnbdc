@@ -194,7 +194,7 @@ public class SentenceBo extends BaseBo<Sentence> {
         WordSentenceId linkId = new WordSentenceId(wordId, sentence.getId());
         wordSentenceBo.createEntity(new WordSentence(linkId));
 
-                    // 付出泡泡糖
+                    // 付出魔法泡泡
         user.setCowDung(user.getCowDung() - payCowdung);
         userBo.updateEntity(user);
 

@@ -1246,7 +1246,7 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
         final user = await db.usersDao.getLastLoggedInUser();
         
         if (user != null) {
-          // 更新用户的游戏积分和泡泡糖
+          // 更新用户的游戏积分和魔法泡泡
           final newGameScore = user.gameScore + scoreAdjust;
           final newCowDung = user.cowDung + cowDungAdjust;
           
@@ -1258,7 +1258,7 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
             true,
           );
           
-          // 记录泡泡糖变更日志
+          // 记录魔法泡泡变更日志
           if (cowDungAdjust != 0) {
             final log = UserCowDungLog(
               id: AppClock.now().millisecondsSinceEpoch.toString(),
@@ -1274,10 +1274,10 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
           // 触发数据库同步
           ThrottledDbSyncService().requestSync();
           
-          Global.logger.d('游戏积分和泡泡糖已更新：积分${scoreAdjust > 0 ? "+$scoreAdjust" : scoreAdjust}, 泡泡糖${cowDungAdjust > 0 ? "+$cowDungAdjust" : cowDungAdjust}');
+          Global.logger.d('游戏积分和魔法泡泡已更新：积分${scoreAdjust > 0 ? "+$scoreAdjust" : scoreAdjust}, 魔法泡泡${cowDungAdjust > 0 ? "+$cowDungAdjust" : cowDungAdjust}');
         }
       } catch (e, stackTrace) {
-        Global.logger.e('更新游戏积分和泡泡糖失败: $e', stackTrace: stackTrace);
+        Global.logger.e('更新游戏积分和魔法泡泡失败: $e', stackTrace: stackTrace);
       }
     });
 
@@ -2309,7 +2309,7 @@ class UserInfoPanel extends PositionComponent with HasGameReference<MyGame> {
       final double maxWidth = player.playGround.width - 32; // 左右各16px内边距
       nickName.text = _ellipsize(baseNick, (nickName.textRenderer as TextPaint), maxWidth);
       score.text = '游戏分： ${player.userGameInfo!.score}';
-      cowDung.text = '泡泡糖： ${player.userGameInfo!.cowDung}';
+      cowDung.text = '魔法泡泡： ${player.userGameInfo!.cowDung}';
       contest.text = '胜　负： ${player.userGameInfo!.winCount} | ${player.userGameInfo!.lostCount}';
 
       if (player.userGameInfo!.winCount + player.userGameInfo!.lostCount == 0) {
@@ -2318,7 +2318,7 @@ class UserInfoPanel extends PositionComponent with HasGameReference<MyGame> {
         winRatio.text = '胜　率： ${player.userGameInfo!.winCount * 100.0 ~/ (player.userGameInfo!.winCount + player.userGameInfo!.lostCount)}%';
       }
 
-      // 只有在有上一局游戏结果时才显示积分/泡泡糖调整信息
+      // 只有在有上一局游戏结果时才显示积分/魔法泡泡调整信息
       if (player.isWonInLastGame != null) {
         if (player.isWonInLastGame!) {
           scoreAdjust.textRenderer = TextPaint(
@@ -2338,7 +2338,7 @@ class UserInfoPanel extends PositionComponent with HasGameReference<MyGame> {
             ),
           ]));
           scoreAdjust.text = '积分 +${player.scoreAdjust}';
-          cowDungAdjust.text = '泡泡糖 +${player.cowdungAdjust}';
+          cowDungAdjust.text = '魔法泡泡 +${player.cowdungAdjust}';
         } else {
           scoreAdjust.textRenderer = TextPaint(
               style: const TextStyle(color: Color(0xFFF44336), fontSize: 15, fontWeight: FontWeight.w500, fontFamily: 'NotoSansSC', shadows: [
@@ -2357,9 +2357,9 @@ class UserInfoPanel extends PositionComponent with HasGameReference<MyGame> {
             ),
           ]));
           scoreAdjust.text = '积分 -${player.scoreAdjust.abs()}';
-          cowDungAdjust.text = '泡泡糖 -${player.cowdungAdjust.abs()}';
+          cowDungAdjust.text = '魔法泡泡 -${player.cowdungAdjust.abs()}';
         }
-        // 有游戏结果时才添加积分/泡泡糖调整组件
+        // 有游戏结果时才添加积分/魔法泡泡调整组件
         if (scoreAdjust.parent == null) {
           add(scoreAdjust);
         }
@@ -2367,7 +2367,7 @@ class UserInfoPanel extends PositionComponent with HasGameReference<MyGame> {
           add(cowDungAdjust);
         }
       } else {
-        // 没有游戏结果时，移除积分/泡泡糖调整组件
+        // 没有游戏结果时，移除积分/魔法泡泡调整组件
         scoreAdjust.removeFromParent();
         cowDungAdjust.removeFromParent();
       }

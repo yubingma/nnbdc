@@ -796,7 +796,7 @@ class _MePageState extends State<MePage> {
                     const Color(0xFF9B59B6),
                   ),
                   _buildProgressItem(
-                    '泡泡糖',
+                    '魔法泡泡',
                     studyProgress!.cowDung.toString(),
                     Icons.pets,
                     const Color(0xFFE67E22),

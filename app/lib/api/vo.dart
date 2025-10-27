@@ -1010,7 +1010,7 @@ class UserGameInfo {
   /// 用户的积分，属于用户级信息，和具体游戏无关
   int score;
 
-  /// 用户的泡泡糖数
+  /// 用户的魔法泡泡数
   int cowDung;
 
   int winCount;
