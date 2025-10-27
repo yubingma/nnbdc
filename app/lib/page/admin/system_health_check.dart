@@ -1089,12 +1089,16 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
         }
       }
       
-      // 调用后端API进行自动修复
+      // 调用后端API进行自动修复（禁用自动加载进度条）
+      Api.disableAutoLoading = true;
       final apiResult = await Api.client.autoFixSystemIssues(issueTypes);
+      Api.disableAutoLoading = false;
       
       // 在异步操作完成后处理UI
       if (mounted) _handleSystemFixResult(apiResult);
     } catch (e, stackTrace) {
+      // 确保在异常情况下也重置自动加载标志
+      Api.disableAutoLoading = false;
       // 在异步操作完成后处理错误
       if (mounted) _handleSystemFixError(e, stackTrace);
     }
@@ -1216,12 +1220,16 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
         return;
       }
 
-      // 调用后端API进行自动修复
+      // 调用后端API进行自动修复（禁用自动加载进度条）
+      Api.disableAutoLoading = true;
       final apiResult = await Api.client.autoFixSystemIssues(issueTypes);
+      Api.disableAutoLoading = false;
 
       // 在异步操作完成后处理UI
       if (mounted) _handleSystemFixResult(apiResult);
     } catch (e, stackTrace) {
+      // 确保在异常情况下也重置自动加载标志
+      Api.disableAutoLoading = false;
       // 在异步操作完成后处理错误
       if (mounted) _handleSystemFixError(e, stackTrace);
     }
