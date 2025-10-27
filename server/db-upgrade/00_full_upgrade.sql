@@ -1,3 +1,61 @@
+-- ============================================
+-- 系统数据增量同步表结构
+-- 创建时间：2025-10-18
+-- 用途：支持UGC内容（Sentences、WordImages、WordShortDescChinese）增量同步
+-- ============================================
+
+-- 1. 全局系统数据版本表（单例表）
+CREATE TABLE IF NOT EXISTS sys_db_version (
+    id VARCHAR(36) PRIMARY KEY DEFAULT 'singleton' COMMENT '固定为singleton，单例表',
+    version INT NOT NULL DEFAULT 1 COMMENT '当前全局版本号',
+    createTime DATETIME NOT NULL COMMENT '创建时间',
+    updateTime DATETIME COMMENT '更新时间'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_bin COMMENT='系统数据库版本表（单例）';
+
+-- 初始化版本记录（version=1表示系统已初始化，有静态数据可同步）
+-- 前端新安装时本地版本为0，远程版本为1，触发首次全量同步
+INSERT INTO sys_db_version (id, version, createTime) 
+VALUES ('singleton', 1, NOW())
+ON DUPLICATE KEY UPDATE id=id;
+
+-- 2. 系统数据变更日志表
+CREATE TABLE IF NOT EXISTS sys_db_log (
+    id VARCHAR(36) PRIMARY KEY COMMENT '日志ID',
+    version INT NOT NULL COMMENT '日志版本号（递增）',
+    operate VARCHAR(20) NOT NULL COMMENT '操作类型：INSERT/UPDATE/DELETE',
+    table_ VARCHAR(50) NOT NULL COMMENT '表名：word_image/sentence/word_shortdesc_chinese',
+    record_id VARCHAR(131) NOT NULL COMMENT '记录ID',
+    record TEXT NOT NULL COMMENT '记录内容（JSON格式）',
+    createTime DATETIME NOT NULL COMMENT '创建时间',
+    updateTime DATETIME COMMENT '更新时间',
+    INDEX idx_version (version) COMMENT '按版本查询增量日志',
+    INDEX idx_table_record (table_, record_id) COMMENT '查重和查找特定记录'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_bin COMMENT='系统数据变更日志表';
+
+
+
+delete from sys_param where paramName='systemDbVersion';
+
+ALTER TABLE bdc.user 
+ADD COLUMN asrPassRule VARCHAR(10) 
+COMMENT 'ASR答对判定规则：ONE/HALF/ALL';
+-- 如果字段已存在，上面语句会报错，可忽略该错误继续执行后续语句
+
+-- 2. 创建user_oper表（用户操作历史记录表）
+CREATE TABLE IF NOT EXISTS bdc.user_oper (
+    id VARCHAR(32) NOT NULL COMMENT '主键ID',
+    userId VARCHAR(32) NOT NULL COMMENT '用户ID',
+    operType VARCHAR(20) NOT NULL COMMENT '操作类型：LOGIN、START_LEARN、DAKA等',
+    operTime DATETIME NOT NULL COMMENT '操作时间',
+    remark VARCHAR(200) COMMENT '备注信息',
+    createTime DATETIME NOT NULL COMMENT '创建时间',
+    updateTime DATETIME COMMENT '更新时间',
+    PRIMARY KEY (id),
+    INDEX idx_userId_operTime (userId, operTime) COMMENT '按用户和时间查询',
+    INDEX idx_operType (operType) COMMENT '按操作类型查询',
+    CONSTRAINT fk_user_oper_user FOREIGN KEY (userId) REFERENCES user (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_bin COMMENT='用户操作历史记录表';
+
 -- 创建user_db_version表
 CREATE TABLE IF NOT EXISTS user_db_version (
     id VARCHAR(32) NOT NULL,
@@ -254,3 +312,217 @@ ALTER TABLE bdc.sys_db_version MODIFY COLUMN createTime DATETIME NOT NULL;
 UPDATE bdc.word_shortdesc_chinese SET createTime = '2000-01-01 00:00:00' WHERE createTime IS NULL;
 ALTER TABLE bdc.word_shortdesc_chinese MODIFY COLUMN createTime DATETIME NOT NULL;
 
+-- ========================================
+-- 将通用词典从虚拟ID改为实际数据库记录
+-- 说明：通用词典之前使用虚拟ID "0"，释义项的dictId为NULL
+-- 本脚本将：
+-- 1. 在dict表中创建id='0'的通用词典记录
+-- 2. 将所有meaning_item表中dictId为NULL的记录更新为'0'
+-- ========================================
+
+-- 步骤1：在dict表中插入通用词典记录
+-- 检查是否已存在，避免重复插入
+INSERT INTO bdc.dict (id, name, owner, isShared, isReady, visible, wordCount, createTime, updateTime)
+SELECT '0', '通用词典.dict', '15118', 1, 1, 1, 
+       (SELECT COUNT(DISTINCT word) FROM bdc.meaning_item WHERE dictId IS NULL),
+       '2000-01-01 00:00:00', 
+       NOW()
+WHERE NOT EXISTS (SELECT 1 FROM bdc.dict WHERE id = '0');
+
+-- 步骤2：更新meaning_item表，将dictId为NULL的记录更新为'0'
+-- 这是核心迁移步骤，将虚拟的通用词典ID变为实际的
+UPDATE bdc.meaning_item 
+SET dictId = '0' 
+WHERE dictId IS NULL;
+
+-- 步骤3：验证数据迁移
+-- 执行后应该没有dictId为NULL的记录了
+SELECT 
+    '迁移验证' as status,
+    (SELECT COUNT(*) FROM bdc.meaning_item WHERE dictId IS NULL) as null_count,
+    (SELECT COUNT(*) FROM bdc.meaning_item WHERE dictId = '0') as common_dict_count,
+    (SELECT COUNT(*) FROM bdc.dict WHERE id = '0') as dict_record_count;
+
+-- ========================================
+-- 为通用词典创建 dict_word 记录
+-- 说明：将通用词典与普通词书统一，为所有有通用释义的单词创建 dict_word 记录
+-- ========================================
+
+-- 步骤1：为通用词典中的所有单词创建 dict_word 记录
+-- 按单词拼写排序，自动生成序号
+INSERT INTO bdc.dict_word (dictId, wordId, seq, createTime, updateTime)
+SELECT 
+    '0' as dictId,
+    w.id as wordId,
+    (@row_number := @row_number + 1) as seq,
+    NOW() as createTime,
+    NOW() as updateTime
+FROM 
+    bdc.word w,
+    (SELECT @row_number := 0) as init
+WHERE 
+    EXISTS (
+        SELECT 1 
+        FROM bdc.meaning_item mi 
+        WHERE mi.word = w.id AND mi.dictId = '0'
+    )
+    AND NOT EXISTS (
+        SELECT 1 
+        FROM bdc.dict_word dw 
+        WHERE dw.dictId = '0' AND dw.wordId = w.id
+    )
+ORDER BY w.spell;
+
+-- 步骤2：更新通用词典的 wordCount 字段为实际单词数
+UPDATE bdc.dict 
+SET wordCount = (
+    SELECT COUNT(*) 
+    FROM bdc.dict_word 
+    WHERE dictId = '0'
+),
+updateTime = NOW()
+WHERE id = '0';
+
+-- 步骤3：验证数据
+SELECT 
+    '通用词典dict_word记录数' as item,
+    COUNT(*) as count
+FROM bdc.dict_word 
+WHERE dictId = '0'
+UNION ALL
+SELECT 
+    '通用词典wordCount' as item,
+    wordCount as count
+FROM bdc.dict 
+WHERE id = '0'
+UNION ALL
+SELECT 
+    '通用词典释义项涉及的单词数' as item,
+    COUNT(DISTINCT word) as count
+FROM bdc.meaning_item 
+WHERE dictId = '0';
+
+-- 全量重命名外键列为 *Id 结尾，确保命名统一
+-- 目标数据库：bdc（按项目现有脚本惯例）
+
+-- meaning_item
+ALTER TABLE bdc.meaning_item CHANGE COLUMN word wordId VARCHAR(32) NOT NULL;
+
+-- dict
+ALTER TABLE bdc.dict CHANGE COLUMN owner ownerId VARCHAR(32) NOT NULL;
+
+-- study_group
+ALTER TABLE bdc.study_group CHANGE COLUMN grade gradeId VARCHAR(32) NOT NULL;
+ALTER TABLE bdc.study_group CHANGE COLUMN creator creatorId VARCHAR(32) NOT NULL;
+
+-- learning_dict
+ALTER TABLE bdc.learning_dict CHANGE COLUMN currentWord currentWordId VARCHAR(32);
+
+-- dict_group
+ALTER TABLE bdc.dict_group CHANGE COLUMN parent parentId VARCHAR(32);
+
+-- sentence
+ALTER TABLE bdc.sentence CHANGE COLUMN author authorId VARCHAR(32) NOT NULL;
+
+-- study_group_post
+ALTER TABLE bdc.study_group_post CHANGE COLUMN postCreator postCreatorId VARCHAR(32) NOT NULL;
+
+-- study_group_post_reply
+ALTER TABLE bdc.study_group_post_reply CHANGE COLUMN postReplyer postReplyerId VARCHAR(32) NOT NULL;
+
+-- forum_post
+ALTER TABLE bdc.forum_post CHANGE COLUMN postCreator postCreatorId VARCHAR(32) NOT NULL;
+
+-- forum_post_reply
+ALTER TABLE bdc.forum_post_reply CHANGE COLUMN postReplyer postReplyerId VARCHAR(32) NOT NULL;
+
+-- game_hall
+ALTER TABLE bdc.game_hall CHANGE COLUMN dictGroup dictGroupId VARCHAR(32) NOT NULL;
+ALTER TABLE bdc.game_hall CHANGE COLUMN hallGroup hallGroupId VARCHAR(32) NOT NULL;
+
+-- msg
+ALTER TABLE bdc.msg CHANGE COLUMN fromUser fromUserId VARCHAR(32) NOT NULL;
+ALTER TABLE bdc.msg CHANGE COLUMN toUser toUserId VARCHAR(32) NOT NULL;
+
+-- word_shortdesc_chinese
+ALTER TABLE bdc.word_shortdesc_chinese CHANGE COLUMN author authorId VARCHAR(32) NOT NULL;
+
+-- word_image
+ALTER TABLE bdc.word_image CHANGE COLUMN author authorId VARCHAR(32) NOT NULL;
+
+-- similar_word（中间表）
+ALTER TABLE bdc.similar_word CHANGE COLUMN word wordId VARCHAR(32) NOT NULL;
+ALTER TABLE bdc.similar_word CHANGE COLUMN similarWord similarWordId VARCHAR(32) NOT NULL;
+
+ALTER TABLE bdc.user CHANGE COLUMN invitedBy invitedById VARCHAR(32);
+update bdc.user set level = '1' where level is null;
+ALTER TABLE bdc.user CHANGE COLUMN level levelId VARCHAR(32) not null;
+
+-- 为dict表添加popularityLimit字段
+-- 该字段用于过滤展示给用户的单词释义，如果某个单词没有该dict的定制释义，
+-- 从而只能使用通用词典释义时，popularity大于该设定的通用词典释义项会被用户隐藏
+ALTER TABLE dict ADD COLUMN popularityLimit INT NULL COMMENT '过滤展示给用户的通用词典单词释义的popularity阈值';
+
+
+-- 为msg表添加clientType字段
+ALTER TABLE msg ADD COLUMN clientType VARCHAR(20) NULL;
+
+-- 添加索引以提高查询性能
+CREATE INDEX idx_msg_client_type ON msg(clientType);
+
+
+
+
+-- 2. 修改字段名为驼峰格式
+
+
+-- 修改user表字段名（只修改下划线字段）
+ALTER TABLE user CHANGE COLUMN wechat_open_id wechatOpenId VARCHAR(100);
+ALTER TABLE user CHANGE COLUMN wechat_union_id wechatUnionId VARCHAR(100);
+ALTER TABLE user CHANGE COLUMN wechat_nickname wechatNickname VARCHAR(200);
+ALTER TABLE user CHANGE COLUMN wechat_avatar wechatAvatar VARCHAR(500);
+
+-- 修改idGens表字段名
+ALTER TABLE id_gen CHANGE COLUMN next_val nextVal BIGINT;
+ALTER TABLE id_gen CHANGE COLUMN sequence_name sequenceName VARCHAR(50);
+
+-- 修改learningWords表字段名
+ALTER TABLE learning_word CHANGE COLUMN AddDay addDay INT;
+ALTER TABLE learning_word CHANGE COLUMN AddTime addTime DATETIME(6);
+ALTER TABLE learning_word CHANGE COLUMN LastLearningDate lastLearningDate DATETIME(6);
+ALTER TABLE learning_word CHANGE COLUMN LearningOrder learningOrder INT;
+ALTER TABLE learning_word CHANGE COLUMN LifeValue lifeValue INT;
+
+-- 修改sentences表字段名
+ALTER TABLE sentence CHANGE COLUMN chinese_raw chineseRaw VARCHAR(300);
+ALTER TABLE sentence CHANGE COLUMN English english VARCHAR(300);
+ALTER TABLE sentence CHANGE COLUMN english_raw englishRaw VARCHAR(300);
+ALTER TABLE sentence CHANGE COLUMN LastDiyUpdateTime lastDiyUpdateTime DATETIME(6);
+ALTER TABLE sentence CHANGE COLUMN temp_sound_url tempSoundUrl VARCHAR(500);
+ALTER TABLE sentence CHANGE COLUMN TheType theType VARCHAR(45);
+
+-- 修改sentenceChineses表字段名
+ALTER TABLE sentence_chinese CHANGE COLUMN sentenceID sentenceId VARCHAR(32);
+
+-- 修改studyGroupAndManagerLinks表字段名
+ALTER TABLE study_group_and_manager_link CHANGE COLUMN groupID groupId VARCHAR(32);
+
+-- 修改sysDbLogs表字段名
+ALTER TABLE sys_db_log CHANGE COLUMN record_id recordId VARCHAR(131);
+ALTER TABLE sys_db_log CHANGE COLUMN table_ tblName VARCHAR(50);
+
+-- 修改userDbLogs表字段名
+ALTER TABLE user_db_log CHANGE COLUMN table_ tblName VARCHAR(50);
+ALTER TABLE user_db_log CHANGE COLUMN record record TEXT;
+
+-- 修改userStudySteps表字段名
+ALTER TABLE user_study_step CHANGE COLUMN index_ seq INT;
+
+-- 3. 验证重构结果
+-- 查看所有表名
+SHOW TABLES;
+
+-- 查看主要表结构
+DESCRIBE user;
+DESCRIBE word;
+DESCRIBE dict;

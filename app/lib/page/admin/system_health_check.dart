@@ -1189,9 +1189,8 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
   Future<void> _runAutoFix() async {
     if (_checkResult == null) return;
 
-    setState(() {
-      _isRunning = true;
-    });
+    // 显示修复进度对话框
+    _showSystemFixProgressDialog();
 
     try {
       // 收集需要修复的问题类型
@@ -1203,9 +1202,8 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
       }
 
       if (issueTypes.isEmpty) {
-        setState(() {
-          _isRunning = false;
-        });
+        // 关闭进度对话框
+        Navigator.pop(context);
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -1221,61 +1219,11 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
       // 调用后端API进行自动修复
       final apiResult = await Api.client.autoFixSystemIssues(issueTypes);
 
-      setState(() {
-        _isRunning = false;
-      });
-
-      if (mounted) {
-        if (apiResult.success && apiResult.data != null) {
-          final data = apiResult.data!;
-
-          if (data.fixedCount > 0) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('已修复 ${data.fixedCount} 个问题'),
-                backgroundColor: Colors.green,
-              ),
-            );
-
-            // 重新运行检查以更新状态
-            _runSystemDiagnostic();
-          } else if (data.errors.isNotEmpty) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('修复过程中出现错误: ${data.errors.join(', ')}'),
-                backgroundColor: Colors.orange,
-              ),
-            );
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('没有需要修复的问题'),
-                backgroundColor: Colors.blue,
-              ),
-            );
-          }
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('修复失败: ${apiResult.msg}'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      setState(() {
-        _isRunning = false;
-      });
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('修复过程中出现错误: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      // 在异步操作完成后处理UI
+      if (mounted) _handleSystemFixResult(apiResult);
+    } catch (e, stackTrace) {
+      // 在异步操作完成后处理错误
+      if (mounted) _handleSystemFixError(e, stackTrace);
     }
   }
 }
