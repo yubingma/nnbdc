@@ -6,7 +6,7 @@ void main() {
     // 辅助函数，创建带有DateTime类型时间戳的变更记录
     Map<String, dynamic> createChange(String table, String recordId, String operation, DateTime updateTime, Map<String, dynamic> record) {
       return {
-        'table_': table,
+        'tblName': table,
         'recordId': recordId,
         'operate': operation,
         'updateTime': updateTime,
@@ -270,10 +270,10 @@ void main() {
       expect(result.second.length, 2);
       
       // 验证每个表是否都有正确的记录
-      expect(result.first.any((change) => change['table_'] == 'users'), true);
-      expect(result.first.any((change) => change['table_'] == 'dakas'), true);
-      expect(result.second.any((change) => change['table_'] == 'learningDicts'), true);
-      expect(result.second.any((change) => change['table_'] == 'userStudySteps'), true);
+      expect(result.first.any((change) => change['tblName'] == 'users'), true);
+      expect(result.first.any((change) => change['tblName'] == 'dakas'), true);
+      expect(result.second.any((change) => change['tblName'] == 'learningDicts'), true);
+      expect(result.second.any((change) => change['tblName'] == 'userStudySteps'), true);
     });
 
     test('合并操作移除多余记录', () {

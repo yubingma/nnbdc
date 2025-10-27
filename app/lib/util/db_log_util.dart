@@ -27,7 +27,7 @@ class DbLogUtil {
             id: logId,
             userId: userId,
             operate: operate,
-            table_: table,
+            tblName: table,
             recordId: recordId,
             record: record,
             version: 0, // 客户端不设置版本号
@@ -83,7 +83,7 @@ class DbLogUtil {
             id: logId,
             userId: userId,
             operate: 'BATCH_DELETE',
-            table_: table,
+            tblName: table,
             recordId: specialRecordId,
             record: jsonEncode(recordData),
             version: 0, // 客户端不设置版本号

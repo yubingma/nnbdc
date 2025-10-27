@@ -39,35 +39,35 @@ import 'package:toastification/toastification.dart';
 import 'local_word_cache.dart';
 
 void main() async {
-  // 确保Flutter绑定已初始化
-  WidgetsFlutterBinding.ensureInitialized();
-
-  // 捕获Flutter框架层的错误（同步错误）
-  FlutterError.onError = (FlutterErrorDetails details) {
-    // 记录错误到日志
-    Global.logger.e(
-      '【Flutter框架错误】${details.exceptionAsString()}',
-      error: details.exception,
-      stackTrace: details.stack,
-    );
-    
-    // 在debug模式下，也输出到控制台
-    FlutterError.presentError(details);
-  };
-
-  // 捕获平台层和异步错误
-  PlatformDispatcher.instance.onError = (error, stack) {
-    Global.logger.e(
-      '【未捕获的平台/异步错误】',
-      error: error,
-      stackTrace: stack,
-    );
-    return true; // 返回true表示错误已处理
-  };
-
   // 使用Zone捕获所有未处理的异步异常
   runZonedGuarded(
-    () {
+    () async {
+      // 确保Flutter绑定已初始化（在同一个zone中）
+      WidgetsFlutterBinding.ensureInitialized();
+
+      // 捕获Flutter框架层的错误（同步错误）
+      FlutterError.onError = (FlutterErrorDetails details) {
+        // 记录错误到日志
+        Global.logger.e(
+          '【Flutter框架错误】${details.exceptionAsString()}',
+          error: details.exception,
+          stackTrace: details.stack,
+        );
+        
+        // 在debug模式下，也输出到控制台
+        FlutterError.presentError(details);
+      };
+
+      // 捕获平台层和异步错误
+      PlatformDispatcher.instance.onError = (error, stack) {
+        Global.logger.e(
+          '【未捕获的平台/异步错误】',
+          error: error,
+          stackTrace: stack,
+        );
+        return true; // 返回true表示错误已处理
+      };
+
       runApp(
         MultiProvider(
           providers: [

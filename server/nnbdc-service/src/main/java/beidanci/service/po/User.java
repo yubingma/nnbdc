@@ -41,16 +41,16 @@ public class User extends UuidPo {
     private String email;
 
     // 微信相关字段
-    @Column(name = "wechat_open_id", length = 100, unique = true)
+    @Column(name = "wechatOpenId", length = 100, unique = true)
     private String wechatOpenId;
     
-    @Column(name = "wechat_union_id", length = 100)
+    @Column(name = "wechatUnionId", length = 100)
     private String wechatUnionId;
     
-    @Column(name = "wechat_nickname", length = 200)
+    @Column(name = "wechatNickname", length = 200)
     private String wechatNickname;
     
-    @Column(name = "wechat_avatar", length = 500)
+    @Column(name = "wechatAvatar", length = 500)
     private String wechatAvatar;
 
     @Column(name = "lastLearningDate")

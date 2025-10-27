@@ -19,10 +19,10 @@ public class SysDbLog extends UuidPo {
     @Column(name = "operate", length = 20, nullable = false)
     private String operate;
 
-    @Column(name = "table_", length = 50, nullable = false)
+    @Column(name = "tblName", length = 50, nullable = false)
     private String table;
 
-    @Column(name = "record_id", length = 131, nullable = false)
+    @Column(name = "recordId", length = 131, nullable = false)
     private String recordId;
 
     @Column(name = "record", columnDefinition = "TEXT", nullable = false)

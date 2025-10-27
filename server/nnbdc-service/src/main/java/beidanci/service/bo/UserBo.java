@@ -1040,10 +1040,10 @@ public class UserBo extends BaseBo<User> {
             return logs;
         } else { // 增量同步
             Session session = getSession();
-            String sql = "select e.id, e.userId, e.version, e.operate, e.table_, e.recordId, e.record, e.createTime, e.updateTime FROM user_db_log e "
+            String sql = "select e.id, e.userId, e.version, e.operate, e.tblName, e.recordId, e.record, e.createTime, e.updateTime FROM user_db_log e "
                     +
                     "WHERE e.userId= :userId and e.version > :fromVersion and e.createTime = " +
-                    "(SELECT MAX(e2.createTime) FROM user_db_log e2 WHERE e2.table_ = e.table_ and e2.recordId = e.recordId) order by e.version asc, e.createTime asc";
+                    "(SELECT MAX(e2.createTime) FROM user_db_log e2 WHERE e2.tblName = e.tblName and e2.recordId = e.recordId) order by e.version asc, e.createTime asc";
             Query<?> query = session.createNativeQuery(sql);
             query.setParameter("userId", userId);
             query.setParameter("fromVersion", fromVersion);
@@ -1056,7 +1056,7 @@ public class UserBo extends BaseBo<User> {
                 log.setUserId((String) values[1]);
                 log.setVersion((Integer) values[2]);
                 log.setOperate((String) values[3]);
-                log.setTable_((String) values[4]);
+                log.setTblName((String) values[4]);
                 log.setRecordId((String) values[5]);
                 log.setRecord((String) values[6]);
                 log.setCreateTime((Date) values[7]);

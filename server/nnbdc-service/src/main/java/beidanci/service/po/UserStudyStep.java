@@ -31,8 +31,8 @@ public class UserStudyStep extends Po {
     /**
      * 本学习步骤在所有步骤中的顺序号，从0开始
      */
-    @Column(name = "index_", nullable = false)
-    private Integer index;
+    @Column(name = "seq", nullable = false)
+    private Integer seq;
 
     @Column(name = "state", length = 20, nullable = false)
     @Enumerated(EnumType.STRING)
@@ -66,12 +66,12 @@ public class UserStudyStep extends Po {
         this.user = user;
     }
 
-    public Integer getIndex() {
-        return index;
+    public Integer getSeq() {
+        return seq;
     }
 
-    public void setIndex(Integer index) {
-        this.index = index;
+    public void setSeq(Integer index) {
+        this.seq = index;
     }
 
     public StudyStepState getState() {

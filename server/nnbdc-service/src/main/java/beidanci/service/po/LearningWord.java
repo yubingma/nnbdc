@@ -32,19 +32,19 @@ public class LearningWord extends Po {
     @JoinColumn(name = "userId", nullable = false, updatable = false, insertable = false)
     private User user;
 
-    @Column(name = "AddTime", nullable = false)
+    @Column(name = "addTime", nullable = false)
     private Date addTime;
 
-    @Column(name = "AddDay", nullable = false)
+    @Column(name = "addDay", nullable = false)
     private Integer addDay;
 
-    @Column(name = "LifeValue", nullable = false)
+    @Column(name = "lifeValue", nullable = false)
     private Integer lifeValue;
 
-    @Column(name = "LastLearningDate")
+    @Column(name = "lastLearningDate")
     private Date lastLearningDate;
 
-    @Column(name = "LearningOrder")
+    @Column(name = "learningOrder")
     private Integer learningOrder;
 
     /**

@@ -10,16 +10,16 @@ public class UserStudyStepVo extends Vo {
     /**
      * 本学习步骤在所有步骤中的顺序号，从0开始
      */
-    private Integer index;
+    private Integer seq;
 
     private StudyStepState state;
 
     public UserStudyStepVo() {
     }
 
-    public UserStudyStepVo(StudyStep studyStep, Integer index, StudyStepState state) {
+    public UserStudyStepVo(StudyStep studyStep, Integer seq, StudyStepState state) {
         this.studyStep = studyStep;
-        this.index = index;
+        this.seq = seq;
         this.state = state;
     }
 
@@ -39,12 +39,12 @@ public class UserStudyStepVo extends Vo {
         this.user = user;
     }
 
-    public Integer getIndex() {
-        return index;
+    public Integer getSeq() {
+        return seq;
     }
 
-    public void setIndex(Integer index) {
-        this.index = index;
+    public void setSeq(Integer seq) {
+        this.seq = seq;
     }
 
     public StudyStepState getState() {

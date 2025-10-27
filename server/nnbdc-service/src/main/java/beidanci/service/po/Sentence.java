@@ -28,7 +28,7 @@ public class Sentence extends UuidPo {
      */
     public static final String WAITTING_TTS = "waitting_tts";
 
-    @Column(name = "English", length = 300)
+    @Column(name = "english", length = 300)
     private String english;
 
     @Column(name = "chinese", length = 300)
@@ -37,13 +37,13 @@ public class Sentence extends UuidPo {
     @Column(name = "wordMeaning", length = 300)
     private String wordMeaning;
 
-    @Column(name = "TheType", length = 45)
+    @Column(name = "theType", length = 45)
     private String theType;
 
     @Column(name = "englishDigest", length = 32)
     private String englishDigest;
 
-    @Column(name = "LastDiyUpdateTime")
+    @Column(name = "lastDiyUpdateTime")
     private Date lastDiyUpdateTime;
 
     @Column(name = "producer", length = 20)

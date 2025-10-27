@@ -166,7 +166,7 @@ public class SysDbLogBo extends BaseBo<SysDbLog> {
             log.setId(Util.uuid());
             log.setVersion(version);
             log.setOperate("INSERT");
-            log.setTable_("level");
+            log.setTblName("level");
             log.setRecordId((String) tuple[0]);
             java.text.SimpleDateFormat isoFormat = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
             isoFormat.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
@@ -199,7 +199,7 @@ public class SysDbLogBo extends BaseBo<SysDbLog> {
             log.setId(Util.uuid());
             log.setVersion(version);
             log.setOperate("INSERT");
-            log.setTable_("dict_group");
+            log.setTblName("dict_group");
             log.setRecordId((String) tuple[0]);
             java.util.Map<String, Object> record = new java.util.HashMap<>();
             record.put("id", tuple[0]);
@@ -225,7 +225,7 @@ public class SysDbLogBo extends BaseBo<SysDbLog> {
             log.setId(Util.uuid());
             log.setVersion(version);
             log.setOperate("INSERT");
-            log.setTable_("group_and_dict_link");
+            log.setTblName("group_and_dict_link");
             log.setRecordId(tuple[0] + "-" + tuple[1]);
             java.util.Map<String, Object> record = new java.util.HashMap<>();
             record.put("groupId", tuple[0]);
@@ -254,7 +254,7 @@ public class SysDbLogBo extends BaseBo<SysDbLog> {
             log.setId(Util.uuid());
             log.setVersion(version);
             log.setOperate("INSERT");
-            log.setTable_("dict");
+            log.setTblName("dict");
             log.setRecordId((String) tuple[0]);
             
             // 格式化日期字段
@@ -288,7 +288,7 @@ public class SysDbLogBo extends BaseBo<SysDbLog> {
         dto.setId(log.getId());
         dto.setVersion(log.getVersion());
         dto.setOperate(log.getOperate());
-        dto.setTable_(log.getTable());
+        dto.setTblName(log.getTable());
         dto.setRecordId(log.getRecordId());
         dto.setRecord(log.getRecord());
         dto.setCreateTime(log.getCreateTime());

@@ -24,13 +24,13 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
   try {
     // 把后端日志中的表名转化为前端的格式
     for (var change in backendChanges) {
-      change.table_ = Util.remoteTableNameToLocal(change.table_);
+      change.tblName = Util.remoteTableNameToLocal(change.tblName);
     }
 
     // 把本地日志按表名分组并统计
     var tableStats = <String, int>{};
     for (var log in localChanges) {
-      tableStats[log.table_] = (tableStats[log.table_] ?? 0) + 1;
+      tableStats[log.tblName] = (tableStats[log.tblName] ?? 0) + 1;
     }
 
     // 把DbLogs转换为Map<String, dynamic>
@@ -68,8 +68,8 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
       if (change['updateTime'] != null) {
         change['updateTime'] = (change['updateTime'] as DateTime).toUtc().toIso8601String();
       }
-      String oldTable = change['table_'] as String;
-      change['table_'] = Util.localTableNameToRemote(oldTable);
+      String oldTable = change['tblName'] as String;
+      change['tblName'] = Util.localTableNameToRemote(oldTable);
 
       localToBackend.add(UserDbLogDto.fromJson(change));
     }
@@ -92,106 +92,106 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
             }
 
             Map<String, dynamic> entityJson = jsonDecode(log.record);
-            if (log.table_ == 'users') {
+            if (log.tblName == 'users') {
               User entity = User.fromJson(entityJson);
               if (log.operate == 'INSERT' || log.operate == 'UPDATE') {
                 await db.usersDao.saveUser(entity, false);
               }
-            } else if (log.table_ == 'dicts') {
+            } else if (log.tblName == 'dicts') {
               Dict entity = Dict.fromJson(entityJson);
               if (log.operate == 'INSERT' || log.operate == 'UPDATE') {
                 await db.dictsDao.saveEntity(entity, false);
               }
-            } else if (log.table_ == 'words') {
+            } else if (log.tblName == 'words') {
               Word entity = Word.fromJson(entityJson);
               if (log.operate == 'INSERT' || log.operate == 'UPDATE') {
                 await db.wordsDao.insertEntity(entity);
               }
-            } else if (log.table_ == 'learningDicts') {
+            } else if (log.tblName == 'learningDicts') {
               LearningDict entity = LearningDict.fromJson(entityJson);
               if (log.operate == 'INSERT' || log.operate == 'UPDATE') {
                 await db.learningDictsDao.saveEntity(entity, false);
               } else if (log.operate == 'DELETE') {
                 await db.learningDictsDao.deleteEntity(entity, false);
               }
-            } else if (log.table_ == 'learningWords') {
+            } else if (log.tblName == 'learningWords') {
               LearningWord entity = LearningWord.fromJson(entityJson);
               if (log.operate == 'INSERT' || log.operate == 'UPDATE') {
                 await db.learningWordsDao.saveEntity(entity, false);
               } else if (log.operate == 'DELETE') {
                 await db.learningWordsDao.deleteEntity(entity, false);
               }
-            } else if (log.table_ == 'masteredWords') {
+            } else if (log.tblName == 'masteredWords') {
               final entity = MasteredWord.fromJson(jsonDecode(log.record));
               if (log.operate == 'INSERT' || log.operate == 'UPDATE') {
                 await db.masteredWordsDao.saveMasteredWord(entity, false, false);
               } else if (log.operate == 'DELETE') {
                 await db.masteredWordsDao.deleteMasteredWord(entity.userId, entity.wordId, false, false);
               }
-            } else if (log.table_ == 'userWrongWords') {
+            } else if (log.tblName == 'userWrongWords') {
               final entity = UserWrongWord.fromJson(jsonDecode(log.record));
               if (log.operate == 'INSERT' || log.operate == 'UPDATE') {
                 await db.userWrongWordsDao.saveEntity(entity, false);
               } else if (log.operate == 'DELETE') {
                 await db.userWrongWordsDao.deleteEntity(entity, false);
               }
-            } else if (log.table_ == 'dictWords') {
+            } else if (log.tblName == 'dictWords') {
               final entity = DictWord.fromJson(jsonDecode(log.record));
               if (log.operate == 'INSERT' || log.operate == 'UPDATE') {
                 await db.dictWordsDao.insertEntity(entity, false);
               } else if (log.operate == 'DELETE') {
                 await db.dictWordsDao.deleteEntity(entity, false);
               }
-            } else if (log.table_ == 'dakas') {
+            } else if (log.tblName == 'dakas') {
               Daka entity = Daka.fromJson(entityJson);
               if (log.operate == 'INSERT' || log.operate == 'UPDATE') {
                 await db.dakasDao.saveDaka(entity, false);
               } else if (log.operate == 'DELETE') {
                 await db.dakasDao.deleteDaka(entity, false);
               }
-            } else if (log.table_ == 'userOpers') {
+            } else if (log.tblName == 'userOpers') {
               UserOper entity = UserOper.fromJson(entityJson);
               if (log.operate == 'INSERT' || log.operate == 'UPDATE') {
                 await db.userOpersDao.saveUserOper(entity, false);
               }
-            } else if (log.table_ == 'bookmarks') {
+            } else if (log.tblName == 'bookmarks') {
               BookMark entity = BookMark.fromJson(entityJson);
               if (log.operate == 'INSERT' || log.operate == 'UPDATE') {
                 await db.bookmarksDao.saveBookmark(entity, false);
               } else if (log.operate == 'DELETE') {
                 await db.bookmarksDao.deleteBookmark(entity.id, false);
               }
-            } else if (log.table_ == 'userStudySteps') {
+            } else if (log.tblName == 'userStudySteps') {
               UserStudyStep entity = UserStudyStep.fromJson(entityJson);
               if (log.operate == 'INSERT' || log.operate == 'UPDATE') {
                 await db.userStudyStepsDao.saveUserStudyStep(entity, false);
               } else if (log.operate == 'DELETE') {
                 await db.userStudyStepsDao.deleteUserStudyStep(entity.userId, entity.studyStep, false);
               }
-            } else if (log.table_ == 'userCowDungLogs') {
+            } else if (log.tblName == 'userCowDungLogs') {
               UserCowDungLog entity = UserCowDungLog.fromJson(entityJson);
               if (log.operate == 'INSERT' || log.operate == 'UPDATE') {
                 await db.userCowDungLogsDao.insertEntity(entity, false);
               }
-            } else if (log.table_ != 'users' &&
-                log.table_ != 'dicts' &&
-                log.table_ != 'words' &&
-                log.table_ != 'learningDicts' &&
-                log.table_ != 'learningWords' &&
-                log.table_ != 'masteredWords' &&
-                log.table_ != 'userWrongWords' &&
-                log.table_ != 'dictWords' &&
-                log.table_ != 'dakas' &&
-                log.table_ != 'userOpers' &&
-                log.table_ != 'bookmarks' &&
-                log.table_ != 'userStudySteps' &&
-                log.table_ != 'userCowDungLogs') {
-              Global.logger.w("⚠️ 不支持的表: ${log.table_}");
-              ToastUtil.error('不支持的表:${log.table_}');
+            } else if (log.tblName != 'users' &&
+                log.tblName != 'dicts' &&
+                log.tblName != 'words' &&
+                log.tblName != 'learningDicts' &&
+                log.tblName != 'learningWords' &&
+                log.tblName != 'masteredWords' &&
+                log.tblName != 'userWrongWords' &&
+                log.tblName != 'dictWords' &&
+                log.tblName != 'dakas' &&
+                log.tblName != 'userOpers' &&
+                log.tblName != 'bookmarks' &&
+                log.tblName != 'userStudySteps' &&
+                log.tblName != 'userCowDungLogs') {
+              Global.logger.w("⚠️ 不支持的表: ${log.tblName}");
+              ToastUtil.error('不支持的表:${log.tblName}');
             }
           } catch (e, stackTrace) {
-            Global.logger.e("❌ 处理表数据失败: ${log.table_} - $e");
-            ErrorHandler.handleDatabaseError(e, stackTrace, db: MyDatabase.instance.usersDao, operation: '处理表数据失败: ${log.table_}', showToast: false);
+            Global.logger.e("❌ 处理表数据失败: ${log.tblName} - $e");
+            ErrorHandler.handleDatabaseError(e, stackTrace, db: MyDatabase.instance.usersDao, operation: '处理表数据失败: ${log.tblName}', showToast: false);
           }
         }
 
@@ -250,7 +250,7 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
 Future<void> _handleBatchDeleteUserRecords(UserDbLog log, String userId) async {
   try {
     final db = MyDatabase.instance;
-    final table = log.table_;
+    final table = log.tblName;
 
     // 解析过滤条件 - log.record本身就是过滤条件
     Map<String, dynamic>? filters;
@@ -301,8 +301,8 @@ Future<void> _handleBatchDeleteUserRecords(UserDbLog log, String userId) async {
 
     Global.logger.i('✅ 成功批量删除用户的数据: $table, 用户ID: $userId');
   } catch (e, stackTrace) {
-    Global.logger.e('❌ 批量删除用户的数据失败: ${log.table_} - $e');
-    ErrorHandler.handleDatabaseError(e, stackTrace, db: MyDatabase.instance.usersDao, operation: '批量删除用户的数据失败: ${log.table_}', showToast: false);
+    Global.logger.e('❌ 批量删除用户的数据失败: ${log.tblName} - $e');
+    ErrorHandler.handleDatabaseError(e, stackTrace, db: MyDatabase.instance.usersDao, operation: '批量删除用户的数据失败: ${log.tblName}', showToast: false);
     rethrow;
   }
 }
@@ -312,13 +312,13 @@ Pair<List<Map<String, dynamic>>, List<Map<String, dynamic>>> mergeChanges(
   List<Map<String, dynamic>> localToBackend = []; // 本地数据库需要更新到后端的记录集
   List<Map<String, dynamic>> backToLocalLogs = []; // 后端数据库需要更新到本地的记录集
 
-  // 将本地变化和后端变化按 table_|recordId 建立字典
-  Map<String, Map<String, dynamic>> localLogs = {for (var log in localChanges) '${log['table_']}|${log['recordId']}': log};
-  Map<String, Map<String, dynamic>> backendLogs = {for (var log in backendChanges) '${log['table_']}|${log['recordId']}': log};
+  // 将本地变化和后端变化按 tblName|recordId 建立字典
+  Map<String, Map<String, dynamic>> localLogs = {for (var log in localChanges) '${log['tblName']}|${log['recordId']}': log};
+  Map<String, Map<String, dynamic>> backendLogs = {for (var log in backendChanges) '${log['tblName']}|${log['recordId']}': log};
 
   // 1. 比较后端变化和本地变化，找出需要更新本地数据库的记录
   for (var backLog in backendChanges) {
-    var backendId = '${backLog['table_']}|${backLog['recordId']}';
+    var backendId = '${backLog['tblName']}|${backLog['recordId']}';
     if (localLogs.containsKey(backendId)) {
       var localLog = localLogs[backendId];
       if (backLog['operate'] == 'UPDATE' && localLog!['operate'] == 'UPDATE') {
@@ -364,7 +364,7 @@ Pair<List<Map<String, dynamic>>, List<Map<String, dynamic>>> mergeChanges(
 
   // 2. 比较本地变化和后端变化，找出需要更新后端数据库的记录
   for (var localLog in localChanges) {
-    var localId = '${localLog['table_']}|${localLog['recordId']}';
+    var localId = '${localLog['tblName']}|${localLog['recordId']}';
     if (backendLogs.containsKey(localId)) {
       var backLog = backendLogs[localId];
       if (localLog['operate'] == 'UPDATE' && backLog!['operate'] == 'UPDATE') {
@@ -409,8 +409,8 @@ Pair<List<Map<String, dynamic>>, List<Map<String, dynamic>>> mergeChanges(
   }
 
   // 去除重复项，确保每个 ID 只出现一次
-  localToBackend = List.from({for (var log in localToBackend) '${log['table_']}|${log['recordId']}': log}.values);
-  backToLocalLogs = List.from({for (var log in backToLocalLogs) '${log['table_']}|${log['recordId']}': log}.values);
+  localToBackend = List.from({for (var log in localToBackend) '${log['tblName']}|${log['recordId']}': log}.values);
+  backToLocalLogs = List.from({for (var log in backToLocalLogs) '${log['tblName']}|${log['recordId']}': log}.values);
 
   return Pair(localToBackend, backToLocalLogs);
 }

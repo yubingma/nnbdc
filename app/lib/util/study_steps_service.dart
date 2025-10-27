@@ -57,7 +57,7 @@ class StudyStepsService {
           .map((vo) => UserStudyStep(
                 userId: user.id,
                 studyStep: vo.studyStep,
-                index: vo.index,
+                seq: vo.seq,
                 state: vo.state,
                 createTime: AppClock.now(),
               ))
@@ -81,7 +81,7 @@ class StudyStepsService {
     final studyStep = _getStudyStepFromString(step.studyStep);
     final state = _getStudyStepStateFromString(step.state);
 
-    return UserStudyStepVo(studyStep.json, step.index, state.json);
+    return UserStudyStepVo(studyStep.json, step.seq, state.json);
   }
 
   /// 从字符串获取StudyStep枚举

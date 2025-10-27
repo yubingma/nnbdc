@@ -9,7 +9,7 @@ public class UserStudyStepDto implements Dto {
 
     private String userId;
     private StudyStep studyStep;
-    private Integer index;
+    private Integer seq;
     private StudyStepState state;
     private Date createTime;
     private Date updateTime;
@@ -17,10 +17,10 @@ public class UserStudyStepDto implements Dto {
     public UserStudyStepDto() {
     }
 
-    public UserStudyStepDto(String userId, StudyStep studyStep, Integer index, StudyStepState state, Date createTime, Date updateTime) {
+    public UserStudyStepDto(String userId, StudyStep studyStep, Integer seq, StudyStepState state, Date createTime, Date updateTime) {
         this.userId = userId;
         this.studyStep = studyStep;
-        this.index = index;
+        this.seq = seq;
         this.state = state;
         this.createTime = createTime;
         this.updateTime = updateTime;
@@ -42,12 +42,12 @@ public class UserStudyStepDto implements Dto {
         this.studyStep = studyStep;
     }
 
-    public Integer getIndex() {
-        return index;
+    public Integer getSeq() {
+        return seq;
     }
 
-    public void setIndex(Integer index) {
-        this.index = index;
+    public void setSeq(Integer seq) {
+        this.seq = seq;
     }
 
     public StudyStepState getState() {

@@ -313,13 +313,13 @@ class UserDbLogDto {
   String userId;
   int version;
   String operate;
-  String table_;
+  String tblName;
   String recordId;
   String record;
   DateTime createTime;
   DateTime updateTime;
 
-  UserDbLogDto(this.id, this.userId, this.version, this.operate, this.table_,
+  UserDbLogDto(this.id, this.userId, this.version, this.operate, this.tblName,
       this.recordId, this.record, this.createTime, this.updateTime);
 
   factory UserDbLogDto.fromJson(Map<String, dynamic> json) =>
@@ -489,7 +489,7 @@ class SysDbLogDto {
   final String id;
   final int version;
   final String operate;
-  final String table_;
+  final String tblName;
   final String recordId;
   final String record;
   final DateTime createTime;
@@ -499,7 +499,7 @@ class SysDbLogDto {
     this.id,
     this.version,
     this.operate,
-    this.table_,
+    this.tblName,
     this.recordId,
     this.record,
     this.createTime,

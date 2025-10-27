@@ -258,7 +258,7 @@ class LearningService {
       if (todayLearningWords.isNotEmpty) {
         String userId = todayLearningWords.first.userId;
         List<UserDbLog> logs = await db.userDbLogsDao.getUserDbLogs(userId);
-        int learningWordsLogCount = logs.where((log) => log.table_ == 'learningWords').length;
+        int learningWordsLogCount = logs.where((log) => log.tblName == 'learningWords').length;
         Global.logger.d('更新后的学习单词相关日志数量: $learningWordsLogCount');
       }
     } catch (e, stackTrace) {

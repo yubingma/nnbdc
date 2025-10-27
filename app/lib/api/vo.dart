@@ -801,11 +801,11 @@ class UserStudyStepVo {
   UserVo? user;
 
   /// 本学习步骤在所有步骤中的顺序号，从0开始
-  int index;
+  int seq;
 
   String state;
 
-  UserStudyStepVo(this.studyStep, this.index, this.state);
+  UserStudyStepVo(this.studyStep, this.seq, this.state);
 
   factory UserStudyStepVo.fromJson(Map<String, dynamic> json) =>
       _$UserStudyStepVoFromJson(json);

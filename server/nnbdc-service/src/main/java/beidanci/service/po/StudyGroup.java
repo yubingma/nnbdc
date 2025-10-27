@@ -55,7 +55,7 @@ public class StudyGroup extends UuidPo  {
 
     @ManyToMany
     @JoinTable(name = "study_group_and_manager_link", joinColumns = {
-            @JoinColumn(name = "groupID")}, inverseJoinColumns = {@JoinColumn(name = "userId")})
+            @JoinColumn(name = "groupId")}, inverseJoinColumns = {@JoinColumn(name = "userId")})
     private   List<User> managers;
 
     @Column(name = "cowDung", nullable = false)

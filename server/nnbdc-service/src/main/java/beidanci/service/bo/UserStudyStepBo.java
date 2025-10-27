@@ -51,7 +51,7 @@ public class UserStudyStepBo extends BaseBo<UserStudyStep> {
             if (!existingSteps.contains(StudyStep.Word)) {
                 id = new UserStudyStepId(userId, StudyStep.Word);
                 step = new UserStudyStep(id);
-                step.setIndex(1);
+                step.setSeq(1);
                 step.setState(StudyStepState.Active);
                 newSteps.add(step);
             }
@@ -59,7 +59,7 @@ public class UserStudyStepBo extends BaseBo<UserStudyStep> {
             if (!existingSteps.contains(StudyStep.Meaning)) {
                 id = new UserStudyStepId(userId, StudyStep.Meaning);
                 step = new UserStudyStep(id);
-                step.setIndex(2);
+                step.setSeq(2);
                 step.setState(StudyStepState.Active);
                 newSteps.add(step);
             }
@@ -99,7 +99,7 @@ public class UserStudyStepBo extends BaseBo<UserStudyStep> {
     public List<UserStudyStep> getUserStudySteps(String userId) {
         UserStudyStep exam = new UserStudyStep();
         exam.setUser(new User(userId));
-        List<UserStudyStep> steps = queryAll(exam, "index", "asc", false);
+        List<UserStudyStep> steps = queryAll(exam, "seq", "asc", false);
         return steps;
     }
 
@@ -113,7 +113,7 @@ public class UserStudyStepBo extends BaseBo<UserStudyStep> {
         UserStudyStep exam = new UserStudyStep();
         exam.setUser(new User(userId));
         exam.setState(StudyStepState.Active);
-        List<UserStudyStep> activeSteps = queryAll(exam, "index", "asc", false);
+        List<UserStudyStep> activeSteps = queryAll(exam, "seq", "asc", false);
         return activeSteps;
     }
 
@@ -141,7 +141,7 @@ public class UserStudyStepBo extends BaseBo<UserStudyStep> {
         UserStudyStepDto dto = new UserStudyStepDto();
         dto.setUserId(entity.getUser().getId());
         dto.setStudyStep(entity.getStudyStep());
-        dto.setIndex(entity.getIndex());
+        dto.setSeq(entity.getSeq());
         dto.setState(entity.getState());
         dto.setCreateTime(entity.getCreateTime());
         dto.setUpdateTime(entity.getUpdateTime());
@@ -193,9 +193,9 @@ public class UserStudyStepBo extends BaseBo<UserStudyStep> {
                 sql.append(" AND state = :state");
                 parameters.put("state", filters.get("state"));
             }
-            if (filters.containsKey("index")) {
-                sql.append(" AND index = :index");
-                parameters.put("index", filters.get("index"));
+            if (filters.containsKey("seq")) {
+                sql.append(" AND seq = :seq");
+                parameters.put("seq", filters.get("seq"));
             }
             
             Query<?> query = getSession().createNativeQuery(sql.toString());

@@ -53,7 +53,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
 
       // 重新计算每个study step的顺序号
       for (var i = 0; i < studySteps!.length; i++) {
-        studySteps![i].index = i;
+        studySteps![i].seq = i;
       }
 
       saveStudyStep();
@@ -685,7 +685,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
                 for (final step in studySteps!)
                   ReorderableDragStartListener(
                     key: ValueKey(step),
-                    index: step.index,
+                    index: step.seq,
                     child: Material(
                       color: Colors.transparent,
                       child: InkWell(

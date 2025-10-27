@@ -210,7 +210,7 @@ def validate_user_db_version_consistency(cursor):
     for user_id, current_version, user_name in user_versions:
         # 检查该用户的日志表中是否有版本号大于当前数据库版本的记录
         sql_logs = """
-        SELECT id, version, operate, table_, recordId, createTime
+        SELECT id, version, operate, tblName, recordId, createTime
         FROM user_db_log
         WHERE userId = %s AND version > %s
         ORDER BY version DESC

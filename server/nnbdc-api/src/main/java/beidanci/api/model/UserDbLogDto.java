@@ -10,7 +10,7 @@ public class UserDbLogDto implements Dto {
 
     private String operate;
 
-    private String table_;
+    private String tblName;
 
     private String record;
 
@@ -26,13 +26,13 @@ public class UserDbLogDto implements Dto {
     public UserDbLogDto() {
     }
 
-    public UserDbLogDto(String id, String userId, Integer version, String operate, String table, String recordId,
+    public UserDbLogDto(String id, String userId, Integer version, String operate, String tblName, String recordId,
             String record, Date createTime, Date updateTime) {
         this.id = id;
         this.userId = userId;
         this.version = version;
         this.operate = operate;
-        this.table_ = table;
+        this.tblName = tblName;
         this.recordId = recordId;
         this.record = record;
         this.createTime = createTime;
@@ -71,12 +71,12 @@ public class UserDbLogDto implements Dto {
         this.operate = operate;
     }
 
-    public String getTable_() {
-        return table_;
+    public String getTblName() {
+        return tblName;
     }
 
-    public void setTable_(String table) {
-        this.table_ = table;
+    public void setTblName(String tblName) {
+        this.tblName = tblName;
     }
 
     public String getRecord() {

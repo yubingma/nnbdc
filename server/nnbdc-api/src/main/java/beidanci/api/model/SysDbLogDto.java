@@ -9,7 +9,7 @@ public class SysDbLogDto implements Dto {
     private String id;
     private Integer version;
     private String operate;
-    private String table_;
+    private String tblName;
     private String recordId;
     private String record;
     private Date createTime;
@@ -18,12 +18,12 @@ public class SysDbLogDto implements Dto {
     public SysDbLogDto() {
     }
 
-    public SysDbLogDto(String id, Integer version, String operate, String table_,
+    public SysDbLogDto(String id, Integer version, String operate, String tblName,
                        String recordId, String record, Date createTime, Date updateTime) {
         this.id = id;
         this.version = version;
         this.operate = operate;
-        this.table_ = table_;
+        this.tblName = tblName;
         this.recordId = recordId;
         this.record = record;
         this.createTime = createTime;
@@ -54,12 +54,12 @@ public class SysDbLogDto implements Dto {
         this.operate = operate;
     }
 
-    public String getTable_() {
-        return table_;
+    public String getTblName() {
+        return tblName;
     }
 
-    public void setTable_(String table_) {
-        this.table_ = table_;
+    public void setTblName(String tblName) {
+        this.tblName = tblName;
     }
 
     public String getRecordId() {

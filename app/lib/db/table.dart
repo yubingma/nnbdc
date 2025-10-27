@@ -19,7 +19,7 @@ class UserStudySteps extends Table {
   TextColumn get studyStep =>
       text()(); // 'Word', 'Meaning'
 
-  IntColumn get index => integer()();
+  IntColumn get seq => integer()();
 
   TextColumn get state => text()(); // 'Active', 'Inactive'
 
@@ -271,7 +271,7 @@ class UserDbLogs extends Table {
 
   TextColumn get record => text()();
 
-  TextColumn get table_ => text()();
+  TextColumn get tblName => text()();
 
   TextColumn get userId => text()();
 

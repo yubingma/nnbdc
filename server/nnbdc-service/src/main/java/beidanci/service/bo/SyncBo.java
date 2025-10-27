@@ -162,7 +162,7 @@ public class SyncBo {
 
                     // 检查record id是否超出长度限制
                     if (log.getRecordId().length() > 131) {
-                        throw new IllegalArgumentException(String.format("record id(%s)超出长度限制(最多131), table(%s)", log.getRecordId(), log.getTable_()));
+                        throw new IllegalArgumentException(String.format("record id(%s)超出长度限制(最多131), table(%s)", log.getRecordId(), log.getTblName()));
                     }
 
                     // 生成服务端数据库日志(用于同步到该用户的其他客户端)
@@ -171,7 +171,7 @@ public class SyncBo {
                     userDbLog.setVersion(lastVersion + 1);
                     userDbLog.setCreateTime(new Date());
                     userDbLog.setUpdateTime(new Date());
-                    userDbLog.setTable(log.getTable_());
+                    userDbLog.setTable(log.getTblName());
                     userDbLog.setRecordId(log.getRecordId());
                     userDbLog.setOperate(log.getOperate());
                     userDbLog.setRecord(recordJson);
@@ -179,7 +179,7 @@ public class SyncBo {
                 } catch (Exception e) {
                     // 任何异常都会导致整个事务回滚
                     logger.error("同步数据失败，将回滚整个事务, 用户[{}], 表[{}], 记录[{}], 错误: {}",
-                            userId, log.getTable_(), recordJson, e.getMessage());
+                            userId, log.getTblName(), recordJson, e.getMessage());
                     logger.error("异常详情:", e);
                     throw new RuntimeException("同步数据失败: " + e.getMessage(), e);
                 }
@@ -255,7 +255,7 @@ public class SyncBo {
      */
     private void processSyncLog(String userId, UserDbLogDto log, String recordJson)
             throws IllegalAccessException {
-        String tableName = log.getTable_().toLowerCase();
+        String tableName = log.getTblName().toLowerCase();
         String operation = log.getOperate().toUpperCase();
 
         switch (tableName) {
@@ -376,15 +376,25 @@ public class SyncBo {
 
     /**
      * 处理用户同步
+     * 注意：isAdmin、isSuper、isSysUser 这三个字段只允许后端同步到前端，不允许前端修改
      */
     private void processUserSync(String userId, UserDbLogDto log, String recordJson, String operation)
             throws IllegalAccessException {
         if ("UPDATE".equals(operation)) {
             try {
                 UserDto userDto = JsonUtils.makeObject(recordJson, UserDto.class);
-                if (userBo.findById(userId) != null) {
+                User user = userBo.findById(userId);
+                if (user != null) {
                     User userFromClient = User.fromDto(userDto);
+                    
+                    // 保护敏感字段：isAdmin、isSuper、isSysUser 只允许后端同步到前端
+                    // 将这三个字段从后端数据库的原始值恢复到 userFromClient
+                    userFromClient.setIsAdmin(user.getIsAdmin());
+                    userFromClient.setIsSuper(user.getIsSuper());
+                    userFromClient.setIsSysUser(user.getIsSysUser());
+                    
                     userBo.updateEntity(userFromClient);
+                    logger.info("同步更新用户成功: userId={}, userName={}", userId, userFromClient.getUserName());
                 }
             } catch (IllegalAccessException | IllegalArgumentException e) {
                 logger.error("同步用户数据失败：" + e.getMessage(), e);
@@ -489,7 +499,7 @@ public class SyncBo {
                 UserStudyStepDto stepDto = JsonUtils.makeObject(recordJson, UserStudyStepDto.class);
                 UserStudyStepId id = new UserStudyStepId(userId, stepDto.getStudyStep());
                 UserStudyStep studyStep = new UserStudyStep(id);
-                studyStep.setIndex(stepDto.getIndex());
+                studyStep.setSeq(stepDto.getSeq());
                 studyStep.setState(stepDto.getState());
 
                 if (stepDto.getCreateTime() != null) {
@@ -789,9 +799,9 @@ public class SyncBo {
      */
     private void updateUserRankingIfNeeded(String userId, List<UserDbLogDto> logs) {
         boolean needUpdateRanking = logs.stream()
-                .anyMatch(log -> log.getTable_().equalsIgnoreCase("dakas") ||
-                        log.getTable_().equalsIgnoreCase("user_game") ||
-                        log.getTable_().equalsIgnoreCase("user"));
+                .anyMatch(log -> log.getTblName().equalsIgnoreCase("dakas") ||
+                        log.getTblName().equalsIgnoreCase("user_game") ||
+                        log.getTblName().equalsIgnoreCase("user"));
 
         if (needUpdateRanking) {
             try {
