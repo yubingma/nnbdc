@@ -361,6 +361,15 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
           ),
         ),
         actions: [
+          // 修复按钮
+          if (relatedIssues.isNotEmpty)
+            TextButton(
+              onPressed: () => _fixIssues(context, relatedIssues),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.green,
+              ),
+              child: const Text('修复'),
+            ),
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('关闭'),
@@ -467,6 +476,121 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
         );
       }
     }
+  }
+
+  // 修复特定问题
+  Future<void> _fixIssues(BuildContext context, List<IntegrityIssue> issues) async {
+    // 关闭详情对话框
+    if (mounted) Navigator.pop(context);
+    
+    // 显示修复确认对话框
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('确认修复'),
+        content: Text('确定要修复这 ${issues.length} 个问题吗？'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.green,
+            ),
+            child: const Text('确定修复'),
+          ),
+        ],
+      ),
+    );
+    
+    if (confirmed != true || !mounted) return;
+    
+    // 显示修复进度
+    _showFixProgressDialog();
+    
+    try {
+      // 使用本地数据完整性检查器进行修复
+      final checker = DataIntegrityChecker();
+      final fixResult = await checker.autoFix(_checkResult!);
+      
+      // 在异步操作完成后处理UI
+      if (mounted) _handleFixResult(fixResult);
+    } catch (e, stackTrace) {
+      // 在异步操作完成后处理错误
+      if (mounted) _handleFixError(e, stackTrace);
+    }
+  }
+
+  // 显示修复进度对话框
+  void _showFixProgressDialog() {
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const AlertDialog(
+        content: Row(
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(width: 16),
+            Text('正在修复问题...'),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // 处理修复结果
+  void _handleFixResult(IntegrityFixResult fixResult) {
+    if (!mounted) return;
+    
+    // 关闭进度对话框
+    Navigator.pop(context);
+    
+    // 显示修复结果
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('修复完成'),
+        content: Text(
+          fixResult.hasFixed 
+            ? '已修复 ${fixResult.fixed.length} 个问题'
+            : '没有需要修复的问题'
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              // 重新运行健康检查
+              _runDiagnostic();
+            },
+            child: const Text('重新检查'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('确定'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 处理修复错误
+  void _handleFixError(dynamic e, StackTrace stackTrace) {
+    if (!mounted) return;
+    
+    // 关闭进度对话框
+    Navigator.pop(context);
+    
+    ErrorHandler.handleError(e, stackTrace, logPrefix: '修复问题', userMessage: '修复过程中出现错误', showToast: true);
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('修复过程中出现错误: $e'),
+        backgroundColor: Colors.red,
+      ),
+    );
   }
 
   Future<void> _runAutoFix() async {

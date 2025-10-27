@@ -436,7 +436,7 @@ public class UserBo extends BaseBo<User> {
                 // 删除用户的自定义单词书
                 List<Dict> customedDicts = dictBo.getOwnDicts(user, Integer.MAX_VALUE);
                 for (Dict dict : customedDicts) {
-                    dictBo.deleteById(dict.getId());
+                    dictBo.deleteDictSafely(dict.getId());
                 }
 
                 // 删除用户的学习步骤

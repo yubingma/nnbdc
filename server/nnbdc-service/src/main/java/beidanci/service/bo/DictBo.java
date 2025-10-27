@@ -552,6 +552,48 @@ public class DictBo extends BaseBo<Dict> {
     }
 
     /**
+     * 安全删除词典（处理外键约束）
+     * 在删除词典之前，先删除相关的 meaning_item 记录
+     */
+    @Transactional
+    public void deleteDictSafely(String dictId) {
+        try {
+            Session session = getSession();
+            
+            // 1. 先删除相关的 meaning_item 记录
+            String deleteMeaningItemsSql = "DELETE FROM meaning_item WHERE dictId = ?";
+            int deletedMeaningItems = session.createNativeQuery(deleteMeaningItemsSql)
+                .setParameter(1, dictId)
+                .executeUpdate();
+            
+            // 2. 删除相关的 dict_word 记录
+            String deleteDictWordsSql = "DELETE FROM dict_word WHERE dictId = ?";
+            int deletedDictWords = session.createNativeQuery(deleteDictWordsSql)
+                .setParameter(1, dictId)
+                .executeUpdate();
+            
+            // 3. 删除相关的 learning_dict 记录
+            String deleteLearningDictsSql = "DELETE FROM learning_dict WHERE dictId = ?";
+            int deletedLearningDicts = session.createNativeQuery(deleteLearningDictsSql)
+                .setParameter(1, dictId)
+                .executeUpdate();
+            
+            // 4. 最后删除词典本身
+            String deleteDictSql = "DELETE FROM dict WHERE id = ?";
+            int deletedDicts = session.createNativeQuery(deleteDictSql)
+                .setParameter(1, dictId)
+                .executeUpdate();
+            
+            log.info("安全删除词典完成: dictId={}, 删除meaning_item={}条, dict_word={}条, learning_dict={}条, dict={}条", 
+                dictId, deletedMeaningItems, deletedDictWords, deletedLearningDicts, deletedDicts);
+                
+        } catch (Exception e) {
+            log.error("安全删除词典失败: dictId={}, 错误: {}", dictId, e.getMessage(), e);
+            throw new RuntimeException("删除词典失败: " + e.getMessage(), e);
+        }
+    }
+
+    /**
      * 获取用户词典ID列表（只包含可见且就绪的词书）
      */
     public List<String> getUserDictIds() {

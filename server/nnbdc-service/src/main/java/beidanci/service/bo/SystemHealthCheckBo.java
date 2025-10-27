@@ -470,8 +470,8 @@ public class SystemHealthCheckBo {
                 // 检查是否为空词书
                 Long actualCount = dictBo.getDictWordCount(dictId);
                 if (actualCount == 0) {
-                    // 删除空的系统词书
-                    dictBo.deleteEntity(dict);
+                    // 使用安全删除方法删除空的系统词书
+                    dictBo.deleteDictSafely(dictId);
                     fixed.add("删除空的系统词书: " + dict.getName());
                     fixedCount++;
                 } else {

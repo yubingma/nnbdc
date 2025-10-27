@@ -6,6 +6,8 @@ import 'package:nnbdc/util/network_util.dart';
 import 'package:nnbdc/socket_io.dart';
 import 'package:nnbdc/config.dart';
 import 'package:nnbdc/api/api.dart';
+import 'package:nnbdc/api/result.dart';
+import 'package:nnbdc/api/vo.dart';
 import 'package:provider/provider.dart';
 import 'package:dio/dio.dart';
 
@@ -554,6 +556,30 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
+                      // 修复按钮
+                      if (relatedIssues.isNotEmpty) ...[
+                        TextButton(
+                          onPressed: () => _fixSystemIssues(context, relatedIssues),
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 12,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            foregroundColor: Colors.green,
+                          ),
+                          child: const Text(
+                            '修复',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                      ],
                       TextButton(
                         onPressed: () => Navigator.pop(context),
                         style: TextButton.styleFrom(
@@ -1020,6 +1046,144 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
         _checkStates[step] = 'failed';
       });
     }
+  }
+
+  // 修复特定系统问题
+  Future<void> _fixSystemIssues(BuildContext context, List<SystemHealthIssue> issues) async {
+    // 关闭详情对话框
+    Navigator.pop(context);
+    
+    // 显示修复确认对话框
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('确认修复'),
+        content: Text('确定要修复这 ${issues.length} 个系统问题吗？'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.green,
+            ),
+            child: const Text('确定修复'),
+          ),
+        ],
+      ),
+    );
+    
+    if (confirmed != true) return;
+    
+    // 显示修复进度
+    _showSystemFixProgressDialog();
+    
+    try {
+      // 收集需要修复的问题类型
+      final issueTypes = <String>[];
+      for (final issue in issues) {
+        if (!issueTypes.contains(issue.category)) {
+          issueTypes.add(issue.category);
+        }
+      }
+      
+      // 调用后端API进行自动修复
+      final apiResult = await Api.client.autoFixSystemIssues(issueTypes);
+      
+      // 在异步操作完成后处理UI
+      if (mounted) _handleSystemFixResult(apiResult);
+    } catch (e, stackTrace) {
+      // 在异步操作完成后处理错误
+      if (mounted) _handleSystemFixError(e, stackTrace);
+    }
+  }
+
+  // 显示系统修复进度对话框
+  void _showSystemFixProgressDialog() {
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const AlertDialog(
+        content: Row(
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(width: 16),
+            Text('正在修复系统问题...'),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // 处理系统修复结果
+  void _handleSystemFixResult(Result<SystemHealthFixResult> apiResult) {
+    if (!mounted) return;
+    
+    // 关闭进度对话框
+    Navigator.pop(context);
+    
+    if (apiResult.success && apiResult.data != null) {
+      final fixResult = apiResult.data!;
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('修复完成'),
+          content: Text(
+            fixResult.fixedCount > 0 
+              ? '已修复 ${fixResult.fixedCount} 个问题'
+              : '没有需要修复的问题'
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                // 重新运行系统诊断
+                _runSystemDiagnostic();
+              },
+              child: const Text('重新检查'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('确定'),
+            ),
+          ],
+        ),
+      );
+    } else {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('修复失败'),
+          content: Text(apiResult.msg ?? '修复过程中出现未知错误'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('确定'),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
+  // 处理系统修复错误
+  void _handleSystemFixError(dynamic e, StackTrace stackTrace) {
+    if (!mounted) return;
+    
+    // 关闭进度对话框
+    Navigator.pop(context);
+    
+    Global.logger.e('修复系统问题时出错', error: e, stackTrace: stackTrace);
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('修复过程中出现错误: $e'),
+        backgroundColor: Colors.red,
+      ),
+    );
   }
 
   Future<void> _runAutoFix() async {
