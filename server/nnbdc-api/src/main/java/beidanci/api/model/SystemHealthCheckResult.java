@@ -19,12 +19,12 @@ public class SystemHealthCheckResult {
         this.errors = errors;
     }
 
-    public boolean isHealthy() {
+    public boolean getIsHealthy() {
         return isHealthy;
     }
 
-    public void setHealthy(boolean healthy) {
-        isHealthy = healthy;
+    public void setIsHealthy(boolean isHealthy) {
+        this.isHealthy = isHealthy;
     }
 
     public List<SystemHealthIssue> getIssues() {

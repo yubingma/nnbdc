@@ -1,6 +1,6 @@
 
 class Config {
-  static String profileName = "dev2";
+  static String profileName = "dev";
 
   static final Map profiles = {
     "prod": {
@@ -13,15 +13,6 @@ class Config {
       "wordImageBaseUrl": 'http://www.nnbdc.com/img/word/'
     },
     "dev": {
-      "service_url": "http://192.168.43.53:5200",
-      "socketServerUrl": "http://192.168.43.53:9090/all",
-      "sound_base_url": "http://192.168.43.53:80/sound/",
-      "updateUrl": "http://192.168.43.53:80/app/ver.json",
-      "apkUrl": "http://192.168.43.53:80/app/nnbdc.apk",
-      "windowsUrl": "http://192.168.43.53:80/app/nnbdc-windows.exe",
-      "wordImageBaseUrl": 'http://192.168.43.53:80/img/word/'
-    },
-    "dev2": {
       "service_url": "http://192.168.1.26:5200",
       "socketServerUrl": "http://192.168.1.26:9090/all",
       "sound_base_url": "http://192.168.1.26:80/sound/",
@@ -65,6 +56,6 @@ class Config {
 
   // Debug settings
   static bool get showDbButton {
-    return profileName == "dev" || profileName == "dev2" || profileName == "dev_web" || profileName == "test";
+    return profileName == "dev" || profileName == "dev_web" || profileName == "test";
   }
 }

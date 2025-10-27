@@ -11,6 +11,8 @@ import beidanci.api.model.SystemHealthCheckResult;
 import beidanci.api.model.SystemHealthFixResult;
 import beidanci.api.model.SystemHealthIssue;
 import beidanci.service.dao.UserDbVersionDao;
+import beidanci.service.po.Dict;
+import beidanci.util.Constants;
 
 /**
  * 系统健康检查业务逻辑
@@ -67,15 +69,27 @@ public class SystemHealthCheckBo {
         List<String> errors = new ArrayList<>();
         
         try {
-            // 获取所有用户词典（ownerId != 15118）
-            List<String> userDictIds = dictBo.getUserDictIds();
+            // 使用原生SQL一次性获取所有用户词典信息，参考check_db.py的高效查询
+            String sql = """
+                SELECT d.id, d.name, d.ownerId, d.wordCount, d.createTime
+                FROM dict d
+                WHERE d.visible = 1 AND d.isReady = 1 AND d.ownerId != ?
+                ORDER BY d.createTime DESC
+                """;
             
-            for (String dictId : userDictIds) {
-                // 检查词典单词序号连续性
-                checkDictWordSequence(dictId, issues);
+            @SuppressWarnings("unchecked")
+            List<Object[]> dicts = dictBo.getSession().createNativeQuery(sql)
+                .setParameter(1, Constants.SYS_USER_SYS_ID)
+                .list();
+            
+            for (Object[] dict : dicts) {
+                String dictId = (String) dict[0];
+                String dictName = (String) dict[1];
+                String ownerId = (String) dict[2];
+                Integer wordCount = (Integer) dict[3];
                 
-                // 检查词典单词数量一致性
-                checkDictWordCount(dictId, issues);
+                // 检查词典单词序号连续性和数量一致性
+                checkDictWordSequenceAndCount(dictId, dictName, ownerId, wordCount, issues);
             }
             
         } catch (Exception e) {
@@ -229,17 +243,148 @@ public class SystemHealthCheckBo {
 
     // 私有辅助方法
 
+    /**
+     * 检查词典单词序号连续性和数量一致性（参考check_db.py的高效实现）
+     */
+    private void checkDictWordSequenceAndCount(String dictId, String dictName, String ownerId, Integer expectedWordCount, List<SystemHealthIssue> issues) {
+        try {
+            // 使用原生SQL一次性获取词典中的所有单词，按seq排序
+            String sql = """
+                SELECT dw.wordId, dw.seq, w.spell
+                FROM dict_word dw
+                JOIN word w ON dw.wordId = w.id
+                WHERE dw.dictId = ?
+                ORDER BY dw.seq ASC
+                """;
+            
+            @SuppressWarnings("unchecked")
+            List<Object[]> dictWords = dictBo.getSession().createNativeQuery(sql)
+                .setParameter(1, dictId)
+                .list();
+            
+            // 检查空词书
+            if (dictWords.isEmpty()) {
+                // 系统词书（ownerId == '15118'）如果为空，是异常情况
+                if (Constants.SYS_USER_SYS_ID.equals(ownerId)) {
+                    issues.add(new SystemHealthIssue(
+                        "系统词书为空",
+                        String.format("系统词书 %s 为空，需要删除", dictName),
+                        "empty_system_dict"
+                    ));
+                } else {
+                    // 如果词书为空但dict表记录的wordCount不为0，这也是个问题
+                    if (expectedWordCount != null && expectedWordCount != 0) {
+                        issues.add(new SystemHealthIssue(
+                            "单词数量不匹配",
+                            String.format("词典 %s 为空，但dict表记录wordCount=%d", dictName, expectedWordCount),
+                            "word_count_mismatch"
+                        ));
+                    }
+                }
+                return;
+            }
+            
+            int actualWordCount = dictWords.size();
+            
+            // 检查单词数量是否和dict表一致
+            if (expectedWordCount != null && actualWordCount != expectedWordCount) {
+                issues.add(new SystemHealthIssue(
+                    "单词数量不匹配",
+                    String.format("词典 %s 记录数量: %d, 实际数量: %d", dictName, expectedWordCount, actualWordCount),
+                    "dict_word_count"
+                ));
+            }
+            
+            // 检查序号是否从1开始
+            Integer firstSeq = (Integer) dictWords.get(0)[1];
+            if (firstSeq != 1) {
+                String firstWord = (String) dictWords.get(0)[2];
+                issues.add(new SystemHealthIssue(
+                    "序号不连续",
+                    String.format("词典 %s 第一个单词 '%s' 序号不是1，实际序号: %d", dictName, firstWord, firstSeq),
+                    "dict_word_sequence"
+                ));
+            }
+            
+            // 检查序号是否连续
+            for (int i = 0; i < dictWords.size(); i++) {
+                Integer actualSeq = (Integer) dictWords.get(i)[1];
+                Integer expectedSeq = i + 1;
+                if (!actualSeq.equals(expectedSeq)) {
+                    String wordSpell = (String) dictWords.get(i)[2];
+                    issues.add(new SystemHealthIssue(
+                        "序号不连续",
+                        String.format("词典 %s 位置%d断开，期望序号: %d, 实际序号: %d, 单词: '%s'", 
+                            dictName, expectedSeq, expectedSeq, actualSeq, wordSpell),
+                        "dict_word_sequence"
+                    ));
+                }
+            }
+            
+            // 检查最大序号是否等于总单词数
+            Integer maxSeq = (Integer) dictWords.get(dictWords.size() - 1)[1];
+            if (!maxSeq.equals(actualWordCount)) {
+                String lastWord = (String) dictWords.get(dictWords.size() - 1)[2];
+                issues.add(new SystemHealthIssue(
+                    "序号不连续",
+                    String.format("词典 %s 最大序号不等于总单词数，最大序号: %d, 总单词数: %d, 单词: '%s'", 
+                        dictName, maxSeq, actualWordCount, lastWord),
+                    "dict_word_sequence"
+                ));
+            }
+            
+        } catch (Exception e) {
+            issues.add(new SystemHealthIssue(
+                "检查序号连续性失败",
+                String.format("检查词典 %s 序号连续性时出错: %s", dictName, e.getMessage()),
+                "dict_word_sequence"
+            ));
+        }
+    }
+
     private void checkDictWordSequence(String dictId, List<SystemHealthIssue> issues) {
         try {
             List<Object[]> dictWords = dictBo.checkDictWordSequence(dictId);
-            if (dictWords.isEmpty()) return;
+            
+            // 获取词典信息
+            Dict dict = dictBo.findById(dictId, false);
+            if (dict == null) {
+                issues.add(new SystemHealthIssue(
+                    "词典不存在",
+                    String.format("词典 %s 不存在", dictId),
+                    "dict_word_sequence"
+                ));
+                return;
+            }
+            
+            // 检查空词书
+            if (dictWords.isEmpty()) {
+                // 系统词书（ownerId == '15118'）如果为空，是异常情况
+                if (Constants.SYS_USER_SYS_ID.equals(dict.getOwner().getId())) {
+                    issues.add(new SystemHealthIssue(
+                        "系统词书为空",
+                        String.format("系统词书 %s 为空，需要删除", dict.getName()),
+                        "empty_system_dict"
+                    ));
+                } else {
+                    // 如果词书为空但dict表记录的wordCount不为0，这也是个问题
+                    if (dict.getWordCount() != 0) {
+                        issues.add(new SystemHealthIssue(
+                            "单词数量不匹配",
+                            String.format("词书 %s 为空，但dict表记录wordCount=%d", dict.getName(), dict.getWordCount()),
+                            "word_count_mismatch"
+                        ));
+                    }
+                }
+                return;
+            }
             
             // 检查序号是否从1开始
             Integer firstSeq = (Integer) dictWords.get(0)[1];
             if (firstSeq != 1) {
                 issues.add(new SystemHealthIssue(
                     "序号不连续",
-                    String.format("词典 %s 第一个单词序号不是1，实际是%d", dictId, firstSeq),
+                    String.format("词典 %s 第一个单词序号不是1，实际是%d", dict.getName(), firstSeq),
                     "dict_word_sequence"
                 ));
                 return;
@@ -255,7 +400,7 @@ public class SystemHealthCheckBo {
                     issues.add(new SystemHealthIssue(
                         "序号不连续",
                         String.format("词典 %s 中单词 %s(%s) 序号不正确，期望%d，实际%d", 
-                                    dictId, wordId, spell, expectedSeq, actualSeq),
+                                    dict.getName(), wordId, spell, expectedSeq, actualSeq),
                         "dict_word_sequence"
                     ));
                     return;
@@ -268,7 +413,7 @@ public class SystemHealthCheckBo {
                 issues.add(new SystemHealthIssue(
                     "序号不连续",
                     String.format("词典 %s 最大序号(%d)不等于总单词数(%d)", 
-                                dictId, lastSeq, dictWords.size()),
+                                dict.getName(), lastSeq, dictWords.size()),
                     "dict_word_sequence"
                 ));
             }
@@ -286,11 +431,22 @@ public class SystemHealthCheckBo {
             Long actualCount = dictBo.getDictWordCount(dictId);
             Integer recordedCount = dictBo.getDictRecordedWordCount(dictId);
             
+            // 获取词典信息
+            Dict dict = dictBo.findById(dictId, false);
+            if (dict == null) {
+                issues.add(new SystemHealthIssue(
+                    "词典不存在",
+                    String.format("词典 %s 不存在", dictId),
+                    "dict_word_count"
+                ));
+                return;
+            }
+            
             if (!actualCount.equals(recordedCount.longValue())) {
                 issues.add(new SystemHealthIssue(
                     "单词数量不匹配",
                     String.format("词典 %s 记录数量: %d, 实际数量: %d", 
-                                dictId, recordedCount, actualCount),
+                                dict.getName(), recordedCount, actualCount),
                     "dict_word_count"
                 ));
             }
@@ -308,15 +464,26 @@ public class SystemHealthCheckBo {
         try {
             List<String> systemDictIds = dictBo.getSystemDictIds();
             for (String dictId : systemDictIds) {
-                // 修复序号
-                dictBo.fixDictWordSequence(dictId);
+                Dict dict = dictBo.findById(dictId, false);
+                if (dict == null) continue;
                 
-                // 修复数量
+                // 检查是否为空词书
                 Long actualCount = dictBo.getDictWordCount(dictId);
-                dictBo.updateDictWordCount(dictId, actualCount.intValue());
-                
-                fixed.add("修复系统词典 " + dictId + " 的完整性问题");
-                fixedCount++;
+                if (actualCount == 0) {
+                    // 删除空的系统词书
+                    dictBo.deleteEntity(dict);
+                    fixed.add("删除空的系统词书: " + dict.getName());
+                    fixedCount++;
+                } else {
+                    // 修复序号
+                    dictBo.fixDictWordSequence(dictId);
+                    
+                    // 修复数量
+                    dictBo.updateDictWordCount(dictId, actualCount.intValue());
+                    
+                    fixed.add("修复系统词典 " + dict.getName() + " 的完整性问题");
+                    fixedCount++;
+                }
             }
         } catch (Exception e) {
             // 错误已在调用方处理

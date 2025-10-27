@@ -542,20 +542,20 @@ public class DictBo extends BaseBo<Dict> {
     // ============================================
 
     /**
-     * 获取系统词典ID列表
+     * 获取系统词典ID列表（只包含可见且就绪的词书）
      */
     public List<String> getSystemDictIds() {
-        String hql = "SELECT d.id FROM Dict d WHERE d.owner.id = :ownerId";
+        String hql = "SELECT d.id FROM Dict d WHERE d.owner.id = :ownerId AND d.visible = true AND d.isReady = true";
         Query<String> query = getSession().createQuery(hql, String.class);
         query.setParameter("ownerId", Constants.SYS_USER_SYS_ID);
         return query.list();
     }
 
     /**
-     * 获取用户词典ID列表
+     * 获取用户词典ID列表（只包含可见且就绪的词书）
      */
     public List<String> getUserDictIds() {
-        String hql = "SELECT d.id FROM Dict d WHERE d.owner.id != :ownerId";
+        String hql = "SELECT d.id FROM Dict d WHERE d.owner.id != :ownerId AND d.visible = true AND d.isReady = true";
         Query<String> query = getSession().createQuery(hql, String.class);
         query.setParameter("ownerId", Constants.SYS_USER_SYS_ID);
         return query.list();
@@ -565,14 +565,13 @@ public class DictBo extends BaseBo<Dict> {
      * 检查词典单词序号连续性
      */
     public List<Object[]> checkDictWordSequence(String dictId) {
-        String sql = """
-            SELECT dw.wordId, dw.seq, w.spell
-            FROM dict_word dw
-            JOIN word w ON dw.wordId = w.id
-            WHERE dw.dictId = :dictId
+        String hql = """
+            SELECT dw.word.id, dw.seq, dw.word.spell
+            FROM DictWord dw
+            WHERE dw.dict.id = :dictId
             ORDER BY dw.seq ASC
             """;
-        Query<Object[]> query = getSession().createNativeQuery(sql, Object[].class);
+        Query<Object[]> query = getSession().createQuery(hql, Object[].class);
         query.setParameter("dictId", dictId);
         return query.list();
     }

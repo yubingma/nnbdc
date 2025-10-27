@@ -437,8 +437,20 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
     try {
       final apiResult = await Api.client.checkSystemDictIntegrity();
       
+      // 添加更多调试信息
+      Global.logger.d('API调用结果: success=${apiResult.success}, data=${apiResult.data != null}');
+      if (apiResult.data != null) {
+        Global.logger.d('API数据: ${apiResult.data}');
+      }
+      
       if (apiResult.success && apiResult.data != null) {
         final data = apiResult.data!;
+        
+        // 添加调试日志
+        Global.logger.d('系统词典完整性检查结果: isHealthy=${data.isHealthy}, issuesCount=${data.issues.length}');
+        Global.logger.d('isHealthy类型: ${data.isHealthy.runtimeType}');
+        Global.logger.d('isHealthy == false: ${data.isHealthy == false}');
+        Global.logger.d('issues.isNotEmpty: ${data.issues.isNotEmpty}');
         
         if ((data.isHealthy == false) && data.issues.isNotEmpty) {
           for (final issue in data.issues) {
