@@ -204,8 +204,17 @@ public class LearningDictBo extends BaseBo<LearningDict> {
             WHERE ld.currentWordSeq > d.wordCount
             ORDER BY ld.userId, ld.dictId
             """;
-        Query<Object[]> query = getSession().createNativeQuery(sql, Object[].class);
-        return query.list();
+        Query<?> query = getSession().createNativeQuery(sql);
+        List<?> results = query.list();
+        
+        // 转换为Object[]数组
+        List<Object[]> resultList = new ArrayList<>();
+        for (Object result : results) {
+            if (result instanceof Object[]) {
+                resultList.add((Object[]) result);
+            }
+        }
+        return resultList;
     }
 
     /**

@@ -553,39 +553,50 @@ public class DictBo extends BaseBo<Dict> {
 
     /**
      * 安全删除词典（处理外键约束）
-     * 在删除词典之前，先删除相关的 meaning_item 记录
+     * 在删除词典之前，先删除相关的记录，按照正确的顺序处理外键约束
      */
     @Transactional
     public void deleteDictSafely(String dictId) {
         try {
             Session session = getSession();
             
-            // 1. 先删除相关的 meaning_item 记录
+            // 1. 先删除 sentence 表中的关联记录（sentence -> meaning_item -> dict）
+            String deleteSentencesSql = """
+                DELETE FROM sentence 
+                WHERE meaningItemId IN (
+                    SELECT id FROM meaning_item WHERE dictId = ?
+                )
+            """;
+            int deletedSentences = session.createNativeQuery(deleteSentencesSql)
+                .setParameter(1, dictId)
+                .executeUpdate();
+            
+            // 2. 删除 meaning_item 表中的关联记录
             String deleteMeaningItemsSql = "DELETE FROM meaning_item WHERE dictId = ?";
             int deletedMeaningItems = session.createNativeQuery(deleteMeaningItemsSql)
                 .setParameter(1, dictId)
                 .executeUpdate();
             
-            // 2. 删除相关的 dict_word 记录
-            String deleteDictWordsSql = "DELETE FROM dict_word WHERE dictId = ?";
-            int deletedDictWords = session.createNativeQuery(deleteDictWordsSql)
-                .setParameter(1, dictId)
-                .executeUpdate();
-            
-            // 3. 删除相关的 learning_dict 记录
+            // 3. 删除 learning_dict 表中的关联记录
             String deleteLearningDictsSql = "DELETE FROM learning_dict WHERE dictId = ?";
             int deletedLearningDicts = session.createNativeQuery(deleteLearningDictsSql)
                 .setParameter(1, dictId)
                 .executeUpdate();
             
-            // 4. 最后删除词典本身
+            // 4. 删除 dict_word 表中的关联记录
+            String deleteDictWordsSql = "DELETE FROM dict_word WHERE dictId = ?";
+            int deletedDictWords = session.createNativeQuery(deleteDictWordsSql)
+                .setParameter(1, dictId)
+                .executeUpdate();
+            
+            // 5. 最后删除词典本身
             String deleteDictSql = "DELETE FROM dict WHERE id = ?";
             int deletedDicts = session.createNativeQuery(deleteDictSql)
                 .setParameter(1, dictId)
                 .executeUpdate();
             
-            log.info("安全删除词典完成: dictId={}, 删除meaning_item={}条, dict_word={}条, learning_dict={}条, dict={}条", 
-                dictId, deletedMeaningItems, deletedDictWords, deletedLearningDicts, deletedDicts);
+            log.info("安全删除词典完成: dictId={}, 删除sentence={}条, meaning_item={}条, learning_dict={}条, dict_word={}条, dict={}条", 
+                dictId, deletedSentences, deletedMeaningItems, deletedLearningDicts, deletedDictWords, deletedDicts);
                 
         } catch (Exception e) {
             log.error("安全删除词典失败: dictId={}, 错误: {}", dictId, e.getMessage(), e);
