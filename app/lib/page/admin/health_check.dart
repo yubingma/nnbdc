@@ -279,7 +279,7 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
                     Text(
                       issue.type,
                       style: const TextStyle(
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w400,
                         fontSize: 14,
                       ),
                     ),
@@ -304,7 +304,7 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
                             const Text(
                               '日志信息:',
                               style: TextStyle(
-                                fontWeight: FontWeight.bold,
+                                fontWeight: FontWeight.w400,
                                 fontSize: 12,
                                 color: Colors.grey,
                               ),
@@ -336,7 +336,7 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
                             const Text(
                               '异常堆栈:',
                               style: TextStyle(
-                                fontWeight: FontWeight.bold,
+                                fontWeight: FontWeight.w400,
                                 fontSize: 12,
                                 color: Colors.red,
                               ),

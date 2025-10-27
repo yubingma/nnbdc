@@ -318,7 +318,7 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
                           title,
                           style: const TextStyle(
                             fontSize: 18,
-                            fontWeight: FontWeight.w600,
+                            fontWeight: FontWeight.w400,
                             color: Colors.white,
                           ),
                         ),
@@ -376,7 +376,7 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
                                     child: Text(
                                       issue.type,
                                       style: TextStyle(
-                                        fontWeight: FontWeight.w600,
+                                        fontWeight: FontWeight.w400,
                                         fontSize: 16,
                                         color: isDarkMode
                                             ? Colors.white
@@ -439,7 +439,7 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
                                           Text(
                                             '日志信息',
                                             style: TextStyle(
-                                              fontWeight: FontWeight.w600,
+                                              fontWeight: FontWeight.w400,
                                               fontSize: 14,
                                               color: Colors.blue[700],
                                             ),
@@ -498,7 +498,7 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
                                           Text(
                                             '异常堆栈',
                                             style: TextStyle(
-                                              fontWeight: FontWeight.w600,
+                                              fontWeight: FontWeight.w400,
                                               fontSize: 14,
                                               color: Colors.red[700],
                                             ),
@@ -569,7 +569,7 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
                           '关闭',
                           style: TextStyle(
                             fontSize: 14,
-                            fontWeight: FontWeight.w500,
+                            fontWeight: FontWeight.w400,
                             color: AppTheme.primaryColor,
                           ),
                         ),
