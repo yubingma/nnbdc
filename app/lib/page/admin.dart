@@ -197,7 +197,7 @@ class _AdminPageState extends State<AdminPage> {
           children: [
             Icon(
               icon,
-              size: 24,
+              size: 32,
               color: color,
             ),
             const SizedBox(height: 3),
@@ -205,7 +205,7 @@ class _AdminPageState extends State<AdminPage> {
               title,
               textScaler: const TextScaler.linear(1.0),
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 13,
                 fontWeight: FontWeight.w500,
                 color: textColor,
                 fontFamily: 'NotoSansSC',
@@ -214,12 +214,12 @@ class _AdminPageState extends State<AdminPage> {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 1),
+            const SizedBox(height: 2),
             Text(
               subtitle,
               textScaler: const TextScaler.linear(1.0),
               style: TextStyle(
-                fontSize: 8,
+                fontSize: 10,
                 color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
                 fontFamily: 'NotoSansSC',
               ),
