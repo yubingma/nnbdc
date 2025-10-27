@@ -763,9 +763,8 @@ public class UserBo extends BaseBo<User> {
      */
     public String saveCowDungOfThrowingDice(int delta, String reason, User user)
             throws IllegalArgumentException, IllegalAccessException {
-        if (delta == 20) { // 用户摇到了最大泡泡糖数，翻倍
-            delta *= 2;
-        }
+        // 不再翻倍，直接使用传入的delta值
+        // delta = delta;
 
         // 根据配置对泡泡糖数乘以一个倍数(节假日)
         delta = (int) (delta * sysParamUtil.getHolidayCowDungRatio());

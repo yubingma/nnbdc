@@ -4,7 +4,6 @@ import 'package:get/get.dart';
 import 'package:nnbdc/api/bo/user_bo.dart';
 import 'package:nnbdc/api/bo/study_bo.dart';
 import 'package:nnbdc/db/db.dart';
-import 'package:nnbdc/util/sound.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:appcheck/appcheck.dart';
@@ -72,11 +71,7 @@ class FinishPageState extends State<FinishPage> {
       var result = await StudyBo().throwDiceAndSave();
       if (result.success) {
         cowDung = result.data!;
-
-        if (cowDung == 20) {
-          //播放欢呼声
-          SoundUtil.playAssetSound('cheer.wav', 1, 1);
-        }
+        // 不再播放特殊声音，因为不再有翻倍机制
       } else {
         ToastUtil.error(result.msg!);
       }
@@ -135,7 +130,7 @@ class FinishPageState extends State<FinishPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text('打卡成功！\n获得积分：${todayDakaScore - extraScore} + $extraScore(连续打卡)'),
-                    cowDung == 20 ? const Text("运气太好了！\n你得到20颗泡泡糖，翻倍！你实际得到40颗泡泡糖！") : Text('恭喜！你得到$cowDung颗泡泡糖')
+                    Text('恭喜！你得到$cowDung颗泡泡糖')
                   ],
                 )
               : Text(dakaResult.msg!),

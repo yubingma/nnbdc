@@ -223,12 +223,12 @@ class StudyBo {
         return Result("ERROR", "没有掷骰子机会", false);
       }
 
-      // 生成1-20的随机数
-      final cowDung = Random().nextInt(20) + 1;
+      // 生成1-5的随机数
+      final cowDung = Random().nextInt(5) + 1;
       Global.logger.d('掷骰子结果: $cowDung');
 
-      // 如果掷到20，翻倍
-      final finalCowDung = cowDung == 20 ? cowDung * 2 : cowDung;
+      // 直接使用掷骰子结果，不再翻倍
+      final finalCowDung = cowDung;
       Global.logger.d('最终泡泡糖数: $finalCowDung');
 
       // 更新用户的泡泡糖数和掷骰子机会
