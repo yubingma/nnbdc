@@ -8,7 +8,7 @@ import 'package:nnbdc/util/app_clock.dart';
 /// 同步系统数据库（统一的系统数据同步）
 /// 
 /// 包含：
-/// - 静态元数据：Levels、DictGroups、GroupAndDictLinks、Dicts
+/// - 静态元数据：Levels、DictGroups、GroupAndDictLinks、Dicts、DictWords
 /// - UGC内容：Sentences、WordImages、WordShortDescChineses
 /// 
 /// 使用单例版本号，所有用户共享同一份系统数据
@@ -121,6 +121,23 @@ Future<void> _applySysDbLogs(List<SysDbLogDto> logs) async {
           } else {
             Dict entity = Dict.fromJson(entityJson);
             await db.dictsDao.saveEntity(entity, false);
+          }
+          
+        } else if (log.table_ == 'dict_word' || log.table_ == 'dictWords') {
+          // 词典单词关联（系统词典的单词变更）
+          if (log.operate == 'DELETE') {
+            // recordId格式为 "dictId_wordId"
+            var parts = log.recordId.split('_');
+            if (parts.length == 2) {
+              final dictId = parts[0];
+              final wordId = parts[1];
+              // 使用统一删除方法，不传userId（系统词典不涉及用户学习进度）
+              await db.dictWordsDao.deleteDictWordWithCleanup(dictId, wordId, null, false);
+            }
+          } else {
+            // INSERT 或 UPDATE 操作
+            DictWord entity = DictWord.fromJson(entityJson);
+            await db.dictWordsDao.insertEntity(entity, false);
           }
           
         // === UGC内容表 ===

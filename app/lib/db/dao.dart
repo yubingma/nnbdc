@@ -679,6 +679,83 @@ class DictWordsDao extends DatabaseAccessor<MyDatabase>
       await _reorderRawWordDict(entry.dictId, genLog);
     }
   }
+  
+  /// 完整删除词典单词（包括后续序号调整、wordCount更新、学习进度修复）
+  /// [dictId] 词典ID
+  /// [wordId] 单词ID
+  /// [userId] 用户ID（用于修复特定用户的学习进度，如果为null则修复所有用户）
+  /// [genLog] 是否生成日志
+  Future<void> deleteDictWordWithCleanup(String dictId, String wordId, String? userId, bool genLog) async {
+    final dictWord = await getById(dictId, wordId);
+    if (dictWord == null) {
+      Global.logger.w('词书中无该单词: dictId=$dictId, wordId=$wordId');
+      return;
+    }
+    
+    final seqNo = dictWord.seq;
+    
+    // 生成删除日志（如果需要）
+    if (genLog) {
+      var dict = await MyDatabase.instance.dictsDao.findById(dictId);
+      var owner = dict?.ownerId;
+      await DbLogUtil.logOperation(owner!, 'DELETE', 'dictWords',
+          '$dictId-$wordId', jsonEncode(dictWord.toJson()));
+    }
+    
+    // 删除记录
+    await delete(dictWords).delete(dictWord);
+    
+    // 更新后续单词的序号
+    final laterWords = await (select(dictWords)
+          ..where((dw) =>
+              dw.dictId.equals(dictId) &
+              dw.seq.isBiggerThanValue(seqNo)))
+        .get();
+    
+    for (final laterWord in laterWords) {
+      await (update(dictWords)
+            ..where((dw) =>
+                dw.dictId.equals(laterWord.dictId) &
+                dw.wordId.equals(laterWord.wordId)))
+          .write(DictWordsCompanion(
+        seq: Value(laterWord.seq - 1),
+        updateTime: Value(AppClock.now()),
+      ));
+    }
+    
+    // 更新词书的wordCount
+    await MyDatabase.instance.dictsDao.updateWordCount(dictId, genLog);
+    
+    // 修复所有相关用户的学习进度
+    var query = MyDatabase.instance.select(MyDatabase.instance.learningDicts)
+      ..where((ld) => ld.dictId.equals(dictId));
+    
+    // 如果指定了userId，只修复该用户的学习进度
+    if (userId != null) {
+      query = query..where((ld) => ld.userId.equals(userId));
+    }
+    
+    final learningDicts = await query.get();
+    
+    for (final learningDict in learningDicts) {
+      if (learningDict.currentWordSeq != null) {
+        // 如果学习位置在删除的单词之后，需要减1
+        if (learningDict.currentWordSeq! > seqNo) {
+          await (MyDatabase.instance.update(MyDatabase.instance.learningDicts)
+                ..where((ld) =>
+                    ld.userId.equals(learningDict.userId) &
+                    ld.dictId.equals(learningDict.dictId)))
+              .write(LearningDictsCompanion(
+            currentWordSeq: Value(learningDict.currentWordSeq! - 1),
+            updateTime: Value(AppClock.now()),
+          ));
+          Global.logger.d('修复用户学习进度: userId=${learningDict.userId}, dictId=$dictId, oldSeq=${learningDict.currentWordSeq}, newSeq=${learningDict.currentWordSeq! - 1}');
+        }
+      }
+    }
+    
+    Global.logger.d('已删除词典单词并完成清理: dictId=$dictId, wordId=$wordId, seqNo=$seqNo, 修复了${learningDicts.length}个用户的学习进度');
+  }
 
   // 批量插入词书中的单词
   Future<void> insertEntities(List<DictWord> entries, bool genLog) async {
