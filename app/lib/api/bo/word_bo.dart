@@ -499,10 +499,8 @@ class WordBo {
             ..americaPronounce = word.americaPronounce
             ..britishPronounce = word.britishPronounce
             ..popularity = word.popularity;
-          final meaningItemsQuery = db.select(db.meaningItems)
-            ..where((tbl) => tbl.wordId.equals(word.id))
-            ..orderBy([(tbl) => OrderingTerm(expression: tbl.popularity)]);
-          final meaningItems = await meaningItemsQuery.get();
+          // 使用 getWordMeaningItems 方法进行词书过滤
+          final meaningItems = await getWordMeaningItems(word.id, userId);
           List<MeaningItemVo> meaningItemVos = [];
           for (final mi in meaningItems) {
             meaningItemVos.add(MeaningItemVo(
@@ -573,19 +571,8 @@ class WordBo {
           ..americaPronounce = word.americaPronounce
           ..britishPronounce = word.britishPronounce
           ..popularity = word.popularity;
-        final learningDictsQuery = db.select(db.learningDicts)
-          ..where((tbl) => tbl.userId.equals(userId));
-        final learningDicts = await learningDictsQuery.get();
-        final selectedDictIds = learningDicts.map((d) => d.dictId).toList();
-        final meaningItemQuery = db.select(db.meaningItems)
-          ..where((mi) =>
-              mi.wordId.equals(word.id) & mi.dictId.isIn(selectedDictIds))
-          ..orderBy([(mi) => OrderingTerm(expression: mi.popularity)]);
-        final meaningItems = await meaningItemQuery.get();
-        if (meaningItems.isEmpty) {
-          final commonMeaningItems = await _getCommonDictMeaningItems(word.id);
-          meaningItems.addAll(commonMeaningItems);
-        }
+        // 使用 getWordMeaningItems 方法进行词书过滤
+        final meaningItems = await getWordMeaningItems(word.id, userId);
         List<MeaningItemVo> meaningItemVos = [];
         for (final mi in meaningItems) {
           meaningItemVos.add(MeaningItemVo(
@@ -652,19 +639,8 @@ class WordBo {
           ..americaPronounce = word.americaPronounce
           ..britishPronounce = word.britishPronounce
           ..popularity = word.popularity;
-        final learningDictsQuery = db.select(db.learningDicts)
-          ..where((tbl) => tbl.userId.equals(userId));
-        final learningDicts = await learningDictsQuery.get();
-        final selectedDictIds = learningDicts.map((d) => d.dictId).toList();
-        final meaningItemQuery = db.select(db.meaningItems)
-          ..where((mi) =>
-              mi.wordId.equals(word.id) & mi.dictId.isIn(selectedDictIds))
-          ..orderBy([(mi) => OrderingTerm(expression: mi.popularity)]);
-        final meaningItems = await meaningItemQuery.get();
-        if (meaningItems.isEmpty) {
-          final commonMeaningItems = await _getCommonDictMeaningItems(word.id);
-          meaningItems.addAll(commonMeaningItems);
-        }
+        // 使用 getWordMeaningItems 方法进行词书过滤
+        final meaningItems = await getWordMeaningItems(word.id, userId);
         List<MeaningItemVo> meaningItemVos = [];
         for (final mi in meaningItems) {
           meaningItemVos.add(MeaningItemVo(
@@ -1498,9 +1474,8 @@ class WordBo {
           ..americaPronounce = word.americaPronounce
           ..britishPronounce = word.britishPronounce
           ..popularity = word.popularity;
-        final meaningItemsQuery = db.select(db.meaningItems)
-          ..where((tbl) => tbl.wordId.equals(word.id));
-        final meaningItems = await meaningItemsQuery.get();
+        // 使用 getWordMeaningItems 方法进行词书过滤
+        final meaningItems = await getWordMeaningItems(word.id, userId);
         List<MeaningItemVo> meaningItemVos = [];
         for (final mi in meaningItems) {
           meaningItemVos.add(MeaningItemVo(
