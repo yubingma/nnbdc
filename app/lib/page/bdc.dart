@@ -15,6 +15,7 @@ import 'package:image_network/image_network.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:nnbdc/api/api.dart';
 import 'package:nnbdc/api/bo/study_bo.dart';
+import 'package:nnbdc/api/bo/word_bo.dart';
 import 'package:nnbdc/page/pic_search.dart';
 import 'package:nnbdc/page/word_detail.dart';
 import 'package:nnbdc/page/word_list/stage_words.dart';
@@ -1118,6 +1119,53 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         return;
       }
       word = getWordResult.learningWord!.word;
+      // 如果仅返回了ID，则本地补全单词详情与释义
+      if (word != null && (word!.spell.isEmpty)) {
+        try {
+          final db = MyDatabase.instance;
+          final local = await db.wordsDao.getWordById(word!.id!);
+          if (local != null) {
+            word!
+              ..spell = local.spell
+              ..shortDesc = local.shortDesc
+              ..longDesc = local.longDesc
+              ..pronounce = local.pronounce
+              ..americaPronounce = local.americaPronounce
+              ..britishPronounce = local.britishPronounce
+              ..popularity = local.popularity;
+          }
+          final user = Global.getLoggedInUser();
+          if (user != null) {
+            final mis = await WordBo().getMeaningItemsForWord(word!.id!, user.id);
+            word!.meaningItems = mis;
+          }
+
+          // 本地加载单词配图，填充到 currentGetWordResult.images
+          try {
+            final imgsQuery = db.select(db.wordImages)..where((tbl) => tbl.wordId.equals(word!.id!));
+            final imgs = await imgsQuery.get();
+            final imageVos = <WordImageVo>[];
+            for (final img in imgs) {
+              final author = await db.usersDao.getUserById(img.authorId);
+              // WordImageVo 需要非空作者，这里用占位作者避免空指针
+              UserVo authorVo = UserVo.c2(author?.id ?? '0')
+                ..nickName = (author?.nickName ?? '');
+              imageVos.add(WordImageVo(
+                img.id,
+                img.imageFile,
+                img.hand,
+                img.foot,
+                authorVo,
+              ));
+            }
+            currentGetWordResult?.images = imageVos;
+          } catch (e) {
+            Global.logger.w('本地加载单词图片失败', error: e);
+          }
+        } catch (e) {
+          Global.logger.w('本地补全单词失败', error: e);
+        }
+      }
       wordWrapper = WordWrapper(word!, null);
 
       // 渲染第一个例句

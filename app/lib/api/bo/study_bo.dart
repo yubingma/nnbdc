@@ -12,6 +12,7 @@ import 'package:drift/drift.dart';
 import 'dart:async';
 import 'dart:math';
 import 'package:nnbdc/util/app_clock.dart';
+import 'word_bo.dart';
 
 /// 业务对象（BO）：承载本地实现逻辑
 class StudyBo {
@@ -455,19 +456,56 @@ class StudyBo {
             true);
       }
 
-      // 获取目标学习单词, 并构建完整的GetWordResult
+      // 获取目标学习单词，仅返回其ID，释义交由本地通过 WordBo.getWordMeaningItems 加载
       final returnWord = todayWords[nextWordIndex];
-      var result = await _buildGetWordResult(
-        user: user,
-        targetWordLearningData: returnWord,
-        nextLearningMode: nextLearningMode,
-        nextWordIndex: nextWordIndex,
-        steps: steps,
-        todayWords: todayWords,
-        modeCount: modeCount,
-        db: db,
-      );
-      return result;
+      final userVo = UserVo.c2(user.id)..level = LevelVo(user.levelId);
+      final wordVo = WordVo.c2('')..id = returnWord.wordId; // 仅返回ID
+      final learningWordVo = LearningWordVo(
+          userVo,
+          returnWord.addTime,
+          returnWord.addDay,
+          returnWord.lifeValue,
+          returnWord.lastLearningDate,
+          returnWord.learningOrder,
+          returnWord.learnedTimes,
+          wordVo);
+
+      // 使用 WordBo.getWordMeaningItems 获取目标单词释义并用于生成混淆项
+      final targetMeaningItems = await WordBo().getWordMeaningItems(returnWord.wordId, returnWord.userId);
+      final targetMeaningItemVos = targetMeaningItems
+          .map((e) => MeaningItemVo(e.id, e.ciXing, e.meaning, null, null, null))
+          .toList();
+
+      // 生成两个混淆单词（其释义同样通过 WordBo.getWordMeaningItems 获取）
+      final otherWords = await getTwoOtherWords(steps, nextLearningMode, targetMeaningItemVos, todayWords, returnWord, db);
+
+      // 计算学习进度
+      final totalWordsToday = todayWords.length;
+      final currentLearningIndex =
+          calculateLearningIndexByWordIndexAndMode(nextWordIndex, nextLearningMode, modeCount, totalWordsToday, 10);
+      final maxLearningIndex = totalWordsToday * modeCount;
+      final progress = [(totalWordsToday * ((currentLearningIndex + 1.0) / (maxLearningIndex + 1))).toInt(), totalWordsToday];
+
+      return Result<GetWordResult>("SUCCESS", "获取成功", true)
+        ..data = GetWordResult(
+          learningWordVo,
+          nextLearningMode,
+          otherWords,
+          progress,
+          null, // sound
+          false, // finished
+          false, // noWord
+          [], // cigens
+          [], // additionalInfos
+          [], // errorReports
+          null, // shortDesc
+          false, // shouldEnterReviewMode
+          [], // images
+          [], // verbTenses
+          [], // shortDescChineses
+          false, // inRawWordDict
+          false, // wordMastered
+        );
     } catch (e, stackTrace) {
       Global.logger.e('获取下一个单词失败: $e', stackTrace: stackTrace);
       return Result("ERROR", "获取下一个单词失败: ${e.toString()}", false);
@@ -581,74 +619,6 @@ class StudyBo {
     }
   }
 
-  /// 获取单词的释义项，优先使用学习中词书的释义项
-  Future<List<MeaningItem>> _getWordMeaningItems(String wordId, String userId, MyDatabase db) async {
-    // 首先获取用户选择的词书列表
-    final learningDictsQuery = db.select(db.learningDicts)..where((tbl) => tbl.userId.equals(userId));
-    final learningDicts = await learningDictsQuery.get();
-    final selectedDictIds = learningDicts.map((d) => d.dictId).toList();
-
-    // 优先从用户选择的词书中查询释义项
-    final meaningItemQuery = db.select(db.meaningItems)
-      ..where((mi) => mi.wordId.equals(wordId) & mi.dictId.isIn(selectedDictIds))
-      ..orderBy([(mi) => OrderingTerm(expression: mi.popularity)]);
-    final meaningItems = await meaningItemQuery.get();
-
-    // 如果单词在用户选择的词书中没有释义项，则从通用词典中查找
-    if (meaningItems.isEmpty) {
-      // 从通用词典中查询释义项
-      final commonDictQuery = db.select(db.meaningItems)
-        ..where((mi) => mi.wordId.equals(wordId) & mi.dictId.equals(Global.commonDictId))
-        ..orderBy([(mi) => OrderingTerm(expression: mi.popularity)]);
-      final commonMeaningItems = await commonDictQuery.get();
-      
-      // 应用popularityLimit过滤
-      if (commonMeaningItems.isNotEmpty) {
-        // 查询用户选择的词书的popularityLimit配置
-        Map<String, int?> dictPopularityLimits = {};
-        for (final learningDict in learningDicts) {
-          final dict = await db.dictsDao.findById(learningDict.dictId);
-          if (dict != null) {
-            dictPopularityLimits[dict.id] = dict.popularityLimit;
-          }
-        }
-        
-        // 过滤通用释义
-        final filteredCommonMeanings = <MeaningItem>[];
-        for (final meaning in commonMeaningItems) {
-          bool shouldInclude = true;
-          
-          // 如果有词书配置了popularityLimit，需要检查
-          if (dictPopularityLimits.isNotEmpty) {
-            final anyLimit = dictPopularityLimits.values.where((limit) => limit != null).isNotEmpty;
-            if (anyLimit) {
-              final int popularity = meaning.popularity;
-              
-              // 检查是否所有词书的popularityLimit都允许该释义
-              shouldInclude = false;
-              for (final limit in dictPopularityLimits.values) {
-                if (limit == null) {
-                  shouldInclude = true;
-                  break;
-                } else if (popularity <= limit) {
-                  shouldInclude = true;
-                  break;
-                }
-              }
-            }
-          }
-          
-          if (shouldInclude) {
-            filteredCommonMeanings.add(meaning);
-          }
-        }
-        
-        meaningItems.addAll(filteredCommonMeanings);
-      }
-    }
-
-    return meaningItems;
-  }
 
   Future<List<WordVo>> getTwoOtherWords(List<UserStudyStep> steps, int learningMode, List<MeaningItemVo> meaningItemVos,
       List<LearningWord> todayWords, LearningWord targetWordLearningData, MyDatabase db) async {
@@ -694,7 +664,7 @@ class StudyBo {
               final wordDetails = await db.wordsDao.getWordById(candidateLearningWord.wordId);
 
               // 获取单词的释义项（优先使用学习中词书）
-              final meaningItems = await _getWordMeaningItems(wordDetails!.id, targetWordLearningData.userId, db);
+              final meaningItems = await WordBo().getWordMeaningItems(wordDetails!.id, targetWordLearningData.userId);
 
               for (final meaningItem in meaningItems) {
                 if (meaningItem.ciXing == targetCiXing) {
@@ -749,7 +719,7 @@ class StudyBo {
               if (wordDetails == null) continue;
 
               // 获取单词的释义项（优先使用学习中词书）
-              final meaningItems = await _getWordMeaningItems(wordDetails.id, targetWordLearningData.userId, db);
+              final meaningItems = await WordBo().getWordMeaningItems(wordDetails.id, targetWordLearningData.userId);
 
               // 检查词性匹配
               bool ciXingMatch = false;
@@ -811,7 +781,7 @@ class StudyBo {
               otherWordVo.popularity = wordDetails.popularity;
 
               // 获取基本释义项（优先使用学习中词书）
-              final meaningItems = await _getWordMeaningItems(wordDetails.id, targetWordLearningData.userId, db);
+              final meaningItems = await WordBo().getWordMeaningItems(wordDetails.id, targetWordLearningData.userId);
               otherWordVo.meaningItems = meaningItems.take(3).map((e) => MeaningItemVo(e.id, e.ciXing, e.meaning, null, null, null)).toList();
 
               otherWords.add(otherWordVo);
@@ -832,6 +802,12 @@ class StudyBo {
       Global.logger.e('Error in getTwoOtherWords: $e', stackTrace: stackTrace);
       return []; // 发生错误时返回空列表，而不是让应用崩溃
     }
+  }
+
+  /// 提供给UI：根据 wordId 和 userId 获取释义项（封装内部的 popularity limit 逻辑）
+  Future<List<MeaningItemVo>> getMeaningItemsForWord(String wordId, String userId) async {
+    final items = await WordBo().getWordMeaningItems(wordId, userId);
+    return items.map((e) => MeaningItemVo(e.id, e.ciXing, e.meaning, null, null, null)).toList();
   }
 
   /// 计算指定单词的指定学习模式, 在第几个顺位出现
@@ -857,207 +833,7 @@ class StudyBo {
     return stageBaseIndex + stageWordBaseIndex;
   }
 
-  /// 构建完整的GetWordResult，包含单词详细信息、图片、时态等
-  Future<Result<GetWordResult>> _buildGetWordResult({
-    required User user,
-    required LearningWord targetWordLearningData,
-    required int nextLearningMode,
-    required int nextWordIndex,
-    required List<UserStudyStep> steps,
-    required List<LearningWord> todayWords,
-    required int modeCount,
-    required MyDatabase db,
-  }) async {
-    try {
-      // 获取单词详细信息 (Word table)
-      final wordDetails = await db.wordsDao.getWordById(targetWordLearningData.wordId);
-      if (wordDetails == null) {
-        Global.logger.e('获取下一个单词失败: 单词详情不存在 (wordId: ${targetWordLearningData.wordId})');
-        return Result("ERROR", "单词数据损坏", false);
-      }
-
-      // 构建WordVo (from wordDetails)
-      final wordVo = WordVo.c2(wordDetails.spell);
-      wordVo.id = wordDetails.id;
-      wordVo.shortDesc = wordDetails.shortDesc;
-      wordVo.longDesc = wordDetails.longDesc;
-      wordVo.pronounce = wordDetails.pronounce;
-      wordVo.americaPronounce = wordDetails.americaPronounce;
-      wordVo.britishPronounce = wordDetails.britishPronounce;
-      wordVo.popularity = wordDetails.popularity;
-
-      // 获取单词的释义项
-      final meaningItemsQuery = db.select(db.meaningItems)
-        ..where((tbl) => tbl.wordId.equals(wordDetails.id))
-        ..orderBy([(tbl) => OrderingTerm(expression: tbl.popularity)]);
-      final meaningItems = await meaningItemsQuery.get();
-
-      List<MeaningItemVo> meaningItemVos = [];
-      for (final mi in meaningItems) {
-        // 查询该释义项的例句
-        final sentencesQuery = db.select(db.sentences)..where((s) => s.meaningItemId.equals(mi.id));
-        final sentences = await sentencesQuery.get();
-
-        List<SentenceVo> sentenceVos = [];
-        for (final s in sentences) {
-          final author = UserVo.c2(s.authorId);
-          sentenceVos.add(SentenceVo(s.id, s.english, s.chinese, s.englishDigest, s.theType, s.footCount, s.handCount, author));
-        }
-
-        // 查询该释义项的同义词
-        final synonymsQuery = db.select(db.synonyms)..where((syn) => syn.meaningItemId.equals(mi.id));
-        final synonyms = await synonymsQuery.get();
-
-        List<SynonymVo> synonymVos = [];
-        for (final syn in synonyms) {
-          // 获取同义词的单词信息
-          final synWordQuery = db.select(db.words)..where((w) => w.id.equals(syn.wordId));
-          final synWord = await synWordQuery.getSingleOrNull();
-
-          if (synWord != null) {
-            synonymVos.add(SynonymVo(null, syn.wordId, synWord.spell));
-          }
-        }
-
-        meaningItemVos.add(MeaningItemVo(
-            mi.id,
-            mi.ciXing,
-            mi.meaning,
-            null, // dict
-            synonymVos, // synonyms
-            sentenceVos // sentences
-            ));
-      }
-      wordVo.meaningItems = meaningItemVos;
-
-      // 获取形近词
-      final similarWordsQuery = db.select(db.similarWords)..where((sw) => sw.wordId.equals(wordDetails.id));
-      final similarWords = await similarWordsQuery.get();
-
-      List<WordVo> similarWordVos = [];
-      for (final sw in similarWords) {
-        final similarWordQuery = db.select(db.words)..where((w) => w.id.equals(sw.similarWordId));
-        final similarWord = await similarWordQuery.getSingleOrNull();
-
-        if (similarWord != null) {
-          final similarWordVo = WordVo.c2(similarWord.spell);
-          similarWordVo.id = similarWord.id;
-          similarWordVo.shortDesc = similarWord.shortDesc;
-          similarWordVo.longDesc = similarWord.longDesc;
-          similarWordVo.pronounce = similarWord.pronounce;
-          similarWordVo.americaPronounce = similarWord.americaPronounce;
-          similarWordVo.britishPronounce = similarWord.britishPronounce;
-          similarWordVo.popularity = similarWord.popularity;
-
-          // 为形近词也获取基本释义项
-          final simMeaningItemsQuery = db.select(db.meaningItems)
-            ..where((tbl) => tbl.wordId.equals(similarWord.id))
-            ..orderBy([(tbl) => OrderingTerm(expression: tbl.popularity)])
-            ..limit(3); // 只取前3个释义项
-          final simMeaningItems = await simMeaningItemsQuery.get();
-
-          List<MeaningItemVo> simMeaningItemVos = [];
-          for (final smi in simMeaningItems) {
-            simMeaningItemVos.add(MeaningItemVo(
-                smi.id,
-                smi.ciXing,
-                smi.meaning,
-                null, // dict
-                null, // synonyms
-                null // sentences
-                ));
-          }
-          similarWordVo.meaningItems = simMeaningItemVos;
-
-          similarWordVos.add(similarWordVo);
-        }
-      }
-      wordVo.similarWords = similarWordVos;
-
-      // 构建LearningWordVo (using targetWordLearningData and wordVo)
-      final userVoForLearningWord = UserVo.c2(user.id)..level = LevelVo(user.levelId);
-
-      final learningWordVo = LearningWordVo(
-          userVoForLearningWord,
-          targetWordLearningData.addTime,
-          targetWordLearningData.addDay,
-          targetWordLearningData.lifeValue,
-          targetWordLearningData.lastLearningDate,
-          targetWordLearningData.learningOrder,
-          targetWordLearningData.learnedTimes,
-          wordVo);
-
-      // 对于选择题学习模式, 需要获取2个混淆单词
-      List<WordVo> otherWords = await getTwoOtherWords(steps, nextLearningMode, meaningItemVos, todayWords, targetWordLearningData, db);
-
-      // 获取单词图片
-      List<WordImageVo> wordImageVos = [];
-      final wordImagesQuery = db.select(db.wordImages)..where((tbl) => tbl.wordId.equals(wordDetails.id));
-      final wordImages = await wordImagesQuery.get();
-      for (final img in wordImages) {
-        // 获取作者信息
-        final author = await db.usersDao.getUserById(img.authorId);
-        if (author != null) {
-          final authorVo = UserVo.c2(author.id)..nickName = author.nickName;
-          wordImageVos.add(WordImageVo(
-            img.id,
-            img.imageFile,
-            img.hand,
-            img.foot,
-            authorVo,
-          ));
-        }
-      }
-
-      // 获取单词时态
-      List<VerbTenseVo> verbTenses = [];
-      final verbTensesQuery = db.select(db.verbTenses)..where((tbl) => tbl.wordId.equals(wordDetails.id));
-      final verbTensesData = await verbTensesQuery.get();
-      for (final vt in verbTensesData) {
-        verbTenses.add(VerbTenseVo(
-          vt.id,
-          wordVo,
-          vt.tenseType,
-          vt.tensedSpell ?? '',
-        ));
-      }
-
-      // 计算学习进度
-      final totalWordsToday = todayWords.length;
-      // 计算当前学习索引
-      final currentLearningIndex =
-          calculateLearningIndexByWordIndexAndMode(nextWordIndex, nextLearningMode, modeCount, totalWordsToday, 10); // 每个阶段10个单词
-      // 计算最大学习索引
-      final maxLearningIndex = totalWordsToday * modeCount;
-      // 计算当前进度
-      final progress = [(totalWordsToday * ((currentLearningIndex + 1.0) / (maxLearningIndex + 1))).toInt(), totalWordsToday];
-
-      // 构建GetWordResult
-      return Result("SUCCESS", "获取成功", true)
-        ..data = GetWordResult(
-          learningWordVo,
-          nextLearningMode, // current learningMode for the returned word
-          otherWords,
-          progress,
-          wordDetails.pronounce,
-          false, // finished (unless determined otherwise)
-          false, // noWord (already handled)
-          [], // cigens
-          [], // additionalInfos
-          [], // errorReports
-          wordDetails.shortDesc,
-          false, // shouldEnterReviewMode (already handled)
-          wordImageVos,
-          verbTenses,
-          [], // shortDescChineses
-          false, // inRawWordDict
-          false, // wordMastered
-        );
-    } catch (e, stackTrace) {
-      Global.logger.e('构建GetWordResult失败: $e', stackTrace: stackTrace);
-      return Result("ERROR", "构建单词信息失败: ${e.toString()}", false);
-    }
-  }
+  
 
   /// 将单词标记为已掌握
   Future<void> _saveMasteredWord({

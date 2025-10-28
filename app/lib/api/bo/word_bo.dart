@@ -1352,6 +1352,85 @@ class WordBo {
       return Result("ERROR", '标记单词为已掌握失败: $e', false);
     }
   }
+
+  /// 获取单词的释义项，遵循如下规则：
+  /// 1) 若单词在用户的任一学习词书中有定制释义，则返回这些定制释义的合集（不做 popularity 过滤）
+  /// 2) 否则，使用通用释义，并按最大 popularity limit 进行过滤：
+  ///    - 情况1：若该单词存在于用户的一个或多个学习词书中，则以这些词书中的最大 popularity limit 过滤
+  ///    - 情况2：若该单词不在任何学习词书中，则以用户所有学习词书的最大 popularity limit 过滤
+  Future<List<MeaningItem>> getWordMeaningItems(String wordId, String userId) async {
+    final db = MyDatabase.instance;
+
+    // 用户的学习词书
+    final learningDictsQuery = db.select(db.learningDicts)..where((tbl) => tbl.userId.equals(userId));
+    final learningDicts = await learningDictsQuery.get();
+    final selectedDictIds = learningDicts.map((d) => d.dictId).toList();
+
+    // 先查定制释义（存在即返回）
+    if (selectedDictIds.isNotEmpty) {
+      final customMiQuery = db.select(db.meaningItems)
+        ..where((mi) => mi.wordId.equals(wordId) & mi.dictId.isIn(selectedDictIds))
+        ..orderBy([(mi) => OrderingTerm(expression: mi.popularity)]);
+      final customMeaningItems = await customMiQuery.get();
+      if (customMeaningItems.isNotEmpty) {
+        return customMeaningItems;
+      }
+    }
+
+    // 未找到定制释义 → 准备过滤通用释义
+    final commonDictQuery = db.select(db.meaningItems)
+      ..where((mi) => mi.wordId.equals(wordId) & mi.dictId.equals(Global.commonDictId))
+      ..orderBy([(mi) => OrderingTerm(expression: mi.popularity)]);
+    final commonMeaningItems = await commonDictQuery.get();
+    if (commonMeaningItems.isEmpty) return [];
+
+    // 计算最大 popularity limit
+    int? maxPopularityLimit;
+
+    // 检查该单词是否存在于用户的学习词书中（dictWords）
+    List<String> relatedDictIds = [];
+    if (selectedDictIds.isNotEmpty) {
+      final dwQuery = db.select(db.dictWords)
+        ..where((dw) => dw.wordId.equals(wordId) & dw.dictId.isIn(selectedDictIds));
+      final dictWords = await dwQuery.get();
+      relatedDictIds = dictWords.map((e) => e.dictId).toList();
+    }
+
+    // 情况1：在学习词书中存在该单词 → 取这些词书的最大 limit
+    // 情况2：否则 → 取所有学习词书的最大 limit
+    final targetDictIds = relatedDictIds.isNotEmpty ? relatedDictIds : selectedDictIds;
+    if (targetDictIds.isNotEmpty) {
+      for (final dictId in targetDictIds) {
+        final dict = await db.dictsDao.findById(dictId);
+        if (dict == null) continue;
+        final limit = dict.popularityLimit;
+        if (limit == null) {
+          // null 视为不限制 → 等价于无限大
+          maxPopularityLimit = null;
+          break;
+        }
+        if (maxPopularityLimit == null || limit > maxPopularityLimit) {
+          maxPopularityLimit = limit;
+        }
+      }
+    } else {
+      // 用户没有学习词书 → 不做限制
+      maxPopularityLimit = null;
+    }
+
+    // 按最大 popularity limit 过滤通用释义
+    if (maxPopularityLimit == null) {
+      return commonMeaningItems;
+    }
+    final intLimit = maxPopularityLimit;
+    return commonMeaningItems.where((mi) => mi.popularity <= intLimit).toList();
+  }
+
+  /// 提供给UI：根据 wordId 和 userId 获取释义项（封装内部的 popularity limit 逻辑）
+  Future<List<MeaningItemVo>> getMeaningItemsForWord(String wordId, String userId) async {
+    final items = await getWordMeaningItems(wordId, userId);
+    return items.map((e) => MeaningItemVo(e.id, e.ciXing, e.meaning, null, null, null)).toList();
+  }
 }
 
 
