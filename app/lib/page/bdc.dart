@@ -211,7 +211,6 @@ void _showImagePreviewWithContext(BuildContext context, WordImageVo image, {Void
                       if (context.mounted) {
                         Navigator.of(context).pop();
                       }
-                      ToastUtil.info('正在删除...');
                       final result = await Api.client.deleteWordImage(image.id, Global.getLoggedInUser()!.id);
                       if (result.success) {
                         ToastUtil.info('删除成功');
@@ -428,6 +427,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
   /// Tab控制器，用于管理说/选两个tab
   TabController? _tabController;
+  
+  /// 记住当前选中的tab索引，避免总是切回"说"tab
+  int _currentTabIndex = 0; // 默认选择"说"tab
 
   /// 判断当前是否在"说"tab
   bool get _isInSpeakTab {
@@ -512,8 +514,21 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
   /// 重新初始化TabController
   void _reinitializeTabController() {
+    // 记住当前tab索引
+    if (_tabController != null) {
+      _currentTabIndex = _tabController!.index;
+    }
+    
     _tabController?.dispose();
     _tabController = TabController(length: _dynamicTabs.length, vsync: this);
+    
+    // 确保索引在有效范围内
+    if (_currentTabIndex >= _dynamicTabs.length) {
+      _currentTabIndex = _dynamicTabs.length - 1; // 选择最后一个tab
+    }
+    
+    // 设置到之前选中的tab
+    _tabController!.index = _currentTabIndex;
 
     // 重新添加监听器
     _tabController!.addListener(() {
@@ -521,6 +536,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         // Tab正在切换中
         return;
       }
+      
+      // 更新当前tab索引
+      _currentTabIndex = _tabController!.index;
 
       if (_isInSpeakTab) {
         // 切换到"说"tab，启动ASR
