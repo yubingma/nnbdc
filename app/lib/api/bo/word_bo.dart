@@ -1382,7 +1382,11 @@ class WordBo {
       ..where((mi) => mi.wordId.equals(wordId) & mi.dictId.equals(Global.commonDictId))
       ..orderBy([(mi) => OrderingTerm(expression: mi.popularity)]);
     final commonMeaningItems = await commonDictQuery.get();
-    if (commonMeaningItems.isEmpty) return [];
+    if (commonMeaningItems.isEmpty) {
+      // 正常情况下通用释义不应为空，视为数据异常
+      Global.logger.e('通用释义缺失: wordId=$wordId');
+      throw Exception('通用释义缺失: $wordId');
+    }
 
     // 计算最大 popularity limit
     int? maxPopularityLimit;
