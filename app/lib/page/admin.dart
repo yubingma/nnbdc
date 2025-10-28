@@ -102,7 +102,14 @@ class _AdminPageState extends State<AdminPage> {
     return Scaffold(
       backgroundColor: backgroundColor,
       appBar: AppBar(
-        title: const Text('系统管理'),
+        title: const Text(
+          '系统管理',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w400,
+            fontFamily: 'NotoSansSC',
+          ),
+        ),
         backgroundColor: AppTheme.primaryColor,
         foregroundColor: Colors.white,
         leading: IconButton(
@@ -121,53 +128,46 @@ class _AdminPageState extends State<AdminPage> {
         crossAxisCount: 3,
         crossAxisSpacing: 8,
         mainAxisSpacing: 8,
-        childAspectRatio: 0.75,
+        childAspectRatio: 0.85,
         children: [
           _buildManagementCard(
             title: '意见建议',
-            subtitle: '查看用户反馈',
             icon: Icons.feedback,
             color: const Color(0xFF4CAF50),
             onTap: () => _navigateToFeedback(),
           ),
           _buildManagementCard(
             title: '系统词典',
-            subtitle: '管理词典资源',
             icon: Icons.book,
             color: const Color(0xFF2196F3),
             onTap: () => _navigateToDictionary(),
           ),
           _buildManagementCard(
             title: '系统健康检查',
-            subtitle: '检查系统完整性',
             icon: Icons.health_and_safety,
             color: const Color(0xFFE91E63),
             onTap: () => _navigateToSystemHealthCheck(),
           ),
           _buildManagementCard(
             title: '用户管理',
-            subtitle: '管理用户账户',
             icon: Icons.people,
             color: const Color(0xFFFF9800),
             onTap: () => _showComingSoon('用户管理'),
           ),
           _buildManagementCard(
             title: '系统设置',
-            subtitle: '配置系统参数',
             icon: Icons.settings,
             color: const Color(0xFF9C27B0),
             onTap: () => _showComingSoon('系统设置'),
           ),
           _buildManagementCard(
             title: '数据统计',
-            subtitle: '查看使用统计',
             icon: Icons.analytics,
             color: const Color(0xFF00BCD4),
             onTap: () => _showComingSoon('数据统计'),
           ),
           _buildManagementCard(
             title: '日志管理',
-            subtitle: '查看系统日志',
             icon: Icons.description,
             color: const Color(0xFF795548),
             onTap: () => _showComingSoon('日志管理'),
@@ -179,7 +179,6 @@ class _AdminPageState extends State<AdminPage> {
 
   Widget _buildManagementCard({
     required String title,
-    required String subtitle,
     required IconData icon,
     required Color color,
     required VoidCallback onTap,
@@ -191,36 +190,23 @@ class _AdminPageState extends State<AdminPage> {
       borderRadius: BorderRadius.circular(12),
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(4),
+        padding: const EdgeInsets.all(6),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               icon,
-              size: 32,
+              size: 44,
               color: color,
             ),
-            const SizedBox(height: 3),
+            const SizedBox(height: 6),
             Text(
               title,
               textScaler: const TextScaler.linear(1.0),
               style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
+                fontSize: 16,
+                fontWeight: FontWeight.w400,
                 color: textColor,
-                fontFamily: 'NotoSansSC',
-              ),
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 2),
-            Text(
-              subtitle,
-              textScaler: const TextScaler.linear(1.0),
-              style: TextStyle(
-                fontSize: 10,
-                color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
                 fontFamily: 'NotoSansSC',
               ),
               textAlign: TextAlign.center,
