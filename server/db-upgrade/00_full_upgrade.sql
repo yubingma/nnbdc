@@ -518,11 +518,4 @@ ALTER TABLE user_db_log CHANGE COLUMN record record TEXT;
 -- 修改userStudySteps表字段名
 ALTER TABLE user_study_step CHANGE COLUMN index_ seq INT;
 
--- 3. 验证重构结果
--- 查看所有表名
-SHOW TABLES;
-
--- 查看主要表结构
-DESCRIBE user;
-DESCRIBE word;
-DESCRIBE dict;
+update dict set popularityLimit=5;

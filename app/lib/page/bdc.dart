@@ -2241,10 +2241,11 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     );
   }
 
-  onAnswerClicked(var selectedAnswerIndex) {
+  onAnswerClicked(var selectedAnswerIndex) async {
     isAnswerCorrect = selectedAnswerIndex == correctAnswerIndex;
     if (isAnswerCorrect) {
-      SoundUtil.playAssetSound('ding5.mp3', 1.5, 0.2);
+      // 等待提示音播放完成后再进入下一个单词
+      await SoundUtil.playAssetSound('ding5.mp3', 1.5, 0.2);
       // 在切换到下一个单词前先清空输入框
       meaningController.text = '';
       handlingChinese = '';
