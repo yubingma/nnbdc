@@ -135,8 +135,19 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
                 color: Colors.transparent,
                 child: InkWell(
                   borderRadius: BorderRadius.circular(16),
-                  onTap: () {
-                    Get.toNamed('/word_detail', arguments: WordDetailPageArgs(word, true, null, false), preventDuplicates: false);
+                  onTap: () async {
+                    try {
+                      // 使用新的根据ID查词方法，用户ID为空表示查词模式
+                      var result = await WordBo().searchWordById(word.id!, null);
+                      if (result.word != null) {
+                        Get.toNamed('/word_detail', arguments: WordDetailPageArgs(result.word!, false, null, false), preventDuplicates: false);
+                      } else {
+                        Get.toNamed('/word_detail', arguments: WordDetailPageArgs(word, true, null, false), preventDuplicates: false);
+                      }
+                    } catch (e, st) {
+                      ErrorHandler.handleDatabaseError(e, st, operation: '根据ID查词');
+                      Get.toNamed('/word_detail', arguments: WordDetailPageArgs(word, true, null, false), preventDuplicates: false);
+                    }
                   },
                   child: Container(
                     padding: const EdgeInsets.all(20),
@@ -397,12 +408,18 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
                         onTap: () async {
                           if (spell.text.trim().isEmpty) return;
                           try {
-                            // 使用本地查词替代后端查词
+                            // 先通过spell查找单词ID，然后使用新的查词方法
                             var result = await WordBo().searchWordLocalOnly(spell.text);
                             if (result.word == null) {
                               ToastUtil.error("单词 ${spell.text} 不存在");
                             } else {
-                              Get.toNamed('/word_detail', arguments: WordDetailPageArgs(result.word!, false, null, false), preventDuplicates: false);
+                              // 使用新的根据ID查词方法，用户ID为空表示查词模式
+                              var fullResult = await WordBo().searchWordById(result.word!.id!, null);
+                              if (fullResult.word != null) {
+                                Get.toNamed('/word_detail', arguments: WordDetailPageArgs(fullResult.word!, false, null, false), preventDuplicates: false);
+                              } else {
+                                Get.toNamed('/word_detail', arguments: WordDetailPageArgs(result.word!, false, null, false), preventDuplicates: false);
+                              }
                             }
                           } catch (e, st) {
                             ErrorHandler.handleDatabaseError(e, st, operation: '本地查词');

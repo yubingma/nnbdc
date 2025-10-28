@@ -120,15 +120,15 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     }
     if (args.needReQueryWord) {
       try {
-        // 使用本地查词替代后端查词
-        var result = await WordBo().searchWordLocalOnly(args.word.spell);
+        // 使用新的根据ID查词方法，传入用户ID进行词书过滤
+        var result = await WordBo().searchWordById(args.word.id!, Global.getLoggedInUser()?.id);
         if (result.word == null) {
           ToastUtil.error("单词 ${args.word.spell} 不存在");
         } else {
           args.word = result.word!;
         }
       } catch (e, st) {
-        ErrorHandler.handleDatabaseError(e, st, operation: '本地查词');
+        ErrorHandler.handleDatabaseError(e, st, operation: '根据ID查词');
         if (mounted) {
           setState(() {
             hasError = true;
@@ -155,14 +155,14 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
 
       if (missingSimilar || missingMeaningItems || missingAnySentences) {
         try {
-          // 使用本地查词替代后端查词
-          var result = await WordBo().searchWordLocalOnly(args.word.spell);
+          // 使用新的根据ID查词方法，传入用户ID进行词书过滤
+          var result = await WordBo().searchWordById(args.word.id!, Global.getLoggedInUser()?.id);
           if (result.word != null) {
             args.word = result.word!;
           }
         } catch (e, st) {
           // 静默处理补拉失败，保留已有数据
-          ErrorHandler.handleDatabaseError(e, st, operation: '本地查词');
+          ErrorHandler.handleDatabaseError(e, st, operation: '根据ID查词');
         }
       }
     }

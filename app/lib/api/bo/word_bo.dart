@@ -27,6 +27,233 @@ class WordBo {
     }
   }
 
+
+  // 通用的查询通用词典释义项方法
+  Future<List<MeaningItem>> _getCommonDictMeaningItems(String wordId) async {
+    final db = MyDatabase.instance;
+    final commonQuery = db.select(db.meaningItems)
+      ..where((mi) => mi.wordId.equals(wordId) & mi.dictId.equals(Global.commonDictId))
+      ..orderBy([(mi) => OrderingTerm(expression: mi.popularity)]);
+    final commonMeaningItems = await commonQuery.get();
+    
+    // 如果通用词典没有释义项，查询所有可用的释义项
+    if (commonMeaningItems.isEmpty) {
+      final anyQuery = db.select(db.meaningItems)
+        ..where((mi) => mi.wordId.equals(wordId))
+        ..orderBy([(mi) => OrderingTerm(expression: mi.popularity)]);
+      return await anyQuery.get();
+    }
+    
+    return commonMeaningItems;
+  }
+
+  // 通用的查询例句数据并分配给释义项的方法
+  Future<void> _loadSentencesForMeaningItems(List<MeaningItemVo> meaningItemVos) async {
+    final db = MyDatabase.instance;
+    final selectedMeaningItemIds = meaningItemVos.map((mi) => mi.id!).toList();
+    
+    if (selectedMeaningItemIds.isEmpty) return;
+    
+    final sentenceQuery = db.select(db.sentences)
+      ..where((s) => s.meaningItemId.isIn(selectedMeaningItemIds));
+    final sentences = await sentenceQuery.get();
+    final sentencesMap = <String, List<Sentence>>{};
+    
+    for (var s in sentences) {
+      if (!sentencesMap.containsKey(s.meaningItemId)) {
+        sentencesMap[s.meaningItemId] = [];
+      }
+      sentencesMap[s.meaningItemId]!.add(s);
+    }
+    
+    // 将例句分配给对应的释义项
+    for (final miVo in meaningItemVos) {
+      if (sentencesMap.containsKey(miVo.id)) {
+        final sentenceVos = <SentenceVo>[];
+        for (final s in sentencesMap[miVo.id!]!) {
+          final author = UserVo.c2(s.authorId);
+          final sentenceVo = SentenceVo(
+            s.id,
+            s.english,
+            s.chinese,
+            s.englishDigest,
+            s.theType.isEmpty ? 'tts' : s.theType,
+            s.handCount,
+            s.footCount,
+            author
+          );
+          sentenceVos.add(sentenceVo);
+        }
+        miVo.sentences = sentenceVos;
+      }
+    }
+  }
+
+  // 通用的查询例句数据并返回映射的方法（用于批量处理）
+  Future<Map<String, List<Sentence>>> _loadSentencesMap(List<String> meaningItemIds) async {
+    final db = MyDatabase.instance;
+    
+    if (meaningItemIds.isEmpty) return {};
+    
+    final sentenceQuery = db.select(db.sentences)
+      ..where((s) => s.meaningItemId.isIn(meaningItemIds));
+    final sentences = await sentenceQuery.get();
+    final sentencesMap = <String, List<Sentence>>{};
+    
+    for (var s in sentences) {
+      if (!sentencesMap.containsKey(s.meaningItemId)) {
+        sentencesMap[s.meaningItemId] = [];
+      }
+      sentencesMap[s.meaningItemId]!.add(s);
+    }
+    
+    return sentencesMap;
+  }
+
+
+  // 根据单词ID和用户ID进行查词，支持词书过滤
+  Future<SearchWordResult> searchWordById(String wordId, String? userId) async {
+    final db = MyDatabase.instance;
+    try {
+      final wordQuery = db.select(db.words)..where((w) => w.id.equals(wordId));
+      final localWord = await wordQuery.getSingleOrNull();
+      
+      if (localWord == null) {
+        return SearchWordResult(null, null, null, null, null);
+      }
+
+      final wordVo = WordVo.c2(localWord.spell)
+        ..id = localWord.id
+        ..shortDesc = localWord.shortDesc
+        ..longDesc = localWord.longDesc
+        ..pronounce = localWord.pronounce
+        ..americaPronounce = localWord.americaPronounce
+        ..britishPronounce = localWord.britishPronounce
+        ..popularity = localWord.popularity
+        ..groupInfo = localWord.groupInfo;
+
+      // 获取释义项
+      List<MeaningItem> meaningItems;
+      if (userId != null && userId.isNotEmpty) {
+        // 用户ID不为空，使用现有的 getWordMeaningItems 方法（包含 popularity limit 过滤）
+        meaningItems = await getWordMeaningItems(localWord.id, userId);
+      } else {
+        // 用户ID为空，直接查询通用词典，不做 popularity limit 过滤
+        meaningItems = await _getCommonDictMeaningItems(localWord.id);
+      }
+
+      // 构建释义项VO
+      final meaningItemVos = <MeaningItemVo>[];
+      for (final mi in meaningItems) {
+        final miVo = MeaningItemVo(
+            mi.id,
+            mi.ciXing,
+            mi.meaning,
+            null, // dict
+            null, // synonyms
+            null  // sentences
+        );
+        meaningItemVos.add(miVo);
+      }
+      wordVo.meaningItems = meaningItemVos;
+
+      // 查询例句数据
+      await _loadSentencesForMeaningItems(meaningItemVos);
+
+      // 查询形近词数据
+      final similarWordsQuery = db.select(db.similarWords)
+        ..where((sw) => sw.wordId.equals(localWord.id))
+        ..orderBy([(sw) => OrderingTerm(expression: sw.distance)]);
+      final similarWords = await similarWordsQuery.get();
+      
+      final similarWordVos = <WordVo>[];
+      for (final sw in similarWords) {
+        final similarWordQuery = db.select(db.words)
+          ..where((w) => w.id.equals(sw.similarWordId));
+        final similarWord = await similarWordQuery.getSingleOrNull();
+        
+        if (similarWord != null) {
+          final similarWordVo = WordVo.c2(similarWord.spell)
+            ..id = similarWord.id
+            ..shortDesc = similarWord.shortDesc
+            ..longDesc = similarWord.longDesc
+            ..pronounce = similarWord.pronounce
+            ..americaPronounce = similarWord.americaPronounce
+            ..britishPronounce = similarWord.britishPronounce
+            ..popularity = similarWord.popularity
+            ..groupInfo = similarWord.groupInfo;
+          
+          // 为形近词查询释义项，根据用户ID决定是否进行词书过滤
+          List<MeaningItem> similarMeaningItems;
+          if (userId != null && userId.isNotEmpty) {
+            // 用户ID不为空，使用 getWordMeaningItems 方法进行词书过滤
+            similarMeaningItems = await getWordMeaningItems(similarWord.id, userId);
+          } else {
+            // 用户ID为空，直接查询通用词典
+            similarMeaningItems = await _getCommonDictMeaningItems(similarWord.id);
+          }
+          
+          final similarMeaningItemVos = <MeaningItemVo>[];
+          for (final mi in similarMeaningItems) {
+            final miVo = MeaningItemVo(
+                mi.id,
+                mi.ciXing,
+                mi.meaning,
+                null, // dict
+                null, // synonyms
+                null  // sentences
+            );
+            similarMeaningItemVos.add(miVo);
+          }
+          similarWordVo.meaningItems = similarMeaningItemVos;
+          
+          similarWordVos.add(similarWordVo);
+        }
+      }
+      wordVo.similarWords = similarWordVos;
+
+      // 检查是否在用户选择的词书中
+      bool isInMySelectedDicts = false;
+      if (userId != null && userId.isNotEmpty) {
+        final learningDicts = await (db.select(db.learningDicts)
+              ..where((tbl) => tbl.userId.equals(userId)))
+            .get();
+        final selectedDictIds = learningDicts.map((e) => e.dictId).toList();
+        
+        if (selectedDictIds.isNotEmpty) {
+          final selectedMiCount = await (db.selectOnly(db.meaningItems)
+                ..addColumns([countAll()])
+                ..where(db.meaningItems.wordId.equals(localWord.id))
+                ..where(db.meaningItems.dictId.isIn(selectedDictIds)))
+              .getSingle();
+          isInMySelectedDicts = (selectedMiCount.read(countAll()) ?? 0) > 0;
+        }
+      }
+
+      // 检查是否在用户生词本中
+      bool isInRawWordDict = false;
+      if (userId != null && userId.isNotEmpty) {
+        final rawDict = await db.dictsDao.findUserRawDict(userId);
+        if (rawDict != null) {
+          final dw = await db.dictWordsDao.getById(rawDict.id, localWord.id);
+          isInRawWordDict = dw != null;
+        }
+      }
+
+      final localResult = SearchWordResult(
+        wordVo,
+        null,
+        isInMySelectedDicts,
+        isInRawWordDict,
+        Util.getWordSoundUrl(localWord.spell),
+      );
+      return localResult;
+    } catch (e, st) {
+      ErrorHandler.handleDatabaseError(e, st, operation: '根据ID查词');
+      return SearchWordResult(null, null, null, null, null);
+    }
+  }
+
   Future<SearchWordResult?> _searchLocallyWithVariants(String purifiedSpell, MyDatabase db) async {
     var result = await _searchLocalOnly(purifiedSpell, db);
     if (result != null) return result;
@@ -117,35 +344,15 @@ class WordBo {
         ..popularity = localWord.popularity
         ..groupInfo = localWord.groupInfo;
 
-      List<MeaningItem> meaningItems = [];
-
-      final commonQuery = db.select(db.meaningItems)
-        ..where((mi) => mi.wordId.equals(localWord.id) & mi.dictId.equals(Global.commonDictId))
-        ..orderBy([(mi) => OrderingTerm(expression: mi.popularity)]);
-      meaningItems = await commonQuery.get();
-
-      List<String> selectedDictIds = [];
-      if (meaningItems.isEmpty) {
-        final currentUser = await Global.refreshLoggedInUser();
-        if (currentUser != null && currentUser.id != null) {
-          final learningDicts = await (db.select(db.learningDicts)
-                ..where((tbl) => tbl.userId.equals(currentUser.id!)))
-              .get();
-          selectedDictIds = learningDicts.map((e) => e.dictId).toList();
-          if (selectedDictIds.isNotEmpty) {
-            final selectedQuery = db.select(db.meaningItems)
-              ..where((mi) => mi.wordId.equals(localWord.id) & mi.dictId.isIn(selectedDictIds))
-              ..orderBy([(mi) => OrderingTerm(expression: mi.popularity)]);
-            meaningItems = await selectedQuery.get();
-          }
-        }
-      }
-
-      if (meaningItems.isEmpty) {
-        final anyQuery = db.select(db.meaningItems)
-          ..where((mi) => mi.wordId.equals(localWord.id))
-          ..orderBy([(mi) => OrderingTerm(expression: mi.popularity)]);
-        meaningItems = await anyQuery.get();
+      // 获取释义项
+      final currentUser = await Global.refreshLoggedInUser();
+      List<MeaningItem> meaningItems;
+      if (currentUser != null && currentUser.id != null) {
+        // 有用户ID，使用现有的 getWordMeaningItems 方法（包含 popularity limit 过滤）
+        meaningItems = await getWordMeaningItems(localWord.id, currentUser.id!);
+      } else {
+        // 无用户ID，直接查询通用词典
+        meaningItems = await _getCommonDictMeaningItems(localWord.id);
       }
 
       final meaningItemVos = <MeaningItemVo>[];
@@ -162,26 +369,23 @@ class WordBo {
       wordVo.meaningItems = meaningItemVos;
 
       bool isInMySelectedDicts = false;
-      if (selectedDictIds.isEmpty) {
-        final currentUser = await Global.refreshLoggedInUser();
-        if (currentUser != null && currentUser.id != null) {
-          final learningDicts = await (db.select(db.learningDicts)
-                ..where((tbl) => tbl.userId.equals(currentUser.id!)))
-              .get();
-          selectedDictIds = learningDicts.map((e) => e.dictId).toList();
+      if (currentUser != null && currentUser.id != null) {
+        final learningDicts = await (db.select(db.learningDicts)
+              ..where((tbl) => tbl.userId.equals(currentUser.id!)))
+            .get();
+        final selectedDictIds = learningDicts.map((e) => e.dictId).toList();
+        
+        if (selectedDictIds.isNotEmpty) {
+          final selectedMiCount = await (db.selectOnly(db.meaningItems)
+                ..addColumns([countAll()])
+                ..where(db.meaningItems.wordId.equals(localWord.id))
+                ..where(db.meaningItems.dictId.isIn(selectedDictIds)))
+              .getSingle();
+          isInMySelectedDicts = (selectedMiCount.read(countAll()) ?? 0) > 0;
         }
-      }
-      if (selectedDictIds.isNotEmpty) {
-        final selectedMiCount = await (db.selectOnly(db.meaningItems)
-              ..addColumns([countAll()])
-              ..where(db.meaningItems.wordId.equals(localWord.id))
-              ..where(db.meaningItems.dictId.isIn(selectedDictIds)))
-            .getSingle();
-        isInMySelectedDicts = (selectedMiCount.read(countAll()) ?? 0) > 0;
       }
 
       bool isInRawWordDict = false;
-      final currentUser = await Global.refreshLoggedInUser();
       if (currentUser != null && currentUser.id != null) {
         final rawDict = await db.dictsDao.findUserRawDict(currentUser.id!);
         if (rawDict != null) {
@@ -379,12 +583,7 @@ class WordBo {
           ..orderBy([(mi) => OrderingTerm(expression: mi.popularity)]);
         final meaningItems = await meaningItemQuery.get();
         if (meaningItems.isEmpty) {
-          final wordsWithoutMeaning = [word.id];
-          final commonDictQuery = db.select(db.meaningItems)
-            ..where((mi) =>
-                mi.wordId.isIn(wordsWithoutMeaning) & mi.dictId.equals(Global.commonDictId))
-            ..orderBy([(mi) => OrderingTerm(expression: mi.popularity)]);
-          final commonMeaningItems = await commonDictQuery.get();
+          final commonMeaningItems = await _getCommonDictMeaningItems(word.id);
           meaningItems.addAll(commonMeaningItems);
         }
         List<MeaningItemVo> meaningItemVos = [];
@@ -463,12 +662,7 @@ class WordBo {
           ..orderBy([(mi) => OrderingTerm(expression: mi.popularity)]);
         final meaningItems = await meaningItemQuery.get();
         if (meaningItems.isEmpty) {
-          final wordsWithoutMeaning = [word.id];
-          final commonDictQuery = db.select(db.meaningItems)
-            ..where((mi) =>
-                mi.wordId.isIn(wordsWithoutMeaning) & mi.dictId.equals(Global.commonDictId))
-            ..orderBy([(mi) => OrderingTerm(expression: mi.popularity)]);
-          final commonMeaningItems = await commonDictQuery.get();
+          final commonMeaningItems = await _getCommonDictMeaningItems(word.id);
           meaningItems.addAll(commonMeaningItems);
         }
         List<MeaningItemVo> meaningItemVos = [];
@@ -636,16 +830,7 @@ class WordBo {
           selectedMeaningItemIds.add(mi.id);
         }
       }
-      final sentenceQuery = db.select(db.sentences)
-        ..where((s) => s.meaningItemId.isIn(selectedMeaningItemIds));
-      final sentences = await sentenceQuery.get();
-      final sentencesMap = <String, List<Sentence>>{};
-      for (var s in sentences) {
-        if (!sentencesMap.containsKey(s.meaningItemId)) {
-          sentencesMap[s.meaningItemId] = [];
-        }
-        sentencesMap[s.meaningItemId]!.add(s);
-      }
+      final sentencesMap = await _loadSentencesMap(selectedMeaningItemIds);
       for (final dictWord in dictWordEntries) {
         final wordEntry = wordMap[dictWord.wordId];
         if (wordEntry != null) {
