@@ -120,14 +120,15 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     }
     if (args.needReQueryWord) {
       try {
-        var result = await Api.client.searchWord(args.word.spell, Global.getLoggedInUser()?.id ?? '');
+        // 使用本地查词替代后端查词
+        var result = await WordBo().searchWordLocalOnly(args.word.spell);
         if (result.word == null) {
           ToastUtil.error("单词 ${args.word.spell} 不存在");
         } else {
           args.word = result.word!;
         }
       } catch (e, st) {
-        ErrorHandler.handleNetworkError(e, st, api: '/searchWord.do');
+        ErrorHandler.handleDatabaseError(e, st, operation: '本地查词');
         if (mounted) {
           setState(() {
             hasError = true;
@@ -135,6 +136,34 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
           });
         }
         return;
+      }
+    }
+
+    // 如果未强制重查，但数据不完整（缺少形近词或例句），则补拉完整数据
+    if (!args.needReQueryWord) {
+      bool missingSimilar = args.word.similarWords == null;
+      bool missingMeaningItems = args.word.meaningItems == null || args.word.meaningItems!.isEmpty;
+      bool missingAnySentences = false;
+      if (!missingMeaningItems) {
+        for (final mi in args.word.meaningItems!) {
+          if (mi.sentences == null || mi.sentences!.isEmpty) {
+            missingAnySentences = true;
+            break;
+          }
+        }
+      }
+
+      if (missingSimilar || missingMeaningItems || missingAnySentences) {
+        try {
+          // 使用本地查词替代后端查词
+          var result = await WordBo().searchWordLocalOnly(args.word.spell);
+          if (result.word != null) {
+            args.word = result.word!;
+          }
+        } catch (e, st) {
+          // 静默处理补拉失败，保留已有数据
+          ErrorHandler.handleDatabaseError(e, st, operation: '本地查词');
+        }
       }
     }
 

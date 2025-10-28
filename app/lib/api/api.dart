@@ -325,8 +325,6 @@ abstract class RestClient {
   @GET("/getGameHallData.do")
   Future<GetGameHallDataResult> getGameHallData();
 
-  @GET("/searchWord.do")
-  Future<SearchWordResult> searchWord(@Query("word") String spell, @Query("userId") String userId);
 
   @POST("/saveSentenceChinese.do")
   @FormUrlEncoded()

@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:nnbdc/global.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:nnbdc/api/api.dart';
+import 'package:nnbdc/api/bo/word_bo.dart';
 import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/local_word_cache.dart';
 import 'package:nnbdc/page/word_detail.dart';
@@ -397,14 +397,15 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
                         onTap: () async {
                           if (spell.text.trim().isEmpty) return;
                           try {
-                            var result = await Api.client.searchWord(spell.text, Global.getLoggedInUser()?.id ?? '');
+                            // 使用本地查词替代后端查词
+                            var result = await WordBo().searchWordLocalOnly(spell.text);
                             if (result.word == null) {
                               ToastUtil.error("单词 ${spell.text} 不存在");
                             } else {
                               Get.toNamed('/word_detail', arguments: WordDetailPageArgs(result.word!, false, null, false), preventDuplicates: false);
                             }
                           } catch (e, st) {
-                            ErrorHandler.handleNetworkError(e, st, api: '/searchWord.do');
+                            ErrorHandler.handleDatabaseError(e, st, operation: '本地查词');
                           }
                         },
                         child: const Padding(

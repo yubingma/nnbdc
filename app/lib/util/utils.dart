@@ -7,7 +7,6 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:nnbdc/api/bo/word_bo.dart';
-import 'package:nnbdc/api/api.dart';
 import 'package:nnbdc/state.dart';
 import 'package:nnbdc/util/sound.dart';
 import 'package:nnbdc/util/toast_util.dart';
@@ -667,17 +666,10 @@ class Util {
   }
 
   /// 尝试本地查询单词及其变体形式
-  /// 参考后端 /searchWord.do 的实现逻辑
+  /// 现在只使用本地查词，不再调用后端
   static Future<SearchWordResult> _searchWordWithVariants(String spell) async {
-    // 使用新的本地搜索方法，避免每个变体都触发后端查询
-    var searchResult = await WordBo().searchWordLocalOnly(spell);
-    if (searchResult.word != null) {
-      return searchResult;
-    }
-
-    // 如果本地没找到，调用后端进行搜索
-    final userId = Global.getLoggedInUser()?.id ?? '';
-    return await Api.client.searchWord(spell, userId);
+    // 使用本地搜索方法，本地已包含通用词典的所有单词
+    return await WordBo().searchWordLocalOnly(spell);
   }
 
   /// 根据单词的生命值计算下次学习该单词应在多少天之后

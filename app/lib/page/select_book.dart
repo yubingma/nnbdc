@@ -623,19 +623,22 @@ class SelectBookPageState extends State<SelectBookPage> {
       // 收集所有需要执行的操作和对应的记录数
       List<Map<String, dynamic>> operations = [];
 
-      // 添加词书操作
+      // 添加词书操作（使用 upsert，并补充 popularityLimit）
       if (dictRes.dict != null) {
         operations.add({
-          'operation': () => MyDatabase.instance.dictsDao.createEntity(Dict(
-              id: dictRes.dict!.id,
-              isReady: dictRes.dict!.isReady,
-              isShared: dictRes.dict!.isShared,
-              ownerId: dictRes.dict!.ownerId,
-              name: dictRes.dict!.name,
-              wordCount: dictRes.dict!.wordCount,
-              visible: dictRes.dict!.visible,
-              createTime: dictRes.dict!.createTime,
-              updateTime: dictRes.dict!.updateTime)),
+          'operation': () => MyDatabase.instance.dictsDao.saveEntity(
+                  Dict(
+                      id: dictRes.dict!.id,
+                      isReady: dictRes.dict!.isReady,
+                      isShared: dictRes.dict!.isShared,
+                      ownerId: dictRes.dict!.ownerId,
+                      name: dictRes.dict!.name,
+                      wordCount: dictRes.dict!.wordCount,
+                      visible: dictRes.dict!.visible,
+                      popularityLimit: dictRes.dict!.popularityLimit,
+                      createTime: dictRes.dict!.createTime,
+                      updateTime: dictRes.dict!.updateTime),
+                  false),
           'count': resourceCounts['词书信息']!,
           'name': '词书信息'
         });

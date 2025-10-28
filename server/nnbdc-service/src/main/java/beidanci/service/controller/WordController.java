@@ -5,30 +5,20 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
-import javax.naming.NamingException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.bind.DatatypeConverter;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.util.ObjectUtils;
 import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import beidanci.api.Result;
-import beidanci.api.model.MeaningItemVo;
-import beidanci.api.model.SearchWordResult;
 import beidanci.api.model.WordImageDto;
-import beidanci.api.model.WordVo;
 import beidanci.service.bo.DictBo;
 import beidanci.service.bo.DictWordBo;
 import beidanci.service.bo.ErrorReportBo;
@@ -43,18 +33,12 @@ import beidanci.service.bo.WordBo;
 import beidanci.service.bo.WordImageBo;
 import beidanci.service.bo.WordShortDescChineseBO;
 import beidanci.service.bo.WrongWordBo;
-import beidanci.service.exception.EmptySpellException;
-import beidanci.service.exception.InvalidMeaningFormatException;
-import beidanci.service.exception.ParseException;
 import beidanci.service.po.User;
 import beidanci.service.po.Word;
 import beidanci.service.po.WordImage;
 import beidanci.service.store.WordCache;
-import beidanci.service.util.BeanUtils;
 import beidanci.service.util.MyImage;
 import beidanci.service.util.SysParamUtil;
-import beidanci.service.util.Util;
-import beidanci.util.Utils;
 
 @RestController
 public class WordController {
@@ -108,97 +92,6 @@ public class WordController {
     @Autowired
     MasteredWordBo masteredWordBo;
 
-
-    @GetMapping("/searchWord.do")
-    @PreAuthorize("hasAnyRole('USER','ADMIN')")
-    public SearchWordResult searchWord(HttpServletRequest request, HttpServletResponse response, String userId)
-            throws IOException, ParseException,
-            InvalidMeaningFormatException, EmptySpellException, SQLException, NamingException, ClassNotFoundException {
-
-        // 获取要查找的单词拼写
-        Map<String, String[]> paramMap = request.getParameterMap();
-        String spell = paramMap.get("word")[0].trim();
-
-        spell = Utils.purifySpell(spell);
-        User user = userBo.findById(userId);
-
-        if (ObjectUtils.isEmpty(spell)) {
-            return new SearchWordResult(null, null, null, false);
-        }
-
-        // 获取一个单词
-        String[] excludeFields = new String[] {
-                "SynonymVo.meaningItem", "SynonymVo.word", "similarWords", "DictVo.dictWords", "WordImageVo.word",
-                "images.author.^id,displayNickName" };
-        WordVo word = wordCache.getWordBySpell2(spell, excludeFields);
-        if (word == null && spell.endsWith("s")) {// 如birds
-            word = wordCache.getWordBySpell2(spell.substring(0, spell.length() - 1), excludeFields);
-        }
-        if (word == null && spell.endsWith("es")) { // 如indexes
-            word = wordCache.getWordBySpell2(spell.substring(0, spell.length() - 2), excludeFields);
-        }
-        if (word == null && (spell.endsWith("'s") || spell.endsWith("'s"))) { // 如government's
-            word = wordCache.getWordBySpell2(spell.substring(0, spell.length() - 2), excludeFields);
-        }
-        if (word == null && spell.endsWith("ies")) {// 如opportunities
-            word = wordCache.getWordBySpell2(spell.substring(0, spell.length() - 3) + "y", excludeFields);
-        }
-        if (word == null && spell.endsWith("ied")) {// 如presignified
-            word = wordCache.getWordBySpell2(spell.substring(0, spell.length() - 3) + "y", excludeFields);
-        }
-        if (word == null && spell.endsWith("ed")) {// 如tested
-            word = wordCache.getWordBySpell2(spell.substring(0, spell.length() - 2), excludeFields);
-        }
-        if (word == null && spell.endsWith("ed")) {// 如improved
-            word = wordCache.getWordBySpell2(spell.substring(0, spell.length() - 1), excludeFields);
-        }
-        if (word == null && spell.endsWith("ing")) {// 如testing
-            word = wordCache.getWordBySpell2(spell.substring(0, spell.length() - 3), excludeFields);
-        }
-        if (word == null && spell.endsWith("ing")) {// 如manufacturing
-            word = wordCache.getWordBySpell2(spell.substring(0, spell.length() - 3) + "e", excludeFields);
-        }
-
-        SearchWordResult result;
-        if (word != null) {
-            // 追加形近词（浅拷贝，避免递归过深）
-            try {
-                Word wordPo = wordBo.findById(word.getId(), false);
-                if (wordPo != null && wordPo.getSimilarWords() != null) {
-                    List<WordVo> similarWords = new ArrayList<>(wordPo.getSimilarWords().size());
-                    for (Word sw : wordPo.getSimilarWords()) {
-                        WordVo vo = new WordVo();
-                        vo.setSpell(sw.getSpell());
-                        // 仅带少量释义项，避免响应过大
-                        List<MeaningItemVo> meaningItemVos = BeanUtils.makeVos(sw.getMeaningItems(), MeaningItemVo.class,
-                                new String[] { "synonyms", "DictVo.owner", "DictVo.dictWords", "sentences", "createTime",
-                                        "updateTime" });
-                        vo.setMeaningItems(meaningItemVos);
-                        vo = Util.shrinkWordVo(vo, Integer.MAX_VALUE, false);
-                        similarWords.add(vo);
-                    }
-                    word.setSimilarWords(similarWords);
-                }
-            } catch (Exception ignore) {
-                // ignore
-            }
-            // 为例句附加UGC信息
-            // List<SentenceVo> sentencesWithUGC =
-            // attatchChinesesForSentences(word.getSentences(), new String[]{"invitedBy",
-            // "userGames", "studyGroups"});
-
-            // 改为返回所有释义项（通用 + 词书），仅做轻量收缩
-            word = Util.shrinkWordVoKeepAll(word, Integer.MAX_VALUE, false);
-
-            result = new SearchWordResult(word, Utils.getFileNameOfWordSound(word.getSpell()),
-                    (user != null) ? selectedDictBo.isWordInMySelectedDicts(word, user) : false,
-                    (user != null) && dictWordBo.isWordInRawWordDict(user, word.getId()));
-        } else {
-            result = new SearchWordResult(null, null, null, false);
-        }
-
-        return result;
-    }
 
     @PutMapping("/handImage.do")
     @PreAuthorize("hasAnyRole('USER','ADMIN')")
