@@ -7,6 +7,7 @@ import 'package:nnbdc/state.dart';
 import 'package:nnbdc/page/admin/feedback_management.dart';
 import 'package:nnbdc/page/admin/dictionary_management.dart';
 import 'package:nnbdc/page/admin/system_health_check.dart';
+import 'package:nnbdc/page/admin/user_management.dart';
 
 class AdminPage extends StatefulWidget {
   const AdminPage({super.key});
@@ -152,7 +153,7 @@ class _AdminPageState extends State<AdminPage> {
             title: '用户管理',
             icon: Icons.people,
             color: const Color(0xFFFF9800),
-            onTap: () => _showComingSoon('用户管理'),
+            onTap: () => _navigateToUserManagement(),
           ),
           _buildManagementCard(
             title: '系统设置',
@@ -246,6 +247,14 @@ class _AdminPageState extends State<AdminPage> {
     );
   }
 
+  void _navigateToUserManagement() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const UserManagementWidget(),
+      ),
+    );
+  }
 
   void _showComingSoon(String feature) {
     ScaffoldMessenger.of(context).showSnackBar(

@@ -376,7 +376,7 @@ public class SyncBo {
 
     /**
      * 处理用户同步
-     * 注意：isAdmin、isSuper、isSysUser 这三个字段只允许后端同步到前端，不允许前端修改
+     * 注意：isAdmin、isSuperAdmin、isSysUser 这三个字段只允许后端同步到前端，不允许前端修改
      */
     private void processUserSync(String userId, UserDbLogDto log, String recordJson, String operation)
             throws IllegalAccessException {
@@ -387,10 +387,10 @@ public class SyncBo {
                 if (user != null) {
                     User userFromClient = User.fromDto(userDto);
                     
-                    // 保护敏感字段：isAdmin、isSuper、isSysUser 只允许后端同步到前端
+                    // 保护敏感字段：isAdmin、isSuperAdmin、isSysUser 只允许后端同步到前端
                     // 将这三个字段从后端数据库的原始值恢复到 userFromClient
                     userFromClient.setIsAdmin(user.getIsAdmin());
-                    userFromClient.setIsSuper(user.getIsSuper());
+                    userFromClient.setIsSuperAdmin(user.getIsSuperAdmin());
                     userFromClient.setIsSysUser(user.getIsSysUser());
                     
                     userBo.updateEntity(userFromClient);

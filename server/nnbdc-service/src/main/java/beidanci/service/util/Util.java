@@ -621,7 +621,7 @@ public class Util {
         user.setThrowDiceChance(0);
         user.setInvitedBy(invitedBy);
         user.setInviteAwardTaken(false);
-        user.setIsSuper(false);
+        user.setIsSuperAdmin(false);
         user.setIsAdmin(false);
         user.setDakaDayCount(0);
         user.setAutoPlaySentence(false);

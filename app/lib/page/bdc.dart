@@ -196,7 +196,7 @@ void _showImagePreviewWithContext(BuildContext context, WordImageVo image, {Void
             // 右下角删除按钮（仅作者本人或管理员可见）
             if (image.author.id == Global.getLoggedInUser()?.id ||
                 (Global.getLoggedInUser()?.isAdmin ?? false) ||
-                (Global.getLoggedInUser()?.isSuper ?? false))
+                (Global.getLoggedInUser()?.isSuperAdmin ?? false))
               Positioned(
                 right: 8,
                 bottom: 8,
@@ -2160,7 +2160,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                           children: [
                             if (wordImage.author.id == Global.getLoggedInUser()!.id ||
                                 Global.getLoggedInUser()!.isAdmin ||
-                                Global.getLoggedInUser()!.isSuper)
+                                Global.getLoggedInUser()!.isSuperAdmin)
                               ElevatedButton(
                                 style: ElevatedButton.styleFrom(
                                   foregroundColor: Colors.white,

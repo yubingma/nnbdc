@@ -507,4 +507,20 @@ abstract class RestClient {
   @FormUrlEncoded()
   Future<Result<SystemHealthFixResult>> autoFixSystemIssues(
       @Field("issueTypes") List<String> issueTypes);
+
+  // 用户管理相关API
+  @GET("/admin/searchUsers.do")
+  Future<Result<PagedResults<UserVo>>> searchUsers(
+      @Query("keyword") String? keyword,
+      @Query("pageNo") int pageNo,
+      @Query("pageSize") int pageSize,
+      @Query("filterType") int? filterType);
+
+  @POST("/admin/updateAdminPermission.do")
+  @FormUrlEncoded()
+  Future<Result<String>> updateAdminPermission(
+      @Field("userId") String userId,
+      @Field("isAdmin") bool? isAdmin,
+      @Field("isSuperAdmin") bool? isSuperAdmin,
+      @Field("isInputor") bool? isInputor);
 }

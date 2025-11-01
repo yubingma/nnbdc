@@ -452,7 +452,7 @@ class UserDto {
   int? lastLearningMode;
   bool? learningFinished;
   bool? inviteAwardTaken;
-  bool? isSuper;
+  bool? isSuperAdmin;
   bool? isAdmin;
   bool? isInputor;
   bool? isSysUser;

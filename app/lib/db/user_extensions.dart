@@ -24,7 +24,7 @@ extension UserExtensions on User {
     int? lastLearningMode,
     bool? learningFinished,
     bool? inviteAwardTaken,
-    bool? isSuper,
+    bool? isSuperAdmin,
     bool? isAdmin,
     bool? isInputor, 
     bool? isTodayLearningStarted,
@@ -63,7 +63,7 @@ extension UserExtensions on User {
       lastLearningMode: lastLearningMode ?? this.lastLearningMode,
       learningFinished: learningFinished ?? this.learningFinished,
       inviteAwardTaken: inviteAwardTaken ?? this.inviteAwardTaken,
-      isSuper: isSuper ?? this.isSuper,
+      isSuperAdmin: isSuperAdmin ?? this.isSuperAdmin,
       isAdmin: isAdmin ?? this.isAdmin,
       isInputor: isInputor ?? this.isInputor,
       isTodayLearningStarted: isTodayLearningStarted ?? this.isTodayLearningStarted,
@@ -105,7 +105,7 @@ extension UserExtensions on User {
       lastLearningMode: Value(lastLearningMode),
       learningFinished: Value(learningFinished),
       inviteAwardTaken: Value(inviteAwardTaken),
-      isSuper: Value(isSuper),
+      isSuperAdmin: Value(isSuperAdmin),
       isAdmin: Value(isAdmin),
       isInputor: Value(isInputor),
       isTodayLearningStarted: Value(isTodayLearningStarted),
@@ -148,7 +148,7 @@ extension UserExtensions on User {
       lastLearningMode: Value(lastLearningMode),
       learningFinished: Value(learningFinished),
       inviteAwardTaken: Value(inviteAwardTaken),
-      isSuper: Value(isSuper),
+      isSuperAdmin: Value(isSuperAdmin),
       isAdmin: Value(isAdmin),
       isInputor: Value(isInputor),
       isTodayLearningStarted: Value(isTodayLearningStarted),
@@ -190,7 +190,7 @@ extension UserExtensions on User {
     userVo.lastLearningMode = lastLearningMode;
     userVo.learningFinished = learningFinished;
     userVo.inviteAwardTaken = inviteAwardTaken;
-    userVo.isSuper = isSuper;
+    userVo.isSuperAdmin = isSuperAdmin;
     userVo.isAdmin = isAdmin;
     userVo.isInputor = isInputor;
     userVo.isTodayLearningStarted = isTodayLearningStarted;

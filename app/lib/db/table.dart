@@ -141,7 +141,7 @@ class Users extends Table {
 
   BoolColumn get inviteAwardTaken => boolean()();
 
-  BoolColumn get isSuper => boolean()();
+  BoolColumn get isSuperAdmin => boolean()();
 
   BoolColumn get isAdmin => boolean()();
 

@@ -519,3 +519,6 @@ ALTER TABLE user_db_log CHANGE COLUMN record record TEXT;
 ALTER TABLE user_study_step CHANGE COLUMN index_ seq INT;
 
 update dict set popularityLimit=5;
+
+-- 重命名user表的isSuper字段为isSuperAdmin
+ALTER TABLE bdc.user CHANGE COLUMN isSuper isSuperAdmin BIT(1) NOT NULL DEFAULT 0 COMMENT '是否为超级管理员';

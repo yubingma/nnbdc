@@ -149,7 +149,7 @@ public class WordImageBo extends BaseBo<WordImage> {
     public Result<Object> deleteWordImage(String imageId, User user, boolean checkPermission) {
         WordImage image = findById(imageId);
         if (checkPermission) {
-            if (!user.getIsAdmin() && !user.getIsSuper() && (image.getAuthor() == null
+            if (!user.getIsAdmin() && !user.getIsSuperAdmin() && (image.getAuthor() == null
                     || !image.getAuthor().getUserName().equalsIgnoreCase(user.getUserName()))) {
                 return new Result<>(false, "无权限", null);
             }

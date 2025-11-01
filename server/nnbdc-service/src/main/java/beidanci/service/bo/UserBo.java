@@ -18,6 +18,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.query.Query;
@@ -37,6 +38,7 @@ import beidanci.api.model.LearningDictDto;
 import beidanci.api.model.LearningWordDto;
 import beidanci.api.model.LevelVo;
 import beidanci.api.model.MasteredWordDto;
+import beidanci.api.model.PagedResults;
 import beidanci.api.model.UserCowDungLogDto;
 import beidanci.api.model.UserDbLogDto;
 import beidanci.api.model.UserOperDto;
@@ -1123,7 +1125,7 @@ public class UserBo extends BaseBo<User> {
             newUser.setLearnedDays(0);
             newUser.setLearningFinished(false);
             newUser.setInviteAwardTaken(false);
-            newUser.setIsSuper(false);
+            newUser.setIsSuperAdmin(false);
             newUser.setIsAdmin(false);
             newUser.setIsInputor(false);
             newUser.setIsSysUser(false);
@@ -1187,6 +1189,111 @@ public class UserBo extends BaseBo<User> {
         } catch (Exception e) {
             logger.error("微信登录异常", e);
             return new Result<>(false, "登录失败，请稍后重试", null);
+        }
+    }
+
+    /**
+     * 分页搜索用户（管理员功能）
+     * 支持按用户名、昵称、邮箱模糊搜索
+     *
+     * @param keyword 搜索关键词
+     * @param pageNo 页码，从1开始
+     * @param pageSize 每页大小
+     * @param filterType 筛选类型：0-全部, 1-管理员, 2-超级管理员, 3-录入员
+     * @return 分页结果
+     */
+    public PagedResults<User> searchUsers(String keyword, int pageNo, int pageSize, Integer filterType) {
+        String hql;
+        Pair<String, Object>[] parameters;
+        
+        // 构建WHERE条件
+        StringBuilder whereClause = new StringBuilder();
+        boolean hasCondition = false;
+        
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            // 有搜索关键词，模糊匹配用户名、昵称、邮箱
+            whereClause.append("(u.userName like :keyword or u.nickName like :keyword or u.email like :keyword)");
+            hasCondition = true;
+        }
+        
+        // 添加权限筛选条件
+        if (filterType != null && filterType > 0) {
+            if (hasCondition) {
+                whereClause.append(" and ");
+            }
+            switch (filterType) {
+                case 1: // 管理员
+                    whereClause.append("u.isAdmin = true");
+                    break;
+                case 2: // 超级管理员
+                    whereClause.append("u.isSuperAdmin = true");
+                    break;
+                case 3: // 录入员
+                    whereClause.append("u.isInputor = true");
+                    break;
+            }
+            hasCondition = true;
+        }
+        
+        // 构建完整HQL
+        if (hasCondition) {
+            hql = "from User u where " + whereClause.toString() + " order by u.lastLoginTime desc";
+        } else {
+            hql = "from User u order by u.lastLoginTime desc";
+        }
+        
+        // 设置参数
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            String searchPattern = "%" + keyword.trim() + "%";
+            @SuppressWarnings("unchecked")
+            Pair<String, Object>[] params = new Pair[]{
+                Pair.of("keyword", searchPattern)
+            };
+            parameters = params;
+        } else {
+            @SuppressWarnings("unchecked")
+            Pair<String, Object>[] params = new Pair[0];
+            parameters = params;
+        }
+        
+        return baseDao.pagedQuery(getSession(), hql, pageNo, pageSize, parameters);
+    }
+
+    /**
+     * 更新用户的管理员权限（管理员功能）
+     *
+     * @param userId 用户ID
+     * @param isAdmin 是否为管理员
+     * @param isSuperAdmin 是否为超级管理员
+     * @param isInputor 是否为录入员
+     * @return 更新结果
+     */
+    @Transactional
+    public Result<Void> updateAdminPermission(String userId, Boolean isAdmin, Boolean isSuperAdmin, Boolean isInputor) {
+        try {
+            User user = findById(userId);
+            if (user == null) {
+                return Result.fail("用户不存在");
+            }
+            
+            if (isAdmin != null) {
+                user.setIsAdmin(isAdmin);
+            }
+            if (isSuperAdmin != null) {
+                user.setIsSuperAdmin(isSuperAdmin);
+            }
+            if (isInputor != null) {
+                user.setIsInputor(isInputor);
+            }
+            
+            updateEntity(user);
+            logger.info("更新用户管理员权限成功: userId={}, isAdmin={}, isSuperAdmin={}, isInputor={}", 
+                userId, isAdmin, isSuperAdmin, isInputor);
+            
+            return Result.success(null);
+        } catch (Exception e) {
+            logger.error("更新用户管理员权限失败", e);
+            return Result.fail("更新失败: " + e.getMessage());
         }
     }
 

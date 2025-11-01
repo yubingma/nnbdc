@@ -35,7 +35,7 @@ public class UserVo extends UuidVo {
     private Integer lastLearningMode;
     private Boolean learningFinished;
     private Boolean inviteAwardTaken;
-    private Boolean isSuper;
+    private Boolean isSuperAdmin;
     private Boolean isAdmin;
     private Boolean isInputor;
     private Boolean isTodayLearningStarted;
@@ -288,12 +288,12 @@ public class UserVo extends UuidVo {
         this.inviteAwardTaken = inviteAwardTaken;
     }
 
-    public Boolean getIsSuper() {
-        return isSuper;
+    public Boolean getIsSuperAdmin() {
+        return isSuperAdmin;
     }
 
-    public void setIsSuper(Boolean isSuper) {
-        this.isSuper = isSuper;
+    public void setIsSuperAdmin(Boolean isSuperAdmin) {
+        this.isSuperAdmin = isSuperAdmin;
     }
 
     public Boolean getAutoPlaySentence() {

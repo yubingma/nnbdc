@@ -70,8 +70,8 @@ public class User extends UuidPo {
     private Boolean learningFinished;
     @Column(name = "inviteAwardTaken", nullable = false)
     private Boolean inviteAwardTaken;
-    @Column(name = "isSuper", nullable = false)
-    private Boolean isSuper;
+    @Column(name = "isSuperAdmin", nullable = false)
+    private Boolean isSuperAdmin;
     @Column(name = "isAdmin", nullable = false)
     private Boolean isAdmin;
     @Column(name = "isInputor", nullable = false)
@@ -562,12 +562,12 @@ public class User extends UuidPo {
         return getDakaScore() + getGameScore();
     }
 
-    public Boolean getIsSuper() {
-        return isSuper;
+    public Boolean getIsSuperAdmin() {
+        return isSuperAdmin;
     }
 
-    public void setIsSuper(Boolean isSuper) {
-        this.isSuper = isSuper;
+    public void setIsSuperAdmin(Boolean isSuperAdmin) {
+        this.isSuperAdmin = isSuperAdmin;
     }
 
     public Integer getDakaDayCount() {
@@ -772,8 +772,8 @@ public class User extends UuidPo {
         Boolean inviteAwardTaken = dto.getInviteAwardTaken();
         user.setInviteAwardTaken(inviteAwardTaken != null ? inviteAwardTaken : false);
 
-        Boolean isSuper = dto.getIsSuper();
-        user.setIsSuper(isSuper != null ? isSuper : false);
+        Boolean isSuperAdmin = dto.getIsSuperAdmin();
+        user.setIsSuperAdmin(isSuperAdmin != null ? isSuperAdmin : false);
 
         Boolean isAdmin = dto.getIsAdmin();
         user.setIsAdmin(isAdmin != null ? isAdmin : false);
@@ -861,7 +861,7 @@ public class User extends UuidPo {
         dto.setLastLearningMode(this.getLastLearningMode());
         dto.setLearningFinished(this.getLearningFinished());
         dto.setInviteAwardTaken(this.getInviteAwardTaken());
-        dto.setIsSuper(this.getIsSuper());
+        dto.setIsSuperAdmin(this.getIsSuperAdmin());
         dto.setIsAdmin(this.getIsAdmin());
         dto.setIsInputor(this.getIsInputor());
         dto.setIsSysUser(this.getIsSysUser());
