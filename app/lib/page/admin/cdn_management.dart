@@ -230,84 +230,82 @@ class _CdnManagementPageState extends State<CdnManagementPage> with SingleTicker
     required String hintText,
     required bool isDarkMode,
   }) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: isDarkMode ? const Color(0xFF1A3A52) : const Color(0xFFE3F2FD),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: isDarkMode ? const Color(0xFF2E5984) : const Color(0xFFBBDEFB),
-              ),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  type == '文件' ? Icons.info_outline : Icons.folder_outlined,
-                  color: isDarkMode ? const Color(0xFF64B5F6) : const Color(0xFF1976D2),
-                  size: 20,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    '$type刷新会批量处理该类型的所有URL',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: isDarkMode ? const Color(0xFF64B5F6) : const Color(0xFF1976D2),
-                      fontFamily: 'NotoSansSC',
-                    ),
-                  ),
-                ),
-              ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isDarkMode ? const Color(0xFF1A3A52) : const Color(0xFFE3F2FD),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isDarkMode ? const Color(0xFF2E5984) : const Color(0xFFBBDEFB),
             ),
           ),
-          const SizedBox(height: 16),
-          Expanded(
-            child: TextField(
-              controller: controller,
-              maxLines: null,
-              expands: true,
-              style: TextStyle(
+          child: Row(
+            children: [
+              Icon(
+                type == '文件' ? Icons.info_outline : Icons.folder_outlined,
+                color: isDarkMode ? const Color(0xFF64B5F6) : const Color(0xFF1976D2),
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  '$type刷新会批量处理该类型的所有URL',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: isDarkMode ? const Color(0xFF64B5F6) : const Color(0xFF1976D2),
+                    fontFamily: 'NotoSansSC',
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        Expanded(
+          child: TextField(
+            controller: controller,
+            maxLines: null,
+            minLines: 10,
+            style: TextStyle(
+              fontSize: 14,
+              color: isDarkMode ? Colors.white : Colors.black87,
+              fontFamily: 'NotoSansSC',
+            ),
+            decoration: InputDecoration(
+              hintText: hintText,
+              hintStyle: TextStyle(
                 fontSize: 14,
-                color: isDarkMode ? Colors.white : Colors.black87,
-                fontFamily: 'NotoSansSC',
+                color: isDarkMode ? Colors.grey[600] : Colors.grey[500],
               ),
-              decoration: InputDecoration(
-                hintText: hintText,
-                hintStyle: TextStyle(
-                  fontSize: 14,
-                  color: isDarkMode ? Colors.grey[600] : Colors.grey[500],
+              contentPadding: const EdgeInsets.all(16),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: isDarkMode ? const Color(0xFF444444) : const Color(0xFFD0D0D0),
                 ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: isDarkMode ? const Color(0xFF444444) : const Color(0xFFD0D0D0),
-                  ),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: isDarkMode ? const Color(0xFF444444) : const Color(0xFFD0D0D0),
-                  ),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(
-                    color: AppTheme.primaryColor,
-                    width: 2,
-                  ),
-                ),
-                filled: true,
-                fillColor: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
               ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: isDarkMode ? const Color(0xFF444444) : const Color(0xFFD0D0D0),
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(
+                  color: AppTheme.primaryColor,
+                  width: 2,
+                ),
+              ),
+              filled: true,
+              fillColor: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
