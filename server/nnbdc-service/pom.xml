@@ -133,6 +133,12 @@
             <groupId>com.aliyun</groupId>
             <artifactId>aliyun-java-sdk-dysmsapi</artifactId>
         </dependency>
+        
+        <!-- 阿里云CDN服务 -->
+        <dependency>
+            <groupId>com.aliyun</groupId>
+            <artifactId>aliyun-java-sdk-cdn</artifactId>
+        </dependency>
 
         <!-- OkHttp - 用于微信登录API调用 -->
         <dependency>

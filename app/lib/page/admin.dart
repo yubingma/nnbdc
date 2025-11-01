@@ -8,6 +8,7 @@ import 'package:nnbdc/page/admin/feedback_management.dart';
 import 'package:nnbdc/page/admin/dictionary_management.dart';
 import 'package:nnbdc/page/admin/system_health_check.dart';
 import 'package:nnbdc/page/admin/user_management.dart';
+import 'package:nnbdc/page/admin/cdn_management.dart';
 
 class AdminPage extends StatefulWidget {
   const AdminPage({super.key});
@@ -173,6 +174,12 @@ class _AdminPageState extends State<AdminPage> {
             color: const Color(0xFF795548),
             onTap: () => _showComingSoon('日志管理'),
           ),
+          _buildManagementCard(
+            title: 'CDN管理',
+            icon: Icons.cloud_sync,
+            color: const Color(0xFF009688),
+            onTap: () => _navigateToCdnManagement(),
+          ),
         ],
       ),
     );
@@ -252,6 +259,15 @@ class _AdminPageState extends State<AdminPage> {
       context,
       MaterialPageRoute(
         builder: (context) => const UserManagementWidget(),
+      ),
+    );
+  }
+
+  void _navigateToCdnManagement() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const CdnManagementPage(),
       ),
     );
   }

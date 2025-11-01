@@ -70,6 +70,10 @@ aliyun:
       register: SMS_123456789
       login: SMS_322250684
       reset-password: SMS_123456791
+  cdn:
+    access-key-id: ${aliyun_access_key_id}
+    access-key-secret: ${aliyun_access_key_secret}
+    region-id: cn-hangzhou
 
 # 短信验证码配置
 sms:

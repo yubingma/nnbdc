@@ -523,4 +523,11 @@ abstract class RestClient {
       @Field("isAdmin") bool? isAdmin,
       @Field("isSuperAdmin") bool? isSuperAdmin,
       @Field("isInputor") bool? isInputor);
+
+  // CDN管理相关API
+  @POST("/admin/refreshCdnCache.do")
+  @FormUrlEncoded()
+  Future<Result<String>> refreshCdnCache(
+      @Field("urls") String urls,
+      @Field("objectType") String objectType);
 }

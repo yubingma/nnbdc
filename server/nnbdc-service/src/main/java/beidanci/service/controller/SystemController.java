@@ -16,6 +16,7 @@ import beidanci.api.model.SystemHealthFixResult;
 import beidanci.service.bo.SysDbLogBo;
 import beidanci.service.bo.DictBo;
 import beidanci.service.bo.SystemHealthCheckBo;
+import beidanci.service.util.CdnUtil;
 
 @RestController
 public class SystemController {
@@ -28,6 +29,9 @@ public class SystemController {
     
     @Autowired
     private SystemHealthCheckBo systemHealthCheckBo;
+    
+    @Autowired
+    private CdnUtil cdnUtil;
 
     // ============================================
     // 统一的系统数据版本控制
@@ -236,6 +240,29 @@ public class SystemController {
             return Result.success(result);
         } catch (Exception e) {
             return Result.fail("自动修复系统问题失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * CDN缓存刷新
+     * @param urls 需要刷新的URL列表，多个URL以换行符分隔
+     * @param objectType 刷新类型：File（文件）或 Directory（目录）
+     * @return 刷新结果
+     */
+    @PostMapping("/admin/refreshCdnCache.do")
+    public Result<String> refreshCdnCache(
+            @RequestParam("urls") String urls,
+            @RequestParam(value = "objectType", defaultValue = "File") String objectType
+    ) {
+        try {
+            String result = cdnUtil.refreshCache(urls, objectType);
+            if ("OK".equals(result)) {
+                return Result.success("缓存刷新任务提交成功");
+            } else {
+                return Result.fail(result);
+            }
+        } catch (Exception e) {
+            return Result.fail("缓存刷新失败: " + e.getMessage());
         }
     }
 }
