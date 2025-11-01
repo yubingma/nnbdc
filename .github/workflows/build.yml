@@ -74,6 +74,37 @@ jobs:
           cd app
           flutter pub run build_runner build --delete-conflicting-outputs
 
+      # 修改配置文件为生产环境
+      - name: Set Production Profile (Linux/macOS)
+        if: matrix.platform != 'windows'
+        run: |
+          cd app
+          sed -i 's/static String profileName = ".*"/static String profileName = "prod"/' lib/config.dart
+          echo "已设置 profileName 为 prod"
+          # 验证修改是否成功
+          if grep -q 'profileName = "prod"' lib/config.dart; then
+            echo "✅ 验证成功：profileName 已设置为 prod"
+          else
+            echo "❌ 修改失败"
+            exit 1
+          fi
+        shell: bash
+
+      - name: Set Production Profile (Windows)
+        if: matrix.platform == 'windows'
+        run: |
+          (Get-Content app\lib\config.dart) -replace 'static String profileName = ".*"', 'static String profileName = "prod"' | Set-Content app\lib\config.dart
+          Write-Host "已设置 profileName 为 prod"
+          # 验证修改是否成功
+          $found = Select-String -Path app\lib\config.dart -Pattern 'profileName = "prod"'
+          if ($found) {
+            Write-Host "✅ 验证成功：profileName 已设置为 prod"
+          } else {
+            Write-Host "❌ 修改失败"
+            exit 1
+          }
+        shell: powershell
+
       # 调试环境变量（仅在 Android 构建时显示）
       - name: Debug Environment Variables
         if: matrix.platform == 'android'
