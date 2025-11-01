@@ -58,6 +58,7 @@ class _FeatureRequestManagementWidgetState extends State<FeatureRequestManagemen
         adminUser.id,
       );
 
+      if (!mounted) return;
       if (result.success) {
         setState(() {
           request.status = status.json;
@@ -67,18 +68,19 @@ class _FeatureRequestManagementWidgetState extends State<FeatureRequestManagemen
         ToastUtil.error(result.msg ?? '更新失败');
       }
     } catch (e) {
+      if (!mounted) return;
       ToastUtil.error('更新失败');
     }
   }
 
   void _showStatusDialog(FeatureRequestVo request) {
-    final isDarkMode = context.watch<DarkMode>().isDarkMode;
+    final isDarkMode = Provider.of<DarkMode>(context, listen: false).isDarkMode;
     final backgroundColor = isDarkMode ? const Color(0xFF2D2D2D) : Colors.white;
     final textColor = isDarkMode ? Colors.white : Colors.black;
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         backgroundColor: backgroundColor,
         title: Text(
           '更改状态',
@@ -91,27 +93,31 @@ class _FeatureRequestManagementWidgetState extends State<FeatureRequestManagemen
               FeatureRequestStatus.voting,
               request,
               textColor,
+              dialogContext,
             ),
             _buildStatusOption(
               FeatureRequestStatus.inProgress,
               request,
               textColor,
+              dialogContext,
             ),
             _buildStatusOption(
               FeatureRequestStatus.rejected,
               request,
               textColor,
+              dialogContext,
             ),
             _buildStatusOption(
               FeatureRequestStatus.completed,
               request,
               textColor,
+              dialogContext,
             ),
           ],
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: Text('取消', style: TextStyle(color: textColor)),
           ),
         ],
@@ -123,6 +129,7 @@ class _FeatureRequestManagementWidgetState extends State<FeatureRequestManagemen
     FeatureRequestStatus status,
     FeatureRequestVo request,
     Color textColor,
+    BuildContext dialogContext,
   ) {
     final isSelected = FeatureRequestStatusExt.fromString(request.status ?? 'VOTING') == status;
     
@@ -137,7 +144,7 @@ class _FeatureRequestManagementWidgetState extends State<FeatureRequestManagemen
       ),
       trailing: isSelected ? Icon(Icons.check, color: AppTheme.primaryColor) : null,
       onTap: () async {
-        Navigator.pop(context);
+        Navigator.pop(dialogContext);
         await _updateStatus(request, status);
       },
     );

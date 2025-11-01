@@ -17,15 +17,31 @@ class FeatureRequestWallPage extends StatefulWidget {
   State<StatefulWidget> createState() => _FeatureRequestWallPageState();
 }
 
-class _FeatureRequestWallPageState extends State<FeatureRequestWallPage> {
+class _FeatureRequestWallPageState extends State<FeatureRequestWallPage> with SingleTickerProviderStateMixin {
   List<FeatureRequestVo> _requests = [];
   bool _isLoading = true;
   final Map<String, bool> _votedStatus = {};
+  late TabController _tabController;
+  int _currentTabIndex = 0;
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 4, vsync: this);
+    _tabController.addListener(() {
+      if (_tabController.indexIsChanging) {
+        setState(() {
+          _currentTabIndex = _tabController.index;
+        });
+      }
+    });
     _loadRequests();
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadRequests() async {
@@ -292,10 +308,32 @@ class _FeatureRequestWallPageState extends State<FeatureRequestWallPage> {
     );
   }
 
+  List<FeatureRequestVo> _getFilteredRequests() {
+    String targetStatus;
+    switch (_currentTabIndex) {
+      case 0:
+        targetStatus = 'VOTING';
+        break;
+      case 1:
+        targetStatus = 'IN_PROGRESS';
+        break;
+      case 2:
+        targetStatus = 'REJECTED';
+        break;
+      case 3:
+        targetStatus = 'COMPLETED';
+        break;
+      default:
+        return _requests;
+    }
+    return _requests.where((req) => req.status == targetStatus).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
     final backgroundColor = isDarkMode ? const Color(0xFF121212) : const Color(0xFFF8F9FA);
+    final filteredRequests = _getFilteredRequests();
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -317,6 +355,18 @@ class _FeatureRequestWallPageState extends State<FeatureRequestWallPage> {
             tooltip: '刷新',
           ),
         ],
+        bottom: TabBar(
+          controller: _tabController,
+          indicatorColor: Colors.white,
+          labelColor: Colors.white,
+          unselectedLabelColor: Colors.white70,
+          tabs: const [
+            Tab(text: '投票中'),
+            Tab(text: '开发中'),
+            Tab(text: '已拒绝'),
+            Tab(text: '已完成'),
+          ],
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showCreateDialog,
@@ -325,7 +375,7 @@ class _FeatureRequestWallPageState extends State<FeatureRequestWallPage> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : _requests.isEmpty
+          : filteredRequests.isEmpty
               ? Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -348,9 +398,9 @@ class _FeatureRequestWallPageState extends State<FeatureRequestWallPage> {
                 )
               : ListView.builder(
                   padding: const EdgeInsets.all(16),
-                  itemCount: _requests.length,
+                  itemCount: filteredRequests.length,
                   itemBuilder: (context, index) {
-                    final request = _requests[index];
+                    final request = filteredRequests[index];
                     return _buildRequestCard(request);
                   },
                 ),
