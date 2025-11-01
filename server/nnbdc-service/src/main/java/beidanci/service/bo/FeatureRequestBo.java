@@ -66,15 +66,15 @@ public class FeatureRequestBo extends BaseBo<FeatureRequest> {
     
     /**
      * 投票
-     * @return true 表示投票成功，false 表示已经投过票
+     * @return Pair<Boolean, String> 第一个元素表示是否成功，第二个元素是错误信息（失败时）
      */
-    public boolean voteForRequest(String requestId, User user) {
+    public org.apache.commons.lang3.tuple.Pair<Boolean, String> voteForRequest(String requestId, User user) {
         Session session = getSession();
         
-        // 检查是否已经投过票
+        // 检查需求是否存在
         FeatureRequest request = session.get(FeatureRequest.class, requestId);
         if (request == null) {
-            return false;
+            return org.apache.commons.lang3.tuple.Pair.of(false, "需求不存在");
         }
         
         // 检查用户是否已经投票
@@ -85,7 +85,7 @@ public class FeatureRequestBo extends BaseBo<FeatureRequest> {
         FeatureRequestVote existingVote = checkQuery.uniqueResult();
         
         if (existingVote != null) {
-            return false; // 已经投过票
+            return org.apache.commons.lang3.tuple.Pair.of(false, "您已经对此需求投过票了");
         }
         
         // 创建投票记录
@@ -98,7 +98,7 @@ public class FeatureRequestBo extends BaseBo<FeatureRequest> {
         request.setVoteCount(request.getVoteCount() + 1);
         session.update(request);
         
-        return true;
+        return org.apache.commons.lang3.tuple.Pair.of(true, null);
     }
     
     /**

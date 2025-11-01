@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import org.apache.commons.lang3.tuple.Pair;
+
 import beidanci.api.Result;
 import beidanci.api.model.FeatureRequestStatus;
 import beidanci.api.model.FeatureRequestVo;
@@ -87,11 +89,11 @@ public class FeatureRequestController {
             return Result.fail("用户未登录");
         }
         
-        boolean success = featureRequestBo.voteForRequest(requestId, user);
-        if (success) {
+        Pair<Boolean, String> result = featureRequestBo.voteForRequest(requestId, user);
+        if (result.getLeft()) {
             return Result.success(null);
         } else {
-            return Result.fail("已经投过票或需求不存在");
+            return Result.fail(result.getRight());
         }
     }
 
