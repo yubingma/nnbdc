@@ -44,7 +44,7 @@ dependencies:
   json_serializable: ^6.8.0
   json_annotation: ^4.9.0
   retrofit: ^4.4.2
-  retrofit_generator: ^9.1.9
+  retrofit_generator: ^9.3.0
   logger: ^2.5.0 #for logging purpose
   dio_cookie_manager:
   cookie_jar: ^4.0.8
