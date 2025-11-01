@@ -72,14 +72,14 @@ class _FeatureRequestWallPageState extends State<FeatureRequestWallPage> {
   void _showCreateDialog() {
     final titleController = TextEditingController();
     final contentController = TextEditingController();
-    final isDarkMode = context.watch<DarkMode>().isDarkMode;
+    final isDarkMode = Provider.of<DarkMode>(context, listen: false).isDarkMode;
     final backgroundColor = isDarkMode ? const Color(0xFF2D2D2D) : Colors.white;
     final textColor = isDarkMode ? Colors.white : Colors.black;
 
     showDialog(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
+        builder: (builderContext, setState) => AlertDialog(
           backgroundColor: backgroundColor,
           title: Text(
             '提需求',
