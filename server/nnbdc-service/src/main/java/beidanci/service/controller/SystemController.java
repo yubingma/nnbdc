@@ -19,6 +19,8 @@ import beidanci.service.bo.SystemHealthCheckBo;
 import beidanci.service.bo.SysParamBo;
 import beidanci.service.po.SysParam;
 import beidanci.service.util.CdnUtil;
+import beidanci.service.util.AliyunResourceUtil;
+import beidanci.service.util.AliyunResourceUtil.AccountBalanceInfo;
 
 @RestController
 public class SystemController {
@@ -37,6 +39,9 @@ public class SystemController {
     
     @Autowired
     private SysParamBo sysParamBo;
+    
+    @Autowired
+    private AliyunResourceUtil aliyunResourceUtil;
 
     // ============================================
     // 统一的系统数据版本控制
@@ -362,6 +367,42 @@ public class SystemController {
         
         public void setDirUrls(String dirUrls) {
             this.dirUrls = dirUrls;
+        }
+    }
+
+    /**
+     * 查询阿里云账户余额
+     * @return 账户余额信息
+     */
+    @GetMapping("/admin/queryAliyunBalance.do")
+    public Result<AccountBalanceInfo> queryAliyunBalance() {
+        try {
+            AccountBalanceInfo balanceInfo = aliyunResourceUtil.queryAccountBalance();
+            if ("查询成功".equals(balanceInfo.getMessage())) {
+                return Result.success(balanceInfo);
+            } else {
+                return Result.fail(balanceInfo.getMessage());
+            }
+        } catch (Exception e) {
+            return Result.fail("查询失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 查询阿里云资源包使用情况
+     * @return 资源包信息
+     */
+    @GetMapping("/admin/queryAliyunResourcePackages.do")
+    public Result<String> queryAliyunResourcePackages() {
+        try {
+            String result = aliyunResourceUtil.queryResourcePackageInstances();
+            if ("OK".equals(result)) {
+                return Result.success("查询成功");
+            } else {
+                return Result.fail(result);
+            }
+        } catch (Exception e) {
+            return Result.fail("查询失败: " + e.getMessage());
         }
     }
 }

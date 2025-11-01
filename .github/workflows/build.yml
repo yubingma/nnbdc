@@ -93,14 +93,17 @@ jobs:
       - name: Set Production Profile (Windows)
         if: matrix.platform == 'windows'
         run: |
-          (Get-Content app\lib\config.dart) -replace 'static String profileName = ".*"', 'static String profileName = "prod"' | Set-Content app\lib\config.dart
-          Write-Host "已设置 profileName 为 prod"
-          # 验证修改是否成功
-          $found = Select-String -Path app\lib\config.dart -Pattern 'profileName = "prod"'
+          $filePath = "app\lib\config.dart"
+          $content = Get-Content $filePath -Raw -Encoding UTF8
+          $content = $content -replace 'static String profileName = ".*"', 'static String profileName = "prod"'
+          Set-Content -Path $filePath -Value $content -Encoding UTF8 -NoNewline
+          Write-Host "Set profileName to prod"
+          # Verify the change
+          $found = Select-String -Path $filePath -Pattern 'profileName = "prod"'
           if ($found) {
-            Write-Host "✅ 验证成功：profileName 已设置为 prod"
+            Write-Host "Success: profileName set to prod"
           } else {
-            Write-Host "❌ 修改失败"
+            Write-Host "Error: Failed to set profileName"
             exit 1
           }
         shell: powershell

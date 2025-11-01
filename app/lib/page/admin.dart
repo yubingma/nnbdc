@@ -9,6 +9,7 @@ import 'package:nnbdc/page/admin/dictionary_management.dart';
 import 'package:nnbdc/page/admin/system_health_check.dart';
 import 'package:nnbdc/page/admin/user_management.dart';
 import 'package:nnbdc/page/admin/cdn_management.dart';
+import 'package:nnbdc/page/admin/aliyun_resource_management.dart';
 
 class AdminPage extends StatefulWidget {
   const AdminPage({super.key});
@@ -180,6 +181,12 @@ class _AdminPageState extends State<AdminPage> {
             color: const Color(0xFF009688),
             onTap: () => _navigateToCdnManagement(),
           ),
+          _buildManagementCard(
+            title: '阿里云资源',
+            icon: Icons.cloud,
+            color: const Color(0xFFFF6B00),
+            onTap: () => _navigateToAliyunResourceManagement(),
+          ),
         ],
       ),
     );
@@ -268,6 +275,15 @@ class _AdminPageState extends State<AdminPage> {
       context,
       MaterialPageRoute(
         builder: (context) => const CdnManagementPage(),
+      ),
+    );
+  }
+
+  void _navigateToAliyunResourceManagement() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const AliyunResourceManagementPage(),
       ),
     );
   }

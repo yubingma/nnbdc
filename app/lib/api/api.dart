@@ -539,4 +539,11 @@ abstract class RestClient {
   Future<Result<String>> saveCdnRefreshUrls(
       @Field("fileUrls") String fileUrls,
       @Field("dirUrls") String dirUrls);
+
+  // 阿里云资源查询相关API
+  @GET("/admin/queryAliyunBalance.do")
+  Future<Result<Map<String, dynamic>>> queryAliyunBalance();
+
+  @GET("/admin/queryAliyunResourcePackages.do")
+  Future<Result<String>> queryAliyunResourcePackages();
 }
