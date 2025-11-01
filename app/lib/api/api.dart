@@ -545,5 +545,5 @@ abstract class RestClient {
   Future<Result<Map<String, dynamic>>> queryAliyunBalance();
 
   @GET("/admin/queryAliyunResourcePackages.do")
-  Future<Result<String>> queryAliyunResourcePackages();
+  Future<Result<Map<String, dynamic>>> queryAliyunResourcePackages();
 }

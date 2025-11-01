@@ -17,7 +17,21 @@ class AliyunResourceManagementPage extends StatefulWidget {
 
 class _AliyunResourceManagementPageState extends State<AliyunResourceManagementPage> {
   Map<String, dynamic>? _balanceInfo;
-  bool _isLoading = false;
+  List<dynamic>? _resourcePackages;
+  final bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+  
+  Future<void> _loadData() async {
+    await Future.wait([
+      _refreshBalance(),
+      _refreshResourcePackages(),
+    ]);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -44,8 +58,8 @@ class _AliyunResourceManagementPageState extends State<AliyunResourceManagementP
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh, color: Colors.white),
-            onPressed: _refreshBalance,
-            tooltip: '刷新余额',
+            onPressed: _loadData,
+            tooltip: '刷新',
           ),
         ],
       ),
@@ -95,6 +109,7 @@ class _AliyunResourceManagementPageState extends State<AliyunResourceManagementP
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
                     color: textColor,
+                    fontFamily: 'NotoSansSC',
                   ),
                 ),
               ],
@@ -108,6 +123,7 @@ class _AliyunResourceManagementPageState extends State<AliyunResourceManagementP
                   style: TextStyle(
                     fontSize: 14,
                     color: textColor.withValues(alpha: 0.6),
+                    fontFamily: 'NotoSansSC',
                   ),
                 ),
               )
@@ -162,6 +178,7 @@ class _AliyunResourceManagementPageState extends State<AliyunResourceManagementP
           style: TextStyle(
             fontSize: 14,
             color: textColor.withValues(alpha: 0.8),
+            fontFamily: 'NotoSansSC',
           ),
         ),
         Row(
@@ -172,6 +189,7 @@ class _AliyunResourceManagementPageState extends State<AliyunResourceManagementP
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: isPositive ? Colors.green : Colors.red,
+                fontFamily: 'NotoSansSC',
               ),
             ),
             const SizedBox(width: 4),
@@ -180,6 +198,7 @@ class _AliyunResourceManagementPageState extends State<AliyunResourceManagementP
               style: TextStyle(
                 fontSize: 14,
                 color: textColor.withValues(alpha: 0.6),
+                fontFamily: 'NotoSansSC',
               ),
             ),
           ],
@@ -216,22 +235,99 @@ class _AliyunResourceManagementPageState extends State<AliyunResourceManagementP
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
                     color: textColor,
+                    fontFamily: 'NotoSansSC',
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 16),
-            Text(
-              '资源包查询功能开发中...',
-              style: TextStyle(
-                fontSize: 14,
-                color: textColor.withValues(alpha: 0.6),
+            if (_resourcePackages == null)
+              Text(
+                '正在加载资源包信息...',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: textColor.withValues(alpha: 0.6),
+                  fontFamily: 'NotoSansSC',
+                ),
+              )
+            else if (_resourcePackages!.isEmpty)
+              Text(
+                '暂无资源包',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: textColor.withValues(alpha: 0.6),
+                  fontFamily: 'NotoSansSC',
+                ),
+              )
+            else
+              Column(
+                children: _resourcePackages!.map((package) {
+                  return _buildResourcePackageItem(package, isDarkMode, textColor);
+                }).toList(),
               ),
-            ),
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildResourcePackageItem(Map<String, dynamic> package, bool isDarkMode, Color textColor) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isDarkMode ? const Color(0xFF2A2A2A) : const Color(0xFFF5F5F5),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  package['InstanceName'] ?? '未知资源包',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: textColor,
+                    fontFamily: 'NotoSansSC',
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '有效期至: ${package['ExpiryTime'] ?? '-'}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: textColor.withValues(alpha: 0.6),
+                    fontFamily: 'NotoSansSC',
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Text(
+            package['Status'] ?? '-',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: _getStatusColor(package['Status'] ?? ''),
+              fontFamily: 'NotoSansSC',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color _getStatusColor(String status) {
+    if (status.contains('有效') || status.contains('Active')) {
+      return Colors.green;
+    } else if (status.contains('过期') || status.contains('Expired')) {
+      return Colors.red;
+    } else {
+      return Colors.orange;
+    }
   }
 
   Widget _buildInfoCard(bool isDarkMode) {
@@ -262,6 +358,7 @@ class _AliyunResourceManagementPageState extends State<AliyunResourceManagementP
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
                     color: textColor,
+                    fontFamily: 'NotoSansSC',
                   ),
                 ),
               ],
@@ -276,6 +373,7 @@ class _AliyunResourceManagementPageState extends State<AliyunResourceManagementP
                 fontSize: 14,
                 height: 1.6,
                 color: textColor.withValues(alpha: 0.8),
+                fontFamily: 'NotoSansSC',
               ),
             ),
           ],
@@ -286,10 +384,6 @@ class _AliyunResourceManagementPageState extends State<AliyunResourceManagementP
 
   /// 刷新余额信息
   Future<void> _refreshBalance() async {
-    setState(() {
-      _isLoading = true;
-    });
-
     try {
       final result = await LoadingUtils.withoutApiLoading(() async {
         return await Api.client.queryAliyunBalance();
@@ -298,21 +392,33 @@ class _AliyunResourceManagementPageState extends State<AliyunResourceManagementP
       if (result.success && result.data != null) {
         setState(() {
           _balanceInfo = result.data;
-          _isLoading = false;
         });
-        ToastUtil.success('余额查询成功');
       } else {
-        setState(() {
-          _isLoading = false;
-        });
         ToastUtil.error('查询失败: ${result.msg ?? "未知错误"}');
       }
     } catch (e) {
       Global.logger.e('查询余额失败', error: e);
-      setState(() {
-        _isLoading = false;
-      });
       ToastUtil.error('查询失败: $e');
+    }
+  }
+
+  /// 刷新资源包信息
+  Future<void> _refreshResourcePackages() async {
+    try {
+      final result = await LoadingUtils.withoutApiLoading(() async {
+        return await Api.client.queryAliyunResourcePackages();
+      });
+
+      if (result.success && result.data != null) {
+        setState(() {
+          _resourcePackages = result.data?['Instances'] as List<dynamic>?;
+        });
+      } else {
+        // 资源包查询失败不显示错误，因为可能没有资源包
+        Global.logger.w('资源包查询失败: ${result.msg ?? "未知错误"}');
+      }
+    } catch (e) {
+      Global.logger.e('查询资源包失败', error: e);
     }
   }
 }

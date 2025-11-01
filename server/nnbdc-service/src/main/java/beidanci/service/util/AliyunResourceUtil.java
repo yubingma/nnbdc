@@ -125,14 +125,18 @@ public class AliyunResourceUtil {
 
             CommonResponse response = client.getCommonResponse(request);
             JsonNode responseObj = objectMapper.readTree(response.getData());
+            
+            logger.info("资源包API原始响应：{}", response.getData());
 
-            if ("Success".equals(responseObj.get("Code").asText())) {
+            String code = responseObj.get("Code").asText();
+            if ("Success".equals(code) || "200".equals(code)) {
                 JsonNode data = responseObj.get("Data");
                 int count = data.get("Instances") != null ? data.get("Instances").size() : 0;
                 logger.info("资源包查询成功，找到 {} 个资源包", count);
-                return "OK";
+                // 返回完整的Data对象JSON字符串
+                return data.toString();
             } else {
-                logger.error("资源包查询失败：{}", responseObj.get("Message").asText());
+                logger.error("资源包查询失败，Code：{}，Message：{}", code, responseObj.get("Message").asText());
                 return responseObj.get("Message").asText();
             }
         } catch (Exception e) {

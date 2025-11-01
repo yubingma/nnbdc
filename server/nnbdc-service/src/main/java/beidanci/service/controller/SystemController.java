@@ -396,8 +396,9 @@ public class SystemController {
     public Result<String> queryAliyunResourcePackages() {
         try {
             String result = aliyunResourceUtil.queryResourcePackageInstances();
-            if ("OK".equals(result)) {
-                return Result.success("查询成功");
+            // 如果是错误消息，返回失败；否则返回JSON数据
+            if (result.startsWith("{") && result.contains("Instances")) {
+                return Result.success(result);
             } else {
                 return Result.fail(result);
             }
