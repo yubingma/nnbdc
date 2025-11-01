@@ -79,8 +79,11 @@ public class AliyunResourceUtil {
 
             CommonResponse response = client.getCommonResponse(request);
             JsonNode responseObj = objectMapper.readTree(response.getData());
+            
+            logger.info("阿里云API原始响应：{}", response.getData());
 
-            if ("Success".equals(responseObj.get("Code").asText())) {
+            String code = responseObj.get("Code").asText();
+            if ("Success".equals(code) || "200".equals(code)) {
                 JsonNode data = responseObj.get("Data");
                 logger.info("账户余额查询成功，可用余额：{}", data.get("AvailableAmount").asText());
                 return new AccountBalanceInfo(
@@ -91,7 +94,7 @@ public class AliyunResourceUtil {
                     data.get("Currency").asText()
                 );
             } else {
-                logger.error("账户余额查询失败：{}", responseObj.get("Message").asText());
+                logger.error("账户余额查询失败，Code：{}，Message：{}", code, responseObj.get("Message").asText());
                 return new AccountBalanceInfo(responseObj.get("Message").asText(), null, null, null, null);
             }
         } catch (Exception e) {
