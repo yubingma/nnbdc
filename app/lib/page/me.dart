@@ -24,6 +24,7 @@ import "package:percent_indicator/percent_indicator.dart";
 import 'package:provider/provider.dart';
 import 'package:nnbdc/widget/dict_download_dialog.dart';
 import 'package:nnbdc/page/admin/health_check.dart';
+import 'package:nnbdc/page/feature_request_wall.dart';
 
 import '../config.dart';
 import '../global.dart';
@@ -997,6 +998,16 @@ class _MePageState extends State<MePage> {
                     : null,
                 onTap: () {
                   Get.toNamed('/msg');
+                },
+              ),
+              _buildMenuTile(
+                icon: Icons.rate_review,
+                title: '需求墙',
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const FeatureRequestWallPage()),
+                  );
                 },
               ),
               _buildMenuTile(

@@ -45,7 +45,7 @@ class _CdnManagementPageState extends State<CdnManagementPage> with SingleTicker
       });
 
       if (result.success && result.data != null) {
-        final config = CdnUrlConfig.fromJson(result.data!);
+        final config = CdnUrlConfig.fromJson(result.data!.data);
         setState(() {
           _fileUrlsController.text = config.fileUrls ?? '';
           _dirUrlsController.text = config.dirUrls ?? '';

@@ -1396,3 +1396,24 @@ class SystemHealthFixResult {
   Map<String, dynamic> toJson() => _$SystemHealthFixResultToJson(this);
 }
 
+@JsonSerializable()
+@CustomDateTimeConverter()
+class FeatureRequestVo {
+  String id;
+  String? title;
+  String? content;
+  String? status;
+  int? voteCount;
+  UserVo? creator;
+  DateTime createTime;
+
+  FeatureRequestVo(this.id, this.title, this.content, this.status, this.voteCount, this.creator, this.createTime);
+
+  FeatureRequestVo.c2(this.id, this.createTime);
+
+  factory FeatureRequestVo.fromJson(Map<String, dynamic> json) =>
+      _$FeatureRequestVoFromJson(json);
+
+  Map<String, dynamic> toJson() => _$FeatureRequestVoToJson(this);
+}
+

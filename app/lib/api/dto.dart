@@ -418,6 +418,28 @@ class StringList {
   }
 }
 
+/// JSON Map包装类，用于在retrofit中序列化`Map<String, dynamic>`
+class JsonMap {
+  Map<String, dynamic> data;
+
+  JsonMap(this.data);
+
+  /// 便捷构造方法，从`Map<String, dynamic>`创建`JsonMap`
+  static JsonMap from(Map<String, dynamic> map) {
+    return JsonMap(map);
+  }
+
+  factory JsonMap.fromJson(Map<String, dynamic> json) {
+    // 直接返回整个json对象作为data
+    return JsonMap(json);
+  }
+
+  Map<String, dynamic> toJson() {
+    // 直接返回data字段
+    return data;
+  }
+}
+
 @JsonSerializable()
 @CustomDateTimeConverter()
 class UserCowDungLogDto {

@@ -532,7 +532,7 @@ abstract class RestClient {
       @Field("objectType") String objectType);
 
   @GET("/admin/getCdnRefreshUrls.do")
-  Future<Result<Map<String, dynamic>>> getCdnRefreshUrls();
+  Future<Result<JsonMap>> getCdnRefreshUrls();
 
   @POST("/admin/saveCdnRefreshUrls.do")
   @FormUrlEncoded()
@@ -542,8 +542,37 @@ abstract class RestClient {
 
   // 阿里云资源查询相关API
   @GET("/admin/queryAliyunBalance.do")
-  Future<Result<Map<String, dynamic>>> queryAliyunBalance();
+  Future<Result<JsonMap>> queryAliyunBalance();
 
   @GET("/admin/queryAliyunResourcePackages.do")
-  Future<Result<Map<String, dynamic>>> queryAliyunResourcePackages();
+  Future<Result<JsonMap>> queryAliyunResourcePackages();
+
+  // 需求墙相关API
+  @GET("/getAllFeatureRequests.do")
+  Future<List<FeatureRequestVo>> getAllFeatureRequests();
+
+  @POST("/createFeatureRequest.do")
+  @FormUrlEncoded()
+  Future<Result<FeatureRequestVo>> createFeatureRequest(
+      @Field("title") String title,
+      @Field("content") String content,
+      @Field("userId") String userId);
+
+  @POST("/voteFeatureRequest.do")
+  @FormUrlEncoded()
+  Future<Result> voteFeatureRequest(
+      @Field("requestId") String requestId,
+      @Field("userId") String userId);
+
+  @GET("/hasUserVoted.do")
+  Future<Result<bool>> hasUserVoted(
+      @Query("requestId") String requestId,
+      @Query("userId") String userId);
+
+  @PUT("/updateFeatureRequestStatus.do")
+  @FormUrlEncoded()
+  Future<Result> updateFeatureRequestStatus(
+      @Field("requestId") String requestId,
+      @Field("status") String status,
+      @Field("adminUserId") String adminUserId);
 }

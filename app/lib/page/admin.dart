@@ -10,6 +10,7 @@ import 'package:nnbdc/page/admin/system_health_check.dart';
 import 'package:nnbdc/page/admin/user_management.dart';
 import 'package:nnbdc/page/admin/cdn_management.dart';
 import 'package:nnbdc/page/admin/aliyun_resource_management.dart';
+import 'package:nnbdc/page/admin/feature_request_management.dart';
 
 class AdminPage extends StatefulWidget {
   const AdminPage({super.key});
@@ -138,6 +139,12 @@ class _AdminPageState extends State<AdminPage> {
             icon: Icons.feedback,
             color: const Color(0xFF4CAF50),
             onTap: () => _navigateToFeedback(),
+          ),
+          _buildManagementCard(
+            title: '需求管理',
+            icon: Icons.rate_review,
+            color: const Color(0xFFE53935),
+            onTap: () => _navigateToFeatureRequestManagement(),
           ),
           _buildManagementCard(
             title: '系统词典',
@@ -284,6 +291,15 @@ class _AdminPageState extends State<AdminPage> {
       context,
       MaterialPageRoute(
         builder: (context) => const AliyunResourceManagementPage(),
+      ),
+    );
+  }
+
+  void _navigateToFeatureRequestManagement() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const FeatureRequestManagementWidget(),
       ),
     );
   }

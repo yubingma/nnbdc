@@ -391,7 +391,7 @@ class _AliyunResourceManagementPageState extends State<AliyunResourceManagementP
 
       if (result.success && result.data != null) {
         setState(() {
-          _balanceInfo = result.data;
+          _balanceInfo = result.data!.data;
         });
       } else {
         ToastUtil.error('查询失败: ${result.msg ?? "未知错误"}');
@@ -411,7 +411,7 @@ class _AliyunResourceManagementPageState extends State<AliyunResourceManagementP
 
       if (result.success && result.data != null) {
         setState(() {
-          _resourcePackages = result.data?['Instances'] as List<dynamic>?;
+          _resourcePackages = result.data!.data['Instances'] as List<dynamic>?;
         });
       } else {
         // 资源包查询失败不显示错误，因为可能没有资源包

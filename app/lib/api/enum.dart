@@ -181,3 +181,48 @@ extension MsgTypeExt on MsgType {
     }
   }
 }
+
+enum FeatureRequestStatus { voting, inProgress, rejected, completed }
+
+extension FeatureRequestStatusExt on FeatureRequestStatus {
+  String get json {
+    switch (this) {
+      case FeatureRequestStatus.voting:
+        return "VOTING";
+      case FeatureRequestStatus.inProgress:
+        return "IN_PROGRESS";
+      case FeatureRequestStatus.rejected:
+        return "REJECTED";
+      case FeatureRequestStatus.completed:
+        return "COMPLETED";
+    }
+  }
+
+  String get description {
+    switch (this) {
+      case FeatureRequestStatus.voting:
+        return "投票中";
+      case FeatureRequestStatus.inProgress:
+        return "开发中";
+      case FeatureRequestStatus.rejected:
+        return "已拒绝";
+      case FeatureRequestStatus.completed:
+        return "已完成";
+    }
+  }
+
+  static FeatureRequestStatus fromString(String value) {
+    switch (value) {
+      case "VOTING":
+        return FeatureRequestStatus.voting;
+      case "IN_PROGRESS":
+        return FeatureRequestStatus.inProgress;
+      case "REJECTED":
+        return FeatureRequestStatus.rejected;
+      case "COMPLETED":
+        return FeatureRequestStatus.completed;
+      default:
+        throw Error();
+    }
+  }
+}
