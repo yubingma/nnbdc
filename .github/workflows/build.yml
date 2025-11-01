@@ -73,7 +73,12 @@ jobs:
         if: matrix.platform != 'windows'
         run: |
           cd app
-          sed -i 's/static String profileName = ".*"/static String profileName = "prod"/' lib/config.dart
+          # macOS 需要 sed -i ''，Linux 需要 sed -i，根据操作系统选择
+          if [[ "${{ runner.os }}" == "macOS" ]]; then
+            sed -i '' 's/static String profileName = ".*"/static String profileName = "prod"/' lib/config.dart
+          else
+            sed -i 's/static String profileName = ".*"/static String profileName = "prod"/' lib/config.dart
+          fi
           echo "已设置 profileName 为 prod"
           # 验证修改是否成功
           if grep -q 'profileName = "prod"' lib/config.dart; then
