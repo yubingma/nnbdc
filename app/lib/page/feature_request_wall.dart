@@ -39,6 +39,7 @@ class _FeatureRequestWallPageState extends State<FeatureRequestWallPage> {
         _isLoading = false;
       });
     } catch (e) {
+      Global.logger.e('加载需求列表失败', error: e);
       setState(() {
         _isLoading = false;
       });
@@ -77,78 +78,82 @@ class _FeatureRequestWallPageState extends State<FeatureRequestWallPage> {
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: backgroundColor,
-        title: Text(
-          '提需求',
-          style: TextStyle(color: textColor, fontWeight: FontWeight.w400),
-        ),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: titleController,
-                  style: TextStyle(color: textColor),
-                  decoration: InputDecoration(
-                    labelText: '标题',
-                    labelStyle: TextStyle(color: textColor),
-                    border: const OutlineInputBorder(),
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          backgroundColor: backgroundColor,
+          title: Text(
+            '提需求',
+            style: TextStyle(color: textColor, fontWeight: FontWeight.w400),
+          ),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: titleController,
+                    style: TextStyle(color: textColor),
+                    decoration: InputDecoration(
+                      labelText: '标题',
+                      labelStyle: TextStyle(color: textColor),
+                      border: const OutlineInputBorder(),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: contentController,
-                  style: TextStyle(color: textColor),
-                  maxLines: 5,
-                  decoration: InputDecoration(
-                    labelText: '详细描述',
-                    labelStyle: TextStyle(color: textColor),
-                    border: const OutlineInputBorder(),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: contentController,
+                    style: TextStyle(color: textColor),
+                    maxLines: 5,
+                    decoration: InputDecoration(
+                      labelText: '详细描述',
+                      labelStyle: TextStyle(color: textColor),
+                      border: const OutlineInputBorder(),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('取消', style: TextStyle(color: textColor)),
-          ),
-          TextButton(
-            onPressed: () async {
-              final title = titleController.text.trim();
-              final content = contentController.text.trim();
-              if (title.isEmpty || content.isEmpty) {
-                ToastUtil.info('请填写完整信息');
-                return;
-              }
-              
-              final user = Global.getLoggedInUser();
-              if (user == null) {
-                ToastUtil.info('请先登录');
-                return;
-              }
-
-              try {
-                final result = await Api.client.createFeatureRequest(title, content, user.id);
-                if (result.success && result.data != null) {
-                  ToastUtil.success('提交成功');
-                  Navigator.pop(context);
-                  _loadRequests();
-                } else {
-                  ToastUtil.error(result.msg ?? '提交失败');
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text('取消', style: TextStyle(color: textColor)),
+            ),
+            TextButton(
+              onPressed: () async {
+                final title = titleController.text.trim();
+                final content = contentController.text.trim();
+                if (title.isEmpty || content.isEmpty) {
+                  ToastUtil.info('请填写完整信息');
+                  return;
                 }
-              } catch (e) {
-                ToastUtil.error('提交失败');
-              }
-            },
-            child: const Text('提交'),
-          ),
-        ],
+                
+                final user = Global.getLoggedInUser();
+                if (user == null) {
+                  ToastUtil.info('请先登录');
+                  return;
+                }
+
+                try {
+                  final result = await Api.client.createFeatureRequest(title, content, user.id);
+                  if (!context.mounted) return;
+                  if (result.success && result.data != null) {
+                    ToastUtil.success('提交成功');
+                    Navigator.pop(dialogContext);
+                    _loadRequests(); 
+                  } else {
+                    ToastUtil.error(result.msg ?? '提交失败');
+                  }
+                } catch (e) {
+                  if (!context.mounted) return;
+                  ToastUtil.error('提交失败');
+                }
+              },
+              child: const Text('提交'),
+            ),
+          ],
+        ),
       ),
     );
   }

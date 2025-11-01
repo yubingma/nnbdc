@@ -522,3 +522,35 @@ update dict set popularityLimit=5;
 
 -- 重命名user表的isSuper字段为isSuperAdmin
 ALTER TABLE bdc.user CHANGE COLUMN isSuper isSuperAdmin BIT(1) NOT NULL DEFAULT 0 COMMENT '是否为超级管理员';
+
+-- 创建需求墙功能相关表
+-- 需求请求表
+CREATE TABLE IF NOT EXISTS bdc.feature_request (
+    id VARCHAR(32) NOT NULL COMMENT '主键ID',
+    creatorId VARCHAR(32) NOT NULL COMMENT '创建者用户ID',
+    title VARCHAR(200) NOT NULL COMMENT '需求标题',
+    content VARCHAR(5000) COMMENT '需求详细描述',
+    status VARCHAR(20) NOT NULL DEFAULT 'VOTING' COMMENT '状态：VOTING/IN_PROGRESS/REJECTED/COMPLETED',
+    voteCount INT NOT NULL DEFAULT 0 COMMENT '投票数',
+    createTime DATETIME NOT NULL COMMENT '创建时间',
+    updateTime DATETIME COMMENT '更新时间',
+    PRIMARY KEY (id),
+    INDEX idx_status_voteCount (status, voteCount, createTime) COMMENT '按状态和投票数排序',
+    INDEX idx_creatorId (creatorId) COMMENT '按创建者查询',
+    CONSTRAINT fk_feature_request_creator FOREIGN KEY (creatorId) REFERENCES user (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_bin COMMENT='需求请求表';
+
+-- 需求投票记录表
+CREATE TABLE IF NOT EXISTS bdc.feature_request_vote (
+    id VARCHAR(32) NOT NULL COMMENT '主键ID',
+    requestId VARCHAR(32) NOT NULL COMMENT '需求ID',
+    userId VARCHAR(32) NOT NULL COMMENT '投票用户ID',
+    createTime DATETIME NOT NULL COMMENT '创建时间',
+    updateTime DATETIME COMMENT '更新时间',
+    PRIMARY KEY (id),
+    UNIQUE KEY unique_request_user (requestId, userId) COMMENT '每个用户只能对每个需求投票一次',
+    INDEX idx_requestId (requestId) COMMENT '按需求查询投票',
+    INDEX idx_userId (userId) COMMENT '按用户查询投票',
+    CONSTRAINT fk_feature_request_vote_request FOREIGN KEY (requestId) REFERENCES feature_request (id) ON DELETE CASCADE,
+    CONSTRAINT fk_feature_request_vote_user FOREIGN KEY (userId) REFERENCES user (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_bin COMMENT='需求投票记录表';
