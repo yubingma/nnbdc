@@ -16,6 +16,8 @@ import beidanci.api.model.SystemHealthFixResult;
 import beidanci.service.bo.SysDbLogBo;
 import beidanci.service.bo.DictBo;
 import beidanci.service.bo.SystemHealthCheckBo;
+import beidanci.service.bo.SysParamBo;
+import beidanci.service.po.SysParam;
 import beidanci.service.util.CdnUtil;
 
 @RestController
@@ -32,6 +34,9 @@ public class SystemController {
     
     @Autowired
     private CdnUtil cdnUtil;
+    
+    @Autowired
+    private SysParamBo sysParamBo;
 
     // ============================================
     // 统一的系统数据版本控制
@@ -263,6 +268,100 @@ public class SystemController {
             }
         } catch (Exception e) {
             return Result.fail("缓存刷新失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 获取CDN刷新URL配置
+     * @return 配置的URL列表（文件和目录）
+     */
+    @GetMapping("/admin/getCdnRefreshUrls.do")
+    public Result<CdnUrlConfig> getCdnRefreshUrls() {
+        try {
+            String fileUrls = "";
+            String dirUrls = "";
+            
+            SysParam fileParam = sysParamBo.findById("cdnRefreshFileUrls");
+            if (fileParam != null) {
+                fileUrls = fileParam.getParamValue();
+            }
+            
+            SysParam dirParam = sysParamBo.findById("cdnRefreshDirUrls");
+            if (dirParam != null) {
+                dirUrls = dirParam.getParamValue();
+            }
+            
+            CdnUrlConfig config = new CdnUrlConfig(fileUrls, dirUrls);
+            return Result.success(config);
+        } catch (Exception e) {
+            return Result.fail("获取配置失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 保存CDN刷新URL配置
+     * @param fileUrls 文件URL列表，多个URL以换行符分隔
+     * @param dirUrls 目录URL列表，多个URL以换行符分隔
+     * @return 保存结果
+     */
+    @PostMapping("/admin/saveCdnRefreshUrls.do")
+    public Result<String> saveCdnRefreshUrls(
+            @RequestParam(value = "fileUrls", required = false, defaultValue = "") String fileUrls,
+            @RequestParam(value = "dirUrls", required = false, defaultValue = "") String dirUrls
+    ) {
+        try {
+            // 保存文件URL配置
+            SysParam fileParam = sysParamBo.findById("cdnRefreshFileUrls");
+            if (fileParam == null) {
+                fileParam = new SysParam("cdnRefreshFileUrls", fileUrls, "CDN文件刷新URL配置");
+                sysParamBo.createEntity(fileParam);
+            } else {
+                fileParam.setParamValue(fileUrls);
+                sysParamBo.updateEntity(fileParam);
+            }
+            
+            // 保存目录URL配置
+            SysParam dirParam = sysParamBo.findById("cdnRefreshDirUrls");
+            if (dirParam == null) {
+                dirParam = new SysParam("cdnRefreshDirUrls", dirUrls, "CDN目录刷新URL配置");
+                sysParamBo.createEntity(dirParam);
+            } else {
+                dirParam.setParamValue(dirUrls);
+                sysParamBo.updateEntity(dirParam);
+            }
+            
+            return Result.success("配置保存成功");
+        } catch (Exception e) {
+            return Result.fail("保存配置失败: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * CDN URL配置类
+     */
+    public static class CdnUrlConfig {
+        private String fileUrls;
+        private String dirUrls;
+        
+        public CdnUrlConfig(String fileUrls, String dirUrls) {
+            this.fileUrls = fileUrls;
+            this.dirUrls = dirUrls;
+        }
+        
+        public String getFileUrls() {
+            return fileUrls;
+        }
+        
+        public void setFileUrls(String fileUrls) {
+            this.fileUrls = fileUrls;
+        }
+        
+        public String getDirUrls() {
+            return dirUrls;
+        }
+        
+        public void setDirUrls(String dirUrls) {
+            this.dirUrls = dirUrls;
         }
     }
 }

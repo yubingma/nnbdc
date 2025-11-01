@@ -530,4 +530,13 @@ abstract class RestClient {
   Future<Result<String>> refreshCdnCache(
       @Field("urls") String urls,
       @Field("objectType") String objectType);
+
+  @GET("/admin/getCdnRefreshUrls.do")
+  Future<Result<Map<String, dynamic>>> getCdnRefreshUrls();
+
+  @POST("/admin/saveCdnRefreshUrls.do")
+  @FormUrlEncoded()
+  Future<Result<String>> saveCdnRefreshUrls(
+      @Field("fileUrls") String fileUrls,
+      @Field("dirUrls") String dirUrls);
 }
