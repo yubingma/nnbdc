@@ -212,7 +212,7 @@ class _CdnManagementPageState extends State<CdnManagementPage> with SingleTicker
                       _buildUrlEditor(
                         controller: _dirUrlsController,
                         type: '目录',
-                        hintText: '请输入需要刷新的目录URL，多个URL请换行分隔\n\n示例:\nhttp://www.nnbdc.com/img/word/\nhttp://www.nnbdc.com/img/',
+                        hintText: '请输入需要刷新的目录URL（必须以/结尾），多个URL请换行分隔\n\n示例:\nhttp://www.nnbdc.com/img/word/\nhttp://www.nnbdc.com/img/',
                         isDarkMode: isDarkMode,
                       ),
                     ],

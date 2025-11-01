@@ -14,9 +14,6 @@ import com.aliyuncs.profile.DefaultProfile;
 
 import beidanci.service.config.AliyunCdnProperties;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-
 /**
  * 阿里云CDN服务工具类
  */
@@ -76,17 +73,10 @@ public class CdnUtil {
                 return "URL为空，请检查URL格式";
             }
             
-            // 将完整URL转换为路径格式（阿里云CDN会根据配置的域名自动添加前缀）
-            String paths = convertUrlsToPaths(urls);
-            logger.info("准备刷新CDN缓存，类型：{}，原始URL：\n{}，转换后路径：\n{}", objectType, urls, paths);
-            
-            if (isBlank(paths)) {
-                logger.error("URL转换后路径为空");
-                return "URL转换后路径为空，请检查URL格式";
-            }
+            logger.info("准备刷新CDN缓存，类型：{}，URL内容：\n{}", objectType, urls);
             
             RefreshObjectCachesRequest request = new RefreshObjectCachesRequest();
-            request.setObjectPath(paths);
+            request.setObjectPath(urls);
             request.setObjectType(objectType);
 
             RefreshObjectCachesResponse response = client.getAcsResponse(request);
@@ -97,51 +87,6 @@ public class CdnUtil {
             logger.error("CDN缓存刷新失败，刷新类型：{}", objectType, e);
             return e.getMessage();
         }
-    }
-
-    /**
-     * 将完整URL转换为路径格式
-     * 例如: http://www.nnbdc.com/img/word/test.jpg -> /img/word/test.jpg
-     * 阿里云CDN会根据配置的域名自动添加域名前缀，所以只需要路径部分
-     */
-    private String convertUrlsToPaths(String urls) {
-        if (isBlank(urls)) {
-            return "";
-        }
-        
-        String[] urlLines = urls.split("\n");
-        StringBuilder pathsBuilder = new StringBuilder();
-        
-        for (String urlLine : urlLines) {
-            String trimmedUrl = urlLine.trim();
-            if (trimmedUrl.isEmpty()) {
-                continue;
-            }
-            
-            try {
-                URI uri = new URI(trimmedUrl);
-                String path = uri.getPath();
-                
-                if (path == null || path.isEmpty()) {
-                    // 如果没有路径，使用根路径
-                    path = "/";
-                }
-                
-                // 如果有查询参数，也需要包含
-                if (uri.getQuery() != null && !uri.getQuery().isEmpty()) {
-                    path += "?" + uri.getQuery();
-                }
-                
-                if (pathsBuilder.length() > 0) {
-                    pathsBuilder.append("\n");
-                }
-                pathsBuilder.append(path);
-            } catch (URISyntaxException e) {
-                logger.warn("URL解析失败，跳过: {}", trimmedUrl, e);
-            }
-        }
-        
-        return pathsBuilder.toString();
     }
 
     /**
