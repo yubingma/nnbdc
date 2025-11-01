@@ -75,84 +75,218 @@ class _FeatureRequestWallPageState extends State<FeatureRequestWallPage> {
     final isDarkMode = Provider.of<DarkMode>(context, listen: false).isDarkMode;
     final backgroundColor = isDarkMode ? const Color(0xFF2D2D2D) : Colors.white;
     final textColor = isDarkMode ? Colors.white : Colors.black;
+    final cardColor = isDarkMode ? const Color(0xFF3D3D3D) : const Color(0xFFF8F9FA);
 
     showDialog(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
-        builder: (builderContext, setState) => AlertDialog(
-          backgroundColor: backgroundColor,
-          title: Text(
-            '提需求',
-            style: TextStyle(color: textColor, fontWeight: FontWeight.w400),
-          ),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: titleController,
-                    style: TextStyle(color: textColor),
-                    decoration: InputDecoration(
-                      labelText: '标题',
-                      labelStyle: TextStyle(color: textColor),
-                      border: const OutlineInputBorder(),
+        builder: (builderContext, setState) => Dialog(
+          backgroundColor: Colors.transparent,
+          child: Container(
+            width: MediaQuery.of(context).size.width * 0.9,
+            margin: const EdgeInsets.symmetric(horizontal: 0),
+            decoration: BoxDecoration(
+              color: backgroundColor,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: isDarkMode ? Colors.black.withValues(alpha: 0.5) : Colors.black.withValues(alpha: 0.1),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // 标题栏
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [AppTheme.primaryColor, AppTheme.primaryColor.withValues(alpha: 0.8)],
+                    ),
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(20),
+                      topRight: Radius.circular(20),
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: contentController,
-                    style: TextStyle(color: textColor),
-                    maxLines: 5,
-                    decoration: InputDecoration(
-                      labelText: '详细描述',
-                      labelStyle: TextStyle(color: textColor),
-                      border: const OutlineInputBorder(),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Icons.rate_review,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      const Text(
+                        '提需求',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w400,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // 表单内容
+                Flexible(
+                  child: SingleChildScrollView(
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        children: [
+                          Container(
+                            decoration: BoxDecoration(
+                              color: cardColor,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: isDarkMode ? Colors.grey[700]! : Colors.grey[200]!,
+                                width: 1,
+                              ),
+                            ),
+                            child: TextField(
+                              controller: titleController,
+                              style: TextStyle(color: textColor),
+                              decoration: InputDecoration(
+                                labelText: '需求标题',
+                                labelStyle: TextStyle(
+                                  color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                                  fontSize: 14,
+                                ),
+                                prefixIcon: Icon(
+                                  Icons.title,
+                                  color: AppTheme.primaryColor,
+                                  size: 20,
+                                ),
+                                border: InputBorder.none,
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Container(
+                            decoration: BoxDecoration(
+                              color: cardColor,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: isDarkMode ? Colors.grey[700]! : Colors.grey[200]!,
+                                width: 1,
+                              ),
+                            ),
+                            child: TextField(
+                              controller: contentController,
+                              style: TextStyle(color: textColor),
+                              maxLines: 6,
+                              decoration: InputDecoration(
+                                labelText: '详细描述',
+                                labelStyle: TextStyle(
+                                  color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                                  fontSize: 14,
+                                ),
+                                prefixIcon: Padding(
+                                  padding: const EdgeInsets.only(bottom: 120),
+                                  child: Icon(
+                                    Icons.description_outlined,
+                                    color: AppTheme.primaryColor,
+                                    size: 20,
+                                  ),
+                                ),
+                                border: InputBorder.none,
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ],
-              ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: Text('取消', style: TextStyle(color: textColor)),
-            ),
-            TextButton(
-              onPressed: () async {
-                final title = titleController.text.trim();
-                final content = contentController.text.trim();
-                if (title.isEmpty || content.isEmpty) {
-                  ToastUtil.info('请填写完整信息');
-                  return;
-                }
-                
-                final user = Global.getLoggedInUser();
-                if (user == null) {
-                  ToastUtil.info('请先登录');
-                  return;
-                }
+                ),
+                // 操作按钮
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    border: Border(
+                      top: BorderSide(
+                        color: isDarkMode ? Colors.grey[700]! : Colors.grey[200]!,
+                        width: 1,
+                      ),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(dialogContext),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                        ),
+                        child: Text(
+                          '取消',
+                          style: TextStyle(
+                            color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      ElevatedButton(
+                        onPressed: () async {
+                          final title = titleController.text.trim();
+                          final content = contentController.text.trim();
+                          if (title.isEmpty || content.isEmpty) {
+                            ToastUtil.info('请填写完整信息');
+                            return;
+                          }
+                          
+                          final user = Global.getLoggedInUser();
+                          if (user == null) {
+                            ToastUtil.info('请先登录');
+                            return;
+                          }
 
-                try {
-                  final result = await Api.client.createFeatureRequest(title, content, user.id);
-                  if (!context.mounted) return;
-                  if (result.success && result.data != null) {
-                    ToastUtil.success('提交成功');
-                    Navigator.pop(dialogContext);
-                    _loadRequests(); 
-                  } else {
-                    ToastUtil.error(result.msg ?? '提交失败');
-                  }
-                } catch (e) {
-                  if (!context.mounted) return;
-                  ToastUtil.error('提交失败');
-                }
-              },
-              child: const Text('提交'),
+                          try {
+                            final result = await Api.client.createFeatureRequest(title, content, user.id);
+                            if (!context.mounted) return;
+                            if (result.success && result.data != null) {
+                              ToastUtil.success('提交成功');
+                              Navigator.pop(dialogContext);
+                              _loadRequests(); 
+                            } else {
+                              ToastUtil.error(result.msg ?? '提交失败');
+                            }
+                          } catch (e) {
+                            if (!context.mounted) return;
+                            ToastUtil.error('提交失败');
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primaryColor,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: const Text('提交', style: TextStyle(fontSize: 14)),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

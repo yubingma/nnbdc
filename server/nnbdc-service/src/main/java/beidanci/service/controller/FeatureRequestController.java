@@ -67,7 +67,9 @@ public class FeatureRequestController {
         
         FeatureRequest request = featureRequestBo.createFeatureRequest(title, content, user);
         FeatureRequestVo vo = BeanUtils.makeVo(request, FeatureRequestVo.class,
-                new String[]{"creator.password", "creator.invitedBy"});
+                new String[]{"creator.password", "creator.invitedBy", "creator.StudyGroupVo.creator",
+                        "creator.StudyGroupVo.users", "creator.StudyGroupVo.managers", 
+                        "creator.studyGroupPosts", "creator.userGames"});
         shrinkCreatorInfo(vo);
         return Result.success(vo);
     }
