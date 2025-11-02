@@ -105,7 +105,7 @@ class FinishPageState extends State<FinishPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 16),
                   
                   // 打卡结果卡片
                   _buildDakaCard(
@@ -115,7 +115,7 @@ class FinishPageState extends State<FinishPage> {
                     subtitleColor: subtitleColor,
                   ),
                   
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 12),
                   
                   // 魔法泡泡卡片
                   if (dakaResult.success)
@@ -125,7 +125,7 @@ class FinishPageState extends State<FinishPage> {
                       textColor: textColor,
                     ),
                   
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 16),
                   
                   // 操作按钮卡片
                   _buildActionCards(
@@ -134,7 +134,7 @@ class FinishPageState extends State<FinishPage> {
                     textColor: textColor,
                   ),
                   
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 16),
                 ],
               ),
             ),
@@ -147,7 +147,7 @@ class FinishPageState extends State<FinishPage> {
   // 构建顶部装饰区域
   Widget _buildHeaderSection(bool isDarkMode) {
     return Container(
-      height: 220,
+      height: 160,
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -171,9 +171,9 @@ class FinishPageState extends State<FinishPage> {
           
           // 标题文本
           Positioned(
-            bottom: 40,
-            left: 24,
-            right: 24,
+            bottom: 24,
+            left: 20,
+            right: 20,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -182,21 +182,21 @@ class FinishPageState extends State<FinishPage> {
                     Icon(
                       Icons.celebration,
                       color: Colors.amber[300],
-                      size: 36,
+                      size: 28,
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: Text(
                         '学习完成',
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 1.2,
+                          fontSize: 24,
+                          fontWeight: FontWeight.w400,
+                          letterSpacing: 0.8,
                           shadows: [
                             Shadow(
                               color: Colors.black.withValues(alpha: 0.3),
-                              blurRadius: 8,
+                              blurRadius: 6,
                               offset: const Offset(0, 2),
                             ),
                           ],
@@ -205,17 +205,18 @@ class FinishPageState extends State<FinishPage> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 Text(
                   '继续坚持，每天进步一点点',
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.95),
-                    fontSize: 16,
-                    letterSpacing: 0.5,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                    letterSpacing: 0.3,
                     shadows: [
                       Shadow(
                         color: Colors.black.withValues(alpha: 0.2),
-                        blurRadius: 4,
+                        blurRadius: 3,
                         offset: const Offset(0, 1),
                       ),
                     ],
@@ -431,10 +432,10 @@ class FinishPageState extends State<FinishPage> {
   }) {
     if (!dakaResult.success) {
       return Container(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: cardColor,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: isDarkMode ? Colors.grey[700]! : Colors.grey[200]!,
             width: 1,
@@ -442,8 +443,8 @@ class FinishPageState extends State<FinishPage> {
           boxShadow: [
             BoxShadow(
               color: (isDarkMode ? Colors.black : Colors.grey).withValues(alpha: 0.15),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
+              blurRadius: 6,
+              offset: const Offset(0, 3),
             ),
           ],
         ),
@@ -452,16 +453,17 @@ class FinishPageState extends State<FinishPage> {
             Icon(
               Icons.info_outline,
               color: Colors.orange,
-              size: 28,
+              size: 22,
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 12),
             Expanded(
               child: Text(
                 dakaResult.msg ?? '打卡失败',
                 style: TextStyle(
                   color: textColor,
-                  fontSize: 16,
-                  height: 1.5,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w400,
+                  height: 1.4,
                 ),
               ),
             ),
@@ -471,10 +473,10 @@ class FinishPageState extends State<FinishPage> {
     }
 
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: cardColor,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: AppTheme.primaryColor.withValues(alpha: 0.2),
           width: 2,
@@ -482,8 +484,8 @@ class FinishPageState extends State<FinishPage> {
         boxShadow: [
           BoxShadow(
             color: AppTheme.primaryColor.withValues(alpha: 0.15),
-            blurRadius: 12,
-            offset: const Offset(0, 6),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -493,18 +495,18 @@ class FinishPageState extends State<FinishPage> {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(
                   Icons.check_circle,
                   color: AppTheme.primaryColor,
-                  size: 28,
+                  size: 22,
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -513,17 +515,18 @@ class FinishPageState extends State<FinishPage> {
                       '打卡成功！',
                       style: TextStyle(
                         color: textColor,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 0.5,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w400,
+                        letterSpacing: 0.3,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 3),
                     Text(
                       '今日学习完成',
                       style: TextStyle(
                         color: subtitleColor,
-                        fontSize: 14,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w400,
                       ),
                     ),
                   ],
@@ -531,9 +534,9 @@ class FinishPageState extends State<FinishPage> {
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 14),
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
@@ -543,7 +546,7 @@ class FinishPageState extends State<FinishPage> {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(10),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -555,10 +558,11 @@ class FinishPageState extends State<FinishPage> {
                       '获得积分',
                       style: TextStyle(
                         color: subtitleColor,
-                        fontSize: 14,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w400,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 3),
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
@@ -566,19 +570,19 @@ class FinishPageState extends State<FinishPage> {
                           '${todayDakaScore - extraScore}',
                           style: TextStyle(
                             color: AppTheme.primaryColor,
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
+                            fontSize: 24,
+                            fontWeight: FontWeight.w400,
                           ),
                         ),
                         if (extraScore > 0) ...[
                           Padding(
-                            padding: const EdgeInsets.only(left: 8, bottom: 4),
+                            padding: const EdgeInsets.only(left: 6, bottom: 3),
                             child: Text(
                               '+ $extraScore',
                               style: TextStyle(
                                 color: Colors.orange,
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w400,
                               ),
                             ),
                           ),
@@ -589,10 +593,10 @@ class FinishPageState extends State<FinishPage> {
                 ),
                 if (extraScore > 0)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                     decoration: BoxDecoration(
                       color: Colors.orange.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(16),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -600,15 +604,15 @@ class FinishPageState extends State<FinishPage> {
                         Icon(
                           Icons.local_fire_department,
                           color: Colors.orange,
-                          size: 16,
+                          size: 14,
                         ),
                         const SizedBox(width: 4),
                         Text(
                           '连续打卡',
                           style: TextStyle(
                             color: Colors.orange,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w400,
                           ),
                         ),
                       ],
@@ -629,7 +633,7 @@ class FinishPageState extends State<FinishPage> {
     required Color textColor,
   }) {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
@@ -639,7 +643,7 @@ class FinishPageState extends State<FinishPage> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: Colors.purple.withValues(alpha: 0.3),
           width: 2,
@@ -647,26 +651,26 @@ class FinishPageState extends State<FinishPage> {
         boxShadow: [
           BoxShadow(
             color: Colors.purple.withValues(alpha: 0.15),
-            blurRadius: 12,
-            offset: const Offset(0, 6),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
               color: Colors.purple.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(
               Icons.auto_awesome,
               color: Colors.purple[300] ?? Colors.purple,
-              size: 32,
+              size: 26,
             ),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -675,11 +679,12 @@ class FinishPageState extends State<FinishPage> {
                   '恭喜！你得到',
                   style: TextStyle(
                     color: textColor,
-                    fontSize: 16,
-                    height: 1.5,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                    height: 1.4,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 3),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
@@ -687,18 +692,18 @@ class FinishPageState extends State<FinishPage> {
                       '$cowDung',
                       style: TextStyle(
                         color: Colors.purple[400] ?? Colors.purple,
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
+                        fontSize: 26,
+                        fontWeight: FontWeight.w400,
                       ),
                     ),
                     Padding(
-                      padding: const EdgeInsets.only(left: 8, bottom: 4),
+                      padding: const EdgeInsets.only(left: 6, bottom: 3),
                       child: Text(
                         '颗魔法泡泡',
                         style: TextStyle(
                           color: textColor,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w400,
                         ),
                       ),
                     ),
@@ -722,10 +727,10 @@ class FinishPageState extends State<FinishPage> {
       children: [
         // 前往词表卡片
         Container(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: cardColor,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(14),
             border: Border.all(
               color: isDarkMode ? Colors.grey[700]! : Colors.grey[200]!,
               width: 1,
@@ -733,8 +738,8 @@ class FinishPageState extends State<FinishPage> {
             boxShadow: [
               BoxShadow(
                 color: (isDarkMode ? Colors.black : Colors.grey).withValues(alpha: 0.1),
-                blurRadius: 8,
-                offset: const Offset(0, 4),
+                blurRadius: 6,
+                offset: const Offset(0, 3),
               ),
             ],
           ),
@@ -748,33 +753,35 @@ class FinishPageState extends State<FinishPage> {
                       '若要复习，可前往',
                       style: TextStyle(
                         color: textColor,
-                        fontSize: 16,
-                        height: 1.5,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        height: 1.4,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 3),
                     Text(
                       '查看今日学习的单词',
                       style: TextStyle(
                         color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                        fontSize: 13,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w400,
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 12),
               ElevatedButton.icon(
                 icon: const Icon(
                   Icons.wysiwyg,
-                  size: 20.0,
+                  size: 18.0,
                 ),
                 style: ElevatedButton.styleFrom(
                   foregroundColor: Colors.white,
                   backgroundColor: AppTheme.primaryColor,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(10),
                   ),
                   elevation: 2,
                 ),
@@ -782,8 +789,8 @@ class FinishPageState extends State<FinishPage> {
                 label: const Text(
                   '词表',
                   style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
                 onPressed: () {
@@ -796,12 +803,12 @@ class FinishPageState extends State<FinishPage> {
         
         // 给个好评卡片（如果存在）
         if (marketAppUrl != null) ...[
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           Container(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: cardColor,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(14),
               border: Border.all(
                 color: isDarkMode ? Colors.grey[700]! : Colors.grey[200]!,
                 width: 1,
@@ -809,8 +816,8 @@ class FinishPageState extends State<FinishPage> {
               boxShadow: [
                 BoxShadow(
                   color: (isDarkMode ? Colors.black : Colors.grey).withValues(alpha: 0.1),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
+                  blurRadius: 6,
+                  offset: const Offset(0, 3),
                 ),
               ],
             ),
@@ -821,44 +828,46 @@ class FinishPageState extends State<FinishPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '如果喜欢牛牛，那就',
+                        '喜欢泡泡，那就',
                         style: TextStyle(
                           color: textColor,
-                          fontSize: 16,
-                          height: 1.5,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w400,
+                          height: 1.4,
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 3),
                       Text(
                         '给个好评支持一下',
                         style: TextStyle(
                           color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                          fontSize: 13,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w400,
                         ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 12),
                 ElevatedButton.icon(
                   icon: const Icon(
                     Icons.favorite,
-                    size: 20.0,
+                    size: 18.0,
                   ),
                   style: ElevatedButton.styleFrom(
                     foregroundColor: Colors.white,
                     backgroundColor: Colors.red[400],
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(10),
                     ),
                     elevation: 2,
                   ),
                   label: const Text(
                     '给个好评吧',
                     style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w400,
                     ),
                   ),
                   onPressed: () {
