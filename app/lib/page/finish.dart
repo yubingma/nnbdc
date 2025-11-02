@@ -24,7 +24,7 @@ class FinishPage extends StatefulWidget {
   }
 }
 
-class FinishPageState extends State<FinishPage> {
+class FinishPageState extends State<FinishPage> with TickerProviderStateMixin {
   bool dataLoaded = false;
   late int cowDung;
   late Result<int> dakaResult;
@@ -32,6 +32,8 @@ class FinishPageState extends State<FinishPage> {
   late int extraScore; // 打卡积分加成
 
   String? marketAppUrl; // 应用市场的对应Url
+  
+  late AnimationController _bubbleGlowController; // 泡泡光晕动画控制器
 
   static const double leftPadding = 16;
   static const double rightPadding = 16;
@@ -39,8 +41,20 @@ class FinishPageState extends State<FinishPage> {
   @override
   void initState() {
     super.initState();
+    
+    // 初始化泡泡光晕动画
+    _bubbleGlowController = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    )..repeat(reverse: true);
 
     loadData();
+  }
+  
+  @override
+  void dispose() {
+    _bubbleGlowController.dispose();
+    super.dispose();
   }
 
   Future<void> loadData() async {
@@ -740,73 +754,103 @@ class FinishPageState extends State<FinishPage> {
 
   // 构建单个泡泡
   Widget _buildSingleBubble(BubbleTypeConfig type, double size) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.6),
-          width: 1.5,
-        ),
-        gradient: RadialGradient(
-          colors: [
-            type.color.withValues(alpha: 0.95),
-            type.color.withValues(alpha: 0.75),
-            type.color.withValues(alpha: 0.5),
-            type.color.withValues(alpha: 0.3),
-          ],
-          stops: const [0.0, 0.4, 0.7, 1.0],
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: type.color.withValues(alpha: 0.5),
-            blurRadius: 6,
-            spreadRadius: 1,
-            offset: const Offset(0, 3),
+    return AnimatedBuilder(
+      animation: _bubbleGlowController,
+      builder: (context, child) {
+        // 计算光晕动画值，在 0.5 到 1.0 之间变化
+        final glowValue = 0.5 + (_bubbleGlowController.value * 0.5);
+        
+        return Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.6),
+              width: 1.5,
+            ),
+            gradient: RadialGradient(
+              colors: [
+                type.color.withValues(alpha: 0.95),
+                type.color.withValues(alpha: 0.75),
+                type.color.withValues(alpha: 0.5),
+                type.color.withValues(alpha: 0.3),
+              ],
+              stops: const [0.0, 0.4, 0.7, 1.0],
+            ),
+            boxShadow: [
+              // 动态光晕效果
+              BoxShadow(
+                color: type.color.withValues(alpha: 0.6 * glowValue),
+                blurRadius: 8 * glowValue,
+                spreadRadius: 2 * glowValue,
+                offset: const Offset(0, 0),
+              ),
+              // 静态阴影
+              BoxShadow(
+                color: type.color.withValues(alpha: 0.5),
+                blurRadius: 6,
+                spreadRadius: 1,
+                offset: const Offset(0, 3),
+              ),
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.2),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          // 高光效果（左上角）
-          Positioned(
-            top: size * 0.2,
-            left: size * 0.2,
-            child: Container(
-              width: size * 0.35,
-              height: size * 0.35,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    Colors.white.withValues(alpha: 0.7),
-                    Colors.white.withValues(alpha: 0.3),
-                    Colors.white.withValues(alpha: 0.0),
-                  ],
-                  stops: const [0.0, 0.5, 1.0],
+          child: Stack(
+            children: [
+              // 动态光晕层（外层）
+              Positioned.fill(
+                child: Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: RadialGradient(
+                      colors: [
+                        type.color.withValues(alpha: 0.3 * glowValue),
+                        type.color.withValues(alpha: 0.0),
+                      ],
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ),
-          // 内部物品图标（中心偏下，若隐若现）
-          Center(
-            child: Padding(
-              padding: EdgeInsets.only(top: size * 0.15),
-              child: Icon(
-                type.icon,
-                size: size * 0.4,
-                color: Colors.white.withValues(alpha: 0.6),
+              // 高光效果（左上角）
+              Positioned(
+                top: size * 0.2,
+                left: size * 0.2,
+                child: Container(
+                  width: size * 0.35,
+                  height: size * 0.35,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: RadialGradient(
+                      colors: [
+                        Colors.white.withValues(alpha: 0.7),
+                        Colors.white.withValues(alpha: 0.3),
+                        Colors.white.withValues(alpha: 0.0),
+                      ],
+                      stops: const [0.0, 0.5, 1.0],
+                    ),
+                  ),
+                ),
               ),
-            ),
+              // 内部物品图标（中心偏下，若隐若现）
+              Center(
+                child: Padding(
+                  padding: EdgeInsets.only(top: size * 0.15),
+                  child: Icon(
+                    type.icon,
+                    size: size * 0.4,
+                    color: Colors.white.withValues(alpha: 0.6),
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 

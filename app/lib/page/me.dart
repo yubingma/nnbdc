@@ -24,6 +24,7 @@ import "package:percent_indicator/percent_indicator.dart";
 import 'package:provider/provider.dart';
 import 'package:nnbdc/widget/dict_download_dialog.dart';
 import 'package:nnbdc/page/admin/health_check.dart';
+import 'package:nnbdc/page/admin/page_viewer.dart';
 import 'package:nnbdc/page/feature_request_wall.dart';
 
 import '../config.dart';
@@ -1073,6 +1074,18 @@ class _MePageState extends State<MePage> {
                   icon: Icons.admin_panel_settings,
                   title: '系统管理',
                   onTap: () => Get.toNamed('/admin'),
+                ),
+                _buildMenuTile(
+                  icon: Icons.pageview,
+                  title: '页面查看器',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const PageViewerPage(),
+                      ),
+                    );
+                  },
                 ),
               ],
             ],
