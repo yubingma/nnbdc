@@ -11,6 +11,7 @@ import 'package:nnbdc/global.dart';
 import 'package:nnbdc/page/admin.dart';
 import 'package:nnbdc/page/bdc.dart';
 import 'package:nnbdc/page/before_bdc.dart';
+import 'package:nnbdc/page/farm.dart';
 import 'package:nnbdc/page/finish.dart';
 import 'package:nnbdc/page/first.dart';
 import 'package:nnbdc/page/game.dart';
@@ -222,6 +223,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         '/word_detail': (context) => const WordDetailPage(),
         '/bdc': (context) => const BdcPage(),
         '/finish': (context) => const FinishPage(),
+        '/farm': (context) => const FarmPage(),
         '/word_lists': (context) => const WordListsPage(),
         '/msg': (context) => const MsgPage(),
         '/search': (context) => const SearchPage(),

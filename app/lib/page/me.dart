@@ -1002,6 +1002,13 @@ class _MePageState extends State<MePage> {
                 },
               ),
               _buildMenuTile(
+                icon: Icons.eco,
+                title: '我的小天地',
+                onTap: () {
+                  Get.toNamed('/farm');
+                },
+              ),
+              _buildMenuTile(
                 icon: Icons.rate_review,
                 title: '需求墙',
                 onTap: () {

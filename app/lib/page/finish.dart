@@ -682,6 +682,36 @@ class FinishPageState extends State<FinishPage> with TickerProviderStateMixin {
           const SizedBox(height: 10),
           // 显示具体的泡泡
           _buildBubblesDisplay(cowDung, isDarkMode),
+          const SizedBox(height: 12),
+          // 进入我的小天地按钮
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              icon: const Icon(
+                Icons.eco,
+                size: 18.0,
+              ),
+              style: ElevatedButton.styleFrom(
+                foregroundColor: Colors.white,
+                backgroundColor: Colors.green[600],
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                elevation: 2,
+              ),
+              label: const Text(
+                '进入我的小天地',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+              onPressed: () {
+                Get.toNamed('/farm');
+              },
+            ),
+          ),
         ],
       ),
     );
@@ -703,11 +733,6 @@ class FinishPageState extends State<FinishPage> with TickerProviderStateMixin {
       name: '资源',
       color: Colors.blue,
       icon: Icons.diamond,
-    ),
-    BubbleTypeConfig(
-      name: '工具',
-      color: Colors.brown,
-      icon: Icons.agriculture,
     ),
   ];
 
