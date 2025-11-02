@@ -146,31 +146,8 @@ class StudyBo {
           wordVo.britishPronounce = word.britishPronounce;
           wordVo.popularity = word.popularity;
 
-          // 获取单词的释义项
-          // 首先获取用户选择的词书列表
-          final learningDictsQuery = db.select(db.learningDicts)..where((tbl) => tbl.userId.equals(user.id));
-          final learningDicts = await learningDictsQuery.get();
-          final selectedDictIds = learningDicts.map((d) => d.dictId).toList();
-
-          // 优先从用户选择的词书中查询释义项
-          final meaningItemQuery = db.select(db.meaningItems)
-            ..where((mi) => mi.wordId.equals(word.id) & mi.dictId.isIn(selectedDictIds))
-            ..orderBy([(mi) => OrderingTerm(expression: mi.popularity)]);
-
-          final meaningItems = await meaningItemQuery.get();
-
-          // 如果单词在用户选择的词书中没有释义项，则从通用词典中查找
-          if (meaningItems.isEmpty) {
-            // 从通用词典中查询释义项
-            final wordsWithoutMeaning = [word.id];
-            final commonDictQuery = db.select(db.meaningItems)
-              ..where((mi) => mi.wordId.isIn(wordsWithoutMeaning) & mi.dictId.equals(Global.commonDictId))
-              ..orderBy([(mi) => OrderingTerm(expression: mi.popularity)]);
-
-            final commonMeaningItems = await commonDictQuery.get();
-            meaningItems.addAll(commonMeaningItems);
-          }
-
+          // 使用 getWordMeaningItems 方法进行词书过滤和 popularity limit 过滤
+          final meaningItems = await WordBo().getWordMeaningItems(word.id, user.id);
           List<MeaningItemVo> meaningItemVos = [];
           for (final mi in meaningItems) {
             final meaningItemVo = MeaningItemVo(
