@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:nnbdc/api/bo/user_bo.dart';
@@ -34,6 +35,7 @@ class FinishPageState extends State<FinishPage> with TickerProviderStateMixin {
   String? marketAppUrl; // 应用市场的对应Url
   
   late AnimationController _bubbleGlowController; // 泡泡光晕动画控制器
+  late AnimationController _rayRotationController; // 光线旋转动画控制器
 
   static const double leftPadding = 16;
   static const double rightPadding = 16;
@@ -44,9 +46,15 @@ class FinishPageState extends State<FinishPage> with TickerProviderStateMixin {
     
     // 初始化泡泡光晕动画
     _bubbleGlowController = AnimationController(
-      duration: const Duration(milliseconds: 1500),
+      duration: const Duration(milliseconds: 2000),
       vsync: this,
     )..repeat(reverse: true);
+    
+    // 初始化光线旋转动画
+    _rayRotationController = AnimationController(
+      duration: const Duration(milliseconds: 3000),
+      vsync: this,
+    )..repeat();
 
     loadData();
   }
@@ -54,6 +62,7 @@ class FinishPageState extends State<FinishPage> with TickerProviderStateMixin {
   @override
   void dispose() {
     _bubbleGlowController.dispose();
+    _rayRotationController.dispose();
     super.dispose();
   }
 
@@ -736,6 +745,7 @@ class FinishPageState extends State<FinishPage> with TickerProviderStateMixin {
   // 构建泡泡显示区域
   Widget _buildBubblesDisplay(int count, bool isDarkMode) {
     final displayCount = count > 10 ? 10 : count;
+    const double bubbleSize = 36.0; // 统一的泡泡大小
 
     return Wrap(
       spacing: 10,
@@ -744,113 +754,159 @@ class FinishPageState extends State<FinishPage> with TickerProviderStateMixin {
         // 循环分配到四类泡泡中
         final typeIndex = index % _bubbleTypes.length;
         final bubbleType = _bubbleTypes[typeIndex];
-        // 泡泡大小有轻微变化，但保持合理范围
-        final size = 32.0 + (index % 3) * 3.0; // 32, 35, 38
         
-        return _buildSingleBubble(bubbleType, size);
+        return _buildSingleBubble(bubbleType, bubbleSize);
       }),
     );
   }
 
   // 构建单个泡泡
   Widget _buildSingleBubble(BubbleTypeConfig type, double size) {
-    return AnimatedBuilder(
-      animation: _bubbleGlowController,
-      builder: (context, child) {
-        // 计算光晕动画值，在 0.5 到 1.0 之间变化
-        final glowValue = 0.5 + (_bubbleGlowController.value * 0.5);
-        
-        return Container(
-          width: size,
-          height: size,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.6),
-              width: 1.5,
-            ),
-            gradient: RadialGradient(
-              colors: [
-                type.color.withValues(alpha: 0.95),
-                type.color.withValues(alpha: 0.75),
-                type.color.withValues(alpha: 0.5),
-                type.color.withValues(alpha: 0.3),
-              ],
-              stops: const [0.0, 0.4, 0.7, 1.0],
-            ),
-            boxShadow: [
-              // 动态光晕效果
-              BoxShadow(
-                color: type.color.withValues(alpha: 0.6 * glowValue),
-                blurRadius: 8 * glowValue,
-                spreadRadius: 2 * glowValue,
-                offset: const Offset(0, 0),
-              ),
-              // 静态阴影
-              BoxShadow(
-                color: type.color.withValues(alpha: 0.5),
-                blurRadius: 6,
-                spreadRadius: 1,
-                offset: const Offset(0, 3),
-              ),
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.2),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Stack(
+    // 计算最大光晕范围，确保容器大小固定
+    final maxGlowExtension = size * 0.5;
+    final containerSize = size + maxGlowExtension * 2;
+    
+    return SizedBox(
+      width: containerSize,
+      height: containerSize,
+      child: AnimatedBuilder(
+        animation: Listenable.merge([_bubbleGlowController, _rayRotationController]),
+        builder: (context, child) {
+          // 计算光晕动画值，在 0.4 到 1.0 之间变化
+          // 使用 controller.value，因为 repeat(reverse: true) 会在 0-1 之间来回
+          final glowValue = 0.4 + (0.6 * _bubbleGlowController.value);
+          // 旋转角度
+          final rotationAngle = _rayRotationController.value * 2 * math.pi; // 0 到 2π
+          
+          return Stack(
+            alignment: Alignment.center,
+            clipBehavior: Clip.none,
             children: [
-              // 动态光晕层（外层）
-              Positioned.fill(
-                child: Container(
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: RadialGradient(
-                      colors: [
-                        type.color.withValues(alpha: 0.3 * glowValue),
-                        type.color.withValues(alpha: 0.0),
-                      ],
-                    ),
-                  ),
-                ),
+              // 光芒万丈效果 - 放射光线（在泡泡外层，从中心发散）
+              ..._buildRadiantRays(
+                type,
+                containerSize / 2,
+                containerSize / 2,
+                size,
+                glowValue,
+                rotationAngle,
               ),
-              // 高光效果（左上角）
+              // 外层动态光晕（固定在容器中心，不会影响布局）
               Positioned(
-                top: size * 0.2,
-                left: size * 0.2,
+                left: containerSize / 2 - (size + size * 0.5 * glowValue) / 2,
+                top: containerSize / 2 - (size + size * 0.5 * glowValue) / 2,
                 child: Container(
-                  width: size * 0.35,
-                  height: size * 0.35,
+                  width: size + (size * 0.5 * glowValue),
+                  height: size + (size * 0.5 * glowValue),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    gradient: RadialGradient(
-                      colors: [
-                        Colors.white.withValues(alpha: 0.7),
-                        Colors.white.withValues(alpha: 0.3),
-                        Colors.white.withValues(alpha: 0.0),
-                      ],
-                      stops: const [0.0, 0.5, 1.0],
-                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: type.color.withValues(alpha: 0.5 * glowValue),
+                        blurRadius: 15 * glowValue,
+                        spreadRadius: 6 * glowValue,
+                      ),
+                    ],
                   ),
                 ),
               ),
-              // 内部物品图标（中心偏下，若隐若现）
-              Center(
-                child: Padding(
-                  padding: EdgeInsets.only(top: size * 0.15),
-                  child: Icon(
-                    type.icon,
-                    size: size * 0.4,
-                    color: Colors.white.withValues(alpha: 0.6),
+              // 主泡泡容器（固定在中心）
+              Positioned(
+                left: containerSize / 2 - size / 2,
+                top: containerSize / 2 - size / 2,
+                child: Container(
+                  width: size,
+                  height: size,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.6),
+                      width: 1.5,
+                    ),
+                    gradient: RadialGradient(
+                      colors: [
+                        type.color.withValues(alpha: 0.95),
+                        type.color.withValues(alpha: 0.75),
+                        type.color.withValues(alpha: 0.5),
+                        type.color.withValues(alpha: 0.3),
+                      ],
+                      stops: const [0.0, 0.4, 0.7, 1.0],
+                    ),
+                    boxShadow: [
+                      // 动态内发光
+                      BoxShadow(
+                        color: type.color.withValues(alpha: 0.5 * glowValue),
+                        blurRadius: 6 * glowValue,
+                        spreadRadius: 0,
+                        offset: const Offset(0, 0),
+                      ),
+                      // 静态阴影
+                      BoxShadow(
+                        color: type.color.withValues(alpha: 0.4),
+                        blurRadius: 8,
+                        spreadRadius: 2,
+                        offset: const Offset(0, 3),
+                      ),
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.15),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: ClipOval(
+                    child: Stack(
+                      children: [
+                        // 动态光晕层（内层，增强效果）
+                        Positioned.fill(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: RadialGradient(
+                                colors: [
+                                  type.color.withValues(alpha: 0.4 * glowValue),
+                                  type.color.withValues(alpha: 0.0),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        // 内部放射光线效果（从中心向外发散）
+                        ..._buildInternalRays(type, size, glowValue, rotationAngle),
+                        // 中心高光点
+                        Center(
+                          child: Container(
+                            width: size * 0.3,
+                            height: size * 0.3,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: RadialGradient(
+                                colors: [
+                                  Colors.white.withValues(alpha: 0.9 * glowValue),
+                                  Colors.white.withValues(alpha: 0.5 * glowValue),
+                                  Colors.transparent,
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        // 内部物品图标（中心）
+                        Center(
+                          child: Icon(
+                            type.icon,
+                            size: size * 0.4,
+                            color: Colors.white.withValues(alpha: 0.8),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
             ],
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 
@@ -1019,6 +1075,85 @@ class FinishPageState extends State<FinishPage> with TickerProviderStateMixin {
     );
   }
 
+  // 构建放射光线（外部光芒万丈效果）
+  List<Widget> _buildRadiantRays(
+    BubbleTypeConfig type,
+    double centerX,
+    double centerY,
+    double bubbleSize,
+    double glowValue,
+    double rotationAngle,
+  ) {
+    final rayCount = 16; // 16条光线，更密集
+    final rayLength = bubbleSize * 1.2; // 光线长度更长
+    final maxRayWidth = 3.0; // 光线最大宽度
+    
+    return List.generate(rayCount, (index) {
+      final angle = (index * 2 * math.pi / rayCount) + rotationAngle;
+      final startX = centerX + (bubbleSize / 2 + 2) * math.cos(angle);
+      final startY = centerY + (bubbleSize / 2 + 2) * math.sin(angle);
+      final endX = startX + rayLength * math.cos(angle);
+      final endY = startY + rayLength * math.sin(angle);
+      // 光线宽度随光晕值变化
+      final rayWidth = maxRayWidth * glowValue;
+      
+      return Positioned(
+        left: 0,
+        top: 0,
+        child: CustomPaint(
+          size: Size(centerX * 2, centerY * 2),
+          painter: _RadiantRayPainter(
+            startX: startX,
+            startY: startY,
+            endX: endX,
+            endY: endY,
+            width: rayWidth,
+            color: type.color,
+            alpha: (0.5 + 0.4 * glowValue),
+          ),
+        ),
+      );
+    });
+  }
+
+  // 构建内部放射光线
+  List<Widget> _buildInternalRays(
+    BubbleTypeConfig type,
+    double size,
+    double glowValue,
+    double rotationAngle,
+  ) {
+    final rayCount = 12; // 12条内部光线，更密集
+    
+    return List.generate(rayCount, (index) {
+      final angle = (index * 2 * math.pi / rayCount) + rotationAngle;
+      
+      return Center(
+        child: Transform.rotate(
+          angle: angle,
+          child: Container(
+            width: size * 0.95,
+            height: 2.0,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.center,
+                end: Alignment.centerRight,
+                colors: [
+                  Colors.white.withValues(alpha: 0.0),
+                  Colors.white.withValues(alpha: 0.4 * glowValue),
+                  Colors.white.withValues(alpha: 0.7 * glowValue),
+                  Colors.white.withValues(alpha: 0.5 * glowValue),
+                  Colors.white.withValues(alpha: 0.0),
+                ],
+                stops: const [0.0, 0.25, 0.5, 0.75, 1.0],
+              ),
+            ),
+          ),
+        ),
+      );
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -1029,6 +1164,86 @@ class FinishPageState extends State<FinishPage> with TickerProviderStateMixin {
           : renderPage(),
     );
   }
+}
+
+// 放射光线绘制器（带渐变效果）
+class _RadiantRayPainter extends CustomPainter {
+  final double startX;
+  final double startY;
+  final double endX;
+  final double endY;
+  final double width;
+  final Color color;
+  final double alpha;
+
+  _RadiantRayPainter({
+    required this.startX,
+    required this.startY,
+    required this.endX,
+    required this.endY,
+    required this.width,
+    required this.color,
+    required this.alpha,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    // 计算光线方向
+    final dx = endX - startX;
+    final dy = endY - startY;
+    final length = math.sqrt(dx * dx + dy * dy);
+    
+    if (length == 0) return;
+    
+    // 创建渐变画笔，从泡泡边缘到光线末端逐渐变淡
+    final gradient = LinearGradient(
+      begin: Alignment.centerLeft,
+      end: Alignment.centerRight,
+      colors: [
+        color.withValues(alpha: alpha),
+        color.withValues(alpha: alpha * 0.8),
+        color.withValues(alpha: alpha * 0.4),
+        Colors.transparent,
+      ],
+      stops: const [0.0, 0.3, 0.7, 1.0],
+    );
+    
+    final rect = Rect.fromLTWH(
+      math.min(startX, endX) - width,
+      math.min(startY, endY) - width,
+      length + width * 2,
+      width * 2,
+    );
+    
+    final paint = Paint()
+      ..shader = gradient.createShader(rect)
+      ..strokeWidth = width
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+    
+    canvas.drawLine(
+      Offset(startX, startY),
+      Offset(endX, endY),
+      paint,
+    );
+    
+    // 添加光晕效果（外发光）
+    final glowPaint = Paint()
+      ..color = color.withValues(alpha: alpha * 0.3)
+      ..strokeWidth = width * 2
+      ..style = PaintingStyle.stroke
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.0)
+      ..strokeCap = StrokeCap.round;
+    
+    canvas.drawLine(
+      Offset(startX, startY),
+      Offset(endX, endY),
+      glowPaint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
 
 // 泡泡类型配置类
