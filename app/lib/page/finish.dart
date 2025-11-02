@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
 import 'package:nnbdc/api/bo/user_bo.dart';
 import 'package:nnbdc/api/bo/study_bo.dart';
@@ -161,37 +160,15 @@ class FinishPageState extends State<FinishPage> {
       ),
       child: Stack(
         children: [
-          // 波浪背景
-          Positioned.fill(
-            child: SvgPicture.asset(
-              "assets/images/wave8.svg",
-              fit: BoxFit.cover,
-              colorFilter: ColorFilter.mode(
-                Colors.white.withValues(alpha: 0.15),
-                BlendMode.srcOver,
-              ),
-            ),
-          ),
-          // 装饰图标
-          const Positioned(
-            top: 84,
-            right: 120,
-            child: Image(
-              image: AssetImage("assets/images/cow.png"),
-              height: 40,
-            ),
-          ),
-          const Positioned(
-            top: 150,
-            right: 10,
-            child: RotationTransition(
-              turns: AlwaysStoppedAnimation(30 / 360),
-              child: Image(
-                image: AssetImage("assets/images/snails.png"),
-                height: 30,
-              ),
-            ),
-          ),
+          // 庆祝光晕效果
+          _buildCelebrationGlow(),
+          
+          // 星星装饰
+          _buildStars(),
+          
+          // 彩带装饰
+          _buildConfetti(),
+          
           // 标题文本
           Positioned(
             bottom: 40,
@@ -200,22 +177,48 @@ class FinishPageState extends State<FinishPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  '学习完成',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1.2,
-                  ),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.celebration,
+                      color: Colors.amber[300],
+                      size: 36,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        '学习完成',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.2,
+                          shadows: [
+                            Shadow(
+                              color: Colors.black.withValues(alpha: 0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 8),
                 Text(
                   '继续坚持，每天进步一点点',
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.9),
+                    color: Colors.white.withValues(alpha: 0.95),
                     fontSize: 16,
                     letterSpacing: 0.5,
+                    shadows: [
+                      Shadow(
+                        color: Colors.black.withValues(alpha: 0.2),
+                        blurRadius: 4,
+                        offset: const Offset(0, 1),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -223,6 +226,199 @@ class FinishPageState extends State<FinishPage> {
           ),
         ],
       ),
+    );
+  }
+
+  // 构建庆祝光晕效果
+  Widget _buildCelebrationGlow() {
+    return Stack(
+      children: [
+        // 主光晕 - 顶部中央
+        Positioned(
+          top: -60,
+          left: 0,
+          right: 0,
+          child: Center(
+            child: Container(
+              width: 200,
+              height: 200,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    Colors.amber.withValues(alpha: 0.3),
+                    Colors.orange.withValues(alpha: 0.2),
+                    Colors.transparent,
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+        // 左侧光晕
+        Positioned(
+          top: 60,
+          left: -40,
+          child: Container(
+            width: 120,
+            height: 120,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RadialGradient(
+                colors: [
+                  Colors.pink.withValues(alpha: 0.25),
+                  Colors.purple.withValues(alpha: 0.15),
+                  Colors.transparent,
+                ],
+              ),
+            ),
+          ),
+        ),
+        // 右侧光晕
+        Positioned(
+          top: 80,
+          right: -30,
+          child: Container(
+            width: 100,
+            height: 100,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RadialGradient(
+                colors: [
+                  Colors.cyan.withValues(alpha: 0.25),
+                  Colors.blue.withValues(alpha: 0.15),
+                  Colors.transparent,
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // 构建星星装饰
+  Widget _buildStars() {
+    return Stack(
+      children: [
+        // 左上角星星
+        Positioned(
+          top: 50,
+          left: 30,
+          child: Icon(
+            Icons.star,
+            color: Colors.amber[200],
+            size: 24,
+          ),
+        ),
+        // 右上角大星星
+        Positioned(
+          top: 40,
+          right: 50,
+          child: Icon(
+            Icons.star,
+            color: Colors.amber[300],
+            size: 32,
+          ),
+        ),
+        // 中间小星星
+        Positioned(
+          top: 80,
+          right: 100,
+          child: Icon(
+            Icons.star,
+            color: Colors.white.withValues(alpha: 0.8),
+            size: 16,
+          ),
+        ),
+        // 左侧小星星
+        Positioned(
+          top: 100,
+          left: 80,
+          child: Icon(
+            Icons.star,
+            color: Colors.white.withValues(alpha: 0.7),
+            size: 14,
+          ),
+        ),
+      ],
+    );
+  }
+
+  // 构建彩带装饰
+  Widget _buildConfetti() {
+    return Stack(
+      children: [
+        // 左侧彩带
+        Positioned(
+          top: 20,
+          left: 20,
+          child: Transform.rotate(
+            angle: -0.3,
+            child: Container(
+              width: 60,
+              height: 4,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.red.withValues(alpha: 0.8),
+                    Colors.orange.withValues(alpha: 0.8),
+                    Colors.yellow.withValues(alpha: 0.8),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+        ),
+        // 右侧彩带
+        Positioned(
+          top: 30,
+          right: 30,
+          child: Transform.rotate(
+            angle: 0.4,
+            child: Container(
+              width: 50,
+              height: 4,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.purple.withValues(alpha: 0.8),
+                    Colors.pink.withValues(alpha: 0.8),
+                    Colors.cyan.withValues(alpha: 0.8),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+        ),
+        // 中间彩带
+        Positioned(
+          top: 10,
+          left: 0,
+          right: 0,
+          child: Center(
+            child: Transform.rotate(
+              angle: 0.2,
+              child: Container(
+                width: 70,
+                height: 4,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.green.withValues(alpha: 0.8),
+                      Colors.blue.withValues(alpha: 0.8),
+                      Colors.purple.withValues(alpha: 0.8),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
