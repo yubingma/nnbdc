@@ -656,26 +656,26 @@ class FinishPageState extends State<FinishPage> {
           ),
         ],
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: Colors.purple.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(
-              Icons.auto_awesome,
-              color: Colors.purple[300] ?? Colors.purple,
-              size: 26,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.purple.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  Icons.auto_awesome,
+                  color: Colors.purple[300] ?? Colors.purple,
+                  size: 26,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
                   '恭喜！你得到',
                   style: TextStyle(
                     color: textColor,
@@ -684,32 +684,125 @@ class FinishPageState extends State<FinishPage> {
                     height: 1.4,
                   ),
                 ),
-                const SizedBox(height: 3),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      '$cowDung',
-                      style: TextStyle(
-                        color: Colors.purple[400] ?? Colors.purple,
-                        fontSize: 26,
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.only(left: 6, bottom: 3),
-                      child: Text(
-                        '颗魔法泡泡',
-                        style: TextStyle(
-                          color: textColor,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-                    ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          // 显示具体的泡泡
+          _buildBubblesDisplay(cowDung, isDarkMode),
+        ],
+      ),
+    );
+  }
+
+  // 泡泡类型配置
+  static const List<BubbleTypeConfig> _bubbleTypes = [
+    BubbleTypeConfig(
+      name: '种子',
+      color: Colors.green,
+      icon: Icons.eco,
+    ),
+    BubbleTypeConfig(
+      name: '卵',
+      color: Colors.amber,
+      icon: Icons.egg,
+    ),
+    BubbleTypeConfig(
+      name: '资源',
+      color: Colors.blue,
+      icon: Icons.diamond,
+    ),
+    BubbleTypeConfig(
+      name: '工具',
+      color: Colors.brown,
+      icon: Icons.build,
+    ),
+  ];
+
+  // 构建泡泡显示区域
+  Widget _buildBubblesDisplay(int count, bool isDarkMode) {
+    final displayCount = count > 10 ? 10 : count;
+
+    return Wrap(
+      spacing: 10,
+      runSpacing: 10,
+      children: List.generate(displayCount, (index) {
+        // 循环分配到四类泡泡中
+        final typeIndex = index % _bubbleTypes.length;
+        final bubbleType = _bubbleTypes[typeIndex];
+        // 泡泡大小有轻微变化，但保持合理范围
+        final size = 32.0 + (index % 3) * 3.0; // 32, 35, 38
+        
+        return _buildSingleBubble(bubbleType, size);
+      }),
+    );
+  }
+
+  // 构建单个泡泡
+  Widget _buildSingleBubble(BubbleTypeConfig type, double size) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.6),
+          width: 1.5,
+        ),
+        gradient: RadialGradient(
+          colors: [
+            type.color.withValues(alpha: 0.95),
+            type.color.withValues(alpha: 0.75),
+            type.color.withValues(alpha: 0.5),
+            type.color.withValues(alpha: 0.3),
+          ],
+          stops: const [0.0, 0.4, 0.7, 1.0],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: type.color.withValues(alpha: 0.5),
+            blurRadius: 6,
+            spreadRadius: 1,
+            offset: const Offset(0, 3),
+          ),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Stack(
+        children: [
+          // 高光效果（左上角）
+          Positioned(
+            top: size * 0.2,
+            left: size * 0.2,
+            child: Container(
+              width: size * 0.35,
+              height: size * 0.35,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    Colors.white.withValues(alpha: 0.7),
+                    Colors.white.withValues(alpha: 0.3),
+                    Colors.white.withValues(alpha: 0.0),
                   ],
+                  stops: const [0.0, 0.5, 1.0],
                 ),
-              ],
+              ),
+            ),
+          ),
+          // 内部物品图标（中心偏下，若隐若现）
+          Center(
+            child: Padding(
+              padding: EdgeInsets.only(top: size * 0.15),
+              child: Icon(
+                type.icon,
+                size: size * 0.4,
+                color: Colors.white.withValues(alpha: 0.6),
+              ),
             ),
           ),
         ],
@@ -892,4 +985,17 @@ class FinishPageState extends State<FinishPage> {
           : renderPage(),
     );
   }
+}
+
+// 泡泡类型配置类
+class BubbleTypeConfig {
+  final String name;
+  final Color color;
+  final IconData icon;
+
+  const BubbleTypeConfig({
+    required this.name,
+    required this.color,
+    required this.icon,
+  });
 }
