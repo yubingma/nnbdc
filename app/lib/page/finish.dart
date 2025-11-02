@@ -29,8 +29,7 @@ class FinishPageState extends State<FinishPage> with TickerProviderStateMixin {
   bool dataLoaded = false;
   late int cowDung;
   late Result<int> dakaResult;
-  late int todayDakaScore; // 今日打卡积分（含加成）
-  late int extraScore; // 打卡积分加成
+  late int todayDakaScore; // 今日打卡积分（固定1分）
 
   String? marketAppUrl; // 应用市场的对应Url
   
@@ -50,9 +49,9 @@ class FinishPageState extends State<FinishPage> with TickerProviderStateMixin {
       vsync: this,
     )..repeat(reverse: true);
     
-    // 初始化光线旋转动画
+    // 初始化光线旋转动画（降速为原来的十分之一）
     _rayRotationController = AnimationController(
-      duration: const Duration(milliseconds: 3000),
+      duration: const Duration(milliseconds: 10000),
       vsync: this,
     )..repeat();
 
@@ -88,10 +87,9 @@ class FinishPageState extends State<FinishPage> with TickerProviderStateMixin {
       await Global.setLoggedInUser(user.data!);
 
       // 记录用户打卡操作
-      await MyDatabase.instance.userOpersDao.recordDaka(user.data!.id!, remark: "用户完成打卡，获得${dakaResult.data}积分");
+      await MyDatabase.instance.userOpersDao.recordDaka(user.data!.id!, remark: "用户完成打卡，获得1积分");
 
-      todayDakaScore = dakaResult.data!;
-      extraScore = Global.getLoggedInUser()!.continuousDakaDayCount;
+      todayDakaScore = 1; // 每天固定1分
 
       var result = await StudyBo().throwDiceAndSave();
       if (result.success) {
@@ -586,61 +584,16 @@ class FinishPageState extends State<FinishPage> with TickerProviderStateMixin {
                       ),
                     ),
                     const SizedBox(height: 3),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          '${todayDakaScore - extraScore}',
-                          style: TextStyle(
-                            color: AppTheme.primaryColor,
-                            fontSize: 24,
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
-                        if (extraScore > 0) ...[
-                          Padding(
-                            padding: const EdgeInsets.only(left: 6, bottom: 3),
-                            child: Text(
-                              '+ $extraScore',
-                              style: TextStyle(
-                                color: Colors.orange,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w400,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
+                    Text(
+                      todayDakaScore.toString(),
+                      style: TextStyle(
+                        color: AppTheme.primaryColor,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w400,
+                      ),
                     ),
                   ],
                 ),
-                if (extraScore > 0)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: Colors.orange.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.local_fire_department,
-                          color: Colors.orange,
-                          size: 14,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          '连续打卡',
-                          style: TextStyle(
-                            color: Colors.orange,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
               ],
             ),
           ),
@@ -683,6 +636,7 @@ class FinishPageState extends State<FinishPage> with TickerProviderStateMixin {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
                 padding: const EdgeInsets.all(10),
@@ -698,19 +652,34 @@ class FinishPageState extends State<FinishPage> with TickerProviderStateMixin {
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: Text(
-                  '恭喜！你得到',
-                  style: TextStyle(
-                    color: textColor,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w400,
-                    height: 1.4,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '恭喜你得到$cowDung个魔法泡泡',
+                      style: TextStyle(
+                        color: textColor,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        height: 1.3,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '可以建造自己的小天地啦',
+                      style: TextStyle(
+                        color: textColor,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w400,
+                        height: 1.3,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           // 显示具体的泡泡
           _buildBubblesDisplay(cowDung, isDarkMode),
         ],
@@ -738,25 +707,47 @@ class FinishPageState extends State<FinishPage> with TickerProviderStateMixin {
     BubbleTypeConfig(
       name: '工具',
       color: Colors.brown,
-      icon: Icons.build,
+      icon: Icons.agriculture,
     ),
   ];
 
   // 构建泡泡显示区域
   Widget _buildBubblesDisplay(int count, bool isDarkMode) {
     final displayCount = count > 10 ? 10 : count;
-    const double bubbleSize = 36.0; // 统一的泡泡大小
-
-    return Wrap(
-      spacing: 10,
-      runSpacing: 10,
-      children: List.generate(displayCount, (index) {
-        // 循环分配到四类泡泡中
-        final typeIndex = index % _bubbleTypes.length;
-        final bubbleType = _bubbleTypes[typeIndex];
+    
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // 计算每行5个泡泡的大小
+        // 可用宽度 = 屏幕宽度 - 左右padding (16 * 2)
+        final availableWidth = constraints.maxWidth;
+        // 每行5个，4个间距
+        const int bubblesPerRow = 5;
+        const double spacing = 8.0;
+        const double totalSpacing = spacing * (bubblesPerRow - 1);
         
-        return _buildSingleBubble(bubbleType, bubbleSize);
-      }),
+        // 计算每个泡泡容器的大小
+        // containerSize = (availableWidth - totalSpacing) / bubblesPerRow
+        final containerSize = (availableWidth - totalSpacing) / bubblesPerRow;
+        
+        // 计算实际的泡泡大小
+        // containerSize = bubbleSize + maxGlowExtension * 2
+        // maxGlowExtension = bubbleSize * 0.5
+        // 所以 containerSize = bubbleSize * 2
+        final bubbleSize = containerSize / 2;
+
+        return Wrap(
+          spacing: spacing,
+          runSpacing: spacing,
+          alignment: WrapAlignment.start,
+          children: List.generate(displayCount, (index) {
+            // 循环分配到四类泡泡中
+            final typeIndex = index % _bubbleTypes.length;
+            final bubbleType = _bubbleTypes[typeIndex];
+            
+            return _buildSingleBubble(bubbleType, bubbleSize);
+          }),
+        );
+      },
     );
   }
 
@@ -1084,16 +1075,16 @@ class FinishPageState extends State<FinishPage> with TickerProviderStateMixin {
           angle: angle,
           child: Container(
             width: size * 0.95,
-            height: 2.0,
+            height: 1.5,
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.center,
                 end: Alignment.centerRight,
                 colors: [
                   Colors.white.withValues(alpha: 0.0),
-                  Colors.white.withValues(alpha: 0.4 * glowValue),
-                  Colors.white.withValues(alpha: 0.7 * glowValue),
-                  Colors.white.withValues(alpha: 0.5 * glowValue),
+                  Colors.white.withValues(alpha: 0.15 * glowValue),
+                  Colors.white.withValues(alpha: 0.25 * glowValue),
+                  Colors.white.withValues(alpha: 0.15 * glowValue),
                   Colors.white.withValues(alpha: 0.0),
                 ],
                 stops: const [0.0, 0.25, 0.5, 0.75, 1.0],
@@ -1115,86 +1106,6 @@ class FinishPageState extends State<FinishPage> with TickerProviderStateMixin {
           : renderPage(),
     );
   }
-}
-
-// 放射光线绘制器（带渐变效果）
-class _RadiantRayPainter extends CustomPainter {
-  final double startX;
-  final double startY;
-  final double endX;
-  final double endY;
-  final double width;
-  final Color color;
-  final double alpha;
-
-  _RadiantRayPainter({
-    required this.startX,
-    required this.startY,
-    required this.endX,
-    required this.endY,
-    required this.width,
-    required this.color,
-    required this.alpha,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    // 计算光线方向
-    final dx = endX - startX;
-    final dy = endY - startY;
-    final length = math.sqrt(dx * dx + dy * dy);
-    
-    if (length == 0) return;
-    
-    // 创建渐变画笔，从泡泡边缘到光线末端逐渐变淡
-    final gradient = LinearGradient(
-      begin: Alignment.centerLeft,
-      end: Alignment.centerRight,
-      colors: [
-        color.withValues(alpha: alpha),
-        color.withValues(alpha: alpha * 0.8),
-        color.withValues(alpha: alpha * 0.4),
-        Colors.transparent,
-      ],
-      stops: const [0.0, 0.3, 0.7, 1.0],
-    );
-    
-    final rect = Rect.fromLTWH(
-      math.min(startX, endX) - width,
-      math.min(startY, endY) - width,
-      length + width * 2,
-      width * 2,
-    );
-    
-    final paint = Paint()
-      ..shader = gradient.createShader(rect)
-      ..strokeWidth = width
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-    
-    canvas.drawLine(
-      Offset(startX, startY),
-      Offset(endX, endY),
-      paint,
-    );
-    
-    // 添加光晕效果（外发光）
-    final glowPaint = Paint()
-      ..color = color.withValues(alpha: alpha * 0.3)
-      ..strokeWidth = width * 2
-      ..style = PaintingStyle.stroke
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.0)
-      ..strokeCap = StrokeCap.round;
-    
-    canvas.drawLine(
-      Offset(startX, startY),
-      Offset(endX, endY),
-      glowPaint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
 
 // 泡泡类型配置类
