@@ -10,7 +10,10 @@ import 'package:appcheck/appcheck.dart';
 
 import '../api/result.dart';
 import '../global.dart';
+import '../state.dart';
+import '../theme/app_theme.dart';
 import '../util/platform_util.dart';
+import 'package:provider/provider.dart';
 import 'index.dart';
 
 class FinishPage extends StatefulWidget {
@@ -83,107 +86,593 @@ class FinishPageState extends State<FinishPage> {
   }
 
   Widget renderPage() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(
-          height: 200,
-          child: Stack(
-            children: [
-              Container(
-                color: Colors.green,
-                width: double.infinity,
-                height: double.infinity,
-                child: SvgPicture.asset(
-                  "assets/images/wave8.svg",
-                  fit: BoxFit.fill,
-                  colorFilter: const ColorFilter.mode(Colors.blue, BlendMode.srcIn),
-                ),
-              ),
-              const Positioned(
-                  top: 84,
-                  right: 120,
-                  child: Image(
-                    image: AssetImage("assets/images/cow.png"),
-                    height: 40,
-                  )),
+    final isDarkMode = context.watch<DarkMode>().isDarkMode;
+    final backgroundColor = isDarkMode ? const Color(0xFF1A1A1A) : const Color(0xFFF5F5F5);
+    final cardColor = isDarkMode ? const Color(0xFF2D2D2D) : Colors.white;
+    final textColor = isDarkMode ? Colors.white : const Color(0xFF2C3E50);
+    final subtitleColor = isDarkMode ? (Colors.grey[400] ?? Colors.grey) : (Colors.grey[600] ?? Colors.grey);
 
-              const Positioned(
-                top: 150,
-                right: 10,
-                child: RotationTransition(
-                    turns: AlwaysStoppedAnimation(30 / 360),
-                    child: Image(
-                      image: AssetImage("assets/images/snails.png"),
-                      height: 30,
-                    )),
-              ),
-              // ! 0x00FFFFFF
-              const Text("Assess"),
-            ],
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(leftPadding, 16, rightPadding, 0),
-          child: dakaResult.success
-              ? Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('打卡成功！\n获得积分：${todayDakaScore - extraScore} + $extraScore(连续打卡)'),
-                    Text('恭喜！你得到$cowDung颗魔法泡泡')
-                  ],
-                )
-              : Text(dakaResult.msg!),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(leftPadding, 16, rightPadding, 0),
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Container(
+      color: backgroundColor,
+      child: Column(
+        children: [
+          // 顶部装饰区域
+          _buildHeaderSection(isDarkMode),
+          
+          // 主要内容区域
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('若要复习，可前往 '),
-                  ElevatedButton.icon(
-                    icon: const Icon(
-                      Icons.wysiwyg,
-                      size: 24.0,
-                      color: Colors.white,
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.white, backgroundColor: Global.highlight, // foreground
-                    ),
-                    key: const Key('finish_word_list_btn'),
-                    label: const Text('词表'),
-                    onPressed: () {
-                      Get.toNamed('/index', arguments: IndexPageArgs(1));
-                    },
+                  const SizedBox(height: 24),
+                  
+                  // 打卡结果卡片
+                  _buildDakaCard(
+                    isDarkMode: isDarkMode,
+                    cardColor: cardColor,
+                    textColor: textColor,
+                    subtitleColor: subtitleColor,
                   ),
+                  
+                  const SizedBox(height: 20),
+                  
+                  // 魔法泡泡卡片
+                  if (dakaResult.success)
+                    _buildBubbleCard(
+                      isDarkMode: isDarkMode,
+                      cardColor: cardColor,
+                      textColor: textColor,
+                    ),
+                  
+                  const SizedBox(height: 32),
+                  
+                  // 操作按钮卡片
+                  _buildActionCards(
+                    isDarkMode: isDarkMode,
+                    cardColor: cardColor,
+                    textColor: textColor,
+                  ),
+                  
+                  const SizedBox(height: 32),
                 ],
               ),
-              if (marketAppUrl != null)
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 构建顶部装饰区域
+  Widget _buildHeaderSection(bool isDarkMode) {
+    return Container(
+      height: 220,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppTheme.gradientStartColor,
+            AppTheme.gradientEndColor,
+          ],
+        ),
+      ),
+      child: Stack(
+        children: [
+          // 波浪背景
+          Positioned.fill(
+            child: SvgPicture.asset(
+              "assets/images/wave8.svg",
+              fit: BoxFit.cover,
+              colorFilter: ColorFilter.mode(
+                Colors.white.withValues(alpha: 0.15),
+                BlendMode.srcOver,
+              ),
+            ),
+          ),
+          // 装饰图标
+          const Positioned(
+            top: 84,
+            right: 120,
+            child: Image(
+              image: AssetImage("assets/images/cow.png"),
+              height: 40,
+            ),
+          ),
+          const Positioned(
+            top: 150,
+            right: 10,
+            child: RotationTransition(
+              turns: AlwaysStoppedAnimation(30 / 360),
+              child: Image(
+                image: AssetImage("assets/images/snails.png"),
+                height: 30,
+              ),
+            ),
+          ),
+          // 标题文本
+          Positioned(
+            bottom: 40,
+            left: 24,
+            right: 24,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '学习完成',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '继续坚持，每天进步一点点',
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.9),
+                    fontSize: 16,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 构建打卡结果卡片
+  Widget _buildDakaCard({
+    required bool isDarkMode,
+    required Color cardColor,
+    required Color textColor,
+    required Color subtitleColor,
+  }) {
+    if (!dakaResult.success) {
+      return Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: cardColor,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isDarkMode ? Colors.grey[700]! : Colors.grey[200]!,
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: (isDarkMode ? Colors.black : Colors.grey).withValues(alpha: 0.15),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Icon(
+              Icons.info_outline,
+              color: Colors.orange,
+              size: 28,
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                dakaResult.msg ?? '打卡失败',
+                style: TextStyle(
+                  color: textColor,
+                  fontSize: 16,
+                  height: 1.5,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: AppTheme.primaryColor.withValues(alpha: 0.2),
+          width: 2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.primaryColor.withValues(alpha: 0.15),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.check_circle,
+                  color: AppTheme.primaryColor,
+                  size: 28,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('如果喜欢牛牛，那就 '),
-                    ElevatedButton.icon(
-                      icon: const Icon(
-                        Icons.favorite_outline,
-                        size: 24.0,
-                        color: Colors.white,
+                    Text(
+                      '打卡成功！',
+                      style: TextStyle(
+                        color: textColor,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
                       ),
-                      style: ElevatedButton.styleFrom(
-                        foregroundColor: Colors.white, backgroundColor: Global.highlight, // foreground
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '今日学习完成',
+                      style: TextStyle(
+                        color: subtitleColor,
+                        fontSize: 14,
                       ),
-                      label: const Text('给个好评吧'),
-                      onPressed: () {
-                        launchUrl(Uri.parse(marketAppUrl!));
-                      },
                     ),
                   ],
                 ),
+              ),
             ],
           ),
-        )
+          const SizedBox(height: 20),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  AppTheme.primaryColor.withValues(alpha: 0.1),
+                  AppTheme.primaryLightColor.withValues(alpha: 0.05),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '获得积分',
+                      style: TextStyle(
+                        color: subtitleColor,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          '${todayDakaScore - extraScore}',
+                          style: TextStyle(
+                            color: AppTheme.primaryColor,
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        if (extraScore > 0) ...[
+                          Padding(
+                            padding: const EdgeInsets.only(left: 8, bottom: 4),
+                            child: Text(
+                              '+ $extraScore',
+                              style: TextStyle(
+                                color: Colors.orange,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ],
+                ),
+                if (extraScore > 0)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.local_fire_department,
+                          color: Colors.orange,
+                          size: 16,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '连续打卡',
+                          style: TextStyle(
+                            color: Colors.orange,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 构建魔法泡泡卡片
+  Widget _buildBubbleCard({
+    required bool isDarkMode,
+    required Color cardColor,
+    required Color textColor,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Colors.purple.withValues(alpha: isDarkMode ? 0.2 : 0.1),
+            Colors.pink.withValues(alpha: isDarkMode ? 0.15 : 0.08),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: Colors.purple.withValues(alpha: 0.3),
+          width: 2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.purple.withValues(alpha: 0.15),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.purple.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              Icons.auto_awesome,
+              color: Colors.purple[300] ?? Colors.purple,
+              size: 32,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '恭喜！你得到',
+                  style: TextStyle(
+                    color: textColor,
+                    fontSize: 16,
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      '$cowDung',
+                      style: TextStyle(
+                        color: Colors.purple[400] ?? Colors.purple,
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 8, bottom: 4),
+                      child: Text(
+                        '颗魔法泡泡',
+                        style: TextStyle(
+                          color: textColor,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 构建操作按钮卡片
+  Widget _buildActionCards({
+    required bool isDarkMode,
+    required Color cardColor,
+    required Color textColor,
+  }) {
+    return Column(
+      children: [
+        // 前往词表卡片
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: cardColor,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isDarkMode ? Colors.grey[700]! : Colors.grey[200]!,
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: (isDarkMode ? Colors.black : Colors.grey).withValues(alpha: 0.1),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '若要复习，可前往',
+                      style: TextStyle(
+                        color: textColor,
+                        fontSize: 16,
+                        height: 1.5,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '查看今日学习的单词',
+                      style: TextStyle(
+                        color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 16),
+              ElevatedButton.icon(
+                icon: const Icon(
+                  Icons.wysiwyg,
+                  size: 20.0,
+                ),
+                style: ElevatedButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  backgroundColor: AppTheme.primaryColor,
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 2,
+                ),
+                key: const Key('finish_word_list_btn'),
+                label: const Text(
+                  '词表',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                onPressed: () {
+                  Get.toNamed('/index', arguments: IndexPageArgs(1));
+                },
+              ),
+            ],
+          ),
+        ),
+        
+        // 给个好评卡片（如果存在）
+        if (marketAppUrl != null) ...[
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: cardColor,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isDarkMode ? Colors.grey[700]! : Colors.grey[200]!,
+                width: 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: (isDarkMode ? Colors.black : Colors.grey).withValues(alpha: 0.1),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '如果喜欢牛牛，那就',
+                        style: TextStyle(
+                          color: textColor,
+                          fontSize: 16,
+                          height: 1.5,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '给个好评支持一下',
+                        style: TextStyle(
+                          color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 16),
+                ElevatedButton.icon(
+                  icon: const Icon(
+                    Icons.favorite,
+                    size: 20.0,
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    backgroundColor: Colors.red[400],
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 2,
+                  ),
+                  label: const Text(
+                    '给个好评吧',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  onPressed: () {
+                    launchUrl(Uri.parse(marketAppUrl!));
+                  },
+                ),
+              ],
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -191,10 +680,11 @@ class FinishPageState extends State<FinishPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        padding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
-        child: (!dataLoaded) ? const Center(child: Text('')) : renderPage(),
-      ),
+      body: (!dataLoaded)
+          ? const Center(
+              child: CircularProgressIndicator(),
+            )
+          : renderPage(),
     );
   }
 }

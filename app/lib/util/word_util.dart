@@ -163,8 +163,7 @@ List<Widget> renderMeaningItemParts(String meaning, int meaningIndex, int hintLe
         }
       }
 
-      var widget = Row(
-        mainAxisSize: MainAxisSize.min,
+      var widget = Wrap(
         children: finalWidgets,
       );
       partWidgets.add(widget);
