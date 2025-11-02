@@ -782,15 +782,6 @@ class FinishPageState extends State<FinishPage> with TickerProviderStateMixin {
             alignment: Alignment.center,
             clipBehavior: Clip.none,
             children: [
-              // 光芒万丈效果 - 放射光线（在泡泡外层，从中心发散）
-              ..._buildRadiantRays(
-                type,
-                containerSize / 2,
-                containerSize / 2,
-                size,
-                glowValue,
-                rotationAngle,
-              ),
               // 外层动态光晕（固定在容器中心，不会影响布局）
               Positioned(
                 left: containerSize / 2 - (size + size * 0.5 * glowValue) / 2,
@@ -1075,46 +1066,6 @@ class FinishPageState extends State<FinishPage> with TickerProviderStateMixin {
     );
   }
 
-  // 构建放射光线（外部光芒万丈效果）
-  List<Widget> _buildRadiantRays(
-    BubbleTypeConfig type,
-    double centerX,
-    double centerY,
-    double bubbleSize,
-    double glowValue,
-    double rotationAngle,
-  ) {
-    final rayCount = 16; // 16条光线，更密集
-    final rayLength = bubbleSize * 1.2; // 光线长度更长
-    final maxRayWidth = 3.0; // 光线最大宽度
-    
-    return List.generate(rayCount, (index) {
-      final angle = (index * 2 * math.pi / rayCount) + rotationAngle;
-      final startX = centerX + (bubbleSize / 2 + 2) * math.cos(angle);
-      final startY = centerY + (bubbleSize / 2 + 2) * math.sin(angle);
-      final endX = startX + rayLength * math.cos(angle);
-      final endY = startY + rayLength * math.sin(angle);
-      // 光线宽度随光晕值变化
-      final rayWidth = maxRayWidth * glowValue;
-      
-      return Positioned(
-        left: 0,
-        top: 0,
-        child: CustomPaint(
-          size: Size(centerX * 2, centerY * 2),
-          painter: _RadiantRayPainter(
-            startX: startX,
-            startY: startY,
-            endX: endX,
-            endY: endY,
-            width: rayWidth,
-            color: type.color,
-            alpha: (0.5 + 0.4 * glowValue),
-          ),
-        ),
-      );
-    });
-  }
 
   // 构建内部放射光线
   List<Widget> _buildInternalRays(
