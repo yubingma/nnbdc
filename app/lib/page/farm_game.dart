@@ -164,6 +164,12 @@ class FarmItem extends PositionComponent with TapCallbacks {
 // 拖拽地图组件（全屏透明层）
 class DragMapComponent extends PositionComponent with DragCallbacks, HasGameRef<FarmGame> {
   Vector2 _cumulativeDrag = Vector2.zero();
+  // 多指缩放支持
+  final Map<int, Vector2> _activePointers = {};
+  final Map<int, Vector2> _startPointers = {};
+  bool _isPinching = false;
+  double _pinchStartScale = 1.0;
+  Vector2 _pinchStartWorldPos = Vector2.zero();
 
   @override
   Future<void> onLoad() async {
@@ -188,20 +194,79 @@ class DragMapComponent extends PositionComponent with DragCallbacks, HasGameRef<
   void onDragStart(DragStartEvent event) {
     super.onDragStart(event);
     _cumulativeDrag = Vector2.zero();
-    debugPrint('Flame拖拽开始');
+    // 记录指针
+    try {
+      _activePointers[event.pointerId] = event.localPosition;
+      _startPointers[event.pointerId] = event.localPosition.clone();
+    } catch (_) {}
+    debugPrint('Flame拖拽开始 pointers=${_activePointers.length}');
   }
 
   @override
   void onDragUpdate(DragUpdateEvent event) {
     super.onDragUpdate(event);
     final game = gameRef;
-    // 直接使用localDelta
+    // 更新指针位置（使用累计增量）
+    if (_activePointers.containsKey(event.pointerId)) {
+      _activePointers[event.pointerId] = _activePointers[event.pointerId]! + event.localDelta;
+    }
+
+    // 如果有两指，执行缩放；否则执行平移
+    if (_activePointers.length >= 2) {
+      // 初始化捏合状态
+      if (!_isPinching) {
+        _isPinching = true;
+        _pinchStartScale = game.worldLayer.scale.x;
+        _pinchStartWorldPos = game.worldLayer.position.clone();
+      }
+
+      // 取任意两指
+      final entries = _activePointers.entries.toList();
+      final Vector2 p1Current = entries[0].value;
+      final Vector2 p2Current = entries[1].value;
+      final Vector2 p1Start = _startPointers[entries[0].key] ?? p1Current;
+      final Vector2 p2Start = _startPointers[entries[1].key] ?? p2Current;
+
+      final double startDistance = (p1Start - p2Start).length;
+      final double currentDistance = (p1Current - p2Current).length;
+      if (startDistance > 0.0) {
+        final double desiredScale = (_pinchStartScale * (currentDistance / startDistance))
+            .clamp(FarmGame.minScale, FarmGame.maxScale);
+
+        // 焦点为两指中点
+        final Vector2 focal = (p1Current + p2Current) / 2;
+        final Vector2 worldPoint = (focal - _pinchStartWorldPos) / _pinchStartScale;
+        final Vector2 newWorldPos = focal - worldPoint * desiredScale;
+
+        game.worldLayer.scale = Vector2.all(desiredScale);
+
+        // 缩放后边界（考虑scale以及溢出）
+        final screenSize = game.size;
+        final scaledWorld = Vector2(game.worldWidth, game.worldHeight) * desiredScale;
+        final bool widerThanScreen = scaledWorld.x > screenSize.x;
+        final bool tallerThanScreen = scaledWorld.y > screenSize.y;
+        final double contentCenterOffsetX = (screenSize.x - scaledWorld.x) / 2;
+        final double contentCenterOffsetY = (screenSize.y - scaledWorld.y) / 2;
+        final double minX = (widerThanScreen ? (screenSize.x - scaledWorld.x) : contentCenterOffsetX) - FarmGame.panOverflow;
+        final double maxX = (widerThanScreen ? 0.0 : contentCenterOffsetX) + FarmGame.panOverflow;
+        final double minY = (tallerThanScreen ? (screenSize.y - scaledWorld.y) : contentCenterOffsetY) - FarmGame.panOverflow;
+        final double maxY = (tallerThanScreen ? 0.0 : contentCenterOffsetY) + FarmGame.panOverflow;
+
+        final Vector2 clamped = Vector2(
+          newWorldPos.x.clamp(minX, maxX),
+          newWorldPos.y.clamp(minY, maxY),
+        );
+
+        game.worldLayer.position = clamped;
+
+        debugPrint('Flame捏合: startDist=${startDistance.toStringAsFixed(2)}, currDist=${currentDistance.toStringAsFixed(2)}, scale=$desiredScale, focal=$focal, pos=${game.worldLayer.position}');
+      }
+      return;
+    }
+
+    // 单指平移
     final delta = event.localDelta;
-    
-    // 累积拖动偏移
     _cumulativeDrag += delta;
-    
-    // 移动世界容器：手指向右拖动 -> 世界容器向右移动
     final newPos = game.worldLayer.position + delta;
     
     // 边界限制
@@ -238,6 +303,12 @@ class DragMapComponent extends PositionComponent with DragCallbacks, HasGameRef<
     super.onDragEnd(event);
     debugPrint('Flame拖拽结束');
     _cumulativeDrag = Vector2.zero();
+    // 移除指针
+    _activePointers.remove(event.pointerId);
+    _startPointers.remove(event.pointerId);
+    if (_activePointers.length < 2) {
+      _isPinching = false;
+    }
   }
 
   @override
@@ -245,7 +316,11 @@ class DragMapComponent extends PositionComponent with DragCallbacks, HasGameRef<
     super.onDragCancel(event);
     debugPrint('Flame拖拽取消');
     _cumulativeDrag = Vector2.zero();
+    _activePointers.clear();
+    _startPointers.clear();
+    _isPinching = false;
   }
+
 }
 
 // 农场游戏主类
@@ -265,6 +340,9 @@ class FarmGame extends FlameGame {
   static const double tileHeight = 30.0;
   // 拖动溢出范围（允许超出内容边界拖动的距离，像素）
   static const double panOverflow = 1000.0;
+  // 缩放限制
+  static const double minScale = 0.5;
+  static const double maxScale = 3.0;
   
   // 农场世界边界
   double get worldWidth => (gridWidth - 1) * (tileWidth / 2) + tileWidth;
