@@ -1,11 +1,13 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flame/game.dart';
 import 'package:get/get.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:provider/provider.dart';
 import '../global.dart';
 import '../state.dart';
 import '../theme/app_theme.dart';
+import 'farm_game.dart';
 
 // 泡泡类型
 enum BubbleType { seed, egg, resource }
@@ -72,6 +74,8 @@ class _FarmPageState extends State<FarmPage> with TickerProviderStateMixin {
 
   late AnimationController _bubbleGlowController;
   late AnimationController _rayRotationController;
+  
+  late FarmGame farmGame;
 
   // 泡泡类型配置
   static const List<FarmBubbleTypeConfig> _bubbleTypes = [
@@ -138,13 +142,56 @@ class _FarmPageState extends State<FarmPage> with TickerProviderStateMixin {
     )..repeat();
     
     _loadUserData();
+    
+    // 初始化Flame游戏
+    farmGame = FarmGame(
+      onItemTap: _handleItemTap,
+      onTileTap: _handleTileTap,
+    );
   }
 
   @override
   void dispose() {
     _bubbleGlowController.dispose();
     _rayRotationController.dispose();
+    farmGame.removeFromParent();
     super.dispose();
+  }
+  
+  // 处理物品点击
+  void _handleItemTap(ItemConfig config, int gridX, int gridY) {
+    // 可以在这里实现物品点击后的操作，比如收获、查看详情等
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(config.name),
+        content: Text('位于 ($gridX, $gridY)'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              farmGame.removeItem(gridX, gridY);
+              setState(() {
+                farmItems.removeWhere((item) => 
+                  item['gridX'] == gridX && item['gridY'] == gridY
+                );
+              });
+              Get.back();
+              ToastUtil.success('已移除 ${config.name}');
+            },
+            child: const Text('移除'),
+          ),
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text('关闭'),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  // 处理地块点击
+  void _handleTileTap(int gridX, int gridY) {
+    // 可以在这里实现地块点击后的操作，比如选择放置物品的位置
   }
 
   // 加载用户数据
@@ -226,13 +273,27 @@ class _FarmPageState extends State<FarmPage> with TickerProviderStateMixin {
           userItems.removeAt(itemIndex);
         }
         
-        // 添加到农场
+        // 添加到农场（随机选择空位置）
+        final random = math.Random();
+        int gridX = random.nextInt(FarmGame.gridWidth);
+        int gridY = random.nextInt(FarmGame.gridHeight);
+        
+        // 确保位置是空的
+        while (farmItems.any((item) => item['gridX'] == gridX && item['gridY'] == gridY)) {
+          gridX = random.nextInt(FarmGame.gridWidth);
+          gridY = random.nextInt(FarmGame.gridHeight);
+        }
+        
         farmItems.add({
           'type': itemConfig.type,
           'config': itemConfig,
-          'position': Offset(math.Random().nextDouble() * 200, math.Random().nextDouble() * 200),
+          'gridX': gridX,
+          'gridY': gridY,
           'plantTime': DateTime.now(),
         });
+        
+        // 在游戏中放置物品
+        farmGame.placeItem(itemConfig, gridX, gridY);
         
         ToastUtil.success('播种了 ${itemConfig.name} x$useCount');
       }
@@ -252,13 +313,27 @@ class _FarmPageState extends State<FarmPage> with TickerProviderStateMixin {
           userItems.removeAt(itemIndex);
         }
         
-        // 添加到农场
+        // 添加到农场（随机选择空位置）
+        final random = math.Random();
+        int gridX = random.nextInt(FarmGame.gridWidth);
+        int gridY = random.nextInt(FarmGame.gridHeight);
+        
+        // 确保位置是空的
+        while (farmItems.any((item) => item['gridX'] == gridX && item['gridY'] == gridY)) {
+          gridX = random.nextInt(FarmGame.gridWidth);
+          gridY = random.nextInt(FarmGame.gridHeight);
+        }
+        
         farmItems.add({
           'type': itemConfig.type,
           'config': itemConfig,
-          'position': Offset(math.Random().nextDouble() * 200, math.Random().nextDouble() * 200),
+          'gridX': gridX,
+          'gridY': gridY,
           'hatchTime': DateTime.now(),
         });
+        
+        // 在游戏中放置物品
+        farmGame.placeItem(itemConfig, gridX, gridY);
         
         ToastUtil.success('孵化了 ${itemConfig.name} x$useCount');
       }
@@ -297,27 +372,23 @@ class _FarmPageState extends State<FarmPage> with TickerProviderStateMixin {
       ),
       body: Column(
         children: [
-          // 农场区域（荒地背景）
+          // 农场区域（使用Flame游戏引擎）
           Expanded(
             child: Container(
               width: double.infinity,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                   colors: [
                     Colors.brown[200]!,
                     Colors.brown[300]!,
+                    Colors.brown[400]!,
                   ],
                 ),
               ),
-              child: Stack(
-                children: [
-                  // 荒地装饰（可以添加一些石头、草等）
-                  _buildWasteland(),
-                  // 农场中的物品
-                  ...farmItems.map((item) => _buildFarmItem(item)),
-                ],
+              child: GameWidget<FarmGame>.controlled(
+                gameFactory: () => farmGame,
               ),
             ),
           ),
@@ -363,52 +434,6 @@ class _FarmPageState extends State<FarmPage> with TickerProviderStateMixin {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  // 构建荒地背景
-  Widget _buildWasteland() {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Colors.brown[200]!,
-            Colors.brown[300]!,
-            Colors.brown[400]!,
-          ],
-        ),
-      ),
-      child: CustomPaint(
-        painter: _WastelandPainter(),
-      ),
-    );
-  }
-
-  // 构建农场中的物品
-  Widget _buildFarmItem(Map<String, dynamic> item) {
-    final config = item['config'] as ItemConfig;
-    final position = item['position'] as Offset;
-    
-    return Positioned(
-      left: position.dx,
-      top: position.dy,
-      child: GestureDetector(
-        onTap: () {
-          // 可以点击查看详情或收获
-        },
-        child: Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: config.color.withValues(alpha: 0.3),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: config.color, width: 2),
-          ),
-          child: Icon(config.icon, color: config.color, size: 24),
-        ),
       ),
     );
   }
@@ -642,33 +667,6 @@ class _FarmPageState extends State<FarmPage> with TickerProviderStateMixin {
       ),
     );
   }
-}
-
-// 荒地绘制器
-class _WastelandPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.brown[400]!
-      ..style = PaintingStyle.fill;
-    
-    // 绘制一些随机的小石头和草
-    final random = math.Random(42);
-    for (int i = 0; i < 20; i++) {
-      final x = random.nextDouble() * size.width;
-      final y = random.nextDouble() * size.height;
-      
-      // 绘制小点（石头）
-      canvas.drawCircle(
-        Offset(x, y),
-        2 + random.nextDouble() * 3,
-        paint..color = Colors.brown[600]!.withValues(alpha: 0.5),
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(_WastelandPainter oldDelegate) => false;
 }
 
 // 内部光线绘制器
