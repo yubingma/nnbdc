@@ -196,7 +196,8 @@ class _TreeGrowthPainter extends CustomPainter {
 
     final double stageSeed = _segmentProgress(0);
     final double stageSapling = _segmentProgress(2);
-    final double stageBranch = _segmentProgress(3);
+    final double stageBranchProgress = _segmentProgress(3);
+    final double stageBranch = math.max(stageSapling, stageBranchProgress);
 
     final double centerX = size.width * 0.5;
 
