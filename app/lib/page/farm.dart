@@ -75,6 +75,7 @@ class _PlantGrowthSceneState extends State<PlantGrowthScene>
       },
       child: LayoutBuilder(
         builder: (context, constraints) {
+          // 使用 LayoutBuilder 获取父容器尺寸，便于自适应绘制大小
           return Stack(
             alignment: Alignment.center,
             children: [
@@ -88,6 +89,7 @@ class _PlantGrowthSceneState extends State<PlantGrowthScene>
                       progress: progress,
                       isDarkMode: isDarkMode,
                       accentColor: AppTheme.primaryColor,
+                      // 记录是否已播种，决定是否绘制根系、树干
                       seedPlanted: _seedPlanted,
                     ),
                   );
@@ -103,6 +105,7 @@ class _PlantGrowthSceneState extends State<PlantGrowthScene>
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: const Text(
+                      // 初始提示：轻点种子开始动画
                       '轻点种子播种',
                       style: TextStyle(
                         color: Colors.white,
@@ -125,6 +128,7 @@ class _TreeGrowthPainter extends CustomPainter {
   final bool isDarkMode;
   final Color accentColor;
   final bool seedPlanted;
+  // 整个动画按阶段划分，使用分段时间控制各部位的生长
 
   _TreeGrowthPainter({
     required this.progress,
@@ -152,7 +156,7 @@ class _TreeGrowthPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final double soilTop = size.height * 0.66;
+    final double soilTop = size.height * 0.66; // 土层位置：下方约三分之一
     final Paint skyPaint = Paint()
       ..shader = LinearGradient(
         colors: isDarkMode
@@ -196,6 +200,7 @@ class _TreeGrowthPainter extends CustomPainter {
 
     final double centerX = size.width * 0.5;
 
+    // 种子：播种前悬浮在土表，播种后缓慢下沉
     final Offset seedCenter = seedPlanted
         ? Offset(
             centerX,
@@ -212,6 +217,7 @@ class _TreeGrowthPainter extends CustomPainter {
     );
 
     if (seedPlanted && stageSapling > 0) {
+      // 根系：使用递归曲线向下生长
       final double strength = stageSapling.clamp(0.0, 1.0);
       final double baseLength = (30 + 48 * strength) * strength;
       final double baseThickness = (4.2 + 3.6 * strength) * strength.clamp(0.35, 1.0);
@@ -294,6 +300,7 @@ class _TreeGrowthPainter extends CustomPainter {
     }
 
     if (stageBranch > 0) {
+      // 树干：随着 stageBranch 增大逐渐拉高并加粗
       final double stemHeight = ui.lerpDouble(18, size.height * 0.46, stageBranch) ?? 18;
       final double trunkBaseWidth = ui.lerpDouble(6, 22, stageBranch) ?? 6;
       final double trunkTopWidth = ui.lerpDouble(2, 10, stageBranch) ?? 2;
@@ -333,6 +340,7 @@ class _TreeGrowthPainter extends CustomPainter {
         ..close();
       canvas.drawPath(trunkPath, trunkPaint);
 
+      // 树枝：递归生成向上分叉的枝干形态
       final double baseLength = ui.lerpDouble(54, 126, stageBranch) ?? 54;
       final double baseThickness = ui.lerpDouble(6.5, 11.0, stageBranch) ?? 6.5;
       final int maxDepth = 3 + (stageBranch * 2.5).floor();
