@@ -188,47 +188,32 @@ class _TreeGrowthPainter extends CustomPainter {
     }
 
     final double stageSeed = _segmentProgress(0);
-    final double stageSprout = _segmentProgress(1);
     final double stageSapling = _segmentProgress(2);
     final double stageBranch = _segmentProgress(3);
-    final double stageCanopy = _segmentProgress(4);
-    final double stageMature = _segmentProgress(5);
 
     final double centerX = size.width * 0.5;
 
     final Offset seedCenter = seedPlanted
         ? Offset(
             centerX,
-            ui.lerpDouble(soilTop - 12, soilTop + 10, stageSeed) ?? soilTop - 12,
+            ui.lerpDouble(soilTop - 8, soilTop + 8, stageSeed) ?? soilTop - 8,
           )
-        : Offset(centerX, soilTop - 14);
+        : Offset(centerX, soilTop - 12);
     final double seedWidth = seedPlanted
-        ? ui.lerpDouble(16, 10, stageSeed)?.clamp(8.0, 16.0) ?? 16
-        : 20;
+        ? ui.lerpDouble(10, 6, stageSeed)?.clamp(4.0, 10.0) ?? 10
+        : 9;
     final double seedHeight = seedPlanted
-        ? ui.lerpDouble(12, 8, stageSeed)?.clamp(6.0, 12.0) ?? 12
-        : 14;
+        ? ui.lerpDouble(14, 8, stageSeed)?.clamp(4.0, 14.0) ?? 14
+        : 12;
+    final Paint seedPaint = Paint()..color = const Color(0xFFA96A3A);
     canvas.drawOval(
       Rect.fromCenter(
         center: seedCenter,
         width: seedWidth,
         height: seedHeight,
       ),
-      Paint()
-        ..shader = RadialGradient(
-          colors: [const Color(0xFFB76B32), const Color(0xFF8C4A1C)],
-        ).createShader(Rect.fromCircle(center: seedCenter, radius: seedWidth)),
+      seedPaint,
     );
-    if (!seedPlanted) {
-      canvas.drawCircle(
-        seedCenter,
-        seedWidth,
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 2
-          ..color = accentColor.withOpacity(0.6),
-      );
-    }
 
     if (stageSapling > 0) {
       final double baseLength = ui.lerpDouble(30, 78, stageSapling) ?? 30;
@@ -425,24 +410,7 @@ class _TreeGrowthPainter extends CustomPainter {
           );
         }
 
-        final double leafFactor = (maxDepth - depth + 1) / (maxDepth + 1);
-        final bool isAboveRootNeck = end.dy < soilTop - stemHeight * 0.15;
-        if (leafFactor > 0.2 && stageCanopy > 0 && isAboveRootNeck) {
-          final double adjustedScale = leafFactor * leafFactor;
-          final double leafRadius = 18 * adjustedScale * stageCanopy;
-          final Offset leafCenter = end + Offset(
-            math.cos((angleDeg + 18) * math.pi / 180) * 6,
-            math.sin((angleDeg + 18) * math.pi / 180) * 6,
-          );
-          final Paint leafPaint = Paint()
-            ..shader = RadialGradient(
-              colors: [
-                const Color(0xFF7BC67D).withOpacity(0.82),
-                const Color(0xFF2E7D32).withOpacity(0.94),
-              ],
-            ).createShader(Rect.fromCircle(center: leafCenter, radius: leafRadius));
-          canvas.drawCircle(leafCenter, leafRadius, leafPaint);
-        }
+        // 叶片暂不绘制，专注于枝干生长形态。
       }
 
       final Offset trunkTop = Offset(centerX, soilTop - stemHeight);
@@ -480,120 +448,6 @@ class _TreeGrowthPainter extends CustomPainter {
         baseThickness * 0.68,
         maxDepth - 3,
         81.2,
-      );
-    }
-
-    final List<Offset> canopyOffsets = [
-      const Offset(-60, -10),
-      const Offset(-42, -6),
-      const Offset(-24, -24),
-      const Offset(-8, -12),
-      const Offset(8, -18),
-      const Offset(22, -6),
-      const Offset(40, -28),
-      const Offset(58, -12),
-      const Offset(-30, -44),
-      const Offset(-4, -36),
-      const Offset(24, -42),
-      const Offset(52, -46),
-    ];
-
-    double canopyRadius(double base, double variance) {
-      return ui.lerpDouble(0, base, stageCanopy)! + variance * stageMature;
-    }
-
-    final Paint canopyPaint = Paint();
-    for (final offset in canopyOffsets) {
-      final double radius = canopyRadius(26, 10 * math.sin(offset.dx / 18));
-      if (radius <= 0) continue;
-      final Offset center = Offset(
-        centerX + offset.dx * stageCanopy,
-        soilTop - stemHeight - 18 * stageCanopy + offset.dy * (0.6 + 0.4 * stageCanopy),
-      );
-      canopyPaint.shader = RadialGradient(
-        colors: [
-          const Color(0xFF7BC67D).withOpacity(0.85),
-          const Color(0xFF2E7D32).withOpacity(0.9),
-        ],
-      ).createShader(Rect.fromCircle(center: center, radius: radius));
-      canvas.drawCircle(center, radius, canopyPaint);
-      canvas.drawCircle(
-        center,
-        radius,
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.4
-          ..color = Colors.white.withOpacity(0.08),
-      );
-    }
-
-    void drawLeaf(Offset position, double rotation, double scale, double opacity) {
-      if (opacity <= 0 || scale <= 0) return;
-      canvas.save();
-      canvas.translate(position.dx, position.dy);
-      canvas.rotate(rotation);
-      final Rect leafRect = Rect.fromCenter(center: Offset.zero, width: 20 * scale, height: 38 * scale);
-      final Paint leafPaint = Paint()
-        ..shader = LinearGradient(
-          colors: [
-            const Color(0xFF7BC67D).withOpacity(0.6 + 0.3 * opacity),
-            const Color(0xFF2E7D32).withOpacity(0.7 + 0.3 * opacity),
-          ],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ).createShader(leafRect);
-      final Path leafPath = Path()
-        ..moveTo(0, -leafRect.height / 2)
-        ..quadraticBezierTo(leafRect.width * 0.55, -leafRect.height * 0.15, 0, leafRect.height / 2)
-        ..quadraticBezierTo(-leafRect.width * 0.55, -leafRect.height * 0.15, 0, -leafRect.height / 2);
-      canvas.drawPath(leafPath, leafPaint);
-      canvas.restore();
-    }
-
-    final double trunkTopY = soilTop - stemHeight;
-
-    final double earlyLeafOpacity = stageSprout.clamp(0.0, 1.0);
-    if (earlyLeafOpacity > 0) {
-      final double sproutOffset = 18 * (1 - stageSprout * 0.5);
-      drawLeaf(
-        Offset(centerX - 12 * (0.4 + stageSprout * 0.6), trunkTopY + sproutOffset),
-        -math.pi * 0.22,
-        0.35 + 0.25 * stageSprout,
-        earlyLeafOpacity,
-      );
-      drawLeaf(
-        Offset(centerX + 12 * (0.4 + stageSprout * 0.6), trunkTopY + sproutOffset),
-        math.pi * 0.22,
-        0.35 + 0.25 * stageSprout,
-        earlyLeafOpacity,
-      );
-    }
-
-    final double leafOpacity = math.max(stageBranch, stageSprout);
-    if (leafOpacity > 0) {
-      drawLeaf(
-        Offset(centerX - 26 * stageBranch, soilTop - stemHeight * 0.55),
-        -math.pi * 0.18,
-        0.75 * leafOpacity,
-        leafOpacity,
-      );
-      drawLeaf(
-        Offset(centerX + 22 * stageBranch, soilTop - stemHeight * 0.5),
-        math.pi * 0.2,
-        0.7 * leafOpacity,
-        leafOpacity,
-      );
-      drawLeaf(
-        Offset(centerX - 38 * stageBranch, soilTop - stemHeight * 0.32),
-        -math.pi * 0.25,
-        (leafOpacity - 0.2).clamp(0.0, 1.0),
-        (leafOpacity - 0.2).clamp(0.0, 1.0),
-      );
-      drawLeaf(
-        Offset(centerX + 34 * stageBranch, soilTop - stemHeight * 0.35),
-        math.pi * 0.27,
-        (leafOpacity - 0.2).clamp(0.0, 1.0),
-        (leafOpacity - 0.2).clamp(0.0, 1.0),
       );
     }
   }
