@@ -18,19 +18,7 @@ const List<double> _treeStageStops = [
 
 const double _maxTreeHeightMeters = 6.0;
 const double _secondsPerGrowthDay = 3.0; // 几秒一日的生长速度控制
-
-double _segmentProgressFor(double progress, int segment) {
-  final double start = _treeStageStops[segment];
-  final double end = _treeStageStops[segment + 1];
-  final double clamped = (progress - start) / (end - start);
-  return clamped.clamp(0.0, 1.0);
-}
-
-double _branchFactorFor(double progress) {
-  final double stageSapling = _segmentProgressFor(progress, 2);
-  final double stageBranchProgress = _segmentProgressFor(progress, 3);
-  return math.sqrt(math.max(stageSapling, stageBranchProgress));
-}
+const double _seedInitialDepth = 18.0; // 种子初始埋深，控制破土时间
 
 double _rootProgressFor(double progress) {
   final double emergenceThreshold = _treeStageStops[2];
@@ -203,7 +191,12 @@ class _PlantGrowthSceneState extends State<PlantGrowthScene>
   }
 
   double _estimateTreeHeightMeters(double progress) {
-    final double factor = _branchFactorFor(progress.clamp(0.0, 1.0));
+    final double emergenceThreshold = _treeStageStops[2];
+    if (progress < emergenceThreshold) {
+      return 0.0;
+    }
+    final double post = ((progress - emergenceThreshold) / (1 - emergenceThreshold)).clamp(0.0, 1.0);
+    final double factor = math.pow(post, 0.85).toDouble();
     return factor * _maxTreeHeightMeters;
   }
 
@@ -396,14 +389,20 @@ class _TreeGrowthPainter extends CustomPainter {
       canvas.drawOval(Rect.fromCircle(center: Offset(x, y), radius: r), stonePaint);
     }
 
-    final double stageBranch = _branchFactorFor(progress);
-    final double stageRoot = _rootProgressFor(progress);
-
     final double centerX = size.width * 0.5;
+    final double emergenceThreshold = _treeStageStops[2];
+    final bool hasBrokenGround = seedPlanted && progress >= emergenceThreshold;
+    final double stageRoot = _rootProgressFor(progress);
+    final double stageBranch = hasBrokenGround
+        ? math.pow(
+              ((progress - emergenceThreshold) / (1 - emergenceThreshold)).clamp(0.0, 1.0),
+              0.85,
+            ).toDouble()
+        : 0.0;
 
     // 种子：播种瞬间埋入土壤，不再做缓慢下沉动画
     final Offset seedCenter = seedPlanted
-        ? Offset(centerX, soilTop + 6)
+        ? Offset(centerX, soilTop + _seedInitialDepth)
         : Offset(centerX, soilTop - 12);
     final double seedRadius = seedPlanted ? 3.6 : 5;
     canvas.drawCircle(
@@ -412,8 +411,71 @@ class _TreeGrowthPainter extends CustomPainter {
       Paint()..color = const Color(0xFF9C6941),
     );
 
+    final double sproutRatio = seedPlanted
+        ? (emergenceThreshold > 0
+            ? (progress / emergenceThreshold).clamp(0.0, 1.0)
+            : progress.clamp(0.0, 1.0))
+        : 0.0;
+
+    if (seedPlanted && sproutRatio > 0 && !hasBrokenGround) {
+      final double maxRise = _seedInitialDepth + 14;
+      final double sproutLength = sproutRatio * maxRise;
+      final Offset sproutEnd = Offset(
+        centerX,
+        math.max(soilTop - 4, seedCenter.dy - sproutLength),
+      );
+
+      final Paint sproutPaint = Paint()
+        ..shader = LinearGradient(
+          colors: [
+            const Color(0xFF6A3A1E),
+            const Color(0xFF8B5A2F),
+          ],
+          begin: Alignment.bottomCenter,
+          end: Alignment.topCenter,
+        ).createShader(
+          Rect.fromPoints(seedCenter, sproutEnd),
+        )
+        ..strokeWidth = ui.lerpDouble(1.1, 2.2, sproutRatio)!
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round;
+
+      final Path sproutPath = Path()
+        ..moveTo(seedCenter.dx, seedCenter.dy)
+        ..quadraticBezierTo(
+          centerX + math.sin(sproutRatio * math.pi) * 6,
+          (seedCenter.dy + sproutEnd.dy) / 2,
+          sproutEnd.dx,
+          sproutEnd.dy,
+        );
+      canvas.drawPath(sproutPath, sproutPaint);
+
+      if (sproutRatio > 0.32) {
+        final double budRadius = ui.lerpDouble(1.8, 3.2, sproutRatio)!;
+        canvas.drawOval(
+          Rect.fromCenter(
+            center: sproutEnd + const Offset(0, -2),
+            width: budRadius * 1.4,
+            height: budRadius * 2.4,
+          ),
+          Paint()
+            ..shader = LinearGradient(
+              colors: [const Color(0xFF8B5F39), const Color(0xFFB57A47)],
+              begin: Alignment.bottomCenter,
+              end: Alignment.topCenter,
+            ).createShader(
+              Rect.fromCenter(
+                center: sproutEnd + const Offset(0, -2),
+                width: budRadius * 1.4,
+                height: budRadius * 2.4,
+              ),
+            ),
+        );
+      }
+    }
+
     // 播种后立刻生长根系，破土而出后隐藏
-    if (seedPlanted && stageRoot > 0 && stageBranch < 0.02) {
+    if (seedPlanted && stageRoot > 0 && !hasBrokenGround) {
       final double easedRoot = math.pow(stageRoot, 1.4).toDouble();
       final int rootDepth = 1 + (easedRoot * 4).floor();
       final double rootBaseLength = ui.lerpDouble(16, soilRect.height * 0.55, easedRoot) ?? 16;
@@ -502,7 +564,7 @@ class _TreeGrowthPainter extends CustomPainter {
       }
     }
 
-    if (stageBranch > 0) {
+    if (hasBrokenGround && stageBranch > 0) {
       final double stemHeight = ui.lerpDouble(18, size.height * 0.46, stageBranch * stageBranch) ?? 18;
       final double trunkBaseWidth = ui.lerpDouble(10, 26, stageBranch) ?? 10;
       final double trunkTopWidth = ui.lerpDouble(2, 10, stageBranch) ?? 2;
