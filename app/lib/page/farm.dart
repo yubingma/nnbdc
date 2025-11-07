@@ -101,7 +101,7 @@ class _PlantGrowthSceneState extends State<PlantGrowthScene>
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(isDarkMode ? 0.45 : 0.28),
+                      color: Colors.black.withValues(alpha: isDarkMode ? 0.45 : 0.28),
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: const Text(
@@ -226,7 +226,7 @@ class _TreeGrowthPainter extends CustomPainter {
       Color rootColorFor(int depth) {
         final double t = depth / (maxDepth + 1);
         return Color.lerp(const Color(0xFFE6D3B2), const Color(0xFFB99863), t)!
-            .withOpacity(0.92 - t * 0.2);
+            .withValues(alpha: 0.92 - t * 0.2);
       }
 
       void drawRootBranch(
@@ -348,7 +348,7 @@ class _TreeGrowthPainter extends CustomPainter {
       Color branchColor(int depth) {
         final double t = depth / (maxDepth + 1);
         return Color.lerp(const Color(0xFF704225), const Color(0xFF9B6B3A), t)!
-            .withOpacity(0.95 - t * 0.25);
+            .withValues(alpha: 0.95 - t * 0.25);
       }
 
       void growBranch(
