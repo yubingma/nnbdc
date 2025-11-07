@@ -401,21 +401,38 @@ class _TreeGrowthPainter extends CustomPainter {
         : 0.0;
 
     // 种子：播种瞬间埋入土壤，不再做缓慢下沉动画
-    final Offset seedCenter = seedPlanted
-        ? Offset(centerX, soilTop + _seedInitialDepth)
-        : Offset(centerX, soilTop - 12);
-    final double seedRadius = seedPlanted ? 3.6 : 5;
-    canvas.drawCircle(
-      seedCenter,
-      seedRadius,
-      Paint()..color = const Color(0xFF9C6941),
-    );
-
     final double sproutRatio = seedPlanted
         ? (emergenceThreshold > 0
             ? (progress / emergenceThreshold).clamp(0.0, 1.0)
             : progress.clamp(0.0, 1.0))
         : 0.0;
+
+    final double seedLift = seedPlanted ? sproutRatio.clamp(0.0, 1.0) : 0.0;
+    final double emergenceOvershoot = hasBrokenGround
+        ? ((progress - emergenceThreshold) / 0.12).clamp(0.0, 1.0)
+        : 0.0;
+    final double seedDepthOffset = _seedInitialDepth * (1 - seedLift) - emergenceOvershoot * 10;
+    final Offset seedCenter = seedPlanted
+        ? Offset(centerX, soilTop + seedDepthOffset)
+        : Offset(centerX, soilTop - 12);
+    final double seedRadius = seedPlanted
+        ? ui.lerpDouble(3.6, 2.2, (seedLift * 1.2).clamp(0.0, 1.0)) ?? 3.0
+        : 5;
+    canvas.drawCircle(
+      seedCenter,
+      seedRadius,
+      Paint()..color = const Color(0xFF9C6941),
+    );
+    if (seedPlanted) {
+      final double shellAlpha = (1 - seedLift).clamp(0.0, 1.0);
+      if (shellAlpha > 0) {
+        final Paint shellPaint = Paint()
+          ..color = const Color(0xFFB27A47).withValues(alpha: 0.38 * shellAlpha)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = ui.lerpDouble(1.4, 0.4, seedLift) ?? 1.0;
+        canvas.drawCircle(seedCenter, seedRadius + 2.6, shellPaint);
+      }
+    }
 
     if (seedPlanted && sproutRatio > 0 && !hasBrokenGround) {
       final double maxRise = _seedInitialDepth + 14;
@@ -451,7 +468,7 @@ class _TreeGrowthPainter extends CustomPainter {
       canvas.drawPath(sproutPath, sproutPaint);
 
       if (sproutRatio > 0.32) {
-        final double budRadius = ui.lerpDouble(1.8, 3.2, sproutRatio)!;
+        final double budRadius = ui.lerpDouble(1.4, 2.6, sproutRatio)!;
         canvas.drawOval(
           Rect.fromCenter(
             center: sproutEnd + const Offset(0, -2),
@@ -476,83 +493,99 @@ class _TreeGrowthPainter extends CustomPainter {
 
     // 播种后立刻生长根系，破土而出后隐藏
     if (seedPlanted && stageRoot > 0 && !hasBrokenGround) {
-      final double easedRoot = math.pow(stageRoot, 1.4).toDouble();
-      final int rootDepth = 1 + (easedRoot * 4).floor();
-      final double rootBaseLength = ui.lerpDouble(16, soilRect.height * 0.55, easedRoot) ?? 16;
-      final double rootBaseThickness = ui.lerpDouble(1.2, 3.4, easedRoot) ?? 1.2;
+      final double easedRoot = math.pow(stageRoot, 1.35).toDouble();
+      final Offset rootStart = seedCenter + const Offset(0, 4);
       final Color rootBaseColor = const Color(0xFF8A532B);
       final Color rootTipColor = const Color(0xFF5B341B);
 
-      double noise(String key) {
-        int hash = branchSeed ^ 0x5f3759df;
-        for (final code in key.codeUnits) {
-          hash = (hash * 31 + code) & 0x7fffffff;
-        }
-        return (hash / 0x7fffffff) * 2 - 1;
-      }
-
-      void drawRootBranch(
-        Offset start,
-        double length,
-        double angleDeg,
-        double thickness,
-        int depth,
-        String key,
-      ) {
-        if (depth <= 0 || thickness < 0.6) {
-          return;
-        }
-        final double angle = angleDeg * math.pi / 180;
-        final double bend = noise('bend-$key-$depth') * (6 + easedRoot * 6);
-        final double controlAngle = (angleDeg + bend * 0.35) * math.pi / 180;
-        final Offset control = start + Offset(
-          math.cos(controlAngle) * length * 0.46,
-          math.sin(controlAngle) * length * 0.46,
-        );
-        final Offset end = start + Offset(
-          math.cos(angle) * length,
-          math.sin(angle) * length,
-        );
-
-        final double depthRatio = (rootDepth - depth) / rootDepth;
+      if (easedRoot < 0.58) {
+        final double rootLength = ui.lerpDouble(28, soilRect.height * 0.45, easedRoot) ?? 28;
+        final double sway = ui.lerpDouble(4, 18, easedRoot) ?? 6;
+        final Offset control = rootStart + Offset(sway, rootLength * 0.45);
+        final Offset end = rootStart + Offset(0, rootLength);
         final Paint rootPaint = Paint()
-          ..color = Color.lerp(rootBaseColor, rootTipColor, depthRatio)!
-          ..strokeWidth = thickness
+          ..color = Color.lerp(rootBaseColor, rootTipColor, easedRoot)!
+          ..strokeWidth = ui.lerpDouble(1.2, 2.6, easedRoot) ?? 1.2
           ..style = PaintingStyle.stroke
           ..strokeCap = StrokeCap.round;
-
         final Path rootPath = Path()
-          ..moveTo(start.dx, start.dy)
+          ..moveTo(rootStart.dx, rootStart.dy)
           ..quadraticBezierTo(control.dx, control.dy, end.dx, end.dy);
         canvas.drawPath(rootPath, rootPaint);
+      } else {
+        final int rootDepth = 1 + (easedRoot * 4).floor();
+        final double rootBaseLength = ui.lerpDouble(20, soilRect.height * 0.55, easedRoot) ?? 20;
+        final double rootBaseThickness = ui.lerpDouble(1.4, 3.6, easedRoot) ?? 1.4;
 
-        final double nextLength = length * (0.72 + 0.16 * easedRoot) * (0.96 + noise('len-$key-$depth') * 0.08);
-        final double nextThickness = math.max(0.6, thickness * (0.64 + 0.18 * easedRoot));
-        final double spread = 14 + easedRoot * 10 + noise('spread-$key-$depth') * 8;
-
-        drawRootBranch(end, nextLength, angleDeg + spread, nextThickness, depth - 1, '${key}L');
-        drawRootBranch(end, nextLength, angleDeg - spread, nextThickness, depth - 1, '${key}R');
-
-        if (depth > 2 && easedRoot > 0.4) {
-          final double extra = 0.48 + 0.16 * easedRoot;
-          drawRootBranch(
-            end,
-            nextLength * extra,
-            angleDeg + noise('mid-$key-$depth') * 16,
-            nextThickness * 0.84,
-            depth - 2,
-            '${key}M',
-          );
+        double noise(String key) {
+          int hash = branchSeed ^ 0x5f3759df;
+          for (final code in key.codeUnits) {
+            hash = (hash * 31 + code) & 0x7fffffff;
+          }
+          return (hash / 0x7fffffff) * 2 - 1;
         }
-      }
 
-      final Offset rootStart = seedCenter + const Offset(0, 4);
-      final double mainAngle = 90 + noise('root-main') * 6;
-      drawRootBranch(rootStart, rootBaseLength, mainAngle + 12 + easedRoot * 24,
-          rootBaseThickness, rootDepth, 'root-left');
-      drawRootBranch(rootStart, rootBaseLength, mainAngle - (12 + easedRoot * 24),
-          rootBaseThickness, rootDepth, 'root-right');
-      if (easedRoot > 0.42) {
+        void drawRootBranch(
+          Offset start,
+          double length,
+          double angleDeg,
+          double thickness,
+          int depth,
+          String key,
+        ) {
+          if (depth <= 0 || thickness < 0.6) {
+            return;
+          }
+          final double angle = angleDeg * math.pi / 180;
+          final double bend = noise('bend-$key-$depth') * (5 + easedRoot * 6);
+          final double controlAngle = (angleDeg + bend * 0.35) * math.pi / 180;
+          final Offset control = start + Offset(
+            math.cos(controlAngle) * length * 0.46,
+            math.sin(controlAngle) * length * 0.46,
+          );
+          final Offset end = start + Offset(
+            math.cos(angle) * length,
+            math.sin(angle) * length,
+          );
+
+          final double depthRatio = (rootDepth - depth) / rootDepth;
+          final Paint rootPaint = Paint()
+            ..color = Color.lerp(rootBaseColor, rootTipColor, depthRatio)!
+            ..strokeWidth = thickness
+            ..style = PaintingStyle.stroke
+            ..strokeCap = StrokeCap.round;
+
+          final Path rootPath = Path()
+            ..moveTo(start.dx, start.dy)
+            ..quadraticBezierTo(control.dx, control.dy, end.dx, end.dy);
+          canvas.drawPath(rootPath, rootPaint);
+
+          final double nextLength =
+              length * (0.72 + 0.16 * easedRoot) * (0.96 + noise('len-$key-$depth') * 0.08);
+          final double nextThickness = math.max(0.6, thickness * (0.64 + 0.18 * easedRoot));
+          final double spread = 14 + easedRoot * 10 + noise('spread-$key-$depth') * 8;
+
+          drawRootBranch(end, nextLength, angleDeg + spread, nextThickness, depth - 1, '${key}L');
+          drawRootBranch(end, nextLength, angleDeg - spread, nextThickness, depth - 1, '${key}R');
+
+          if (depth > 2) {
+            final double extra = 0.48 + 0.16 * easedRoot;
+            drawRootBranch(
+              end,
+              nextLength * extra,
+              angleDeg + noise('mid-$key-$depth') * 14,
+              nextThickness * 0.84,
+              depth - 2,
+              '${key}M',
+            );
+          }
+        }
+
+        final double mainAngle = 90 + noise('root-main') * 6;
+        drawRootBranch(rootStart, rootBaseLength, mainAngle + 12 + easedRoot * 24,
+            rootBaseThickness, rootDepth, 'root-left');
+        drawRootBranch(rootStart, rootBaseLength, mainAngle - (12 + easedRoot * 24),
+            rootBaseThickness, rootDepth, 'root-right');
         drawRootBranch(
           rootStart,
           rootBaseLength * (0.74 + easedRoot * 0.22),
@@ -565,9 +598,9 @@ class _TreeGrowthPainter extends CustomPainter {
     }
 
     if (hasBrokenGround && stageBranch > 0) {
-      final double stemHeight = ui.lerpDouble(18, size.height * 0.46, stageBranch * stageBranch) ?? 18;
-      final double trunkBaseWidth = ui.lerpDouble(10, 26, stageBranch) ?? 10;
-      final double trunkTopWidth = ui.lerpDouble(2, 10, stageBranch) ?? 2;
+      final double stemHeight = ui.lerpDouble(14, size.height * 0.46, stageBranch) ?? 14;
+      final double trunkBaseWidth = ui.lerpDouble(8, 26, stageBranch) ?? 8;
+      final double trunkTopWidth = ui.lerpDouble(1.6, 10, stageBranch) ?? 1.6;
       final double trunkLeftBase = centerX - trunkBaseWidth;
       final double trunkRightBase = centerX + trunkBaseWidth;
       final double trunkLeftTop = centerX - trunkTopWidth;
@@ -589,15 +622,15 @@ class _TreeGrowthPainter extends CustomPainter {
         ..moveTo(trunkLeftBase, soilTop)
         ..lineTo(trunkRightBase, soilTop)
         ..quadraticBezierTo(
-          centerX + trunkBaseWidth * 0.5,
-          soilTop - stemHeight * 0.45,
+          centerX + trunkBaseWidth * 0.45,
+          soilTop - stemHeight * 0.48,
           trunkRightTop,
           soilTop - stemHeight,
         )
         ..lineTo(trunkLeftTop, soilTop - stemHeight)
         ..quadraticBezierTo(
-          centerX - trunkBaseWidth * 0.5,
-          soilTop - stemHeight * 0.38,
+          centerX - trunkBaseWidth * 0.45,
+          soilTop - stemHeight * 0.44,
           trunkLeftBase,
           soilTop,
         )
@@ -605,9 +638,10 @@ class _TreeGrowthPainter extends CustomPainter {
       canvas.drawPath(trunkPath, trunkPaint);
 
       // 树枝：递归生成向上分叉的枝干形态
-      final double baseLength = ui.lerpDouble(54, 126, stageBranch) ?? 54;
-      final double baseThickness = ui.lerpDouble(6.5, 11.0, stageBranch) ?? 6.5;
-      final int maxDepth = 3 + (stageBranch * 2.5).floor();
+      final double baseLength = ui.lerpDouble(22, 126, stageBranch) ?? 22;
+      final double baseThickness = ui.lerpDouble(3.6, 11.0, stageBranch) ?? 3.6;
+      final int maxDepth = 2 + (stageBranch * 2.5).floor();
+      final double branchingFactor = stageBranch.clamp(0.0, 1.0);
 
       Color branchColor(int depth) {
         final double t = depth / (maxDepth + 1);
@@ -628,6 +662,55 @@ class _TreeGrowthPainter extends CustomPainter {
         return (parentStage - delay).clamp(0.0, 1.0);
       }
 
+      void drawLeafPair(Offset origin, double scale) {
+        final double leafLength = ui.lerpDouble(16, 42, scale) ?? 16;
+        final double leafWidth = ui.lerpDouble(6, 16, scale) ?? 6;
+        final double leafAngle = ui.lerpDouble(28, 46, scale) ?? 28;
+
+        Path makeLeaf(bool isLeft) {
+          final double direction = isLeft ? -1 : 1;
+          final double radians = (leafAngle * direction) * math.pi / 180;
+          final Offset tip = origin + Offset(
+            math.cos(radians) * leafLength,
+            math.sin(radians) * leafLength,
+          );
+          final Offset control1 = origin + Offset(
+            math.cos(radians) * leafLength * 0.46,
+            math.sin(radians) * leafLength * 0.32,
+          );
+          final Offset control2 = origin + Offset(
+            math.cos(radians) * leafLength * 0.78,
+            math.sin(radians) * leafLength * 0.78,
+          );
+
+          return Path()
+            ..moveTo(origin.dx, origin.dy)
+            ..cubicTo(control1.dx, control1.dy, control2.dx, control2.dy, tip.dx, tip.dy)
+            ..quadraticBezierTo(
+              origin.dx + direction * leafWidth * 0.52,
+              origin.dy - leafWidth * 0.42,
+              origin.dx,
+              origin.dy,
+            )
+            ..close();
+        }
+
+        final Rect leafRect = Rect.fromCenter(
+          center: origin + const Offset(0, -4),
+          width: leafWidth * 1.8,
+          height: leafLength * 1.6,
+        );
+        final Paint leafPaint = Paint()
+          ..shader = LinearGradient(
+            colors: const [Color(0xFF75B04A), Color(0xFF3F7C2A)],
+            begin: Alignment.bottomCenter,
+            end: Alignment.topCenter,
+          ).createShader(leafRect);
+
+        canvas.drawPath(makeLeaf(true), leafPaint);
+        canvas.drawPath(makeLeaf(false), leafPaint);
+      }
+
       void growBranch(
         Offset start,
         double length,
@@ -637,16 +720,16 @@ class _TreeGrowthPainter extends CustomPainter {
         String key,
         double parentStage,
       ) {
-        if (depth <= 0 || thickness < 0.8) return;
+        if (depth <= 0 || thickness < 0.5) return;
         final double localStage = branchStageFor(key, parentStage);
         if (localStage <= 0) return;
 
         final double angle = angleDeg * math.pi / 180;
-        final double bend = noise('$key-bend-$depth') * 10;
-        final double controlAngle = (angleDeg + bend * 0.3) * math.pi / 180;
+        final double bend = noise('$key-bend-$depth') * 8 * (0.4 + 0.6 * localStage);
+        final double controlAngle = (angleDeg + bend * 0.28) * math.pi / 180;
         final Offset control = start + Offset(
-          math.cos(controlAngle) * length * 0.5,
-          math.sin(controlAngle) * length * 0.5,
+          math.cos(controlAngle) * length * (0.46 + 0.12 * localStage),
+          math.sin(controlAngle) * length * (0.46 + 0.12 * localStage),
         );
         final Offset end = start + Offset(
           math.cos(angle) * length,
@@ -666,15 +749,39 @@ class _TreeGrowthPainter extends CustomPainter {
             ..strokeWidth = thickness,
         );
 
+        final double budStrength = (1 - branchingFactor) * localStage;
+        if (key == 'main' && budStrength > 0.05) {
+          drawLeafPair(end, (budStrength / 0.4).clamp(0.0, 1.0));
+        }
+
         final double lengthJitter = 1 + noise('$key-length-$depth') * 0.12;
-        final double nextLength = length * (0.68 + 0.2 * localStage) * lengthJitter;
-        final double taperBase = 0.52 + 0.2 * localStage;
+        final double nextLength = length * (0.68 + 0.18 * localStage) * lengthJitter;
+        final double taperBase = 0.5 + 0.22 * localStage;
         final double taperNoise = 1 + noise('$key-thickness-$depth') * 0.09;
         final double candidate = thickness * taperBase * taperNoise;
-        final double guaranteedDecrease = thickness - 0.2 * (0.5 + 0.5 * localStage);
-        final double nextThickness = math.max(0.18, math.min(candidate, guaranteedDecrease));
-        final double spreadBase = 12 + 9 * (1 - localStage);
+        final double guaranteedDecrease = thickness - 0.22 * (0.5 + 0.5 * localStage);
+        final double nextThickness = math.max(0.16, math.min(candidate, guaranteedDecrease));
+        final double spreadBase = 10 + 10 * (1 - localStage);
         final double spread = spreadBase + noise('$key-spread-$depth') * 9;
+
+        final double sideEnable =
+            (branchingFactor * 0.8 + localStage * 0.4).clamp(0.0, 1.0) - 0.18;
+        final bool enableSide = sideEnable > 0;
+
+        if (!enableSide) {
+          if (depth > 1) {
+            growBranch(
+              end,
+              nextLength * (0.84 + 0.1 * localStage),
+              angleDeg + noise('$key-stem-$depth') * 6,
+              nextThickness * (0.82 + 0.1 * localStage),
+              depth - 1,
+              key,
+              localStage * 0.96,
+            );
+          }
+          return;
+        }
 
         growBranch(
           end,
@@ -712,46 +819,59 @@ class _TreeGrowthPainter extends CustomPainter {
 
       final Offset trunkTop = Offset(centerX, soilTop - stemHeight);
       growBranch(trunkTop, baseLength, -90, baseThickness * 0.84, maxDepth, 'main', stageBranch);
-      growBranch(trunkTop + Offset(0, -stemHeight * 0.08), baseLength * 0.9, -78,
-          baseThickness * 0.78, maxDepth - 1, 'upperL', stageBranch);
-      growBranch(trunkTop + Offset(0, -stemHeight * 0.08), baseLength * 0.9, -102,
-          baseThickness * 0.78, maxDepth - 1, 'upperR', stageBranch);
-      growBranch(
-        Offset(centerX, soilTop - stemHeight * 0.52),
-        baseLength * 0.76,
-        -72,
-        baseThickness * 0.7,
-        maxDepth - 2,
-        'midL',
-        stageBranch,
-      );
-      growBranch(
-        Offset(centerX, soilTop - stemHeight * 0.52),
-        baseLength * 0.76,
-        -108,
-        baseThickness * 0.7,
-        maxDepth - 2,
-        'midR',
-        stageBranch,
-      );
-      growBranch(
-        Offset(centerX, soilTop - stemHeight * 0.3),
-        baseLength * 0.64,
-        -65,
-        baseThickness * 0.6,
-        maxDepth - 3,
-        'lowL',
-        stageBranch,
-      );
-      growBranch(
-        Offset(centerX, soilTop - stemHeight * 0.3),
-        baseLength * 0.64,
-        -115,
-        baseThickness * 0.6,
-        maxDepth - 3,
-        'lowR',
-        stageBranch,
-      );
+      if (branchingFactor > 0.2) {
+        growBranch(trunkTop + Offset(0, -stemHeight * 0.08), baseLength * 0.9, -78,
+            baseThickness * 0.78, maxDepth - 1, 'upperL', stageBranch);
+        growBranch(trunkTop + Offset(0, -stemHeight * 0.08), baseLength * 0.9, -102,
+            baseThickness * 0.78, maxDepth - 1, 'upperR', stageBranch);
+        final double midOffset = ui.lerpDouble(0.58, 0.42, branchingFactor) ?? 0.5;
+        final double lowOffset = ui.lerpDouble(0.36, 0.26, branchingFactor) ?? 0.32;
+        final double midLengthFactor = ui.lerpDouble(0.6, 0.82, branchingFactor) ?? 0.7;
+        final double lowLengthFactor = ui.lerpDouble(0.42, 0.7, branchingFactor) ?? 0.6;
+        final double midThicknessFactor = ui.lerpDouble(0.48, 0.72, branchingFactor) ?? 0.6;
+        final double lowThicknessFactor = ui.lerpDouble(0.38, 0.66, branchingFactor) ?? 0.55;
+        final double midLength = baseLength * midLengthFactor;
+        final double lowLength = baseLength * lowLengthFactor;
+        final double midThickness = baseThickness * midThicknessFactor;
+        final double lowThickness = baseThickness * lowThicknessFactor;
+
+        growBranch(
+          Offset(centerX, soilTop - stemHeight * midOffset),
+          midLength,
+          -72,
+          midThickness,
+          maxDepth - 2,
+          'midL',
+          stageBranch,
+        );
+        growBranch(
+          Offset(centerX, soilTop - stemHeight * midOffset),
+          midLength,
+          -108,
+          midThickness,
+          maxDepth - 2,
+          'midR',
+          stageBranch,
+        );
+        growBranch(
+          Offset(centerX, soilTop - stemHeight * lowOffset),
+          lowLength,
+          -65,
+          lowThickness,
+          maxDepth - 3,
+          'lowL',
+          stageBranch,
+        );
+        growBranch(
+          Offset(centerX, soilTop - stemHeight * lowOffset),
+          lowLength,
+          -115,
+          lowThickness,
+          maxDepth - 3,
+          'lowR',
+          stageBranch,
+        );
+      }
     }
   }
 
