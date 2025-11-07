@@ -1,63 +1,9 @@
 import 'dart:math' as math;
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
-import 'package:flame/game.dart';
-import 'package:get/get.dart';
-import 'package:nnbdc/util/toast_util.dart';
-import 'package:provider/provider.dart';
-import '../global.dart';
-import '../state.dart';
+
 import '../theme/app_theme.dart';
-import 'farm_game.dart';
-
-// 泡泡类型
-enum BubbleType { seed, egg, resource }
-
-// 物品类型
-enum ItemType {
-  // 种子类型
-  treeSeed, // 树种
-  grassSeed, // 草种
-  
-  // 卵类型
-  insectEgg, // 昆虫卵
-  birdEgg, // 鸟卵
-  
-  // 资源类型
-  fertilizer, // 化肥
-  water, // 水
-}
-
-// 物品配置
-class ItemConfig {
-  final ItemType type;
-  final String name;
-  final IconData icon;
-  final Color color;
-  final BubbleType sourceType; // 来源泡泡类型
-
-  const ItemConfig({
-    required this.type,
-    required this.name,
-    required this.icon,
-    required this.color,
-    required this.sourceType,
-  });
-}
-
-// 泡泡配置
-class FarmBubbleTypeConfig {
-  final BubbleType type;
-  final String name;
-  final Color color;
-  final IconData icon;
-
-  const FarmBubbleTypeConfig({
-    required this.type,
-    required this.name,
-    required this.color,
-    required this.icon,
-  });
-}
 
 class FarmPage extends StatefulWidget {
   const FarmPage({super.key});
@@ -66,657 +12,415 @@ class FarmPage extends StatefulWidget {
   State<FarmPage> createState() => _FarmPageState();
 }
 
-class _FarmPageState extends State<FarmPage> with TickerProviderStateMixin {
-  late int cowDung; // 魔法泡泡数量
-  late List<Map<String, dynamic>> userBubbles; // 用户的泡泡列表
-  late List<Map<String, dynamic>> userItems; // 用户的物品列表
-  late List<Map<String, dynamic>> farmItems; // 农场中的物品（已播种/孵化的）
-
-  late AnimationController _bubbleGlowController;
-  late AnimationController _rayRotationController;
-  
-  late FarmGame farmGame;
-
-  // 泡泡类型配置
-  static const List<FarmBubbleTypeConfig> _bubbleTypes = [
-    FarmBubbleTypeConfig(
-      type: BubbleType.seed,
-      name: '种子',
-      color: Colors.green,
-      icon: Icons.eco,
-    ),
-    FarmBubbleTypeConfig(
-      type: BubbleType.egg,
-      name: '卵',
-      color: Colors.amber,
-      icon: Icons.egg,
-    ),
-    FarmBubbleTypeConfig(
-      type: BubbleType.resource,
-      name: '资源',
-      color: Colors.blue,
-      icon: Icons.diamond,
-    ),
-  ];
-
-  // 物品配置
-  static final List<ItemConfig> _itemConfigs = [
-    // 种子类型 - 树种（多种）
-    ItemConfig(type: ItemType.treeSeed, name: '橡树种', icon: Icons.park, color: Colors.brown[700]!, sourceType: BubbleType.seed),
-    ItemConfig(type: ItemType.treeSeed, name: '松树种', icon: Icons.park, color: Colors.green[700]!, sourceType: BubbleType.seed),
-    ItemConfig(type: ItemType.treeSeed, name: '枫树种', icon: Icons.park, color: Colors.orange[700]!, sourceType: BubbleType.seed),
-    // 种子类型 - 草种（多种）
-    ItemConfig(type: ItemType.grassSeed, name: '三叶草', icon: Icons.grass, color: Colors.green[600]!, sourceType: BubbleType.seed),
-    ItemConfig(type: ItemType.grassSeed, name: '苜蓿草', icon: Icons.grass, color: Colors.green[500]!, sourceType: BubbleType.seed),
-    ItemConfig(type: ItemType.grassSeed, name: '蒲公英', icon: Icons.grass, color: Colors.yellow[600]!, sourceType: BubbleType.seed),
-    
-    // 卵类型 - 昆虫卵（多种）
-    ItemConfig(type: ItemType.insectEgg, name: '蝴蝶卵', icon: Icons.bug_report, color: Colors.purple[400]!, sourceType: BubbleType.egg),
-    ItemConfig(type: ItemType.insectEgg, name: '蜜蜂卵', icon: Icons.bug_report, color: Colors.orange[400]!, sourceType: BubbleType.egg),
-    ItemConfig(type: ItemType.insectEgg, name: '蜻蜓卵', icon: Icons.bug_report, color: Colors.blue[400]!, sourceType: BubbleType.egg),
-    // 卵类型 - 鸟卵（多种）
-    ItemConfig(type: ItemType.birdEgg, name: '麻雀卵', icon: Icons.egg, color: Colors.brown[400]!, sourceType: BubbleType.egg),
-    ItemConfig(type: ItemType.birdEgg, name: '知更鸟卵', icon: Icons.egg, color: Colors.blue[300]!, sourceType: BubbleType.egg),
-    ItemConfig(type: ItemType.birdEgg, name: '画眉鸟卵', icon: Icons.egg, color: Colors.grey[600]!, sourceType: BubbleType.egg),
-    
-    // 资源类型
-    ItemConfig(type: ItemType.fertilizer, name: '有机化肥', icon: Icons.agriculture, color: Colors.brown[600]!, sourceType: BubbleType.resource),
-    ItemConfig(type: ItemType.fertilizer, name: '营养肥料', icon: Icons.agriculture, color: Colors.green[700]!, sourceType: BubbleType.resource),
-    ItemConfig(type: ItemType.water, name: '清水', icon: Icons.water_drop, color: Colors.blue[400]!, sourceType: BubbleType.resource),
-    ItemConfig(type: ItemType.water, name: '营养液', icon: Icons.water_drop, color: Colors.teal[400]!, sourceType: BubbleType.resource),
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-    
-    // 初始化动画控制器
-    _bubbleGlowController = AnimationController(
-      duration: const Duration(milliseconds: 2000),
-      vsync: this,
-    )..repeat(reverse: true);
-    
-    _rayRotationController = AnimationController(
-      duration: const Duration(milliseconds: 30000),
-      vsync: this,
-    )..repeat();
-    
-    _loadUserData();
-    
-    // 初始化Flame游戏
-    farmGame = FarmGame(
-      onItemTap: _handleItemTap,
-      onTileTap: _handleTileTap,
-    );
-  }
-
-  @override
-  void dispose() {
-    _bubbleGlowController.dispose();
-    _rayRotationController.dispose();
-    farmGame.removeFromParent();
-    super.dispose();
-  }
-  
-  // 处理物品点击
-  void _handleItemTap(ItemConfig config, int gridX, int gridY) {
-    // 可以在这里实现物品点击后的操作，比如收获、查看详情等
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(config.name),
-        content: Text('位于 ($gridX, $gridY)'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              farmGame.removeItem(gridX, gridY);
-              setState(() {
-                farmItems.removeWhere((item) => 
-                  item['gridX'] == gridX && item['gridY'] == gridY
-                );
-              });
-              Get.back();
-              ToastUtil.success('已移除 ${config.name}');
-            },
-            child: const Text('移除'),
-          ),
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('关闭'),
-          ),
-        ],
-      ),
-    );
-  }
-  
-  // 处理地块点击
-  void _handleTileTap(int gridX, int gridY) {
-    // 可以在这里实现地块点击后的操作，比如选择放置物品的位置
-  }
-
-  // 加载用户数据
-  Future<void> _loadUserData() async {
-    final user = Global.getLoggedInUser();
-    if (user == null) {
-      ToastUtil.error('用户未登录');
-      Get.back();
-      return;
-    }
-
-    setState(() {
-      cowDung = user.cowDung;
-      // 初始化用户泡泡列表（简化版：直接使用cowDung数量，实际应该从数据库加载）
-      userBubbles = _generateBubbles(cowDung);
-      userItems = []; // 从数据库加载用户物品
-      farmItems = []; // 从数据库加载农场物品
-    });
-  }
-
-  // 生成泡泡列表
-  List<Map<String, dynamic>> _generateBubbles(int count) {
-    final random = math.Random();
-    return List.generate(count, (index) {
-      final typeIndex = random.nextInt(_bubbleTypes.length);
-      final bubbleType = _bubbleTypes[typeIndex];
-      return {
-        'id': 'bubble_$index',
-        'type': bubbleType.type,
-        'config': bubbleType,
-      };
-    });
-  }
-
-  // 打开泡泡，获得随机物品
-  void _openBubble(Map<String, dynamic> bubble) {
-    final random = math.Random();
-    final bubbleType = bubble['type'] as BubbleType;
-    
-    // 根据泡泡类型获取可能的物品
-    final possibleItems = _itemConfigs.where((item) => item.sourceType == bubbleType).toList();
-    if (possibleItems.isEmpty) return;
-    
-    // 随机选择一个物品
-    final selectedItem = possibleItems[random.nextInt(possibleItems.length)];
-    final quantity = random.nextInt(3) + 1; // 1-3个
-    
-    setState(() {
-      // 移除泡泡
-      userBubbles.removeWhere((b) => b['id'] == bubble['id']);
-      cowDung--;
-      
-      // 添加物品
-      final existingItemIndex = userItems.indexWhere((item) => item['type'] == selectedItem.type);
-      if (existingItemIndex >= 0) {
-        userItems[existingItemIndex]['quantity'] += quantity;
-      } else {
-        userItems.add({
-          'type': selectedItem.type,
-          'config': selectedItem,
-          'quantity': quantity,
-        });
-      }
-    });
-    
-    ToastUtil.success('获得了 ${selectedItem.name} x$quantity');
-  }
-
-  // 使用种子播种
-  void _plantSeed(ItemConfig itemConfig, int quantity) {
-    if (quantity <= 0) return;
-    
-    setState(() {
-      final itemIndex = userItems.indexWhere((item) => item['type'] == itemConfig.type);
-      if (itemIndex >= 0) {
-        final useCount = math.min(quantity, userItems[itemIndex]['quantity'] as int);
-        userItems[itemIndex]['quantity'] -= useCount;
-        if (userItems[itemIndex]['quantity'] <= 0) {
-          userItems.removeAt(itemIndex);
-        }
-        
-        // 添加到农场（随机选择空位置）
-        final random = math.Random();
-        int gridX = random.nextInt(FarmGame.gridWidth);
-        int gridY = random.nextInt(FarmGame.gridHeight);
-        
-        // 确保位置是空的
-        while (farmItems.any((item) => item['gridX'] == gridX && item['gridY'] == gridY)) {
-          gridX = random.nextInt(FarmGame.gridWidth);
-          gridY = random.nextInt(FarmGame.gridHeight);
-        }
-        
-        farmItems.add({
-          'type': itemConfig.type,
-          'config': itemConfig,
-          'gridX': gridX,
-          'gridY': gridY,
-          'plantTime': DateTime.now(),
-        });
-        
-        // 在游戏中放置物品
-        farmGame.placeItem(itemConfig, gridX, gridY);
-        
-        ToastUtil.success('播种了 ${itemConfig.name} x$useCount');
-      }
-    });
-  }
-
-  // 孵化卵
-  void _hatchEgg(ItemConfig itemConfig, int quantity) {
-    if (quantity <= 0) return;
-    
-    setState(() {
-      final itemIndex = userItems.indexWhere((item) => item['type'] == itemConfig.type);
-      if (itemIndex >= 0) {
-        final useCount = math.min(quantity, userItems[itemIndex]['quantity'] as int);
-        userItems[itemIndex]['quantity'] -= useCount;
-        if (userItems[itemIndex]['quantity'] <= 0) {
-          userItems.removeAt(itemIndex);
-        }
-        
-        // 添加到农场（随机选择空位置）
-        final random = math.Random();
-        int gridX = random.nextInt(FarmGame.gridWidth);
-        int gridY = random.nextInt(FarmGame.gridHeight);
-        
-        // 确保位置是空的
-        while (farmItems.any((item) => item['gridX'] == gridX && item['gridY'] == gridY)) {
-          gridX = random.nextInt(FarmGame.gridWidth);
-          gridY = random.nextInt(FarmGame.gridHeight);
-        }
-        
-        farmItems.add({
-          'type': itemConfig.type,
-          'config': itemConfig,
-          'gridX': gridX,
-          'gridY': gridY,
-          'hatchTime': DateTime.now(),
-        });
-        
-        // 在游戏中放置物品
-        farmGame.placeItem(itemConfig, gridX, gridY);
-        
-        ToastUtil.success('孵化了 ${itemConfig.name} x$useCount');
-      }
-    });
-  }
-
-  // 使用资源
-  void _useResource(ItemConfig itemConfig, int quantity) {
-    if (quantity <= 0) return;
-    
-    setState(() {
-      final itemIndex = userItems.indexWhere((item) => item['type'] == itemConfig.type);
-      if (itemIndex >= 0) {
-        final useCount = math.min(quantity, userItems[itemIndex]['quantity'] as int);
-        userItems[itemIndex]['quantity'] -= useCount;
-        if (userItems[itemIndex]['quantity'] <= 0) {
-          userItems.removeAt(itemIndex);
-        }
-        
-        ToastUtil.success('使用了 ${itemConfig.name} x$useCount');
-      }
-    });
-  }
-
+class _FarmPageState extends State<FarmPage> {
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    final cardColor = isDarkMode ? Colors.grey[850] : Colors.white;
-    final textColor = isDarkMode ? Colors.white : Colors.black87;
-
     return Scaffold(
+      backgroundColor: const Color(0xFFF2F5F8),
       appBar: AppBar(
         title: const Text('我的小天地'),
         backgroundColor: AppTheme.primaryColor,
         foregroundColor: Colors.white,
+        elevation: 0,
       ),
-      body: Column(
-        children: [
-          // 农场区域（使用Flame游戏引擎）
-          Expanded(
-            child: Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Colors.brown[200]!,
-                    Colors.brown[300]!,
-                    Colors.brown[400]!,
-                  ],
-                ),
-              ),
-              child: GameWidget<FarmGame>.controlled(
-                gameFactory: () => farmGame,
-              ),
-            ),
+      body: const SafeArea(
+        child: Center(
+          child: SizedBox(
+            width: 420,
+            height: 320,
+            child: PlantGrowthScene(),
           ),
-          // 底部泡泡和物品区域
-          Container(
-            constraints: const BoxConstraints(minHeight: 200),
-            color: cardColor,
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  '魔法泡泡 (${userBubbles.length})',
-                  style: TextStyle(
-                    color: textColor,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                SizedBox(
-                  height: 70,
-                  child: _buildBubblesList(isDarkMode),
-                ),
-                if (userItems.isNotEmpty) ...[
-                  const SizedBox(height: 12),
-                  Text(
-                    '我的物品',
-                    style: TextStyle(
-                      color: textColor,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w400,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    height: 70,
-                    child: _buildItemsList(isDarkMode),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // 构建泡泡列表
-  Widget _buildBubblesList(bool isDarkMode) {
-    if (userBubbles.isEmpty) {
-      return Center(
-        child: Text(
-          '暂无魔法泡泡',
-          style: TextStyle(
-            color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-            fontSize: 12,
-            fontWeight: FontWeight.w400,
-          ),
-        ),
-      );
-    }
-
-    return ListView.builder(
-      scrollDirection: Axis.horizontal,
-      itemCount: userBubbles.length,
-      itemBuilder: (context, index) {
-        final bubble = userBubbles[index];
-        final config = bubble['config'] as FarmBubbleTypeConfig;
-        
-        return GestureDetector(
-          onTap: () => _openBubble(bubble),
-          child: Container(
-            margin: const EdgeInsets.only(right: 12),
-            width: 50,
-            height: 50,
-            child: _buildSingleBubble(config, 40),
-          ),
-        );
-      },
-    );
-  }
-
-  // 构建物品列表
-  Widget _buildItemsList(bool isDarkMode) {
-    return ListView.builder(
-      scrollDirection: Axis.horizontal,
-      itemCount: userItems.length,
-      itemBuilder: (context, index) {
-        final item = userItems[index];
-        final config = item['config'] as ItemConfig;
-        final quantity = item['quantity'] as int;
-        
-        return GestureDetector(
-          onTap: () {
-            _showItemActionDialog(config, quantity);
-          },
-          child: Container(
-            margin: const EdgeInsets.only(right: 12),
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: config.color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: config.color, width: 1),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(config.icon, color: config.color, size: 24),
-                const SizedBox(height: 4),
-                Text(
-                  'x$quantity',
-                  style: TextStyle(
-                    color: isDarkMode ? Colors.white : Colors.black87,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  // 显示物品操作对话框
-  void _showItemActionDialog(ItemConfig config, int quantity) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(config.name),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(config.icon, size: 48, color: config.color),
-            const SizedBox(height: 16),
-            Text('数量: $quantity'),
-            const SizedBox(height: 16),
-            if (config.sourceType == BubbleType.seed)
-              ElevatedButton(
-                onPressed: () {
-                  Get.back();
-                  _plantSeed(config, 1);
-                },
-                child: const Text('播种'),
-              ),
-            if (config.sourceType == BubbleType.egg)
-              ElevatedButton(
-                onPressed: () {
-                  Get.back();
-                  _hatchEgg(config, 1);
-                },
-                child: const Text('孵化'),
-              ),
-            if (config.sourceType == BubbleType.resource)
-              ElevatedButton(
-                onPressed: () {
-                  Get.back();
-                  _useResource(config, 1);
-                },
-                child: const Text('使用'),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // 构建单个泡泡（复用finish.dart的样式）
-  Widget _buildSingleBubble(FarmBubbleTypeConfig type, double size) {
-    final maxGlowExtension = size * 0.5;
-    final containerSize = size + maxGlowExtension * 2;
-    
-    return SizedBox(
-      width: containerSize,
-      height: containerSize,
-      child: AnimatedBuilder(
-        animation: Listenable.merge([_bubbleGlowController, _rayRotationController]),
-        builder: (context, child) {
-          final glowValue = 0.4 + (_bubbleGlowController.value * 0.6);
-          final rotationAngle = _rayRotationController.value * 2 * math.pi;
-          
-          return Stack(
-            clipBehavior: Clip.none,
-            children: [
-              // 外层光晕
-              Positioned(
-                left: maxGlowExtension - (maxGlowExtension * (1 - glowValue)),
-                top: maxGlowExtension - (maxGlowExtension * (1 - glowValue)),
-                child: Container(
-                  width: size + (maxGlowExtension * 2 * glowValue),
-                  height: size + (maxGlowExtension * 2 * glowValue),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: RadialGradient(
-                      colors: [
-                        type.color.withValues(alpha: 0.3 * glowValue),
-                        type.color.withValues(alpha: 0),
-                      ],
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: type.color.withValues(alpha: 0.5 * glowValue),
-                        blurRadius: 20 * glowValue,
-                        spreadRadius: 5 * glowValue,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              // 主泡泡
-              Positioned(
-                left: maxGlowExtension,
-                top: maxGlowExtension,
-                child: Container(
-                  width: size,
-                  height: size,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: RadialGradient(
-                      center: const Alignment(-0.3, -0.3),
-                      colors: [
-                        type.color.withValues(alpha: 0.9),
-                        type.color,
-                        type.color.withValues(alpha: 0.7),
-                      ],
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: type.color.withValues(alpha: 0.6 * glowValue),
-                        blurRadius: 15 * glowValue,
-                        spreadRadius: 3 * glowValue,
-                      ),
-                    ],
-                  ),
-                  child: Stack(
-                    children: [
-                      // 内部光线
-                      _buildInternalRays(size, type.color, rotationAngle, glowValue),
-                      // 内部图标
-                      Center(
-                        child: Icon(
-                          type.icon,
-                          size: size * 0.4,
-                          color: Colors.white.withValues(alpha: 0.8),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          );
-        },
-      ),
-    );
-  }
-
-  // 构建内部光线
-  Widget _buildInternalRays(double size, Color color, double rotationAngle, double glowValue) {
-    const int rayCount = 12;
-    final rayHeight = size * 0.35;
-    
-    return Transform.rotate(
-      angle: rotationAngle,
-      child: CustomPaint(
-        size: Size(size, size),
-        painter: _InternalRayPainter(
-          rayCount: rayCount,
-          rayHeight: rayHeight,
-          color: color,
-          glowValue: glowValue,
         ),
       ),
     );
   }
 }
 
-// 内部光线绘制器
-class _InternalRayPainter extends CustomPainter {
-  final int rayCount;
-  final double rayHeight;
-  final Color color;
-  final double glowValue;
+class PlantGrowthScene extends StatefulWidget {
+  const PlantGrowthScene({super.key});
 
-  _InternalRayPainter({
-    required this.rayCount,
-    required this.rayHeight,
-    required this.color,
-    required this.glowValue,
+  @override
+  State<PlantGrowthScene> createState() => _PlantGrowthSceneState();
+}
+
+class _PlantGrowthSceneState extends State<PlantGrowthScene>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 18),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return CustomPaint(
+          painter: _TreeGrowthPainter(
+            progress: _controller.value,
+            isDarkMode: isDarkMode,
+            accentColor: AppTheme.primaryColor,
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _TreeGrowthPainter extends CustomPainter {
+  final double progress;
+  final bool isDarkMode;
+  final Color accentColor;
+
+  _TreeGrowthPainter({
+    required this.progress,
+    required this.isDarkMode,
+    required this.accentColor,
   });
+
+  static const List<double> _stageStops = [
+    0.0,
+    0.18,
+    0.35,
+    0.55,
+    0.75,
+    0.9,
+    1.0,
+  ];
+
+  double _segmentProgress(int segment) {
+    final double start = _stageStops[segment];
+    final double end = _stageStops[segment + 1];
+    final double clamped = (progress - start) / (end - start);
+    return clamped.clamp(0.0, 1.0);
+  }
 
   @override
   void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final angleStep = 2 * math.pi / rayCount;
-    
-    for (int i = 0; i < rayCount; i++) {
-      final angle = i * angleStep;
-      final startX = center.dx + math.cos(angle) * (size.width / 2 - rayHeight);
-      final startY = center.dy + math.sin(angle) * (size.height / 2 - rayHeight);
-      final endX = center.dx + math.cos(angle) * (size.width / 2);
-      final endY = center.dy + math.sin(angle) * (size.height / 2);
-      
-      final paint = Paint()
-        ..strokeWidth = 1.5
+    final double soilTop = size.height * 0.68;
+    final Paint bgPaint = Paint()
+      ..shader = LinearGradient(
+        colors: isDarkMode
+            ? [const Color(0xFF26303F), const Color(0xFF10151F)]
+            : [const Color(0xFFDFF3FF), const Color(0xFFF6FBFF)],
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
+    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), bgPaint);
+
+    final Paint soilPaint = Paint()
+      ..shader = LinearGradient(
+        colors: [const Color(0xFFC58B5B), const Color(0xFF8B572A)],
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+      ).createShader(Rect.fromLTWH(0, soilTop, size.width, size.height - soilTop));
+    canvas.drawRect(
+      Rect.fromLTWH(0, soilTop, size.width, size.height - soilTop),
+      soilPaint,
+    );
+
+    final Paint stonePaint = Paint()..style = PaintingStyle.fill;
+    final math.Random random = math.Random(7);
+    for (int i = 0; i < 28; i++) {
+      final double x = (i + 1) * (size.width / 30) + random.nextDouble() * 12 - 6;
+      final double y = soilTop + random.nextDouble() * (size.height - soilTop - 20);
+      final double r = 3 + random.nextDouble() * 4;
+      stonePaint.color = Color.lerp(
+        const Color(0xFF7A4A25),
+        const Color(0xFF5E381A),
+        random.nextDouble(),
+      )!;
+      canvas.drawOval(Rect.fromCircle(center: Offset(x, y), radius: r), stonePaint);
+    }
+
+    final double stageSeed = _segmentProgress(0);
+    final double stageSprout = _segmentProgress(1);
+    final double stageSapling = _segmentProgress(2);
+    final double stageBranch = _segmentProgress(3);
+    final double stageCanopy = _segmentProgress(4);
+    final double stageMature = _segmentProgress(5);
+
+    final double centerX = size.width * 0.5;
+
+    final Paint seedPaint = Paint()..color = const Color(0xFF5D4037);
+    final double seedScale = ui.lerpDouble(0.2, 1.0, stageSeed) ?? 0.2;
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset(centerX - 40 * (1 - stageSeed), soilTop - 6 * stageSeed),
+        width: 16 * seedScale,
+        height: 10 * seedScale,
+      ),
+      seedPaint,
+    );
+
+    final Paint primaryRootPaint = Paint()
+      ..color = const Color(0xFFE6D3B2)
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeWidth = ui.lerpDouble(2.0, 4.0, stageSapling) ?? 2.0;
+    final double rootDepth = ui.lerpDouble(18, 68, stageSapling) ?? 18;
+
+    Path buildRootPath({
+      required double angleDeg,
+      required double lengthFactor,
+      required double curvature,
+    }) {
+      final double angle = angleDeg * math.pi / 180;
+      final double dx = math.cos(angle);
+      final double dyFactor = math.sin(angle).abs();
+      final double depth = rootDepth * lengthFactor;
+      final Path path = Path()
+        ..moveTo(centerX, soilTop)
+        ..cubicTo(
+          centerX + dx * 16 * stageSapling,
+          soilTop + depth * (0.18 + 0.12 * dyFactor),
+          centerX + dx * 32 * stageSapling + curvature * 12,
+          soilTop + depth * (0.48 + 0.15 * dyFactor),
+          centerX + dx * 52 * stageSapling,
+          soilTop + depth,
+        );
+      return path;
+    }
+
+    canvas.drawPath(
+      buildRootPath(angleDeg: 200, lengthFactor: 1.0, curvature: -1),
+      primaryRootPaint,
+    );
+    canvas.drawPath(
+      buildRootPath(angleDeg: -200, lengthFactor: 1.0, curvature: 1),
+      primaryRootPaint,
+    );
+
+    if (stageSapling > 0.25) {
+      final Paint sideRootPaint = Paint()
+        ..color = const Color(0xFFEBDAC0)
         ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round
+        ..strokeWidth = ui.lerpDouble(1.2, 2.6, stageSapling) ?? 1.2;
+
+      void drawSideRoot(double startOffset, double angleDeg, double lengthFactor) {
+        final double startY = soilTop + rootDepth * startOffset;
+        final double angle = angleDeg * math.pi / 180;
+        final Path path = Path()
+          ..moveTo(centerX, startY)
+          ..quadraticBezierTo(
+            centerX + math.cos(angle) * 18 * stageSapling,
+            startY + math.sin(angle) * 18 * stageSapling,
+            centerX + math.cos(angle) * 36 * stageSapling,
+            startY + math.sin(angle) * 36 * stageSapling * lengthFactor,
+          );
+        canvas.drawPath(path, sideRootPaint);
+      }
+
+      drawSideRoot(0.35, 215, 1.0);
+      drawSideRoot(0.32, -215, 1.0);
+      if (stageSapling > 0.6) {
+        drawSideRoot(0.55, 245, 0.85);
+        drawSideRoot(0.55, -245, 0.85);
+      }
+    }
+
+    final double stemHeight = ui.lerpDouble(18, size.height * 0.46, stageBranch) ?? 18;
+    final double trunkBaseWidth = ui.lerpDouble(6, 22, stageBranch) ?? 6;
+    final double trunkTopWidth = ui.lerpDouble(2, 10, stageBranch) ?? 2;
+    final double trunkLeftBase = centerX - trunkBaseWidth;
+    final double trunkRightBase = centerX + trunkBaseWidth;
+    final double trunkLeftTop = centerX - trunkTopWidth;
+    final double trunkRightTop = centerX + trunkTopWidth;
+
+    final Paint trunkPaint = Paint()
+      ..shader = LinearGradient(
+        colors: [
+          const Color(0xFF8D5A2F),
+          const Color(0xFF6B4525),
+        ],
+        begin: Alignment.bottomCenter,
+        end: Alignment.topCenter,
+      ).createShader(
+        Rect.fromLTRB(trunkLeftBase, soilTop - stemHeight, trunkRightBase, soilTop),
+      );
+
+    final Path trunkPath = Path()
+      ..moveTo(trunkLeftBase, soilTop)
+      ..lineTo(trunkRightBase, soilTop)
+      ..quadraticBezierTo(
+        centerX + trunkBaseWidth * 0.5,
+        soilTop - stemHeight * 0.45,
+        trunkRightTop,
+        soilTop - stemHeight,
+      )
+      ..lineTo(trunkLeftTop, soilTop - stemHeight)
+      ..quadraticBezierTo(
+        centerX - trunkBaseWidth * 0.5,
+        soilTop - stemHeight * 0.38,
+        trunkLeftBase,
+        soilTop,
+      )
+      ..close();
+    canvas.drawPath(trunkPath, trunkPaint);
+
+    final Paint branchPaint = Paint()
+      ..color = const Color(0xFF704225)
+      ..strokeWidth = ui.lerpDouble(2.0, 4.0, stageBranch) ?? 2.0
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+
+    void drawBranch(double heightFactor, double direction, double lengthFactor) {
+      if (stageBranch <= 0) return;
+      final double branchOriginY = soilTop - stemHeight * heightFactor;
+      final Path branchPath = Path()
+        ..moveTo(centerX, branchOriginY)
+        ..quadraticBezierTo(
+          centerX + direction * 40 * stageBranch,
+          branchOriginY - 10 * stageBranch,
+          centerX + direction * 80 * stageBranch * lengthFactor,
+          branchOriginY - 20 * stageBranch,
+        );
+      canvas.drawPath(branchPath, branchPaint);
+    }
+
+    drawBranch(0.32, -1, 0.65);
+    drawBranch(0.32, 1, 0.65);
+    drawBranch(0.55, -1.1, 0.7);
+    drawBranch(0.55, 1.1, 0.7);
+    drawBranch(0.72, -0.8, 0.5);
+    drawBranch(0.72, 0.8, 0.5);
+
+    final List<Offset> canopyOffsets = [
+      const Offset(-60, -10),
+      const Offset(-42, -6),
+      const Offset(-24, -24),
+      const Offset(-8, -12),
+      const Offset(8, -18),
+      const Offset(22, -6),
+      const Offset(40, -28),
+      const Offset(58, -12),
+      const Offset(-30, -44),
+      const Offset(-4, -36),
+      const Offset(24, -42),
+      const Offset(52, -46),
+    ];
+
+    double canopyRadius(double base, double variance) {
+      return ui.lerpDouble(0, base, stageCanopy)! + variance * stageMature;
+    }
+
+    final Paint canopyPaint = Paint();
+    for (final offset in canopyOffsets) {
+      final double radius = canopyRadius(26, 10 * math.sin(offset.dx / 18));
+      if (radius <= 0) continue;
+      final Offset center = Offset(
+        centerX + offset.dx * stageCanopy,
+        soilTop - stemHeight - 18 * stageCanopy + offset.dy * (0.6 + 0.4 * stageCanopy),
+      );
+      canopyPaint.shader = RadialGradient(
+        colors: [
+          const Color(0xFF7BC67D).withOpacity(0.85),
+          const Color(0xFF2E7D32).withOpacity(0.9),
+        ],
+      ).createShader(Rect.fromCircle(center: center, radius: radius));
+      canvas.drawCircle(center, radius, canopyPaint);
+      canvas.drawCircle(
+        center,
+        radius,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.4
+          ..color = Colors.white.withOpacity(0.08),
+      );
+    }
+
+    void drawLeaf(Offset position, double rotation, double scale, double opacity) {
+      if (opacity <= 0 || scale <= 0) return;
+      canvas.save();
+      canvas.translate(position.dx, position.dy);
+      canvas.rotate(rotation);
+      final Rect leafRect = Rect.fromCenter(center: Offset.zero, width: 20 * scale, height: 38 * scale);
+      final Paint leafPaint = Paint()
         ..shader = LinearGradient(
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
           colors: [
-            Colors.white.withValues(alpha: 0.15 * glowValue),
-            Colors.white.withValues(alpha: 0.25 * glowValue),
-            Colors.white.withValues(alpha: 0.15 * glowValue),
+            const Color(0xFF7BC67D).withOpacity(0.6 + 0.3 * opacity),
+            const Color(0xFF2E7D32).withOpacity(0.7 + 0.3 * opacity),
           ],
-        ).createShader(Rect.fromPoints(Offset(startX, startY), Offset(endX, endY)));
-      
-      canvas.drawLine(Offset(startX, startY), Offset(endX, endY), paint);
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ).createShader(leafRect);
+      final Path leafPath = Path()
+        ..moveTo(0, -leafRect.height / 2)
+        ..quadraticBezierTo(leafRect.width * 0.55, -leafRect.height * 0.15, 0, leafRect.height / 2)
+        ..quadraticBezierTo(-leafRect.width * 0.55, -leafRect.height * 0.15, 0, -leafRect.height / 2);
+      canvas.drawPath(leafPath, leafPaint);
+      canvas.restore();
+    }
+
+    final double trunkTopY = soilTop - stemHeight;
+
+    final double earlyLeafOpacity = stageSprout.clamp(0.0, 1.0);
+    if (earlyLeafOpacity > 0) {
+      final double sproutOffset = 18 * (1 - stageSprout * 0.5);
+      drawLeaf(
+        Offset(centerX - 12 * (0.4 + stageSprout * 0.6), trunkTopY + sproutOffset),
+        -math.pi * 0.22,
+        0.35 + 0.25 * stageSprout,
+        earlyLeafOpacity,
+      );
+      drawLeaf(
+        Offset(centerX + 12 * (0.4 + stageSprout * 0.6), trunkTopY + sproutOffset),
+        math.pi * 0.22,
+        0.35 + 0.25 * stageSprout,
+        earlyLeafOpacity,
+      );
+    }
+
+    final double leafOpacity = math.max(stageBranch, stageSprout);
+    if (leafOpacity > 0) {
+      drawLeaf(
+        Offset(centerX - 26 * stageBranch, soilTop - stemHeight * 0.55),
+        -math.pi * 0.18,
+        0.75 * leafOpacity,
+        leafOpacity,
+      );
+      drawLeaf(
+        Offset(centerX + 22 * stageBranch, soilTop - stemHeight * 0.5),
+        math.pi * 0.2,
+        0.7 * leafOpacity,
+        leafOpacity,
+      );
+      drawLeaf(
+        Offset(centerX - 38 * stageBranch, soilTop - stemHeight * 0.32),
+        -math.pi * 0.25,
+        (leafOpacity - 0.2).clamp(0.0, 1.0),
+        (leafOpacity - 0.2).clamp(0.0, 1.0),
+      );
+      drawLeaf(
+        Offset(centerX + 34 * stageBranch, soilTop - stemHeight * 0.35),
+        math.pi * 0.27,
+        (leafOpacity - 0.2).clamp(0.0, 1.0),
+        (leafOpacity - 0.2).clamp(0.0, 1.0),
+      );
     }
   }
 
   @override
-  bool shouldRepaint(_InternalRayPainter oldDelegate) =>
-      oldDelegate.rayCount != rayCount ||
-      oldDelegate.rayHeight != rayHeight ||
-      oldDelegate.color != color ||
-      oldDelegate.glowValue != glowValue;
+  bool shouldRepaint(covariant _TreeGrowthPainter oldDelegate) {
+    return oldDelegate.progress != progress ||
+        oldDelegate.isDarkMode != isDarkMode ||
+        oldDelegate.accentColor != accentColor;
+  }
 }
 
