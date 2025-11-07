@@ -24,12 +24,8 @@ class _FarmPageState extends State<FarmPage> {
         elevation: 0,
       ),
       body: const SafeArea(
-        child: Center(
-          child: SizedBox(
-            width: 420,
-            height: 320,
-            child: PlantGrowthScene(),
-          ),
+        child: SizedBox.expand(
+          child: PlantGrowthScene(),
         ),
       ),
     );
@@ -77,43 +73,48 @@ class _PlantGrowthSceneState extends State<PlantGrowthScene>
           _controller.repeat();
         }
       },
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          AnimatedBuilder(
-            animation: _controller,
-            builder: (context, child) {
-              final double progress = _seedPlanted ? _controller.value : 0.0;
-              return CustomPaint(
-                painter: _TreeGrowthPainter(
-                  progress: progress,
-                  isDarkMode: isDarkMode,
-                  accentColor: AppTheme.primaryColor,
-                  seedPlanted: _seedPlanted,
-                ),
-              );
-            },
-          ),
-          if (!_seedPlanted)
-            Positioned(
-              bottom: 18,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(isDarkMode ? 0.45 : 0.28),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: const Text(
-                  '轻点种子播种',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w400,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return Stack(
+            alignment: Alignment.center,
+            children: [
+              AnimatedBuilder(
+                animation: _controller,
+                builder: (context, child) {
+                  final double progress = _seedPlanted ? _controller.value : 0.0;
+                  return CustomPaint(
+                    size: Size(constraints.maxWidth, constraints.maxHeight),
+                    painter: _TreeGrowthPainter(
+                      progress: progress,
+                      isDarkMode: isDarkMode,
+                      accentColor: AppTheme.primaryColor,
+                      seedPlanted: _seedPlanted,
+                    ),
+                  );
+                },
+              ),
+              if (!_seedPlanted)
+                Positioned(
+                  bottom: 18,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(isDarkMode ? 0.45 : 0.28),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: const Text(
+                      '轻点种子播种',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            ),
-        ],
+            ],
+          );
+        },
       ),
     );
   }
@@ -151,37 +152,39 @@ class _TreeGrowthPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final double soilTop = size.height * 0.68;
-    final Paint bgPaint = Paint()
+    final double soilTop = size.height * 0.66;
+    final Paint skyPaint = Paint()
       ..shader = LinearGradient(
         colors: isDarkMode
-            ? [const Color(0xFF26303F), const Color(0xFF10151F)]
-            : [const Color(0xFFDFF3FF), const Color(0xFFF6FBFF)],
+            ? [const Color(0xFF22354F), const Color(0xFF101D2C)]
+            : [const Color(0xFF6BB7FF), const Color(0xFFCEE7FF)],
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
-    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), bgPaint);
+      ).createShader(Rect.fromLTWH(0, 0, size.width, soilTop));
+    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, soilTop), skyPaint);
 
+    final Rect soilRect = Rect.fromLTWH(0, soilTop, size.width, size.height - soilTop);
     final Paint soilPaint = Paint()
       ..shader = LinearGradient(
-        colors: [const Color(0xFFC58B5B), const Color(0xFF8B572A)],
+        colors: [const Color(0xFFC88645), const Color(0xFF6E3816)],
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-      ).createShader(Rect.fromLTWH(0, soilTop, size.width, size.height - soilTop));
+      ).createShader(soilRect);
+    canvas.drawRect(soilRect, soilPaint);
     canvas.drawRect(
-      Rect.fromLTWH(0, soilTop, size.width, size.height - soilTop),
-      soilPaint,
+      Rect.fromLTWH(-1, soilTop - 6, size.width + 2, 6),
+      Paint()..color = const Color(0xFF4F2E16),
     );
 
     final Paint stonePaint = Paint()..style = PaintingStyle.fill;
-    final math.Random random = math.Random(7);
-    for (int i = 0; i < 28; i++) {
-      final double x = (i + 1) * (size.width / 30) + random.nextDouble() * 12 - 6;
-      final double y = soilTop + random.nextDouble() * (size.height - soilTop - 20);
-      final double r = 3 + random.nextDouble() * 4;
+    final math.Random random = math.Random(11);
+    for (int i = 0; i < 36; i++) {
+      final double x = soilRect.left + random.nextDouble() * soilRect.width;
+      final double y = soilRect.top + soilRect.height * (0.15 + random.nextDouble() * 0.8);
+      final double r = 2.0 + random.nextDouble() * 3.0;
       stonePaint.color = Color.lerp(
-        const Color(0xFF7A4A25),
-        const Color(0xFF5E381A),
+        const Color(0xFF9B6A3D),
+        const Color(0xFF6B4124),
         random.nextDouble(),
       )!;
       canvas.drawOval(Rect.fromCircle(center: Offset(x, y), radius: r), stonePaint);
@@ -199,25 +202,19 @@ class _TreeGrowthPainter extends CustomPainter {
             ui.lerpDouble(soilTop - 8, soilTop + 8, stageSeed) ?? soilTop - 8,
           )
         : Offset(centerX, soilTop - 12);
-    final double seedWidth = seedPlanted
-        ? ui.lerpDouble(10, 6, stageSeed)?.clamp(4.0, 10.0) ?? 10
-        : 9;
-    final double seedHeight = seedPlanted
-        ? ui.lerpDouble(14, 8, stageSeed)?.clamp(4.0, 14.0) ?? 14
-        : 12;
-    final Paint seedPaint = Paint()..color = const Color(0xFFA96A3A);
-    canvas.drawOval(
-      Rect.fromCenter(
-        center: seedCenter,
-        width: seedWidth,
-        height: seedHeight,
-      ),
-      seedPaint,
+    final double seedRadius = seedPlanted
+        ? ui.lerpDouble(5, 3.8, stageSeed)?.clamp(2.5, 5.0) ?? 5
+        : 5;
+    canvas.drawCircle(
+      seedCenter,
+      seedRadius,
+      Paint()..color = const Color(0xFF9C6941),
     );
 
-    if (stageSapling > 0) {
-      final double baseLength = ui.lerpDouble(30, 78, stageSapling) ?? 30;
-      final double baseThickness = ui.lerpDouble(4.2, 7.6, stageSapling) ?? 4.2;
+    if (seedPlanted && stageSapling > 0) {
+      final double strength = stageSapling.clamp(0.0, 1.0);
+      final double baseLength = (30 + 48 * strength) * strength;
+      final double baseThickness = (4.2 + 3.6 * strength) * strength.clamp(0.35, 1.0);
       final int maxDepth = 3 + (stageSapling * 2.2).floor();
 
       Color rootColorFor(int depth) {
@@ -257,9 +254,9 @@ class _TreeGrowthPainter extends CustomPainter {
           ..strokeWidth = thickness;
         canvas.drawPath(path, paint);
 
-        final double nextLength = length * (0.68 + 0.12 * stageSapling);
-        final double nextThickness = thickness * 0.62;
-        final double spread = 18 + 10 * (1 - stageSapling);
+        final double nextLength = length * (0.62 + 0.18 * strength);
+        final double nextThickness = thickness * 0.65;
+        final double spread = 18 + 10 * (1 - strength);
 
         drawRootBranch(
           end,
@@ -290,51 +287,52 @@ class _TreeGrowthPainter extends CustomPainter {
         }
       }
 
-      drawRootBranch(Offset(centerX, soilTop), baseLength, 90, baseThickness, maxDepth, 11.0);
-      drawRootBranch(Offset(centerX, soilTop), baseLength * 0.85, 115, baseThickness * 0.92, maxDepth - 1, 23.4);
-      drawRootBranch(Offset(centerX, soilTop), baseLength * 0.85, 65, baseThickness * 0.92, maxDepth - 1, 37.8);
+      final Offset rootOrigin = Offset(centerX, soilTop + 4 * strength);
+      drawRootBranch(rootOrigin, baseLength, 90, baseThickness, maxDepth, 11.0);
+      drawRootBranch(rootOrigin, baseLength * 0.85, 115, baseThickness * 0.92, maxDepth - 1, 23.4);
+      drawRootBranch(rootOrigin, baseLength * 0.85, 65, baseThickness * 0.92, maxDepth - 1, 37.8);
     }
 
-    final double stemHeight = ui.lerpDouble(18, size.height * 0.46, stageBranch) ?? 18;
-    final double trunkBaseWidth = ui.lerpDouble(6, 22, stageBranch) ?? 6;
-    final double trunkTopWidth = ui.lerpDouble(2, 10, stageBranch) ?? 2;
-    final double trunkLeftBase = centerX - trunkBaseWidth;
-    final double trunkRightBase = centerX + trunkBaseWidth;
-    final double trunkLeftTop = centerX - trunkTopWidth;
-    final double trunkRightTop = centerX + trunkTopWidth;
-
-    final Paint trunkPaint = Paint()
-      ..shader = LinearGradient(
-        colors: [
-          const Color(0xFF8D5A2F),
-          const Color(0xFF6B4525),
-        ],
-        begin: Alignment.bottomCenter,
-        end: Alignment.topCenter,
-      ).createShader(
-        Rect.fromLTRB(trunkLeftBase, soilTop - stemHeight, trunkRightBase, soilTop),
-      );
-
-    final Path trunkPath = Path()
-      ..moveTo(trunkLeftBase, soilTop)
-      ..lineTo(trunkRightBase, soilTop)
-      ..quadraticBezierTo(
-        centerX + trunkBaseWidth * 0.5,
-        soilTop - stemHeight * 0.45,
-        trunkRightTop,
-        soilTop - stemHeight,
-      )
-      ..lineTo(trunkLeftTop, soilTop - stemHeight)
-      ..quadraticBezierTo(
-        centerX - trunkBaseWidth * 0.5,
-        soilTop - stemHeight * 0.38,
-        trunkLeftBase,
-        soilTop,
-      )
-      ..close();
-    canvas.drawPath(trunkPath, trunkPaint);
-
     if (stageBranch > 0) {
+      final double stemHeight = ui.lerpDouble(18, size.height * 0.46, stageBranch) ?? 18;
+      final double trunkBaseWidth = ui.lerpDouble(6, 22, stageBranch) ?? 6;
+      final double trunkTopWidth = ui.lerpDouble(2, 10, stageBranch) ?? 2;
+      final double trunkLeftBase = centerX - trunkBaseWidth;
+      final double trunkRightBase = centerX + trunkBaseWidth;
+      final double trunkLeftTop = centerX - trunkTopWidth;
+      final double trunkRightTop = centerX + trunkTopWidth;
+
+      final Paint trunkPaint = Paint()
+        ..shader = LinearGradient(
+          colors: [
+            const Color(0xFF8D5A2F),
+            const Color(0xFF6B4525),
+          ],
+          begin: Alignment.bottomCenter,
+          end: Alignment.topCenter,
+        ).createShader(
+          Rect.fromLTRB(trunkLeftBase, soilTop - stemHeight, trunkRightBase, soilTop),
+        );
+
+      final Path trunkPath = Path()
+        ..moveTo(trunkLeftBase, soilTop)
+        ..lineTo(trunkRightBase, soilTop)
+        ..quadraticBezierTo(
+          centerX + trunkBaseWidth * 0.5,
+          soilTop - stemHeight * 0.45,
+          trunkRightTop,
+          soilTop - stemHeight,
+        )
+        ..lineTo(trunkLeftTop, soilTop - stemHeight)
+        ..quadraticBezierTo(
+          centerX - trunkBaseWidth * 0.5,
+          soilTop - stemHeight * 0.38,
+          trunkLeftBase,
+          soilTop,
+        )
+        ..close();
+      canvas.drawPath(trunkPath, trunkPaint);
+
       final double baseLength = ui.lerpDouble(54, 126, stageBranch) ?? 54;
       final double baseThickness = ui.lerpDouble(6.5, 11.0, stageBranch) ?? 6.5;
       final int maxDepth = 3 + (stageBranch * 2.5).floor();
