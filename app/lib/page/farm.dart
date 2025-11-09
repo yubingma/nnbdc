@@ -544,21 +544,6 @@ class _TreeGrowthPainter extends CustomPainter {
       skyPaint.color = const Color(0xFF1E88E5); // 深邃的蔚蓝色
     }
     canvas.drawRect(Rect.fromLTWH(0, 0, size.width, soilTop), skyPaint);
-    
-    // 绘制云朵（在世界空间中，会随滚动变化）
-    if (!isDarkMode) {
-      final math.Random cloudRandom = math.Random(branchSeed ^ 0x1c7);
-      final int cloudCount = 15; // 增加云朵数量
-      
-      for (int i = 0; i < cloudCount; i++) {
-        // 云朵在世界空间中分布
-        final double cloudX = (i / cloudCount) * size.width + cloudRandom.nextDouble() * 200 - 100;
-        final double cloudY = soilTop * 0.15 + cloudRandom.nextDouble() * soilTop * 0.3;
-        final double cloudScale = 0.6 + cloudRandom.nextDouble() * 0.8;
-        
-        drawCloud(canvas, Offset(cloudX, cloudY), cloudScale, cloudRandom.nextDouble());
-      }
-    }
 
     // 用户小天地在世界中央
     final double centerX = size.width * 0.5;
@@ -569,6 +554,54 @@ class _TreeGrowthPainter extends CustomPainter {
     final double viewportHeightPx = viewportHeightMeters * pixelsPerMeter;
     
     final double horizonY = soilTop - viewportHeightPx * 0.35;
+    
+    // 绘制云朵和太阳（都在世界空间中，会随滚动变化）
+    if (!isDarkMode) {
+      final math.Random cloudRandom = math.Random(branchSeed ^ 0x1c7);
+      
+      // 太阳（在世界空间中，山峰上方10米）
+      final double mountainHeight = viewportHeightPx * 0.32; // 山峰约高度
+      final double sunX = size.width * 0.67; // 世界中的X位置
+      final double sunY = horizonY - mountainHeight - 10 * pixelsPerMeter; // 山峰上方10米
+      final double sunRadius = 75.0; // 直径150像素，半径75
+      
+      // 太阳光晕
+      final Paint sunGlowPaint = Paint()
+        ..shader = RadialGradient(
+          colors: [
+            const Color(0xFFFFEB3B).withValues(alpha: 0.5),
+            const Color(0xFFFFEB3B).withValues(alpha: 0.0),
+          ],
+          stops: const [0.0, 1.0],
+        ).createShader(Rect.fromCircle(center: Offset(sunX, sunY), radius: sunRadius * 2.5));
+      canvas.drawCircle(Offset(sunX, sunY), sunRadius * 2.5, sunGlowPaint);
+      
+      // 太阳本体
+      final Paint sunPaint = Paint()
+        ..shader = RadialGradient(
+          colors: [
+            const Color(0xFFFFFACD),
+            const Color(0xFFFFEB3B),
+            const Color(0xFFFFC107),
+          ],
+          stops: const [0.0, 0.6, 1.0],
+        ).createShader(Rect.fromCircle(center: Offset(sunX, sunY), radius: sunRadius));
+      canvas.drawCircle(Offset(sunX, sunY), sunRadius, sunPaint);
+      
+      // 云朵（覆盖整个天空）- 大20倍
+      final int cloudCount = 15; // 增加数量覆盖整个天空
+      final double skyHeight = soilTop; // 天空高度（从顶部到土壤）
+      
+      for (int i = 0; i < cloudCount; i++) {
+        // 云朵在世界空间中均匀分布
+        final double cloudX = (i / cloudCount) * size.width + cloudRandom.nextDouble() * 300 - 150;
+        // 云朵分布在整个天空：从顶部5%到底部95%
+        final double cloudY = skyHeight * 0.05 + cloudRandom.nextDouble() * skyHeight * 0.9;
+        final double cloudScale = (0.6 + cloudRandom.nextDouble() * 0.8) * 20; // 放大20倍
+        
+        drawCloud(canvas, Offset(cloudX, cloudY), cloudScale, cloudRandom.nextDouble());
+      }
+    }
     
     // 绘制渐变的大气层，从天空平滑过渡到地平线
     final Paint atmospherePaint = Paint()
@@ -1583,36 +1616,6 @@ class _TreeGrowthPainter extends CustomPainter {
           'lowR',
         );
       }
-    }
-    
-    // 绘制太阳（固定在屏幕坐标，不随滚动变化）
-    if (!isDarkMode) {
-      final double sunX = size.width * 0.85;
-      final double sunY = size.height * 0.12;
-      final double sunRadius = 40.0;
-      
-      // 太阳光晕
-      final Paint sunGlowPaint = Paint()
-        ..shader = RadialGradient(
-          colors: [
-            const Color(0xFFFFEB3B).withValues(alpha: 0.4),
-            const Color(0xFFFFEB3B).withValues(alpha: 0.0),
-          ],
-          stops: const [0.0, 1.0],
-        ).createShader(Rect.fromCircle(center: Offset(sunX, sunY), radius: sunRadius * 2.5));
-      canvas.drawCircle(Offset(sunX, sunY), sunRadius * 2.5, sunGlowPaint);
-      
-      // 太阳本体
-      final Paint sunPaint = Paint()
-        ..shader = RadialGradient(
-          colors: [
-            const Color(0xFFFFFACD),
-            const Color(0xFFFFEB3B),
-            const Color(0xFFFFC107),
-          ],
-          stops: const [0.0, 0.65, 1.0],
-        ).createShader(Rect.fromCircle(center: Offset(sunX, sunY), radius: sunRadius));
-      canvas.drawCircle(Offset(sunX, sunY), sunRadius, sunPaint);
     }
   }
 
