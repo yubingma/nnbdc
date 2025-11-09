@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
@@ -19,6 +20,9 @@ const List<double> _treeStageStops = [
 const double _maxTreeHeightMeters = 6.0;
 const double _secondsPerGrowthDay = 3.0; // 几秒一日的生长速度控制
 const double _seedInitialDepth = 18.0; // 种子初始埋深，控制破土时间
+const double _worldScaleMetersPerScreen = 10.0; // 当前屏幕宽度代表的米数
+const double _targetWorldWidthMeters = 10000.0; // 世界总宽度（米）
+const double _soilThicknessMeters = 5.0; // 土壤层厚度（米）
 
 double _rootProgressFor(double progress) {
   final double emergenceThreshold = _treeStageStops[2];
@@ -73,6 +77,14 @@ class _PlantGrowthSceneState extends State<PlantGrowthScene>
   double _elapsedDays = 0.0;
   double _lastControllerValue = 0.0;
   String? _inputError;
+  late final TransformationController _viewController;
+  Matrix4 _baseViewMatrix = Matrix4.identity();
+  Size? _lastViewportSize;
+  bool _viewMatrixInitialized = false;
+  bool _userInteractingWithView = false;
+  bool _isAdjustingViewMatrix = false;
+  double _currentViewportHeight = 0;
+  double _currentWorldHeight = 0;
 
   @override
   void initState() {
@@ -84,6 +96,8 @@ class _PlantGrowthSceneState extends State<PlantGrowthScene>
       duration: const Duration(seconds: 18),
     );
     _controller.addListener(_handleTick);
+    _viewController = TransformationController();
+    _viewController.addListener(_handleViewMatrixChange);
   }
 
   int _computeBranchSeed() {
@@ -95,6 +109,64 @@ class _PlantGrowthSceneState extends State<PlantGrowthScene>
     }
     if (hash == 0) hash = 1;
     return hash;
+  }
+
+  Matrix4 _computeBaseViewMatrix(
+    double viewportWidth,
+    double viewportHeight,
+    double worldWidth,
+    double worldHeight,
+  ) {
+    // 将用户小天地放在世界中央，同时保证世界底部贴齐屏幕底部
+    // 用户小天地在世界中央，即 worldWidth / 2
+    // 视口中央是 viewportWidth / 2
+    // 所以 X 平移 = viewportWidth/2 - worldWidth/2
+    final Matrix4 matrix = Matrix4.identity();
+    matrix.translate(
+      viewportWidth / 2 - worldWidth / 2,
+      viewportHeight - worldHeight,
+    );
+    return matrix;
+  }
+
+  bool _matricesTranslationClose(Matrix4 a, Matrix4 b,
+      [double tolerance = 0.5]) {
+    final Float64List aStorage = a.storage;
+    final Float64List bStorage = b.storage;
+    return (aStorage[12] - bStorage[12]).abs() <= tolerance &&
+        (aStorage[13] - bStorage[13]).abs() <= tolerance;
+  }
+
+  void _applyViewMatrix(Matrix4 matrix) {
+    _isAdjustingViewMatrix = true;
+    try {
+      _viewController.value = Matrix4.copy(matrix);
+    } finally {
+      _isAdjustingViewMatrix = false;
+    }
+  }
+
+  void _handleViewMatrixChange() {
+    if (!_viewMatrixInitialized || _isAdjustingViewMatrix) {
+      return;
+    }
+    if (_currentViewportHeight <= 0 || _currentWorldHeight <= 0) {
+      return;
+    }
+    final Matrix4 value = _viewController.value;
+    final double scaleY = value.getMaxScaleOnAxis();
+    final double desiredTy =
+        _currentViewportHeight - scaleY * _currentWorldHeight;
+    final double currentTy = value.storage[13];
+    if ((currentTy - desiredTy).abs() > 0.5) {
+      final Matrix4 adjusted = Matrix4.copy(value);
+      adjusted.setTranslationRaw(
+        adjusted.storage[12],
+        desiredTy,
+        adjusted.storage[14],
+      );
+      _applyViewMatrix(adjusted);
+    }
   }
 
   void _handleTick() {
@@ -118,19 +190,14 @@ class _PlantGrowthSceneState extends State<PlantGrowthScene>
     final double deltaSeconds = delta * durationMs / 1000.0;
     _elapsedDays += deltaSeconds / _secondsPerGrowthDay; // 几秒钟流逝一天
 
-    double newProgress;
-    if (_stopDay > 0) {
-      if (_elapsedDays >= _stopDay) {
-        _elapsedDays = _stopDay.toDouble();
-        _controller.stop();
-      }
-      final double normalized = (_elapsedDays / _stopDay).clamp(0.0, 1.0);
-      newProgress = normalized;
-    } else {
-      const double characteristicDays = 45.0;
-      final double normalized = (_elapsedDays / characteristicDays).clamp(0.0, 1.0);
-      newProgress = normalized;
+    const double characteristicDays = 45.0;
+    if (_stopDay > 0 && _elapsedDays >= _stopDay) {
+      _elapsedDays = _stopDay.toDouble();
+      _controller.stop();
     }
+
+    final double newProgress =
+        (_elapsedDays / characteristicDays).clamp(0.0, 1.0);
 
     setState(() {
       _displayProgress = newProgress.clamp(0.0, 1.0);
@@ -213,6 +280,8 @@ class _PlantGrowthSceneState extends State<PlantGrowthScene>
     _controller.removeListener(_handleTick);
     _controller.dispose();
     _dayController.dispose();
+    _viewController.removeListener(_handleViewMatrixChange);
+    _viewController.dispose();
     super.dispose();
   }
 
@@ -257,23 +326,79 @@ class _PlantGrowthSceneState extends State<PlantGrowthScene>
                 _startGrowthFromSeed();
               }
             },
+            onDoubleTap: () {
+              _userInteractingWithView = false;
+              _applyViewMatrix(_baseViewMatrix);
+            },
             child: LayoutBuilder(
               builder: (context, constraints) {
                 // 使用 LayoutBuilder 获取父容器尺寸，便于自适应绘制大小
                 final double progress = _seedPlanted ? _displayProgress : 0.0;
                 final String elapsedLabel = _formatElapsedTime(progress);
+                final double worldWidth =
+                    constraints.maxWidth * (_targetWorldWidthMeters / _worldScaleMetersPerScreen);
+                final double aspectRatio = constraints.maxWidth == 0
+                    ? 1.0
+                    : constraints.maxHeight / constraints.maxWidth;
+                final double worldHeight = worldWidth * aspectRatio;
+                final double boundaryExtent =
+                    math.max(worldWidth, worldHeight) * 0.25;
+                final Size viewportSize = Size(constraints.maxWidth, constraints.maxHeight);
+                _currentViewportHeight = viewportSize.height;
+                _currentWorldHeight = worldHeight;
+
+                final Matrix4 desiredBaseMatrix = _computeBaseViewMatrix(
+                  viewportSize.width,
+                  viewportSize.height,
+                  worldWidth,
+                  worldHeight,
+                );
+
+                final bool viewportChanged = _lastViewportSize != viewportSize;
+
+                if (!_viewMatrixInitialized || viewportChanged) {
+                  _viewMatrixInitialized = true;
+                  _lastViewportSize = viewportSize;
+                  _baseViewMatrix = Matrix4.copy(desiredBaseMatrix);
+                  _applyViewMatrix(_baseViewMatrix);
+                } else if (!_userInteractingWithView &&
+                    !_matricesTranslationClose(_baseViewMatrix, desiredBaseMatrix)) {
+                  _lastViewportSize = viewportSize;
+                  _baseViewMatrix = Matrix4.copy(desiredBaseMatrix);
+                  _applyViewMatrix(_baseViewMatrix);
+                }
                 return Stack(
                   alignment: Alignment.center,
                   children: [
-                    CustomPaint(
-                      size: Size(constraints.maxWidth, constraints.maxHeight),
-                      painter: _TreeGrowthPainter(
-                        progress: progress,
-                        isDarkMode: isDarkMode,
-                        accentColor: AppTheme.primaryColor,
-                        // 记录是否已播种，决定是否绘制树干
-                        seedPlanted: _seedPlanted,
-                        branchSeed: _branchSeed,
+                    ClipRect(
+                      child: InteractiveViewer(
+                        transformationController: _viewController,
+                        constrained: false,
+                        alignment: Alignment.topLeft,
+                        minScale: 0.001,
+                        maxScale: 2.6,
+                        boundaryMargin: EdgeInsets.all(boundaryExtent),
+                        clipBehavior: Clip.hardEdge,
+                        onInteractionStart: (_) {
+                          _userInteractingWithView = true;
+                        },
+                        onInteractionEnd: (_) {
+                          _userInteractingWithView = false;
+                        },
+                        child: SizedBox(
+                          width: worldWidth,
+                          height: worldHeight,
+                          child: CustomPaint(
+                            painter: _TreeGrowthPainter(
+                              progress: progress,
+                              isDarkMode: isDarkMode,
+                              accentColor: AppTheme.primaryColor,
+                              // 记录是否已播种，决定是否绘制树干
+                              seedPlanted: _seedPlanted,
+                              branchSeed: _branchSeed,
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                     Positioned(
@@ -351,7 +476,12 @@ class _TreeGrowthPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final double soilTop = size.height * 0.65; // 土层位置：下方约三分之一
+    final double pixelsPerMeter =
+        _targetWorldWidthMeters == 0 ? 0 : size.width / _targetWorldWidthMeters;
+    final double soilThicknessPx = pixelsPerMeter > 0
+        ? math.min(size.height * 0.9, _soilThicknessMeters * pixelsPerMeter)
+        : size.height * 0.35;
+    final double soilTop = size.height - soilThicknessPx; // 土层位置，底部厚度固定为 5 米
     final Paint skyPaint = Paint()
       ..shader = LinearGradient(
         colors: isDarkMode
@@ -361,6 +491,154 @@ class _TreeGrowthPainter extends CustomPainter {
         end: Alignment.bottomCenter,
       ).createShader(Rect.fromLTWH(0, 0, size.width, soilTop));
     canvas.drawRect(Rect.fromLTWH(0, 0, size.width, soilTop), skyPaint);
+
+    // 用户小天地在世界中央
+    final double centerX = size.width * 0.5;
+    
+    // 使用已定义的pixelsPerMeter，计算视口尺寸
+    final double viewportWidthMeters = _worldScaleMetersPerScreen; // 视口宽度对应10米
+    final double viewportWidthPx = viewportWidthMeters * pixelsPerMeter;
+    
+    // 背景对象范围：视口宽度的1.5倍
+    final double localViewWidth = viewportWidthPx * 0.75;
+    
+    // 树木等对象使用视口米数来计算尺寸，而不是世界米数
+    final double viewportHeightMeters = viewportWidthMeters * (size.height / size.width);
+    final double viewportHeightPx = viewportHeightMeters * pixelsPerMeter;
+    
+    final double horizonY = soilTop - viewportHeightPx * 0.32;
+    final Paint horizonPaint = Paint()
+      ..shader = LinearGradient(
+        colors: [
+          const Color(0xFF90C1FF).withValues(alpha: 0.55),
+          const Color(0xFF6394D6).withValues(alpha: 0.75),
+        ],
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+      ).createShader(Rect.fromLTWH(centerX - localViewWidth, horizonY - 80, localViewWidth * 2, 160));
+
+    Path distantRange(double offset, double heightFactor, double skew) {
+      final Path path = Path()..moveTo(centerX - localViewWidth * 1.1, horizonY + offset);
+      final double step = localViewWidth * 2 / 6;
+      for (int i = -1; i <= 7; i++) {
+        final double x = centerX - localViewWidth + i * step;
+        final double peak = horizonY + offset - heightFactor * viewportHeightPx *
+            (0.4 + math.sin(i * 0.8 + skew) * 0.18);
+        path.quadraticBezierTo(
+          x + step * 0.4,
+          peak,
+          x + step,
+          horizonY + offset,
+        );
+      }
+      path
+        ..lineTo(centerX + localViewWidth * 1.1, horizonY + offset + 60)
+        ..lineTo(centerX - localViewWidth * 1.1, horizonY + offset + 60)
+        ..close();
+      return path;
+    }
+
+    final Paint farRangePaint = Paint()
+      ..shader = LinearGradient(
+        colors: [
+          const Color(0xFF4B6BA1).withValues(alpha: 0.6),
+          const Color(0xFF395382).withValues(alpha: 0.8),
+        ],
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+      ).createShader(Rect.fromLTWH(centerX - localViewWidth, horizonY - 200, localViewWidth * 2, 240));
+    canvas.drawPath(
+      distantRange(42, 0.16, 0.0),
+      farRangePaint,
+    );
+
+    final Paint nearRangePaint = Paint()
+      ..shader = LinearGradient(
+        colors: [
+          const Color(0xFF77A869).withValues(alpha: 0.75),
+          const Color(0xFF4E7E46).withValues(alpha: 0.9),
+        ],
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+      ).createShader(Rect.fromLTWH(centerX - localViewWidth, horizonY - 140, localViewWidth * 2, 220));
+    canvas.drawPath(
+      distantRange(0, 0.22, 1.2),
+      nearRangePaint,
+    );
+
+    canvas.drawRect(
+      Rect.fromLTWH(centerX - localViewWidth, horizonY - 80, localViewWidth * 2, 160),
+      horizonPaint,
+    );
+
+    final Paint distantTreePaint = Paint()
+      ..color = const Color(0xFF476944).withValues(alpha: 0.28);
+    final Paint distantCrownPaint = Paint()
+      ..color = const Color(0xFF6B8F58).withValues(alpha: 0.34);
+    final int groveCount = (localViewWidth * 2 / 120).ceil();
+    for (int i = 0; i < groveCount; i++) {
+      final double t = i / groveCount;
+      final double baseX = centerX - localViewWidth + t * localViewWidth * 2 + math.sin(i * 1.4) * 28;
+      final double baseY = horizonY + math.sin(i * 1.9) * 14;
+      canvas.drawRect(
+        Rect.fromCenter(
+          center: Offset(baseX, baseY + 24),
+          width: 6,
+          height: 48,
+        ),
+        distantTreePaint,
+      );
+      canvas.drawOval(
+        Rect.fromCenter(
+          center: Offset(baseX, baseY),
+          width: 46,
+          height: 34,
+        ),
+        distantCrownPaint,
+      );
+    }
+
+    final double riverTop = soilTop - size.height * 0.18;
+    final Paint riverPaint = Paint()
+      ..shader = LinearGradient(
+        colors: [
+          const Color(0xFF9CD0F3).withValues(alpha: 0.55),
+          const Color(0xFF66A8D1).withValues(alpha: 0.8),
+        ],
+        begin: Alignment.centerLeft,
+        end: Alignment.centerRight,
+      ).createShader(Rect.fromLTWH(centerX - localViewWidth, riverTop - 14, localViewWidth * 2, 60));
+    final Path riverPath = Path()
+      ..moveTo(centerX - localViewWidth - 40, riverTop)
+      ..cubicTo(
+        centerX - localViewWidth * 0.7,
+        riverTop + 18,
+        centerX - localViewWidth * 0.3,
+        riverTop - 28,
+        centerX + localViewWidth * 0.04,
+        riverTop - 10,
+      )
+      ..cubicTo(
+        centerX + localViewWidth * 0.5,
+        riverTop + 24,
+        centerX + localViewWidth * 0.84,
+        riverTop - 6,
+        centerX + localViewWidth + 60,
+        riverTop + 14,
+      )
+      ..lineTo(centerX + localViewWidth + 60, riverTop + 60)
+      ..lineTo(centerX - localViewWidth - 40, riverTop + 60)
+      ..close();
+    canvas.drawPath(riverPath, riverPaint);
+
+    final Paint riverHighlight = Paint()
+      ..color = Colors.white.withValues(alpha: isDarkMode ? 0.16 : 0.22)
+      ..strokeWidth = 3
+      ..style = PaintingStyle.stroke;
+    canvas.drawPath(
+      riverPath.shift(const Offset(0, -2)),
+      riverHighlight,
+    );
 
     final Rect soilRect = Rect.fromLTWH(0, soilTop, size.width, size.height - soilTop);
     final Paint soilPaint = Paint()
@@ -376,11 +654,12 @@ class _TreeGrowthPainter extends CustomPainter {
     );
 
     final Paint stonePaint = Paint()..style = PaintingStyle.fill;
-    final math.Random random = math.Random(11);
-    for (int i = 0; i < 36; i++) {
+    final math.Random random = math.Random(branchSeed ^ 0x51f);
+    final int stoneCount = (size.width / 20).round();
+    for (int i = 0; i < stoneCount; i++) {
       final double x = soilRect.left + random.nextDouble() * soilRect.width;
       final double y = soilRect.top + soilRect.height * (0.15 + random.nextDouble() * 0.8);
-      final double r = 2.0 + random.nextDouble() * 3.0;
+      final double r = 1.6 + random.nextDouble() * 3.6;
       stonePaint.color = Color.lerp(
         const Color(0xFF9B6A3D),
         const Color(0xFF6B4124),
@@ -389,7 +668,35 @@ class _TreeGrowthPainter extends CustomPainter {
       canvas.drawOval(Rect.fromCircle(center: Offset(x, y), radius: r), stonePaint);
     }
 
-    final double centerX = size.width * 0.5;
+    final Paint shrubPaint = Paint()
+      ..color = const Color(0xFF4A7B37).withValues(alpha: 0.82);
+    final Paint shrubShadow = Paint()
+      ..color = const Color(0xFF2E4F27).withValues(alpha: 0.6);
+    final int shrubCount = (localViewWidth * 2 / 90).ceil();
+    for (int i = 0; i < shrubCount; i++) {
+      final double t = (i + 0.5) / shrubCount;
+      final double baseX = centerX - localViewWidth + localViewWidth * 2 * t +
+          math.sin(i * 1.6) * 32;
+      final double baseY = soilRect.top + soilRect.height * 0.05 +
+          math.sin(i * 0.9) * 12;
+      final double radius = 18 + math.sin(i * 1.2) * 6;
+      canvas.drawOval(
+        Rect.fromCenter(
+          center: Offset(baseX, baseY + 8),
+          width: radius * 1.6,
+          height: radius * 0.7,
+        ),
+        shrubShadow,
+      );
+      canvas.drawOval(
+        Rect.fromCenter(
+          center: Offset(baseX, baseY),
+          width: radius * 1.4,
+          height: radius,
+        ),
+        shrubPaint,
+      );
+    }
     final double emergenceThreshold = _treeStageStops[2];
     final bool hasBrokenGround = seedPlanted && progress >= emergenceThreshold;
     final double stageRoot = _rootProgressFor(progress);
@@ -635,7 +942,7 @@ class _TreeGrowthPainter extends CustomPainter {
     }
 
     if (hasBrokenGround && stageBranch > 0) {
-      final double stemHeight = ui.lerpDouble(14, size.height * 0.46, stageBranch) ?? 14;
+      final double stemHeight = ui.lerpDouble(14, viewportHeightPx * 0.46, stageBranch) ?? 14;
       final double trunkBaseWidth = ui.lerpDouble(8, 26, stageBranch) ?? 8;
       final double trunkTopWidth = ui.lerpDouble(1.6, 10, stageBranch) ?? 1.6;
       final double trunkLeftBase = centerX - trunkBaseWidth;
@@ -703,8 +1010,6 @@ class _TreeGrowthPainter extends CustomPainter {
         final double normalizedScale = scale.clamp(0.12, 1.0);
         final double stageEased = math.pow(growth.clamp(0.0, 1.0), 0.86).toDouble();
         final double clusterRadius = ui.lerpDouble(8, 28, normalizedScale) ?? 12;
-        final double depthStretch = ui.lerpDouble(1.1, 1.6, normalizedScale) ?? 1.2;
-
         final Color baseColor = Color.lerp(
           const Color(0xFF6FB257),
           const Color(0xFF37692A),
@@ -721,18 +1026,13 @@ class _TreeGrowthPainter extends CustomPainter {
           normalizedScale * 0.28 + 0.12,
         )!;
 
-        final List<Offset> baseOffsets = [
-          const Offset(-0.58, -0.08),
-          const Offset(-0.18, -0.26),
-          const Offset(0.28, -0.12),
-          const Offset(0.6, -0.18),
-          const Offset(0.08, 0.12),
-        ];
-        final List<double> baseScales = [0.86, 0.72, 0.78, 0.66, 0.9];
-
         final Paint bubblePaint = Paint()..style = PaintingStyle.fill;
         final Paint highlightPaint = Paint()
           ..color = Colors.white.withValues(alpha: 0.06 + stageEased * 0.06);
+        final Paint shadowPaint = Paint()
+          ..color = shadowColor.withValues(alpha: 0.16 + stageEased * 0.14)
+          ..style = PaintingStyle.fill
+          ..maskFilter = MaskFilter.blur(BlurStyle.normal, clusterRadius * 0.18);
         final Paint stemPaint = Paint()
           ..color = Color.lerp(
             const Color(0xFF3F5E27),
@@ -751,59 +1051,95 @@ class _TreeGrowthPainter extends CustomPainter {
           Offset(clusterRadius * 0.4, 0),
           stemPaint,
         );
+        final double cloudWidth = clusterRadius * (2.0 + normalizedScale * 0.5);
+        final double cloudHeight = clusterRadius * (1.28 + normalizedScale * 0.34);
 
-        for (int i = 0; i < baseOffsets.length; i++) {
-          final Offset offset = baseOffsets[i];
-          final double noiseX =
-              noise('leaf-cluster-x-$seedKey-$i') * 0.15 * (1 - stageEased);
-          final double noiseY =
-              noise('leaf-cluster-y-$seedKey-$i') * 0.18 * (1 - stageEased);
-          final double jitter = noise('leaf-cluster-r-$seedKey-$i') * 0.12;
-          final double bubbleScale =
-              (baseScales[i] + jitter).clamp(0.42, 1.28) * (0.75 + stageEased * 0.35);
-          final Offset center = Offset(
-            offset.dx * clusterRadius * 0.9 + noiseX * clusterRadius,
-            offset.dy * clusterRadius * depthStretch + noiseY * clusterRadius * 0.6,
+        Offset lobeCenter(String axis, double dx, double dy) {
+          return Offset(
+            dx * cloudWidth + noise('cloud-$axis-x-$seedKey') * clusterRadius * 0.12,
+            dy * cloudHeight + noise('cloud-$axis-y-$seedKey') * clusterRadius * 0.1,
           );
-
-          final Rect bubbleRect = Rect.fromCenter(
-            center: center,
-            width: clusterRadius * bubbleScale * 1.8,
-            height: clusterRadius * bubbleScale * (1.2 + normalizedScale * 0.18),
-          );
-
-          final double colorMix =
-              (0.35 + stageEased * 0.4 + offset.dy.abs() * 0.1).clamp(0.0, 1.0);
-          bubblePaint.color = Color.lerp(baseColor, highlightColor, colorMix)!
-              .withValues(alpha: 0.78 + stageEased * 0.18);
-          canvas.drawOval(bubbleRect, bubblePaint);
-
-          final Rect shadowRect = Rect.fromCenter(
-            center: center.translate(clusterRadius * 0.06, clusterRadius * 0.18),
-            width: bubbleRect.width * 0.82,
-            height: bubbleRect.height * 0.76,
-          );
-          bubblePaint.color = shadowColor.withValues(alpha: 0.22 + stageEased * 0.12);
-          canvas.drawOval(shadowRect, bubblePaint);
         }
 
-        if (stageEased > 0.3) {
-          final Path highlightPath = Path()
-            ..moveTo(clusterRadius * 0.12, -clusterRadius * 0.32)
-            ..quadraticBezierTo(
-              clusterRadius * 0.48,
-              -clusterRadius * 0.54,
-              clusterRadius * 0.82,
-              -clusterRadius * 0.18,
-            )
-            ..quadraticBezierTo(
-              clusterRadius * 0.32,
-              -clusterRadius * 0.28,
-              clusterRadius * 0.12,
-              -clusterRadius * 0.32,
-            );
-          canvas.drawPath(highlightPath, highlightPaint);
+        final List<Offset> centers = [
+          lobeCenter('a', -0.38, -0.18),
+          lobeCenter('b', -0.06, -0.46),
+          lobeCenter('c', 0.32, -0.22),
+          lobeCenter('d', 0.18, 0.08),
+        ];
+        final List<double> radii = [
+          clusterRadius * (1.08 + normalizedScale * 0.24),
+          clusterRadius * (1.26 + normalizedScale * 0.2),
+          clusterRadius * (1.02 + normalizedScale * 0.22),
+          clusterRadius * (0.88 + normalizedScale * 0.18),
+        ];
+        final List<double> verticalStretch = [1.42, 1.48, 1.36, 1.44];
+
+        Path cloudPath = Path();
+        for (int i = 0; i < centers.length; i++) {
+          final Rect oval = Rect.fromCenter(
+            center: centers[i],
+            width: radii[i] * 2,
+            height: radii[i] * verticalStretch[i],
+          );
+          final Path lobe = Path()..addOval(oval);
+          cloudPath = i == 0 ? lobe : Path.combine(PathOperation.union, cloudPath, lobe);
         }
+
+        final Path basePad = Path()
+          ..addOval(
+            Rect.fromCenter(
+              center: Offset(
+                noise('cloud-base-x-$seedKey') * clusterRadius * 0.08,
+                clusterRadius * (0.32 + stageEased * 0.24),
+              ),
+              width: cloudWidth * 1.05,
+              height: clusterRadius * (0.92 + stageEased * 0.3),
+            ),
+          );
+        cloudPath = Path.combine(PathOperation.union, cloudPath, basePad);
+
+        final Rect bounds = cloudPath.getBounds();
+
+        canvas.drawPath(
+          cloudPath.shift(const Offset(0.12, 0.16)),
+          shadowPaint,
+        );
+
+        bubblePaint.shader = LinearGradient(
+          colors: [shadowColor, baseColor, highlightColor],
+          stops: const [0.0, 0.58, 1.0],
+          begin: Alignment.bottomCenter,
+          end: Alignment.topLeft,
+        ).createShader(bounds);
+        canvas.drawPath(cloudPath, bubblePaint);
+
+        final Path highlightPath = Path.combine(
+          PathOperation.intersect,
+          cloudPath,
+          Path()
+            ..addOval(
+              Rect.fromCenter(
+                center: bounds.center +
+                    Offset(
+                      -bounds.width * 0.08,
+                      -bounds.height * (0.24 + stageEased * 0.12),
+                    ),
+                width: bounds.width * 0.82,
+                height: bounds.height * (0.66 + stageEased * 0.08),
+              ),
+            ),
+        );
+        canvas.drawPath(highlightPath, highlightPaint);
+
+        final Paint rimPaint = Paint()
+          ..color = highlightColor.withValues(alpha: 0.12 + stageEased * 0.08)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = math.max(1.2, clusterRadius * 0.12);
+        canvas.drawPath(
+          cloudPath.shift(Offset(0, -clusterRadius * 0.04)),
+          rimPaint,
+        );
 
         canvas.restore();
       }
