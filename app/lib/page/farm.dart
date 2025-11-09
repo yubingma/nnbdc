@@ -21,7 +21,7 @@ const double _maxTreeHeightMeters = 6.0;
 const double _secondsPerGrowthDay = 3.0; // 几秒一日的生长速度控制
 const double _seedInitialDepth = 18.0; // 种子初始埋深，控制破土时间
 const double _worldScaleMetersPerScreen = 10.0; // 当前屏幕宽度代表的米数
-const double _targetWorldWidthMeters = 10000.0; // 世界总宽度（米）
+const double _targetWorldWidthMeters = 1000.0; // 世界总宽度（米）
 const double _soilThicknessMeters = 5.0; // 土壤层厚度（米）
 
 double _rootProgressFor(double progress) {
@@ -500,93 +500,152 @@ class _TreeGrowthPainter extends CustomPainter {
     final double viewportHeightMeters = viewportWidthMeters * (size.height / size.width);
     final double viewportHeightPx = viewportHeightMeters * pixelsPerMeter;
     
-    final double horizonY = soilTop - viewportHeightPx * 0.32;
-    final Paint horizonPaint = Paint()
+    final double horizonY = soilTop - viewportHeightPx * 0.35;
+    
+    // 绘制渐变的大气层，从天空平滑过渡到地平线
+    final Paint atmospherePaint = Paint()
       ..shader = LinearGradient(
-        colors: [
-          const Color(0xFF90C1FF).withValues(alpha: 0.55),
-          const Color(0xFF6394D6).withValues(alpha: 0.75),
-        ],
+        colors: isDarkMode 
+          ? [
+              const Color(0xFF22354F).withValues(alpha: 0.0),
+              const Color(0xFF3A4F72).withValues(alpha: 0.3),
+              const Color(0xFF4A6088).withValues(alpha: 0.6),
+            ]
+          : [
+              const Color(0xFF6BB7FF).withValues(alpha: 0.0),
+              const Color(0xFF89C8FF).withValues(alpha: 0.4),
+              const Color(0xFFB5DBFF).withValues(alpha: 0.7),
+            ],
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-      ).createShader(Rect.fromLTWH(0, horizonY - 80, size.width, 160));
+        stops: const [0.0, 0.6, 1.0],
+      ).createShader(Rect.fromLTWH(0, horizonY - viewportHeightPx * 0.25, size.width, viewportHeightPx * 0.25));
+    canvas.drawRect(
+      Rect.fromLTWH(0, horizonY - viewportHeightPx * 0.25, size.width, viewportHeightPx * 0.25),
+      atmospherePaint,
+    );
 
-    Path distantRange(double offset, double heightFactor, double skew) {
-      final Path path = Path()..moveTo(-size.width * 0.1, horizonY + offset);
-      final double step = size.width / 6;
-      for (int i = -1; i <= 7; i++) {
+    Path distantRange(double offset, double heightFactor, double skew, int peakCount) {
+      final Path path = Path()..moveTo(0, horizonY + offset);
+      final double step = size.width / peakCount;
+      for (int i = 0; i <= peakCount; i++) {
         final double x = i * step;
-        final double peak = horizonY + offset - heightFactor * viewportHeightPx *
-            (0.4 + math.sin(i * 0.8 + skew) * 0.18);
+        final double baseHeight = heightFactor * viewportHeightPx;
+        final double variation = math.sin(i * 0.8 + skew) * 0.18;
+        final double microVariation = math.sin(i * 2.3 + skew * 1.5) * 0.08;
+        final double peak = horizonY + offset - baseHeight *
+            (0.4 + variation + microVariation);
         path.quadraticBezierTo(
           x + step * 0.4,
-          peak,
+          peak - math.sin(i * 1.2 + skew) * baseHeight * 0.05,
           x + step,
           horizonY + offset,
         );
       }
       path
-        ..lineTo(size.width * 1.1, horizonY + offset + 60)
-        ..lineTo(size.width * -0.1, horizonY + offset + 60)
+        ..lineTo(size.width, soilTop)
+        ..lineTo(0, soilTop)
         ..close();
       return path;
     }
 
-    final Paint farRangePaint = Paint()
+    // 最远的山脉 - 深蓝色，更多峰
+    final Paint veryFarRangePaint = Paint()
       ..shader = LinearGradient(
-        colors: [
-          const Color(0xFF4B6BA1).withValues(alpha: 0.6),
-          const Color(0xFF395382).withValues(alpha: 0.8),
-        ],
+        colors: isDarkMode
+          ? [
+              const Color(0xFF2E3F5E).withValues(alpha: 0.5),
+              const Color(0xFF1F2D42).withValues(alpha: 0.7),
+            ]
+          : [
+              const Color(0xFF5A7BA8).withValues(alpha: 0.4),
+              const Color(0xFF4A6B98).withValues(alpha: 0.6),
+            ],
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-      ).createShader(Rect.fromLTWH(0, horizonY - 200, size.width, 240));
+      ).createShader(Rect.fromLTWH(0, horizonY - viewportHeightPx * 0.2, size.width, viewportHeightPx * 0.3));
     canvas.drawPath(
-      distantRange(42, 0.16, 0.0),
+      distantRange(viewportHeightPx * 0.08, 0.12, 0.0, 12),
+      veryFarRangePaint,
+    );
+
+    // 中远山脉 - 蓝灰色
+    final Paint farRangePaint = Paint()
+      ..shader = LinearGradient(
+        colors: isDarkMode
+          ? [
+              const Color(0xFF3A4F6E).withValues(alpha: 0.6),
+              const Color(0xFF2A3F5E).withValues(alpha: 0.8),
+            ]
+          : [
+              const Color(0xFF6B8AAF).withValues(alpha: 0.55),
+              const Color(0xFF5B7A9F).withValues(alpha: 0.75),
+            ],
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+      ).createShader(Rect.fromLTWH(0, horizonY - viewportHeightPx * 0.15, size.width, viewportHeightPx * 0.25));
+    canvas.drawPath(
+      distantRange(viewportHeightPx * 0.04, 0.16, 0.8, 10),
       farRangePaint,
     );
 
+    // 近山脉 - 绿色调
     final Paint nearRangePaint = Paint()
       ..shader = LinearGradient(
-        colors: [
-          const Color(0xFF77A869).withValues(alpha: 0.75),
-          const Color(0xFF4E7E46).withValues(alpha: 0.9),
-        ],
+        colors: isDarkMode
+          ? [
+              const Color(0xFF4A5F4E).withValues(alpha: 0.7),
+              const Color(0xFF3A4F3E).withValues(alpha: 0.85),
+            ]
+          : [
+              const Color(0xFF7AA869).withValues(alpha: 0.7),
+              const Color(0xFF5A8850).withValues(alpha: 0.85),
+            ],
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-      ).createShader(Rect.fromLTWH(0, horizonY - 140, size.width, 220));
+      ).createShader(Rect.fromLTWH(0, horizonY - viewportHeightPx * 0.12, size.width, viewportHeightPx * 0.2));
     canvas.drawPath(
-      distantRange(0, 0.22, 1.2),
+      distantRange(0, 0.18, 1.8, 8),
       nearRangePaint,
     );
 
-    canvas.drawRect(
-      Rect.fromLTWH(0, horizonY - 80, size.width, 160),
-      horizonPaint,
-    );
-
-    final Paint distantTreePaint = Paint()
-      ..color = const Color(0xFF476944).withValues(alpha: 0.28);
-    final Paint distantCrownPaint = Paint()
-      ..color = const Color(0xFF6B8F58).withValues(alpha: 0.34);
-    final int groveCount = (size.width / 120).ceil();
+    // 远景树林 - 多层次，更自然
+    final math.Random treeRandom = math.Random(branchSeed ^ 0x7a9);
+    final int groveCount = (size.width / 80).ceil();
     for (int i = 0; i < groveCount; i++) {
       final double t = i / groveCount;
       final double baseX = t * size.width + math.sin(i * 1.4) * 28;
-      final double baseY = horizonY + math.sin(i * 1.9) * 14;
+      final double depth = treeRandom.nextDouble();
+      final double depthY = horizonY + viewportHeightPx * 0.02 + depth * viewportHeightPx * 0.08;
+      
+      final double treeHeight = 35 + depth * 25;
+      final double treeWidth = 4 + depth * 4;
+      final double crownWidth = 32 + depth * 20;
+      final double crownHeight = 24 + depth * 14;
+      
+      final double alphaFactor = 0.3 + depth * 0.3;
+      final Paint distantTreePaint = Paint()
+        ..color = (isDarkMode 
+            ? const Color(0xFF3A4F3A) 
+            : const Color(0xFF476944)).withValues(alpha: alphaFactor * 0.6);
+      final Paint distantCrownPaint = Paint()
+        ..color = (isDarkMode
+            ? const Color(0xFF4A5F4A)
+            : const Color(0xFF6B8F58)).withValues(alpha: alphaFactor);
+      
       canvas.drawRect(
         Rect.fromCenter(
-          center: Offset(baseX, baseY + 24),
-          width: 6,
-          height: 48,
+          center: Offset(baseX, depthY + treeHeight * 0.5),
+          width: treeWidth,
+          height: treeHeight,
         ),
         distantTreePaint,
       );
       canvas.drawOval(
         Rect.fromCenter(
-          center: Offset(baseX, baseY),
-          width: 46,
-          height: 34,
+          center: Offset(baseX, depthY - treeHeight * 0.2),
+          width: crownWidth,
+          height: crownHeight,
         ),
         distantCrownPaint,
       );
@@ -603,7 +662,7 @@ class _TreeGrowthPainter extends CustomPainter {
         end: Alignment.centerRight,
       ).createShader(Rect.fromLTWH(0, riverTop - 14, size.width, 60));
     final Path riverPath = Path()
-      ..moveTo(-40, riverTop)
+      ..moveTo(0, riverTop)
       ..cubicTo(
         size.width * 0.15,
         riverTop + 18,
@@ -617,11 +676,11 @@ class _TreeGrowthPainter extends CustomPainter {
         riverTop + 24,
         size.width * 0.92,
         riverTop - 6,
-        size.width + 60,
+        size.width,
         riverTop + 14,
       )
-      ..lineTo(size.width + 60, riverTop + 60)
-      ..lineTo(-40, riverTop + 60)
+      ..lineTo(size.width, riverTop + 60)
+      ..lineTo(0, riverTop + 60)
       ..close();
     canvas.drawPath(riverPath, riverPaint);
 
