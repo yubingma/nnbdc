@@ -643,7 +643,50 @@ class _TreeGrowthPainter extends CustomPainter {
       nearRangePaint,
     );
 
-    // 远景树林 - 深绿色，更明显
+    // 先绘制河流，让树木可以遮挡它
+    final double riverTop = soilTop - viewportHeightPx * 0.18;
+    final Paint riverPaint = Paint()
+      ..shader = LinearGradient(
+        colors: [
+          const Color(0xFF9CD0F3).withValues(alpha: 0.55),
+          const Color(0xFF66A8D1).withValues(alpha: 0.8),
+        ],
+        begin: Alignment.centerLeft,
+        end: Alignment.centerRight,
+      ).createShader(Rect.fromLTWH(0, riverTop - 14, size.width, 60));
+    final Path riverPath = Path()
+      ..moveTo(0, riverTop)
+      ..cubicTo(
+        size.width * 0.15,
+        riverTop + 18,
+        size.width * 0.35,
+        riverTop - 28,
+        size.width * 0.52,
+        riverTop - 10,
+      )
+      ..cubicTo(
+        size.width * 0.75,
+        riverTop + 24,
+        size.width * 0.92,
+        riverTop - 6,
+        size.width,
+        riverTop + 14,
+      )
+      ..lineTo(size.width, riverTop + 60)
+      ..lineTo(0, riverTop + 60)
+      ..close();
+    canvas.drawPath(riverPath, riverPaint);
+
+    final Paint riverHighlight = Paint()
+      ..color = Colors.white.withValues(alpha: isDarkMode ? 0.16 : 0.22)
+      ..strokeWidth = 3
+      ..style = PaintingStyle.stroke;
+    canvas.drawPath(
+      riverPath.shift(const Offset(0, -2)),
+      riverHighlight,
+    );
+
+    // 远景树林 - 深绿色，更明显，绘制在河流之后以遮挡河流
     final math.Random treeRandom = math.Random(branchSeed ^ 0x7a9);
     final int groveCount = (size.width / 80).ceil();
     for (int i = 0; i < groveCount; i++) {
@@ -686,48 +729,6 @@ class _TreeGrowthPainter extends CustomPainter {
         distantCrownPaint,
       );
     }
-
-    final double riverTop = soilTop - viewportHeightPx * 0.18;
-    final Paint riverPaint = Paint()
-      ..shader = LinearGradient(
-        colors: [
-          const Color(0xFF9CD0F3).withValues(alpha: 0.55),
-          const Color(0xFF66A8D1).withValues(alpha: 0.8),
-        ],
-        begin: Alignment.centerLeft,
-        end: Alignment.centerRight,
-      ).createShader(Rect.fromLTWH(0, riverTop - 14, size.width, 60));
-    final Path riverPath = Path()
-      ..moveTo(0, riverTop)
-      ..cubicTo(
-        size.width * 0.15,
-        riverTop + 18,
-        size.width * 0.35,
-        riverTop - 28,
-        size.width * 0.52,
-        riverTop - 10,
-      )
-      ..cubicTo(
-        size.width * 0.75,
-        riverTop + 24,
-        size.width * 0.92,
-        riverTop - 6,
-        size.width,
-        riverTop + 14,
-      )
-      ..lineTo(size.width, riverTop + 60)
-      ..lineTo(0, riverTop + 60)
-      ..close();
-    canvas.drawPath(riverPath, riverPaint);
-
-    final Paint riverHighlight = Paint()
-      ..color = Colors.white.withValues(alpha: isDarkMode ? 0.16 : 0.22)
-      ..strokeWidth = 3
-      ..style = PaintingStyle.stroke;
-    canvas.drawPath(
-      riverPath.shift(const Offset(0, -2)),
-      riverHighlight,
-    );
 
     final Rect soilRect = Rect.fromLTWH(0, soilTop, size.width, size.height - soilTop);
     final Paint soilPaint = Paint()
