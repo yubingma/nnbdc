@@ -495,14 +495,8 @@ class _TreeGrowthPainter extends CustomPainter {
     // 用户小天地在世界中央
     final double centerX = size.width * 0.5;
     
-    // 使用已定义的pixelsPerMeter，计算视口尺寸
+    // 使用已定义的pixelsPerMeter，计算视口尺寸（用于树木等对象的合理比例）
     final double viewportWidthMeters = _worldScaleMetersPerScreen; // 视口宽度对应10米
-    final double viewportWidthPx = viewportWidthMeters * pixelsPerMeter;
-    
-    // 背景对象范围：视口宽度的1.5倍
-    final double localViewWidth = viewportWidthPx * 0.75;
-    
-    // 树木等对象使用视口米数来计算尺寸，而不是世界米数
     final double viewportHeightMeters = viewportWidthMeters * (size.height / size.width);
     final double viewportHeightPx = viewportHeightMeters * pixelsPerMeter;
     
@@ -515,13 +509,13 @@ class _TreeGrowthPainter extends CustomPainter {
         ],
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-      ).createShader(Rect.fromLTWH(centerX - localViewWidth, horizonY - 80, localViewWidth * 2, 160));
+      ).createShader(Rect.fromLTWH(0, horizonY - 80, size.width, 160));
 
     Path distantRange(double offset, double heightFactor, double skew) {
-      final Path path = Path()..moveTo(centerX - localViewWidth * 1.1, horizonY + offset);
-      final double step = localViewWidth * 2 / 6;
+      final Path path = Path()..moveTo(-size.width * 0.1, horizonY + offset);
+      final double step = size.width / 6;
       for (int i = -1; i <= 7; i++) {
-        final double x = centerX - localViewWidth + i * step;
+        final double x = i * step;
         final double peak = horizonY + offset - heightFactor * viewportHeightPx *
             (0.4 + math.sin(i * 0.8 + skew) * 0.18);
         path.quadraticBezierTo(
@@ -532,8 +526,8 @@ class _TreeGrowthPainter extends CustomPainter {
         );
       }
       path
-        ..lineTo(centerX + localViewWidth * 1.1, horizonY + offset + 60)
-        ..lineTo(centerX - localViewWidth * 1.1, horizonY + offset + 60)
+        ..lineTo(size.width * 1.1, horizonY + offset + 60)
+        ..lineTo(size.width * -0.1, horizonY + offset + 60)
         ..close();
       return path;
     }
@@ -546,7 +540,7 @@ class _TreeGrowthPainter extends CustomPainter {
         ],
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-      ).createShader(Rect.fromLTWH(centerX - localViewWidth, horizonY - 200, localViewWidth * 2, 240));
+      ).createShader(Rect.fromLTWH(0, horizonY - 200, size.width, 240));
     canvas.drawPath(
       distantRange(42, 0.16, 0.0),
       farRangePaint,
@@ -560,14 +554,14 @@ class _TreeGrowthPainter extends CustomPainter {
         ],
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-      ).createShader(Rect.fromLTWH(centerX - localViewWidth, horizonY - 140, localViewWidth * 2, 220));
+      ).createShader(Rect.fromLTWH(0, horizonY - 140, size.width, 220));
     canvas.drawPath(
       distantRange(0, 0.22, 1.2),
       nearRangePaint,
     );
 
     canvas.drawRect(
-      Rect.fromLTWH(centerX - localViewWidth, horizonY - 80, localViewWidth * 2, 160),
+      Rect.fromLTWH(0, horizonY - 80, size.width, 160),
       horizonPaint,
     );
 
@@ -575,10 +569,10 @@ class _TreeGrowthPainter extends CustomPainter {
       ..color = const Color(0xFF476944).withValues(alpha: 0.28);
     final Paint distantCrownPaint = Paint()
       ..color = const Color(0xFF6B8F58).withValues(alpha: 0.34);
-    final int groveCount = (localViewWidth * 2 / 120).ceil();
+    final int groveCount = (size.width / 120).ceil();
     for (int i = 0; i < groveCount; i++) {
       final double t = i / groveCount;
-      final double baseX = centerX - localViewWidth + t * localViewWidth * 2 + math.sin(i * 1.4) * 28;
+      final double baseX = t * size.width + math.sin(i * 1.4) * 28;
       final double baseY = horizonY + math.sin(i * 1.9) * 14;
       canvas.drawRect(
         Rect.fromCenter(
@@ -598,7 +592,7 @@ class _TreeGrowthPainter extends CustomPainter {
       );
     }
 
-    final double riverTop = soilTop - size.height * 0.18;
+    final double riverTop = soilTop - viewportHeightPx * 0.18;
     final Paint riverPaint = Paint()
       ..shader = LinearGradient(
         colors: [
@@ -607,27 +601,27 @@ class _TreeGrowthPainter extends CustomPainter {
         ],
         begin: Alignment.centerLeft,
         end: Alignment.centerRight,
-      ).createShader(Rect.fromLTWH(centerX - localViewWidth, riverTop - 14, localViewWidth * 2, 60));
+      ).createShader(Rect.fromLTWH(0, riverTop - 14, size.width, 60));
     final Path riverPath = Path()
-      ..moveTo(centerX - localViewWidth - 40, riverTop)
+      ..moveTo(-40, riverTop)
       ..cubicTo(
-        centerX - localViewWidth * 0.7,
+        size.width * 0.15,
         riverTop + 18,
-        centerX - localViewWidth * 0.3,
+        size.width * 0.35,
         riverTop - 28,
-        centerX + localViewWidth * 0.04,
+        size.width * 0.52,
         riverTop - 10,
       )
       ..cubicTo(
-        centerX + localViewWidth * 0.5,
+        size.width * 0.75,
         riverTop + 24,
-        centerX + localViewWidth * 0.84,
+        size.width * 0.92,
         riverTop - 6,
-        centerX + localViewWidth + 60,
+        size.width + 60,
         riverTop + 14,
       )
-      ..lineTo(centerX + localViewWidth + 60, riverTop + 60)
-      ..lineTo(centerX - localViewWidth - 40, riverTop + 60)
+      ..lineTo(size.width + 60, riverTop + 60)
+      ..lineTo(-40, riverTop + 60)
       ..close();
     canvas.drawPath(riverPath, riverPaint);
 
@@ -672,10 +666,10 @@ class _TreeGrowthPainter extends CustomPainter {
       ..color = const Color(0xFF4A7B37).withValues(alpha: 0.82);
     final Paint shrubShadow = Paint()
       ..color = const Color(0xFF2E4F27).withValues(alpha: 0.6);
-    final int shrubCount = (localViewWidth * 2 / 90).ceil();
+    final int shrubCount = (size.width / 90).ceil();
     for (int i = 0; i < shrubCount; i++) {
       final double t = (i + 0.5) / shrubCount;
-      final double baseX = centerX - localViewWidth + localViewWidth * 2 * t +
+      final double baseX = soilRect.left + soilRect.width * t +
           math.sin(i * 1.6) * 32;
       final double baseY = soilRect.top + soilRect.height * 0.05 +
           math.sin(i * 0.9) * 12;
