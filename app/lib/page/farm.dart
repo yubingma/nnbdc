@@ -1494,11 +1494,13 @@ class _TreeGrowthPainter extends CustomPainter {
       }
 
       // 树枝：递归生成向上分叉的枝干形态（与根系算法一致）
-      final double branchBaseLength = ui.lerpDouble(22, 126, stageBranch) ?? 22;
-      final double branchBaseThickness = ui.lerpDouble(3.6, 11.0, stageBranch) ?? 3.6;
+      // 适度的长度和粗度，让树冠自然茂密
+      final double branchBaseLength = ui.lerpDouble(26, 140, stageBranch) ?? 26;
+      final double branchBaseThickness = ui.lerpDouble(4.2, 12.0, stageBranch) ?? 4.2;
       final double branchingFactor = stageBranch.clamp(0.0, 1.0);
       final double easedBranch = math.pow(stageBranch, 1.35).toDouble();
-      final int branchDepth = math.max(1, 1 + (easedBranch * 4).floor());
+      // 增加分支深度，形成茂密的树冠
+      final int branchDepth = math.max(1, 2 + (easedBranch * 4.5).floor());
 
       Color branchColor(int generation) {
         final double t = generation / (branchDepth + 1);
@@ -1572,13 +1574,14 @@ class _TreeGrowthPainter extends CustomPainter {
           );
         }
 
+        // 自然的衰减参数，让树枝逐渐变细，树冠更茂密
         final double nextLength =
-            length * (0.72 + 0.16 * easedBranch) *
+            length * (0.73 + 0.17 * easedBranch) *
                 (0.96 + noise('branch-len-$key-$depth') * 0.08);
         final double nextThickness =
-            math.max(0.6, thickness * (0.64 + 0.18 * easedBranch));
+            math.max(0.6, thickness * (0.65 + 0.19 * easedBranch));
         final double spread =
-            14 + easedBranch * 10 + noise('branch-spread-$key-$depth') * 8;
+            15 + easedBranch * 11 + noise('branch-spread-$key-$depth') * 9;
 
         drawTreeBranch(
           end,
@@ -1611,11 +1614,12 @@ class _TreeGrowthPainter extends CustomPainter {
       }
 
       final Offset trunkTop = Offset(centerX, soilTop - stemHeight);
+      // 主干顶部的中央枝
       drawTreeBranch(
         trunkTop,
         branchBaseLength,
         -90,
-        branchBaseThickness * 0.84,
+        branchBaseThickness * 0.85,
         branchDepth,
         'main',
       );
@@ -1624,28 +1628,30 @@ class _TreeGrowthPainter extends CustomPainter {
         final int midDepth = math.max(1, branchDepth - 2);
         final int lowDepth = math.max(1, branchDepth - 3);
 
+        // 主干顶部的侧枝，自然协调
         drawTreeBranch(
           trunkTop + Offset(0, -stemHeight * 0.08),
-          branchBaseLength * 0.9,
-          -78,
+          branchBaseLength * 0.88,
+          -76,
           branchBaseThickness * 0.78,
           upperDepth,
           'upperL',
         );
         drawTreeBranch(
           trunkTop + Offset(0, -stemHeight * 0.08),
-          branchBaseLength * 0.9,
-          -102,
+          branchBaseLength * 0.88,
+          -104,
           branchBaseThickness * 0.78,
           upperDepth,
           'upperR',
         );
+        // 主干中部和下部的侧枝，自然渐变
         final double midOffset = ui.lerpDouble(0.58, 0.42, branchingFactor) ?? 0.5;
         final double lowOffset = ui.lerpDouble(0.36, 0.26, branchingFactor) ?? 0.32;
-        final double midLengthFactor = ui.lerpDouble(0.6, 0.82, branchingFactor) ?? 0.7;
-        final double lowLengthFactor = ui.lerpDouble(0.42, 0.7, branchingFactor) ?? 0.6;
-        final double midThicknessFactor = ui.lerpDouble(0.48, 0.72, branchingFactor) ?? 0.6;
-        final double lowThicknessFactor = ui.lerpDouble(0.38, 0.66, branchingFactor) ?? 0.55;
+        final double midLengthFactor = ui.lerpDouble(0.64, 0.84, branchingFactor) ?? 0.74;
+        final double lowLengthFactor = ui.lerpDouble(0.48, 0.74, branchingFactor) ?? 0.64;
+        final double midThicknessFactor = ui.lerpDouble(0.52, 0.76, branchingFactor) ?? 0.66;
+        final double lowThicknessFactor = ui.lerpDouble(0.42, 0.70, branchingFactor) ?? 0.60;
         final double midLength = branchBaseLength * midLengthFactor;
         final double lowLength = branchBaseLength * lowLengthFactor;
         final double midThickness = branchBaseThickness * midThicknessFactor;
