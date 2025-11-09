@@ -532,34 +532,43 @@ class _TreeGrowthPainter extends CustomPainter {
       final int peakCount = math.max(3, (size.width / pixelsPerPeak).ceil());
       final double step = size.width / peakCount;
       
+      // 生成所有山峰的高度数据
+      final List<double> peakHeights = [];
       for (int i = 0; i <= peakCount; i++) {
-        final double x = i * step;
         final double baseHeight = heightFactor * viewportHeightPx;
-        
-        // 大幅增加起伏变化
         final double majorVariation = math.sin(i * 0.9 + skew) * 0.8;
         final double minorVariation = math.sin(i * 2.5 + skew * 1.8) * 0.4;
         final double microVariation = math.sin(i * 5.2 + skew * 3.2) * 0.2;
-        
         final double totalVariation = majorVariation + minorVariation + microVariation;
-        final double peak = baseY - baseHeight * (1.0 + totalVariation);
+        peakHeights.add(baseY - baseHeight * (1.0 + totalVariation));
+      }
+      
+      // 使用三次贝塞尔曲线创建非常圆润的山峰轮廓
+      for (int i = 0; i <= peakCount; i++) {
+        final double x = i * step;
+        final double peak = peakHeights[i];
         
-        // 使用二次贝塞尔曲线创建更平滑的山峰
-        if (i > 0) {
-          final double prevX = (i - 1) * step;
-          final double prevHeight = baseHeight * (1.0 + 
-              math.sin((i - 1) * 0.9 + skew) * 0.8 + 
-              math.sin((i - 1) * 2.5 + skew * 1.8) * 0.4 +
-              math.sin((i - 1) * 5.2 + skew * 3.2) * 0.2);
-          final double prevPeak = baseY - prevHeight;
-          
-          final double controlX = (prevX + x) * 0.5;
-          final double controlY = (prevPeak + peak) * 0.5 - 
-              math.sin(i * 1.2 + skew) * baseHeight * 0.15;
-          
-          path.quadraticBezierTo(controlX, controlY, x, peak);
-        } else {
+        if (i == 0) {
           path.lineTo(x, peak);
+        } else {
+          final double prevX = (i - 1) * step;
+          final double prevPeak = peakHeights[i - 1];
+          
+          // 控制点位置非常接近端点，创造极其平缓的曲线
+          final double segmentLength = x - prevX;
+          final double control1X = prevX + segmentLength * 0.4;
+          final double control2X = x - segmentLength * 0.4;
+          
+          // 控制点的Y坐标几乎贴近端点，让曲线在峰顶和谷底都非常平缓
+          final double heightDiff = peak - prevPeak;
+          final double control1Y = prevPeak + heightDiff * 0.1;
+          final double control2Y = peak - heightDiff * 0.1;
+          
+          path.cubicTo(
+            control1X, control1Y,
+            control2X, control2Y,
+            x, peak,
+          );
         }
       }
       
