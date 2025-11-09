@@ -1287,29 +1287,41 @@ class _TreeGrowthPainter extends CustomPainter {
         final double normalizedScale = scale.clamp(0.12, 1.0);
         final double stageEased = math.pow(growth.clamp(0.0, 1.0), 0.86).toDouble();
         final double clusterRadius = ui.lerpDouble(8, 28, normalizedScale) ?? 12;
-        final Color baseColor = Color.lerp(
-          const Color(0xFF6FB257),
+        
+        // 更丰富的颜色层次，从深绿到亮绿
+        final Color deepGreen = Color.lerp(
+          const Color(0xFF2D5016),
           const Color(0xFF37692A),
-          0.35 * (1 - stageEased),
+          stageEased * 0.4,
+        )!;
+        final Color baseColor = Color.lerp(
+          const Color(0xFF5FA84B),
+          const Color(0xFF6FB257),
+          stageEased * 0.5 + 0.3,
+        )!;
+        final Color brightGreen = Color.lerp(
+          const Color(0xFF8BC879),
+          const Color(0xFFB1F08C),
+          stageEased * 0.6,
         )!;
         final Color highlightColor = Color.lerp(
-          const Color(0xFFB1F08C),
-          const Color(0xFF7AD463),
-          stageEased * 0.6 + 0.2,
+          const Color(0xFFCEF5B8),
+          const Color(0xFFE8FFDA),
+          stageEased * 0.4 + 0.3,
         )!;
         final Color shadowColor = Color.lerp(
-          const Color(0xFF3E6125),
           const Color(0xFF1E3B16),
-          normalizedScale * 0.28 + 0.12,
+          const Color(0xFF2A4A1D),
+          normalizedScale * 0.3,
         )!;
 
         final Paint bubblePaint = Paint()..style = PaintingStyle.fill;
         final Paint highlightPaint = Paint()
-          ..color = Colors.white.withValues(alpha: 0.06 + stageEased * 0.06);
+          ..color = Colors.white.withValues(alpha: 0.08 + stageEased * 0.08);
         final Paint shadowPaint = Paint()
-          ..color = shadowColor.withValues(alpha: 0.16 + stageEased * 0.14)
+          ..color = shadowColor.withValues(alpha: 0.2 + stageEased * 0.18)
           ..style = PaintingStyle.fill
-          ..maskFilter = MaskFilter.blur(BlurStyle.normal, clusterRadius * 0.18);
+          ..maskFilter = MaskFilter.blur(BlurStyle.normal, clusterRadius * 0.22);
         final Paint stemPaint = Paint()
           ..color = Color.lerp(
             const Color(0xFF3F5E27),
@@ -1323,34 +1335,53 @@ class _TreeGrowthPainter extends CustomPainter {
         canvas.translate(origin.dx, origin.dy);
         canvas.rotate(directionDeg * math.pi / 180);
 
+        // 绘制叶柄
         canvas.drawLine(
           Offset(-clusterRadius * 0.12, 0),
           Offset(clusterRadius * 0.4, 0),
           stemPaint,
         );
-        final double cloudWidth = clusterRadius * (2.0 + normalizedScale * 0.5);
-        final double cloudHeight = clusterRadius * (1.28 + normalizedScale * 0.34);
+        
+        final double cloudWidth = clusterRadius * (2.2 + normalizedScale * 0.6);
+        final double cloudHeight = clusterRadius * (1.4 + normalizedScale * 0.4);
 
+        // 使用更多随机变化创建更自然的叶团
         Offset lobeCenter(String axis, double dx, double dy) {
           return Offset(
-            dx * cloudWidth + noise('cloud-$axis-x-$seedKey') * clusterRadius * 0.12,
-            dy * cloudHeight + noise('cloud-$axis-y-$seedKey') * clusterRadius * 0.1,
+            dx * cloudWidth + noise('cloud-$axis-x-$seedKey') * clusterRadius * 0.18,
+            dy * cloudHeight + noise('cloud-$axis-y-$seedKey') * clusterRadius * 0.15,
           );
         }
 
+        // 增加叶团数量和变化，形成更蓬松的效果
         final List<Offset> centers = [
-          lobeCenter('a', -0.38, -0.18),
-          lobeCenter('b', -0.06, -0.46),
-          lobeCenter('c', 0.32, -0.22),
-          lobeCenter('d', 0.18, 0.08),
+          lobeCenter('a', -0.42, -0.22),
+          lobeCenter('b', -0.15, -0.52),
+          lobeCenter('c', 0.28, -0.48),
+          lobeCenter('d', 0.38, -0.12),
+          lobeCenter('e', 0.22, 0.15),
+          lobeCenter('f', -0.08, 0.12),
+          lobeCenter('g', -0.28, 0.05),
         ];
         final List<double> radii = [
-          clusterRadius * (1.08 + normalizedScale * 0.24),
-          clusterRadius * (1.26 + normalizedScale * 0.2),
-          clusterRadius * (1.02 + normalizedScale * 0.22),
-          clusterRadius * (0.88 + normalizedScale * 0.18),
+          clusterRadius * (1.05 + normalizedScale * 0.25 + noise('r-a-$seedKey') * 0.15),
+          clusterRadius * (1.28 + normalizedScale * 0.22 + noise('r-b-$seedKey') * 0.12),
+          clusterRadius * (1.12 + normalizedScale * 0.24 + noise('r-c-$seedKey') * 0.14),
+          clusterRadius * (0.95 + normalizedScale * 0.2 + noise('r-d-$seedKey') * 0.12),
+          clusterRadius * (0.88 + normalizedScale * 0.18 + noise('r-e-$seedKey') * 0.1),
+          clusterRadius * (0.92 + normalizedScale * 0.19 + noise('r-f-$seedKey') * 0.11),
+          clusterRadius * (0.82 + normalizedScale * 0.16 + noise('r-g-$seedKey') * 0.1),
         ];
-        final List<double> verticalStretch = [1.42, 1.48, 1.36, 1.44];
+        // 垂直拉伸，形成更自然的椭圆形叶团
+        final List<double> verticalStretch = [
+          1.35 + noise('v-a-$seedKey') * 0.15,
+          1.50 + noise('v-b-$seedKey') * 0.12,
+          1.42 + noise('v-c-$seedKey') * 0.14,
+          1.38 + noise('v-d-$seedKey') * 0.13,
+          1.45 + noise('v-e-$seedKey') * 0.11,
+          1.40 + noise('v-f-$seedKey') * 0.12,
+          1.36 + noise('v-g-$seedKey') * 0.10,
+        ];
 
         Path cloudPath = Path();
         for (int i = 0; i < centers.length; i++) {
@@ -1363,34 +1394,38 @@ class _TreeGrowthPainter extends CustomPainter {
           cloudPath = i == 0 ? lobe : Path.combine(PathOperation.union, cloudPath, lobe);
         }
 
+        // 底部基础垫，连接枝干
         final Path basePad = Path()
           ..addOval(
             Rect.fromCenter(
               center: Offset(
-                noise('cloud-base-x-$seedKey') * clusterRadius * 0.08,
-                clusterRadius * (0.32 + stageEased * 0.24),
+                noise('cloud-base-x-$seedKey') * clusterRadius * 0.1,
+                clusterRadius * (0.35 + stageEased * 0.28),
               ),
-              width: cloudWidth * 1.05,
-              height: clusterRadius * (0.92 + stageEased * 0.3),
+              width: cloudWidth * 1.08,
+              height: clusterRadius * (1.0 + stageEased * 0.35),
             ),
           );
         cloudPath = Path.combine(PathOperation.union, cloudPath, basePad);
 
         final Rect bounds = cloudPath.getBounds();
 
+        // 绘制阴影，增加深度感
         canvas.drawPath(
-          cloudPath.shift(const Offset(0.12, 0.16)),
+          cloudPath.shift(Offset(clusterRadius * 0.03, clusterRadius * 0.05)),
           shadowPaint,
         );
 
+        // 使用多色渐变创建更丰富的层次感
         bubblePaint.shader = LinearGradient(
-          colors: [shadowColor, baseColor, highlightColor],
-          stops: const [0.0, 0.58, 1.0],
+          colors: [shadowColor, deepGreen, baseColor, brightGreen, highlightColor],
+          stops: const [0.0, 0.25, 0.52, 0.78, 1.0],
           begin: Alignment.bottomCenter,
           end: Alignment.topLeft,
         ).createShader(bounds);
         canvas.drawPath(cloudPath, bubblePaint);
 
+        // 绘制高光，模拟阳光照射
         final Path highlightPath = Path.combine(
           PathOperation.intersect,
           cloudPath,
@@ -1399,24 +1434,35 @@ class _TreeGrowthPainter extends CustomPainter {
               Rect.fromCenter(
                 center: bounds.center +
                     Offset(
-                      -bounds.width * 0.08,
-                      -bounds.height * (0.24 + stageEased * 0.12),
+                      -bounds.width * 0.12,
+                      -bounds.height * (0.28 + stageEased * 0.15),
                     ),
-                width: bounds.width * 0.82,
-                height: bounds.height * (0.66 + stageEased * 0.08),
+                width: bounds.width * 0.75,
+                height: bounds.height * (0.62 + stageEased * 0.1),
               ),
             ),
         );
         canvas.drawPath(highlightPath, highlightPaint);
 
+        // 添加细微的边缘高光，增加立体感
         final Paint rimPaint = Paint()
-          ..color = highlightColor.withValues(alpha: 0.12 + stageEased * 0.08)
+          ..color = brightGreen.withValues(alpha: 0.15 + stageEased * 0.1)
           ..style = PaintingStyle.stroke
-          ..strokeWidth = math.max(1.2, clusterRadius * 0.12);
+          ..strokeWidth = math.max(1.3, clusterRadius * 0.14);
         canvas.drawPath(
-          cloudPath.shift(Offset(0, -clusterRadius * 0.04)),
+          cloudPath.shift(Offset(0, -clusterRadius * 0.05)),
           rimPaint,
         );
+        
+        // 添加一些细小的亮点，模拟叶片反光
+        final Paint sparkPaint = Paint()
+          ..color = highlightColor.withValues(alpha: 0.4 + stageEased * 0.2);
+        for (int i = 0; i < 3; i++) {
+          final double sparkX = noise('spark-x-$i-$seedKey') * bounds.width * 0.4;
+          final double sparkY = noise('spark-y-$i-$seedKey') * bounds.height * 0.3 - bounds.height * 0.2;
+          final double sparkSize = clusterRadius * (0.08 + noise('spark-s-$i-$seedKey') * 0.06);
+          canvas.drawCircle(Offset(sparkX, sparkY), sparkSize, sparkPaint);
+        }
 
         canvas.restore();
       }
