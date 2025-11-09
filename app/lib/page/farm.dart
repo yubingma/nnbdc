@@ -687,15 +687,42 @@ class _TreeGrowthPainter extends CustomPainter {
     );
 
     // 远景树林 - 深绿色，更明显，绘制在河流之后以遮挡河流
+    // 树木分为两组：远景树林（在地平线附近）和近景树林（在土壤表面草地带）
     final math.Random treeRandom = math.Random(branchSeed ^ 0x7a9);
     final int groveCount = (size.width / 80).ceil();
+    
+    // 河流上边界
+    final double riverZoneTop = riverTop - 40;
+    
     for (int i = 0; i < groveCount; i++) {
       final double t = i / groveCount;
       final double baseX = t * size.width + math.sin(i * 1.4) * 28;
-      final double depth = treeRandom.nextDouble();
-      final double depthY = horizonY + viewportHeightPx * 0.05 + depth * viewportHeightPx * 0.1;
+      final double depthRandom = treeRandom.nextDouble();
       
-      final double treeHeight = 40 + depth * 30;
+      // 根据随机值决定树木在远处（地平线附近）还是近处（土壤表面）
+      final bool isFar = depthRandom < 0.6; // 60%的树在远处
+      
+      double depthY;
+      double depth;
+      double treeHeight;
+      
+      if (isFar) {
+        // 远景树林：在地平线到河流上方之间，树根不能碰到河水
+        depth = depthRandom / 0.6; // 归一化到 0-1
+        treeHeight = 40 + depth * 30;
+        final double farTreeZoneStart = horizonY + viewportHeightPx * 0.02;
+        // 树根位置 = depthY + treeHeight，必须在河流上边界之上
+        final double maxTreeRootY = riverZoneTop - 10; // 留出安全距离
+        depthY = farTreeZoneStart + depth * (maxTreeRootY - treeHeight - farTreeZoneStart);
+      } else {
+        // 近景树林：在土壤表面的草地带（soilTop上方20-60px的绿色区域）
+        depth = (depthRandom - 0.6) / 0.4; // 归一化到 0-1
+        treeHeight = 50 + depth * 40;
+        // 树根要固定在土壤表面附近
+        final double grassZoneHeight = 50; // 草地带高度
+        depthY = soilTop - grassZoneHeight + depth * grassZoneHeight * 0.6 - treeHeight;
+      }
+      
       final double treeWidth = 5 + depth * 5;
       final double crownWidth = 38 + depth * 24;
       final double crownHeight = 28 + depth * 18;
