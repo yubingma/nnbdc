@@ -686,20 +686,46 @@ class _TreeGrowthPainter extends CustomPainter {
       riverHighlight,
     );
 
+    // 计算河流上边缘的Y坐标函数（蜿蜒曲线）
+    double getRiverEdgeY(double x) {
+      // 复制河流路径的逻辑来计算指定X位置的河流上边缘Y坐标
+      if (x <= size.width * 0.52) {
+        // 第一段曲线
+        final double t1 = x / (size.width * 0.52);
+        final double y1 = riverTop;
+        final double y2 = riverTop - 10;
+        final double cy1 = riverTop + 18;
+        final double cy2 = riverTop - 28;
+        // 简化的三次贝塞尔曲线近似
+        return y1 * math.pow(1 - t1, 3) + 
+               cy1 * 3 * math.pow(1 - t1, 2) * t1 +
+               cy2 * 3 * (1 - t1) * math.pow(t1, 2) +
+               y2 * math.pow(t1, 3);
+      } else {
+        // 第二段曲线
+        final double t2 = (x - size.width * 0.52) / (size.width - size.width * 0.52);
+        final double y1 = riverTop - 10;
+        final double y2 = riverTop + 14;
+        final double cy1 = riverTop + 24;
+        final double cy2 = riverTop - 6;
+        return y1 * math.pow(1 - t2, 3) + 
+               cy1 * 3 * math.pow(1 - t2, 2) * t2 +
+               cy2 * 3 * (1 - t2) * math.pow(t2, 2) +
+               y2 * math.pow(t2, 3);
+      }
+    }
+    
     // 远景树林 - 深绿色，更明显，绘制在河流之后以遮挡河流
-    // 树木分为两组：远景树林（在地平线附近）和近景树林（在土壤表面草地带）
+    // 树木分为两组：远景树林（沿河岸线分布）和近景树林（在土壤表面草地带）
     final math.Random treeRandom = math.Random(branchSeed ^ 0x7a9);
     final int groveCount = (size.width / 80).ceil();
-    
-    // 河流上边界
-    final double riverZoneTop = riverTop - 40;
     
     for (int i = 0; i < groveCount; i++) {
       final double t = i / groveCount;
       final double baseX = t * size.width + math.sin(i * 1.4) * 28;
       final double depthRandom = treeRandom.nextDouble();
       
-      // 根据随机值决定树木在远处（地平线附近）还是近处（土壤表面）
+      // 根据随机值决定树木在远处（河岸附近）还是近处（土壤表面）
       final bool isFar = depthRandom < 0.6; // 60%的树在远处
       
       double depthY;
@@ -707,13 +733,24 @@ class _TreeGrowthPainter extends CustomPainter {
       double treeHeight;
       
       if (isFar) {
-        // 远景树林：在地平线到河流上方之间，树根不能碰到河水
+        // 远景树林：沿着河流上边缘分布，树根紧贴河岸
         depth = depthRandom / 0.6; // 归一化到 0-1
         treeHeight = 40 + depth * 30;
-        final double farTreeZoneStart = horizonY + viewportHeightPx * 0.02;
-        // 树根位置 = depthY + treeHeight，必须在河流上边界之上
-        final double maxTreeRootY = riverZoneTop - 10; // 留出安全距离
-        depthY = farTreeZoneStart + depth * (maxTreeRootY - treeHeight - farTreeZoneStart);
+        
+        // 获取这个X位置的河流边缘Y坐标
+        final double riverEdgeY = getRiverEdgeY(baseX.clamp(0.0, size.width));
+        
+        // 使用4次方分布让大部分树紧贴河岸
+        final double distanceRandom = treeRandom.nextDouble();
+        final double distanceFromRiver = math.pow(distanceRandom, 4.0).toDouble();
+        
+        // 树根距离河岸边缘 5-80px
+        final double maxNearDistance = 80.0;
+        final double rootY = riverEdgeY - 5 - distanceFromRiver * maxNearDistance;
+        depthY = rootY - treeHeight;
+        
+        // 根据距离河岸的远近计算深度（用于透明度和尺寸）
+        depth = (distanceFromRiver * 0.6 + 0.4).clamp(0.0, 1.0);
       } else {
         // 近景树林：在土壤表面的草地带（soilTop上方20-60px的绿色区域）
         depth = (depthRandom - 0.6) / 0.4; // 归一化到 0-1
