@@ -525,24 +525,44 @@ class _TreeGrowthPainter extends CustomPainter {
       atmospherePaint,
     );
 
-    Path distantRange(double baseY, double heightFactor, double skew, int peakCount) {
+    Path distantRange(double baseY, double heightFactor, double skew, double peakDensity) {
       final Path path = Path()..moveTo(0, baseY);
+      // 山峰数量基于视口宽度，确保在任何缩放级别都能看到起伏
+      final double pixelsPerPeak = viewportWidthMeters * pixelsPerMeter / peakDensity;
+      final int peakCount = math.max(3, (size.width / pixelsPerPeak).ceil());
       final double step = size.width / peakCount;
+      
       for (int i = 0; i <= peakCount; i++) {
         final double x = i * step;
         final double baseHeight = heightFactor * viewportHeightPx;
-        final double variation = math.sin(i * 0.8 + skew) * 0.3;
-        final double microVariation = math.sin(i * 2.3 + skew * 1.5) * 0.15;
-        final double peak = baseY - baseHeight * (0.5 + variation + microVariation);
         
-        // 山峰的控制点，让轮廓更自然
-        final double controlY = (baseY + peak) * 0.5 - 
-            math.sin(i * 1.5 + skew) * baseHeight * 0.1;
+        // 大幅增加起伏变化
+        final double majorVariation = math.sin(i * 0.9 + skew) * 0.8;
+        final double minorVariation = math.sin(i * 2.5 + skew * 1.8) * 0.4;
+        final double microVariation = math.sin(i * 5.2 + skew * 3.2) * 0.2;
         
-        path.lineTo(x + step * 0.3, controlY);
-        path.lineTo(x + step * 0.5, peak);
-        path.lineTo(x + step * 0.7, controlY);
+        final double totalVariation = majorVariation + minorVariation + microVariation;
+        final double peak = baseY - baseHeight * (1.0 + totalVariation);
+        
+        // 使用二次贝塞尔曲线创建更平滑的山峰
+        if (i > 0) {
+          final double prevX = (i - 1) * step;
+          final double prevHeight = baseHeight * (1.0 + 
+              math.sin((i - 1) * 0.9 + skew) * 0.8 + 
+              math.sin((i - 1) * 2.5 + skew * 1.8) * 0.4 +
+              math.sin((i - 1) * 5.2 + skew * 3.2) * 0.2);
+          final double prevPeak = baseY - prevHeight;
+          
+          final double controlX = (prevX + x) * 0.5;
+          final double controlY = (prevPeak + peak) * 0.5 - 
+              math.sin(i * 1.2 + skew) * baseHeight * 0.15;
+          
+          path.quadraticBezierTo(controlX, controlY, x, peak);
+        } else {
+          path.lineTo(x, peak);
+        }
       }
+      
       path
         ..lineTo(size.width, baseY)
         ..lineTo(size.width, soilTop)
@@ -551,7 +571,7 @@ class _TreeGrowthPainter extends CustomPainter {
       return path;
     }
 
-    // 最远的山脉 - 深蓝色
+    // 最远的山脉 - 深蓝色，低密度（约2个峰/视口）
     final double veryFarMountainBase = horizonY - viewportHeightPx * 0.05;
     final Paint veryFarRangePaint = Paint()
       ..shader = LinearGradient(
@@ -566,13 +586,13 @@ class _TreeGrowthPainter extends CustomPainter {
             ],
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-      ).createShader(Rect.fromLTWH(0, veryFarMountainBase - viewportHeightPx * 0.15, size.width, viewportHeightPx * 0.2));
+      ).createShader(Rect.fromLTWH(0, veryFarMountainBase - viewportHeightPx * 0.3, size.width, viewportHeightPx * 0.35));
     canvas.drawPath(
-      distantRange(veryFarMountainBase, 0.15, 0.0, 10),
+      distantRange(veryFarMountainBase, 0.25, 0.0, 2.0),
       veryFarRangePaint,
     );
 
-    // 中远山脉 - 蓝紫色
+    // 中远山脉 - 蓝紫色，中密度（约3个峰/视口）
     final double farMountainBase = horizonY;
     final Paint farRangePaint = Paint()
       ..shader = LinearGradient(
@@ -587,13 +607,13 @@ class _TreeGrowthPainter extends CustomPainter {
             ],
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-      ).createShader(Rect.fromLTWH(0, farMountainBase - viewportHeightPx * 0.18, size.width, viewportHeightPx * 0.22));
+      ).createShader(Rect.fromLTWH(0, farMountainBase - viewportHeightPx * 0.35, size.width, viewportHeightPx * 0.4));
     canvas.drawPath(
-      distantRange(farMountainBase, 0.18, 1.2, 8),
+      distantRange(farMountainBase, 0.28, 1.5, 3.0),
       farRangePaint,
     );
 
-    // 近山脉 - 绿色调，更突出
+    // 近山脉 - 绿色调，高密度（约4个峰/视口）
     final double nearMountainBase = horizonY + viewportHeightPx * 0.04;
     final Paint nearRangePaint = Paint()
       ..shader = LinearGradient(
@@ -608,9 +628,9 @@ class _TreeGrowthPainter extends CustomPainter {
             ],
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-      ).createShader(Rect.fromLTWH(0, nearMountainBase - viewportHeightPx * 0.22, size.width, viewportHeightPx * 0.26));
+      ).createShader(Rect.fromLTWH(0, nearMountainBase - viewportHeightPx * 0.4, size.width, viewportHeightPx * 0.45));
     canvas.drawPath(
-      distantRange(nearMountainBase, 0.22, 2.5, 6),
+      distantRange(nearMountainBase, 0.32, 2.8, 4.0),
       nearRangePaint,
     );
 
