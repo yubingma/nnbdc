@@ -477,28 +477,43 @@ class _TreeGrowthPainter extends CustomPainter {
   // 绘制云朵
   void drawCloud(Canvas canvas, Offset center, double scale, double seed) {
     final Paint cloudPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.85)
+      ..color = Colors.white.withValues(alpha: 0.9)
       ..style = PaintingStyle.fill;
     
     final Paint cloudShadow = Paint()
-      ..color = const Color(0xFFE0E0E0).withValues(alpha: 0.4);
+      ..color = const Color(0xFFD0D0D0).withValues(alpha: 0.3);
     
-    // 云朵由多个椭圆组成
-    final List<Map<String, double>> bubbles = [
-      {'x': 0, 'y': 0, 'w': 50 * scale, 'h': 30 * scale},
-      {'x': 35 * scale, 'y': -5 * scale, 'w': 45 * scale, 'h': 35 * scale},
-      {'x': 65 * scale, 'y': 2 * scale, 'w': 40 * scale, 'h': 28 * scale},
-      {'x': 20 * scale, 'y': 8 * scale, 'w': 35 * scale, 'h': 25 * scale},
-      {'x': 50 * scale, 'y': 10 * scale, 'w': 30 * scale, 'h': 22 * scale},
-    ];
+    // 使用随机种子创建更自然的棉花状云朵
+    final math.Random cloudRand = math.Random((seed * 10000).toInt());
     
-    // 绘制阴影
+    // 云朵由更多小椭圆组成，形成蓬松的棉花效果
+    final List<Map<String, double>> bubbles = [];
+    
+    // 中心大团
+    bubbles.add({'x': 0, 'y': 0, 'w': 30 * scale, 'h': 20 * scale});
+    
+    // 周围添加8-12个小棉花团，形成不规则的蓬松外形
+    final int smallBubbles = 8 + cloudRand.nextInt(5);
+    for (int i = 0; i < smallBubbles; i++) {
+      final double angle = (i / smallBubbles) * 2 * math.pi + cloudRand.nextDouble() * 0.5;
+      final double distance = (15 + cloudRand.nextDouble() * 12) * scale;
+      final double bubbleSize = (12 + cloudRand.nextDouble() * 12) * scale;
+      
+      bubbles.add({
+        'x': math.cos(angle) * distance,
+        'y': math.sin(angle) * distance * 0.6, // Y轴压缩，更像云
+        'w': bubbleSize,
+        'h': bubbleSize * (0.7 + cloudRand.nextDouble() * 0.3),
+      });
+    }
+    
+    // 绘制轻微阴影
     for (final bubble in bubbles) {
       canvas.drawOval(
         Rect.fromCenter(
           center: Offset(
-            center.dx + bubble['x']! + 2,
-            center.dy + bubble['y']! + 2,
+            center.dx + bubble['x']! + 1,
+            center.dy + bubble['y']! + 1.5,
           ),
           width: bubble['w']!,
           height: bubble['h']!,
@@ -507,7 +522,7 @@ class _TreeGrowthPainter extends CustomPainter {
       );
     }
     
-    // 绘制云朵
+    // 绘制云朵本体
     for (final bubble in bubbles) {
       canvas.drawOval(
         Rect.fromCenter(
@@ -545,25 +560,27 @@ class _TreeGrowthPainter extends CustomPainter {
     }
     canvas.drawRect(Rect.fromLTWH(0, 0, size.width, soilTop), skyPaint);
 
-    // 用户小天地在世界中央
-    final double centerX = size.width * 0.5;
-    
     // 使用已定义的pixelsPerMeter，计算视口尺寸（用于树木等对象的合理比例）
     final double viewportWidthMeters = _worldScaleMetersPerScreen; // 视口宽度对应10米
+    final double viewportWidthPx = viewportWidthMeters * pixelsPerMeter;
     final double viewportHeightMeters = viewportWidthMeters * (size.height / size.width);
     final double viewportHeightPx = viewportHeightMeters * pixelsPerMeter;
     
     final double horizonY = soilTop - viewportHeightPx * 0.35;
     
+    // 用户小天地在世界中央
+    final double centerX = size.width * 0.5;
+    
     // 绘制云朵和太阳（都在世界空间中，会随滚动变化）
     if (!isDarkMode) {
       final math.Random cloudRandom = math.Random(branchSeed ^ 0x1c7);
       
-      // 太阳（在世界空间中，山峰上方10米）
+      // 太阳（在用户小天地上方偏右，完全露出不被山峰遮挡）
       final double mountainHeight = viewportHeightPx * 0.32; // 山峰约高度
-      final double sunX = size.width * 0.67; // 世界中的X位置
-      final double sunY = horizonY - mountainHeight - 10 * pixelsPerMeter; // 山峰上方10米
+      final double sunX = centerX + viewportWidthPx * 0.3; // 用户小天地中心偏右
       final double sunRadius = 75.0; // 直径150像素，半径75
+      // 太阳位置：山峰顶部上方非常高的位置，确保不被云朵遮挡
+      final double sunY = horizonY - mountainHeight - viewportHeightPx * 0.65; // 山峰上方很高
       
       // 太阳光晕
       final Paint sunGlowPaint = Paint()
@@ -588,16 +605,21 @@ class _TreeGrowthPainter extends CustomPainter {
         ).createShader(Rect.fromCircle(center: Offset(sunX, sunY), radius: sunRadius));
       canvas.drawCircle(Offset(sunX, sunY), sunRadius, sunPaint);
       
-      // 云朵（覆盖整个天空）- 大20倍
-      final int cloudCount = 15; // 增加数量覆盖整个天空
-      final double skyHeight = soilTop; // 天空高度（从顶部到土壤）
+      // 云朵（主要集中在山峰上方，像棉花一样）
+      final int cloudCount = 30; // 增加数量，但缩小单个云朵
+      
+      // 山峰上方区域（重点分布区域）
+      final double mountainTopY = horizonY - mountainHeight;
       
       for (int i = 0; i < cloudCount; i++) {
         // 云朵在世界空间中均匀分布
-        final double cloudX = (i / cloudCount) * size.width + cloudRandom.nextDouble() * 300 - 150;
-        // 云朵分布在整个天空：从顶部5%到底部95%
-        final double cloudY = skyHeight * 0.05 + cloudRandom.nextDouble() * skyHeight * 0.9;
-        final double cloudScale = (0.6 + cloudRandom.nextDouble() * 0.8) * 20; // 放大20倍
+        final double cloudX = (i / cloudCount) * size.width + cloudRandom.nextDouble() * 400 - 200;
+        
+        // 云朵集中在山峰上方附近，但不要太高（避免遮挡太阳）
+        // 从山峰顶部开始，向上延伸0.45个视口高度（太阳在0.65处）
+        final double cloudY = mountainTopY - (cloudRandom.nextDouble() * viewportHeightPx * 0.45);
+        
+        final double cloudScale = (0.5 + cloudRandom.nextDouble() * 0.6) * 4; // 进一步缩小到4倍
         
         drawCloud(canvas, Offset(cloudX, cloudY), cloudScale, cloudRandom.nextDouble());
       }
