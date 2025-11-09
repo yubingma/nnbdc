@@ -525,113 +525,120 @@ class _TreeGrowthPainter extends CustomPainter {
       atmospherePaint,
     );
 
-    Path distantRange(double offset, double heightFactor, double skew, int peakCount) {
-      final Path path = Path()..moveTo(0, horizonY + offset);
+    Path distantRange(double baseY, double heightFactor, double skew, int peakCount) {
+      final Path path = Path()..moveTo(0, baseY);
       final double step = size.width / peakCount;
       for (int i = 0; i <= peakCount; i++) {
         final double x = i * step;
         final double baseHeight = heightFactor * viewportHeightPx;
-        final double variation = math.sin(i * 0.8 + skew) * 0.18;
-        final double microVariation = math.sin(i * 2.3 + skew * 1.5) * 0.08;
-        final double peak = horizonY + offset - baseHeight *
-            (0.4 + variation + microVariation);
-        path.quadraticBezierTo(
-          x + step * 0.4,
-          peak - math.sin(i * 1.2 + skew) * baseHeight * 0.05,
-          x + step,
-          horizonY + offset,
-        );
+        final double variation = math.sin(i * 0.8 + skew) * 0.3;
+        final double microVariation = math.sin(i * 2.3 + skew * 1.5) * 0.15;
+        final double peak = baseY - baseHeight * (0.5 + variation + microVariation);
+        
+        // 山峰的控制点，让轮廓更自然
+        final double controlY = (baseY + peak) * 0.5 - 
+            math.sin(i * 1.5 + skew) * baseHeight * 0.1;
+        
+        path.lineTo(x + step * 0.3, controlY);
+        path.lineTo(x + step * 0.5, peak);
+        path.lineTo(x + step * 0.7, controlY);
       }
       path
+        ..lineTo(size.width, baseY)
         ..lineTo(size.width, soilTop)
         ..lineTo(0, soilTop)
         ..close();
       return path;
     }
 
-    // 最远的山脉 - 深蓝色，更多峰
+    // 最远的山脉 - 深蓝色
+    final double veryFarMountainBase = horizonY - viewportHeightPx * 0.05;
     final Paint veryFarRangePaint = Paint()
       ..shader = LinearGradient(
         colors: isDarkMode
           ? [
-              const Color(0xFF2E3F5E).withValues(alpha: 0.5),
-              const Color(0xFF1F2D42).withValues(alpha: 0.7),
+              const Color(0xFF4A5F8E),
+              const Color(0xFF2F3D5E),
             ]
           : [
-              const Color(0xFF5A7BA8).withValues(alpha: 0.4),
-              const Color(0xFF4A6B98).withValues(alpha: 0.6),
+              const Color(0xFF7A9BC8),
+              const Color(0xFF5A7BA8),
             ],
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-      ).createShader(Rect.fromLTWH(0, horizonY - viewportHeightPx * 0.2, size.width, viewportHeightPx * 0.3));
+      ).createShader(Rect.fromLTWH(0, veryFarMountainBase - viewportHeightPx * 0.15, size.width, viewportHeightPx * 0.2));
     canvas.drawPath(
-      distantRange(viewportHeightPx * 0.08, 0.12, 0.0, 12),
+      distantRange(veryFarMountainBase, 0.15, 0.0, 10),
       veryFarRangePaint,
     );
 
-    // 中远山脉 - 蓝灰色
+    // 中远山脉 - 蓝紫色
+    final double farMountainBase = horizonY;
     final Paint farRangePaint = Paint()
       ..shader = LinearGradient(
         colors: isDarkMode
           ? [
-              const Color(0xFF3A4F6E).withValues(alpha: 0.6),
-              const Color(0xFF2A3F5E).withValues(alpha: 0.8),
+              const Color(0xFF5A6F9E),
+              const Color(0xFF3A4F7E),
             ]
           : [
-              const Color(0xFF6B8AAF).withValues(alpha: 0.55),
-              const Color(0xFF5B7A9F).withValues(alpha: 0.75),
+              const Color(0xFF8AAADF),
+              const Color(0xFF6B8AAF),
             ],
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-      ).createShader(Rect.fromLTWH(0, horizonY - viewportHeightPx * 0.15, size.width, viewportHeightPx * 0.25));
+      ).createShader(Rect.fromLTWH(0, farMountainBase - viewportHeightPx * 0.18, size.width, viewportHeightPx * 0.22));
     canvas.drawPath(
-      distantRange(viewportHeightPx * 0.04, 0.16, 0.8, 10),
+      distantRange(farMountainBase, 0.18, 1.2, 8),
       farRangePaint,
     );
 
-    // 近山脉 - 绿色调
+    // 近山脉 - 绿色调，更突出
+    final double nearMountainBase = horizonY + viewportHeightPx * 0.04;
     final Paint nearRangePaint = Paint()
       ..shader = LinearGradient(
         colors: isDarkMode
           ? [
-              const Color(0xFF4A5F4E).withValues(alpha: 0.7),
-              const Color(0xFF3A4F3E).withValues(alpha: 0.85),
+              const Color(0xFF5A7F5A),
+              const Color(0xFF3A5F3A),
             ]
           : [
-              const Color(0xFF7AA869).withValues(alpha: 0.7),
-              const Color(0xFF5A8850).withValues(alpha: 0.85),
+              const Color(0xFF8AC87A),
+              const Color(0xFF5A9850),
             ],
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-      ).createShader(Rect.fromLTWH(0, horizonY - viewportHeightPx * 0.12, size.width, viewportHeightPx * 0.2));
+      ).createShader(Rect.fromLTWH(0, nearMountainBase - viewportHeightPx * 0.22, size.width, viewportHeightPx * 0.26));
     canvas.drawPath(
-      distantRange(0, 0.18, 1.8, 8),
+      distantRange(nearMountainBase, 0.22, 2.5, 6),
       nearRangePaint,
     );
 
-    // 远景树林 - 多层次，更自然
+    // 远景树林 - 深绿色，更明显
     final math.Random treeRandom = math.Random(branchSeed ^ 0x7a9);
     final int groveCount = (size.width / 80).ceil();
     for (int i = 0; i < groveCount; i++) {
       final double t = i / groveCount;
       final double baseX = t * size.width + math.sin(i * 1.4) * 28;
       final double depth = treeRandom.nextDouble();
-      final double depthY = horizonY + viewportHeightPx * 0.02 + depth * viewportHeightPx * 0.08;
+      final double depthY = horizonY + viewportHeightPx * 0.05 + depth * viewportHeightPx * 0.1;
       
-      final double treeHeight = 35 + depth * 25;
-      final double treeWidth = 4 + depth * 4;
-      final double crownWidth = 32 + depth * 20;
-      final double crownHeight = 24 + depth * 14;
+      final double treeHeight = 40 + depth * 30;
+      final double treeWidth = 5 + depth * 5;
+      final double crownWidth = 38 + depth * 24;
+      final double crownHeight = 28 + depth * 18;
       
-      final double alphaFactor = 0.3 + depth * 0.3;
+      // 树干 - 深褐色，更突出
       final Paint distantTreePaint = Paint()
         ..color = (isDarkMode 
-            ? const Color(0xFF3A4F3A) 
-            : const Color(0xFF476944)).withValues(alpha: alphaFactor * 0.6);
+            ? const Color(0xFF3A2F1A) 
+            : const Color(0xFF5A4A2A)).withValues(alpha: 0.7 + depth * 0.2);
+      
+      // 树冠 - 深绿色，对比强烈
       final Paint distantCrownPaint = Paint()
         ..color = (isDarkMode
-            ? const Color(0xFF4A5F4A)
-            : const Color(0xFF6B8F58)).withValues(alpha: alphaFactor);
+            ? const Color(0xFF2F4F2F)
+            : const Color(0xFF3A7A3A)).withValues(alpha: 0.75 + depth * 0.2);
       
       canvas.drawRect(
         Rect.fromCenter(
@@ -643,7 +650,7 @@ class _TreeGrowthPainter extends CustomPainter {
       );
       canvas.drawOval(
         Rect.fromCenter(
-          center: Offset(baseX, depthY - treeHeight * 0.2),
+          center: Offset(baseX, depthY - treeHeight * 0.15),
           width: crownWidth,
           height: crownHeight,
         ),
