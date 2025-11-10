@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
@@ -17,11 +18,15 @@ const List<double> _treeStageStops = [
   1.0,
 ];
 
-const double _secondsPerGrowthDay = 3.0; // 几秒一日的生长速度控制
-const double _seedInitialDepth = 18.0; // 种子初始埋深，控制破土时间
+const double _baseMetersPerGrowthDay = 0.1; // 基础生长速度：每天生长0.1米
+const double _growthPlaybackMultiplier = 1000000.0; // 生长播放快进倍数（调试用，影响时间流逝）
+const double _seedInitialDepthMeters = 0.18; // 种子初始埋深（米），控制破土时间
+const double _seedRadiusMeters = 0.036; // 种子平均半径（米）
+const double _seedGrowthMetersPerDay = 0.32; // 种子破土阶段的日生长速度（米/天）
 const double _worldScaleMetersPerScreen = 10.0; // 当前屏幕宽度代表的米数
 const double _targetWorldWidthMeters = 1000.0; // 世界总宽度（米）
 const double _soilThicknessMeters = 5.0; // 土壤层厚度（米）
+const Duration _growthTickInterval = Duration(seconds: 1);
 
 double _rootProgressFor(double progress) {
   final double emergenceThreshold = _treeStageStops[2];
@@ -63,18 +68,18 @@ class PlantGrowthScene extends StatefulWidget {
   State<PlantGrowthScene> createState() => _PlantGrowthSceneState();
 }
 
-class _PlantGrowthSceneState extends State<PlantGrowthScene>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
+class _PlantGrowthSceneState extends State<PlantGrowthScene> {
+  
+  Timer? _growthTimer;
   bool _seedPlanted = false;
   late final int _branchSeed;
-  static const int _totalDays = 30;
-  static const int _maxDayInput = 365;
+  static const int _totalDays = 3000;
+  static const int _maxDayInput = 3650;
   late final TextEditingController _dayController;
   int _stopDay = _totalDays;
   double _displayProgress = 0.0;
   double _elapsedDays = 0.0;
-  double _lastControllerValue = 0.0;
+  DateTime? _lastGrowthUpdateTime;
   String? _inputError;
   late final TransformationController _viewController;
   Matrix4 _baseViewMatrix = Matrix4.identity();
@@ -88,16 +93,20 @@ class _PlantGrowthSceneState extends State<PlantGrowthScene>
   double _currentWorldHeight = 0;
   double _currentWorldWidth = 0;
 
+  void _ensureGrowthTimer() {
+    _growthTimer ??= Timer.periodic(
+      _growthTickInterval,
+      (_) => _handleTick(),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
     _branchSeed = _computeBranchSeed();
     _dayController = TextEditingController(text: '$_stopDay');
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 18),
-    );
-    _controller.addListener(_handleTick);
+    _ensureGrowthTimer();
+    _lastGrowthUpdateTime = DateTime.now();
     _viewController = TransformationController();
     _viewController.addListener(_handleViewMatrixChange);
   }
@@ -173,29 +182,32 @@ class _PlantGrowthSceneState extends State<PlantGrowthScene>
 
   void _handleTick() {
     if (!_seedPlanted) return;
-
-    final double currentValue = _controller.value;
-    double delta = currentValue - _lastControllerValue;
-    if (delta < 0) {
-      delta += 1.0;
-    }
-    _lastControllerValue = currentValue;
-
-    if (delta <= 0) {
+    if (_stopDay > 0 && _elapsedDays >= _stopDay) {
+      _elapsedDays = _stopDay.toDouble();
+      _lastGrowthUpdateTime = DateTime.now();
       return;
     }
 
-    final double durationMs = (_controller.duration?.inMilliseconds ?? 0).toDouble();
-    if (durationMs <= 0) {
+    final DateTime now = DateTime.now();
+    _lastGrowthUpdateTime ??= now;
+    final Duration interval = now.difference(_lastGrowthUpdateTime!);
+    _lastGrowthUpdateTime = now;
+
+    final double deltaSeconds = interval.inMicroseconds / 1e6;
+    if (deltaSeconds <= 0) {
       return;
     }
-    final double deltaSeconds = delta * durationMs / 1000.0;
-    _elapsedDays += deltaSeconds / _secondsPerGrowthDay; // 几秒钟流逝一天
+
+    final double deltaDays =
+        (deltaSeconds / Duration.secondsPerDay) * _growthPlaybackMultiplier;
+    if (deltaDays <= 0) {
+      return;
+    }
+    _elapsedDays += deltaDays;
 
     const double characteristicDays = 45.0;
     if (_stopDay > 0 && _elapsedDays >= _stopDay) {
       _elapsedDays = _stopDay.toDouble();
-      _controller.stop();
     }
 
     final double newProgress =
@@ -250,7 +262,17 @@ class _PlantGrowthSceneState extends State<PlantGrowthScene>
     final double totalRequiredHeight = soilHeightPx + treeWithCrownHeight + requiredTopSpace;
     
     // 计算需要的最小缩放比例
-    final double requiredScale = _currentViewportHeight / totalRequiredHeight;
+    double requiredScale = 1.0;
+    if (totalRequiredHeight > 0) {
+      requiredScale = _currentViewportHeight / totalRequiredHeight;
+    }
+    
+    // 限制树木（不含顶部额外留白）在屏幕中的占比不超过 60%
+    final double maxTreeScreenHeight = _currentViewportHeight * 0.6;
+    if (treeHeightPx > 0) {
+      final double scaleForTreeRatio = maxTreeScreenHeight / treeHeightPx;
+      requiredScale = math.min(requiredScale, scaleForTreeRatio);
+    }
     
     // 只在需要缩小时才自动调整（不自动放大）
     final Matrix4 currentMatrix = _viewController.value;
@@ -300,7 +322,7 @@ class _PlantGrowthSceneState extends State<PlantGrowthScene>
       }
       _elapsedDays = 0.0;
       _displayProgress = 0.0;
-      _lastControllerValue = 0.0;
+      _lastGrowthUpdateTime = DateTime.now();
     });
 
     if (_seedPlanted) {
@@ -313,20 +335,18 @@ class _PlantGrowthSceneState extends State<PlantGrowthScene>
       setState(() {
         _displayProgress = 0.0;
         _elapsedDays = 0.0;
-        _lastControllerValue = 0.0;
+        _lastGrowthUpdateTime = DateTime.now();
       });
     } else {
       setState(() {
         _seedPlanted = true;
         _displayProgress = 0.0;
         _elapsedDays = 0.0;
-        _lastControllerValue = 0.0;
+        _lastGrowthUpdateTime = DateTime.now();
       });
     }
 
-    _controller.stop();
-    _controller.value = 0.0;
-    _controller.repeat();
+    _ensureGrowthTimer();
   }
 
   double _estimateTreeHeightMeters(double progress) {
@@ -335,15 +355,13 @@ class _PlantGrowthSceneState extends State<PlantGrowthScene>
       return 0.0;
     }
     // 树木持续生长，不再有高度限制
-    // 使用经过的天数计算实际高度，生长速度逐渐放缓但永不停止
-    final double daysGrown = _elapsedDays - (emergenceThreshold * 45.0);
+    // 使用经过的天数计算实际高度，保持线性生长速度
+    final double daysGrown = _elapsedDays;
     if (daysGrown <= 0) return 0.0;
     
-    // 使用对数增长模型：树在前期快速生长，后期放缓但持续增长
-    // height = a * ln(days + 1) + b，确保持续增长
-    final double a = 2.5; // 控制增长速度
-    final double b = 0.5; // 初始偏移
-    return a * math.log(daysGrown + 1) + b;
+    // 线性增长模型：保持每天固定的生长米数
+    const double offset = 0.5; // 初期微小高度，避免破土瞬间为0
+    return offset + _baseMetersPerGrowthDay * daysGrown;
   }
 
   String _formatElapsedTime(double progress) {
@@ -356,8 +374,7 @@ class _PlantGrowthSceneState extends State<PlantGrowthScene>
 
   @override
   void dispose() {
-    _controller.removeListener(_handleTick);
-    _controller.dispose();
+    _growthTimer?.cancel();
     _dayController.dispose();
     _viewController.removeListener(_handleViewMatrixChange);
     _viewController.dispose();
@@ -628,6 +645,7 @@ class _TreeGrowthPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final double pixelsPerMeter =
         _targetWorldWidthMeters == 0 ? 0 : size.width / _targetWorldWidthMeters;
+    double toPixels(double meters) => meters * pixelsPerMeter;
     final double soilThicknessPx = pixelsPerMeter > 0
         ? math.min(size.height * 0.9, _soilThicknessMeters * pixelsPerMeter)
         : size.height * 0.35;
@@ -1061,21 +1079,10 @@ class _TreeGrowthPainter extends CustomPainter {
       );
     }
     final double emergenceThreshold = _treeStageStops[2];
-    final bool hasBrokenGround = seedPlanted && progress >= emergenceThreshold;
     final double stageRoot = _rootProgressFor(progress);
-    final double stageBranch = hasBrokenGround
-        ? math.pow(
-              ((progress - emergenceThreshold) / (1 - emergenceThreshold)).clamp(0.0, 1.0),
-              0.85,
-            ).toDouble()
-        : 0.0;
     final double foliageStart = _treeStageStops[3];
-    final double stageFoliage = (hasBrokenGround && stageBranch > 0)
-        ? math.pow(
-              ((progress - foliageStart) / (1 - foliageStart)).clamp(0.0, 1.0),
-              0.9,
-            ).toDouble()
-        : 0.0;
+    double stageBranch = 0.0;
+    double stageFoliage = 0.0;
 
     // 种子：播种瞬间埋入土壤，不再做缓慢下沉动画
     final double sproutRatio = seedPlanted
@@ -1085,33 +1092,71 @@ class _TreeGrowthPainter extends CustomPainter {
         : 0.0;
 
     final double seedLift = seedPlanted ? sproutRatio.clamp(0.0, 1.0) : 0.0;
-    final double rootPush = seedPlanted
+    final double seedInitialDepthMeters = _seedInitialDepthMeters;
+    final double maxRootPushMeters = math.min(
+      seedInitialDepthMeters + _seedGrowthMetersPerDay * 0.6,
+      seedInitialDepthMeters * 2.0,
+    );
+    final double rootPushMeters = seedPlanted
         ? ui.lerpDouble(
               0,
-              _seedInitialDepth + 12,
+              maxRootPushMeters,
               math.pow(stageRoot, 1.18).toDouble(),
             ) ??
             0
         : 0.0;
+    final double liftTargetMeters = math.min(
+      seedInitialDepthMeters + _seedGrowthMetersPerDay * 0.35,
+      maxRootPushMeters,
+    );
+    final double combinedLiftMeters = math.max(
+      ui.lerpDouble(
+            0,
+            liftTargetMeters,
+            seedLift,
+          ) ??
+          0,
+      rootPushMeters,
+    );
+    final double sproutLengthMeters =
+        sproutRatio * _seedGrowthMetersPerDay;
+    final double sproutTipAboveSoilMeters = seedPlanted
+        ? sproutLengthMeters + combinedLiftMeters - seedInitialDepthMeters
+        : 0.0;
+    final bool sproutAboveSoil =
+        seedPlanted && sproutTipAboveSoilMeters >= 0;
+    final bool hasBrokenGround =
+        seedPlanted && (sproutAboveSoil || progress >= emergenceThreshold);
     final double emergenceOvershoot = hasBrokenGround
         ? ((progress - emergenceThreshold) / 0.12).clamp(0.0, 1.0)
         : 0.0;
-    final double combinedLift = math.max(
-      ui.lerpDouble(0, _seedInitialDepth + 8, seedLift) ?? 0,
-      rootPush,
+    final double depthClamp = math.min(
+      seedInitialDepthMeters,
+      _seedGrowthMetersPerDay * 0.4,
     );
-    final double seedDepthOffset =
-        (_seedInitialDepth - combinedLift).clamp(-12.0, _seedInitialDepth) -
-            emergenceOvershoot * 12;
+    final double seedDepthOffsetMeters =
+        (seedInitialDepthMeters - combinedLiftMeters)
+            .clamp(-depthClamp, seedInitialDepthMeters) -
+        emergenceOvershoot * depthClamp;
+    final double seedDepthOffsetPx = toPixels(seedDepthOffsetMeters);
     final Offset seedCenter = seedPlanted
-        ? Offset(centerX, soilTop + seedDepthOffset)
-        : Offset(centerX, soilTop - 12);
-    final double seedRadius = seedPlanted
-        ? ui.lerpDouble(3.6, 2.2, (seedLift * 1.2).clamp(0.0, 1.0)) ?? 3.0
-        : 5;
+        ? Offset(centerX, soilTop + seedDepthOffsetPx)
+        : Offset(
+            centerX,
+            soilTop - toPixels(depthClamp),
+          );
+    final double seedRadiusMeters = seedPlanted
+        ? ui.lerpDouble(
+              _seedRadiusMeters,
+              _seedRadiusMeters * 0.65,
+              (seedLift * 1.2).clamp(0.0, 1.0),
+            ) ??
+            _seedRadiusMeters
+        : _seedRadiusMeters * 1.2;
+    final double seedRadiusPx = toPixels(seedRadiusMeters);
     canvas.drawCircle(
       seedCenter,
-      seedRadius,
+      seedRadiusPx,
       Paint()..color = const Color(0xFF9C6941),
     );
     if (seedPlanted) {
@@ -1120,19 +1165,68 @@ class _TreeGrowthPainter extends CustomPainter {
         final Paint shellPaint = Paint()
           ..color = const Color(0xFFB27A47).withValues(alpha: 0.38 * shellAlpha)
           ..style = PaintingStyle.stroke
-          ..strokeWidth = ui.lerpDouble(1.4, 0.4, seedLift) ?? 1.0;
-        canvas.drawCircle(seedCenter, seedRadius + 2.6, shellPaint);
+          ..strokeWidth = toPixels(
+            ui.lerpDouble(
+                  _seedRadiusMeters * 0.42,
+                  _seedRadiusMeters * 0.16,
+                  seedLift,
+                ) ??
+                _seedRadiusMeters * 0.42,
+          );
+        canvas.drawCircle(
+          seedCenter,
+          seedRadiusPx +
+              toPixels(
+                _seedRadiusMeters * 0.72,
+              ),
+          shellPaint,
+        );
       }
     }
 
-    if (seedPlanted && sproutRatio > 0 && !hasBrokenGround) {
-      final double maxRise = _seedInitialDepth + 14;
-      final double sproutLength = sproutRatio * maxRise;
-      final Offset sproutEnd = Offset(
-        centerX,
-        math.max(soilTop - 4, seedCenter.dy - sproutLength),
-      );
+    if (hasBrokenGround) {
+      final double timeBasedBranchProgress = math.pow(
+        ((progress - emergenceThreshold) / (1 - emergenceThreshold))
+            .clamp(0.0, 1.0),
+        0.85,
+      ).toDouble();
 
+      double sproutBasedBranchProgress = 0.0;
+      if (sproutAboveSoil) {
+        final double normalizedExposure =
+            (sproutTipAboveSoilMeters / (_seedGrowthMetersPerDay * 0.6))
+                .clamp(0.0, 1.0);
+        sproutBasedBranchProgress =
+            math.pow(normalizedExposure, 0.85).toDouble();
+      }
+
+      stageBranch =
+          math.max(timeBasedBranchProgress, sproutBasedBranchProgress);
+
+      if (stageBranch > 0) {
+        final double timeBasedFoliageProgress = math.pow(
+          ((progress - foliageStart) / (1 - foliageStart)).clamp(0.0, 1.0),
+          0.9,
+        ).toDouble();
+        final double branchDrivenFoliage =
+            math.pow(stageBranch, 0.92).toDouble();
+        stageFoliage =
+            math.max(timeBasedFoliageProgress, branchDrivenFoliage);
+      }
+    }
+
+    final double sproutLengthPx = toPixels(sproutLengthMeters);
+    final Offset sproutEnd = Offset(
+      centerX,
+      math.max(
+        soilTop - toPixels(_seedRadiusMeters * 1.2),
+        seedCenter.dy - sproutLengthPx,
+      ),
+    );
+    final bool shouldDrawSprout =
+        seedPlanted && sproutRatio > 0 && stageBranch < 0.35;
+
+    if (shouldDrawSprout) {
       final Paint sproutPaint = Paint()
         ..shader = LinearGradient(
           colors: [
@@ -1144,7 +1238,14 @@ class _TreeGrowthPainter extends CustomPainter {
         ).createShader(
           Rect.fromPoints(seedCenter, sproutEnd),
         )
-        ..strokeWidth = ui.lerpDouble(1.1, 2.2, sproutRatio)!
+        ..strokeWidth = toPixels(
+          ui.lerpDouble(
+                _seedRadiusMeters * 0.32,
+                _seedRadiusMeters * 0.64,
+                sproutRatio,
+              ) ??
+              _seedRadiusMeters * 0.32,
+        )
         ..style = PaintingStyle.stroke
         ..strokeCap = StrokeCap.round;
 
@@ -1200,7 +1301,7 @@ class _TreeGrowthPainter extends CustomPainter {
           ..strokeCap = StrokeCap.round;
         canvas.drawLine(
           rootStart + const Offset(0, 2),
-          seedCenter + Offset(0, -seedRadius * 0.3),
+          seedCenter + Offset(0, -seedRadiusPx * 0.3),
           pushPaint,
         );
       }
@@ -1375,10 +1476,23 @@ class _TreeGrowthPainter extends CustomPainter {
         required double scale,
         required double growth,
         required String seedKey,
+        required double canopyHeightPx,
       }) {
-        final double normalizedScale = scale.clamp(0.12, 1.0);
+        final double normalizedScale = scale.clamp(0.08, 1.0);
         final double stageEased = math.pow(growth.clamp(0.0, 1.0), 0.86).toDouble();
-        final double clusterRadius = ui.lerpDouble(8, 28, normalizedScale) ?? 12;
+        final double desiredHeight =
+            canopyHeightPx.clamp(8.0, size.height * 0.5);
+        final double baseStretch = 1.4 + normalizedScale * 0.4;
+        const double averageVerticalStretch = 1.42;
+        final double targetRadius =
+            desiredHeight / (baseStretch * averageVerticalStretch);
+        final double clusterRadius = (ui.lerpDouble(
+                  targetRadius * 0.55,
+                  targetRadius,
+                  normalizedScale,
+                ) ??
+                targetRadius)
+            .clamp(6.0, desiredHeight);
         
         // 更丰富的颜色层次，从深绿到亮绿
         final Color deepGreen = Color.lerp(
@@ -1568,6 +1682,8 @@ class _TreeGrowthPainter extends CustomPainter {
             ui.lerpDouble(0.32, 0.58, cotyledonGrowth) ?? 0.4;
         final double cotyledonSpread =
             ui.lerpDouble(42, 28, cotyledonGrowth) ?? 36;
+        final double cotyledonCanopyHeight =
+            (stemHeight * 0.24 * cotyledonGrowth).clamp(12.0, stemHeight * 0.32);
 
         drawLeafCluster(
           origin: cotyledonAnchor + const Offset(-6, -2),
@@ -1575,6 +1691,7 @@ class _TreeGrowthPainter extends CustomPainter {
           scale: cotyledonScale,
           growth: cotyledonGrowth.clamp(0.0, 0.9),
           seedKey: 'cotyledon-left',
+          canopyHeightPx: cotyledonCanopyHeight,
         );
         drawLeafCluster(
           origin: cotyledonAnchor + const Offset(6, -2),
@@ -1582,6 +1699,7 @@ class _TreeGrowthPainter extends CustomPainter {
           scale: cotyledonScale,
           growth: cotyledonGrowth.clamp(0.0, 0.9),
           seedKey: 'cotyledon-right',
+          canopyHeightPx: cotyledonCanopyHeight,
         );
       }
 
@@ -1627,6 +1745,27 @@ class _TreeGrowthPainter extends CustomPainter {
 
         final int generation = branchDepth - depth;
 
+        bool shouldCullBranch() {
+          if (generation <= 0) {
+            return false;
+          }
+          final double maturity = stageBranch.clamp(0.0, 1.0);
+          if (maturity <= 0.35) {
+            return false;
+          }
+          final double exposure = (generation + 1) / (branchDepth + 1);
+          final double baseChance = (maturity - 0.35) * 0.22;
+          final double generationBonus = exposure * 0.25;
+          final double deathChance = (baseChance + generationBonus).clamp(0.0, 0.42);
+          final double randomValue =
+              (noise('branch-death-$key-$depth') + 1.0) * 0.5; // 0-1
+          return randomValue < deathChance;
+        }
+
+        if (shouldCullBranch()) {
+          return;
+        }
+
         canvas.drawPath(
           branchPath,
           Paint()
@@ -1640,12 +1779,15 @@ class _TreeGrowthPainter extends CustomPainter {
         final double foliageStrength =
             (stageFoliage * (0.6 + generationRatio * 0.6) + 0.12).clamp(0.12, 1.0);
         final double tipScale = ui.lerpDouble(0.34, 0.96, foliageStrength) ?? 0.52;
+        final double canopyHeightForTip =
+            math.max(10.0, length / 3 * (0.8 + generationRatio * 0.2));
         drawLeafCluster(
           origin: end,
           directionDeg: angleDeg + noise('branch-tip-$key-$depth') * 5,
           scale: tipScale,
           growth: foliageStrength,
           seedKey: '$key-tip-$depth',
+          canopyHeightPx: canopyHeightForTip,
         );
 
         if (foliageStrength > 0.24 && depth > 1) {
@@ -1657,12 +1799,15 @@ class _TreeGrowthPainter extends CustomPainter {
           );
           final double budScale =
               (tipScale * (0.72 + noise('branch-bud-$key-$depth') * 0.12)).clamp(0.22, 0.82);
+          final double budCanopyHeight =
+              math.max(8.0, canopyHeightForTip * 0.7);
           drawLeafCluster(
             origin: budPoint,
             directionDeg: angleDeg + noise('branch-bud-ang-$key-$depth') * 6,
             scale: budScale,
             growth: (foliageStrength * 0.8).clamp(0.24, 1.0),
             seedKey: '$key-bud-$depth',
+            canopyHeightPx: budCanopyHeight,
           );
         }
 
@@ -1715,72 +1860,65 @@ class _TreeGrowthPainter extends CustomPainter {
         branchDepth,
         'main',
       );
-      if (branchingFactor > 0.2) {
-        final int upperDepth = math.max(1, branchDepth - 1);
-        final int midDepth = math.max(1, branchDepth - 2);
-        final int lowDepth = math.max(1, branchDepth - 3);
+      if (branchingFactor > 0.18) {
+        final int baseLateralLevels = 3;
+        final int heightDrivenLevels =
+            math.max(0, (treeHeightMeters / 2.2).floor());
+        final int lateralLevels =
+            (baseLateralLevels + heightDrivenLevels).clamp(3, 14);
 
-        // 主干顶部的侧枝，自然协调
-        drawTreeBranch(
-          trunkTop + Offset(0, -stemHeight * 0.08),
-          branchBaseLength * 0.88,
-          -76,
-          branchBaseThickness * 0.78,
-          upperDepth,
-          'upperL',
-        );
-        drawTreeBranch(
-          trunkTop + Offset(0, -stemHeight * 0.08),
-          branchBaseLength * 0.88,
-          -104,
-          branchBaseThickness * 0.78,
-          upperDepth,
-          'upperR',
-        );
-        // 主干中部和下部的侧枝，自然渐变
-        final double midOffset = ui.lerpDouble(0.58, 0.42, branchingFactor) ?? 0.5;
-        final double lowOffset = ui.lerpDouble(0.36, 0.26, branchingFactor) ?? 0.32;
-        final double midLengthFactor = ui.lerpDouble(0.64, 0.84, branchingFactor) ?? 0.74;
-        final double lowLengthFactor = ui.lerpDouble(0.48, 0.74, branchingFactor) ?? 0.64;
-        final double midThicknessFactor = ui.lerpDouble(0.52, 0.76, branchingFactor) ?? 0.66;
-        final double lowThicknessFactor = ui.lerpDouble(0.42, 0.70, branchingFactor) ?? 0.60;
-        final double midLength = branchBaseLength * midLengthFactor;
-        final double lowLength = branchBaseLength * lowLengthFactor;
-        final double midThickness = branchBaseThickness * midThicknessFactor;
-        final double lowThickness = branchBaseThickness * lowThicknessFactor;
+        for (int i = 0; i < lateralLevels; i++) {
+          final double levelT = (i + 1) / (lateralLevels + 1);
+          final double anchorFactor =
+              (ui.lerpDouble(0.22, 0.92, levelT) ?? 0.5).clamp(0.18, 0.94);
+          final Offset anchor =
+              Offset(centerX, soilTop - stemHeight * anchorFactor);
 
-        drawTreeBranch(
-          Offset(centerX, soilTop - stemHeight * midOffset),
-          midLength,
-          -72,
-          midThickness,
-          midDepth,
-          'midL',
-        );
-        drawTreeBranch(
-          Offset(centerX, soilTop - stemHeight * midOffset),
-          midLength,
-          -108,
-          midThickness,
-          midDepth,
-          'midR',
-        );
-        drawTreeBranch(
-          Offset(centerX, soilTop - stemHeight * lowOffset),
-          lowLength,
-          -65,
-          lowThickness,
-          lowDepth,
-          'lowL',
-        );
-        drawTreeBranch(
-          Offset(centerX, soilTop - stemHeight * lowOffset),
-          lowLength,
-          -115,
-          lowThickness,
-          lowDepth,
-          'lowR',
-        );
+          final double strengthNoise = noise('lvl-strength-$i') * 0.08;
+          final double levelStrength =
+              (branchingFactor * (0.52 + levelT * 0.68) + strengthNoise)
+                  .clamp(0.2, 1.0);
+
+          final double lengthFactor =
+              (ui.lerpDouble(0.42, 0.9, levelStrength) ?? 0.66) *
+                  (0.9 + noise('lvl-len-$i') * 0.08);
+          final double thicknessFactor =
+              (ui.lerpDouble(0.32, 0.78, levelStrength) ?? 0.54) *
+                  (0.92 + noise('lvl-thick-$i') * 0.06);
+
+          final double levelLength = branchBaseLength * lengthFactor;
+          final double levelThickness =
+              branchBaseThickness * thicknessFactor;
+
+          final int levelDepth =
+              math.max(1, branchDepth - (i ~/ 2) - 1);
+          final double baseAngle =
+              ui.lerpDouble(84, 72, levelStrength) ?? 78;
+          final double spreadAngle =
+              (ui.lerpDouble(18, 32, levelStrength) ?? 22) *
+                  (0.9 + noise('lvl-spread-$i') * 0.05);
+          final double upwardBias =
+              ui.lerpDouble(6, 14, levelStrength) ?? 10;
+
+          drawTreeBranch(
+            anchor,
+            levelLength,
+            -(baseAngle - spreadAngle + upwardBias) +
+                noise('lvl-angL-$i') * 4,
+            levelThickness,
+            levelDepth,
+            'lvlL-$i',
+          );
+          drawTreeBranch(
+            anchor,
+            levelLength,
+            -(baseAngle + spreadAngle + upwardBias) -
+                noise('lvl-angR-$i') * 4,
+            levelThickness,
+            levelDepth,
+            'lvlR-$i',
+          );
+        }
       }
     }
   }
