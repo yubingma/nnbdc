@@ -23,6 +23,8 @@ const double _growthPlaybackMultiplier = 1000000.0; // 生长播放快进倍数�
 const double _seedInitialDepthMeters = 0.18; // 种子初始埋深（米），控制破土时间
 const double _seedRadiusMeters = 0.036; // 种子平均半径（米）
 const double _seedGrowthMetersPerDay = 0.32; // 种子破土阶段的日生长速度（米/天）
+const double _branchFullMaturityDays = 180.0; // 树枝达到完全成熟所需天数
+const double _foliageFullMaturityDays = 220.0; // 树冠达到完全茂密所需天数
 const double _worldScaleMetersPerScreen = 10.0; // 当前屏幕宽度代表的米数
 const double _targetWorldWidthMeters = 1000.0; // 世界总宽度（米）
 const double _soilThicknessMeters = 5.0; // 土壤层厚度（米）
@@ -1080,7 +1082,6 @@ class _TreeGrowthPainter extends CustomPainter {
     }
     final double emergenceThreshold = _treeStageStops[2];
     final double stageRoot = _rootProgressFor(progress);
-    final double foliageStart = _treeStageStops[3];
     double stageBranch = 0.0;
     double stageFoliage = 0.0;
 
@@ -1185,33 +1186,29 @@ class _TreeGrowthPainter extends CustomPainter {
     }
 
     if (hasBrokenGround) {
-      final double timeBasedBranchProgress = math.pow(
-        ((progress - emergenceThreshold) / (1 - emergenceThreshold))
-            .clamp(0.0, 1.0),
-        0.85,
-      ).toDouble();
+      final double growthDays = math.max(
+        0.0,
+        (treeHeightMeters - 0.5) / _baseMetersPerGrowthDay,
+      );
 
-      double sproutBasedBranchProgress = 0.0;
-      if (sproutAboveSoil) {
+      stageBranch = (growthDays / _branchFullMaturityDays).clamp(0.0, 1.0);
+      if (sproutAboveSoil && stageBranch < 0.15) {
         final double normalizedExposure =
             (sproutTipAboveSoilMeters / (_seedGrowthMetersPerDay * 0.6))
                 .clamp(0.0, 1.0);
-        sproutBasedBranchProgress =
-            math.pow(normalizedExposure, 0.85).toDouble();
+        final double exposureBoost = normalizedExposure * 0.15;
+        if (exposureBoost > stageBranch) {
+          stageBranch = exposureBoost;
+        }
       }
 
-      stageBranch =
-          math.max(timeBasedBranchProgress, sproutBasedBranchProgress);
-
       if (stageBranch > 0) {
-        final double timeBasedFoliageProgress = math.pow(
-          ((progress - foliageStart) / (1 - foliageStart)).clamp(0.0, 1.0),
-          0.9,
-        ).toDouble();
-        final double branchDrivenFoliage =
-            math.pow(stageBranch, 0.92).toDouble();
+        final double foliageByTime =
+            (growthDays / _foliageFullMaturityDays).clamp(0.0, 1.0);
+        final double foliageByBranch =
+            math.pow(stageBranch, 0.9).toDouble();
         stageFoliage =
-            math.max(timeBasedFoliageProgress, branchDrivenFoliage);
+            foliageByTime >= foliageByBranch ? foliageByTime : foliageByBranch;
       }
     }
 
@@ -1749,6 +1746,9 @@ class _TreeGrowthPainter extends CustomPainter {
           if (generation <= 0) {
             return false;
           }
+          if (depth > 1) {
+            return false;
+          }
           final double maturity = stageBranch.clamp(0.0, 1.0);
           if (maturity <= 0.35) {
             return false;
@@ -1847,6 +1847,53 @@ class _TreeGrowthPainter extends CustomPainter {
             depth - 2,
             '${key}M',
           );
+        }
+
+        final double sproutChanceBase = (stageBranch - 0.35).clamp(0.0, 0.65);
+        if (depth > 1 && sproutChanceBase > 0) {
+          final double sproutProbability = (sproutChanceBase *
+                  (0.28 + generationRatio * 0.5) *
+                  (0.6 + easedBranch * 0.4))
+              .clamp(0.0, 0.85);
+          final double sproutRoll =
+              (noise('branch-sprout-$key-$depth') + 1.0) * 0.5;
+          if (sproutRoll < sproutProbability) {
+            final double sproutT =
+                ((noise('branch-sprout-t-$key-$depth') + 1.0) * 0.5)
+                    .clamp(0.18, 0.82);
+            final double invT = 1 - sproutT;
+            final Offset sproutOrigin = Offset(
+              invT * invT * start.dx +
+                  2 * invT * sproutT * control.dx +
+                  sproutT * sproutT * end.dx,
+              invT * invT * start.dy +
+                  2 * invT * sproutT * control.dy +
+                  sproutT * sproutT * end.dy,
+            );
+
+            final double sproutLengthFactor =
+                (0.3 + stageBranch * 0.45) *
+                (0.88 + noise('branch-sprout-len-$key-$depth') * 0.08);
+            final double sproutThicknessFactor =
+                (0.36 + stageBranch * 0.32) *
+                (0.9 + noise('branch-sprout-thick-$key-$depth') * 0.05);
+            final double sproutLength = nextLength * sproutLengthFactor;
+            final double sproutThickness =
+                math.max(0.6, nextThickness * sproutThicknessFactor);
+            final double sproutAngle = angleDeg +
+                noise('branch-sprout-ang-$key-$depth') *
+                    (16 + 6 * (1 - generationRatio)) +
+                (sproutRoll - sproutProbability * 0.5) * spread * 0.2;
+
+            drawTreeBranch(
+              sproutOrigin,
+              sproutLength,
+              sproutAngle,
+              sproutThickness,
+              depth - 1,
+              '${key}S',
+            );
+          }
         }
       }
 
