@@ -17,7 +17,6 @@ const List<double> _treeStageStops = [
   1.0,
 ];
 
-const double _maxTreeHeightMeters = 6.0;
 const double _secondsPerGrowthDay = 3.0; // 几秒一日的生长速度控制
 const double _seedInitialDepth = 18.0; // 种子初始埋深，控制破土时间
 const double _worldScaleMetersPerScreen = 10.0; // 当前屏幕宽度代表的米数
@@ -83,8 +82,11 @@ class _PlantGrowthSceneState extends State<PlantGrowthScene>
   bool _viewMatrixInitialized = false;
   bool _userInteractingWithView = false;
   bool _isAdjustingViewMatrix = false;
+  DateTime? _lastUserInteractionTime;
   double _currentViewportHeight = 0;
+  double _currentViewportWidth = 0;
   double _currentWorldHeight = 0;
+  double _currentWorldWidth = 0;
 
   @override
   void initState() {
@@ -202,6 +204,76 @@ class _PlantGrowthSceneState extends State<PlantGrowthScene>
     setState(() {
       _displayProgress = newProgress.clamp(0.0, 1.0);
     });
+    
+    // 自动缩放以保持树木完整可见
+    _autoAdjustZoomForTree();
+  }
+  
+  void _autoAdjustZoomForTree() {
+    // 只在用户没有手动交互时自动调整
+    if (_userInteractingWithView || !_viewMatrixInitialized) {
+      return;
+    }
+    
+    // 如果用户最近交互过（3秒内），不自动调整
+    if (_lastUserInteractionTime != null) {
+      final Duration timeSinceInteraction = DateTime.now().difference(_lastUserInteractionTime!);
+      if (timeSinceInteraction.inSeconds < 3) {
+        return;
+      }
+    }
+    
+    // 计算当前树木高度（米）
+    final double treeHeightMeters = _estimateTreeHeightMeters(_displayProgress);
+    if (treeHeightMeters <= 0) return;
+    
+    // 获取当前视口尺寸
+    if (_currentViewportHeight <= 0 || _currentWorldHeight <= 0) {
+      return;
+    }
+    
+    // 计算树木在世界中的像素高度
+    final double pixelsPerMeter = (_currentWorldWidth > 0) 
+        ? _currentWorldWidth / _targetWorldWidthMeters 
+        : 1.0;
+    final double treeHeightPx = treeHeightMeters * pixelsPerMeter;
+    
+    // 土壤层高度（固定5米）
+    final double soilHeightPx = _soilThicknessMeters * pixelsPerMeter;
+    
+    // 计算总需要显示的高度：
+    // 底部：土壤层（始终贴着屏幕底部）
+    // 中部：树高 + 树冠空间（树高的0.5倍，包含枝叶）
+    // 顶部：至少 1/4 屏幕高度的空白空间
+    final double treeWithCrownHeight = treeHeightPx * 1.5;
+    final double requiredTopSpace = _currentViewportHeight * 0.25; // 至少1/4屏幕高度
+    final double totalRequiredHeight = soilHeightPx + treeWithCrownHeight + requiredTopSpace;
+    
+    // 计算需要的最小缩放比例
+    final double requiredScale = _currentViewportHeight / totalRequiredHeight;
+    
+    // 只在需要缩小时才自动调整（不自动放大）
+    final Matrix4 currentMatrix = _viewController.value;
+    final double currentScale = currentMatrix.getMaxScaleOnAxis();
+    
+    if (requiredScale < currentScale && requiredScale >= 0.001) {
+      // 平滑过渡到新的缩放比例
+      final double newScale = math.max(requiredScale, 0.001);
+      
+      // 创建新的变换矩阵
+      final Matrix4 newMatrix = Matrix4.identity();
+      
+      // 保持世界水平居中
+      final double translateX = _currentViewportWidth / 2 - newScale * _currentWorldWidth / 2;
+      // 保持底部对齐
+      final double translateY = _currentViewportHeight - newScale * _currentWorldHeight;
+      
+      newMatrix.translate(translateX, translateY);
+      newMatrix.scale(newScale);
+      
+      // 应用新的变换
+      _applyViewMatrix(newMatrix);
+    }
   }
 
   void _applyStopDay() {
@@ -262,9 +334,16 @@ class _PlantGrowthSceneState extends State<PlantGrowthScene>
     if (progress < emergenceThreshold) {
       return 0.0;
     }
-    final double post = ((progress - emergenceThreshold) / (1 - emergenceThreshold)).clamp(0.0, 1.0);
-    final double factor = math.pow(post, 0.85).toDouble();
-    return factor * _maxTreeHeightMeters;
+    // 树木持续生长，不再有高度限制
+    // 使用经过的天数计算实际高度，生长速度逐渐放缓但永不停止
+    final double daysGrown = _elapsedDays - (emergenceThreshold * 45.0);
+    if (daysGrown <= 0) return 0.0;
+    
+    // 使用对数增长模型：树在前期快速生长，后期放缓但持续增长
+    // height = a * ln(days + 1) + b，确保持续增长
+    final double a = 2.5; // 控制增长速度
+    final double b = 0.5; // 初始偏移
+    return a * math.log(daysGrown + 1) + b;
   }
 
   String _formatElapsedTime(double progress) {
@@ -345,7 +424,9 @@ class _PlantGrowthSceneState extends State<PlantGrowthScene>
                     math.max(worldWidth, worldHeight) * 0.25;
                 final Size viewportSize = Size(constraints.maxWidth, constraints.maxHeight);
                 _currentViewportHeight = viewportSize.height;
+                _currentViewportWidth = viewportSize.width;
                 _currentWorldHeight = worldHeight;
+                _currentWorldWidth = worldWidth;
 
                 final Matrix4 desiredBaseMatrix = _computeBaseViewMatrix(
                   viewportSize.width,
@@ -381,9 +462,11 @@ class _PlantGrowthSceneState extends State<PlantGrowthScene>
                         clipBehavior: Clip.hardEdge,
                         onInteractionStart: (_) {
                           _userInteractingWithView = true;
+                          _lastUserInteractionTime = DateTime.now();
                         },
                         onInteractionEnd: (_) {
                           _userInteractingWithView = false;
+                          _lastUserInteractionTime = DateTime.now();
                         },
                         child: SizedBox(
                           width: worldWidth,
@@ -396,6 +479,7 @@ class _PlantGrowthSceneState extends State<PlantGrowthScene>
                               // 记录是否已播种，决定是否绘制树干
                               seedPlanted: _seedPlanted,
                               branchSeed: _branchSeed,
+                              treeHeightMeters: _estimateTreeHeightMeters(progress),
                             ),
                           ),
                         ),
@@ -464,6 +548,7 @@ class _TreeGrowthPainter extends CustomPainter {
   final Color accentColor;
   final bool seedPlanted;
   final int branchSeed;
+  final double treeHeightMeters; // 树木高度（米）
   // 整个动画按阶段划分，使用分段时间控制各部位的生长
 
   _TreeGrowthPainter({
@@ -472,6 +557,7 @@ class _TreeGrowthPainter extends CustomPainter {
     required this.accentColor,
     required this.seedPlanted,
     required this.branchSeed,
+    required this.treeHeightMeters,
   });
 
   // 绘制云朵
@@ -1219,9 +1305,15 @@ class _TreeGrowthPainter extends CustomPainter {
     }
 
     if (hasBrokenGround && stageBranch > 0) {
-      final double stemHeight = ui.lerpDouble(14, viewportHeightPx * 0.46, stageBranch) ?? 14;
-      final double trunkBaseWidth = ui.lerpDouble(8, 26, stageBranch) ?? 8;
-      final double trunkTopWidth = ui.lerpDouble(1.6, 10, stageBranch) ?? 1.6;
+      // 树木持续生长，高度不再受限
+      // 使用实际米数转换为像素，基于对数增长模型
+      final double pixelsPerMeter = size.width / _targetWorldWidthMeters;
+      final double stemHeight = math.max(14.0, treeHeightMeters * pixelsPerMeter);
+      // 树干粗度随高度持续增长，但速度放缓
+      final double baseWidth = 8 + math.log(treeHeightMeters + 1) * 6;
+      final double topWidth = 1.6 + math.log(treeHeightMeters + 1) * 2.5;
+      final double trunkBaseWidth = baseWidth.clamp(8.0, 80.0);
+      final double trunkTopWidth = topWidth.clamp(1.6, 30.0);
       final double trunkLeftBase = centerX - trunkBaseWidth;
       final double trunkRightBase = centerX + trunkBaseWidth;
       final double trunkLeftTop = centerX - trunkTopWidth;
@@ -1494,9 +1586,9 @@ class _TreeGrowthPainter extends CustomPainter {
       }
 
       // 树枝：递归生成向上分叉的枝干形态（与根系算法一致）
-      // 适度的长度和粗度，让树冠自然茂密
-      final double branchBaseLength = ui.lerpDouble(26, 140, stageBranch) ?? 26;
-      final double branchBaseThickness = ui.lerpDouble(4.2, 12.0, stageBranch) ?? 4.2;
+      // 树枝随树木高度持续生长
+      final double branchBaseLength = 26 + math.log(treeHeightMeters + 1) * 35;
+      final double branchBaseThickness = 4.2 + math.log(treeHeightMeters + 1) * 2.8;
       final double branchingFactor = stageBranch.clamp(0.0, 1.0);
       final double easedBranch = math.pow(stageBranch, 1.35).toDouble();
       // 增加分支深度，形成茂密的树冠
