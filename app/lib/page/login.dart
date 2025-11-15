@@ -137,13 +137,17 @@ class LoginPageState extends State<LoginPage> {
                     onTap: () {
                       showEmailLoginPage();
                     },
-                    child: Text(
-                      "邮箱登录",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: MediaQuery.of(context).size.width > 600 ? 14 : 12,
-                        decoration: TextDecoration.underline,
-                        decorationColor: Colors.white,
+                    behavior: HitTestBehavior.opaque,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      child: Text(
+                        "邮箱登录",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: MediaQuery.of(context).size.width > 600 ? 14 : 12,
+                          decoration: TextDecoration.underline,
+                          decorationColor: Colors.white,
+                        ),
                       ),
                     ),
                   ),
