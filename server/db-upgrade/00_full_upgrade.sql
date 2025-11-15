@@ -554,3 +554,33 @@ CREATE TABLE IF NOT EXISTS bdc.feature_request_vote (
     CONSTRAINT fk_feature_request_vote_request FOREIGN KEY (requestId) REFERENCES feature_request (id) ON DELETE CASCADE,
     CONSTRAINT fk_feature_request_vote_user FOREIGN KEY (userId) REFERENCES user (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_bin COMMENT='需求投票记录表';
+
+-- 创建短信验证码表
+CREATE TABLE IF NOT EXISTS sms_verification_code (
+    id VARCHAR(36) NOT NULL,
+    phone VARCHAR(20) NOT NULL,
+    code VARCHAR(6) NOT NULL,
+    type VARCHAR(20) NOT NULL,
+    expire_time DATETIME NOT NULL,
+    used BOOLEAN DEFAULT FALSE,
+    create_time DATETIME NOT NULL,
+    update_time DATETIME NOT NULL,
+    PRIMARY KEY (id),
+    INDEX idx_phone_type (phone, type),
+    INDEX idx_create_time (create_time)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 创建邮箱验证码表
+CREATE TABLE IF NOT EXISTS email_verification_code (
+    id VARCHAR(36) NOT NULL,
+    email VARCHAR(100) NOT NULL,
+    code VARCHAR(6) NOT NULL,
+    type VARCHAR(20) NOT NULL,
+    expire_time DATETIME NOT NULL,
+    used BOOLEAN DEFAULT FALSE,
+    create_time DATETIME NOT NULL,
+    update_time DATETIME NOT NULL,
+    PRIMARY KEY (id),
+    INDEX idx_email_type (email, type),
+    INDEX idx_create_time (create_time)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

@@ -304,6 +304,21 @@ abstract class RestClient {
   @GET("/getPwd.do")
   Future<Result> getPwd(@Query("email") String email);
 
+  // 邮箱验证码API
+  @POST("/sendEmailCode.do")
+  @FormUrlEncoded()
+  Future<Result> sendEmailCode(
+      @Field("email") String email,
+      @Field("type") String type);
+
+  @POST("/loginByEmailCode.do")
+  @FormUrlEncoded()
+  Future<Result> loginByEmailCode(
+      @Field("email") String email,
+      @Field("code") String code,
+      @Field("clientType") String clientType,
+      @Field("clientVersion") String clientVersion);
+
   // 微信登录API
   @POST("/loginByWechat.do")
   @FormUrlEncoded()

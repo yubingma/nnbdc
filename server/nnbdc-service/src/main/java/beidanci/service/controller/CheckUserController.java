@@ -5,14 +5,18 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.Assert;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import beidanci.api.Result;
 import beidanci.api.model.CheckBy;
 import beidanci.api.model.ClientType;
 import beidanci.api.model.UserVo;
+import beidanci.service.bo.EmailVerificationCodeBo;
 import beidanci.service.bo.UserBo;
+import beidanci.service.po.EmailCodeType;
 import beidanci.service.po.User;
 import beidanci.service.util.BeanUtils;
 
@@ -21,6 +25,9 @@ public class CheckUserController {
 
     @Autowired
     UserBo userBo;
+
+    @Autowired
+    EmailVerificationCodeBo emailVerificationCodeBo;
 
     @PutMapping("/checkUser.do")
     public Result<UserVo> checkUser(HttpServletRequest request, HttpServletResponse response, String userName, String email,
@@ -40,5 +47,45 @@ public class CheckUserController {
         }
 
         return new Result<>(false, result.getMsg(), null);
+    }
+
+    /**
+     * 邮箱验证码登录
+     * @param email 邮箱地址
+     * @param code 验证码
+     * @param clientType 客户端类型
+     * @param clientVersion 客户端版本
+     * @return 登录结果
+     */
+    @PostMapping("/loginByEmailCode.do")
+    public Result<UserVo> loginByEmailCode(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            @RequestParam("email") String email,
+            @RequestParam("code") String code,
+            ClientType clientType,
+            String clientVersion) {
+        try {
+            // 验证验证码
+            String verifyResult = emailVerificationCodeBo.verifyCode(email, code, EmailCodeType.LOGIN);
+            if (!"OK".equals(verifyResult)) {
+                return Result.fail(verifyResult);
+            }
+
+            // 验证码验证成功，进行登录
+            Result<User> result = userBo.checkUserByEmailCode(request, email, clientType, clientVersion);
+            
+            if (result.isSuccess()) {
+                User user = result.getData();
+                Assert.notNull(user, "用户不存在");
+                UserVo userVo = BeanUtils.makeVo(user, UserVo.class, new String[]{"invitedBy", "StudyGroupVo.creator",
+                        "StudyGroupVo.users", "StudyGroupVo.managers", "StudyGroupVo.studyGroupPosts", "userGames"});
+                return new Result<>(true, "登录成功", userVo);
+            }
+
+            return new Result<>(false, result.getMsg(), null);
+        } catch (Exception e) {
+            return Result.fail("登录失败：" + e.getMessage());
+        }
     }
 }

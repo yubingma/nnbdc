@@ -82,7 +82,7 @@ aliyun:
     from-alias: 泡泡单词
     template-ids:
       verification-code: 417522
-      reset-password: 417523
+      get-password: 417523
 
 # 短信验证码配置
 sms:

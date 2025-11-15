@@ -131,17 +131,17 @@ public class EmailUtil {
     }
 
     /**
-     * 使用模板发送找回密码邮件
+     * 使用模板发送获取密码邮件
      * @param toEmail 收件人邮箱
      * @param toName 收件人名称
-     * @param content 邮件内容（通常是密码信息）
+     * @param content 邮件内容（密码信息）
      * @return 发送结果
      */
-    public String sendResetPasswordEmail(String toEmail, String toName, String content) {
-        String templateId = properties.getTemplateIds().getResetPassword();
+    public String sendGetPasswordEmail(String toEmail, String toName, String content) {
+        String templateId = properties.getTemplateIds().getGetPassword();
         if (isBlank(templateId)) {
-            logger.error("找回密码模板ID未配置（aliyun.email.template-ids.reset-password 为空），已取消发送");
-            return "Reset password template not configured";
+            logger.error("获取密码模板ID未配置（aliyun.email.template-ids.get-password 为空），已取消发送");
+            return "Get password template not configured";
         }
         // 根据模板参数格式调整，这里假设模板需要 content 参数
         String templateParam = "{\"content\":\"" + escapeJson(content) + "\"}";

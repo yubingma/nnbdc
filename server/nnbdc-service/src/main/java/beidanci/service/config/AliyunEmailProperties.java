@@ -64,7 +64,7 @@ public class AliyunEmailProperties {
 
     public static class TemplateIds {
         private String verificationCode;
-        private String resetPassword;
+        private String getPassword;
 
         public String getVerificationCode() {
             return verificationCode;
@@ -74,12 +74,12 @@ public class AliyunEmailProperties {
             this.verificationCode = verificationCode;
         }
 
-        public String getResetPassword() {
-            return resetPassword;
+        public String getGetPassword() {
+            return getPassword;
         }
 
-        public void setResetPassword(String resetPassword) {
-            this.resetPassword = resetPassword;
+        public void setGetPassword(String getPassword) {
+            this.getPassword = getPassword;
         }
     }
 }

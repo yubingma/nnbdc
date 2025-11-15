@@ -724,6 +724,42 @@ public class UserBo extends BaseBo<User> {
         return new Result<>(true, null, user);
     }
 
+    /**
+     * 通过邮箱验证码登录（验证码已在Controller中验证）
+     * @param request HTTP请求
+     * @param email 邮箱地址
+     * @param clientType 客户端类型
+     * @param clientVersion 客户端版本
+     * @return 用户验证结果
+     */
+    public Result<User> checkUserByEmailCode(HttpServletRequest request, String email,
+            ClientType clientType, String clientVersion) {
+        logger.info(String.format("用户正在通过邮箱验证码登录... IP[%s] email[%s] clientType[%s] UA[%s] ver[%s]",
+                Util.getClientIP(request), email, clientType,
+                request.getHeader("User-Agent"), clientVersion));
+
+        List<User> users = findByEmail(email);
+        User user;
+        
+        if (!users.isEmpty()) {
+            user = users.get(0);
+        } else {
+            // 如果Email对应的账户不存在，自动创建账户
+            String nickname = email != null && email.contains("@") ? email.split("@")[0] : "user";
+            user = Util.genNewUser(email, null, nickname, email, null, sysParamBo,
+                    dictBo, this, learningDictBo, false);
+            user.setWordsPerDay(20);
+            try {
+                createEntity(user);
+            } catch (Exception e) {
+                logger.error("自动创建用户失败", e);
+                return new Result<>(false, "创建用户失败", null);
+            }
+        }
+
+        return new Result<>(true, null, user);
+    }
+
     @Transactional
     public Result<User> doCheckUser(String userName, String email, String passwordFromClient, CheckBy checkBy,
             ClientType clientType, String clientVersion,

@@ -68,25 +68,25 @@ public class GetPwd {
     }
 
     /**
-     * 用Email方式发送用户的密码到用户邮箱
+     * 用Email方式发送用户的密码到用户邮箱（获取密码，不是重置密码）
      *
-     * @param toEmail
-     * @param toName
-     * @param content
+     * @param toEmail 收件人邮箱
+     * @param toName 收件人名称
+     * @param content 邮件内容（包含密码信息）
      */
     private void sendPwdByEmail(String toEmail, String toName, String content) {
         String sendResult = "success";
         
         try {
-            String result = emailUtil.sendResetPasswordEmail(toEmail, toName, content);
+            String result = emailUtil.sendGetPasswordEmail(toEmail, toName, content);
             if ("OK".equals(result)) {
-                log.info("使用模板成功发送找回密码邮件，收件人：{}", toEmail);
+                log.info("使用模板成功发送获取密码邮件，收件人：{}", toEmail);
             } else {
-                log.error("使用模板发送找回密码邮件失败，收件人：{}，错误：{}", toEmail, result);
+                log.error("使用模板发送获取密码邮件失败，收件人：{}，错误：{}", toEmail, result);
                 sendResult = "failed: " + result;
             }
         } catch (Exception e) {
-            log.error("使用模板发送找回密码邮件异常，收件人：{}", toEmail, e);
+            log.error("使用模板发送获取密码邮件异常，收件人：{}", toEmail, e);
             sendResult = "failed: " + e.getMessage();
         }
 
