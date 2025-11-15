@@ -29,14 +29,18 @@ class EmailLoginPageState extends State<EmailLoginPage> {
   bool _approved = false;
   bool _isLoading = false;
   bool _obscure = true;
-  bool _showVerificationCode = false; // 是否显示验证码输入框
   bool _isSendingCode = false; // 是否正在发送验证码
   int _countdown = 0; // 倒计时秒数
   Timer? _countdownTimer; // 倒计时定时器
+  bool? _emailExists; // 邮箱是否存在，null表示未检查
+  bool _isCheckingEmail = false; // 是否正在检查邮箱
 
   @override
   void dispose() {
     _countdownTimer?.cancel();
+    email.dispose();
+    password.dispose();
+    verificationCode.dispose();
     super.dispose();
   }
 
@@ -56,6 +60,48 @@ class EmailLoginPageState extends State<EmailLoginPage> {
   void initState() {
     super.initState();
     loadData();
+    // 监听邮箱输入变化，检查邮箱是否存在
+    email.addListener(_checkEmailExists);
+  }
+
+  // 检查邮箱是否存在
+  Future<void> _checkEmailExists() async {
+    if (email.text.isEmpty || !EmailValidator.validate(email.text)) {
+      setState(() {
+        _emailExists = null;
+        verificationCode.clear();
+      });
+      return;
+    }
+
+    // 防抖：延迟500ms后检查
+    await Future.delayed(const Duration(milliseconds: 500));
+    if (email.text.isEmpty || !EmailValidator.validate(email.text)) {
+      return;
+    }
+
+    setState(() {
+      _isCheckingEmail = true;
+    });
+
+    try {
+      final db = MyDatabase.instance;
+      final user = await db.usersDao.getUserByEmail(email.text);
+      
+      setState(() {
+        _emailExists = user != null;
+        if (user != null) {
+          // 如果邮箱存在，清空验证码
+          verificationCode.clear();
+        }
+      });
+    } catch (e) {
+      // 检查失败，保持当前状态
+    } finally {
+      setState(() {
+        _isCheckingEmail = false;
+      });
+    }
   }
 
   // 开始倒计时
@@ -128,7 +174,9 @@ class EmailLoginPageState extends State<EmailLoginPage> {
               ),
               const SizedBox(height: 10),
               Text(
-                _showVerificationCode ? '请输入验证码完成注册' : '使用邮箱和密码登录',
+                _emailExists == false 
+                    ? '请输入验证码完成注册'
+                    : '使用邮箱和密码登录',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: MediaQuery.of(context).size.width > 600 ? 16 : 12,
@@ -164,15 +212,7 @@ class EmailLoginPageState extends State<EmailLoginPage> {
                 children: [
                   IconButton(
                     onPressed: () {
-                      if (_showVerificationCode) {
-                        // 如果正在验证码流程，返回密码登录
-                        setState(() {
-                          _showVerificationCode = false;
-                          verificationCode.clear();
-                        });
-                      } else {
-                        Navigator.pop(context);
-                      }
+                      Navigator.pop(context);
                     },
                     icon: const Icon(Icons.arrow_back, color: Colors.white),
                   ),
@@ -182,9 +222,11 @@ class EmailLoginPageState extends State<EmailLoginPage> {
             // 输入框
             Container(
               width: double.infinity,
-              height: _showVerificationCode 
-                  ? (MediaQuery.of(context).size.width > 600 ? 180 : 120)
-                  : (MediaQuery.of(context).size.width > 600 ? 200 : 140),
+              constraints: BoxConstraints(
+                minHeight: (_emailExists == false) 
+                    ? (MediaQuery.of(context).size.width > 600 ? 280 : 200)
+                    : (MediaQuery.of(context).size.width > 600 ? 200 : 140),
+              ),
               margin: EdgeInsets.symmetric(
                 horizontal: 20,
                 vertical: MediaQuery.of(context).size.width > 600 ? 10 : 5,
@@ -198,6 +240,7 @@ class EmailLoginPageState extends State<EmailLoginPage> {
                 borderRadius: BorderRadius.all(Radius.circular(20)),
               ),
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -206,7 +249,6 @@ class EmailLoginPageState extends State<EmailLoginPage> {
                     key: const Key('email_login_email_field'),
                     controller: email,
                     keyboardType: TextInputType.emailAddress,
-                    enabled: !_showVerificationCode, // 验证码流程中禁用邮箱输入
                     style: TextStyle(
                       color: Colors.black,
                       fontSize: MediaQuery.of(context).size.width > 600 ? 16 : 14,
@@ -217,6 +259,16 @@ class EmailLoginPageState extends State<EmailLoginPage> {
                       labelStyle: const TextStyle(color: Colors.grey),
                       border: const OutlineInputBorder(),
                       prefixIcon: const Icon(Icons.email, color: Colors.grey),
+                      suffixIcon: _isCheckingEmail 
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: Padding(
+                                padding: EdgeInsets.all(12.0),
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              ),
+                            )
+                          : null,
                       contentPadding: EdgeInsets.symmetric(
                         horizontal: 12,
                         vertical: MediaQuery.of(context).size.width > 600 ? 16 : 12,
@@ -224,32 +276,33 @@ class EmailLoginPageState extends State<EmailLoginPage> {
                     ),
                   ),
                   SizedBox(height: MediaQuery.of(context).size.width > 600 ? 15 : 10),
-                  // 密码输入或验证码输入
-                  if (!_showVerificationCode)
-                    TextFormField(
-                      key: const Key('email_login_password_field'),
-                      controller: password,
-                      obscureText: _obscure,
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontSize: MediaQuery.of(context).size.width > 600 ? 16 : 14,
+                  // 密码输入
+                  TextFormField(
+                    key: const Key('email_login_password_field'),
+                    controller: password,
+                    obscureText: _obscure,
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontSize: MediaQuery.of(context).size.width > 600 ? 16 : 14,
+                    ),
+                    decoration: InputDecoration(
+                      labelText: '密码',
+                      labelStyle: const TextStyle(color: Colors.grey),
+                      border: const OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.lock, color: Colors.grey),
+                      suffixIcon: IconButton(
+                        icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility, color: Colors.grey),
+                        onPressed: () => setState(() => _obscure = !_obscure),
                       ),
-                      decoration: InputDecoration(
-                        labelText: '密码',
-                        labelStyle: const TextStyle(color: Colors.grey),
-                        border: const OutlineInputBorder(),
-                        prefixIcon: const Icon(Icons.lock, color: Colors.grey),
-                        suffixIcon: IconButton(
-                          icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility, color: Colors.grey),
-                          onPressed: () => setState(() => _obscure = !_obscure),
-                        ),
-                        contentPadding: EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: MediaQuery.of(context).size.width > 600 ? 16 : 12,
-                        ),
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: MediaQuery.of(context).size.width > 600 ? 16 : 12,
                       ),
-                    )
-                  else
+                    ),
+                  ),
+                  // 验证码输入（仅在邮箱不存在时显示）
+                  if (_emailExists == false) ...[
+                    SizedBox(height: MediaQuery.of(context).size.width > 600 ? 15 : 10),
                     Row(
                       children: [
                         Expanded(
@@ -299,6 +352,7 @@ class EmailLoginPageState extends State<EmailLoginPage> {
                         ),
                       ],
                     ),
+                  ],
                 ],
               ),
             ),
@@ -323,7 +377,7 @@ class EmailLoginPageState extends State<EmailLoginPage> {
                 child: Text(
                   _isLoading 
                       ? '登录中…' 
-                      : (_showVerificationCode ? '完成注册' : '登录'),
+                      : (_emailExists == false ? '完成注册' : '登录'),
                   style: TextStyle(
                     fontSize: MediaQuery.of(context).size.width > 600 ? 18 : 14,
                     color: Colors.white,
@@ -331,33 +385,32 @@ class EmailLoginPageState extends State<EmailLoginPage> {
                 ),
               ),
             ),
-            // 找回密码（仅在密码登录时显示）
-            if (!_showVerificationCode)
-              Container(
-                margin: EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: MediaQuery.of(context).size.width > 600 ? 5 : 3,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    GestureDetector(
-                      onTap: () {
-                        showGetPasswordPage();
-                      },
-                      child: Text(
-                        "找回密码",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: MediaQuery.of(context).size.width > 600 ? 14 : 12,
-                          decoration: TextDecoration.underline,
-                          decorationColor: Colors.white,
-                        ),
+            // 找回密码
+            Container(
+              margin: EdgeInsets.symmetric(
+                horizontal: 20,
+                vertical: MediaQuery.of(context).size.width > 600 ? 5 : 3,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  GestureDetector(
+                    onTap: () {
+                      showGetPasswordPage();
+                    },
+                    child: Text(
+                      "找回密码",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: MediaQuery.of(context).size.width > 600 ? 14 : 12,
+                        decoration: TextDecoration.underline,
+                        decorationColor: Colors.white,
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
+            ),
             // 隐私政策
             Container(
               margin: EdgeInsets.symmetric(
@@ -490,16 +543,11 @@ class EmailLoginPageState extends State<EmailLoginPage> {
       return;
     }
 
-    if (_showVerificationCode) {
-      // 验证码登录流程
-      await doLoginByCode();
-    } else {
-      // 密码登录流程
-      await doLogin();
-    }
+    // 统一使用验证码登录流程
+    await doLogin();
   }
 
-  // 密码登录
+  // 登录
   Future<void> doLogin() async {
     if (email.text.isEmpty) {
       ToastUtil.error('请输入邮箱');
@@ -515,96 +563,65 @@ class EmailLoginPageState extends State<EmailLoginPage> {
     });
 
     try {
-      // 先检查邮箱是否存在
-      final db = MyDatabase.instance;
-      final user = await db.usersDao.getUserByEmail(email.text);
-      
-      if (user != null) {
-        // 邮箱存在，验证密码
-        if (user.password != password.text) {
-          ToastUtil.error('密码错误');
+      // 如果邮箱不存在，需要验证码
+      if (_emailExists == false) {
+        if (verificationCode.text.isEmpty) {
+          ToastUtil.error('请输入验证码');
           setState(() {
             _isLoading = false;
           });
           return;
         }
 
-        // 密码正确，登录成功
-        var result = await UserBo().checkUser(
-          CheckBy.email,
+        // 使用验证码登录（自动注册）
+        final result = await Api.client.loginByEmailCode(
           email.text,
-          null,
           password.text,
+          verificationCode.text,
           getClientType().name,
           Global.version,
         );
 
         if (result.success) {
+          // 登录成功，保存用户信息
           if (result.data != null) {
-            await Global.setLoggedInUser(result.data!);
+            final userVo = UserVo.fromJson(result.data as Map<String, dynamic>);
+            userVo.lastLoginTime = AppClock.now();
+            userVo.password = password.text;
+            
+            // 保存到本地数据库
+            final db = MyDatabase.instance;
+            await db.usersDao.saveUser(userVo2User(userVo), false);
+            
+            // 设置全局用户
+            await Global.setLoggedInUser(userVo);
           }
           Get.offAllNamed('/index');
         } else {
           ToastUtil.error(result.msg ?? '登录失败');
         }
       } else {
-        // 邮箱不存在，发送验证码
-        await sendVerificationCode();
-        setState(() {
-          _showVerificationCode = true;
-        });
-      }
-    } catch (e, stackTrace) {
-      ErrorHandler.handleNetworkError(e, stackTrace, api: 'checkUser');
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
-
-  // 验证码登录
-  Future<void> doLoginByCode() async {
-    if (email.text.isEmpty) {
-      ToastUtil.error('请输入邮箱');
-      return;
-    }
-    if (verificationCode.text.isEmpty) {
-      ToastUtil.error('请输入验证码');
-      return;
-    }
-
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      final result = await Api.client.loginByEmailCode(
+        // 邮箱存在，使用密码登录
+      var result = await UserBo().checkUser(
+        CheckBy.email,
         email.text,
-        verificationCode.text,
+        null,
+        password.text,
         getClientType().name,
         Global.version,
       );
 
       if (result.success) {
-        // 登录成功，保存用户信息
         if (result.data != null) {
-          final userVo = UserVo.fromJson(result.data as Map<String, dynamic>);
-          userVo.lastLoginTime = AppClock.now();
-          
-          // 保存到本地数据库
-          final db = MyDatabase.instance;
-          await db.usersDao.saveUser(userVo2User(userVo), false);
-          
-          // 设置全局用户
-          await Global.setLoggedInUser(userVo);
+          await Global.setLoggedInUser(result.data!);
         }
         Get.offAllNamed('/index');
       } else {
         ToastUtil.error(result.msg ?? '登录失败');
+        }
       }
     } catch (e, stackTrace) {
-      ErrorHandler.handleNetworkError(e, stackTrace, api: 'loginByEmailCode');
+      ErrorHandler.handleNetworkError(e, stackTrace, api: 'doLogin');
     } finally {
       setState(() {
         _isLoading = false;

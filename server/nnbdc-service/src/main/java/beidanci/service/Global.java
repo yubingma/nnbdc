@@ -17,7 +17,7 @@ import beidanci.service.socket.SocketServer;
 @Component
 public class Global implements ApplicationContextAware {
     private static ApplicationContext webAppCtx;
-    
+
     public static ApplicationContext getApplicationContext() {
         return webAppCtx;
     }

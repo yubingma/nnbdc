@@ -50,8 +50,9 @@ public class CheckUserController {
     }
 
     /**
-     * 邮箱验证码登录
+     * 邮箱验证码登录（同时验证密码和验证码）
      * @param email 邮箱地址
+     * @param password 密码
      * @param code 验证码
      * @param clientType 客户端类型
      * @param clientVersion 客户端版本
@@ -62,18 +63,19 @@ public class CheckUserController {
             HttpServletRequest request,
             HttpServletResponse response,
             @RequestParam("email") String email,
+            @RequestParam("password") String password,
             @RequestParam("code") String code,
             ClientType clientType,
             String clientVersion) {
         try {
-            // 验证验证码
+            // 先验证验证码（验证邮箱没有输入错误）
             String verifyResult = emailVerificationCodeBo.verifyCode(email, code, EmailCodeType.LOGIN);
             if (!"OK".equals(verifyResult)) {
                 return Result.fail(verifyResult);
             }
 
-            // 验证码验证成功，进行登录
-            Result<User> result = userBo.checkUserByEmailCode(request, email, clientType, clientVersion);
+            // 验证码验证成功，进行登录或注册
+            Result<User> result = userBo.checkUserByEmailCodeAndPassword(request, email, password, clientType, clientVersion);
             
             if (result.isSuccess()) {
                 User user = result.getData();

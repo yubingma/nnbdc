@@ -11,6 +11,9 @@ import com.aliyuncs.CommonRequest;
 import com.aliyuncs.CommonResponse;
 import com.aliyuncs.http.MethodType;
 import com.aliyuncs.profile.DefaultProfile;
+import java.util.HashMap;
+import java.util.Map;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -91,6 +94,7 @@ public class EmailUtil {
             if (!isBlank(fromAlias)) {
                 request.putQueryParameter("FromAlias", fromAlias);
             }
+            request.putQueryParameter("AddressType", "1"); // 1表示发信地址
             request.putQueryParameter("ToAddress", toEmail);
             request.putQueryParameter("Subject", subject);
             request.putQueryParameter("HtmlBody", content);
@@ -127,7 +131,17 @@ public class EmailUtil {
             logger.error("验证码模板ID未配置（aliyun.email.template-ids.verification-code 为空），已取消发送");
             return "Verification code template not configured";
         }
-        return sendTemplatedEmail(toEmail, toName, templateId, "{\"code\":\"" + code + "\"}");
+        // 使用 ObjectMapper 构建 JSON，确保格式正确
+        try {
+            Map<String, String> paramMap = new HashMap<>();
+            paramMap.put("code", code);
+            String templateParam = objectMapper.writeValueAsString(paramMap);
+            logger.debug("发送验证码邮件，收件人：{}，模板：{}，参数：{}", toEmail, templateId, templateParam);
+            return sendTemplatedEmail(toEmail, toName, "邮箱验证码", templateId, templateParam);
+        } catch (Exception e) {
+            logger.error("构建模板参数失败，收件人：{}，验证码：{}", toEmail, code, e);
+            return "Failed to build template parameters: " + e.getMessage();
+        }
     }
 
     /**
@@ -143,20 +157,28 @@ public class EmailUtil {
             logger.error("获取密码模板ID未配置（aliyun.email.template-ids.get-password 为空），已取消发送");
             return "Get password template not configured";
         }
-        // 根据模板参数格式调整，这里假设模板需要 content 参数
-        String templateParam = "{\"content\":\"" + escapeJson(content) + "\"}";
-        return sendTemplatedEmail(toEmail, toName, templateId, templateParam);
+        // 使用 ObjectMapper 构建 JSON，确保格式正确
+        try {
+            Map<String, String> paramMap = new HashMap<>();
+            paramMap.put("content", content);
+            String templateParam = objectMapper.writeValueAsString(paramMap);
+            return sendTemplatedEmail(toEmail, toName, "找回密码", templateId, templateParam);
+        } catch (Exception e) {
+            logger.error("构建模板参数失败，收件人：{}", toEmail, e);
+            return "Failed to build template parameters: " + e.getMessage();
+        }
     }
 
     /**
      * 使用模板发送邮件
      * @param toEmail 收件人邮箱
      * @param toName 收件人名称
+     * @param subject 邮件主题
      * @param templateId 模板ID
      * @param templateParam 模板参数（JSON格式）
      * @return 发送结果
      */
-    private String sendTemplatedEmail(String toEmail, String toName, String templateId, String templateParam) {
+    private String sendTemplatedEmail(String toEmail, String toName, String subject, String templateId, String templateParam) {
         try {
             if (client == null) {
                 initClient();
@@ -178,15 +200,87 @@ public class EmailUtil {
             request.setSysVersion("2015-11-23");
             request.setSysAction("SingleSendMail");
             
-            // 设置请求参数
+            // 确保 TemplateParam 是有效的 JSON 字符串
+            String finalTemplateParam = templateParam;
+            if (finalTemplateParam == null || finalTemplateParam.trim().isEmpty()) {
+                finalTemplateParam = "{}";
+            } else {
+                // 验证 JSON 格式
+                try {
+                    objectMapper.readTree(finalTemplateParam);
+                } catch (Exception e) {
+                    logger.error("TemplateParam JSON 格式无效: {}", finalTemplateParam, e);
+                    return "TemplateParam JSON format is invalid: " + e.getMessage();
+                }
+            }
+            
+            // Subject 参数是必需的（即使模板中定义了 Subject，也需要传递）
+            String finalSubject = isBlank(subject) ? "邮件通知" : subject;
+            
+            // 设置请求参数 - 使用模板发送邮件时的必需参数
+            // 注意：对于 POST 请求，参数应该使用 putQueryParameter（阿里云 SDK 的设计）
             request.putQueryParameter("AccountName", fromAddress);
             if (!isBlank(fromAlias)) {
                 request.putQueryParameter("FromAlias", fromAlias);
             }
+            request.putQueryParameter("AddressType", "1"); // 1表示发信地址
             request.putQueryParameter("ToAddress", toEmail);
-            request.putQueryParameter("TemplateCode", templateId);
-            request.putQueryParameter("TemplateParam", templateParam);
+            request.putQueryParameter("Subject", finalSubject);
+            
+            // 根据阿里云 API 文档，使用模板发送邮件时，应该使用 Template 对象
+            // Template 对象包含 TemplateId 和 TemplateData
+            // 对于 CommonRequest，需要将嵌套对象转换为 JSON 字符串
+            try {
+                Map<String, Object> templateMap = new HashMap<>();
+                templateMap.put("TemplateId", templateId);
+                // TemplateData 需要是对象，将 JSON 字符串解析为对象
+                @SuppressWarnings("unchecked")
+                Map<String, Object> templateDataMap = objectMapper.readValue(finalTemplateParam, Map.class);
+                templateMap.put("TemplateData", templateDataMap);
+                String templateJson = objectMapper.writeValueAsString(templateMap);
+                request.putQueryParameter("Template", templateJson);
+            } catch (Exception e) {
+                logger.error("构建 Template 参数失败: {}", e.getMessage(), e);
+                return "Failed to build Template parameter: " + e.getMessage();
+            }
+            
+            // ReplyToAddress 参数是必需的
             request.putQueryParameter("ReplyToAddress", "false");
+            
+            // 显式确保不设置 HtmlBody 和 TextBody（即使它们不存在，也显式移除）
+            // 使用反射检查并移除可能存在的 HtmlBody 和 TextBody 参数
+            try {
+                java.lang.reflect.Method getQueryParamsMethod = request.getClass().getMethod("getQueryParameters");
+                @SuppressWarnings("unchecked")
+                java.util.Map<String, String> queryParams = (java.util.Map<String, String>) getQueryParamsMethod.invoke(request);
+                if (queryParams != null) {
+                    boolean hadHtmlBody = queryParams.containsKey("HtmlBody");
+                    boolean hadTextBody = queryParams.containsKey("TextBody");
+                    queryParams.remove("HtmlBody");
+                    queryParams.remove("TextBody");
+                    if (hadHtmlBody || hadTextBody) {
+                        logger.warn("检测到并移除了 HtmlBody 或 TextBody 参数 - HtmlBody: {}, TextBody: {}", hadHtmlBody, hadTextBody);
+                    }
+                    // 记录所有实际参数，用于调试
+                    logger.info("实际请求参数列表: {}", queryParams.keySet());
+                    // 详细记录每个参数的值（除了敏感信息）
+                    for (Map.Entry<String, String> entry : queryParams.entrySet()) {
+                        String key = entry.getKey();
+                        String value = entry.getValue();
+                        if ("TemplateParam".equals(key)) {
+                            logger.info("参数 {} = {}", key, value);
+                        } else {
+                            logger.info("参数 {} = {}", key, value);
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                // 如果反射失败，记录错误但继续执行
+                logger.warn("无法通过反射检查参数: {}", e.getMessage());
+            }
+            
+            logger.info("发送模板邮件请求，收件人：{}，模板：{}，参数：{}，主题：{}", 
+                toEmail, templateId, finalTemplateParam, finalSubject);
 
             CommonResponse response = client.getCommonResponse(request);
             JsonNode responseObj = objectMapper.readTree(response.getData());
@@ -204,19 +298,5 @@ public class EmailUtil {
             logger.error("模板邮件发送异常，收件人：{}，模板：{}", toEmail, templateId, e);
             return e.getMessage();
         }
-    }
-
-    /**
-     * 转义JSON字符串中的特殊字符
-     */
-    private String escapeJson(String str) {
-        if (str == null) {
-            return "";
-        }
-        return str.replace("\\", "\\\\")
-                  .replace("\"", "\\\"")
-                  .replace("\n", "\\n")
-                  .replace("\r", "\\r")
-                  .replace("\t", "\\t");
     }
 }

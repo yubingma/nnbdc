@@ -315,6 +315,7 @@ abstract class RestClient {
   @FormUrlEncoded()
   Future<Result> loginByEmailCode(
       @Field("email") String email,
+      @Field("password") String password,
       @Field("code") String code,
       @Field("clientType") String clientType,
       @Field("clientVersion") String clientVersion);
