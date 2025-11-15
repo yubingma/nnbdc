@@ -49,13 +49,17 @@ public class GetPwd {
         if (email != null && email.trim().length() > 0) {
             List<User> users = userBo.findByEmail(email);
             if (!users.isEmpty()) {
-                StringBuilder content = new StringBuilder();
-                content.append("您在牛牛背单词的帐户信息：\r\n");
+                // 构建日志内容（保留完整信息用于日志记录）
+                StringBuilder logContent = new StringBuilder();
+                logContent.append("您在牛牛背单词的帐户信息：\r\n");
                 for (User user : users) {
-                    content.append(String.format("用户名：%s  密码：%s\r\n", user.getEmail(), user.getPassword()));
+                    logContent.append(String.format("用户名：%s  密码：%s\r\n", user.getEmail(), user.getPassword()));
                 }
+                
+                // 只提取第一个用户的密码（用于邮件模板）
+                String password = users.get(0).getPassword();
 
-                sendPwdByEmail(email, Util.getNickNameOfUser(users.get(0)), content.toString());
+                sendPwdByEmail(email, Util.getNickNameOfUser(users.get(0)), password, logContent.toString());
                 result = Result.success(email, null);
             } else {
                 result = Result.fail("Email在系统中不存在");
@@ -72,13 +76,14 @@ public class GetPwd {
      *
      * @param toEmail 收件人邮箱
      * @param toName 收件人名称
-     * @param content 邮件内容（包含密码信息）
+     * @param password 用户密码（用于邮件模板）
+     * @param logContent 日志内容（完整信息用于日志记录）
      */
-    private void sendPwdByEmail(String toEmail, String toName, String content) {
+    private void sendPwdByEmail(String toEmail, String toName, String password, String logContent) {
         String sendResult = "success";
         
         try {
-            String result = emailUtil.sendGetPasswordEmail(toEmail, toName, content);
+            String result = emailUtil.sendGetPasswordEmail(toEmail, toName, password);
             if ("OK".equals(result)) {
                 log.info("使用模板成功发送获取密码邮件，收件人：{}", toEmail);
             } else {
@@ -90,8 +95,8 @@ public class GetPwd {
             sendResult = "failed: " + e.getMessage();
         }
 
-        // 写日志
-        GetPwdLog getPwdLog = new GetPwdLog(toEmail, new Date((new Date()).getTime()), content, sendResult);
+        // 写日志（使用完整内容）
+        GetPwdLog getPwdLog = new GetPwdLog(toEmail, new Date((new Date()).getTime()), logContent, sendResult);
         getPwdLogBo.createEntity(getPwdLog);
     }
 }

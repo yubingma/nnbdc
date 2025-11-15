@@ -148,19 +148,20 @@ public class EmailUtil {
      * 使用模板发送获取密码邮件
      * @param toEmail 收件人邮箱
      * @param toName 收件人名称
-     * @param content 邮件内容（密码信息）
+     * @param password 用户密码
      * @return 发送结果
      */
-    public String sendGetPasswordEmail(String toEmail, String toName, String content) {
+    public String sendGetPasswordEmail(String toEmail, String toName, String password) {
         String templateId = properties.getTemplateIds().getGetPassword();
         if (isBlank(templateId)) {
             logger.error("获取密码模板ID未配置（aliyun.email.template-ids.get-password 为空），已取消发送");
             return "Get password template not configured";
         }
         // 使用 ObjectMapper 构建 JSON，确保格式正确
+        // 模板变量名是 pwd，所以使用 pwd 作为参数名
         try {
             Map<String, String> paramMap = new HashMap<>();
-            paramMap.put("content", content);
+            paramMap.put("pwd", password);
             String templateParam = objectMapper.writeValueAsString(paramMap);
             return sendTemplatedEmail(toEmail, toName, "找回密码", templateId, templateParam);
         } catch (Exception e) {

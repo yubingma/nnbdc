@@ -175,7 +175,7 @@ class EmailLoginPageState extends State<EmailLoginPage> {
               const SizedBox(height: 10),
               Text(
                 _emailExists == false 
-                    ? '请输入验证码完成注册'
+                    ? '请输入验证码登录'
                     : '使用邮箱和密码登录',
                 style: TextStyle(
                   color: Colors.white,
@@ -377,7 +377,7 @@ class EmailLoginPageState extends State<EmailLoginPage> {
                 child: Text(
                   _isLoading 
                       ? '登录中…' 
-                      : (_emailExists == false ? '完成注册' : '登录'),
+                      : '登录',
                   style: TextStyle(
                     fontSize: MediaQuery.of(context).size.width > 600 ? 18 : 14,
                     color: Colors.white,
@@ -563,18 +563,10 @@ class EmailLoginPageState extends State<EmailLoginPage> {
     });
 
     try {
-      // 如果邮箱不存在，需要验证码
-      if (_emailExists == false) {
-        if (verificationCode.text.isEmpty) {
-          ToastUtil.error('请输入验证码');
-          setState(() {
-            _isLoading = false;
-          });
-          return;
-        }
-
-        // 使用验证码登录（自动注册）
-        final result = await Api.client.loginByEmailCode(
+      // 如果显示了验证码输入框（本地检查显示邮箱不存在）且用户输入了验证码，必须使用验证码登录流程
+      if (_emailExists == false && verificationCode.text.isNotEmpty) {
+        // 使用验证码登录（会验证验证码，然后进行登录或注册）
+        final codeResult = await Api.client.loginByEmailCode(
           email.text,
           password.text,
           verificationCode.text,
@@ -582,10 +574,10 @@ class EmailLoginPageState extends State<EmailLoginPage> {
           Global.version,
         );
 
-        if (result.success) {
-          // 登录成功，保存用户信息
-          if (result.data != null) {
-            final userVo = UserVo.fromJson(result.data as Map<String, dynamic>);
+        if (codeResult.success) {
+          // 验证码登录成功（自动注册或登录）
+          if (codeResult.data != null) {
+            final userVo = UserVo.fromJson(codeResult.data as Map<String, dynamic>);
             userVo.lastLoginTime = AppClock.now();
             userVo.password = password.text;
             
@@ -598,26 +590,30 @@ class EmailLoginPageState extends State<EmailLoginPage> {
           }
           Get.offAllNamed('/index');
         } else {
-          ToastUtil.error(result.msg ?? '登录失败');
+          ToastUtil.error(codeResult.msg ?? '登录失败');
         }
+      } else if (_emailExists == false && verificationCode.text.isEmpty) {
+        // 本地检查显示邮箱不存在，但没有输入验证码
+        ToastUtil.error('请输入验证码');
       } else {
-        // 邮箱存在，使用密码登录
-      var result = await UserBo().checkUser(
-        CheckBy.email,
-        email.text,
-        null,
-        password.text,
-        getClientType().name,
-        Global.version,
-      );
+        // 本地检查显示邮箱存在，使用密码登录
+        var result = await UserBo().checkUser(
+          CheckBy.email,
+          email.text,
+          null,
+          password.text,
+          getClientType().name,
+          Global.version,
+        );
 
-      if (result.success) {
-        if (result.data != null) {
-          await Global.setLoggedInUser(result.data!);
-        }
-        Get.offAllNamed('/index');
-      } else {
-        ToastUtil.error(result.msg ?? '登录失败');
+        if (result.success) {
+          // 密码登录成功
+          if (result.data != null) {
+            await Global.setLoggedInUser(result.data!);
+          }
+          Get.offAllNamed('/index');
+        } else {
+          ToastUtil.error(result.msg ?? '登录失败');
         }
       }
     } catch (e, stackTrace) {
