@@ -1,5 +1,7 @@
 package beidanci.service.util;
 
+import static beidanci.util.Utils.getPureDate;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -51,11 +53,10 @@ import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.mail.EmailException;
-import org.apache.commons.mail.SimpleEmail;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
+import org.springframework.context.ApplicationContext;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -75,6 +76,7 @@ import beidanci.api.model.SynonymVo;
 import beidanci.api.model.UserVo;
 import beidanci.api.model.WordShortDescChineseVo;
 import beidanci.api.model.WordVo;
+import beidanci.service.Global;
 import beidanci.service.SessionData;
 import beidanci.service.bo.DictBo;
 import beidanci.service.bo.LearningDictBo;
@@ -93,7 +95,6 @@ import beidanci.service.store.WordCache;
 import beidanci.util.Constants;
 import beidanci.util.MD5Utils;
 import beidanci.util.Utils;
-import static beidanci.util.Utils.getPureDate;
 import net.sf.json.JSONObject;
 import net.sf.json.JSONSerializer;
 
@@ -484,28 +485,39 @@ public class Util {
                 content);
     }
 
-    @SuppressWarnings("deprecation")
+    /**
+     * 发送简单邮件（使用阿里云邮件推送服务）
+     * @param toEmail 收件人邮箱
+     * @param toName 收件人名称
+     * @param subject 邮件主题
+     * @param content 邮件内容
+     */
     public static void sendSimpleEmail(String toEmail, String toName, String subject, String content) {
         new Thread(() -> {
             try {
-                log.info(String.format("向%s发送邮件，主题：%s", toEmail, subject)); 
-                SimpleEmail email = new SimpleEmail();
-                email.setHostName("smtp.office365.com");
-                email.setSmtpPort(587);
-                email.setAuthentication("mmyybb3000@hotmail.com", System.getenv("nnbdc_server_pwd"));
-                email.setTLS(true);
-                email.setDebug(true);
-                email.setCharset("UTF-8");
-                email.addTo(toEmail, toName);
-                email.setFrom("mmyybb3000@hotmail.com", "牛牛背单词");
-                email.setSubject(subject);
-                email.setMsg(content);
-                email.send();
-            } catch (EmailException e) {
-                log.error("", e);
+                log.info(String.format("向%s发送邮件，主题：%s", toEmail, subject));
+                
+                ApplicationContext ctx = Global.getApplicationContext();
+                if (ctx == null) {
+                    log.error("Spring ApplicationContext未初始化，无法发送邮件");
+                    return;
+                }
+                
+                EmailUtil emailUtil = ctx.getBean(EmailUtil.class);
+                
+                // 将纯文本内容转换为HTML格式
+                String htmlContent = content.replace("\r\n", "<br/>").replace("\n", "<br/>");
+                String result = emailUtil.sendEmail(toEmail, toName, subject, htmlContent);
+                
+                if ("OK".equals(result)) {
+                    log.info("邮件发送成功，收件人：{}", toEmail);
+                } else {
+                    log.error("邮件发送失败，收件人：{}，错误：{}", toEmail, result);
+                }
+            } catch (Exception e) {
+                log.error("邮件发送异常，收件人：{}", toEmail, e);
             }
         }).start();
-
     }
 
     public static boolean isUserAgentMobile(HttpServletRequest request) {

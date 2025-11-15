@@ -74,6 +74,15 @@ aliyun:
     access-key-id: ${aliyun_access_key_id}
     access-key-secret: ${aliyun_access_key_secret}
     region-id: cn-hangzhou
+  email:
+    access-key-id: ${aliyun_access_key_id}
+    access-key-secret: ${aliyun_access_key_secret}
+    region-id: cn-hangzhou
+    from-address: pp@nnbdc.com
+    from-alias: 泡泡单词
+    template-ids:
+      verification-code: 417522
+      reset-password: 417523
 
 # 短信验证码配置
 sms:

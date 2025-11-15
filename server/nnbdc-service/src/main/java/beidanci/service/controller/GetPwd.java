@@ -8,7 +8,8 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.commons.mail.EmailException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -20,9 +21,11 @@ import beidanci.service.bo.UserBo;
 import beidanci.service.po.GetPwdLog;
 import beidanci.service.po.User;
 import beidanci.service.util.Util;
+import beidanci.service.util.EmailUtil;
 
 @RestController
 public class GetPwd {
+    private static final Logger log = LoggerFactory.getLogger(GetPwd.class);
 
     @Autowired
     GetPwdLogBo getPwdLogBo;
@@ -30,10 +33,13 @@ public class GetPwd {
     @Autowired
     UserBo userBo;
 
+    @Autowired
+    EmailUtil emailUtil;
+
     @GetMapping("/getPwd.do")
     @ResponseBody
     public Result<Void> handle(HttpServletRequest request, HttpServletResponse response)
-            throws EmailException, IOException {
+            throws IOException {
         // Get parameter from request.
         Map<String, String[]> paramMap = request.getParameterMap();
         String email = paramMap.get("email")[0];
@@ -70,7 +76,19 @@ public class GetPwd {
      */
     private void sendPwdByEmail(String toEmail, String toName, String content) {
         String sendResult = "success";
-        Util.sendSimpleEmail(toEmail, toName, "您在牛牛背单词的密码", content);
+        
+        try {
+            String result = emailUtil.sendResetPasswordEmail(toEmail, toName, content);
+            if ("OK".equals(result)) {
+                log.info("使用模板成功发送找回密码邮件，收件人：{}", toEmail);
+            } else {
+                log.error("使用模板发送找回密码邮件失败，收件人：{}，错误：{}", toEmail, result);
+                sendResult = "failed: " + result;
+            }
+        } catch (Exception e) {
+            log.error("使用模板发送找回密码邮件异常，收件人：{}", toEmail, e);
+            sendResult = "failed: " + e.getMessage();
+        }
 
         // 写日志
         GetPwdLog getPwdLog = new GetPwdLog(toEmail, new Date((new Date()).getTime()), content, sendResult);

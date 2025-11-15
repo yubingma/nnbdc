@@ -17,6 +17,10 @@ import beidanci.service.socket.SocketServer;
 @Component
 public class Global implements ApplicationContextAware {
     private static ApplicationContext webAppCtx;
+    
+    public static ApplicationContext getApplicationContext() {
+        return webAppCtx;
+    }
 
     @Override
     public void setApplicationContext(@NonNull ApplicationContext applicationContext) throws BeansException {
