@@ -428,10 +428,11 @@ public class UserBo extends BaseBo<User> {
     public void deleteUser(User user) throws IllegalArgumentException, IllegalAccessException {
         trxTemplate.execute((status -> {
             try {
-                // 删除用户选择的单词书
-                for (LearningDict dict : user.getLearningDicts()) {
-                    learningDictBo.deleteEntity(dict);
-                }
+                // 删除用户选择的单词书（使用批量删除避免OptimisticLockException）
+                Session session = sessionFactory.getCurrentSession();
+                Query<?> query = session.createQuery("delete LearningDict where user = :user")
+                        .setParameter("user", user);
+                query.executeUpdate();
                 user.getLearningDicts().clear();
                 updateEntity(user);
 
@@ -452,8 +453,7 @@ public class UserBo extends BaseBo<User> {
                 updateEntity(user);
 
                 // 删除用户已掌握的单词
-                Session session = sessionFactory.getCurrentSession();
-                Query<?> query = session.createQuery("delete MasteredWord where user = :user")
+                query = session.createQuery("delete MasteredWord where user = :user")
                         .setParameter("user", user);
                 query.executeUpdate();
 

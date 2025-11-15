@@ -539,6 +539,9 @@ abstract class RestClient {
       @Field("isSuperAdmin") bool? isSuperAdmin,
       @Field("isInputor") bool? isInputor);
 
+  @DELETE("/admin/deleteUser.do")
+  Future<Result<String>> deleteUser(@Query("userId") String userId);
+
   // CDN管理相关API
   @POST("/admin/refreshCdnCache.do")
   @FormUrlEncoded()

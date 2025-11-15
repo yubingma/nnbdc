@@ -319,14 +319,28 @@ class _UserManagementWidgetState extends State<UserManagementWidget> {
             ),
           ],
         ),
-        trailing: IconButton(
-          onPressed: () => _editUserPermission(user),
-          icon: Icon(
-            Icons.settings,
-            size: 24,
-            color: AppTheme.primaryColor,
-          ),
-          tooltip: '设置权限',
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              onPressed: () => _editUserPermission(user),
+              icon: Icon(
+                Icons.settings,
+                size: 24,
+                color: AppTheme.primaryColor,
+              ),
+              tooltip: '设置权限',
+            ),
+            IconButton(
+              onPressed: () => _deleteUser(user),
+              icon: Icon(
+                Icons.delete_outline,
+                size: 24,
+                color: Colors.red,
+              ),
+              tooltip: '删除用户',
+            ),
+          ],
         ),
       ),
     );
@@ -449,6 +463,116 @@ class _UserManagementWidgetState extends State<UserManagementWidget> {
         },
       ),
     );
+  }
+
+  void _deleteUser(UserVo user) {
+    final isDarkMode = context.watch<DarkMode>().isDarkMode;
+    final textColor = isDarkMode ? Colors.white : Colors.black87;
+    final backgroundColor = isDarkMode ? const Color(0xFF121212) : const Color(0xFFF8F9FA);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: backgroundColor,
+        title: Text(
+          '确认删除用户',
+          textScaler: const TextScaler.linear(1.0),
+          style: TextStyle(
+            color: textColor,
+            fontFamily: 'NotoSansSC',
+          ),
+        ),
+        content: Text(
+          '确定要删除用户 "${user.nickName ?? user.userName ?? "未知"}" 吗？\n\n此操作将永久删除该用户及其所有相关数据，且无法恢复！',
+          textScaler: const TextScaler.linear(1.0),
+          style: TextStyle(
+            color: textColor,
+            fontFamily: 'NotoSansSC',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text(
+              '取消',
+              textScaler: TextScaler.linear(1.0),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () => _confirmDeleteUser(user),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text(
+              '确认删除',
+              textScaler: TextScaler.linear(1.0),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _confirmDeleteUser(UserVo user) async {
+    Navigator.pop(context); // 关闭确认对话框
+
+    try {
+      // 显示加载提示
+      await Api.loadingService.show(
+        status: '正在删除用户...',
+        dismissOnTap: false,
+        maskColor: Colors.transparent,
+      );
+
+      // 调用删除API
+      final result = await LoadingUtils.withoutApiLoading(() async {
+        return await Api.client.deleteUser(user.id!);
+      });
+
+      await Api.loadingService.dismiss();
+
+      if (result.success) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                '用户删除成功',
+                textScaler: TextScaler.linear(1.0),
+              ),
+              backgroundColor: Colors.green,
+            ),
+          );
+          // 重新加载用户列表
+          _loadUsers();
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                '删除失败: ${result.msg ?? "未知错误"}',
+                textScaler: const TextScaler.linear(1.0),
+              ),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      await Api.loadingService.dismiss();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '删除失败: $e',
+              textScaler: const TextScaler.linear(1.0),
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 }
 

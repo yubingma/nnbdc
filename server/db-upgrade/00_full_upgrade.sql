@@ -563,11 +563,11 @@ CREATE TABLE IF NOT EXISTS sms_verification_code (
     type VARCHAR(20) NOT NULL,
     expire_time DATETIME NOT NULL,
     used BOOLEAN DEFAULT FALSE,
-    create_time DATETIME NOT NULL,
-    update_time DATETIME NOT NULL,
+    createTime DATETIME NOT NULL,
+    updateTime DATETIME NOT NULL,
     PRIMARY KEY (id),
     INDEX idx_phone_type (phone, type),
-    INDEX idx_create_time (create_time)
+    INDEX idx_createTime (createTime)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 创建邮箱验证码表
@@ -578,9 +578,10 @@ CREATE TABLE IF NOT EXISTS email_verification_code (
     type VARCHAR(20) NOT NULL,
     expire_time DATETIME NOT NULL,
     used BOOLEAN DEFAULT FALSE,
-    create_time DATETIME NOT NULL,
-    update_time DATETIME NOT NULL,
+    createTime DATETIME NOT NULL,
+    updateTime DATETIME NOT NULL,
     PRIMARY KEY (id),
     INDEX idx_email_type (email, type),
-    INDEX idx_create_time (create_time)
+    INDEX idx_createTime (createTime)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+

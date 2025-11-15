@@ -93,4 +93,26 @@ public class UserController {
             @RequestParam(required = false) Boolean isInputor) throws IllegalAccessException {
         return userBo.updateAdminPermission(userId, isAdmin, isSuperAdmin, isInputor);
     }
+
+    /**
+     * 删除用户（管理员功能）
+     *
+     * @param userId 用户ID
+     * @return 删除结果
+     * @throws IllegalAccessException
+     */
+    @DeleteMapping("/admin/deleteUser.do")
+    @PreAuthorize("hasAnyRole('ADMIN')")
+    public Result<Void> deleteUser(@RequestParam String userId) throws IllegalAccessException {
+        User user = userBo.findById(userId);
+        if (user == null) {
+            return Result.fail("用户不存在");
+        }
+        // 防止删除系统用户
+        if (user.getIsSysUser() != null && Boolean.TRUE.equals(user.getIsSysUser())) {
+            return Result.fail("不能删除系统用户");
+        }
+        userBo.deleteUser(user);
+        return Result.success(null);
+    }
 }

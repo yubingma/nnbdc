@@ -289,7 +289,7 @@ class EmailLoginPageState extends State<EmailLoginPage> {
                             child: Text(
                               _isSendingCode 
                                   ? '发送中...'
-                                  : (_countdown > 0 ? '${_countdown}秒' : '发送验证码'),
+                                  : (_countdown > 0 ? '$_countdown秒' : '发送验证码'),
                               style: TextStyle(
                                 fontSize: MediaQuery.of(context).size.width > 600 ? 12 : 10,
                                 color: Colors.white,
