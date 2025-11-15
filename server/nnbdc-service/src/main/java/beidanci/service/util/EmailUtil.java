@@ -204,21 +204,12 @@ public class EmailUtil {
             String finalTemplateParam = templateParam;
             if (finalTemplateParam == null || finalTemplateParam.trim().isEmpty()) {
                 finalTemplateParam = "{}";
-            } else {
-                // 验证 JSON 格式
-                try {
-                    objectMapper.readTree(finalTemplateParam);
-                } catch (Exception e) {
-                    logger.error("TemplateParam JSON 格式无效: {}", finalTemplateParam, e);
-                    return "TemplateParam JSON format is invalid: " + e.getMessage();
-                }
             }
             
-            // Subject 参数是必需的（即使模板中定义了 Subject，也需要传递）
+            // Subject 参数是必需的
             String finalSubject = isBlank(subject) ? "邮件通知" : subject;
             
-            // 设置请求参数 - 使用模板发送邮件时的必需参数
-            // 注意：对于 POST 请求，参数应该使用 putQueryParameter（阿里云 SDK 的设计）
+            // 设置请求参数
             request.putQueryParameter("AccountName", fromAddress);
             if (!isBlank(fromAlias)) {
                 request.putQueryParameter("FromAlias", fromAlias);
@@ -229,7 +220,6 @@ public class EmailUtil {
             
             // 根据阿里云 API 文档，使用模板发送邮件时，应该使用 Template 对象
             // Template 对象包含 TemplateId 和 TemplateData
-            // 对于 CommonRequest，需要将嵌套对象转换为 JSON 字符串
             try {
                 Map<String, Object> templateMap = new HashMap<>();
                 templateMap.put("TemplateId", templateId);
@@ -244,40 +234,7 @@ public class EmailUtil {
                 return "Failed to build Template parameter: " + e.getMessage();
             }
             
-            // ReplyToAddress 参数是必需的
             request.putQueryParameter("ReplyToAddress", "false");
-            
-            // 显式确保不设置 HtmlBody 和 TextBody（即使它们不存在，也显式移除）
-            // 使用反射检查并移除可能存在的 HtmlBody 和 TextBody 参数
-            try {
-                java.lang.reflect.Method getQueryParamsMethod = request.getClass().getMethod("getQueryParameters");
-                @SuppressWarnings("unchecked")
-                java.util.Map<String, String> queryParams = (java.util.Map<String, String>) getQueryParamsMethod.invoke(request);
-                if (queryParams != null) {
-                    boolean hadHtmlBody = queryParams.containsKey("HtmlBody");
-                    boolean hadTextBody = queryParams.containsKey("TextBody");
-                    queryParams.remove("HtmlBody");
-                    queryParams.remove("TextBody");
-                    if (hadHtmlBody || hadTextBody) {
-                        logger.warn("检测到并移除了 HtmlBody 或 TextBody 参数 - HtmlBody: {}, TextBody: {}", hadHtmlBody, hadTextBody);
-                    }
-                    // 记录所有实际参数，用于调试
-                    logger.info("实际请求参数列表: {}", queryParams.keySet());
-                    // 详细记录每个参数的值（除了敏感信息）
-                    for (Map.Entry<String, String> entry : queryParams.entrySet()) {
-                        String key = entry.getKey();
-                        String value = entry.getValue();
-                        if ("TemplateParam".equals(key)) {
-                            logger.info("参数 {} = {}", key, value);
-                        } else {
-                            logger.info("参数 {} = {}", key, value);
-                        }
-                    }
-                }
-            } catch (Exception e) {
-                // 如果反射失败，记录错误但继续执行
-                logger.warn("无法通过反射检查参数: {}", e.getMessage());
-            }
             
             logger.info("发送模板邮件请求，收件人：{}，模板：{}，参数：{}，主题：{}", 
                 toEmail, templateId, finalTemplateParam, finalSubject);
