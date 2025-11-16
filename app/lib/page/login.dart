@@ -3,6 +3,9 @@ import 'package:nnbdc/page/email_login.dart';
 import 'package:nnbdc/theme/app_theme.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/util/error_handler.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import '../config.dart';
+import '../global.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -14,6 +17,10 @@ class LoginPage extends StatefulWidget {
 class LoginPageState extends State<LoginPage> {
   bool _approved = false;
   bool _isLoading = false;
+  
+  // 双击检测相关
+  DateTime? _lastTapTime;
+  static const Duration _doubleTapTimeout = Duration(milliseconds: 300);
 
   @override
   Widget build(BuildContext context) {
@@ -53,11 +60,27 @@ class LoginPageState extends State<LoginPage> {
           SizedBox(height: MediaQuery.of(context).size.height * 0.25),
           Column(
             children: [
-              Image.asset(
-                'assets/images/logo.png',
-                width: 80,
-                height: 80,
-                fit: BoxFit.contain,
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () {
+                  Global.logger.d('Logo area tapped');
+                  final now = DateTime.now();
+                  if (_lastTapTime != null && 
+                      now.difference(_lastTapTime!) < _doubleTapTimeout) {
+                    // 检测到双击
+                    Global.logger.d('Logo double tapped detected!');
+                    _lastTapTime = null;
+                    _showVersionAndProfileDialog();
+                  } else {
+                    _lastTapTime = now;
+                  }
+                },
+                child: Image.asset(
+                  'assets/images/logo.png',
+                  width: 80,
+                  height: 80,
+                  fit: BoxFit.contain,
+                ),
               ),
               const SizedBox(height: 20),
               Text(
@@ -311,6 +334,52 @@ class LoginPageState extends State<LoginPage> {
       setState(() {
         _isLoading = false;
       });
+    }
+  }
+
+  /// 显示版本号和Profile信息的对话框
+  Future<void> _showVersionAndProfileDialog() async {
+    try {
+      // 获取版本信息
+      PackageInfo packageInfo = await PackageInfo.fromPlatform();
+      String version = packageInfo.version;
+      String buildNumber = packageInfo.buildNumber;
+      String profile = Config.profileName;
+
+      if (!mounted) return;
+
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('应用信息'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('版本号: $version'),
+                const SizedBox(height: 8),
+                Text('构建号: $buildNumber'),
+                const SizedBox(height: 8),
+                Text('Profile: $profile'),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: const Text('确定'),
+              ),
+            ],
+          );
+        },
+      );
+    } catch (e) {
+      Global.logger.e('获取版本信息失败: $e');
+      if (mounted) {
+        ToastUtil.error('获取版本信息失败');
+      }
     }
   }
 }
