@@ -202,32 +202,68 @@ jobs:
 
           $DEPLOY_DIR = Join-Path -Path $PWD -ChildPath 'deploy'
           New-Item -ItemType Directory -Path $DEPLOY_DIR -Force | Out-Null
+          $NSIS_DIR = Join-Path -Path $PWD -ChildPath 'platforms\windows'
 
           # 创建 NSIS 安装包
-          Set-Location $DEPLOY_DIR
+          # 在 platforms/windows 目录下创建临时目录（NSIS 脚本期望 installer_temp 在此目录）
+          $INSTALLER_TEMP = Join-Path -Path $NSIS_DIR -ChildPath 'installer_temp'
+          if (Test-Path $INSTALLER_TEMP) { Remove-Item -Path $INSTALLER_TEMP -Recurse -Force }
+          New-Item -ItemType Directory -Path $INSTALLER_TEMP -Force | Out-Null
+          
           # 复制构建文件到临时目录
-          New-Item -ItemType Directory -Path "installer_temp" -Force | Out-Null
-          Copy-Item -Path "../app/build/windows/x64/runner/Release/*" -Destination "installer_temp/" -Recurse -Force
+          Copy-Item -Path "app\build\windows\x64\runner\Release\*" -Destination $INSTALLER_TEMP -Recurse -Force
 
           # 资源文件可选复制
-          $logoPath = "../app/assets/images/logo.png"
-          if (Test-Path $logoPath) { Copy-Item $logoPath "installer_temp/"; Write-Host "复制了 logo.png" }
+          $logoPath = "app\assets\images\logo.png"
+          if (Test-Path $logoPath) { Copy-Item $logoPath "$INSTALLER_TEMP\logo.png"; Write-Host "复制了 logo.png" }
 
-          $privacyPath = "../app/assets/privacy.html"
-          if (Test-Path $privacyPath) { Copy-Item $privacyPath "installer_temp/"; Write-Host "复制了内置的 privacy.html" }
+          $privacyPath = "app\assets\privacy.html"
+          if (Test-Path $privacyPath) { Copy-Item $privacyPath "$INSTALLER_TEMP\privacy.html"; Write-Host "复制了内置的 privacy.html" }
 
-          # 编译 NSIS 安装脚本（如果可用）
-          $nsisBuilt = $false
+          # 编译 NSIS 安装脚本（在 platforms/windows 目录下）
           $makensis = Get-Command makensis -ErrorAction SilentlyContinue
-          if ($makensis) { & makensis "../platforms/windows/installer.nsi"; $nsisBuilt = Test-Path "nnbdc-setup.exe" }
+          if (-not $makensis) {
+            Write-Host "❌ 错误: makensis 命令未找到，请检查 NSIS 是否正确安装"
+            exit 1
+          }
 
-          if ($nsisBuilt) { Move-Item "nnbdc-setup.exe" "$DEPLOY_DIR/nnbdc-setup.exe" -Force; Write-Host "安装包创建成功: nnbdc-setup.exe" } else { Write-Host "安装包创建失败或 NSIS 不可用，创建 ZIP 包作为备用"; Compress-Archive -Path "installer_temp/*" -DestinationPath "$DEPLOY_DIR/nnbdc-windows.zip" -Force; Write-Host "ZIP 包创建成功: nnbdc-windows.zip" }
+          Set-Location $NSIS_DIR
+          Write-Host "当前工作目录: $(Get-Location)"
+          Write-Host "检查 installer_temp 目录内容:"
+          if (Test-Path $INSTALLER_TEMP) {
+            Get-ChildItem $INSTALLER_TEMP | Select-Object -First 10 | Format-Table Name, Length
+          } else {
+            Write-Host "❌ 错误: installer_temp 目录不存在"
+            exit 1
+          }
+
+          Write-Host "编译 NSIS 脚本: installer.nsi"
+          $result = & makensis installer.nsi 2>&1
+          $exitCode = $LASTEXITCODE
+          Write-Host $result
+          
+          if ($exitCode -ne 0) {
+            Write-Host "❌ 错误: NSIS 编译失败，退出码: $exitCode"
+            exit 1
+          }
+          
+          $setupExe = Join-Path -Path $NSIS_DIR -ChildPath "nnbdc-setup.exe"
+          if (-not (Test-Path $setupExe)) {
+            Write-Host "❌ 错误: NSIS 编译完成，但未找到输出文件 nnbdc-setup.exe"
+            Write-Host "当前目录文件列表:"
+            Get-ChildItem $NSIS_DIR | Format-Table Name, Length
+            exit 1
+          }
+
+          Move-Item -Path $setupExe -Destination "$DEPLOY_DIR\nnbdc-setup.exe" -Force
+          Write-Host "✅ 安装包创建成功: nnbdc-setup.exe"
 
           # 清理临时文件
-          Remove-Item -Path "installer_temp" -Recurse -Force
+          if (Test-Path $INSTALLER_TEMP) { Remove-Item -Path $INSTALLER_TEMP -Recurse -Force }
 
           # 更新版本信息文件
-          $VERSION_LINE = Select-String -Path "../app/pubspec.yaml" -Pattern "^version:" | Select-Object -First 1
+          Set-Location $PWD  # 回到项目根目录
+          $VERSION_LINE = Select-String -Path "app\pubspec.yaml" -Pattern "^version:" | Select-Object -First 1
           $VERSION = ($VERSION_LINE -split " ")[1]
           $BUILD_NUMBER = ($VERSION -split "\+")[1]
           $VERSION_NUMBER = ($VERSION -split "\+")[0]
@@ -236,7 +272,7 @@ jobs:
           $verName = $VERSION_NUMBER
           $changes = @("修复已知问题，提升稳定性")
           $payload = @(@{ verCode = $verCode; verName = $verName; changes = $changes })
-          $payload | ConvertTo-Json -Depth 3 -Compress | Out-File -FilePath "$DEPLOY_DIR/ver.json" -Encoding UTF8 -Force
+          $payload | ConvertTo-Json -Depth 3 -Compress | Out-File -FilePath "$DEPLOY_DIR\ver.json" -Encoding UTF8 -Force
           Write-Host "版本信息已更新: $VERSION_NUMBER ($BUILD_NUMBER)"
         shell: pwsh
 
