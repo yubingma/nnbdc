@@ -138,11 +138,11 @@ class CustomInterceptors extends Interceptor {
       int statusCode = response.statusCode ?? 0;
       
       // 只对关键接口记录详细日志
-      if (path.contains('getDictResById.do') || path.contains('getNewDbLogs.do')) {
+      if (path.contains('getDictResById.do') || path.contains('getUserDbLogsFromVersion.do')) {
         Global.logger.i('📥 收到完整应答 - $path, 状态码: $statusCode');
         
         // 记录响应大小（如果还没有记录过）
-        if (path.contains('getNewDbLogs.do')) {
+        if (path.contains('getUserDbLogsFromVersion.do')) {
           String? contentLength = response.headers.value('content-length');
           if (contentLength != null) {
             double sizeInMB = int.parse(contentLength) / (1024 * 1024);
@@ -431,9 +431,9 @@ abstract class RestClient {
       @Field("toUserId") String toUserId,
       @Field("adminUserId") String adminUserId);
 
-  @GET("/getNewDbLogs.do")
-  Future<Result<List<UserDbLogDto>>> getNewDbLogs(
-      @Query("localDbVersion") int localDbVersion,
+  @GET("/getUserDbLogsFromVersion.do")
+  Future<Result<List<UserDbLogDto>>> getDbLogsFromVersion(
+      @Query("fromVersion") int fromVersion,
       @Query("userId") String userId);
 
   @POST("/syncUserDb2Back.do")

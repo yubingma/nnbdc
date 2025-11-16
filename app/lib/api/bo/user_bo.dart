@@ -353,9 +353,9 @@ class UserBo {
   Future<Result<String>> saveErrorReport(String word, String content) async =>
       Api.client.saveErrorReport(word, content, getClientType().name);
 
-  Future<Result<List<UserDbLogDto>>> getNewDbLogs(
-          int localDbVersion, String userId) async =>
-      Api.client.getNewDbLogs(localDbVersion, userId);
+  Future<Result<List<UserDbLogDto>>> getDbLogsFromVersion(
+          int fromVersion, String userId) async =>
+      Api.client.getDbLogsFromVersion(fromVersion, userId);
 
   Future<Result<int>> syncUserDb(int expectedServerDbVersion, String userId,
           List<UserDbLogDto> logs) async =>

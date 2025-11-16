@@ -43,13 +43,13 @@ public class SyncController {
      * 获取用户数据库（服务端）的增量日志
      * 使用流式传输模式，支持gzip压缩和chunked传输
      *
-     * @param localDbVersion 用户本地数据库当前版本, 将返回服务端在此版本之后的增量日志
+     * @param fromVersion 用户本地数据库当前版本, 将返回服务端在此版本之后的增量日志
      * @param userId 用户ID，用于在客户端未登录时指定要同步的用户
      * @param request HTTP请求对象
      * @param response HTTP响应对象
      */
-    @GetMapping("/getNewDbLogs.do")
-    public void getNewDbLogs(int localDbVersion, @RequestParam("userId") String userId, 
+    @GetMapping("/getUserDbLogsFromVersion.do")
+    public void getDbLogsFromVersion(@RequestParam("fromVersion") int fromVersion, @RequestParam("userId") String userId, 
                            HttpServletRequest request, HttpServletResponse response) throws IOException {
         
         // 设置响应类型，让 Spring Boot 自动处理 chunked 传输
@@ -64,11 +64,11 @@ public class SyncController {
         
         
         long startTime = System.currentTimeMillis();
-        log.info("🔄 开始查询用户数据库日志, userId: {}, localDbVersion: {}", userId, localDbVersion);
+        log.info("🔄 开始查询用户数据库日志, userId: {}, localDbVersion: {}", userId, fromVersion);
         
         try {
             // 查询用户数据库增量日志
-            List<UserDbLogDto> logs = userBo.getUserNewDbLogs(userId, localDbVersion);
+            List<UserDbLogDto> logs = userBo.getUserDbLogsFromVersion(userId, fromVersion);
             log.info("📋 用户数据库增量日志查询完成, 数量: {}", logs.size());
             
             // 构建响应对象
@@ -124,17 +124,17 @@ public class SyncController {
             
             if (supportsGzip) {
                 log.info("✅ 用户数据库日志查询完成, userId: {}, localDbVersion: {}, 耗时: {}ms, 原始大小: {}MB ({}字节), 压缩后: {}MB ({}字节), 压缩率: {}%, 日志数量: {}", 
-                    userId, localDbVersion, duration, String.format("%.2f", originalSizeMB), originalSize, String.format("%.2f", actualSizeMB), actualBytes, String.format("%.1f", compressionRatio), logs.size());
+                    userId, fromVersion, duration, String.format("%.2f", originalSizeMB), originalSize, String.format("%.2f", actualSizeMB), actualBytes, String.format("%.1f", compressionRatio), logs.size());
             } else {
                 log.info("✅ 用户数据库日志查询完成, userId: {}, localDbVersion: {}, 耗时: {}ms, 传输大小: {}MB ({}字节), 日志数量: {}", 
-                    userId, localDbVersion, duration, String.format("%.2f", actualSizeMB), actualBytes, logs.size());
+                    userId, fromVersion, duration, String.format("%.2f", actualSizeMB), actualBytes, logs.size());
             }
             
         } catch (IOException e) {
             long endTime = System.currentTimeMillis();
             long duration = endTime - startTime;
             log.error("❌ 用户数据库日志查询失败, userId: {}, localDbVersion: {}, 耗时: {}ms, 错误: {}", 
-                userId, localDbVersion, duration, e.getMessage(), e);
+                userId, fromVersion, duration, e.getMessage(), e);
             
             // 返回错误响应
             try {

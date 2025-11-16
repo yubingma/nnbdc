@@ -445,7 +445,7 @@ Future<void> syncUserDb(String userId) async {
 
     // 与后端同步用户数据库
     if (localDbVersion != remoteDbVersion || localLogs.isNotEmpty) {
-      var result1 = await Api.client.getNewDbLogs(localDbVersion, userId);
+      var result1 = await Api.client.getDbLogsFromVersion(localDbVersion, userId);
       if (result1.success) {
         List<UserDbLogDto> remoteLogs = result1.data!;
         Global.logger.i("✅ 获取远程变更日志成功 - 耗时: ${stopwatch.elapsedMilliseconds}ms, 本地变更: ${localLogs.length}, 远程变更: ${remoteLogs.length}");

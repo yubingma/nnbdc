@@ -931,7 +931,7 @@ public class UserBo extends BaseBo<User> {
      * @param fromVersion 从此版本开始，不包括此版本
      * @return
      */
-    public List<UserDbLogDto> getUserNewDbLogs(String userId, int fromVersion) {
+    public List<UserDbLogDto> getUserDbLogsFromVersion(String userId, int fromVersion) {
         User user = findById(userId);
 
         // 如果用户不存在，则返回空列表（这种情况可能发生在客户端未登录到后端时，指定要同步的用户（用户可能是前端首先创建的））
