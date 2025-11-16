@@ -6,7 +6,6 @@
 !define APP_PUBLISHER "泡泡单词团队"
 !define APP_URL "http://www.nnbdc.com"
 !define APP_EXECUTABLE "nnbdc.exe"
-!define APP_ICON "installer_temp\logo.png"
 
 ; 安装程序基本设置
 Name "${APP_NAME}"
@@ -18,15 +17,10 @@ RequestExecutionLevel admin
 ; 界面设置
 !include "MUI2.nsh"
 
-; 检查图标文件是否存在，如果不存在则使用默认图标
-!ifdef APP_ICON
-    !if /FileExists "${APP_ICON}"
-        !define MUI_ICON "${APP_ICON}"
-        !define MUI_UNICON "${APP_ICON}"
-    !else
-        !warning "图标文件不存在: ${APP_ICON}"
-    !endif
-!endif
+; 注意：NSIS 只支持 .ico 格式的图标，PNG 不能用作图标
+; 如果需要自定义图标，请提供 .ico 文件并取消下面的注释
+; !define MUI_ICON "installer_temp\icon.ico"
+; !define MUI_UNICON "installer_temp\icon.ico"
 
 !define MUI_HEADERIMAGE
 
@@ -67,10 +61,7 @@ VIAddVersionKey "FileVersion" "${APP_VERSION}"
 
 ; 检查必要文件是否存在
 Function .onInit
-    ; 检查 logo.png 是否存在
-    IfFileExists "installer_temp\logo.png" +3
-        MessageBox MB_ICONINFORMATION "信息: 未找到 logo.png 文件，将使用默认图标"
-    ; 检查 privacy.html 是否存在
+    ; 检查 privacy.html 是否存在（logo.png 用于头部图像，不是必需的）
     IfFileExists "installer_temp\privacy.html" +3
         MessageBox MB_ICONINFORMATION "信息: 未找到 privacy.html 文件，将跳过许可协议页面"
 FunctionEnd
