@@ -81,7 +81,7 @@ Section "主程序" SecMain
     ; 复制应用程序文件
     File /r "installer_temp\*"
     
-    ; 创建开始菜单快捷方式
+    ; 注意：vc_redist.x64.exe 也会被复制到安装目录，用于后续安装
     CreateDirectory "$SMPROGRAMS\${APP_NAME}"
     CreateShortCut "$SMPROGRAMS\${APP_NAME}\${APP_NAME}.lnk" "$INSTDIR\${APP_EXECUTABLE}" "" "$INSTDIR\${APP_EXECUTABLE}" 0
     CreateShortCut "$SMPROGRAMS\${APP_NAME}\卸载.lnk" "$INSTDIR\uninstall.exe"
@@ -104,20 +104,30 @@ Section "主程序" SecMain
 SectionEnd
 
 ; Visual C++ Redistributable 安装段
-; 注意：由于 inetc 插件在 GitHub Actions 环境中不可用，此功能已禁用
-; 如果用户系统缺少 Visual C++ Redistributable，程序运行时会提示安装
-; Section "Visual C++ Redistributable" SecVCRedist
-;     ; 检查是否已安装 Visual C++ Redistributable
-;     ReadRegStr $0 HKLM "SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64" "Version"
-;     StrCmp $0 "" 0 +3
-;         ; 如果未安装，则提示用户手动下载安装
-;         MessageBox MB_OK "系统未检测到 Visual C++ Redistributable。$\n$\n如果程序无法运行，请访问以下链接下载并安装：$\nhttps://aka.ms/vs/17/release/vc_redist.x64.exe"
-; SectionEnd
+; 默认选中且必需（如果系统未安装）
+Section "Visual C++ Redistributable" SecVCRedist
+    SectionIn RO  ; 只读，用户无法取消选择
+    ; 检查是否已安装 Visual C++ Redistributable
+    ReadRegStr $0 HKLM "SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64" "Version"
+    StrCmp $0 "" install_vcredist skip_vcredist
+    
+    install_vcredist:
+        ; 如果未安装，则从本地文件安装（已在构建时下载并复制到安装目录）
+        IfFileExists "$INSTDIR\vc_redist.x64.exe" 0 vcredist_not_found
+            ExecWait '"$INSTDIR\vc_redist.x64.exe" /quiet /norestart'
+            Delete "$INSTDIR\vc_redist.x64.exe"
+            Goto skip_vcredist
+        
+        vcredist_not_found:
+            MessageBox MB_OK|MB_ICONEXCLAMATION "警告: 未找到 Visual C++ Redistributable 安装程序。$\n$\n程序可能无法正常运行。$\n$\n请访问以下链接手动下载并安装：$\nhttps://aka.ms/vs/17/release/vc_redist.x64.exe"
+    
+    skip_vcredist:
+SectionEnd
 
 ; 安装程序描述
 !insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
     !insertmacro MUI_DESCRIPTION_TEXT ${SecMain} "安装 ${APP_NAME} 主程序文件"
-    ; !insertmacro MUI_DESCRIPTION_TEXT ${SecVCRedist} "安装 Visual C++ Redistributable（如果系统未安装）"
+    !insertmacro MUI_DESCRIPTION_TEXT ${SecVCRedist} "安装 Visual C++ Redistributable（如果系统未安装）"
 !insertmacro MUI_FUNCTION_DESCRIPTION_END
 
 ; 卸载程序段

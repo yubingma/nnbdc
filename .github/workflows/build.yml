@@ -223,6 +223,18 @@ jobs:
           $privacyPath = "app\assets\privacy.html"
           if (Test-Path $privacyPath) { Copy-Item $privacyPath "$INSTALLER_TEMP\privacy.html"; Write-Host "复制了内置的 privacy.html" }
 
+          # 下载 Visual C++ Redistributable 到临时目录（用于安装时静默安装）
+          Write-Host "下载 Visual C++ Redistributable..."
+          $vcRedistUrl = "https://aka.ms/vs/17/release/vc_redist.x64.exe"
+          $vcRedistPath = Join-Path -Path $INSTALLER_TEMP -ChildPath "vc_redist.x64.exe"
+          try {
+            Invoke-WebRequest -Uri $vcRedistUrl -OutFile $vcRedistPath -UseBasicParsing
+            Write-Host "✅ Visual C++ Redistributable 下载成功"
+          } catch {
+            Write-Host "⚠️ 警告: Visual C++ Redistributable 下载失败: $_"
+            Write-Host "安装程序将跳过 VC++ Redistributable 的自动安装"
+          }
+
           # 编译 NSIS 安装脚本（在 platforms/windows 目录下）
           # 刷新 PATH 环境变量（因为 GitHub Actions 的每个 step 都是独立的）
           $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("PATH","User")
