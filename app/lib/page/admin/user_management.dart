@@ -466,7 +466,9 @@ class _UserManagementWidgetState extends State<UserManagementWidget> {
   }
 
   void _deleteUser(UserVo user) {
-    final isDarkMode = context.watch<DarkMode>().isDarkMode;
+    // 事件回调中不应使用 watch 监听 Provider，避免 "Tried to listen to a value exposed with provider" 异常
+    // 这里只需要读取当前值即可
+    final isDarkMode = context.read<DarkMode>().isDarkMode;
     final textColor = isDarkMode ? Colors.white : Colors.black87;
     final backgroundColor = isDarkMode ? const Color(0xFF121212) : const Color(0xFFF8F9FA);
 
