@@ -1,5 +1,9 @@
 ; 泡泡单词 Windows 安装程序脚本
 ; 使用 NSIS (Nullsoft Scriptable Install System) 创建
+; 注意：此文件必须使用 UTF-8 with BOM 编码以确保中文正确显示
+
+; Unicode 模式（NSIS 3.x 默认启用，但明确指定以确保兼容性）
+Unicode True
 
 !define APP_NAME "泡泡单词"
 !define APP_VERSION "25.10.13"

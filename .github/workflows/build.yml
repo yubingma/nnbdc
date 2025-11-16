@@ -279,8 +279,20 @@ jobs:
           }
 
           Write-Host "编译 NSIS 脚本: installer.nsi"
+          
+          # 确保 NSIS 脚本文件使用 UTF-8 with BOM 编码（解决中文乱码问题）
+          $nsisScriptPath = Join-Path -Path $NSIS_DIR -ChildPath "installer.nsi"
+          $scriptContent = Get-Content -Path $nsisScriptPath -Raw -Encoding UTF8
+          # 添加 UTF-8 BOM
+          $utf8Bom = [System.Text.Encoding]::UTF8.GetPreamble()
+          $scriptBytes = [System.Text.Encoding]::UTF8.GetBytes($scriptContent)
+          $scriptWithBom = $utf8Bom + $scriptBytes
+          [System.IO.File]::WriteAllBytes($nsisScriptPath, $scriptWithBom)
+          Write-Host "已将 NSIS 脚本转换为 UTF-8 with BOM 编码"
+          
           $makensisExe = $makensis.Source
-          $result = & "$makensisExe" installer.nsi 2>&1
+          # 使用 /NOCD 参数确保使用正确的编码
+          $result = & "$makensisExe" /NOCD installer.nsi 2>&1
           $exitCode = $LASTEXITCODE
           Write-Host $result
           
