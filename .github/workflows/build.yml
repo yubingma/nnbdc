@@ -221,11 +221,49 @@ jobs:
           if (Test-Path $privacyPath) { Copy-Item $privacyPath "$INSTALLER_TEMP\privacy.html"; Write-Host "复制了内置的 privacy.html" }
 
           # 编译 NSIS 安装脚本（在 platforms/windows 目录下）
+          # 刷新 PATH 环境变量（因为 GitHub Actions 的每个 step 都是独立的）
+          $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("PATH","User")
+          
+          # 查找 makensis 命令
           $makensis = Get-Command makensis -ErrorAction SilentlyContinue
+          
+          # 如果未找到，尝试常见的安装路径
           if (-not $makensis) {
-            Write-Host "❌ 错误: makensis 命令未找到，请检查 NSIS 是否正确安装"
-            exit 1
+            Write-Host "makensis 不在 PATH 中，尝试查找常见安装位置..."
+            $nsisPaths = @(
+              "C:\Program Files (x86)\NSIS\makensis.exe",
+              "C:\Program Files\NSIS\makensis.exe",
+              "$env:ProgramFiles\NSIS\makensis.exe",
+              "${env:ProgramFiles(x86)}\NSIS\makensis.exe"
+            )
+            
+            $found = $false
+            foreach ($path in $nsisPaths) {
+              if (Test-Path $path) {
+                $nsisDir = Split-Path -Parent $path
+                $env:PATH += ";$nsisDir"
+                Write-Host "找到 NSIS: $path，已添加到 PATH"
+                $found = $true
+                break
+              }
+            }
+            
+            if (-not $found) {
+              Write-Host "❌ 错误: 未找到 makensis.exe，请检查 NSIS 是否正确安装"
+              Write-Host "已检查的路径:"
+              $nsisPaths | ForEach-Object { Write-Host "  - $_" }
+              exit 1
+            }
+            
+            # 重新查找 makensis
+            $makensis = Get-Command makensis -ErrorAction SilentlyContinue
+            if (-not $makensis) {
+              Write-Host "❌ 错误: 即使添加到 PATH 后仍无法找到 makensis"
+              exit 1
+            }
           }
+          
+          Write-Host "找到 makensis: $($makensis.Source)"
 
           Set-Location $NSIS_DIR
           Write-Host "当前工作目录: $(Get-Location)"
@@ -238,7 +276,8 @@ jobs:
           }
 
           Write-Host "编译 NSIS 脚本: installer.nsi"
-          $result = & makensis installer.nsi 2>&1
+          $makensisExe = $makensis.Source
+          $result = & "$makensisExe" installer.nsi 2>&1
           $exitCode = $LASTEXITCODE
           Write-Host $result
           
