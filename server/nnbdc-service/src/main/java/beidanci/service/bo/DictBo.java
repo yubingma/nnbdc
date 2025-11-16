@@ -12,6 +12,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 
 import org.hibernate.Session;
 import org.hibernate.query.Query;
@@ -157,9 +158,14 @@ public class DictBo extends BaseBo<Dict> {
         Collections.sort(dict.getDictWords(), (o1, o2) -> {
             String[] excludeFields = new String[] {
                     "SynonymVo.meaningItem", "SynonymVo.word", "similarWords", "DictVo.dictWords" };
-            return DigestUtils.md5DigestAsHex(o1.getWordVo(wordCache, excludeFields).getSpell().getBytes())
-                    .compareTo(DigestUtils
-                            .md5DigestAsHex(o2.getWordVo(wordCache, excludeFields).getSpell().getBytes()));
+            String spell1 = o1.getWordVo(wordCache, excludeFields).getSpell();
+            String spell2 = o2.getWordVo(wordCache, excludeFields).getSpell();
+            if (spell1 == null) spell1 = "";
+            if (spell2 == null) spell2 = "";
+            byte[] bytes1 = Objects.requireNonNull(spell1.getBytes());
+            byte[] bytes2 = Objects.requireNonNull(spell2.getBytes());
+            return DigestUtils.md5DigestAsHex(bytes1)
+                    .compareTo(DigestUtils.md5DigestAsHex(bytes2));
         });
         int seq = 1; // 单词排序的顺序号
         for (DictWord dictWord : dict.getDictWords()) {

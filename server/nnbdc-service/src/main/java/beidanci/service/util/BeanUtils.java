@@ -12,6 +12,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -143,7 +144,8 @@ public class BeanUtils {
                 if (isFieldExcluded(voClass.getSimpleName(), field.getName(), fullName, excludeFields)) {
                     continue;
                 }
-                String fieldName = StringUtils.capitalize(field.getName());
+                String fieldNameRaw = Objects.requireNonNull(field.getName());
+                String fieldName = Objects.requireNonNull(StringUtils.capitalize(fieldNameRaw));
                 String getKey = po.getClass().getName() + "." + "get" + fieldName;
                 String setkey = vo.getClass().getName() + "." + "set" + fieldName;
                 Integer getIndex = methodIndexMap.get(getKey);
@@ -214,7 +216,8 @@ public class BeanUtils {
         StringBuilder sb = new StringBuilder();
         List<Field> fieldList = fieldMap.get(bean.getClass());
         for (Field field : fieldList) {
-            String fieldName = StringUtils.capitalize(field.getName());
+            String fieldNameRaw = Objects.requireNonNull(field.getName());
+            String fieldName = Objects.requireNonNull(StringUtils.capitalize(fieldNameRaw));
             String getKey = bean.getClass().getName() + "." + "get" + fieldName;
             Integer getIndex = methodIndexMap.get(getKey);
             if (getIndex != null) {
@@ -276,7 +279,8 @@ public class BeanUtils {
                 List<Field> fieldList = new ArrayList<>(allFields.size());
                 for (Field field : allFields) {
                     if ((Modifier.isPrivate(field.getModifiers()) || Modifier.isProtected(field.getModifiers())) && !Modifier.isStatic(field.getModifiers())) {// 非静态私有或保护变量
-                        String fieldName = StringUtils.capitalize(field.getName());
+                        String fieldNameRaw = Objects.requireNonNull(field.getName());
+                        String fieldName = Objects.requireNonNull(StringUtils.capitalize(fieldNameRaw));
                         if (!fieldName.startsWith("$$")) {
                             int getIndex = methodAccess.getIndex("get" + fieldName);
                             int setIndex = methodAccess.getIndex("set" + fieldName);

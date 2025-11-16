@@ -35,6 +35,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Objects;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.UUID;
@@ -992,10 +993,10 @@ public class Util {
         for (MeaningItemVo meaningItemVo : srcMeaningItems) {
             MeaningItemVo destMeaningItemVo = new MeaningItemVo();
             meaningItemVos.add(destMeaningItemVo);
-            BeanUtils.copyProperties(meaningItemVo, destMeaningItemVo, "dict", "createTime", "updateTime");
+            BeanUtils.copyProperties(Objects.requireNonNull(meaningItemVo), destMeaningItemVo, "dict", "createTime", "updateTime");
             if (meaningItemVo.getDict() != null) {
                 DictVo destDict = new DictVo();
-                BeanUtils.copyProperties(meaningItemVo.getDict(), destDict, "owner");
+                BeanUtils.copyProperties(Objects.requireNonNull(meaningItemVo.getDict()), destDict, "owner");
                 destMeaningItemVo.setDict(destDict);
             }
         }
@@ -1012,7 +1013,7 @@ public class Util {
     public static WordVo shrinkWordVo(WordVo srcWordVo, Set<String> dictIds, final int maxSentenceCount,
             boolean removeSimilarWords) {
         WordVo destWordVo = new WordVo();
-        BeanUtils.copyProperties(srcWordVo, destWordVo, "meaningItems", "similarWords");
+        BeanUtils.copyProperties(Objects.requireNonNull(srcWordVo), destWordVo, "meaningItems", "similarWords");
 
         // 复制meaningItems
         destWordVo.setMeaningItems(shrinkMeanItems(srcWordVo.getMeaningItems()));
@@ -1024,7 +1025,7 @@ public class Util {
             for (WordVo wordVo : srcWordVo.getSimilarWords()) {
                 WordVo similarWord = new WordVo();
                 similarWords.add(similarWord);
-                BeanUtils.copyProperties(wordVo, similarWord, "meaningItems");
+                BeanUtils.copyProperties(Objects.requireNonNull(wordVo), similarWord, "meaningItems");
                 similarWord.setMeaningItems(shrinkMeanItems(wordVo.getMeaningItems()));
             }
         }
@@ -1142,7 +1143,7 @@ public class Util {
      */
     public static WordVo shrinkWordVoKeepAll(WordVo srcWordVo, final int maxSentenceCount, boolean removeSimilarWords) {
         WordVo destWordVo = new WordVo();
-        org.springframework.beans.BeanUtils.copyProperties(srcWordVo, destWordVo, "meaningItems", "similarWords");
+        org.springframework.beans.BeanUtils.copyProperties(Objects.requireNonNull(srcWordVo), destWordVo, "meaningItems", "similarWords");
 
         // 复制所有 meaningItems（不做词书过滤）
         if (srcWordVo.getMeaningItems() != null) {
@@ -1165,7 +1166,7 @@ public class Util {
             destWordVo.setSimilarWords(similarWords);
             for (WordVo sw : srcWordVo.getSimilarWords()) {
                 WordVo copy = new WordVo();
-                org.springframework.beans.BeanUtils.copyProperties(sw, copy, "meaningItems");
+                org.springframework.beans.BeanUtils.copyProperties(Objects.requireNonNull(sw), copy, "meaningItems");
                 if (sw.getMeaningItems() != null) {
                     copy.setMeaningItems(shrinkMeanItems(sw.getMeaningItems()));
                 }
@@ -1197,7 +1198,7 @@ public class Util {
         List<MeaningItemVo> dest = new ArrayList<>(src.size());
         for (final MeaningItemVo srcVo : src) {
             MeaningItemVo destVo = new MeaningItemVo();
-            BeanUtils.copyProperties(srcVo, destVo, excludeFields);
+            BeanUtils.copyProperties(Objects.requireNonNull(srcVo), destVo, Objects.requireNonNull(excludeFields));
             dest.add(destVo);
         }
         return dest;
@@ -1207,7 +1208,7 @@ public class Util {
         List<SentenceVo> destVos = new ArrayList<>(src.size());
         for (final SentenceVo srcVo : src) {
             SentenceVo destVo = new SentenceVo();
-            BeanUtils.copyProperties(srcVo, destVo, fieldsToRemove);
+            BeanUtils.copyProperties(Objects.requireNonNull(srcVo), destVo, Objects.requireNonNull(fieldsToRemove));
             destVos.add(destVo);
         }
         return destVos;

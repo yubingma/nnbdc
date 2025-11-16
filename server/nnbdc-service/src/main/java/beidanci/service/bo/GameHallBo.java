@@ -4,6 +4,7 @@ import javax.annotation.PostConstruct;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import org.hibernate.query.Query;
 import org.springframework.stereotype.Service;
@@ -57,7 +58,7 @@ public class GameHallBo extends BaseBo<GameHall> {
             WordVo wordVo = BeanUtils.makeVo(word, WordVo.class,
                     new String[]{"WordVo.^id,spell,meaningItems", "MeaningItemVo.^ciXing,meaning,dict", "DictVo.^id"});
             WordVo wordVo2 = new WordVo();
-            org.springframework.beans.BeanUtils.copyProperties(wordVo, wordVo2);
+            org.springframework.beans.BeanUtils.copyProperties(Objects.requireNonNull(wordVo), wordVo2);
             wordVo2 = Util.shrinkWordVo(wordVo2, dicts, 1, true);
             wordsBySpell.put(wordVo2.getSpell(), wordVo2);
         }

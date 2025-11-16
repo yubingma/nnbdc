@@ -3,6 +3,7 @@ package beidanci.service.socket;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -166,13 +167,15 @@ public class SocketService {
     private void clearUserCache(String userId, UUID sessionId) {
         UUID session = (sessionsByUser.remove(userId));
         Assert.isTrue(sessionId.equals(session),
-                String.format("sessionId:%s, session:%s", sessionId, session));
+                Objects.requireNonNull(String.format("sessionId:%s, session:%s", sessionId, session)));
 
         UserVo user = usersBySession.remove(sessionId);
-        Assert.isTrue(userId.equals(user.getId()), String.format("userId:%s, user.getId():%s", userId, user.getId()));
+        String userIdFromUser = Objects.requireNonNull(user.getId());
+        Assert.isTrue(userId.equals(userIdFromUser), Objects.requireNonNull(String.format("userId:%s, user.getId():%s", userId, userIdFromUser)));
 
         SocketIOClient client = clientsBySession.remove(sessionId);
-        Assert.isTrue(sessionId.equals(client.getSessionId()), String.format("sessionId:%s, client.getSessionId():%s", sessionId, client.getSessionId()));
+        UUID clientSessionId = Objects.requireNonNull(client.getSessionId());
+        Assert.isTrue(sessionId.equals(clientSessionId), Objects.requireNonNull(String.format("sessionId:%s, client.getSessionId():%s", sessionId, clientSessionId)));
         checkCache();
     }
 
