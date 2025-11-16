@@ -78,6 +78,8 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
               newVersionName = verName;
               newVersionChanges = changes;
             });
+            // 调用升级确认对话框
+            await showUpgradeConfirmDlg(verName, changes);
           } else {
             /// 已经是最新版本
             tryAutoLogin();
@@ -97,24 +99,49 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
   }
 
   Future<void> showUpgradeConfirmDlg(verName, changes) async {
-    if (await confirm(
-      context,
-      title: const Text('确认'),
-      content: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [Text("发现新版本 $verName"), for (String change in changes) Text('• $change'), const Text('\n是否升级？')],
-      ),
-      textOK: const Text('是'),
-      textCancel: const Text('否'),
-    )) {
-      if (PlatformUtils.isAndroid) {
-        downloadApkAndUpgrade();
-      } else if (PlatformUtils.isWindows) {
-        downloadWindowsAndUpgrade();
+    if (PlatformUtils.isWindows) {
+      // Windows 平台：直接使用静默安装，显示确认对话框
+      if (await confirm(
+        context,
+        title: const Text('发现新版本'),
+        content: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text("发现新版本 $verName"),
+            SizedBox(height: 8),
+            Text('更新内容：', style: TextStyle(fontWeight: FontWeight.bold)),
+            for (String change in changes) Text('• $change'),
+            SizedBox(height: 8),
+            Text('\n将自动完成安装，无需手动操作。是否升级？', 
+                 style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+          ],
+        ),
+        textOK: const Text('是'),
+        textCancel: const Text('否'),
+      )) {
+        // 直接执行静默安装
+        downloadWindowsAndUpgrade(useSilent: true);
+      } else {
+        tryAutoLogin();
       }
     } else {
-      tryAutoLogin();
+      // Android 平台：保持原有逻辑
+      if (await confirm(
+        context,
+        title: const Text('确认'),
+        content: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [Text("发现新版本 $verName"), for (String change in changes) Text('• $change'), const Text('\n是否升级？')],
+        ),
+        textOK: const Text('是'),
+        textCancel: const Text('否'),
+      )) {
+        downloadApkAndUpgrade();
+      } else {
+        tryAutoLogin();
+      }
     }
   }
 
@@ -184,7 +211,7 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
     }
   }
 
-  Future downloadWindowsAndUpgrade() async {
+  Future downloadWindowsAndUpgrade({bool useSilent = false}) async {
     try {
       Dio dio = Dio();
 
@@ -205,7 +232,8 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
           downloading = false;
           downloadSuccess = true;
         });
-        installWindowsApp();
+        // 传递静默安装参数
+        await installWindowsApp(silent: useSilent);
       } else {
         ToastUtil.error(("下载Windows安装包失败, status code: ${resp.statusCode}"));
         setState(() {
@@ -224,23 +252,174 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
     }
   }
 
-  Future<void> installWindowsApp() async {
+  Future<void> installWindowsApp({bool silent = false}) async {
     try {
-      var result = await OpenFile.open(savePath);
-      if (result.type == ResultType.done) {
-        // 提示用户安装新版本
-        ToastUtil.success("安装包已下载，请按照提示安装新版本");
-        // 延迟退出，让用户看到提示
-        Future.delayed(Duration(seconds: 2), () {
+      if (silent) {
+        // 静默安装模式
+        await _silentInstallWindowsApp();
+      } else {
+        // 原有方式：打开安装包让用户手动安装
+        var result = await OpenFile.open(savePath);
+        if (result.type == ResultType.done) {
+          // 提示用户安装新版本
+          ToastUtil.success("安装包已下载，请按照提示安装新版本");
+          // 延迟退出，让用户看到提示
+          Future.delayed(Duration(seconds: 2), () {
+            SystemNavigator.pop();
+          });
+        } else {
+          ToastUtil.error("打开安装包失败：${result.message}，仍使用旧版本");
+          tryAutoLogin();
+        }
+      }
+    } catch (e, stackTrace) {
+      ErrorHandler.handleError(e, stackTrace, logPrefix: 'Windows安装失败', showToast: true);
+      tryAutoLogin();
+    }
+  }
+
+  /// 静默安装 Windows 应用
+  Future<void> _silentInstallWindowsApp() async {
+    try {
+      Global.logger.d('开始静默安装 Windows 应用: $savePath');
+      
+      // NSIS 静默安装参数说明：
+      // /S - 静默安装（Silent）
+      // /D=路径 - 指定安装目录（可选，默认使用注册表中的路径）
+      
+      // 获取当前安装目录（如果已安装）
+      String? installDir = await _getCurrentInstallDir();
+      
+      // 构建静默安装命令
+      List<String> arguments = ['/S']; // 静默安装参数
+      if (installDir != null && installDir.isNotEmpty) {
+        // 如果已安装，使用相同目录进行升级
+        arguments.add('/D=$installDir');
+        Global.logger.d('使用已安装目录: $installDir');
+      }
+      
+      // 执行静默安装
+      Global.logger.d('执行命令: $savePath ${arguments.join(" ")}');
+      ProcessResult result = await Process.run(
+        savePath,
+        arguments,
+        runInShell: true,
+      );
+      
+      Global.logger.d('安装进程退出码: ${result.exitCode}');
+      if (result.stdout.toString().isNotEmpty) {
+        Global.logger.d('安装输出: ${result.stdout}');
+      }
+      if (result.stderr.toString().isNotEmpty) {
+        Global.logger.d('安装错误: ${result.stderr}');
+      }
+      
+      if (result.exitCode == 0) {
+        // 安装成功
+        Global.logger.d('静默安装成功');
+        ToastUtil.success("新版本安装成功，正在重启应用...");
+        
+        // 延迟后启动新版本并退出当前版本
+        Future.delayed(Duration(seconds: 2), () async {
+          await _launchNewVersion();
           SystemNavigator.pop();
         });
       } else {
-        ToastUtil.error("打开安装包失败：${result.message}，仍使用旧版本");
-        tryAutoLogin();
+        // 安装失败，可能需要管理员权限
+        Global.logger.w('静默安装失败，退出码: ${result.exitCode}，尝试使用管理员权限');
+        
+        // 尝试使用管理员权限重新执行
+        await _silentInstallWithElevation();
       }
     } catch (e, stackTrace) {
-      ErrorHandler.handleError(e, stackTrace, logPrefix: '打开Windows安装包失败', showToast: true);
-      tryAutoLogin();
+      Global.logger.e('静默安装异常', error: e, stackTrace: stackTrace);
+      // 降级到手动安装
+      ToastUtil.info('静默安装失败，将打开安装包');
+      await installWindowsApp(silent: false);
+    }
+  }
+
+  /// 获取当前安装目录
+  Future<String?> _getCurrentInstallDir() async {
+    try {
+      // 从注册表读取安装目录
+      // Windows 注册表路径: HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Uninstall\泡泡单词
+      // 由于 Flutter 无法直接读取注册表，这里返回 null，使用默认安装路径
+      // NSIS 安装程序会自动使用注册表中的路径，如果不存在则使用默认路径
+      // 如果需要精确控制，可以使用 Windows 平台通道（Platform Channel）
+      return null;
+    } catch (e) {
+      Global.logger.e('获取安装目录失败: $e');
+      return null;
+    }
+  }
+
+  /// 使用管理员权限执行静默安装
+  Future<void> _silentInstallWithElevation() async {
+    try {
+      Global.logger.d('尝试使用管理员权限执行静默安装');
+      
+      // 使用 PowerShell 以管理员权限执行安装
+      // 注意：这会触发 UAC 提示
+      // 转义路径中的特殊字符
+      String escapedPath = savePath.replaceAll('\\', '\\\\').replaceAll('"', '\\"');
+      String script = 'Start-Process -FilePath "$escapedPath" -ArgumentList "/S" -Verb RunAs -Wait';
+      
+      ProcessResult result = await Process.run(
+        'powershell',
+        ['-Command', script],
+        runInShell: true,
+      );
+      
+      Global.logger.d('管理员权限安装退出码: ${result.exitCode}');
+      
+      if (result.exitCode == 0) {
+        Global.logger.d('管理员权限安装成功');
+        ToastUtil.success("新版本安装成功，正在重启应用...");
+        Future.delayed(Duration(seconds: 2), () async {
+          await _launchNewVersion();
+          SystemNavigator.pop();
+        });
+      } else {
+        // 降级到手动安装
+        Global.logger.w('管理员权限安装失败，降级到手动安装');
+        ToastUtil.info('需要管理员权限，将打开安装包');
+        await installWindowsApp(silent: false);
+      }
+    } catch (e, stackTrace) {
+      Global.logger.e('管理员权限安装异常', error: e, stackTrace: stackTrace);
+      // 降级到手动安装
+      await installWindowsApp(silent: false);
+    }
+  }
+
+  /// 启动新版本应用
+  Future<void> _launchNewVersion() async {
+    try {
+      // 默认安装路径
+      String defaultPath = r'C:\Program Files\泡泡单词\nnbdc.exe';
+      
+      // 检查文件是否存在
+      File exeFile = File(defaultPath);
+      if (await exeFile.exists()) {
+        Global.logger.d('启动新版本: $defaultPath');
+        // 启动新版本应用
+        await Process.start(defaultPath, [], runInShell: true);
+      } else {
+        Global.logger.w('新版本可执行文件不存在: $defaultPath');
+        // 尝试从开始菜单启动
+        String startMenuPath = r'C:\ProgramData\Microsoft\Windows\Start Menu\Programs\泡泡单词\泡泡单词.lnk';
+        File startMenuFile = File(startMenuPath);
+        if (await startMenuFile.exists()) {
+          await Process.start('cmd', ['/c', 'start', '', startMenuPath], runInShell: true);
+        } else {
+          Global.logger.w('开始菜单快捷方式也不存在，请手动启动应用');
+          ToastUtil.info('安装完成，请手动启动应用');
+        }
+      }
+    } catch (e, stackTrace) {
+      Global.logger.e('启动新版本失败', error: e, stackTrace: stackTrace);
+      ToastUtil.info('安装完成，请手动启动应用');
     }
   }
 
@@ -356,7 +535,12 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
                                   ),
                                   child: const Text('是'),
                                   onPressed: () {
-                                    downloadApkAndUpgrade();
+                                    if (PlatformUtils.isAndroid) {
+                                      downloadApkAndUpgrade();
+                                    } else if (PlatformUtils.isWindows) {
+                                      // Windows 平台直接执行静默安装
+                                      downloadWindowsAndUpgrade(useSilent: true);
+                                    }
                                   },
                                 ),
                               ),
