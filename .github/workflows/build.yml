@@ -200,9 +200,12 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
 
-          $DEPLOY_DIR = Join-Path -Path $PWD -ChildPath 'deploy'
+          # 保存项目根目录
+          $PROJECT_ROOT = $PWD
+          
+          $DEPLOY_DIR = Join-Path -Path $PROJECT_ROOT -ChildPath 'deploy'
           New-Item -ItemType Directory -Path $DEPLOY_DIR -Force | Out-Null
-          $NSIS_DIR = Join-Path -Path $PWD -ChildPath 'platforms\windows'
+          $NSIS_DIR = Join-Path -Path $PROJECT_ROOT -ChildPath 'platforms\windows'
 
           # 创建 NSIS 安装包
           # 在 platforms/windows 目录下创建临时目录（NSIS 脚本期望 installer_temp 在此目录）
@@ -301,8 +304,9 @@ jobs:
           if (Test-Path $INSTALLER_TEMP) { Remove-Item -Path $INSTALLER_TEMP -Recurse -Force }
 
           # 更新版本信息文件
-          Set-Location $PWD  # 回到项目根目录
-          $VERSION_LINE = Select-String -Path "app\pubspec.yaml" -Pattern "^version:" | Select-Object -First 1
+          Set-Location $PROJECT_ROOT  # 回到项目根目录
+          $pubspecPath = Join-Path -Path $PROJECT_ROOT -ChildPath "app\pubspec.yaml"
+          $VERSION_LINE = Select-String -Path $pubspecPath -Pattern "^version:" | Select-Object -First 1
           $VERSION = ($VERSION_LINE -split " ")[1]
           $BUILD_NUMBER = ($VERSION -split "\+")[1]
           $VERSION_NUMBER = ($VERSION -split "\+")[0]
