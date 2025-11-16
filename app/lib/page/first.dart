@@ -55,7 +55,7 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
 
   void checkNewVersion() async {
     // 检查新版本/自动升级
-    if (PlatformUtils.isAndroid || PlatformUtils.isWindows) {
+    if (PlatformUtils.isAndroid || PlatformUtils.isWindows || PlatformUtils.isLinux) {
       // 获取程序版本信息
       PackageInfo packageInfo = await PackageInfo.fromPlatform();
       int buildNumber = int.parse(packageInfo.buildNumber);
@@ -93,7 +93,7 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
         tryAutoLogin();
       }
     } else {
-      /// 非android/windows
+      /// 非android/windows/linux
       tryAutoLogin();
     }
   }
@@ -122,6 +122,32 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
       )) {
         // 直接执行静默安装
         downloadWindowsAndUpgrade(useSilent: true);
+      } else {
+        tryAutoLogin();
+      }
+    } else if (PlatformUtils.isLinux) {
+      // Linux 平台：使用静默升级
+      if (await confirm(
+        context,
+        title: const Text('发现新版本'),
+        content: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text("发现新版本 $verName"),
+            SizedBox(height: 8),
+            Text('更新内容：', style: TextStyle(fontWeight: FontWeight.bold)),
+            for (String change in changes) Text('• $change'),
+            SizedBox(height: 8),
+            Text('\n将自动下载并替换应用文件，无需手动操作。是否升级？', 
+                 style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+          ],
+        ),
+        textOK: const Text('是'),
+        textCancel: const Text('否'),
+      )) {
+        // 直接执行自动升级
+        downloadLinuxAndUpgrade();
       } else {
         tryAutoLogin();
       }
@@ -208,6 +234,47 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
     } else {
       ToastUtil.error("${result.message}，仍使用旧版本");
       tryAutoLogin();
+    }
+  }
+
+  Future downloadLinuxAndUpgrade() async {
+    try {
+      Dio dio = Dio();
+
+      String fileName = Config.linuxUrl.substring(Config.linuxUrl.lastIndexOf("/") + 1);
+
+      savePath = await getFilePath(fileName);
+      downloadStarted = true;
+      downloading = true;
+      var resp = await dio.download(Config.linuxUrl, savePath, deleteOnError: true, onReceiveProgress: (rec, total) {
+        setState(() {
+          downloading = true;
+          downloadedBytes = rec;
+          totalBytes = total;
+        });
+      });
+      if (resp.statusCode == 200) {
+        setState(() {
+          downloading = false;
+          downloadSuccess = true;
+        });
+        // 执行 Linux AppImage 升级
+        await installLinuxApp();
+      } else {
+        ToastUtil.error(("下载Linux安装包失败, status code: ${resp.statusCode}"));
+        setState(() {
+          downloading = false;
+          downloadSuccess = false;
+        });
+        tryAutoLogin();
+      }
+    } catch (e, stackTrace) {
+      ErrorHandler.handleError(e, stackTrace, logPrefix: '下载Linux新版本失败', showToast: true);
+      setState(() {
+        downloading = false;
+        downloadSuccess = false;
+      });
+      tryAutoLogin(); // 仍使用旧版本
     }
   }
 
@@ -393,6 +460,176 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
     }
   }
 
+  /// 安装 Linux AppImage
+  Future<void> installLinuxApp() async {
+    try {
+      Global.logger.d('开始安装 Linux AppImage: $savePath');
+      
+      // 获取当前运行的 AppImage 路径
+      String? currentAppImagePath = await _getCurrentLinuxAppImagePath();
+      
+      if (currentAppImagePath == null || currentAppImagePath.isEmpty) {
+        Global.logger.w('无法获取当前 AppImage 路径，尝试使用默认路径');
+        // 尝试使用常见的 AppImage 位置
+        String homeDir = Platform.environment['HOME'] ?? '';
+        if (homeDir.isNotEmpty) {
+          // 尝试在用户目录下查找
+          List<String> possiblePaths = [
+            '$homeDir/Applications/nnbdc-linux.AppImage',
+            '$homeDir/.local/bin/nnbdc-linux.AppImage',
+            '$homeDir/Downloads/nnbdc-linux.AppImage',
+            '/opt/nnbdc/nnbdc-linux.AppImage',
+            '/usr/local/bin/nnbdc-linux.AppImage',
+          ];
+          
+          for (String path in possiblePaths) {
+            File file = File(path);
+            if (await file.exists()) {
+              currentAppImagePath = path;
+              Global.logger.d('找到 AppImage: $currentAppImagePath');
+              break;
+            }
+          }
+        }
+      }
+      
+      if (currentAppImagePath == null || currentAppImagePath.isEmpty) {
+        // 如果找不到当前文件，将新文件保存到用户目录
+        String homeDir = Platform.environment['HOME'] ?? '';
+        if (homeDir.isNotEmpty) {
+          Directory appDir = Directory('$homeDir/.local/bin');
+          if (!await appDir.exists()) {
+            await appDir.create(recursive: true);
+          }
+          currentAppImagePath = '${appDir.path}/nnbdc-linux.AppImage';
+        } else {
+          throw Exception('无法确定 AppImage 安装路径');
+        }
+      }
+      
+      Global.logger.d('目标 AppImage 路径: $currentAppImagePath');
+      
+      // 备份旧文件（如果存在）
+      File targetFile = File(currentAppImagePath);
+      if (await targetFile.exists()) {
+        String backupPath = '$currentAppImagePath.backup';
+        Global.logger.d('备份旧文件到: $backupPath');
+        await targetFile.copy(backupPath);
+      }
+      
+      // 复制新文件到目标位置
+      File newFile = File(savePath);
+      Global.logger.d('复制新文件从 $savePath 到 $currentAppImagePath');
+      await newFile.copy(currentAppImagePath);
+      
+      // 设置执行权限
+      ProcessResult chmodResult = await Process.run(
+        'chmod',
+        ['+x', currentAppImagePath],
+        runInShell: false,
+      );
+      
+      if (chmodResult.exitCode != 0) {
+        Global.logger.w('设置执行权限失败: ${chmodResult.stderr}');
+      } else {
+        Global.logger.d('设置执行权限成功');
+      }
+      
+      // 删除备份文件（如果升级成功）
+      File backupFile = File('$currentAppImagePath.backup');
+      if (await backupFile.exists()) {
+        await backupFile.delete();
+      }
+      
+      Global.logger.d('Linux AppImage 升级成功');
+      ToastUtil.success("新版本安装成功，正在重启应用...");
+      
+      // 延迟后启动新版本并退出当前版本
+      Future.delayed(Duration(seconds: 2), () async {
+        await _launchLinuxNewVersion(currentAppImagePath!);
+        SystemNavigator.pop();
+      });
+    } catch (e, stackTrace) {
+      Global.logger.e('安装 Linux AppImage 失败', error: e, stackTrace: stackTrace);
+      ToastUtil.error('安装失败: $e');
+      
+      // 尝试恢复备份
+      try {
+        String? currentAppImagePath = await _getCurrentLinuxAppImagePath();
+        if (currentAppImagePath != null) {
+          File backupFile = File('$currentAppImagePath.backup');
+          if (await backupFile.exists()) {
+            File targetFile = File(currentAppImagePath);
+            if (await targetFile.exists()) {
+              await targetFile.delete();
+            }
+            await backupFile.copy(currentAppImagePath);
+            await Process.run('chmod', ['+x', currentAppImagePath], runInShell: false);
+            Global.logger.d('已恢复备份文件');
+          }
+        }
+      } catch (restoreError) {
+        Global.logger.e('恢复备份失败: $restoreError');
+      }
+      
+      tryAutoLogin();
+    }
+  }
+
+  /// 获取当前运行的 Linux AppImage 路径
+  Future<String?> _getCurrentLinuxAppImagePath() async {
+    try {
+      // 通过 /proc/self/exe 获取当前可执行文件路径
+      ProcessResult result = await Process.run(
+        'readlink',
+        ['-f', '/proc/self/exe'],
+        runInShell: false,
+      );
+      
+      if (result.exitCode == 0) {
+        String path = result.stdout.toString().trim();
+        Global.logger.d('当前 AppImage 路径: $path');
+        return path;
+      }
+    } catch (e) {
+      Global.logger.w('获取当前 AppImage 路径失败: $e');
+    }
+    
+    // 备用方法：通过 Platform.resolvedExecutable
+    try {
+      String executable = Platform.resolvedExecutable;
+      if (executable.endsWith('.AppImage')) {
+        Global.logger.d('通过 Platform.resolvedExecutable 获取路径: $executable');
+        return executable;
+      }
+    } catch (e) {
+      Global.logger.w('通过 Platform.resolvedExecutable 获取路径失败: $e');
+    }
+    
+    return null;
+  }
+
+  /// 启动 Linux 新版本应用
+  Future<void> _launchLinuxNewVersion(String appImagePath) async {
+    try {
+      Global.logger.d('启动新版本 Linux AppImage: $appImagePath');
+      
+      // 检查文件是否存在
+      File exeFile = File(appImagePath);
+      if (await exeFile.exists()) {
+        // 启动新版本应用（在后台运行）
+        await Process.start(appImagePath, [], runInShell: true);
+        Global.logger.d('新版本启动成功');
+      } else {
+        Global.logger.w('新版本 AppImage 不存在: $appImagePath');
+        ToastUtil.info('安装完成，请手动启动应用: $appImagePath');
+      }
+    } catch (e, stackTrace) {
+      Global.logger.e('启动新版本失败', error: e, stackTrace: stackTrace);
+      ToastUtil.info('安装完成，请手动启动应用');
+    }
+  }
+
   /// 启动新版本应用
   Future<void> _launchNewVersion() async {
     try {
@@ -540,6 +777,9 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
                                     } else if (PlatformUtils.isWindows) {
                                       // Windows 平台直接执行静默安装
                                       downloadWindowsAndUpgrade(useSilent: true);
+                                    } else if (PlatformUtils.isLinux) {
+                                      // Linux 平台直接执行自动升级
+                                      downloadLinuxAndUpgrade();
                                     }
                                   },
                                 ),

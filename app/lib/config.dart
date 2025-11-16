@@ -10,6 +10,7 @@ class Config {
       "updateUrl": "http://www.nnbdc.com/app/ver.json",
       "apkUrl": "http://www.nnbdc.com/app/nnbdc.apk",
       "windowsUrl": "http://www.nnbdc.com/app/nnbdc-setup.exe",
+      "linuxUrl": "http://www.nnbdc.com/app/nnbdc-linux.AppImage",
       "wordImageBaseUrl": 'http://www.nnbdc.com/img/word/'
     },
     "dev": {
@@ -19,6 +20,7 @@ class Config {
       "updateUrl": "http://192.168.1.170:80/app/ver.json",
       "apkUrl": "http://192.168.1.170:80/app/nnbdc.apk",
       "windowsUrl": "http://192.168.1.170:80/app/nnbdc-windows.exe",
+      "linuxUrl": "http://192.168.1.170:80/app/nnbdc-linux.AppImage",
       "wordImageBaseUrl": 'http://192.168.1.170:80/img/word/'
     },
     "dev_web": {
@@ -28,6 +30,7 @@ class Config {
       "updateUrl": "http://localhost:80/app/ver.json",
       "apkUrl": "http://localhost:80/app/nnbdc.apk",
       "windowsUrl": "http://localhost:80/app/nnbdc-windows.exe",
+      "linuxUrl": "http://localhost:80/app/nnbdc-linux.AppImage",
       "wordImageBaseUrl": 'http://localhost:80/img/word/'
     },
     "test": {
@@ -37,6 +40,7 @@ class Config {
       "updateUrl": "http://localhost:80/app/ver.json",
       "apkUrl": "http://localhost:80/app/nnbdc.apk",
       "windowsUrl": "http://localhost:80/app/nnbdc-windows.exe",
+      "linuxUrl": "http://localhost:80/app/nnbdc-linux.AppImage",
       "wordImageBaseUrl": 'http://localhost:80/img/word/'
     }
   };
@@ -49,6 +53,7 @@ class Config {
   static final String updateUrl = profile["updateUrl"];
   static final String apkUrl = profile["apkUrl"];
   static final String windowsUrl = profile["windowsUrl"];
+  static final String linuxUrl = profile["linuxUrl"];
   static final String wordImageBaseUrl = profile["wordImageBaseUrl"];
 
   // Configuration for ThrottledDbSyncService
