@@ -22,15 +22,11 @@ RequestExecutionLevel admin
 ; !define MUI_ICON "installer_temp\icon.ico"
 ; !define MUI_UNICON "installer_temp\icon.ico"
 
-!define MUI_HEADERIMAGE
-
-; 检查头部图像是否存在
-!if /FileExists "installer_temp\logo.png"
-    !define MUI_HEADERIMAGE_BITMAP "installer_temp\logo.png"
-    !define MUI_WELCOMEFINISHPAGE_BITMAP "installer_temp\logo.png"
-!else
-    !warning "头部图像文件不存在: installer_temp\logo.png"
-!endif
+; 注意：NSIS 的头部图像和欢迎页面图像只支持 BMP 格式，不支持 PNG
+; 如果需要自定义图像，请将 logo.png 转换为 BMP 格式并取消下面的注释
+; !define MUI_HEADERIMAGE
+; !define MUI_HEADERIMAGE_BITMAP "installer_temp\logo.bmp"
+; !define MUI_WELCOMEFINISHPAGE_BITMAP "installer_temp\logo.bmp"
 
 ; 安装程序页面
 !insertmacro MUI_PAGE_WELCOME
@@ -104,20 +100,20 @@ Section "主程序" SecMain
 SectionEnd
 
 ; Visual C++ Redistributable 安装段
-Section "Visual C++ Redistributable" SecVCRedist
-    ; 检查是否已安装 Visual C++ Redistributable
-    ReadRegStr $0 HKLM "SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64" "Version"
-    StrCmp $0 "" 0 +3
-        ; 如果未安装，则下载并安装
-        inetc::get "https://aka.ms/vs/17/release/vc_redist.x64.exe" "$TEMP\vc_redist.x64.exe"
-        ExecWait "$TEMP\vc_redist.x64.exe /quiet /norestart"
-        Delete "$TEMP\vc_redist.x64.exe"
-SectionEnd
+; 注意：由于 inetc 插件在 GitHub Actions 环境中不可用，此功能已禁用
+; 如果用户系统缺少 Visual C++ Redistributable，程序运行时会提示安装
+; Section "Visual C++ Redistributable" SecVCRedist
+;     ; 检查是否已安装 Visual C++ Redistributable
+;     ReadRegStr $0 HKLM "SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64" "Version"
+;     StrCmp $0 "" 0 +3
+;         ; 如果未安装，则提示用户手动下载安装
+;         MessageBox MB_OK "系统未检测到 Visual C++ Redistributable。$\n$\n如果程序无法运行，请访问以下链接下载并安装：$\nhttps://aka.ms/vs/17/release/vc_redist.x64.exe"
+; SectionEnd
 
 ; 安装程序描述
 !insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
     !insertmacro MUI_DESCRIPTION_TEXT ${SecMain} "安装 ${APP_NAME} 主程序文件"
-    !insertmacro MUI_DESCRIPTION_TEXT ${SecVCRedist} "安装 Visual C++ Redistributable（如果系统未安装）"
+    ; !insertmacro MUI_DESCRIPTION_TEXT ${SecVCRedist} "安装 Visual C++ Redistributable（如果系统未安装）"
 !insertmacro MUI_FUNCTION_DESCRIPTION_END
 
 ; 卸载程序段
