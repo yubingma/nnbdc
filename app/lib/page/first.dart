@@ -79,9 +79,9 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
         );
 
         if (response.statusCode == 200) {
-          int verCode = response.data![0]['verCode'];
-          var verName = response.data![0]['verName'];
-          var changes = response.data![0]['changes'];
+          int verCode = response.data!['verCode'];
+          var verName = response.data!['verName'];
+          var changes = response.data!['changes'];
           if (verCode > buildNumber) {
             setState(() {
               newVersionFound = true;
