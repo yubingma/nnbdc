@@ -42,6 +42,8 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
   bool downloadSuccess = false;
   int? downloadedBytes;
   int? totalBytes;
+  bool installing = false; // 安装状态
+  String? installingMessage; // 安装状态消息
 
   bool newVersionFound = false;
   bool newVersionIgnored = false;
@@ -200,6 +202,8 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
         setState(() {
           downloading = false;
           downloadSuccess = true;
+          installing = true;
+          installingMessage = '正在准备安装...';
         });
         installApk();
       } else {
@@ -231,17 +235,48 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
   }
 
   Future<void> installApk() async {
-    if (!await Permission.requestInstallPackages.request().isGranted) {
-      ToastUtil.error("未获得安装权限，仍使用旧版本");
-      tryAutoLogin();
-    }
+    try {
+      setState(() {
+        installingMessage = '正在请求安装权限...';
+      });
+      
+      if (!await Permission.requestInstallPackages.request().isGranted) {
+        setState(() {
+          installing = false;
+          installingMessage = null;
+        });
+        ToastUtil.error("未获得安装权限，仍使用旧版本");
+        tryAutoLogin();
+        return;
+      }
 
-    var result = await OpenFile.open(savePath, type: "application/vnd.android.package-archive");
-    if (result.type == ResultType.done) {
-      // 开始安装新版本，当前程序可以退出了
-      SystemNavigator.pop();
-    } else {
-      ToastUtil.error("${result.message}，仍使用旧版本");
+      setState(() {
+        installingMessage = '正在启动安装程序...';
+      });
+
+      var result = await OpenFile.open(savePath, type: "application/vnd.android.package-archive");
+      if (result.type == ResultType.done) {
+        setState(() {
+          installingMessage = '安装程序已启动，请按照提示完成安装';
+        });
+        // 延迟退出，让用户看到提示
+        Future.delayed(Duration(seconds: 2), () {
+          SystemNavigator.pop();
+        });
+      } else {
+        setState(() {
+          installing = false;
+          installingMessage = null;
+        });
+        ToastUtil.error("${result.message}，仍使用旧版本");
+        tryAutoLogin();
+      }
+    } catch (e) {
+      setState(() {
+        installing = false;
+        installingMessage = null;
+      });
+      ToastUtil.error("安装失败: $e");
       tryAutoLogin();
     }
   }
@@ -273,6 +308,8 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
         setState(() {
           downloading = false;
           downloadSuccess = true;
+          installing = true;
+          installingMessage = '正在准备安装...';
         });
         // 执行 Linux AppImage 升级
         await installLinuxApp();
@@ -321,6 +358,8 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
         setState(() {
           downloading = false;
           downloadSuccess = true;
+          installing = true;
+          installingMessage = '正在准备安装...';
         });
         // 传递静默安装参数
         await installWindowsApp(silent: useSilent);
@@ -348,9 +387,16 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
       String installerPath = savePath;
       if (savePath.toLowerCase().endsWith('.zip')) {
         // 如果是 zip 文件，需要先解压
+        setState(() {
+          installingMessage = '正在解压安装包...';
+        });
         Global.logger.d('检测到 zip 文件，开始解压: $savePath');
         installerPath = await _extractZipFile(savePath);
         if (installerPath.isEmpty) {
+          setState(() {
+            installing = false;
+            installingMessage = null;
+          });
           ToastUtil.error("解压安装包失败，仍使用旧版本");
           tryAutoLogin();
           return;
@@ -365,8 +411,14 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
         await _silentInstallWindowsApp();
       } else {
         // 原有方式：打开安装包让用户手动安装
+        setState(() {
+          installingMessage = '正在启动安装程序...';
+        });
         var result = await OpenFile.open(savePath);
         if (result.type == ResultType.done) {
+          setState(() {
+            installingMessage = '安装程序已启动，请按照提示完成安装';
+          });
           // 提示用户安装新版本
           ToastUtil.success("安装包已下载，请按照提示安装新版本");
           // 延迟退出，让用户看到提示
@@ -374,11 +426,19 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
             SystemNavigator.pop();
           });
         } else {
+          setState(() {
+            installing = false;
+            installingMessage = null;
+          });
           ToastUtil.error("打开安装包失败：${result.message}，仍使用旧版本");
           tryAutoLogin();
         }
       }
     } catch (e, stackTrace) {
+      setState(() {
+        installing = false;
+        installingMessage = null;
+      });
       ErrorHandler.handleError(e, stackTrace, logPrefix: 'Windows安装失败', showToast: true);
       tryAutoLogin();
     }
@@ -444,6 +504,10 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
   /// 静默安装 Windows 应用
   Future<void> _silentInstallWindowsApp() async {
     try {
+      setState(() {
+        installingMessage = '正在准备安装...';
+      });
+      
       Global.logger.d('开始静默安装 Windows 应用: $savePath');
       
       // NSIS 静默安装参数说明：
@@ -462,6 +526,10 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
       }
       
       // 执行静默安装
+      setState(() {
+        installingMessage = '正在安装新版本，请稍候...';
+      });
+      
       Global.logger.d('执行命令: $savePath ${arguments.join(" ")}');
       ProcessResult result = await Process.run(
         savePath,
@@ -480,6 +548,9 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
       if (result.exitCode == 0) {
         // 安装成功
         Global.logger.d('静默安装成功');
+        setState(() {
+          installingMessage = '安装成功，正在重启应用...';
+        });
         ToastUtil.success("新版本安装成功，正在重启应用...");
         
         // 延迟后启动新版本并退出当前版本
@@ -490,11 +561,18 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
       } else {
         // 安装失败，可能需要管理员权限
         Global.logger.w('静默安装失败，退出码: ${result.exitCode}，尝试使用管理员权限');
+        setState(() {
+          installingMessage = '需要管理员权限，正在请求...';
+        });
         
         // 尝试使用管理员权限重新执行
         await _silentInstallWithElevation();
       }
     } catch (e, stackTrace) {
+      setState(() {
+        installing = false;
+        installingMessage = null;
+      });
       Global.logger.e('静默安装异常', error: e, stackTrace: stackTrace);
       // 降级到手动安装
       ToastUtil.info('静默安装失败，将打开安装包');
@@ -538,6 +616,9 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
       
       if (result.exitCode == 0) {
         Global.logger.d('管理员权限安装成功');
+        setState(() {
+          installingMessage = '安装成功，正在重启应用...';
+        });
         ToastUtil.success("新版本安装成功，正在重启应用...");
         Future.delayed(Duration(seconds: 2), () async {
           await _launchNewVersion();
@@ -545,11 +626,18 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
         });
       } else {
         // 降级到手动安装
+        setState(() {
+          installingMessage = '正在打开安装包...';
+        });
         Global.logger.w('管理员权限安装失败，降级到手动安装');
         ToastUtil.info('需要管理员权限，将打开安装包');
         await installWindowsApp(silent: false);
       }
     } catch (e, stackTrace) {
+      setState(() {
+        installing = false;
+        installingMessage = null;
+      });
       Global.logger.e('管理员权限安装异常', error: e, stackTrace: stackTrace);
       // 降级到手动安装
       await installWindowsApp(silent: false);
@@ -559,6 +647,10 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
   /// 安装 Linux AppImage
   Future<void> installLinuxApp() async {
     try {
+      setState(() {
+        installingMessage = '正在查找安装位置...';
+      });
+      
       Global.logger.d('开始安装 Linux AppImage: $savePath');
       
       // 获取当前运行的 AppImage 路径
@@ -608,17 +700,26 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
       // 备份旧文件（如果存在）
       File targetFile = File(currentAppImagePath);
       if (await targetFile.exists()) {
+        setState(() {
+          installingMessage = '正在备份旧版本...';
+        });
         String backupPath = '$currentAppImagePath.backup';
         Global.logger.d('备份旧文件到: $backupPath');
         await targetFile.copy(backupPath);
       }
       
       // 复制新文件到目标位置
+      setState(() {
+        installingMessage = '正在安装新版本...';
+      });
       File newFile = File(savePath);
       Global.logger.d('复制新文件从 $savePath 到 $currentAppImagePath');
       await newFile.copy(currentAppImagePath);
       
       // 设置执行权限
+      setState(() {
+        installingMessage = '正在设置权限...';
+      });
       ProcessResult chmodResult = await Process.run(
         'chmod',
         ['+x', currentAppImagePath],
@@ -638,6 +739,9 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
       }
       
       Global.logger.d('Linux AppImage 升级成功');
+      setState(() {
+        installingMessage = '安装成功，正在重启应用...';
+      });
       ToastUtil.success("新版本安装成功，正在重启应用...");
       
       // 延迟后启动新版本并退出当前版本
@@ -646,6 +750,10 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
         SystemNavigator.pop();
       });
     } catch (e, stackTrace) {
+      setState(() {
+        installing = false;
+        installingMessage = null;
+      });
       Global.logger.e('安装 Linux AppImage 失败', error: e, stackTrace: stackTrace);
       ToastUtil.error('安装失败: $e');
       
@@ -802,22 +910,65 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
     return Scaffold(
         backgroundColor: Colors.lightBlue, // 设置Scaffold的背景色
         body: Center(
-          ///正在下载
-          child: downloading || downloadSuccess
-              ? SizedBox(
-                  height: 250,
-                  width: 250,
-                  child: CircularPercentIndicator(
-                    radius: 60.0,
-                    lineWidth: 5.0,
-                    percent: (downloadedBytes ?? 0) / (totalBytes ?? 1024),
-                    center: Text(
-                      "${((downloadedBytes ?? 0) / 1024).round()}k\n${((totalBytes ?? 1024) / 1024).round()}k",
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 11),
+          ///正在下载或安装
+          child: downloading || downloadSuccess || installing
+              ? Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      height: 250,
+                      width: 250,
+                      child: CircularPercentIndicator(
+                        radius: 60.0,
+                        lineWidth: 5.0,
+                        percent: downloading 
+                            ? (downloadedBytes ?? 0) / (totalBytes ?? 1024)
+                            : installing 
+                                ? 1.0 
+                                : 1.0,
+                        center: downloading
+                            ? Text(
+                                "${((downloadedBytes ?? 0) / 1024).round()}k\n${((totalBytes ?? 1024) / 1024).round()}k",
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(fontSize: 11),
+                              )
+                            : installing
+                                ? Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      const SizedBox(
+                                        width: 30,
+                                        height: 30,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 3,
+                                          valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        installingMessage ?? '正在安装...',
+                                        textAlign: TextAlign.center,
+                                        style: const TextStyle(fontSize: 14, color: Colors.white),
+                                      ),
+                                    ],
+                                  )
+                                : const Text(
+                                    "下载完成",
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(fontSize: 14),
+                                  ),
+                        progressColor: downloading ? Colors.green : installing ? Colors.blue : Colors.green,
+                      ),
                     ),
-                    progressColor: Colors.green,
-                  ),
+                    if (installing && installingMessage != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 16),
+                        child: Text(
+                          installingMessage!,
+                          style: const TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                  ],
                 )
 
               /// 发现新版本
