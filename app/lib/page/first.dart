@@ -785,8 +785,10 @@ endlocal
 ''';
       
       // 写入批处理脚本文件（UTF-8 无 BOM，避免命令前出现不可识别字符）
+      // Windows 批处理脚本需要 CRLF 换行符，否则可能被当成单行导致“不是内部或外部命令”
+      final batchContentWithCrlf = batchContent.replaceAll('\n', '\r\n');
       File scriptFile = File(scriptPath);
-      await scriptFile.writeAsString(batchContent, encoding: utf8);
+      await scriptFile.writeAsString(batchContentWithCrlf, encoding: utf8);
       
       Global.logger.d('批处理脚本已创建: $scriptPath');
       return scriptPath;
