@@ -99,8 +99,10 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
           ToastUtil.error('获取版本信息失败');
           tryAutoLogin();
         }
-      } on DioException {
-        ToastUtil.error('获取版本信息失败!');
+      } catch (e, stackTrace) {
+        // 捕获所有类型的异常（包括 Exception 和 Error）
+        Global.logger.e('检查更新异常', error: e, stackTrace: stackTrace);
+        ToastUtil.error('获取版本信息失败: $e');
         tryAutoLogin();
       }
     } else {

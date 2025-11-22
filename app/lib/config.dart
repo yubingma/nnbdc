@@ -8,7 +8,7 @@ class Config {
       "socketServerUrl": "http://back.nnbdc.com:9090/all",
       "sound_base_url": "http://www.nnbdc.com/sound/",
       "updateUrl": "http://www.nnbdc.com/app/ver.json",
-      "apkUrl": "http://www.nnbdc.com/app/nnbdc.apk",
+      "apkUrl": "http://www.nnbdc.com/app/nnbdc-android.apk",
       "windowsUrl": "http://www.nnbdc.com/app/nnbdc-windows.zip",
       "linuxUrl": "http://www.nnbdc.com/app/nnbdc-linux.AppImage",
       "wordImageBaseUrl": 'http://www.nnbdc.com/img/word/'
@@ -18,8 +18,8 @@ class Config {
       "socketServerUrl": "http://192.168.1.170:9090/all",
       "sound_base_url": "http://192.168.1.170:80/sound/",
       "updateUrl": "http://192.168.1.170:80/app/ver.json",
-      "apkUrl": "http://192.168.1.170:80/app/nnbdc.apk",
-      "windowsUrl": "http://192.168.1.170:80/app/nnbdc-windows.exe",
+      "apkUrl": "http://192.168.1.170:80/app/nnbdc-android.apk",
+      "windowsUrl": "http://192.168.1.170:80/app/nnbdc-windows.zip",
       "linuxUrl": "http://192.168.1.170:80/app/nnbdc-linux.AppImage",
       "wordImageBaseUrl": 'http://192.168.1.170:80/img/word/'
     },
@@ -28,8 +28,8 @@ class Config {
       "socketServerUrl": "http://localhost:9090/all",
       "sound_base_url": "http://localhost:80/sound/",
       "updateUrl": "http://localhost:80/app/ver.json",
-      "apkUrl": "http://localhost:80/app/nnbdc.apk",
-      "windowsUrl": "http://localhost:80/app/nnbdc-windows.exe",
+      "apkUrl": "http://localhost:80/app/nnbdc-android.apk",
+      "windowsUrl": "http://localhost:80/app/nnbdc-windows.zip",
       "linuxUrl": "http://localhost:80/app/nnbdc-linux.AppImage",
       "wordImageBaseUrl": 'http://localhost:80/img/word/'
     },
@@ -38,8 +38,8 @@ class Config {
       "socketServerUrl": "http://localhost:9091/all",
       "sound_base_url": "http://localhost:80/sound/",
       "updateUrl": "http://localhost:80/app/ver.json",
-      "apkUrl": "http://localhost:80/app/nnbdc.apk",
-      "windowsUrl": "http://localhost:80/app/nnbdc-windows.exe",
+      "apkUrl": "http://localhost:80/app/nnbdc-android.apk",
+      "windowsUrl": "http://localhost:80/app/nnbdc-windows.zip",
       "linuxUrl": "http://localhost:80/app/nnbdc-linux.AppImage",
       "wordImageBaseUrl": 'http://localhost:80/img/word/'
     }
