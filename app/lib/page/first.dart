@@ -578,33 +578,31 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
       // 使用 cmd /c start 在新窗口中启动批处理脚本
       // 这样可以确保脚本独立运行，即使应用退出也能继续执行
       // 使用 start "" 可以指定窗口标题为空，避免显示不必要的窗口标题
-      String escapedScriptPath = batchScriptPath.replaceAll('"', '""');
+      String quotedScriptPath = '"${batchScriptPath.replaceAll('"', '""')}"';
       
-      Global.logger.d('启动批处理脚本: $escapedScriptPath');
+      Global.logger.d('启动批处理脚本: $quotedScriptPath');
       
-      // 使用 start 命令在新窗口中运行脚本
-      // start "" "脚本路径" 会在新窗口中运行脚本
-      // 使用 /min 参数最小化窗口，避免干扰用户
-      ProcessResult startResult = await Process.run(
-        'cmd',
-        [
-          '/c',
-          'start',
-          '/min',
-          '""',
-          escapedScriptPath,
-        ],
-        runInShell: true,
-      );
-      
-      Global.logger.d('批处理脚本已启动，退出码: ${startResult.exitCode}');
-      if (startResult.exitCode != 0) {
-        Global.logger.w('启动脚本可能失败，stderr: ${startResult.stderr}, stdout: ${startResult.stdout}');
+      try {
+        final process = await Process.start(
+          'cmd',
+          [
+            '/c',
+            'start',
+            '/min',
+            '""',
+            quotedScriptPath,
+          ],
+          mode: ProcessStartMode.detached,
+        );
+        Global.logger.d('批处理脚本进程 PID: ${process.pid}');
+      } catch (e, stackTrace) {
+        Global.logger.e('启动批处理脚本失败', error: e, stackTrace: stackTrace);
+        throw Exception('启动更新脚本失败: $e');
       }
       
       // 等待足够的时间确保脚本已启动并开始等待进程
       // 给脚本时间检测到当前进程
-      await Future.delayed(Duration(milliseconds: 2000));
+      await Future.delayed(Duration(milliseconds: 1500));
       
       // 强制退出应用，让批处理脚本接管安装流程
       // 使用 exit(0) 确保应用立即退出
@@ -650,6 +648,8 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
         String escapedInstallDir = installDir.replaceAll('"', '""');
         installArgs += ' /D="$escapedInstallDir"';
       }
+      // 批处理脚本中需要将引号再转义一次（使用 "" 表示一个引号）
+      String batchInstallArgs = installArgs.replaceAll('"', '""');
       
       // 默认安装路径（用于启动新版本）
       String defaultInstallPath = r'C:\Program Files\泡泡单词\nnbdc.exe';
@@ -674,7 +674,7 @@ set "INSTALLER_PATH=$escapedInstallerPath"
 set "LOG_FILE=$escapedLogPath"
 set "TARGET_PID=$currentPid"
 set "DEFAULT_EXE=$escapedDefaultPath"
-set "INSTALL_ARGS=$installArgs"
+set "INSTALL_ARGS=$batchInstallArgs"
 
 title 泡泡单词自动更新
 echo ========================================
@@ -694,27 +694,38 @@ echo [%date% %time%] 等待应用退出... >> "!LOG_FILE!"
 REM 等待当前进程退出（最多等待 60 秒）
 set /a timeout=60
 :wait_loop
-REM 使用 tasklist 检查进程是否存在
 tasklist /FI "PID eq !TARGET_PID!" 2>NUL | findstr /C:"!TARGET_PID!" >NUL 2>&1
 if !ERRORLEVEL! EQU 0 (
+    if !timeout! LEQ 0 goto force_close
     echo 等待进程退出... (剩余 !timeout! 秒)
     echo [%date% %time%] 等待进程退出... (剩余 !timeout! 秒) >> "!LOG_FILE!"
     timeout /t 1 /nobreak >nul
     set /a timeout-=1
-    if !timeout! GTR 0 (
-        goto wait_loop
-    )
-    echo [%date% %time%] 等待超时，继续执行安装 >> "!LOG_FILE!"
+    goto wait_loop
 ) else (
-    echo [%date% %time%] 进程已退出 >> "!LOG_FILE!"
+    goto process_exited
 )
 
+:force_close
 echo.
-echo 进程已退出，开始安装新版本...
-echo [%date% %time%] 进程已退出或超时 >> "!LOG_FILE!"
+echo 超时未退出，正在强制关闭旧版本...
+echo [%date% %time%] 等待超时，尝试强制结束进程 >> "!LOG_FILE!"
+taskkill /F /PID !TARGET_PID! /T >nul 2>&1
+timeout /t 2 /nobreak >nul
+goto after_wait
 
+:process_exited
+echo.
+echo 检测到旧版本已退出
+echo [%date% %time%] 进程已退出 >> "!LOG_FILE!"
+goto after_wait
+
+:after_wait
 REM 额外等待 2 秒确保文件已完全释放
 timeout /t 2 /nobreak >nul
+
+echo.
+echo [%date% %time%] 开始安装新版本... >> "!LOG_FILE!"
 
 echo.
 echo [%date% %time%] 开始安装新版本... >> "!LOG_FILE!"
@@ -775,20 +786,9 @@ del /F /Q "%~f0" >nul 2>&1
 endlocal
 ''';
       
-      // 写入批处理脚本文件
-      // Windows 批处理脚本需要使用 GBK 编码或 UTF-8 with BOM
-      // 使用 GBK 编码以确保中文字符正确显示
+      // 写入批处理脚本文件（UTF-8 无 BOM，避免命令前出现不可识别字符）
       File scriptFile = File(scriptPath);
-      try {
-        // 先尝试使用 UTF-8 with BOM 编码
-        List<int> utf8Bytes = utf8.encode(batchContent);
-        List<int> bom = [0xEF, 0xBB, 0xBF]; // UTF-8 BOM
-        List<int> contentWithBom = [...bom, ...utf8Bytes];
-        await scriptFile.writeAsBytes(contentWithBom);
-      } catch (e) {
-        // 如果失败，使用 UTF-8 编码
-        await scriptFile.writeAsString(batchContent, encoding: utf8);
-      }
+      await scriptFile.writeAsString(batchContent, encoding: utf8);
       
       Global.logger.d('批处理脚本已创建: $scriptPath');
       return scriptPath;
