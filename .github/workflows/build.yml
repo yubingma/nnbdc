@@ -386,13 +386,35 @@ jobs:
           }
 
           # 将安装包打包成 zip 文件，避免浏览器警告
+          # 确保 zip 文件根目录包含 nnbdc-setup.exe（不包含路径结构）
           $zipFile = Join-Path -Path $DEPLOY_DIR -ChildPath "nnbdc-windows.zip"
           Write-Host "正在打包安装包为 zip 文件..."
-          Compress-Archive -Path $setupExe -DestinationPath $zipFile -Force
+          
+          # 创建临时目录用于打包，确保 zip 文件内容结构正确
+          $tempZipDir = Join-Path -Path $DEPLOY_DIR -ChildPath "zip_temp"
+          if (Test-Path $tempZipDir) { Remove-Item -Path $tempZipDir -Recurse -Force }
+          New-Item -ItemType Directory -Path $tempZipDir -Force | Out-Null
+          
+          # 复制 exe 文件到临时目录
+          Copy-Item -Path $setupExe -Destination "$tempZipDir\nnbdc-setup.exe" -Force
+          
+          # 从临时目录压缩，确保 zip 文件根目录就是 nnbdc-setup.exe
+          Compress-Archive -Path "$tempZipDir\*" -DestinationPath $zipFile -Force
+          
+          # 清理临时目录
+          Remove-Item -Path $tempZipDir -Recurse -Force
           
           if (Test-Path $zipFile) {
             $zipSize = (Get-Item $zipFile).Length / 1MB
             Write-Host "✅ 安装包打包成功: nnbdc-windows.zip (大小: $([math]::Round($zipSize, 2)) MB)"
+            Write-Host "验证 zip 文件内容..."
+            # 验证 zip 文件内容
+            $zipContent = [System.IO.Compression.ZipFile]::OpenRead($zipFile)
+            $entries = $zipContent.Entries | Select-Object -First 5
+            foreach ($entry in $entries) {
+              Write-Host "  - $($entry.FullName)"
+            }
+            $zipContent.Dispose()
           } else {
             Write-Host "⚠️ 警告: zip 文件创建失败，但继续使用 exe 文件"
             Move-Item -Path $setupExe -Destination "$DEPLOY_DIR\nnbdc-setup.exe" -Force
