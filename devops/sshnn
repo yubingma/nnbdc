@@ -1,0 +1,50 @@
+#!/usr/bin/expect
+
+# SSH 自动登录脚本
+# 用于登录到远程服务器 47.108.27.205
+
+set timeout 30
+set host "47.108.27.205"
+set user "root"
+set port "22"
+
+# 从环境变量获取密码
+set password $env(nnbdc_server_pwd)
+
+# 启动 SSH 连接
+spawn ssh -p $port $user@$host
+
+# 处理可能的提示
+expect {
+    "yes/no" {
+        send "yes\r"
+        exp_continue
+    }
+    "password:" {
+        send "$password\r"
+    }
+    "Password:" {
+        send "$password\r"
+    }
+    "*password*" {
+        send "$password\r"
+    }
+}
+
+# 等待登录成功（等待命令提示符）
+expect {
+    "*#" {
+        # 登录成功，保持交互
+    }
+    "*$" {
+        # 登录成功，保持交互
+    }
+    timeout {
+        puts "登录超时"
+        exit 1
+    }
+}
+
+# 保持交互式会话
+interact
+
