@@ -494,18 +494,35 @@ jobs:
             $trimmedLine = $line.Trim()
             if ($trimmedLine -eq "changes:") {
               $inChangesSection = $true
+              Write-Host "找到 changes 部分"
               continue
             }
             if ($inChangesSection) {
               # 检查是否是 changes 项的结束（空行或非缩进行）
-              if ($trimmedLine -eq "" -or ($trimmedLine -notmatch "^\s" -and $trimmedLine -notmatch "^#")) {
+              if ($trimmedLine -eq "" -or ($line -notmatch "^\s" -and $trimmedLine -notmatch "^#")) {
+                Write-Host "changes 部分结束"
                 break
               }
-              # 匹配 YAML 列表项：- "内容" 或 - 内容
-              # 使用双引号字符串并转义引号，避免 PowerShell 解析错误
-              if ($trimmedLine -match "^\s*-\s*[`"']?(.+?)[`"']?\s*$") {
+              # 匹配 YAML 列表项：- "内容" 或 - '内容' 或 - 内容
+              # 分别处理带双引号、单引号和不带引号的情况
+              Write-Host "处理行: '$trimmedLine'"
+              if ($trimmedLine -match '^-\s*"(.+)"\s*$') {
+                # 带双引号的情况
                 $changeText = $matches[1]
+                Write-Host "匹配到带双引号的项: '$changeText'"
                 $changes += $changeText
+              } elseif ($trimmedLine -match "^-\s*'(.+)'\s*`$") {
+                # 带单引号的情况
+                $changeText = $matches[1]
+                Write-Host "匹配到带单引号的项: '$changeText'"
+                $changes += $changeText
+              } elseif ($trimmedLine -match '^-\s*(.+)\s*$') {
+                # 不带引号的情况
+                $changeText = $matches[1]
+                Write-Host "匹配到不带引号的项: '$changeText'"
+                $changes += $changeText
+              } else {
+                Write-Host "未匹配到任何模式: '$trimmedLine'"
               }
             }
           }
@@ -515,7 +532,10 @@ jobs:
             $changes = @("修复已知问题，提升稳定性")
             Write-Host "警告: 未在 pubspec.yaml 中找到 changes，使用默认值"
           } else {
-            Write-Host "从 pubspec.yaml 读取到 $($changes.Count) 个更新项"
+            Write-Host "从 pubspec.yaml 读取到 $($changes.Count) 个更新项:"
+            foreach ($change in $changes) {
+              Write-Host "  - $change"
+            }
           }
           
           $payload = @{ verCode = $verCode; verName = $verName; changes = $changes }

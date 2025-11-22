@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:nnbdc/util/toast_util.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:get/get.dart';
@@ -41,7 +42,7 @@ class UpdateInfo {
 
 class UpdateService extends GetxController {
   static UpdateService get instance => Get.find<UpdateService>();
-  
+
   final RxBool _isChecking = false.obs;
   final Rx<UpdateInfo?> _updateInfo = Rx<UpdateInfo?>(null);
   final RxString _currentVersion = ''.obs;
@@ -73,19 +74,19 @@ class UpdateService extends GetxController {
   /// 如果没有新版本或检查失败，返回 null
   Future<Map<String, dynamic>?> checkForUpdateOnStartup(int currentBuildNumber) async {
     if (_isChecking.value) return null;
-    
+
     _isChecking.value = true;
-    
+
     try {
       // 添加时间戳参数避免缓存，确保获取最新版本
       String updateUrl = Config.updateUrl;
       String separator = updateUrl.contains('?') ? '&' : '?';
       updateUrl = '$updateUrl${separator}t=${DateTime.now().millisecondsSinceEpoch}';
-      
+
       final response = await http.get(Uri.parse(updateUrl));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        
+
         // 对象格式：{"verCode":25101301,"verName":"25.10.13", "changes":["修复已知问题"]}
         if (data is Map<String, dynamic>) {
           final verCodeObj = data['verCode'];
@@ -95,7 +96,7 @@ class UpdateService extends GetxController {
           } else if (verCodeObj is String) {
             verCode = int.tryParse(verCodeObj);
           }
-          
+
           if (verCode != null && verCode > currentBuildNumber) {
             return {
               'verCode': verCode,
@@ -110,32 +111,32 @@ class UpdateService extends GetxController {
     } finally {
       _isChecking.value = false;
     }
-    
+
     return null;
   }
 
   /// 检查更新
   Future<bool> checkForUpdate({bool showDialog = true}) async {
     if (_isChecking.value) return false;
-    
+
     _isChecking.value = true;
-    
+
     try {
       // 添加时间戳参数避免缓存，确保获取最新版本
       String updateUrl = Config.updateUrl;
       String separator = updateUrl.contains('?') ? '&' : '?';
       updateUrl = '$updateUrl${separator}t=${DateTime.now().millisecondsSinceEpoch}';
-      
+
       final response = await http.get(Uri.parse(updateUrl));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        
+
         // 对象格式：{"verCode":25101301,"verName":"25.10.13", "changes":["修复已知问题，提升稳定性"]}
         if (data is Map<String, dynamic>) {
           final newVersion = data['verName']?.toString() ?? '';
           final newBuildNumber = data['verCode']?.toString() ?? '';
           final changes = List<String>.from(data['changes'] ?? []);
-          
+
           // 比较版本号
           if (_isNewerVersion(newVersion, _currentVersion.value)) {
             final updateInfo = UpdateInfo(
@@ -147,7 +148,7 @@ class UpdateService extends GetxController {
               requiresRestart: true,
               installerType: 'setup',
             );
-            
+
             _updateInfo.value = updateInfo;
             if (showDialog) {
               _showUpdateDialog(updateInfo);
@@ -164,7 +165,7 @@ class UpdateService extends GetxController {
     } finally {
       _isChecking.value = false;
     }
-    
+
     if (showDialog) {
       Get.snackbar('检查更新', '当前已是最新版本', snackPosition: SnackPosition.TOP);
     }
@@ -176,14 +177,15 @@ class UpdateService extends GetxController {
     String baseUrl;
     if (Platform.isWindows) {
       baseUrl = Config.windowsUrl;
-    } else if (Platform.isMacOS) {
-      baseUrl = 'http://www.nnbdc.com/app/nnbdc-macos.zip';
     } else if (Platform.isLinux) {
-      baseUrl = 'http://www.nnbdc.com/app/nnbdc-linux.tar.gz';
-    } else {
+      baseUrl = Config.linuxUrl;
+    } else if (Platform.isAndroid) {
       baseUrl = Config.apkUrl;
+    } else {
+      ToastUtil.error('不支持的下载平台: ${Platform.operatingSystem}');
+      return '';
     }
-    
+
     // 添加版本号参数
     String separator = baseUrl.contains('?') ? '&' : '?';
     return '$baseUrl${separator}ver=$verCode';
@@ -194,7 +196,7 @@ class UpdateService extends GetxController {
     try {
       final newParts = newVersion.split('.').map(int.parse).toList();
       final currentParts = currentVersion.split('.').map(int.parse).toList();
-      
+
       // 补齐版本号长度
       while (newParts.length < 3) {
         newParts.add(0);
@@ -202,7 +204,7 @@ class UpdateService extends GetxController {
       while (currentParts.length < 3) {
         currentParts.add(0);
       }
-      
+
       for (int i = 0; i < 3; i++) {
         if (newParts[i] > currentParts[i]) return true;
         if (newParts[i] < currentParts[i]) return false;
@@ -254,8 +256,7 @@ class UpdateService extends GetxController {
       if (Platform.isWindows) {
         // Windows 安装包直接打开下载链接
         await launchUrl(Uri.parse(updateInfo.downloadUrl));
-        Get.snackbar('下载更新', '正在打开下载页面，请下载并安装新版本', 
-                    snackPosition: SnackPosition.TOP, duration: Duration(seconds: 5));
+        Get.snackbar('下载更新', '正在打开下载页面，请下载并安装新版本', snackPosition: SnackPosition.TOP, duration: Duration(seconds: 5));
       } else if (Platform.isMacOS) {
         // macOS 显示升级说明
         _showMacOSUpgradeDialog(updateInfo);
