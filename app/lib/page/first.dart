@@ -680,6 +680,7 @@ set "PRIMARY_EXE=$escapedCurrentExePath"
 set "FALLBACK_EXE=$escapedDefaultPath"
 set "START_MENU_CN=$escapedChineseLink"
 set "INSTALL_ARGS=$batchInstallArgs"
+set "SHOULD_EXIT=0"
 
 title nnbdc auto update
 echo ========================================
@@ -772,6 +773,7 @@ if !ERRORLEVEL! EQU 0 (
             echo [%date% %time%] error: start menu shortcut not found >> "!LOG_FILE!"
         )
     )
+    set "SHOULD_EXIT=1"
 ) else (
     echo.
     echo install failed, code: !ERRORLEVEL!
@@ -788,6 +790,10 @@ echo [%date% %time%] update script finished >> "!LOG_FILE!"
 REM 清理临时脚本（延迟删除，避免影响当前执行）
 timeout /t 5 /nobreak >nul
 del /F /Q "%~f0" >nul 2>&1
+
+if "!SHOULD_EXIT!"=="1" (
+    exit
+)
 
 endlocal
 ''';
