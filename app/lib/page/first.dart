@@ -321,6 +321,22 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
 
   Future<void> installWindowsApp({bool silent = false}) async {
     try {
+      // 检查下载的文件是否是 zip 文件
+      String installerPath = savePath;
+      if (savePath.toLowerCase().endsWith('.zip')) {
+        // 如果是 zip 文件，需要先解压
+        Global.logger.d('检测到 zip 文件，开始解压: $savePath');
+        installerPath = await _extractZipFile(savePath);
+        if (installerPath.isEmpty) {
+          ToastUtil.error("解压安装包失败，仍使用旧版本");
+          tryAutoLogin();
+          return;
+        }
+      }
+      
+      // 更新 savePath 为实际的安装程序路径
+      savePath = installerPath;
+      
       if (silent) {
         // 静默安装模式
         await _silentInstallWindowsApp();
@@ -342,6 +358,63 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
     } catch (e, stackTrace) {
       ErrorHandler.handleError(e, stackTrace, logPrefix: 'Windows安装失败', showToast: true);
       tryAutoLogin();
+    }
+  }
+
+  /// 解压 zip 文件并返回 exe 文件路径
+  Future<String> _extractZipFile(String zipPath) async {
+    try {
+      // 获取临时目录
+      Directory tempDir = await getApplicationDocumentsDirectory();
+      String extractDir = '${tempDir.path}/nnbdc_update_temp';
+      
+      // 创建解压目录
+      Directory extractDirectory = Directory(extractDir);
+      if (await extractDirectory.exists()) {
+        await extractDirectory.delete(recursive: true);
+      }
+      await extractDirectory.create(recursive: true);
+      
+      Global.logger.d('解压目录: $extractDir');
+      
+      // 使用 PowerShell 解压 zip 文件
+      ProcessResult result = await Process.run(
+        'powershell',
+        [
+          '-Command',
+          'Expand-Archive',
+          '-Path',
+          zipPath,
+          '-DestinationPath',
+          extractDir,
+          '-Force'
+        ],
+        runInShell: true,
+      );
+      
+      if (result.exitCode != 0) {
+        Global.logger.e('解压失败，退出码: ${result.exitCode}');
+        Global.logger.e('错误信息: ${result.stderr}');
+        return '';
+      }
+      
+      // 查找解压后的 exe 文件
+      Directory dir = Directory(extractDir);
+      List<FileSystemEntity> files = await dir.list(recursive: true).toList();
+      
+      for (FileSystemEntity file in files) {
+        if (file is File && file.path.toLowerCase().endsWith('.exe')) {
+          String exePath = file.path;
+          Global.logger.d('找到安装程序: $exePath');
+          return exePath;
+        }
+      }
+      
+      Global.logger.e('解压后未找到 exe 文件');
+      return '';
+    } catch (e, stackTrace) {
+      Global.logger.e('解压 zip 文件异常', error: e, stackTrace: stackTrace);
+      return '';
     }
   }
 

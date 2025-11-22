@@ -385,8 +385,20 @@ jobs:
             exit 1
           }
 
-          Move-Item -Path $setupExe -Destination "$DEPLOY_DIR\nnbdc-setup.exe" -Force
-          Write-Host "✅ 安装包创建成功: nnbdc-setup.exe"
+          # 将安装包打包成 zip 文件，避免浏览器警告
+          $zipFile = Join-Path -Path $DEPLOY_DIR -ChildPath "nnbdc-windows.zip"
+          Write-Host "正在打包安装包为 zip 文件..."
+          Compress-Archive -Path $setupExe -DestinationPath $zipFile -Force
+          
+          if (Test-Path $zipFile) {
+            $zipSize = (Get-Item $zipFile).Length / 1MB
+            Write-Host "✅ 安装包打包成功: nnbdc-windows.zip (大小: $([math]::Round($zipSize, 2)) MB)"
+          } else {
+            Write-Host "⚠️ 警告: zip 文件创建失败，但继续使用 exe 文件"
+            Move-Item -Path $setupExe -Destination "$DEPLOY_DIR\nnbdc-setup.exe" -Force
+          }
+          
+          Write-Host "✅ Windows 安装包处理完成"
 
           # 清理临时文件
           if (Test-Path $INSTALLER_TEMP) { Remove-Item -Path $INSTALLER_TEMP -Recurse -Force }

@@ -20,12 +20,13 @@ create_installer.bat
 
 ### GitHub Actions 构建
 - 自动构建 Windows 安装包
-- 生成 `nnbdc-setup.exe`
+- 生成 `nnbdc-setup.exe` 并打包为 `nnbdc-windows.zip`
 - 包含 Visual C++ Redistributable
 
 ## 📦 输出文件
 
-- `nnbdc-setup.exe` - Windows 安装包
+- `nnbdc-windows.zip` - Windows 安装包（zip 格式，避免浏览器警告）
+  - 解压后包含 `nnbdc-setup.exe` 安装程序
 - 支持升级安装
 - 自动安装 Visual C++ Redistributable
 

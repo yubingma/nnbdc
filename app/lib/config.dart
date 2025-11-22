@@ -9,7 +9,7 @@ class Config {
       "sound_base_url": "http://www.nnbdc.com/sound/",
       "updateUrl": "http://www.nnbdc.com/app/ver.json",
       "apkUrl": "http://www.nnbdc.com/app/nnbdc.apk",
-      "windowsUrl": "http://www.nnbdc.com/app/nnbdc-setup.exe",
+      "windowsUrl": "http://www.nnbdc.com/app/nnbdc-windows.zip",
       "linuxUrl": "http://www.nnbdc.com/app/nnbdc-linux.AppImage",
       "wordImageBaseUrl": 'http://www.nnbdc.com/img/word/'
     },
