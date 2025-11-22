@@ -1001,13 +1001,15 @@ class _MePageState extends State<MePage> {
                   Get.toNamed('/msg');
                 },
               ),
-              _buildMenuTile(
-                icon: Icons.eco,
-                title: '我的小天地',
-                onTap: () {
-                  Get.toNamed('/farm');
-                },
-              ),
+              // 我的小天地 - 仅管理员可见
+              if (loggedInUser?.isAdmin == true)
+                _buildMenuTile(
+                  icon: Icons.eco,
+                  title: '我的小天地',
+                  onTap: () {
+                    Get.toNamed('/farm');
+                  },
+                ),
               _buildMenuTile(
                 icon: Icons.rate_review,
                 title: '需求墙',
