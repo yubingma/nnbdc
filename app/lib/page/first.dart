@@ -47,6 +47,7 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
   bool newVersionIgnored = false;
   String? newVersionName;
   List<dynamic>? newVersionChanges;
+  int? newVerCode; // 保存新版本的 verCode，用于下载时添加版本参数
 
   // 动态闪屏：动画控制与数据
   late AnimationController _splashController;
@@ -77,6 +78,7 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
               newVersionFound = true;
               newVersionName = verName;
               newVersionChanges = changes;
+              newVerCode = verCode; // 保存版本号，用于下载时添加版本参数
             });
             // 调用升级确认对话框
             await showUpgradeConfirmDlg(verName, changes);
@@ -175,12 +177,19 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
     try {
       Dio dio = Dio();
 
+      // 构建带版本号的下载 URL
+      String downloadUrl = Config.apkUrl;
+      if (newVerCode != null) {
+        String separator = downloadUrl.contains('?') ? '&' : '?';
+        downloadUrl = '$downloadUrl${separator}ver=$newVerCode';
+      }
+
       String fileName = Config.apkUrl.substring(Config.apkUrl.lastIndexOf("/") + 1);
 
       savePath = await getFilePath(fileName);
       downloadStarted = true;
       downloading = true;
-      var resp = await dio.download(Config.apkUrl, savePath, deleteOnError: true, onReceiveProgress: (rec, total) {
+      var resp = await dio.download(downloadUrl, savePath, deleteOnError: true, onReceiveProgress: (rec, total) {
         setState(() {
           downloading = true;
           downloadedBytes = rec;
@@ -241,12 +250,19 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
     try {
       Dio dio = Dio();
 
+      // 构建带版本号的下载 URL
+      String downloadUrl = Config.linuxUrl;
+      if (newVerCode != null) {
+        String separator = downloadUrl.contains('?') ? '&' : '?';
+        downloadUrl = '$downloadUrl${separator}ver=$newVerCode';
+      }
+
       String fileName = Config.linuxUrl.substring(Config.linuxUrl.lastIndexOf("/") + 1);
 
       savePath = await getFilePath(fileName);
       downloadStarted = true;
       downloading = true;
-      var resp = await dio.download(Config.linuxUrl, savePath, deleteOnError: true, onReceiveProgress: (rec, total) {
+      var resp = await dio.download(downloadUrl, savePath, deleteOnError: true, onReceiveProgress: (rec, total) {
         setState(() {
           downloading = true;
           downloadedBytes = rec;
@@ -282,12 +298,19 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
     try {
       Dio dio = Dio();
 
+      // 构建带版本号的下载 URL
+      String downloadUrl = Config.windowsUrl;
+      if (newVerCode != null) {
+        String separator = downloadUrl.contains('?') ? '&' : '?';
+        downloadUrl = '$downloadUrl${separator}ver=$newVerCode';
+      }
+
       String fileName = Config.windowsUrl.substring(Config.windowsUrl.lastIndexOf("/") + 1);
 
       savePath = await getFilePath(fileName);
       downloadStarted = true;
       downloading = true;
-      var resp = await dio.download(Config.windowsUrl, savePath, deleteOnError: true, onReceiveProgress: (rec, total) {
+      var resp = await dio.download(downloadUrl, savePath, deleteOnError: true, onReceiveProgress: (rec, total) {
         setState(() {
           downloading = true;
           downloadedBytes = rec;

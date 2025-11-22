@@ -257,6 +257,36 @@
     </div>
 
     <script>
+        // 从 ver.json 获取版本号并更新下载链接
+        async function loadVersionAndUpdateLinks() {
+            try {
+                const response = await fetch('ver.json');
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data && data.length > 0 && data[0].verCode) {
+                        const verCode = data[0].verCode;
+                        updateDownloadLinks(verCode);
+                    }
+                }
+            } catch (error) {
+                console.warn('获取版本信息失败，使用默认链接:', error);
+            }
+        }
+
+        // 更新所有下载链接，添加版本参数
+        function updateDownloadLinks(verCode) {
+            const downloadButtons = document.querySelectorAll('.download-btn[href]');
+            downloadButtons.forEach(function(button) {
+                const originalHref = button.getAttribute('href');
+                if (originalHref && originalHref.startsWith('http')) {
+                    // 检查是否已有查询参数
+                    const separator = originalHref.includes('?') ? '&' : '?';
+                    const newHref = originalHref + separator + 'ver=' + verCode;
+                    button.setAttribute('href', newHref);
+                }
+            });
+        }
+
         // 保留函数以支持可能的其他用途，但主要下载已改为直接链接
         function downloadApp(platform) {
             // 在这里配置实际的下载链接
@@ -275,8 +305,12 @@
             }
         }
 
-        // 为所有下载链接添加点击事件监听，确保下载完整性
+        // 页面加载完成后执行
         document.addEventListener('DOMContentLoaded', function() {
+            // 加载版本号并更新下载链接
+            loadVersionAndUpdateLinks();
+
+            // 为所有下载链接添加点击事件监听，确保下载完整性
             const downloadButtons = document.querySelectorAll('.download-btn[download]');
             downloadButtons.forEach(function(button) {
                 button.addEventListener('click', function(e) {

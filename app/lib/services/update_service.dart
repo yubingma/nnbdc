@@ -91,7 +91,7 @@ class UpdateService extends GetxController {
             final updateInfo = UpdateInfo(
               version: newVersion,
               buildNumber: newBuildNumber,
-              downloadUrl: _getDownloadUrl(),
+              downloadUrl: _getDownloadUrl(newBuildNumber),
               size: '0',
               releaseNotes: changes.join('\n'),
               requiresRestart: true,
@@ -121,17 +121,22 @@ class UpdateService extends GetxController {
     return false;
   }
 
-  /// 获取下载链接
-  String _getDownloadUrl() {
+  /// 获取下载链接，添加版本号参数避免 CDN 缓存
+  String _getDownloadUrl(String verCode) {
+    String baseUrl;
     if (Platform.isWindows) {
-      return Config.windowsUrl;
+      baseUrl = Config.windowsUrl;
     } else if (Platform.isMacOS) {
-      return 'http://www.nnbdc.com/app/nnbdc-macos.zip';
+      baseUrl = 'http://www.nnbdc.com/app/nnbdc-macos.zip';
     } else if (Platform.isLinux) {
-      return 'http://www.nnbdc.com/app/nnbdc-linux.tar.gz';
+      baseUrl = 'http://www.nnbdc.com/app/nnbdc-linux.tar.gz';
     } else {
-      return Config.apkUrl;
+      baseUrl = Config.apkUrl;
     }
+    
+    // 添加版本号参数
+    String separator = baseUrl.contains('?') ? '&' : '?';
+    return '$baseUrl${separator}ver=$verCode';
   }
 
   /// 比较版本号
