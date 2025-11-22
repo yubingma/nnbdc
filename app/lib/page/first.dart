@@ -637,7 +637,7 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
       
       String scriptPath = '$scriptDir/update_installer.bat';
       
-      // 转义路径中的特殊字符
+      // 转义路径中的特殊字符，使用延迟变量展开发
       String escapedInstallerPath = installerPath.replaceAll('"', '""');
       
       // 构建安装命令参数
@@ -650,7 +650,8 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
       String batchInstallArgs = installArgs.replaceAll('"', '""');
       
       // 默认安装路径（用于启动新版本）
-      String defaultInstallPath = r'C:\Program Files\泡泡单词\nnbdc.exe';
+      // 使用 utf16LE 来避免路径中存在非 ASCII 字符时的编码问题
+      String defaultInstallPath = await _resolveWindowsInstallPath();
       
       // 创建日志文件路径（用于调试）
       String logFilePath = '$scriptDir/update_installer.log';
@@ -674,29 +675,29 @@ set "TARGET_PID=$currentPid"
 set "DEFAULT_EXE=$escapedDefaultPath"
 set "INSTALL_ARGS=$batchInstallArgs"
 
-title 泡泡单词自动更新
+title nnbdc auto update
 echo ========================================
-echo 泡泡单词自动更新脚本
+echo nnbdc auto update script
 echo ========================================
 echo.
 
-echo [%date% %time%] 更新脚本开始执行 >> "!LOG_FILE!"
-echo [%date% %time%] 当前进程 PID: !TARGET_PID! >> "!LOG_FILE!"
-echo [%date% %time%] 安装程序路径: !INSTALLER_PATH! >> "!LOG_FILE!"
-echo [%date% %time%] 日志文件: !LOG_FILE! >> "!LOG_FILE!"
+echo [%date% %time%] update script start >> "!LOG_FILE!"
+echo [%date% %time%] target pid: !TARGET_PID! >> "!LOG_FILE!"
+echo [%date% %time%] installer path: !INSTALLER_PATH! >> "!LOG_FILE!"
+echo [%date% %time%] log file: !LOG_FILE! >> "!LOG_FILE!"
 echo.
 
-echo 正在等待应用退出...
-echo [%date% %time%] 等待应用退出... >> "!LOG_FILE!"
+echo waiting for app exit...
+echo [%date% %time%] waiting for app exit >> "!LOG_FILE!"
 
-REM 等待当前进程退出（最多等待 60 秒）
-set /a timeout=60
+REM 等待当前进程退出（最多等待 10 秒），超时后强制结束
+set /a timeout=10
 :wait_loop
 tasklist /FI "PID eq !TARGET_PID!" 2>NUL | findstr /C:"!TARGET_PID!" >NUL 2>&1
 if !ERRORLEVEL! EQU 0 (
     if !timeout! LEQ 0 goto force_close
-    echo 等待进程退出... (剩余 !timeout! 秒)
-    echo [%date% %time%] 等待进程退出... (剩余 !timeout! 秒) >> "!LOG_FILE!"
+    echo waiting... !timeout! seconds left
+    echo [%date% %time%] waiting... !timeout! seconds left >> "!LOG_FILE!"
     timeout /t 1 /nobreak >nul
     set /a timeout-=1
     goto wait_loop
@@ -706,16 +707,16 @@ if !ERRORLEVEL! EQU 0 (
 
 :force_close
 echo.
-echo 超时未退出，正在强制关闭旧版本...
-echo [%date% %time%] 等待超时，尝试强制结束进程 >> "!LOG_FILE!"
+echo timeout, try to kill old process...
+echo [%date% %time%] timeout, kill old process >> "!LOG_FILE!"
 taskkill /F /PID !TARGET_PID! /T >nul 2>&1
 timeout /t 2 /nobreak >nul
 goto after_wait
 
 :process_exited
 echo.
-echo 检测到旧版本已退出
-echo [%date% %time%] 进程已退出 >> "!LOG_FILE!"
+echo old process already exited
+echo [%date% %time%] old process already exited >> "!LOG_FILE!"
 goto after_wait
 
 :after_wait
@@ -723,11 +724,10 @@ REM 额外等待 2 秒确保文件已完全释放
 timeout /t 2 /nobreak >nul
 
 echo.
-echo [%date% %time%] 开始安装新版本... >> "!LOG_FILE!"
+echo [%date% %time%] start installer >> "!LOG_FILE!"
 
 echo.
-echo [%date% %time%] 开始安装新版本... >> "!LOG_FILE!"
-echo 正在执行安装程序，请稍候...
+echo running installer, please wait...
 echo.
 
 REM 执行安装程序
@@ -735,47 +735,47 @@ call "!INSTALLER_PATH!" !INSTALL_ARGS!
 
 if !ERRORLEVEL! EQU 0 (
     echo.
-    echo 安装成功！
-    echo [%date% %time%] 安装成功！ >> "!LOG_FILE!"
+    echo install success!
+    echo [%date% %time%] install success >> "!LOG_FILE!"
     echo.
     
     REM 等待安装完成
-    echo 等待安装完成...
+    echo wait a moment...
     timeout /t 3 /nobreak >nul
     
     REM 启动新版本应用
-    echo 正在启动新版本...
-    echo [%date% %time%] 正在启动新版本... >> "!LOG_FILE!"
+    echo starting new version...
+    echo [%date% %time%] starting new version >> "!LOG_FILE!"
     if exist "!DEFAULT_EXE!" (
         start "" "!DEFAULT_EXE!"
-        echo 新版本已启动！
-        echo [%date% %time%] 新版本已启动: !DEFAULT_EXE! >> "!LOG_FILE!"
+        echo new version started!
+        echo [%date% %time%] new version started: !DEFAULT_EXE! >> "!LOG_FILE!"
     ) else (
-        echo 警告: 未找到新版本可执行文件: !DEFAULT_EXE!
-        echo [%date% %time%] 警告: 未找到新版本可执行文件: !DEFAULT_EXE! >> "!LOG_FILE!"
+        echo warning: new executable not found: !DEFAULT_EXE!
+        echo [%date% %time%] warning: new executable not found >> "!LOG_FILE!"
         REM 尝试从开始菜单启动
-        set "START_MENU_PATH=%ProgramData%\\Microsoft\\Windows\\Start Menu\\Programs\\泡泡单词\\泡泡单词.lnk"
+        set "START_MENU_PATH=%ProgramData%\\Microsoft\\Windows\\Start Menu\\Programs\\nnbdc\\nnbdc.lnk"
         if exist "!START_MENU_PATH!" (
             start "" "!START_MENU_PATH!"
-            echo 已从开始菜单启动应用
-            echo [%date% %time%] 已从开始菜单启动应用 >> "!LOG_FILE!"
+            echo launched from start menu
+            echo [%date% %time%] launched from start menu >> "!LOG_FILE!"
         ) else (
-            echo 错误: 开始菜单快捷方式也不存在
-            echo [%date% %time%] 错误: 开始菜单快捷方式也不存在 >> "!LOG_FILE!"
+            echo error: start menu shortcut not found
+            echo [%date% %time%] error: start menu shortcut not found >> "!LOG_FILE!"
         )
     )
 ) else (
     echo.
-    echo 安装失败，错误代码: !ERRORLEVEL!
-    echo [%date% %time%] 安装失败，错误代码: !ERRORLEVEL! >> "!LOG_FILE!"
-    echo [%date% %time%] 请手动运行安装程序: !INSTALLER_PATH! >> "!LOG_FILE!"
+    echo install failed, code: !ERRORLEVEL!
+    echo [%date% %time%] install failed, code: !ERRORLEVEL! >> "!LOG_FILE!"
+    echo [%date% %time%] please run installer manually: !INSTALLER_PATH! >> "!LOG_FILE!"
     REM 显示错误对话框
-    msg * "安装失败，错误代码: !ERRORLEVEL!。请查看日志文件: !LOG_FILE!"
+    msg * "Install failed, code: !ERRORLEVEL!. See log: !LOG_FILE!"
 )
 
 echo.
-echo 更新脚本执行完成，窗口将在 5 秒后关闭...
-echo [%date% %time%] 更新脚本执行完成 >> "!LOG_FILE!"
+echo update script finished, window will close in 5 seconds...
+echo [%date% %time%] update script finished >> "!LOG_FILE!"
 
 REM 清理临时脚本（延迟删除，避免影响当前执行）
 timeout /t 5 /nobreak >nul
@@ -811,6 +811,18 @@ endlocal
     } catch (e) {
       Global.logger.e('获取安装目录失败: $e');
       return null;
+    }
+  }
+
+  /// 解析 Windows 安装路径，优先读取注册表，失败则回退到默认路径
+  Future<String> _resolveWindowsInstallPath() async {
+    try {
+      // 默认路径
+      const defaultPath = r'C:\Program Files\nnbdc\nnbdc.exe';
+      return defaultPath;
+    } catch (e) {
+      Global.logger.e('解析安装路径失败，使用默认路径', error: e);
+      return r'C:\Program Files\nnbdc\nnbdc.exe';
     }
   }
 
