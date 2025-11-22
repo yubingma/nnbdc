@@ -561,6 +561,7 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
         currentPid: currentPid,
         exeName: exeName,
         installDir: installDir,
+        currentExePath: currentExe,
       );
       
       if (batchScriptPath.isEmpty) {
@@ -624,6 +625,7 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
     required String installerPath,
     required int currentPid,
     required String exeName,
+    required String currentExePath,
     String? installDir,
   }) async {
     try {
@@ -649,9 +651,9 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
       // 批处理脚本中需要将引号再转义一次（使用 "" 表示一个引号）
       String batchInstallArgs = installArgs.replaceAll('"', '""');
       
-      // 默认安装路径（用于启动新版本）
-      // 使用 utf16LE 来避免路径中存在非 ASCII 字符时的编码问题
+      // 默认安装路径（用于启动新版本，统一使用中文目录）
       String defaultInstallPath = await _resolveWindowsInstallPath();
+      const chineseStartMenuPath = r'C:\ProgramData\Microsoft\Windows\Start Menu\Programs\泡泡单词\泡泡单词.lnk';
       
       // 创建日志文件路径（用于调试）
       String logFilePath = '$scriptDir/update_installer.log';
@@ -660,6 +662,8 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
       // 转义批处理脚本中需要的路径（避免特殊字符问题）
       // 在批处理脚本中使用变量而不是直接插值
       String escapedDefaultPath = defaultInstallPath.replaceAll('\\', '\\\\').replaceAll('"', '""');
+      String escapedCurrentExePath = currentExePath.replaceAll('\\', '\\\\').replaceAll('"', '""');
+      String escapedChineseLink = chineseStartMenuPath.replaceAll('\\', '\\\\').replaceAll('"', '""');
       
       // 创建批处理脚本内容
       // 使用变量存储路径，避免字符串插值导致的编码问题
@@ -672,7 +676,9 @@ REM 设置变量
 set "INSTALLER_PATH=$escapedInstallerPath"
 set "LOG_FILE=$escapedLogPath"
 set "TARGET_PID=$currentPid"
-set "DEFAULT_EXE=$escapedDefaultPath"
+set "PRIMARY_EXE=$escapedCurrentExePath"
+set "FALLBACK_EXE=$escapedDefaultPath"
+set "START_MENU_CN=$escapedChineseLink"
 set "INSTALL_ARGS=$batchInstallArgs"
 
 title nnbdc auto update
@@ -746,19 +752,21 @@ if !ERRORLEVEL! EQU 0 (
     REM 启动新版本应用
     echo starting new version...
     echo [%date% %time%] starting new version >> "!LOG_FILE!"
-    if exist "!DEFAULT_EXE!" (
-        start "" "!DEFAULT_EXE!"
-        echo new version started!
-        echo [%date% %time%] new version started: !DEFAULT_EXE! >> "!LOG_FILE!"
+    if exist "!PRIMARY_EXE!" (
+        start "" "!PRIMARY_EXE!"
+        echo new version started from primary path
+        echo [%date% %time%] new version started: !PRIMARY_EXE! >> "!LOG_FILE!"
+    ) else if exist "!FALLBACK_EXE!" (
+        start "" "!FALLBACK_EXE!"
+        echo new version started from fallback path
+        echo [%date% %time%] new version started: !FALLBACK_EXE! >> "!LOG_FILE!"
     ) else (
-        echo warning: new executable not found: !DEFAULT_EXE!
-        echo [%date% %time%] warning: new executable not found >> "!LOG_FILE!"
-        REM 尝试从开始菜单启动
-        set "START_MENU_PATH=%ProgramData%\\Microsoft\\Windows\\Start Menu\\Programs\\nnbdc\\nnbdc.lnk"
-        if exist "!START_MENU_PATH!" (
-            start "" "!START_MENU_PATH!"
-            echo launched from start menu
-            echo [%date% %time%] launched from start menu >> "!LOG_FILE!"
+        echo warning: executable not found in known locations
+        echo [%date% %time%] warning: executable not found >> "!LOG_FILE!"
+        if exist "!START_MENU_CN!" (
+            start "" "!START_MENU_CN!"
+            echo launched from chinese start menu shortcut
+            echo [%date% %time%] launched from chinese start menu >> "!LOG_FILE!"
         ) else (
             echo error: start menu shortcut not found
             echo [%date% %time%] error: start menu shortcut not found >> "!LOG_FILE!"
@@ -817,12 +825,12 @@ endlocal
   /// 解析 Windows 安装路径，优先读取注册表，失败则回退到默认路径
   Future<String> _resolveWindowsInstallPath() async {
     try {
-      // 默认路径
-      const defaultPath = r'C:\Program Files\nnbdc\nnbdc.exe';
+      // 默认路径（中文目录）
+      const defaultPath = r'C:\Program Files\泡泡单词\nnbdc.exe';
       return defaultPath;
     } catch (e) {
       Global.logger.e('解析安装路径失败，使用默认路径', error: e);
-      return r'C:\Program Files\nnbdc\nnbdc.exe';
+      return r'C:\Program Files\泡泡单词\nnbdc.exe';
     }
   }
 

@@ -7,7 +7,7 @@ Unicode True
 
 !define APP_NAME "泡泡单词"
 !define APP_VERSION "25.10.13"
-!define APP_PUBLISHER "泡泡单词团队"
+!define APP_PUBLISHER "高新技术产业开发区智航技术服务部"
 !define APP_URL "http://www.nnbdc.com"
 !define APP_EXECUTABLE "nnbdc.exe"
 
