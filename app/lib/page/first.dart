@@ -584,11 +584,13 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
       
       // 使用 start 命令在新窗口中运行脚本
       // start "" "脚本路径" 会在新窗口中运行脚本
+      // 使用 /min 参数最小化窗口，避免干扰用户
       ProcessResult startResult = await Process.run(
         'cmd',
         [
           '/c',
           'start',
+          '/min',
           '""',
           escapedScriptPath,
         ],
@@ -600,10 +602,11 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
         Global.logger.w('启动脚本可能失败，stderr: ${startResult.stderr}, stdout: ${startResult.stdout}');
       }
       
-      // 等待一小段时间确保脚本已启动
-      await Future.delayed(Duration(milliseconds: 1000));
+      // 等待足够的时间确保脚本已启动并开始等待进程
+      // 给脚本时间检测到当前进程
+      await Future.delayed(Duration(milliseconds: 2000));
       
-      // 立即退出应用，让批处理脚本接管安装流程
+      // 强制退出应用，让批处理脚本接管安装流程
       // 使用 exit(0) 确保应用立即退出
       exit(0);
       
@@ -655,58 +658,76 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
       String logFilePath = '$scriptDir/update_installer.log';
       String escapedLogPath = logFilePath.replaceAll('"', '""');
       
+      // 转义批处理脚本中需要的路径（避免特殊字符问题）
+      // 在批处理脚本中使用变量而不是直接插值
+      String escapedDefaultPath = defaultInstallPath.replaceAll('\\', '\\\\').replaceAll('"', '""');
+      
       // 创建批处理脚本内容
-      // 同时输出到控制台和日志文件，方便调试
+      // 使用变量存储路径，避免字符串插值导致的编码问题
       String batchContent = '''
 @echo off
 chcp 65001 >nul
+setlocal enabledelayedexpansion
+
+REM 设置变量
+set "INSTALLER_PATH=$escapedInstallerPath"
+set "LOG_FILE=$escapedLogPath"
+set "TARGET_PID=$currentPid"
+set "DEFAULT_EXE=$escapedDefaultPath"
+set "INSTALL_ARGS=$installArgs"
+
 title 泡泡单词自动更新
 echo ========================================
 echo 泡泡单词自动更新脚本
 echo ========================================
 echo.
-echo [%date% %time%] 更新脚本开始执行 >> "$escapedLogPath"
-echo [%date% %time%] 当前进程 PID: $currentPid >> "$escapedLogPath"
-echo [%date% %time%] 安装程序路径: $escapedInstallerPath >> "$escapedLogPath"
-echo [%date% %time%] 日志文件: $escapedLogPath >> "$escapedLogPath"
+
+echo [%date% %time%] 更新脚本开始执行 >> "!LOG_FILE!"
+echo [%date% %time%] 当前进程 PID: !TARGET_PID! >> "!LOG_FILE!"
+echo [%date% %time%] 安装程序路径: !INSTALLER_PATH! >> "!LOG_FILE!"
+echo [%date% %time%] 日志文件: !LOG_FILE! >> "!LOG_FILE!"
 echo.
 
 echo 正在等待应用退出...
-echo [%date% %time%] 等待应用退出... >> "$escapedLogPath"
+echo [%date% %time%] 等待应用退出... >> "!LOG_FILE!"
 
-REM 等待当前进程退出（最多等待 30 秒）
-set /a timeout=30
+REM 等待当前进程退出（最多等待 60 秒）
+set /a timeout=60
 :wait_loop
-tasklist /FI "PID eq $currentPid" 2>NUL | find /I /N "$currentPid">NUL
-if "%ERRORLEVEL%"=="0" (
-    echo 等待进程退出... (剩余 %timeout% 秒)
-    echo [%date% %time%] 等待进程退出... (剩余 %timeout% 秒) >> "$escapedLogPath"
+REM 使用 tasklist 检查进程是否存在
+tasklist /FI "PID eq !TARGET_PID!" 2>NUL | findstr /C:"!TARGET_PID!" >NUL 2>&1
+if !ERRORLEVEL! EQU 0 (
+    echo 等待进程退出... (剩余 !timeout! 秒)
+    echo [%date% %time%] 等待进程退出... (剩余 !timeout! 秒) >> "!LOG_FILE!"
     timeout /t 1 /nobreak >nul
     set /a timeout-=1
-    if %timeout% GTR 0 (
+    if !timeout! GTR 0 (
         goto wait_loop
     )
+    echo [%date% %time%] 等待超时，继续执行安装 >> "!LOG_FILE!"
+) else (
+    echo [%date% %time%] 进程已退出 >> "!LOG_FILE!"
 )
 
 echo.
 echo 进程已退出，开始安装新版本...
-echo [%date% %time%] 进程已退出或超时 >> "$escapedLogPath"
+echo [%date% %time%] 进程已退出或超时 >> "!LOG_FILE!"
 
 REM 额外等待 2 秒确保文件已完全释放
 timeout /t 2 /nobreak >nul
 
 echo.
-echo [%date% %time%] 开始安装新版本... >> "$escapedLogPath"
+echo [%date% %time%] 开始安装新版本... >> "!LOG_FILE!"
 echo 正在执行安装程序，请稍候...
 echo.
 
 REM 执行安装程序
-"$escapedInstallerPath" $installArgs
+call "!INSTALLER_PATH!" !INSTALL_ARGS!
 
-if %ERRORLEVEL% EQU 0 (
+if !ERRORLEVEL! EQU 0 (
     echo.
     echo 安装成功！
-    echo [%date% %time%] 安装成功！ >> "$escapedLogPath"
+    echo [%date% %time%] 安装成功！ >> "!LOG_FILE!"
     echo.
     
     REM 等待安装完成
@@ -715,46 +736,59 @@ if %ERRORLEVEL% EQU 0 (
     
     REM 启动新版本应用
     echo 正在启动新版本...
-    echo [%date% %time%] 正在启动新版本... >> "$escapedLogPath"
-    if exist "$defaultInstallPath" (
-        start "" "$defaultInstallPath"
+    echo [%date% %time%] 正在启动新版本... >> "!LOG_FILE!"
+    if exist "!DEFAULT_EXE!" (
+        start "" "!DEFAULT_EXE!"
         echo 新版本已启动！
-        echo [%date% %time%] 新版本已启动: $defaultInstallPath >> "$escapedLogPath"
+        echo [%date% %time%] 新版本已启动: !DEFAULT_EXE! >> "!LOG_FILE!"
     ) else (
-        echo 警告: 未找到新版本可执行文件: $defaultInstallPath
-        echo [%date% %time%] 警告: 未找到新版本可执行文件: $defaultInstallPath >> "$escapedLogPath"
+        echo 警告: 未找到新版本可执行文件: !DEFAULT_EXE!
+        echo [%date% %time%] 警告: 未找到新版本可执行文件: !DEFAULT_EXE! >> "!LOG_FILE!"
         REM 尝试从开始菜单启动
-        set startMenuPath=%ProgramData%\\Microsoft\\Windows\\Start Menu\\Programs\\泡泡单词\\泡泡单词.lnk
-        if exist "%startMenuPath%" (
-            start "" "%startMenuPath%"
+        set "START_MENU_PATH=%ProgramData%\\Microsoft\\Windows\\Start Menu\\Programs\\泡泡单词\\泡泡单词.lnk"
+        if exist "!START_MENU_PATH!" (
+            start "" "!START_MENU_PATH!"
             echo 已从开始菜单启动应用
-            echo [%date% %time%] 已从开始菜单启动应用 >> "$escapedLogPath"
+            echo [%date% %time%] 已从开始菜单启动应用 >> "!LOG_FILE!"
         ) else (
             echo 错误: 开始菜单快捷方式也不存在
-            echo [%date% %time%] 错误: 开始菜单快捷方式也不存在 >> "$escapedLogPath"
+            echo [%date% %time%] 错误: 开始菜单快捷方式也不存在 >> "!LOG_FILE!"
         )
     )
 ) else (
     echo.
-    echo 安装失败，错误代码: %ERRORLEVEL%
-    echo [%date% %time%] 安装失败，错误代码: %ERRORLEVEL% >> "$escapedLogPath"
-    echo [%date% %time%] 请手动运行安装程序: "$escapedInstallerPath" >> "$escapedLogPath"
+    echo 安装失败，错误代码: !ERRORLEVEL!
+    echo [%date% %time%] 安装失败，错误代码: !ERRORLEVEL! >> "!LOG_FILE!"
+    echo [%date% %time%] 请手动运行安装程序: !INSTALLER_PATH! >> "!LOG_FILE!"
     REM 显示错误对话框
-    msg * "安装失败，错误代码: %ERRORLEVEL%。请查看日志文件: $escapedLogPath"
+    msg * "安装失败，错误代码: !ERRORLEVEL!。请查看日志文件: !LOG_FILE!"
 )
 
 echo.
 echo 更新脚本执行完成，窗口将在 5 秒后关闭...
-echo [%date% %time%] 更新脚本执行完成 >> "$escapedLogPath"
+echo [%date% %time%] 更新脚本执行完成 >> "!LOG_FILE!"
 
 REM 清理临时脚本（延迟删除，避免影响当前执行）
 timeout /t 5 /nobreak >nul
 del /F /Q "%~f0" >nul 2>&1
+
+endlocal
 ''';
       
       // 写入批处理脚本文件
+      // Windows 批处理脚本需要使用 GBK 编码或 UTF-8 with BOM
+      // 使用 GBK 编码以确保中文字符正确显示
       File scriptFile = File(scriptPath);
-      await scriptFile.writeAsString(batchContent, encoding: utf8);
+      try {
+        // 先尝试使用 UTF-8 with BOM 编码
+        List<int> utf8Bytes = utf8.encode(batchContent);
+        List<int> bom = [0xEF, 0xBB, 0xBF]; // UTF-8 BOM
+        List<int> contentWithBom = [...bom, ...utf8Bytes];
+        await scriptFile.writeAsBytes(contentWithBom);
+      } catch (e) {
+        // 如果失败，使用 UTF-8 编码
+        await scriptFile.writeAsString(batchContent, encoding: utf8);
+      }
       
       Global.logger.d('批处理脚本已创建: $scriptPath');
       return scriptPath;
