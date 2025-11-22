@@ -502,7 +502,8 @@ jobs:
                 break
               }
               # 匹配 YAML 列表项：- "内容" 或 - 内容
-              if ($trimmedLine -match '^\s*-\s*["\']?(.+?)["\']?\s*$') {
+              # 使用双引号字符串并转义引号，避免 PowerShell 解析错误
+              if ($trimmedLine -match "^\s*-\s*[`"']?(.+?)[`"']?\s*$") {
                 $changeText = $matches[1]
                 $changes += $changeText
               }

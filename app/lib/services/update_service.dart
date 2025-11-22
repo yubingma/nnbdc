@@ -68,6 +68,52 @@ class UpdateService extends GetxController {
     }
   }
 
+  /// 检查更新（用于启动时检查，返回版本信息但不显示对话框）
+  /// 返回 Map 包含：verCode (int), verName (String), changes (List<String>)
+  /// 如果没有新版本或检查失败，返回 null
+  Future<Map<String, dynamic>?> checkForUpdateOnStartup(int currentBuildNumber) async {
+    if (_isChecking.value) return null;
+    
+    _isChecking.value = true;
+    
+    try {
+      // 添加时间戳参数避免缓存，确保获取最新版本
+      String updateUrl = Config.updateUrl;
+      String separator = updateUrl.contains('?') ? '&' : '?';
+      updateUrl = '$updateUrl${separator}t=${DateTime.now().millisecondsSinceEpoch}';
+      
+      final response = await http.get(Uri.parse(updateUrl));
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        
+        // 对象格式：{"verCode":25101301,"verName":"25.10.13", "changes":["修复已知问题"]}
+        if (data is Map<String, dynamic>) {
+          final verCodeObj = data['verCode'];
+          int? verCode;
+          if (verCodeObj is int) {
+            verCode = verCodeObj;
+          } else if (verCodeObj is String) {
+            verCode = int.tryParse(verCodeObj);
+          }
+          
+          if (verCode != null && verCode > currentBuildNumber) {
+            return {
+              'verCode': verCode,
+              'verName': data['verName']?.toString() ?? '',
+              'changes': List<String>.from(data['changes'] ?? []),
+            };
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('启动时检查更新失败: $e');
+    } finally {
+      _isChecking.value = false;
+    }
+    
+    return null;
+  }
+
   /// 检查更新
   Future<bool> checkForUpdate({bool showDialog = true}) async {
     if (_isChecking.value) return false;
@@ -75,13 +121,18 @@ class UpdateService extends GetxController {
     _isChecking.value = true;
     
     try {
-      final response = await http.get(Uri.parse(Config.updateUrl));
+      // 添加时间戳参数避免缓存，确保获取最新版本
+      String updateUrl = Config.updateUrl;
+      String separator = updateUrl.contains('?') ? '&' : '?';
+      updateUrl = '$updateUrl${separator}t=${DateTime.now().millisecondsSinceEpoch}';
+      
+      final response = await http.get(Uri.parse(updateUrl));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         
         // 对象格式：{"verCode":25101301,"verName":"25.10.13", "changes":["修复已知问题，提升稳定性"]}
         if (data is Map<String, dynamic>) {
-          final newVersion = data['verName'] ?? '';
+          final newVersion = data['verName']?.toString() ?? '';
           final newBuildNumber = data['verCode']?.toString() ?? '';
           final changes = List<String>.from(data['changes'] ?? []);
           

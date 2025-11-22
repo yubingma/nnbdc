@@ -23,6 +23,7 @@ import 'package:permission_handler/permission_handler.dart';
 import '../config.dart';
 import '../global.dart';
 import '../util/client_type.dart';
+import '../services/update_service.dart';
 
 class FirstPage extends StatefulWidget {
   const FirstPage({super.key});
@@ -81,32 +82,37 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
         });
       }
 
-      // 从服务端获取最新版本信息，如果发现新版本，则下载并升级
+      // 使用 UpdateService 统一检查版本
       try {
-        var response =
-            await Dio(BaseOptions(connectTimeout: Duration(seconds: 5), sendTimeout: Duration(seconds: 5), receiveTimeout: Duration(seconds: 5))).get(
-          Config.updateUrl,
-        );
-
-        if (response.statusCode == 200) {
-          int verCode = response.data!['verCode'];
-          var verName = response.data!['verName'];
-          var changes = response.data!['changes'];
-          if (verCode > buildNumber) {
-            setState(() {
-              newVersionFound = true;
-              newVersionName = verName;
-              newVersionChanges = changes;
-              newVerCode = verCode; // 保存版本号，用于下载时添加版本参数
-            });
-            // 调用升级确认对话框
-            await showUpgradeConfirmDlg(verName, changes);
-          } else {
-            /// 已经是最新版本
-            tryAutoLogin();
-          }
+        // 确保 UpdateService 已注册
+        UpdateService? updateService;
+        try {
+          updateService = Get.find<UpdateService>();
+        } catch (e) {
+          // 如果未注册，则创建并注册
+          updateService = UpdateService();
+          Get.put(updateService);
+        }
+        
+        // 调用启动时检查方法
+        final versionInfo = await updateService.checkForUpdateOnStartup(buildNumber);
+        
+        if (versionInfo != null) {
+          // 发现新版本
+          int verCode = versionInfo['verCode'] as int;
+          var verName = versionInfo['verName'] as String;
+          var changes = versionInfo['changes'] as List<String>;
+          
+          setState(() {
+            newVersionFound = true;
+            newVersionName = verName;
+            newVersionChanges = changes;
+            newVerCode = verCode; // 保存版本号，用于下载时添加版本参数
+          });
+          // 调用升级确认对话框
+          await showUpgradeConfirmDlg(verName, changes);
         } else {
-          ToastUtil.error('获取版本信息失败');
+          /// 已经是最新版本
           tryAutoLogin();
         }
       } catch (e, stackTrace) {
