@@ -49,6 +49,6 @@ app.*.map.json
 /lib/api/vo.g.dart
 /lib/db/dao.g.dart
 /lib/db/db.g.dart
-/pubspec.lock
+# /pubspec.lock  # 注释掉，确保版本一致性
 /android/app/local.properties
 /android/app/.gradle/config.properties
