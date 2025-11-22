@@ -204,7 +204,7 @@
                 </div>
                 <h2>Windows 版</h2>
                 <p>支持 Windows 10 及以上版本</p>
-                <a href="#" class="download-btn" onclick="downloadApp('windows-installer')">立即下载</a>
+                <a href="http://www.nnbdc.com/app/nnbdc-setup.exe" class="download-btn" download="nnbdc-setup.exe">立即下载</a>
             </div>
 
             <!-- macOS 卡片 -->
@@ -231,7 +231,7 @@
                 </div>
                 <h2>Linux 版</h2>
                 <p>支持 Ubuntu 18.04 及以上版本</p>
-                <a href="#" class="download-btn" onclick="downloadApp('linux')">立即下载</a>
+                <a href="http://www.nnbdc.com/app/nnbdc-linux.AppImage" class="download-btn" download="nnbdc-linux.AppImage">立即下载</a>
             </div>
 
             <!-- Android 卡片 -->
@@ -243,7 +243,7 @@
                 </div>
                 <h2>Android 版</h2>
                 <p>支持 Android 5.0 及以上版本</p>
-                <a href="#" class="download-btn" onclick="downloadApp('android')">立即下载</a>
+                <a href="http://www.nnbdc.com/app/nnbdc-android.apk" class="download-btn" download="nnbdc-android.apk">立即下载</a>
             </div>
         </div>
 
@@ -256,6 +256,7 @@
     </div>
 
     <script>
+        // 保留函数以支持可能的其他用途，但主要下载已改为直接链接
         function downloadApp(platform) {
             // 在这里配置实际的下载链接
             const downloadLinks = {
@@ -268,16 +269,31 @@
             const link = downloadLinks[platform];
             
             if (link) {
-                // 创建隐藏的下载链接
-                const a = document.createElement('a');
-                a.href = link;
-                a.download = '';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
+                // 直接跳转，让浏览器处理下载，更可靠
+                window.location.href = link;
             }
         }
 
+        // 为所有下载链接添加点击事件监听，确保下载完整性
+        document.addEventListener('DOMContentLoaded', function() {
+            const downloadButtons = document.querySelectorAll('.download-btn[download]');
+            downloadButtons.forEach(function(button) {
+                button.addEventListener('click', function(e) {
+                    // 添加下载开始提示
+                    const originalText = this.textContent;
+                    this.textContent = '正在下载...';
+                    this.style.opacity = '0.7';
+                    this.style.pointerEvents = 'none';
+                    
+                    // 恢复按钮状态（如果下载失败）
+                    setTimeout(function() {
+                        button.textContent = originalText;
+                        button.style.opacity = '1';
+                        button.style.pointerEvents = 'auto';
+                    }, 3000);
+                });
+            });
+        });
     </script>
 </body>
 </html>
