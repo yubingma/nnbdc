@@ -578,9 +578,7 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
       // 使用 cmd /c start 在新窗口中启动批处理脚本
       // 这样可以确保脚本独立运行，即使应用退出也能继续执行
       // 使用 start "" 可以指定窗口标题为空，避免显示不必要的窗口标题
-      String quotedScriptPath = '"${batchScriptPath.replaceAll('"', '""')}"';
-      
-      Global.logger.d('启动批处理脚本: $quotedScriptPath');
+      Global.logger.d('启动批处理脚本: $batchScriptPath');
       
       try {
         final process = await Process.start(
@@ -590,7 +588,7 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
             'start',
             '/min',
             '""',
-            quotedScriptPath,
+            batchScriptPath,
           ],
           mode: ProcessStartMode.detached,
         );
