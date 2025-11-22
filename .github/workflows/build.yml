@@ -395,10 +395,33 @@ jobs:
           if (Test-Path $tempZipDir) { Remove-Item -Path $tempZipDir -Recurse -Force }
           New-Item -ItemType Directory -Path $tempZipDir -Force | Out-Null
           
+          # 验证 setupExe 文件确实是安装程序（检查文件大小，应该大于几MB）
+          $setupExeSize = (Get-Item $setupExe).Length / 1MB
+          Write-Host "安装程序文件大小: $([math]::Round($setupExeSize, 2)) MB"
+          if ($setupExeSize -lt 1) {
+            Write-Host "❌ 错误: 安装程序文件大小异常（小于 1MB），可能不是正确的安装程序"
+            Write-Host "文件路径: $setupExe"
+            exit 1
+          }
+          
+          # 验证文件名确实是 nnbdc-setup.exe
+          $setupExeName = Split-Path -Leaf $setupExe
+          if ($setupExeName -ne "nnbdc-setup.exe") {
+            Write-Host "❌ 错误: 文件名不正确，期望 nnbdc-setup.exe，实际: $setupExeName"
+            exit 1
+          }
+          
           # 复制 exe 文件到临时目录
           Copy-Item -Path $setupExe -Destination "$tempZipDir\nnbdc-setup.exe" -Force
           
+          # 验证复制是否成功
+          if (-not (Test-Path "$tempZipDir\nnbdc-setup.exe")) {
+            Write-Host "❌ 错误: 复制安装程序到临时目录失败"
+            exit 1
+          }
+          
           # 从临时目录压缩，确保 zip 文件根目录就是 nnbdc-setup.exe
+          Write-Host "正在压缩文件..."
           Compress-Archive -Path "$tempZipDir\*" -DestinationPath $zipFile -Force
           
           # 清理临时目录
@@ -410,14 +433,39 @@ jobs:
             Write-Host "验证 zip 文件内容..."
             # 验证 zip 文件内容
             $zipContent = [System.IO.Compression.ZipFile]::OpenRead($zipFile)
-            $entries = $zipContent.Entries | Select-Object -First 5
+            $entries = $zipContent.Entries
+            Write-Host "Zip 文件包含 $($entries.Count) 个条目:"
             foreach ($entry in $entries) {
-              Write-Host "  - $($entry.FullName)"
+              Write-Host "  - $($entry.FullName) ($([math]::Round($entry.Length / 1KB, 2)) KB)"
             }
             $zipContent.Dispose()
+            
+            # 验证 zip 文件根目录确实包含 nnbdc-setup.exe
+            $hasSetupExe = $false
+            $zipContent2 = [System.IO.Compression.ZipFile]::OpenRead($zipFile)
+            foreach ($entry in $zipContent2.Entries) {
+              if ($entry.FullName -eq "nnbdc-setup.exe" -or $entry.FullName -eq "nnbdc-setup.exe/") {
+                $hasSetupExe = $true
+                break
+              }
+            }
+            $zipContent2.Dispose()
+            
+            if (-not $hasSetupExe) {
+              Write-Host "❌ 错误: zip 文件中未找到 nnbdc-setup.exe"
+              Write-Host "zip 文件内容:"
+              $zipContent3 = [System.IO.Compression.ZipFile]::OpenRead($zipFile)
+              foreach ($entry in $zipContent3.Entries) {
+                Write-Host "  - $($entry.FullName)"
+              }
+              $zipContent3.Dispose()
+              exit 1
+            }
+            
+            Write-Host "✅ zip 文件验证通过，包含 nnbdc-setup.exe"
           } else {
-            Write-Host "⚠️ 警告: zip 文件创建失败，但继续使用 exe 文件"
-            Move-Item -Path $setupExe -Destination "$DEPLOY_DIR\nnbdc-setup.exe" -Force
+            Write-Host "❌ 错误: zip 文件创建失败"
+            exit 1
           }
           
           Write-Host "✅ Windows 安装包处理完成"
