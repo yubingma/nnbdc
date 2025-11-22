@@ -70,7 +70,6 @@ class UpdateService extends GetxController {
   }
 
   /// 检查更新（用于启动时检查，返回版本信息但不显示对话框）
-  /// 返回 Map 包含：verCode (int), verName (String), changes (List<String>)
   /// 如果没有新版本或检查失败，返回 null
   Future<Map<String, dynamic>?> checkForUpdateOnStartup(int currentBuildNumber) async {
     if (_isChecking.value) return null;
@@ -219,13 +218,13 @@ class UpdateService extends GetxController {
   void _showUpdateDialog(UpdateInfo updateInfo) {
     Get.dialog(
       AlertDialog(
-        title: Text('发现新版本 ${updateInfo.version}'),
+        title: Text('发现新版本 ${updateInfo.buildNumber}'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('当前版本: ${_currentVersion.value}'),
-            Text('最新版本: ${updateInfo.version}'),
+            Text('当前版本: ${_currentBuildNumber.value}'),
+            Text('最新版本: ${updateInfo.buildNumber}'),
             if (updateInfo.releaseNotes.isNotEmpty) ...[
               SizedBox(height: 8),
               Text('更新内容:'),

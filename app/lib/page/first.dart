@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:confirm_dialog/confirm_dialog.dart';
@@ -48,9 +49,8 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
 
   bool newVersionFound = false;
   bool newVersionIgnored = false;
-  String? newVersionName;
+  int? newVerCode; // 保存新版本的 verCode，用于下载时添加版本参数和显示
   List<dynamic>? newVersionChanges;
-  int? newVerCode; // 保存新版本的 verCode，用于下载时添加版本参数
 
   // 准备阶段状态提示
   String _preparingMessage = '正在准备学习环境…';
@@ -100,17 +100,15 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
         if (versionInfo != null) {
           // 发现新版本
           int verCode = versionInfo['verCode'] as int;
-          var verName = versionInfo['verName'] as String;
           var changes = versionInfo['changes'] as List<String>;
           
           setState(() {
             newVersionFound = true;
-            newVersionName = verName;
+            newVerCode = verCode; // 保存版本号，用于下载时添加版本参数和显示
             newVersionChanges = changes;
-            newVerCode = verCode; // 保存版本号，用于下载时添加版本参数
           });
           // 调用升级确认对话框
-          await showUpgradeConfirmDlg(verName, changes);
+          await showUpgradeConfirmDlg(verCode, changes);
         } else {
           /// 已经是最新版本
           tryAutoLogin();
@@ -127,7 +125,7 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
     }
   }
 
-  Future<void> showUpgradeConfirmDlg(verName, changes) async {
+  Future<void> showUpgradeConfirmDlg(int verCode, changes) async {
     if (PlatformUtils.isWindows) {
       // Windows 平台：直接使用静默安装，显示确认对话框
       if (await confirm(
@@ -137,7 +135,7 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text("发现新版本 $verName"),
+            Text("发现新版本 $verCode"),
             SizedBox(height: 8),
             Text('更新内容：', style: TextStyle(fontWeight: FontWeight.bold)),
             for (String change in changes) Text('• $change'),
@@ -163,7 +161,7 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text("发现新版本 $verName"),
+            Text("发现新版本 $verCode"),
             SizedBox(height: 8),
             Text('更新内容：', style: TextStyle(fontWeight: FontWeight.bold)),
             for (String change in changes) Text('• $change'),
@@ -188,7 +186,7 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
         content: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
-          children: [Text("发现新版本 $verName"), for (String change in changes) Text('• $change'), const Text('\n是否升级？')],
+          children: [Text("发现新版本 $verCode"), for (String change in changes) Text('• $change'), const Text('\n是否升级？')],
         ),
         textOK: const Text('是'),
         textCancel: const Text('否'),
@@ -535,64 +533,52 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
       
       Global.logger.d('开始静默安装 Windows 应用: $savePath');
       
-      // NSIS 静默安装参数说明：
-      // /S - 静默安装（Silent）
-      // /D=路径 - 指定安装目录（可选，默认使用注册表中的路径）
+      // 获取当前进程 ID 和可执行文件路径
+      int currentPid = pid;
+      String currentExe = Platform.resolvedExecutable;
+      String exeName = currentExe.split('\\').last;
+      
+      Global.logger.d('当前进程 PID: $currentPid, 可执行文件: $exeName');
       
       // 获取当前安装目录（如果已安装）
       String? installDir = await _getCurrentInstallDir();
       
-      // 构建静默安装命令
-      List<String> arguments = ['/S']; // 静默安装参数
-      if (installDir != null && installDir.isNotEmpty) {
-        // 如果已安装，使用相同目录进行升级
-        arguments.add('/D=$installDir');
-        Global.logger.d('使用已安装目录: $installDir');
-      }
-      
-      // 执行静默安装
-      setState(() {
-        installingMessage = '正在安装新版本，请稍候...';
-      });
-      
-      Global.logger.d('执行命令: $savePath ${arguments.join(" ")}');
-      ProcessResult result = await Process.run(
-        savePath,
-        arguments,
-        runInShell: true,
+      // 创建批处理脚本来处理安装流程
+      String batchScriptPath = await _createWindowsUpdateBatchScript(
+        installerPath: savePath,
+        currentPid: currentPid,
+        exeName: exeName,
+        installDir: installDir,
       );
       
-      Global.logger.d('安装进程退出码: ${result.exitCode}');
-      if (result.stdout.toString().isNotEmpty) {
-        Global.logger.d('安装输出: ${result.stdout}');
-      }
-      if (result.stderr.toString().isNotEmpty) {
-        Global.logger.d('安装错误: ${result.stderr}');
+      if (batchScriptPath.isEmpty) {
+        throw Exception('创建更新脚本失败');
       }
       
-      if (result.exitCode == 0) {
-        // 安装成功
-        Global.logger.d('静默安装成功');
-        setState(() {
-          installingMessage = '安装成功，正在重启应用...';
-        });
-        ToastUtil.success("新版本安装成功，正在重启应用...");
-        
-        // 延迟后启动新版本并退出当前版本
-        Future.delayed(Duration(seconds: 2), () async {
-          await _launchNewVersion();
-          SystemNavigator.pop();
-        });
-      } else {
-        // 安装失败，可能需要管理员权限
-        Global.logger.w('静默安装失败，退出码: ${result.exitCode}，尝试使用管理员权限');
-        setState(() {
-          installingMessage = '需要管理员权限，正在请求...';
-        });
-        
-        // 尝试使用管理员权限重新执行
-        await _silentInstallWithElevation();
-      }
+      Global.logger.d('更新脚本已创建: $batchScriptPath');
+      
+      setState(() {
+        installingMessage = '正在启动安装程序，应用即将退出...';
+      });
+      
+      ToastUtil.success("正在安装新版本，应用即将退出...");
+      
+      // 启动批处理脚本（在后台运行，不等待）
+      await Process.start(
+        'cmd',
+        ['/c', batchScriptPath],
+        runInShell: false,
+        mode: ProcessStartMode.detached,
+      );
+      
+      Global.logger.d('批处理脚本已启动，准备退出应用');
+      
+      // 延迟一小段时间确保脚本已启动，然后退出应用
+      await Future.delayed(Duration(milliseconds: 500));
+      
+      // 退出当前应用，让批处理脚本接管安装流程
+      SystemNavigator.pop();
+      
     } catch (e, stackTrace) {
       setState(() {
         installing = false;
@@ -602,6 +588,115 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
       // 降级到手动安装
       ToastUtil.info('静默安装失败，将打开安装包');
       await installWindowsApp(silent: false);
+    }
+  }
+
+  /// 创建 Windows 更新批处理脚本
+  /// 脚本会等待当前应用退出，然后执行安装，最后启动新版本
+  Future<String> _createWindowsUpdateBatchScript({
+    required String installerPath,
+    required int currentPid,
+    required String exeName,
+    String? installDir,
+  }) async {
+    try {
+      // 获取临时目录
+      Directory tempDir = await getApplicationDocumentsDirectory();
+      String scriptDir = '${tempDir.path}/nnbdc_update';
+      Directory scriptDirectory = Directory(scriptDir);
+      if (!await scriptDirectory.exists()) {
+        await scriptDirectory.create(recursive: true);
+      }
+      
+      String scriptPath = '$scriptDir/update_installer.bat';
+      
+      // 转义路径中的特殊字符
+      String escapedInstallerPath = installerPath.replaceAll('"', '""');
+      
+      // 构建安装命令参数
+      String installArgs = '/S'; // 静默安装
+      if (installDir != null && installDir.isNotEmpty) {
+        String escapedInstallDir = installDir.replaceAll('"', '""');
+        installArgs += ' /D="$escapedInstallDir"';
+      }
+      
+      // 默认安装路径（用于启动新版本）
+      String defaultInstallPath = r'C:\Program Files\泡泡单词\nnbdc.exe';
+      
+      // 创建批处理脚本内容
+      String batchContent = '''
+@echo off
+chcp 65001 >nul
+echo 正在等待应用退出...
+echo.
+
+REM 等待当前进程退出（最多等待 30 秒）
+set /a timeout=30
+:wait_loop
+tasklist /FI "PID eq $currentPid" 2>NUL | find /I /N "$currentPid">NUL
+if "%ERRORLEVEL%"=="0" (
+    echo 等待进程退出... (剩余 %timeout% 秒)
+    timeout /t 1 /nobreak >nul
+    set /a timeout-=1
+    if %timeout% GTR 0 (
+        goto wait_loop
+    )
+)
+
+REM 额外等待 1 秒确保文件已释放
+timeout /t 1 /nobreak >nul
+
+echo.
+echo 开始安装新版本...
+echo.
+
+REM 执行安装程序
+"$escapedInstallerPath" $installArgs
+
+if %ERRORLEVEL% EQU 0 (
+    echo.
+    echo 安装成功！
+    echo.
+    
+    REM 等待安装完成
+    timeout /t 2 /nobreak >nul
+    
+    REM 启动新版本应用
+    echo 正在启动新版本...
+    if exist "$defaultInstallPath" (
+        start "" "$defaultInstallPath"
+        echo 新版本已启动
+    ) else (
+        echo 警告: 未找到新版本可执行文件，请手动启动应用
+        REM 尝试从开始菜单启动
+        set startMenuPath=%ProgramData%\\Microsoft\\Windows\\Start Menu\\Programs\\泡泡单词\\泡泡单词.lnk
+        if exist "%startMenuPath%" (
+            start "" "%startMenuPath%"
+            echo 已从开始菜单启动应用
+        )
+    )
+) else (
+    echo.
+    echo 安装失败，错误代码: %ERRORLEVEL%
+    echo 请手动运行安装程序: "$escapedInstallerPath"
+    pause
+)
+
+REM 清理临时脚本（延迟删除，避免影响当前执行）
+timeout /t 3 /nobreak >nul
+del /F /Q "%~f0" >nul 2>&1
+''';
+      
+      // 写入批处理脚本文件
+      File scriptFile = File(scriptPath);
+      await scriptFile.writeAsString(batchContent, encoding: utf8);
+      
+      Global.logger.d('批处理脚本已创建: $scriptPath');
+      return scriptPath;
+      
+    } catch (e, stackTrace) {
+      Global.logger.e('创建更新脚本失败', error: e, stackTrace: stackTrace);
+      return '';
     }
   }
 
@@ -620,54 +715,6 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
     }
   }
 
-  /// 使用管理员权限执行静默安装
-  Future<void> _silentInstallWithElevation() async {
-    try {
-      Global.logger.d('尝试使用管理员权限执行静默安装');
-      
-      // 使用 PowerShell 以管理员权限执行安装
-      // 注意：这会触发 UAC 提示
-      // 转义路径中的特殊字符
-      String escapedPath = savePath.replaceAll('\\', '\\\\').replaceAll('"', '\\"');
-      String script = 'Start-Process -FilePath "$escapedPath" -ArgumentList "/S" -Verb RunAs -Wait';
-      
-      ProcessResult result = await Process.run(
-        'powershell',
-        ['-Command', script],
-        runInShell: true,
-      );
-      
-      Global.logger.d('管理员权限安装退出码: ${result.exitCode}');
-      
-      if (result.exitCode == 0) {
-        Global.logger.d('管理员权限安装成功');
-        setState(() {
-          installingMessage = '安装成功，正在重启应用...';
-        });
-        ToastUtil.success("新版本安装成功，正在重启应用...");
-        Future.delayed(Duration(seconds: 2), () async {
-          await _launchNewVersion();
-          SystemNavigator.pop();
-        });
-      } else {
-        // 降级到手动安装
-        setState(() {
-          installingMessage = '正在打开安装包...';
-        });
-        Global.logger.w('管理员权限安装失败，降级到手动安装');
-        ToastUtil.info('需要管理员权限，将打开安装包');
-        await installWindowsApp(silent: false);
-      }
-    } catch (e, stackTrace) {
-      setState(() {
-        installing = false;
-        installingMessage = null;
-      });
-      Global.logger.e('管理员权限安装异常', error: e, stackTrace: stackTrace);
-      // 降级到手动安装
-      await installWindowsApp(silent: false);
-    }
-  }
 
   /// 安装 Linux AppImage
   Future<void> installLinuxApp() async {
@@ -860,6 +907,8 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
   }
 
   /// 启动新版本应用
+  /// 注意：在静默安装模式下，此方法不再使用，由批处理脚本负责启动新版本
+  // ignore: unused_element
   Future<void> _launchNewVersion() async {
     try {
       // 默认安装路径
@@ -1011,7 +1060,7 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text("发现新版本 $newVersionName"),
+                              Text("发现新版本 $newVerCode"),
                               for (String change in newVersionChanges!) Text('• $change'),
                               const Text('\n是否升级？'),
                             ],
