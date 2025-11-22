@@ -34,11 +34,11 @@ RequestExecutionLevel admin
 
 ; 安装程序页面
 !insertmacro MUI_PAGE_WELCOME
-; 检查许可协议文件是否存在
-!if /FileExists "installer_temp\privacy.html"
-    !insertmacro MUI_PAGE_LICENSE "installer_temp\privacy.html"
+; 检查许可协议文件是否存在（NSIS 需要纯文本文件，不是 HTML）
+!if /FileExists "installer_temp\privacy.txt"
+    !insertmacro MUI_PAGE_LICENSE "installer_temp\privacy.txt"
 !else
-    !warning "许可协议文件不存在，跳过许可协议页面"
+    !error "错误: 未找到 privacy.txt 文件！$\n$\n请确保已运行 create_installer.bat 脚本准备安装文件，$\n脚本会自动从 app\assets\privacy.html 提取纯文本内容。"
 !endif
 !insertmacro MUI_PAGE_DIRECTORY
 !insertmacro MUI_PAGE_INSTFILES
@@ -59,11 +59,9 @@ VIAddVersionKey "CompanyName" "${APP_PUBLISHER}"
 VIAddVersionKey "FileDescription" "${APP_NAME} 安装程序"
 VIAddVersionKey "FileVersion" "${APP_VERSION}"
 
-; 检查必要文件是否存在
+; 初始化函数（如果需要，可以在这里添加其他初始化逻辑）
 Function .onInit
-    ; 检查 privacy.html 是否存在（logo.png 用于头部图像，不是必需的）
-    IfFileExists "installer_temp\privacy.html" +3
-        MessageBox MB_ICONINFORMATION "信息: 未找到 privacy.html 文件，将跳过许可协议页面"
+    ; 文件检查已在编译时完成，运行时无需再次检查
 FunctionEnd
 
 ; 安装程序段

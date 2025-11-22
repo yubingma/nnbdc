@@ -221,7 +221,27 @@ jobs:
           if (Test-Path $logoPath) { Copy-Item $logoPath "$INSTALLER_TEMP\logo.png"; Write-Host "复制了 logo.png" }
 
           $privacyPath = "app\assets\privacy.html"
-          if (Test-Path $privacyPath) { Copy-Item $privacyPath "$INSTALLER_TEMP\privacy.html"; Write-Host "复制了内置的 privacy.html" }
+          if (Test-Path $privacyPath) {
+            Copy-Item $privacyPath "$INSTALLER_TEMP\privacy.html"; Write-Host "复制了内置的 privacy.html"
+            # 从 HTML 提取纯文本内容，创建 .txt 文件供 NSIS 使用
+            Write-Host "正在从 HTML 提取纯文本内容..."
+            $htmlContent = Get-Content $privacyPath -Raw -Encoding UTF8
+            # 移除 HTML 标签
+            $textContent = $htmlContent -replace '<[^>]+>', ''
+            # 替换 HTML 实体
+            $textContent = $textContent -replace '&nbsp;', ' '
+            $textContent = $textContent -replace '&lt;', '<'
+            $textContent = $textContent -replace '&gt;', '>'
+            $textContent = $textContent -replace '&amp;', '&'
+            $textContent = $textContent.Trim()
+            # 保存为 UTF-8 编码的文本文件
+            [System.IO.File]::WriteAllText("$INSTALLER_TEMP\privacy.txt", $textContent, [System.Text.Encoding]::UTF8)
+            Write-Host "已创建纯文本版本: privacy.txt"
+          } else {
+            Write-Host "警告: privacy.html 文件不存在，创建默认许可协议"
+            $defaultText = "泡泡单词用户隐私政策`n`n请访问官方网站获取最新隐私政策。"
+            [System.IO.File]::WriteAllText("$INSTALLER_TEMP\privacy.txt", $defaultText, [System.Text.Encoding]::UTF8)
+          }
 
           # 下载 Visual C++ Redistributable 到临时目录（用于安装时静默安装）
           Write-Host "下载 Visual C++ Redistributable..."
