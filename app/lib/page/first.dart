@@ -563,21 +563,20 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
       
       ToastUtil.success("正在安装新版本，应用即将退出...");
       
-      // 启动批处理脚本（在后台运行，不等待）
-      await Process.start(
+      // 使用 start 命令启动批处理脚本（在新窗口中运行，不阻塞）
+      // 使用 start /B 在后台运行，避免显示命令行窗口
+      ProcessResult startResult = await Process.run(
         'cmd',
-        ['/c', batchScriptPath],
-        runInShell: false,
-        mode: ProcessStartMode.detached,
+        ['/c', 'start', '/B', '""', batchScriptPath],
+        runInShell: true,
       );
       
-      Global.logger.d('批处理脚本已启动，准备退出应用');
+      Global.logger.d('批处理脚本已启动，退出码: ${startResult.exitCode}');
       
-      // 延迟一小段时间确保脚本已启动，然后退出应用
-      await Future.delayed(Duration(milliseconds: 500));
-      
-      // 退出当前应用，让批处理脚本接管安装流程
-      SystemNavigator.pop();
+      // 立即退出应用，让批处理脚本接管安装流程
+      // 使用 exit(0) 确保应用立即退出
+      await Future.delayed(Duration(milliseconds: 300));
+      exit(0);
       
     } catch (e, stackTrace) {
       setState(() {
