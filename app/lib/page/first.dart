@@ -150,6 +150,10 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
         // 直接执行静默安装
         downloadWindowsAndUpgrade(useSilent: true);
       } else {
+        // 用户选择不升级，标记为已忽略，不显示界面提示
+        setState(() {
+          newVersionIgnored = true;
+        });
         tryAutoLogin();
       }
     } else if (PlatformUtils.isLinux) {
@@ -176,6 +180,10 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
         // 直接执行自动升级
         downloadLinuxAndUpgrade();
       } else {
+        // 用户选择不升级，标记为已忽略，不显示界面提示
+        setState(() {
+          newVersionIgnored = true;
+        });
         tryAutoLogin();
       }
     } else {
@@ -193,6 +201,10 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
       )) {
         downloadApkAndUpgrade();
       } else {
+        // 用户选择不升级，标记为已忽略，不显示界面提示
+        setState(() {
+          newVersionIgnored = true;
+        });
         tryAutoLogin();
       }
     }
@@ -1070,72 +1082,8 @@ echo [%date% %time%] 更新脚本执行完成 >> "$escapedLogPath"
                   ],
                 )
 
-              /// 发现新版本
-              : newVersionFound && !newVersionIgnored
-                  ? Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Image.asset(
-                          "assets/images/logo.png",
-                          width: 64,
-                          height: 64,
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(0, 16, 0, 0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text("发现新版本 $newVerCode"),
-                              for (String change in newVersionChanges!) Text('• $change'),
-                              const Text('\n是否升级？'),
-                            ],
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(0, 32, 0, 0),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  foregroundColor: Colors.white,
-                                  backgroundColor: Colors.red, // foreground
-                                ),
-                                child: const Text('否'),
-                                onPressed: () {
-                                  setState(() {
-                                    newVersionIgnored = true;
-                                    tryAutoLogin();
-                                  });
-                                },
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.fromLTRB(32, 0, 0, 0),
-                                child: ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
-                                    foregroundColor: Colors.white,
-                                    backgroundColor: Colors.green, // foreground
-                                  ),
-                                  child: const Text('是'),
-                                  onPressed: () {
-                                    if (PlatformUtils.isAndroid) {
-                                      downloadApkAndUpgrade();
-                                    } else if (PlatformUtils.isWindows) {
-                                      // Windows 平台直接执行静默安装
-                                      downloadWindowsAndUpgrade(useSilent: true);
-                                    } else if (PlatformUtils.isLinux) {
-                                      // Linux 平台直接执行自动升级
-                                      downloadLinuxAndUpgrade();
-                                    }
-                                  },
-                                ),
-                              ),
-                            ],
-                          ),
-                        )
-                      ],
-                    )
-                  : LayoutBuilder(
+              /// 正常闪屏界面
+              : LayoutBuilder(
                       builder: (context, constraints) {
                         // 动态特效闪屏
                         final double w = constraints.maxWidth;
