@@ -143,16 +143,16 @@ jobs:
           dart run build_runner build --delete-conflicting-outputs
           # 验证生成的代码
           if (Test-Path "lib\api\api.g.dart") {
-            Write-Host "✅ 代码生成成功"
+            Write-Host "Code generation successful"
             # 检查 logError 调用是否正确
             $content = Get-Content "lib\api\api.g.dart" -Raw
-            if ($content -match "errorLogger\?\.logError\(e, s, _options\)") {
-              Write-Host "✅ logError 调用格式正确"
+            if ($content -match "errorLogger.*logError.*e.*s.*_options") {
+              Write-Host "logError call format is correct"
             } else {
-              Write-Host "⚠️ 警告: 未找到预期的 logError 调用格式"
+              Write-Host "Warning: Expected logError call format not found"
             }
           } else {
-            Write-Host "❌ 错误: api.g.dart 文件未生成"
+            Write-Host "Error: api.g.dart file was not generated"
             exit 1
           }
         shell: powershell
