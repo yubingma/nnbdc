@@ -37,12 +37,7 @@ jobs:
             echo "pubspec.lock 不存在，无法计算缓存 key" >&2
             exit 1
           fi
-          HASH=$(python - <<'PY'
-import hashlib, pathlib
-path = pathlib.Path('app/pubspec.lock')
-print(hashlib.sha256(path.read_bytes()).hexdigest())
-PY
-)
+          HASH=$(python -c "import hashlib, pathlib; print(hashlib.sha256(pathlib.Path('app/pubspec.lock').read_bytes()).hexdigest())")
           echo "hash=$HASH"
           echo "hash=$HASH" >> "$GITHUB_OUTPUT"
         shell: bash
