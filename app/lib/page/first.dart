@@ -53,6 +53,9 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
 
   // 准备阶段状态提示
   String _preparingMessage = '正在准备学习环境…';
+  
+  // 版本信息
+  String? _buildNumber;
 
   // 动态闪屏：动画控制与数据
   late AnimationController _splashController;
@@ -70,6 +73,13 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
       PackageInfo packageInfo = await PackageInfo.fromPlatform();
       int buildNumber = int.parse(packageInfo.buildNumber);
       Global.version = packageInfo.version;
+      
+      // 保存版本代码用于显示
+      if (mounted) {
+        setState(() {
+          _buildNumber = packageInfo.buildNumber;
+        });
+      }
 
       // 从服务端获取最新版本信息，如果发现新版本，则下载并升级
       try {
@@ -1094,6 +1104,19 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
                                       ),
                                     ),
                                     const SizedBox(height: 24),
+                                    // 版本号显示
+                                    Text(
+                                      _buildNumber != null 
+                                          ? '版本 ${Global.version} ($_buildNumber)'
+                                          : '版本 ${Global.version}',
+                                      textScaler: const TextScaler.linear(1.0),
+                                      style: TextStyle(
+                                        color: Colors.white.withValues(alpha: 0.7),
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w300,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 16),
                                     // 轻量的进度提示
                                     Row(
                                       mainAxisSize: MainAxisSize.min,
