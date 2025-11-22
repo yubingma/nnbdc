@@ -51,6 +51,9 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
   List<dynamic>? newVersionChanges;
   int? newVerCode; // 保存新版本的 verCode，用于下载时添加版本参数
 
+  // 准备阶段状态提示
+  String _preparingMessage = '正在准备学习环境…';
+
   // 动态闪屏：动画控制与数据
   late AnimationController _splashController;
   late List<_Bubble> _bubbles;
@@ -59,6 +62,10 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
   void checkNewVersion() async {
     // 检查新版本/自动升级
     if (PlatformUtils.isAndroid || PlatformUtils.isWindows || PlatformUtils.isLinux) {
+      setState(() {
+        _preparingMessage = '正在检查更新…';
+      });
+      
       // 获取程序版本信息
       PackageInfo packageInfo = await PackageInfo.fromPlatform();
       int buildNumber = int.parse(packageInfo.buildNumber);
@@ -1099,7 +1106,7 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
                                         ),
                                         const SizedBox(width: 8),
                                         Text(
-                                          '正在准备学习环境…',
+                                          _preparingMessage,
                                           textScaler: const TextScaler.linear(1.0),
                                           style: TextStyle(
                                             color: Colors.white.withValues(alpha: 0.9),
@@ -1121,10 +1128,22 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
   }
 
   tryAutoLogin() async {
+    setState(() {
+      _preparingMessage = '正在同步数据…';
+    });
+    
     var user = await MyDatabase.instance.usersDao.getLastLoggedInUser();
     if (user != null && user.email != null) {
+      setState(() {
+        _preparingMessage = '正在验证登录…';
+      });
+      
       var result = await UserBo().checkUser(CheckBy.email, user.email!, null, user.password!, getClientType().name, Global.version);
       if (result.success) {
+        setState(() {
+          _preparingMessage = '正在加载用户信息…';
+        });
+        
         var result2 = await UserBo().getLoggedInUser();
         if (result2.success) {
           await Global.setLoggedInUser(result2.data!);
