@@ -563,19 +563,32 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
       
       ToastUtil.success("正在安装新版本，应用即将退出...");
       
-      // 使用 start 命令启动批处理脚本（在新窗口中运行，不阻塞）
-      // 使用 start /B 在后台运行，避免显示命令行窗口
+      // 使用 PowerShell 启动批处理脚本，确保脚本能够正确执行
+      // Start-Process 可以独立于当前进程运行，即使当前进程退出也能继续执行
+      // 转义路径中的特殊字符（PowerShell 需要）
+      String escapedScriptPath = batchScriptPath.replaceAll('"', '`"').replaceAll(r'$', r'`$');
+      // 构建 PowerShell 命令字符串
+      String psCommand = 'Start-Process -FilePath "cmd.exe" -ArgumentList "/c,\\"$escapedScriptPath\\"" -WindowStyle Hidden';
+      Global.logger.d('执行 PowerShell 命令: $psCommand');
       ProcessResult startResult = await Process.run(
-        'cmd',
-        ['/c', 'start', '/B', '""', batchScriptPath],
-        runInShell: true,
+        'powershell',
+        [
+          '-Command',
+          psCommand,
+        ],
+        runInShell: false,
       );
       
       Global.logger.d('批处理脚本已启动，退出码: ${startResult.exitCode}');
+      if (startResult.exitCode != 0) {
+        Global.logger.w('启动脚本可能失败，stderr: ${startResult.stderr}');
+      }
+      
+      // 等待一小段时间确保脚本已启动
+      await Future.delayed(Duration(milliseconds: 500));
       
       // 立即退出应用，让批处理脚本接管安装流程
       // 使用 exit(0) 确保应用立即退出
-      await Future.delayed(Duration(milliseconds: 300));
       exit(0);
       
     } catch (e, stackTrace) {
@@ -622,11 +635,18 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
       // 默认安装路径（用于启动新版本）
       String defaultInstallPath = r'C:\Program Files\泡泡单词\nnbdc.exe';
       
+      // 创建日志文件路径（用于调试）
+      String logFilePath = '$scriptDir/update_installer.log';
+      String escapedLogPath = logFilePath.replaceAll('"', '""');
+      
       // 创建批处理脚本内容
+      // 使用 > 重定向输出到日志文件，方便调试
       String batchContent = '''
 @echo off
 chcp 65001 >nul
-echo 正在等待应用退出...
+echo [%date% %time%] 更新脚本开始执行 >> "$escapedLogPath"
+echo [%date% %time%] 当前进程 PID: $currentPid >> "$escapedLogPath"
+echo [%date% %time%] 安装程序路径: $escapedInstallerPath >> "$escapedLogPath"
 echo.
 
 REM 等待当前进程退出（最多等待 30 秒）
@@ -634,7 +654,7 @@ set /a timeout=30
 :wait_loop
 tasklist /FI "PID eq $currentPid" 2>NUL | find /I /N "$currentPid">NUL
 if "%ERRORLEVEL%"=="0" (
-    echo 等待进程退出... (剩余 %timeout% 秒)
+    echo [%date% %time%] 等待进程退出... (剩余 %timeout% 秒) >> "$escapedLogPath"
     timeout /t 1 /nobreak >nul
     set /a timeout-=1
     if %timeout% GTR 0 (
@@ -642,11 +662,13 @@ if "%ERRORLEVEL%"=="0" (
     )
 )
 
-REM 额外等待 1 秒确保文件已释放
-timeout /t 1 /nobreak >nul
+echo [%date% %time%] 进程已退出或超时 >> "$escapedLogPath"
+
+REM 额外等待 2 秒确保文件已完全释放
+timeout /t 2 /nobreak >nul
 
 echo.
-echo 开始安装新版本...
+echo [%date% %time%] 开始安装新版本... >> "$escapedLogPath"
 echo.
 
 REM 执行安装程序
@@ -654,36 +676,40 @@ REM 执行安装程序
 
 if %ERRORLEVEL% EQU 0 (
     echo.
-    echo 安装成功！
+    echo [%date% %time%] 安装成功！ >> "$escapedLogPath"
     echo.
     
     REM 等待安装完成
-    timeout /t 2 /nobreak >nul
+    timeout /t 3 /nobreak >nul
     
     REM 启动新版本应用
-    echo 正在启动新版本...
+    echo [%date% %time%] 正在启动新版本... >> "$escapedLogPath"
     if exist "$defaultInstallPath" (
         start "" "$defaultInstallPath"
-        echo 新版本已启动
+        echo [%date% %time%] 新版本已启动: $defaultInstallPath >> "$escapedLogPath"
     ) else (
-        echo 警告: 未找到新版本可执行文件，请手动启动应用
+        echo [%date% %time%] 警告: 未找到新版本可执行文件: $defaultInstallPath >> "$escapedLogPath"
         REM 尝试从开始菜单启动
         set startMenuPath=%ProgramData%\\Microsoft\\Windows\\Start Menu\\Programs\\泡泡单词\\泡泡单词.lnk
         if exist "%startMenuPath%" (
             start "" "%startMenuPath%"
-            echo 已从开始菜单启动应用
+            echo [%date% %time%] 已从开始菜单启动应用 >> "$escapedLogPath"
+        ) else (
+            echo [%date% %time%] 错误: 开始菜单快捷方式也不存在 >> "$escapedLogPath"
         )
     )
 ) else (
     echo.
-    echo 安装失败，错误代码: %ERRORLEVEL%
-    echo 请手动运行安装程序: "$escapedInstallerPath"
-    pause
+    echo [%date% %time%] 安装失败，错误代码: %ERRORLEVEL% >> "$escapedLogPath"
+    echo [%date% %time%] 请手动运行安装程序: "$escapedInstallerPath" >> "$escapedLogPath"
+    REM 显示错误对话框
+    msg * "安装失败，错误代码: %ERRORLEVEL%。请查看日志文件: $escapedLogPath"
 )
 
 REM 清理临时脚本（延迟删除，避免影响当前执行）
-timeout /t 3 /nobreak >nul
+timeout /t 5 /nobreak >nul
 del /F /Q "%~f0" >nul 2>&1
+echo [%date% %time%] 更新脚本执行完成 >> "$escapedLogPath"
 ''';
       
       // 写入批处理脚本文件
