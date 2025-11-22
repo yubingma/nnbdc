@@ -79,12 +79,11 @@ class UpdateService extends GetxController {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         
-        // 新格式：数组格式 [{"verCode":25101301,"verName":"25.10.13", "changes":["修复已知问题，提升稳定性"]}]
-        if (data is List && data.isNotEmpty) {
-          final latestVersion = data[0];
-          final newVersion = latestVersion['verName'] ?? '';
-          final newBuildNumber = latestVersion['verCode']?.toString() ?? '';
-          final changes = List<String>.from(latestVersion['changes'] ?? []);
+        // 对象格式：{"verCode":25101301,"verName":"25.10.13", "changes":["修复已知问题，提升稳定性"]}
+        if (data is Map<String, dynamic>) {
+          final newVersion = data['verName'] ?? '';
+          final newBuildNumber = data['verCode']?.toString() ?? '';
+          final changes = List<String>.from(data['changes'] ?? []);
           
           // 比较版本号
           if (_isNewerVersion(newVersion, _currentVersion.value)) {

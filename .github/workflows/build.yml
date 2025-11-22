@@ -483,8 +483,41 @@ jobs:
 
           $verCode = [int]$BUILD_NUMBER
           $verName = $VERSION_NUMBER
-          $changes = @("修复已知问题，提升稳定性")
-          $payload = @(@{ verCode = $verCode; verName = $verName; changes = $changes })
+          
+          # 从 pubspec.yaml 读取 changes
+          $changes = @()
+          $inChangesSection = $false
+          $pubspecContent = Get-Content -Path $pubspecPath -Raw
+          $pubspecLines = Get-Content -Path $pubspecPath
+          
+          foreach ($line in $pubspecLines) {
+            $trimmedLine = $line.Trim()
+            if ($trimmedLine -eq "changes:") {
+              $inChangesSection = $true
+              continue
+            }
+            if ($inChangesSection) {
+              # 检查是否是 changes 项的结束（空行或非缩进行）
+              if ($trimmedLine -eq "" -or ($trimmedLine -notmatch "^\s" -and $trimmedLine -notmatch "^#")) {
+                break
+              }
+              # 匹配 YAML 列表项：- "内容" 或 - 内容
+              if ($trimmedLine -match '^\s*-\s*["\']?(.+?)["\']?\s*$') {
+                $changeText = $matches[1]
+                $changes += $changeText
+              }
+            }
+          }
+          
+          # 如果没有读取到 changes，使用默认值
+          if ($changes.Count -eq 0) {
+            $changes = @("修复已知问题，提升稳定性")
+            Write-Host "警告: 未在 pubspec.yaml 中找到 changes，使用默认值"
+          } else {
+            Write-Host "从 pubspec.yaml 读取到 $($changes.Count) 个更新项"
+          }
+          
+          $payload = @{ verCode = $verCode; verName = $verName; changes = $changes }
           $payload | ConvertTo-Json -Depth 3 -Compress | Out-File -FilePath "$DEPLOY_DIR\ver.json" -Encoding UTF8 -Force
           Write-Host "版本信息已更新: $VERSION_NUMBER ($BUILD_NUMBER)"
         shell: pwsh
@@ -557,9 +590,47 @@ jobs:
           BUILD_NUMBER=$(echo $VERSION | cut -d'+' -f2)
           VERSION_NUMBER=$(echo $VERSION | cut -d'+' -f1)
           
-          # 创建版本信息 JSON
+          # 从 pubspec.yaml 读取 changes
+          CHANGES_ARRAY=""
+          IN_CHANGES_SECTION=false
+          
+          while IFS= read -r line; do
+            trimmed=$(echo "$line" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+            
+            if [ "$trimmed" = "changes:" ]; then
+              IN_CHANGES_SECTION=true
+              continue
+            fi
+            
+            if [ "$IN_CHANGES_SECTION" = true ]; then
+              # 检查是否是 changes 项的结束（空行或非缩进行）
+              if [ -z "$trimmed" ] || [[ ! "$line" =~ ^[[:space:]] ]]; then
+                break
+              fi
+              
+              # 匹配 YAML 列表项：- "内容" 或 - 内容
+              if [[ "$trimmed" =~ ^-\ \"(.+)\"$ ]] || [[ "$trimmed" =~ ^-\ (.+)$ ]]; then
+                change_text="${BASH_REMATCH[1]}"
+                if [ -z "$CHANGES_ARRAY" ]; then
+                  CHANGES_ARRAY="\"$change_text\""
+                else
+                  CHANGES_ARRAY="$CHANGES_ARRAY,\"$change_text\""
+                fi
+              fi
+            fi
+          done < app/pubspec.yaml
+          
+          # 如果没有读取到 changes，使用默认值
+          if [ -z "$CHANGES_ARRAY" ]; then
+            CHANGES_ARRAY="\"修复已知问题，提升稳定性\""
+            echo "警告: 未在 pubspec.yaml 中找到 changes，使用默认值"
+          else
+            echo "从 pubspec.yaml 读取到更新项: [$CHANGES_ARRAY]"
+          fi
+          
+          # 创建版本信息 JSON（对象格式，不是数组）
           cat > ver.json << EOF
-          [{"verCode":$BUILD_NUMBER,"verName":"$VERSION_NUMBER", "changes":["修复已知问题，提升稳定性"]}]
+          {"verCode":$BUILD_NUMBER,"verName":"$VERSION_NUMBER", "changes":[$CHANGES_ARRAY]}
           EOF
           
           # 复制版本信息文件到部署目录
