@@ -725,18 +725,17 @@ public class UserBo extends BaseBo<User> {
     }
 
     /**
-     * 通过邮箱验证码和密码登录（验证码已在Controller中验证）
-     * 如果用户存在，验证密码；如果不存在，自动创建账户
+     * 通过邮箱验证码登录（验证码已在Controller中验证，不需要密码）
+     * 如果用户存在，直接登录；如果不存在，自动创建账户
      * @param request HTTP请求
      * @param email 邮箱地址
-     * @param password 密码
      * @param clientType 客户端类型
      * @param clientVersion 客户端版本
      * @return 用户验证结果
      */
-    public Result<User> checkUserByEmailCodeAndPassword(HttpServletRequest request, String email, String password,
+    public Result<User> checkUserByEmailCode(HttpServletRequest request, String email,
             ClientType clientType, String clientVersion) {
-        logger.info(String.format("用户正在通过邮箱验证码和密码登录... IP[%s] email[%s] clientType[%s] UA[%s] ver[%s]",
+        logger.info(String.format("用户正在通过邮箱验证码登录... IP[%s] email[%s] clientType[%s] UA[%s] ver[%s]",
                 Util.getClientIP(request), email, clientType,
                 request.getHeader("User-Agent"), clientVersion));
 
@@ -744,15 +743,13 @@ public class UserBo extends BaseBo<User> {
         User user;
         
         if (!users.isEmpty()) {
-            // 用户存在，验证密码
+            // 用户存在，直接登录（验证码已验证通过）
             user = users.get(0);
-            if (!password.equals(user.getPassword())) {
-                return new Result<>(false, "密码错误", null);
-            }
         } else {
             // 如果Email对应的账户不存在，自动创建账户
+            // 密码设为空字符串（CS架构下不再使用密码，登录后自动登录）
             String nickname = email != null && email.contains("@") ? email.split("@")[0] : "user";
-            user = Util.genNewUser(email, password, nickname, email, null, sysParamBo,
+            user = Util.genNewUser(email, "", nickname, email, null, sysParamBo,
                     dictBo, this, learningDictBo, false);
             user.setWordsPerDay(20);
             try {
@@ -761,7 +758,7 @@ public class UserBo extends BaseBo<User> {
                 logger.error("自动创建用户失败", e);
                 return new Result<>(false, "创建用户失败", null);
             }
-            }
+        }
 
         return new Result<>(true, null, user);
     }

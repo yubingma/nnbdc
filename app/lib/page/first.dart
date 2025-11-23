@@ -9,7 +9,6 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:nnbdc/api/api.dart';
 import 'package:nnbdc/api/bo/user_bo.dart';
-import 'package:nnbdc/api/enum.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/page/index.dart';
 import 'package:nnbdc/util/platform_util.dart';
@@ -23,7 +22,6 @@ import 'package:permission_handler/permission_handler.dart';
 
 import '../config.dart';
 import '../global.dart';
-import '../util/client_type.dart';
 import '../services/update_service.dart';
 
 class FirstPage extends StatefulWidget {
@@ -1281,9 +1279,7 @@ endlocal
                                     const SizedBox(height: 24),
                                     // 版本号显示
                                     Text(
-                                      _buildNumber != null 
-                                          ? '版本 ${Global.version} ($_buildNumber)'
-                                          : '版本 ${Global.version}',
+                                      '版本 $_buildNumber',
                                       textScaler: const TextScaler.linear(1.0),
                                       style: TextStyle(
                                         color: Colors.white.withValues(alpha: 0.7),
@@ -1335,26 +1331,19 @@ endlocal
     var user = await MyDatabase.instance.usersDao.getLastLoggedInUser();
     if (user != null && user.email != null) {
       setState(() {
-        _preparingMessage = '正在验证登录…';
+        _preparingMessage = '正在加载用户信息…';
       });
       
-      var result = await UserBo().checkUser(CheckBy.email, user.email!, null, user.password!, getClientType().name, Global.version);
-      if (result.success) {
-        setState(() {
-          _preparingMessage = '正在加载用户信息…';
-        });
-        
-        var result2 = await UserBo().getLoggedInUser();
-        if (result2.success) {
-          await Global.setLoggedInUser(result2.data!);
-          // 注意：由于改为延迟连接，此处不再主动上报用户信息
-          // 用户信息会在进入需要socket的页面（如me、russia）时自动上报
-          // SocketIoClient.instance.tryReportUserToSocketServer();
+      // CS架构下，本地有用户信息就可以直接登录，不需要密码验证
+      // 直接获取用户信息并登录
+      var result = await UserBo().getLoggedInUser();
+      if (result.success && result.data != null) {
+        await Global.setLoggedInUser(result.data!);
+        // 注意：由于改为延迟连接，此处不再主动上报用户信息
+        // 用户信息会在进入需要socket的页面（如me、russia）时自动上报
+        // SocketIoClient.instance.tryReportUserToSocketServer();
 
-          Get.offNamed("/index", arguments: IndexPageArgs(4));
-        } else {
-          Get.offNamed("/email_login");
-        }
+        Get.offNamed("/index", arguments: IndexPageArgs(4));
       } else {
         Get.offNamed("/email_login");
       }
