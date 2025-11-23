@@ -774,6 +774,16 @@ if !ERRORLEVEL! EQU 0 (
         )
     )
     set "SHOULD_EXIT=1"
+    echo.
+    echo update script finished, window will close in 5 seconds...
+    echo [%date% %time%] update script finished >> "!LOG_FILE!"
+    
+    REM 清理临时脚本（延迟删除，避免影响当前执行）
+    timeout /t 5 /nobreak >nul
+    start "" /b cmd /c del /Q "%~f0" >nul 2>&1
+    
+    REM 成功时自动关闭窗口
+    exit
 ) else (
     echo.
     echo install failed, code: !ERRORLEVEL!
@@ -781,18 +791,12 @@ if !ERRORLEVEL! EQU 0 (
     echo [%date% %time%] please run installer manually: !INSTALLER_PATH! >> "!LOG_FILE!"
     REM 显示错误对话框
     msg * "Install failed, code: !ERRORLEVEL!. See log: !LOG_FILE!"
-)
-
-echo.
-echo update script finished, window will close in 5 seconds...
-echo [%date% %time%] update script finished >> "!LOG_FILE!"
-
-REM 清理临时脚本（延迟删除，避免影响当前执行）
-timeout /t 5 /nobreak >nul
-start "" /b cmd /c del /Q "%~f0" >nul 2>&1
-
-if "!SHOULD_EXIT!"=="1" (
-    exit
+    echo.
+    echo update script finished, please check the error message above
+    echo [%date% %time%] update script finished with error >> "!LOG_FILE!"
+    echo.
+    echo Press any key to close this window...
+    pause >nul
 )
 
 endlocal
