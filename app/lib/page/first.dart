@@ -651,8 +651,17 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
       // 批处理脚本中需要将引号再转义一次（使用 "" 表示一个引号）
       String batchInstallArgs = installArgs.replaceAll('"', '""');
       
-      // 默认安装路径（用于启动新版本，统一使用中文目录）
-      String defaultInstallPath = await _resolveWindowsInstallPath();
+      // 根据安装目录确定可执行文件路径
+      // 如果有安装目录，使用该目录下的 nnbdc.exe；否则使用默认路径
+      String primaryExePath;
+      if (installDir != null && installDir.isNotEmpty) {
+        primaryExePath = '$installDir\\nnbdc.exe';
+        Global.logger.d('使用用户安装目录: $primaryExePath');
+      } else {
+        primaryExePath = await _resolveWindowsInstallPath();
+        Global.logger.d('使用默认安装路径: $primaryExePath');
+      }
+      
       const chineseStartMenuPath = r'C:\ProgramData\Microsoft\Windows\Start Menu\Programs\泡泡单词\泡泡单词.lnk';
       
       // 创建日志文件路径（用于调试）
@@ -661,7 +670,7 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
       
       // 转义批处理脚本中需要的路径（避免特殊字符问题）
       // 在批处理脚本中使用变量而不是直接插值
-      String escapedDefaultPath = defaultInstallPath.replaceAll('\\', '\\\\').replaceAll('"', '""');
+      String escapedPrimaryPath = primaryExePath.replaceAll('\\', '\\\\').replaceAll('"', '""');
       String escapedCurrentExePath = currentExePath.replaceAll('\\', '\\\\').replaceAll('"', '""');
       String escapedChineseLink = chineseStartMenuPath.replaceAll('\\', '\\\\').replaceAll('"', '""');
       
@@ -676,11 +685,15 @@ REM 设置变量
 set "INSTALLER_PATH=$escapedInstallerPath"
 set "LOG_FILE=$escapedLogPath"
 set "TARGET_PID=$currentPid"
-set "PRIMARY_EXE=$escapedCurrentExePath"
-set "FALLBACK_EXE=$escapedDefaultPath"
+set "PRIMARY_EXE=$escapedPrimaryPath"
+set "FALLBACK_EXE=$escapedCurrentExePath"
 set "START_MENU_CN=$escapedChineseLink"
 set "INSTALL_ARGS=$batchInstallArgs"
 set "SHOULD_EXIT=0"
+
+echo Debug: Primary path = !PRIMARY_EXE!
+echo Debug: Fallback path = !FALLBACK_EXE!
+echo Debug: Install args = !INSTALL_ARGS!
 
 title nnbdc auto update
 echo ========================================
@@ -846,12 +859,22 @@ endlocal
   /// 获取当前安装目录
   Future<String?> _getCurrentInstallDir() async {
     try {
-      // 从注册表读取安装目录
-      // Windows 注册表路径: HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Uninstall\泡泡单词
-      // 由于 Flutter 无法直接读取注册表，这里返回 null，使用默认安装路径
-      // NSIS 安装程序会自动使用注册表中的路径，如果不存在则使用默认路径
-      // 如果需要精确控制，可以使用 Windows 平台通道（Platform Channel）
-      return null;
+      // 从当前可执行文件路径提取安装目录
+      String currentExe = Platform.resolvedExecutable;
+      Global.logger.d('当前可执行文件路径: $currentExe');
+      
+      // 获取可执行文件的父目录（即安装目录）
+      // 例如: C:\Program Files\nn\nnbdc.exe -> C:\Program Files\nn
+      String installDir = currentExe.substring(0, currentExe.lastIndexOf('\\'));
+      Global.logger.d('提取的安装目录: $installDir');
+      
+      // 验证目录是否存在
+      if (await Directory(installDir).exists()) {
+        return installDir;
+      } else {
+        Global.logger.w('安装目录不存在: $installDir');
+        return null;
+      }
     } catch (e) {
       Global.logger.e('获取安装目录失败: $e');
       return null;
