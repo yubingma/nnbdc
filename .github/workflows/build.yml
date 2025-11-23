@@ -550,8 +550,19 @@ jobs:
             }
           }
           
-          $payload = @{ verCode = $verCode; verName = $verName; changes = $changes }
-          $payload | ConvertTo-Json -Depth 3 -Compress | Out-File -FilePath "$DEPLOY_DIR\ver.json" -Encoding UTF8 -Force
+          # 手动构建格式化的 JSON 字符串以确保字段顺序固定：verCode, verName, changes
+          # changes 数组元素需要缩进 4 个空格（根对象 2 空格 + 数组 2 空格）
+          $changesJson = ($changes | ForEach-Object { "    `"$_`"" }) -join ",`r`n"
+          $jsonContent = @"
+{
+  "verCode": $verCode,
+  "verName": "$verName",
+  "changes": [
+$changesJson
+  ]
+}
+"@
+          $jsonContent | Out-File -FilePath "$DEPLOY_DIR\ver.json" -Encoding UTF8 -NoNewline -Force
           Write-Host "版本信息已更新: $VERSION_NUMBER ($BUILD_NUMBER)"
         shell: pwsh
 
@@ -661,10 +672,19 @@ jobs:
             echo "从 pubspec.yaml 读取到更新项: [$CHANGES_ARRAY]"
           fi
           
-          # 创建版本信息 JSON（对象格式，不是数组）
+          # 创建版本信息 JSON（对象格式，确保字段顺序固定：verCode, verName, changes）
+          # 格式化 changes 数组，每个元素一行，缩进 4 个空格（根对象 2 空格 + 数组 2 空格）
+          # 将逗号分隔的字符串转换为每行一个元素，并添加缩进
+          CHANGES_FORMATTED=$(echo "$CHANGES_ARRAY" | sed 's/","/",\n    "/g' | sed 's/^/    /')
           cat > ver.json << EOF
-          {"verCode":$BUILD_NUMBER,"verName":"$VERSION_NUMBER", "changes":[$CHANGES_ARRAY]}
-          EOF
+{
+  "verCode": $BUILD_NUMBER,
+  "verName": "$VERSION_NUMBER",
+  "changes": [
+$CHANGES_FORMATTED
+  ]
+}
+EOF
           
           # 复制版本信息文件到部署目录
           cp ver.json "$DEPLOY_DIR/ver.json"
