@@ -286,7 +286,9 @@
         // 从 ver.json 获取版本号并更新下载链接
         async function loadVersionAndUpdateLinks() {
             try {
-                const response = await fetch('app/ver.json');
+                // 添加时间戳参数，确保获取最新版本信息
+                const timestamp = new Date().getTime();
+                const response = await fetch('app/ver.json?t=' + timestamp);
                 if (response.ok) {
                     console.log('获取版本信息成功:', response);
                     const data = await response.json();
