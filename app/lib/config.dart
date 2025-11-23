@@ -58,9 +58,4 @@ class Config {
 
   // Configuration for ThrottledDbSyncService
   static const Duration dbSyncThrottleInterval = Duration(seconds: 60);
-
-  // Debug settings
-  static bool get showDbButton {
-    return profileName == "dev" || profileName == "dev_web" || profileName == "test";
-  }
 }

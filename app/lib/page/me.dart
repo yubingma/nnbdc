@@ -27,7 +27,6 @@ import 'package:nnbdc/page/admin/health_check.dart';
 import 'package:nnbdc/page/admin/page_viewer.dart';
 import 'package:nnbdc/page/feature_request_wall.dart';
 
-import '../config.dart';
 import '../global.dart';
 import '../state.dart';
 import '../theme/app_theme.dart';
@@ -1064,12 +1063,6 @@ class _MePageState extends State<MePage> {
                 title: '健康检查',
                 onTap: () => _navigateToDataDiagnostic(),
               ),
-              if (Config.showDbButton)
-                _buildMenuTile(
-                  icon: Icons.storage,
-                  title: '数据库查看器',
-                  onTap: () => _openDbViewPage(),
-                ),
               _buildMenuTile(
                 icon: Icons.cleaning_services,
                 title: '清空本地数据',
@@ -1083,6 +1076,11 @@ class _MePageState extends State<MePage> {
                   icon: Icons.admin_panel_settings,
                   title: '系统管理',
                   onTap: () => Get.toNamed('/admin'),
+                ),
+                _buildMenuTile(
+                  icon: Icons.storage,
+                  title: '数据库查看器',
+                  onTap: () => _openDbViewPage(),
                 ),
                 _buildMenuTile(
                   icon: Icons.pageview,
