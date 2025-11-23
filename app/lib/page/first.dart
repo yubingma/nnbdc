@@ -789,7 +789,7 @@ echo [%date% %time%] update script finished >> "!LOG_FILE!"
 
 REM 清理临时脚本（延迟删除，避免影响当前执行）
 timeout /t 5 /nobreak >nul
-del /F /Q "%~f0" >nul 2>&1
+start "" /b cmd /c del /Q "%~f0" >nul 2>&1
 
 if "!SHOULD_EXIT!"=="1" (
     exit
