@@ -2,7 +2,9 @@ package beidanci.service.controller;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.security.MessageDigest;
 import java.text.ParseException;
+import java.util.Date;
 import java.util.List;
 import java.util.zip.GZIPOutputStream;
 
@@ -91,6 +93,55 @@ public class ResController {
 
             // 查询词典基本信息
             DictDto dict = dictBo.getDictDto(dictId);
+            
+            // 获取词典更新时间，用于CDN缓存控制
+            Date updateTime = dict != null ? dict.getUpdateTime() : null;
+            if (updateTime == null) {
+                updateTime = new Date(); // 如果没有更新时间，使用当前时间
+            }
+            
+            // 生成ETag（基于dictId和updateTime）
+            String etag = generateETag(dictId, updateTime);
+            
+            // 设置Last-Modified头（HTTP日期格式）
+            long lastModified = updateTime.getTime();
+            response.setDateHeader("Last-Modified", lastModified);
+            response.setHeader("ETag", etag);
+            
+            // 设置Cache-Control头
+            // 缓存机制说明：
+            // - max-age: 客户端（浏览器/App）的缓存时间，过期后客户端会重新请求
+            // - s-maxage: CDN节点的缓存时间，过期后CDN会回源检查资源是否更新
+            // - stale-while-revalidate: CDN缓存过期后，在后台异步更新缓存的同时，继续使用旧缓存服务请求
+            //   这样可以避免缓存过期瞬间的大量回源请求，让流量完全落在CDN上
+            // - 当CDN缓存过期回源时，如果资源未修改（ETag/Last-Modified匹配），服务器返回304，
+            //   CDN可以继续使用缓存，无需重新下载完整内容
+            // - 如果资源已更新，服务器返回200和新内容，CDN更新缓存
+            // 统一配置：
+            //   - CDN缓存1小时（s-maxage=3600），过期后继续服务旧内容7天（stale-while-revalidate=604800）
+            //   - 客户端缓存5分钟（max-age=300）
+            // 这样即使缓存过期，流量也完全落在CDN上，不会回源
+            response.setHeader("Cache-Control", "public, max-age=300, s-maxage=3600, stale-while-revalidate=604800");
+            
+            // 检查条件请求（If-None-Match和If-Modified-Since）
+            String ifNoneMatch = request.getHeader("If-None-Match");
+            long ifModifiedSince = request.getDateHeader("If-Modified-Since");
+            
+            // 如果ETag匹配或资源未修改，返回304 Not Modified
+            boolean notModified = false;
+            if (ifNoneMatch != null && ifNoneMatch.equals(etag)) {
+                notModified = true;
+                logger.debug("📋 ETag匹配，返回304, dictId: {}, ETag: {}", dictId, etag);
+            } else if (ifModifiedSince > 0 && lastModified <= ifModifiedSince) {
+                notModified = true;
+                logger.debug("📋 Last-Modified未变化，返回304, dictId: {}, Last-Modified: {}", dictId, new Date(lastModified));
+            }
+            
+            if (notModified) {
+                response.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
+                logger.info("✅ 词典资源未修改，返回304, dictId: {}", dictId);
+                return;
+            }
             
             // 查询词典单词
             List<DictWordDto> dictWords = dictWordBo.getDictWordsOfDict(dictId);
@@ -199,6 +250,30 @@ public class ResController {
                 logger.error("❌ 生成错误响应失败", ex);
                 response.setStatus(500);
             }
+        }
+    }
+    
+    /**
+     * 生成ETag（基于dictId和updateTime）
+     * ETag格式: "dict-{dictId}-{updateTime的毫秒数}"
+     * 为了更安全，使用MD5生成短ETag
+     */
+    private String generateETag(String dictId, Date updateTime) {
+        try {
+            String content = dictId + "-" + updateTime.getTime();
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            byte[] hash = md.digest(content.getBytes("UTF-8"));
+            StringBuilder sb = new StringBuilder();
+            sb.append("\"");
+            for (byte b : hash) {
+                sb.append(String.format("%02x", b));
+            }
+            sb.append("\"");
+            return sb.toString();
+        } catch (Exception e) {
+            logger.warn("生成ETag失败，使用简单格式, dictId: {}", dictId, e);
+            // 如果MD5失败，使用简单格式
+            return "\"dict-" + dictId + "-" + updateTime.getTime() + "\"";
         }
     }
 }
