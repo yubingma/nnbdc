@@ -130,6 +130,26 @@ SectionEnd
 
 ; 卸载程序段
 Section "Uninstall"
+    ; 检查应用是否正在运行，如果是则关闭
+    ; 使用 tasklist 命令检查进程
+    nsExec::ExecToStack 'cmd /c tasklist /FI "IMAGENAME eq ${APP_EXECUTABLE}" 2^>NUL ^| find /I "${APP_EXECUTABLE}" ^>NUL'
+    Pop $0 ; 返回值：0=找到进程，1=未找到
+    
+    ; 如果找到进程（返回值为0）
+    IntCmp $0 0 app_running app_not_running app_not_running
+    
+    app_running:
+    ; 应用正在运行，提示用户并自动关闭
+    MessageBox MB_OKCANCEL|MB_ICONEXCLAMATION \
+        "${APP_NAME} 正在运行，需要先关闭应用才能继续卸载。$\n$\n点击 确定 自动关闭应用，或点击 取消 手动关闭后再卸载。" \
+        IDCANCEL cancel_uninstall
+    
+    ; 尝试强制关闭应用
+    DetailPrint "正在关闭 ${APP_NAME}..."
+    nsExec::ExecToLog 'taskkill /IM ${APP_EXECUTABLE} /F'
+    Sleep 2000 ; 等待 2 秒让进程完全退出
+    
+    app_not_running:
     ; 删除应用程序文件
     RMDir /r "$INSTDIR"
     
@@ -163,4 +183,12 @@ Section "Uninstall"
     ; 删除注册表项
     DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}"
     DeleteRegKey HKLM "Software\${APP_NAME}"
+    
+    Goto uninstall_complete
+    
+    cancel_uninstall:
+        MessageBox MB_OK "卸载已取消，请手动关闭 ${APP_NAME} 后再次运行卸载程序。"
+        Abort "卸载已取消"
+    
+    uninstall_complete:
 SectionEnd
