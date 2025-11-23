@@ -554,6 +554,7 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
       
       // 获取当前安装目录（如果已安装）
       String? installDir = await _getCurrentInstallDir();
+      Global.logger.d('检测到的安装目录: $installDir');
       
       // 创建批处理脚本来处理安装流程
       String batchScriptPath = await _createWindowsUpdateBatchScript(
@@ -643,13 +644,17 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
       String escapedInstallerPath = installerPath.replaceAll('"', '""');
       
       // 构建安装命令参数
+      // 注意：NSIS 的 /D 参数必须是最后一个参数，且路径不需要引号
       String installArgs = '/S'; // 静默安装
+      String installDirArg = '';
       if (installDir != null && installDir.isNotEmpty) {
-        String escapedInstallDir = installDir.replaceAll('"', '""');
-        installArgs += ' /D="$escapedInstallDir"';
+        // NSIS /D 参数格式：/D=路径（不需要引号，即使路径有空格）
+        installDirArg = ' /D=$installDir';
+        Global.logger.d('安装目录参数: $installDirArg');
       }
-      // 批处理脚本中需要将引号再转义一次（使用 "" 表示一个引号）
+      // 批处理脚本中需要将引号转义（使用 "" 表示一个引号）
       String batchInstallArgs = installArgs.replaceAll('"', '""');
+      String batchInstallDirArg = installDirArg.replaceAll('"', '""');
       
       // 根据安装目录确定可执行文件路径
       // 如果有安装目录，使用该目录下的 nnbdc.exe；否则使用默认路径
@@ -689,11 +694,12 @@ set "PRIMARY_EXE=$escapedPrimaryPath"
 set "FALLBACK_EXE=$escapedCurrentExePath"
 set "START_MENU_CN=$escapedChineseLink"
 set "INSTALL_ARGS=$batchInstallArgs"
+set "INSTALL_DIR_ARG=$batchInstallDirArg"
 set "SHOULD_EXIT=0"
 
 echo Debug: Primary path = !PRIMARY_EXE!
 echo Debug: Fallback path = !FALLBACK_EXE!
-echo Debug: Install args = !INSTALL_ARGS!
+echo Debug: Install args = !INSTALL_ARGS!!INSTALL_DIR_ARG!
 
 title nnbdc auto update
 echo ========================================
@@ -750,8 +756,8 @@ echo.
 echo running installer, please wait...
 echo.
 
-REM 执行安装程序
-call "!INSTALLER_PATH!" !INSTALL_ARGS!
+REM 执行安装程序（/D 参数必须在最后）
+call "!INSTALLER_PATH!" !INSTALL_ARGS!!INSTALL_DIR_ARG!
 
 if !ERRORLEVEL! EQU 0 (
     echo.
