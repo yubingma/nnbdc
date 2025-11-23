@@ -130,7 +130,7 @@ SectionEnd
 
 ; 卸载程序段
 Section "Uninstall"
-    ; 删除文件
+    ; 删除应用程序文件
     RMDir /r "$INSTDIR"
     
     ; 删除开始菜单快捷方式
@@ -140,6 +140,25 @@ Section "Uninstall"
     
     ; 删除桌面快捷方式
     Delete "$DESKTOP\${APP_NAME}.lnk"
+    
+    ; 删除用户数据（完全卸载）
+    ; Flutter 的 getApplicationDocumentsDirectory() 在 Windows 上指向 %USERPROFILE%\Documents
+    ; 删除数据库文件（包括 WAL 和 SHM 文件）
+    Delete "$DOCUMENTS\db.sqlite"
+    Delete "$DOCUMENTS\db.sqlite-shm"
+    Delete "$DOCUMENTS\db.sqlite-wal"
+    
+    ; 删除更新相关目录和文件
+    RMDir /r "$DOCUMENTS\nnbdc_update"
+    RMDir /r "$DOCUMENTS\nnbdc_update_temp"
+    
+    ; 删除可能存在的下载文件
+    Delete "$DOCUMENTS\nnbdc-*.apk"
+    Delete "$DOCUMENTS\nnbdc-*.exe"
+    Delete "$DOCUMENTS\nnbdc-*.zip"
+    
+    ; 删除 GetStorage 数据（如果存在）
+    RMDir /r "$LOCALAPPDATA\nnbdc"
     
     ; 删除注册表项
     DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}"
