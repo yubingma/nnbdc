@@ -114,14 +114,20 @@ public class ResController {
             // - s-maxage: CDN节点的缓存时间，过期后CDN会回源检查资源是否更新
             // - stale-while-revalidate: CDN缓存过期后，在后台异步更新缓存的同时，继续使用旧缓存服务请求
             //   这样可以避免缓存过期瞬间的大量回源请求，让流量完全落在CDN上
+            // - stale-if-error: 当源站异常时，CDN可以继续使用过期缓存提供服务
             // - 当CDN缓存过期回源时，如果资源未修改（ETag/Last-Modified匹配），服务器返回304，
-            //   CDN可以继续使用缓存，无需重新下载完整内容
+            //   304响应只包含响应头（约200-300字节），没有响应体，回源成本极低
             // - 如果资源已更新，服务器返回200和新内容，CDN更新缓存
             // 统一配置：
             //   - CDN缓存1小时（s-maxage=3600），过期后继续服务旧内容7天（stale-while-revalidate=604800）
+            //   - 源站异常时继续服务旧内容7天（stale-if-error=604800）
             //   - 客户端缓存5分钟（max-age=300）
-            // 这样即使缓存过期，流量也完全落在CDN上，不会回源
-            response.setHeader("Cache-Control", "public, max-age=300, s-maxage=3600, stale-while-revalidate=604800");
+            // 为什么1小时缓存不会有问题：
+            // 1. 1小时内所有请求都在CDN，不回源
+            // 2. 1小时后回源检查，如果词典未更新（常见情况），返回304（只有响应头，约200-300字节）
+            // 3. 304响应成本极低，不会对服务器造成压力
+            // 4. 如果CDN支持stale-while-revalidate，即使缓存过期，流量也完全落在CDN上
+            response.setHeader("Cache-Control", "public, max-age=300, s-maxage=3600, stale-while-revalidate=604800, stale-if-error=604800");
             
             // 检查条件请求（If-None-Match和If-Modified-Since）
             String ifNoneMatch = request.getHeader("If-None-Match");
