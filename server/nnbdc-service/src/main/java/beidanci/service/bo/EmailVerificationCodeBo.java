@@ -7,8 +7,6 @@ import java.util.List;
 import javax.annotation.PostConstruct;
 
 import org.hibernate.query.Query;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -25,8 +23,6 @@ import beidanci.service.util.EmailUtil;
 @Service
 @Transactional(rollbackFor = Throwable.class)
 public class EmailVerificationCodeBo extends BaseBo<EmailVerificationCode> {
-
-    private static final Logger logger = LoggerFactory.getLogger(EmailVerificationCodeBo.class);
 
     @Autowired
     private EmailUtil emailUtil;
@@ -123,22 +119,10 @@ public class EmailVerificationCodeBo extends BaseBo<EmailVerificationCode> {
         }
 
         EmailVerificationCode verificationCode = codes.get(0);
-        
-        if (verificationCode.getUsed()) {
-            return "验证码已使用";
-        }
 
+        // 只检查是否过期，不检查是否已使用，允许在有效期内多次使用
         if (verificationCode.isExpired()) {
             return "验证码已过期";
-        }
-
-        // 标记为已使用
-        verificationCode.setUsed(true);
-        try {
-            updateEntity(verificationCode);
-        } catch (IllegalAccessException e) {
-            logger.error("更新验证码状态失败", e);
-            return "验证失败";
         }
 
         return "OK";
