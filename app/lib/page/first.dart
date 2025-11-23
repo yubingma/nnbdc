@@ -753,21 +753,45 @@ if !ERRORLEVEL! EQU 0 (
     REM 启动新版本应用（使用 PowerShell Start-Process 确保应用独立于命令行窗口）
     echo starting new version...
     echo [%date% %time%] starting new version >> "!LOG_FILE!"
+    
+    REM 检查并启动主路径的可执行文件
     if exist "!PRIMARY_EXE!" (
-        powershell -Command "Start-Process -FilePath '!PRIMARY_EXE!' -WindowStyle Hidden"
-        echo new version started from primary path
-        echo [%date% %time%] new version started: !PRIMARY_EXE! >> "!LOG_FILE!"
+        echo found primary exe: !PRIMARY_EXE!
+        echo [%date% %time%] found primary exe: !PRIMARY_EXE! >> "!LOG_FILE!"
+        powershell -Command "Start-Process -FilePath '!PRIMARY_EXE!'" 2>>"!LOG_FILE!"
+        if !ERRORLEVEL! EQU 0 (
+            echo new version started from primary path
+            echo [%date% %time%] new version started: !PRIMARY_EXE! >> "!LOG_FILE!"
+        ) else (
+            echo failed to start from primary path, error: !ERRORLEVEL!
+            echo [%date% %time%] failed to start from primary path, error: !ERRORLEVEL! >> "!LOG_FILE!"
+        )
     ) else if exist "!FALLBACK_EXE!" (
-        powershell -Command "Start-Process -FilePath '!FALLBACK_EXE!' -WindowStyle Hidden"
-        echo new version started from fallback path
-        echo [%date% %time%] new version started: !FALLBACK_EXE! >> "!LOG_FILE!"
+        echo found fallback exe: !FALLBACK_EXE!
+        echo [%date% %time%] found fallback exe: !FALLBACK_EXE! >> "!LOG_FILE!"
+        powershell -Command "Start-Process -FilePath '!FALLBACK_EXE!'" 2>>"!LOG_FILE!"
+        if !ERRORLEVEL! EQU 0 (
+            echo new version started from fallback path
+            echo [%date% %time%] new version started: !FALLBACK_EXE! >> "!LOG_FILE!"
+        ) else (
+            echo failed to start from fallback path, error: !ERRORLEVEL!
+            echo [%date% %time%] failed to start from fallback path, error: !ERRORLEVEL! >> "!LOG_FILE!"
+        )
     ) else (
         echo warning: executable not found in known locations
         echo [%date% %time%] warning: executable not found >> "!LOG_FILE!"
+        echo checking start menu shortcut: !START_MENU_CN!
         if exist "!START_MENU_CN!" (
-            powershell -Command "Start-Process -FilePath '!START_MENU_CN!' -WindowStyle Hidden"
-            echo launched from chinese start menu shortcut
-            echo [%date% %time%] launched from chinese start menu >> "!LOG_FILE!"
+            echo found start menu shortcut
+            echo [%date% %time%] found start menu shortcut >> "!LOG_FILE!"
+            powershell -Command "Start-Process -FilePath '!START_MENU_CN!'" 2>>"!LOG_FILE!"
+            if !ERRORLEVEL! EQU 0 (
+                echo launched from chinese start menu shortcut
+                echo [%date% %time%] launched from chinese start menu >> "!LOG_FILE!"
+            ) else (
+                echo failed to launch from start menu, error: !ERRORLEVEL!
+                echo [%date% %time%] failed to launch from start menu, error: !ERRORLEVEL! >> "!LOG_FILE!"
+            )
         ) else (
             echo error: start menu shortcut not found
             echo [%date% %time%] error: start menu shortcut not found >> "!LOG_FILE!"
