@@ -78,16 +78,16 @@ public class ResController {
         
         
         long startTime = System.currentTimeMillis();
-        logger.info("🔄 开始查询词典资源, dictId: {}", dictId);
+        logger.info("开始查询词典资源, dictId: {}", dictId);
         
         try {
             // 对通用词典先做一次数据库层面的释义补全（幂等）
             if (Constants.COMMON_DICT_ID.equals(dictId)) {
                 try {
                     int inserted = meaningItemBo.supplementCommonMeanings();
-                    logger.info("🧩 通用词典释义补全完成, 新增条数: {}", inserted);
+                    logger.info("通用词典释义补全完成, 新增条数: {}", inserted);
                 } catch (Exception e) {
-                    logger.warn("⚠️ 通用释义补全执行失败: {}", e.getMessage());
+                    logger.warn("通用释义补全执行失败: {}", e.getMessage());
                 }
             }
 
@@ -137,45 +137,45 @@ public class ResController {
             boolean notModified = false;
             if (ifNoneMatch != null && ifNoneMatch.equals(etag)) {
                 notModified = true;
-                logger.debug("📋 ETag匹配，返回304, dictId: {}, ETag: {}", dictId, etag);
+                logger.debug("ETag匹配，返回304, dictId: {}, ETag: {}", dictId, etag);
             } else if (ifModifiedSince > 0 && lastModified <= ifModifiedSince) {
                 notModified = true;
-                logger.debug("📋 Last-Modified未变化，返回304, dictId: {}, Last-Modified: {}", dictId, new Date(lastModified));
+                logger.debug("Last-Modified未变化，返回304, dictId: {}, Last-Modified: {}", dictId, new Date(lastModified));
             }
             
             if (notModified) {
                 response.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
-                logger.info("✅ 词典资源未修改，返回304, dictId: {}", dictId);
+                logger.info("词典资源未修改，返回304, dictId: {}", dictId);
                 return;
             }
             
             // 查询词典单词
             List<DictWordDto> dictWords = dictWordBo.getDictWordsOfDict(dictId);
-            logger.info("📝 词典单词关系查询完成, 数量: {}", dictWords.size());
+            logger.info("词典单词关系查询完成, 数量: {}", dictWords.size());
             
             // 查询单词详细信息
             List<WordDto> words = wordBo.getWordsOfDict(dictId);
-            logger.info("🔍 单词详细信息查询完成, 数量: {}", words.size());
+            logger.info("单词详细信息查询完成, 数量: {}", words.size());
             
             // 查询释义（此时通用释义已在库中补齐）
             List<MeaningItemDto> meaningItems = meaningItemBo.getMeaningItemsOfDict(dictId);
-            logger.info("📚 释义信息查询完成, 数量: {}", meaningItems.size());
+            logger.info("释义信息查询完成, 数量: {}", meaningItems.size());
             
             // 查询同义词
             List<SynonymDto> synonyms = synonymBo.getSynonymsOfDict(dictId);
-            logger.info("🔄 同义词查询完成, 数量: {}", synonyms.size());
+            logger.info("同义词查询完成, 数量: {}", synonyms.size());
             
             // 查询相似词
             List<SimilarWordDto> similarWords = wordBo.getSimilarWordsOfDict(dictId);
-            logger.info("🔗 相似词查询完成, 数量: {}", similarWords.size());
+            logger.info("相似词查询完成, 数量: {}", similarWords.size());
             
             // 查询例句
             List<SentenceDto> sentences = sentenceBo.getSentencesOfDict(dictId);
-            logger.info("💬 例句查询完成, 数量: {}", sentences.size());
+            logger.info("例句查询完成, 数量: {}", sentences.size());
             
             // 查询图片
             List<WordImageDto> images = wordBo.getWordImagesOfDict(dictId);
-            logger.info("🖼️ 单词图片查询完成, 数量: {}", images.size());
+            logger.info("单词图片查询完成, 数量: {}", images.size());
             
             // 构建响应对象
             // 对于通用词典，不返回 dictWords 以减少响应大小
@@ -200,7 +200,7 @@ public class ResController {
             // 这样可以提供准确的进度显示和完整性验证
             if (supportsGzip) {
                 // 使用 gzip 压缩时，由于压缩后大小未知，使用 chunked 模式
-                logger.info("📦 使用 chunked 模式 + gzip 压缩传输");
+                logger.info("使用 chunked 模式 + gzip 压缩传输");
                 
                 CountingOutputStream countingOut = new CountingOutputStream(response.getOutputStream());
                 try (GZIPOutputStream gzipOut = new GZIPOutputStream(countingOut)) {
@@ -211,7 +211,7 @@ public class ResController {
             } else {
                 // 不压缩时使用 Content-Length 模式
                 response.setHeader("Content-Length", String.valueOf(originalSize));
-                logger.info("📦 使用 Content-Length 模式传输");
+                logger.info("使用 Content-Length 模式传输");
                 
                 mapper.writeValue(response.getOutputStream(), result);
                 actualBytes = originalSize; // 使用原始大小作为实际传输大小
@@ -231,17 +231,17 @@ public class ResController {
             long duration = endTime - startTime;
             
             if (supportsGzip) {
-                logger.info("✅ 词典资源查询完成, dictId: {}, 耗时: {}ms, 原始大小: {}MB ({}字节), 压缩后: {}MB ({}字节), 压缩率: {}%, 词典单词关系: {}, 单词: {}, 释义数: {}, 例句数: {}", 
+                logger.info("词典资源查询完成, dictId: {}, 耗时: {}ms, 原始大小: {}MB ({}字节), 压缩后: {}MB ({}字节), 压缩率: {}%, 词典单词关系: {}, 单词: {}, 释义数: {}, 例句数: {}", 
                     dictId, duration, String.format("%.2f", originalSizeMB), originalSize, String.format("%.2f", actualSizeMB), actualBytes, String.format("%.1f", compressionRatio), dictWords.size(), words.size(), meaningItems.size(), sentences.size());
             } else {
-                logger.info("✅ 词典资源查询完成, dictId: {}, 耗时: {}ms, 传输大小: {}MB ({}字节), 词典单词关系: {}, 单词: {}, 释义数: {}, 例句数: {}", 
+                logger.info("词典资源查询完成, dictId: {}, 耗时: {}ms, 传输大小: {}MB ({}字节), 词典单词关系: {}, 单词: {}, 释义数: {}, 例句数: {}", 
                     dictId, duration, String.format("%.2f", actualSizeMB), actualBytes, dictWords.size(), words.size(), meaningItems.size(), sentences.size());
             }
             
         } catch (IOException | ParseException e) {
             long endTime = System.currentTimeMillis();
             long duration = endTime - startTime;
-            logger.error("❌ 词典资源查询失败, dictId: {}, 耗时: {}ms, 错误: {}", dictId, duration, e.getMessage(), e);
+            logger.error("词典资源查询失败, dictId: {}, 耗时: {}ms, 错误: {}", dictId, duration, e.getMessage(), e);
             
             // 返回错误响应
             try {
@@ -253,7 +253,7 @@ public class ResController {
                 writer.write(errorJson);
                 writer.flush();
             } catch (IOException ex) {
-                logger.error("❌ 生成错误响应失败", ex);
+                logger.error("生成错误响应失败", ex);
                 response.setStatus(500);
             }
         }
