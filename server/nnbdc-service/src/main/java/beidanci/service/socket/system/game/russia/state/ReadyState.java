@@ -131,7 +131,7 @@ public class ReadyState extends RoomState {
                                         room.processUserCmd(botUser, propsCmd);
                                         // 打印机器人使用"减一行"日志
                                         org.slf4j.LoggerFactory.getLogger(ReadyState.class)
-                                                .info(String.format("🤖 机器人[%s] 延迟%.1f秒后使用了道具[减一行]，库存：加一行=%d，减一行=%d",
+                                                .info(String.format("机器人[%s] 延迟%.1f秒后使用了道具[减一行]，库存：加一行=%d，减一行=%d",
                                                         beidanci.service.util.Util.getNickNameOfUser(botUser),
                                                         delayMs / 1000.0,
                                                         currentBotData.getPropsCounts()[0],
@@ -294,7 +294,7 @@ public class ReadyState extends RoomState {
                                     room.processUserCmd(botUser, startCmd);
 
                                     org.slf4j.LoggerFactory.getLogger(ReadyState.class)
-                                            .info(String.format("🤖 机器人[%s]自动点击开始按钮完成，已调用processUserCmd",
+                                            .info(String.format("机器人[%s]自动点击开始按钮完成，已调用processUserCmd",
                                                     Util.getNickNameOfUser(botUser)));
                                 }
                             }
@@ -308,7 +308,7 @@ public class ReadyState extends RoomState {
                 fallTimer.schedule(botAutoStartTask, delayMs);
 
                 org.slf4j.LoggerFactory.getLogger(ReadyState.class)
-                        .info(String.format("🤖 已调度机器人[%s]在%.1f秒后自动开始",
+                        .info(String.format("已调度机器人[%s]在%.1f秒后自动开始",
                                 Util.getNickNameOfUser(botUser), delayMs / 1000.0));
                 break; // 只处理一个机器人
             }
@@ -439,7 +439,7 @@ public class ReadyState extends RoomState {
         boolean isBot = user.getUserName() != null && user.getUserName().startsWith("bot_");
         if (!isBot && user.getCowDung() < cowDungPerGame) {
             org.slf4j.LoggerFactory.getLogger(ReadyState.class)
-                    .warn(String.format("❌ 用户[%s]魔法泡泡不足：需要%d，现有%d",
+                    .warn(String.format("用户[%s]魔法泡泡不足：需要%d，现有%d",
                             Util.getNickNameOfUser(user), cowDungPerGame, user.getCowDung()));
             room.sendEventToUser(user, "noEnoughCowDung", cowDungPerGame);
             return;
@@ -472,7 +472,7 @@ public class ReadyState extends RoomState {
                         double leaveChance = 0.10;
                         if (Math.random() < leaveChance) {
                             org.slf4j.LoggerFactory.getLogger(ReadyState.class)
-                                    .info(String.format("🤖 机器人[%s]在人类玩家开始后选择离开游戏（延迟%.1f秒后的决定）",
+                                    .info(String.format("机器人[%s]在人类玩家开始后选择离开游戏（延迟%.1f秒后的决定）",
                                             Util.getNickNameOfUser(bot), delayMs / 1000.0));
                             // 让机器人离开房间
                             room.userLeave(bot);
@@ -482,7 +482,7 @@ public class ReadyState extends RoomState {
                         // 90%概率：先广播机器人点击了开始
                         room.broadcastEvent("userStarted", bot.getId());
                         org.slf4j.LoggerFactory.getLogger(ReadyState.class)
-                                .info(String.format("✅ 已广播机器人[%s]的userStarted事件",
+                                .info(String.format("已广播机器人[%s]的userStarted事件",
                                         Util.getNickNameOfUser(bot)));
 
                         // 设置机器人为已开始状态

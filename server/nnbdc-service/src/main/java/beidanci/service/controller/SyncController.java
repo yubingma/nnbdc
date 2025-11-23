@@ -64,12 +64,12 @@ public class SyncController {
         
         
         long startTime = System.currentTimeMillis();
-        log.info("🔄 开始查询用户数据库日志, userId: {}, localDbVersion: {}", userId, fromVersion);
+        log.info("开始查询用户数据库日志, userId: {}, localDbVersion: {}", userId, fromVersion);
         
         try {
             // 查询用户数据库增量日志
             List<UserDbLogDto> logs = userBo.getUserDbLogsFromVersion(userId, fromVersion);
-            log.info("📋 用户数据库增量日志查询完成, 数量: {}", logs.size());
+            log.info("用户数据库增量日志查询完成, 数量: {}", logs.size());
             
             // 构建响应对象
             Result<List<UserDbLogDto>> result = Result.success(logs);
@@ -92,7 +92,7 @@ public class SyncController {
             // 这样可以提供准确的进度显示和完整性验证
             if (supportsGzip) {
                 // 使用 gzip 压缩时，由于压缩后大小未知，使用 chunked 模式
-                log.info("📦 使用 chunked 模式 + gzip 压缩传输");
+                log.info("使用 chunked 模式 + gzip 压缩传输");
                 
                 CountingOutputStream countingOut = new CountingOutputStream(response.getOutputStream());
                 try (GZIPOutputStream gzipOut = new GZIPOutputStream(countingOut)) {
@@ -103,7 +103,7 @@ public class SyncController {
             } else {
                 // 不压缩时使用 Content-Length 模式
                 response.setHeader("Content-Length", String.valueOf(originalSize));
-                log.info("📦 使用 Content-Length 模式传输");
+                log.info("使用 Content-Length 模式传输");
                 
                 mapper.writeValue(response.getOutputStream(), result);
                 actualBytes = originalSize; // 使用原始大小作为实际传输大小
@@ -123,17 +123,17 @@ public class SyncController {
             long duration = endTime - startTime;
             
             if (supportsGzip) {
-                log.info("✅ 用户数据库日志查询完成, userId: {}, localDbVersion: {}, 耗时: {}ms, 原始大小: {}MB ({}字节), 压缩后: {}MB ({}字节), 压缩率: {}%, 日志数量: {}", 
+                log.info("用户数据库日志查询完成, userId: {}, localDbVersion: {}, 耗时: {}ms, 原始大小: {}MB ({}字节), 压缩后: {}MB ({}字节), 压缩率: {}%, 日志数量: {}", 
                     userId, fromVersion, duration, String.format("%.2f", originalSizeMB), originalSize, String.format("%.2f", actualSizeMB), actualBytes, String.format("%.1f", compressionRatio), logs.size());
             } else {
-                log.info("✅ 用户数据库日志查询完成, userId: {}, localDbVersion: {}, 耗时: {}ms, 传输大小: {}MB ({}字节), 日志数量: {}", 
+                log.info("用户数据库日志查询完成, userId: {}, localDbVersion: {}, 耗时: {}ms, 传输大小: {}MB ({}字节), 日志数量: {}", 
                     userId, fromVersion, duration, String.format("%.2f", actualSizeMB), actualBytes, logs.size());
             }
             
         } catch (IOException e) {
             long endTime = System.currentTimeMillis();
             long duration = endTime - startTime;
-            log.error("❌ 用户数据库日志查询失败, userId: {}, localDbVersion: {}, 耗时: {}ms, 错误: {}", 
+            log.error("用户数据库日志查询失败, userId: {}, localDbVersion: {}, 耗时: {}ms, 错误: {}", 
                 userId, fromVersion, duration, e.getMessage(), e);
             
             // 返回错误响应
@@ -146,7 +146,7 @@ public class SyncController {
                 writer.write(errorJson);
                 writer.flush();
             } catch (IOException ex) {
-                log.error("❌ 生成错误响应失败", ex);
+                log.error("生成错误响应失败", ex);
                 response.setStatus(500);
             }
         }

@@ -103,9 +103,9 @@ public class EmailUtilTest {
         logger.info("发送结果: {}", result);
         
         if ("OK".equals(result)) {
-            logger.info("✓ 邮件发送成功");
+            logger.info("邮件发送成功");
         } else {
-            logger.error("✗ 邮件发送失败: {}", result);
+            logger.error("邮件发送失败: {}", result);
         }
         
         logger.info("=== 测试完成 ===");
@@ -143,9 +143,9 @@ public class EmailUtilTest {
             String parsedCode = (String) parsed.get("code");
             
             if (code.equals(parsedCode)) {
-                logger.info("  ✓ JSON 解析成功，值匹配");
+                logger.info("  JSON 解析成功，值匹配");
             } else {
-                logger.error("  ✗ JSON 解析后值不匹配: 原值={}, 解析值={}", code, parsedCode);
+                logger.error("  JSON 解析后值不匹配: 原值={}, 解析值={}", code, parsedCode);
             }
         }
         

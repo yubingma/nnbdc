@@ -39,7 +39,7 @@ public class EmailUtilJsonTest {
         JsonNode node1 = objectMapper.readTree(codeJson);
         assert node1.has("code") : "JSON 缺少 code 字段";
         assert "123456".equals(node1.get("code").asText()) : "code 值不正确";
-        logger.info("✓ 验证码参数 JSON 格式正确");
+        logger.info("验证码参数 JSON 格式正确");
         
         // 测试包含特殊字符的验证码
         codeMap.put("code", "test\"code");
@@ -49,7 +49,7 @@ public class EmailUtilJsonTest {
         JsonNode node2 = objectMapper.readTree(codeJson2);
         assert node2.has("code") : "JSON 缺少 code 字段";
         assert "test\"code".equals(node2.get("code").asText()) : "包含引号的 code 值不正确";
-        logger.info("✓ 包含特殊字符的验证码参数 JSON 格式正确");
+        logger.info("包含特殊字符的验证码参数 JSON 格式正确");
         
         // 测试密码内容参数
         Map<String, String> contentMap = new HashMap<>();
@@ -60,7 +60,7 @@ public class EmailUtilJsonTest {
         JsonNode node3 = objectMapper.readTree(contentJson);
         assert node3.has("content") : "JSON 缺少 content 字段";
         assert "您的密码是：123456".equals(node3.get("content").asText()) : "content 值不正确";
-        logger.info("✓ 密码内容参数 JSON 格式正确");
+        logger.info("密码内容参数 JSON 格式正确");
         
         logger.info("=== 所有 JSON 格式测试通过 ===");
     }
@@ -97,9 +97,9 @@ public class EmailUtilJsonTest {
             String parsedCode = (String) parsed.get("code");
             
             if (code.equals(parsedCode)) {
-                logger.info("  ✓ JSON 解析成功，值匹配");
+                logger.info("  JSON 解析成功，值匹配");
             } else {
-                logger.error("  ✗ JSON 解析后值不匹配: 原值=[{}], 解析值=[{}]", code, parsedCode);
+                logger.error("  JSON 解析后值不匹配: 原值=[{}], 解析值=[{}]", code, parsedCode);
                 throw new AssertionError(String.format("JSON 解析后值不匹配: 原值=[%s], 解析值=[%s]", code, parsedCode));
             }
         }
@@ -152,7 +152,7 @@ public class EmailUtilJsonTest {
         logger.info("  HtmlBody: [未设置]");
         logger.info("  TextBody: [未设置]");
         
-        logger.info("✓ 模拟参数构建成功");
+        logger.info("模拟参数构建成功");
         logger.info("=== 模拟测试完成 ===");
     }
 }

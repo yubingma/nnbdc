@@ -74,7 +74,7 @@ public final class GetNextWordProcessor {
                 if (user.getUserName() != null && user.getUserName().startsWith("bot_")) {
                     int c0 = userPlayData.getPropsCounts()[0];
                     int c1 = userPlayData.getPropsCounts()[1];
-                    log.info(String.format("🤖 机器人[%s] 获得道具[%s]，道具库存：加一行=%d，减一行=%d",
+                    log.info(String.format("机器人[%s] 获得道具[%s]，道具库存：加一行=%d，减一行=%d",
                             beidanci.service.util.Util.getNickNameOfUser(user),
                             (props == 0 ? "加一行" : "减一行"), c0, c1));
                 }
