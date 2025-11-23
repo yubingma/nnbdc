@@ -553,15 +553,16 @@ jobs:
           # 手动构建格式化的 JSON 字符串以确保字段顺序固定：verCode, verName, changes
           # changes 数组元素需要缩进 4 个空格（根对象 2 空格 + 数组 2 空格）
           $changesJson = ($changes | ForEach-Object { "    `"$_`"" }) -join ",`r`n"
-          $jsonContent = @"
-{
-  "verCode": $verCode,
-  "verName": "$verName",
-  "changes": [
-$changesJson
-  ]
-}
-"@
+          $jsonLines = @(
+            "{",
+            "  `"verCode`": $verCode,",
+            "  `"verName`": `"$verName`",",
+            "  `"changes`": [",
+            $changesJson,
+            "  ]",
+            "}"
+          )
+          $jsonContent = $jsonLines -join "`r`n"
           $jsonContent | Out-File -FilePath "$DEPLOY_DIR\ver.json" -Encoding UTF8 -NoNewline -Force
           Write-Host "版本信息已更新: $VERSION_NUMBER ($BUILD_NUMBER)"
         shell: pwsh
