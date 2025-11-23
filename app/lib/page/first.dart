@@ -750,22 +750,22 @@ if !ERRORLEVEL! EQU 0 (
     echo wait a moment...
     timeout /t 3 /nobreak >nul
     
-    REM 启动新版本应用
+    REM 启动新版本应用（使用 PowerShell Start-Process 确保应用独立于命令行窗口）
     echo starting new version...
     echo [%date% %time%] starting new version >> "!LOG_FILE!"
     if exist "!PRIMARY_EXE!" (
-        start "" "!PRIMARY_EXE!"
+        powershell -Command "Start-Process -FilePath '!PRIMARY_EXE!' -WindowStyle Hidden"
         echo new version started from primary path
         echo [%date% %time%] new version started: !PRIMARY_EXE! >> "!LOG_FILE!"
     ) else if exist "!FALLBACK_EXE!" (
-        start "" "!FALLBACK_EXE!"
+        powershell -Command "Start-Process -FilePath '!FALLBACK_EXE!' -WindowStyle Hidden"
         echo new version started from fallback path
         echo [%date% %time%] new version started: !FALLBACK_EXE! >> "!LOG_FILE!"
     ) else (
         echo warning: executable not found in known locations
         echo [%date% %time%] warning: executable not found >> "!LOG_FILE!"
         if exist "!START_MENU_CN!" (
-            start "" "!START_MENU_CN!"
+            powershell -Command "Start-Process -FilePath '!START_MENU_CN!' -WindowStyle Hidden"
             echo launched from chinese start menu shortcut
             echo [%date% %time%] launched from chinese start menu >> "!LOG_FILE!"
         ) else (
@@ -773,16 +773,18 @@ if !ERRORLEVEL! EQU 0 (
             echo [%date% %time%] error: start menu shortcut not found >> "!LOG_FILE!"
         )
     )
-    set "SHOULD_EXIT=1"
+    
     echo.
-    echo update script finished, window will close in 5 seconds...
-    echo [%date% %time%] update script finished >> "!LOG_FILE!"
+    echo new version launched, closing window...
+    echo [%date% %time%] update script finished, closing window >> "!LOG_FILE!"
     
-    REM 清理临时脚本（延迟删除，避免影响当前执行）
-    timeout /t 5 /nobreak >nul
-    start "" /b cmd /c del /Q "%~f0" >nul 2>&1
+    REM 短暂延迟确保应用启动完成
+    timeout /t 2 /nobreak >nul
     
-    REM 成功时自动关闭窗口
+    REM 在后台异步删除临时脚本，不影响窗口关闭
+    start "" /b cmd /c "timeout /t 3 /nobreak >nul & del /Q "%~f0"" >nul 2>&1
+    
+    REM 立即关闭窗口
     exit
 ) else (
     echo.
