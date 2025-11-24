@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>泡泡单词 - 智能背单词应用官方网站</title>
+    <meta name="description" content="泡泡单词是一款专业的智能背单词应用，支持多平台，采用科学的记忆算法，让英语学习更高效。">
+    <meta name="keywords" content="泡泡单词,背单词,英语学习,单词记忆,NNBDC">
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        /* 导航栏 */
+        nav {
+            background-color: #fff;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        
+        nav .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+        }
+        
+        .logo {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #667eea;
+            text-decoration: none;
+        }
+        
+        nav ul {
+            list-style: none;
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+        
+        nav ul li a {
+            color: #333;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+        
+        nav ul li a:hover {
+            color: #667eea;
+        }
+        
+        /* 首页横幅 */
+        .hero {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 80px 20px;
+            text-align: center;
+        }
+        
+        .hero h1 {
+            font-size: 3em;
+            margin-bottom: 20px;
+        }
+        
+        .hero p {
+            font-size: 1.3em;
+            margin-bottom: 30px;
+            opacity: 0.9;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 15px 40px;
+            background-color: white;
+            color: #667eea;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: 600;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        
+        /* 内容区域 */
+        section {
+            padding: 60px 20px;
+            background-color: #fff;
+            margin-bottom: 20px;
+        }
+        
+        section h2 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        section h3 {
+            color: #764ba2;
+            font-size: 1.8em;
+            margin-top: 40px;
+            margin-bottom: 20px;
+        }
+        
+        /* 产品展示 */
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }
+        
+        .product-card {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .product-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .product-card .icon {
+            font-size: 3em;
+            margin-bottom: 20px;
+        }
+        
+        .product-card h4 {
+            color: #667eea;
+            font-size: 1.5em;
+            margin-bottom: 15px;
+        }
+        
+        .product-card p {
+            color: #666;
+            line-height: 1.8;
+        }
+        
+        /* 应用介绍 */
+        .app-intro {
+            background-color: #f9f9f9;
+            padding: 40px;
+            border-radius: 15px;
+            margin-top: 30px;
+        }
+        
+        .app-intro p {
+            font-size: 1.1em;
+            line-height: 2;
+            margin-bottom: 20px;
+        }
+        
+        .app-intro ul {
+            margin-left: 30px;
+            line-height: 2.5;
+        }
+        
+        .app-intro ul li {
+            margin-bottom: 10px;
+        }
+        
+        /* 联系方式 */
+        .contact-info {
+            background-color: #f0f7ff;
+            padding: 30px;
+            border-radius: 15px;
+            margin-top: 30px;
+        }
+        
+        .contact-info p {
+            margin: 15px 0;
+            font-size: 1.1em;
+        }
+        
+        .contact-info strong {
+            color: #667eea;
+            min-width: 120px;
+            display: inline-block;
+        }
+        
+        /* 页脚 */
+        footer {
+            background-color: #333;
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+        }
+        
+        footer p {
+            margin: 10px 0;
+        }
+        
+        footer a {
+            color: #667eea;
+            text-decoration: none;
+            margin: 0 10px;
+        }
+        
+        footer a:hover {
+            text-decoration: underline;
+        }
+        
+        .footer-links {
+            margin: 20px 0;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2em;
+            }
+            
+            .hero p {
+                font-size: 1.1em;
+            }
+            
+            nav ul {
+                gap: 15px;
+                font-size: 0.9em;
+            }
+            
+            section h2 {
+                font-size: 2em;
+            }
+            
+            .product-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav>
+        <div class="container">
+            <a href="#" class="logo">泡泡单词</a>
+            <ul>
+                <li><a href="#home">首页</a></li>
+                <li><a href="#product">产品展示</a></li>
+                <li><a href="#intro">应用介绍</a></li>
+                <li><a href="#contact">联系我们</a></li>
+                <li><a href="protocol.html">用户协议</a></li>
+                <li><a href="privacy.html">隐私政策</a></li>
+            </ul>
+        </div>
+    </nav>
+    
+    <!-- 首页横幅 -->
+    <section id="home" class="hero">
+        <div class="container">
+            <h1>泡泡单词</h1>
+            <p>智能背单词应用 - 让英语学习更高效</p>
+            <a href="http://www.nnbdc.com/download.html" class="btn">下载</a>
+        </div>
+    </section>
+    
+    <!-- 产品展示 -->
+    <section id="product">
+        <div class="container">
+            <h2>产品展示</h2>
+            <div class="product-grid">
+                <div class="product-card">
+                    <div class="icon">📚</div>
+                    <h4>多词库支持</h4>
+                    <p>涵盖高考、CET4/6、TOEFL、GRE 等各类词库，满足不同学习需求</p>
+                </div>
+                <div class="product-card">
+                    <div class="icon">🎯</div>
+                    <h4>智能算法</h4>
+                    <p>基于艾宾浩斯遗忘曲线的科学记忆算法，自动安排复习时间</p>
+                </div>
+                <div class="product-card">
+                    <div class="icon">🎮</div>
+                    <h4>游戏化学习</h4>
+                    <p>趣味学习模式，让背单词变得轻松有趣，不再枯燥</p>
+                </div>
+                <div class="product-card">
+                    <div class="icon">🔊</div>
+                    <h4>语音朗读</h4>
+                    <p>TTS 语音朗读功能，帮助用户学习标准发音</p>
+                </div>
+                <div class="product-card">
+                    <div class="icon">📊</div>
+                    <h4>学习统计</h4>
+                    <p>详细记录学习进度、掌握情况等数据，可视化展示学习成果</p>
+                </div>
+                <div class="product-card">
+                    <div class="icon">💾</div>
+                    <h4>数据同步</h4>
+                    <p>支持多设备数据同步，随时随地继续学习</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- 应用介绍 -->
+    <section id="intro">
+        <div class="container">
+            <h2>应用介绍</h2>
+            <div class="app-intro">
+                <h3>关于泡泡单词（NNBDC）</h3>
+                <p>
+                    泡泡单词（NNBDC）是一款功能强大的智能背单词应用，采用 Flutter 跨平台技术开发，
+                    支持 Android、iOS、Windows、macOS 等多个平台。应用集成了先进的记忆算法，
+                    能够根据用户的学习情况智能调整复习计划，提高学习效率。
+                </p>
+                
+                <h3>核心功能特点</h3>
+                <ul>
+                    <li><strong>多词库支持：</strong>提供高考、大学英语四六级、托福、GRE 等多种词库，满足不同学习需求</li>
+                    <li><strong>智能复习：</strong>基于艾宾浩斯遗忘曲线，自动安排复习时间，提高记忆效率</li>
+                    <li><strong>多种学习模式：</strong>支持看词选义、看义选词、看英说义等多种学习模式</li>
+                    <li><strong>语音功能：</strong>集成 TTS 语音朗读，帮助用户学习标准发音</li>
+                    <li><strong>学习统计：</strong>详细记录学习进度、掌握情况等数据，可视化展示学习成果</li>
+                    <li><strong>数据同步：</strong>支持多设备数据同步，随时随地继续学习</li>
+                    <li><strong>主题切换：</strong>支持深色/浅色主题，保护眼睛，提升使用体验</li>
+                </ul>
+                
+                <h3>技术特点</h3>
+                <p>
+                    泡泡单词采用现代化的技术栈开发，包括 Flutter 跨平台框架、Drift 数据库、
+                    Socket.IO 实时通信等技术，确保应用的稳定性和性能。应用界面简洁美观，
+                    操作流畅，为用户提供优质的学习体验。
+                </p>
+                
+                <h3>适用平台</h3>
+                <p>
+                    泡泡单词支持多平台使用，包括 Android、iOS、Windows、macOS 等，
+                    用户可以根据自己的设备选择相应的版本进行下载和使用。
+                </p>
+            </div>
+        </div>
+    </section>
+    
+    <!-- 联系我们 -->
+    <section id="contact">
+        <div class="container">
+            <h2>联系我们</h2>
+            <div class="contact-info">
+                <p><strong>应用名称：</strong>泡泡单词（NNBDC）</p>
+                <p><strong>版权所有者：</strong>高新技术产业开发区智航技术服务部</p>
+                <p><strong>应用包名：</strong>com.nn.nnbdc.nnbdc</p>
+                <p><strong>官方网站：</strong>http://www.nnbdc.com</p>
+                <p><strong>网站备案信息：</strong>蜀ICP备12032137号-1（备案主体：马育兵）</p>
+                <p><strong>统一社会信用代码：</strong>92220100MAK17T247X</p>
+                <p><strong>联系方式：</strong>请通过应用内反馈功能联系我们</p>
+                <p><strong>技术支持：</strong>请通过应用内反馈功能获取技术支持</p>
+            </div>
+        </div>
+    </section>
+    
+    <!-- 页脚 -->
+    <footer>
+        <div class="container">
+            <p><strong>版权声明</strong></p>
+            <p>Copyright © 2025 高新技术产业开发区智航技术服务部. All rights reserved.</p>
+            <p>泡泡单词（NNBDC）是高新技术产业开发区智航技术服务部的注册商标和产品。</p>
+            <p>未经授权，禁止复制、传播或用于商业用途。</p>
+            <div class="footer-links">
+                <a href="protocol.html">用户协议</a>
+                <a href="privacy.html">隐私政策</a>
+                <a href="ownership.html">网站授权书</a>
+                <a href="https://beian.miit.gov.cn/" target="_blank">蜀ICP备12032137号-1</a>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
+
