@@ -21,6 +21,7 @@ import 'package:nnbdc/page/word_list/stage_words.dart';
 import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/util/sound.dart';
 import 'package:nnbdc/util/toast_util.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:nnbdc/util/word_util.dart';
 import 'package:provider/provider.dart';
 
@@ -578,30 +579,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     super.initState();
     args = BdcPageArgs.fromJson(GetStorage().read<String>("BdcPageArgs")!);
 
-    // 初始化Tab控制器 - 延迟到studyStep设置后
-    // _tabController = TabController(length: 2, vsync: this);
-
-    // // 监听Tab切换，控制ASR的启动和停止
-    // _tabController.addListener(() {
-    //   if (_tabController.indexIsChanging) {
-    //     // Tab正在切换中
-    //     return;
-    //   }
-
-    //   if (_isInSpeakTab) {
-    //     // 切换到"说"tab，启动ASR
-    //     Global.logger.d('===== BDC: 切换到"说"tab，启动ASR');
-    //     if (!isKeyboardVisible) {
-    //       // 设置上下文短语
-    //       _setAsrContextualPhrases();
-    //       asr.startAsr(decideAsrLanguage());
-    //     }
-    //   } else {
-    //     // 切换到"选"tab，停止ASR
-    //     Global.logger.d('===== BDC: 切换到"选"tab，停止ASR');
-    //     asr.stopAsr();
-    //   }
-    // });
 
     // 初始化两个动画控制器
     _wordSoundController = AnimationController(
@@ -643,8 +620,18 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     asr = Asr();
     asr.initAsr(onAsrResult);
     asr.addStateListener((state) {
-      if (mounted) {
+      if (!mounted) return;
+      // 避免在其他页面构建过程中直接触发 BdcPage 的 setState，
+      // 在非空闲阶段改为下一帧再刷新，防止 "setState during build" 异常
+      final phase = SchedulerBinding.instance.schedulerPhase;
+      if (phase == SchedulerPhase.idle || phase == SchedulerPhase.postFrameCallbacks) {
         setState(() {});
+      } else {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            setState(() {});
+          }
+        });
       }
     });
 
@@ -1068,28 +1055,16 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
             Get.offAndToNamed('/bdc');
           },
         );
-        // 进入阶段复习列表，返回后刷新并确保ASR恢复
+        // 进入阶段复习列表，返回后刷新，并交给统一的ASR状态机处理启动/停止
         toStageWordsListPage(true, nextWordBtn, context)?.then((_) async {
           if (!mounted) return;
-          // 刷新学习内容
+          // 刷新学习内容（内部会更新 studyStep、word、重建 TabController）
           await getNextWord(false);
-          // UI稳定后，确保在“说”tab下重启ASR
-          Future.delayed(const Duration(milliseconds: 80), () {
-            if (!mounted) return;
-            if (_isInSpeakTab && !isKeyboardVisible) {
-              try {
-                // 返回后重新绑定ASR事件监听，避免事件通道在子页面中被覆盖
-                asr.stopAsr();
-                asr.reset();
-                asr.initAsr(onAsrResult);
-                _setAsrContextualPhrases();
-              } catch (e, stackTrace) {
-                // ASR初始化失败需要记录，但不影响后续流程
-                Global.logger.w('ASR初始化失败', error: e, stackTrace: stackTrace);
-              }
-              asr.startAsr(decideAsrLanguage());
-            }
-          });
+          // 数据和UI稳定后，如果当前在“说”tab且键盘未弹出，
+          // 交给统一的 _handleTabChangeForAsr 根据最新的 studyStep 决定语言和启动ASR
+          if (_isInSpeakTab && !isKeyboardVisible) {
+            _handleTabChangeForAsr();
+          }
         });
         return;
       }
