@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:core';
-import 'dart:io';
 import 'dart:math';
 
 import 'package:day_night_switcher/day_night_switcher.dart';
@@ -519,8 +518,10 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     if (_tabController != null) {
       _currentTabIndex = _tabController!.index;
     }
-    
-    _tabController?.dispose();
+
+    // 注意：不在这里 dispose 旧的 TabController，避免在手势处理中
+    // 仍然引用旧 controller 时触发 "used after being disposed" 异常。
+    // 旧的 controller 会在页面整体 dispose 时统一释放。
     _tabController = TabController(length: _dynamicTabs.length, vsync: this);
     
     // 确保索引在有效范围内
@@ -541,20 +542,35 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       // 更新当前tab索引
       _currentTabIndex = _tabController!.index;
 
-      if (_isInSpeakTab) {
-        // 切换到"说"tab，启动ASR
-        Global.logger.d('===== BDC: 切换到"说"tab，启动ASR');
-        if (!isKeyboardVisible) {
-          // 设置上下文短语
-          _setAsrContextualPhrases();
-          asr.startAsr(decideAsrLanguage());
-        }
-      } else {
-        // 切换到"选"tab，停止ASR
-        Global.logger.d('===== BDC: 切换到"选"tab，停止ASR');
-        asr.stopAsr();
-      }
+      _handleTabChangeForAsr();
     });
+
+    // 初始化完成后，根据当前tab状态触发一次ASR逻辑
+    _handleTabChangeForAsr();
+  }
+
+  /// 根据当前tab状态处理ASR启动/停止逻辑
+  void _handleTabChangeForAsr() {
+    // 如果正在获取下一个单词，暂时不要自动启动/停止ASR，
+    // 避免在getNextWord内部的stop/reset和这里的start/stop交错导致状态紊乱
+    if (gettingNextWord) {
+      Global.logger.d('===== BDC: 正在获取下一个单词，跳过本次ASR状态切换');
+      return;
+    }
+
+    if (_isInSpeakTab) {
+      // 当前在"说"tab，启动ASR
+      Global.logger.d('===== BDC: 当前在\"说\"tab，启动ASR');
+      if (!isKeyboardVisible) {
+        // 设置上下文短语
+        _setAsrContextualPhrases();
+        asr.startAsr(decideAsrLanguage());
+      }
+    } else {
+      // 当前在"选"tab，停止ASR
+      Global.logger.d('===== BDC: 当前在\"选\"tab，停止ASR');
+      asr.stopAsr();
+    }
   }
 
   @override
@@ -612,24 +628,14 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     keyboardSubscription = keyboardVisibilityController.onChange.listen((bool visible) {
       isKeyboardVisible = visible;
       if (isKeyboardVisible) {
+        // 键盘弹出时，统一停止ASR
         asr.stopAsr();
       } else {
-        // 键盘隐藏时，只有在"说"tab激活时才启动ASR
+        // 键盘隐藏时，复用与Tab切换一致的ASR启动/停止逻辑
         if (_isInSpeakTab) {
-          AsrLanguage language = decideAsrLanguage();
-          // 设置上下文短语
           _setAsrContextualPhrases();
-          if (studyStep == StudyStep.word.json) {
-            asr.startAsr(language);
-          } else if (studyStep == StudyStep.meaning.json && Platform.isIOS) {
-            asr.startAsr(language);
-          }
-          if (language != AsrLanguage.english || Platform.isIOS) {
-            asr.startAsr(language);
-          }
-        } else {
-          Global.logger.d('===== BDC: 键盘隐藏，但当前在"选"tab，不启动ASR');
         }
+        _handleTabChangeForAsr();
       }
       setState(() {});
     });
@@ -646,6 +652,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
+
     loadData();
   }
 
@@ -742,7 +749,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         if (studyStep == StudyStep.meaning.json && word != null) {
           // 中→英模式：结合拼写相似度和音素相似度的智能选择
           processedResult = await AsrUtil.selectBestCandidateWithPhoneme(candidateStrings, word!.spell);
-          Global.logger.d('===== ASR: Selected result: "$processedResult" (target: ${word!.spell})');
+          Global.logger.d('===== ASR: Selected result: "$processedResult" (目标单词: ${word!.spell})');
         } else {
           // 其他模式：直接使用最佳候选结果，然后进行相应预处理
           processedResult = bestCandidate;
@@ -781,13 +788,11 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     if (mounted) {
       if (_debounceTimer?.isActive ?? false) _debounceTimer!.cancel();
       _debounceTimer = Timer(const Duration(milliseconds: 100), () {
-        if (mounted) {
-          if (isShowingWordDetail) {
-            Global.logger.d('===== ASR: Skipping result because showing word detail');
-            return;
-          }
-          meaningController.text = processedResult;
-        }
+        if (!mounted) return;
+        // 无论当前是否显示“词详”面板，都写入输入框，
+        // 避免在模式切换等场景下识别结果被忽略，导致看不到文本
+        Global.logger.d('===== ASR: Applying processed result to input: "$processedResult"');
+        meaningController.text = processedResult;
       });
     }
   }
@@ -866,9 +871,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         } catch (e, stackTrace) {
           ErrorHandler.handleError(e, stackTrace, logPrefix: '播放发音失败', showToast: false);
         }
-        // 在切换到下一个单词前先清空输入框
-        meaningController.text = '';
-        handlingChinese = '';
         getNextWord(true);
       } else {
         Global.logger.d('checkAsrResult: skipping getNextWord because already getting next word');
@@ -1027,15 +1029,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         await playFirstSentence();
       }
     } finally {
-      // 播音结束后，如果之前在"说"tab且ASR是活跃的，则启动ASR
-      if (!PlatformUtils.isWeb && _isInSpeakTab /* "说"tab激活 */) {
-        // 设置语音识别的语言
-        AsrLanguage language = studyStep == StudyStep.meaning.json ? AsrLanguage.english : AsrLanguage.chinese;
-        if (language != AsrLanguage.english || Platform.isIOS) {
-          // 启动前设置上下文短语，提升识别效果
-          _setAsrContextualPhrases();
-          asr.startAsr(language);
-        }
+      // 播音结束后，如果当前在"说"tab且键盘未弹出，则统一交给 _handleTabChangeForAsr 控制ASR启动
+      if (!PlatformUtils.isWeb && _isInSpeakTab && !isKeyboardVisible) {
+        _handleTabChangeForAsr();
       }
     }
   }
@@ -1106,7 +1102,17 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         ToastUtil.error('学习模式配置错误');
         return;
       }
+
+      // 记录旧的学习模式，用于检测模式切换（英→中 / 中→英）
+      String? oldStudyStep = studyStep;
       studyStep = activeUserStudySteps[getWordResult.learningMode].studyStep;
+
+      // 当学习模式发生切换时，重新初始化 ASR 事件监听，避免在模式切换过程中
+      // 出现事件订阅丢失或仍然绑定到旧页面实例的情况
+      if (oldStudyStep != null && oldStudyStep != studyStep) {
+        Global.logger.d('===== BDC: 学习模式发生切换: $oldStudyStep => $studyStep，重新初始化ASR监听');
+        asr.initAsr(onAsrResult);
+      }
 
       // 重新初始化TabController以适应动态tabs
       _reinitializeTabController();
@@ -1948,9 +1954,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                 ),
                 label: const Text('下一词'),
                 onPressed: () {
-                  // 在切换到下一个单词前先清空输入框
-                  meaningController.text = '';
-                  handlingChinese = '';
                   getNextWord(true);
                 },
               ),
@@ -2294,9 +2297,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     if (isAnswerCorrect) {
       // 等待提示音播放完成后再进入下一个单词
       await SoundUtil.playAssetSound('ding5.mp3', 1.5, 0.2);
-      // 在切换到下一个单词前先清空输入框
-      meaningController.text = '';
-      handlingChinese = '';
       getNextWord(true);
     } else {
       //不认识或答案错误
@@ -2316,9 +2316,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       child: InkWell(
         onTap: () {
           Navigator.pop(context);
-          // 在切换到下一个单词前先清空输入框
-          meaningController.text = '';
-          handlingChinese = '';
           getNextWord(true);
         },
         borderRadius: BorderRadius.circular(8),
@@ -2367,12 +2364,10 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         controller.stop();
         controller.reset();
 
-        // 播音结束后，如果之前在"说"tab且ASR是活跃的，则启动ASR
+        // 播音结束后，如果当前在"说"tab且键盘未弹出，则统一交给 _handleTabChangeForAsr 控制ASR启动
         if (_isInSpeakTab && !isKeyboardVisible) {
-          Global.logger.d('===== BDC: 播音结束，启动ASR ($audioType)');
-          // 设置上下文短语
-          _setAsrContextualPhrases();
-          asr.startAsr(decideAsrLanguage());
+          Global.logger.d('===== BDC: 播音结束，准备根据当前状态决定是否启动ASR ($audioType)');
+          _handleTabChangeForAsr();
         }
       }
     }
@@ -2657,9 +2652,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                     isAnswerCorrect = true;
                     isWordMastered = true;
                     ToastUtil.info("不再学习 ${word!.spell}");
-                    // 在切换到下一个单词前先清空输入框
-                    meaningController.text = '';
-                    handlingChinese = '';
                     getNextWord(true);
                   },
                 ),
@@ -2908,21 +2900,28 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                     Container(
                       decoration: BoxDecoration(
                         color: const Color(0xFF4A90E2).withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(6),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                       child: Material(
                         color: Colors.transparent,
                         child: InkWell(
-                          borderRadius: BorderRadius.circular(6),
+                          borderRadius: BorderRadius.circular(8),
                           onTap: () => giveALittleHint(wordWrapper!),
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.emoji_objects_rounded, color: const Color(0xFF4A90E2), size: 14),
-                                const SizedBox(width: 3),
-                                const Text('提示', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w500, color: Color(0xFF4A90E2))),
+                                Icon(Icons.emoji_objects_rounded, color: const Color(0xFF4A90E2), size: 16),
+                                const SizedBox(width: 4),
+                                const Text(
+                                  '提示',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF4A90E2),
+                                  ),
+                                ),
                               ],
                             ),
                           ),
@@ -2933,21 +2932,28 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                     Container(
                       decoration: BoxDecoration(
                         color: Colors.grey.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(6),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                       child: Material(
                         color: Colors.transparent,
                         child: InkWell(
-                          borderRadius: BorderRadius.circular(6),
+                          borderRadius: BorderRadius.circular(8),
                           onTap: () => clearHint(wordWrapper!),
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.refresh, color: Colors.grey[600], size: 14),
-                                const SizedBox(width: 3),
-                                Text('清除', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w500, color: Colors.grey[600])),
+                                Icon(Icons.refresh, color: Colors.grey[600], size: 16),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '清除',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
                               ],
                             ),
                           ),
