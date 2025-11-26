@@ -1082,10 +1082,10 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       String? oldStudyStep = studyStep;
       studyStep = activeUserStudySteps[getWordResult.learningMode].studyStep;
 
-      // 当学习模式发生切换时，重新初始化 ASR 事件监听，避免在模式切换过程中
-      // 出现事件订阅丢失或仍然绑定到旧页面实例的情况
-      if (oldStudyStep != null && oldStudyStep != studyStep) {
-        Global.logger.d('===== BDC: 学习模式发生切换: $oldStudyStep => $studyStep，重新初始化ASR监听');
+      // 当学习模式发生切换，或这是本次会话首次设置学习模式时，
+      // 重新初始化 ASR 事件监听，确保事件订阅始终绑定到当前 BdcPage
+      if (oldStudyStep == null || oldStudyStep != studyStep) {
+        Global.logger.i('===== BDC: 学习模式更新: $oldStudyStep => $studyStep，重新初始化ASR监听');
         asr.initAsr(onAsrResult);
       }
 
