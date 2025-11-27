@@ -640,7 +640,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     });
 
     asr = Asr();
-    asr.initAsr(onAsrResult);
+    //asr.initAsr(onAsrResult);
     asr.addStateListener((state) {
       if (!mounted) return;
       // 避免在其他页面构建过程中直接触发 BdcPage 的 setState，

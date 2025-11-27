@@ -40,9 +40,15 @@ class Asr {
   /// 标记是否正在执行 startAsr，避免并发的 start/stop 调用打架
   bool _isStarting = false;
 
+  /// 标记是否正在初始化事件监听，避免并发初始化
+  bool _isInitializing = false;
+
   /// ASR 结果事件订阅，用于在页面销毁或重新初始化时正确取消订阅，
   /// 避免多个已失效的监听器继续处理结果，导致目标单词长期停留在旧值
   StreamSubscription? _eventSubscription;
+  
+  /// 当前的事件监听器回调函数，用于在事件回调中正确调用
+  void Function(dynamic)? _currentAsrListener;
 
   AsrState get state => _state;
   setState(AsrState newState) {
@@ -70,6 +76,7 @@ class Asr {
     _stateListeners.clear();
     _eventSubscription?.cancel();
     _eventSubscription = null;
+    _currentAsrListener = null;
   }
 
   Future<void> _updateLanguage(AsrLanguage language) async {
@@ -238,26 +245,85 @@ class Asr {
   }
 
   Future<void> initAsr(void Function(dynamic asrResult)? asrListener) async {
+    if (_isInitializing) {
+      Global.logger.w('===== ASR: initAsr 正在执行中，等待完成...');
+      return;
+    }
+    _isInitializing = true;
+
     if (!PlatformUtils.isAsrSupported()) {
+      _isInitializing = false;
       return;
     }
 
-    // 先设置事件监听器，避免权限检查失败时无法接收结果
-    // 如果之前已经有订阅，先取消，保证始终只有一个有效监听器
-    Global.logger.i('===== ASR: 重新初始化事件监听，取消旧订阅');
-    _eventSubscription?.cancel();
-    _eventSubscription = asrEventChannel.receiveBroadcastStream().listen(
-      (event) {
-        Global.logger.d('===== ASR: 收到原生端事件: $event');
-        asrListener!(event);
-      },
-      onError: (error) {
-        Global.logger.e('===== ASR: 事件通道错误: $error');
-      },
-      cancelOnError: false,
-    );
-    Global.logger.i('===== ASR: 事件监听已重新绑定');
-    setState(AsrState.initialized);
+    if (asrListener == null) {
+      Global.logger.w('===== ASR: initAsr 被调用，但 asrListener 为 null，跳过初始化');
+      _isInitializing = false;
+      return;
+    }
+
+    try {
+      // 先设置事件监听器，避免权限检查失败时无法接收结果
+      // 如果之前已经有订阅，先取消，保证始终只有一个有效监听器
+      Global.logger.i('===== ASR: 重新初始化事件监听，取消旧订阅');
+      final oldSubscription = _eventSubscription;
+      _eventSubscription = null;
+      
+      // 保存当前监听器引用，确保在回调中能正确调用
+      _currentAsrListener = asrListener;
+      
+      // 取消旧订阅并等待完全取消
+      if (oldSubscription != null) {
+        await oldSubscription.cancel();
+        Global.logger.d('===== ASR: 旧订阅已取消');
+      }
+      
+      // 等待一小段时间，确保旧订阅完全取消，避免与新订阅冲突
+      await Future.delayed(const Duration(milliseconds: 100));
+      
+      try {
+        Global.logger.d('===== ASR: 开始创建新的事件订阅');
+        final stream = asrEventChannel.receiveBroadcastStream();
+        Global.logger.d('===== ASR: EventChannel Stream 已创建');
+        
+        _eventSubscription = stream.listen(
+          (event) {
+            Global.logger.d('===== ASR: 收到原生端事件: $event');
+            if (_currentAsrListener != null) {
+              try {
+                _currentAsrListener!(event);
+              } catch (e, stackTrace) {
+                Global.logger.e('===== ASR: 执行监听器回调时出错: $e', stackTrace: stackTrace);
+              }
+            } else {
+              Global.logger.w('===== ASR: 收到事件但 _currentAsrListener 为 null，忽略事件: $event');
+            }
+          },
+          onError: (error) {
+            Global.logger.e('===== ASR: 事件通道错误: $error');
+          },
+          onDone: () {
+            Global.logger.w('===== ASR: 事件流已关闭 (onDone)');
+          },
+          cancelOnError: false,
+        );
+        Global.logger.i('===== ASR: 事件监听已重新绑定，监听器状态: ${_currentAsrListener != null ? "有效" : "无效"}，订阅状态: ${_eventSubscription != null ? "已创建" : "未创建"}');
+        
+        // 验证订阅是否真正建立（通过检查订阅状态）
+        if (_eventSubscription != null) {
+          Global.logger.d('===== ASR: 事件订阅验证通过，订阅ID: ${_eventSubscription.hashCode}');
+        } else {
+          Global.logger.e('===== ASR: 警告：事件订阅创建失败，_eventSubscription 为 null');
+        }
+      } catch (e, stackTrace) {
+        Global.logger.e('===== ASR: 创建事件订阅时出错: $e', stackTrace: stackTrace);
+        _currentAsrListener = null;
+        rethrow;
+      }
+      setState(AsrState.initialized);
+    } finally {
+      _isInitializing = false;
+    }
   }
 
   Future<void> startAsr(AsrLanguage language) async {
