@@ -39,6 +39,7 @@ class Asr {
 
   /// 标记是否正在执行 startAsr，避免并发的 start/stop 调用打架
   bool _isStarting = false;
+
   /// ASR 结果事件订阅，用于在页面销毁或重新初始化时正确取消订阅，
   /// 避免多个已失效的监听器继续处理结果，导致目标单词长期停留在旧值
   StreamSubscription? _eventSubscription;
@@ -243,8 +244,19 @@ class Asr {
 
     // 先设置事件监听器，避免权限检查失败时无法接收结果
     // 如果之前已经有订阅，先取消，保证始终只有一个有效监听器
+    Global.logger.i('===== ASR: 重新初始化事件监听，取消旧订阅');
     _eventSubscription?.cancel();
-    _eventSubscription = asrEventChannel.receiveBroadcastStream().listen(asrListener!);
+    _eventSubscription = asrEventChannel.receiveBroadcastStream().listen(
+      (event) {
+        Global.logger.d('===== ASR: 收到原生端事件: $event');
+        asrListener!(event);
+      },
+      onError: (error) {
+        Global.logger.e('===== ASR: 事件通道错误: $error');
+      },
+      cancelOnError: false,
+    );
+    Global.logger.i('===== ASR: 事件监听已重新绑定');
     setState(AsrState.initialized);
   }
 
@@ -254,10 +266,23 @@ class Asr {
       return;
     }
 
-    // 如果已经在启动流程中，避免并发重复调用
+    // 如果已经在启动流程中，等待之前的启动完成（最多等待2秒）
     if (_isStarting) {
-      Global.logger.i('===== ASR: startAsr called while another start is in progress, skipping');
-      return;
+      Global.logger.i('===== ASR: startAsr called while another start is in progress, waiting...');
+      int waitCount = 0;
+      while (_isStarting && waitCount < 20) {
+        await Future.delayed(const Duration(milliseconds: 100));
+        waitCount++;
+      }
+      if (_isStarting) {
+        Global.logger.w('===== ASR: Previous start is still in progress after waiting, skipping this start');
+        return;
+      }
+      // 如果之前的启动已经完成，检查当前状态
+      if (state == AsrState.started) {
+        Global.logger.i('===== ASR: Previous start completed, ASR is already started');
+        return;
+      }
     }
 
     if (state == AsrState.started) {
@@ -317,10 +342,19 @@ class Asr {
       return;
     }
 
-    // 如果正在启动流程中，延迟 stop，避免在 startMicrophone 与 startAsr 之间插入 stop 导致 NOT_RECORDING
+    // 如果正在启动流程中，等待启动完成后再停止（最多等待2秒）
     if (_isStarting) {
-      Global.logger.i('===== ASR: stopAsr called while starting, skipping this stop');
-      return;
+      Global.logger.i('===== ASR: stopAsr called while starting, waiting for start to complete...');
+      int waitCount = 0;
+      while (_isStarting && waitCount < 20) {
+        await Future.delayed(const Duration(milliseconds: 100));
+        waitCount++;
+      }
+      if (_isStarting) {
+        Global.logger.w('===== ASR: Start is still in progress after waiting, forcing stop');
+        // 强制重置 _isStarting，避免卡死
+        _isStarting = false;
+      }
     }
 
     if (permissionGranted) {

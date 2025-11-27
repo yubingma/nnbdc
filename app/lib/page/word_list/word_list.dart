@@ -636,7 +636,7 @@ class WordListPageState extends State<WordListPage> {
           // 标记通过以揭示英文
           words[currWordIndex].speakEnglishPassed = true;
           // 播放提示音
-          await SoundUtil.playAssetSound('ding5.mp3', 1.5, 0.2);
+          await SoundUtil.playAssetSound('correct.mp3', 1.5, 0.2);
           // 识别正确后，先关闭语音识别，避免录到系统发音
           asr.stopAsr();
           asr.reset();
@@ -668,7 +668,7 @@ class WordListPageState extends State<WordListPage> {
           }
 
           // 播放提示音（注：await等待播音完成，由于协程特性，可能会导致多个并发的asr任务，这正是需要的行为）
-          await SoundUtil.playAssetSound('ding5.mp3', mustAnswerAll ? 2.0 : 1.5, 0.2);
+          await SoundUtil.playAssetSound('correct.mp3', mustAnswerAll ? 2.0 : 1.5, 0.2);
         }
       }
 

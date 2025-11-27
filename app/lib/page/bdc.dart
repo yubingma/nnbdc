@@ -236,13 +236,13 @@ void _showImagePreviewWithContext(BuildContext context, WordImageVo image, {Void
   );
 }
 
-class AsrInputWidget extends StatefulWidget {
+class ChineseAsrInputWidget extends StatefulWidget {
   final TextEditingController controller;
   final AsrState asrState;
   final Function(AsrLanguage) onStartAsr;
   final bool isKeyboardVisible;
 
-  const AsrInputWidget({
+  const ChineseAsrInputWidget({
     super.key,
     required this.controller,
     required this.asrState,
@@ -251,10 +251,10 @@ class AsrInputWidget extends StatefulWidget {
   });
 
   @override
-  State<AsrInputWidget> createState() => _AsrInputWidgetState();
+  State<ChineseAsrInputWidget> createState() => _ChineseAsrInputWidgetState();
 }
 
-class _AsrInputWidgetState extends State<AsrInputWidget> {
+class _ChineseAsrInputWidgetState extends State<ChineseAsrInputWidget> {
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -425,6 +425,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   };
 
   Timer? _debounceTimer;
+  Timer? _asrStateChangeDebounceTimer;
 
   /// Tab控制器，用于管理说/选两个tab
   TabController? _tabController;
@@ -546,8 +547,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       _handleTabChangeForAsr();
     });
 
-    // 初始化完成后，根据当前tab状态触发一次ASR逻辑
-    _handleTabChangeForAsr();
+    // 注意：不在初始化完成后立即启动ASR，而是等待单词播放完成后再启动
+    // ASR的启动会在 playWordAndFirstSentence 的 finally 块中处理
   }
 
   /// 根据当前tab状态处理ASR启动/停止逻辑
@@ -559,17 +560,38 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       return;
     }
 
+    // 防抖：如果最近刚调用过，延迟执行，避免短时间内重复调用
+    _asrStateChangeDebounceTimer?.cancel();
+    _asrStateChangeDebounceTimer = Timer(const Duration(milliseconds: 100), () {
+      _doHandleTabChangeForAsr();
+    });
+  }
+
+  /// 实际执行ASR启动/停止逻辑
+  void _doHandleTabChangeForAsr() {
     if (_isInSpeakTab) {
+      // 当前在"说"tab，如果ASR已经启动且状态正确，不需要再次启动
+      if (asr.state == AsrState.started && !isKeyboardVisible) {
+        Global.logger.d('===== BDC: 当前在"说"tab，ASR已启动，跳过重复启动');
+        return;
+      }
       // 当前在"说"tab，启动ASR
-      Global.logger.d('===== BDC: 当前在\"说\"tab，启动ASR');
+      Global.logger.d('===== BDC: 当前在"说"tab，启动ASR (studyStep=$studyStep)');
       if (!isKeyboardVisible) {
         // 设置上下文短语
         _setAsrContextualPhrases();
-        asr.startAsr(decideAsrLanguage());
+        final language = decideAsrLanguage();
+        Global.logger.d('===== BDC: 准备启动ASR，语言=${language.locale}');
+        asr.startAsr(language);
       }
     } else {
+      // 当前在"选"tab，如果ASR已经停止，不需要再次停止
+      if (asr.state == AsrState.stopped || asr.state == AsrState.initialized) {
+        Global.logger.d('===== BDC: 当前在"选"tab，ASR已停止，跳过重复停止');
+        return;
+      }
       // 当前在"选"tab，停止ASR
-      Global.logger.d('===== BDC: 当前在\"选\"tab，停止ASR');
+      Global.logger.d('===== BDC: 当前在"选"tab，停止ASR');
       asr.stopAsr();
     }
   }
@@ -644,9 +666,12 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   }
 
   AsrLanguage decideAsrLanguage() {
+    Global.logger.d('===== BDC: decideAsrLanguage() - studyStep=$studyStep, meaning.json=${StudyStep.meaning.json}, word.json=${StudyStep.word.json}');
     if (studyStep == StudyStep.meaning.json) {
+      Global.logger.d('===== BDC: 决定使用英文ASR (中→英模式)');
       return AsrLanguage.english;
     }
+    Global.logger.d('===== BDC: 决定使用中文ASR (英→中模式)');
     return AsrLanguage.chinese;
   }
 
@@ -680,6 +705,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   @override
   void dispose() {
     _debounceTimer?.cancel();
+    _asrStateChangeDebounceTimer?.cancel();
     asr.removeStateListener((state) {
       if (mounted) {
         setState(() {});
@@ -710,6 +736,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   }
 
   onAsrResult(event) async {
+    Global.logger.d('===== BDC: onAsrResult 被调用，收到事件: $event (studyStep=$studyStep, word=${word?.spell})');
     // 预处理ASR结果，然后更新 meaningController
     String processedResult;
 
@@ -785,6 +812,12 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   }
 
   checkAsrResult() async {
+    // 如果正在获取下一个单词，跳过检查，避免在清空输入框时误触发
+    if (gettingNextWord) {
+      Global.logger.d('checkAsrResult: 正在获取下一个单词，跳过检查');
+      return;
+    }
+
     if (meaningController.text != handlingChinese) {
       handlingChinese = meaningController.text;
     } else {
@@ -819,7 +852,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         });
 
         // 播放提示音
-        await SoundUtil.playAssetSound('ding5.mp3', 1.5, 0.2);
+        await SoundUtil.playAssetSound('correct.mp3', 1.5, 0.2);
       }
     } else if (studyStep == StudyStep.meaning.json) {
       // 中→英：验证英文单词拼写
@@ -836,7 +869,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         });
 
         // 播放提示音
-        await SoundUtil.playAssetSound('ding5.mp3', 1.5, 0.2);
+        await SoundUtil.playAssetSound('correct.mp3', 1.5, 0.2);
         Global.logger.d('checkAsrResult: English spelling match!');
       }
     }
@@ -846,7 +879,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       // 检查是否正在获取下一个单词，避免重复调用
       if (!gettingNextWord) {
         Global.logger
-            .d('checkAsrResult: pass handling - step=$studyStep, isPass=$isPass, canLeaveCurrWord=$canLeaveCurrWord');
+            .d('checkAsrResult: pass handling - step=$studyStep, isPass=$isPass, canLeaveCurrWord=$canLeaveCurrWord, 准备调用 getNextWord');
         try {
           // 中→英：回答正确后，先播放一次标准发音再跳转
           if (studyStep == StudyStep.meaning.json) {
@@ -922,8 +955,10 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
   getNextWord(bool gotoNext) async {
     if (gettingNextWord) {
+      Global.logger.w('===== BDC: getNextWord 被调用，但正在获取中，跳过 (gotoNext=$gotoNext)');
       return;
     }
+    Global.logger.d('===== BDC: getNextWord 开始 (gotoNext=$gotoNext)');
     gettingNextWord = true;
     asr.stopAsr();
     asr.reset();
@@ -950,6 +985,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     // 循环调用直到获取到有效单词或遇到其他状态
     int triedCount = 0;
     while (true) {
+      Global.logger.d('===== BDC: getNextWord 循环第 ${triedCount + 1} 次调用 StudyBo().getNextWord (shouldEnterNextStage=$shouldEnterNextStage, gotoNext=${triedCount == 0 ? gotoNext : true})');
       var resp = await StudyBo().getNextWord(
           isAnswerCorrect,
           isWordMastered,
@@ -986,12 +1022,15 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
       // 如果单词已掌握，重置状态并继续获取下一个单词
       if (currentGetWordResult!.wordMastered) {
+        Global.logger.d('===== BDC: getNextWord 循环第 $triedCount 次返回的单词已掌握, 继续循环');
         // 重置状态，准备获取下一个单词
         isAnswerCorrect = true; // 设置为true以便前进到下一个单词
         isWordMastered = false; // 重置掌握状态
         shouldEnterNextStage = false; // 后续调用不需要进入下一阶段
         continue; // 继续循环获取下一个单词
       }
+
+      Global.logger.d('===== BDC: getNextWord 循环第 $triedCount 次返回有效单词, 跳出循环');
 
       // 获取到有效单词，跳出循环
       break;
@@ -1003,6 +1042,10 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   }
 
   Future<void> playWordAndFirstSentence(UserVo user, bool forcePlayWord, bool startAsrWhenFinish) async {
+    // 保存当前的 studyStep 和 word，用于在 finally 块中检查是否已经改变
+    final savedStudyStep = studyStep;
+    final savedWordId = word?.id;
+    
     // 播音开始时停止ASR
     asr.stopAsr();
 
@@ -1017,8 +1060,17 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       }
     } finally {
       // 播音结束后，如果当前在"说"tab且键盘未弹出，则统一交给 _handleTabChangeForAsr 控制ASR启动
-      if (!PlatformUtils.isWeb && _isInSpeakTab && !isKeyboardVisible) {
-        _handleTabChangeForAsr();
+      // 注意：检查 studyStep 和 word 是否已经改变，如果改变了说明有新的单词加载，就不应该启动ASR
+      if (!PlatformUtils.isWeb && _isInSpeakTab && !isKeyboardVisible && !gettingNextWord) {
+        // 检查 studyStep 和 word 是否还是原来的值
+        if (savedStudyStep == studyStep && savedWordId == word?.id) {
+          Global.logger.d('===== BDC: playWordAndFirstSentence 播放完成，准备启动ASR (studyStep=$studyStep, wordId=${word?.id})');
+          _handleTabChangeForAsr();
+        } else {
+          Global.logger.d('===== BDC: playWordAndFirstSentence 播放完成，但单词已改变，跳过ASR启动 (savedStudyStep=$savedStudyStep => studyStep=$studyStep, savedWordId=$savedWordId => wordId=${word?.id})');
+        }
+      } else {
+        Global.logger.d('===== BDC: playWordAndFirstSentence 播放完成，但跳过ASR启动 (isInSpeakTab=$_isInSpeakTab, isKeyboardVisible=$isKeyboardVisible, gettingNextWord=$gettingNextWord)');
       }
     }
   }
@@ -1055,16 +1107,16 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
             Get.offAndToNamed('/bdc');
           },
         );
+        // 进入阶段复习列表前，先停止ASR，避免在阶段复习页面时ASR还在运行
+        await asr.stopAsr();
+        await asr.reset();
         // 进入阶段复习列表，返回后刷新，并交给统一的ASR状态机处理启动/停止
         toStageWordsListPage(true, nextWordBtn, context)?.then((_) async {
           if (!mounted) return;
           // 刷新学习内容（内部会更新 studyStep、word、重建 TabController）
-          await getNextWord(false);
-          // 数据和UI稳定后，如果当前在“说”tab且键盘未弹出，
-          // 交给统一的 _handleTabChangeForAsr 根据最新的 studyStep 决定语言和启动ASR
-          if (_isInSpeakTab && !isKeyboardVisible) {
-            _handleTabChangeForAsr();
-          }
+          //await getNextWord(false);
+          // 注意：不需要在这里手动调用 _handleTabChangeForAsr()，
+          // 因为 playWordAndFirstSentence 播放完成后会自动调用
         });
         return;
       }
@@ -1083,9 +1135,15 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       studyStep = activeUserStudySteps[getWordResult.learningMode].studyStep;
 
       // 当学习模式发生切换，或这是本次会话首次设置学习模式时，
-      // 重新初始化 ASR 事件监听，确保事件订阅始终绑定到当前 BdcPage
+      // 先确保ASR完全停止，然后重新初始化 ASR 事件监听，确保事件订阅始终绑定到当前 BdcPage
       if (oldStudyStep == null || oldStudyStep != studyStep) {
-        Global.logger.i('===== BDC: 学习模式更新: $oldStudyStep => $studyStep，重新初始化ASR监听');
+        Global.logger.i('===== BDC: 学习模式更新: $oldStudyStep => $studyStep，先停止ASR，然后重新初始化ASR监听');
+        // 先停止ASR，确保没有正在执行的启动流程
+        await asr.stopAsr();
+        await asr.reset();
+        // 等待一小段时间，确保之前的操作完全完成
+        await Future.delayed(const Duration(milliseconds: 100));
+        // 重新初始化事件监听
         asr.initAsr(onAsrResult);
       }
 
@@ -2271,7 +2329,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     isAnswerCorrect = selectedAnswerIndex == correctAnswerIndex;
     if (isAnswerCorrect) {
       // 等待提示音播放完成后再进入下一个单词
-      await SoundUtil.playAssetSound('ding5.mp3', 1.5, 0.2);
+      await SoundUtil.playAssetSound('correct.mp3', 1.5, 0.2);
       getNextWord(true);
     } else {
       //不认识或答案错误
@@ -2942,7 +3000,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
           ),
           const SizedBox(height: 4),
           studyStep == StudyStep.word.json
-              ? AsrInputWidget(
+              ? ChineseAsrInputWidget(
                   controller: meaningController,
                   asrState: asr.state,
                   onStartAsr: (language) => asr.startAsr(language),

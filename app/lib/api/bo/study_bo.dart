@@ -323,9 +323,19 @@ class StudyBo {
     }
   }
 
+  /// 获取下一个学习单词
+  ///
+  /// [isAnswerCorrect] 当前单词的回答是否正确
+  /// [isWordMastered] 当前单词是否已掌握
+  /// [shouldEnterNextStage] 是否应该进入下一个学习阶段（从阶段复习返回时使用）
+  /// [gotoNext] 是否跳转到下一个单词/学习模式
+  ///   - true: 会推进学习进度，移动到下一个单词或下一个学习模式，并更新用户的学习位置
+  ///   - false: 仅刷新当前单词，不改变学习位置（用于初始加载、从阶段复习返回后刷新等场景）
+  ///
+  /// 返回下一个单词的学习信息，包括单词详情、学习模式、混淆项等
   Future<Result<GetWordResult>> getNextWord(bool isAnswerCorrect, bool isWordMastered, bool shouldEnterNextStage, bool gotoNext) async {
     try {
-      Global.logger.d('开始获取下一个单词: isAnswerCorrect=$isAnswerCorrect, isWordMastered=$isWordMastered, shouldEnterNextStage=$shouldEnterNextStage');
+      Global.logger.d('开始获取下一个单词: isAnswerCorrect=$isAnswerCorrect, isWordMastered=$isWordMastered, shouldEnterNextStage=$shouldEnterNextStage, gotoNext=$gotoNext');
       final db = MyDatabase.instance;
 
       // 获取当前登录用户
