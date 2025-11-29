@@ -30,11 +30,12 @@ pluginManagement {
     }
 
     // Force Android Gradle Plugin to a consistent version and avoid resolving 8.12.x from dl.google.com
+    // 升级到 8.7.0 以支持 Kotlin 2.2.21
     resolutionStrategy {
         eachPlugin { details ->
             def pluginId = details.requested.id.id
             if (pluginId != null && pluginId.startsWith("com.android.")) {
-                details.useModule("com.android.tools.build:gradle:8.3.0")
+                details.useModule("com.android.tools.build:gradle:8.7.0")
             }
         }
     }
@@ -42,7 +43,8 @@ pluginManagement {
 
 plugins {
     id "dev.flutter.flutter-plugin-loader" version "1.0.0"
-    id "com.android.application" version "8.3.0" apply false
+    // 升级到 8.7.0 以支持 Kotlin 2.2.21 的元数据版本 2.2.0
+    id "com.android.application" version "8.7.0" apply false
     id "org.jetbrains.kotlin.android" version "2.2.21" apply false
 }
 

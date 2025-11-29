@@ -81,7 +81,7 @@ dependencies:
   drift_db_viewer: ^2.1.0
   equatable: ^2.0.7
   flutter_native_splash: ^2.4.3 
-  fluwx: ^5.7.5  # 微信登录SDK (升级以兼容 Kotlin 2.2.21)
+  fluwx: ^5.7.5  # 微信登录SDK (需要 Kotlin 2.2.21)
   connectivity_plus: ^6.0.5  # 网络连接检测
 
   http: any

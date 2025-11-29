@@ -44,7 +44,8 @@ def compileSdkVersion = (isCI || sdk36Exists) ? 36 : 35
 android {
     namespace 'com.nn.nnbdc'
     compileSdk = compileSdkVersion
-    ndkVersion = "26.3.11579264"
+    // 升级到 NDK 27.0.12077973 以兼容所有 Flutter 插件
+    ndkVersion = "27.0.12077973"
     
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
@@ -113,6 +114,7 @@ flutter {
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.aar'])
+    // 与 Kotlin 插件版本保持一致
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.21"
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'androidx.core:core-ktx:1.12.0'
