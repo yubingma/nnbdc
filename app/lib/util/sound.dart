@@ -81,10 +81,14 @@ class SoundUtil {
         ));
       }
 
-      try {
-        await player.stop();
-      } catch (stopError, stackTrace) {
-        ErrorHandler.handleError(stopError, stackTrace, logPrefix: '停止音频播放时出错', showToast: false);
+      // 只有在使用共享播放器时才停止当前播放（避免中断其他独立播放器的音频）
+      // 如果 disposeWhenFinish 为 true，说明使用的是独立播放器，不需要停止
+      if (!disposeWhenFinish) {
+        try {
+          await player.stop();
+        } catch (stopError, stackTrace) {
+          ErrorHandler.handleError(stopError, stackTrace, logPrefix: '停止音频播放时出错', showToast: false);
+        }
       }
 
       if (PlatformUtils.isWeb) {
@@ -115,9 +119,128 @@ class SoundUtil {
     }
   }
 
+  /// 并发播放 URL 音频（使用独立播放器，不等待播放完成，立即返回，支持多个音频同时播放）
+  static void playSoundByUrlConcurrent(String soundUrl) {
+    var player = AudioPlayer();
+    
+    // 在后台异步处理播放和释放，不阻塞调用者
+    _playSoundByUrlInBackground(player, soundUrl).catchError((error, stackTrace) {
+      ErrorHandler.handleAudioError(error, stackTrace, audioType: 'url:$soundUrl');
+    });
+  }
+
+  /// 在后台播放 URL 音频并自动释放播放器
+  static Future<void> _playSoundByUrlInBackground(AudioPlayer player, String soundUrl) async {
+    try {
+      if (PlatformUtils.isWeb) {
+        await _ensureWebAudioUnlocked();
+      }
+
+      // 添加播放状态监听
+      player.onPlayerStateChanged.listen((state) {
+        // 音频播放状态变化
+      });
+
+      // 在 iOS 上设置 AudioContext 以支持混音
+      if (PlatformUtils.isIOS) {
+        await player.setAudioContext(AudioContext(
+          iOS: AudioContextIOS(
+            category: AVAudioSessionCategory.playAndRecord,
+            options: {
+              AVAudioSessionOptions.defaultToSpeaker,
+              AVAudioSessionOptions.mixWithOthers,
+            },
+          ),
+        ));
+      }
+
+      // 使用独立播放器，不需要停止其他播放
+
+      if (PlatformUtils.isWeb) {
+        Global.logger.d('Web audio play url: $soundUrl');
+        await player.play(UrlSource(soundUrl));
+      } else {
+        var file = await DefaultCacheManager().getSingleFile(soundUrl);
+        await player.play(DeviceFileSource(file.path));
+      }
+
+      // 等待播放完成
+      await player.onPlayerComplete.first;
+    } catch (e, st) {
+      ErrorHandler.handleAudioError(e, st, audioType: 'url:$soundUrl');
+      try {
+        player.stop();
+      } catch (stopError, stackTrace) {
+        ErrorHandler.handleError(stopError, stackTrace, logPrefix: '停止音频播放时出错', showToast: false);
+      }
+    } finally {
+      try {
+        player.dispose();
+      } catch (disposeError, stackTrace) {
+        ErrorHandler.handleError(disposeError, stackTrace, logPrefix: '释放音频播放器时出错', showToast: false);
+      }
+    }
+  }
+
   static Future<void> playAssetSound(String soundFileName, double speed, double volume) async {
 
     var player = AudioPlayer();
+    try {
+      // 在 iOS 上设置 AudioContext 以支持混音
+      if (PlatformUtils.isIOS) {
+        await player.setAudioContext(AudioContext(
+          iOS: AudioContextIOS(
+            category: AVAudioSessionCategory.playAndRecord,
+            options: {
+              AVAudioSessionOptions.defaultToSpeaker,
+              AVAudioSessionOptions.mixWithOthers,
+              AVAudioSessionOptions.allowBluetooth,
+            },
+          ),
+        ));
+      }
+
+      await player.setPlaybackRate(speed);
+      await player.setVolume(volume);
+
+      // 添加播放状态监听
+      player.onPlayerStateChanged.listen((state) {
+        // 音效播放状态变化
+      });
+
+      // 修复路径问题：audioplayers 会自动添加 assets/ 前缀，所以只需要 audio/ 路径
+      await player.play(AssetSource('audio/$soundFileName'));
+
+      // 等待播放完成，避免立即释放播放器
+      await player.onPlayerComplete.first;
+
+      // 添加一个小延迟确保声音完全播放
+      await Future.delayed(Duration(milliseconds: 100));
+    } on Exception catch (e, stackTrace) {
+      ErrorHandler.handleError(e, stackTrace, logPrefix: '播放音效出错', showToast: false);
+    } finally {
+      player.dispose();
+    }
+  }
+
+  /// 并发播放音效（不等待播放完成，立即返回，支持多个音频同时播放）
+  /// 音频会在后台播放完成并自动释放播放器
+  static void playAssetSoundConcurrent(String soundFileName, double speed, double volume) {
+    var player = AudioPlayer();
+    
+    // 在后台异步处理播放和释放，不阻塞调用者
+    _playAssetSoundInBackground(player, soundFileName, speed, volume).catchError((error, stackTrace) {
+      ErrorHandler.handleError(error, stackTrace, logPrefix: '并发播放音效出错', showToast: false);
+    });
+  }
+
+  /// 在后台播放音效并自动释放播放器
+  static Future<void> _playAssetSoundInBackground(
+    AudioPlayer player,
+    String soundFileName,
+    double speed,
+    double volume,
+  ) async {
     try {
       // 在 iOS 上设置 AudioContext 以支持混音
       if (PlatformUtils.isIOS) {

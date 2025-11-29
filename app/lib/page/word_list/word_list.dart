@@ -635,12 +635,12 @@ class WordListPageState extends State<WordListPage> {
           canLeaveCurrWord = true;
           // 标记通过以揭示英文
           words[currWordIndex].speakEnglishPassed = true;
-          // 播放提示音
+          // 播放提示音，等待播放完成后再播放单词发音，避免重叠
           await SoundUtil.playAssetSound('correct.mp3', 1.5, 0.2);
           // 识别正确后，先关闭语音识别，避免录到系统发音
           asr.stopAsr();
           asr.reset();
-          // 然后播放一次标准发音（开始时不播放）
+          // 然后播放一次标准发音（提示音已播放完成，不会重叠）
           try {
             if (!_audioPlayerDisposed) {
               await SoundUtil.playPronounceSound2(words[currWordIndex].word, audioPlayer);
@@ -667,7 +667,7 @@ class WordListPageState extends State<WordListPage> {
             canLeaveCurrWord = true;
           }
 
-          // 播放提示音（注：await等待播音完成，由于协程特性，可能会导致多个并发的asr任务，这正是需要的行为）
+          // 播放提示音，等待播放完成后再跳转，避免与下一个单词发音重叠
           await SoundUtil.playAssetSound('correct.mp3', mustAnswerAll ? 2.0 : 1.5, 0.2);
         }
       }
@@ -679,6 +679,7 @@ class WordListPageState extends State<WordListPage> {
           words[currWordIndex].answeredAllMeanings = true;
         }
 
+        // 提示音已播放完成，可以安全地停止 ASR
         asr.stopAsr();
         asr.reset(); // 清除缓冲区
 

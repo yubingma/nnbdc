@@ -27,7 +27,7 @@ PODS:
     - fluwx/pay (= 0.0.1)
   - fluwx/pay (0.0.1):
     - Flutter
-    - WechatOpenSDK-XCFramework (~> 2.0.4)
+    - WechatOpenSDK-XCFramework (~> 2.0.5)
   - open_file_ios (0.0.1):
     - Flutter
   - OrderedSet (6.0.3)
@@ -164,7 +164,7 @@ SPEC CHECKSUMS:
   flutter_inappwebview_ios: b89ba3482b96fb25e00c967aae065701b66e9b99
   flutter_keyboard_visibility: 4625131e43015dbbe759d9b20daaf77e0e3f6619
   flutter_native_splash: c32d145d68aeda5502d5f543ee38c192065986cf
-  fluwx: 6bf9c5a3a99ad31b0de137dd92370a0d10a60f4b
+  fluwx: 2ef787502fccb3f3596b380509001a8ea71cbbff
   open_file_ios: 5ff7526df64e4394b4fe207636b67a95e83078bb
   OrderedSet: e539b66b644ff081c73a262d24ad552a69be3a94
   package_info_plus: af8e2ca6888548050f16fa2f1938db7b5a5df499

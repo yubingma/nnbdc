@@ -852,7 +852,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
           canLeaveCurrWord = true;
         });
 
-        // 播放提示音
+        // 播放提示音，等待播放完成后再跳转，避免与下一个单词发音重叠
         await SoundUtil.playAssetSound('correct.mp3', 1.5, 0.2);
       }
     } else if (studyStep == StudyStep.meaning.json) {
@@ -869,7 +869,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
           canLeaveCurrWord = true;
         });
 
-        // 播放提示音
+        // 播放提示音，等待播放完成后再播放单词发音，避免重叠
         await SoundUtil.playAssetSound('correct.mp3', 1.5, 0.2);
         Global.logger.d('checkAsrResult: English spelling match!');
       }
@@ -882,7 +882,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         Global.logger
             .d('checkAsrResult: pass handling - step=$studyStep, isPass=$isPass, canLeaveCurrWord=$canLeaveCurrWord, 准备调用 getNextWord');
         try {
-          // 中→英：回答正确后，先播放一次标准发音再跳转
+          // 中→英：回答正确后，先播放一次标准发音再跳转（提示音已播放完成，不会重叠）
           if (studyStep == StudyStep.meaning.json) {
             if (!_audioPlayerDisposed && word != null) {
               await SoundUtil.playPronounceSound2(word!, audioPlayer);
@@ -2338,12 +2338,12 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   onAnswerClicked(var selectedAnswerIndex) async {
     isAnswerCorrect = selectedAnswerIndex == correctAnswerIndex;
     if (isAnswerCorrect) {
-      // 等待提示音播放完成后再进入下一个单词
-      await SoundUtil.playAssetSound('correct.mp3', 1.5, 0.2);
+      // 并发播放提示音（不等待完成，立即进入下一个单词）
+      SoundUtil.playAssetSoundConcurrent('correct.mp3', 1.5, 0.2);
       getNextWord(true);
     } else {
       //不认识或答案错误
-      SoundUtil.playAssetSound('cow2.mp3', 1.5, 0.2);
+      SoundUtil.playAssetSoundConcurrent('cow2.mp3', 1.5, 0.2);
       showWordDetail(word!, true); // 传递true表示本次回答错误
     }
   }
