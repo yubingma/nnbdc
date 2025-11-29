@@ -81,7 +81,7 @@ dependencies:
   drift_db_viewer: ^2.1.0
   equatable: ^2.0.7
   flutter_native_splash: ^2.4.3 
-  fluwx: ^4.1.0  # 微信登录SDK
+  fluwx: ^5.7.5  # 微信登录SDK (升级以兼容 Kotlin 2.2.21)
   connectivity_plus: ^6.0.5  # 网络连接检测
 
   http: any
@@ -181,7 +181,8 @@ flutter_launcher_icons:
     icon_size: 256
   # 注意：生成器不接受 SVG，需先导出 PNG
   image_path: assets/images/logo.png
-  min_sdk_android: 21
+  # fluwx 插件要求最低 SDK 版本为 24
+  min_sdk_android: 24
   remove_alpha_ios: true
 
 # 如改用 icons_launcher，可保留此段。但当前生成图标将使用 flutter_launcher_icons 与 PNG。

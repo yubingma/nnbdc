@@ -73,7 +73,24 @@ gradle.beforeProject { project ->
             google()
         }
     }
+    
+    // 为所有项目配置 Kotlin 编译器选项，允许使用已弃用的 API
+    // 这主要是为了兼容第三方插件（如 fluwx）使用已弃用的 API
+    project.afterEvaluate {
+        project.tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+            kotlinOptions {
+                // 允许使用已弃用的 API
+                allWarningsAsErrors = false
+                freeCompilerArgs += [
+                    "-Xno-deprecated-version-warning",
+                    "-Xsuppress-version-warnings",
+                    "-Xno-warn-on-deprecated-usage"
+                ]
+            }
+        }
+    }
 }
+
 
 //def localPropertiesFile = new File(rootProject.projectDir, "local.properties")
 //def properties = new Properties()
