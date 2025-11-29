@@ -561,8 +561,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     }
 
     // 防抖：如果最近刚调用过，延迟执行，避免短时间内重复调用
+    // 减少延迟时间，让ASR更快启动，提升用户体验
     _asrStateChangeDebounceTimer?.cancel();
-    _asrStateChangeDebounceTimer = Timer(const Duration(milliseconds: 100), () {
+    _asrStateChangeDebounceTimer = Timer(const Duration(milliseconds: 50), () {
       _doHandleTabChangeForAsr();
     });
   }

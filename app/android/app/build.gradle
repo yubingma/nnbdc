@@ -36,7 +36,7 @@ if (System.getenv('KEY_PASSWORD')) {
 
 android {
     namespace 'com.nn.nnbdc'
-    compileSdk = 35
+    compileSdk = 36
     ndkVersion = "26.3.11579264"
     
     compileOptions {
@@ -101,7 +101,7 @@ flutter {
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.aar'])
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.7.10"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.21"
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'androidx.core:core-ktx:1.12.0'
 }
