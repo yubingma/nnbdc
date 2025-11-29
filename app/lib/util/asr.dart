@@ -42,6 +42,9 @@ class Asr {
 
   /// 标记是否正在初始化事件监听，避免并发初始化
   bool _isInitializing = false;
+  
+  /// 标记订阅是否应该被保护，防止在初始化后立即被取消
+  bool _subscriptionProtected = false;
 
   /// ASR 结果事件订阅，用于在页面销毁或重新初始化时正确取消订阅，
   /// 避免多个已失效的监听器继续处理结果，导致目标单词长期停留在旧值
@@ -72,8 +75,23 @@ class Asr {
   }
 
   void dispose() {
+    Global.logger.d('===== ASR: dispose() 被调用，取消事件订阅');
+    // 如果正在初始化，等待初始化完成
+    if (_isInitializing) {
+      Global.logger.w('===== ASR: 警告：在初始化过程中调用 dispose()，等待初始化完成');
+      // 等待初始化完成（最多等待1秒）
+      int waitCount = 0;
+      while (_isInitializing && waitCount < 20) {
+        Future.delayed(const Duration(milliseconds: 50));
+        waitCount++;
+      }
+    }
     _disposed = true;
     _stateListeners.clear();
+    _subscriptionProtected = false; // 清除保护标记
+    if (_subscriptionProtected) {
+      Global.logger.w('===== ASR: 警告：在订阅保护期内调用 dispose()');
+    }
     _eventSubscription?.cancel();
     _eventSubscription = null;
     _currentAsrListener = null;
@@ -268,6 +286,7 @@ class Asr {
       Global.logger.i('===== ASR: 重新初始化事件监听，取消旧订阅');
       final oldSubscription = _eventSubscription;
       _eventSubscription = null;
+      _subscriptionProtected = false; // 清除旧的保护标记
       
       // 保存当前监听器引用，确保在回调中能正确调用
       _currentAsrListener = asrListener;
@@ -286,32 +305,48 @@ class Asr {
         final stream = asrEventChannel.receiveBroadcastStream();
         Global.logger.d('===== ASR: EventChannel Stream 已创建');
         
+        // 创建一个包装的监听器，确保即使 _currentAsrListener 被改变，也能正确处理事件
+        final subscriptionId = DateTime.now().millisecondsSinceEpoch;
+        final savedListener = asrListener; // 保存当前监听器的引用
+        
         _eventSubscription = stream.listen(
           (event) {
-            Global.logger.d('===== ASR: 收到原生端事件: $event');
-            if (_currentAsrListener != null) {
-              try {
-                _currentAsrListener!(event);
-              } catch (e, stackTrace) {
-                Global.logger.e('===== ASR: 执行监听器回调时出错: $e', stackTrace: stackTrace);
-              }
-            } else {
-              Global.logger.w('===== ASR: 收到事件但 _currentAsrListener 为 null，忽略事件: $event');
+            Global.logger.d('===== ASR: 收到原生端事件: $event (subscriptionId=$subscriptionId)');
+            // 使用保存的监听器（在创建订阅时已确保不为 null）
+            try {
+              savedListener(event);
+            } catch (e, stackTrace) {
+              Global.logger.e('===== ASR: 执行监听器回调时出错: $e', stackTrace: stackTrace);
             }
           },
           onError: (error) {
-            Global.logger.e('===== ASR: 事件通道错误: $error');
+            Global.logger.e('===== ASR: 事件通道错误: $error (subscriptionId=$subscriptionId)');
           },
           onDone: () {
-            Global.logger.w('===== ASR: 事件流已关闭 (onDone)');
+            Global.logger.w('===== ASR: 事件流已关闭 (onDone, subscriptionId=$subscriptionId)');
+            // 如果当前订阅被关闭，清空引用
+            if (_eventSubscription != null && _eventSubscription.hashCode == subscriptionId) {
+              Global.logger.w('===== ASR: 清空事件订阅引用 (subscriptionId=$subscriptionId)');
+              _eventSubscription = null;
+            }
           },
           cancelOnError: false,
         );
-        Global.logger.i('===== ASR: 事件监听已重新绑定，监听器状态: ${_currentAsrListener != null ? "有效" : "无效"}，订阅状态: ${_eventSubscription != null ? "已创建" : "未创建"}');
+        Global.logger.i('===== ASR: 事件监听已重新绑定，监听器状态: ${_currentAsrListener != null ? "有效" : "无效"}，订阅状态: ${_eventSubscription != null ? "已创建" : "未创建"}，订阅ID: $subscriptionId');
         
         // 验证订阅是否真正建立（通过检查订阅状态）
         if (_eventSubscription != null) {
           Global.logger.d('===== ASR: 事件订阅验证通过，订阅ID: ${_eventSubscription.hashCode}');
+          // 标记订阅为受保护状态，防止在初始化后立即被取消
+          _subscriptionProtected = true;
+          // 等待一小段时间，确保 iOS 端的 onListen 已经完成
+          await Future.delayed(const Duration(milliseconds: 50));
+          Global.logger.d('===== ASR: 事件订阅建立完成，等待 iOS 端 onListen 完成');
+          // 再等待一小段时间，确保 iOS 端的 onListen 完全建立
+          await Future.delayed(const Duration(milliseconds: 100));
+          // 取消保护标记
+          _subscriptionProtected = false;
+          Global.logger.d('===== ASR: 事件订阅保护期结束');
         } else {
           Global.logger.e('===== ASR: 警告：事件订阅创建失败，_eventSubscription 为 null');
         }

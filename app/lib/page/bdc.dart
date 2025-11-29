@@ -1101,21 +1101,30 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
           ),
           label: const Text('下一组'),
           onPressed: () async {
+            // 先关闭阶段复习对话框
             Get.back();
-            await GetStorage().write("BdcPageArgs", BdcPageArgs('stage_review').toJson());
-            // 使用offAndToNamed强制创建新的BDC页面实例
-            Get.offAndToNamed('/bdc');
+            // 更新参数，标记从阶段复习返回
+            args.fromPage = 'stage_review';
+            await GetStorage().write("BdcPageArgs", args.toJson());
+            // 直接刷新当前页面，而不是创建新实例
+            // 这样可以避免 dispose 导致 ASR 事件监听被取消
+            await getNextWord(false);
           },
         );
         // 进入阶段复习列表前，先停止ASR，避免在阶段复习页面时ASR还在运行
         await asr.stopAsr();
         await asr.reset();
         // 进入阶段复习列表，返回后刷新，并交给统一的ASR状态机处理启动/停止
+        if (!mounted) return;
+        // 保存 mounted 状态，避免在异步回调中使用 context
+        final wasMounted = mounted;
+        if (!wasMounted) return;
         toStageWordsListPage(true, nextWordBtn, context)?.then((_) async {
+          // 从阶段复习返回后，检查页面是否仍然挂载
           if (!mounted) return;
           // 刷新学习内容（内部会更新 studyStep、word、重建 TabController）
-          //await getNextWord(false);
-          // 注意：不需要在这里手动调用 _handleTabChangeForAsr()，
+          // 注意：getNextWord 会在 handleWord 中自动调用 initAsr 重新初始化事件监听
+          // 不需要在这里手动调用 _handleTabChangeForAsr()，
           // 因为 playWordAndFirstSentence 播放完成后会自动调用
         });
         return;
