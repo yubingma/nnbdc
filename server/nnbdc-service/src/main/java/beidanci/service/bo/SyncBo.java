@@ -621,7 +621,7 @@ public class SyncBo {
                 } else if ("DELETE".equals(operation)) {
                     wrongWordBo.deleteEntity(wrongWord);
                 }
-            } catch (IllegalArgumentException | IllegalAccessException e) {
+            } catch (IllegalArgumentException e) {
                 logger.error("同步错词数据失败：" + e.getMessage(), e);
             }
         }

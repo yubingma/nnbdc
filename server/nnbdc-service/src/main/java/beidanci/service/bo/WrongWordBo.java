@@ -62,12 +62,11 @@ public class WrongWordBo extends BaseBo<WrongWord> {
 
     /**
      * 幂等创建：若已存在则忽略
+     * 
+     * 使用 findById 而不是 queryUnique，避免在事务中因 Hibernate 会话缓存状态不一致导致的异常
      */
-    public void createIfAbsent(WrongWord wrongWord) throws IllegalAccessException {
-        String hql = "from WrongWord where id.userId = :userId and id.wordId = :wordId";
-        WrongWord existing = queryUnique(hql,
-                new ImmutablePair<>("userId", wrongWord.getId().getUserId()),
-                new ImmutablePair<>("wordId", wrongWord.getId().getWordId()));
+    public void createIfAbsent(WrongWord wrongWord) {
+        WrongWord existing = findById(wrongWord.getId());
         if (existing == null) {
             createEntity(wrongWord);
         }
