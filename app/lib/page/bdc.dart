@@ -535,8 +535,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       _handleTabChangeForAsr();
     });
 
-    // 注意：不在初始化完成后立即启动ASR，而是等待单词播放完成后再启动
-    // ASR的启动会在 playWordAndFirstSentence 的 finally 块中处理
   }
 
   /// 根据当前tab状态处理ASR启动/停止逻辑
@@ -970,6 +968,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     handleWord(_currentGetWordResult);
   }
 
+  /// 播放单词和第一个例句
   Future<void> playWordAndFirstSentence(UserVo user, bool forcePlayWord, bool startAsrWhenFinish) async {
     // 等待所有提示音播放完成，避免与单词发音重叠
     // 使用列表快照，避免在等待过程中列表被修改
@@ -986,12 +985,12 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     asr.stopAsr();
 
     try {
-      // 在中→英模式下，不播放单词发音，避免暴露答案
-      if (_studyStep != StudyStep.ch2En.json && (user.autoPlayWord! || forcePlayWord)) {
+      // 在英→中模式下，播放单词发音
+      if (_studyStep == StudyStep.en2Ch.json && (user.autoPlayWord! || forcePlayWord)) {
         await SoundUtil.playPronounceSound2(_word!, _audioPlayer);
       }
-      // 在中→英模式下，不播放例句发音，避免暴露答案
-      if (_studyStep != StudyStep.ch2En.json && user.autoPlaySentence!) {
+      // 在英→中模式下，播放例句发音
+      if (_studyStep == StudyStep.en2Ch.json && user.autoPlaySentence!) {
         await playFirstSentence();
       }
     } finally {

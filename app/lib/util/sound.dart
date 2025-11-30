@@ -69,23 +69,30 @@ class SoundUtil {
       });
 
       // 在 iOS 上设置 AudioContext 以支持混音
-      if (PlatformUtils.isIOS) {
-        await player.setAudioContext(AudioContext(
-          iOS: AudioContextIOS(
-            category: AVAudioSessionCategory.playAndRecord,
-            options: {
-              AVAudioSessionOptions.defaultToSpeaker,
-              AVAudioSessionOptions.mixWithOthers,
-            },
-          ),
-        ));
-      }
+      // if (PlatformUtils.isIOS) {
+      //   await player.setAudioContext(AudioContext(
+      //     iOS: AudioContextIOS(
+      //       category: AVAudioSessionCategory.playAndRecord,
+      //       options: {
+      //         AVAudioSessionOptions.defaultToSpeaker,
+      //         AVAudioSessionOptions.mixWithOthers,
+      //       },
+      //     ),
+      //   ));
+      // }
 
       // 只有在使用共享播放器时才停止当前播放（避免中断其他独立播放器的音频）
       // 如果 disposeWhenFinish 为 true，说明使用的是独立播放器，不需要停止
       if (!disposeWhenFinish) {
         try {
-          await player.stop();
+          // 先检查当前状态，如果已经是停止状态，就不需要调用 stop()
+          final currentState = player.state;
+          if (currentState != PlayerState.stopped && currentState != PlayerState.disposed) {
+            await player.stop();
+            // 添加短暂延迟，确保播放器完全停止，避免新旧音频重叠产生爆音
+            // 使用固定延迟比等待状态变化更可靠，因为 stop() 后状态可能立即变为停止
+            await Future.delayed(const Duration(milliseconds: 50));
+          }
         } catch (stopError, stackTrace) {
           ErrorHandler.handleError(stopError, stackTrace, logPrefix: '停止音频播放时出错', showToast: false);
         }

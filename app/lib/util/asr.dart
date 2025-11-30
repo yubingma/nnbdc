@@ -441,6 +441,10 @@ class Asr {
       return;
     }
 
+    if (state == AsrState.stopped || state == AsrState.stopping) {
+      return;
+    }
+
     // 如果正在启动流程中，等待启动完成后再停止（最多等待2秒）
     if (_isStarting) {
       Global.logger.i('===== ASR: stopAsr called while starting, waiting for start to complete...');
