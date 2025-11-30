@@ -823,7 +823,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         // 等待音频播放完成，然后再等待200毫秒后执行后续逻辑
         // 这样用户有机会说出下一个释义, 用户体验会更好一点
         soundFuture.whenComplete(() {
-          Future.delayed(Duration(microseconds: 1200)).then((_) {
+          Future.delayed(Duration(microseconds: 5200)).then((_) {
             _playingCorrectSounds.remove(soundFuture);
             if (_playingCorrectSounds.isEmpty && _isAnswerCorrect) {
               getNextWord(true);
@@ -915,9 +915,13 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
     //如果是从阶段复习跳转来的，则第一次从服务端取单词时，通知服务端进入下一个学习阶段
     var shouldEnterNextStage = false;
+    bool isFromStageReview = false;
     if (_args.fromPage != null && _args.fromPage == 'stage_review') {
       shouldEnterNextStage = true;
+      isFromStageReview = true;
+      // 立即清除标记，通过参数传递给 handleWord
       _args.fromPage = null;
+      await GetStorage().write("BdcPageArgs", _args.toJson());
     }
 
     // 循环调用直到获取到有效单词或遇到其他状态
@@ -932,7 +936,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
             context: context,
             builder: (ctx) => AlertDialog(
               title: const Text('新的一天'),
-              content: const Text('已进入新的一天，今天的学习请从“我”页面开始。'),
+              content: const Text('已进入新的一天，今天的学习请从"我"页面开始。'),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(ctx).pop(),
@@ -965,7 +969,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       break;
     }
 
-    handleWord(_currentGetWordResult);
+    handleWord(_currentGetWordResult, isFromStageReview: isFromStageReview);
   }
 
   /// 播放单词和第一个例句
@@ -1011,7 +1015,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     }
   }
 
-  void handleWord(final GetWordResult? getWordResult) async {
+  void handleWord(final GetWordResult? getWordResult, {bool isFromStageReview = false}) async {
     try {
       if (getWordResult == null) {
         Global.logger.d('getWordResult 为空');
@@ -1079,15 +1083,13 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       String? oldStudyStep = _studyStep;
       _studyStep = activeUserStudySteps[getWordResult.learningMode].studyStep;
 
-      // 当学习模式发生切换，或这是本次会话首次设置学习模式时，
+      // 当学习模式发生切换，或这是本次会话首次设置学习模式时，或从阶段复习返回时，
       // 先确保ASR完全停止，然后重新初始化 ASR 事件监听，确保事件订阅始终绑定到当前 BdcPage
-      if (oldStudyStep == null || oldStudyStep != _studyStep) {
-        Global.logger.i('===== BDC: 学习模式更新: $oldStudyStep => $_studyStep，先停止ASR，然后重新初始化ASR监听');
+      if (oldStudyStep == null || oldStudyStep != _studyStep || isFromStageReview) {
+        Global.logger.i('===== BDC: 学习模式更新: $oldStudyStep => $_studyStep，从阶段复习返回: $isFromStageReview，先停止ASR，然后重新初始化ASR监听');
         // 先停止ASR，确保没有正在执行的启动流程
         await asr.stopAsr();
         await asr.reset();
-        // 等待一小段时间，确保之前的操作完全完成
-        await Future.delayed(const Duration(milliseconds: 100));
         // 重新初始化事件监听
         asr.initAsr(onAsrResult);
       }

@@ -68,19 +68,6 @@ class SoundUtil {
         // 音频播放状态变化
       });
 
-      // 在 iOS 上设置 AudioContext 以支持混音
-      // if (PlatformUtils.isIOS) {
-      //   await player.setAudioContext(AudioContext(
-      //     iOS: AudioContextIOS(
-      //       category: AVAudioSessionCategory.playAndRecord,
-      //       options: {
-      //         AVAudioSessionOptions.defaultToSpeaker,
-      //         AVAudioSessionOptions.mixWithOthers,
-      //       },
-      //     ),
-      //   ));
-      // }
-
       // 只有在使用共享播放器时才停止当前播放（避免中断其他独立播放器的音频）
       // 如果 disposeWhenFinish 为 true，说明使用的是独立播放器，不需要停止
       if (!disposeWhenFinish) {
