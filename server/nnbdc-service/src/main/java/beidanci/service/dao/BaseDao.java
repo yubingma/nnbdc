@@ -206,6 +206,13 @@ public abstract class BaseDao<E extends Po> {
                 continue;
             }
             
+            // 跳过 static 和 final 字段（如常量 NEW_LEARNING_WORD_LIFE_VALUE）
+            int modifiers = field.getModifiers();
+            if (java.lang.reflect.Modifier.isStatic(modifiers) || 
+                java.lang.reflect.Modifier.isFinal(modifiers)) {
+                continue;
+            }
+            
             // 检查 @Column 注解的 insertable 属性
             if (field.isAnnotationPresent(Column.class)) {
                 Column column = field.getAnnotation(Column.class);
@@ -627,6 +634,13 @@ public abstract class BaseDao<E extends Po> {
             
             // 跳过集合类型字段（List, Set 等）- 这些在 JDBC 中不需要
             if (java.util.Collection.class.isAssignableFrom(field.getType())) {
+                continue;
+            }
+            
+            // 跳过 static 和 final 字段（如常量 NEW_LEARNING_WORD_LIFE_VALUE）
+            int modifiers = field.getModifiers();
+            if (java.lang.reflect.Modifier.isStatic(modifiers) || 
+                java.lang.reflect.Modifier.isFinal(modifiers)) {
                 continue;
             }
             

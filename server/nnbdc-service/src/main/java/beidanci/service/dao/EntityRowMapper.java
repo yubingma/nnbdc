@@ -60,6 +60,13 @@ public class EntityRowMapper<E extends Po> implements RowMapper<E> {
                 continue;
             }
             
+            // 跳过 static 和 final 字段（如常量 NEW_LEARNING_WORD_LIFE_VALUE）
+            int modifiers = field.getModifiers();
+            if (java.lang.reflect.Modifier.isStatic(modifiers) || 
+                java.lang.reflect.Modifier.isFinal(modifiers)) {
+                continue;
+            }
+            
             // 跳过关联对象字段（类型为 Po 的子类，且不是以 "Id" 结尾的字段）
             // 这些字段对应的外键列会在 ResultSet 中，但我们需要映射到外键列名（字段名 + "Id"）
             if (beidanci.service.po.Po.class.isAssignableFrom(field.getType()) && !field.getName().endsWith("Id")) {
@@ -78,9 +85,9 @@ public class EntityRowMapper<E extends Po> implements RowMapper<E> {
                     java.util.List<Field> keyFields = BeanUtils.getFields(compositeKeyType, true);
                     for (Field keyField : keyFields) {
                         // 跳过 static 和 final 字段（如 serialVersionUID）
-                        int modifiers = keyField.getModifiers();
-                        if (java.lang.reflect.Modifier.isStatic(modifiers) || 
-                            java.lang.reflect.Modifier.isFinal(modifiers)) {
+                        int keyFieldModifiers = keyField.getModifiers();
+                        if (java.lang.reflect.Modifier.isStatic(keyFieldModifiers) || 
+                            java.lang.reflect.Modifier.isFinal(keyFieldModifiers)) {
                             continue;
                         }
                         
@@ -148,9 +155,9 @@ public class EntityRowMapper<E extends Po> implements RowMapper<E> {
                 java.util.List<Field> keyFields = BeanUtils.getFields(compositeKeyType, true);
                 for (Field keyField : keyFields) {
                     // 跳过 static 和 final 字段（如 serialVersionUID）
-                    int modifiers = keyField.getModifiers();
-                    if (java.lang.reflect.Modifier.isStatic(modifiers) || 
-                        java.lang.reflect.Modifier.isFinal(modifiers)) {
+                    int keyFieldModifiers = keyField.getModifiers();
+                    if (java.lang.reflect.Modifier.isStatic(keyFieldModifiers) || 
+                        java.lang.reflect.Modifier.isFinal(keyFieldModifiers)) {
                         continue;
                     }
                     
@@ -190,9 +197,9 @@ public class EntityRowMapper<E extends Po> implements RowMapper<E> {
                     java.util.List<Field> keyFields = BeanUtils.getFields(compositeKeyType, true);
                     for (Field keyField : keyFields) {
                         // 跳过 static 和 final 字段（如 serialVersionUID）
-                        int modifiers = keyField.getModifiers();
-                        if (java.lang.reflect.Modifier.isStatic(modifiers) || 
-                            java.lang.reflect.Modifier.isFinal(modifiers)) {
+                        int keyFieldModifiers = keyField.getModifiers();
+                        if (java.lang.reflect.Modifier.isStatic(keyFieldModifiers) || 
+                            java.lang.reflect.Modifier.isFinal(keyFieldModifiers)) {
                             continue;
                         }
                         

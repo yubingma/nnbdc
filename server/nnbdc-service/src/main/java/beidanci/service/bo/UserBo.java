@@ -703,11 +703,12 @@ public class UserBo extends BaseBo<User> {
             // 如果Email对应的账户不存在，自动创建账户
             // 密码设为空字符串（CS架构下不再使用密码，登录后自动登录）
             String nickname = email != null && email.contains("@") ? email.split("@")[0] : "user";
-            user = Util.genNewUser(email, "", nickname, email, null, sysParamBo,
-                    dictBo, this, learningDictBo, false);
-            user.setWordsPerDay(20);
             try {
-                createEntity(user);
+                user = Util.genNewUser(email, "", nickname, email, null, sysParamBo,
+                        dictBo, this, learningDictBo, false);
+                user.setWordsPerDay(20);
+                // 注意：genNewUser 内部已经调用了 createEntity，所以这里只需要更新 wordsPerDay
+                updateEntity(user);
             } catch (Exception e) {
                 logger.error("自动创建用户失败", e);
                 return new Result<>(false, "创建用户失败", null);
