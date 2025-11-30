@@ -237,19 +237,6 @@ class SoundUtil {
     double volume,
   ) async {
     try {
-      // 在 iOS 上设置 AudioContext 以支持混音
-      if (PlatformUtils.isIOS) {
-        await player.setAudioContext(AudioContext(
-          iOS: AudioContextIOS(
-            category: AVAudioSessionCategory.playAndRecord,
-            options: {
-              AVAudioSessionOptions.defaultToSpeaker,
-              AVAudioSessionOptions.mixWithOthers,
-              AVAudioSessionOptions.allowBluetooth,
-            },
-          ),
-        ));
-      }
 
       await player.setPlaybackRate(speed);
       await player.setVolume(volume);
