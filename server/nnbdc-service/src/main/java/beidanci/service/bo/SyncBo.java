@@ -616,12 +616,24 @@ public class SyncBo {
             try {
                 WrongWordDto wrongWordDto = JsonUtils.makeObject(recordJson, WrongWordDto.class);
                 WrongWord wrongWord = WrongWord.fromDto(wrongWordDto);
-                if ("INSERT".equals(operation)) {
-                    wrongWordBo.createIfAbsent(wrongWord);
-                } else if ("DELETE".equals(operation)) {
-                    wrongWordBo.deleteEntity(wrongWord);
+                switch (operation) {
+                    case "INSERT":
+                        wrongWordBo.createIfAbsent(wrongWord);
+                        break;
+                    case "UPDATE":
+                        // 检查记录是否存在，不存在则创建
+                        WrongWord existingForUpdate = wrongWordBo.findById(wrongWord.getId());
+                        if (existingForUpdate == null) {
+                            wrongWordBo.createEntity(wrongWord);
+                        } else {
+                            wrongWordBo.updateEntity(wrongWord);
+                        }
+                        break;
+                    case "DELETE":
+                        wrongWordBo.deleteEntity(wrongWord);
+                        break;
                 }
-            } catch (IllegalArgumentException e) {
+            } catch (IllegalArgumentException | IllegalAccessException e) {
                 logger.error("同步错词数据失败：" + e.getMessage(), e);
             }
         }
