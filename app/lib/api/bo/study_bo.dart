@@ -395,8 +395,6 @@ class StudyBo {
       bool allStepsCompletedForWord = currentLearningMode >= steps.length - 1;
       await updateCurrWord(isWordMastered, currWord, user, now, db, isAnswerCorrect, allStepsCompletedForWord);
 
-      // 移除了基于UserStageWord缓存的阶段复习逻辑，改为基于单词数量的简单判断
-
       // 计算下一个单词的索引 (nextWordIndex) 和学习模式 (nextLearningMode)
       int nextWordIndex = currentWordIndex;
       int nextLearningMode = currentLearningMode;
@@ -429,7 +427,7 @@ class StudyBo {
 
       // 更新用户取词位置信息
       Global.logger
-          .d("~~~~~~~~~~~~~~~~~~~~nextWordIndex: $nextWordIndex, nextLearningMode: $nextLearningMode, todayWords.length: ${todayWords.length}");
+          .d("~~~~~nextWordIndex: $nextWordIndex, nextLearningMode: $nextLearningMode, todayWords.length: ${todayWords.length}");
       if (nextWordIndex >= todayWords.length) {
         // 今日所有单词都学习完了
         return _buildTodayStudyFinishedResult();
