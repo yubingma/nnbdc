@@ -823,7 +823,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         // 等待音频播放完成，然后再等待200毫秒后执行后续逻辑
         // 这样用户有机会说出下一个释义, 用户体验会更好一点
         soundFuture.whenComplete(() {
-          Future.delayed(Duration(microseconds: 5200)).then((_) {
+          Future.delayed(Duration(milliseconds: 300)).then((_) {
             _playingCorrectSounds.remove(soundFuture);
             if (_playingCorrectSounds.isEmpty && _isAnswerCorrect) {
               getNextWord(true);
