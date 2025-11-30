@@ -40,6 +40,10 @@ public class GameController {
         // 获取所有游戏大厅分组
         List<HallGroup> groups = hallGroupBo.queryAll(null, false);
         groups.sort(Comparator.comparingInt(HallGroup::getDisplayOrder));
+        
+        // 批量加载每个 HallGroup 的 gameHalls
+        hallGroupBo.loadGameHallsForHallGroups(groups);
+        
         List<HallGroupVo> groupVos = BeanUtils.makeVos(groups, HallGroupVo.class,
                 new String[]{"hallGroup", "dicts", "allDicts"});
         result.setHallGroups(groupVos);
