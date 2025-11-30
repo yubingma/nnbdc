@@ -1,5 +1,7 @@
 package beidanci.service.controller;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -15,6 +17,8 @@ import beidanci.service.po.EmailCodeType;
  */
 @RestController
 public class EmailVerificationController {
+
+    private static final Logger log = LoggerFactory.getLogger(EmailVerificationController.class);
 
     @Autowired
     private EmailVerificationCodeBo emailVerificationCodeBo;
@@ -45,6 +49,7 @@ public class EmailVerificationController {
                 return Result.fail(result);
             }
         } catch (Exception e) {
+            log.error("发送验证码失败", e);
             return Result.fail("发送验证码失败：" + e.getMessage());
         }
     }
@@ -77,6 +82,7 @@ public class EmailVerificationController {
                 return Result.fail(result);
             }
         } catch (Exception e) {
+            log.error("验证验证码失败", e);
             return Result.fail("验证失败：" + e.getMessage());
         }
     }

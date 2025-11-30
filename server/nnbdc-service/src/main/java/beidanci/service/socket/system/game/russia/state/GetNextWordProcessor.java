@@ -39,7 +39,9 @@ public final class GetNextWordProcessor {
                 beidanci.api.model.WordVo w = (beidanci.api.model.WordVo) words.get(index)[0];
                 return w.getSpell();
             }
-        } catch (Exception ignored) {}
+        } catch (Exception e) {
+            log.error("获取单词拼写失败: index={}, words.size()={}", index, words.size(), e);
+        }
         return "";
     }
 
@@ -108,7 +110,13 @@ public final class GetNextWordProcessor {
                 room.sendEventToUser(anotherUser, "wordB", new Object[]{answerResult, spell});
             }
         } catch (NumberFormatException e) {
-            log.error("", e);
+            log.error("解析用户命令参数失败: userCmd={}", userCmd, e);
+            // 参数解析失败，无法继续处理，记录错误后返回
+            return;
+        } catch (Exception e) {
+            log.error("处理获取下一个单词命令失败: user={}, userCmd={}", user, userCmd, e);
+            // 其他异常也需要记录，不能静默失败
+            return;
         }
     }
 

@@ -680,7 +680,9 @@ public class UserBo extends BaseBo<User> {
                         try {
                             createEntity(user);
                         } catch (Exception e) {
-                            logger.error("自动创建用户失败", e);
+                            logger.error("自动创建用户失败: userName={}", userName, e);
+                            // 创建用户失败，抛出异常让调用者知道
+                            throw new RuntimeException("自动创建用户失败: " + e.getMessage(), e);
                         }
                     }
                 }
@@ -697,7 +699,9 @@ public class UserBo extends BaseBo<User> {
                         try {
                             createEntity(user);
                         } catch (Exception e) {
-                            logger.error("自动创建用户失败", e);
+                            logger.error("自动创建用户失败: email={}", email, e);
+                            // 创建用户失败，抛出异常让调用者知道
+                            throw new RuntimeException("自动创建用户失败: " + e.getMessage(), e);
                         }
                     }
                 }
@@ -1174,8 +1178,10 @@ public class UserBo extends BaseBo<User> {
             return newUser;
 
         } catch (Exception e) {
-            logger.error("查找或创建微信用户异常", e);
-            return null;
+            logger.error("查找或创建微信用户异常: openId={}, nickname={}", 
+                wechatUserInfo.openId, wechatUserInfo.nickname, e);
+            // 重新抛出异常，让调用者知道操作失败
+            throw new RuntimeException("查找或创建微信用户失败: " + e.getMessage(), e);
         }
     }
 
