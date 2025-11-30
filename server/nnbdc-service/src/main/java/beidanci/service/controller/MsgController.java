@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.mail.EmailException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -16,6 +15,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import beidanci.api.Result;
+import beidanci.api.model.MsgCountVo;
 import beidanci.api.model.MsgVo;
 import beidanci.service.bo.MsgBo;
 import beidanci.service.bo.UserBo;
@@ -96,13 +96,16 @@ public class MsgController {
      * @throws IOException
      */
     @GetMapping("/getMsgCounts.do")
-    public Result<Pair<Integer, Integer>> getMsgCounts(@RequestParam(name = "userId") String userId) {
+    public Result<MsgCountVo> getMsgCounts(@RequestParam(name = "userId") String userId) {
         User user = userBo.findById(userId);
         if (user == null) {
-            return Result.success(Pair.of(0, 0));
+            return Result.success(new MsgCountVo(0, 0));
         }
-        return Result.success(Pair.of(msgBo.getAllPersistentMsgCountToUser(user.getId()),
-                msgBo.getUnViewedPersistentMsgCountToUser(user.getId())));
+        // 确保返回的值不为 null，避免 JSON 序列化时出现 null
+        int allCount = msgBo.getAllPersistentMsgCountToUser(user.getId());
+        int unviewedCount = msgBo.getUnViewedPersistentMsgCountToUser(user.getId());
+        // 使用专门的 DTO 类，确保字段名与 Flutter 端匹配
+        return Result.success(new MsgCountVo(allCount, unviewedCount));
     }
 
     /**

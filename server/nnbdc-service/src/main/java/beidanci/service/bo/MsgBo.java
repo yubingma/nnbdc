@@ -4,6 +4,8 @@ import javax.annotation.PostConstruct;
 import java.util.Date;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -23,6 +25,8 @@ import beidanci.util.Constants;
 @Service
 @Transactional(rollbackFor = Throwable.class)
 public class MsgBo extends BaseBo<Msg> {
+    private static final Logger logger = LoggerFactory.getLogger(MsgBo.class);
+
     @Autowired
     UserBo userBo;
 
@@ -75,6 +79,9 @@ public class MsgBo extends BaseBo<Msg> {
         List<Msg> msgs = namedParameterJdbcTemplate.query(pagedSql, params, 
             new beidanci.service.dao.EntityRowMapper<>(Msg.class));
 
+        // 批量加载完整的 User 对象，填充 fromUser 和 toUser 字段
+        loadUsersForMsgs(msgs);
+
         PagedResults<Msg> pagedResults = new PagedResults<>();
         pagedResults.setTotal(total != null ? total.intValue() : 0);
         pagedResults.setRows(msgs);
@@ -107,8 +114,65 @@ public class MsgBo extends BaseBo<Msg> {
         params.addValue("limit", msgCount);
         params.addValue("offset", totalInt >= msgCount ? totalInt - msgCount : 0);
         
-        return namedParameterJdbcTemplate.query(pagedSql, params, 
+        List<Msg> msgs = namedParameterJdbcTemplate.query(pagedSql, params, 
             new beidanci.service.dao.EntityRowMapper<>(Msg.class));
+        
+        // 批量加载完整的 User 对象，填充 fromUser 和 toUser 字段
+        loadUsersForMsgs(msgs);
+        
+        return msgs;
+    }
+    
+    /**
+     * 批量加载 User 对象并填充到 Msg 的 fromUser 和 toUser 字段
+     */
+    private void loadUsersForMsgs(List<Msg> msgs) {
+        if (msgs == null || msgs.isEmpty()) {
+            return;
+        }
+        
+        // 收集所有需要加载的 User ID
+        java.util.Set<String> userIds = new java.util.HashSet<>();
+        for (Msg msg : msgs) {
+            if (msg.getFromUser() != null && msg.getFromUser().getId() != null) {
+                userIds.add(msg.getFromUser().getId());
+            }
+            if (msg.getToUser() != null && msg.getToUser().getId() != null) {
+                userIds.add(msg.getToUser().getId());
+            }
+        }
+        
+        if (userIds.isEmpty()) {
+            return;
+        }
+        
+        // 批量查询 User 对象
+        String sql = "SELECT * FROM user WHERE id IN (:ids)";
+        MapSqlParameterSource params = new MapSqlParameterSource("ids", userIds);
+        List<beidanci.service.po.User> users = namedParameterJdbcTemplate.query(sql, params,
+            new beidanci.service.dao.EntityRowMapper<>(beidanci.service.po.User.class));
+        
+        // 构建 User ID 到 User 对象的映射
+        java.util.Map<String, beidanci.service.po.User> userMap = new java.util.HashMap<>();
+        for (beidanci.service.po.User user : users) {
+            userMap.put(user.getId(), user);
+        }
+        
+        // 填充 Msg 的 fromUser 和 toUser 字段
+        for (Msg msg : msgs) {
+            if (msg.getFromUser() != null && msg.getFromUser().getId() != null) {
+                beidanci.service.po.User fullUser = userMap.get(msg.getFromUser().getId());
+                if (fullUser != null) {
+                    msg.setFromUser(fullUser);
+                }
+            }
+            if (msg.getToUser() != null && msg.getToUser().getId() != null) {
+                beidanci.service.po.User fullUser = userMap.get(msg.getToUser().getId());
+                if (fullUser != null) {
+                    msg.setToUser(fullUser);
+                }
+            }
+        }
     }
 
     /**
@@ -128,10 +192,23 @@ public class MsgBo extends BaseBo<Msg> {
      * @return
      */
     public int getUnViewedPersistentMsgCountToUser(String toUserId) {
-        String sql = "SELECT COUNT(*) FROM msg WHERE toUserId = :toUserId AND viewed = false";
-        MapSqlParameterSource params = new MapSqlParameterSource("toUserId", toUserId);
-        Long count = namedParameterJdbcTemplate.queryForObject(sql, params, Long.class);
-        return count != null ? count.intValue() : 0;
+        try {
+            String sql = "SELECT COUNT(*) FROM msg WHERE toUserId = :toUserId AND viewed = false";
+            MapSqlParameterSource params = new MapSqlParameterSource("toUserId", toUserId);
+            Long count = namedParameterJdbcTemplate.queryForObject(sql, params, Long.class);
+            // 确保返回非 null 值，避免 JSON 序列化时出现 null
+            if (count == null) {
+                return 0;
+            }
+            return count.intValue();
+        } catch (org.springframework.dao.EmptyResultDataAccessException e) {
+            // COUNT(*) 不应该返回空结果，但为了安全起见处理这种情况
+            return 0;
+        } catch (Exception e) {
+            // 处理任何其他异常，确保始终返回非 null 值
+            logger.error("获取未读持久消息数量失败: toUserId={}", toUserId, e);
+            return 0;
+        }
     }
 
     /**
@@ -140,10 +217,23 @@ public class MsgBo extends BaseBo<Msg> {
      * @return
      */
     public int getAllPersistentMsgCountToUser(String toUserId) {
-        String sql = "SELECT COUNT(*) FROM msg WHERE toUserId = :toUserId";
-        MapSqlParameterSource params = new MapSqlParameterSource("toUserId", toUserId);
-        Long count = namedParameterJdbcTemplate.queryForObject(sql, params, Long.class);
-        return count != null ? count.intValue() : 0;
+        try {
+            String sql = "SELECT COUNT(*) FROM msg WHERE toUserId = :toUserId";
+            MapSqlParameterSource params = new MapSqlParameterSource("toUserId", toUserId);
+            Long count = namedParameterJdbcTemplate.queryForObject(sql, params, Long.class);
+            // 确保返回非 null 值，避免 JSON 序列化时出现 null
+            if (count == null) {
+                return 0;
+            }
+            return count.intValue();
+        } catch (org.springframework.dao.EmptyResultDataAccessException e) {
+            // COUNT(*) 不应该返回空结果，但为了安全起见处理这种情况
+            return 0;
+        } catch (Exception e) {
+            // 处理任何其他异常，确保始终返回非 null 值
+            logger.error("获取所有持久消息数量失败: toUserId={}", toUserId, e);
+            return 0;
+        }
     }
 
     public void sendAdvice(String content, String clientType, User fromUser) {
@@ -214,7 +304,12 @@ public class MsgBo extends BaseBo<Msg> {
     public List<Msg> getAllAdviceMessages() {
         String sql = "SELECT * FROM msg WHERE msgType = :msgType ORDER BY createTime DESC";
         MapSqlParameterSource params = new MapSqlParameterSource("msgType", MsgType.Advice.toString());
-        return namedParameterJdbcTemplate.query(sql, params, 
+        List<Msg> msgs = namedParameterJdbcTemplate.query(sql, params, 
             new beidanci.service.dao.EntityRowMapper<>(Msg.class));
+        
+        // 批量加载完整的 User 对象，填充 fromUser 和 toUser 字段
+        loadUsersForMsgs(msgs);
+        
+        return msgs;
     }
 }
