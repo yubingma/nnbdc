@@ -16,6 +16,7 @@ import beidanci.api.model.GameHallVo;
 import beidanci.api.model.WordVo;
 import beidanci.service.dao.BaseDao;
 import beidanci.service.po.Dict;
+import beidanci.service.po.DictGroup;
 import beidanci.service.po.GameHall;
 import beidanci.service.po.Word;
 import beidanci.service.util.BeanUtils;
@@ -41,6 +42,9 @@ public class GameHallBo extends BaseBo<GameHall> {
         return vo;
     }
 
+    @Autowired
+    private DictGroupBo dictGroupBo;
+
     /**
      * 获游戏大厅所包含的单词书中的所有单词
      *
@@ -49,7 +53,12 @@ public class GameHallBo extends BaseBo<GameHall> {
      */
     public Map<String/*spell*/, WordVo> getGameHallWords(String id) {
         GameHall gameHall = findById(id);
-        List<Dict> dicts = gameHall.getDictGroup().getAllDicts();
+        DictGroup dictGroup = gameHall.getDictGroup();
+        
+        // 加载 DictGroup 的 dictGroups 和 dicts 集合（递归加载所有子分组）
+        dictGroupBo.loadDictGroupsAndDicts(dictGroup);
+        
+        List<Dict> dicts = dictGroup.getAllDicts();
         List<String> dictIds = dicts.stream().map(d -> d.getId()).collect(java.util.stream.Collectors.toList());
         String sql = "SELECT DISTINCT w.* FROM word w " +
                 "INNER JOIN dict_word dw ON dw.wordId = w.id " +

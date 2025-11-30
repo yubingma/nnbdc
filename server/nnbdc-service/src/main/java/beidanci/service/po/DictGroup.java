@@ -11,9 +11,6 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Table;
 
-// JDBC 不再支持 Hibernate Fetch 注解
-// import org.hibernate.annotations.Fetch;
-// import org.hibernate.annotations.FetchMode;
 
 @Entity
 @Table(name = "dict_group")
@@ -22,6 +19,7 @@ public class DictGroup extends UuidPo {
     @Column(name = "name", length = 20)
     private String name;
 
+    @Column(name = "parentId")
     private DictGroup dictGroup;
 
     public Integer getDisplayIndex() {
@@ -124,20 +122,24 @@ public class DictGroup extends UuidPo {
         Map<String, Dict> dictMap = new HashMap<>();
 
         // 加入子群组包含的单词书
-        for (DictGroup childGroup : this.dictGroups) {
-            // root群组的的父亲还是root，要避免无限递归
-            if (childGroup.getName().equalsIgnoreCase("root")) {
-                continue;
-            }
+        if (this.dictGroups != null) {
+            for (DictGroup childGroup : this.dictGroups) {
+                // root群组的的父亲还是root，要避免无限递归
+                if (childGroup.getName() != null && childGroup.getName().equalsIgnoreCase("root")) {
+                    continue;
+                }
 
-            for (Dict dict : childGroup.getAllDicts()) {
-                dictMap.put(dict.getName(), dict);
+                for (Dict dict : childGroup.getAllDicts()) {
+                    dictMap.put(dict.getName(), dict);
+                }
             }
         }
 
         // 加入直接包含的单词书
-        for (Dict dict : this.dicts) {
-            dictMap.put(dict.getName(), dict);
+        if (this.dicts != null) {
+            for (Dict dict : this.dicts) {
+                dictMap.put(dict.getName(), dict);
+            }
         }
 
         // 将单词书按字母顺序排序

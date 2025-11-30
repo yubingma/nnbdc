@@ -1,4 +1,5 @@
 package beidanci.service.bo;
+
 import javax.annotation.PostConstruct;
 
 import java.util.ArrayList;
@@ -23,7 +24,7 @@ import beidanci.service.po.HallGroup;
 @Service
 @Transactional(rollbackFor = Throwable.class)
 public class HallGroupBo extends BaseBo<HallGroup> {
-        @PostConstruct
+    @PostConstruct
     public void init() {
         setDao(new BaseDao<HallGroup>() {
         });
@@ -52,7 +53,7 @@ public class HallGroupBo extends BaseBo<HallGroup> {
         // 查询所有属于这些 HallGroup 的 GameHall
         String sql = "SELECT * FROM game_hall WHERE hallGroupId IN (:hallGroupIds) ORDER BY displayOrder ASC";
         MapSqlParameterSource params = new MapSqlParameterSource("hallGroupIds", new ArrayList<>(hallGroupIds));
-        List<GameHall> gameHalls = namedParameterJdbcTemplate.query(sql, params, 
+        List<GameHall> gameHalls = namedParameterJdbcTemplate.query(sql, params,
                 new EntityRowMapper<>(GameHall.class));
 
         // 批量加载 DictGroup 对象
@@ -98,9 +99,9 @@ public class HallGroupBo extends BaseBo<HallGroup> {
         // 批量查询 DictGroup
         String sql = "SELECT * FROM dict_group WHERE id IN (:ids)";
         MapSqlParameterSource params = new MapSqlParameterSource("ids", new ArrayList<>(dictGroupIds));
-        List<DictGroup> dictGroups = namedParameterJdbcTemplate.query(sql, params, 
+        List<DictGroup> dictGroups = namedParameterJdbcTemplate.query(sql, params,
                 new EntityRowMapper<>(DictGroup.class));
-        
+
         Map<String, DictGroup> dictGroupMap = dictGroups.stream()
                 .collect(Collectors.toMap(DictGroup::getId, dg -> dg));
 
