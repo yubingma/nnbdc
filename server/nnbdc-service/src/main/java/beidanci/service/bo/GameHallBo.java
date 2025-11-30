@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import beidanci.api.model.GameHallVo;
+import beidanci.api.model.MeaningItemVo;
 import beidanci.api.model.WordVo;
 import beidanci.service.dao.BaseDao;
 import beidanci.service.po.Dict;
@@ -45,6 +46,9 @@ public class GameHallBo extends BaseBo<GameHall> {
     @Autowired
     private DictGroupBo dictGroupBo;
 
+    @Autowired
+    private MeaningItemBo meaningItemBo;
+
     /**
      * 获游戏大厅所包含的单词书中的所有单词
      *
@@ -67,10 +71,63 @@ public class GameHallBo extends BaseBo<GameHall> {
         List<Word> words = namedParameterJdbcTemplate.query(sql, params, 
             new beidanci.service.dao.EntityRowMapper<>(Word.class));
 
+        // 批量加载所有单词的 meaningItems
+        List<String> wordIds = words.stream().map(Word::getId).collect(java.util.stream.Collectors.toList());
+        Map<String, List<MeaningItemVo>> meaningItemsByWordId = new HashMap<>();
+        if (!wordIds.isEmpty()) {
+            // 优先查询通用词典的释义项（dictId = '0'）
+            String meaningSql = "SELECT id, ciXing, meaning, wordId, dictId, popularity, createTime, updateTime FROM meaning_item " +
+                    "WHERE wordId IN (:wordIds) AND dictId = '0' ORDER BY popularity ASC";
+            MapSqlParameterSource meaningParams = new MapSqlParameterSource("wordIds", wordIds);
+            List<beidanci.api.model.MeaningItemDto> commonMeaningItems = namedParameterJdbcTemplate.query(meaningSql, meaningParams, (rs, rowNum) -> {
+                beidanci.api.model.MeaningItemDto dto = new beidanci.api.model.MeaningItemDto();
+                dto.setId(rs.getString("id"));
+                dto.setCiXing(rs.getString("ciXing"));
+                dto.setMeaning(rs.getString("meaning"));
+                dto.setWordId(rs.getString("wordId"));
+                dto.setDictId(rs.getString("dictId"));
+                Integer popularity = rs.getObject("popularity", Integer.class);
+                dto.setPopularity(popularity != null ? popularity : 999);
+                dto.setCreateTime(rs.getTimestamp("createTime"));
+                dto.setUpdateTime(rs.getTimestamp("updateTime"));
+                return dto;
+            });
+            
+            // 转换为 MeaningItemVo 并按 wordId 分组
+            for (beidanci.api.model.MeaningItemDto dto : commonMeaningItems) {
+                MeaningItemVo vo = new MeaningItemVo();
+                vo.setId(dto.getId());
+                vo.setCiXing(dto.getCiXing());
+                vo.setMeaning(dto.getMeaning());
+                meaningItemsByWordId.computeIfAbsent(dto.getWordId(), k -> new java.util.ArrayList<>()).add(vo);
+            }
+            
+            // 对于没有通用释义的单词，从任意词典中取一条作为兜底
+            java.util.Set<String> wordsWithCommonMeaning = new java.util.HashSet<>(meaningItemsByWordId.keySet());
+            List<String> wordsWithoutCommonMeaning = wordIds.stream()
+                    .filter(wordId -> !wordsWithCommonMeaning.contains(wordId))
+                    .collect(java.util.stream.Collectors.toList());
+            if (!wordsWithoutCommonMeaning.isEmpty()) {
+                List<beidanci.api.model.MeaningItemDto> fallbackMeaningItems = meaningItemBo.getOneMeaningPerWordFromAnyDict(wordsWithoutCommonMeaning);
+                for (beidanci.api.model.MeaningItemDto dto : fallbackMeaningItems) {
+                    MeaningItemVo vo = new MeaningItemVo();
+                    vo.setId(dto.getId());
+                    vo.setCiXing(dto.getCiXing());
+                    vo.setMeaning(dto.getMeaning());
+                    meaningItemsByWordId.computeIfAbsent(dto.getWordId(), k -> new java.util.ArrayList<>()).add(vo);
+                }
+            }
+        }
+
         Map<String, WordVo> wordsBySpell = new HashMap<>();
         for (Word word : words) {
             WordVo wordVo = BeanUtils.makeVo(word, WordVo.class,
                     new String[]{"WordVo.^id,spell,meaningItems", "MeaningItemVo.^ciXing,meaning,dict", "DictVo.^id"});
+            
+            // 设置 meaningItems
+            List<MeaningItemVo> meaningItems = meaningItemsByWordId.getOrDefault(word.getId(), new java.util.ArrayList<>());
+            wordVo.setMeaningItems(meaningItems);
+            
             WordVo wordVo2 = new WordVo();
             org.springframework.beans.BeanUtils.copyProperties(Objects.requireNonNull(wordVo), wordVo2);
             wordVo2 = Util.shrinkWordVo(wordVo2, dicts, 1, true);
