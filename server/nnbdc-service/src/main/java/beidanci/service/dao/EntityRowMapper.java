@@ -10,8 +10,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import javax.persistence.Column;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,9 +45,17 @@ public class EntityRowMapper<E extends Po> implements RowMapper<E> {
         java.util.List<Field> fields = BeanUtils.getFields(entityClass, true);
         
         for (Field field : fields) {
-            // 跳过关联字段（ManyToOne, OneToMany 等）
-            if (field.isAnnotationPresent(ManyToOne.class) || 
-                field.isAnnotationPresent(OneToMany.class)) {
+            // 跳过集合类型字段（List, Set 等）- 这些在 JDBC 中不需要
+            if (java.util.Collection.class.isAssignableFrom(field.getType())) {
+                continue;
+            }
+            
+            // 跳过关联对象字段（类型为 Po 的子类，且不是以 "Id" 结尾的字段）
+            // 这些字段对应的外键列会在 ResultSet 中，但我们需要映射到外键列名（字段名 + "Id"）
+            if (beidanci.service.po.Po.class.isAssignableFrom(field.getType()) && !field.getName().endsWith("Id")) {
+                // 关联对象字段：映射外键列名（字段名 + "Id"）到字段
+                String foreignKeyColumnName = field.getName() + "Id";
+                map.put(foreignKeyColumnName.toLowerCase(), field);
                 continue;
             }
             
@@ -130,6 +136,22 @@ public class EntityRowMapper<E extends Po> implements RowMapper<E> {
             field.setAccessible(true);
             Class<?> fieldType = field.getType();
             
+            // 处理关联对象字段：从外键 ID 创建关联对象
+            if (Po.class.isAssignableFrom(fieldType) && !field.getName().endsWith("Id")) {
+                if (value != null) {
+                    // 创建关联对象并设置 ID
+                    @SuppressWarnings("unchecked")
+                    Class<? extends Po> poClass = (Class<? extends Po>) fieldType;
+                    Po associatedObject = poClass.getDeclaredConstructor().newInstance();
+                    // 通过反射设置 ID 字段
+                    Field idField = beidanci.service.dao.EntityTableInfo.getIdField(poClass);
+                    idField.setAccessible(true);
+                    idField.set(associatedObject, value);
+                    field.set(entity, associatedObject);
+                }
+                return;
+            }
+            
             // 处理 Date 类型
             if (fieldType == Date.class && value instanceof Timestamp) {
                 field.set(entity, new Date(((Timestamp) value).getTime()));
@@ -160,6 +182,9 @@ public class EntityRowMapper<E extends Po> implements RowMapper<E> {
             logger.error("设置枚举字段值时出错: field={}, value={}, enumType={}", 
                 field.getName(), value, fieldType.getName(), e);
             throw new RuntimeException("无法将值 '" + value + "' 转换为枚举类型 " + fieldType.getName(), e);
+        } catch (Exception e) {
+            logger.error("设置关联对象字段值时出错: field={}, value={}", field.getName(), value, e);
+            throw new RuntimeException("设置关联对象字段值失败: " + field.getName(), e);
         }
     }
 }

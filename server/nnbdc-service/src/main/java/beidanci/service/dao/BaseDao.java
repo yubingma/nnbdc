@@ -22,11 +22,6 @@ import beidanci.service.po.Po;
 import beidanci.service.util.BeanUtils;
 import beidanci.service.util.ReflectionUtil;
 
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
-import javax.persistence.ManyToMany;
-import javax.persistence.OneToOne;
 
 /**
  * DAO基类，支持基本的CRUD、分页、模糊查询 <br>
@@ -81,43 +76,37 @@ public abstract class BaseDao<E extends Po> {
         List<Object> values = new ArrayList<>();
         
         for (Field field : fields) {
-            // 处理 @ManyToOne 字段：提取关联对象的 ID 作为外键
-            if (field.isAnnotationPresent(ManyToOne.class)) {
-                javax.persistence.JoinColumn joinColumn = field.getAnnotation(javax.persistence.JoinColumn.class);
-                if (joinColumn != null) {
-                    String foreignKeyColumnName = joinColumn.name();
-                    if (foreignKeyColumnName.isEmpty()) {
-                        // 如果没有指定列名，使用字段名 + "Id"
-                        foreignKeyColumnName = field.getName() + "Id";
+            // 处理关联对象字段（类型为 Po 的子类，且不是以 "Id" 结尾的字段）
+            // 约定：关联对象字段的外键列名为 字段名 + "Id"（如 level -> levelId）
+            if (Po.class.isAssignableFrom(field.getType()) && !field.getName().endsWith("Id")) {
+                String foreignKeyColumnName = field.getName() + "Id";
+                
+                try {
+                    field.setAccessible(true);
+                    Object associatedObject = field.get(entity);
+                    Object foreignKeyValue = null;
+                    
+                    if (associatedObject != null) {
+                        // 提取关联对象的 ID
+                        @SuppressWarnings("unchecked")
+                        Class<? extends Po> associatedPoClass = (Class<? extends Po>) field.getType();
+                        Field associatedIdField = EntityTableInfo.getIdField(associatedPoClass);
+                        associatedIdField.setAccessible(true);
+                        foreignKeyValue = associatedIdField.get(associatedObject);
                     }
                     
-                    try {
-                        field.setAccessible(true);
-                        Object associatedObject = field.get(entity);
-                        Object foreignKeyValue = null;
-                        
-                        if (associatedObject != null) {
-                            // 提取关联对象的 ID
-                            @SuppressWarnings("unchecked")
-                            Class<? extends Po> associatedPoClass = (Class<? extends Po>) associatedObject.getClass();
-                            Field associatedIdField = EntityTableInfo.getIdField(associatedPoClass);
-                            associatedIdField.setAccessible(true);
-                            foreignKeyValue = associatedIdField.get(associatedObject);
-                        }
-                        
-                        columnNames.add(foreignKeyColumnName);
-                        values.add(foreignKeyValue);
-                    } catch (IllegalAccessException e) {
-                        logger.error("创建实体时获取关联字段值失败: entityClass={}, field={}", 
-                            valueClass.getName(), field.getName(), e);
-                        throw new RuntimeException("获取关联字段值失败: " + field.getName(), e);
-                    }
+                    columnNames.add(foreignKeyColumnName);
+                    values.add(foreignKeyValue);
+                } catch (IllegalAccessException e) {
+                    logger.error("创建实体时获取关联字段值失败: entityClass={}, field={}", 
+                        valueClass.getName(), field.getName(), e);
+                    throw new RuntimeException("获取关联字段值失败: " + field.getName(), e);
                 }
                 continue;
             }
             
-            // 跳过其他关联字段（OneToMany, ManyToMany, OneToOne）
-            if (isAssociationField(field)) {
+            // 跳过集合类型字段（List, Set 等）- 这些在 JDBC 中不需要
+            if (java.util.Collection.class.isAssignableFrom(field.getType())) {
                 continue;
             }
             
@@ -270,7 +259,9 @@ public abstract class BaseDao<E extends Po> {
         if (preciseEntity != null) {
             List<Field> fields = BeanUtils.getFields(valueClass, true);
             for (Field field : fields) {
-                if (isAssociationField(field)) {
+                // 跳过集合类型字段和关联对象字段（这些在查询条件中不需要）
+                if (java.util.Collection.class.isAssignableFrom(field.getType()) ||
+                    (Po.class.isAssignableFrom(field.getType()) && !field.getName().endsWith("Id"))) {
                     continue;
                 }
                 
@@ -369,7 +360,9 @@ public abstract class BaseDao<E extends Po> {
         if (preciseEntity != null) {
             List<Field> fields = BeanUtils.getFields(valueClass, true);
             for (Field field : fields) {
-                if (isAssociationField(field)) {
+                // 跳过集合类型字段和关联对象字段（这些在查询条件中不需要）
+                if (java.util.Collection.class.isAssignableFrom(field.getType()) ||
+                    (Po.class.isAssignableFrom(field.getType()) && !field.getName().endsWith("Id"))) {
                     continue;
                 }
                 
@@ -488,43 +481,42 @@ public abstract class BaseDao<E extends Po> {
         List<Object> values = new ArrayList<>();
         
         for (Field field : fields) {
-            // 处理 @ManyToOne 字段：提取关联对象的 ID 作为外键
-            if (field.isAnnotationPresent(ManyToOne.class)) {
-                javax.persistence.JoinColumn joinColumn = field.getAnnotation(javax.persistence.JoinColumn.class);
-                if (joinColumn != null) {
-                    String foreignKeyColumnName = joinColumn.name();
-                    if (foreignKeyColumnName.isEmpty()) {
-                        // 如果没有指定列名，使用字段名 + "Id"
-                        foreignKeyColumnName = field.getName() + "Id";
+            // 跳过主键
+            if (field.equals(idField)) {
+                continue;
+            }
+            
+            // 处理关联对象字段（类型为 Po 的子类，且不是以 "Id" 结尾的字段）
+            // 约定：关联对象字段的外键列名为 字段名 + "Id"（如 level -> levelId）
+            if (Po.class.isAssignableFrom(field.getType()) && !field.getName().endsWith("Id")) {
+                String foreignKeyColumnName = field.getName() + "Id";
+                
+                try {
+                    field.setAccessible(true);
+                    Object associatedObject = field.get(entity);
+                    Object foreignKeyValue = null;
+                    
+                    if (associatedObject != null) {
+                        // 提取关联对象的 ID
+                        @SuppressWarnings("unchecked")
+                        Class<? extends Po> associatedPoClass = (Class<? extends Po>) field.getType();
+                        Field associatedIdField = EntityTableInfo.getIdField(associatedPoClass);
+                        associatedIdField.setAccessible(true);
+                        foreignKeyValue = associatedIdField.get(associatedObject);
                     }
                     
-                    try {
-                        field.setAccessible(true);
-                        Object associatedObject = field.get(entity);
-                        Object foreignKeyValue = null;
-                        
-                        if (associatedObject != null) {
-                            // 提取关联对象的 ID
-                            @SuppressWarnings("unchecked")
-                            Class<? extends Po> associatedPoClass = (Class<? extends Po>) associatedObject.getClass();
-                            Field associatedIdField = EntityTableInfo.getIdField(associatedPoClass);
-                            associatedIdField.setAccessible(true);
-                            foreignKeyValue = associatedIdField.get(associatedObject);
-                        }
-                        
-                        setParts.add(foreignKeyColumnName + " = ?");
-                        values.add(foreignKeyValue);
-                    } catch (IllegalAccessException e) {
-                        logger.error("更新实体时获取关联字段值失败: entityClass={}, field={}", 
-                            valueClass.getName(), field.getName(), e);
-                        throw new RuntimeException("获取关联字段值失败: " + field.getName(), e);
-                    }
+                    setParts.add(foreignKeyColumnName + " = ?");
+                    values.add(foreignKeyValue);
+                } catch (IllegalAccessException e) {
+                    logger.error("更新实体时获取关联字段值失败: entityClass={}, field={}", 
+                        valueClass.getName(), field.getName(), e);
+                    throw new RuntimeException("获取关联字段值失败: " + field.getName(), e);
                 }
                 continue;
             }
             
-            // 跳过其他关联字段和主键
-            if (isAssociationField(field) || field.equals(idField)) {
+            // 跳过集合类型字段（List, Set 等）- 这些在 JDBC 中不需要
+            if (java.util.Collection.class.isAssignableFrom(field.getType())) {
                 continue;
             }
             
@@ -617,15 +609,6 @@ public abstract class BaseDao<E extends Po> {
         return results.isEmpty() ? null : results.get(0);
     }
 
-    /**
-     * 判断字段是否为关联字段
-     */
-    private boolean isAssociationField(Field field) {
-        return field.isAnnotationPresent(ManyToOne.class) ||
-               field.isAnnotationPresent(OneToMany.class) ||
-               field.isAnnotationPresent(ManyToMany.class) ||
-               field.isAnnotationPresent(OneToOne.class);
-    }
 
     /**
      * 将字段名转换为列名
