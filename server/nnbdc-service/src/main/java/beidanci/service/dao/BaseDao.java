@@ -112,6 +112,18 @@ public abstract class BaseDao<E extends Po> {
                             // 获取复合主键类的所有字段
                             List<Field> keyFields = BeanUtils.getFields(compositeKey.getClass(), true);
                             for (Field keyField : keyFields) {
+                                // 跳过 static 和 final 字段（如 serialVersionUID）
+                                int modifiers = keyField.getModifiers();
+                                if (java.lang.reflect.Modifier.isStatic(modifiers) || 
+                                    java.lang.reflect.Modifier.isFinal(modifiers)) {
+                                    continue;
+                                }
+                                
+                                // 只处理有 @Column 注解的字段（复合主键的组件字段应该有 @Column 注解）
+                                if (!keyField.isAnnotationPresent(Column.class)) {
+                                    continue;
+                                }
+                                
                                 keyField.setAccessible(true);
                                 Object keyValue = keyField.get(compositeKey);
                                 String columnName = EntityTableInfo.getColumnName(keyField);
@@ -180,7 +192,21 @@ public abstract class BaseDao<E extends Po> {
                 continue;
             }
             
+            // 检查 @Column 注解的 insertable 属性
+            if (field.isAnnotationPresent(Column.class)) {
+                Column column = field.getAnnotation(Column.class);
+                if (!column.insertable()) {
+                    continue; // 跳过 insertable = false 的字段
+                }
+            }
+            
             String columnName = EntityTableInfo.getColumnName(field);
+            
+            // 如果该列名已经在复合主键中，则跳过（避免重复）
+            if (isCompositeKey && compositeKeyColumnNames.contains(columnName.toLowerCase())) {
+                continue;
+            }
+            
             columnNames.add(columnName);
             
             try {
