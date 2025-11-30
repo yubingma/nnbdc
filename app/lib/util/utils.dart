@@ -696,9 +696,61 @@ class Util {
   }
 
   static Future<String?> networkImageToBase64(String imageUrl) async {
-    http.Response response = await http.get(Uri.parse(imageUrl));
-    final bytes = response.bodyBytes;
-    return base64Encode(bytes);
+    try {
+      http.Response response = await http.get(Uri.parse(imageUrl));
+      
+      // 检查响应状态码
+      if (response.statusCode != 200) {
+        Global.logger.w('networkImageToBase64: 请求失败，状态码: ${response.statusCode}, URL: $imageUrl');
+        return null;
+      }
+      
+      final bytes = response.bodyBytes;
+      
+      // 验证数据不为空
+      if (bytes.isEmpty) {
+        Global.logger.w('networkImageToBase64: 图像数据为空, URL: $imageUrl');
+        return null;
+      }
+      
+      // 基本验证：检查是否是有效的图像格式（通过文件头）
+      if (bytes.length < 4) {
+        Global.logger.w('networkImageToBase64: 图像数据过短, URL: $imageUrl');
+        return null;
+      }
+      
+      // 检查常见的图像文件头
+      bool isValidImage = false;
+      // JPEG: FF D8 FF
+      if (bytes[0] == 0xFF && bytes[1] == 0xD8 && bytes[2] == 0xFF) {
+        isValidImage = true;
+      }
+      // PNG: 89 50 4E 47
+      else if (bytes[0] == 0x89 && bytes[1] == 0x50 && bytes[2] == 0x4E && bytes[3] == 0x47) {
+        isValidImage = true;
+      }
+      // GIF: 47 49 46 38
+      else if (bytes[0] == 0x47 && bytes[1] == 0x49 && bytes[2] == 0x46 && bytes[3] == 0x38) {
+        isValidImage = true;
+      }
+      // WebP: RIFF...WEBP
+      else if (bytes.length >= 12 && 
+               bytes[0] == 0x52 && bytes[1] == 0x49 && bytes[2] == 0x46 && bytes[3] == 0x46 &&
+               bytes[8] == 0x57 && bytes[9] == 0x45 && bytes[10] == 0x42 && bytes[11] == 0x50) {
+        isValidImage = true;
+      }
+      
+      if (!isValidImage) {
+        Global.logger.w('networkImageToBase64: 不是有效的图像格式, URL: $imageUrl, 前4字节: ${bytes.take(4).map((b) => b.toRadixString(16).padLeft(2, '0')).join(' ')}');
+        // 不直接返回 null，因为可能还有其他格式，让调用方决定
+        // 但记录警告日志
+      }
+      
+      return base64Encode(bytes);
+    } catch (e, stackTrace) {
+      Global.logger.e('networkImageToBase64: 获取图像失败, URL: $imageUrl', error: e, stackTrace: stackTrace);
+      return null;
+    }
   }
 
   static Color sentenceChineseColor(BuildContext context) {

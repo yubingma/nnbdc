@@ -48,15 +48,31 @@ void main() async {
 
       // 捕获Flutter框架层的错误（同步错误）
       FlutterError.onError = (FlutterErrorDetails details) {
-        // 记录错误到日志
-        Global.logger.e(
-          '【Flutter框架错误】${details.exceptionAsString()}',
-          error: details.exception,
-          stackTrace: details.stack,
-        );
+        // 检查是否为图像相关的错误（非致命错误，不需要在控制台显示）
+        final exceptionString = details.exceptionAsString();
+        final isImageError = exceptionString.contains('Invalid image data') ||
+            exceptionString.contains('Exception: Invalid image data') ||
+            (details.stack?.toString().contains('MemoryImage') ?? false) ||
+            (details.stack?.toString().contains('image_provider.dart') ?? false);
         
-        // 在debug模式下，也输出到控制台
-        FlutterError.presentError(details);
+        if (isImageError) {
+          // 图像错误只记录到日志，不输出到控制台（避免干扰）
+          Global.logger.w(
+            '【图像加载错误】${details.exceptionAsString()}',
+            error: details.exception,
+            stackTrace: details.stack,
+          );
+        } else {
+          // 其他错误正常处理
+          Global.logger.e(
+            '【Flutter框架错误】${details.exceptionAsString()}',
+            error: details.exception,
+            stackTrace: details.stack,
+          );
+          
+          // 在debug模式下，也输出到控制台
+          FlutterError.presentError(details);
+        }
       };
 
       // 捕获平台层和异步错误

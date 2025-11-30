@@ -42,14 +42,14 @@ class Asr {
 
   /// 标记是否正在初始化事件监听，避免并发初始化
   bool _isInitializing = false;
-  
+
   /// 标记订阅是否应该被保护，防止在初始化后立即被取消
   bool _subscriptionProtected = false;
 
   /// ASR 结果事件订阅，用于在页面销毁或重新初始化时正确取消订阅，
   /// 避免多个已失效的监听器继续处理结果，导致目标单词长期停留在旧值
   StreamSubscription? _eventSubscription;
-  
+
   /// 当前的事件监听器回调函数，用于在事件回调中正确调用
   void Function(dynamic)? _currentAsrListener;
 
@@ -262,6 +262,7 @@ class Asr {
         .handleError((e) => Global.logger.i('ASR meter error: $e'));
   }
 
+  /// 初始化语音识别事件监听
   Future<void> initAsr(void Function(dynamic asrResult)? asrListener) async {
     if (_isInitializing) {
       Global.logger.w('===== ASR: initAsr 正在执行中，等待完成...');
@@ -287,31 +288,25 @@ class Asr {
       final oldSubscription = _eventSubscription;
       _eventSubscription = null;
       _subscriptionProtected = false; // 清除旧的保护标记
-      
+
       // 保存当前监听器引用，确保在回调中能正确调用
       _currentAsrListener = asrListener;
-      
+
       // 取消旧订阅并等待完全取消
       if (oldSubscription != null) {
         await oldSubscription.cancel();
-        Global.logger.d('===== ASR: 旧订阅已取消');
       }
-      
-      // 等待一小段时间，确保旧订阅完全取消，避免与新订阅冲突
-      await Future.delayed(const Duration(milliseconds: 100));
-      
+
+
       try {
-        Global.logger.d('===== ASR: 开始创建新的事件订阅');
         final stream = asrEventChannel.receiveBroadcastStream();
-        Global.logger.d('===== ASR: EventChannel Stream 已创建');
-        
+
         // 创建一个包装的监听器，确保即使 _currentAsrListener 被改变，也能正确处理事件
         final subscriptionId = DateTime.now().millisecondsSinceEpoch;
         final savedListener = asrListener; // 保存当前监听器的引用
-        
+
         _eventSubscription = stream.listen(
           (event) {
-            Global.logger.d('===== ASR: 收到原生端事件: $event (subscriptionId=$subscriptionId)');
             // 使用保存的监听器（在创建订阅时已确保不为 null）
             try {
               savedListener(event);
@@ -332,30 +327,34 @@ class Asr {
           },
           cancelOnError: false,
         );
-        Global.logger.i('===== ASR: 事件监听已重新绑定，监听器状态: ${_currentAsrListener != null ? "有效" : "无效"}，订阅状态: ${_eventSubscription != null ? "已创建" : "未创建"}，订阅ID: $subscriptionId');
-        
+        Global.logger.i(
+            '===== ASR: 事件监听已重新绑定，监听器状态: ${_currentAsrListener != null ? "有效" : "无效"}，订阅状态: ${_eventSubscription != null ? "已创建" : "未创建"}，订阅ID: $subscriptionId');
+
         // 验证订阅是否真正建立（通过检查订阅状态）
         if (_eventSubscription != null) {
-          Global.logger.d('===== ASR: 事件订阅验证通过，订阅ID: ${_eventSubscription.hashCode}');
+          // 在事件订阅创建成功后立即设置 initialized 状态
+          // 注意：如果当前已经是 started 状态，说明 startAsr 已经在运行，不应该再改回 initialized
+          if (_state != AsrState.started) {
+            setState(AsrState.initialized);
+          }
+
           // 标记订阅为受保护状态，防止在初始化后立即被取消
           _subscriptionProtected = true;
-          // 等待一小段时间，确保 iOS 端的 onListen 已经完成
-          await Future.delayed(const Duration(milliseconds: 50));
-          Global.logger.d('===== ASR: 事件订阅建立完成，等待 iOS 端 onListen 完成');
-          // 再等待一小段时间，确保 iOS 端的 onListen 完全建立
-          await Future.delayed(const Duration(milliseconds: 100));
           // 取消保护标记
           _subscriptionProtected = false;
-          Global.logger.d('===== ASR: 事件订阅保护期结束');
         } else {
           Global.logger.e('===== ASR: 警告：事件订阅创建失败，_eventSubscription 为 null');
+          // 如果订阅创建失败，也设置 initialized（或者保持当前状态）
+          if (_state != AsrState.started) {
+            setState(AsrState.initialized);
+          }
         }
       } catch (e, stackTrace) {
         Global.logger.e('===== ASR: 创建事件订阅时出错: $e', stackTrace: stackTrace);
         _currentAsrListener = null;
         rethrow;
       }
-      setState(AsrState.initialized);
+      // 注意：状态已经在事件订阅创建成功后设置，这里不需要再次设置
     } finally {
       _isInitializing = false;
     }
@@ -403,7 +402,7 @@ class Asr {
           SoundUtil.playAssetSound('asr_ready_hint.mp3', 1.3, 1.0).catchError((e) {
             Global.logger.i('播放ASR启动提示音失败: $e');
           });
-          
+
           // 先设置识别语言，再启动麦克风
           Global.logger.i('===== ASR: Updating language first...');
           await _updateLanguage(language);

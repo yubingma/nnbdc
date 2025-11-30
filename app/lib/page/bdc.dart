@@ -779,8 +779,11 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   }
 
   checkAsrResult() async {
+    if (_meaningController.text.isEmpty) {
+      return;
+    }
     if (asr.state != AsrState.started) {
-      Global.logger.w('收到语音识别结果，但ASR未启动，跳过处理');
+      Global.logger.w('收到语音识别结果(${_meaningController.text})，但ASR未启动，跳过处理');
       if (mounted) {
         _meaningController.text = '';
       }
