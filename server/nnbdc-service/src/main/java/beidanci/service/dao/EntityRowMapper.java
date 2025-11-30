@@ -44,6 +44,16 @@ public class EntityRowMapper<E extends Po> implements RowMapper<E> {
         // 获取所有字段（包括父类）
         java.util.List<Field> fields = BeanUtils.getFields(entityClass, true);
         
+        // 查找复合主键字段（@Id 且类型是 @Embeddable）
+        Field compositeKeyField = null;
+        for (Field field : fields) {
+            if (field.isAnnotationPresent(javax.persistence.Id.class) && 
+                field.getType().isAnnotationPresent(javax.persistence.Embeddable.class)) {
+                compositeKeyField = field;
+                break;
+            }
+        }
+        
         for (Field field : fields) {
             // 跳过集合类型字段（List, Set 等）- 这些在 JDBC 中不需要
             if (java.util.Collection.class.isAssignableFrom(field.getType())) {
@@ -56,6 +66,24 @@ public class EntityRowMapper<E extends Po> implements RowMapper<E> {
                 // 关联对象字段：映射外键列名（字段名 + "Id"）到字段
                 String foreignKeyColumnName = field.getName() + "Id";
                 map.put(foreignKeyColumnName.toLowerCase(), field);
+                continue;
+            }
+            
+            // 如果是复合主键字段本身，跳过（其组件字段会在下面处理）
+            if (field.equals(compositeKeyField)) {
+                // 处理复合主键的组件字段：将它们映射到复合主键字段
+                try {
+                    field.setAccessible(true);
+                    Class<?> compositeKeyType = field.getType();
+                    java.util.List<Field> keyFields = BeanUtils.getFields(compositeKeyType, true);
+                    for (Field keyField : keyFields) {
+                        String columnName = EntityTableInfo.getColumnName(keyField);
+                        // 将复合主键的组件列映射到复合主键字段
+                        map.put(columnName.toLowerCase(), field);
+                    }
+                } catch (Exception e) {
+                    logger.error("构建复合主键字段映射时出错: field={}", field.getName(), e);
+                }
                 continue;
             }
             
@@ -109,15 +137,74 @@ public class EntityRowMapper<E extends Po> implements RowMapper<E> {
             ResultSetMetaData metaData = rs.getMetaData();
             int columnCount = metaData.getColumnCount();
             
+            // 查找复合主键字段（@Id 且类型是 @Embeddable）
+            Field compositeKeyField = null;
+            java.util.List<Field> fields = BeanUtils.getFields(entityClass, true);
+            for (Field field : fields) {
+                if (field.isAnnotationPresent(javax.persistence.Id.class) && 
+                    field.getType().isAnnotationPresent(javax.persistence.Embeddable.class)) {
+                    compositeKeyField = field;
+                    break;
+                }
+            }
+            
+            // 如果存在复合主键，收集其组件列的值
+            Map<String, Object> compositeKeyValues = new HashMap<>();
+            if (compositeKeyField != null) {
+                Class<?> compositeKeyType = compositeKeyField.getType();
+                java.util.List<Field> keyFields = BeanUtils.getFields(compositeKeyType, true);
+                for (Field keyField : keyFields) {
+                    String columnName = EntityTableInfo.getColumnName(keyField);
+                    compositeKeyValues.put(columnName.toLowerCase(), null);
+                }
+            }
+            
             for (int i = 1; i <= columnCount; i++) {
                 String columnName = metaData.getColumnLabel(i).toLowerCase();
                 Field field = columnToFieldMap.get(columnName);
                 
                 if (field != null) {
                     Object value = rs.getObject(i);
-                    if (value != null) {
+                    
+                    // 如果这个列属于复合主键的组件，收集值而不是直接设置
+                    if (compositeKeyField != null && field.equals(compositeKeyField)) {
+                        compositeKeyValues.put(columnName, value);
+                    } else if (value != null) {
                         setFieldValue(entity, field, value);
                     }
+                }
+            }
+            
+            // 如果存在复合主键，创建并设置复合主键对象
+            if (compositeKeyField != null && !compositeKeyValues.isEmpty()) {
+                try {
+                    compositeKeyField.setAccessible(true);
+                    Class<?> compositeKeyType = compositeKeyField.getType();
+                    Object compositeKey = compositeKeyType.getDeclaredConstructor().newInstance();
+                    
+                    java.util.List<Field> keyFields = BeanUtils.getFields(compositeKeyType, true);
+                    for (Field keyField : keyFields) {
+                        String columnName = EntityTableInfo.getColumnName(keyField);
+                        Object keyValue = compositeKeyValues.get(columnName.toLowerCase());
+                        if (keyValue != null) {
+                            keyField.setAccessible(true);
+                            // 处理枚举类型
+                            if (keyField.getType().isEnum() && keyValue instanceof String) {
+                                @SuppressWarnings("unchecked")
+                                Class<? extends Enum<?>> enumClass = (Class<? extends Enum<?>>) keyField.getType();
+                                java.lang.reflect.Method valueOfMethod = enumClass.getMethod("valueOf", String.class);
+                                Enum<?> enumValue = (Enum<?>) valueOfMethod.invoke(null, (String) keyValue);
+                                keyField.set(compositeKey, enumValue);
+                            } else {
+                                keyField.set(compositeKey, keyValue);
+                            }
+                        }
+                    }
+                    
+                    compositeKeyField.set(entity, compositeKey);
+                } catch (Exception e) {
+                    logger.error("设置复合主键时出错: entityClass={}, field={}", entityClass.getName(), compositeKeyField.getName(), e);
+                    throw new RuntimeException("设置复合主键失败", e);
                 }
             }
             
