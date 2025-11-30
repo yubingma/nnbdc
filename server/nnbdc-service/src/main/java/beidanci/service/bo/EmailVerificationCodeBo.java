@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import beidanci.service.dao.BaseDao;
+import beidanci.service.dao.EntityRowMapper;
 import beidanci.service.po.EmailCodeType;
 import beidanci.service.po.EmailVerificationCode;
 import beidanci.service.util.EmailUtil;
@@ -72,7 +73,7 @@ public class EmailVerificationCodeBo extends BaseBo<EmailVerificationCode> {
         params.addValue("minSendTime", minSendTime);
         
         List<EmailVerificationCode> recentCodes = namedParameterJdbcTemplate.query(sql, params, 
-            new beidanci.service.dao.EntityRowMapper<>(EmailVerificationCode.class));
+            new EntityRowMapper<>(EmailVerificationCode.class));
         if (!recentCodes.isEmpty()) {
             return "发送过于频繁，请稍后再试";
         }
@@ -115,7 +116,7 @@ public class EmailVerificationCodeBo extends BaseBo<EmailVerificationCode> {
         params.addValue("type", type.toString());
         
         List<EmailVerificationCode> codes = namedParameterJdbcTemplate.query(sql, params, 
-            new beidanci.service.dao.EntityRowMapper<>(EmailVerificationCode.class));
+            new EntityRowMapper<>(EmailVerificationCode.class));
         if (codes.isEmpty()) {
             return "验证码错误";
         }

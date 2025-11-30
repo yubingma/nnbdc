@@ -2,7 +2,9 @@ package beidanci.service.bo;
 import javax.annotation.PostConstruct;
 
 import java.io.File;
+import java.text.SimpleDateFormat;
 import java.util.List;
+import java.util.TimeZone;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -186,8 +188,8 @@ public class WordImageBo extends BaseBo<WordImage> {
     private String toJsonForLog(WordImage image) {
         try {
             // 用于格式化日期为ISO-8601格式
-            java.text.SimpleDateFormat isoFormat = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-            isoFormat.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
+            SimpleDateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+            isoFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
             
             String createTimeStr = image.getCreateTime() != null ? isoFormat.format(image.getCreateTime()) : "";
             String updateTimeStr = image.getUpdateTime() != null ? isoFormat.format(image.getUpdateTime()) : "";

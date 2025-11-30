@@ -1,7 +1,9 @@
 package beidanci.service.socket.system.game.russia.state;
 
+import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.lang3.NotImplementedException;
 
@@ -46,22 +48,22 @@ public class ReadyState extends RoomState {
     }
 
     // 前端上报下落触底 ETA 的调度器与任务表（按用户）
-    private final java.util.Timer fallTimer = new java.util.Timer(true);
-    private final java.util.Map<String, java.util.TimerTask> fallTasks = new java.util.concurrent.ConcurrentHashMap<>();
+    private final Timer fallTimer = new Timer(true);
+    private final Map<String, TimerTask> fallTasks = new ConcurrentHashMap<>();
     // 同一单词最多只+1的防抖标记：userId -> 是否已对当前下落单词做过+1
-    private final java.util.Map<String, java.lang.Boolean> stackAddedOnce = new java.util.concurrent.ConcurrentHashMap<>();
+    private final Map<String, Boolean> stackAddedOnce = new ConcurrentHashMap<>();
     // 机器人自动开始游戏的定时任务
-    private java.util.TimerTask botAutoStartTask = null;
+    private TimerTask botAutoStartTask = null;
     // 记录机器人上次的堆叠行数，用于检测是否被攻击
     private int botLastStackRows = 0;
     // 机器人使用道具的延迟任务（避免立即反击, 显得更真实）
-    private java.util.TimerTask botPropsDelayTask = null;
+    private TimerTask botPropsDelayTask = null;
 
     /**
      * 递归调度机器人动作（用道具 + 答题），避免局部 lambda 的捕获初始化问题。
      */
-    private void scheduleBotNext(java.util.Timer botTimer, long delayMs, UserVo botUser, UserVo humanUser, int[] idx) {
-        botTimer.schedule(new java.util.TimerTask() {
+    private void scheduleBotNext(Timer botTimer, long delayMs, UserVo botUser, UserVo humanUser, int[] idx) {
+        botTimer.schedule(new TimerTask() {
             @Override
             public void run() {
                 try {
@@ -104,7 +106,7 @@ public class ReadyState extends RoomState {
                             && botPropsDelayTask == null) {
                         // 堆叠行数增加了，延迟300ms-2秒后使用"减一行"道具，模拟人类反应时间
                         long delayMs = 300L + (long) (Math.random() * 1700L);
-                        botPropsDelayTask = new java.util.TimerTask() {
+                        botPropsDelayTask = new TimerTask() {
                             @Override
                             public void run() {
                                 try {
@@ -132,7 +134,7 @@ public class ReadyState extends RoomState {
                                         // 打印机器人使用"减一行"日志
                                         org.slf4j.LoggerFactory.getLogger(ReadyState.class)
                                                 .info(String.format("机器人[%s] 延迟%.1f秒后使用了道具[减一行]，库存：加一行=%d，减一行=%d",
-                                                        beidanci.service.util.Util.getNickNameOfUser(botUser),
+                                                        Util.getNickNameOfUser(botUser),
                                                         delayMs / 1000.0,
                                                         currentBotData.getPropsCounts()[0],
                                                         currentBotData.getPropsCounts()[1]));
@@ -202,7 +204,7 @@ public class ReadyState extends RoomState {
             return;
         // 新词开始下落，重置“一次性+1”标记
         stackAddedOnce.put(user.getId(), Boolean.FALSE);
-        java.util.TimerTask task = new java.util.TimerTask() {
+        TimerTask task = new TimerTask() {
             @Override
             public void run() {
                 try {
@@ -222,7 +224,7 @@ public class ReadyState extends RoomState {
     }
 
     private void cancelFallTask(UserVo user) {
-        java.util.TimerTask old = fallTasks.remove(user.getId());
+        TimerTask old = fallTasks.remove(user.getId());
         if (old != null)
             old.cancel();
     }
@@ -267,7 +269,7 @@ public class ReadyState extends RoomState {
                 long delayMs = 3000L + (long) (Math.random() * 7000L);
                 final UserVo botUser = user;
 
-                botAutoStartTask = new java.util.TimerTask() {
+                botAutoStartTask = new TimerTask() {
                     @Override
                     public void run() {
                         try {
@@ -532,7 +534,7 @@ public class ReadyState extends RoomState {
         room.broadcastEvent("sysCmd", "BEGIN");
         isPlaying = true;
         // 清空历史触底计时
-        fallTasks.values().forEach(java.util.TimerTask::cancel);
+        fallTasks.values().forEach(TimerTask::cancel);
         fallTasks.clear();
         // 清空堆叠标记，避免上一局游戏状态影响新游戏
         stackAddedOnce.clear();
@@ -558,7 +560,7 @@ public class ReadyState extends RoomState {
         // 1) 根据对手历史胜率动态模拟答题：胜率越低，思考时间越长，并加入随机性
         // 2) 同时根据局势自动使用道具（自救优先，其次进攻），使用与答题共享的调度器
         if (botUser != null) {
-            final java.util.Timer botTimer = new java.util.Timer(true);
+            final Timer botTimer = new Timer(true);
             final int[] idx = new int[] { 0 };
             // 首次调度：设置合理的初始延迟，让机器人与人类基本同步开始
             scheduleBotNext(botTimer, 800L, botUser, humanUser, idx);
@@ -597,7 +599,7 @@ public class ReadyState extends RoomState {
             room.broadcastEvent("loser", loser.getId());
             gameOverProcessor.adjustUserScore(winer, loser);
             isPlaying = false;
-            fallTasks.values().forEach(java.util.TimerTask::cancel);
+            fallTasks.values().forEach(TimerTask::cancel);
             fallTasks.clear();
             // 清空堆叠标记
             stackAddedOnce.clear();

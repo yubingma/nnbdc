@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import beidanci.api.model.DakaDto;
 import beidanci.service.dao.BaseDao;
+import beidanci.service.dao.EntityRowMapper;
 import beidanci.service.po.Daka;
 import beidanci.service.po.DakaId;
 import beidanci.service.po.StudyGroup;
@@ -58,7 +59,7 @@ public class DakaBo extends BaseBo<Daka> {
         params.addValue("startDate", startDate);
         params.addValue("endDate", endDate);
         return namedParameterJdbcTemplate.query(sql, params, 
-            new beidanci.service.dao.EntityRowMapper<>(Daka.class));
+            new EntityRowMapper<>(Daka.class));
     }
 
     /**
@@ -92,7 +93,7 @@ public class DakaBo extends BaseBo<Daka> {
         String sql = "SELECT * FROM daka WHERE userId = :userId";
         MapSqlParameterSource params = new MapSqlParameterSource("userId", userId);
         List<Daka> dakas = namedParameterJdbcTemplate.query(sql, params, 
-            new beidanci.service.dao.EntityRowMapper<>(Daka.class));
+            new EntityRowMapper<>(Daka.class));
 
         List<DakaDto> dtos = new ArrayList<>();
         for (Daka daka : dakas) {

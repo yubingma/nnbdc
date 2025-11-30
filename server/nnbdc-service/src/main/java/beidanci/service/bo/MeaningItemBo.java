@@ -1,7 +1,9 @@
 package beidanci.service.bo;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
 
@@ -79,10 +81,10 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
         List<?> results = allResults.stream().map(dto -> new Object[]{
             dto.getId(), dto.getCiXing(), dto.getMeaning(), dto.getWordId(), 
             dto.getDictId(), dto.getPopularity(), dto.getCreateTime(), dto.getUpdateTime()
-        }).collect(java.util.stream.Collectors.toList());
+        }).collect(Collectors.toList());
 
         List<MeaningItemDto> picked = new ArrayList<>();
-        java.util.HashSet<String> seen = new java.util.HashSet<>();
+        HashSet<String> seen = new HashSet<>();
         for (Object result : results) {
             Object[] tuple = (Object[]) result;
             String wordId = (String) tuple[3];

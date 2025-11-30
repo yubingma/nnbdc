@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import beidanci.api.model.LearningDictDto;
 import beidanci.api.model.WordVo;
 import beidanci.service.dao.BaseDao;
+import beidanci.service.dao.EntityRowMapper;
 import beidanci.service.po.LearningDict;
 import beidanci.service.po.User;
 import beidanci.service.util.Util;
@@ -36,7 +37,7 @@ public class LearningDictBo extends BaseBo<LearningDict> {
         String sql = "SELECT * FROM learning_dict WHERE userId = :userId ORDER BY createTime ASC";
         MapSqlParameterSource params = new MapSqlParameterSource("userId", user.getId());
         return namedParameterJdbcTemplate.query(sql, params, 
-            new beidanci.service.dao.EntityRowMapper<>(LearningDict.class));
+            new EntityRowMapper<>(LearningDict.class));
     }
 
     public LearningDict getLearningDictOfUser(User user, String dictName) {
@@ -45,7 +46,7 @@ public class LearningDictBo extends BaseBo<LearningDict> {
         params.addValue("userId", user.getId());
         params.addValue("dictName", dictName);
         List<LearningDict> results = namedParameterJdbcTemplate.query(sql, params, 
-            new beidanci.service.dao.EntityRowMapper<>(LearningDict.class));
+            new EntityRowMapper<>(LearningDict.class));
         return results.isEmpty() ? null : results.get(0);
     }
 

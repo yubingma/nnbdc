@@ -2,8 +2,10 @@ package beidanci.service.dao;
 
 import java.io.Serializable;
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -114,8 +116,8 @@ public abstract class BaseDao<E extends Po> {
                             for (Field keyField : keyFields) {
                                 // 跳过 static 和 final 字段（如 serialVersionUID）
                                 int modifiers = keyField.getModifiers();
-                                if (java.lang.reflect.Modifier.isStatic(modifiers) || 
-                                    java.lang.reflect.Modifier.isFinal(modifiers)) {
+                                if (Modifier.isStatic(modifiers) || 
+                                    Modifier.isFinal(modifiers)) {
                                     continue;
                                 }
                                 
@@ -202,14 +204,14 @@ public abstract class BaseDao<E extends Po> {
             }
             
             // 跳过集合类型字段（List, Set 等）- 这些在 JDBC 中不需要
-            if (java.util.Collection.class.isAssignableFrom(field.getType())) {
+            if (Collection.class.isAssignableFrom(field.getType())) {
                 continue;
             }
             
             // 跳过 static 和 final 字段（如常量 NEW_LEARNING_WORD_LIFE_VALUE）
             int modifiers = field.getModifiers();
-            if (java.lang.reflect.Modifier.isStatic(modifiers) || 
-                java.lang.reflect.Modifier.isFinal(modifiers)) {
+            if (Modifier.isStatic(modifiers) || 
+                Modifier.isFinal(modifiers)) {
                 continue;
             }
             
@@ -598,7 +600,7 @@ public abstract class BaseDao<E extends Po> {
         List<Object> values = new ArrayList<>();
         
         // 收集复合主键的组件列名（如果主键是复合主键）
-        java.util.Set<String> compositeKeyColumnNames = new java.util.HashSet<>();
+        Set<String> compositeKeyColumnNames = new HashSet<>();
         boolean isCompositeKey = idField.getType().isAnnotationPresent(javax.persistence.Embeddable.class);
         if (isCompositeKey) {
             try {
@@ -610,8 +612,8 @@ public abstract class BaseDao<E extends Po> {
                     for (Field keyField : keyFields) {
                         // 跳过 static 和 final 字段
                         int keyFieldModifiers = keyField.getModifiers();
-                        if (java.lang.reflect.Modifier.isStatic(keyFieldModifiers) || 
-                            java.lang.reflect.Modifier.isFinal(keyFieldModifiers)) {
+                        if (Modifier.isStatic(keyFieldModifiers) || 
+                            Modifier.isFinal(keyFieldModifiers)) {
                             continue;
                         }
                         // 只处理有 @Column 注解的字段
@@ -667,14 +669,14 @@ public abstract class BaseDao<E extends Po> {
             }
             
             // 跳过集合类型字段（List, Set 等）- 这些在 JDBC 中不需要
-            if (java.util.Collection.class.isAssignableFrom(field.getType())) {
+            if (Collection.class.isAssignableFrom(field.getType())) {
                 continue;
             }
             
             // 跳过 static 和 final 字段（如常量 NEW_LEARNING_WORD_LIFE_VALUE）
             int modifiers = field.getModifiers();
-            if (java.lang.reflect.Modifier.isStatic(modifiers) || 
-                java.lang.reflect.Modifier.isFinal(modifiers)) {
+            if (Modifier.isStatic(modifiers) || 
+                Modifier.isFinal(modifiers)) {
                 continue;
             }
             

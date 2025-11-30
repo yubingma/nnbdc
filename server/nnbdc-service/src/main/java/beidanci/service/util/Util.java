@@ -24,6 +24,7 @@ import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
 import java.sql.Timestamp;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -915,7 +916,7 @@ public class Util {
         return remoteAddr;
     }
 
-    public static Date removeTimePart(Date date) throws java.text.ParseException {
+    public static Date removeTimePart(Date date) throws ParseException {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
         String s = sdf.format(date);
         return sdf.parse(s);

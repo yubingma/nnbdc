@@ -11,6 +11,7 @@ import beidanci.api.model.WordVo;
 import beidanci.service.socket.UserCmd;
 import beidanci.service.socket.system.game.russia.RussiaRoom;
 import beidanci.service.socket.system.game.russia.UserGameData;
+import beidanci.service.util.Util;
 import beidanci.util.Utils;
 
 public final class GetNextWordProcessor {
@@ -77,7 +78,7 @@ public final class GetNextWordProcessor {
                     int c0 = userPlayData.getPropsCounts()[0];
                     int c1 = userPlayData.getPropsCounts()[1];
                     log.info(String.format("机器人[%s] 获得道具[%s]，道具库存：加一行=%d，减一行=%d",
-                            beidanci.service.util.Util.getNickNameOfUser(user),
+                            Util.getNickNameOfUser(user),
                             (props == 0 ? "加一行" : "减一行"), c0, c1));
                 }
             }

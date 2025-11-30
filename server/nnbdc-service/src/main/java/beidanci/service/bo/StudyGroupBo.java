@@ -17,6 +17,7 @@ import java.util.Calendar;
 
 import beidanci.api.model.StudyGroupSummary;
 import beidanci.service.dao.BaseDao;
+import beidanci.service.dao.EntityRowMapper;
 import beidanci.service.po.StudyGroup;
 import beidanci.service.po.StudyGroupPost;
 import beidanci.service.po.StudyGroupPostReply;
@@ -153,7 +154,7 @@ public class StudyGroupBo extends BaseBo<StudyGroup> {
         params.addValue("groupId", groupId);
         params.addValue("theDate", Util.removeTimePart(calendar.getTime()));
         List<StudyGroupSnapshotDaily> snapshots = namedParameterJdbcTemplate.query(sql, params, 
-            new beidanci.service.dao.EntityRowMapper<>(StudyGroupSnapshotDaily.class));
+            new EntityRowMapper<>(StudyGroupSnapshotDaily.class));
         return snapshots.isEmpty() ? null : snapshots.get(0);
     }
 

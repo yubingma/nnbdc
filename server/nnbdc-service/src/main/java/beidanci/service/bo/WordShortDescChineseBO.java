@@ -1,7 +1,9 @@
 package beidanci.service.bo;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.List;
+import java.util.TimeZone;
 
 import javax.annotation.PostConstruct;
 
@@ -150,8 +152,8 @@ public class WordShortDescChineseBO extends BaseBo<WordShortDescChinese> {
     private String toJsonForLog(WordShortDescChinese chinese) {
         try {
             // 用于格式化日期为ISO-8601格式
-            java.text.SimpleDateFormat isoFormat = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-            isoFormat.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
+            SimpleDateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+            isoFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
             
             String createTimeStr = chinese.getCreateTime() != null ? isoFormat.format(chinese.getCreateTime()) : "";
             String updateTimeStr = chinese.getUpdateTime() != null ? isoFormat.format(chinese.getUpdateTime()) : "";

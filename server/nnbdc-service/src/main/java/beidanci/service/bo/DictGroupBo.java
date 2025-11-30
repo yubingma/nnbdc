@@ -36,7 +36,7 @@ public class DictGroupBo extends BaseBo<DictGroup> {
     public List<DictGroup> getAllDictGroups() {
         String sql = "SELECT * FROM dict_group ORDER BY displayIndex ASC";
         return namedParameterJdbcTemplate.query(sql, 
-            new beidanci.service.dao.EntityRowMapper<>(DictGroup.class));
+            new EntityRowMapper<>(DictGroup.class));
     }
 
     /**

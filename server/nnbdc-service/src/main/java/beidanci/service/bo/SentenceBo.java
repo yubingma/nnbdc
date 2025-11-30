@@ -1,6 +1,7 @@
 package beidanci.service.bo;
 import java.io.IOException;
 import java.util.List;
+import java.util.TimeZone;
 
 import javax.annotation.PostConstruct;
 
@@ -197,7 +198,7 @@ public class SentenceBo extends BaseBo<Sentence> {
         try {
             // 用于格式化日期为ISO-8601格式
             java.text.SimpleDateFormat isoFormat = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-            isoFormat.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
+            isoFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
             
             String createTimeStr = sentence.getCreateTime() != null ? isoFormat.format(sentence.getCreateTime()) : "";
             String updateTimeStr = sentence.getUpdateTime() != null ? isoFormat.format(sentence.getUpdateTime()) : "";

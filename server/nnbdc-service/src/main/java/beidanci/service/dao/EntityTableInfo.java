@@ -2,6 +2,7 @@ package beidanci.service.dao;
 
 import java.lang.reflect.Field;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.persistence.Column;
@@ -56,7 +57,7 @@ public class EntityTableInfo {
             return cached;
         }
         
-        java.util.List<Field> fields = BeanUtils.getFields(entityClass, true);
+        List<Field> fields = BeanUtils.getFields(entityClass, true);
         for (Field field : fields) {
             if (field.isAnnotationPresent(Id.class)) {
                 idFieldCache.put(entityClass, field);

@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import beidanci.service.dao.BaseDao;
+import beidanci.service.dao.EntityRowMapper;
 import beidanci.service.po.User;
 import beidanci.service.po.UserSnapshotDaily;
 
@@ -33,6 +34,6 @@ public class UserSnapshotDailyBo extends BaseBo<UserSnapshotDaily> {
         params.addValue("startDate", startDate);
         params.addValue("endDate", endDate);
         return namedParameterJdbcTemplate.query(sql, params, 
-            new beidanci.service.dao.EntityRowMapper<>(UserSnapshotDaily.class));
+            new EntityRowMapper<>(UserSnapshotDaily.class));
     }
 }

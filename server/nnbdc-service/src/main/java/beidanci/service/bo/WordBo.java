@@ -21,6 +21,7 @@ import beidanci.api.model.WordImageDto;
 import beidanci.api.model.WordList;
 import beidanci.api.model.WordVo;
 import beidanci.service.dao.BaseDao;
+import beidanci.service.dao.EntityRowMapper;
 import beidanci.service.exception.EmptySpellException;
 import beidanci.service.exception.InvalidMeaningFormatException;
 import beidanci.service.exception.ParseException;
@@ -72,7 +73,7 @@ public class WordBo extends BaseBo<Word> {
     public List<Word> getAllWords() {
         String sql = "SELECT * FROM word ORDER BY LOWER(spell) ASC";
         return namedParameterJdbcTemplate.query(sql, 
-            new beidanci.service.dao.EntityRowMapper<>(Word.class));
+            new EntityRowMapper<>(Word.class));
     }
 
     public WordVo getWordVoById(String wordId, String[] excludeFields) {
@@ -86,7 +87,7 @@ public class WordBo extends BaseBo<Word> {
         String sql = "SELECT * FROM word WHERE spell = :spell";
         MapSqlParameterSource params = new MapSqlParameterSource("spell", spell);
         List<Word> results = namedParameterJdbcTemplate.query(sql, params, 
-            new beidanci.service.dao.EntityRowMapper<>(Word.class));
+            new EntityRowMapper<>(Word.class));
         return results.isEmpty() ? null : results.get(0);
     }
 

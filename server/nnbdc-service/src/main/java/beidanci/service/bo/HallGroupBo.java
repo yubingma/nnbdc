@@ -4,6 +4,7 @@ import javax.annotation.PostConstruct;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -85,7 +86,7 @@ public class HallGroupBo extends BaseBo<HallGroup> {
         }
 
         // 收集所有 dictGroupId
-        Set<String> dictGroupIds = new java.util.HashSet<>();
+        Set<String> dictGroupIds = new HashSet<>();
         for (GameHall gameHall : gameHalls) {
             if (gameHall.getDictGroup() != null && gameHall.getDictGroup().getId() != null) {
                 dictGroupIds.add(gameHall.getDictGroup().getId());

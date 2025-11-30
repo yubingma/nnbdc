@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import beidanci.api.model.UserOperDto;
 import beidanci.service.dao.BaseDao;
+import beidanci.service.dao.EntityRowMapper;
 import beidanci.service.po.UserOper;
 import beidanci.service.util.Util;
 
@@ -88,7 +89,7 @@ public class UserOperBo extends BaseBo<UserOper> {
         String sql = "SELECT * FROM user_oper WHERE userId = :userId ORDER BY operTime DESC";
         MapSqlParameterSource params = new MapSqlParameterSource("userId", userId);
         List<UserOper> opers = namedParameterJdbcTemplate.query(sql, params, 
-            new beidanci.service.dao.EntityRowMapper<>(UserOper.class));
+            new EntityRowMapper<>(UserOper.class));
 
         List<UserOperDto> result = new ArrayList<>();
         for (UserOper oper : opers) {

@@ -20,6 +20,7 @@ import beidanci.api.Result;
 import beidanci.api.model.DictWordDto;
 import beidanci.api.model.WordVo;
 import beidanci.service.dao.BaseDao;
+import beidanci.service.dao.EntityRowMapper;
 import beidanci.service.dao.PaginationResults;
 import beidanci.service.exception.EmptySpellException;
 import beidanci.service.exception.InvalidMeaningFormatException;
@@ -99,7 +100,7 @@ public class DictWordBo extends BaseBo<DictWord> {
         params.addValue("dictId", dictId);
         params.addValue("seq", seqNo);
         List<DictWord> results = namedParameterJdbcTemplate.query(sql, params, 
-            new beidanci.service.dao.EntityRowMapper<>(DictWord.class));
+            new EntityRowMapper<>(DictWord.class));
         if (results.isEmpty()) {
             return null;
         }
@@ -137,7 +138,7 @@ public class DictWordBo extends BaseBo<DictWord> {
         params.addValue("limit", pageSize);
         params.addValue("offset", offset);
         List<DictWord> dictWords = namedParameterJdbcTemplate.query(sql, params, 
-            new beidanci.service.dao.EntityRowMapper<>(DictWord.class));
+            new EntityRowMapper<>(DictWord.class));
 
         PaginationResults<DictWord> result = new PaginationResults<>();
         result.setTotal(total);
@@ -328,7 +329,7 @@ public class DictWordBo extends BaseBo<DictWord> {
         params.addValue("limit", pageSize);
         params.addValue("offset", firstRow);
         return namedParameterJdbcTemplate.query(sql, params, 
-            new beidanci.service.dao.EntityRowMapper<>(DictWord.class));
+            new EntityRowMapper<>(DictWord.class));
     }
 
     public int getMaxSeqNo(final Dict dict) {

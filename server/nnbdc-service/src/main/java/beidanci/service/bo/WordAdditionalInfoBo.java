@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import beidanci.service.dao.BaseDao;
+import beidanci.service.dao.EntityRowMapper;
 import beidanci.service.po.WordAdditionalInfo;
 
 @Service
@@ -28,6 +29,6 @@ public class WordAdditionalInfoBo extends BaseBo<WordAdditionalInfo> {
         String sql = "SELECT wai.* FROM word_additional_info wai INNER JOIN word w ON wai.wordId = w.id WHERE w.spell = :spell";
         MapSqlParameterSource params = new MapSqlParameterSource("spell", wordSpell);
         return namedParameterJdbcTemplate.query(sql, params, 
-            new beidanci.service.dao.EntityRowMapper<>(WordAdditionalInfo.class));
+            new EntityRowMapper<>(WordAdditionalInfo.class));
     }
 }

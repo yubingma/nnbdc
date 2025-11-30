@@ -11,6 +11,8 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 import org.slf4j.Logger;
@@ -27,6 +29,7 @@ import beidanci.api.model.DictVo;
 import beidanci.api.model.DictStatsVo;
 import beidanci.api.model.DictWordDto;
 import beidanci.service.dao.BaseDao;
+import beidanci.service.dao.EntityRowMapper;
 import beidanci.service.po.Dict;
 import beidanci.service.po.DictWord;
 import beidanci.service.po.LearningDict;
@@ -110,7 +113,7 @@ public class DictBo extends BaseBo<Dict> {
         String sql = "SELECT * FROM dict WHERE ownerId = :ownerId";
         MapSqlParameterSource params = new MapSqlParameterSource("ownerId", owner.getId());
         List<Dict> result = namedParameterJdbcTemplate.query(sql, params, 
-            new beidanci.service.dao.EntityRowMapper<>(Dict.class));
+            new EntityRowMapper<>(Dict.class));
         // fetchSize 在 JDBC 中通过 PreparedStatement.setFetchSize 设置，这里暂时忽略
         return result;
     }
@@ -120,7 +123,7 @@ public class DictBo extends BaseBo<Dict> {
         String sql = "SELECT * FROM dict WHERE ownerId = :ownerId";
         MapSqlParameterSource params = new MapSqlParameterSource("ownerId", ownerId);
         List<Dict> result = namedParameterJdbcTemplate.query(sql, params, 
-            new beidanci.service.dao.EntityRowMapper<>(Dict.class));
+            new EntityRowMapper<>(Dict.class));
         System.out.println("查询用户ID为 " + ownerId + " 的词典，共找到 " + result.size() + " 条记录");
         return result;
     }
@@ -240,7 +243,7 @@ public class DictBo extends BaseBo<Dict> {
                 "SELECT 1 FROM dict_word dw WHERE dw.wordId = w.id AND dw.dictId = :dictId)";
         MapSqlParameterSource params = new MapSqlParameterSource("dictId", dict.getId());
         return namedParameterJdbcTemplate.query(sql, params, 
-            new beidanci.service.dao.EntityRowMapper<>(Word.class));
+            new EntityRowMapper<>(Word.class));
     }
 
     public DictDto getDictDto(String dictId) throws ParseException {
@@ -437,7 +440,7 @@ public class DictBo extends BaseBo<Dict> {
             namedParameterJdbcTemplate.update(updateWordSql, updateParams);
             
             // 记录系统数据同步日志
-            java.util.Map<String, Object> record = new java.util.HashMap<>();
+            Map<String, Object> record = new HashMap<>();
             record.put("id", wordId);
             record.put("spell", spell);
             record.put("shortDesc", shortDesc);

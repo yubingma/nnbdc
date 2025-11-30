@@ -311,7 +311,7 @@ public class MsgBo extends BaseBo<Msg> {
         String sql = "SELECT * FROM msg WHERE msgType = :msgType ORDER BY createTime DESC";
         MapSqlParameterSource params = new MapSqlParameterSource("msgType", MsgType.Advice.toString());
         List<Msg> msgs = namedParameterJdbcTemplate.query(sql, params, 
-            new beidanci.service.dao.EntityRowMapper<>(Msg.class));
+            new EntityRowMapper<>(Msg.class));
         
         // 批量加载完整的 User 对象，填充 fromUser 和 toUser 字段
         loadUsersForMsgs(msgs);

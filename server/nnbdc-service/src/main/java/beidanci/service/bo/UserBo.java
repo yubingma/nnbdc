@@ -46,6 +46,7 @@ import beidanci.api.model.UserVo;
 import beidanci.api.model.WordVo;
 import beidanci.api.model.WrongWordDto;
 import beidanci.service.dao.BaseDao;
+import beidanci.service.dao.EntityRowMapper;
 import beidanci.service.dao.UserDbVersionDao;
 import beidanci.service.exception.EmptySpellException;
 import beidanci.service.exception.InvalidMeaningFormatException;
@@ -206,7 +207,7 @@ public class UserBo extends BaseBo<User> {
         } else {
             sql = "SELECT * FROM user WHERE userName NOT LIKE 'guest%' AND userName NOT LIKE 'guess%' AND userName NOT LIKE '游客%' AND (gameScore > 0 OR dakaScore > 0)";
         }
-        return jdbcTemplate.query(sql, new beidanci.service.dao.EntityRowMapper<>(User.class));
+        return jdbcTemplate.query(sql, new EntityRowMapper<>(User.class));
     }
 
     @Transactional
@@ -409,7 +410,7 @@ public class UserBo extends BaseBo<User> {
         MapSqlParameterSource params = new MapSqlParameterSource("time", 
             Utils.localDate2Date(LocalDate.now().plusDays(-idleDays)));
         List<User> users = namedParameterJdbcTemplate.query(sql, params, 
-            new beidanci.service.dao.EntityRowMapper<>(User.class));
+            new EntityRowMapper<>(User.class));
         logger.info("发现{}个长期未登录用户", users.size());
 
         // 删除这些用户
@@ -554,7 +555,7 @@ public class UserBo extends BaseBo<User> {
         String sql = "SELECT * FROM user WHERE email = :email";
         MapSqlParameterSource params = new MapSqlParameterSource("email", email);
         return namedParameterJdbcTemplate.query(sql, params, 
-            new beidanci.service.dao.EntityRowMapper<>(User.class));
+            new EntityRowMapper<>(User.class));
     }
 
     public User getByUserName(String userName, boolean openNewSession) {
@@ -562,13 +563,13 @@ public class UserBo extends BaseBo<User> {
         String sql = "SELECT * FROM user WHERE userName = :userName";
         MapSqlParameterSource params = new MapSqlParameterSource("userName", userName);
         List<User> results = namedParameterJdbcTemplate.query(sql, params, 
-            new beidanci.service.dao.EntityRowMapper<>(User.class));
+            new EntityRowMapper<>(User.class));
         return results.isEmpty() ? null : results.get(0);
     }
 
     public List<User> findAll() {
         String sql = "SELECT * FROM user";
-        return jdbcTemplate.query(sql, new beidanci.service.dao.EntityRowMapper<>(User.class));
+        return jdbcTemplate.query(sql, new EntityRowMapper<>(User.class));
     }
 
     /**
@@ -579,13 +580,13 @@ public class UserBo extends BaseBo<User> {
         // JDBC 不需要管理 Session
         String sql = "SELECT * FROM user WHERE userName NOT LIKE 'guest%' LIMIT 50";
         List<User> candidates = jdbcTemplate.query(sql, 
-            new beidanci.service.dao.EntityRowMapper<>(User.class));
+            new EntityRowMapper<>(User.class));
         if (candidates == null || candidates.isEmpty()) {
             return null;
         }
-        java.util.Collections.shuffle(candidates);
+        Collections.shuffle(candidates);
         User picked = candidates.get(0);
-        return beidanci.service.util.Util.getNickNameOfUser(picked);
+        return Util.getNickNameOfUser(picked);
     }
 
     /**
@@ -600,12 +601,12 @@ public class UserBo extends BaseBo<User> {
                      "LIMIT ?";
         Date time = Utils.localDate2Date(LocalDate.now().plusDays(-idleDays));
         List<User> candidates = jdbcTemplate.query(sql, 
-            new beidanci.service.dao.EntityRowMapper<>(User.class), 
+            new EntityRowMapper<>(User.class), 
             time, maxCandidates);
         if (candidates == null || candidates.isEmpty()) {
             return null;
         }
-        java.util.Collections.shuffle(candidates);
+        Collections.shuffle(candidates);
         return candidates.get(0);
     }
 
@@ -1075,7 +1076,7 @@ public class UserBo extends BaseBo<User> {
             String sql = "SELECT * FROM user WHERE wechatOpenId = :openId";
             MapSqlParameterSource params = new MapSqlParameterSource("openId", wechatUserInfo.openId);
             List<User> users = namedParameterJdbcTemplate.query(sql, params, 
-                new beidanci.service.dao.EntityRowMapper<>(User.class));
+                new EntityRowMapper<>(User.class));
 
             if (!users.isEmpty()) {
                 // 用户已存在，更新微信信息（昵称和头像可能变化）
@@ -1133,7 +1134,7 @@ public class UserBo extends BaseBo<User> {
             // 设置默认等级（一般是第一个等级）
             String levelSql = "SELECT * FROM level ORDER BY id ASC LIMIT 1";
             List<Level> levels = jdbcTemplate.query(levelSql, 
-                new beidanci.service.dao.EntityRowMapper<>(Level.class));
+                new EntityRowMapper<>(Level.class));
             if (!levels.isEmpty()) {
                 newUser.setLevel(levels.get(0));
             }

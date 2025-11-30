@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import beidanci.service.dao.BaseDao;
+import beidanci.service.dao.EntityRowMapper;
 import beidanci.service.po.CigenWordLink;
 
 @Service
@@ -28,7 +29,7 @@ public class CigenWordLinkBo extends BaseBo<CigenWordLink> {
         String sql = "SELECT * FROM cigen_word_link WHERE wordId = :wordId";
         MapSqlParameterSource params = new MapSqlParameterSource("wordId", wordId);
         return namedParameterJdbcTemplate.query(sql, params, 
-            new beidanci.service.dao.EntityRowMapper<>(CigenWordLink.class));
+            new EntityRowMapper<>(CigenWordLink.class));
     }
 
 

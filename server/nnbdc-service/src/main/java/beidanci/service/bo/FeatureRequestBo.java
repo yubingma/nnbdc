@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import beidanci.api.model.FeatureRequestStatus;
 import beidanci.service.dao.EntityRowMapper;
 import beidanci.service.dao.FeatureRequestDao;
+import beidanci.service.util.Util;
 import beidanci.service.dao.FeatureRequestVoteDao;
 import beidanci.service.po.FeatureRequest;
 import beidanci.service.po.FeatureRequestVote;
@@ -145,7 +146,7 @@ public class FeatureRequestBo extends BaseBo<FeatureRequest> {
             // 或者直接使用 JDBC
             String insertSql = "INSERT INTO feature_request_vote (id, requestId, userId, createTime, updateTime) VALUES (:id, :requestId, :userId, :createTime, :updateTime)";
             MapSqlParameterSource voteParams = new MapSqlParameterSource();
-            voteParams.addValue("id", beidanci.service.util.Util.uuid());
+            voteParams.addValue("id", Util.uuid());
             voteParams.addValue("requestId", request.getId());
             voteParams.addValue("userId", user.getId());
             Date now = new Date();

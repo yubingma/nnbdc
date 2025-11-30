@@ -2,6 +2,7 @@ package beidanci.service.bo;
 
 import beidanci.api.model.SysDbLogDto;
 import beidanci.service.dao.BaseDao;
+import beidanci.service.dao.EntityRowMapper;
 import beidanci.service.po.SysDbLog;
 import beidanci.service.po.SysDbVersion;
 import beidanci.service.util.JsonUtils;
@@ -13,9 +14,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.PostConstruct;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.TimeZone;
 import java.util.stream.Collectors;
 
 /**
@@ -71,7 +76,7 @@ public class SysDbLogBo extends BaseBo<SysDbLog> {
     public int getSysDbVersion() {
         String sql = "SELECT * FROM sys_db_version WHERE id = 'singleton'";
         List<SysDbVersion> versions = namedParameterJdbcTemplate.query(sql, 
-            new beidanci.service.dao.EntityRowMapper<>(SysDbVersion.class));
+            new EntityRowMapper<>(SysDbVersion.class));
         return versions.isEmpty() ? 0 : versions.get(0).getVersion();
     }
 
@@ -83,7 +88,7 @@ public class SysDbLogBo extends BaseBo<SysDbLog> {
     private void incrementSysDbVersion(int newVersion) {
         String sql = "SELECT * FROM sys_db_version WHERE id = 'singleton'";
         List<SysDbVersion> versions = namedParameterJdbcTemplate.query(sql, 
-            new beidanci.service.dao.EntityRowMapper<>(SysDbVersion.class));
+            new EntityRowMapper<>(SysDbVersion.class));
 
         if (versions.isEmpty()) {
             // 首次创建版本记录
@@ -119,7 +124,7 @@ public class SysDbLogBo extends BaseBo<SysDbLog> {
             String sql = "SELECT * FROM sys_db_log WHERE version > :fromVersion ORDER BY version ASC";
             MapSqlParameterSource params = new MapSqlParameterSource("fromVersion", fromVersion);
             List<SysDbLog> logs = namedParameterJdbcTemplate.query(sql, params, 
-                new beidanci.service.dao.EntityRowMapper<>(SysDbLog.class));
+                new EntityRowMapper<>(SysDbLog.class));
             return logs.stream().map(this::toDto).collect(Collectors.toList());
         }
     }
@@ -184,9 +189,9 @@ public class SysDbLogBo extends BaseBo<SysDbLog> {
             log.setOperate("INSERT");
             log.setTblName("level");
             log.setRecordId((String) tuple[0]);
-            java.text.SimpleDateFormat isoFormat = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-            isoFormat.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
-            java.util.Map<String, Object> record = new java.util.HashMap<>();
+            SimpleDateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+            isoFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+            Map<String, Object> record = new HashMap<>();
             record.put("id", tuple[0]);
             record.put("level", tuple[1]);
             record.put("name", tuple[2]);
