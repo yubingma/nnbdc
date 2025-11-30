@@ -2,9 +2,6 @@ package beidanci.service.po;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 @Entity
@@ -12,12 +9,8 @@ import javax.persistence.Table;
 public class StudyGroupPostReply extends UuidPo {
 
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "postReplyerId")
     private User user;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "postId")
     private StudyGroupPost studyGroupPost;
 
     @Column(name = "content", length = 1048576, nullable = false)

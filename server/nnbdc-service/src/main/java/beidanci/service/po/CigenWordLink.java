@@ -3,8 +3,6 @@ package beidanci.service.po;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 // JDBC 不再支持 Hibernate 缓存注解
@@ -19,12 +17,8 @@ public class CigenWordLink extends Po {
     @Id
     private CigenWordLinkId id;
 
-    @ManyToOne
-    @JoinColumn(name = "cigenId", nullable = false, updatable = false, insertable = false)
     private Cigen cigen;
 
-    @ManyToOne
-    @JoinColumn(name = "wordId", nullable = false, updatable = false, insertable = false)
     private Word word;
 
     @Column(name = "theExplain", length = 1024, nullable = false)

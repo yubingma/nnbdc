@@ -2,11 +2,8 @@ package beidanci.service.po;
 
 import java.util.List;
 
-import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
 @Entity
@@ -19,8 +16,6 @@ public class StudyGroupGrade extends UuidPo {
     @Column(name = "maxUserCount", nullable = false)
     private Integer maxUserCount;
 
-    @OneToMany(cascade = {CascadeType.PERSIST, CascadeType.REMOVE,
-            CascadeType.MERGE}, mappedBy = "studyGroupGrade", fetch = FetchType.LAZY)
     private List<StudyGroup> studyGroups;
 
     // Constructors

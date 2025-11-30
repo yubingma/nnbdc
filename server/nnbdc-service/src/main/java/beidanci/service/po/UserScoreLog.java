@@ -5,16 +5,12 @@ import java.util.Date;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 @Entity
 @Table(name = "user_score_log")
 public class UserScoreLog extends UuidPo {
 
-    @ManyToOne
-    @JoinColumn(name = "userId", nullable = false, updatable = false, insertable = false)
     private User user;
 
     @Column(name = "delta")

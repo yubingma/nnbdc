@@ -3,13 +3,8 @@ package beidanci.service.po;
 import java.util.Date;
 import java.util.List;
 
-import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
 import javax.persistence.OrderBy;
 import javax.persistence.Table;
 
@@ -18,12 +13,8 @@ import javax.persistence.Table;
 public class ForumPost extends UuidPo  {
 
 
-    @ManyToOne
-    @JoinColumn(name = "postCreatorId", nullable = false)
     private User user;
 
-    @ManyToOne
-    @JoinColumn(name = "forumId", nullable = false)
     private Forum forum;
 
     @Column(name = "postTitle", length = 100, nullable = false)
@@ -41,8 +32,6 @@ public class ForumPost extends UuidPo  {
     @Column(name = "lastReplyTime")
     private Date lastReplyTime;
 
-    @OneToMany(cascade = {CascadeType.PERSIST, CascadeType.REMOVE,
-            CascadeType.MERGE}, mappedBy = "forumPost", fetch = FetchType.LAZY)
     @OrderBy("updateTime asc")
     private List<ForumPostReply> forumPostReplies;
 

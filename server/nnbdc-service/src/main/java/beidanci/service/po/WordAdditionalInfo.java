@@ -2,13 +2,8 @@ package beidanci.service.po;
 
 import java.util.Set;
 
-import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
 // JDBC 不再支持 Hibernate 缓存注解
@@ -20,12 +15,8 @@ import javax.persistence.Table;
 // @Cache(region = "wordCache", usage = CacheConcurrencyStrategy.READ_WRITE)  // JDBC 不支持缓存
 public class WordAdditionalInfo extends UuidPo {
 
-    @ManyToOne
-    @JoinColumn(name = "userId", nullable = false)
     private User user;
 
-    @ManyToOne
-    @JoinColumn(name = "wordId", nullable = false)
     private Word word;
 
     @Column(name = "content", length = 1024, nullable = false)
@@ -37,8 +28,6 @@ public class WordAdditionalInfo extends UuidPo {
     @Column(name = "footCount", nullable = false)
     private Integer footCount;
 
-    @OneToMany(cascade = {CascadeType.PERSIST, CascadeType.REMOVE,
-            CascadeType.MERGE}, mappedBy = "wordAdditionalInfo", fetch = FetchType.LAZY)
     private Set<InfoVoteLog> voteLogs;
 
     // Constructors

@@ -12,8 +12,6 @@ public class Cigen extends UuidPo {
     @Column(name = "description", length = 1024, nullable = false)
     private String description;
 
-    @OneToMany(cascade = {CascadeType.PERSIST, CascadeType.REMOVE,
-            CascadeType.MERGE}, mappedBy = "cigen", fetch = FetchType.LAZY)
     private Set<CigenWordLink> cigenWordLinks;
 
     // Constructors

@@ -1,8 +1,6 @@
 package beidanci.service.po;
 
 import javax.persistence.Entity;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 /**
@@ -12,8 +10,6 @@ import javax.persistence.Table;
 @Table(name = "sentence_update_notify")
 public class SentenceUpdateNotidy extends UuidPo {
 
-    @ManyToOne
-    @JoinColumn(name = "sentenceId", nullable = false)
     private Sentence sentence;
 
     public Sentence getSentence() {

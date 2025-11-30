@@ -2,16 +2,12 @@ package beidanci.service.po;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 @Entity
 @Table(name = "error_report")
 public class ErrorReport extends UuidPo  {
 
-    @ManyToOne
-    @JoinColumn(name = "userId", nullable = false)
     private User user;
 
     @Column(name = "content", length = 8192, nullable = false)

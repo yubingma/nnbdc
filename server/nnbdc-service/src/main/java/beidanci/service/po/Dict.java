@@ -3,14 +3,9 @@ package beidanci.service.po;
 import java.util.List;
 import java.util.Objects;
 
-import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
 import javax.persistence.Index;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
 /**
@@ -25,8 +20,6 @@ public class Dict extends UuidPo {
     @Column(name = "name", nullable = false, length = 50)
     private String name;
 
-    @ManyToOne
-    @JoinColumn(name = "ownerId", nullable = false)
     private User owner;
 
     /**
@@ -41,8 +34,6 @@ public class Dict extends UuidPo {
     @Column(name = "isReady", nullable = false)
     private Boolean isReady;
 
-    @OneToMany(cascade = {CascadeType.PERSIST, CascadeType.REMOVE,
-            CascadeType.MERGE}, mappedBy = "dict", fetch = FetchType.LAZY)
     private  List<DictWord> dictWords;
 
     /**

@@ -5,8 +5,6 @@ import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 import beidanci.api.model.StudyStep;
@@ -19,8 +17,6 @@ public class UserStudyStep extends Po {
     @Id
     private UserStudyStepId id;
 
-    @ManyToOne
-    @JoinColumn(name = "userId", nullable = false, updatable = false, insertable = false)
     private User user;
 
 

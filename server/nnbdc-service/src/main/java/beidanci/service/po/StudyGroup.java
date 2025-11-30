@@ -4,15 +4,8 @@ import java.text.ParseException;
 import java.util.Date;
 import java.util.List;
 
-import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.JoinColumn;
-import javax.persistence.JoinTable;
-import javax.persistence.ManyToMany;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
 import javax.persistence.OrderBy;
 import javax.persistence.Table;
 
@@ -24,12 +17,8 @@ public class StudyGroup extends UuidPo  {
 
 
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "gradeId")
     private StudyGroupGrade studyGroupGrade;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "creatorId")
     private User creator;
 
     @Column(name = "groupName", length = 100, nullable = false, unique = true)
@@ -41,25 +30,15 @@ public class StudyGroup extends UuidPo  {
     @Column(name = "groupRemark", length = 4000, nullable = false)
     private String groupRemark;
 
-    @ManyToMany
-    @JoinTable(name = "study_group_and_user_link", joinColumns = {
-            @JoinColumn(name = "groupId")}, inverseJoinColumns = {@JoinColumn(name = "userId")})
     private  List<User> users;
 
-    @ManyToMany
-    @JoinTable(name = "study_group_and_manager_link", joinColumns = {
-            @JoinColumn(name = "groupId")}, inverseJoinColumns = {@JoinColumn(name = "userId")})
     private   List<User> managers;
 
     @Column(name = "cowDung", nullable = false)
     private Integer cowDung;
 
-    @OneToMany(cascade = {CascadeType.PERSIST, CascadeType.REMOVE,
-            CascadeType.MERGE}, mappedBy = "studyGroup", fetch = FetchType.LAZY)
     private   List<StudyGroupSnapshotDaily> snapshotDailys;
 
-    @OneToMany(cascade = {CascadeType.PERSIST, CascadeType.REMOVE,
-            CascadeType.MERGE}, mappedBy = "studyGroup", fetch = FetchType.LAZY)
     @OrderBy("updateTime desc")
     private   List<StudyGroupPost> studyGroupPosts;
 

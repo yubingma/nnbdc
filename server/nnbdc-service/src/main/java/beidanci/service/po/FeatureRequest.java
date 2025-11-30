@@ -4,8 +4,6 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 import beidanci.api.model.FeatureRequestStatus;
@@ -14,8 +12,6 @@ import beidanci.api.model.FeatureRequestStatus;
 @Table(name = "feature_request")
 public class FeatureRequest extends UuidPo {
 
-    @ManyToOne
-    @JoinColumn(name = "creatorId", nullable = false)
     private User creator;
 
     @Column(name = "title", length = 200, nullable = false)

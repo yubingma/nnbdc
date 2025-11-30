@@ -4,8 +4,6 @@ import java.util.Date;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 @Entity
@@ -58,12 +56,8 @@ public class Sentence extends UuidPo {
     @Column(name = "handCount")
     private Integer handCount = 0;
 
-    @ManyToOne
-    @JoinColumn(name = "authorId", nullable = false)
     private User author;
 
-    @ManyToOne
-    @JoinColumn(name = "meaningItemId", nullable = false)
     private MeaningItem meaningItem;
 
     @Column(name = "popularity")

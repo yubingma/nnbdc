@@ -4,16 +4,9 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
 import javax.persistence.Index;
-import javax.persistence.JoinColumn;
-import javax.persistence.JoinTable;
-import javax.persistence.ManyToMany;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
 import javax.persistence.OrderBy;
 import javax.persistence.Table;
 
@@ -113,87 +106,50 @@ public class User extends UuidPo {
     @Column(name = "autoPlayWord", nullable = false)
     private Boolean autoPlayWord;
 
-    @OneToMany(cascade = { CascadeType.PERSIST, CascadeType.REMOVE,
-            CascadeType.MERGE }, mappedBy = "user", fetch = FetchType.LAZY)
     @OrderBy("dictId asc")
     private  List<LearningDict> learningDicts;
 
-    @OneToMany(cascade = { CascadeType.PERSIST, CascadeType.REMOVE,
-            CascadeType.MERGE }, mappedBy = "user", fetch = FetchType.LAZY)
     private  List<MasteredWord> masteredWords;
-    @OneToMany(cascade = { CascadeType.PERSIST, CascadeType.REMOVE,
-            CascadeType.MERGE }, mappedBy = "user", fetch = FetchType.LAZY)
     private  List<LearningWord> learningWords;
 
-    @OneToMany(cascade = { CascadeType.PERSIST, CascadeType.REMOVE,
-            CascadeType.MERGE }, mappedBy = "fromUser", fetch = FetchType.LAZY)
     private  List<Msg> sentMsgs;
 
-    @OneToMany(cascade = { CascadeType.PERSIST, CascadeType.REMOVE,
-            CascadeType.MERGE }, mappedBy = "toUser", fetch = FetchType.LAZY)
     private  List<Msg> recvedMsgs;
 
-    @OneToMany(cascade = { CascadeType.PERSIST, CascadeType.REMOVE,
-            CascadeType.MERGE }, mappedBy = "user", fetch = FetchType.LAZY)
     private List<UserGame> userGames;
 
-    @OneToMany(cascade = { CascadeType.PERSIST, CascadeType.REMOVE,
-            CascadeType.MERGE }, mappedBy = "user", fetch = FetchType.LAZY)
     private List<UserCowDungLog> userCowDungLogs;
 
-    @OneToMany(cascade = { CascadeType.PERSIST, CascadeType.REMOVE,
-            CascadeType.MERGE }, mappedBy = "user", fetch = FetchType.LAZY)
     private  List<Daka> dakas;
 
-    @OneToMany(cascade = { CascadeType.PERSIST, CascadeType.REMOVE,
-            CascadeType.MERGE }, mappedBy = "user", fetch = FetchType.LAZY)
     private  List<UserScoreLog> userScoreLogs;
-    @OneToMany(cascade = { CascadeType.PERSIST, CascadeType.REMOVE,
-            CascadeType.MERGE }, mappedBy = "user", fetch = FetchType.LAZY)
     @OrderBy("theDate asc")
     private  List<UserSnapshotDaily> userSnapshotDailys;
-    @ManyToOne
-    @JoinColumn(name = "invitedById", nullable = true)
     private User invitedBy;
 
-    @ManyToOne
-    @JoinColumn(name = "levelId", nullable = true)
     private Level level;
 
-    @OneToMany(cascade = { CascadeType.PERSIST, CascadeType.REMOVE,
-            CascadeType.MERGE }, mappedBy = "invitedBy", fetch = FetchType.LAZY)
     private  List<User> invitedUsers;
 
-    @ManyToMany(mappedBy = "users")
     private  List<StudyGroup> studyGroups = new ArrayList<>();
 
-    @OneToMany(cascade = { CascadeType.PERSIST, CascadeType.REMOVE,
-            CascadeType.MERGE }, mappedBy = "creator", fetch = FetchType.LAZY)
     private  List<StudyGroup> createdStudyGroups;
 
-    @ManyToMany(mappedBy = "managers")
     private  List<StudyGroup> managedStudyGroups;
 
     /**
      * ugc - 用户创建的例句
      */
-    @OneToMany(cascade = { CascadeType.PERSIST, CascadeType.REMOVE,
-            CascadeType.MERGE }, mappedBy = "author", fetch = FetchType.LAZY)
     private  List<Sentence> createdSentences;
 
     /**
      * ugc - 用户创建的单词笔记
      */
-    @OneToMany(cascade = { CascadeType.PERSIST, CascadeType.REMOVE,
-            CascadeType.MERGE }, mappedBy = "user", fetch = FetchType.LAZY)
     private  List<WordAdditionalInfo> createdWordNotes;
 
     /**
      * 缓存用户回答错误的单词
      */
-    @ManyToMany
-    @JoinTable(name = "user_wrong_word", joinColumns = { @JoinColumn(name = "userId") }, inverseJoinColumns = {
-            @JoinColumn(name = "wordId") })
     private  List<Word> wrongWords;
 
     /**

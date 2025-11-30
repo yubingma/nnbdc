@@ -4,8 +4,6 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Index;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 import beidanci.api.model.DictWordDto;
@@ -24,12 +22,8 @@ public class DictWord extends Po  {
     @Id
     private DictWordId id;
 
-    @ManyToOne
-    @JoinColumn(name = "dictId", nullable = false, updatable = false, insertable = false)
     private Dict dict;
 
-    @ManyToOne
-    @JoinColumn(name = "wordId", nullable = false, updatable = false, insertable = false)
     private Word word;
 
     /**

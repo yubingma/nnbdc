@@ -7,15 +7,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.JoinColumn;
-import javax.persistence.JoinTable;
-import javax.persistence.ManyToMany;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
 // JDBC 不再支持 Hibernate Fetch 注解
@@ -29,8 +22,6 @@ public class DictGroup extends UuidPo {
     @Column(name = "name", length = 20)
     private String name;
 
-    @ManyToOne
-    @JoinColumn(name = "parentId")
     private DictGroup dictGroup;
 
     public Integer getDisplayIndex() {
@@ -44,19 +35,11 @@ public class DictGroup extends UuidPo {
     @Column(name = "displayIndex", nullable = false)
     private Integer displayIndex;
 
-    @OneToMany(cascade = {CascadeType.PERSIST, CascadeType.REMOVE,
-            CascadeType.MERGE}, mappedBy = "dictGroup", fetch = FetchType.LAZY)
     // @Fetch(FetchMode.SUBSELECT)  // JDBC 不支持
     private List<DictGroup> dictGroups;
 
-    @ManyToMany
-    @JoinTable(name = "group_and_dict_link", joinColumns = {@JoinColumn(name = "groupId")}, inverseJoinColumns = {
-            @JoinColumn(name = "dictId")})
-    // @Fetch(FetchMode.SUBSELECT)  // JDBC 不支持
     private List<Dict> dicts;
 
-    @OneToMany(cascade = {CascadeType.PERSIST, CascadeType.REMOVE,
-            CascadeType.MERGE}, mappedBy = "dictGroup", fetch = FetchType.LAZY)
     // @Fetch(FetchMode.SUBSELECT)  // JDBC 不支持
     private Set<GameHall> gameHalls;
 

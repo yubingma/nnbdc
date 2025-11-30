@@ -25,8 +25,6 @@ public class WordImage extends UuidPo {
     }
 
 
-    @ManyToOne
-    @JoinColumn(name = "wordId", nullable = false)
     private Word word;
 
     @Column(name = "imageFile")
@@ -38,8 +36,6 @@ public class WordImage extends UuidPo {
     @Column(name = "foot")
     private Integer foot;
 
-    @ManyToOne
-    @JoinColumn(name = "authorId", nullable = false)
     private User author;
 
     public User getAuthor() {

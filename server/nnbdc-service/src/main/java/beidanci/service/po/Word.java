@@ -3,14 +3,9 @@ package beidanci.service.po;
 import java.util.LinkedList;
 import java.util.List;
 
-import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Index;
-import javax.persistence.JoinColumn;
-import javax.persistence.JoinTable;
-import javax.persistence.ManyToMany;
-import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
 // JDBC 不再支持 Hibernate 缓存和 Fetch 注解
@@ -60,37 +55,16 @@ public class Word extends UuidPo {
     @Column(name = "longDesc", length = 1000)
     private String longDesc;
 
-    @OneToMany(cascade = {CascadeType.PERSIST, CascadeType.REMOVE, CascadeType.MERGE}, mappedBy = "word")
-    // @Fetch(FetchMode.SUBSELECT)  // JDBC 不支持
-    // @Cache(region = "wordCache", usage = CacheConcurrencyStrategy.READ_WRITE)  // JDBC 不支持缓存
     private  List<MeaningItem> meaningItems;
 
-    @OneToMany(cascade = {CascadeType.ALL}, orphanRemoval = true, mappedBy = "word")
-    // @Fetch(FetchMode.SUBSELECT)  // JDBC 不支持
-    // @Cache(region = "wordCache", usage = CacheConcurrencyStrategy.READ_WRITE)  // JDBC 不支持缓存
     private  List<WordImage> images;
 
-    @OneToMany(cascade = {CascadeType.ALL}, orphanRemoval = true, mappedBy = "word")
-    // @Fetch(FetchMode.SUBSELECT)  // JDBC 不支持
-    // @Cache(region = "wordCache", usage = CacheConcurrencyStrategy.READ_WRITE)  // JDBC 不支持缓存
     private  List<WordShortDescChinese> wordShortDescChineses;
 
-    @OneToMany(cascade = {CascadeType.PERSIST, CascadeType.REMOVE, CascadeType.MERGE}, mappedBy = "word")
-    // @Fetch(FetchMode.SUBSELECT)  // JDBC 不支持
-    // @Cache(region = "wordCache", usage = CacheConcurrencyStrategy.READ_WRITE)  // JDBC 不支持缓存
     private  List<VerbTense> verbTences;
 
-    @ManyToMany
-    // @Fetch(FetchMode.SUBSELECT)  // JDBC 不支持
-    @JoinTable(name = "similar_word", joinColumns = {@JoinColumn(name = "word")}, inverseJoinColumns = {
-            @JoinColumn(name = "similarWord")})
-    // @Cache(region = "wordCache", usage = CacheConcurrencyStrategy.READ_WRITE)  // JDBC 不支持缓存
     private  List<Word> similarWords;
 
-
-    @OneToMany(cascade = {CascadeType.PERSIST, CascadeType.REMOVE, CascadeType.MERGE}, mappedBy = "word")
-    // @Fetch(FetchMode.SUBSELECT)  // JDBC 不支持
-    // @Cache(region = "wordCache", usage = CacheConcurrencyStrategy.READ_WRITE)  // JDBC 不支持缓存
     private  List<CigenWordLink> cigenWordLinks;
 
     public List<VerbTense> getVerbTences() {

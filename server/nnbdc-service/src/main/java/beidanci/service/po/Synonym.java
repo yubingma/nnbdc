@@ -23,8 +23,6 @@ public class Synonym extends Po {
     @Id
     private SynonymId id;
 
-    @ManyToOne
-    @JoinColumn(name = "meaningItemId", nullable = false, updatable = false, insertable = false)
     private MeaningItem meaningItem;
 
     public String getWordId() {

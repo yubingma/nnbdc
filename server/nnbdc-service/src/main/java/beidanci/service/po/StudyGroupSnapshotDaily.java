@@ -4,9 +4,6 @@ import java.util.Date;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 @Entity
@@ -14,8 +11,6 @@ import javax.persistence.Table;
 public class StudyGroupSnapshotDaily extends UuidPo {
 
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "groupId")
     private StudyGroup studyGroup;
 
     @Column(name = "theDate", nullable = false)

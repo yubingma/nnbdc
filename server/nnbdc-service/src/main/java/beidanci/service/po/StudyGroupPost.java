@@ -4,13 +4,8 @@ import java.sql.Timestamp;
 import java.util.Date;
 import java.util.List;
 
-import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
 import javax.persistence.OrderBy;
 import javax.persistence.Table;
 
@@ -19,12 +14,8 @@ import javax.persistence.Table;
 public class StudyGroupPost extends UuidPo {
 
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "postCreatorId")
     private User user;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "groupId")
     private StudyGroup studyGroup;
 
     @Column(name = "postTitle", length = 100, nullable = false)
@@ -42,8 +33,6 @@ public class StudyGroupPost extends UuidPo {
     @Column(name = "lastReplyTime")
     private Date lastReplyTime;
 
-    @OneToMany(cascade = {CascadeType.PERSIST, CascadeType.REMOVE,
-            CascadeType.MERGE}, mappedBy = "studyGroupPost", fetch = FetchType.LAZY)
     @OrderBy("updateTime asc")
     private List<StudyGroupPostReply> studyGroupPostReplies;
 

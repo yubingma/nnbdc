@@ -3,8 +3,6 @@ package beidanci.service.po;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 import beidanci.api.model.LearningDictDto;
@@ -20,16 +18,10 @@ public class LearningDict extends Po {
     @Id
     private LearningDictId id;
 
-    @ManyToOne
-    @JoinColumn(name = "dictId", nullable = false, updatable = false, insertable = false)
     private Dict dict;
 
-    @ManyToOne
-    @JoinColumn(name = "userId", nullable = false, updatable = false, insertable = false)
     private User user;
 
-    @ManyToOne
-    @JoinColumn(name = "currentWordId", updatable = false, insertable = false)
     private Word currentWord;
 
     @Column(name = "currentWordSeq")

@@ -13,12 +13,8 @@ public class WordSentence extends Po {
     @Id
     private WordSentenceId id;
 
-    @ManyToOne
-    @JoinColumn(name = "wordId", nullable = false, updatable = false, insertable = false)
     private Word word;
 
-    @ManyToOne
-    @JoinColumn(name = "sentenceId", nullable = false, updatable = false, insertable = false)
     private Sentence sentence;
 
     public Sentence getSentence() {

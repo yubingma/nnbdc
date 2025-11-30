@@ -2,8 +2,6 @@ package beidanci.service.po;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 @Entity
@@ -12,8 +10,6 @@ public class Article extends UuidPo {
     // no Java serialization
 
 
-    @ManyToOne
-    @JoinColumn(name = "authorId", nullable = false, updatable = false, insertable = false)
     private User user;
 
     @Column(name = "title", length = 1024, nullable = false)

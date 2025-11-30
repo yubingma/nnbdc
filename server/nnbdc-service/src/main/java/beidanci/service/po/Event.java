@@ -13,12 +13,8 @@ public class Event extends UuidPo {
     @Column(name = "eventType", nullable = false, length = 30)
     private EventType eventType;
 
-    @ManyToOne
-    @JoinColumn(name = "userId", nullable = false)
     private User user;
 
-    @ManyToOne
-    @JoinColumn(name = "wordImage", nullable = true)
     private WordImage wordImage;
 
     public Sentence getSentence() {
@@ -29,12 +25,8 @@ public class Event extends UuidPo {
         this.sentence = sentence;
     }
 
-    @ManyToOne
-    @JoinColumn(name = "sentence", nullable = true)
     private Sentence sentence;
 
-    @ManyToOne
-    @JoinColumn(name = "wordShortDescChinese", nullable = true)
     private WordShortDescChinese wordShortDescChinese;
 
     public Event(EventType eventType, User user, WordImage wordImage) {

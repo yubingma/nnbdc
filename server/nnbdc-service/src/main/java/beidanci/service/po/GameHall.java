@@ -2,8 +2,6 @@ package beidanci.service.po;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 @Entity
@@ -16,12 +14,8 @@ public class GameHall extends UuidPo  {
     @Column(name = "hallName", nullable = false)
     private String hallName;
 
-    @ManyToOne
-    @JoinColumn(name = "dictGroupId", nullable = false, updatable = false, insertable = false)
     private DictGroup dictGroup;
 
-    @ManyToOne
-    @JoinColumn(name = "hallGroupId", nullable = false, insertable = false, updatable = false)
     private HallGroup hallGroup;
 
     @Column(name = "basePoint")

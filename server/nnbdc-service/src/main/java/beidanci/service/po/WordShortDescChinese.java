@@ -17,8 +17,6 @@ import javax.persistence.*;
 public class WordShortDescChinese extends UuidPo {
 
 
-    @ManyToOne
-    @JoinColumn(name = "wordId", nullable = false)
     private Word word;
 
     @Column(name = "hand")
@@ -30,8 +28,6 @@ public class WordShortDescChinese extends UuidPo {
     @Column(name = "content")
     private String content;
 
-    @ManyToOne
-    @JoinColumn(name = "authorId", nullable = false)
     private User author;
 
     public Word getWord() {

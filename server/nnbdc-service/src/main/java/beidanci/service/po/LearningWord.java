@@ -9,8 +9,6 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Index;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 import beidanci.api.model.LearningWordDto;
@@ -28,8 +26,6 @@ public class LearningWord extends Po {
     @Id
     private LearningWordId id;
 
-    @ManyToOne
-    @JoinColumn(name = "userId", nullable = false, updatable = false, insertable = false)
     private User user;
 
     @Column(name = "addTime", nullable = false)

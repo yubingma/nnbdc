@@ -5,8 +5,6 @@ import java.util.Date;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 @Entity
@@ -25,12 +23,8 @@ public class InfoVoteLog extends Po {
         this.id = id;
     }
 
-    @ManyToOne
-    @JoinColumn(name = "infoId", nullable = false, updatable = false, insertable = false)
     private WordAdditionalInfo wordAdditionalInfo;
 
-    @ManyToOne
-    @JoinColumn(name = "userId", nullable = false, updatable = false, insertable = false)
     private User user;
 
     @Column(name = "voteType", length = 4, nullable = false)

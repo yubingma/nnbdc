@@ -5,8 +5,6 @@ import java.util.Date;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 import beidanci.api.model.UserCowDungLogDto;
@@ -15,8 +13,6 @@ import beidanci.api.model.UserCowDungLogDto;
 @Table(name = "user_cow_dung_log")
 public class UserCowDungLog extends UuidPo {
 
-    @ManyToOne
-    @JoinColumn(name = "userId", nullable = false)
     private User user;
 
     @Column(name = "delta", nullable = false)

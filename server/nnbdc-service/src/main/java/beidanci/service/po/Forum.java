@@ -2,14 +2,8 @@ package beidanci.service.po;
 
 import java.util.List;
 
-import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.JoinColumn;
-import javax.persistence.JoinTable;
-import javax.persistence.ManyToMany;
-import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
 @Entity
@@ -19,12 +13,8 @@ public class Forum extends UuidPo {
     @Column(name = "name", nullable = false)
     private String name;
 
-    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.REMOVE, CascadeType.MERGE})
-    @JoinTable(name = "forum_and_manager_link", joinColumns = @JoinColumn(name = "forumId"), inverseJoinColumns = @JoinColumn(name = "userId"))
     private List<User> managers;
 
-    @OneToMany(cascade = {CascadeType.PERSIST, CascadeType.REMOVE,
-            CascadeType.MERGE}, mappedBy = "forum", fetch = FetchType.LAZY)
     private List<ForumPost> forumPosts;
 
     // Constructors

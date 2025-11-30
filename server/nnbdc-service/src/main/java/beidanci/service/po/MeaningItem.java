@@ -3,13 +3,8 @@ package beidanci.service.po;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
 // JDBC 不再支持 Hibernate 缓存和 Fetch 注解
@@ -34,8 +29,6 @@ public class MeaningItem extends UuidPo {
     /**
      * 释义所属单词
      */
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "wordId")
     private Word word;
 
     /**
@@ -57,7 +50,6 @@ public class MeaningItem extends UuidPo {
     /**
      * 近义词
      */
-    @OneToMany(cascade = {CascadeType.PERSIST, CascadeType.REMOVE, CascadeType.MERGE}, mappedBy = "meaningItem")
     // @Fetch(FetchMode.SUBSELECT)  // JDBC 不支持
     // @Cache(region = "wordCache", usage = CacheConcurrencyStrategy.READ_WRITE)  // JDBC 不支持缓存
     private List<Synonym> synonyms = new ArrayList<>();
@@ -65,13 +57,10 @@ public class MeaningItem extends UuidPo {
     /**
      * 例句
      */
-    @OneToMany(cascade = {CascadeType.PERSIST, CascadeType.REMOVE, CascadeType.MERGE}, mappedBy = "meaningItem")
     // @Fetch(FetchMode.SUBSELECT)  // JDBC 不支持
     // @Cache(region = "wordCache", usage = CacheConcurrencyStrategy.READ_WRITE)  // JDBC 不支持缓存
     private List<Sentence> sentences = new ArrayList<>();
 
-    @ManyToOne
-    @JoinColumn(name = "dictId", updatable = false, insertable = false)
     private Dict dict;
 
     public MeaningItem() {

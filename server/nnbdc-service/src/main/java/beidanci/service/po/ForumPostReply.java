@@ -2,20 +2,14 @@ package beidanci.service.po;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 @Entity
 @Table(name = "forum_post_reply")
 public class ForumPostReply extends UuidPo {
 
-    @ManyToOne
-    @JoinColumn(name = "postReplyerId", nullable = false)
     private User user;
 
-    @ManyToOne
-    @JoinColumn(name = "postId", nullable = false)
     private ForumPost forumPost;
 
     @Column(name = "content", length = 1048576, nullable = false)

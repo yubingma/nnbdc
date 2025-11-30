@@ -2,11 +2,8 @@ package beidanci.service.po;
 
 import java.util.List;
 
-import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.OneToMany;
 import javax.persistence.OrderBy;
 import javax.persistence.Table;
 
@@ -23,8 +20,6 @@ public class HallGroup extends UuidPo {
     @Column(name = "displayOrder", nullable = false)
     private Integer displayOrder;
 
-    @OneToMany(cascade = {CascadeType.PERSIST, CascadeType.REMOVE,
-            CascadeType.MERGE}, mappedBy = "hallGroup", fetch = FetchType.LAZY)
     @OrderBy("displayOrder asc")
     private List<GameHall> gameHalls;
 

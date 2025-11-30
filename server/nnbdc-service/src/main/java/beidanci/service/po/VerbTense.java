@@ -4,8 +4,6 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 // JDBC 不再支持 Hibernate 缓存注解
@@ -25,8 +23,6 @@ import beidanci.api.model.TenseType;
 public class VerbTense extends UuidPo {
 
 
-    @ManyToOne
-    @JoinColumn(name = "wordId", nullable = false, updatable = false, insertable = false)
     private Word word;
 
     /**

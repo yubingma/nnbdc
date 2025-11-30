@@ -3,8 +3,6 @@ package beidanci.service.po;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 @Entity
@@ -14,8 +12,6 @@ public class UserGame extends Po {
     @Id
     private UserGameId id;
 
-    @ManyToOne
-    @JoinColumn(name = "userId", nullable = false, updatable = false, insertable = false)
     private User user;
 
     @Column(name = "winCount")
