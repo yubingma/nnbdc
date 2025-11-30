@@ -7,7 +7,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.hibernate.query.Query;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +27,9 @@ public class UserOperBo extends BaseBo<UserOper> {
         setDao(new BaseDao<UserOper>() {
         });
     }
+
+    @Autowired
+    private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
     /**
      * 将实体对象转换为DTO对象
@@ -76,10 +81,10 @@ public class UserOperBo extends BaseBo<UserOper> {
      * @return 操作历史记录DTO列表
      */
     public List<UserOperDto> getUserOperDtosOfUser(String userId) {
-        String hql = "from UserOper where userId = :userId order by operTime desc";
-        Query<UserOper> query = getSession().createQuery(hql, UserOper.class);
-        query.setParameter("userId", userId);
-        List<UserOper> opers = query.list();
+        String sql = "SELECT * FROM user_oper WHERE userId = :userId ORDER BY operTime DESC";
+        MapSqlParameterSource params = new MapSqlParameterSource("userId", userId);
+        List<UserOper> opers = namedParameterJdbcTemplate.query(sql, params, 
+            new beidanci.service.dao.EntityRowMapper<>(UserOper.class));
 
         List<UserOperDto> result = new ArrayList<>();
         for (UserOper oper : opers) {
@@ -174,12 +179,12 @@ public class UserOperBo extends BaseBo<UserOper> {
                 parameters.put("remark", filters.get("remark"));
             }
             
-            Query<?> query = getSession().createNativeQuery(sql.toString());
+            MapSqlParameterSource params = new MapSqlParameterSource();
             for (Map.Entry<String, Object> entry : parameters.entrySet()) {
-                query.setParameter(entry.getKey(), entry.getValue());
+                params.addValue(entry.getKey(), entry.getValue());
             }
             
-            int deletedCount = query.executeUpdate();
+            int deletedCount = namedParameterJdbcTemplate.update(sql.toString(), params);
             System.out.println("批量删除user_oper记录完成，用户ID: " + userId + ", 删除数量: " + deletedCount);
             
         } catch (Exception e) {

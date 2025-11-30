@@ -1,13 +1,14 @@
 package beidanci.service.po;
 
-import org.hibernate.annotations.Cache;
-import org.hibernate.annotations.CacheConcurrencyStrategy;
+// JDBC 不再支持 Hibernate 缓存注解
+// import org.hibernate.annotations.Cache;
+// import org.hibernate.annotations.CacheConcurrencyStrategy;
 
 import javax.persistence.*;
 
 @Entity
 @Table(name = "word_image")
-@Cache(region = "wordCache", usage = CacheConcurrencyStrategy.READ_WRITE)
+// @Cache(region = "wordCache", usage = CacheConcurrencyStrategy.READ_WRITE)  // JDBC 不支持缓存
 public class WordImage extends UuidPo {
 
     public WordImage(Word word, String imageFile, Integer hand, Integer foot, User author) {

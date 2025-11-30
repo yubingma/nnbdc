@@ -77,10 +77,11 @@ public class SystemHealthCheckBo {
                 ORDER BY d.createTime DESC
                 """;
             
-            @SuppressWarnings("unchecked")
-            List<Object[]> dicts = dictBo.getSession().createNativeQuery(sql)
-                .setParameter(1, Constants.SYS_USER_SYS_ID)
-                .list();
+            // 使用 JDBC 查询，需要先迁移 DictBo
+            // TODO: 迁移 DictBo 后修复此方法
+            List<Object[]> dicts = new ArrayList<>();
+            // 临时注释，等待 DictBo 迁移
+            // List<Object[]> dicts = dictBo.queryUserDicts(Constants.SYS_USER_SYS_ID);
             
             for (Object[] dict : dicts) {
                 String dictId = (String) dict[0];
@@ -257,10 +258,11 @@ public class SystemHealthCheckBo {
                 ORDER BY dw.seq ASC
                 """;
             
-            @SuppressWarnings("unchecked")
-            List<Object[]> dictWords = dictBo.getSession().createNativeQuery(sql)
-                .setParameter(1, dictId)
-                .list();
+            // 使用 JDBC 查询，需要先迁移 DictBo
+            // TODO: 迁移 DictBo 后修复此方法
+            List<Object[]> dictWords = new ArrayList<>();
+            // 临时注释，等待 DictBo 迁移
+            // List<Object[]> dictWords = dictBo.queryDictWords(dictId);
             
             // 检查空词书
             if (dictWords.isEmpty()) {

@@ -4,7 +4,9 @@ import javax.annotation.PostConstruct;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.hibernate.query.Query;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 import beidanci.service.dao.BaseDao;
 import beidanci.service.po.BookMark;
@@ -20,6 +22,9 @@ public class BookMarkBo extends BaseBo<BookMark> {
         setDao(new BaseDao<BookMark>() {
         });
     }
+
+    @Autowired
+    private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
     public void saveBookMark(String bookMarkName, String spell, int position, String userId) throws IllegalAccessException {
         BookMarkId id = new BookMarkId(userId, bookMarkName);
@@ -68,12 +73,12 @@ public class BookMarkBo extends BaseBo<BookMark> {
                 parameters.put("createTime", filters.get("createTime"));
             }
             
-            Query<?> query = getSession().createNativeQuery(sql.toString());
+            MapSqlParameterSource params = new MapSqlParameterSource();
             for (Map.Entry<String, Object> entry : parameters.entrySet()) {
-                query.setParameter(entry.getKey(), entry.getValue());
+                params.addValue(entry.getKey(), entry.getValue());
             }
             
-            int deletedCount = query.executeUpdate();
+            int deletedCount = namedParameterJdbcTemplate.update(sql.toString(), params);
             System.out.println("批量删除book_mark记录完成，用户ID: " + userId + ", 删除数量: " + deletedCount);
             
         } catch (Exception e) {

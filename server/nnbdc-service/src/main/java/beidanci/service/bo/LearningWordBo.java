@@ -20,8 +20,8 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.hibernate.query.Query;
-import org.hibernate.type.StandardBasicTypes;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -69,6 +69,9 @@ public class LearningWordBo extends BaseBo<LearningWord> {
     @Autowired
     WordCache wordCache;
 
+    @Autowired
+    private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
+
     private List<LearningWord> fetchNewWordsToLearn(User user, int todayDayNumber, int countToFetch) {
         if (countToFetch <= 0) {
             return new ArrayList<>(0);
@@ -84,11 +87,11 @@ public class LearningWordBo extends BaseBo<LearningWord> {
                 +
                 "and not exists (select 0 from learning_word lw where lw.userId=:userId and lw.wordId=dw.wordId) " +
                 "group by wordId order by is_privileged desc, minSeq asc limit :limit ";
-        Query<String> query = getSession().createNativeQuery(sql, String.class)
-                .addScalar("wordId", StandardBasicTypes.STRING);
-        query.setParameter("userId", user.getId());
-        query.setParameter("limit", countToFetch);
-        List<String> list = query.list();
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        params.addValue("userId", user.getId());
+        params.addValue("limit", countToFetch);
+        List<String> list = namedParameterJdbcTemplate.query(sql, params, 
+            (rs, rowNum) -> rs.getString("wordId"));
         List<LearningWord> learningWords = new ArrayList<>(countToFetch);
         for (String wordId : list) {
             LearningWordId id = new LearningWordId(user.getId(), wordId);
@@ -433,12 +436,19 @@ public class LearningWordBo extends BaseBo<LearningWord> {
                 " or (DATE_FORMAT(addTime,'%Y-%m-%d %H:%i:%s') = :addTime and lifeValue < :lifeValue) " +
                 " or (DATE_FORMAT(addTime,'%Y-%m-%d %H:%i:%s') = :addTime and lifeValue = :lifeValue and md5(wordId) <= md5(:wordId) )"
                 + ")";
-        Query<Long> query = getSession().createQuery(hql, Long.class);
-        query.setParameter("userId", userId);
-        query.setParameter("addTime", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(learningWord.getAddTime()));
-        query.setParameter("lifeValue", learningWord.getLifeValue());
-        query.setParameter("wordId", learningWord.getId().getWordId());
-        Long result = query.uniqueResult();
+        // 转换为 SQL
+        String countSql = "SELECT COUNT(*) FROM learning_word WHERE userId = :userId AND lifeValue > 0 " +
+                "AND (" +
+                "DATE_FORMAT(addTime,'%Y-%m-%d %H:%i:%s') < :addTime " +
+                "OR (DATE_FORMAT(addTime,'%Y-%m-%d %H:%i:%s') = :addTime AND lifeValue < :lifeValue) " +
+                "OR (DATE_FORMAT(addTime,'%Y-%m-%d %H:%i:%s') = :addTime AND lifeValue = :lifeValue AND MD5(wordId) <= MD5(:wordId))" +
+                ")";
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        params.addValue("userId", userId);
+        params.addValue("addTime", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(learningWord.getAddTime()));
+        params.addValue("lifeValue", learningWord.getLifeValue());
+        params.addValue("wordId", learningWord.getId().getWordId());
+        Long result = namedParameterJdbcTemplate.queryForObject(countSql, params, Long.class);
         long count = result != null ? result : 0L;
 
         return (int) count;
@@ -505,15 +515,16 @@ public class LearningWordBo extends BaseBo<LearningWord> {
             return -1;
         }
 
-        hql = "select count(0) from LearningWord where user.id = :userId " +
-                "and lastLearningDate >= :start and lastLearningDate < :end " +
-                "and learningOrder<=:learningOrder";
-        Query<Long> query = getSession().createQuery(hql, Long.class);
-        query.setParameter("userId", userId);
-        query.setParameter("start", DateUtils.truncate(now, Calendar.DATE));
-        query.setParameter("end", DateUtils.ceiling(now, Calendar.DATE));
-        query.setParameter("learningOrder", learningWord.getLearningOrder());
-        Long result = query.uniqueResult();
+        // 转换为 SQL
+        String countSql = "SELECT COUNT(*) FROM learning_word WHERE userId = :userId " +
+                "AND lastLearningDate >= :start AND lastLearningDate < :end " +
+                "AND learningOrder <= :learningOrder";
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        params.addValue("userId", userId);
+        params.addValue("start", DateUtils.truncate(now, Calendar.DATE));
+        params.addValue("end", DateUtils.ceiling(now, Calendar.DATE));
+        params.addValue("learningOrder", learningWord.getLearningOrder());
+        Long result = namedParameterJdbcTemplate.queryForObject(countSql, params, Long.class);
         long count = result != null ? result : 0L;
 
         return (int) count;
@@ -554,12 +565,16 @@ public class LearningWordBo extends BaseBo<LearningWord> {
         hql = "select count(0) from LearningWord where user.id = :userId and isTodayNewWord = 1 " +
                 "and lastLearningDate >= :start and lastLearningDate < :end " +
                 "and learningOrder<=:learningOrder";
-        Query<Long> query = getSession().createQuery(hql, Long.class);
-        query.setParameter("userId", userId);
-        query.setParameter("start", DateUtils.truncate(now, Calendar.DATE));
-        query.setParameter("end", DateUtils.ceiling(now, Calendar.DATE));
-        query.setParameter("learningOrder", learningWord.getLearningOrder());
-        Long result = query.uniqueResult();
+        // 转换为 SQL
+        String countSql = "SELECT COUNT(*) FROM learning_word WHERE userId = :userId " +
+                "AND lastLearningDate >= :start AND lastLearningDate < :end " +
+                "AND learningOrder <= :learningOrder";
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        params.addValue("userId", userId);
+        params.addValue("start", DateUtils.truncate(now, Calendar.DATE));
+        params.addValue("end", DateUtils.ceiling(now, Calendar.DATE));
+        params.addValue("learningOrder", learningWord.getLearningOrder());
+        Long result = namedParameterJdbcTemplate.queryForObject(countSql, params, Long.class);
         long count = result != null ? result : 0L;
         return (int) count;
     }
@@ -600,12 +615,16 @@ public class LearningWordBo extends BaseBo<LearningWord> {
         hql = "select count(0) from LearningWord where user.id = :userId and isTodayNewWord = 0 " +
                 "and lastLearningDate >= :start and lastLearningDate < :end " +
                 "and learningOrder<=:learningOrder";
-        Query<Long> query = getSession().createQuery(hql, Long.class);
-        query.setParameter("userId", userId);
-        query.setParameter("start", DateUtils.truncate(now, Calendar.DATE));
-        query.setParameter("end", DateUtils.ceiling(now, Calendar.DATE));
-        query.setParameter("learningOrder", learningWord.getLearningOrder());
-        Long result = query.uniqueResult();
+        // 转换为 SQL
+        String countSql = "SELECT COUNT(*) FROM learning_word WHERE userId = :userId " +
+                "AND lastLearningDate >= :start AND lastLearningDate < :end " +
+                "AND learningOrder <= :learningOrder";
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        params.addValue("userId", userId);
+        params.addValue("start", DateUtils.truncate(now, Calendar.DATE));
+        params.addValue("end", DateUtils.ceiling(now, Calendar.DATE));
+        params.addValue("learningOrder", learningWord.getLearningOrder());
+        Long result = namedParameterJdbcTemplate.queryForObject(countSql, params, Long.class);
         long count = result != null ? result : 0L;
         return (int) count;
     }
@@ -621,27 +640,24 @@ public class LearningWordBo extends BaseBo<LearningWord> {
     }
 
     public List<LearningWordDto> getLearningWordDtosOfUser(String userId) {
-        String sql = "select userId, wordId, learningOrder, isTodayNewWord, lifeValue, lastLearningDate, addTime, addDay, learnedTimes, createTime, updateTime from learning_word where userId = :userId";
-        Query<?> query = getSession().createNativeQuery(sql);
-        List<?> list = query.setParameter("userId", userId).list();
-
-        List<LearningWordDto> dtos = new ArrayList<>();
-        for (Object obj : list) {
-            Object[] values = (Object[]) obj;
+        String sql = "SELECT userId, wordId, learningOrder, isTodayNewWord, lifeValue, lastLearningDate, addTime, addDay, learnedTimes, createTime, updateTime FROM learning_word WHERE userId = :userId";
+        MapSqlParameterSource params = new MapSqlParameterSource("userId", userId);
+        
+        List<LearningWordDto> dtos = namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> {
             LearningWordDto dto = new LearningWordDto();
-            dto.setUserId((String) values[0]);
-            dto.setWordId((String) values[1]);
-            dto.setLearningOrder((Integer) values[2]);
-            dto.setIsTodayNewWord((Boolean) values[3]);
-            dto.setLifeValue((Integer) values[4]);
-            dto.setLastLearningDate((Date) values[5]);
-            dto.setAddTime((Date) values[6]);
-            dto.setAddDay((Integer) values[7]);
-            dto.setLearnedTimes((Integer) values[8]);
-            dto.setCreateTime((Date) values[9]);
-            dto.setUpdateTime((Date) values[10]);
-            dtos.add(dto);
-        }
+            dto.setUserId(rs.getString("userId"));
+            dto.setWordId(rs.getString("wordId"));
+            dto.setLearningOrder(rs.getInt("learningOrder"));
+            dto.setIsTodayNewWord(rs.getBoolean("isTodayNewWord"));
+            dto.setLifeValue(rs.getInt("lifeValue"));
+            dto.setLastLearningDate(rs.getTimestamp("lastLearningDate"));
+            dto.setAddTime(rs.getTimestamp("addTime"));
+            dto.setAddDay(rs.getInt("addDay"));
+            dto.setLearnedTimes(rs.getInt("learnedTimes"));
+            dto.setCreateTime(rs.getTimestamp("createTime"));
+            dto.setUpdateTime(rs.getTimestamp("updateTime"));
+            return dto;
+        });
 
         return dtos;
     }
@@ -662,29 +678,23 @@ public class LearningWordBo extends BaseBo<LearningWord> {
             
             // 构建删除SQL
             StringBuilder sql = new StringBuilder("DELETE FROM learning_word WHERE userId = :userId");
-            Map<String, Object> parameters = new HashMap<>();
-            parameters.put("userId", userId);
+            MapSqlParameterSource params = new MapSqlParameterSource("userId", userId);
             
             // 添加过滤条件
             if (filters.containsKey("wordId")) {
                 sql.append(" AND wordId = :wordId");
-                parameters.put("wordId", filters.get("wordId"));
+                params.addValue("wordId", filters.get("wordId"));
             }
             if (filters.containsKey("lifeValue")) {
                 sql.append(" AND lifeValue = :lifeValue");
-                parameters.put("lifeValue", filters.get("lifeValue"));
+                params.addValue("lifeValue", filters.get("lifeValue"));
             }
             if (filters.containsKey("lastLearningDate")) {
                 sql.append(" AND lastLearningDate = :lastLearningDate");
-                parameters.put("lastLearningDate", filters.get("lastLearningDate"));
+                params.addValue("lastLearningDate", filters.get("lastLearningDate"));
             }
             
-            Query<?> query = getSession().createNativeQuery(sql.toString());
-            for (Map.Entry<String, Object> entry : parameters.entrySet()) {
-                query.setParameter(entry.getKey(), entry.getValue());
-            }
-            
-            int deletedCount = query.executeUpdate();
+            int deletedCount = namedParameterJdbcTemplate.update(sql.toString(), params);
             log.info("批量删除学习单词记录完成，用户ID: {}, 删除数量: {}", userId, deletedCount);
             
         } catch (Exception e) {

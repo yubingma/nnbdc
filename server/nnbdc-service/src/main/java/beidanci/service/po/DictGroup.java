@@ -18,8 +18,9 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
-import org.hibernate.annotations.Fetch;
-import org.hibernate.annotations.FetchMode;
+// JDBC 不再支持 Hibernate Fetch 注解
+// import org.hibernate.annotations.Fetch;
+// import org.hibernate.annotations.FetchMode;
 
 @Entity
 @Table(name = "dict_group")
@@ -45,18 +46,18 @@ public class DictGroup extends UuidPo {
 
     @OneToMany(cascade = {CascadeType.PERSIST, CascadeType.REMOVE,
             CascadeType.MERGE}, mappedBy = "dictGroup", fetch = FetchType.LAZY)
-    @Fetch(FetchMode.SUBSELECT)
+    // @Fetch(FetchMode.SUBSELECT)  // JDBC 不支持
     private List<DictGroup> dictGroups;
 
     @ManyToMany
     @JoinTable(name = "group_and_dict_link", joinColumns = {@JoinColumn(name = "groupId")}, inverseJoinColumns = {
             @JoinColumn(name = "dictId")})
-    @Fetch(FetchMode.SUBSELECT)
+    // @Fetch(FetchMode.SUBSELECT)  // JDBC 不支持
     private List<Dict> dicts;
 
     @OneToMany(cascade = {CascadeType.PERSIST, CascadeType.REMOVE,
             CascadeType.MERGE}, mappedBy = "dictGroup", fetch = FetchType.LAZY)
-    @Fetch(FetchMode.SUBSELECT)
+    // @Fetch(FetchMode.SUBSELECT)  // JDBC 不支持
     private Set<GameHall> gameHalls;
 
     // Constructors

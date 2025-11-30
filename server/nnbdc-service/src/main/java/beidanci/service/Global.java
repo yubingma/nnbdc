@@ -1,6 +1,5 @@
 package beidanci.service;
 
-import org.hibernate.SessionFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -33,10 +32,11 @@ public class Global implements ApplicationContextAware {
         }
     }
 
-    public static SessionFactory getSessionFactory() {
-        ensureInitialized();
-        return (SessionFactory) webAppCtx.getBean("sessionFactory");
-    }
+    // JDBC 不再需要 SessionFactory
+    // public static SessionFactory getSessionFactory() {
+    //     ensureInitialized();
+    //     return (SessionFactory) webAppCtx.getBean("sessionFactory");
+    // }
 
     public static SessionRegistry getSessionRegistry() {
         ensureInitialized();

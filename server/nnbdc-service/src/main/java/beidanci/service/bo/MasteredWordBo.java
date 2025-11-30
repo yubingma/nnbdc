@@ -3,14 +3,14 @@ package beidanci.service.bo;
 import javax.annotation.PostConstruct;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.hibernate.query.Query;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -50,6 +50,9 @@ public class MasteredWordBo extends BaseBo<MasteredWord> {
 
     @Autowired
     DictBo dictBo;
+
+    @Autowired
+    private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
     @PostConstruct
     public void init() {
@@ -135,12 +138,14 @@ public class MasteredWordBo extends BaseBo<MasteredWord> {
             return -1;
         }
 
-        hql = "select count(0) from MasteredWord where user.id = :userId and (masterAtTime < :masterAtTime or (masterAtTime = :masterAtTime and id.wordId <= :wordId))";
-        Query<Long> query = getSession().createQuery(hql, Long.class);
-        query.setParameter("userId", userId);
-        query.setParameter("masterAtTime", masteredWord.getMasterAtTime());
-        query.setParameter("wordId", word.getId());
-        Long result = query.uniqueResult();
+        // 转换为 SQL
+        String countSql = "SELECT COUNT(*) FROM mastered_word WHERE userId = :userId " +
+                "AND (masterAtTime < :masterAtTime OR (masterAtTime = :masterAtTime AND wordId <= :wordId))";
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        params.addValue("userId", userId);
+        params.addValue("masterAtTime", masteredWord.getMasterAtTime());
+        params.addValue("wordId", word.getId());
+        Long result = namedParameterJdbcTemplate.queryForObject(countSql, params, Long.class);
         long count = result != null ? result : 0L;
 
         return (int) count;
@@ -150,22 +155,18 @@ public class MasteredWordBo extends BaseBo<MasteredWord> {
      * 获取用户所有已掌握单词的DTO列表，用于全量同步
      */
     public List<MasteredWordDto> getMasteredWordDtosOfUser(String userId) {
-        String sql = "select userId, wordId, masterAtTime, createTime, updateTime from mastered_word where userId = :userId order by masterAtTime, wordId";
-        Query<?> query = getSession().createNativeQuery(sql);
-        query.setParameter("userId", userId);
-        List<?> results = query.list();
-
-        List<MasteredWordDto> masteredWordDtos = new ArrayList<>();
-        for (Object result : results) {
-            Object[] tuple = (Object[]) result;
+        String sql = "SELECT userId, wordId, masterAtTime, createTime, updateTime FROM mastered_word WHERE userId = :userId ORDER BY masterAtTime, wordId";
+        MapSqlParameterSource params = new MapSqlParameterSource("userId", userId);
+        
+        List<MasteredWordDto> masteredWordDtos = namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> {
             MasteredWordDto masteredWordDto = new MasteredWordDto();
-            masteredWordDto.setUserId((String) tuple[0]);
-            masteredWordDto.setWordId((String) tuple[1]);
-            masteredWordDto.setMasterAtTime((Date) tuple[2]);
-            masteredWordDto.setCreateTime((Date) tuple[3]);
-            masteredWordDto.setUpdateTime((Date) tuple[4]);
-            masteredWordDtos.add(masteredWordDto);
-        }
+            masteredWordDto.setUserId(rs.getString("userId"));
+            masteredWordDto.setWordId(rs.getString("wordId"));
+            masteredWordDto.setMasterAtTime(rs.getTimestamp("masterAtTime"));
+            masteredWordDto.setCreateTime(rs.getTimestamp("createTime"));
+            masteredWordDto.setUpdateTime(rs.getTimestamp("updateTime"));
+            return masteredWordDto;
+        });
         return masteredWordDtos;
     }
 
@@ -197,12 +198,12 @@ public class MasteredWordBo extends BaseBo<MasteredWord> {
                 parameters.put("masterAtTime", filters.get("masterAtTime"));
             }
             
-            Query<?> query = getSession().createNativeQuery(sql.toString());
+            MapSqlParameterSource params = new MapSqlParameterSource();
             for (Map.Entry<String, Object> entry : parameters.entrySet()) {
-                query.setParameter(entry.getKey(), entry.getValue());
+                params.addValue(entry.getKey(), entry.getValue());
             }
             
-            int deletedCount = query.executeUpdate();
+            int deletedCount = namedParameterJdbcTemplate.update(sql.toString(), params);
             System.out.println("批量删除mastered_word记录完成，用户ID: " + userId + ", 删除数量: " + deletedCount);
             
         } catch (Exception e) {

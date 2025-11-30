@@ -1,7 +1,6 @@
 package beidanci.service.bo;
 import java.io.File;
 import java.io.IOException;
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
@@ -9,8 +8,9 @@ import java.util.List;
 
 import javax.annotation.PostConstruct;
 
-import org.hibernate.query.Query;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -55,7 +55,10 @@ public class WordBo extends BaseBo<Word> {
     @Autowired
     UserBo userBo;
 
-        @PostConstruct
+    @Autowired
+    private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
+
+    @PostConstruct
     public void init() {
         setDao(new BaseDao<Word>() {
         });
@@ -67,9 +70,9 @@ public class WordBo extends BaseBo<Word> {
      * @return
      */
     public List<Word> getAllWords() {
-        String hql = "from Word order by lower(spell) asc";
-        Query<Word> query = getSession().createQuery(hql, Word.class);
-        return query.list();
+        String sql = "SELECT * FROM word ORDER BY LOWER(spell) ASC";
+        return namedParameterJdbcTemplate.query(sql, 
+            new beidanci.service.dao.EntityRowMapper<>(Word.class));
     }
 
     public WordVo getWordVoById(String wordId, String[] excludeFields) {
@@ -80,10 +83,11 @@ public class WordBo extends BaseBo<Word> {
     }
 
     public Word getWordBySpell(String spell) {
-        String hql = "from Word w where w.spell = :spell";
-        Query<Word> query = getSession().createQuery(hql, Word.class);
-        query.setParameter("spell", spell);
-        return query.uniqueResult();
+        String sql = "SELECT * FROM word WHERE spell = :spell";
+        MapSqlParameterSource params = new MapSqlParameterSource("spell", spell);
+        List<Word> results = namedParameterJdbcTemplate.query(sql, params, 
+            new beidanci.service.dao.EntityRowMapper<>(Word.class));
+        return results.isEmpty() ? null : results.get(0);
     }
 
     public WordVo getWordVoBySpell(String spell, String[] excludeFields) {
@@ -207,71 +211,58 @@ public class WordBo extends BaseBo<Word> {
 
     public List<WordDto> getWordsOfDict(String dictId) {
         // 通用词典现在也有dict_word记录，统一查询逻辑
-        String hql = "select id, americaPronounce, britishPronounce, groupInfo, longDesc, shortDesc, popularity, pronounce, spell, createTime, updateTime from word w where w.id in (select dw.wordId from dict_word dw where dw.dictId=:dictId)";
-        Query<?> query = getSession().createNativeQuery(hql);
-        List<?> results = query.setParameter("dictId", dictId).list();
-
-        List<WordDto> wordDtos = new ArrayList<>();
-        for (Object result : results) {
-            Object[] tuple = (Object[]) result;
+        String sql = "SELECT id, americaPronounce, britishPronounce, groupInfo, longDesc, shortDesc, popularity, pronounce, spell, createTime, updateTime FROM word w WHERE w.id IN (SELECT dw.wordId FROM dict_word dw WHERE dw.dictId=:dictId)";
+        MapSqlParameterSource params = new MapSqlParameterSource("dictId", dictId);
+        
+        return namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> {
             WordDto wordDto = new WordDto();
-            wordDto.setId((String) tuple[0]);
-            wordDto.setAmericaPronounce((String) tuple[1]);
-            wordDto.setBritishPronounce((String) tuple[2]);
-            wordDto.setGroupInfo((String) tuple[3]);
-            wordDto.setLongDesc((String) tuple[4]);
-            wordDto.setShortDesc((String) tuple[5]);
-            wordDto.setPopularity((Integer) tuple[6]);
-            wordDto.setPronounce((String) tuple[7]);
-            wordDto.setSpell((String) tuple[8]);
-            wordDto.setCreateTime((Timestamp) tuple[9]);
-            wordDto.setUpdateTime((Timestamp) tuple[10]);
-            wordDtos.add(wordDto);
-        }
-        return wordDtos;
+            wordDto.setId(rs.getString("id"));
+            wordDto.setAmericaPronounce(rs.getString("americaPronounce"));
+            wordDto.setBritishPronounce(rs.getString("britishPronounce"));
+            wordDto.setGroupInfo(rs.getString("groupInfo"));
+            wordDto.setLongDesc(rs.getString("longDesc"));
+            wordDto.setShortDesc(rs.getString("shortDesc"));
+            wordDto.setPopularity(rs.getObject("popularity", Integer.class));
+            wordDto.setPronounce(rs.getString("pronounce"));
+            wordDto.setSpell(rs.getString("spell"));
+            wordDto.setCreateTime(rs.getTimestamp("createTime"));
+            wordDto.setUpdateTime(rs.getTimestamp("updateTime"));
+            return wordDto;
+        });
     }
 
     public List<SimilarWordDto> getSimilarWordsOfDict(String dictId) {
         // 通用词典现在也有dict_word记录，统一查询逻辑
-        String hql = "select sw.wordId, sw.similarWordId, sw.distance, w.spell from similar_word sw left join word w on w.id=sw.similarWordId where sw.wordId in (select dw.wordId from dict_word dw where dw.dictId=:dictId)";
-        Query<?> query = getSession().createNativeQuery(hql);
-        List<?> results = query.setParameter("dictId", dictId).list();
+        String sql = "SELECT sw.wordId, sw.similarWordId, sw.distance, w.spell FROM similar_word sw LEFT JOIN word w ON w.id=sw.similarWordId WHERE sw.wordId IN (SELECT dw.wordId FROM dict_word dw WHERE dw.dictId=:dictId)";
+        MapSqlParameterSource params = new MapSqlParameterSource("dictId", dictId);
         
-        List<SimilarWordDto> words = new ArrayList<>();
-        for (Object result : results) {
-            Object[] tuple = (Object[]) result;
+        return namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> {
             SimilarWordDto wordDto = new SimilarWordDto();
-            wordDto.setWordId((String) tuple[0]);
-            wordDto.setSimilarWordId((String) tuple[1]);
-            wordDto.setDistance((Integer) tuple[2]);
-            wordDto.setSimilarWordSpell((String) tuple[3]);
-            words.add(wordDto);
-        }
-        return words;
+            wordDto.setWordId(rs.getString("wordId"));
+            wordDto.setSimilarWordId(rs.getString("similarWordId"));
+            wordDto.setDistance(rs.getObject("distance", Integer.class));
+            wordDto.setSimilarWordSpell(rs.getString("spell"));
+            return wordDto;
+        });
     }
 
     public List<WordImageDto> getWordImagesOfDict(String dictId) {
         // 通用词典现在也有dict_word记录，统一查询逻辑
-        String sql = "select id, foot, hand, imageFile, authorId, wordId, createTime, updateTime from word_image wi where wi.wordId in (select dw.wordId from dict_word dw where dw.dictId=:dictId)";
-        Query<?> query = getSession().createNativeQuery(sql);
-        query.setParameter("dictId", dictId);
-        List<?> results = query.list();
-
-        List<WordImageDto> wordImageDtos = new ArrayList<>();
-        for (Object result : results) {
-            Object[] tuple = (Object[]) result;
+        String sql = "SELECT id, foot, hand, imageFile, authorId, wordId, createTime, updateTime FROM word_image wi WHERE wi.wordId IN (SELECT dw.wordId FROM dict_word dw WHERE dw.dictId=:dictId)";
+        MapSqlParameterSource params = new MapSqlParameterSource("dictId", dictId);
+        
+        return namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> {
             WordImageDto wordImageDto = new WordImageDto();
-            wordImageDto.setId((String) tuple[0]);
-            wordImageDto.setFoot((Integer) tuple[1]);
-            wordImageDto.setHand((Integer) tuple[2]);
-            wordImageDto.setImageFile((String) tuple[3]);
-            wordImageDto.setAuthorId((String) tuple[4]);
-            wordImageDto.setWordId((String) tuple[5]);
-            wordImageDto.setCreateTime((Timestamp) tuple[6]);
-            wordImageDto.setUpdateTime((Timestamp) tuple[7]);
-            wordImageDtos.add(wordImageDto);
-        }
-        return wordImageDtos;
+            wordImageDto.setId(rs.getString("id"));
+            wordImageDto.setFoot(rs.getObject("foot", Integer.class));
+            wordImageDto.setHand(rs.getObject("hand", Integer.class));
+            wordImageDto.setImageFile(rs.getString("imageFile"));
+            wordImageDto.setAuthorId(rs.getString("authorId"));
+            wordImageDto.setWordId(rs.getString("wordId"));
+            wordImageDto.setCreateTime(rs.getTimestamp("createTime"));
+            wordImageDto.setUpdateTime(rs.getTimestamp("updateTime"));
+            return wordImageDto;
+        });
     }
 
 }

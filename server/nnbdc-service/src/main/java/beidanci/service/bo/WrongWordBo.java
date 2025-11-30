@@ -2,15 +2,14 @@ package beidanci.service.bo;
 import javax.annotation.PostConstruct;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.hibernate.query.Query;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,6 +35,9 @@ public class WrongWordBo extends BaseBo<WrongWord> {
     @Autowired
     WordCache wordCache;
 
+    @Autowired
+    private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
+
     public int getWrongWordOrder(String userId, String spell) throws InvalidMeaningFormatException, EmptySpellException, IOException, ParseException {
         WordVo word = wordCache.getWordBySpell(spell, new String[]{
                 "SynonymVo.meaningItem", "SynonymVo.word",  "similarWords", "DictVo.dictWords"});
@@ -43,21 +45,22 @@ public class WrongWordBo extends BaseBo<WrongWord> {
             return -1;
         }
 
-        String hql = String.format("from WrongWord where user.id = :userId and id.wordId = :wordId");
-        WrongWord wrongWord = queryUnique(hql,
+        // 转换为 SQL（注意：复合主键需要特殊处理）
+        String sql = "SELECT * FROM user_wrong_word WHERE userId = :userId AND wordId = :wordId";
+        WrongWord wrongWord = queryUnique(sql,
                 new ImmutablePair<>("userId", userId),
                 new ImmutablePair<>("wordId", word.getId()));
         if (wrongWord == null) {
             return -1;
         }
 
-        hql = "select count(0) from WrongWord where user.id = :userId " +
-                "and createTime<=:createTime";
-        Query<Long> query = getSession().createQuery(hql, Long.class);
-        query.setParameter("userId", userId);
-        query.setParameter("createTime", wrongWord.getCreateTime());
-        long count = query.uniqueResult();
-        return (int) count;
+        // 转换为 SQL
+        String countSql = "SELECT COUNT(*) FROM user_wrong_word WHERE userId = :userId AND createTime <= :createTime";
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        params.addValue("userId", userId);
+        params.addValue("createTime", wrongWord.getCreateTime());
+        Long count = namedParameterJdbcTemplate.queryForObject(countSql, params, Long.class);
+        return count != null ? count.intValue() : 0;
     }
 
     /**
@@ -76,20 +79,17 @@ public class WrongWordBo extends BaseBo<WrongWord> {
      * 获取用户所有错词的DTO列表，用于全量同步
      */
     public List<WrongWordDto> getWrongWordDtosOfUser(String userId) {
-        String sql = "select userId, wordId, createTime, updateTime from user_wrong_word where userId = :userId order by createTime";
-        Query<?> query = getSession().createNativeQuery(sql);
-        List<?> list = query.setParameter("userId", userId).list();
-
-        List<WrongWordDto> dtos = new ArrayList<>();
-        for (Object obj : list) {
-            Object[] values = (Object[]) obj;
+        String sql = "SELECT userId, wordId, createTime, updateTime FROM user_wrong_word WHERE userId = :userId ORDER BY createTime";
+        MapSqlParameterSource params = new MapSqlParameterSource("userId", userId);
+        
+        List<WrongWordDto> dtos = namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> {
             WrongWordDto dto = new WrongWordDto();
-            dto.setUserId((String) values[0]);
-            dto.setWordId((String) values[1]);
-            dto.setCreateTime((Date) values[2]);
-            dto.setUpdateTime((Date) values[3]);
-            dtos.add(dto);
-        }
+            dto.setUserId(rs.getString("userId"));
+            dto.setWordId(rs.getString("wordId"));
+            dto.setCreateTime(rs.getTimestamp("createTime"));
+            dto.setUpdateTime(rs.getTimestamp("updateTime"));
+            return dto;
+        });
 
         return dtos;
     }
@@ -109,25 +109,19 @@ public class WrongWordBo extends BaseBo<WrongWord> {
             
             // 构建删除SQL
             StringBuilder sql = new StringBuilder("DELETE FROM user_wrong_word WHERE userId = :userId");
-            Map<String, Object> parameters = new HashMap<>();
-            parameters.put("userId", userId);
+            MapSqlParameterSource params = new MapSqlParameterSource("userId", userId);
             
             // 添加过滤条件
             if (filters.containsKey("wordId")) {
                 sql.append(" AND wordId = :wordId");
-                parameters.put("wordId", filters.get("wordId"));
+                params.addValue("wordId", filters.get("wordId"));
             }
             if (filters.containsKey("createTime")) {
                 sql.append(" AND createTime = :createTime");
-                parameters.put("createTime", filters.get("createTime"));
+                params.addValue("createTime", filters.get("createTime"));
             }
             
-            Query<?> query = getSession().createNativeQuery(sql.toString());
-            for (Map.Entry<String, Object> entry : parameters.entrySet()) {
-                query.setParameter(entry.getKey(), entry.getValue());
-            }
-            
-            int deletedCount = query.executeUpdate();
+            int deletedCount = namedParameterJdbcTemplate.update(sql.toString(), params);
             System.out.println("批量删除user_wrong_word记录完成，用户ID: " + userId + ", 删除数量: " + deletedCount);
             
         } catch (Exception e) {

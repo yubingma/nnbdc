@@ -2,7 +2,6 @@ package beidanci.service.bo;
 
 import java.io.IOException;
 import java.sql.Timestamp;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -10,9 +9,8 @@ import java.util.Map;
 
 import javax.annotation.PostConstruct;
 
-import org.hibernate.Session;
-import org.hibernate.query.NativeQuery;
-import org.hibernate.query.Query;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -48,6 +46,9 @@ public class DictWordBo extends BaseBo<DictWord> {
 
     @Autowired
     LearningDictBo learningDictBo;
+
+    @Autowired
+    private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
     @PostConstruct
     public void init() {
@@ -91,25 +92,27 @@ public class DictWordBo extends BaseBo<DictWord> {
      * @return
      */
     public WordVo getWordOfOrder(String dictId, int seqNo) {
-        String hql = "from DictWord where dict.id=:dictId and seq=:seq";
-        Query<DictWord> query = getSession().createQuery(hql, DictWord.class);
-        query.setParameter("dictId", dictId);
-        query.setParameter("seq", seqNo);
-        query.setCacheable(true);
-        DictWord dictWord = query.uniqueResult();
+        // 转换为 SQL
+        String sql = "SELECT * FROM dict_word WHERE dictId = :dictId AND seq = :seq";
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        params.addValue("dictId", dictId);
+        params.addValue("seq", seqNo);
+        List<DictWord> results = namedParameterJdbcTemplate.query(sql, params, 
+            new beidanci.service.dao.EntityRowMapper<>(DictWord.class));
+        if (results.isEmpty()) {
+            return null;
+        }
+        DictWord dictWord = results.get(0);
         return dictWord.getWordVo(wordCache, new String[] {
                 "SynonymVo.meaningItem", "SynonymVo.word", "similarWords", "DictVo.dictWords" });
     }
 
     public int getWordCountOfDict(String dictName) {
         // 查询记录总数
-        Session session = getSession();
-        String hql = "select count(0) from DictWord where dictName=:dictName";
-        Query<Long> query = session.createQuery(hql, Long.class);
-        query.setParameter("dictName", dictName);
-        query.setCacheable(true);
-        int total = query.uniqueResult().intValue();
-        return total;
+        String sql = "SELECT COUNT(*) FROM dict_word WHERE dictName = :dictName";
+        MapSqlParameterSource params = new MapSqlParameterSource("dictName", dictName);
+        Integer total = namedParameterJdbcTemplate.queryForObject(sql, params, Integer.class);
+        return total != null ? total : 0;
     }
 
     /**
@@ -124,16 +127,16 @@ public class DictWordBo extends BaseBo<DictWord> {
         int total = getWordCountOfDict(dictName);
 
         // 查询一页数据
-        Session session = getSession();
-        String sql = "from DictWord where dictName=:dictName " + (orderBy == null ? "" : " order by " + orderBy);
-        Query<DictWord> query = session.createQuery(sql, DictWord.class);
-        query.setParameter("dictName", dictName);
+        String sql = "SELECT * FROM dict_word WHERE dictName = :dictName " + (orderBy == null ? "" : " ORDER BY " + orderBy) + " LIMIT :limit OFFSET :offset";
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        params.addValue("dictName", dictName);
         int pageCount = total % pageSize == 0 ? total / pageSize : total / pageSize + 1;
         pageNo = pageNo > pageCount ? pageCount : pageNo;
         int offset = (pageSize * (pageNo - 1));
-        query.setFirstResult(offset);
-        query.setMaxResults(pageSize);
-        List<DictWord> dictWords = query.list();
+        params.addValue("limit", pageSize);
+        params.addValue("offset", offset);
+        List<DictWord> dictWords = namedParameterJdbcTemplate.query(sql, params, 
+            new beidanci.service.dao.EntityRowMapper<>(DictWord.class));
 
         PaginationResults<DictWord> result = new PaginationResults<>();
         result.setTotal(total);
@@ -145,12 +148,9 @@ public class DictWordBo extends BaseBo<DictWord> {
      * 获取自定义单词书中的所有单词
      */
     public List<String> getWordSpellsOfDict(String dictId) throws IOException {
-        Session session = getSession();
-        String sql = "select w.spell from dict_word dw left join word w on dw.wordId=w.id where dw.dictId=:dictId ";
-        NativeQuery<String> query = session.createNativeQuery(sql, String.class);
-        query.setParameter("dictId", dictId);
-
-        List<String> dictWords = query.list();
+        String sql = "SELECT w.spell FROM dict_word dw LEFT JOIN word w ON dw.wordId = w.id WHERE dw.dictId = :dictId";
+        MapSqlParameterSource params = new MapSqlParameterSource("dictId", dictId);
+        List<String> dictWords = namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> rs.getString("spell"));
         return dictWords;
     }
 
@@ -250,10 +250,9 @@ public class DictWordBo extends BaseBo<DictWord> {
         createEntity(dictWord);
 
         // 更新词书单词数
-        String hql = "update Dict set wordCount=wordCount+1 where id=:dictId";
-        javax.persistence.Query query = getSession().createQuery(hql);
-        query.setParameter("dictId", dict.getId());
-        query.executeUpdate();
+        String sql = "UPDATE dict SET wordCount = wordCount + 1 WHERE id = :dictId";
+        MapSqlParameterSource params = new MapSqlParameterSource("dictId", dict.getId());
+        namedParameterJdbcTemplate.update(sql, params);
 
         return Result.success(dictWord);
     }
@@ -283,17 +282,16 @@ public class DictWordBo extends BaseBo<DictWord> {
         deleteEntity(dictWord);
 
         // 后面的单词前移
-        String hql = "update DictWord set seq = seq - 1 where dict.id=:dictId and seq > :seq";
-        javax.persistence.Query query = getSession().createQuery(hql);
-        query.setParameter("dictId", dictId);
-        query.setParameter("seq", seqNo);
-        query.executeUpdate();
+        String sql = "UPDATE dict_word SET seq = seq - 1 WHERE dictId = :dictId AND seq > :seq";
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        params.addValue("dictId", dictId);
+        params.addValue("seq", seqNo);
+        namedParameterJdbcTemplate.update(sql, params);
 
         // 更新词书单词数
-        hql = "update Dict set wordCount=wordCount-1 where id=:dictId";
-        query = getSession().createQuery(hql);
-        query.setParameter("dictId", dictId);
-        query.executeUpdate();
+        sql = "UPDATE dict SET wordCount = wordCount - 1 WHERE id = :dictId";
+        params = new MapSqlParameterSource("dictId", dictId);
+        namedParameterJdbcTemplate.update(sql, params);
 
         // 更新词书的当前学习位置
         learningDictBo.updateCurrentPositionForUserDict(user, dictId, true);
@@ -323,19 +321,19 @@ public class DictWordBo extends BaseBo<DictWord> {
     }
 
     public List<DictWord> getWordsByPage(final Dict dict, final int firstRow, final int pageSize, String ascOrDesc) {
-        Query<DictWord> query = getSession()
-                .createQuery(" from DictWord where dict = :dict" + " order by seq " + ascOrDesc, DictWord.class);
-        query.setParameter("dict", dict);
-        query.setFirstResult(firstRow);
-        query.setMaxResults(pageSize);
-        return query.list();
+        String sql = "SELECT * FROM dict_word WHERE dictId = :dictId ORDER BY seq " + ascOrDesc + " LIMIT :limit OFFSET :offset";
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        params.addValue("dictId", dict.getId());
+        params.addValue("limit", pageSize);
+        params.addValue("offset", firstRow);
+        return namedParameterJdbcTemplate.query(sql, params, 
+            new beidanci.service.dao.EntityRowMapper<>(DictWord.class));
     }
 
     public int getMaxSeqNo(final Dict dict) {
-        Query<Integer> query = getSession().createQuery("select max(seq) from DictWord where dict = :dict",
-                Integer.class);
-        query.setParameter("dict", dict);
-        Integer result = query.uniqueResult();
+        String sql = "SELECT MAX(seq) FROM dict_word WHERE dictId = :dictId";
+        MapSqlParameterSource params = new MapSqlParameterSource("dictId", dict.getId());
+        Integer result = namedParameterJdbcTemplate.queryForObject(sql, params, Integer.class);
         return result == null ? 0 : result;
     }
 
@@ -351,21 +349,17 @@ public class DictWordBo extends BaseBo<DictWord> {
 
     public List<DictWordDto> getDictWordsOfDict(String dictId) {
         // 通用词典现在也有dict_word记录，统一查询逻辑
-        String sql = "select dictId, wordId, seq, createTime, updateTime from dict_word where dictId = :dictId";
-        Query<?> query = getSession().createNativeQuery(sql);
-        query.setParameter("dictId", dictId);
-        List<?> results = query.list();
-        List<DictWordDto> dictWordDtos = new ArrayList<>();
-        for (Object result : results) {
-            Object[] tuple = (Object[]) result;
+        String sql = "SELECT dictId, wordId, seq, createTime, updateTime FROM dict_word WHERE dictId = :dictId";
+        MapSqlParameterSource params = new MapSqlParameterSource("dictId", dictId);
+        List<DictWordDto> dictWordDtos = namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> {
             DictWordDto dictWordDto = new DictWordDto();
-            dictWordDto.setDictId((String) tuple[0]);
-            dictWordDto.setWordId((String) tuple[1]);
-            dictWordDto.setSeq((Integer) tuple[2]);
-            dictWordDto.setCreateTime((Timestamp) tuple[3]);
-            dictWordDto.setUpdateTime((Timestamp) tuple[4]);
-            dictWordDtos.add(dictWordDto);
-        }
+            dictWordDto.setDictId(rs.getString("dictId"));
+            dictWordDto.setWordId(rs.getString("wordId"));
+            dictWordDto.setSeq(rs.getInt("seq"));
+            dictWordDto.setCreateTime(rs.getTimestamp("createTime"));
+            dictWordDto.setUpdateTime(rs.getTimestamp("updateTime"));
+            return dictWordDto;
+        });
         return dictWordDtos;
     }
 
@@ -374,26 +368,21 @@ public class DictWordBo extends BaseBo<DictWord> {
      */
     public List<DictWordDto> getDictWordDtosOfUser(String userId) {
         // 查询用户的生词本中的所有单词
-        String sql = "select dw.dictId, dw.wordId, dw.seq, dw.createTime, dw.updateTime " +
-                "from dict_word dw " +
-                "inner join dict d on dw.dictId = d.id " +
-                "where d.ownerId = :userId " +
-                "order by dw.createTime";
-        Query<?> query = getSession().createNativeQuery(sql);
-        query.setParameter("userId", userId);
-        List<?> results = query.list();
-
-        List<DictWordDto> dictWordDtos = new ArrayList<>();
-        for (Object result : results) {
-            Object[] tuple = (Object[]) result;
+        String sql = "SELECT dw.dictId, dw.wordId, dw.seq, dw.createTime, dw.updateTime " +
+                "FROM dict_word dw " +
+                "INNER JOIN dict d ON dw.dictId = d.id " +
+                "WHERE d.ownerId = :userId " +
+                "ORDER BY dw.createTime";
+        MapSqlParameterSource params = new MapSqlParameterSource("userId", userId);
+        List<DictWordDto> dictWordDtos = namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> {
             DictWordDto dictWordDto = new DictWordDto();
-            dictWordDto.setDictId((String) tuple[0]);
-            dictWordDto.setWordId((String) tuple[1]);
-            dictWordDto.setSeq((Integer) tuple[2]);
-            dictWordDto.setCreateTime((Date) tuple[3]);
-            dictWordDto.setUpdateTime((Date) tuple[4]);
-            dictWordDtos.add(dictWordDto);
-        }
+            dictWordDto.setDictId(rs.getString("dictId"));
+            dictWordDto.setWordId(rs.getString("wordId"));
+            dictWordDto.setSeq(rs.getInt("seq"));
+            dictWordDto.setCreateTime(rs.getTimestamp("createTime"));
+            dictWordDto.setUpdateTime(rs.getTimestamp("updateTime"));
+            return dictWordDto;
+        });
         return dictWordDtos;
     }
 
@@ -408,18 +397,17 @@ public class DictWordBo extends BaseBo<DictWord> {
             return null;
         }
         // 取出生词本内所有词，按seq排序
-        String sql = "select dw.wordId, dw.seq from dict_word dw where dw.dictId = :dictId order by dw.seq";
-        Query<?> query = getSession().createNativeQuery(sql);
-        query.setParameter("dictId", rawWordDict.getId());
-        List<?> list = query.list();
+        String sql = "SELECT dw.wordId, dw.seq FROM dict_word dw WHERE dw.dictId = :dictId ORDER BY dw.seq";
+        MapSqlParameterSource params = new MapSqlParameterSource("dictId", rawWordDict.getId());
+        List<Object[]> list = namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> 
+            new Object[]{rs.getString("wordId"), rs.getInt("seq")});
         if (list == null || list.isEmpty()) {
             return null;
         }
         int expected = 1;
         Integer firstIndex = null;
         Integer lastIndex = null;
-        for (Object row : list) {
-            Object[] tuple = (Object[]) row;
+        for (Object[] tuple : list) {
             Integer indexNo = ((Number) tuple[1]).intValue();
             if (firstIndex == null)
                 firstIndex = indexNo;
@@ -451,31 +439,30 @@ public class DictWordBo extends BaseBo<DictWord> {
         }
         // 清空
         String deleteSql = "DELETE FROM dict_word WHERE dictId = :dictId";
-        javax.persistence.Query delQuery = getSession().createNativeQuery(deleteSql);
-        delQuery.setParameter("dictId", rawWordDict.getId());
-        delQuery.executeUpdate();
+        MapSqlParameterSource deleteParams = new MapSqlParameterSource("dictId", rawWordDict.getId());
+        namedParameterJdbcTemplate.update(deleteSql, deleteParams);
 
         // 批量插入
         int count = 0;
         String insertSql = "INSERT INTO dict_word (dictId, wordId, seq, createTime, updateTime) " +
                 "VALUES (:dictId, :wordId, :seq, :createTime, :updateTime)";
         for (DictWordDto dto : dictWordDtos) {
-            javax.persistence.Query ins = getSession().createNativeQuery(insertSql);
-            ins.setParameter("dictId", dto.getDictId());
-            ins.setParameter("wordId", dto.getWordId());
-            ins.setParameter("seq", dto.getSeq());
-            ins.setParameter("createTime", dto.getCreateTime());
-            ins.setParameter("updateTime", dto.getUpdateTime());
-            ins.executeUpdate();
+            MapSqlParameterSource insertParams = new MapSqlParameterSource();
+            insertParams.addValue("dictId", dto.getDictId());
+            insertParams.addValue("wordId", dto.getWordId());
+            insertParams.addValue("seq", dto.getSeq());
+            insertParams.addValue("createTime", dto.getCreateTime());
+            insertParams.addValue("updateTime", dto.getUpdateTime());
+            namedParameterJdbcTemplate.update(insertSql, insertParams);
             count++;
         }
 
         // 更新词书单词数
-        String hql = "update Dict set wordCount = :cnt where id=:dictId";
-        javax.persistence.Query q = getSession().createQuery(hql);
-        q.setParameter("cnt", count);
-        q.setParameter("dictId", rawWordDict.getId());
-        q.executeUpdate();
+        String sql = "UPDATE dict SET wordCount = :cnt WHERE id = :dictId";
+        MapSqlParameterSource updateParams = new MapSqlParameterSource();
+        updateParams.addValue("cnt", count);
+        updateParams.addValue("dictId", rawWordDict.getId());
+        namedParameterJdbcTemplate.update(sql, updateParams);
 
         return count;
     }
@@ -515,12 +502,12 @@ public class DictWordBo extends BaseBo<DictWord> {
             sql.append(" AND dw.dictId = :dictId");
             parameters.put("dictId", filters.get("dictId"));
 
-            Query<?> query = getSession().createNativeQuery(sql.toString());
+            MapSqlParameterSource params = new MapSqlParameterSource();
             for (Map.Entry<String, Object> entry : parameters.entrySet()) {
-                query.setParameter(entry.getKey(), entry.getValue());
+                params.addValue(entry.getKey(), entry.getValue());
             }
 
-            int deletedCount = query.executeUpdate();
+            int deletedCount = namedParameterJdbcTemplate.update(sql.toString(), params);
             System.out.println("批量删除dict_word记录完成，用户ID: " + userId + ", 删除数量: " + deletedCount);
 
         } catch (Exception e) {

@@ -5,12 +5,13 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import org.hibernate.annotations.Cache;
-import org.hibernate.annotations.CacheConcurrencyStrategy;
+// JDBC 不再支持 Hibernate 缓存注解
+// import org.hibernate.annotations.Cache;
+// import org.hibernate.annotations.CacheConcurrencyStrategy;
 
 @Entity
 @Table(name = "sys_param")
-@Cache(region = "sysParamCache", usage = CacheConcurrencyStrategy.READ_WRITE)
+// @Cache(region = "sysParamCache", usage = CacheConcurrencyStrategy.READ_WRITE)  // JDBC 不支持缓存
 public class SysParam extends Po {
 
     public static final String COW_DUNG_PER_GAME = "CowDungPerGame";

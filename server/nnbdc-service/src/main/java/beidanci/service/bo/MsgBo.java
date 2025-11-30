@@ -4,9 +4,9 @@ import javax.annotation.PostConstruct;
 import java.util.Date;
 import java.util.List;
 
-import org.hibernate.Session;
-import org.hibernate.query.Query;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,7 +26,10 @@ public class MsgBo extends BaseBo<Msg> {
     @Autowired
     UserBo userBo;
 
-        @PostConstruct
+    @Autowired
+    private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
+
+    @PostConstruct
     public void init() {
         setDao(new BaseDao<Msg>() {
         });
@@ -42,37 +45,38 @@ public class MsgBo extends BaseBo<Msg> {
      * @return
      */
     public PagedResults<Msg> getMsgsByPage(int page, int rows, Integer toUserId, MsgType msgType) {
-        // 查询一页数据
-        Session session = getSession();
-        String baseHql = "from Msg m where m.id=(select max(mm.id) from Msg mm where mm.fromUser = m.fromUser" +
-                (toUserId == null ? "" : " and mm.toUser=:toUser") +
-                (msgType == null ? "" : " and mm.msgType=:msgType") +
-                ") order by m.updateTime desc";
-        String hql = "select m " + baseHql;
-        Query<Msg> query = session.createQuery(hql, Msg.class);
+        // 构建 SQL 查询
+        StringBuilder sqlBuilder = new StringBuilder(
+            "SELECT m.* FROM msg m WHERE m.id = (" +
+            "    SELECT MAX(mm.id) FROM msg mm WHERE mm.fromUserId = m.fromUserId"
+        );
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        
         if (toUserId != null) {
-            query.setParameter("toUser", userBo.findById(toUserId));
+            sqlBuilder.append(" AND mm.toUserId = :toUserId");
+            params.addValue("toUserId", toUserId);
         }
         if (msgType != null) {
-            query.setParameter("msgType", msgType);
+            sqlBuilder.append(" AND mm.msgType = :msgType");
+            params.addValue("msgType", msgType.toString());
         }
-        query.setFirstResult((page - 1) * rows);
-        query.setMaxResults(rows);
-        List<Msg> msgs = query.list();
-
-        // 查询数据总条数
-        hql = "select count(*) " + baseHql;
-        Query<Long> query2 = session.createQuery(hql, Long.class);
-        if (toUserId != null) {
-            query2.setParameter("toUser", userBo.findById(toUserId));
-        }
-        if (msgType != null) {
-            query2.setParameter("msgType", msgType);
-        }
-        long total = query2.uniqueResult();
+        sqlBuilder.append(") ORDER BY m.updateTime DESC");
+        
+        String sql = sqlBuilder.toString();
+        
+        // 查询总数
+        String countSql = "SELECT COUNT(*) FROM (" + sql + ") AS count_query";
+        Long total = namedParameterJdbcTemplate.queryForObject(countSql, params, Long.class);
+        
+        // 分页查询
+        String pagedSql = sql + " LIMIT :limit OFFSET :offset";
+        params.addValue("limit", rows);
+        params.addValue("offset", (page - 1) * rows);
+        List<Msg> msgs = namedParameterJdbcTemplate.query(pagedSql, params, 
+            new beidanci.service.dao.EntityRowMapper<>(Msg.class));
 
         PagedResults<Msg> pagedResults = new PagedResults<>();
-        pagedResults.setTotal((int) total);
+        pagedResults.setTotal(total != null ? total.intValue() : 0);
         pagedResults.setRows(msgs);
         return pagedResults;
     }
@@ -86,26 +90,25 @@ public class MsgBo extends BaseBo<Msg> {
      * @return
      */
     public List<Msg> getLastestMsgsBetweenTwoUsers(String user1, String user2, int msgCount) {
-        User user1_ = userBo.findById(user1);
-        User user2_ = userBo.findById(user2);
-
-        Session session = getSession();
-        String baseHql = "from Msg m where (fromUser = :user1 and toUser = :user2) or (fromUser = :user2 and toUser = :user1) order by createTime asc";
-
+        String sql = "SELECT * FROM msg WHERE " +
+                "((fromUserId = :user1Id AND toUserId = :user2Id) OR (fromUserId = :user2Id AND toUserId = :user1Id)) " +
+                "ORDER BY createTime ASC";
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        params.addValue("user1Id", user1);
+        params.addValue("user2Id", user2);
+        
         // 查询数据总条数
-        Query<Long> query2 = session.createQuery("select count(*) " + baseHql, Long.class);
-        query2.setParameter("user1", user1_);
-        query2.setParameter("user2", user2_);
-        int total = query2.uniqueResult().intValue();
-
-        // 查询数据
-        Query<Msg> query = session.createQuery(baseHql, Msg.class);
-        query.setParameter("user1", user1_);
-        query.setParameter("user2", user2_);
-        query.setFirstResult(total >= msgCount ? total - msgCount : 0);
-        query.setMaxResults(msgCount);
-
-        return query.list();
+        String countSql = "SELECT COUNT(*) FROM (" + sql + ") AS count_query";
+        Long total = namedParameterJdbcTemplate.queryForObject(countSql, params, Long.class);
+        int totalInt = total != null ? total.intValue() : 0;
+        
+        // 分页查询
+        String pagedSql = sql + " LIMIT :limit OFFSET :offset";
+        params.addValue("limit", msgCount);
+        params.addValue("offset", totalInt >= msgCount ? totalInt - msgCount : 0);
+        
+        return namedParameterJdbcTemplate.query(pagedSql, params, 
+            new beidanci.service.dao.EntityRowMapper<>(Msg.class));
     }
 
     /**
@@ -125,17 +128,10 @@ public class MsgBo extends BaseBo<Msg> {
      * @return
      */
     public int getUnViewedPersistentMsgCountToUser(String toUserId) {
-        User toUser = userBo.findById(toUserId);
-
-        Session session = getSession();
-        String hql = "select count(*) from Msg m where toUser = :toUser and viewed = false";
-
-        // 查询数据总条数
-        Query<Long> query2 = session.createQuery(hql, Long.class);
-        query2.setParameter("toUser", toUser);
-        int count = query2.uniqueResult().intValue();
-
-        return count;
+        String sql = "SELECT COUNT(*) FROM msg WHERE toUserId = :toUserId AND viewed = false";
+        MapSqlParameterSource params = new MapSqlParameterSource("toUserId", toUserId);
+        Long count = namedParameterJdbcTemplate.queryForObject(sql, params, Long.class);
+        return count != null ? count.intValue() : 0;
     }
 
     /**
@@ -144,17 +140,10 @@ public class MsgBo extends BaseBo<Msg> {
      * @return
      */
     public int getAllPersistentMsgCountToUser(String toUserId) {
-        User toUser = userBo.findById(toUserId);
-
-        Session session = getSession();
-        String hql = "select count(*) from Msg m where toUser = :toUser";
-
-        // 查询数据总条数
-        Query<Long> query2 = session.createQuery(hql, Long.class);
-        query2.setParameter("toUser", toUser);
-        int count = query2.uniqueResult().intValue();
-
-        return count;
+        String sql = "SELECT COUNT(*) FROM msg WHERE toUserId = :toUserId";
+        MapSqlParameterSource params = new MapSqlParameterSource("toUserId", toUserId);
+        Long count = namedParameterJdbcTemplate.queryForObject(sql, params, Long.class);
+        return count != null ? count.intValue() : 0;
     }
 
     public void sendAdvice(String content, String clientType, User fromUser) {
@@ -207,14 +196,11 @@ public class MsgBo extends BaseBo<Msg> {
      * @param msgIds
      */
     public void setMsgsAsViewed(List<String> msgIds, String userId, UserBo userBo) {
-        User user = userBo.findById(userId);
-
-        Session session = getSession();
-        String hql = "update Msg set viewed = 1 where id IN :ids and (toUser=:user or fromUser=:user)";
-        Query<?> query2 = session.createQuery(hql);
-        query2.setParameter("ids", msgIds);
-        query2.setParameter("user", user);
-        query2.executeUpdate();
+        String sql = "UPDATE msg SET viewed = 1 WHERE id IN (:ids) AND (toUserId = :userId OR fromUserId = :userId)";
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        params.addValue("ids", msgIds);
+        params.addValue("userId", userId);
+        namedParameterJdbcTemplate.update(sql, params);
 
         // 向用户推送通知，告知最新的消息数量情况
         SocketService.getInstance().sendPersistentMsgCountToUser(userBo.getUserVoById(userId));
@@ -226,10 +212,9 @@ public class MsgBo extends BaseBo<Msg> {
      * @return 意见建议消息列表
      */
     public List<Msg> getAllAdviceMessages() {
-        Session session = getSession();
-        String hql = "from Msg m where m.msgType = :msgType order by m.createTime desc";
-        Query<Msg> query = session.createQuery(hql, Msg.class);
-        query.setParameter("msgType", MsgType.Advice);
-        return query.list();
+        String sql = "SELECT * FROM msg WHERE msgType = :msgType ORDER BY createTime DESC";
+        MapSqlParameterSource params = new MapSqlParameterSource("msgType", MsgType.Advice.toString());
+        return namedParameterJdbcTemplate.query(sql, params, 
+            new beidanci.service.dao.EntityRowMapper<>(Msg.class));
     }
 }

@@ -7,8 +7,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.hibernate.query.Query;
-
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +31,9 @@ public class UserStudyStepBo extends BaseBo<UserStudyStep> {
         setDao(new BaseDao<UserStudyStep>() {
         });
     }
+
+    @Autowired
+    private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
 
     /**
@@ -84,10 +88,9 @@ public class UserStudyStepBo extends BaseBo<UserStudyStep> {
      * 清除用户的学习步骤
      */
     public void clearUserStudySteps(String userId) {
-        String hql = "delete from UserStudyStep where user.id = :userId";
-        getSession().createQuery(hql)
-                .setParameter("userId", userId)
-                .executeUpdate();
+        String sql = "DELETE FROM user_study_step WHERE userId = :userId";
+        MapSqlParameterSource params = new MapSqlParameterSource("userId", userId);
+        namedParameterJdbcTemplate.update(sql, params);
     }
 
     /**
@@ -198,12 +201,12 @@ public class UserStudyStepBo extends BaseBo<UserStudyStep> {
                 parameters.put("seq", filters.get("seq"));
             }
             
-            Query<?> query = getSession().createNativeQuery(sql.toString());
+            MapSqlParameterSource params = new MapSqlParameterSource();
             for (Map.Entry<String, Object> entry : parameters.entrySet()) {
-                query.setParameter(entry.getKey(), entry.getValue());
+                params.addValue(entry.getKey(), entry.getValue());
             }
             
-            int deletedCount = query.executeUpdate();
+            int deletedCount = namedParameterJdbcTemplate.update(sql.toString(), params);
             System.out.println("批量删除user_study_step记录完成，用户ID: " + userId + ", 删除数量: " + deletedCount);
             
         } catch (Exception e) {

@@ -3,48 +3,46 @@ import javax.annotation.PostConstruct;
 
 import java.util.List;
 
-import org.hibernate.query.Query;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import beidanci.service.dao.BaseDao;
 import beidanci.service.po.UserGame;
-import org.hibernate.Session;
 
 @Service
 @Transactional(rollbackFor = Throwable.class)
 public class UserGameBo extends BaseBo<UserGame> {
-        @PostConstruct
+    @Autowired
+    private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
+
+    @PostConstruct
     public void init() {
         setDao(new BaseDao<UserGame>() {
         });
     }
 
     public List<UserGame> getUserGamesWithTopScore(final int count) {
-        Query<UserGame> query = getSession().createQuery(
-                " from UserGame where user.userName not like 'guest%' and user.userName not like 'guess%' and user.userName not like '游客%'"
-                        + " order by Score desc ", UserGame.class);
-        query.setCacheable(true);
-        query.setFirstResult(0);
-        query.setMaxResults(count);
-        return query.list();
+        String sql = "SELECT ug.* FROM user_game ug " +
+                "INNER JOIN user u ON ug.userId = u.id " +
+                "WHERE u.userName NOT LIKE 'guest%' AND u.userName NOT LIKE 'guess%' AND u.userName NOT LIKE '游客%' " +
+                "ORDER BY ug.Score DESC LIMIT :count";
+        MapSqlParameterSource params = new MapSqlParameterSource("count", count);
+        return namedParameterJdbcTemplate.query(sql, params, 
+            new beidanci.service.dao.EntityRowMapper<>(UserGame.class));
     }
 
     /**
-     * 获取某用户的所有游戏记录。可选新会话，避免在无事务线程中 currentSession 不可用的问题。
+     * 获取某用户的所有游戏记录。JDBC 不需要管理 Session。
      */
     public List<UserGame> getUserGamesOfUser(String userId, boolean openNewSession) {
-        Session session = openNewSession ? openSession() : getSession();
-        try {
-            Query<UserGame> query = session.createQuery(
-                    "from UserGame ug where ug.user.id = :userId", UserGame.class);
-            query.setParameter("userId", userId);
-            return query.list();
-        } finally {
-            if (openNewSession) {
-                session.close();
-            }
-        }
+        // JDBC 不需要管理 Session，openNewSession 参数保留以保持接口兼容性
+        String sql = "SELECT * FROM user_game WHERE userId = :userId";
+        MapSqlParameterSource params = new MapSqlParameterSource("userId", userId);
+        return namedParameterJdbcTemplate.query(sql, params, 
+            new beidanci.service.dao.EntityRowMapper<>(UserGame.class));
     }
 
 }

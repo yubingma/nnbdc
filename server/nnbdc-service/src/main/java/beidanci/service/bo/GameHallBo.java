@@ -6,7 +6,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import org.hibernate.query.Query;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +31,9 @@ public class GameHallBo extends BaseBo<GameHall> {
         });
     }
 
+    @Autowired
+    private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
+
     public GameHallVo getGameHallVoById(String id) {
         GameHall gameHall = findById(id);
         GameHallVo vo = BeanUtils.makeVo(gameHall, GameHallVo.class,
@@ -46,12 +51,12 @@ public class GameHallBo extends BaseBo<GameHall> {
         GameHall gameHall = findById(id);
         List<Dict> dicts = gameHall.getDictGroup().getAllDicts();
         List<String> dictIds = dicts.stream().map(d -> d.getId()).collect(java.util.stream.Collectors.toList());
-        String hql = "from Word w where exists (" +
-                "from DictWord dw where dw.word.id=w.id and dw.dict.id in (:dictIds)" +
-                ")";
-        Query<Word> query = getSession().createQuery(hql, Word.class);
-        query.setParameter("dictIds", dictIds);
-        List<Word> words = query.list();
+        String sql = "SELECT DISTINCT w.* FROM word w " +
+                "INNER JOIN dict_word dw ON dw.wordId = w.id " +
+                "WHERE dw.dictId IN (:dictIds)";
+        MapSqlParameterSource params = new MapSqlParameterSource("dictIds", dictIds);
+        List<Word> words = namedParameterJdbcTemplate.query(sql, params, 
+            new beidanci.service.dao.EntityRowMapper<>(Word.class));
 
         Map<String, WordVo> wordsBySpell = new HashMap<>();
         for (Word word : words) {

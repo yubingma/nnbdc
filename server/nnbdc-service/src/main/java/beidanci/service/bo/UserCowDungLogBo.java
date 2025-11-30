@@ -1,13 +1,13 @@
 package beidanci.service.bo;
 import javax.annotation.PostConstruct;
 
-import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.hibernate.query.Query;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,29 +24,28 @@ public class UserCowDungLogBo extends BaseBo<UserCowDungLog> {
         });
     }
 
+    @Autowired
+    private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
+
     /**
      * 获取用户所有魔法泡泡日志的DTO列表，用于全量同步
      */
     public List<UserCowDungLogDto> getUserCowDungLogDtosOfUser(String userId) {
-        String sql = "select id, userId, delta, cowDung, theTime, reason, createTime, updateTime from user_cow_dung_log where userId = :userId order by createTime";
-        Query<?> query = getSession().createNativeQuery(sql);
-        query.setParameter("userId", userId);
-        List<?> results = query.list();
-
-        List<UserCowDungLogDto> userCowDungLogDtos = new ArrayList<>();
-        for (Object result : results) {
-            Object[] tuple = (Object[]) result;
+        String sql = "SELECT id, userId, delta, cowDung, theTime, reason, createTime, updateTime FROM user_cow_dung_log WHERE userId = :userId ORDER BY createTime";
+        MapSqlParameterSource params = new MapSqlParameterSource("userId", userId);
+        
+        List<UserCowDungLogDto> userCowDungLogDtos = namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> {
             UserCowDungLogDto userCowDungLogDto = new UserCowDungLogDto();
-            userCowDungLogDto.setId((String) tuple[0]);
-            userCowDungLogDto.setUserId((String) tuple[1]);
-            userCowDungLogDto.setDelta((Integer) tuple[2]);
-            userCowDungLogDto.setCowDung((Integer) tuple[3]);
-            userCowDungLogDto.setTheTime((Date) tuple[4]);
-            userCowDungLogDto.setReason((String) tuple[5]);
-            userCowDungLogDto.setCreateTime((Date) tuple[6]);
-            userCowDungLogDto.setUpdateTime((Date) tuple[7]);
-            userCowDungLogDtos.add(userCowDungLogDto);
-        }
+            userCowDungLogDto.setId(rs.getString("id"));
+            userCowDungLogDto.setUserId(rs.getString("userId"));
+            userCowDungLogDto.setDelta(rs.getInt("delta"));
+            userCowDungLogDto.setCowDung(rs.getInt("cowDung"));
+            userCowDungLogDto.setTheTime(rs.getTimestamp("theTime"));
+            userCowDungLogDto.setReason(rs.getString("reason"));
+            userCowDungLogDto.setCreateTime(rs.getTimestamp("createTime"));
+            userCowDungLogDto.setUpdateTime(rs.getTimestamp("updateTime"));
+            return userCowDungLogDto;
+        });
         return userCowDungLogDtos;
     }
 
@@ -86,12 +85,12 @@ public class UserCowDungLogBo extends BaseBo<UserCowDungLog> {
                 parameters.put("reason", filters.get("reason"));
             }
             
-            Query<?> query = getSession().createNativeQuery(sql.toString());
+            MapSqlParameterSource params = new MapSqlParameterSource();
             for (Map.Entry<String, Object> entry : parameters.entrySet()) {
-                query.setParameter(entry.getKey(), entry.getValue());
+                params.addValue(entry.getKey(), entry.getValue());
             }
             
-            int deletedCount = query.executeUpdate();
+            int deletedCount = namedParameterJdbcTemplate.update(sql.toString(), params);
             System.out.println("批量删除user_cow_dung_log记录完成，用户ID: " + userId + ", 删除数量: " + deletedCount);
             
         } catch (Exception e) {

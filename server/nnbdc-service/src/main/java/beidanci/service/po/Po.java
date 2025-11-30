@@ -7,7 +7,8 @@ import javax.persistence.MappedSuperclass;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
-import org.hibernate.annotations.CreationTimestamp;
+// JDBC 不再支持 Hibernate 注解，创建时间需要在代码中手动设置
+// import org.hibernate.annotations.CreationTimestamp;
 
 /**
  * 数据库持久化对象（一般也称为Entity）
@@ -21,7 +22,7 @@ public abstract class Po {
      * 对象创建时间
      */
     @Temporal(TemporalType.TIMESTAMP)
-    @CreationTimestamp
+    // @CreationTimestamp  // JDBC 不再支持，需要在代码中手动设置
     @Column(name = "createTime", nullable = false)
     protected Date createTime;
 

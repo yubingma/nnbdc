@@ -12,10 +12,11 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
-import org.hibernate.annotations.Cache;
-import org.hibernate.annotations.CacheConcurrencyStrategy;
-import org.hibernate.annotations.Fetch;
-import org.hibernate.annotations.FetchMode;
+// JDBC 不再支持 Hibernate 缓存和 Fetch 注解
+// import org.hibernate.annotations.Cache;
+// import org.hibernate.annotations.CacheConcurrencyStrategy;
+// import org.hibernate.annotations.Fetch;
+// import org.hibernate.annotations.FetchMode;
 
 /**
  * 单词的释义
@@ -24,7 +25,7 @@ import org.hibernate.annotations.FetchMode;
  */
 @Entity
 @Table(name = "meaning_item")
-@Cache(region = "wordCache", usage = CacheConcurrencyStrategy.READ_WRITE)
+// @Cache(region = "wordCache", usage = CacheConcurrencyStrategy.READ_WRITE)  // JDBC 不支持缓存
 public class MeaningItem extends UuidPo {
     
     // no Java serialization
@@ -57,16 +58,16 @@ public class MeaningItem extends UuidPo {
      * 近义词
      */
     @OneToMany(cascade = {CascadeType.PERSIST, CascadeType.REMOVE, CascadeType.MERGE}, mappedBy = "meaningItem")
-    @Fetch(FetchMode.SUBSELECT)
-    @Cache(region = "wordCache", usage = CacheConcurrencyStrategy.READ_WRITE)
+    // @Fetch(FetchMode.SUBSELECT)  // JDBC 不支持
+    // @Cache(region = "wordCache", usage = CacheConcurrencyStrategy.READ_WRITE)  // JDBC 不支持缓存
     private List<Synonym> synonyms = new ArrayList<>();
 
     /**
      * 例句
      */
     @OneToMany(cascade = {CascadeType.PERSIST, CascadeType.REMOVE, CascadeType.MERGE}, mappedBy = "meaningItem")
-    @Fetch(FetchMode.SUBSELECT)
-    @Cache(region = "wordCache", usage = CacheConcurrencyStrategy.READ_WRITE)
+    // @Fetch(FetchMode.SUBSELECT)  // JDBC 不支持
+    // @Cache(region = "wordCache", usage = CacheConcurrencyStrategy.READ_WRITE)  // JDBC 不支持缓存
     private List<Sentence> sentences = new ArrayList<>();
 
     @ManyToOne

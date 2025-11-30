@@ -6,9 +6,10 @@ import java.util.List;
 
 import javax.annotation.PostConstruct;
 
-import org.hibernate.query.Query;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +27,9 @@ public class EmailVerificationCodeBo extends BaseBo<EmailVerificationCode> {
 
     @Autowired
     private EmailUtil emailUtil;
+
+    @Autowired
+    private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
     @Value("${sms.code.length:6}")
     private int codeLength;
@@ -61,15 +65,14 @@ public class EmailVerificationCodeBo extends BaseBo<EmailVerificationCode> {
         Date now = new Date();
         Date minSendTime = new Date(now.getTime() - sendIntervalSeconds * 1000L);
         
-        Query<EmailVerificationCode> query = getSession().createQuery(
-            "from EmailVerificationCode where email = :email and type = :type and createTime > :minSendTime order by createTime desc",
-            EmailVerificationCode.class);
-        query.setParameter("email", email);
-        query.setParameter("type", type);
-        query.setParameter("minSendTime", minSendTime);
-        query.setMaxResults(1);
+        String sql = "SELECT * FROM email_verification_code WHERE email = :email AND type = :type AND createTime > :minSendTime ORDER BY createTime DESC LIMIT 1";
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        params.addValue("email", email);
+        params.addValue("type", type.toString());
+        params.addValue("minSendTime", minSendTime);
         
-        List<EmailVerificationCode> recentCodes = query.getResultList();
+        List<EmailVerificationCode> recentCodes = namedParameterJdbcTemplate.query(sql, params, 
+            new beidanci.service.dao.EntityRowMapper<>(EmailVerificationCode.class));
         if (!recentCodes.isEmpty()) {
             return "发送过于频繁，请稍后再试";
         }
@@ -105,15 +108,14 @@ public class EmailVerificationCodeBo extends BaseBo<EmailVerificationCode> {
      * @return 验证结果，"OK"表示成功，其他为错误信息
      */
     public String verifyCode(String email, String code, EmailCodeType type) {
-        Query<EmailVerificationCode> query = getSession().createQuery(
-            "from EmailVerificationCode where email = :email and code = :code and type = :type order by createTime desc",
-            EmailVerificationCode.class);
-        query.setParameter("email", email);
-        query.setParameter("code", code);
-        query.setParameter("type", type);
-        query.setMaxResults(1);
+        String sql = "SELECT * FROM email_verification_code WHERE email = :email AND code = :code AND type = :type ORDER BY createTime DESC LIMIT 1";
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        params.addValue("email", email);
+        params.addValue("code", code);
+        params.addValue("type", type.toString());
         
-        List<EmailVerificationCode> codes = query.getResultList();
+        List<EmailVerificationCode> codes = namedParameterJdbcTemplate.query(sql, params, 
+            new beidanci.service.dao.EntityRowMapper<>(EmailVerificationCode.class));
         if (codes.isEmpty()) {
             return "验证码错误";
         }

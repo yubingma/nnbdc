@@ -5,7 +5,9 @@ import java.util.List;
 
 import javax.annotation.PostConstruct;
 
-import org.hibernate.query.Query;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,7 +18,10 @@ import beidanci.service.po.MeaningItem;
 @Service
 @Transactional(rollbackFor = Throwable.class)
 public class MeaningItemBo extends BaseBo<MeaningItem> {
-        @PostConstruct
+    @Autowired
+    private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
+
+    @PostConstruct
     public void init() {
         setDao(new BaseDao<MeaningItem>() {
         });
@@ -25,26 +30,23 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
     /** 获取指定词书的所有单词释义项，通用词典ID为'0' */
     public List<MeaningItemDto> getMeaningItemsOfDict(String dictId) {
         // 通用词典现在是数据库中的实际记录，统一查询
-        String sql = "select id, ciXing, meaning, wordId, dictId, popularity, createTime, updateTime from meaning_item where dictId = :dictId";
-        Query<?> query = getSession().createNativeQuery(sql);
-        List<?> results = query.setParameter("dictId", dictId).list();
-
-        List<MeaningItemDto> meaningItemDtos = new ArrayList<>();
-        for (Object result : results) {
-            Object[] tuple = (Object[]) result;
+        String sql = "SELECT id, ciXing, meaning, wordId, dictId, popularity, createTime, updateTime FROM meaning_item WHERE dictId = :dictId";
+        MapSqlParameterSource params = new MapSqlParameterSource("dictId", dictId);
+        
+        return namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> {
             MeaningItemDto meaningItemDto = new MeaningItemDto();
-            meaningItemDto.setId((String) tuple[0]);
-            meaningItemDto.setCiXing((String) tuple[1]);
-            meaningItemDto.setMeaning((String) tuple[2]);
-            meaningItemDto.setWordId((String) tuple[3]);
-            meaningItemDto.setDictId((String) tuple[4]);
+            meaningItemDto.setId(rs.getString("id"));
+            meaningItemDto.setCiXing(rs.getString("ciXing"));
+            meaningItemDto.setMeaning(rs.getString("meaning"));
+            meaningItemDto.setWordId(rs.getString("wordId"));
+            meaningItemDto.setDictId(rs.getString("dictId"));
             // 处理 popularity 可能为 NULL 的情况，默认值为 999
-            meaningItemDto.setPopularity(tuple[5] != null ? (Integer) tuple[5] : 999);
-            meaningItemDto.setCreateTime((Timestamp) tuple[6]);
-            meaningItemDto.setUpdateTime((Timestamp) tuple[7]);
-            meaningItemDtos.add(meaningItemDto);
-        }
-        return meaningItemDtos;
+            Integer popularity = rs.getObject("popularity", Integer.class);
+            meaningItemDto.setPopularity(popularity != null ? popularity : 999);
+            meaningItemDto.setCreateTime(rs.getTimestamp("createTime"));
+            meaningItemDto.setUpdateTime(rs.getTimestamp("updateTime"));
+            return meaningItemDto;
+        });
     }
 
     /**
@@ -56,11 +58,28 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
         }
 
         // 使用原生SQL一次性取回所有候选，再在内存中按 word 聚合取第一条
-        String sql = "select id, ciXing, meaning, wordId, dictId, popularity, createTime, updateTime from meaning_item " +
-                     "where dictId is not null and wordId in (:ids) order by updateTime desc";
-        Query<?> query = getSession().createNativeQuery(sql);
-        query.setParameterList("ids", wordIds);
-        List<?> results = query.list();
+        String sql = "SELECT id, ciXing, meaning, wordId, dictId, popularity, createTime, updateTime FROM meaning_item " +
+                     "WHERE dictId IS NOT NULL AND wordId IN (:ids) ORDER BY updateTime DESC";
+        MapSqlParameterSource params = new MapSqlParameterSource("ids", wordIds);
+        List<MeaningItemDto> allResults = namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> {
+            MeaningItemDto dto = new MeaningItemDto();
+            dto.setId(rs.getString("id"));
+            dto.setCiXing(rs.getString("ciXing"));
+            dto.setMeaning(rs.getString("meaning"));
+            dto.setWordId(rs.getString("wordId"));
+            dto.setDictId(rs.getString("dictId"));
+            Integer popularity = rs.getObject("popularity", Integer.class);
+            dto.setPopularity(popularity != null ? popularity : 999);
+            dto.setCreateTime(rs.getTimestamp("createTime"));
+            dto.setUpdateTime(rs.getTimestamp("updateTime"));
+            return dto;
+        });
+        
+        // 转换为 Object[] 格式以保持原有逻辑
+        List<?> results = allResults.stream().map(dto -> new Object[]{
+            dto.getId(), dto.getCiXing(), dto.getMeaning(), dto.getWordId(), 
+            dto.getDictId(), dto.getPopularity(), dto.getCreateTime(), dto.getUpdateTime()
+        }).collect(java.util.stream.Collectors.toList());
 
         List<MeaningItemDto> picked = new ArrayList<>();
         java.util.HashSet<String> seen = new java.util.HashSet<>();
@@ -102,8 +121,7 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
                 "FROM meaning_item mi " +
                 "LEFT JOIN meaning_item cm ON cm.wordId = mi.wordId AND cm.dictId = '0' " +
                 "WHERE mi.dictId != '0' AND cm.id IS NULL";
-        Query<?> query = getSession().createNativeQuery(sql);
-        return query.executeUpdate();
+        return namedParameterJdbcTemplate.getJdbcTemplate().update(sql);
     }
 
     // ============================================
@@ -114,18 +132,15 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
      * 查找缺少释义项的单词
      */
     public List<String> findWordsWithoutMeanings(String dictId) {
-        String sql = """
-            SELECT dw.wordId
-            FROM dict_word dw
-            WHERE dw.dictId = :dictId
-            AND dw.wordId NOT IN (
-                SELECT mi.wordId
-                FROM meaning_item mi
-                WHERE mi.dictId = :dictId
-            )
-            """;
-        Query<String> query = getSession().createNativeQuery(sql, String.class);
-        query.setParameter("dictId", dictId);
-        return query.list();
+        String sql = "SELECT dw.wordId " +
+                "FROM dict_word dw " +
+                "WHERE dw.dictId = :dictId " +
+                "AND dw.wordId NOT IN (" +
+                "    SELECT mi.wordId " +
+                "    FROM meaning_item mi " +
+                "    WHERE mi.dictId = :dictId" +
+                ")";
+        MapSqlParameterSource params = new MapSqlParameterSource("dictId", dictId);
+        return namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> rs.getString("wordId"));
     }
 }

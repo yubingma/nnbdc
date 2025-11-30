@@ -1,7 +1,6 @@
 package beidanci.service.po;
 
 import java.text.ParseException;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
@@ -15,15 +14,9 @@ import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.OrderBy;
-import javax.persistence.Query;
 import javax.persistence.Table;
 
-import org.hibernate.Session;
-import org.hibernate.SessionFactory;
-
 import beidanci.api.model.StudyGroupSummary;
-import beidanci.service.Global;
-import beidanci.service.util.Util;
 
 @Entity
 @Table(name = "study_group")
@@ -154,87 +147,13 @@ public class StudyGroup extends UuidPo  {
 
     /**
      * 判断小组是否是懒人小组。懒人小组是指：创立时间大于10天，且打卡率小于80%
+     * 注意：此方法需要 StudyGroupBo.getGroupSummary() 来计算打卡率
      *
      * @return
      */
-    public boolean isBadGroup() throws ParseException {
+    public boolean isBadGroup(StudyGroupSummary summary) throws ParseException {
         return (new Date().getTime() - getCreateTime().getTime()) > 10 * 24 * 60 * 60 * 1000
-                && getGroupSummary().getDakaRatio() < 0.8;
-    }
-
-    @SuppressWarnings("unchecked")
-    private StudyGroupSnapshotDaily getSnapshotOfDay(String groupId, Calendar calendar, Session dbSession)
-            throws ParseException {
-        Query query = dbSession.createQuery(" from StudyGroupSnapshotDaily where groupId=:groupId and theDate=:day");
-        query.setParameter("groupId", groupId);
-        query.setParameter("day", Util.removeTimePart(calendar.getTime()));
-        List<StudyGroupSnapshotDaily> snapshot = query.getResultList();
-        return !snapshot.isEmpty() ? snapshot.get(0) : null;
-    }
-
-    public StudyGroupSummary getGroupSummary() throws ParseException {
-        StudyGroupSummary summary = new StudyGroupSummary();
-
-        // 小组人数
-        int memberCount = users.size();
-        summary.setMemberCount(memberCount);
-
-        // 小组游戏积分, 打卡分和打卡率
-        int gameScore = 0;
-        int dakaScore = 0;
-        int dakaDays = 0;
-        int existDays = 0;
-        for (User user : users) {
-            gameScore += user.getGameScore();
-            dakaScore += user.getDakaScore();
-            dakaDays += user.getDakaDayCount();
-            existDays += user.getExistDays();
-        }
-        summary.setGameScore(gameScore);
-        summary.setDakaScore(dakaScore);
-        double dakaRatio = (dakaDays + 0.0) / existDays;
-        summary.setDakaRatio(dakaRatio);
-
-        // 取小组最近快照(为了获取小组排名，计算小组排名是个耗时操作，每天夜间计算，所以取到的是前一天的排名)
-        SessionFactory sessionFactory = Global.getSessionFactory();
-        try (Session dbSession = sessionFactory.openSession()) {
-            Calendar calendar = Calendar.getInstance();// 当前时间
-            calendar.add(Calendar.DATE, -1); // 得到昨天
-            StudyGroupSnapshotDaily snapshot = getSnapshotOfDay(id, calendar, dbSession);
-
-            if (snapshot != null) {
-                summary.setGroupOrder(snapshot.getOrderNo());
-            } else {// 无快照，说明是新组
-                summary.setGroupOrder(1000000);
-            }
-
-            // 计算一日内排名升降
-            calendar = Calendar.getInstance(); // 当前时间
-            calendar.add(Calendar.DATE, -2); // 得到前天
-            StudyGroupSnapshotDaily snapshot2 = getSnapshotOfDay(id, calendar, dbSession);
-            if (snapshot2 != null && snapshot != null) {
-                summary.setDayOrderRise(snapshot.getOrderNo() - snapshot2.getOrderNo());
-            }
-
-            // 获取一周前的快照
-            calendar = Calendar.getInstance();// 当前时间
-            calendar.add(Calendar.DATE, -8); // 得到上周
-            StudyGroupSnapshotDaily snapshotAWeekAgo = getSnapshotOfDay(id, calendar, dbSession);
-            if (snapshot != null && snapshotAWeekAgo != null) {
-                summary.setWeekOrderRise(snapshot.getOrderNo() - snapshotAWeekAgo.getOrderNo());
-            }
-
-            // 获取一月前的快照
-            calendar = Calendar.getInstance();// 当前时间
-            calendar.add(Calendar.DATE, -31); // 得到上个月
-            StudyGroupSnapshotDaily snapshotAMonthAgo = getSnapshotOfDay(id, calendar, dbSession);
-            if (snapshot != null && snapshotAMonthAgo != null) {
-                summary.setWeekOrderRise(snapshot.getOrderNo() - snapshotAMonthAgo.getOrderNo());
-            }
-
-        }
-
-        return summary;
+                && summary.getDakaRatio() < 0.8;
     }
 
 

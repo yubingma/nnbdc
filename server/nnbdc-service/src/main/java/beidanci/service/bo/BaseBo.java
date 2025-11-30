@@ -6,8 +6,7 @@ import java.util.List;
 import javax.annotation.Resource;
 
 import org.apache.commons.lang3.tuple.Pair;
-import org.hibernate.Session;
-import org.hibernate.SessionFactory;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
 import beidanci.api.model.PagedResults;
@@ -16,13 +15,17 @@ import beidanci.service.dao.SortRule;
 import beidanci.service.po.Po;
 
 public abstract class BaseBo<E extends Po> {
-    @Resource(name = "sessionFactory")
-    protected SessionFactory sessionFactory;
+    @Resource
+    protected JdbcTemplate jdbcTemplate;
 
     protected BaseDao<E> baseDao;
 
     protected void setDao(BaseDao<E> dao) {
         this.baseDao = dao;
+        // 设置 JdbcTemplate 到 DAO
+        if (dao != null && jdbcTemplate != null) {
+            dao.setJdbcTemplate(jdbcTemplate);
+        }
     }
 
     public BaseDao<E> getDao() {
@@ -40,26 +43,26 @@ public abstract class BaseBo<E extends Po> {
      * @param order     升序还是降序， 可取值 asc 或 desc
      */
     public PagedResults<E> pagedQuery(E preciseEntity, int pageNo, int pageSize, String sortField, String order) {
-        return baseDao.pagedQuery(getSession(), preciseEntity, pageNo, pageSize, sortField, order);
+        return baseDao.pagedQuery(jdbcTemplate, preciseEntity, pageNo, pageSize, sortField, order);
     }
 
     public PagedResults<E> pagedQuery2(E preciseEntity, int fromIndex, int pageSize, List<SortRule> sortRules) {
-        return baseDao.pagedQuery2(getSession(), preciseEntity, fromIndex, pageSize, sortRules);
+        return baseDao.pagedQuery2(jdbcTemplate, preciseEntity, fromIndex, pageSize, sortRules);
     }
 
     @SafeVarargs
-    public final PagedResults<E> pagedQuery(String hql, int pageNo, int pageSize, Pair<String, Object>... parameters) {
-        return baseDao.pagedQuery(getSession(), hql, pageNo, pageSize, parameters);
+    public final PagedResults<E> pagedQuery(String sql, int pageNo, int pageSize, Pair<String, Object>... parameters) {
+        return baseDao.pagedQuery(jdbcTemplate, sql, pageNo, pageSize, parameters);
     }
 
     @SafeVarargs
-    public final E queryUnique(String hql, Pair<String, Object>... parameters) {
-        return baseDao.queryUnique(getSession(), hql, parameters);
+    public final E queryUnique(String sql, Pair<String, Object>... parameters) {
+        return baseDao.queryUnique(jdbcTemplate, sql, parameters);
     }
 
     @SafeVarargs
-    public final PagedResults<E> pagedQuery2(String hql, int fromIndex, int pageSize, Pair<String, Object>... parameters) {
-        return baseDao.pagedQuery2(getSession(), hql, fromIndex, pageSize, parameters);
+    public final PagedResults<E> pagedQuery2(String sql, int fromIndex, int pageSize, Pair<String, Object>... parameters) {
+        return baseDao.pagedQuery2(jdbcTemplate, sql, fromIndex, pageSize, parameters);
     }
 
     public List<E> queryAll(E preciseEntity, boolean newSession) {
@@ -67,14 +70,8 @@ public abstract class BaseBo<E extends Po> {
     }
 
     public List<E> queryAll(E preciseEntity, String sortField, String order, boolean newSession) {
-        Session session = newSession ? openSession() : getSession();
-        try {
-            return baseDao.queryAll(session, preciseEntity, sortField, order);
-        } finally {
-            if (newSession) {
-                session.close();
-            }
-        }
+        // JDBC 不需要管理 Session，直接查询
+        return baseDao.queryAll(jdbcTemplate, preciseEntity, sortField, order);
     }
 
     public E queryUnique(E preciseEntity) {
@@ -92,28 +89,30 @@ public abstract class BaseBo<E extends Po> {
      */
     @Transactional
     public void updateEntity(E entity) throws IllegalArgumentException, IllegalAccessException {
-        baseDao.updateEntity(getSession(), entity, false, true);
+        baseDao.updateEntity(jdbcTemplate, entity, false, true);
     }
 
     @Transactional
     public void updateEntity(E entity, boolean updateUpdateTime) throws IllegalAccessException {
-        baseDao.updateEntity(getSession(), entity, false, updateUpdateTime);
+        baseDao.updateEntity(jdbcTemplate, entity, false, updateUpdateTime);
     }
 
     @Transactional
     public void deleteEntity(E entity) {
-        baseDao.deleteEntity(getSession(), entity);
+        baseDao.deleteEntity(jdbcTemplate, entity);
     }
 
     @Transactional
     public void deleteById(Serializable id) {
         E entity = findById(id, false);
-        deleteEntity(entity);
+        if (entity != null) {
+            deleteEntity(entity);
+        }
     }
 
     @Transactional
     public void createEntity(E entity) {
-        baseDao.createEntity(getSession(), entity);
+        baseDao.createEntity(jdbcTemplate, entity);
     }
 
     @Transactional(readOnly = true)
@@ -122,29 +121,14 @@ public abstract class BaseBo<E extends Po> {
     }
 
     public E findById(Serializable id, boolean newSession) {
-        Session session = newSession ? openSession() : getSession();
-        try {
-            return baseDao.getEntityById(session, id);
-        } finally {
-            if (newSession) {
-                session.close();
-            }
-        }
-    }
-
-    public Session getSession() {
-        return sessionFactory.getCurrentSession();
-    }
-
-    public Session openSession() {
-        return sessionFactory.openSession();
+        // JDBC 不需要管理 Session，直接查询
+        return baseDao.getEntityById(jdbcTemplate, id);
     }
 
     /**
-     * 从session缓存中清除指定对象
+     * JDBC 不需要 evict 操作，此方法保留以保持接口兼容性
      */
     public void evict(E entity) {
-        Session session = getSession();
-        session.evict(entity);
+        // JDBC 不需要管理 Session 缓存，此方法为空实现
     }
 }

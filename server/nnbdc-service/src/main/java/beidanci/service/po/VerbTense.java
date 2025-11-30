@@ -8,8 +8,9 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
-import org.hibernate.annotations.Cache;
-import org.hibernate.annotations.CacheConcurrencyStrategy;
+// JDBC 不再支持 Hibernate 缓存注解
+// import org.hibernate.annotations.Cache;
+// import org.hibernate.annotations.CacheConcurrencyStrategy;
 
 import beidanci.api.model.TenseType;
 
@@ -20,7 +21,7 @@ import beidanci.api.model.TenseType;
  */
 @Entity
 @Table(name = "verb_tense")
-@Cache(region = "wordCache", usage = CacheConcurrencyStrategy.READ_WRITE)
+// @Cache(region = "wordCache", usage = CacheConcurrencyStrategy.READ_WRITE)  // JDBC 不支持缓存
 public class VerbTense extends UuidPo {
 
 

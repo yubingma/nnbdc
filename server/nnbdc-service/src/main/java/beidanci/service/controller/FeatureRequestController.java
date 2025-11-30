@@ -133,6 +133,8 @@ public class FeatureRequestController {
             return Result.success(null);
         } catch (IllegalArgumentException e) {
             return Result.fail("无效的状态值");
+        } catch (IllegalAccessException e) {
+            return Result.fail("更新失败: " + e.getMessage());
         }
     }
 

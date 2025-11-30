@@ -6,7 +6,9 @@ import beidanci.service.po.SysDbLog;
 import beidanci.service.po.SysDbVersion;
 import beidanci.service.util.JsonUtils;
 import beidanci.service.util.Util;
-import org.hibernate.query.Query;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +25,8 @@ import java.util.stream.Collectors;
 @Service
 @Transactional(rollbackFor = Throwable.class)
 public class SysDbLogBo extends BaseBo<SysDbLog> {
+    @Autowired
+    private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
     @PostConstruct
     public void init() {
@@ -65,10 +69,10 @@ public class SysDbLogBo extends BaseBo<SysDbLog> {
      * @return 当前版本号，若不存在则返回0
      */
     public int getSysDbVersion() {
-        String hql = "FROM SysDbVersion WHERE id = 'singleton'";
-        Query<SysDbVersion> query = getSession().createQuery(hql, SysDbVersion.class);
-        SysDbVersion version = query.uniqueResult();
-        return version != null ? version.getVersion() : 0;
+        String sql = "SELECT * FROM sys_db_version WHERE id = 'singleton'";
+        List<SysDbVersion> versions = namedParameterJdbcTemplate.query(sql, 
+            new beidanci.service.dao.EntityRowMapper<>(SysDbVersion.class));
+        return versions.isEmpty() ? 0 : versions.get(0).getVersion();
     }
 
     /**
@@ -77,20 +81,24 @@ public class SysDbLogBo extends BaseBo<SysDbLog> {
      * @param newVersion 新版本号
      */
     private void incrementSysDbVersion(int newVersion) {
-        String hql = "FROM SysDbVersion WHERE id = 'singleton'";
-        Query<SysDbVersion> query = getSession().createQuery(hql, SysDbVersion.class);
-        SysDbVersion version = query.uniqueResult();
+        String sql = "SELECT * FROM sys_db_version WHERE id = 'singleton'";
+        List<SysDbVersion> versions = namedParameterJdbcTemplate.query(sql, 
+            new beidanci.service.dao.EntityRowMapper<>(SysDbVersion.class));
 
-        if (version == null) {
+        if (versions.isEmpty()) {
             // 首次创建版本记录
-            version = new SysDbVersion("singleton", newVersion);
-            version.setCreateTime(new Date());
-            getSession().save(version);
+            String insertSql = "INSERT INTO sys_db_version (id, version, createTime) VALUES ('singleton', :version, :createTime)";
+            MapSqlParameterSource params = new MapSqlParameterSource();
+            params.addValue("version", newVersion);
+            params.addValue("createTime", new Date());
+            namedParameterJdbcTemplate.update(insertSql, params);
         } else {
             // 更新版本号
-            version.setVersion(newVersion);
-            version.setUpdateTime(new Date());
-            getSession().update(version);
+            String updateSql = "UPDATE sys_db_version SET version = :version, updateTime = :updateTime WHERE id = 'singleton'";
+            MapSqlParameterSource params = new MapSqlParameterSource();
+            params.addValue("version", newVersion);
+            params.addValue("updateTime", new Date());
+            namedParameterJdbcTemplate.update(updateSql, params);
         }
     }
 
@@ -108,11 +116,10 @@ public class SysDbLogBo extends BaseBo<SysDbLog> {
             return generateFullSysDbLogs(currentVersion);
         } else {
             // 增量同步
-            String hql = "FROM SysDbLog WHERE version > :fromVersion ORDER BY version ASC";
-            Query<SysDbLog> query = getSession().createQuery(hql, SysDbLog.class);
-            query.setParameter("fromVersion", fromVersion);
-            
-            List<SysDbLog> logs = query.list();
+            String sql = "SELECT * FROM sys_db_log WHERE version > :fromVersion ORDER BY version ASC";
+            MapSqlParameterSource params = new MapSqlParameterSource("fromVersion", fromVersion);
+            List<SysDbLog> logs = namedParameterJdbcTemplate.query(sql, params, 
+                new beidanci.service.dao.EntityRowMapper<>(SysDbLog.class));
             return logs.stream().map(this::toDto).collect(Collectors.toList());
         }
     }
@@ -121,10 +128,9 @@ public class SysDbLogBo extends BaseBo<SysDbLog> {
      * 检查是否存在指定版本的日志
      */
     private boolean hasVersionLogs(int fromVersion) {
-        String hql = "SELECT COUNT(*) FROM SysDbLog WHERE version > :fromVersion";
-        Query<Long> query = getSession().createQuery(hql, Long.class);
-        query.setParameter("fromVersion", fromVersion);
-        Long count = query.uniqueResult();
+        String sql = "SELECT COUNT(*) FROM sys_db_log WHERE version > :fromVersion";
+        MapSqlParameterSource params = new MapSqlParameterSource("fromVersion", fromVersion);
+        Long count = namedParameterJdbcTemplate.queryForObject(sql, params, Long.class);
         return count != null && count > 0;
     }
     
@@ -156,8 +162,18 @@ public class SysDbLogBo extends BaseBo<SysDbLog> {
     private List<SysDbLogDto> generateLevelLogs(int version) {
         // 动态生成Level的INSERT日志
         String sql = "SELECT id, level, name, figure, minScore, maxScore, style, createTime, updateTime FROM level";
-        Query<?> query = getSession().createNativeQuery(sql);
-        List<?> results = query.list();
+        List<Object[]> results = namedParameterJdbcTemplate.getJdbcTemplate().query(sql, (rs, rowNum) -> 
+            new Object[]{
+                rs.getString("id"),
+                rs.getObject("level"),
+                rs.getString("name"),
+                rs.getObject("figure"),
+                rs.getObject("minScore"),
+                rs.getObject("maxScore"),
+                rs.getString("style"),
+                rs.getTimestamp("createTime"),
+                rs.getTimestamp("updateTime")
+            });
         
         List<SysDbLogDto> logs = new ArrayList<>();
         for (Object result : results) {
@@ -189,8 +205,13 @@ public class SysDbLogBo extends BaseBo<SysDbLog> {
     
     private List<SysDbLogDto> generateDictGroupLogs(int version) {
         String sql = "SELECT id, name, parentId, displayIndex FROM dict_group";
-        Query<?> query = getSession().createNativeQuery(sql);
-        List<?> results = query.list();
+        List<Object[]> results = namedParameterJdbcTemplate.getJdbcTemplate().query(sql, (rs, rowNum) -> 
+            new Object[]{
+                rs.getString("id"),
+                rs.getString("name"),
+                rs.getString("parentId"),
+                rs.getObject("displayIndex")
+            });
         
         List<SysDbLogDto> logs = new ArrayList<>();
         for (Object result : results) {
@@ -215,8 +236,11 @@ public class SysDbLogBo extends BaseBo<SysDbLog> {
     
     private List<SysDbLogDto> generateGroupAndDictLinkLogs(int version) {
         String sql = "SELECT groupId, dictId FROM group_and_dict_link";
-        Query<?> query = getSession().createNativeQuery(sql);
-        List<?> results = query.list();
+        List<Object[]> results = namedParameterJdbcTemplate.getJdbcTemplate().query(sql, (rs, rowNum) -> 
+            new Object[]{
+                rs.getString("groupId"),
+                rs.getString("dictId")
+            });
         
         List<SysDbLogDto> logs = new ArrayList<>();
         for (Object result : results) {
@@ -240,8 +264,19 @@ public class SysDbLogBo extends BaseBo<SysDbLog> {
     private List<SysDbLogDto> generateDictLogs(int version) {
         // 只生成系统词典的日志
         String sql = "SELECT id, name, ownerId, isShared, isReady, visible, wordCount, popularityLimit, createTime, updateTime FROM dict WHERE ownerId='15118'";
-        Query<?> query = getSession().createNativeQuery(sql);
-        List<?> results = query.list();
+        List<Object[]> results = namedParameterJdbcTemplate.getJdbcTemplate().query(sql, (rs, rowNum) -> 
+            new Object[]{
+                rs.getString("id"),
+                rs.getString("name"),
+                rs.getString("ownerId"),
+                rs.getObject("isShared"),
+                rs.getObject("isReady"),
+                rs.getObject("visible"),
+                rs.getObject("wordCount"),
+                rs.getObject("popularityLimit"),
+                rs.getTimestamp("createTime"),
+                rs.getTimestamp("updateTime")
+            });
         
         // 用于格式化日期为ISO-8601格式
         java.text.SimpleDateFormat isoFormat = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
@@ -302,11 +337,9 @@ public class SysDbLogBo extends BaseBo<SysDbLog> {
      */
     public int cleanOldLogs() {
         Date thirtyDaysAgo = new Date(System.currentTimeMillis() - 30L * 24 * 60 * 60 * 1000);
-        String hql = "DELETE FROM SysDbLog WHERE createTime < :date";
-        Query<?> query = getSession().createQuery(hql);
-        query.setParameter("date", thirtyDaysAgo);
-        int deletedCount = query.executeUpdate();
-        return deletedCount;
+        String sql = "DELETE FROM sys_db_log WHERE createTime < :date";
+        MapSqlParameterSource params = new MapSqlParameterSource("date", thirtyDaysAgo);
+        return namedParameterJdbcTemplate.update(sql, params);
     }
 }
 

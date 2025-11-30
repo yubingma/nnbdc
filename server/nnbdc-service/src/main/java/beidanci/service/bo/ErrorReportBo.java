@@ -32,7 +32,7 @@ public class ErrorReportBo extends BaseBo<ErrorReport> {
     public List<ErrorReport> findByWordSpell(String spell) {
         ErrorReport exam = new ErrorReport();
         exam.setWord(spell);
-        return baseDao.queryAll(getSession(), exam, null, null);
+        return queryAll(exam, false);
     }
 
     public Result<String> saveErrorReport(String spell, String content, String userId, String clientType) {

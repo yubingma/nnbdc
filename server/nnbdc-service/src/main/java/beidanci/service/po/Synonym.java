@@ -1,8 +1,9 @@
 package beidanci.service.po;
 
 import beidanci.service.Global;
-import org.hibernate.annotations.Cache;
-import org.hibernate.annotations.CacheConcurrencyStrategy;
+// JDBC 不再支持 Hibernate 缓存注解
+// import org.hibernate.annotations.Cache;
+// import org.hibernate.annotations.CacheConcurrencyStrategy;
 
 import javax.persistence.*;
 
@@ -13,7 +14,7 @@ import javax.persistence.*;
  */
 @Entity
 @Table(name = "synonym")
-@Cache(region = "wordCache", usage = CacheConcurrencyStrategy.READ_WRITE)
+// @Cache(region = "wordCache", usage = CacheConcurrencyStrategy.READ_WRITE)  // JDBC 不支持缓存
 public class Synonym extends Po {
     /**
      *

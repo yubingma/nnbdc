@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import org.hibernate.Session;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -121,6 +121,9 @@ public class SyncBo {
     @Autowired
     private PlatformTransactionManager transactionManager;
 
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
     /**
      * 同步用户客户端数据库到服务端
      *
@@ -151,7 +154,6 @@ public class SyncBo {
 
             // 使用已经加锁查询的版本号，避免重复查询数据库
             final int lastVersion = validationResult.getVersion();
-            Session session = userBo.getSession();
 
             // 执行数据同步
             for (UserDbLogDto log : logs) {
@@ -186,7 +188,7 @@ public class SyncBo {
             }
 
             // 生词本顺序校验和后续处理
-            validateAndFinalizeSync(userId, logs, lastVersion, session);
+            validateAndFinalizeSync(userId, logs, lastVersion);
 
             transactionManager.commit(status);
             return lastVersion + 1;
@@ -233,13 +235,12 @@ public class SyncBo {
 
         // 使用 FOR UPDATE 锁定版本号记录，防止并发修改
         // 注意：这个锁会一直持有到事务提交或回滚
-        Session session = userBo.getSession();
         
         // 先确保版本记录存在（对于新用户可能不存在）
-        userDbVersionDao.ensureUserDbVersionExists(session, userId);
+        userDbVersionDao.ensureUserDbVersionExists(jdbcTemplate, userId);
         
         // 使用带锁的查询方法，锁定该用户的版本号行
-        final int lastVersion = userDbVersionDao.getUserDbVersionWithLock(session, userId);
+        final int lastVersion = userDbVersionDao.getUserDbVersionWithLock(jdbcTemplate, userId);
         
         if (expectedServerDbVersion != lastVersion) {
             throw new DbVersionNotMatchException(String.format("数据库版本不匹配，期望版本[%d]，当前版本[%d]，本次同步失败（请重试）",
@@ -683,7 +684,6 @@ public class SyncBo {
      */
     private void deleteDictWordSafely(DictWord dictWord) {
         try {
-            userBo.getSession().evict(dictWord);
             DictWord toDelete = dictWordBo.findById(dictWord.getId());
             if (toDelete != null) {
                 dictWordBo.deleteEntity(toDelete);
@@ -691,11 +691,10 @@ public class SyncBo {
         } catch (Exception deleteEx) {
             logger.warn("删除dict_word时出现异常，尝试使用原生SQL删除: {}", deleteEx.getMessage());
             try {
-                String deleteSql = "DELETE FROM dict_word WHERE dictId = :dictId AND wordId = :wordId";
-                javax.persistence.Query query = userBo.getSession().createNativeQuery(deleteSql);
-                query.setParameter("dictId", dictWord.getId().getDictId());
-                query.setParameter("wordId", dictWord.getId().getWordId());
-                int deletedRows = query.executeUpdate();
+                String deleteSql = "DELETE FROM dict_word WHERE dictId = ? AND wordId = ?";
+                int deletedRows = jdbcTemplate.update(deleteSql, 
+                    dictWord.getId().getDictId(), 
+                    dictWord.getId().getWordId());
                 if (deletedRows > 0) {
                     logger.info("使用原生SQL成功删除dict_word: dictId={}, wordId={}",
                             dictWord.getId().getDictId(), dictWord.getId().getWordId());
@@ -770,7 +769,7 @@ public class SyncBo {
      * 
      * 重要改进：使用 CAS (Compare-And-Swap) 来更新版本号，确保原子性
      */
-    private void validateAndFinalizeSync(String userId, List<UserDbLogDto> logs, int lastVersion, Session session)
+    private void validateAndFinalizeSync(String userId, List<UserDbLogDto> logs, int lastVersion)
             throws IllegalAccessException, RawWordDataErrorException, DbVersionNotMatchException {
         // 生词本顺序校验
         try {
@@ -791,7 +790,7 @@ public class SyncBo {
 
         // 使用 CAS 原子更新数据库版本
         final int newVersion = lastVersion + 1;
-        boolean updateSuccess = userDbVersionDao.updateUserDbVersionCAS(session, userId, lastVersion, newVersion);
+        boolean updateSuccess = userDbVersionDao.updateUserDbVersionCAS(jdbcTemplate, userId, lastVersion, newVersion);
         
         if (!updateSuccess) {
             // CAS 更新失败，说明版本号在同步过程中被其他事务修改了

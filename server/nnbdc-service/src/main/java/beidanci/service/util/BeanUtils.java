@@ -19,8 +19,9 @@ import java.util.stream.Collectors;
 
 import javax.persistence.Id;
 
-import org.hibernate.Hibernate;
-import org.hibernate.proxy.HibernateProxy;
+// JDBC 不再支持 Hibernate 代理
+// import org.hibernate.Hibernate;
+// import org.hibernate.proxy.HibernateProxy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.StringUtils;
@@ -311,20 +312,21 @@ public class BeanUtils {
 
     /**
      * 把Hibernate代理对象还原为源对象
+     * JDBC 不再使用 Hibernate 代理，直接返回原对象
      *
      * @param entity
      * @return
      */
-    @SuppressWarnings("unchecked")
     public static <T> T initializeAndUnproxy(T entity) {
         if (entity == null) {
             throw new NullPointerException("Entity passed for initialization is null");
         }
 
-        Hibernate.initialize(entity);
-        if (entity instanceof HibernateProxy hibernateProxy) {
-            entity = (T) hibernateProxy.getHibernateLazyInitializer().getImplementation();
-        }
+        // JDBC 不再使用 Hibernate 代理，直接返回原对象
+        // Hibernate.initialize(entity);
+        // if (entity instanceof HibernateProxy hibernateProxy) {
+        //     entity = (T) hibernateProxy.getHibernateLazyInitializer().getImplementation();
+        // }
         return entity;
     }
 

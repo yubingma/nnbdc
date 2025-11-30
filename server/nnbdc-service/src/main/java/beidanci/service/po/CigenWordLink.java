@@ -7,12 +7,13 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
-import org.hibernate.annotations.Cache;
-import org.hibernate.annotations.CacheConcurrencyStrategy;
+// JDBC 不再支持 Hibernate 缓存注解
+// import org.hibernate.annotations.Cache;
+// import org.hibernate.annotations.CacheConcurrencyStrategy;
 
 @Entity
 @Table(name = "cigen_word_link")
-@Cache(region = "wordCache", usage = CacheConcurrencyStrategy.READ_WRITE)
+// @Cache(region = "wordCache", usage = CacheConcurrencyStrategy.READ_WRITE)  // JDBC 不支持缓存
 public class CigenWordLink extends Po {
 
     @Id

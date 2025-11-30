@@ -1,13 +1,12 @@
 package beidanci.service.bo;
 import java.io.IOException;
-import java.sql.Timestamp;
-import java.util.ArrayList;
 import java.util.List;
 
 import javax.annotation.PostConstruct;
 
-import org.hibernate.query.Query;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -44,7 +43,10 @@ public class SentenceBo extends BaseBo<Sentence> {
     @Autowired
     SysDbLogBo sysDbLogBo;
 
-        @PostConstruct
+    @Autowired
+    private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
+
+    @PostConstruct
     public void init() {
         setDao(new BaseDao<Sentence>() {
         });
@@ -99,32 +101,28 @@ public class SentenceBo extends BaseBo<Sentence> {
      */
     public List<SentenceDto> getSentencesOfDict(String dictId) {
         // 通用词典现在是数据库中的实际记录，统一查询
-        String sql = "select s.id, s.english, s.englishDigest, s.chinese, s.lastDiyUpdateTime, s.theType, s.producer, s.needTts, s.footCount, s.handCount, s.authorId, s.meaningItemId, s.wordMeaning, s.createTime, s.updateTime from sentence s left join meaning_item mi on mi.id = s.meaningItemId where mi.dictId = :dictId";
-        Query<?> query = getSession().createNativeQuery(sql);
-        List<?> results = query.setParameter("dictId", dictId).list();
-
-        List<SentenceDto> sentenceDtos = new ArrayList<>();
-        for (Object result : results) {
-            Object[] tuple = (Object[]) result;
+        String sql = "SELECT s.id, s.english, s.englishDigest, s.chinese, s.lastDiyUpdateTime, s.theType, s.producer, s.needTts, s.footCount, s.handCount, s.authorId, s.meaningItemId, s.wordMeaning, s.createTime, s.updateTime FROM sentence s LEFT JOIN meaning_item mi ON mi.id = s.meaningItemId WHERE mi.dictId = :dictId";
+        MapSqlParameterSource params = new MapSqlParameterSource("dictId", dictId);
+        
+        return namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> {
             SentenceDto sentenceDto = new SentenceDto();
-            sentenceDto.setId((String) tuple[0]);
-            sentenceDto.setEnglish((String) tuple[1]);
-            sentenceDto.setEnglishDigest((String) tuple[2]);
-            sentenceDto.setChinese((String) tuple[3]);
-            sentenceDto.setLastDiyUpdateTime((Timestamp) tuple[4]);
-            sentenceDto.setTheType((String) tuple[5]);
-            sentenceDto.setProducer((String) tuple[6]);
-            sentenceDto.setNeedTts((Boolean) tuple[7]);
-            sentenceDto.setFootCount((Integer) tuple[8]);
-            sentenceDto.setHandCount((Integer) tuple[9]);
-            sentenceDto.setAuthorId((String) tuple[10]);
-            sentenceDto.setMeaningItemId((String) tuple[11]);
-            sentenceDto.setWordMeaning((String) tuple[12]);
-            sentenceDto.setCreateTime((Timestamp) tuple[13]);
-            sentenceDto.setUpdateTime((Timestamp) tuple[14]);
-            sentenceDtos.add(sentenceDto);
-        }
-        return sentenceDtos;
+            sentenceDto.setId(rs.getString("id"));
+            sentenceDto.setEnglish(rs.getString("english"));
+            sentenceDto.setEnglishDigest(rs.getString("englishDigest"));
+            sentenceDto.setChinese(rs.getString("chinese"));
+            sentenceDto.setLastDiyUpdateTime(rs.getTimestamp("lastDiyUpdateTime"));
+            sentenceDto.setTheType(rs.getString("theType"));
+            sentenceDto.setProducer(rs.getString("producer"));
+            sentenceDto.setNeedTts(rs.getBoolean("needTts"));
+            sentenceDto.setFootCount(rs.getInt("footCount"));
+            sentenceDto.setHandCount(rs.getInt("handCount"));
+            sentenceDto.setAuthorId(rs.getString("authorId"));
+            sentenceDto.setMeaningItemId(rs.getString("meaningItemId"));
+            sentenceDto.setWordMeaning(rs.getString("wordMeaning"));
+            sentenceDto.setCreateTime(rs.getTimestamp("createTime"));
+            sentenceDto.setUpdateTime(rs.getTimestamp("updateTime"));
+            return sentenceDto;
+        });
     }
 
     public Result<Void> deleteSentence(String id, String currWord, String userId)
@@ -138,34 +136,25 @@ public class SentenceBo extends BaseBo<Sentence> {
         }
 
         // 从数据库删除 - 例句的事件
-        String hql = "delete from Event where sentence.id=:sentenceId";
-        Query<Long> query = getSession().createQuery(hql, Long.class);
-        query.setParameter("sentenceId", id);
-        query.executeUpdate();
+        String sql = "DELETE FROM event WHERE sentenceId = :sentenceId";
+        MapSqlParameterSource params = new MapSqlParameterSource("sentenceId", id);
+        namedParameterJdbcTemplate.update(sql, params);
 
         // 从数据库删除 - 单词和例句的关联
-        hql = "delete from WordSentence where id.sentenceId=:sentenceId";
-        query = getSession().createQuery(hql, Long.class);
-        query.setParameter("sentenceId", id);
-        query.executeUpdate();
+        sql = "DELETE FROM word_sentence WHERE sentenceId = :sentenceId";
+        namedParameterJdbcTemplate.update(sql, params);
 
         // 从数据库删除 - 例句翻译的事件
-        hql = "delete from Event where sentenceChinese.id in (select id from SentenceChinese where sentence.id=:sentenceId)";
-        query = getSession().createQuery(hql, Long.class);
-        query.setParameter("sentenceId", id);
-        query.executeUpdate();
+        sql = "DELETE FROM event WHERE sentenceChineseId IN (SELECT id FROM sentence_chinese WHERE sentenceId = :sentenceId)";
+        namedParameterJdbcTemplate.update(sql, params);
 
         // 从数据库删除 - 例句的翻译
-        hql = "delete from SentenceChinese where sentence.id=:sentenceId";
-        query = getSession().createQuery(hql, Long.class);
-        query.setParameter("sentenceId", id);
-        query.executeUpdate();
+        sql = "DELETE FROM sentence_chinese WHERE sentenceId = :sentenceId";
+        namedParameterJdbcTemplate.update(sql, params);
 
         // 从数据库删除 - 例句本身
-        hql = "delete from Sentence where id=:sentenceId";
-        query = getSession().createQuery(hql, Long.class);
-        query.setParameter("sentenceId", id);
-        query.executeUpdate();
+        sql = "DELETE FROM sentence WHERE id = :sentenceId";
+        namedParameterJdbcTemplate.update(sql, params);
 
         // 记录系统数据日志（删除例句）
         sysDbLogBo.logOperation("DELETE", "sentence", id, "{}");
@@ -241,18 +230,15 @@ public class SentenceBo extends BaseBo<Sentence> {
      * 查找缺少例句的释义项
      */
     public List<String> findMeaningsWithoutSentences(String dictId) {
-        String sql = """
-            SELECT mi.id
-            FROM meaning_item mi
-            WHERE mi.dictId = :dictId
-            AND mi.id NOT IN (
-                SELECT s.meaningItemId
-                FROM sentence s
-                WHERE s.meaningItemId = mi.id
-            )
-            """;
-        Query<String> query = getSession().createNativeQuery(sql, String.class);
-        query.setParameter("dictId", dictId);
-        return query.list();
+        String sql = "SELECT mi.id " +
+                "FROM meaning_item mi " +
+                "WHERE mi.dictId = :dictId " +
+                "AND mi.id NOT IN (" +
+                "    SELECT s.meaningItemId " +
+                "    FROM sentence s " +
+                "    WHERE s.meaningItemId = mi.id" +
+                ")";
+        MapSqlParameterSource params = new MapSqlParameterSource("dictId", dictId);
+        return namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> rs.getString("id"));
     }
 }

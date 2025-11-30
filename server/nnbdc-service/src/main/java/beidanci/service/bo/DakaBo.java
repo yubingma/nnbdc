@@ -7,8 +7,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.hibernate.query.Query;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,7 +26,10 @@ public class DakaBo extends BaseBo<Daka> {
     @Autowired
     UserBo userBo;
 
-        @PostConstruct
+    @Autowired
+    private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
+
+    @PostConstruct
     public void init() {
         setDao(new BaseDao<Daka>() {
         });
@@ -47,13 +51,13 @@ public class DakaBo extends BaseBo<Daka> {
     }
 
     public List<Daka> getDakaRecords(User user, Date startDate, Date endDate) {
-        String hql = "from Daka sr where user = :user and forLearningDate >= :startDate and forLearningDate <= :endDate";
-
-        Query<Daka> query = getSession().createQuery(hql, Daka.class);
-        query.setParameter("user", user);
-        query.setParameter("startDate", startDate);
-        query.setParameter("endDate", endDate);
-        return query.list();
+        String sql = "SELECT * FROM dakas WHERE userId = :userId AND forLearningDate >= :startDate AND forLearningDate <= :endDate";
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        params.addValue("userId", user.getId());
+        params.addValue("startDate", startDate);
+        params.addValue("endDate", endDate);
+        return namedParameterJdbcTemplate.query(sql, params, 
+            new beidanci.service.dao.EntityRowMapper<>(Daka.class));
     }
 
     /**
@@ -84,11 +88,10 @@ public class DakaBo extends BaseBo<Daka> {
      * @return 打卡记录DTO列表
      */
     public List<DakaDto> getDakaDtosOfUser(String userId) {
-        String hql = "from Daka d where d.user.id = :userId";
-
-        Query<Daka> query = getSession().createQuery(hql, Daka.class);
-        query.setParameter("userId", userId);
-        List<Daka> dakas = query.list();
+        String sql = "SELECT * FROM dakas WHERE userId = :userId";
+        MapSqlParameterSource params = new MapSqlParameterSource("userId", userId);
+        List<Daka> dakas = namedParameterJdbcTemplate.query(sql, params, 
+            new beidanci.service.dao.EntityRowMapper<>(Daka.class));
 
         List<DakaDto> dtos = new ArrayList<>();
         for (Daka daka : dakas) {
@@ -153,12 +156,12 @@ public class DakaBo extends BaseBo<Daka> {
                 parameters.put("textContent", filters.get("textContent"));
             }
             
-            Query<?> query = getSession().createNativeQuery(sql.toString());
+            MapSqlParameterSource params = new MapSqlParameterSource();
             for (Map.Entry<String, Object> entry : parameters.entrySet()) {
-                query.setParameter(entry.getKey(), entry.getValue());
+                params.addValue(entry.getKey(), entry.getValue());
             }
             
-            int deletedCount = query.executeUpdate();
+            int deletedCount = namedParameterJdbcTemplate.update(sql.toString(), params);
             System.out.println("批量删除dakas记录完成，用户ID: " + userId + ", 删除数量: " + deletedCount);
             
         } catch (Exception e) {

@@ -13,10 +13,11 @@ import javax.persistence.ManyToMany;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
-import org.hibernate.annotations.Cache;
-import org.hibernate.annotations.CacheConcurrencyStrategy;
-import org.hibernate.annotations.Fetch;
-import org.hibernate.annotations.FetchMode;
+// JDBC 不再支持 Hibernate 缓存和 Fetch 注解
+// import org.hibernate.annotations.Cache;
+// import org.hibernate.annotations.CacheConcurrencyStrategy;
+// import org.hibernate.annotations.Fetch;
+// import org.hibernate.annotations.FetchMode;
 import org.springframework.util.Assert;
 
 import net.sf.json.JSONObject;
@@ -24,7 +25,7 @@ import net.sf.json.JsonConfig;
 
 @Entity
 @Table(name = "word", indexes = {@Index(name = "idx_wordspell", columnList = "spell", unique = true)})
-@Cache(region = "wordCache", usage = CacheConcurrencyStrategy.READ_WRITE)
+// @Cache(region = "wordCache", usage = CacheConcurrencyStrategy.READ_WRITE)  // JDBC 不支持缓存
 public class Word extends UuidPo {
 
     // serial marker removed; entities are not serialized via Java serialization
@@ -60,36 +61,36 @@ public class Word extends UuidPo {
     private String longDesc;
 
     @OneToMany(cascade = {CascadeType.PERSIST, CascadeType.REMOVE, CascadeType.MERGE}, mappedBy = "word")
-    @Fetch(FetchMode.SUBSELECT)
-    @Cache(region = "wordCache", usage = CacheConcurrencyStrategy.READ_WRITE)
+    // @Fetch(FetchMode.SUBSELECT)  // JDBC 不支持
+    // @Cache(region = "wordCache", usage = CacheConcurrencyStrategy.READ_WRITE)  // JDBC 不支持缓存
     private  List<MeaningItem> meaningItems;
 
     @OneToMany(cascade = {CascadeType.ALL}, orphanRemoval = true, mappedBy = "word")
-    @Fetch(FetchMode.SUBSELECT)
-    @Cache(region = "wordCache", usage = CacheConcurrencyStrategy.READ_WRITE)
+    // @Fetch(FetchMode.SUBSELECT)  // JDBC 不支持
+    // @Cache(region = "wordCache", usage = CacheConcurrencyStrategy.READ_WRITE)  // JDBC 不支持缓存
     private  List<WordImage> images;
 
     @OneToMany(cascade = {CascadeType.ALL}, orphanRemoval = true, mappedBy = "word")
-    @Fetch(FetchMode.SUBSELECT)
-    @Cache(region = "wordCache", usage = CacheConcurrencyStrategy.READ_WRITE)
+    // @Fetch(FetchMode.SUBSELECT)  // JDBC 不支持
+    // @Cache(region = "wordCache", usage = CacheConcurrencyStrategy.READ_WRITE)  // JDBC 不支持缓存
     private  List<WordShortDescChinese> wordShortDescChineses;
 
     @OneToMany(cascade = {CascadeType.PERSIST, CascadeType.REMOVE, CascadeType.MERGE}, mappedBy = "word")
-    @Fetch(FetchMode.SUBSELECT)
-    @Cache(region = "wordCache", usage = CacheConcurrencyStrategy.READ_WRITE)
+    // @Fetch(FetchMode.SUBSELECT)  // JDBC 不支持
+    // @Cache(region = "wordCache", usage = CacheConcurrencyStrategy.READ_WRITE)  // JDBC 不支持缓存
     private  List<VerbTense> verbTences;
 
     @ManyToMany
-    @Fetch(FetchMode.SUBSELECT)
+    // @Fetch(FetchMode.SUBSELECT)  // JDBC 不支持
     @JoinTable(name = "similar_word", joinColumns = {@JoinColumn(name = "word")}, inverseJoinColumns = {
             @JoinColumn(name = "similarWord")})
-    @Cache(region = "wordCache", usage = CacheConcurrencyStrategy.READ_WRITE)
+    // @Cache(region = "wordCache", usage = CacheConcurrencyStrategy.READ_WRITE)  // JDBC 不支持缓存
     private  List<Word> similarWords;
 
 
     @OneToMany(cascade = {CascadeType.PERSIST, CascadeType.REMOVE, CascadeType.MERGE}, mappedBy = "word")
-    @Fetch(FetchMode.SUBSELECT)
-    @Cache(region = "wordCache", usage = CacheConcurrencyStrategy.READ_WRITE)
+    // @Fetch(FetchMode.SUBSELECT)  // JDBC 不支持
+    // @Cache(region = "wordCache", usage = CacheConcurrencyStrategy.READ_WRITE)  // JDBC 不支持缓存
     private  List<CigenWordLink> cigenWordLinks;
 
     public List<VerbTense> getVerbTences() {

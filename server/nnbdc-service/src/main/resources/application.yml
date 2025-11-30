@@ -6,8 +6,6 @@ maxConcurrentSession: 1
 spring:
   aop:
     auto: true
-  jpa:
-    open-in-view: true
   servlet:
     multipart:
       enabled: false # 禁用spring boot对 multipart 预处理，否则会导致老的上传代码不能工作
@@ -32,19 +30,7 @@ spring:
       maximumPoolSize: 30 #连接池中允许的最大连接数。缺省值：10；推荐的公式：((core_count * 2) + effective_spindle_count)
       connection-test-query: select 1 from dual
 
-# Hibernate
-hibernate:
-  dialect: org.hibernate.dialect.MySQL5InnoDBDialect
-  show_sql: false
-  format_sql: true
-  use_sql_comments: true
-  generate_statistics: false
-  packagesToScan: beidanci
-  hbm2ddl:
-    auto: none # 这里不用update，因为自动ddl虽然方便, 但是存在隐患
-  cache:
-    use_query_cache: true
-    use_second_level_cache: true
+# JDBC 配置（Spring Boot 自动配置，无需额外配置）
 
 # Define the port where the server would be running
 server:
@@ -97,7 +83,5 @@ logging:
     name: /var/nnbdc/log/nnbdc-service.log
   level:
     ROOT: INFO
-    org.hibernate.orm.deprecation: ERROR # 不显示使用Hibernate旧API的告警
-    org.hibernate.persister.entity: ERROR
     #org.springframework.web: DEBUG
     #org.springframework.boot.autoconfigure.web: DEBUG
