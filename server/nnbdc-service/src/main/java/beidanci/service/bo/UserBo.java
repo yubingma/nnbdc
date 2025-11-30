@@ -58,12 +58,9 @@ import beidanci.service.po.LearningDictId;
 import beidanci.service.po.LearningWord;
 import beidanci.service.po.Level;
 import beidanci.service.po.LoginLog;
-import beidanci.service.po.Msg;
 import beidanci.service.po.StudyGroup;
 import beidanci.service.po.User;
 import beidanci.service.po.UserCowDungLog;
-import beidanci.service.po.UserGame;
-import beidanci.service.po.UserSnapshotDaily;
 import beidanci.service.po.Word;
 import beidanci.service.store.WordCache;
 import beidanci.service.util.BeanUtils;
@@ -428,10 +425,6 @@ public class UserBo extends BaseBo<User> {
                 // 删除用户选择的单词书（使用批量删除避免OptimisticLockException）
                 String sql = "DELETE FROM learning_dict WHERE userId = ?";
                 jdbcTemplate.update(sql, user.getId());
-                if (user.getLearningDicts() != null) {
-                    user.getLearningDicts().clear();
-                    updateEntity(user);
-                }
 
                 // 删除用户的自定义单词书
                 List<Dict> customedDicts = dictBo.getOwnDicts(user, Integer.MAX_VALUE);
@@ -450,14 +443,9 @@ public class UserBo extends BaseBo<User> {
                 sql = "DELETE FROM mastered_word WHERE userId = ?";
                 jdbcTemplate.update(sql, user.getId());
 
-                // 删除用户发送的消息
-                if (user.getSentMsgs() != null) {
-                    for (Msg msg : user.getSentMsgs()) {
-                        msgBo.deleteEntity(msg);
-                    }
-                    user.getSentMsgs().clear();
-                    updateEntity(user);
-                }
+                // 删除用户发送的消息（使用批量删除避免外键约束问题）
+                sql = "DELETE FROM msg WHERE fromUserId = ?";
+                jdbcTemplate.update(sql, user.getId());
 
                 // 删除用户接收的消息
                 sql = "DELETE FROM msg WHERE toUserId = ?";
@@ -466,41 +454,21 @@ public class UserBo extends BaseBo<User> {
                 // 删除用户相关事件
                 eventBo.clearUserEvents(user);
 
-                // 删除用户的打卡记录
-                if (user.getDakas() != null) {
-                    for (Daka daka : user.getDakas()) {
-                        dakaBo.deleteEntity(daka);
-                    }
-                    user.getDakas().clear();
-                    updateEntity(user);
-                }
+                // 删除用户的打卡记录（使用批量删除避免外键约束问题）
+                sql = "DELETE FROM daka WHERE userId = ?";
+                jdbcTemplate.update(sql, user.getId());
 
-                // 删除用户的魔法泡泡收支记录
-                if (user.getUserCowDungLogs() != null) {
-                    for (UserCowDungLog userCowDungLog : user.getUserCowDungLogs()) {
-                        userCowDungLogBo.deleteEntity(userCowDungLog);
-                    }
-                    user.getUserCowDungLogs().clear();
-                    updateEntity(user);
-                }
+                // 删除用户的魔法泡泡收支记录（使用批量删除避免外键约束问题）
+                sql = "DELETE FROM user_cow_dung_log WHERE userId = ?";
+                jdbcTemplate.update(sql, user.getId());
 
-                // 删除用户的游戏记录
-                if (user.getUserGames() != null) {
-                    for (UserGame userGame : user.getUserGames()) {
-                        userGameBo.deleteEntity(userGame);
-                    }
-                    user.getUserGames().clear();
-                    updateEntity(user);
-                }
+                // 删除用户的游戏记录（使用批量删除避免外键约束问题）
+                sql = "DELETE FROM user_game WHERE userId = ?";
+                jdbcTemplate.update(sql, user.getId());
 
-                // 删除用户每日快照记录
-                if (user.getUserSnapshotDailys() != null) {
-                    for (UserSnapshotDaily userLearnProgress : user.getUserSnapshotDailys()) {
-                        userSnapshotDailyBo.deleteEntity(userLearnProgress);
-                    }
-                    user.getUserSnapshotDailys().clear();
-                    updateEntity(user);
-                }
+                // 删除用户每日快照记录（使用批量删除避免外键约束问题）
+                sql = "DELETE FROM user_snapshot_daily WHERE userId = ?";
+                jdbcTemplate.update(sql, user.getId());
 
                 // 删除用户积分记录
                 sql = "DELETE FROM user_score_log WHERE userId = ?";
@@ -510,15 +478,10 @@ public class UserBo extends BaseBo<User> {
                 sql = "DELETE FROM user_wrong_word WHERE userId = ?";
                 jdbcTemplate.update(sql, user.getId());
 
-                // 解除该用户邀请的用户对其的引用
-                if (user.getInvitedUsers() != null) {
-                    for (User invitedUser : user.getInvitedUsers()) {
-                        invitedUser.setInvitedBy(findById("nulluser"));
-                        updateEntity(invitedUser);
-                    }
-                    user.getInvitedUsers().clear();
-                    updateEntity(user);
-                }
+                // 解除该用户邀请的用户对其的引用（使用批量更新避免外键约束问题）
+                User sysUser = getSysUser_deleted(false);
+                sql = "UPDATE user SET invitedById = ? WHERE invitedById = ?";
+                jdbcTemplate.update(sql, sysUser.getId(), user.getId());
 
                 // 退出所在的小组
                 if (user.getCreatedStudyGroups() != null) {
@@ -545,7 +508,6 @@ public class UserBo extends BaseBo<User> {
                 jdbcTemplate.update(sql, user.getId());
 
                 // 将用户UGC转让给系统虚拟用户
-                User sysUser = getSysUser_deleted(false);
                 sql = "UPDATE word_additional_info SET userId = ? WHERE userId = ?";
                 jdbcTemplate.update(sql, sysUser.getId(), user.getId());
                 sql = "UPDATE sentence SET authorId = ? WHERE authorId = ?";
