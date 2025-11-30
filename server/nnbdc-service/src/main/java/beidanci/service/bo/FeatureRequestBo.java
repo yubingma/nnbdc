@@ -1,7 +1,11 @@
 package beidanci.service.bo;
 
 import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
@@ -13,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import beidanci.api.model.FeatureRequestStatus;
+import beidanci.service.dao.EntityRowMapper;
 import beidanci.service.dao.FeatureRequestDao;
 import beidanci.service.dao.FeatureRequestVoteDao;
 import beidanci.service.po.FeatureRequest;
@@ -42,8 +47,56 @@ public class FeatureRequestBo extends BaseBo<FeatureRequest> {
      */
     public List<FeatureRequest> getAllFeatureRequests() {
         String sql = "SELECT * FROM feature_request ORDER BY voteCount DESC, createTime DESC";
-        return namedParameterJdbcTemplate.query(sql, 
-            new beidanci.service.dao.EntityRowMapper<>(FeatureRequest.class));
+        List<FeatureRequest> requests = namedParameterJdbcTemplate.query(sql, 
+            new EntityRowMapper<>(FeatureRequest.class));
+        
+        // 批量加载完整的 User 对象，填充 creator 字段
+        loadUsersForFeatureRequests(requests);
+        
+        return requests;
+    }
+    
+    /**
+     * 批量加载 User 对象并填充到 FeatureRequest 的 creator 字段
+     */
+    private void loadUsersForFeatureRequests(List<FeatureRequest> requests) {
+        if (requests == null || requests.isEmpty()) {
+            return;
+        }
+        
+        // 收集所有需要加载的 User ID
+        Set<String> userIds = new HashSet<>();
+        for (FeatureRequest request : requests) {
+            if (request.getCreator() != null && request.getCreator().getId() != null) {
+                userIds.add(request.getCreator().getId());
+            }
+        }
+        
+        if (userIds.isEmpty()) {
+            return;
+        }
+        
+        // 批量查询 User 对象
+        String sql = "SELECT * FROM user WHERE id IN (:ids)";
+        MapSqlParameterSource params = new MapSqlParameterSource("ids", userIds);
+        List<User> users = namedParameterJdbcTemplate.query(sql, params,
+            new EntityRowMapper<>(User.class));
+        
+        // 构建 User ID 到 User 对象的映射
+        Map<String, User> userMap = new HashMap<>();
+        for (User user : users) {
+            userMap.put(user.getId(), user);
+        }
+        
+        // 填充 FeatureRequest 的 creator 字段
+        for (FeatureRequest request : requests) {
+            if (request.getCreator() != null && request.getCreator().getId() != null) {
+                User fullUser = userMap.get(request.getCreator().getId());
+                if (fullUser != null) {
+                    request.setCreator(fullUser);
+                }
+            }
+        }
     }
     
     /**
@@ -78,7 +131,7 @@ public class FeatureRequestBo extends BaseBo<FeatureRequest> {
             params.addValue("requestId", requestId);
             params.addValue("userId", user.getId());
             List<FeatureRequestVote> existingVotes = namedParameterJdbcTemplate.query(checkSql, params, 
-                new beidanci.service.dao.EntityRowMapper<>(FeatureRequestVote.class));
+                new EntityRowMapper<>(FeatureRequestVote.class));
             
             if (!existingVotes.isEmpty()) {
                 return org.apache.commons.lang3.tuple.Pair.of(false, "您已经对此需求投过票了");
@@ -118,8 +171,8 @@ public class FeatureRequestBo extends BaseBo<FeatureRequest> {
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("requestId", requestId);
         params.addValue("userId", user.getId());
-        List<FeatureRequestVote> votes = namedParameterJdbcTemplate.query(sql, params, 
-            new beidanci.service.dao.EntityRowMapper<>(FeatureRequestVote.class));
+            List<FeatureRequestVote> votes = namedParameterJdbcTemplate.query(sql, params, 
+                new EntityRowMapper<>(FeatureRequestVote.class));
         return !votes.isEmpty();
     }
     
