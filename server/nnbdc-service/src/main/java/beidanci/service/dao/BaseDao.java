@@ -597,6 +597,35 @@ public abstract class BaseDao<E extends Po> {
         List<String> setParts = new ArrayList<>();
         List<Object> values = new ArrayList<>();
         
+        // 收集复合主键的组件列名（如果主键是复合主键）
+        java.util.Set<String> compositeKeyColumnNames = new java.util.HashSet<>();
+        boolean isCompositeKey = idField.getType().isAnnotationPresent(javax.persistence.Embeddable.class);
+        if (isCompositeKey) {
+            try {
+                idField.setAccessible(true);
+                Serializable id = (Serializable) idField.get(entity);
+                if (id != null && idField.getType().isInstance(id)) {
+                    Object compositeKey = id;
+                    List<Field> keyFields = BeanUtils.getFields(compositeKey.getClass(), true);
+                    for (Field keyField : keyFields) {
+                        // 跳过 static 和 final 字段
+                        int keyFieldModifiers = keyField.getModifiers();
+                        if (java.lang.reflect.Modifier.isStatic(keyFieldModifiers) || 
+                            java.lang.reflect.Modifier.isFinal(keyFieldModifiers)) {
+                            continue;
+                        }
+                        // 只处理有 @Column 注解的字段
+                        if (keyField.isAnnotationPresent(Column.class)) {
+                            String columnName = EntityTableInfo.getColumnName(keyField);
+                            compositeKeyColumnNames.add(columnName);
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                // 忽略，如果无法获取复合主键信息，继续处理
+            }
+        }
+        
         for (Field field : fields) {
             // 跳过主键
             if (field.equals(idField)) {
@@ -607,6 +636,11 @@ public abstract class BaseDao<E extends Po> {
             // 约定：关联对象字段的外键列名为 字段名 + "Id"（如 level -> levelId）
             if (Po.class.isAssignableFrom(field.getType()) && !field.getName().endsWith("Id")) {
                 String foreignKeyColumnName = field.getName() + "Id";
+                
+                // 如果外键列名是复合主键的组件列名，则跳过（因为主键不应该被更新）
+                if (compositeKeyColumnNames.contains(foreignKeyColumnName)) {
+                    continue;
+                }
                 
                 try {
                     field.setAccessible(true);
@@ -678,9 +712,51 @@ public abstract class BaseDao<E extends Po> {
         try {
             idField.setAccessible(true);
             Serializable id = (Serializable) idField.get(entity);
-            String idColumnName = EntityTableInfo.getColumnName(idField);
-            sql.append(" WHERE ").append(idColumnName).append(" = ?");
-            values.add(id);
+            
+            if (isCompositeKey) {
+                // 复合主键：需要根据所有组件字段构建 WHERE 条件
+                if (!(idField.getType().isInstance(id))) {
+                    logger.error("updateEntity: 复合主键类型不匹配. Expected: {}, Got: {}", idField.getType().getName(), id.getClass().getName());
+                    throw new IllegalArgumentException("复合主键类型不匹配");
+                }
+                
+                Object compositeKey = id;
+                List<Field> keyFields = BeanUtils.getFields(compositeKey.getClass(), true);
+                StringBuilder whereClause = new StringBuilder();
+                boolean first = true;
+                
+                for (Field keyField : keyFields) {
+                    // 跳过 static 和 final 字段（如 serialVersionUID）
+                    int keyFieldModifiers = keyField.getModifiers();
+                    if (java.lang.reflect.Modifier.isStatic(keyFieldModifiers) || 
+                        java.lang.reflect.Modifier.isFinal(keyFieldModifiers)) {
+                        continue;
+                    }
+                    
+                    // 只处理有 @Column 注解的字段（复合主键的组件字段应该有 @Column 注解）
+                    if (!keyField.isAnnotationPresent(Column.class)) {
+                        continue;
+                    }
+                    
+                    keyField.setAccessible(true);
+                    Object keyValue = keyField.get(compositeKey);
+                    String columnName = EntityTableInfo.getColumnName(keyField);
+                    
+                    if (!first) {
+                        whereClause.append(" AND ");
+                    }
+                    whereClause.append(columnName).append(" = ?");
+                    values.add(keyValue);
+                    first = false;
+                }
+                
+                sql.append(" WHERE ").append(whereClause.toString());
+            } else {
+                // 简单主键
+                String idColumnName = EntityTableInfo.getColumnName(idField);
+                sql.append(" WHERE ").append(idColumnName).append(" = ?");
+                values.add(id);
+            }
         } catch (IllegalAccessException e) {
             logger.error("更新实体时获取主键值失败: entityClass={}", valueClass.getName(), e);
             throw new RuntimeException("获取主键值失败", e);
@@ -703,9 +779,56 @@ public abstract class BaseDao<E extends Po> {
         try {
             idField.setAccessible(true);
             Serializable id = (Serializable) idField.get(entity);
-            String idColumnName = EntityTableInfo.getColumnName(idField);
-            String sql = "DELETE FROM " + tableName + " WHERE " + idColumnName + " = ?";
-            jdbcTemplate.update(sql, id);
+            
+            // 检查主键是否是复合主键（@Embeddable）
+            boolean isCompositeKey = idField.getType().isAnnotationPresent(javax.persistence.Embeddable.class);
+            
+            if (isCompositeKey) {
+                // 复合主键：需要根据所有组件字段构建 WHERE 条件
+                if (!(idField.getType().isInstance(id))) {
+                    logger.error("deleteEntity: 复合主键类型不匹配. Expected: {}, Got: {}", idField.getType().getName(), id.getClass().getName());
+                    throw new IllegalArgumentException("复合主键类型不匹配");
+                }
+                
+                Object compositeKey = id;
+                List<Field> keyFields = BeanUtils.getFields(compositeKey.getClass(), true);
+                StringBuilder whereClause = new StringBuilder();
+                List<Object> params = new ArrayList<>();
+                boolean first = true;
+                
+                for (Field keyField : keyFields) {
+                    // 跳过 static 和 final 字段（如 serialVersionUID）
+                    int keyFieldModifiers = keyField.getModifiers();
+                    if (java.lang.reflect.Modifier.isStatic(keyFieldModifiers) || 
+                        java.lang.reflect.Modifier.isFinal(keyFieldModifiers)) {
+                        continue;
+                    }
+                    
+                    // 只处理有 @Column 注解的字段（复合主键的组件字段应该有 @Column 注解）
+                    if (!keyField.isAnnotationPresent(Column.class)) {
+                        continue;
+                    }
+                    
+                    keyField.setAccessible(true);
+                    Object keyValue = keyField.get(compositeKey);
+                    String columnName = EntityTableInfo.getColumnName(keyField);
+                    
+                    if (!first) {
+                        whereClause.append(" AND ");
+                    }
+                    whereClause.append(columnName).append(" = ?");
+                    params.add(keyValue);
+                    first = false;
+                }
+                
+                String sql = "DELETE FROM " + tableName + " WHERE " + whereClause.toString();
+                jdbcTemplate.update(sql, params.toArray());
+            } else {
+                // 简单主键
+                String idColumnName = EntityTableInfo.getColumnName(idField);
+                String sql = "DELETE FROM " + tableName + " WHERE " + idColumnName + " = ?";
+                jdbcTemplate.update(sql, id);
+            }
         } catch (IllegalAccessException e) {
             logger.error("删除实体时获取主键值失败: entityClass={}", valueClass.getName(), e);
             throw new RuntimeException("获取主键值失败", e);
