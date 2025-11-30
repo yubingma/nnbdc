@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
+import javax.persistence.Column;
+
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
@@ -686,6 +688,18 @@ public abstract class BaseDao<E extends Po> {
                 boolean first = true;
                 
                 for (Field keyField : keyFields) {
+                    // 跳过 static 和 final 字段（如 serialVersionUID）
+                    int modifiers = keyField.getModifiers();
+                    if (java.lang.reflect.Modifier.isStatic(modifiers) || 
+                        java.lang.reflect.Modifier.isFinal(modifiers)) {
+                        continue;
+                    }
+                    
+                    // 只处理有 @Column 注解的字段（复合主键的组件字段应该有 @Column 注解）
+                    if (!keyField.isAnnotationPresent(Column.class)) {
+                        continue;
+                    }
+                    
                     keyField.setAccessible(true);
                     Object keyValue = keyField.get(compositeKey);
                     String columnName = Objects.requireNonNull(EntityTableInfo.getColumnName(keyField));

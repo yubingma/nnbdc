@@ -77,6 +77,18 @@ public class EntityRowMapper<E extends Po> implements RowMapper<E> {
                     Class<?> compositeKeyType = field.getType();
                     java.util.List<Field> keyFields = BeanUtils.getFields(compositeKeyType, true);
                     for (Field keyField : keyFields) {
+                        // 跳过 static 和 final 字段（如 serialVersionUID）
+                        int modifiers = keyField.getModifiers();
+                        if (java.lang.reflect.Modifier.isStatic(modifiers) || 
+                            java.lang.reflect.Modifier.isFinal(modifiers)) {
+                            continue;
+                        }
+                        
+                        // 只处理有 @Column 注解的字段（复合主键的组件字段应该有 @Column 注解）
+                        if (!keyField.isAnnotationPresent(Column.class)) {
+                            continue;
+                        }
+                        
                         String columnName = EntityTableInfo.getColumnName(keyField);
                         // 将复合主键的组件列映射到复合主键字段
                         map.put(columnName.toLowerCase(), field);
@@ -154,6 +166,18 @@ public class EntityRowMapper<E extends Po> implements RowMapper<E> {
                 Class<?> compositeKeyType = compositeKeyField.getType();
                 java.util.List<Field> keyFields = BeanUtils.getFields(compositeKeyType, true);
                 for (Field keyField : keyFields) {
+                    // 跳过 static 和 final 字段（如 serialVersionUID）
+                    int modifiers = keyField.getModifiers();
+                    if (java.lang.reflect.Modifier.isStatic(modifiers) || 
+                        java.lang.reflect.Modifier.isFinal(modifiers)) {
+                        continue;
+                    }
+                    
+                    // 只处理有 @Column 注解的字段（复合主键的组件字段应该有 @Column 注解）
+                    if (!keyField.isAnnotationPresent(Column.class)) {
+                        continue;
+                    }
+                    
                     String columnName = EntityTableInfo.getColumnName(keyField);
                     compositeKeyValues.put(columnName.toLowerCase(), null);
                 }
@@ -184,6 +208,18 @@ public class EntityRowMapper<E extends Po> implements RowMapper<E> {
                     
                     java.util.List<Field> keyFields = BeanUtils.getFields(compositeKeyType, true);
                     for (Field keyField : keyFields) {
+                        // 跳过 static 和 final 字段（如 serialVersionUID）
+                        int modifiers = keyField.getModifiers();
+                        if (java.lang.reflect.Modifier.isStatic(modifiers) || 
+                            java.lang.reflect.Modifier.isFinal(modifiers)) {
+                            continue;
+                        }
+                        
+                        // 只处理有 @Column 注解的字段（复合主键的组件字段应该有 @Column 注解）
+                        if (!keyField.isAnnotationPresent(Column.class)) {
+                            continue;
+                        }
+                        
                         String columnName = EntityTableInfo.getColumnName(keyField);
                         Object keyValue = compositeKeyValues.get(columnName.toLowerCase());
                         if (keyValue != null) {
