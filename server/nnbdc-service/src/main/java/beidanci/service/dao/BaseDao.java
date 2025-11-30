@@ -751,27 +751,8 @@ public abstract class BaseDao<E extends Po> {
             }
         }
         
-        // 如果找不到，使用驼峰转下划线
-        return camelToSnakeCase(fieldName);
-    }
-
-    /**
-     * 驼峰命名转下划线命名
-     */
-    private String camelToSnakeCase(String camelCase) {
-        StringBuilder result = new StringBuilder();
-        for (int i = 0; i < camelCase.length(); i++) {
-            char c = camelCase.charAt(i);
-            if (Character.isUpperCase(c)) {
-                if (i > 0) {
-                    result.append('_');
-                }
-                result.append(Character.toLowerCase(c));
-            } else {
-                result.append(c);
-            }
-        }
-        return result.toString();
+        // 如果找不到，直接使用字段名（驼峰格式）
+        return fieldName;
     }
 
     /**

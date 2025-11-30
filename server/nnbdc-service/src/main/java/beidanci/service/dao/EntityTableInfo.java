@@ -41,8 +41,8 @@ public class EntityTableInfo {
             }
         }
         
-        // 如果没有 @Table 注解，使用类名（驼峰转下划线）
-        String tableName = camelToSnakeCase(entityClass.getSimpleName());
+        // 如果没有 @Table 注解，直接使用类名（驼峰格式）
+        String tableName = entityClass.getSimpleName();
         tableNameCache.put(entityClass, tableName);
         return tableName;
     }
@@ -81,27 +81,8 @@ public class EntityTableInfo {
             }
         }
         
-        // 如果没有 @Column，使用字段名（驼峰转下划线）
-        return camelToSnakeCase(field.getName());
-    }
-    
-    /**
-     * 驼峰命名转下划线命名
-     */
-    private static String camelToSnakeCase(String camelCase) {
-        StringBuilder result = new StringBuilder();
-        for (int i = 0; i < camelCase.length(); i++) {
-            char c = camelCase.charAt(i);
-            if (Character.isUpperCase(c)) {
-                if (i > 0) {
-                    result.append('_');
-                }
-                result.append(Character.toLowerCase(c));
-            } else {
-                result.append(c);
-            }
-        }
-        return result.toString();
+        // 如果没有 @Column，直接使用字段名（驼峰格式）
+        return field.getName();
     }
 }
 

@@ -20,7 +20,7 @@ import beidanci.service.util.BeanUtils;
 
 /**
  * 通用的 RowMapper，用于将 ResultSet 映射到 PO 对象
- * 支持通过 @Column 注解指定列名，如果没有注解则使用字段名（驼峰转下划线）
+ * 支持通过 @Column 注解指定列名，如果没有注解则直接使用字段名（因为数据库表字段也是驼峰格式）
  * 
  * @param <E> PO 类型
  */
@@ -119,27 +119,8 @@ public class EntityRowMapper<E extends Po> implements RowMapper<E> {
             }
         }
         
-        // 如果没有 @Column，使用字段名（驼峰转下划线）
-        return camelToSnakeCase(field.getName());
-    }
-    
-    /**
-     * 驼峰命名转下划线命名
-     */
-    private String camelToSnakeCase(String camelCase) {
-        StringBuilder result = new StringBuilder();
-        for (int i = 0; i < camelCase.length(); i++) {
-            char c = camelCase.charAt(i);
-            if (Character.isUpperCase(c)) {
-                if (i > 0) {
-                    result.append('_');
-                }
-                result.append(Character.toLowerCase(c));
-            } else {
-                result.append(c);
-            }
-        }
-        return result.toString();
+        // 如果没有 @Column，直接使用字段名（驼峰格式）
+        return field.getName();
     }
     
     @Override
