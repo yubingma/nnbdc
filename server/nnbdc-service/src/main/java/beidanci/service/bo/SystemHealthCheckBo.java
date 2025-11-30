@@ -71,6 +71,7 @@ public class SystemHealthCheckBo {
         try {
             // 使用原生SQL一次性获取所有用户词典信息，参考check_db.py的高效查询
             // String sql = """
+            
             //     SELECT d.id, d.name, d.ownerId, d.wordCount, d.createTime
             //     FROM dict d
             //     WHERE d.visible = 1 AND d.isReady = 1 AND d.ownerId != ?

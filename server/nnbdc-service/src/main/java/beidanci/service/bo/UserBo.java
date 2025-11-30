@@ -428,8 +428,10 @@ public class UserBo extends BaseBo<User> {
                 // 删除用户选择的单词书（使用批量删除避免OptimisticLockException）
                 String sql = "DELETE FROM learning_dict WHERE userId = ?";
                 jdbcTemplate.update(sql, user.getId());
-                user.getLearningDicts().clear();
-                updateEntity(user);
+                if (user.getLearningDicts() != null) {
+                    user.getLearningDicts().clear();
+                    updateEntity(user);
+                }
 
                 // 删除用户的自定义单词书
                 List<Dict> customedDicts = dictBo.getOwnDicts(user, Integer.MAX_VALUE);
@@ -440,23 +442,22 @@ public class UserBo extends BaseBo<User> {
                 // 删除用户的学习步骤
                 userStudyStepBo.clearUserStudySteps(user.getId());
 
-                // 删除用户正在学习的单词
-                for (LearningWord word : user.getLearningWords()) {
-                    learningWordBo.deleteEntity(word);
-                }
-                user.getLearningWords().clear();
-                updateEntity(user);
+                // 删除用户正在学习的单词（使用批量删除避免外键约束问题）
+                sql = "DELETE FROM learning_word WHERE userId = ?";
+                jdbcTemplate.update(sql, user.getId());
 
                 // 删除用户已掌握的单词
                 sql = "DELETE FROM mastered_word WHERE userId = ?";
                 jdbcTemplate.update(sql, user.getId());
 
                 // 删除用户发送的消息
-                for (Msg msg : user.getSentMsgs()) {
-                    msgBo.deleteEntity(msg);
+                if (user.getSentMsgs() != null) {
+                    for (Msg msg : user.getSentMsgs()) {
+                        msgBo.deleteEntity(msg);
+                    }
+                    user.getSentMsgs().clear();
+                    updateEntity(user);
                 }
-                user.getSentMsgs().clear();
-                updateEntity(user);
 
                 // 删除用户接收的消息
                 sql = "DELETE FROM msg WHERE toUserId = ?";
@@ -466,32 +467,40 @@ public class UserBo extends BaseBo<User> {
                 eventBo.clearUserEvents(user);
 
                 // 删除用户的打卡记录
-                for (Daka daka : user.getDakas()) {
-                    dakaBo.deleteEntity(daka);
+                if (user.getDakas() != null) {
+                    for (Daka daka : user.getDakas()) {
+                        dakaBo.deleteEntity(daka);
+                    }
+                    user.getDakas().clear();
+                    updateEntity(user);
                 }
-                user.getDakas().clear();
-                updateEntity(user);
 
                 // 删除用户的魔法泡泡收支记录
-                for (UserCowDungLog userCowDungLog : user.getUserCowDungLogs()) {
-                    userCowDungLogBo.deleteEntity(userCowDungLog);
+                if (user.getUserCowDungLogs() != null) {
+                    for (UserCowDungLog userCowDungLog : user.getUserCowDungLogs()) {
+                        userCowDungLogBo.deleteEntity(userCowDungLog);
+                    }
+                    user.getUserCowDungLogs().clear();
+                    updateEntity(user);
                 }
-                user.getUserCowDungLogs().clear();
-                updateEntity(user);
 
                 // 删除用户的游戏记录
-                for (UserGame userGame : user.getUserGames()) {
-                    userGameBo.deleteEntity(userGame);
+                if (user.getUserGames() != null) {
+                    for (UserGame userGame : user.getUserGames()) {
+                        userGameBo.deleteEntity(userGame);
+                    }
+                    user.getUserGames().clear();
+                    updateEntity(user);
                 }
-                user.getUserGames().clear();
-                updateEntity(user);
 
                 // 删除用户每日快照记录
-                for (UserSnapshotDaily userLearnProgress : user.getUserSnapshotDailys()) {
-                    userSnapshotDailyBo.deleteEntity(userLearnProgress);
+                if (user.getUserSnapshotDailys() != null) {
+                    for (UserSnapshotDaily userLearnProgress : user.getUserSnapshotDailys()) {
+                        userSnapshotDailyBo.deleteEntity(userLearnProgress);
+                    }
+                    user.getUserSnapshotDailys().clear();
+                    updateEntity(user);
                 }
-                user.getUserSnapshotDailys().clear();
-                updateEntity(user);
 
                 // 删除用户积分记录
                 sql = "DELETE FROM user_score_log WHERE userId = ?";
@@ -502,22 +511,30 @@ public class UserBo extends BaseBo<User> {
                 jdbcTemplate.update(sql, user.getId());
 
                 // 解除该用户邀请的用户对其的引用
-                for (User invitedUser : user.getInvitedUsers()) {
-                    invitedUser.setInvitedBy(findById("nulluser"));
-                    updateEntity(invitedUser);
+                if (user.getInvitedUsers() != null) {
+                    for (User invitedUser : user.getInvitedUsers()) {
+                        invitedUser.setInvitedBy(findById("nulluser"));
+                        updateEntity(invitedUser);
+                    }
+                    user.getInvitedUsers().clear();
+                    updateEntity(user);
                 }
-                user.getInvitedUsers().clear();
-                updateEntity(user);
 
                 // 退出所在的小组
-                for (StudyGroup group : user.getCreatedStudyGroups()) {
-                    studyGroupBo.exitGroup(user, group.getId());
+                if (user.getCreatedStudyGroups() != null) {
+                    for (StudyGroup group : user.getCreatedStudyGroups()) {
+                        studyGroupBo.exitGroup(user, group.getId());
+                    }
                 }
-                for (StudyGroup group : user.getStudyGroups()) {
-                    studyGroupBo.exitGroup(user, group.getId());
+                if (user.getStudyGroups() != null) {
+                    for (StudyGroup group : user.getStudyGroups()) {
+                        studyGroupBo.exitGroup(user, group.getId());
+                    }
                 }
-                for (StudyGroup group : user.getManagedStudyGroups()) {
-                    studyGroupBo.exitGroup(user, group.getId());
+                if (user.getManagedStudyGroups() != null) {
+                    for (StudyGroup group : user.getManagedStudyGroups()) {
+                        studyGroupBo.exitGroup(user, group.getId());
+                    }
                 }
 
                 // 删除登录日志
@@ -537,7 +554,7 @@ public class UserBo extends BaseBo<User> {
                 jdbcTemplate.update(sql, user.getId());
                 sql = "UPDATE word_image SET authorId = ? WHERE authorId = ?";
                 jdbcTemplate.update(sql, sysUser.getId(), user.getId());
-                sql = "UPDATE word_short_desc_chinese SET authorId = ? WHERE authorId = ?";
+                sql = "UPDATE word_shortdesc_chinese SET authorId = ? WHERE authorId = ?";
                 jdbcTemplate.update(sql, sysUser.getId(), user.getId());
 
                 // 不再作为论坛管理员
@@ -545,11 +562,11 @@ public class UserBo extends BaseBo<User> {
                 jdbcTemplate.update(sql, user.getId());
 
                 // 删除用户回复的帖子
-                sql = "DELETE FROM forum_post_reply WHERE userId = ?";
+                sql = "DELETE FROM forum_post_reply WHERE postReplyerId = ?";
                 jdbcTemplate.update(sql, user.getId());
 
                 // 删除用户的帖子
-                sql = "DELETE FROM forum_post WHERE userId = ?";
+                sql = "DELETE FROM forum_post WHERE postCreatorId = ?";
                 jdbcTemplate.update(sql, user.getId());
 
                 // 删除用户报错
