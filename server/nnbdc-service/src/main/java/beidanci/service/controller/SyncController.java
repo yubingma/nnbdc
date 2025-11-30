@@ -1,7 +1,6 @@
 package beidanci.service.controller;
 
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.GZIPOutputStream;
@@ -66,89 +65,67 @@ public class SyncController {
         long startTime = System.currentTimeMillis();
         log.info("开始查询用户数据库日志, userId: {}, localDbVersion: {}", userId, fromVersion);
         
-        try {
-            // 查询用户数据库增量日志
-            List<UserDbLogDto> logs = userBo.getUserDbLogsFromVersion(userId, fromVersion);
-            log.info("用户数据库增量日志查询完成, 数量: {}", logs.size());
+        // 查询用户数据库增量日志
+        List<UserDbLogDto> logs = userBo.getUserDbLogsFromVersion(userId, fromVersion);
+        log.info("用户数据库增量日志查询完成, 数量: {}", logs.size());
+        
+        // 构建响应对象
+        Result<List<UserDbLogDto>> result = Result.success(logs);
+        
+        // 使用 chunked 模式流式写入 JSON，并统计传输大小
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
+        // 配置日期序列化为 ISO-8601 字符串格式，而不是时间戳
+        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        mapper.setDateFormat(new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"));
+        
+        // 先计算原始JSON大小
+        String originalJson = mapper.writeValueAsString(result);
+        long originalSize = originalJson.getBytes("UTF-8").length;
+        
+        // 声明实际传输字节数变量
+        long actualBytes;
+        
+        // 对于数据库日志这种已知大小的响应，使用 Content-Length 模式
+        // 这样可以提供准确的进度显示和完整性验证
+        if (supportsGzip) {
+            // 使用 gzip 压缩时，由于压缩后大小未知，使用 chunked 模式
+            log.info("使用 chunked 模式 + gzip 压缩传输");
             
-            // 构建响应对象
-            Result<List<UserDbLogDto>> result = Result.success(logs);
-            
-            // 使用 chunked 模式流式写入 JSON，并统计传输大小
-            ObjectMapper mapper = new ObjectMapper();
-            mapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
-            // 配置日期序列化为 ISO-8601 字符串格式，而不是时间戳
-            mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-            mapper.setDateFormat(new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"));
-            
-            // 先计算原始JSON大小
-            String originalJson = mapper.writeValueAsString(result);
-            long originalSize = originalJson.getBytes("UTF-8").length;
-            
-            // 声明实际传输字节数变量
-            long actualBytes;
-            
-            // 对于数据库日志这种已知大小的响应，使用 Content-Length 模式
-            // 这样可以提供准确的进度显示和完整性验证
-            if (supportsGzip) {
-                // 使用 gzip 压缩时，由于压缩后大小未知，使用 chunked 模式
-                log.info("使用 chunked 模式 + gzip 压缩传输");
-                
-                CountingOutputStream countingOut = new CountingOutputStream(response.getOutputStream());
-                try (GZIPOutputStream gzipOut = new GZIPOutputStream(countingOut)) {
-                    mapper.writeValue(gzipOut, result);
-                    gzipOut.flush();
-                }
-                actualBytes = countingOut.getByteCount();
-            } else {
-                // 不压缩时使用 Content-Length 模式
-                response.setHeader("Content-Length", String.valueOf(originalSize));
-                log.info("使用 Content-Length 模式传输");
-                
-                mapper.writeValue(response.getOutputStream(), result);
-                actualBytes = originalSize; // 使用原始大小作为实际传输大小
+            CountingOutputStream countingOut = new CountingOutputStream(response.getOutputStream());
+            try (GZIPOutputStream gzipOut = new GZIPOutputStream(countingOut)) {
+                mapper.writeValue(gzipOut, result);
+                gzipOut.flush();
             }
+            actualBytes = countingOut.getByteCount();
+        } else {
+            // 不压缩时使用 Content-Length 模式
+            response.setHeader("Content-Length", String.valueOf(originalSize));
+            log.info("使用 Content-Length 模式传输");
             
-            // 获取实际传输的字节数
-            double actualSizeMB = actualBytes / (1024.0 * 1024.0);
-            double originalSizeMB = originalSize / (1024.0 * 1024.0);
-            
-            // 计算压缩率
-            double compressionRatio = 0.0;
-            if (supportsGzip && originalSize > 0) {
-                compressionRatio = (1.0 - (double) actualBytes / originalSize) * 100.0;
-            }
-            
-            long endTime = System.currentTimeMillis();
-            long duration = endTime - startTime;
-            
-            if (supportsGzip) {
-                log.info("用户数据库日志查询完成, userId: {}, localDbVersion: {}, 耗时: {}ms, 原始大小: {}MB ({}字节), 压缩后: {}MB ({}字节), 压缩率: {}%, 日志数量: {}", 
-                    userId, fromVersion, duration, String.format("%.2f", originalSizeMB), originalSize, String.format("%.2f", actualSizeMB), actualBytes, String.format("%.1f", compressionRatio), logs.size());
-            } else {
-                log.info("用户数据库日志查询完成, userId: {}, localDbVersion: {}, 耗时: {}ms, 传输大小: {}MB ({}字节), 日志数量: {}", 
-                    userId, fromVersion, duration, String.format("%.2f", actualSizeMB), actualBytes, logs.size());
-            }
-            
-        } catch (IOException e) {
-            long endTime = System.currentTimeMillis();
-            long duration = endTime - startTime;
-            log.error("用户数据库日志查询失败, userId: {}, localDbVersion: {}, 耗时: {}ms, 错误: {}", 
-                userId, fromVersion, duration, e.getMessage(), e);
-            
-            // 返回错误响应
-            try {
-                Result<Object> errorResult = Result.fail(e.getMessage());
-                ObjectMapper mapper = new ObjectMapper();
-                String errorJson = mapper.writeValueAsString(errorResult);
-                
-                PrintWriter writer = response.getWriter();
-                writer.write(errorJson);
-                writer.flush();
-            } catch (IOException ex) {
-                log.error("生成错误响应失败", ex);
-                response.setStatus(500);
-            }
+            mapper.writeValue(response.getOutputStream(), result);
+            actualBytes = originalSize; // 使用原始大小作为实际传输大小
+        }
+        
+        // 获取实际传输的字节数
+        double actualSizeMB = actualBytes / (1024.0 * 1024.0);
+        double originalSizeMB = originalSize / (1024.0 * 1024.0);
+        
+        // 计算压缩率
+        double compressionRatio = 0.0;
+        if (supportsGzip && originalSize > 0) {
+            compressionRatio = (1.0 - (double) actualBytes / originalSize) * 100.0;
+        }
+        
+        long endTime = System.currentTimeMillis();
+        long duration = endTime - startTime;
+        
+        if (supportsGzip) {
+            log.info("用户数据库日志查询完成, userId: {}, localDbVersion: {}, 耗时: {}ms, 原始大小: {}MB ({}字节), 压缩后: {}MB ({}字节), 压缩率: {}%, 日志数量: {}", 
+                userId, fromVersion, duration, String.format("%.2f", originalSizeMB), originalSize, String.format("%.2f", actualSizeMB), actualBytes, String.format("%.1f", compressionRatio), logs.size());
+        } else {
+            log.info("用户数据库日志查询完成, userId: {}, localDbVersion: {}, 耗时: {}ms, 传输大小: {}MB ({}字节), 日志数量: {}", 
+                userId, fromVersion, duration, String.format("%.2f", actualSizeMB), actualBytes, logs.size());
         }
     }
 
@@ -164,15 +141,9 @@ public class SyncController {
     @PostMapping("/syncUserDb2Back.do")
     public Result<Integer> syncUserDb2Back(@RequestParam("expectedServerDbVersion") int expectedServerDbVersion,
                                  @RequestParam("userId") String userId,
-                                 @RequestBody ArrayList<UserDbLogDto> logs) throws IllegalAccessException, DbVersionNotMatchException {
-        try {
-            int lastVersion = syncBo.syncUserDb2Back(userId, expectedServerDbVersion, logs);
-            return Result.success(lastVersion);
-        } catch (RawWordDataErrorException e) {
-            log.info("", e);
-            // 返回特殊错误码，前端用来触发全量覆盖同步
-            return new Result<>("RAW_WORD_ORDER_INVALID", e.getMessage(), null);
-        }
+                                 @RequestBody ArrayList<UserDbLogDto> logs) throws IllegalAccessException, DbVersionNotMatchException, RawWordDataErrorException {
+        int lastVersion = syncBo.syncUserDb2Back(userId, expectedServerDbVersion, logs);
+        return Result.success(lastVersion);
     }
 
 

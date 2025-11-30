@@ -1,7 +1,5 @@
 package beidanci.service.controller;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -18,8 +16,6 @@ import beidanci.service.po.EmailCodeType;
 @RestController
 public class EmailVerificationController {
 
-    private static final Logger log = LoggerFactory.getLogger(EmailVerificationController.class);
-
     @Autowired
     private EmailVerificationCodeBo emailVerificationCodeBo;
 
@@ -34,23 +30,18 @@ public class EmailVerificationController {
     public Result<String> sendEmailCode(
             @RequestParam("email") String email,
             @RequestParam("type") String type) {
+        EmailCodeType codeType;
         try {
-            EmailCodeType codeType;
-            try {
-                codeType = EmailCodeType.valueOf(type.toUpperCase());
-            } catch (IllegalArgumentException e) {
-                return Result.fail("无效的验证码类型");
-            }
+            codeType = EmailCodeType.valueOf(type.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return Result.fail("无效的验证码类型");
+        }
 
-            String result = emailVerificationCodeBo.sendVerificationCode(email, codeType);
-            if ("OK".equals(result)) {
-                return Result.success("验证码已发送到您的邮箱", null);
-            } else {
-                return Result.fail(result);
-            }
-        } catch (Exception e) {
-            log.error("发送验证码失败", e);
-            return Result.fail("发送验证码失败：" + e.getMessage());
+        String result = emailVerificationCodeBo.sendVerificationCode(email, codeType);
+        if ("OK".equals(result)) {
+            return Result.success("验证码已发送到您的邮箱", null);
+        } else {
+            return Result.fail(result);
         }
     }
 
@@ -67,23 +58,18 @@ public class EmailVerificationController {
             @RequestParam("email") String email,
             @RequestParam("code") String code,
             @RequestParam("type") String type) {
+        EmailCodeType codeType;
         try {
-            EmailCodeType codeType;
-            try {
-                codeType = EmailCodeType.valueOf(type.toUpperCase());
-            } catch (IllegalArgumentException e) {
-                return Result.fail("无效的验证码类型");
-            }
+            codeType = EmailCodeType.valueOf(type.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return Result.fail("无效的验证码类型");
+        }
 
-            String result = emailVerificationCodeBo.verifyCode(email, code, codeType);
-            if ("OK".equals(result)) {
-                return Result.success("验证成功", null);
-            } else {
-                return Result.fail(result);
-            }
-        } catch (Exception e) {
-            log.error("验证验证码失败", e);
-            return Result.fail("验证失败：" + e.getMessage());
+        String result = emailVerificationCodeBo.verifyCode(email, code, codeType);
+        if ("OK".equals(result)) {
+            return Result.success("验证成功", null);
+        } else {
+            return Result.fail(result);
         }
     }
 }

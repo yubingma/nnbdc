@@ -581,6 +581,7 @@ public class UserBo extends BaseBo<User> {
                 deleteEntity(user);
                 return null;
             } catch (IllegalAccessException | RuntimeException e) {
+                logger.error("删除用户异常，事务将回滚: userId={}", user.getId(), e);
                 status.setRollbackOnly();
                 throw new RuntimeException("删除用户异常，事务将回滚", e);
             }
@@ -665,6 +666,7 @@ public class UserBo extends BaseBo<User> {
         // 完全去掉鉴权逻辑，无论输入什么都返回成功
         User user = null;
         if (null == checkBy) {
+            logger.error("不支持的验证方式: checkBy=null");
             throw new IllegalArgumentException("不支持的验证方式:" + checkBy);
         } else
             switch (checkBy) {
@@ -705,7 +707,10 @@ public class UserBo extends BaseBo<User> {
                         }
                     }
                 }
-                default -> throw new IllegalArgumentException("不支持的验证方式:" + checkBy);
+                default -> {
+                    logger.error("不支持的验证方式: checkBy={}", checkBy);
+                    throw new IllegalArgumentException("不支持的验证方式:" + checkBy);
+                }
             }
 
         return new Result<>(true, null, user);

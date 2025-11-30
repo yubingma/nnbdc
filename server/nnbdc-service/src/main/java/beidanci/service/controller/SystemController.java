@@ -90,12 +90,8 @@ public class SystemController {
      */
     @GetMapping("/getSystemDictsWithStats.do")
     public Result<List<DictStatsVo>> getSystemDictsWithStats() {
-        try {
-            List<DictStatsVo> result = dictBo.getSystemDictsWithStats();
-            return Result.success(result);
-        } catch (Exception e) {
-            return Result.fail("获取系统词典统计失败: " + e.getMessage());
-        }
+        List<DictStatsVo> result = dictBo.getSystemDictsWithStats();
+        return Result.success(result);
     }
 
     /**
@@ -103,12 +99,8 @@ public class SystemController {
      */
     @GetMapping("/getDictStats.do")
     public Result<DictStatsVo> getDictStats(@RequestParam("dictId") String dictId) {
-        try {
-            DictStatsVo result = dictBo.getDictStats(dictId);
-            return Result.success(result);
-        } catch (Exception e) {
-            return Result.fail("获取词典统计失败: " + e.getMessage());
-        }
+        DictStatsVo result = dictBo.getDictStats(dictId);
+        return Result.success(result);
     }
 
     /**
@@ -122,12 +114,8 @@ public class SystemController {
             @RequestParam("visible") boolean visible,
             @RequestParam(value = "popularityLimit", required = false) Integer popularityLimit
     ) {
-        try {
-            dictBo.updateSystemDict(dictId, name, isReady, visible, popularityLimit);
-            return Result.success("词典信息更新成功");
-        } catch (Exception e) {
-            return Result.fail("更新词典信息失败: " + e.getMessage());
-        }
+        dictBo.updateSystemDict(dictId, name, isReady, visible, popularityLimit);
+        return Result.success("词典信息更新成功");
     }
 
     /**
@@ -144,13 +132,9 @@ public class SystemController {
             @RequestParam(value = "britishPronounce", required = false) String britishPronounce,
             @RequestParam(value = "popularity", required = false) Integer popularity
     ) {
-        try {
-            dictBo.updateDictWord(wordId, spell, shortDesc, longDesc, pronounce, 
-                                americaPronounce, britishPronounce, popularity);
-            return Result.success("单词信息更新成功");
-        } catch (Exception e) {
-            return Result.fail("更新单词信息失败: " + e.getMessage());
-        }
+        dictBo.updateDictWord(wordId, spell, shortDesc, longDesc, pronounce, 
+                            americaPronounce, britishPronounce, popularity);
+        return Result.success("单词信息更新成功");
     }
 
     /**
@@ -161,12 +145,8 @@ public class SystemController {
             @RequestParam("dictId") String dictId,
             @RequestParam("wordId") String wordId
     ) {
-        try {
-            dictBo.removeWordFromDict(dictId, wordId);
-            return Result.success("单词删除成功");
-        } catch (Exception e) {
-            return Result.fail("删除单词失败: " + e.getMessage());
-        }
+        dictBo.removeWordFromDict(dictId, wordId);
+        return Result.success("单词删除成功");
     }
 
     // ============================================
@@ -178,12 +158,8 @@ public class SystemController {
      */
     @GetMapping("/admin/checkSystemDictIntegrity.do")
     public Result<SystemHealthCheckResult> checkSystemDictIntegrity() {
-        try {
-            SystemHealthCheckResult result = systemHealthCheckBo.checkSystemDictIntegrity();
-            return Result.success(result);
-        } catch (Exception e) {
-            return Result.fail("检查系统词典完整性失败: " + e.getMessage());
-        }
+        SystemHealthCheckResult result = systemHealthCheckBo.checkSystemDictIntegrity();
+        return Result.success(result);
     }
 
     /**
@@ -191,12 +167,8 @@ public class SystemController {
      */
     @GetMapping("/admin/checkUserDictIntegrity.do")
     public Result<SystemHealthCheckResult> checkUserDictIntegrity() {
-        try {
-            SystemHealthCheckResult result = systemHealthCheckBo.checkUserDictIntegrity();
-            return Result.success(result);
-        } catch (Exception e) {
-            return Result.fail("检查用户词典完整性失败: " + e.getMessage());
-        }
+        SystemHealthCheckResult result = systemHealthCheckBo.checkUserDictIntegrity();
+        return Result.success(result);
     }
 
     /**
@@ -204,12 +176,8 @@ public class SystemController {
      */
     @GetMapping("/admin/checkLearningProgress.do")
     public Result<SystemHealthCheckResult> checkLearningProgress() {
-        try {
-            SystemHealthCheckResult result = systemHealthCheckBo.checkLearningProgress();
-            return Result.success(result);
-        } catch (Exception e) {
-            return Result.fail("检查学习进度合理性失败: " + e.getMessage());
-        }
+        SystemHealthCheckResult result = systemHealthCheckBo.checkLearningProgress();
+        return Result.success(result);
     }
 
     /**
@@ -217,12 +185,8 @@ public class SystemController {
      */
     @GetMapping("/admin/checkDbVersionConsistency.do")
     public Result<SystemHealthCheckResult> checkDbVersionConsistency() {
-        try {
-            SystemHealthCheckResult result = systemHealthCheckBo.checkDbVersionConsistency();
-            return Result.success(result);
-        } catch (Exception e) {
-            return Result.fail("检查数据库版本一致性失败: " + e.getMessage());
-        }
+        SystemHealthCheckResult result = systemHealthCheckBo.checkDbVersionConsistency();
+        return Result.success(result);
     }
 
     /**
@@ -230,12 +194,8 @@ public class SystemController {
      */
     @GetMapping("/admin/checkCommonDictIntegrity.do")
     public Result<SystemHealthCheckResult> checkCommonDictIntegrity() {
-        try {
-            SystemHealthCheckResult result = systemHealthCheckBo.checkCommonDictIntegrity();
-            return Result.success(result);
-        } catch (Exception e) {
-            return Result.fail("检查通用词典完整性失败: " + e.getMessage());
-        }
+        SystemHealthCheckResult result = systemHealthCheckBo.checkCommonDictIntegrity();
+        return Result.success(result);
     }
 
     /**
@@ -245,12 +205,8 @@ public class SystemController {
     public Result<SystemHealthFixResult> autoFixSystemIssues(
             @RequestParam("issueTypes") List<String> issueTypes
     ) {
-        try {
-            SystemHealthFixResult result = systemHealthCheckBo.autoFixSystemIssues(issueTypes);
-            return Result.success(result);
-        } catch (Exception e) {
-            return Result.fail("自动修复系统问题失败: " + e.getMessage());
-        }
+        SystemHealthFixResult result = systemHealthCheckBo.autoFixSystemIssues(issueTypes);
+        return Result.success(result);
     }
 
     /**
@@ -263,16 +219,12 @@ public class SystemController {
     public Result<String> refreshCdnCache(
             @RequestParam("urls") String urls,
             @RequestParam(value = "objectType", defaultValue = "File") String objectType
-    ) {
-        try {
-            String result = cdnUtil.refreshCache(urls, objectType);
-            if ("OK".equals(result)) {
-                return Result.success("缓存刷新任务提交成功");
-            } else {
-                return Result.fail(result);
-            }
-        } catch (Exception e) {
-            return Result.fail("缓存刷新失败: " + e.getMessage());
+    ) throws IllegalAccessException {
+        String result = cdnUtil.refreshCache(urls, objectType);
+        if ("OK".equals(result)) {
+            return Result.success("缓存刷新任务提交成功");
+        } else {
+            return Result.fail(result);
         }
     }
 
@@ -282,25 +234,21 @@ public class SystemController {
      */
     @GetMapping("/admin/getCdnRefreshUrls.do")
     public Result<CdnUrlConfig> getCdnRefreshUrls() {
-        try {
-            String fileUrls = "";
-            String dirUrls = "";
-            
-            SysParam fileParam = sysParamBo.findById("cdnRefreshFileUrls");
-            if (fileParam != null) {
-                fileUrls = fileParam.getParamValue();
-            }
-            
-            SysParam dirParam = sysParamBo.findById("cdnRefreshDirUrls");
-            if (dirParam != null) {
-                dirUrls = dirParam.getParamValue();
-            }
-            
-            CdnUrlConfig config = new CdnUrlConfig(fileUrls, dirUrls);
-            return Result.success(config);
-        } catch (Exception e) {
-            return Result.fail("获取配置失败: " + e.getMessage());
+        String fileUrls = "";
+        String dirUrls = "";
+        
+        SysParam fileParam = sysParamBo.findById("cdnRefreshFileUrls");
+        if (fileParam != null) {
+            fileUrls = fileParam.getParamValue();
         }
+        
+        SysParam dirParam = sysParamBo.findById("cdnRefreshDirUrls");
+        if (dirParam != null) {
+            dirUrls = dirParam.getParamValue();
+        }
+        
+        CdnUrlConfig config = new CdnUrlConfig(fileUrls, dirUrls);
+        return Result.success(config);
     }
 
     /**
@@ -313,32 +261,28 @@ public class SystemController {
     public Result<String> saveCdnRefreshUrls(
             @RequestParam(value = "fileUrls", required = false, defaultValue = "") String fileUrls,
             @RequestParam(value = "dirUrls", required = false, defaultValue = "") String dirUrls
-    ) {
-        try {
-            // 保存文件URL配置
-            SysParam fileParam = sysParamBo.findById("cdnRefreshFileUrls");
-            if (fileParam == null) {
-                fileParam = new SysParam("cdnRefreshFileUrls", fileUrls, "CDN文件刷新URL配置");
-                sysParamBo.createEntity(fileParam);
-            } else {
-                fileParam.setParamValue(fileUrls);
-                sysParamBo.updateEntity(fileParam);
-            }
-            
-            // 保存目录URL配置
-            SysParam dirParam = sysParamBo.findById("cdnRefreshDirUrls");
-            if (dirParam == null) {
-                dirParam = new SysParam("cdnRefreshDirUrls", dirUrls, "CDN目录刷新URL配置");
-                sysParamBo.createEntity(dirParam);
-            } else {
-                dirParam.setParamValue(dirUrls);
-                sysParamBo.updateEntity(dirParam);
-            }
-            
-            return Result.success("配置保存成功");
-        } catch (Exception e) {
-            return Result.fail("保存配置失败: " + e.getMessage());
+    ) throws IllegalAccessException {
+        // 保存文件URL配置
+        SysParam fileParam = sysParamBo.findById("cdnRefreshFileUrls");
+        if (fileParam == null) {
+            fileParam = new SysParam("cdnRefreshFileUrls", fileUrls, "CDN文件刷新URL配置");
+            sysParamBo.createEntity(fileParam);
+        } else {
+            fileParam.setParamValue(fileUrls);
+            sysParamBo.updateEntity(fileParam);
         }
+        
+        // 保存目录URL配置
+        SysParam dirParam = sysParamBo.findById("cdnRefreshDirUrls");
+        if (dirParam == null) {
+            dirParam = new SysParam("cdnRefreshDirUrls", dirUrls, "CDN目录刷新URL配置");
+            sysParamBo.createEntity(dirParam);
+        } else {
+            dirParam.setParamValue(dirUrls);
+            sysParamBo.updateEntity(dirParam);
+        }
+        
+        return Result.success("配置保存成功");
     }
     
     /**
@@ -376,15 +320,11 @@ public class SystemController {
      */
     @GetMapping("/admin/queryAliyunBalance.do")
     public Result<AccountBalanceInfo> queryAliyunBalance() {
-        try {
-            AccountBalanceInfo balanceInfo = aliyunResourceUtil.queryAccountBalance();
-            if ("查询成功".equals(balanceInfo.getMessage())) {
-                return Result.success(balanceInfo);
-            } else {
-                return Result.fail(balanceInfo.getMessage());
-            }
-        } catch (Exception e) {
-            return Result.fail("查询失败: " + e.getMessage());
+        AccountBalanceInfo balanceInfo = aliyunResourceUtil.queryAccountBalance();
+        if ("查询成功".equals(balanceInfo.getMessage())) {
+            return Result.success(balanceInfo);
+        } else {
+            return Result.fail(balanceInfo.getMessage());
         }
     }
 
@@ -394,16 +334,12 @@ public class SystemController {
      */
     @GetMapping("/admin/queryAliyunResourcePackages.do")
     public Result<String> queryAliyunResourcePackages() {
-        try {
-            String result = aliyunResourceUtil.queryResourcePackageInstances();
-            // 如果是错误消息，返回失败；否则返回JSON数据
-            if (result.startsWith("{") && result.contains("Instances")) {
-                return Result.success(result);
-            } else {
-                return Result.fail(result);
-            }
-        } catch (Exception e) {
-            return Result.fail("查询失败: " + e.getMessage());
+        String result = aliyunResourceUtil.queryResourcePackageInstances();
+        // 如果是错误消息，返回失败；否则返回JSON数据
+        if (result.startsWith("{") && result.contains("Instances")) {
+            return Result.success(result);
+        } else {
+            return Result.fail(result);
         }
     }
 }

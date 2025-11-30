@@ -10,6 +10,8 @@ import java.util.Objects;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -20,6 +22,7 @@ import beidanci.service.po.Po;
 import beidanci.service.util.BeanUtils;
 import beidanci.service.util.ReflectionUtil;
 
+import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.ManyToMany;
@@ -33,6 +36,7 @@ import javax.persistence.OneToOne;
  * @author MaYubing
  */
 public abstract class BaseDao<E extends Po> {
+    private static final Logger logger = LoggerFactory.getLogger(BaseDao.class);
 
     private final ParameterizedType parameterizedType = (ParameterizedType) getClass().getGenericSuperclass();
 
@@ -77,7 +81,42 @@ public abstract class BaseDao<E extends Po> {
         List<Object> values = new ArrayList<>();
         
         for (Field field : fields) {
-            // 跳过关联字段和主键（如果主键已设置）
+            // 处理 @ManyToOne 字段：提取关联对象的 ID 作为外键
+            if (field.isAnnotationPresent(ManyToOne.class)) {
+                javax.persistence.JoinColumn joinColumn = field.getAnnotation(javax.persistence.JoinColumn.class);
+                if (joinColumn != null) {
+                    String foreignKeyColumnName = joinColumn.name();
+                    if (foreignKeyColumnName.isEmpty()) {
+                        // 如果没有指定列名，使用字段名 + "Id"
+                        foreignKeyColumnName = field.getName() + "Id";
+                    }
+                    
+                    try {
+                        field.setAccessible(true);
+                        Object associatedObject = field.get(entity);
+                        Object foreignKeyValue = null;
+                        
+                        if (associatedObject != null) {
+                            // 提取关联对象的 ID
+                            @SuppressWarnings("unchecked")
+                            Class<? extends Po> associatedPoClass = (Class<? extends Po>) associatedObject.getClass();
+                            Field associatedIdField = EntityTableInfo.getIdField(associatedPoClass);
+                            associatedIdField.setAccessible(true);
+                            foreignKeyValue = associatedIdField.get(associatedObject);
+                        }
+                        
+                        columnNames.add(foreignKeyColumnName);
+                        values.add(foreignKeyValue);
+                    } catch (IllegalAccessException e) {
+                        logger.error("创建实体时获取关联字段值失败: entityClass={}, field={}", 
+                            valueClass.getName(), field.getName(), e);
+                        throw new RuntimeException("获取关联字段值失败: " + field.getName(), e);
+                    }
+                }
+                continue;
+            }
+            
+            // 跳过其他关联字段（OneToMany, ManyToMany, OneToOne）
             if (isAssociationField(field)) {
                 continue;
             }
@@ -88,8 +127,24 @@ public abstract class BaseDao<E extends Po> {
             try {
                 field.setAccessible(true);
                 Object value = field.get(entity);
+                
+                // 处理枚举类型：如果字段是枚举且使用 @Enumerated(EnumType.STRING)，转换为字符串
+                if (value != null && field.getType().isEnum()) {
+                    if (field.isAnnotationPresent(javax.persistence.Enumerated.class)) {
+                        javax.persistence.Enumerated enumerated = field.getAnnotation(javax.persistence.Enumerated.class);
+                        if (enumerated.value() == javax.persistence.EnumType.STRING) {
+                            value = ((Enum<?>) value).name();
+                        }
+                    } else {
+                        // 如果没有 @Enumerated 注解，默认使用字符串形式
+                        value = ((Enum<?>) value).name();
+                    }
+                }
+                
                 values.add(value);
             } catch (IllegalAccessException e) {
+                logger.error("创建实体时获取字段值失败: entityClass={}, field={}", 
+                    valueClass.getName(), field.getName(), e);
                 throw new RuntimeException("获取字段值失败: " + field.getName(), e);
             }
         }
@@ -433,6 +488,42 @@ public abstract class BaseDao<E extends Po> {
         List<Object> values = new ArrayList<>();
         
         for (Field field : fields) {
+            // 处理 @ManyToOne 字段：提取关联对象的 ID 作为外键
+            if (field.isAnnotationPresent(ManyToOne.class)) {
+                javax.persistence.JoinColumn joinColumn = field.getAnnotation(javax.persistence.JoinColumn.class);
+                if (joinColumn != null) {
+                    String foreignKeyColumnName = joinColumn.name();
+                    if (foreignKeyColumnName.isEmpty()) {
+                        // 如果没有指定列名，使用字段名 + "Id"
+                        foreignKeyColumnName = field.getName() + "Id";
+                    }
+                    
+                    try {
+                        field.setAccessible(true);
+                        Object associatedObject = field.get(entity);
+                        Object foreignKeyValue = null;
+                        
+                        if (associatedObject != null) {
+                            // 提取关联对象的 ID
+                            @SuppressWarnings("unchecked")
+                            Class<? extends Po> associatedPoClass = (Class<? extends Po>) associatedObject.getClass();
+                            Field associatedIdField = EntityTableInfo.getIdField(associatedPoClass);
+                            associatedIdField.setAccessible(true);
+                            foreignKeyValue = associatedIdField.get(associatedObject);
+                        }
+                        
+                        setParts.add(foreignKeyColumnName + " = ?");
+                        values.add(foreignKeyValue);
+                    } catch (IllegalAccessException e) {
+                        logger.error("更新实体时获取关联字段值失败: entityClass={}, field={}", 
+                            valueClass.getName(), field.getName(), e);
+                        throw new RuntimeException("获取关联字段值失败: " + field.getName(), e);
+                    }
+                }
+                continue;
+            }
+            
+            // 跳过其他关联字段和主键
             if (isAssociationField(field) || field.equals(idField)) {
                 continue;
             }
@@ -443,8 +534,24 @@ public abstract class BaseDao<E extends Po> {
             try {
                 field.setAccessible(true);
                 Object value = field.get(entity);
+                
+                // 处理枚举类型：如果字段是枚举且使用 @Enumerated(EnumType.STRING)，转换为字符串
+                if (value != null && field.getType().isEnum()) {
+                    if (field.isAnnotationPresent(javax.persistence.Enumerated.class)) {
+                        javax.persistence.Enumerated enumerated = field.getAnnotation(javax.persistence.Enumerated.class);
+                        if (enumerated.value() == javax.persistence.EnumType.STRING) {
+                            value = ((Enum<?>) value).name();
+                        }
+                    } else {
+                        // 如果没有 @Enumerated 注解，默认使用字符串形式
+                        value = ((Enum<?>) value).name();
+                    }
+                }
+                
                 values.add(value);
             } catch (IllegalAccessException e) {
+                logger.error("更新实体时获取字段值失败: entityClass={}, field={}", 
+                    valueClass.getName(), field.getName(), e);
                 throw new RuntimeException("获取字段值失败: " + field.getName(), e);
             }
         }
@@ -459,6 +566,7 @@ public abstract class BaseDao<E extends Po> {
             sql.append(" WHERE ").append(idColumnName).append(" = ?");
             values.add(id);
         } catch (IllegalAccessException e) {
+            logger.error("更新实体时获取主键值失败: entityClass={}", valueClass.getName(), e);
             throw new RuntimeException("获取主键值失败", e);
         }
         
@@ -483,6 +591,7 @@ public abstract class BaseDao<E extends Po> {
             String sql = "DELETE FROM " + tableName + " WHERE " + idColumnName + " = ?";
             jdbcTemplate.update(sql, id);
         } catch (IllegalAccessException e) {
+            logger.error("删除实体时获取主键值失败: entityClass={}", valueClass.getName(), e);
             throw new RuntimeException("获取主键值失败", e);
         }
     }

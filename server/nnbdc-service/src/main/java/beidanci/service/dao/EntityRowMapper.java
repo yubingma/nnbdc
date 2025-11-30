@@ -135,11 +135,31 @@ public class EntityRowMapper<E extends Po> implements RowMapper<E> {
                 field.set(entity, new Date(((Timestamp) value).getTime()));
             } else if (fieldType == Date.class && value instanceof java.sql.Date) {
                 field.set(entity, new Date(((java.sql.Date) value).getTime()));
+            } 
+            // 处理枚举类型：如果字段是枚举类型，且值是字符串，则转换为枚举
+            else if (fieldType.isEnum() && value instanceof String) {
+                @SuppressWarnings("unchecked")
+                Class<? extends Enum<?>> enumClass = (Class<? extends Enum<?>>) fieldType;
+                // 使用反射调用 valueOf 方法，因为 Enum.valueOf 需要具体的泛型类型
+                try {
+                    java.lang.reflect.Method valueOfMethod = enumClass.getMethod("valueOf", String.class);
+                    Enum<?> enumValue = (Enum<?>) valueOfMethod.invoke(null, (String) value);
+                    field.set(entity, enumValue);
+                } catch (NoSuchMethodException | java.lang.reflect.InvocationTargetException e) {
+                    logger.error("无法将值转换为枚举类型: field={}, value={}, enumType={}", 
+                        field.getName(), value, fieldType.getName(), e);
+                    throw new RuntimeException("无法将值 '" + value + "' 转换为枚举类型 " + fieldType.getName(), e);
+                }
             } else {
                 field.set(entity, value);
             }
         } catch (IllegalAccessException e) {
-            logger.warn("设置字段 {} 的值时出错: {}", field.getName(), e.getMessage());
+            logger.error("设置字段值时出错: field={}, value={}", field.getName(), value, e);
+        } catch (IllegalArgumentException e) {
+            Class<?> fieldType = field.getType();
+            logger.error("设置枚举字段值时出错: field={}, value={}, enumType={}", 
+                field.getName(), value, fieldType.getName(), e);
+            throw new RuntimeException("无法将值 '" + value + "' 转换为枚举类型 " + fieldType.getName(), e);
         }
     }
 }

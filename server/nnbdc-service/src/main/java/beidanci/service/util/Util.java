@@ -482,7 +482,7 @@ public class Util {
     }
 
     public static void sendEmailToNnbdcCustomerSerivce(String subject, String content) {
-        sendSimpleEmail("mmyybb3000@hotmail.com", "myb", subject,
+        sendSimpleEmail("mmyybb3000@icloud.com", "myb", subject,
                 content);
     }
 

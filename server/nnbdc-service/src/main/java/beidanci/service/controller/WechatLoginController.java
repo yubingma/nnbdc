@@ -46,36 +46,30 @@ public class WechatLoginController {
                                        @RequestParam ClientType clientType, 
                                        @RequestParam String clientVersion) {
 
-        try {
-            // 1. 使用code从微信获取用户信息
-            Result<WechatBo.WechatUserInfo> wechatResult = wechatBo.getUserInfoByCode(code);
-            if (!wechatResult.isSuccess() || wechatResult.getData() == null) {
-                logger.error("获取微信用户信息失败: {}", wechatResult.getMsg());
-                return new Result<>(false, wechatResult.getMsg() != null ? wechatResult.getMsg() : "微信授权失败", null);
-            }
+        // 1. 使用code从微信获取用户信息
+        Result<WechatBo.WechatUserInfo> wechatResult = wechatBo.getUserInfoByCode(code);
+        if (!wechatResult.isSuccess() || wechatResult.getData() == null) {
+            logger.error("获取微信用户信息失败: {}", wechatResult.getMsg());
+            return new Result<>(false, wechatResult.getMsg() != null ? wechatResult.getMsg() : "微信授权失败", null);
+        }
 
-            WechatBo.WechatUserInfo wechatUserInfo = wechatResult.getData();
+        WechatBo.WechatUserInfo wechatUserInfo = wechatResult.getData();
 
-            // 2. 根据openId查找或创建用户
-            User user = userBo.findOrCreateUserByWechat(wechatUserInfo);
-            if (user == null) {
-                return new Result<>(false, "用户创建失败", null);
-            }
+        // 2. 根据openId查找或创建用户
+        User user = userBo.findOrCreateUserByWechat(wechatUserInfo);
+        if (user == null) {
+            return new Result<>(false, "用户创建失败", null);
+        }
 
-            // 3. 执行登录逻辑（设置session等）
-            Result<User> loginResult = userBo.doLoginByWechat(user, clientType, clientVersion, request, response);
+        // 3. 执行登录逻辑（设置session等）
+        Result<User> loginResult = userBo.doLoginByWechat(user, clientType, clientVersion, request, response);
 
-            if (loginResult.isSuccess()) {
-                UserVo userVo = BeanUtils.makeVo(user, UserVo.class, new String[]{"invitedBy", "StudyGroupVo.creator",
-                        "StudyGroupVo.users", "StudyGroupVo.managers", "StudyGroupVo.studyGroupPosts", "userGames"});
-                return new Result<>(true, "登录成功", userVo);
-            } else {
-                return new Result<>(false, loginResult.getMsg(), null);
-            }
-
-        } catch (Exception e) {
-            logger.error("微信登录异常", e);
-            return new Result<>(false, "登录失败，请稍后重试", null);
+        if (loginResult.isSuccess()) {
+            UserVo userVo = BeanUtils.makeVo(user, UserVo.class, new String[]{"invitedBy", "StudyGroupVo.creator",
+                    "StudyGroupVo.users", "StudyGroupVo.managers", "StudyGroupVo.studyGroupPosts", "userGames"});
+            return new Result<>(true, "登录成功", userVo);
+        } else {
+            return new Result<>(false, loginResult.getMsg(), null);
         }
     }
 }

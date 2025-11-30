@@ -121,21 +121,22 @@ public class FeatureRequestController {
     @ResponseBody
     public Result<Void> updateFeatureRequestStatus(@RequestParam(name = "requestId") String requestId,
                                                    @RequestParam(name = "status") String statusStr,
-                                                   @RequestParam(name = "adminUserId") String adminUserId) {
+                                                   @RequestParam(name = "adminUserId") String adminUserId) 
+            throws IllegalAccessException {
         User adminUser = userBo.findById(adminUserId);
         if (adminUser == null || !adminUser.getIsAdmin()) {
             return Result.fail("管理员权限不足");
         }
         
+        FeatureRequestStatus status;
         try {
-            FeatureRequestStatus status = FeatureRequestStatus.valueOf(statusStr);
-            featureRequestBo.updateRequestStatus(requestId, status);
-            return Result.success(null);
+            status = FeatureRequestStatus.valueOf(statusStr);
         } catch (IllegalArgumentException e) {
             return Result.fail("无效的状态值");
-        } catch (IllegalAccessException e) {
-            return Result.fail("更新失败: " + e.getMessage());
         }
+        
+        featureRequestBo.updateRequestStatus(requestId, status);
+        return Result.success(null);
     }
 
     private void shrinkCreatorInfo(FeatureRequestVo vo) throws IllegalAccessException {

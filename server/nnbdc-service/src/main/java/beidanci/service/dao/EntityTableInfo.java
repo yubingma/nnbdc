@@ -8,6 +8,9 @@ import javax.persistence.Column;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import beidanci.service.po.Po;
 import beidanci.service.util.BeanUtils;
 
@@ -15,6 +18,7 @@ import beidanci.service.util.BeanUtils;
  * 实体表信息工具类，用于获取表名、主键等信息
  */
 public class EntityTableInfo {
+    private static final Logger logger = LoggerFactory.getLogger(EntityTableInfo.class);
     private static final Map<Class<?>, String> tableNameCache = new HashMap<>();
     private static final Map<Class<?>, Field> idFieldCache = new HashMap<>();
     
@@ -60,6 +64,7 @@ public class EntityTableInfo {
             }
         }
         
+        logger.error("实体类没有找到主键字段: entityClass={}", entityClass.getName());
         throw new RuntimeException("实体类 " + entityClass.getName() + " 没有找到主键字段");
     }
     

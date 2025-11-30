@@ -8,6 +8,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -26,6 +28,7 @@ import beidanci.service.po.UserStudyStepId;
 @Service
 @Transactional(rollbackFor = Throwable.class)
 public class UserStudyStepBo extends BaseBo<UserStudyStep> {
+    private static final Logger logger = LoggerFactory.getLogger(UserStudyStepBo.class);
 
         @PostConstruct
     public void init() {
@@ -211,7 +214,7 @@ public class UserStudyStepBo extends BaseBo<UserStudyStep> {
             System.out.println("批量删除user_study_step记录完成，用户ID: " + userId + ", 删除数量: " + deletedCount);
             
         } catch (Exception e) {
-            System.err.println("批量删除user_study_step记录失败，用户ID: " + userId + ", 错误: " + e.getMessage());
+            logger.error("批量删除user_study_step记录失败: userId={}", userId, e);
             throw new RuntimeException("批量删除user_study_step记录失败: " + e.getMessage(), e);
         }
     }

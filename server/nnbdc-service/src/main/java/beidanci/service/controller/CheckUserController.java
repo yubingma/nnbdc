@@ -65,27 +65,23 @@ public class CheckUserController {
             @RequestParam("code") String code,
             ClientType clientType,
             String clientVersion) {
-        try {
-            // 先验证验证码（验证邮箱没有输入错误）
-            String verifyResult = emailVerificationCodeBo.verifyCode(email, code, EmailCodeType.LOGIN);
-            if (!"OK".equals(verifyResult)) {
-                return Result.fail(verifyResult);
-            }
-
-            // 验证码验证成功，进行登录或注册（不需要密码）
-            Result<User> result = userBo.checkUserByEmailCode(request, email, clientType, clientVersion);
-            
-            if (result.isSuccess()) {
-                User user = result.getData();
-                Assert.notNull(user, "用户不存在");
-                UserVo userVo = BeanUtils.makeVo(user, UserVo.class, new String[]{"invitedBy", "StudyGroupVo.creator",
-                        "StudyGroupVo.users", "StudyGroupVo.managers", "StudyGroupVo.studyGroupPosts", "userGames"});
-                return new Result<>(true, "登录成功", userVo);
-            }
-
-            return new Result<>(false, result.getMsg(), null);
-        } catch (Exception e) {
-            return Result.fail("登录失败：" + e.getMessage());
+        // 先验证验证码（验证邮箱没有输入错误）
+        String verifyResult = emailVerificationCodeBo.verifyCode(email, code, EmailCodeType.LOGIN);
+        if (!"OK".equals(verifyResult)) {
+            return Result.fail(verifyResult);
         }
+
+        // 验证码验证成功，进行登录或注册（不需要密码）
+        Result<User> result = userBo.checkUserByEmailCode(request, email, clientType, clientVersion);
+        
+        if (result.isSuccess()) {
+            User user = result.getData();
+            Assert.notNull(user, "用户不存在");
+            UserVo userVo = BeanUtils.makeVo(user, UserVo.class, new String[]{"invitedBy", "StudyGroupVo.creator",
+                    "StudyGroupVo.users", "StudyGroupVo.managers", "StudyGroupVo.studyGroupPosts", "userGames"});
+            return new Result<>(true, "登录成功", userVo);
+        }
+
+        return new Result<>(false, result.getMsg(), null);
     }
 }
