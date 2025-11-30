@@ -2,11 +2,16 @@ package beidanci.service.bo;
 import javax.annotation.PostConstruct;
 
 import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -16,6 +21,7 @@ import beidanci.api.model.ClientType;
 import beidanci.api.model.MsgType;
 import beidanci.api.model.PagedResults;
 import beidanci.service.dao.BaseDao;
+import beidanci.service.dao.EntityRowMapper;
 import beidanci.service.po.Msg;
 import beidanci.service.po.User;
 import beidanci.service.socket.SocketService;
@@ -77,7 +83,7 @@ public class MsgBo extends BaseBo<Msg> {
         params.addValue("limit", rows);
         params.addValue("offset", (page - 1) * rows);
         List<Msg> msgs = namedParameterJdbcTemplate.query(pagedSql, params, 
-            new beidanci.service.dao.EntityRowMapper<>(Msg.class));
+            new EntityRowMapper<>(Msg.class));
 
         // 批量加载完整的 User 对象，填充 fromUser 和 toUser 字段
         loadUsersForMsgs(msgs);
@@ -115,7 +121,7 @@ public class MsgBo extends BaseBo<Msg> {
         params.addValue("offset", totalInt >= msgCount ? totalInt - msgCount : 0);
         
         List<Msg> msgs = namedParameterJdbcTemplate.query(pagedSql, params, 
-            new beidanci.service.dao.EntityRowMapper<>(Msg.class));
+            new EntityRowMapper<>(Msg.class));
         
         // 批量加载完整的 User 对象，填充 fromUser 和 toUser 字段
         loadUsersForMsgs(msgs);
@@ -132,7 +138,7 @@ public class MsgBo extends BaseBo<Msg> {
         }
         
         // 收集所有需要加载的 User ID
-        java.util.Set<String> userIds = new java.util.HashSet<>();
+        Set<String> userIds = new HashSet<>();
         for (Msg msg : msgs) {
             if (msg.getFromUser() != null && msg.getFromUser().getId() != null) {
                 userIds.add(msg.getFromUser().getId());
@@ -149,25 +155,25 @@ public class MsgBo extends BaseBo<Msg> {
         // 批量查询 User 对象
         String sql = "SELECT * FROM user WHERE id IN (:ids)";
         MapSqlParameterSource params = new MapSqlParameterSource("ids", userIds);
-        List<beidanci.service.po.User> users = namedParameterJdbcTemplate.query(sql, params,
-            new beidanci.service.dao.EntityRowMapper<>(beidanci.service.po.User.class));
+        List<User> users = namedParameterJdbcTemplate.query(sql, params,
+            new EntityRowMapper<>(User.class));
         
         // 构建 User ID 到 User 对象的映射
-        java.util.Map<String, beidanci.service.po.User> userMap = new java.util.HashMap<>();
-        for (beidanci.service.po.User user : users) {
+        Map<String, User> userMap = new HashMap<>();
+        for (User user : users) {
             userMap.put(user.getId(), user);
         }
         
         // 填充 Msg 的 fromUser 和 toUser 字段
         for (Msg msg : msgs) {
             if (msg.getFromUser() != null && msg.getFromUser().getId() != null) {
-                beidanci.service.po.User fullUser = userMap.get(msg.getFromUser().getId());
+                User fullUser = userMap.get(msg.getFromUser().getId());
                 if (fullUser != null) {
                     msg.setFromUser(fullUser);
                 }
             }
             if (msg.getToUser() != null && msg.getToUser().getId() != null) {
-                beidanci.service.po.User fullUser = userMap.get(msg.getToUser().getId());
+                User fullUser = userMap.get(msg.getToUser().getId());
                 if (fullUser != null) {
                     msg.setToUser(fullUser);
                 }
@@ -201,7 +207,7 @@ public class MsgBo extends BaseBo<Msg> {
                 return 0;
             }
             return count.intValue();
-        } catch (org.springframework.dao.EmptyResultDataAccessException e) {
+        } catch (EmptyResultDataAccessException e) {
             // COUNT(*) 不应该返回空结果，但为了安全起见处理这种情况
             return 0;
         } catch (Exception e) {
@@ -226,7 +232,7 @@ public class MsgBo extends BaseBo<Msg> {
                 return 0;
             }
             return count.intValue();
-        } catch (org.springframework.dao.EmptyResultDataAccessException e) {
+        } catch (EmptyResultDataAccessException e) {
             // COUNT(*) 不应该返回空结果，但为了安全起见处理这种情况
             return 0;
         } catch (Exception e) {
