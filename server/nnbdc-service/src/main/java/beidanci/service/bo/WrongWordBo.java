@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -121,7 +122,7 @@ public class WrongWordBo extends BaseBo<WrongWord> {
                 params.addValue("createTime", filters.get("createTime"));
             }
             
-            int deletedCount = namedParameterJdbcTemplate.update(sql.toString(), params);
+            int deletedCount = namedParameterJdbcTemplate.update(Objects.requireNonNull(sql.toString(), "SQL cannot be null"), params);
             System.out.println("批量删除user_wrong_word记录完成，用户ID: " + userId + ", 删除数量: " + deletedCount);
             
         } catch (Exception e) {

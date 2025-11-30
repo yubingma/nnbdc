@@ -5,6 +5,7 @@ import java.util.List;
 import javax.annotation.Resource;
 
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -37,9 +38,9 @@ public class UserDbVersionDao extends BaseDao<UserDbVersion> {
      * @see #getUserDbVersionWithLock(JdbcTemplate, String) 带锁的查询方法，用于事务中的修改操作
      */
     public int getUserDbVersion(JdbcTemplate jdbcTemplate, String userId) {
-        String sql = "SELECT version FROM user_db_version WHERE userId = ?";
-        List<Integer> results = jdbcTemplate.query(sql, 
-            new Object[]{userId}, 
+        String sql = "SELECT version FROM user_db_version WHERE userId = :userId";
+        MapSqlParameterSource params = new MapSqlParameterSource("userId", userId);
+        List<Integer> results = namedParameterJdbcTemplate.query(sql, params, 
             (rs, rowNum) -> rs.getInt("version"));
         
         return results.isEmpty() ? Constants.USER_DB_VERSION_INITIAL : results.get(0);
@@ -57,9 +58,9 @@ public class UserDbVersionDao extends BaseDao<UserDbVersion> {
      */
     public int getUserDbVersionWithLock(JdbcTemplate jdbcTemplate, String userId) {
         // 使用原生SQL的 FOR UPDATE 子句来加行锁
-        String sql = "SELECT version FROM user_db_version WHERE userId = ? FOR UPDATE";
-        List<Integer> results = jdbcTemplate.query(sql, 
-            new Object[]{userId}, 
+        String sql = "SELECT version FROM user_db_version WHERE userId = :userId FOR UPDATE";
+        MapSqlParameterSource params = new MapSqlParameterSource("userId", userId);
+        List<Integer> results = namedParameterJdbcTemplate.query(sql, params, 
             (rs, rowNum) -> rs.getInt("version"));
         
         return results.isEmpty() ? Constants.USER_DB_VERSION_INITIAL : results.get(0);
@@ -95,13 +96,14 @@ public class UserDbVersionDao extends BaseDao<UserDbVersion> {
      */
     public void ensureUserDbVersionExists(JdbcTemplate jdbcTemplate, String userId) {
         // 检查用户是否存在
-        String checkUserSql = "SELECT COUNT(*) FROM user WHERE id = ?";
-        Integer userCount = jdbcTemplate.queryForObject(checkUserSql, new Object[]{userId}, Integer.class);
+        String checkUserSql = "SELECT COUNT(*) FROM user WHERE id = :userId";
+        MapSqlParameterSource userParams = new MapSqlParameterSource("userId", userId);
+        Integer userCount = namedParameterJdbcTemplate.queryForObject(checkUserSql, userParams, Integer.class);
         
         if (userCount != null && userCount > 0) {
             // 检查版本记录是否存在
-            String checkVersionSql = "SELECT COUNT(*) FROM user_db_version WHERE userId = ?";
-            Integer versionCount = jdbcTemplate.queryForObject(checkVersionSql, new Object[]{userId}, Integer.class);
+            String checkVersionSql = "SELECT COUNT(*) FROM user_db_version WHERE userId = :userId";
+            Integer versionCount = namedParameterJdbcTemplate.queryForObject(checkVersionSql, userParams, Integer.class);
             
             if (versionCount == null || versionCount == 0) {
                 // 创建初始版本记录
@@ -131,8 +133,9 @@ public class UserDbVersionDao extends BaseDao<UserDbVersion> {
      * 统计用户异常日志数量
      */
     public Integer countInvalidLogs(String userId, Integer currentVersion) {
-        String sql = "SELECT COUNT(*) FROM user_db_log WHERE userId = ? AND version > ?";
-        return jdbcTemplate.queryForObject(sql, new Object[]{userId, currentVersion}, Integer.class);
+        String sql = "SELECT COUNT(*) FROM user_db_log WHERE userId = :userId AND version > :currentVersion";
+        MapSqlParameterSource params = new MapSqlParameterSource("userId", userId).addValue("currentVersion", currentVersion);
+        return namedParameterJdbcTemplate.queryForObject(sql, params, Integer.class);
     }
 
     /**

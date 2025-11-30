@@ -7,6 +7,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -200,10 +201,10 @@ public class MasteredWordBo extends BaseBo<MasteredWord> {
             
             MapSqlParameterSource params = new MapSqlParameterSource();
             for (Map.Entry<String, Object> entry : parameters.entrySet()) {
-                params.addValue(entry.getKey(), entry.getValue());
+                params.addValue(Objects.requireNonNull(entry.getKey(), "Parameter key cannot be null"), entry.getValue());
             }
             
-            int deletedCount = namedParameterJdbcTemplate.update(sql.toString(), params);
+            int deletedCount = namedParameterJdbcTemplate.update(Objects.requireNonNull(sql.toString(), "SQL cannot be null"), params);
             System.out.println("批量删除mastered_word记录完成，用户ID: " + userId + ", 删除数量: " + deletedCount);
             
         } catch (Exception e) {

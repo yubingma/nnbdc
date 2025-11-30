@@ -6,6 +6,7 @@ import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -46,8 +47,8 @@ public abstract class BaseDao<E extends Po> {
      * 设置 JdbcTemplate（由子类或配置类注入）
      */
     public void setJdbcTemplate(JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
-        this.namedParameterJdbcTemplate = new NamedParameterJdbcTemplate(jdbcTemplate);
+        this.jdbcTemplate = Objects.requireNonNull(jdbcTemplate, "JdbcTemplate cannot be null");
+        this.namedParameterJdbcTemplate = new NamedParameterJdbcTemplate(this.jdbcTemplate);
         this.rowMapper = new EntityRowMapper<>(valueClass);
     }
 
@@ -65,7 +66,7 @@ public abstract class BaseDao<E extends Po> {
         entity.setUpdateTime(now);
         
         String tableName = EntityTableInfo.getTableName(valueClass);
-        Field idField = EntityTableInfo.getIdField(valueClass);
+        // Field idField = EntityTableInfo.getIdField(valueClass); // 未使用
         
         // 构建 INSERT SQL
         StringBuilder sql = new StringBuilder("INSERT INTO ");
@@ -98,7 +99,8 @@ public abstract class BaseDao<E extends Po> {
         sql.append(String.join(", ", columnNames.stream().map(c -> "?").toList()));
         sql.append(")");
         
-        jdbcTemplate.update(sql.toString(), values.toArray());
+        String finalSql = Objects.requireNonNull(sql.toString(), "SQL cannot be null");
+        jdbcTemplate.update(finalSql, values.toArray());
     }
 
     /**
@@ -123,11 +125,11 @@ public abstract class BaseDao<E extends Po> {
         // 构建参数映射
         MapSqlParameterSource paramSource = new MapSqlParameterSource();
         for (Pair<String, Object> param : parameters) {
-            paramSource.addValue(param.getLeft(), param.getRight());
+            paramSource.addValue(Objects.requireNonNull(param.getLeft(), "Parameter key cannot be null"), param.getRight());
         }
         
         // 查询总数
-        String countSql = "SELECT COUNT(*) FROM (" + convertedSql + ") AS count_query";
+        String countSql = "SELECT COUNT(*) FROM (" + Objects.requireNonNull(convertedSql, "SQL cannot be null") + ") AS count_query";
         Integer total = namedParameterJdbcTemplate.queryForObject(countSql, paramSource, Integer.class);
         
         // 分页查询
@@ -135,7 +137,7 @@ public abstract class BaseDao<E extends Po> {
         paramSource.addValue("limit", pageSize);
         paramSource.addValue("offset", (pageNo - 1) * pageSize);
         
-        List<E> rows = namedParameterJdbcTemplate.query(pagedSql, paramSource, rowMapper);
+        List<E> rows = namedParameterJdbcTemplate.query(pagedSql, paramSource, Objects.requireNonNull(rowMapper, "RowMapper cannot be null"));
         
         return new PagedResults<>(total != null ? total : 0, rows);
     }
@@ -153,10 +155,13 @@ public abstract class BaseDao<E extends Po> {
         
         MapSqlParameterSource paramSource = new MapSqlParameterSource();
         for (Pair<String, Object> param : parameters) {
-            paramSource.addValue(param.getLeft(), param.getRight());
+            paramSource.addValue(Objects.requireNonNull(param.getLeft(), "Parameter key cannot be null"), param.getRight());
         }
         
-        List<E> results = namedParameterJdbcTemplate.query(convertedSql, paramSource, rowMapper);
+        List<E> results = namedParameterJdbcTemplate.query(
+            Objects.requireNonNull(convertedSql, "SQL cannot be null"), 
+            paramSource, 
+            Objects.requireNonNull(rowMapper, "RowMapper cannot be null"));
         return results.isEmpty() ? null : results.get(0);
     }
 
@@ -173,11 +178,11 @@ public abstract class BaseDao<E extends Po> {
         
         MapSqlParameterSource paramSource = new MapSqlParameterSource();
         for (Pair<String, Object> param : parameters) {
-            paramSource.addValue(param.getLeft(), param.getRight());
+            paramSource.addValue(Objects.requireNonNull(param.getLeft(), "Parameter key cannot be null"), param.getRight());
         }
         
         // 查询总数
-        String countSql = "SELECT COUNT(*) FROM (" + convertedSql + ") AS count_query";
+        String countSql = "SELECT COUNT(*) FROM (" + Objects.requireNonNull(convertedSql, "SQL cannot be null") + ") AS count_query";
         Integer total = namedParameterJdbcTemplate.queryForObject(countSql, paramSource, Integer.class);
         
         // 分页查询
@@ -185,7 +190,7 @@ public abstract class BaseDao<E extends Po> {
         paramSource.addValue("limit", pageSize);
         paramSource.addValue("offset", fromIndex);
         
-        List<E> rows = namedParameterJdbcTemplate.query(pagedSql, paramSource, rowMapper);
+        List<E> rows = namedParameterJdbcTemplate.query(pagedSql, paramSource, Objects.requireNonNull(rowMapper, "RowMapper cannot be null"));
         
         return new PagedResults<>(total != null ? total : 0, rows);
     }
@@ -204,7 +209,7 @@ public abstract class BaseDao<E extends Po> {
         StringBuilder sql = new StringBuilder("SELECT * FROM ").append(tableName).append(" WHERE 1=1");
         
         List<Object> params = new ArrayList<>();
-        int paramIndex = 1;
+        // int paramIndex = 1; // 未使用
         
         // 添加精确查询条件
         if (preciseEntity != null) {
@@ -238,16 +243,54 @@ public abstract class BaseDao<E extends Po> {
             }
         }
         
-        // 查询总数
-        String countSql = "SELECT COUNT(*) FROM (" + sql.toString() + ") AS count_query";
-        Integer total = jdbcTemplate.queryForObject(countSql, params.toArray(), Integer.class);
+        // 查询总数 - 转换为命名参数 SQL
+        String countSqlStr = sql.toString();
+        MapSqlParameterSource countParams = new MapSqlParameterSource();
+        StringBuilder countSqlBuilder = new StringBuilder();
+        int countParamIndex = 0;
+        for (int i = 0; i < countSqlStr.length(); i++) {
+            if (countSqlStr.charAt(i) == '?') {
+                String paramName = "p" + countParamIndex;
+                countSqlBuilder.append(":").append(paramName);
+                countParams.addValue(paramName, params.get(countParamIndex));
+                countParamIndex++;
+            } else {
+                countSqlBuilder.append(countSqlStr.charAt(i));
+            }
+        }
+        String countSql = "SELECT COUNT(*) FROM (" + countSqlBuilder.toString() + ") AS count_query";
+        Integer total = namedParameterJdbcTemplate.queryForObject(countSql, countParams, Integer.class);
         
-        // 分页查询
-        sql.append(" LIMIT ? OFFSET ?");
-        params.add(pageSize);
-        params.add((pageNo - 1) * pageSize);
+        // 分页查询 - 转换为命名参数 SQL
+        sql.append(" LIMIT :limit OFFSET :offset");
+        String querySqlStr = sql.toString();
+        MapSqlParameterSource queryParams = new MapSqlParameterSource();
+        StringBuilder querySqlBuilder = new StringBuilder();
+        int queryParamIndex = 0;
+        for (int i = 0; i < querySqlStr.length(); i++) {
+            char c = querySqlStr.charAt(i);
+            if (c == '?') {
+                String paramName = "p" + queryParamIndex;
+                querySqlBuilder.append(":").append(paramName);
+                queryParams.addValue(paramName, params.get(queryParamIndex));
+                queryParamIndex++;
+            } else if (i < querySqlStr.length() - 6 && querySqlStr.substring(i, i + 6).equals(":limit")) {
+                querySqlBuilder.append(":limit");
+                i += 5; // 跳过 ":limit"
+            } else if (i < querySqlStr.length() - 8 && querySqlStr.substring(i, i + 8).equals(":offset")) {
+                querySqlBuilder.append(":offset");
+                i += 7; // 跳过 ":offset"
+            } else {
+                querySqlBuilder.append(c);
+            }
+        }
+        queryParams.addValue("limit", pageSize);
+        queryParams.addValue("offset", (pageNo - 1) * pageSize);
         
-        List<E> rows = jdbcTemplate.query(sql.toString(), params.toArray(), rowMapper);
+        List<E> rows = namedParameterJdbcTemplate.query(
+            Objects.requireNonNull(querySqlBuilder.toString(), "SQL cannot be null"), 
+            queryParams, 
+            Objects.requireNonNull(rowMapper, "RowMapper cannot be null"));
         
         return new PagedResults<>(total != null ? total : 0, rows);
     }
@@ -299,16 +342,54 @@ public abstract class BaseDao<E extends Po> {
             sql.append(String.join(", ", orderParts));
         }
         
-        // 查询总数
-        String countSql = "SELECT COUNT(*) FROM (" + sql.toString() + ") AS count_query";
-        Integer total = jdbcTemplate.queryForObject(countSql, params.toArray(), Integer.class);
+        // 查询总数 - 转换为命名参数 SQL
+        String countSqlStr = sql.toString();
+        MapSqlParameterSource countParams = new MapSqlParameterSource();
+        StringBuilder countSqlBuilder = new StringBuilder();
+        int countParamIndex = 0;
+        for (int i = 0; i < countSqlStr.length(); i++) {
+            if (countSqlStr.charAt(i) == '?') {
+                String paramName = "p" + countParamIndex;
+                countSqlBuilder.append(":").append(paramName);
+                countParams.addValue(paramName, params.get(countParamIndex));
+                countParamIndex++;
+            } else {
+                countSqlBuilder.append(countSqlStr.charAt(i));
+            }
+        }
+        String countSql = "SELECT COUNT(*) FROM (" + Objects.requireNonNull(countSqlBuilder.toString(), "SQL cannot be null") + ") AS count_query";
+        Integer total = namedParameterJdbcTemplate.queryForObject(countSql, countParams, Integer.class);
         
-        // 分页查询
-        sql.append(" LIMIT ? OFFSET ?");
-        params.add(pageSize);
-        params.add(fromIndex);
+        // 分页查询 - 转换为命名参数 SQL
+        sql.append(" LIMIT :limit OFFSET :offset");
+        String querySqlStr = sql.toString();
+        MapSqlParameterSource queryParams = new MapSqlParameterSource();
+        StringBuilder querySqlBuilder = new StringBuilder();
+        int queryParamIndex = 0;
+        for (int i = 0; i < querySqlStr.length(); i++) {
+            char c = querySqlStr.charAt(i);
+            if (c == '?') {
+                String paramName = "p" + queryParamIndex;
+                querySqlBuilder.append(":").append(paramName);
+                queryParams.addValue(paramName, params.get(queryParamIndex));
+                queryParamIndex++;
+            } else if (i < querySqlStr.length() - 6 && querySqlStr.substring(i, i + 6).equals(":limit")) {
+                querySqlBuilder.append(":limit");
+                i += 5;
+            } else if (i < querySqlStr.length() - 8 && querySqlStr.substring(i, i + 8).equals(":offset")) {
+                querySqlBuilder.append(":offset");
+                i += 7;
+            } else {
+                querySqlBuilder.append(c);
+            }
+        }
+        queryParams.addValue("limit", pageSize);
+        queryParams.addValue("offset", fromIndex);
         
-        List<E> rows = jdbcTemplate.query(sql.toString(), params.toArray(), rowMapper);
+        List<E> rows = namedParameterJdbcTemplate.query(
+            Objects.requireNonNull(querySqlBuilder.toString(), "SQL cannot be null"), 
+            queryParams, 
+            Objects.requireNonNull(rowMapper, "RowMapper cannot be null"));
         
         return new PagedResults<>(total != null ? total : 0, rows);
     }
@@ -381,7 +462,7 @@ public abstract class BaseDao<E extends Po> {
             throw new RuntimeException("获取主键值失败", e);
         }
         
-        jdbcTemplate.update(sql.toString(), values.toArray());
+        jdbcTemplate.update(Objects.requireNonNull(sql.toString(), "SQL cannot be null"), values.toArray());
     }
 
     /**
@@ -418,8 +499,12 @@ public abstract class BaseDao<E extends Po> {
         Field idField = EntityTableInfo.getIdField(valueClass);
         String idColumnName = EntityTableInfo.getColumnName(idField);
         
-        String sql = "SELECT * FROM " + tableName + " WHERE " + idColumnName + " = ?";
-        List<E> results = jdbcTemplate.query(sql, new Object[]{id}, rowMapper);
+        String sql = "SELECT * FROM " + tableName + " WHERE " + idColumnName + " = :id";
+        MapSqlParameterSource params = new MapSqlParameterSource("id", id);
+        List<E> results = namedParameterJdbcTemplate.query(
+            Objects.requireNonNull(sql, "SQL cannot be null"), 
+            params, 
+            Objects.requireNonNull(rowMapper, "RowMapper cannot be null"));
         return results.isEmpty() ? null : results.get(0);
     }
 

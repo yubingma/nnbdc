@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -203,10 +204,10 @@ public class UserStudyStepBo extends BaseBo<UserStudyStep> {
             
             MapSqlParameterSource params = new MapSqlParameterSource();
             for (Map.Entry<String, Object> entry : parameters.entrySet()) {
-                params.addValue(entry.getKey(), entry.getValue());
+                params.addValue(Objects.requireNonNull(entry.getKey(), "Parameter key cannot be null"), entry.getValue());
             }
             
-            int deletedCount = namedParameterJdbcTemplate.update(sql.toString(), params);
+            int deletedCount = namedParameterJdbcTemplate.update(Objects.requireNonNull(sql.toString(), "SQL cannot be null"), params);
             System.out.println("批量删除user_study_step记录完成，用户ID: " + userId + ", 删除数量: " + deletedCount);
             
         } catch (Exception e) {

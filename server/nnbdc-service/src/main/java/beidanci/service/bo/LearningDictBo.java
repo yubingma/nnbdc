@@ -3,6 +3,7 @@ package beidanci.service.bo;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import javax.annotation.PostConstruct;
 
@@ -150,10 +151,10 @@ public class LearningDictBo extends BaseBo<LearningDict> {
             
             MapSqlParameterSource params = new MapSqlParameterSource();
             for (Map.Entry<String, Object> entry : parameters.entrySet()) {
-                params.addValue(entry.getKey(), entry.getValue());
+                params.addValue(Objects.requireNonNull(entry.getKey(), "Parameter key cannot be null"), entry.getValue());
             }
             
-            int deletedCount = namedParameterJdbcTemplate.update(sql.toString(), params);
+            int deletedCount = namedParameterJdbcTemplate.update(Objects.requireNonNull(sql.toString(), "SQL cannot be null"), params);
             System.out.println("批量删除学习词典记录完成，用户ID: " + userId + ", 删除数量: " + deletedCount);
             
         } catch (Exception e) {

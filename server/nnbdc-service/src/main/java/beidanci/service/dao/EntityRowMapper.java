@@ -97,7 +97,7 @@ public class EntityRowMapper<E extends Po> implements RowMapper<E> {
     }
     
     @Override
-    public E mapRow(ResultSet rs, int rowNum) throws SQLException {
+    public E mapRow(@org.springframework.lang.NonNull ResultSet rs, int rowNum) throws SQLException {
         try {
             E entity = entityClass.getDeclaredConstructor().newInstance();
             ResultSetMetaData metaData = rs.getMetaData();

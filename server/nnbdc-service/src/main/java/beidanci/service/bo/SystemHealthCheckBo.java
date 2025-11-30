@@ -70,12 +70,12 @@ public class SystemHealthCheckBo {
         
         try {
             // 使用原生SQL一次性获取所有用户词典信息，参考check_db.py的高效查询
-            String sql = """
-                SELECT d.id, d.name, d.ownerId, d.wordCount, d.createTime
-                FROM dict d
-                WHERE d.visible = 1 AND d.isReady = 1 AND d.ownerId != ?
-                ORDER BY d.createTime DESC
-                """;
+            // String sql = """
+            //     SELECT d.id, d.name, d.ownerId, d.wordCount, d.createTime
+            //     FROM dict d
+            //     WHERE d.visible = 1 AND d.isReady = 1 AND d.ownerId != ?
+            //     ORDER BY d.createTime DESC
+            //     """;
             
             // 使用 JDBC 查询，需要先迁移 DictBo
             // TODO: 迁移 DictBo 后修复此方法
@@ -250,13 +250,13 @@ public class SystemHealthCheckBo {
     private void checkDictWordSequenceAndCount(String dictId, String dictName, String ownerId, Integer expectedWordCount, List<SystemHealthIssue> issues) {
         try {
             // 使用原生SQL一次性获取词典中的所有单词，按seq排序
-            String sql = """
-                SELECT dw.wordId, dw.seq, w.spell
-                FROM dict_word dw
-                JOIN word w ON dw.wordId = w.id
-                WHERE dw.dictId = ?
-                ORDER BY dw.seq ASC
-                """;
+            // String sql = """
+            //     SELECT dw.wordId, dw.seq, w.spell
+            //     FROM dict_word dw
+            //     JOIN word w ON dw.wordId = w.id
+            //     WHERE dw.dictId = ?
+            //     ORDER BY dw.seq ASC
+            //     """;
             
             // 使用 JDBC 查询，需要先迁移 DictBo
             // TODO: 迁移 DictBo 后修复此方法

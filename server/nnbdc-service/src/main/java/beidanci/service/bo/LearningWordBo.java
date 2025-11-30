@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import javax.naming.NamingException;
 import javax.servlet.http.HttpServletRequest;
@@ -694,7 +695,7 @@ public class LearningWordBo extends BaseBo<LearningWord> {
                 params.addValue("lastLearningDate", filters.get("lastLearningDate"));
             }
             
-            int deletedCount = namedParameterJdbcTemplate.update(sql.toString(), params);
+            int deletedCount = namedParameterJdbcTemplate.update(Objects.requireNonNull(sql.toString(), "SQL cannot be null"), params);
             log.info("批量删除学习单词记录完成，用户ID: {}, 删除数量: {}", userId, deletedCount);
             
         } catch (Exception e) {
