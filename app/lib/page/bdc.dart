@@ -810,15 +810,16 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         // 将提示音 Future 添加到列表中，用于后续等待所有提示音播放完成
         final soundFuture = SoundUtil.playAssetSoundConcurrent('correct.mp3', 1.5, 0.2);
         _playingCorrectSounds.add(soundFuture);
-        // 播放完成后从列表中移除
-        soundFuture.whenComplete(() async {
-          // 等待100秒，用户机会说出下一个释义, 这样用户体验会更好一点
-          await Future.delayed(Duration(seconds: 100));
-          
-          _playingCorrectSounds.remove(soundFuture);
-          if (_playingCorrectSounds.isEmpty && _isAnswerCorrect) {
-            getNextWord(true);
-          }
+
+        // 等待音频播放完成，然后再等待100秒后执行后续逻辑
+        // 这样用户有机会说出下一个释义, 用户体验会更好一点
+        soundFuture.whenComplete(() {
+          Future.delayed(Duration(microseconds: 100)).then((_) {
+            _playingCorrectSounds.remove(soundFuture);
+            if (_playingCorrectSounds.isEmpty && _isAnswerCorrect) {
+              getNextWord(true);
+            }
+          });
         });
       }
     } else if (_studyStep == StudyStep.ch2En.json) {
@@ -826,25 +827,16 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       String inputText = _handlingChinese.trim().toLowerCase();
       String correctSpell = _word!.spell.toLowerCase();
 
-      Global.logger.d('checkAsrResult: inputText=$inputText, correctSpell=$correctSpell');
-
       if (inputText == correctSpell) {
         _isAnswerCorrect = true;
 
-        // 并发播放提示音，支持多个提示音同时播放，互不干扰
-        // 将提示音 Future 添加到列表中，用于后续等待所有提示音播放完成
+        // 播放真确提示音
         final soundFuture = SoundUtil.playAssetSoundConcurrent('correct.mp3', 1.5, 0.2);
-        _playingCorrectSounds.add(soundFuture);
-        Global.logger.d('checkAsrResult: 添加提示音到列表，当前有 ${_playingCorrectSounds.length} 个提示音正在播放');
-        // 播放完成后从列表中移除
         soundFuture.whenComplete(() async {
-          _playingCorrectSounds.remove(soundFuture);
-          if (_playingCorrectSounds.isEmpty && _isAnswerCorrect) {
-            await SoundUtil.playPronounceSound2(_word!, _audioPlayer);
-            getNextWord(true);
-          }
+          // 播放一遍单词的标准发音
+          await SoundUtil.playPronounceSound2(_word!, _audioPlayer);
+          getNextWord(true);
         });
-        Global.logger.d('checkAsrResult: English spelling match!');
       }
     }
   }
@@ -1011,8 +1003,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
               '===== BDC: playWordAndFirstSentence 播放完成，但单词已改变，跳过ASR启动 (savedStudyStep=$savedStudyStep => studyStep=$_studyStep, savedWordId=$savedWordId => wordId=${_word?.id})');
         }
       } else {
-        Global.logger.d(
-            '===== BDC: playWordAndFirstSentence 播放完成，但跳过ASR启动 (isInSpeakTab=$_isInSpeakTab, isKeyboardVisible=$_isKeyboardVisible)');
+        Global.logger.d('===== BDC: playWordAndFirstSentence 播放完成，但跳过ASR启动 (isInSpeakTab=$_isInSpeakTab, isKeyboardVisible=$_isKeyboardVisible)');
       }
     }
   }
