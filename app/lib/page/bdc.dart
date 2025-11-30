@@ -355,9 +355,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   /// 正在进行匹配的asr输入，防止重复处理，影响性能
   var _handlingChinese = "";
 
-  /// 是否正在获取下一个单词
-  bool _gettingNextWord = false;
-
   /// 当前正在学习的单词
   GetWordResult? _currentGetWordResult;
 
@@ -544,13 +541,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
   /// 根据当前tab状态处理ASR启动/停止逻辑
   void _handleTabChangeForAsr() {
-    // 如果正在获取下一个单词，暂时不要自动启动/停止ASR，
-    // 避免在getNextWord内部的stop/reset和这里的start/stop交错导致状态紊乱
-    if (_gettingNextWord) {
-      Global.logger.d('===== BDC: 正在获取下一个单词，跳过本次ASR状态切换');
-      return;
-    }
-
     _doHandleTabChangeForAsr();
   }
 
@@ -790,12 +780,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   }
 
   checkAsrResult() async {
-    // 如果正在获取下一个单词，跳过检查，避免在清空输入框时误触发
-    if (_gettingNextWord) {
-      Global.logger.d('checkAsrResult: 正在获取下一个单词，跳过检查');
-      return;
-    }
-
+    // 如果输入框中的文本与正在处理的文本相同，则直接返回, 避免无谓的性能损耗
     if (_meaningController.text != _handlingChinese) {
       _handlingChinese = _meaningController.text;
     } else {
@@ -809,8 +794,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         _wordWrapper!,
         _handlingChinese,
       );
-
-      Global.logger.d('checkAsrResult: result=$result');
 
       // 检查用户说出的正确释义数量是否达到要求
       final total = result.totalCount;
@@ -827,9 +810,11 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         // 将提示音 Future 添加到列表中，用于后续等待所有提示音播放完成
         final soundFuture = SoundUtil.playAssetSoundConcurrent('correct.mp3', 1.5, 0.2);
         _playingCorrectSounds.add(soundFuture);
-        Global.logger.d('checkAsrResult: 添加提示音到列表，当前有 ${_playingCorrectSounds.length} 个提示音正在播放');
         // 播放完成后从列表中移除
-        soundFuture.whenComplete(() {
+        soundFuture.whenComplete(() async {
+          // 等待100秒，用户机会说出下一个释义, 这样用户体验会更好一点
+          await Future.delayed(Duration(seconds: 100));
+          
           _playingCorrectSounds.remove(soundFuture);
           if (_playingCorrectSounds.isEmpty && _isAnswerCorrect) {
             getNextWord(true);
@@ -920,12 +905,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   /// 获取下一个单词
   /// @param gotoNext true: 取下一个位置的单词 false: 获取当前位置的单词
   getNextWord(bool gotoNext) async {
-    if (_gettingNextWord) {
-      Global.logger.w('===== BDC: getNextWord 被调用，但正在获取中，跳过 (gotoNext=$gotoNext)');
-      return;
-    }
-    Global.logger.d('===== BDC: getNextWord 开始 (gotoNext=$gotoNext)');
-    _gettingNextWord = true;
     asr.stopAsr();
     asr.reset();
     _meaningController.text = '';
@@ -948,7 +927,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       var resp = await StudyBo().getNextWord(_isAnswerCorrect, _isWordMastered, shouldEnterNextStage, triedCount == 0 ? gotoNext : true);
       triedCount++;
       if (!resp.success) {
-        _gettingNextWord = false;
         if (resp.code == 'NEW_DAY') {
           if (!mounted) return;
           await showDialog(
@@ -992,8 +970,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     }
 
     handleWord(_currentGetWordResult);
-
-    _gettingNextWord = false;
   }
 
   Future<void> playWordAndFirstSentence(UserVo user, bool forcePlayWord, bool startAsrWhenFinish) async {
@@ -1025,7 +1001,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     } finally {
       // 播音结束后，如果当前在"说"tab且键盘未弹出，则统一交给 _handleTabChangeForAsr 控制ASR启动
       // 注意：检查 studyStep 和 word 是否已经改变，如果改变了说明有新的单词加载，就不应该启动ASR
-      if (!PlatformUtils.isWeb && _isInSpeakTab && !_isKeyboardVisible && !_gettingNextWord) {
+      if (!PlatformUtils.isWeb && _isInSpeakTab && !_isKeyboardVisible) {
         // 检查 studyStep 和 word 是否还是原来的值
         if (savedStudyStep == _studyStep && savedWordId == _word?.id) {
           Global.logger.d('===== BDC: playWordAndFirstSentence 播放完成，准备启动ASR (studyStep=$_studyStep, wordId=${_word?.id})');
@@ -1036,7 +1012,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         }
       } else {
         Global.logger.d(
-            '===== BDC: playWordAndFirstSentence 播放完成，但跳过ASR启动 (isInSpeakTab=$_isInSpeakTab, isKeyboardVisible=$_isKeyboardVisible, gettingNextWord=$_gettingNextWord)');
+            '===== BDC: playWordAndFirstSentence 播放完成，但跳过ASR启动 (isInSpeakTab=$_isInSpeakTab, isKeyboardVisible=$_isKeyboardVisible)');
       }
     }
   }
