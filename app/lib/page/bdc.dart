@@ -711,7 +711,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   }
 
   onAsrResult(event) async {
-    Global.logger.d('===== BDC: onAsrResult 被调用，收到事件: $event (studyStep=$_studyStep, word=${_word?.spell})');
     // 预处理ASR结果，然后更新 meaningController
     String processedResult;
 
@@ -780,6 +779,14 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   }
 
   checkAsrResult() async {
+    if (asr.state != AsrState.started) {
+      Global.logger.w('收到语音识别结果，但ASR未启动，跳过处理');
+      if (mounted) {
+        _meaningController.text = '';
+      }
+      return;
+    }
+
     // 如果输入框中的文本与正在处理的文本相同，则直接返回, 避免无谓的性能损耗
     if (_meaningController.text != _handlingChinese) {
       _handlingChinese = _meaningController.text;
@@ -810,11 +817,12 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         // 将提示音 Future 添加到列表中，用于后续等待所有提示音播放完成
         final soundFuture = SoundUtil.playAssetSoundConcurrent('correct.mp3', 1.5, 0.2);
         _playingCorrectSounds.add(soundFuture);
+        debugPrint('checkAsrResult: 添加提示音到列表，当前有 ${_playingCorrectSounds.length} 个提示音正在播放');
 
-        // 等待音频播放完成，然后再等待100秒后执行后续逻辑
+        // 等待音频播放完成，然后再等待200毫秒后执行后续逻辑
         // 这样用户有机会说出下一个释义, 用户体验会更好一点
         soundFuture.whenComplete(() {
-          Future.delayed(Duration(microseconds: 100)).then((_) {
+          Future.delayed(Duration(microseconds: 1200)).then((_) {
             _playingCorrectSounds.remove(soundFuture);
             if (_playingCorrectSounds.isEmpty && _isAnswerCorrect) {
               getNextWord(true);
@@ -914,8 +922,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     // 循环调用直到获取到有效单词或遇到其他状态
     int triedCount = 0;
     while (true) {
-      Global.logger.d(
-          '===== BDC: getNextWord 循环第 ${triedCount + 1} 次调用 StudyBo().getNextWord (shouldEnterNextStage=$shouldEnterNextStage, gotoNext=${triedCount == 0 ? gotoNext : true})');
       var resp = await StudyBo().getNextWord(_isAnswerCorrect, _isWordMastered, shouldEnterNextStage, triedCount == 0 ? gotoNext : true);
       triedCount++;
       if (!resp.success) {
@@ -947,15 +953,12 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
       // 如果单词已掌握，重置状态并继续获取下一个单词
       if (_currentGetWordResult!.wordMastered) {
-        Global.logger.d('===== BDC: getNextWord 循环第 $triedCount 次返回的单词已掌握, 继续循环');
         // 重置状态，准备获取下一个单词
         _isAnswerCorrect = true; // 设置为true以便前进到下一个单词
         _isWordMastered = false; // 重置掌握状态
         shouldEnterNextStage = false; // 后续调用不需要进入下一阶段
         continue; // 继续循环获取下一个单词
       }
-
-      Global.logger.d('===== BDC: getNextWord 循环第 $triedCount 次返回有效单词, 跳出循环');
 
       // 获取到有效单词，跳出循环
       break;
@@ -969,9 +972,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     // 使用列表快照，避免在等待过程中列表被修改
     final soundsToWait = List<Future<void>>.from(_playingCorrectSounds);
     if (soundsToWait.isNotEmpty) {
-      Global.logger.d('playWordAndFirstSentence: 等待 ${soundsToWait.length} 个提示音播放完成');
       await Future.wait(soundsToWait);
-      Global.logger.d('playWordAndFirstSentence: 所有提示音播放完成');
     }
 
     // 保存当前的 studyStep 和 word，用于在 finally 块中检查是否已经改变

@@ -400,7 +400,7 @@ class Asr {
         try {
           // 先播放启动提示音，让用户知道可以开始说话了（不等待播放完成）
           // 这样可以减少单词播放完成到提示音之间的间隔
-          SoundUtil.playAssetSound('asr_hint.mp3', 1.3, 1.0).catchError((e) {
+          SoundUtil.playAssetSound('asr_ready_hint.mp3', 1.3, 1.0).catchError((e) {
             Global.logger.i('播放ASR启动提示音失败: $e');
           });
           
