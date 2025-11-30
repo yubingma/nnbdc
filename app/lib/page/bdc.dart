@@ -340,64 +340,55 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   late Asr asr;
 
   /// 释义输入框
-  TextEditingController meaningController = TextEditingController();
+  final TextEditingController _meaningController = TextEditingController();
 
-  AudioPlayer audioPlayer = AudioPlayer();
+  final AudioPlayer _audioPlayer = AudioPlayer();
 
   /// AudioPlayer 是否已被释放的标志
   bool _audioPlayerDisposed = false;
 
-  late BdcPageArgs args;
+  late BdcPageArgs _args;
 
-  /// 是否可以离开当前单词（用户完成了选择题，或者用户asr回答正确的释义数量达到要求）
-  bool canLeaveCurrWord = false;
+  /// 是否允许用户点击下一词按钮离开当前单词（英→中模式下，用户asr回答正确了至少一个释义）
+  bool _canLeaveCurrWord = false;
 
   /// 正在进行匹配的asr输入，防止重复处理，影响性能
-  var handlingChinese = "";
+  var _handlingChinese = "";
 
   /// 是否正在获取下一个单词
-  bool gettingNextWord = false;
+  bool _gettingNextWord = false;
 
   /// 当前正在学习的单词
-  GetWordResult? currentGetWordResult;
+  GetWordResult? _currentGetWordResult;
 
   /// 正确答案的索引号
-  int correctAnswerIndex = 0;
-
-  /// 上一个单词
-  WordVo? prevWrod;
+  int _correctAnswerIndex = 0;
 
   /// 当前单词是否回答正确
-  bool isAnswerCorrect = false;
-
-  /// 当前单词是否回答正确
-  bool isShowingWordDetail = false;
+  bool _isAnswerCorrect = false;
 
   /// 当前单词是否已经掌握
-  bool isWordMastered = false;
+  bool _isWordMastered = false;
 
   /// 当前正在学习的单词的第一个例句
-  String? englishDigestOfFirstSentence;
+  String? _englishDigestOfFirstSentence;
 
-  /// 是否正在显示一个单词的内容？
-  var isShowingAWord = false;
-
-  String? studyStep;
+  String? _studyStep;
 
   /// 当前单词
-  WordVo? word;
+  WordVo? _word;
 
   /// 当前单词的Wrapper，供recite模式使用
-  WordWrapper? wordWrapper;
+  WordWrapper? _wordWrapper;
 
   /// 当前单词及其他备选单词
-  List<WordVo>? words;
+  List<WordVo>? _words;
 
-  late bool showAnswerButtons;
+  late bool _showAnswerButtons;
 
-  late StreamSubscription keyboardSubscription;
+  late StreamSubscription _keyboardSubscription;
 
-  late bool isKeyboardVisible;
+  late bool _isKeyboardVisible;
 
   // 底部按钮实际高度，用于为做题区内容预留空间，避免被遮挡
   final GlobalKey _bottomButtonsKey = GlobalKey();
@@ -406,15 +397,15 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   static const double _questionAnswerGap = 8.0;
 
   /// 控制做题区、题目区和底部按钮的边框是否显示
-  bool showBorders = false;
+  final bool _showBorders = false;
 
-  var isDarkMode = false;
+  var _isDarkMode = false;
 
-  var isEditMode = false;
+  var _isEditMode = false;
 
-  String? highlightedWordImg;
+  String? _highlightedWordImg;
 
-  bool wordImageEdited = false;
+  bool _wordImageEdited = false;
 
   late AnimationController _soundController;
   late AnimationController _wordSoundController;
@@ -424,12 +415,12 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     'sentence': false, // 例句发音
   };
 
-  Timer? _debounceTimer;
-  Timer? _asrStateChangeDebounceTimer;
+  /// 当前正在播放的所有提示音 Future 列表，用于等待所有提示音播放完成
+  final List<Future<void>> _playingCorrectSounds = [];
 
   /// Tab控制器，用于管理说/选两个tab
   TabController? _tabController;
-  
+
   /// 记住当前选中的tab索引，避免总是切回"说"tab
   int _currentTabIndex = 0; // 默认选择"说"tab
 
@@ -446,7 +437,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     if (!PlatformUtils.isAsrSupported()) return false;
 
     // 如果是"中→英"模式，需要英文ASR支持
-    if (studyStep == StudyStep.meaning.json) {
+    if (_studyStep == StudyStep.ch2En.json) {
       return PlatformUtils.isEnglishAsrSupported();
     }
 
@@ -525,12 +516,12 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     // 仍然引用旧 controller 时触发 "used after being disposed" 异常。
     // 旧的 controller 会在页面整体 dispose 时统一释放。
     _tabController = TabController(length: _dynamicTabs.length, vsync: this);
-    
+
     // 确保索引在有效范围内
     if (_currentTabIndex >= _dynamicTabs.length) {
       _currentTabIndex = _dynamicTabs.length - 1; // 选择最后一个tab
     }
-    
+
     // 设置到之前选中的tab
     _tabController!.index = _currentTabIndex;
 
@@ -540,7 +531,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         // Tab正在切换中
         return;
       }
-      
+
       // 更新当前tab索引
       _currentTabIndex = _tabController!.index;
 
@@ -555,30 +546,25 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   void _handleTabChangeForAsr() {
     // 如果正在获取下一个单词，暂时不要自动启动/停止ASR，
     // 避免在getNextWord内部的stop/reset和这里的start/stop交错导致状态紊乱
-    if (gettingNextWord) {
+    if (_gettingNextWord) {
       Global.logger.d('===== BDC: 正在获取下一个单词，跳过本次ASR状态切换');
       return;
     }
 
-    // 防抖：如果最近刚调用过，延迟执行，避免短时间内重复调用
-    // 减少延迟时间，让ASR更快启动，提升用户体验
-    _asrStateChangeDebounceTimer?.cancel();
-    _asrStateChangeDebounceTimer = Timer(const Duration(milliseconds: 50), () {
-      _doHandleTabChangeForAsr();
-    });
+    _doHandleTabChangeForAsr();
   }
 
   /// 实际执行ASR启动/停止逻辑
   void _doHandleTabChangeForAsr() {
     if (_isInSpeakTab) {
       // 当前在"说"tab，如果ASR已经启动且状态正确，不需要再次启动
-      if (asr.state == AsrState.started && !isKeyboardVisible) {
+      if (asr.state == AsrState.started && !_isKeyboardVisible) {
         Global.logger.d('===== BDC: 当前在"说"tab，ASR已启动，跳过重复启动');
         return;
       }
       // 当前在"说"tab，启动ASR
-      Global.logger.d('===== BDC: 当前在"说"tab，启动ASR (studyStep=$studyStep)');
-      if (!isKeyboardVisible) {
+      Global.logger.d('===== BDC: 当前在"说"tab，启动ASR (studyStep=$_studyStep)');
+      if (!_isKeyboardVisible) {
         // 设置上下文短语
         _setAsrContextualPhrases();
         final language = decideAsrLanguage();
@@ -600,8 +586,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    args = BdcPageArgs.fromJson(GetStorage().read<String>("BdcPageArgs")!);
-
+    _args = BdcPageArgs.fromJson(GetStorage().read<String>("BdcPageArgs")!);
 
     // 初始化两个动画控制器
     _wordSoundController = AnimationController(
@@ -614,20 +599,20 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     );
 
     // Listen to player state changes.
-    audioPlayer.onPlayerStateChanged.listen((state) {
+    _audioPlayer.onPlayerStateChanged.listen((state) {
       Global.logger.d('Player state changed: $state');
     });
 
-    meaningController.addListener(() {
+    _meaningController.addListener(() {
       checkAsrResult();
     });
 
     // 监听输入法键盘弹出和隐藏
     var keyboardVisibilityController = KeyboardVisibilityController();
-    isKeyboardVisible = keyboardVisibilityController.isVisible;
-    keyboardSubscription = keyboardVisibilityController.onChange.listen((bool visible) {
-      isKeyboardVisible = visible;
-      if (isKeyboardVisible) {
+    _isKeyboardVisible = keyboardVisibilityController.isVisible;
+    _keyboardSubscription = keyboardVisibilityController.onChange.listen((bool visible) {
+      _isKeyboardVisible = visible;
+      if (_isKeyboardVisible) {
         // 键盘弹出时，统一停止ASR
         asr.stopAsr();
       } else {
@@ -667,8 +652,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   }
 
   AsrLanguage decideAsrLanguage() {
-    Global.logger.d('===== BDC: decideAsrLanguage() - studyStep=$studyStep, meaning.json=${StudyStep.meaning.json}, word.json=${StudyStep.word.json}');
-    if (studyStep == StudyStep.meaning.json) {
+    Global.logger
+        .d('===== BDC: decideAsrLanguage() - studyStep=$_studyStep, meaning.json=${StudyStep.ch2En.json}, word.json=${StudyStep.en2Ch.json}');
+    if (_studyStep == StudyStep.ch2En.json) {
       Global.logger.d('===== BDC: 决定使用英文ASR (中→英模式)');
       return AsrLanguage.english;
     }
@@ -679,14 +665,14 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   /// 设置ASR上下文短语（当前单词的释义子项(说中文)或当前单词的拼写(说英文)）
   void _setAsrContextualPhrases() {
     try {
-      WordVo? word = currentGetWordResult?.learningWord?.word;
+      WordVo? word = _currentGetWordResult?.learningWord?.word;
       if (word != null) {
         List<String> allowPhrases = [];
-        if (studyStep == StudyStep.meaning.json) {
+        if (_studyStep == StudyStep.ch2En.json) {
           allowPhrases = [word.spell];
-        } else if (studyStep == StudyStep.word.json) {
+        } else if (_studyStep == StudyStep.en2Ch.json) {
           allowPhrases = AsrUtil.extractContextualPhrases(
-            currentGetWordResult!.learningWord!.word.getMergedMeaningItems(),
+            _currentGetWordResult!.learningWord!.word.getMergedMeaningItems(),
           );
         }
 
@@ -705,8 +691,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
   @override
   void dispose() {
-    _debounceTimer?.cancel();
-    _asrStateChangeDebounceTimer?.cancel();
     asr.removeStateListener((state) {
       if (mounted) {
         setState(() {});
@@ -714,7 +698,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     });
     asr.dispose();
     asr.stopAsr();
-    keyboardSubscription.cancel();
+    _keyboardSubscription.cancel();
     _tabController?.dispose();
     _soundController.dispose();
     _wordSoundController.dispose();
@@ -727,7 +711,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     // 延迟释放 AudioPlayer，确保所有操作完成
     Future.delayed(const Duration(milliseconds: 100), () {
       try {
-        audioPlayer.dispose();
+        _audioPlayer.dispose();
       } catch (e, stackTrace) {
         ErrorHandler.handleError(e, stackTrace, logPrefix: '释放 AudioPlayer 时出错', showToast: false);
       }
@@ -737,7 +721,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   }
 
   onAsrResult(event) async {
-    Global.logger.d('===== BDC: onAsrResult 被调用，收到事件: $event (studyStep=$studyStep, word=${word?.spell})');
+    Global.logger.d('===== BDC: onAsrResult 被调用，收到事件: $event (studyStep=$_studyStep, word=${_word?.spell})');
     // 预处理ASR结果，然后更新 meaningController
     String processedResult;
 
@@ -761,14 +745,14 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         Global.logger.d('===== ASR: Multiple candidates received: $candidateStrings');
         Global.logger.d('===== ASR: Best candidate: $bestCandidate');
 
-        if (studyStep == StudyStep.meaning.json && word != null) {
+        if (_studyStep == StudyStep.ch2En.json && _word != null) {
           // 中→英模式：结合拼写相似度和音素相似度的智能选择
-          processedResult = await AsrUtil.selectBestCandidateWithPhoneme(candidateStrings, word!.spell);
-          Global.logger.d('===== ASR: Selected result: "$processedResult" (目标单词: ${word!.spell})');
+          processedResult = await AsrUtil.selectBestCandidateWithPhoneme(candidateStrings, _word!.spell);
+          Global.logger.d('===== ASR: Selected result: "$processedResult" (目标单词: ${_word!.spell})');
         } else {
           // 其他模式：直接使用最佳候选结果，然后进行相应预处理
           processedResult = bestCandidate;
-          if (studyStep == StudyStep.word.json) {
+          if (_studyStep == StudyStep.en2Ch.json) {
             // 英→中模式：使用中文预处理
             processedResult = AsrUtil.preprocess(processedResult);
             Global.logger.d('===== ASR: Chinese processed result: $processedResult');
@@ -778,12 +762,12 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         }
       } else {
         // 单个结果处理
-        if (studyStep == StudyStep.meaning.json && word != null) {
+        if (_studyStep == StudyStep.ch2En.json && _word != null) {
           // 中→英模式：英文预处理（单个结果场景下也尝试音素匹配）
-          final pre = AsrUtil.preprocessEnglish(event, word!.spell);
-          final best = await AsrUtil.selectBestCandidateWithPhoneme([pre], word!.spell);
+          final pre = AsrUtil.preprocessEnglish(event, _word!.spell);
+          final best = await AsrUtil.selectBestCandidateWithPhoneme([pre], _word!.spell);
           processedResult = best;
-          Global.logger.d('===== ASR: Single result processed: "$event" -> "$processedResult" (target: ${word!.spell})');
+          Global.logger.d('===== ASR: Single result processed: "$event" -> "$processedResult" (target: ${_word!.spell})');
         } else {
           // 其他模式：中文预处理
           processedResult = AsrUtil.preprocess(event);
@@ -793,111 +777,90 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     } catch (e) {
       Global.logger.e('===== ASR: Error processing result: $e');
       // 出错时使用原始结果进行基本预处理
-      if (studyStep == StudyStep.meaning.json && word != null) {
-        processedResult = AsrUtil.preprocessEnglish(event, word!.spell);
+      if (_studyStep == StudyStep.ch2En.json && _word != null) {
+        processedResult = AsrUtil.preprocessEnglish(event, _word!.spell);
       } else {
         processedResult = AsrUtil.preprocess(event);
       }
     }
 
     if (mounted) {
-      if (_debounceTimer?.isActive ?? false) _debounceTimer!.cancel();
-      _debounceTimer = Timer(const Duration(milliseconds: 100), () {
-        if (!mounted) return;
-        // 无论当前是否显示“词详”面板，都写入输入框，
-        // 避免在模式切换等场景下识别结果被忽略，导致看不到文本
-        Global.logger.d('===== ASR: Applying processed result to input: "$processedResult"');
-        meaningController.text = processedResult;
-      });
+      _meaningController.text = processedResult;
     }
   }
 
   checkAsrResult() async {
     // 如果正在获取下一个单词，跳过检查，避免在清空输入框时误触发
-    if (gettingNextWord) {
+    if (_gettingNextWord) {
       Global.logger.d('checkAsrResult: 正在获取下一个单词，跳过检查');
       return;
     }
 
-    if (meaningController.text != handlingChinese) {
-      handlingChinese = meaningController.text;
+    if (_meaningController.text != _handlingChinese) {
+      _handlingChinese = _meaningController.text;
     } else {
       return;
     }
 
-    Global.logger.d('checkAsrResult: handlingChinese=$handlingChinese');
-
-    bool isPass = false;
-
-    if (studyStep == StudyStep.word.json) {
+    if (_studyStep == StudyStep.en2Ch.json) {
       // 英→中：验证中文释义
-      late Triple<int, int, int> result;
+      late MeaningMatchResult result;
       result = matchInputChineseWithMeaningItems(
-        wordWrapper!,
-        handlingChinese,
+        _wordWrapper!,
+        _handlingChinese,
       );
 
       Global.logger.d('checkAsrResult: result=$result');
 
-      // 检查是否满足通过条件
-      final total = result.first;
-      final matched = result.second;
-      isPass = await _isAsrPass(total, matched);
-      Global.logger.d('checkAsrResult: isPass=$isPass');
+      // 检查用户说出的正确释义数量是否达到要求
+      final total = result.totalCount;
+      final matched = result.matchedCount;
+      _isAnswerCorrect = await _isAsrPass(total, matched);
 
       // 如果本次有新增匹配，播放音效并设置状态
-      if (result.third > 0) {
+      if (result.newMatchCount > 0) {
         setState(() {
-          isAnswerCorrect = true;
-          canLeaveCurrWord = true;
+          _canLeaveCurrWord = true;
         });
 
-        // 播放提示音，等待播放完成后再跳转，避免与下一个单词发音重叠
-        await SoundUtil.playAssetSound('correct.mp3', 1.5, 0.2);
+        // 并发播放提示音，支持多个提示音同时播放，互不干扰
+        // 将提示音 Future 添加到列表中，用于后续等待所有提示音播放完成
+        final soundFuture = SoundUtil.playAssetSoundConcurrent('correct.mp3', 1.5, 0.2);
+        _playingCorrectSounds.add(soundFuture);
+        Global.logger.d('checkAsrResult: 添加提示音到列表，当前有 ${_playingCorrectSounds.length} 个提示音正在播放');
+        // 播放完成后从列表中移除
+        soundFuture.whenComplete(() {
+          _playingCorrectSounds.remove(soundFuture);
+          if (_playingCorrectSounds.isEmpty && _isAnswerCorrect) {
+            getNextWord(true);
+          }
+        });
       }
-    } else if (studyStep == StudyStep.meaning.json) {
+    } else if (_studyStep == StudyStep.ch2En.json) {
       // 中→英：验证英文单词拼写
-      String inputText = handlingChinese.trim().toLowerCase();
-      String correctSpell = word!.spell.toLowerCase();
+      String inputText = _handlingChinese.trim().toLowerCase();
+      String correctSpell = _word!.spell.toLowerCase();
 
       Global.logger.d('checkAsrResult: inputText=$inputText, correctSpell=$correctSpell');
 
       if (inputText == correctSpell) {
-        isPass = true;
-        setState(() {
-          isAnswerCorrect = true;
-          canLeaveCurrWord = true;
-        });
+        _isAnswerCorrect = true;
 
-        // 播放提示音，等待播放完成后再播放单词发音，避免重叠
-        await SoundUtil.playAssetSound('correct.mp3', 1.5, 0.2);
+        // 并发播放提示音，支持多个提示音同时播放，互不干扰
+        // 将提示音 Future 添加到列表中，用于后续等待所有提示音播放完成
+        final soundFuture = SoundUtil.playAssetSoundConcurrent('correct.mp3', 1.5, 0.2);
+        _playingCorrectSounds.add(soundFuture);
+        Global.logger.d('checkAsrResult: 添加提示音到列表，当前有 ${_playingCorrectSounds.length} 个提示音正在播放');
+        // 播放完成后从列表中移除
+        soundFuture.whenComplete(() async {
+          _playingCorrectSounds.remove(soundFuture);
+          if (_playingCorrectSounds.isEmpty && _isAnswerCorrect) {
+            await SoundUtil.playPronounceSound2(_word!, _audioPlayer);
+            getNextWord(true);
+          }
+        });
         Global.logger.d('checkAsrResult: English spelling match!');
       }
-    }
-
-    // 改进的跳转逻辑：使用更宽松的条件
-    if (isPass && canLeaveCurrWord) {
-      // 检查是否正在获取下一个单词，避免重复调用
-      if (!gettingNextWord) {
-        Global.logger
-            .d('checkAsrResult: pass handling - step=$studyStep, isPass=$isPass, canLeaveCurrWord=$canLeaveCurrWord, 准备调用 getNextWord');
-        try {
-          // 中→英：回答正确后，先播放一次标准发音再跳转（提示音已播放完成，不会重叠）
-          if (studyStep == StudyStep.meaning.json) {
-            if (!_audioPlayerDisposed && word != null) {
-              await SoundUtil.playPronounceSound2(word!, audioPlayer);
-            }
-          }
-          // 英→中：回答正确后直接跳转（不播放单词发音）
-        } catch (e, stackTrace) {
-          ErrorHandler.handleError(e, stackTrace, logPrefix: '播放发音失败', showToast: false);
-        }
-        getNextWord(true);
-      } else {
-        Global.logger.d('checkAsrResult: skipping getNextWord because already getting next word');
-      }
-    } else {
-      Global.logger.d('checkAsrResult: not calling getNextWord - isPass=$isPass, canLeaveCurrWord=$canLeaveCurrWord');
     }
   }
 
@@ -923,7 +886,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   }
 
   Future<void> loadData() async {
-    isDarkMode = await MyDatabase.instance.localParamsDao.getIsDarkMode();
+    _isDarkMode = await MyDatabase.instance.localParamsDao.getIsDarkMode();
 
     // 获取用户的学习步骤配置（已激活的学习步骤)
     var stepsResult = await StudyBo().getActiveUserStudySteps();
@@ -934,67 +897,58 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     activeUserStudySteps = stepsResult.data!;
 
     await getNextWord(false);
-    if (currentGetWordResult == null) {
+    if (_currentGetWordResult == null) {
       ToastUtil.error('获取单词失败');
       return;
     }
-    if (currentGetWordResult!.finished || currentGetWordResult!.noWord || currentGetWordResult!.shouldEnterReviewMode) {
+    if (_currentGetWordResult!.finished || _currentGetWordResult!.noWord || _currentGetWordResult!.shouldEnterReviewMode) {
       return;
     }
   }
 
   /// 播放句子发音按钮处理函数
   Future<void> playFirstSentence() async {
-    if (englishDigestOfFirstSentence != null && !_audioPlayerDisposed) {
+    if (_englishDigestOfFirstSentence != null && !_audioPlayerDisposed) {
       try {
-        await SoundUtil.playSentenceSound2(englishDigestOfFirstSentence!, audioPlayer);
+        await SoundUtil.playSentenceSound2(_englishDigestOfFirstSentence!, _audioPlayer);
       } catch (e, stackTrace) {
         ErrorHandler.handleError(e, stackTrace, logPrefix: '播放例句失败', showToast: false);
       }
     }
   }
 
+  /// 获取下一个单词
+  /// @param gotoNext true: 取下一个位置的单词 false: 获取当前位置的单词
   getNextWord(bool gotoNext) async {
-    if (gettingNextWord) {
+    if (_gettingNextWord) {
       Global.logger.w('===== BDC: getNextWord 被调用，但正在获取中，跳过 (gotoNext=$gotoNext)');
       return;
     }
     Global.logger.d('===== BDC: getNextWord 开始 (gotoNext=$gotoNext)');
-    gettingNextWord = true;
+    _gettingNextWord = true;
     asr.stopAsr();
     asr.reset();
-    // 取消所有待处理的ASR结果防抖定时器，避免旧的识别结果写入新单词的输入框 
-    if (_debounceTimer?.isActive ?? false) _debounceTimer!.cancel();
-    meaningController.text = '';
-    handlingChinese = '';
-    // 重置通过状态，避免暴露下一个单词的拼写
-    isAnswerCorrect = false;
-    canLeaveCurrWord = false;
-    highlightedWordImg = null;
-    wordImageEdited = false;
-    if (currentGetWordResult != null && currentGetWordResult!.learningWord != null) {
-      prevWrod = currentGetWordResult!.learningWord!.word;
-    }
+    _meaningController.text = '';
+    _handlingChinese = '';
+    _highlightedWordImg = null;
+    _wordImageEdited = false;
 
     //如果是从阶段复习跳转来的，则第一次从服务端取单词时，通知服务端进入下一个学习阶段
     var shouldEnterNextStage = false;
-    if (args.fromPage != null && args.fromPage == 'stage_review') {
+    if (_args.fromPage != null && _args.fromPage == 'stage_review') {
       shouldEnterNextStage = true;
-      args.fromPage = null;
+      _args.fromPage = null;
     }
 
     // 循环调用直到获取到有效单词或遇到其他状态
     int triedCount = 0;
     while (true) {
-      Global.logger.d('===== BDC: getNextWord 循环第 ${triedCount + 1} 次调用 StudyBo().getNextWord (shouldEnterNextStage=$shouldEnterNextStage, gotoNext=${triedCount == 0 ? gotoNext : true})');
-      var resp = await StudyBo().getNextWord(
-          isAnswerCorrect,
-          isWordMastered,
-          shouldEnterNextStage,
-          triedCount == 0 ? gotoNext : true);
+      Global.logger.d(
+          '===== BDC: getNextWord 循环第 ${triedCount + 1} 次调用 StudyBo().getNextWord (shouldEnterNextStage=$shouldEnterNextStage, gotoNext=${triedCount == 0 ? gotoNext : true})');
+      var resp = await StudyBo().getNextWord(_isAnswerCorrect, _isWordMastered, shouldEnterNextStage, triedCount == 0 ? gotoNext : true);
       triedCount++;
       if (!resp.success) {
-        gettingNextWord = false;
+        _gettingNextWord = false;
         if (resp.code == 'NEW_DAY') {
           if (!mounted) return;
           await showDialog(
@@ -1019,14 +973,14 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         return;
       }
 
-      currentGetWordResult = resp.data;
+      _currentGetWordResult = resp.data;
 
       // 如果单词已掌握，重置状态并继续获取下一个单词
-      if (currentGetWordResult!.wordMastered) {
+      if (_currentGetWordResult!.wordMastered) {
         Global.logger.d('===== BDC: getNextWord 循环第 $triedCount 次返回的单词已掌握, 继续循环');
         // 重置状态，准备获取下一个单词
-        isAnswerCorrect = true; // 设置为true以便前进到下一个单词
-        isWordMastered = false; // 重置掌握状态
+        _isAnswerCorrect = true; // 设置为true以便前进到下一个单词
+        _isWordMastered = false; // 重置掌握状态
         shouldEnterNextStage = false; // 后续调用不需要进入下一阶段
         continue; // 继续循环获取下一个单词
       }
@@ -1037,41 +991,52 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       break;
     }
 
-    handleWord(currentGetWordResult);
+    handleWord(_currentGetWordResult);
 
-    gettingNextWord = false;
+    _gettingNextWord = false;
   }
 
   Future<void> playWordAndFirstSentence(UserVo user, bool forcePlayWord, bool startAsrWhenFinish) async {
+    // 等待所有提示音播放完成，避免与单词发音重叠
+    // 使用列表快照，避免在等待过程中列表被修改
+    final soundsToWait = List<Future<void>>.from(_playingCorrectSounds);
+    if (soundsToWait.isNotEmpty) {
+      Global.logger.d('playWordAndFirstSentence: 等待 ${soundsToWait.length} 个提示音播放完成');
+      await Future.wait(soundsToWait);
+      Global.logger.d('playWordAndFirstSentence: 所有提示音播放完成');
+    }
+
     // 保存当前的 studyStep 和 word，用于在 finally 块中检查是否已经改变
-    final savedStudyStep = studyStep;
-    final savedWordId = word?.id;
-    
+    final savedStudyStep = _studyStep;
+    final savedWordId = _word?.id;
+
     // 播音开始时停止ASR
     asr.stopAsr();
 
     try {
       // 在中→英模式下，不播放单词发音，避免暴露答案
-      if (studyStep != StudyStep.meaning.json && (user.autoPlayWord! || forcePlayWord)) {
-        await SoundUtil.playPronounceSound2(word!, audioPlayer);
+      if (_studyStep != StudyStep.ch2En.json && (user.autoPlayWord! || forcePlayWord)) {
+        await SoundUtil.playPronounceSound2(_word!, _audioPlayer);
       }
       // 在中→英模式下，不播放例句发音，避免暴露答案
-      if (studyStep != StudyStep.meaning.json && user.autoPlaySentence!) {
+      if (_studyStep != StudyStep.ch2En.json && user.autoPlaySentence!) {
         await playFirstSentence();
       }
     } finally {
       // 播音结束后，如果当前在"说"tab且键盘未弹出，则统一交给 _handleTabChangeForAsr 控制ASR启动
       // 注意：检查 studyStep 和 word 是否已经改变，如果改变了说明有新的单词加载，就不应该启动ASR
-      if (!PlatformUtils.isWeb && _isInSpeakTab && !isKeyboardVisible && !gettingNextWord) {
+      if (!PlatformUtils.isWeb && _isInSpeakTab && !_isKeyboardVisible && !_gettingNextWord) {
         // 检查 studyStep 和 word 是否还是原来的值
-        if (savedStudyStep == studyStep && savedWordId == word?.id) {
-          Global.logger.d('===== BDC: playWordAndFirstSentence 播放完成，准备启动ASR (studyStep=$studyStep, wordId=${word?.id})');
+        if (savedStudyStep == _studyStep && savedWordId == _word?.id) {
+          Global.logger.d('===== BDC: playWordAndFirstSentence 播放完成，准备启动ASR (studyStep=$_studyStep, wordId=${_word?.id})');
           _handleTabChangeForAsr();
         } else {
-          Global.logger.d('===== BDC: playWordAndFirstSentence 播放完成，但单词已改变，跳过ASR启动 (savedStudyStep=$savedStudyStep => studyStep=$studyStep, savedWordId=$savedWordId => wordId=${word?.id})');
+          Global.logger.d(
+              '===== BDC: playWordAndFirstSentence 播放完成，但单词已改变，跳过ASR启动 (savedStudyStep=$savedStudyStep => studyStep=$_studyStep, savedWordId=$savedWordId => wordId=${_word?.id})');
         }
       } else {
-        Global.logger.d('===== BDC: playWordAndFirstSentence 播放完成，但跳过ASR启动 (isInSpeakTab=$_isInSpeakTab, isKeyboardVisible=$isKeyboardVisible, gettingNextWord=$gettingNextWord)');
+        Global.logger.d(
+            '===== BDC: playWordAndFirstSentence 播放完成，但跳过ASR启动 (isInSpeakTab=$_isInSpeakTab, isKeyboardVisible=$_isKeyboardVisible, gettingNextWord=$_gettingNextWord)');
       }
     }
   }
@@ -1105,8 +1070,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
             // 先关闭阶段复习对话框
             Get.back();
             // 更新参数，标记从阶段复习返回
-            args.fromPage = 'stage_review';
-            await GetStorage().write("BdcPageArgs", args.toJson());
+            _args.fromPage = 'stage_review';
+            await GetStorage().write("BdcPageArgs", _args.toJson());
             // 直接刷新当前页面，而不是创建新实例
             // 这样可以避免 dispose 导致 ASR 事件监听被取消
             await getNextWord(false);
@@ -1131,7 +1096,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         return;
       }
 
-      isWordMastered = false;
+      _isWordMastered = false;
 
       //单词掌握度及当前学习步骤
       if (getWordResult.learningMode >= activeUserStudySteps.length) {
@@ -1141,13 +1106,13 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       }
 
       // 记录旧的学习模式，用于检测模式切换（英→中 / 中→英）
-      String? oldStudyStep = studyStep;
-      studyStep = activeUserStudySteps[getWordResult.learningMode].studyStep;
+      String? oldStudyStep = _studyStep;
+      _studyStep = activeUserStudySteps[getWordResult.learningMode].studyStep;
 
       // 当学习模式发生切换，或这是本次会话首次设置学习模式时，
       // 先确保ASR完全停止，然后重新初始化 ASR 事件监听，确保事件订阅始终绑定到当前 BdcPage
-      if (oldStudyStep == null || oldStudyStep != studyStep) {
-        Global.logger.i('===== BDC: 学习模式更新: $oldStudyStep => $studyStep，先停止ASR，然后重新初始化ASR监听');
+      if (oldStudyStep == null || oldStudyStep != _studyStep) {
+        Global.logger.i('===== BDC: 学习模式更新: $oldStudyStep => $_studyStep，先停止ASR，然后重新初始化ASR监听');
         // 先停止ASR，确保没有正在执行的启动流程
         await asr.stopAsr();
         await asr.reset();
@@ -1160,21 +1125,22 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       // 重新初始化TabController以适应动态tabs
       _reinitializeTabController();
 
-      isShowingAWord = true;
-
       if (getWordResult.learningWord?.word == null) {
         Global.logger.d('学习单词为空');
         ToastUtil.error('单词数据错误');
         return;
       }
-      word = getWordResult.learningWord!.word;
+      _word = getWordResult.learningWord!.word;
+      _canLeaveCurrWord = false;
+      _isAnswerCorrect = false;
+
       // 如果仅返回了ID，则本地补全单词详情与释义
-      if (word != null && (word!.spell.isEmpty)) {
+      if (_word != null && (_word!.spell.isEmpty)) {
         try {
           final db = MyDatabase.instance;
-          final local = await db.wordsDao.getWordById(word!.id!);
+          final local = await db.wordsDao.getWordById(_word!.id!);
           if (local != null) {
-            word!
+            _word!
               ..spell = local.spell
               ..shortDesc = local.shortDesc
               ..longDesc = local.longDesc
@@ -1185,20 +1151,19 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
           }
           final user = Global.getLoggedInUser();
           if (user != null) {
-            final mis = await WordBo().getMeaningItemsForWord(word!.id!, user.id);
-            word!.meaningItems = mis;
+            final mis = await WordBo().getMeaningItemsForWord(_word!.id!, user.id);
+            _word!.meaningItems = mis;
           }
 
           // 本地加载单词配图，填充到 currentGetWordResult.images
           try {
-            final imgsQuery = db.select(db.wordImages)..where((tbl) => tbl.wordId.equals(word!.id!));
+            final imgsQuery = db.select(db.wordImages)..where((tbl) => tbl.wordId.equals(_word!.id!));
             final imgs = await imgsQuery.get();
             final imageVos = <WordImageVo>[];
             for (final img in imgs) {
               final author = await db.usersDao.getUserById(img.authorId);
               // WordImageVo 需要非空作者，这里用占位作者避免空指针
-              UserVo authorVo = UserVo.c2(author?.id ?? '0')
-                ..nickName = (author?.nickName ?? '');
+              UserVo authorVo = UserVo.c2(author?.id ?? '0')..nickName = (author?.nickName ?? '');
               imageVos.add(WordImageVo(
                 img.id,
                 img.imageFile,
@@ -1207,7 +1172,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                 authorVo,
               ));
             }
-            currentGetWordResult?.images = imageVos;
+            _currentGetWordResult?.images = imageVos;
           } catch (e) {
             Global.logger.w('本地加载单词图片失败', error: e);
           }
@@ -1215,27 +1180,22 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
           Global.logger.w('本地补全单词失败', error: e);
         }
       }
-      wordWrapper = WordWrapper(word!, null);
+      _wordWrapper = WordWrapper(_word!, null);
 
       // 渲染第一个例句
-      englishDigestOfFirstSentence = null; // 先设置为 null
-      if (word!.sentences != null && word!.sentences!.isNotEmpty) {
-        englishDigestOfFirstSentence = word!.sentences![0].englishDigest;
+      _englishDigestOfFirstSentence = null; // 先设置为 null
+      if (_word!.sentences != null && _word!.sentences!.isNotEmpty) {
+        _englishDigestOfFirstSentence = _word!.sentences![0].englishDigest;
       }
 
-      var user = Global.getLoggedInUser();
-      if (user == null) {
-        Global.logger.d('用户未登录');
-        ToastUtil.error('请先登录');
-        return;
-      }
+      var user = Global.getLoggedInUserNotNull();
 
-      if (studyStep == StudyStep.word.json) {
+      if (_studyStep == StudyStep.en2Ch.json) {
         //根据拼写
         playWordAndFirstSentence(await user.toUserVo(), false, false);
         //根据发音
         playWordAndFirstSentence(await user.toUserVo(), true, false);
-      } else if (studyStep == StudyStep.meaning.json) {
+      } else if (_studyStep == StudyStep.ch2En.json) {
         // 中→英：根据发音
         playWordAndFirstSentence(await user.toUserVo(), true, false);
       }
@@ -1246,7 +1206,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       return;
     }
 
-    showAnswerButtons = Global.getLoggedInUser()!.showAnswersDirectly;
+    _showAnswerButtons = Global.getLoggedInUser()!.showAnswersDirectly;
 
     setState(() {
       dataLoaded = true;
@@ -1256,7 +1216,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   /// 初始化选择题数据
   void _initChoiceData(GetWordResult getWordResult, User user) {
     {
-      if (studyStep == StudyStep.word.json || studyStep == StudyStep.meaning.json) {
+      if (_studyStep == StudyStep.en2Ch.json || _studyStep == StudyStep.ch2En.json) {
         // 把当前单词及混淆单词放入数组，并随机打乱
         if (getWordResult.otherWords == null || getWordResult.otherWords!.length < 2) {
           Global.logger.d('混淆单词数量（${getWordResult.otherWords!.length}）不足');
@@ -1264,16 +1224,16 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
           return;
         }
 
-        words = <WordVo>[];
-        words!.add(word!);
-        words!.add(getWordResult.otherWords![0]);
-        words!.add(getWordResult.otherWords![1]);
-        words!.shuffle();
+        _words = <WordVo>[];
+        _words!.add(_word!);
+        _words!.add(getWordResult.otherWords![0]);
+        _words!.add(getWordResult.otherWords![1]);
+        _words!.shuffle();
 
         // 在打乱的单词数组中找到正确的（当前学习的）
-        for (var i = 0; i < words!.length; i++) {
-          if (words![i] == word) {
-            correctAnswerIndex = i + 1;
+        for (var i = 0; i < _words!.length; i++) {
+          if (_words![i] == _word) {
+            _correctAnswerIndex = i + 1;
             break;
           }
         }
@@ -1283,21 +1243,21 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
           // 随机选择一个单词索引号（1～3），从数组中删除该单词
           var rnd = Random();
           var indexToDelete = 1 + rnd.nextInt(3 - 1);
-          words!.removeAt(indexToDelete - 1);
+          _words!.removeAt(indexToDelete - 1);
 
           // 添加[都不对]选项
           var mockWord = WordVo.c2("[ 都不对 ]");
           mockWord.setMeaningStr("[ 都不对 ]");
-          words!.add(mockWord);
+          _words!.add(mockWord);
 
-          if (indexToDelete == correctAnswerIndex) {
+          if (indexToDelete == _correctAnswerIndex) {
             // 恰好删除了正确的单词，此时[都不对]应成为正确答案
-            correctAnswerIndex = 3;
+            _correctAnswerIndex = 3;
           } else {
             // 在调整过的单词数组中重新找到正确的（当前学习的）
-            for (var i = 0; i < words!.length; i++) {
-              if (words![i] == word) {
-                correctAnswerIndex = i + 1;
+            for (var i = 0; i < _words!.length; i++) {
+              if (_words![i] == _word) {
+                _correctAnswerIndex = i + 1;
                 break;
               }
             }
@@ -1447,10 +1407,10 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                   children: [
                     const SizedBox(height: 6),
                     DayNightSwitcherIcon(
-                      isDarkModeEnabled: isDarkMode,
+                      isDarkModeEnabled: _isDarkMode,
                       onStateChanged: (isDarkModeEnabled) {
                         setState(() {
-                          isDarkMode = isDarkModeEnabled;
+                          _isDarkMode = isDarkModeEnabled;
                         });
                         MyDatabase.instance.localParamsDao.saveIsDarkMode(isDarkModeEnabled);
                         context.read<DarkMode>().setIsDarkMode(isDarkModeEnabled);
@@ -1619,7 +1579,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       try {
         // 刷新界面，以体现最新配置
         asr.stopAsr();
-        handleWord(currentGetWordResult);
+        handleWord(_currentGetWordResult);
       } catch (e) {
         ToastUtil.error('刷新界面失败: $e');
       }
@@ -1674,7 +1634,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '请输入单词(${word!.spell})的报错内容',
+                        '请输入单词(${_word!.spell})的报错内容',
                         textScaler: const TextScaler.linear(1.0),
                         style: const TextStyle(
                           fontFamily: "NotoSansSC",
@@ -1734,7 +1694,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         });
 
     if (choice ?? false) {
-      var result = await Api.client.saveErrorReport(word!.spell, errorReportController.text, getClientType().name);
+      var result = await Api.client.saveErrorReport(_word!.spell, errorReportController.text, getClientType().name);
       if (result.success) {
         ToastUtil.info('报错成功！感谢你付出宝贵时间');
       } else {
@@ -1744,7 +1704,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   }
 
   Widget renderPage() {
-    if (word == null) {
+    if (_word == null) {
       return Container();
     }
 
@@ -1768,7 +1728,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
           bottomLeft: Radius.circular(12),
           bottomRight: Radius.circular(12),
         ),
-        border: showBorders
+        border: _showBorders
             ? Border.all(
                 color: const Color.fromARGB(255, 11, 118, 3),
                 width: 10,
@@ -1776,13 +1736,14 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
             : null,
       ),
       child: SingleChildScrollView(
-        padding: EdgeInsets.fromLTRB(leftPadding, 0, rightPadding, max(kTextTabBarHeight + 6.0, MediaQuery.of(context).viewPadding.bottom + kTextTabBarHeight)), // 预留底部TabBar空间，避免遮挡
+        padding: EdgeInsets.fromLTRB(leftPadding, 0, rightPadding,
+            max(kTextTabBarHeight + 6.0, MediaQuery.of(context).viewPadding.bottom + kTextTabBarHeight)), // 预留底部TabBar空间，避免遮挡
         child: Column(
           children: [
             // 英→中模式整合卡片
-            if (studyStep == StudyStep.word.json && currentGetWordResult?.learningWord?.word != null) _buildWordStepCard(),
+            if (_studyStep == StudyStep.en2Ch.json && _currentGetWordResult?.learningWord?.word != null) _buildWordStepCard(),
             // 中→英模式整合卡片
-            if (studyStep == StudyStep.meaning.json && currentGetWordResult?.learningWord?.word != null) _buildMeaningStepCard(),
+            if (_studyStep == StudyStep.ch2En.json && _currentGetWordResult?.learningWord?.word != null) _buildMeaningStepCard(),
 
             _buildPhoneticRow(),
             _buildFirstSentenceRow(),
@@ -1844,11 +1805,11 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
               borderRadius: BorderRadius.circular(3),
               color: context.watch<DarkMode>().isDarkMode ? const Color(0xFF2A2A3E) : const Color(0xFFE8F1FF),
             ),
-            child: currentGetWordResult?.progress != null
+            child: _currentGetWordResult?.progress != null
                 ? FAProgressBar(
                     borderRadius: const BorderRadius.all(Radius.circular(3)),
-                    currentValue: currentGetWordResult!.progress![0].toDouble(),
-                    maxValue: currentGetWordResult!.progress![1].toDouble(),
+                    currentValue: _currentGetWordResult!.progress![0].toDouble(),
+                    maxValue: _currentGetWordResult!.progress![1].toDouble(),
                     displayText: '',
                     direction: Axis.horizontal,
                     displayTextStyle: const TextStyle(color: Color(0x00000000)),
@@ -1885,7 +1846,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
             // 做题区背景色 - 浅绿色调
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
-              border: showBorders
+              border: _showBorders
                   ? Border.all(
                       color: Colors.blue,
                       width: 10,
@@ -1893,11 +1854,11 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                   : null,
             ),
             padding: const EdgeInsets.fromLTRB(leftPadding, 0, rightPadding, 0),
-            child: (showAnswerButtons || studyStep == StudyStep.word.json || studyStep == StudyStep.meaning.json)
+            child: (_showAnswerButtons || _studyStep == StudyStep.en2Ch.json || _studyStep == StudyStep.ch2En.json)
                 ? Column(
                     children: [
                       Expanded(
-                        child: (studyStep == StudyStep.word.json || studyStep == StudyStep.meaning.json)
+                        child: (_studyStep == StudyStep.en2Ch.json || _studyStep == StudyStep.ch2En.json)
                             ? TabBarView(
                                 controller: _tabController,
                                 children: _dynamicTabBarViewChildren,
@@ -1930,7 +1891,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                     ),
                     onTap: () {
                       setState(() {
-                        showAnswerButtons = true;
+                        _showAnswerButtons = true;
                       });
                     },
                   ),
@@ -1949,7 +1910,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         // 底部按钮区背景色 - 紫色调
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
-          border: showBorders
+          border: _showBorders
               ? Border.all(
                   color: context.watch<DarkMode>().isDarkMode
                       ? const Color(0xFF9C27B0) // 深色模式：紫色边框
@@ -1962,7 +1923,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            if (showAnswerButtons || studyStep == StudyStep.word.json)
+            if (_showAnswerButtons || _studyStep == StudyStep.en2Ch.json)
               ElevatedButton.icon(
                 key: const Key('bdc_not_know_btn'),
                 icon: const Icon(Icons.close, size: 20.0, color: Colors.white),
@@ -1972,9 +1933,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 ),
                 label: const Text('不认识'),
-                onPressed: () => showWordDetail(word, true),
+                onPressed: () => showWordDetail(_word, true),
               ),
-            if (showAnswerButtons || studyStep == StudyStep.word.json)
+            if (_showAnswerButtons || _studyStep == StudyStep.en2Ch.json)
               ElevatedButton.icon(
                 key: const Key('bdc_study_again'),
                 icon: const Icon(Icons.refresh, size: 20.0, color: Colors.white),
@@ -1984,9 +1945,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 ),
                 label: const Text('再学学'),
-                onPressed: () => showWordDetail(word, false),
+                onPressed: () => showWordDetail(_word, false),
               ),
-            if (canLeaveCurrWord)
+            if (_canLeaveCurrWord)
               ElevatedButton.icon(
                 key: const Key('bdc_next_word_btn'),
                 icon: const Icon(Icons.navigate_next, size: 20.0, color: Colors.white),
@@ -2010,8 +1971,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     TextStyle textStyle = TextStyle(
         fontSize: 16,
         fontWeight: FontWeight.bold,
-        color: Util.equalsIgnoreCase(word!.spell, wordWrapper!.spellController.text)
-            ? wordWrapper!.isAnswerProvidedBySystem
+        color: Util.equalsIgnoreCase(_word!.spell, _wordWrapper!.spellController.text)
+            ? _wordWrapper!.isAnswerProvidedBySystem
                 ? Colors.blue
                 : Colors.green
             : Colors.red);
@@ -2021,8 +1982,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       height: 26,
       child: TextField(
         textAlign: TextAlign.center,
-        controller: wordWrapper!.spellController,
-        focusNode: wordWrapper!.focusNode,
+        controller: _wordWrapper!.spellController,
+        focusNode: _wordWrapper!.focusNode,
         // 仅保留下边框样式（听音选意模式专用）
         decoration: InputDecoration(
           isCollapsed: true,
@@ -2041,8 +2002,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         maxLines: 1,
         onChanged: (value) {
           // 拼写正确，播放发音并关闭输入法
-          if (Util.equalsIgnoreCase(word!.spell, value)) {
-            SoundUtil.playPronounceSound(word!);
+          if (Util.equalsIgnoreCase(_word!.spell, value)) {
+            SoundUtil.playPronounceSound(_word!);
             Util.closeIme();
           }
           setState(() {});
@@ -2054,7 +2015,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
   resetHighlightedWordImg() {
     setState(() {
-      highlightedWordImg = null;
+      _highlightedWordImg = null;
     });
   }
 
@@ -2150,7 +2111,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                                           MyDatabase.instance.votedWordImagesDao.createEntity(
                                               VotedWordImage(userId: Global.getLoggedInUser()!.id, imageId: wordImage.id, vote: 'HAND'));
                                           wordImage.hand += 1;
-                                          wordImageEdited = true;
+                                          _wordImageEdited = true;
                                           if (mounted) {
                                             setState(() {});
                                           }
@@ -2185,7 +2146,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                                           MyDatabase.instance.votedWordImagesDao.createEntity(
                                               VotedWordImage(userId: Global.getLoggedInUser()!.id, imageId: wordImage.id, vote: 'FOOT'));
                                           wordImage.foot += 1;
-                                          wordImageEdited = true;
+                                          _wordImageEdited = true;
                                           if (mounted) {
                                             setState(() {});
                                           }
@@ -2241,7 +2202,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                               onPressed: () {
                                 resetHighlightedWordImg();
                                 Navigator.pop(context, false);
-                                if (wordImageEdited) {
+                                if (_wordImageEdited) {
                                   reloadWord();
                                 }
                               },
@@ -2275,7 +2236,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     if (isAnswerCorrect) {
       // 答对后显示完整单词
       return Text(
-        word!.spell,
+        _word!.spell,
         style: TextStyle(
           fontSize: 20,
           fontWeight: FontWeight.w700,
@@ -2291,7 +2252,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       return const SizedBox.shrink();
     }
 
-    String spell = word!.spell;
+    String spell = _word!.spell;
     int hintCount = wordWrapper.hintLetterCount;
     List<Widget> letterWidgets = [];
 
@@ -2320,7 +2281,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
           ),
         );
       }
-      
+
       // 将字母包装在容器中以添加右边距
       letterWidgets.add(Container(
         margin: const EdgeInsets.only(right: 3),
@@ -2336,20 +2297,23 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   }
 
   onAnswerClicked(var selectedAnswerIndex) async {
-    isAnswerCorrect = selectedAnswerIndex == correctAnswerIndex;
-    if (isAnswerCorrect) {
-      // 并发播放提示音（不等待完成，立即进入下一个单词）
-      SoundUtil.playAssetSoundConcurrent('correct.mp3', 1.5, 0.2);
+    _isAnswerCorrect = selectedAnswerIndex == _correctAnswerIndex;
+    if (_isAnswerCorrect) {
+      // 并发播放提示音，将 Future 添加到列表中用于后续等待
+      final soundFuture = SoundUtil.playAssetSoundConcurrent('correct.mp3', 1.5, 0.2);
+      _playingCorrectSounds.add(soundFuture);
+      soundFuture.whenComplete(() {
+        _playingCorrectSounds.remove(soundFuture);
+      });
       getNextWord(true);
     } else {
-      //不认识或答案错误
+      //不认识或答案错误（错误提示音不需要等待，因为不会跳转到下一个单词）
       SoundUtil.playAssetSoundConcurrent('cow2.mp3', 1.5, 0.2);
-      showWordDetail(word!, true); // 传递true表示本次回答错误
+      showWordDetail(_word!, true); // 传递true表示本次回答错误
     }
   }
 
   showWordDetail(var word, bool isAnswerWrong) {
-    isShowingWordDetail = true;
     var bottomBtn = Container(
       decoration: BoxDecoration(
         color: Colors.blue,
@@ -2378,7 +2342,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         ),
       ),
     );
-    Get.toNamed('/word_detail', arguments: WordDetailPageArgs(word, false, bottomBtn, isAnswerWrong))?.then((value) => isShowingWordDetail = false);
+    Get.toNamed('/word_detail', arguments: WordDetailPageArgs(word, false, bottomBtn, isAnswerWrong));
   }
 
   reloadWord() async {
@@ -2408,7 +2372,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         controller.reset();
 
         // 播音结束后，如果当前在"说"tab且键盘未弹出，则统一交给 _handleTabChangeForAsr 控制ASR启动
-        if (_isInSpeakTab && !isKeyboardVisible) {
+        if (_isInSpeakTab && !_isKeyboardVisible) {
           Global.logger.d('===== BDC: 播音结束，准备根据当前状态决定是否启动ASR ($audioType)');
           _handleTabChangeForAsr();
         }
@@ -2418,7 +2382,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
   Widget buildWordSoundButton(WordVo word, AudioPlayer audioPlayer) {
     // 在拼写和音标显示的情况下使用小按钮
-    if (studyStep == StudyStep.word.json) {
+    if (_studyStep == StudyStep.en2Ch.json) {
       return Transform.translate(
           offset: Offset(6.0, 1.0),
           child: InkWell(
@@ -2512,8 +2476,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
           },
         ),
         onTap: () {
-          if (!_playingStates['sentence']! && englishDigestOfFirstSentence != null) {
-            _playWithAnimation(() => SoundUtil.playSentenceSound2(englishDigestOfFirstSentence!, audioPlayer), 'sentence');
+          if (!_playingStates['sentence']! && _englishDigestOfFirstSentence != null) {
+            _playWithAnimation(() => SoundUtil.playSentenceSound2(_englishDigestOfFirstSentence!, _audioPlayer), 'sentence');
           }
         },
       ),
@@ -2591,7 +2555,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       borderRadius: BorderRadius.circular(16),
       onTap: () {
         setState(() {
-          isEditMode = !isEditMode;
+          _isEditMode = !_isEditMode;
         });
       },
       child: Container(
@@ -2628,7 +2592,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                 scale: 0.5,
                 child: IgnorePointer(
                   child: Switch(
-                    value: isEditMode,
+                    value: _isEditMode,
                     onChanged: (_) {}, // 空回调而不是null，保持Switch启用状态
                     activeColor: const Color(0xFF4A90E2),
                     inactiveThumbColor: Colors.grey[400],
@@ -2692,15 +2656,15 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                   label: '掌握',
                   color: const Color(0xFF10B981),
                   onTap: () {
-                    isAnswerCorrect = true;
-                    isWordMastered = true;
-                    ToastUtil.info("不再学习 ${word!.spell}");
+                    _isAnswerCorrect = true;
+                    _isWordMastered = true;
+                    ToastUtil.info("不再学习 ${_word!.spell}");
                     getNextWord(true);
                   },
                 ),
 
                 // 编辑开关 - 仅在meaning模式下且非Web平台显示
-                if (studyStep == StudyStep.meaning.json && !PlatformUtils.isWeb) _buildEditToggle(),
+                if (_studyStep == StudyStep.ch2En.json && !PlatformUtils.isWeb) _buildEditToggle(),
 
                 // 报错按钮
                 _buildTopActionButton(
@@ -2823,15 +2787,15 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   }
 
   Widget _buildChoiceList() {
-    if (!(studyStep == StudyStep.word.json || studyStep == StudyStep.meaning.json)) {
+    if (!(_studyStep == StudyStep.en2Ch.json || _studyStep == StudyStep.ch2En.json)) {
       return const SizedBox.shrink();
     }
 
     return Column(
       children: [
-        for (var index = 0; index < (words?.length ?? 0); index++)
+        for (var index = 0; index < (_words?.length ?? 0); index++)
           Padding(
-            padding: studyStep == StudyStep.meaning.json ? const EdgeInsets.symmetric(vertical: 3) : const EdgeInsets.symmetric(vertical: 6),
+            padding: _studyStep == StudyStep.ch2En.json ? const EdgeInsets.symmetric(vertical: 3) : const EdgeInsets.symmetric(vertical: 6),
             child: SizedBox(
               width: double.infinity,
               child: Container(
@@ -2854,7 +2818,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                     child: Container(
                       padding: const EdgeInsets.all(16),
                       child: _buildAnswerContent(
-                        studyStep == StudyStep.meaning.json ? (words?[index].spell ?? '') : (words?[index].getMeaningStr() ?? ''),
+                        _studyStep == StudyStep.ch2En.json ? (_words?[index].spell ?? '') : (_words?[index].getMeaningStr() ?? ''),
                       ),
                     ),
                   ),
@@ -2867,7 +2831,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   }
 
   Widget _buildSpeakPanel() {
-    if (!((studyStep == StudyStep.word.json || studyStep == StudyStep.meaning.json) && word != null)) {
+    if (!((_studyStep == StudyStep.en2Ch.json || _studyStep == StudyStep.ch2En.json) && _word != null)) {
       return const SizedBox.shrink();
     }
 
@@ -2889,7 +2853,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         crossAxisAlignment: CrossAxisAlignment.center,
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
-          if (isKeyboardVisible)
+          if (_isKeyboardVisible)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               margin: const EdgeInsets.only(bottom: 16),
@@ -2902,7 +2866,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
-                studyStep == StudyStep.word.json ? word!.spell : word!.getMergedMeaningItems().map((e) => e.meaning).join('; '),
+                _studyStep == StudyStep.en2Ch.json ? _word!.spell : _word!.getMergedMeaningItems().map((e) => e.meaning).join('; '),
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 18,
@@ -2919,8 +2883,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                   margin: const EdgeInsets.only(bottom: 12),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: studyStep == StudyStep.word.json
-                        ? renderAsrMeaningItems(wordWrapper!)
+                    children: _studyStep == StudyStep.en2Ch.json
+                        ? renderAsrMeaningItems(_wordWrapper!)
                         : [
                             Text(
                               '请说出单词发音：',
@@ -2931,7 +2895,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                               ),
                             ),
                             const SizedBox(height: 8),
-                            _buildWordSpellingHint(wordWrapper!, isAnswerCorrect),
+                            _buildWordSpellingHint(_wordWrapper!, _isAnswerCorrect),
                           ],
                   ),
                 ),
@@ -2949,7 +2913,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                         color: Colors.transparent,
                         child: InkWell(
                           borderRadius: BorderRadius.circular(8),
-                          onTap: () => giveALittleHint(wordWrapper!),
+                          onTap: () => giveALittleHint(_wordWrapper!),
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                             child: Row(
@@ -2981,7 +2945,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                         color: Colors.transparent,
                         child: InkWell(
                           borderRadius: BorderRadius.circular(8),
-                          onTap: () => clearHint(wordWrapper!),
+                          onTap: () => clearHint(_wordWrapper!),
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                             child: Row(
@@ -3009,18 +2973,18 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
             ],
           ),
           const SizedBox(height: 4),
-          studyStep == StudyStep.word.json
+          _studyStep == StudyStep.en2Ch.json
               ? ChineseAsrInputWidget(
-                  controller: meaningController,
+                  controller: _meaningController,
                   asrState: asr.state,
                   onStartAsr: (language) => asr.startAsr(language),
-                  isKeyboardVisible: isKeyboardVisible,
+                  isKeyboardVisible: _isKeyboardVisible,
                 )
               : EnglishAsrInputWidget(
-                  controller: meaningController,
+                  controller: _meaningController,
                   asrState: asr.state,
                   onStartAsr: (language) => asr.startAsr(language),
-                  isKeyboardVisible: isKeyboardVisible,
+                  isKeyboardVisible: _isKeyboardVisible,
                 ),
         ],
       ),
@@ -3029,7 +2993,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
   /// 音标行
   Widget _buildPhoneticRow() {
-    if (!(currentGetWordResult?.learningWord?.word != null && studyStep != StudyStep.word.json)) {
+    if (!(_currentGetWordResult?.learningWord?.word != null && _studyStep != StudyStep.en2Ch.json)) {
       return const SizedBox.shrink();
     }
 
@@ -3043,11 +3007,11 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          if (studyStep != StudyStep.meaning.json)
+          if (_studyStep != StudyStep.ch2En.json)
             Text(
-              Util.getWordDefaultPronounce(currentGetWordResult!.learningWord!.word).isEmpty
+              Util.getWordDefaultPronounce(_currentGetWordResult!.learningWord!.word).isEmpty
                   ? ''
-                  : '[${Util.getWordDefaultPronounce(currentGetWordResult!.learningWord!.word)}]',
+                  : '[${Util.getWordDefaultPronounce(_currentGetWordResult!.learningWord!.word)}]',
               style: TextStyle(
                 color: context.watch<DarkMode>().isDarkMode ? Colors.white70 : Colors.grey[600],
                 fontFamily: "NotoSans",
@@ -3055,7 +3019,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                 fontWeight: FontWeight.w500,
               ),
             ),
-          if (studyStep != StudyStep.meaning.json) buildWordSoundButton(currentGetWordResult!.learningWord!.word, audioPlayer),
+          if (_studyStep != StudyStep.ch2En.json) buildWordSoundButton(_currentGetWordResult!.learningWord!.word, _audioPlayer),
         ],
       ),
     );
@@ -3063,7 +3027,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
   /// 题目区的例句行(单词的第一个例句)
   Widget _buildFirstSentenceRow() {
-    if (!(word?.sentences != null && word!.sentences!.isNotEmpty && studyStep != StudyStep.meaning.json && studyStep != StudyStep.word.json)) {
+    if (!(_word?.sentences != null && _word!.sentences!.isNotEmpty && _studyStep != StudyStep.ch2En.json && _studyStep != StudyStep.en2Ch.json)) {
       return const SizedBox.shrink();
     }
 
@@ -3101,14 +3065,14 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                 },
               ),
               onTap: () {
-                if (!_playingStates['sentence']! && englishDigestOfFirstSentence != null) {
-                  _playWithAnimation(() => SoundUtil.playSentenceSound2(englishDigestOfFirstSentence!, audioPlayer), 'sentence');
+                if (!_playingStates['sentence']! && _englishDigestOfFirstSentence != null) {
+                  _playWithAnimation(() => SoundUtil.playSentenceSound2(_englishDigestOfFirstSentence!, _audioPlayer), 'sentence');
                 }
               },
             ),
           ),
           Expanded(
-            child: Util.makeEnglishSpanText(word!.sentences![0].english!, word!.spell, true, context, false, null, true, FontWeight.w300),
+            child: Util.makeEnglishSpanText(_word!.sentences![0].english!, _word!.spell, true, context, false, null, true, FontWeight.w300),
           ),
         ],
       ),
@@ -3147,7 +3111,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(_getStepIcon(studyStep!), color: AppTheme.primaryColor, size: 16),
+                Icon(_getStepIcon(_studyStep!), color: AppTheme.primaryColor, size: 16),
                 const SizedBox(width: 6),
                 Text(
                   key: const Key('learning_mode_text'),
@@ -3166,7 +3130,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                   fit: BoxFit.scaleDown,
                   child: Text(
                     key: const Key('current_word_spell'),
-                    currentGetWordResult!.learningWord!.word.spell,
+                    _currentGetWordResult!.learningWord!.word.spell,
                     style: TextStyle(
                       fontWeight: FontWeight.w900,
                       fontSize: 36,
@@ -3182,9 +3146,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Text(
-                      Util.getWordDefaultPronounce(currentGetWordResult!.learningWord!.word).isEmpty
+                      Util.getWordDefaultPronounce(_currentGetWordResult!.learningWord!.word).isEmpty
                           ? ''
-                          : '[${Util.getWordDefaultPronounce(currentGetWordResult!.learningWord!.word)}]',
+                          : '[${Util.getWordDefaultPronounce(_currentGetWordResult!.learningWord!.word)}]',
                       style: TextStyle(
                         color: context.watch<DarkMode>().isDarkMode ? Colors.white70 : Colors.grey[600],
                         fontFamily: "NotoSans",
@@ -3193,16 +3157,17 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                       ),
                     ),
                     const SizedBox(width: 4),
-                    buildWordSoundButton(currentGetWordResult!.learningWord!.word, audioPlayer),
+                    buildWordSoundButton(_currentGetWordResult!.learningWord!.word, _audioPlayer),
                   ],
                 ),
-                if (word?.sentences != null && word!.sentences!.isNotEmpty) ...[
+                if (_word?.sentences != null && _word!.sentences!.isNotEmpty) ...[
                   const SizedBox(height: 12),
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
-                        child: Util.makeEnglishSpanText(word!.sentences![0].english!, word!.spell, true, context, false, null, true, FontWeight.w300),
+                        child:
+                            Util.makeEnglishSpanText(_word!.sentences![0].english!, _word!.spell, true, context, false, null, true, FontWeight.w300),
                       ),
                       Container(
                         padding: const EdgeInsets.all(4),
@@ -3231,8 +3196,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                             },
                           ),
                           onTap: () {
-                            if (!_playingStates['sentence']! && englishDigestOfFirstSentence != null) {
-                              _playWithAnimation(() => SoundUtil.playSentenceSound2(englishDigestOfFirstSentence!, audioPlayer), 'sentence');
+                            if (!_playingStates['sentence']! && _englishDigestOfFirstSentence != null) {
+                              _playWithAnimation(() => SoundUtil.playSentenceSound2(_englishDigestOfFirstSentence!, _audioPlayer), 'sentence');
                             }
                           },
                         ),
@@ -3281,9 +3246,10 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(_getStepIcon(studyStep!), color: const Color(0xFF4A90E2), size: 16),
+                Icon(_getStepIcon(_studyStep!), color: const Color(0xFF4A90E2), size: 16),
                 const SizedBox(width: 6),
-                const Text(key: Key('learning_mode_text'), '中→英', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF4A90E2))),
+                const Text(
+                    key: Key('learning_mode_text'), '中→英', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF4A90E2))),
               ],
             ),
           ),
@@ -3294,9 +3260,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // 释义
-                for (var i = 0; i < currentGetWordResult!.learningWord!.word.getMergedMeaningItems().length; i++)
+                for (var i = 0; i < _currentGetWordResult!.learningWord!.word.getMergedMeaningItems().length; i++)
                   Padding(
-                    padding: EdgeInsets.only(bottom: i == currentGetWordResult!.learningWord!.word.getMergedMeaningItems().length - 1 ? 4.0 : 4.0),
+                    padding: EdgeInsets.only(bottom: i == _currentGetWordResult!.learningWord!.word.getMergedMeaningItems().length - 1 ? 4.0 : 4.0),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -3308,7 +3274,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
-                            currentGetWordResult!.learningWord!.word.getMergedMeaningItems()[i].ciXing ?? '',
+                            _currentGetWordResult!.learningWord!.word.getMergedMeaningItems()[i].ciXing ?? '',
                             style: const TextStyle(color: Color(0xFF4A90E2), fontSize: 12, fontWeight: FontWeight.w500),
                             textAlign: TextAlign.center,
                           ),
@@ -3316,7 +3282,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
-                            _hideParenthesesContent(currentGetWordResult!.learningWord!.word.getMergedMeaningItems()[i].meaning ?? ''),
+                            _hideParenthesesContent(_currentGetWordResult!.learningWord!.word.getMergedMeaningItems()[i].meaning ?? ''),
                             style: TextStyle(
                               fontSize: 16,
                               height: 1.5,
@@ -3329,10 +3295,10 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                     ),
                   ),
                 // 图片
-                if (currentGetWordResult?.images != null)
+                if (_currentGetWordResult?.images != null)
                   Column(
                     children: [
-                      if (currentGetWordResult!.images!.isNotEmpty && studyStep != StudyStep.meaning.json)
+                      if (_currentGetWordResult!.images!.isNotEmpty && _studyStep != StudyStep.ch2En.json)
                         Container(
                           padding: const EdgeInsets.all(8),
                           margin: const EdgeInsets.only(bottom: 8),
@@ -3340,16 +3306,16 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                             color: Colors.blue.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(4),
                           ),
-                          child: Text('图片数量: ${currentGetWordResult!.images!.length}', style: const TextStyle(fontSize: 12, color: Colors.blue)),
+                          child: Text('图片数量: ${_currentGetWordResult!.images!.length}', style: const TextStyle(fontSize: 12, color: Colors.blue)),
                         ),
                       WordImagesWidget(
-                        images: currentGetWordResult!.images!,
-                        isEditMode: isEditMode,
-                        highlightedWordImg: highlightedWordImg,
+                        images: _currentGetWordResult!.images!,
+                        isEditMode: _isEditMode,
+                        highlightedWordImg: _highlightedWordImg,
                         onImageTap: (image) {
                           Global.logger.d('show dialog for image: ${image.imageFile}');
                           _showImagePreviewWithContext(context, image, onDeleted: () {
-                            currentGetWordResult?.images?.removeWhere((e) => e.id == image.id);
+                            _currentGetWordResult?.images?.removeWhere((e) => e.id == image.id);
                             setState(() {});
                           });
                         },
@@ -3357,7 +3323,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                     ],
                   ),
                 // 配图按钮
-                if (isEditMode)
+                if (_isEditMode)
                   InkWell(
                     child: Container(
                       margin: const EdgeInsets.fromLTRB(0, 16, 0, 0),
@@ -3366,10 +3332,10 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                         style: ElevatedButton.styleFrom(foregroundColor: Colors.white, backgroundColor: Colors.teal[300]),
                         label: const Text('配图'),
                         onPressed: () {
-                          if (currentGetWordResult?.learningWord?.word.id != null) {
+                          if (_currentGetWordResult?.learningWord?.word.id != null) {
                             Get.toNamed('/pic_search',
                                     arguments: PicSearchPageArgs(
-                                        currentGetWordResult!.learningWord!.word.id!, currentGetWordResult!.learningWord!.word.spell))!
+                                        _currentGetWordResult!.learningWord!.word.id!, _currentGetWordResult!.learningWord!.word.spell))!
                                 .then((value) => reloadWord());
                           }
                         },

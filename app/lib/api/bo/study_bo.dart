@@ -611,7 +611,7 @@ class StudyBo {
       List<LearningWord> todayWords, LearningWord targetWordLearningData, MyDatabase db) async {
     try {
       List<WordVo> otherWords = [];
-      if ([StudyStep.word.json, StudyStep.meaning.json].contains(steps[learningMode].studyStep)) {
+      if ([StudyStep.en2Ch.json, StudyStep.ch2En.json].contains(steps[learningMode].studyStep)) {
         String? targetCiXing;
         if (meaningItemVos.isNotEmpty && meaningItemVos.first.ciXing != null) {
           targetCiXing = meaningItemVos.first.ciXing!;

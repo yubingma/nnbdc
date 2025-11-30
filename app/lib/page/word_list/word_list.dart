@@ -652,7 +652,7 @@ class WordListPageState extends State<WordListPage> {
         }
       } else {
         // 背中文模式：检查中文释义
-        late Triple<int, int, int> result;
+        late MeaningMatchResult result;
         setState(() {
           result = matchInputChineseWithMeaningItems(
             words[currWordIndex],
@@ -661,8 +661,8 @@ class WordListPageState extends State<WordListPage> {
         });
 
         // 说出了正确意思，播放音效，同时置可离开当前单词的标志
-        final answeredAllMeanings = result.second == result.first;
-        if (result.third > 0) {
+        final answeredAllMeanings = result.matchedCount == result.totalCount;
+        if (result.newMatchCount > 0) {
           if (answeredAllMeanings || !mustAnswerAll) {
             canLeaveCurrWord = true;
           }

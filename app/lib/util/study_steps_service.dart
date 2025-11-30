@@ -88,11 +88,11 @@ class StudyStepsService {
   StudyStep _getStudyStepFromString(String stepStr) {
     switch (stepStr) {
       case 'Word':
-        return StudyStep.word;
+        return StudyStep.en2Ch;
       case 'Meaning':
-        return StudyStep.meaning;
+        return StudyStep.ch2En;
       default:
-        return StudyStep.word;
+        return StudyStep.en2Ch;
     }
   }
 

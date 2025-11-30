@@ -46,7 +46,7 @@ List<String> splitMeaning2Parts(String meaning) {
 }
 
 /// 在单词的所有释义项子项，以及给定的中文内容之间进行匹配，返回释义项子项总数量/匹配上的释义项子项数量/本次新增匹配数量
-Triple<int, int, int> matchInputChineseWithMeaningItems(WordWrapper wordWrapper, String asrResult) {
+MeaningMatchResult matchInputChineseWithMeaningItems(WordWrapper wordWrapper, String asrResult) {
   var count = 0; // 所有释义项子项数量
   var newMatchCount = 0; //本次匹配新匹配上的释义项数量
   var meaningItems = wordWrapper.word.getMergedMeaningItems();
@@ -69,7 +69,11 @@ Triple<int, int, int> matchInputChineseWithMeaningItems(WordWrapper wordWrapper,
       }
     }
   }
-  return Triple(count, wordWrapper.asrMatchedMeaningItemParts.length, newMatchCount);
+  return MeaningMatchResult(
+    totalCount: count,
+    matchedCount: wordWrapper.asrMatchedMeaningItemParts.length,
+    newMatchCount: newMatchCount,
+  );
 }
 
 /// 判断一个释义子项是否"整体被括号包裹"，用于在背中文模式下忽略

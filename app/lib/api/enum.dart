@@ -68,27 +68,27 @@ extension UserDayStatusExt on UserDayStatus {
 
 enum StudyStep {
   /// 英→中 - 眼
-  word,
+  en2Ch,
 
   /// 中→英 - 眼
-  meaning
+  ch2En
 }
 
 extension StudyStepExt on StudyStep {
   String get json {
     switch (this) {
-      case StudyStep.word:
+      case StudyStep.en2Ch:
         return "Word";
-      case StudyStep.meaning:
+      case StudyStep.ch2En:
         return "Meaning";
     }
   }
 
   String get description {
     switch (this) {
-      case StudyStep.word:
+      case StudyStep.en2Ch:
         return "英→中";
-      case StudyStep.meaning:
+      case StudyStep.ch2En:
         return "中→英";
     }
   }
@@ -96,9 +96,9 @@ extension StudyStepExt on StudyStep {
   static StudyStep fromString(String value) {
     switch (value) {
       case "Word":
-        return StudyStep.word;
+        return StudyStep.en2Ch;
       case "Meaning":
-        return StudyStep.meaning;
+        return StudyStep.ch2En;
       default:
         throw ArgumentError('无效的StudyStep值：$value');
     }

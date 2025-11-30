@@ -225,11 +225,12 @@ class SoundUtil {
 
   /// 并发播放音效（不等待播放完成，立即返回，支持多个音频同时播放）
   /// 音频会在后台播放完成并自动释放播放器
-  static void playAssetSoundConcurrent(String soundFileName, double speed, double volume) {
+  /// 返回 Future，可用于跟踪播放状态
+  static Future<void> playAssetSoundConcurrent(String soundFileName, double speed, double volume) {
     var player = AudioPlayer();
     
     // 在后台异步处理播放和释放，不阻塞调用者
-    _playAssetSoundInBackground(player, soundFileName, speed, volume).catchError((error, stackTrace) {
+    return _playAssetSoundInBackground(player, soundFileName, speed, volume).catchError((error, stackTrace) {
       ErrorHandler.handleError(error, stackTrace, logPrefix: '并发播放音效出错', showToast: false);
     });
   }

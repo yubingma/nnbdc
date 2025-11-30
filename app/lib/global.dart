@@ -4,6 +4,7 @@ import 'package:logger/logger.dart' as logger_pkg;
 import 'package:nnbdc/api/bo/user_bo.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/util/app_clock.dart';
+import 'package:nnbdc/util/toast_util.dart';
 
 import 'api/vo.dart';
 
@@ -28,6 +29,15 @@ class Global {
   // 获取当前登录用户，直接返回缓存的用户对象
   static User? getLoggedInUser() {
     return _currentUser;
+  }
+
+  static User getLoggedInUserNotNull() {
+    if (_currentUser == null) {
+      Global.logger.d('用户未登录');
+      ToastUtil.error('请先登录');
+      throw Exception('用户未登录');
+    }
+    return _currentUser!;
   }
 
   // 从数据库异步加载用户并更新缓存
@@ -103,10 +113,8 @@ class _TimestampPrinter extends logger_pkg.LogPrinter {
     final now = AppClock.now();
     final timestamp =
         '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}:${now.second.toString().padLeft(2, '0')}.${now.millisecond.toString().padLeft(3, '0')}';
-    final isInfoOrDebug = event.level == logger_pkg.Level.info ||
-        event.level == logger_pkg.Level.debug;
-    final prettyOutput =
-        (isInfoOrDebug ? _printerInfoDebug : _printerOthers).log(event);
+    final isInfoOrDebug = event.level == logger_pkg.Level.info || event.level == logger_pkg.Level.debug;
+    final prettyOutput = (isInfoOrDebug ? _printerInfoDebug : _printerOthers).log(event);
 
     // 在每一行前面添加时分秒时间戳
     return prettyOutput.map((line) => '[$timestamp] $line').toList();

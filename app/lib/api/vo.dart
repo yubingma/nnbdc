@@ -1235,6 +1235,42 @@ class Pair<L, R> {
   }
 }
 
+/// 中文释义匹配结果
+/// 用于存储匹配中文释义时的统计信息
+class MeaningMatchResult {
+  /// 所有释义项子项总数量
+  final int totalCount;
+  
+  /// 匹配上的释义项子项数量
+  final int matchedCount;
+  
+  /// 本次新增匹配数量
+  final int newMatchCount;
+
+  MeaningMatchResult({
+    required this.totalCount,
+    required this.matchedCount,
+    required this.newMatchCount,
+  });
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is MeaningMatchResult &&
+          runtimeType == other.runtimeType &&
+          totalCount == other.totalCount &&
+          matchedCount == other.matchedCount &&
+          newMatchCount == other.newMatchCount;
+
+  @override
+  int get hashCode => totalCount.hashCode ^ matchedCount.hashCode ^ newMatchCount.hashCode;
+
+  @override
+  String toString() {
+    return 'MeaningMatchResult{totalCount: $totalCount, matchedCount: $matchedCount, newMatchCount: $newMatchCount}';
+  }
+}
+
 class Triple<F, S, T> {
   F first;
   S second;
