@@ -666,10 +666,50 @@ public abstract class BaseDao<E extends Po> {
         
         String tableName = EntityTableInfo.getTableName(valueClass);
         Field idField = EntityTableInfo.getIdField(valueClass);
-        String idColumnName = EntityTableInfo.getColumnName(idField);
         
-        String sql = "SELECT * FROM " + tableName + " WHERE " + idColumnName + " = :id";
-        MapSqlParameterSource params = new MapSqlParameterSource("id", id);
+        // 检查主键是否是复合主键（@Embeddable）
+        boolean isCompositeKey = idField.getType().isAnnotationPresent(javax.persistence.Embeddable.class);
+        
+        String sql;
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        
+        if (isCompositeKey) {
+            // 复合主键：需要根据所有组件字段构建 WHERE 条件
+            try {
+                Object compositeKey = id;
+                if (compositeKey == null) {
+                    throw new IllegalArgumentException("复合主键不能为 null");
+                }
+                
+                List<Field> keyFields = BeanUtils.getFields(compositeKey.getClass(), true);
+                StringBuilder whereClause = new StringBuilder();
+                boolean first = true;
+                
+                for (Field keyField : keyFields) {
+                    keyField.setAccessible(true);
+                    Object keyValue = keyField.get(compositeKey);
+                    String columnName = Objects.requireNonNull(EntityTableInfo.getColumnName(keyField));
+                    
+                    if (!first) {
+                        whereClause.append(" AND ");
+                    }
+                    whereClause.append(columnName).append(" = :").append(columnName);
+                    params.addValue(columnName, keyValue);
+                    first = false;
+                }
+                
+                sql = "SELECT * FROM " + tableName + " WHERE " + Objects.requireNonNull(whereClause.toString());
+            } catch (IllegalAccessException e) {
+                logger.error("根据复合主键查询实体时获取主键字段值失败: entityClass={}", valueClass.getName(), e);
+                throw new RuntimeException("获取复合主键字段值失败", e);
+            }
+        } else {
+            // 简单主键
+            String idColumnName = EntityTableInfo.getColumnName(idField);
+            sql = "SELECT * FROM " + tableName + " WHERE " + idColumnName + " = :id";
+            params.addValue("id", id);
+        }
+        
         List<E> results = namedParameterJdbcTemplate.query(
             Objects.requireNonNull(sql, "SQL cannot be null"), 
             params, 
