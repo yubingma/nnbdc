@@ -5,8 +5,10 @@ import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -65,7 +67,28 @@ public abstract class BaseDao<E extends Po> {
         entity.setUpdateTime(now);
         
         String tableName = EntityTableInfo.getTableName(valueClass);
-        // Field idField = EntityTableInfo.getIdField(valueClass); // 未使用
+        Field idField = EntityTableInfo.getIdField(valueClass);
+        
+        // 检查主键是否是复合主键（@Embeddable）
+        boolean isCompositeKey = idField.getType().isAnnotationPresent(javax.persistence.Embeddable.class);
+        
+        // 收集复合主键中的列名（用于避免重复）
+        Set<String> compositeKeyColumnNames = new HashSet<>();
+        if (isCompositeKey) {
+            try {
+                idField.setAccessible(true);
+                Object compositeKey = idField.get(entity);
+                if (compositeKey != null) {
+                    List<Field> keyFields = BeanUtils.getFields(compositeKey.getClass(), true);
+                    for (Field keyField : keyFields) {
+                        String columnName = EntityTableInfo.getColumnName(keyField);
+                        compositeKeyColumnNames.add(columnName.toLowerCase());
+                    }
+                }
+            } catch (IllegalAccessException e) {
+                logger.error("创建实体时获取复合主键列名失败: entityClass={}", valueClass.getName(), e);
+            }
+        }
         
         // 构建 INSERT SQL
         StringBuilder sql = new StringBuilder("INSERT INTO ");
@@ -76,10 +99,55 @@ public abstract class BaseDao<E extends Po> {
         List<Object> values = new ArrayList<>();
         
         for (Field field : fields) {
+            // 处理主键字段
+            if (field.equals(idField)) {
+                // 如果是复合主键，处理其内部字段
+                if (isCompositeKey) {
+                    try {
+                        field.setAccessible(true);
+                        Object compositeKey = field.get(entity);
+                        if (compositeKey != null) {
+                            // 获取复合主键类的所有字段
+                            List<Field> keyFields = BeanUtils.getFields(compositeKey.getClass(), true);
+                            for (Field keyField : keyFields) {
+                                keyField.setAccessible(true);
+                                Object keyValue = keyField.get(compositeKey);
+                                String columnName = EntityTableInfo.getColumnName(keyField);
+                                columnNames.add(columnName);
+                                values.add(keyValue);
+                            }
+                        }
+                    } catch (IllegalAccessException e) {
+                        logger.error("创建实体时获取复合主键字段值失败: entityClass={}, field={}", 
+                            valueClass.getName(), field.getName(), e);
+                        throw new RuntimeException("获取复合主键字段值失败: " + field.getName(), e);
+                    }
+                } else {
+                    // 简单主键（String/UUID）：UuidSetter 已设置值，需要添加到 INSERT 语句中
+                    try {
+                        field.setAccessible(true);
+                        Object idValue = field.get(entity);
+                        String idColumnName = EntityTableInfo.getColumnName(idField);
+                        columnNames.add(idColumnName);
+                        values.add(idValue);
+                    } catch (IllegalAccessException e) {
+                        logger.error("创建实体时获取主键字段值失败: entityClass={}, field={}", 
+                            valueClass.getName(), field.getName(), e);
+                        throw new RuntimeException("获取主键字段值失败: " + field.getName(), e);
+                    }
+                }
+                continue;
+            }
+            
             // 处理关联对象字段（类型为 Po 的子类，且不是以 "Id" 结尾的字段）
             // 约定：关联对象字段的外键列名为 字段名 + "Id"（如 level -> levelId）
             if (Po.class.isAssignableFrom(field.getType()) && !field.getName().endsWith("Id")) {
                 String foreignKeyColumnName = field.getName() + "Id";
+                
+                // 如果该列名已经在复合主键中，则跳过（避免重复）
+                if (isCompositeKey && compositeKeyColumnNames.contains(foreignKeyColumnName.toLowerCase())) {
+                    continue;
+                }
                 
                 try {
                     field.setAccessible(true);

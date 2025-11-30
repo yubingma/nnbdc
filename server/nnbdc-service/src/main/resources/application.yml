@@ -74,7 +74,7 @@ aliyun:
 sms:
   code:
     length: 6
-    expire-minutes: 5
+    expire-minutes: 10
     send-interval-seconds: 60 
 
 # 日志相关配置
