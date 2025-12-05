@@ -356,7 +356,7 @@ abstract class RestClient {
   @POST("/saveErrorReport.do")
   @FormUrlEncoded()
   Future<Result<String>> saveErrorReport(
-      @Field("word") String word, @Field("content") String content, @Field("clientType") String clientType);
+      @Field("word") String word, @Field("content") String content, @Field("clientType") String clientType, @Query("userId") String? userId);
 
   @POST("/saveSentence.do")
   @FormUrlEncoded()

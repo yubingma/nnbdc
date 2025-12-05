@@ -36,7 +36,15 @@ public class ErrorReportBo extends BaseBo<ErrorReport> {
     }
 
     public Result<String> saveErrorReport(String spell, String content, String userId, String clientType) {
+        // 检查 userId 是否为空
+        if (userId == null || userId.trim().isEmpty()) {
+            return Result.fail("用户ID不能为空");
+        }
+
         User user = userBo.findById(userId);
+        if (user == null) {
+            return Result.fail("用户不存在");
+        }
 
         if (content.trim().length() == 0) {
             return Result.fail("内容不能为空");

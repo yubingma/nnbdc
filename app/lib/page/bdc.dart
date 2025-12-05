@@ -14,6 +14,7 @@ import 'package:image_network/image_network.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:nnbdc/api/api.dart';
 import 'package:nnbdc/api/bo/study_bo.dart';
+import 'package:nnbdc/api/bo/user_bo.dart';
 import 'package:nnbdc/api/bo/word_bo.dart';
 import 'package:nnbdc/page/pic_search.dart';
 import 'package:nnbdc/page/word_detail.dart';
@@ -37,7 +38,6 @@ import '../util/utils.dart';
 import '../db/user_extensions.dart';
 import '../theme/app_theme.dart';
 import '../util/error_handler.dart';
-import '../util/client_type.dart';
 
 class BdcPageArgs {
   /// 从哪个页面进入本页面
@@ -1666,7 +1666,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         });
 
     if (choice ?? false) {
-      var result = await Api.client.saveErrorReport(_word!.spell, errorReportController.text, getClientType().name);
+      var result = await UserBo().saveErrorReport(_word!.spell, errorReportController.text);
       if (result.success) {
         ToastUtil.info('报错成功！感谢你付出宝贵时间');
       } else {

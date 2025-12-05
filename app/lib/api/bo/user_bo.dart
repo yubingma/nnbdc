@@ -350,8 +350,10 @@ class UserBo {
     }
   }
 
-  Future<Result<String>> saveErrorReport(String word, String content) async =>
-      Api.client.saveErrorReport(word, content, getClientType().name);
+  Future<Result<String>> saveErrorReport(String word, String content) async {
+    final userId = await getUserId();
+    return await Api.client.saveErrorReport(word, content, getClientType().name, userId);
+  }
 
   Future<Result<List<UserDbLogDto>>> getDbLogsFromVersion(
           int fromVersion, String userId) async =>

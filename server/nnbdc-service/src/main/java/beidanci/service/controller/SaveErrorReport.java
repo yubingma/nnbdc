@@ -19,7 +19,7 @@ public class SaveErrorReport {
 
 
     @PostMapping("/saveErrorReport.do")
-    public Result<String> handle(@RequestParam("word") String spell, @RequestParam("content") String content, String userId, @RequestParam("clientType") String clientType)
+    public Result<String> handle(@RequestParam("word") String spell, @RequestParam("content") String content, @RequestParam(value = "userId", required = false) String userId, @RequestParam("clientType") String clientType)
             throws SQLException, NamingException, ClassNotFoundException {
         return errorReportBo.saveErrorReport(spell, content, userId, clientType);
     }
