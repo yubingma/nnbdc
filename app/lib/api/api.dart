@@ -594,6 +594,11 @@ abstract class RestClient {
       @Field("status") String status,
       @Field("adminUserId") String adminUserId);
 
+  @DELETE("/deleteFeatureRequest.do")
+  Future<Result> deleteFeatureRequest(
+      @Query("requestId") String requestId,
+      @Query("adminUserId") String adminUserId);
+
   // 需求墙举报相关API
   @POST("/saveFeatureRequestReport.do")
   @FormUrlEncoded()

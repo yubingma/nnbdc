@@ -5,6 +5,7 @@ import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/theme/app_theme.dart';
 import 'package:nnbdc/util/loading_utils.dart';
+import 'package:nnbdc/util/toast_util.dart';
 import 'package:provider/provider.dart';
 import 'package:nnbdc/state.dart';
 
@@ -148,6 +149,7 @@ class _FeatureRequestReportManagementWidgetState extends State<FeatureRequestRep
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
                       color: textColor,
+                      height: 1.4,
                     ),
                   ),
                 ),
@@ -166,6 +168,7 @@ class _FeatureRequestReportManagementWidgetState extends State<FeatureRequestRep
                 style: TextStyle(
                   fontSize: 14,
                   color: textColor,
+                  height: 1.4,
                 ),
               ),
             ),
@@ -185,6 +188,7 @@ class _FeatureRequestReportManagementWidgetState extends State<FeatureRequestRep
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
                     color: textColor,
+                    height: 1.4,
                   ),
                 ),
               ],
@@ -205,13 +209,32 @@ class _FeatureRequestReportManagementWidgetState extends State<FeatureRequestRep
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      report.featureRequest!.title ?? '',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w500,
-                        fontSize: 14,
-                        color: textColor,
-                      ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            report.featureRequest!.title ?? '',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w500,
+                              fontSize: 14,
+                              color: textColor,
+                              height: 1.4,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        ElevatedButton.icon(
+                          onPressed: () => _deleteFeatureRequest(report.featureRequest!.id),
+                          icon: const Icon(Icons.delete_outline, size: 16),
+                          label: const Text('删除需求'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red.withValues(alpha: 0.1),
+                            foregroundColor: Colors.red,
+                            elevation: 0,
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 4),
                     Text(
@@ -219,6 +242,7 @@ class _FeatureRequestReportManagementWidgetState extends State<FeatureRequestRep
                       style: TextStyle(
                         fontSize: 12,
                         color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                        height: 1.4,
                       ),
                       maxLines: 3,
                       overflow: TextOverflow.ellipsis,
@@ -248,6 +272,7 @@ class _FeatureRequestReportManagementWidgetState extends State<FeatureRequestRep
                   style: TextStyle(
                     fontSize: 12,
                     color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                    height: 1.4,
                   ),
                 ),
                 const Spacer(),
@@ -256,6 +281,7 @@ class _FeatureRequestReportManagementWidgetState extends State<FeatureRequestRep
                   style: TextStyle(
                     fontSize: 12,
                     color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                    height: 1.4,
                   ),
                 ),
               ],
@@ -271,5 +297,71 @@ class _FeatureRequestReportManagementWidgetState extends State<FeatureRequestRep
     final nickName = user.nickName;
     if (nickName == null || nickName.isEmpty) return '?';
     return nickName[0].toUpperCase();
+  }
+
+  Future<void> _deleteFeatureRequest(String requestId) async {
+    final isDarkMode = Provider.of<DarkMode>(context, listen: false).isDarkMode;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: isDarkMode ? const Color(0xFF2D2D2D) : Colors.white,
+        title: Text(
+          '确认删除',
+          style: TextStyle(
+            color: isDarkMode ? Colors.white : Colors.black87,
+            fontWeight: FontWeight.w400,
+          ),
+        ),
+        content: Text(
+          '确定要删除这个需求吗？删除后将同时删除相关的投票和举报记录，此操作不可恢复。',
+          style: TextStyle(
+            color: isDarkMode ? Colors.white70 : Colors.black87,
+            height: 1.4,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(
+              '取消',
+              style: TextStyle(
+                color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.red,
+            ),
+            child: const Text('删除'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      final adminUser = Global.getLoggedInUser();
+      if (adminUser == null || adminUser.isAdmin != true) {
+        ToastUtil.error('权限不足');
+        return;
+      }
+
+      final result = await Api.client.deleteFeatureRequest(requestId, adminUser.id);
+
+      if (!mounted) return;
+      if (result.success) {
+        ToastUtil.success('删除成功');
+        // 重新加载举报列表
+        _loadReports();
+      } else {
+        ToastUtil.error(result.msg ?? '删除失败');
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ToastUtil.error('删除失败');
+    }
   }
 }

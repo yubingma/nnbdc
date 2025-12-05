@@ -5,6 +5,7 @@ import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -136,6 +137,23 @@ public class FeatureRequestController {
         }
         
         featureRequestBo.updateRequestStatus(requestId, status);
+        return Result.success(null);
+    }
+
+    /**
+     * 删除需求（管理员功能）
+     */
+    @DeleteMapping("/deleteFeatureRequest.do")
+    @PreAuthorize("hasAnyRole('ADMIN')")
+    @ResponseBody
+    public Result<Void> deleteFeatureRequest(@RequestParam(name = "requestId") String requestId,
+                                            @RequestParam(name = "adminUserId") String adminUserId) {
+        User adminUser = userBo.findById(adminUserId);
+        if (adminUser == null || !adminUser.getIsAdmin()) {
+            return Result.fail("管理员权限不足");
+        }
+        
+        featureRequestBo.deleteFeatureRequest(requestId);
         return Result.success(null);
     }
 

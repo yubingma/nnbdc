@@ -187,5 +187,27 @@ public class FeatureRequestBo extends BaseBo<FeatureRequest> {
             updateEntity(request);
         }
     }
+    
+    /**
+     * 删除需求（管理员功能）
+     * 同时删除相关的投票记录和举报记录
+     */
+    public void deleteFeatureRequest(String requestId) {
+        // 删除相关的投票记录
+        String deleteVotesSql = "DELETE FROM feature_request_vote WHERE requestId = :requestId";
+        MapSqlParameterSource voteParams = new MapSqlParameterSource("requestId", requestId);
+        namedParameterJdbcTemplate.update(deleteVotesSql, voteParams);
+        
+        // 删除相关的举报记录
+        String deleteReportsSql = "DELETE FROM feature_request_report WHERE featureRequestId = :requestId";
+        MapSqlParameterSource reportParams = new MapSqlParameterSource("requestId", requestId);
+        namedParameterJdbcTemplate.update(deleteReportsSql, reportParams);
+        
+        // 删除需求本身
+        FeatureRequest request = findById(requestId);
+        if (request != null) {
+            deleteEntity(request);
+        }
+    }
 }
 
