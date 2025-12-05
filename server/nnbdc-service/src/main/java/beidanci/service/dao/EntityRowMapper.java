@@ -71,10 +71,25 @@ public class EntityRowMapper<E extends Po> implements RowMapper<E> {
             }
             
             // 跳过关联对象字段（类型为 Po 的子类，且不是以 "Id" 结尾的字段）
-            // 这些字段对应的外键列会在 ResultSet 中，但我们需要映射到外键列名（字段名 + "Id"）
+            // 这些字段对应的外键列会在 ResultSet 中，但我们需要映射到外键列名
+            // 优先使用 @Column 注解指定的列名，否则使用默认规则（字段名 + "Id"）
             if (Po.class.isAssignableFrom(field.getType()) && !field.getName().endsWith("Id")) {
-                // 关联对象字段：映射外键列名（字段名 + "Id"）到字段
-                String foreignKeyColumnName = field.getName() + "Id";
+                // 关联对象字段：映射外键列名到字段
+                String foreignKeyColumnName;
+                // 优先使用 @Column 注解指定的列名
+                if (field.isAnnotationPresent(Column.class)) {
+                    Column column = field.getAnnotation(Column.class);
+                    String columnName = column.name();
+                    if (!columnName.isEmpty()) {
+                        foreignKeyColumnName = columnName;
+                    } else {
+                        // 如果 @Column 注解存在但没有指定 name，使用默认规则
+                        foreignKeyColumnName = field.getName() + "Id";
+                    }
+                } else {
+                    // 没有 @Column 注解，使用默认规则
+                    foreignKeyColumnName = field.getName() + "Id";
+                }
                 map.put(foreignKeyColumnName.toLowerCase(), field);
                 continue;
             }

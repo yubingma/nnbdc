@@ -171,8 +171,9 @@ public abstract class BaseDao<E extends Po> {
             
             // 处理关联对象字段（类型为 Po 的子类，且不是以 "Id" 结尾的字段）
             // 约定：关联对象字段的外键列名为 字段名 + "Id"（如 level -> levelId）
+            // 但如果字段有 @Column 注解，则使用注解指定的列名
             if (Po.class.isAssignableFrom(field.getType()) && !field.getName().endsWith("Id")) {
-                String foreignKeyColumnName = field.getName() + "Id";
+                String foreignKeyColumnName = getForeignKeyColumnName(field);
                 
                 // 如果该列名已经在复合主键中，则跳过（避免重复）
                 if (isCompositeKey && compositeKeyColumnNames.contains(foreignKeyColumnName.toLowerCase())) {
@@ -636,8 +637,9 @@ public abstract class BaseDao<E extends Po> {
             
             // 处理关联对象字段（类型为 Po 的子类，且不是以 "Id" 结尾的字段）
             // 约定：关联对象字段的外键列名为 字段名 + "Id"（如 level -> levelId）
+            // 但如果字段有 @Column 注解，则使用注解指定的列名
             if (Po.class.isAssignableFrom(field.getType()) && !field.getName().endsWith("Id")) {
-                String foreignKeyColumnName = field.getName() + "Id";
+                String foreignKeyColumnName = getForeignKeyColumnName(field);
                 
                 // 如果外键列名是复合主键的组件列名，则跳过（因为主键不应该被更新）
                 if (compositeKeyColumnNames.contains(foreignKeyColumnName)) {
@@ -910,6 +912,23 @@ public abstract class BaseDao<E extends Po> {
         return results.isEmpty() ? null : results.get(0);
     }
 
+
+    /**
+     * 获取关联对象字段的外键列名
+     * 优先使用 @Column 注解指定的列名，否则使用默认规则（字段名 + "Id"）
+     */
+    private String getForeignKeyColumnName(Field field) {
+        // 优先使用 @Column 注解指定的列名
+        if (field.isAnnotationPresent(Column.class)) {
+            Column column = field.getAnnotation(Column.class);
+            String columnName = column.name();
+            if (!columnName.isEmpty()) {
+                return columnName;
+            }
+        }
+        // 没有 @Column 注解或注解未指定 name，使用默认规则
+        return field.getName() + "Id";
+    }
 
     /**
      * 将字段名转换为列名

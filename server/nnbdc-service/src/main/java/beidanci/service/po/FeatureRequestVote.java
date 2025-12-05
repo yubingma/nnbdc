@@ -1,5 +1,6 @@
 package beidanci.service.po;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
@@ -9,8 +10,10 @@ import javax.persistence.UniqueConstraint;
        uniqueConstraints = {@UniqueConstraint(columnNames = {"requestId", "userId"})})
 public class FeatureRequestVote extends UuidPo {
 
+    @Column(name = "requestId", nullable = false)
     private FeatureRequest request;
 
+    @Column(name = "userId", nullable = false)
     private User user;
 
     public FeatureRequestVote() {

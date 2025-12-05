@@ -1453,3 +1453,20 @@ class FeatureRequestVo {
   Map<String, dynamic> toJson() => _$FeatureRequestVoToJson(this);
 }
 
+@JsonSerializable()
+@CustomDateTimeConverter()
+class FeatureRequestReportVo {
+  String id;
+  UserVo? reporter;
+  FeatureRequestVo? featureRequest;
+  String? content;
+  DateTime createTime;
+
+  FeatureRequestReportVo(this.id, this.reporter, this.featureRequest, this.content, this.createTime);
+
+  factory FeatureRequestReportVo.fromJson(Map<String, dynamic> json) =>
+      _$FeatureRequestReportVoFromJson(json);
+
+  Map<String, dynamic> toJson() => _$FeatureRequestReportVoToJson(this);
+}
+

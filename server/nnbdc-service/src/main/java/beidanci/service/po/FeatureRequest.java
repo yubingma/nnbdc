@@ -12,6 +12,7 @@ import beidanci.api.model.FeatureRequestStatus;
 @Table(name = "feature_request")
 public class FeatureRequest extends UuidPo {
 
+    @Column(name = "creatorId", nullable = false)
     private User creator;
 
     @Column(name = "title", length = 200, nullable = false)

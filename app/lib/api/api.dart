@@ -593,4 +593,15 @@ abstract class RestClient {
       @Field("requestId") String requestId,
       @Field("status") String status,
       @Field("adminUserId") String adminUserId);
+
+  // 需求墙举报相关API
+  @POST("/saveFeatureRequestReport.do")
+  @FormUrlEncoded()
+  Future<Result<String>> saveFeatureRequestReport(
+      @Field("requestId") String requestId,
+      @Field("content") String content,
+      @Field("userId") String userId);
+
+  @GET("/getAllFeatureRequestReports.do")
+  Future<List<FeatureRequestReportVo>> getAllFeatureRequestReports();
 }
