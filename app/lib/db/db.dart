@@ -107,7 +107,6 @@ class MyDatabase extends _$MyDatabase {
         // 创建表、索引和初始化数据
         await _initializeDatabaseSchema(m);
       },
-
       onUpgrade: (Migrator m, int from, int to) async {
         try {
           // 从版本 1 升级到版本 2：更新 studyStep 字段值
@@ -121,21 +120,18 @@ class MyDatabase extends _$MyDatabase {
         } catch (e, stackTrace) {
           // 升级失败，记录错误日志
           Global.logger.e('❌ 数据库升级失败，将删除所有表并重建: $e', error: e, stackTrace: stackTrace);
-          
+
           // 给用户提示
           _showDatabaseRebuildNotification();
-          
+
           // 删除所有表并重建
           await _recreateDatabaseOnUpgradeFailure(m);
-          
+
           // 重建完成后提示用户
           _showDatabaseRebuildSuccessNotification();
         }
       },
-      
-      beforeOpen: (details) async {
-
-      },
+      beforeOpen: (details) async {},
     );
   }
 
@@ -144,7 +140,6 @@ class MyDatabase extends _$MyDatabase {
   /// 2. 更新 studyStep 字段：'Word' -> 'En2Ch', 'Meaning' -> 'Ch2En'
   Future<void> _migrateStudyStepFromV1ToV2() async {
     await transaction(() async {
-      
       // ========== 第二步：更新 studyStep 字段值 ==========
       // 2.1 更新 user_study_steps 表中的 studyStep 字段
       await customStatement('''
@@ -152,46 +147,38 @@ class MyDatabase extends _$MyDatabase {
         SET study_step = 'En2Ch' 
         WHERE study_step = 'Word'
       ''');
-      
+
       await customStatement('''
         UPDATE user_study_steps 
         SET study_step = 'Ch2En' 
         WHERE study_step = 'Meaning'
       ''');
-      
+
       // 2.2 更新 user_db_logs 表中的 JSON 记录
       // 获取所有需要更新的日志记录
       // 注意：这里使用 Drift 的字段名 tblName
-      final logsToUpdate = await (select(userDbLogs)
-            ..where((log) => log.tblName.equals('userStudySteps')))
-          .get();
-      
+      final logsToUpdate = await (select(userDbLogs)..where((log) => log.tblName.equals('userStudySteps'))).get();
+
       for (final log in logsToUpdate) {
-        try {
-          // 解析 JSON
-          final recordJson = jsonDecode(log.record) as Map<String, dynamic>;
-          
-          // 检查并更新 studyStep 字段
-          if (recordJson.containsKey('studyStep')) {
-            final studyStep = recordJson['studyStep'] as String;
-            if (studyStep == 'Word') {
-              recordJson['studyStep'] = 'En2Ch';
-            } else if (studyStep == 'Meaning') {
-              recordJson['studyStep'] = 'Ch2En';
-            } else {
-              // 已经是新值，跳过
-              continue;
-            }
-            
-            // 更新记录
-            await (update(userDbLogs)..where((l) => l.id.equals(log.id)))
-                .write(UserDbLogsCompanion(
-              record: Value(jsonEncode(recordJson)),
-            ));
+        // 解析 JSON
+        final recordJson = jsonDecode(log.record) as Map<String, dynamic>;
+
+        // 检查并更新 studyStep 字段
+        if (recordJson.containsKey('studyStep')) {
+          final studyStep = recordJson['studyStep'] as String;
+          if (studyStep == 'Word') {
+            recordJson['studyStep'] = 'En2Ch';
+          } else if (studyStep == 'Meaning') {
+            recordJson['studyStep'] = 'Ch2En';
+          } else {
+            // 已经是新值，跳过
+            continue;
           }
-        } catch (e) {
-          // 如果 JSON 解析失败，跳过该记录
-          continue;
+
+          // 更新记录
+          await (update(userDbLogs)..where((l) => l.id.equals(log.id))).write(UserDbLogsCompanion(
+            record: Value(jsonEncode(recordJson)),
+          ));
         }
       }
     });
@@ -208,42 +195,34 @@ class MyDatabase extends _$MyDatabase {
         SET popularity_limit = NULL 
         WHERE popularity_limit = 0
       ''');
-      
+
       // 同时需要更新 user_db_logs 表中 dicts 相关的 JSON 记录
       // 获取所有需要更新的日志记录
-      final logsToUpdate = await (select(userDbLogs)
-            ..where((log) => log.tblName.equals('dicts')))
-          .get();
-      
+      final logsToUpdate = await (select(userDbLogs)..where((log) => log.tblName.equals('dicts'))).get();
+
       for (final log in logsToUpdate) {
-        try {
-          // 解析 JSON
-          final recordJson = jsonDecode(log.record) as Map<String, dynamic>;
-          
-          // 检查并更新 popularityLimit 字段
-          if (recordJson.containsKey('popularityLimit')) {
-            final popularityLimit = recordJson['popularityLimit'];
-            // 如果值为 0，将其设置为 null
-            if (popularityLimit == 0) {
-              recordJson['popularityLimit'] = null;
-              
-              // 更新记录
-              await (update(userDbLogs)..where((l) => l.id.equals(log.id)))
-                  .write(UserDbLogsCompanion(
-                record: Value(jsonEncode(recordJson)),
-              ));
-            }
+        // 解析 JSON
+        final recordJson = jsonDecode(log.record) as Map<String, dynamic>;
+
+        // 检查并更新 popularityLimit 字段
+        if (recordJson.containsKey('popularityLimit')) {
+          final popularityLimit = recordJson['popularityLimit'];
+          // 如果值为 0，将其设置为 null
+          if (popularityLimit == 0) {
+            recordJson['popularityLimit'] = null;
+
+            // 更新记录
+            await (update(userDbLogs)..where((l) => l.id.equals(log.id))).write(UserDbLogsCompanion(
+              record: Value(jsonEncode(recordJson)),
+            ));
           }
-        } catch (e) {
-          // 如果 JSON 解析失败，跳过该记录
-          continue;
         }
       }
     });
   }
 
   /// 初始化数据库架构（创建表、索引和基础数据）
-  /// 
+  ///
   /// 此方法会：
   /// 1. 创建所有表
   /// 2. 创建性能优化索引
@@ -274,60 +253,59 @@ class MyDatabase extends _$MyDatabase {
       CREATE INDEX IF NOT EXISTS idx_learning_words_user_life 
       ON learning_words (user_id, life_value)
     ''');
-    
+
     await customStatement('''
       CREATE INDEX IF NOT EXISTS idx_learning_words_user_learning_date 
       ON learning_words (user_id, last_learning_date)
     ''');
-    
+
     await customStatement('''
       CREATE INDEX IF NOT EXISTS idx_learning_words_user_today_new 
       ON learning_words (user_id, is_today_new_word, last_learning_date)
     ''');
-    
+
     await customStatement('''
       CREATE INDEX IF NOT EXISTS idx_learning_words_add_time_life 
       ON learning_words (add_time, life_value, word_id)
     ''');
-    
+
     // 为meaning_items表添加索引以优化释义查询
     await customStatement('''
       CREATE INDEX IF NOT EXISTS idx_meaning_items_word_dict 
       ON meaning_items (word_id, dict_id)
     ''');
-    
-    
+
     // 为dict_words表添加索引
     await customStatement('''
       CREATE INDEX IF NOT EXISTS idx_dict_words_dict_seq 
       ON dict_words (dict_id, seq)
     ''');
-    
+
     // 为learning_dicts表添加索引
     await customStatement('''
       CREATE INDEX IF NOT EXISTS idx_learning_dicts_user 
       ON learning_dicts (user_id)
     ''');
-    
+
     // 为mastered_words表添加索引（现在统一使用下划线格式）
     await customStatement('''
       CREATE INDEX IF NOT EXISTS idx_mastered_words_user 
       ON mastered_words (user_id)
     ''');
-    
+
     await customStatement('''
       CREATE INDEX IF NOT EXISTS idx_mastered_words_user_time 
       ON mastered_words (user_id, master_at_time)
     ''');
-    
+
     // 为sentences表添加索引
     await customStatement('''
       CREATE INDEX IF NOT EXISTS idx_sentences_meaning_item 
       ON sentences (meaning_item_id)
     ''');
-    
+
     // UserStageWords table has been removed
-    
+
     // 为words表添加索引
     await customStatement('''
       CREATE INDEX IF NOT EXISTS idx_words_spell 
@@ -393,7 +371,7 @@ class MyDatabase extends _$MyDatabase {
   }
 
   /// 在升级失败时，删除所有表并重建数据库
-  /// 
+  ///
   /// 此方法会：
   /// 1. 删除所有现有的表（包括表结构）
   /// 2. 重新创建所有表
@@ -401,23 +379,23 @@ class MyDatabase extends _$MyDatabase {
   /// 4. 初始化基础数据
   Future<void> _recreateDatabaseOnUpgradeFailure(Migrator m) async {
     Global.logger.i('🔄 开始重建数据库...');
-    
+
     try {
       // 1. 获取所有表名并删除
       final tables = await customSelect(
         "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'",
         readsFrom: {},
       ).get();
-      
+
       await transaction(() async {
         // 关闭外键约束
         await customStatement('PRAGMA foreign_keys = OFF');
-        
+
         // 删除所有表（使用 IF EXISTS 避免表不存在时的错误）
         for (final table in tables) {
           final tableName = table.data['name'] as String;
           if (tableName.isEmpty) continue;
-          
+
           try {
             // 使用参数化查询避免 SQL 注入（虽然表名来自系统表，但为了安全还是使用引号）
             await customStatement('DROP TABLE IF EXISTS "$tableName"');
@@ -427,14 +405,14 @@ class MyDatabase extends _$MyDatabase {
             // 继续删除其他表，不因单个表删除失败而中断
           }
         }
-        
+
         // 重新启用外键约束
         await customStatement('PRAGMA foreign_keys = ON');
       });
-      
+
       // 2. 重新创建表、索引和初始化数据
       await _initializeDatabaseSchema(m);
-      
+
       Global.logger.i('🎉 数据库重建完成');
     } catch (e, stackTrace) {
       Global.logger.e('❌ 重建数据库失败: $e', error: e, stackTrace: stackTrace);
