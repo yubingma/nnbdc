@@ -975,14 +975,4 @@ public abstract class BaseDao<E extends Po> {
         return fieldName;
     }
 
-    /**
-     * @deprecated 此方法已废弃。请直接使用 SQL 语句，不再支持 HQL。
-     * 如果代码中仍有使用 HQL 的地方，请将其转换为 SQL。
-     */
-    @Deprecated
-    private String convertHqlToSql(String hql) {
-        // 此方法已废弃，保留仅用于向后兼容
-        // 新代码应该直接使用 SQL，不再调用此方法
-        throw new UnsupportedOperationException("HQL 已废弃，请直接使用 SQL 语句。如果看到此错误，说明代码中仍有使用 HQL 的地方，需要将其转换为 SQL。");
-    }
 }
