@@ -3324,9 +3324,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
   IconData _getStepIcon(String studyStep) {
     switch (studyStep) {
-      case 'Word':
+      case 'En2Ch':
         return Icons.auto_stories;
-      case 'Meaning':
+      case 'Ch2En':
         return Icons.school;
       default:
         return Icons.school;

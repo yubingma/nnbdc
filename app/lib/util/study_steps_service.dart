@@ -87,9 +87,9 @@ class StudyStepsService {
   /// 从字符串获取StudyStep枚举
   StudyStep _getStudyStepFromString(String stepStr) {
     switch (stepStr) {
-      case 'Word':
+      case 'En2Ch':
         return StudyStep.en2Ch;
-      case 'Meaning':
+      case 'Ch2En':
         return StudyStep.ch2En;
       default:
         return StudyStep.en2Ch;

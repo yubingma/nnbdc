@@ -17,7 +17,7 @@ class UserStudySteps extends Table {
   TextColumn get userId => text()();
 
   TextColumn get studyStep =>
-      text()(); // 'Word', 'Meaning'
+      text()(); 
 
   IntColumn get seq => integer()();
 

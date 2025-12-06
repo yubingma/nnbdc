@@ -1233,7 +1233,7 @@ class UserStudyStepsDao extends DatabaseAccessor<MyDatabase> with _$UserStudySte
       // 根据客户端类型设置初始状态
       newSteps.add(UserStudyStep(
         userId: userId,
-        studyStep: 'Word',
+        studyStep: 'En2Ch',
         seq: 0,
         state: 'Active',
         createTime: AppClock.now(),
@@ -1241,7 +1241,7 @@ class UserStudyStepsDao extends DatabaseAccessor<MyDatabase> with _$UserStudySte
 
       newSteps.add(UserStudyStep(
         userId: userId,
-        studyStep: 'Meaning',
+        studyStep: 'Ch2En',
         seq: 1,
         state: 'Active',
         createTime: AppClock.now(),
