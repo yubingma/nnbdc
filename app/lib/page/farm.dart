@@ -1677,10 +1677,14 @@ class _TreeGrowthPainter extends CustomPainter {
             Offset(centerX, soilTop - stemHeight * (0.98 - 0.12 * cotyledonGrowth));
         final double cotyledonScale =
             ui.lerpDouble(0.32, 0.58, cotyledonGrowth) ?? 0.4;
-        final double cotyledonSpread =
-            ui.lerpDouble(42, 28, cotyledonGrowth) ?? 36;
-        final double cotyledonCanopyHeight =
-            (stemHeight * 0.24 * cotyledonGrowth).clamp(12.0, stemHeight * 0.32);
+      final double cotyledonSpread =
+          ui.lerpDouble(42, 28, cotyledonGrowth) ?? 36;
+      final double maxCanopyHeight = stemHeight * 0.32;
+      final double cotyledonCanopyHeight =
+          (stemHeight * 0.24 * cotyledonGrowth).clamp(
+        math.min(12.0, maxCanopyHeight),
+        math.max(12.0, maxCanopyHeight),
+      );
 
         drawLeafCluster(
           origin: cotyledonAnchor + const Offset(-6, -2),
