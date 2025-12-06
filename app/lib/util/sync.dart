@@ -154,7 +154,7 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
               if (log.operate == 'INSERT' || log.operate == 'UPDATE') {
                 await db.userOpersDao.saveUserOper(entity, false);
               }
-            } else if (log.tblName == 'bookmarks') {
+            } else if (log.tblName == 'bookMarks') {
               BookMark entity = BookMark.fromJson(entityJson);
               if (log.operate == 'INSERT' || log.operate == 'UPDATE') {
                 await db.bookmarksDao.saveBookmark(entity, false);
@@ -183,7 +183,7 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
                 log.tblName != 'dictWords' &&
                 log.tblName != 'dakas' &&
                 log.tblName != 'userOpers' &&
-                log.tblName != 'bookmarks' &&
+                log.tblName != 'bookMarks' &&
                 log.tblName != 'userStudySteps' &&
                 log.tblName != 'userCowDungLogs') {
               Global.logger.w("⚠️ 不支持的表: ${log.tblName}");
@@ -284,7 +284,7 @@ Future<void> _handleBatchDeleteUserRecords(UserDbLog log, String userId) async {
       case 'userOpers':
         await db.userOpersDao.batchDeleteUserRecords(userId, filters: filters);
         break;
-      case 'bookmarks':
+      case 'bookMarks':
         await db.bookmarksDao.batchDeleteUserRecords(userId, filters: filters);
         break;
       case 'userStudySteps':
