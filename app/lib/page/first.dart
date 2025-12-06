@@ -1279,7 +1279,7 @@ endlocal
                                     const SizedBox(height: 24),
                                     // 版本号显示
                                     Text(
-                                      '版本 $_buildNumber',
+                                      '版本 $_buildNumber (${Config.profileName})',
                                       textScaler: const TextScaler.linear(1.0),
                                       style: TextStyle(
                                         color: Colors.white.withValues(alpha: 0.7),
