@@ -275,7 +275,8 @@ public abstract class BaseDao<E extends Po> {
     }
 
     /**
-     * 使用 SQL 进行分页查询（HQL 需要转换为 SQL）
+     * 使用 SQL 进行分页查询
+     * 注意：此方法只接受 SQL 语句，不再支持 HQL
      */
     @SafeVarargs
     public final PagedResults<E> pagedQuery(JdbcTemplate jdbcTemplate, String sql, int pageNo, int pageSize, Pair<String, Object>... parameters) {
@@ -283,8 +284,11 @@ public abstract class BaseDao<E extends Po> {
             setJdbcTemplate(jdbcTemplate);
         }
         
-        // 转换 HQL 为 SQL（简单处理，复杂情况需要手动转换）
-        String convertedSql = convertHqlToSql(sql);
+        // 确保 SQL 是完整的 SELECT 语句
+        String finalSql = sql.trim();
+        if (!finalSql.toUpperCase().startsWith("SELECT")) {
+            throw new IllegalArgumentException("pagedQuery 方法只接受完整的 SQL SELECT 语句，不再支持 HQL。请将 HQL 转换为 SQL。");
+        }
         
         // 构建参数映射
         MapSqlParameterSource paramSource = new MapSqlParameterSource();
@@ -293,11 +297,11 @@ public abstract class BaseDao<E extends Po> {
         }
         
         // 查询总数
-        String countSql = "SELECT COUNT(*) FROM (" + Objects.requireNonNull(convertedSql, "SQL cannot be null") + ") AS count_query";
+        String countSql = "SELECT COUNT(*) FROM (" + finalSql + ") AS count_query";
         Integer total = namedParameterJdbcTemplate.queryForObject(countSql, paramSource, Integer.class);
         
         // 分页查询
-        String pagedSql = convertedSql + " LIMIT :limit OFFSET :offset";
+        String pagedSql = finalSql + " LIMIT :limit OFFSET :offset";
         paramSource.addValue("limit", pageSize);
         paramSource.addValue("offset", (pageNo - 1) * pageSize);
         
@@ -331,6 +335,7 @@ public abstract class BaseDao<E extends Po> {
 
     /**
      * 使用 SQL 进行分页查询（从指定索引开始）
+     * 注意：此方法只接受 SQL 语句，不再支持 HQL
      */
     @SafeVarargs
     public final PagedResults<E> pagedQuery2(JdbcTemplate jdbcTemplate, String sql, int fromIndex, int pageSize, Pair<String, Object>... parameters) {
@@ -338,7 +343,11 @@ public abstract class BaseDao<E extends Po> {
             setJdbcTemplate(jdbcTemplate);
         }
         
-        String convertedSql = convertHqlToSql(sql);
+        // 确保 SQL 是完整的 SELECT 语句
+        String finalSql = sql.trim();
+        if (!finalSql.toUpperCase().startsWith("SELECT")) {
+            throw new IllegalArgumentException("pagedQuery2 方法只接受完整的 SQL SELECT 语句，不再支持 HQL。请将 HQL 转换为 SQL。");
+        }
         
         MapSqlParameterSource paramSource = new MapSqlParameterSource();
         for (Pair<String, Object> param : parameters) {
@@ -346,11 +355,11 @@ public abstract class BaseDao<E extends Po> {
         }
         
         // 查询总数
-        String countSql = "SELECT COUNT(*) FROM (" + Objects.requireNonNull(convertedSql, "SQL cannot be null") + ") AS count_query";
+        String countSql = "SELECT COUNT(*) FROM (" + finalSql + ") AS count_query";
         Integer total = namedParameterJdbcTemplate.queryForObject(countSql, paramSource, Integer.class);
         
         // 分页查询
-        String pagedSql = convertedSql + " LIMIT :limit OFFSET :offset";
+        String pagedSql = finalSql + " LIMIT :limit OFFSET :offset";
         paramSource.addValue("limit", pageSize);
         paramSource.addValue("offset", fromIndex);
         
@@ -954,22 +963,13 @@ public abstract class BaseDao<E extends Po> {
     }
 
     /**
-     * 将 HQL 转换为 SQL（简化版本，复杂情况需要手动转换）
+     * @deprecated 此方法已废弃。请直接使用 SQL 语句，不再支持 HQL。
+     * 如果代码中仍有使用 HQL 的地方，请将其转换为 SQL。
      */
+    @Deprecated
     private String convertHqlToSql(String hql) {
-        // 简单的 HQL 到 SQL 转换
-        // 注意：这是一个简化版本，复杂的 HQL 需要手动转换
-        String sql = hql;
-        
-        // 替换 FROM 子句中的实体类名为表名
-        String entityName = valueClass.getSimpleName();
-        String tableName = EntityTableInfo.getTableName(valueClass);
-        sql = sql.replace("FROM " + entityName, "FROM " + tableName);
-        sql = sql.replace("from " + entityName, "FROM " + tableName);
-        
-        // 替换字段名为列名（简化处理）
-        // 注意：复杂的 HQL 需要手动转换
-        
-        return sql;
+        // 此方法已废弃，保留仅用于向后兼容
+        // 新代码应该直接使用 SQL，不再调用此方法
+        throw new UnsupportedOperationException("HQL 已废弃，请直接使用 SQL 语句。如果看到此错误，说明代码中仍有使用 HQL 的地方，需要将其转换为 SQL。");
     }
 }

@@ -1194,7 +1194,7 @@ public class UserBo extends BaseBo<User> {
      * @return 分页结果
      */
     public PagedResults<User> searchUsers(String keyword, int pageNo, int pageSize, Integer filterType) {
-        String hql;
+        String sql;
         Pair<String, Object>[] parameters;
         
         // 构建WHERE条件
@@ -1203,34 +1203,34 @@ public class UserBo extends BaseBo<User> {
         
         if (keyword != null && !keyword.trim().isEmpty()) {
             // 有搜索关键词，模糊匹配用户名、昵称、邮箱
-            whereClause.append("(u.userName like :keyword or u.nickName like :keyword or u.email like :keyword)");
+            whereClause.append("(userName LIKE :keyword OR nickName LIKE :keyword OR email LIKE :keyword)");
             hasCondition = true;
         }
         
         // 添加权限筛选条件
         if (filterType != null && filterType > 0) {
             if (hasCondition) {
-                whereClause.append(" and ");
+                whereClause.append(" AND ");
             }
             switch (filterType) {
                 case 1: // 管理员
-                    whereClause.append("u.isAdmin = true");
+                    whereClause.append("isAdmin = 1");
                     break;
                 case 2: // 超级管理员
-                    whereClause.append("u.isSuperAdmin = true");
+                    whereClause.append("isSuperAdmin = 1");
                     break;
                 case 3: // 录入员
-                    whereClause.append("u.isInputor = true");
+                    whereClause.append("isInputor = 1");
                     break;
             }
             hasCondition = true;
         }
         
-        // 构建完整HQL
+        // 构建完整SQL
         if (hasCondition) {
-            hql = "from User u where " + whereClause.toString() + " order by u.lastLoginTime desc";
+            sql = "SELECT * FROM user WHERE " + whereClause.toString() + " ORDER BY lastLoginTime DESC";
         } else {
-            hql = "from User u order by u.lastLoginTime desc";
+            sql = "SELECT * FROM user ORDER BY lastLoginTime DESC";
         }
         
         // 设置参数
@@ -1247,7 +1247,7 @@ public class UserBo extends BaseBo<User> {
             parameters = params;
         }
         
-        return baseDao.pagedQuery(jdbcTemplate, hql, pageNo, pageSize, parameters);
+        return baseDao.pagedQuery(jdbcTemplate, sql, pageNo, pageSize, parameters);
     }
 
     /**

@@ -72,10 +72,10 @@ public class MasteredWordBo extends BaseBo<MasteredWord> {
     }
 
     public PagedResults<MasteredWord> getMasteredWordsForAPage2(int fromIndex, int pageSize, User user) {
-        String hql = "from MasteredWord where user = :user " +
-                "order by masterAtTime asc, id.wordId asc";
-        PagedResults<MasteredWord> learningWords = pagedQuery2(hql, fromIndex, pageSize,
-                new ImmutablePair<>("user", user));
+        String sql = "SELECT * FROM mastered_word WHERE userId = :userId " +
+                "ORDER BY masterAtTime ASC, wordId ASC";
+        PagedResults<MasteredWord> learningWords = pagedQuery2(sql, fromIndex, pageSize,
+                new ImmutablePair<>("userId", user.getId()));
         return learningWords;
     }
 
@@ -135,8 +135,8 @@ public class MasteredWordBo extends BaseBo<MasteredWord> {
         if (word == null) {
             return -1;
         }
-        String hql = String.format("from MasteredWord where user.id = :userId and id.wordId = :wordId");
-        MasteredWord masteredWord = queryUnique(hql,
+        String sql = "SELECT * FROM mastered_word WHERE userId = :userId AND wordId = :wordId";
+        MasteredWord masteredWord = queryUnique(sql,
                 new ImmutablePair<>("userId", userId),
                 new ImmutablePair<>("wordId", word.getId()));
         if (masteredWord == null) {

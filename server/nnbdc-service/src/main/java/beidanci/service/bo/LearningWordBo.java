@@ -401,16 +401,16 @@ public class LearningWordBo extends BaseBo<LearningWord> {
     }
 
     public PagedResults<LearningWord> getLearningWordsForAPage(int pageNo, int pageSize, User user) {
-        String hql = "from LearningWord where user = :user and lifeValue > 0 order by lifeValue desc, addTime desc";
-        PagedResults<LearningWord> learningWords = pagedQuery(hql, pageNo, pageSize,
-                new ImmutablePair<>("user", user));
+        String sql = "SELECT * FROM learning_word WHERE userId = :userId AND lifeValue > 0 ORDER BY lifeValue DESC, addTime DESC";
+        PagedResults<LearningWord> learningWords = pagedQuery(sql, pageNo, pageSize,
+                new ImmutablePair<>("userId", user.getId()));
         return learningWords;
     }
 
     public PagedResults<LearningWord> getLearningWordsForAPage2(int fromIndex, int pageSize, User user) {
-        String hql = "from LearningWord where user = :user and lifeValue > 0 order by DATE_FORMAT(AddTime,'%Y-%m-%d %H:%i:%s') asc, lifeValue asc, md5(wordId) asc";
-        PagedResults<LearningWord> learningWords = pagedQuery2(hql, fromIndex, pageSize,
-                new ImmutablePair<>("user", user));
+        String sql = "SELECT * FROM learning_word WHERE userId = :userId AND lifeValue > 0 ORDER BY DATE_FORMAT(addTime,'%Y-%m-%d %H:%i:%s') ASC, lifeValue ASC, MD5(wordId) ASC";
+        PagedResults<LearningWord> learningWords = pagedQuery2(sql, fromIndex, pageSize,
+                new ImmutablePair<>("userId", user.getId()));
         return learningWords;
     }
 
@@ -422,21 +422,14 @@ public class LearningWordBo extends BaseBo<LearningWord> {
         if (word == null) {
             return -1;
         }
-        String hql = String
-                .format("from LearningWord where user.id = :userId and lifeValue > 0 and id.wordId = :wordId");
-        LearningWord learningWord = queryUnique(hql,
+        String sql = "SELECT * FROM learning_word WHERE userId = :userId AND lifeValue > 0 AND wordId = :wordId";
+        LearningWord learningWord = queryUnique(sql,
                 new ImmutablePair<>("userId", userId),
                 new ImmutablePair<>("wordId", word.getId()));
         if (learningWord == null) {
             return -1;
         }
 
-        hql = "select count(0) from LearningWord where user.id = :userId and lifeValue > 0 " +
-                "and (" +
-                "DATE_FORMAT(addTime,'%Y-%m-%d %H:%i:%s') < :addTime " +
-                " or (DATE_FORMAT(addTime,'%Y-%m-%d %H:%i:%s') = :addTime and lifeValue < :lifeValue) " +
-                " or (DATE_FORMAT(addTime,'%Y-%m-%d %H:%i:%s') = :addTime and lifeValue = :lifeValue and md5(wordId) <= md5(:wordId) )"
-                + ")";
         // 转换为 SQL
         String countSql = "SELECT COUNT(*) FROM learning_word WHERE userId = :userId AND lifeValue > 0 " +
                 "AND (" +
@@ -457,41 +450,42 @@ public class LearningWordBo extends BaseBo<LearningWord> {
 
     public PagedResults<LearningWord> getTodayWordsForAPage(int pageNo, int pageSize, SortType sortType, User user,
             final Date now) {
-        String hql = String.format(
-                "from LearningWord where user = :user and lastLearningDate >= :start and lastLearningDate < :end order by learningOrder %s",
-                sortType == SortType.Positive ? "asc" : "desc");
-        PagedResults<LearningWord> learningWords = pagedQuery(hql, pageNo, pageSize,
-                new ImmutablePair<>("user", user),
+        String orderBy = sortType == SortType.Positive ? "ASC" : "DESC";
+        String sql = String.format(
+                "SELECT * FROM learning_word WHERE userId = :userId AND lastLearningDate >= :start AND lastLearningDate < :end ORDER BY learningOrder %s",
+                orderBy);
+        PagedResults<LearningWord> learningWords = pagedQuery(sql, pageNo, pageSize,
+                new ImmutablePair<>("userId", user.getId()),
                 new ImmutablePair<>("start", DateUtils.truncate(now, Calendar.DATE)),
                 new ImmutablePair<>("end", DateUtils.ceiling(now, Calendar.DATE)));
         return learningWords;
     }
 
     public PagedResults<LearningWord> getTodayNewWordsForAPage(int pageNo, int pageSize, User user, final Date now) {
-        String hql = "from LearningWord where user = :user and isTodayNewWord = 1 " +
-                "and lastLearningDate >= :start and lastLearningDate < :end order by learningOrder asc";
-        PagedResults<LearningWord> learningWords = pagedQuery(hql, pageNo, pageSize,
-                new ImmutablePair<>("user", user),
+        String sql = "SELECT * FROM learning_word WHERE userId = :userId AND isTodayNewWord = 1 " +
+                "AND lastLearningDate >= :start AND lastLearningDate < :end ORDER BY learningOrder ASC";
+        PagedResults<LearningWord> learningWords = pagedQuery(sql, pageNo, pageSize,
+                new ImmutablePair<>("userId", user.getId()),
                 new ImmutablePair<>("start", DateUtils.truncate(now, Calendar.DATE)),
                 new ImmutablePair<>("end", DateUtils.ceiling(now, Calendar.DATE)));
         return learningWords;
     }
 
     public PagedResults<LearningWord> getTodayOldWordsForAPage(int pageNo, int pageSize, User user, final Date now) {
-        String hql = "from LearningWord where user = :user and isTodayNewWord = 0 " +
-                "and lastLearningDate >= :start and lastLearningDate < :end " +
-                "order by learningOrder asc";
-        PagedResults<LearningWord> learningWords = pagedQuery(hql, pageNo, pageSize,
-                new ImmutablePair<>("user", user),
+        String sql = "SELECT * FROM learning_word WHERE userId = :userId AND isTodayNewWord = 0 " +
+                "AND lastLearningDate >= :start AND lastLearningDate < :end " +
+                "ORDER BY learningOrder ASC";
+        PagedResults<LearningWord> learningWords = pagedQuery(sql, pageNo, pageSize,
+                new ImmutablePair<>("userId", user.getId()),
                 new ImmutablePair<>("start", DateUtils.truncate(now, Calendar.DATE)),
                 new ImmutablePair<>("end", DateUtils.ceiling(now, Calendar.DATE)));
         return learningWords;
     }
 
     public PagedResults<LearningWord> getTodayWordsForAPage2(int fromIndex, int pageSize, User user, final Date now) {
-        String hql = "from LearningWord where user = :user and lastLearningDate >= :start and lastLearningDate < :end order by learningOrder asc";
-        PagedResults<LearningWord> learningWords = pagedQuery2(hql, fromIndex, pageSize,
-                new ImmutablePair<>("user", user),
+        String sql = "SELECT * FROM learning_word WHERE userId = :userId AND lastLearningDate >= :start AND lastLearningDate < :end ORDER BY learningOrder ASC";
+        PagedResults<LearningWord> learningWords = pagedQuery2(sql, fromIndex, pageSize,
+                new ImmutablePair<>("userId", user.getId()),
                 new ImmutablePair<>("start", DateUtils.truncate(now, Calendar.DATE)),
                 new ImmutablePair<>("end", DateUtils.ceiling(now, Calendar.DATE)));
         return learningWords;
@@ -505,9 +499,8 @@ public class LearningWordBo extends BaseBo<LearningWord> {
         if (word == null) {
             return -1;
         }
-        String hql = String.format(
-                "from LearningWord where user.id = :userId and lastLearningDate >= :start and lastLearningDate < :end and id.wordId = :wordId");
-        LearningWord learningWord = queryUnique(hql,
+        String sql = "SELECT * FROM learning_word WHERE userId = :userId AND lastLearningDate >= :start AND lastLearningDate < :end AND wordId = :wordId";
+        LearningWord learningWord = queryUnique(sql,
                 new ImmutablePair<>("userId", userId),
                 new ImmutablePair<>("wordId", word.getId()),
                 new ImmutablePair<>("start", DateUtils.truncate(now, Calendar.DATE)),
@@ -533,10 +526,10 @@ public class LearningWordBo extends BaseBo<LearningWord> {
 
     public PagedResults<LearningWord> getTodayNewWordsForAPage2(int fromIndex, int pageSize, User user,
             final Date now) {
-        String hql = "from LearningWord where user = :user and isTodayNewWord = 1 " +
-                "and lastLearningDate >= :start and lastLearningDate < :end order by learningOrder asc";
-        PagedResults<LearningWord> learningWords = pagedQuery2(hql, fromIndex, pageSize,
-                new ImmutablePair<>("user", user),
+        String sql = "SELECT * FROM learning_word WHERE userId = :userId AND isTodayNewWord = 1 " +
+                "AND lastLearningDate >= :start AND lastLearningDate < :end ORDER BY learningOrder ASC";
+        PagedResults<LearningWord> learningWords = pagedQuery2(sql, fromIndex, pageSize,
+                new ImmutablePair<>("userId", user.getId()),
                 new ImmutablePair<>("start", DateUtils.truncate(now, Calendar.DATE)),
                 new ImmutablePair<>("end", DateUtils.ceiling(now, Calendar.DATE)));
         return learningWords;
@@ -552,9 +545,8 @@ public class LearningWordBo extends BaseBo<LearningWord> {
             return -1;
         }
 
-        String hql = String.format(
-                "from LearningWord where user.id = :userId and isTodayNewWord = 1 and lastLearningDate >= :start and lastLearningDate < :end and id.wordId = :wordId");
-        LearningWord learningWord = queryUnique(hql,
+        String sql = "SELECT * FROM learning_word WHERE userId = :userId AND isTodayNewWord = 1 AND lastLearningDate >= :start AND lastLearningDate < :end AND wordId = :wordId";
+        LearningWord learningWord = queryUnique(sql,
                 new ImmutablePair<>("userId", userId),
                 new ImmutablePair<>("wordId", word.getId()),
                 new ImmutablePair<>("start", DateUtils.truncate(now, Calendar.DATE)),
@@ -563,11 +555,9 @@ public class LearningWordBo extends BaseBo<LearningWord> {
             return -1;
         }
 
-        hql = "select count(0) from LearningWord where user.id = :userId and isTodayNewWord = 1 " +
-                "and lastLearningDate >= :start and lastLearningDate < :end " +
-                "and learningOrder<=:learningOrder";
         // 转换为 SQL
         String countSql = "SELECT COUNT(*) FROM learning_word WHERE userId = :userId " +
+                "AND isTodayNewWord = 1 " +
                 "AND lastLearningDate >= :start AND lastLearningDate < :end " +
                 "AND learningOrder <= :learningOrder";
         MapSqlParameterSource params = new MapSqlParameterSource();
@@ -582,11 +572,11 @@ public class LearningWordBo extends BaseBo<LearningWord> {
 
     public PagedResults<LearningWord> getTodayOldWordsForAPage2(int fromIndex, int pageSize, User user,
             final Date now) {
-        String hql = "from LearningWord where user = :user and isTodayNewWord = 0 " +
-                "and lastLearningDate >= :start and lastLearningDate < :end " +
-                "order by learningOrder asc";
-        PagedResults<LearningWord> learningWords = pagedQuery2(hql, fromIndex, pageSize,
-                new ImmutablePair<>("user", user),
+        String sql = "SELECT * FROM learning_word WHERE userId = :userId AND isTodayNewWord = 0 " +
+                "AND lastLearningDate >= :start AND lastLearningDate < :end " +
+                "ORDER BY learningOrder ASC";
+        PagedResults<LearningWord> learningWords = pagedQuery2(sql, fromIndex, pageSize,
+                new ImmutablePair<>("userId", user.getId()),
                 new ImmutablePair<>("start", DateUtils.truncate(now, Calendar.DATE)),
                 new ImmutablePair<>("end", DateUtils.ceiling(now, Calendar.DATE)));
         return learningWords;
@@ -602,9 +592,8 @@ public class LearningWordBo extends BaseBo<LearningWord> {
             return -1;
         }
 
-        String hql = String.format(
-                "from LearningWord where user.id = :userId and isTodayNewWord = 0 and lastLearningDate >= :start and lastLearningDate < :end and id.wordId = :wordId");
-        LearningWord learningWord = queryUnique(hql,
+        String sql = "SELECT * FROM learning_word WHERE userId = :userId AND isTodayNewWord = 0 AND lastLearningDate >= :start AND lastLearningDate < :end AND wordId = :wordId";
+        LearningWord learningWord = queryUnique(sql,
                 new ImmutablePair<>("userId", userId),
                 new ImmutablePair<>("wordId", word.getId()),
                 new ImmutablePair<>("start", DateUtils.truncate(now, Calendar.DATE)),
@@ -613,11 +602,9 @@ public class LearningWordBo extends BaseBo<LearningWord> {
             return -1;
         }
 
-        hql = "select count(0) from LearningWord where user.id = :userId and isTodayNewWord = 0 " +
-                "and lastLearningDate >= :start and lastLearningDate < :end " +
-                "and learningOrder<=:learningOrder";
         // 转换为 SQL
         String countSql = "SELECT COUNT(*) FROM learning_word WHERE userId = :userId " +
+                "AND isTodayNewWord = 0 " +
                 "AND lastLearningDate >= :start AND lastLearningDate < :end " +
                 "AND learningOrder <= :learningOrder";
         MapSqlParameterSource params = new MapSqlParameterSource();
