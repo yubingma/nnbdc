@@ -351,7 +351,7 @@ class FinishPageState extends State<FinishPage> {
               borderRadius: BorderRadius.circular(10),
             ),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 // 获得积分
                 Expanded(
@@ -387,12 +387,6 @@ class FinishPageState extends State<FinishPage> {
                       ),
                     ],
                   ),
-                ),
-                // 分隔线
-                Container(
-                  width: 1,
-                  height: 40,
-                  color: AppTheme.primaryColor.withValues(alpha: 0.2),
                 ),
                 // 获得魔法泡泡
                 Expanded(
