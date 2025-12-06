@@ -145,7 +145,8 @@ class EmailLoginPageState extends State<EmailLoginPage> {
 
   // 检查本地是否有该邮箱
   Future<void> _checkLocalEmail() async {
-    if (email.text.isEmpty || !EmailValidator.validate(email.text)) {
+    final trimmedEmail = email.text.trim();
+    if (trimmedEmail.isEmpty || !EmailValidator.validate(trimmedEmail)) {
       setState(() {
         _emailExistsInLocal = null;
         verificationCode.clear();
@@ -155,7 +156,8 @@ class EmailLoginPageState extends State<EmailLoginPage> {
 
     // 防抖：延迟500ms后检查
     await Future.delayed(const Duration(milliseconds: 500));
-    if (email.text.isEmpty || !EmailValidator.validate(email.text)) {
+    final trimmedEmailAfterDelay = email.text.trim();
+    if (trimmedEmailAfterDelay.isEmpty || !EmailValidator.validate(trimmedEmailAfterDelay)) {
       return;
     }
 
@@ -165,7 +167,7 @@ class EmailLoginPageState extends State<EmailLoginPage> {
 
     try {
       final db = MyDatabase.instance;
-      final user = await db.usersDao.getUserByEmail(email.text);
+      final user = await db.usersDao.getUserByEmail(trimmedEmailAfterDelay);
       
       setState(() {
         _emailExistsInLocal = user != null;
@@ -325,7 +327,7 @@ class EmailLoginPageState extends State<EmailLoginPage> {
                       color: Colors.black,
                       fontSize: MediaQuery.of(context).size.width > 600 ? 16 : 14,
                     ),
-                    validator: (value) => EmailValidator.validate(value!) ? null : "请输入有效的 email",
+                    validator: (value) => EmailValidator.validate(value!.trim()) ? null : "请输入有效的 email",
                     decoration: InputDecoration(
                       labelText: '邮箱',
                       labelStyle: const TextStyle(color: Colors.grey),
@@ -522,12 +524,13 @@ class EmailLoginPageState extends State<EmailLoginPage> {
 
   // 发送验证码
   Future<void> sendVerificationCode() async {
-    if (email.text.isEmpty) {
+    final trimmedEmail = email.text.trim();
+    if (trimmedEmail.isEmpty) {
       ToastUtil.error('请输入邮箱');
       return;
     }
 
-    if (!EmailValidator.validate(email.text)) {
+    if (!EmailValidator.validate(trimmedEmail)) {
       ToastUtil.error('请输入有效的邮箱地址');
       return;
     }
@@ -537,7 +540,7 @@ class EmailLoginPageState extends State<EmailLoginPage> {
     });
 
     try {
-      final result = await Api.client.sendEmailCode(email.text, 'LOGIN');
+      final result = await Api.client.sendEmailCode(trimmedEmail, 'LOGIN');
       if (result.success) {
         ToastUtil.success('验证码已发送到您的邮箱');
         _startCountdown();
@@ -568,7 +571,8 @@ class EmailLoginPageState extends State<EmailLoginPage> {
 
   // 登录
   Future<void> doLogin() async {
-    if (email.text.isEmpty) {
+    final trimmedEmail = email.text.trim();
+    if (trimmedEmail.isEmpty) {
       ToastUtil.error('请输入邮箱');
       return;
     }
@@ -581,7 +585,7 @@ class EmailLoginPageState extends State<EmailLoginPage> {
       // 如果本地有该邮箱，直接使用本地用户信息登录
       if (_emailExistsInLocal == true) {
         final db = MyDatabase.instance;
-        final user = await db.usersDao.getUserByEmail(email.text);
+        final user = await db.usersDao.getUserByEmail(trimmedEmail);
         
         if (user != null) {
           // 更新最后登录时间
@@ -635,8 +639,9 @@ class EmailLoginPageState extends State<EmailLoginPage> {
   // 验证码登录
   Future<void> _doCodeLogin() async {
     // 使用验证码登录（会验证验证码，然后进行登录或注册）
+    final trimmedEmail = email.text.trim();
     final codeResult = await Api.client.loginByEmailCode(
-      email.text,
+      trimmedEmail,
       verificationCode.text,
       getClientType().name,
       Global.version,
