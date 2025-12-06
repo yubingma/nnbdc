@@ -9,7 +9,7 @@ import javax.persistence.Table;
 public class Article extends UuidPo {
     // no Java serialization
 
-
+    @Column(name = "userId")
     private User user;
 
     @Column(name = "title", length = 1024, nullable = false)

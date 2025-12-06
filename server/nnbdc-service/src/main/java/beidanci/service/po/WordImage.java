@@ -24,7 +24,7 @@ public class WordImage extends UuidPo {
         super();
     }
 
-
+    @Column(name = "wordId")
     private Word word;
 
     @Column(name = "imageFile")
@@ -36,6 +36,7 @@ public class WordImage extends UuidPo {
     @Column(name = "foot")
     private Integer foot;
 
+    @Column(name = "authorId")
     private User author;
 
     public User getAuthor() {

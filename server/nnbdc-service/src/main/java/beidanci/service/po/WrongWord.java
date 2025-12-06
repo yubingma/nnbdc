@@ -3,6 +3,7 @@ package beidanci.service.po;
 import java.io.IOException;
 import java.util.Objects;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
@@ -22,6 +23,7 @@ public class WrongWord extends Po {
     @Id
     private WrongWordId id;
 
+    @Column(name = "userId")
     private User user;
 
     /**

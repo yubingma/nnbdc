@@ -18,10 +18,13 @@ public class LearningDict extends Po {
     @Id
     private LearningDictId id;
 
+    @Column(name = "dictId")
     private Dict dict;
 
+    @Column(name = "userId")
     private User user;
 
+    @Column(name = "currentWordId")
     private Word currentWord;
 
     @Column(name = "currentWordSeq")

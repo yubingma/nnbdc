@@ -15,8 +15,10 @@ import javax.persistence.Table;
 // @Cache(region = "wordCache", usage = CacheConcurrencyStrategy.READ_WRITE)  // JDBC 不支持缓存
 public class WordAdditionalInfo extends UuidPo {
 
+    @Column(name = "userId")
     private User user;
 
+    @Column(name = "wordId")
     private Word word;
 
     @Column(name = "content", length = 1024, nullable = false)

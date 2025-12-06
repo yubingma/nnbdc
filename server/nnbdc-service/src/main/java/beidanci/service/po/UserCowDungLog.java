@@ -13,6 +13,7 @@ import beidanci.api.model.UserCowDungLogDto;
 @Table(name = "user_cow_dung_log")
 public class UserCowDungLog extends UuidPo {
 
+    @Column(name = "userId")
     private User user;
 
     @Column(name = "delta", nullable = false)

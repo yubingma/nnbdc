@@ -56,8 +56,10 @@ public class Sentence extends UuidPo {
     @Column(name = "handCount")
     private Integer handCount = 0;
 
+    @Column(name = "authorId")
     private User author;
 
+    @Column(name = "meaningItemId")
     private MeaningItem meaningItem;
 
     @Column(name = "popularity")

@@ -14,6 +14,7 @@ import javax.persistence.UniqueConstraint;
 })
 public class UserDbVersion extends UuidPo {
 
+    @Column(name = "userId")
     private User user;
 
     @Column(name = "version", nullable = false)

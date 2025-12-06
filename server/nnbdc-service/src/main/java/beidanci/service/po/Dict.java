@@ -20,6 +20,7 @@ public class Dict extends UuidPo {
     @Column(name = "name", nullable = false, length = 50)
     private String name;
 
+    @Column(name = "ownerId")
     private User owner;
 
     /**

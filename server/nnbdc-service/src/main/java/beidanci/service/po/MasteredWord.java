@@ -21,6 +21,7 @@ public class MasteredWord extends Po {
     @Id
     private MasteredWordId id;
 
+    @Column(name = "userId")
     private User user;
 
     @Column(name = "masterAtTime", nullable = false)

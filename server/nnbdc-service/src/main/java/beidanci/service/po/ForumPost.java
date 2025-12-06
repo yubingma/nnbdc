@@ -12,9 +12,10 @@ import javax.persistence.Table;
 @Table(name = "forum_post")
 public class ForumPost extends UuidPo  {
 
-
+    @Column(name = "userId")
     private User user;
 
+    @Column(name = "forumId")
     private Forum forum;
 
     @Column(name = "postTitle", length = 100, nullable = false)

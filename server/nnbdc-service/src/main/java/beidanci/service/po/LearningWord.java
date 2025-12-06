@@ -26,6 +26,7 @@ public class LearningWord extends Po {
     @Id
     private LearningWordId id;
 
+    @Column(name = "userId")
     private User user;
 
     @Column(name = "addTime", nullable = false)

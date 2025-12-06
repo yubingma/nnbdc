@@ -15,10 +15,10 @@ import beidanci.api.model.StudyGroupSummary;
 @Table(name = "study_group")
 public class StudyGroup extends UuidPo  {
 
-
-
+    @Column(name = "studyGroupGradeId")
     private StudyGroupGrade studyGroupGrade;
 
+    @Column(name = "creatorId")
     private User creator;
 
     @Column(name = "groupName", length = 100, nullable = false, unique = true)

@@ -8,6 +8,7 @@ import javax.persistence.Table;
 @Table(name = "error_report")
 public class ErrorReport extends UuidPo  {
 
+    @Column(name = "userId")
     private User user;
 
     @Column(name = "content", length = 8192, nullable = false)

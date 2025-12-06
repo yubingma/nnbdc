@@ -17,6 +17,7 @@ public class UserStudyStep extends Po {
     @Id
     private UserStudyStepId id;
 
+    @Column(name = "userId")
     private User user;
 
 

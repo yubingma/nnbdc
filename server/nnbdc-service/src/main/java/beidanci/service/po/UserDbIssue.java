@@ -11,6 +11,7 @@ import javax.persistence.Table;
 @Table(name = "user_db_issue")
 public class UserDbIssue extends UuidPo {
 
+    @Column(name = "userId")
     private User user;
 
     @Column(name = "issueType", nullable = false, length = 64)

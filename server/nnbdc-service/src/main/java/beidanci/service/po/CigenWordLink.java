@@ -17,8 +17,10 @@ public class CigenWordLink extends Po {
     @Id
     private CigenWordLinkId id;
 
+    @Column(name = "cigenId")
     private Cigen cigen;
 
+    @Column(name = "wordId")
     private Word word;
 
     @Column(name = "theExplain", length = 1024, nullable = false)

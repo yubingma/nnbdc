@@ -11,6 +11,7 @@ import javax.persistence.Table;
 @Table(name = "user_score_log")
 public class UserScoreLog extends UuidPo {
 
+    @Column(name = "userId")
     private User user;
 
     @Column(name = "delta")

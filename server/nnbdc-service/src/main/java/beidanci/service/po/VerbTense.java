@@ -22,7 +22,7 @@ import beidanci.api.model.TenseType;
 // @Cache(region = "wordCache", usage = CacheConcurrencyStrategy.READ_WRITE)  // JDBC 不支持缓存
 public class VerbTense extends UuidPo {
 
-
+    @Column(name = "wordId")
     private Word word;
 
     /**

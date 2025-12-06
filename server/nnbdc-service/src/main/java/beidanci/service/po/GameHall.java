@@ -14,8 +14,10 @@ public class GameHall extends UuidPo  {
     @Column(name = "hallName", nullable = false)
     private String hallName;
 
+    @Column(name = "dictGroupId")
     private DictGroup dictGroup;
 
+    @Column(name = "hallGroupId")
     private HallGroup hallGroup;
 
     @Column(name = "basePoint")

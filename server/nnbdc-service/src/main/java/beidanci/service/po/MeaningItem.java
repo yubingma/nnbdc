@@ -29,6 +29,7 @@ public class MeaningItem extends UuidPo {
     /**
      * 释义所属单词
      */
+    @Column(name = "wordId")
     private Word word;
 
     /**
@@ -61,6 +62,7 @@ public class MeaningItem extends UuidPo {
     // @Cache(region = "wordCache", usage = CacheConcurrencyStrategy.READ_WRITE)  // JDBC 不支持缓存
     private List<Sentence> sentences = new ArrayList<>();
 
+    @Column(name = "dictId")
     private Dict dict;
 
     public MeaningItem() {

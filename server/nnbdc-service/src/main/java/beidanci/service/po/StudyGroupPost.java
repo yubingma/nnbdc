@@ -13,9 +13,10 @@ import javax.persistence.Table;
 @Table(name = "study_group_post")
 public class StudyGroupPost extends UuidPo {
 
-
+    @Column(name = "userId")
     private User user;
 
+    @Column(name = "studyGroupId")
     private StudyGroup studyGroup;
 
     @Column(name = "postTitle", length = 100, nullable = false)

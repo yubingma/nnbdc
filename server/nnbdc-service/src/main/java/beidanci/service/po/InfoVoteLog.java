@@ -23,8 +23,10 @@ public class InfoVoteLog extends Po {
         this.id = id;
     }
 
+    @Column(name = "wordAdditionalInfoId")
     private WordAdditionalInfo wordAdditionalInfo;
 
+    @Column(name = "userId")
     private User user;
 
     @Column(name = "voteType", length = 4, nullable = false)

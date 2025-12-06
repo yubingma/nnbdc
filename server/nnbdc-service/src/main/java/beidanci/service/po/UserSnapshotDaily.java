@@ -14,6 +14,7 @@ public class UserSnapshotDaily extends Po {
     @Id
     private UserSnapshotDailyId id;
 
+    @Column(name = "userId")
     private User user;
 
     @Column(name = "learnedWords", nullable = false)

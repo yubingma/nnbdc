@@ -12,6 +12,7 @@ public class UserGame extends Po {
     @Id
     private UserGameId id;
 
+    @Column(name = "userId")
     private User user;
 
     @Column(name = "winCount")

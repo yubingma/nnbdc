@@ -125,8 +125,10 @@ public class User extends UuidPo {
     private  List<UserScoreLog> userScoreLogs;
     @OrderBy("theDate asc")
     private  List<UserSnapshotDaily> userSnapshotDailys;
+    @Column(name = "invitedById")
     private User invitedBy;
 
+    @Column(name = "levelId")
     private Level level;
 
     private  List<User> invitedUsers;

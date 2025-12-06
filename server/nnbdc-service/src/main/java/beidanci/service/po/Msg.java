@@ -13,10 +13,10 @@ import beidanci.api.model.ClientType;
 @Table(name = "msg")
 public class Msg extends UuidPo {
 
-
-
+    @Column(name = "fromUserId")
     private User fromUser;
 
+    @Column(name = "toUserId")
     private User toUser;
 
     @Column(name = "content", length = 4000)

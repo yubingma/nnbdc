@@ -22,8 +22,10 @@ public class DictWord extends Po  {
     @Id
     private DictWordId id;
 
+    @Column(name = "dictId")
     private Dict dict;
 
+    @Column(name = "wordId")
     private Word word;
 
     /**
