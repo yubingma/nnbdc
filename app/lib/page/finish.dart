@@ -25,16 +25,13 @@ class FinishPage extends StatefulWidget {
   }
 }
 
-class FinishPageState extends State<FinishPage> with TickerProviderStateMixin {
+class FinishPageState extends State<FinishPage> {
   bool dataLoaded = false;
   late int cowDung;
   late Result<int> dakaResult;
   late int todayDakaScore; // 今日打卡积分（固定1分）
 
   String? marketAppUrl; // 应用市场的对应Url
-  
-  late AnimationController _bubbleGlowController; // 泡泡光晕动画控制器
-  late AnimationController _rayRotationController; // 光线旋转动画控制器
 
   static const double leftPadding = 16;
   static const double rightPadding = 16;
@@ -42,27 +39,7 @@ class FinishPageState extends State<FinishPage> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    
-    // 初始化泡泡光晕动画
-    _bubbleGlowController = AnimationController(
-      duration: const Duration(milliseconds: 2000),
-      vsync: this,
-    )..repeat(reverse: true);
-    
-    // 初始化光线旋转动画（降速为原来的十分之一）
-    _rayRotationController = AnimationController(
-      duration: const Duration(milliseconds: 10000),
-      vsync: this,
-    )..repeat();
-
     loadData();
-  }
-  
-  @override
-  void dispose() {
-    _bubbleGlowController.dispose();
-    _rayRotationController.dispose();
-    super.dispose();
   }
 
   Future<void> loadData() async {
@@ -81,7 +58,7 @@ class FinishPageState extends State<FinishPage> with TickerProviderStateMixin {
       }*/
     }
 
-    // 检查是否从页面查看器进入，如果是则跳过打卡逻辑
+    // 检查是否从页面查看器进入，如果是则模拟打卡但不入库
     final arguments = Get.arguments;
     final isFromPageViewer = arguments is Map && arguments['fromPageViewer'] == true;
     
@@ -106,10 +83,12 @@ class FinishPageState extends State<FinishPage> with TickerProviderStateMixin {
         }
       }
     } else {
-      // 从页面查看器进入：跳过打卡，初始化默认值
-      dakaResult = Result("SKIP", "页面查看器模式，跳过打卡", false);
-      todayDakaScore = 0;
-      cowDung = 0;
+      // 从页面查看器进入：模拟打卡数据，但不入库
+      // 生成1-5的随机魔法泡泡数（模拟掷骰子结果）
+      cowDung = math.Random().nextInt(5) + 1;
+      todayDakaScore = 1; // 模拟获得1积分
+      // 模拟打卡成功的结果
+      dakaResult = Result("SUCCESS", "页面查看器模式（模拟打卡，数据未入库）", true);
     }
 
     setState(() {
@@ -140,23 +119,13 @@ class FinishPageState extends State<FinishPage> with TickerProviderStateMixin {
                 children: [
                   const SizedBox(height: 16),
                   
-                  // 打卡结果卡片
+                  // 打卡结果卡片（包含积分和魔法泡泡信息）
                   _buildDakaCard(
                     isDarkMode: isDarkMode,
                     cardColor: cardColor,
                     textColor: textColor,
                     subtitleColor: subtitleColor,
                   ),
-                  
-                  const SizedBox(height: 12),
-                  
-                  // 魔法泡泡卡片
-                  if (dakaResult.success)
-                    _buildBubbleCard(
-                      isDarkMode: isDarkMode,
-                      cardColor: cardColor,
-                      textColor: textColor,
-                    ),
                   
                   const SizedBox(height: 16),
                   
@@ -582,121 +551,103 @@ class FinishPageState extends State<FinishPage> with TickerProviderStateMixin {
               borderRadius: BorderRadius.circular(10),
             ),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '获得积分',
-                      style: TextStyle(
-                        color: subtitleColor,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w400,
+                // 获得积分
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.star,
+                            color: AppTheme.primaryColor,
+                            size: 16,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '获得积分',
+                            style: TextStyle(
+                              color: subtitleColor,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      todayDakaScore.toString(),
-                      style: TextStyle(
-                        color: AppTheme.primaryColor,
-                        fontSize: 24,
-                        fontWeight: FontWeight.w400,
+                      const SizedBox(height: 5),
+                      Text(
+                        todayDakaScore.toString(),
+                        style: TextStyle(
+                          color: AppTheme.primaryColor,
+                          fontSize: 24,
+                          fontWeight: FontWeight.w400,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
+                ),
+                // 分隔线
+                Container(
+                  width: 1,
+                  height: 40,
+                  color: AppTheme.primaryColor.withValues(alpha: 0.2),
+                ),
+                // 获得魔法泡泡
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.auto_awesome,
+                            color: Colors.purple[300] ?? Colors.purple,
+                            size: 16,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '魔法泡泡',
+                            style: TextStyle(
+                              color: subtitleColor,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 5),
+                      Row(
+                        children: [
+                          Text(
+                            cowDung.toString(),
+                            style: TextStyle(
+                              color: Colors.purple[300] ?? Colors.purple,
+                              fontSize: 24,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '个',
+                            style: TextStyle(
+                              color: subtitleColor,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  // 构建魔法泡泡卡片
-  Widget _buildBubbleCard({
-    required bool isDarkMode,
-    required Color cardColor,
-    required Color textColor,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Colors.purple.withValues(alpha: isDarkMode ? 0.2 : 0.1),
-            Colors.pink.withValues(alpha: isDarkMode ? 0.15 : 0.08),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Colors.purple.withValues(alpha: 0.3),
-          width: 2,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.purple.withValues(alpha: 0.15),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Colors.purple.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(
-                  Icons.auto_awesome,
-                  color: Colors.purple[300] ?? Colors.purple,
-                  size: 26,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '恭喜你得到$cowDung个魔法泡泡',
-                      style: TextStyle(
-                        color: textColor,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w400,
-                        height: 1.3,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '可以建造自己的小天地啦',
-                      style: TextStyle(
-                        color: textColor,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w400,
-                        height: 1.3,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          // 显示具体的泡泡
-          _buildBubblesDisplay(cowDung, isDarkMode),
-          const SizedBox(height: 12),
-          // 进入我的小天地按钮 - 仅管理员可见
-          if (Global.getLoggedInUser()?.isAdmin == true)
+          // 管理员按钮 - 进入我的小天地
+          if (dakaResult.success && Global.getLoggedInUser()?.isAdmin == true) ...[
+            const SizedBox(height: 12),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
@@ -725,207 +676,8 @@ class FinishPageState extends State<FinishPage> with TickerProviderStateMixin {
                 },
               ),
             ),
+          ],
         ],
-      ),
-    );
-  }
-
-  // 泡泡类型配置
-  static const List<BubbleTypeConfig> _bubbleTypes = [
-    BubbleTypeConfig(
-      name: '种子',
-      color: Colors.green,
-      icon: Icons.eco,
-    ),
-    BubbleTypeConfig(
-      name: '卵',
-      color: Colors.amber,
-      icon: Icons.egg,
-    ),
-    BubbleTypeConfig(
-      name: '资源',
-      color: Colors.blue,
-      icon: Icons.diamond,
-    ),
-  ];
-
-  // 构建泡泡显示区域
-  Widget _buildBubblesDisplay(int count, bool isDarkMode) {
-    final displayCount = count > 10 ? 10 : count;
-    
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        // 计算每行5个泡泡的大小
-        // 可用宽度 = 屏幕宽度 - 左右padding (16 * 2)
-        final availableWidth = constraints.maxWidth;
-        // 每行5个，4个间距
-        const int bubblesPerRow = 5;
-        const double spacing = 8.0;
-        const double totalSpacing = spacing * (bubblesPerRow - 1);
-        
-        // 计算每个泡泡容器的大小
-        // containerSize = (availableWidth - totalSpacing) / bubblesPerRow
-        final containerSize = (availableWidth - totalSpacing) / bubblesPerRow;
-        
-        // 计算实际的泡泡大小
-        // containerSize = bubbleSize + maxGlowExtension * 2
-        // maxGlowExtension = bubbleSize * 0.5
-        // 所以 containerSize = bubbleSize * 2
-        final bubbleSize = containerSize / 2;
-
-        return Wrap(
-          spacing: spacing,
-          runSpacing: spacing,
-          alignment: WrapAlignment.start,
-          children: List.generate(displayCount, (index) {
-            // 循环分配到四类泡泡中
-            final typeIndex = index % _bubbleTypes.length;
-            final bubbleType = _bubbleTypes[typeIndex];
-            
-            return _buildSingleBubble(bubbleType, bubbleSize);
-          }),
-        );
-      },
-    );
-  }
-
-  // 构建单个泡泡
-  Widget _buildSingleBubble(BubbleTypeConfig type, double size) {
-    // 计算最大光晕范围，确保容器大小固定
-    final maxGlowExtension = size * 0.5;
-    final containerSize = size + maxGlowExtension * 2;
-    
-    return SizedBox(
-      width: containerSize,
-      height: containerSize,
-      child: AnimatedBuilder(
-        animation: Listenable.merge([_bubbleGlowController, _rayRotationController]),
-        builder: (context, child) {
-          // 计算光晕动画值，在 0.4 到 1.0 之间变化
-          // 使用 controller.value，因为 repeat(reverse: true) 会在 0-1 之间来回
-          final glowValue = 0.4 + (0.6 * _bubbleGlowController.value);
-          // 旋转角度
-          final rotationAngle = _rayRotationController.value * 2 * math.pi; // 0 到 2π
-          
-          return Stack(
-            alignment: Alignment.center,
-            clipBehavior: Clip.none,
-            children: [
-              // 外层动态光晕（固定在容器中心，不会影响布局）
-              Positioned(
-                left: containerSize / 2 - (size + size * 0.5 * glowValue) / 2,
-                top: containerSize / 2 - (size + size * 0.5 * glowValue) / 2,
-                child: Container(
-                  width: size + (size * 0.5 * glowValue),
-                  height: size + (size * 0.5 * glowValue),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: type.color.withValues(alpha: 0.5 * glowValue),
-                        blurRadius: 15 * glowValue,
-                        spreadRadius: 6 * glowValue,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              // 主泡泡容器（固定在中心）
-              Positioned(
-                left: containerSize / 2 - size / 2,
-                top: containerSize / 2 - size / 2,
-                child: Container(
-                  width: size,
-                  height: size,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.6),
-                      width: 1.5,
-                    ),
-                    gradient: RadialGradient(
-                      colors: [
-                        type.color.withValues(alpha: 0.95),
-                        type.color.withValues(alpha: 0.75),
-                        type.color.withValues(alpha: 0.5),
-                        type.color.withValues(alpha: 0.3),
-                      ],
-                      stops: const [0.0, 0.4, 0.7, 1.0],
-                    ),
-                    boxShadow: [
-                      // 动态内发光
-                      BoxShadow(
-                        color: type.color.withValues(alpha: 0.5 * glowValue),
-                        blurRadius: 6 * glowValue,
-                        spreadRadius: 0,
-                        offset: const Offset(0, 0),
-                      ),
-                      // 静态阴影
-                      BoxShadow(
-                        color: type.color.withValues(alpha: 0.4),
-                        blurRadius: 8,
-                        spreadRadius: 2,
-                        offset: const Offset(0, 3),
-                      ),
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.15),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: ClipOval(
-                    child: Stack(
-                      children: [
-                        // 动态光晕层（内层，增强效果）
-                        Positioned.fill(
-                          child: Container(
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: RadialGradient(
-                                colors: [
-                                  type.color.withValues(alpha: 0.4 * glowValue),
-                                  type.color.withValues(alpha: 0.0),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                        // 内部放射光线效果（从中心向外发散）
-                        ..._buildInternalRays(type, size, glowValue, rotationAngle),
-                        // 中心高光点
-                        Center(
-                          child: Container(
-                            width: size * 0.3,
-                            height: size * 0.3,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: RadialGradient(
-                                colors: [
-                                  Colors.white.withValues(alpha: 0.9 * glowValue),
-                                  Colors.white.withValues(alpha: 0.5 * glowValue),
-                                  Colors.transparent,
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                        // 内部物品图标（中心）
-                        Center(
-                          child: Icon(
-                            type.icon,
-                            size: size * 0.4,
-                            color: Colors.white.withValues(alpha: 0.8),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          );
-        },
       ),
     );
   }
@@ -1095,45 +847,6 @@ class FinishPageState extends State<FinishPage> with TickerProviderStateMixin {
     );
   }
 
-
-  // 构建内部放射光线
-  List<Widget> _buildInternalRays(
-    BubbleTypeConfig type,
-    double size,
-    double glowValue,
-    double rotationAngle,
-  ) {
-    final rayCount = 12; // 12条内部光线，更密集
-    
-    return List.generate(rayCount, (index) {
-      final angle = (index * 2 * math.pi / rayCount) + rotationAngle;
-      
-      return Center(
-        child: Transform.rotate(
-          angle: angle,
-          child: Container(
-            width: size * 0.95,
-            height: 1.5,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.center,
-                end: Alignment.centerRight,
-                colors: [
-                  Colors.white.withValues(alpha: 0.0),
-                  Colors.white.withValues(alpha: 0.15 * glowValue),
-                  Colors.white.withValues(alpha: 0.25 * glowValue),
-                  Colors.white.withValues(alpha: 0.15 * glowValue),
-                  Colors.white.withValues(alpha: 0.0),
-                ],
-                stops: const [0.0, 0.25, 0.5, 0.75, 1.0],
-              ),
-            ),
-          ),
-        ),
-      );
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -1144,17 +857,4 @@ class FinishPageState extends State<FinishPage> with TickerProviderStateMixin {
           : renderPage(),
     );
   }
-}
-
-// 泡泡类型配置类
-class BubbleTypeConfig {
-  final String name;
-  final Color color;
-  final IconData icon;
-
-  const BubbleTypeConfig({
-    required this.name,
-    required this.color,
-    required this.icon,
-  });
 }
