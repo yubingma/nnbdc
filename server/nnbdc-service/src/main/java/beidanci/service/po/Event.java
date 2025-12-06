@@ -13,8 +13,10 @@ public class Event extends UuidPo {
     @Column(name = "eventType", nullable = false, length = 30)
     private EventType eventType;
 
+    @Column(name = "userId")
     private User user;
 
+    @Column(name = "wordImageId")
     private WordImage wordImage;
 
     public Sentence getSentence() {
@@ -25,8 +27,10 @@ public class Event extends UuidPo {
         this.sentence = sentence;
     }
 
+    @Column(name = "sentenceId")
     private Sentence sentence;
 
+    @Column(name = "wordShortDescChineseId")
     private WordShortDescChinese wordShortDescChinese;
 
     public Event(EventType eventType, User user, WordImage wordImage) {
