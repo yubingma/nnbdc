@@ -761,12 +761,12 @@ class WordBo {
       final wordQuery = db.select(db.words)..where((w) => w.id.isIn(wordIds));
       final wordEntries = await wordQuery.get();
       final wordMap = {for (var word in wordEntries) word.id: word};
+      
       // 1) 先取本词书(dictId)的定制释义
       final dictSpecificMeaningQuery = db.select(db.meaningItems)
         ..where((mi) => mi.wordId.isIn(wordIds) & mi.dictId.equals(dictId))
         ..orderBy([(mi) => OrderingTerm(expression: mi.popularity)]);
       final dictSpecificMeaningItems = await dictSpecificMeaningQuery.get();
-
       final meaningItemsMap = <String, List<MeaningItem>>{};
       for (final mi in dictSpecificMeaningItems) {
         (meaningItemsMap[mi.wordId] ??= []).add(mi);
@@ -776,13 +776,11 @@ class WordBo {
       final wordsWithoutCustom = wordIds
           .where((wordId) => !meaningItemsMap.containsKey(wordId) || (meaningItemsMap[wordId]?.isEmpty ?? true))
           .toList();
-
       int? popularityLimit;
       final currDict = await db.dictsDao.findById(dictId);
       if (currDict != null) {
         popularityLimit = currDict.popularityLimit;
       }
-
       if (wordsWithoutCustom.isNotEmpty) {
         final commonDictQuery = db.select(db.meaningItems)
           ..where((mi) => mi.wordId.isIn(wordsWithoutCustom) & mi.dictId.equals(Global.commonDictId))
