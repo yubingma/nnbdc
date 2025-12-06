@@ -210,59 +210,63 @@ class _MePageState extends State<MePage> {
       var db = MyDatabase.instance;
       var level = await (db.select(db.levels)..where((l) => l.id.equals(user.levelId))).getSingleOrNull();
 
+      // 获取学习中的单词数量（只统计生命值大于0的单词）
+      var learningWords = await (db.select(db.learningWords)
+            ..where((lw) => lw.userId.equals(user.id))
+            ..where((lw) => lw.lifeValue.isBiggerThanValue(0)))
+          .get();
+      var learningWordsCount = learningWords.length;
+
+      // 获取所有词书的学习状态
+      var learningDicts = await MyDatabase.instance.learningDictsDao.getLearningDictsOfUser(user.id);
+      var allDictsFinished = true;
+      for (var dict in learningDicts) {
+        var dictInfo = await MyDatabase.instance.dictsDao.findById(dict.dictId);
+        if (dictInfo != null && (dict.currentWordSeq ?? 0) < dictInfo.wordCount) {
+          allDictsFinished = false;
+        }
+      }
+
+      // 获取词书中的单词总数
+      var dictWords = await (db.select(db.dictWords)..where((dw) => dw.dictId.isIn(learningDicts.map((d) => d.dictId).toList()))).get();
+      var rawWordCount = dictWords.length;
+
+      // 获取已掌握单词数量（直接从mastered_words表查询，确保准确）
+      var masteredWordsQuery = db.selectOnly(db.masteredWords)
+        ..addColumns([drift.countAll()])
+        ..where(db.masteredWords.userId.equals(user.id));
+      var masteredWordsResult = await masteredWordsQuery.getSingle();
+      var masteredWordsCount = masteredWordsResult.read(drift.countAll()) ?? 0;
+
+      // 如果查不到等级(很可能是因为系统数据库还没同步完成)，使用默认等级（不显示错误提示）
+      LevelVo levelVo;
       if (level != null) {
-        // 获取学习中的单词数量（只统计生命值大于0的单词）
-        var learningWords = await (db.select(db.learningWords)
-              ..where((lw) => lw.userId.equals(user.id))
-              ..where((lw) => lw.lifeValue.isBiggerThanValue(0)))
-            .get();
-        var learningWordsCount = learningWords.length;
-
-        // 获取所有词书的学习状态
-        var learningDicts = await MyDatabase.instance.learningDictsDao.getLearningDictsOfUser(user.id);
-        var allDictsFinished = true;
-        for (var dict in learningDicts) {
-          var dictInfo = await MyDatabase.instance.dictsDao.findById(dict.dictId);
-          if (dictInfo != null && (dict.currentWordSeq ?? 0) < dictInfo.wordCount) {
-            allDictsFinished = false;
-          }
-        }
-
-        // 获取词书中的单词总数
-        var dictWords = await (db.select(db.dictWords)..where((dw) => dw.dictId.isIn(learningDicts.map((d) => d.dictId).toList()))).get();
-        var rawWordCount = dictWords.length;
-
-        // 获取已掌握单词数量（直接从mastered_words表查询，确保准确）
-        var masteredWordsQuery = db.selectOnly(db.masteredWords)
-          ..addColumns([drift.countAll()])
-          ..where(db.masteredWords.userId.equals(user.id));
-        var masteredWordsResult = await masteredWordsQuery.getSingle();
-        var masteredWordsCount = masteredWordsResult.read(drift.countAll()) ?? 0;
-
-        if (mounted) {
-          setState(() {
-            studyProgress = StudyProgress(
-              user.learnedDays,
-              user.dakaDayCount,
-              user.dakaRatio ?? 0.0,
-              user.totalScore,
-              -1, // 排名信息通过API获取，初始化为-1表示未获取
-              rawWordCount,
-              user.cowDung,
-              LevelVo(level.id)..name = level.name,
-              masteredWordsCount, // 使用直接查询的结果而不是用户表中的字段
-              learningWordsCount,
-              user.wordsPerDay,
-              user.continuousDakaDayCount,
-              user.throwDiceChance,
-              allDictsFinished,
-              user.isTodayLearningFinished,
-              learningDicts,
-            );
-          });
-        }
+        levelVo = LevelVo(level.id)..name = level.name;
       } else {
-        ToastUtil.error("获取用户等级失败");
+        levelVo = LevelVo(user.levelId)..name = '默认等级';
+      }
+
+      if (mounted) {
+        setState(() {
+          studyProgress = StudyProgress(
+            user.learnedDays,
+            user.dakaDayCount,
+            user.dakaRatio ?? 0.0,
+            user.totalScore,
+            -1, // 排名信息通过API获取，初始化为-1表示未获取
+            rawWordCount,
+            user.cowDung,
+            levelVo,
+            masteredWordsCount, // 使用直接查询的结果而不是用户表中的字段
+            learningWordsCount,
+            user.wordsPerDay,
+            user.continuousDakaDayCount,
+            user.throwDiceChance,
+            allDictsFinished,
+            user.isTodayLearningFinished,
+            learningDicts,
+          );
+        });
       }
 
       var result2 = await UserBo().getDayStatuses(30);
