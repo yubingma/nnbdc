@@ -45,9 +45,10 @@ class _AliyunResourceManagementPageState extends State<AliyunResourceManagementP
           '阿里云资源管理',
           style: TextStyle(
             fontSize: 18,
-            fontWeight: FontWeight.w400,
+            fontWeight: FontWeight.w400, // 保持一致的字体粗细，避免变糊
             fontFamily: 'NotoSansSC',
           ),
+          textScaler: TextScaler.linear(1.0),
         ),
         backgroundColor: AppTheme.primaryColor,
         foregroundColor: Colors.white,
@@ -107,10 +108,11 @@ class _AliyunResourceManagementPageState extends State<AliyunResourceManagementP
                   '账户余额',
                   style: TextStyle(
                     fontSize: 18,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w400, // 保持一致的字体粗细，避免变糊
                     color: textColor,
                     fontFamily: 'NotoSansSC',
                   ),
+                  textScaler: const TextScaler.linear(1.0),
                 ),
               ],
             ),
@@ -122,9 +124,11 @@ class _AliyunResourceManagementPageState extends State<AliyunResourceManagementP
                   '点击右上角刷新按钮查询余额',
                   style: TextStyle(
                     fontSize: 14,
+                    fontWeight: FontWeight.w400, // 保持一致的字体粗细，避免变糊
                     color: textColor.withValues(alpha: 0.6),
                     fontFamily: 'NotoSansSC',
                   ),
+                  textScaler: const TextScaler.linear(1.0),
                 ),
               )
             else
@@ -177,9 +181,11 @@ class _AliyunResourceManagementPageState extends State<AliyunResourceManagementP
           label,
           style: TextStyle(
             fontSize: 14,
+            fontWeight: FontWeight.w400, // 保持一致的字体粗细，避免变糊
             color: textColor.withValues(alpha: 0.8),
             fontFamily: 'NotoSansSC',
           ),
+          textScaler: const TextScaler.linear(1.0),
         ),
         Row(
           children: [
@@ -187,19 +193,22 @@ class _AliyunResourceManagementPageState extends State<AliyunResourceManagementP
               amount,
               style: TextStyle(
                 fontSize: 16,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w400, // 保持一致的字体粗细，避免变糊
                 color: isPositive ? Colors.green : Colors.red,
                 fontFamily: 'NotoSansSC',
               ),
+              textScaler: const TextScaler.linear(1.0),
             ),
             const SizedBox(width: 4),
             Text(
               currency,
               style: TextStyle(
                 fontSize: 14,
+                fontWeight: FontWeight.w400, // 保持一致的字体粗细，避免变糊
                 color: textColor.withValues(alpha: 0.6),
                 fontFamily: 'NotoSansSC',
               ),
+              textScaler: const TextScaler.linear(1.0),
             ),
           ],
         ),
@@ -233,10 +242,11 @@ class _AliyunResourceManagementPageState extends State<AliyunResourceManagementP
                   '资源包使用情况',
                   style: TextStyle(
                     fontSize: 18,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w400, // 保持一致的字体粗细，避免变糊
                     color: textColor,
                     fontFamily: 'NotoSansSC',
                   ),
+                  textScaler: const TextScaler.linear(1.0),
                 ),
               ],
             ),
@@ -246,18 +256,22 @@ class _AliyunResourceManagementPageState extends State<AliyunResourceManagementP
                 '正在加载资源包信息...',
                 style: TextStyle(
                   fontSize: 14,
+                  fontWeight: FontWeight.w400, // 保持一致的字体粗细，避免变糊
                   color: textColor.withValues(alpha: 0.6),
                   fontFamily: 'NotoSansSC',
                 ),
+                textScaler: const TextScaler.linear(1.0),
               )
             else if (_resourcePackages!.isEmpty)
               Text(
                 '暂无资源包',
                 style: TextStyle(
                   fontSize: 14,
+                  fontWeight: FontWeight.w400, // 保持一致的字体粗细，避免变糊
                   color: textColor.withValues(alpha: 0.6),
                   fontFamily: 'NotoSansSC',
                 ),
+                textScaler: const TextScaler.linear(1.0),
               )
             else
               Column(
@@ -289,19 +303,22 @@ class _AliyunResourceManagementPageState extends State<AliyunResourceManagementP
                   package['InstanceName'] ?? '未知资源包',
                   style: TextStyle(
                     fontSize: 14,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w400, // 保持一致的字体粗细，避免变糊
                     color: textColor,
                     fontFamily: 'NotoSansSC',
                   ),
+                  textScaler: const TextScaler.linear(1.0),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   '有效期至: ${package['ExpiryTime'] ?? '-'}',
                   style: TextStyle(
                     fontSize: 12,
+                    fontWeight: FontWeight.w400, // 保持一致的字体粗细，避免变糊
                     color: textColor.withValues(alpha: 0.6),
                     fontFamily: 'NotoSansSC',
                   ),
+                  textScaler: const TextScaler.linear(1.0),
                 ),
               ],
             ),
@@ -310,10 +327,11 @@ class _AliyunResourceManagementPageState extends State<AliyunResourceManagementP
             package['Status'] ?? '-',
             style: TextStyle(
               fontSize: 12,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w400, // 保持一致的字体粗细，避免变糊
               color: _getStatusColor(package['Status'] ?? ''),
               fontFamily: 'NotoSansSC',
             ),
+            textScaler: const TextScaler.linear(1.0),
           ),
         ],
       ),
@@ -356,10 +374,11 @@ class _AliyunResourceManagementPageState extends State<AliyunResourceManagementP
                   '说明',
                   style: TextStyle(
                     fontSize: 18,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w400, // 保持一致的字体粗细，避免变糊
                     color: textColor,
                     fontFamily: 'NotoSansSC',
                   ),
+                  textScaler: const TextScaler.linear(1.0),
                 ),
               ],
             ),
@@ -371,10 +390,12 @@ class _AliyunResourceManagementPageState extends State<AliyunResourceManagementP
               '4. 信用额度显示为负数表示透支额度。',
               style: TextStyle(
                 fontSize: 14,
+                fontWeight: FontWeight.w400, // 保持一致的字体粗细，避免变糊
                 height: 1.6,
                 color: textColor.withValues(alpha: 0.8),
                 fontFamily: 'NotoSansSC',
               ),
+              textScaler: const TextScaler.linear(1.0),
             ),
           ],
         ),
