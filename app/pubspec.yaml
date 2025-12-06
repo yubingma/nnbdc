@@ -6,13 +6,12 @@ description: 泡泡单词 - 智能背单词应用
 publish_to: "none" # Remove this line if you wish to publish to pub.dev
 
 # 升级时修改这里
-version: 25.11.23+25112322
+version: 25.12.06+25120601
 
 # 版本更新说明（用于构建脚本生成 ver.json）
 # 格式：每行一个更新项，以 "- " 开头
 changes:
-  - "修复自动更新的bug"
-  - "提升用户体验."
+  - "功能优化"
 
 environment:
   sdk: ^3.4.0
