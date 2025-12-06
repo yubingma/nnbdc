@@ -146,7 +146,7 @@ class _FeatureRequestReportManagementWidgetState extends State<FeatureRequestRep
                   child: Text(
                     '举报内容',
                     style: TextStyle(
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w400,
                       fontSize: 16,
                       color: textColor,
                       height: 1.4,
@@ -185,7 +185,7 @@ class _FeatureRequestReportManagementWidgetState extends State<FeatureRequestRep
                 Text(
                   '被举报的需求',
                   style: TextStyle(
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w400,
                     fontSize: 14,
                     color: textColor,
                     height: 1.4,
@@ -215,7 +215,7 @@ class _FeatureRequestReportManagementWidgetState extends State<FeatureRequestRep
                           child: Text(
                             report.featureRequest!.title ?? '',
                             style: TextStyle(
-                              fontWeight: FontWeight.w500,
+                              fontWeight: FontWeight.w400,
                               fontSize: 14,
                               color: textColor,
                               height: 1.4,
