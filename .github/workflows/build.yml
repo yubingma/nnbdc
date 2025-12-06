@@ -763,8 +763,9 @@ jobs:
         shell: bash
 
       # 上传构建产物（用于 GitHub Actions 归档）
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.platform }}-build
-          path: deploy/
+      # 已禁用：避免 GitHub Actions 存储配额限制，构建产物仅上传到自己的服务器
+      # - name: Upload Artifact
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: ${{ matrix.platform }}-build
+      #     path: deploy/
