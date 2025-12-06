@@ -663,6 +663,7 @@ public class Util {
         rawDict.setIsShared(false);
         rawDict.setVisible(true);
         rawDict.setOwner(user);
+        rawDict.setPopularityLimit(5); // 新用户生词本默认 popularityLimit 为 5
         dictBo.createEntity(rawDict);
 
         LearningDictId id = new LearningDictId(user.getId(), rawDict.getId());
