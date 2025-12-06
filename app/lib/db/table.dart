@@ -589,3 +589,29 @@ class WordShortDescChineses extends Table {
   @override
   Set<Column> get primaryKey => {id};
 }
+
+/// 本地异常记录表
+class LocalExceptions extends Table {
+  TextColumn get id => text()();
+  
+  /// 异常类型（如：Exception, Error, NetworkError等）
+  TextColumn get errorType => text()();
+  
+  /// 异常消息
+  TextColumn get message => text()();
+  
+  /// 异常堆栈信息
+  TextColumn get stackTrace => text().nullable()();
+  
+  /// 错误上下文信息（如：操作类型、页面名称等）
+  TextColumn get context => text().nullable()();
+  
+  /// 用户ID（如果异常发生时用户已登录）
+  TextColumn get userId => text().nullable()();
+  
+  /// 创建时间
+  DateTimeColumn get createTime => dateTime().withDefault(currentDateAndTime)();
+  
+  @override
+  Set<Column> get primaryKey => {id};
+}

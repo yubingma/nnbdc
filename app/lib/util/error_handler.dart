@@ -3,6 +3,9 @@ import 'package:dio/dio.dart';
 import 'package:drift/drift.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/util/toast_util.dart';
+import 'package:nnbdc/db/db.dart';
+import 'package:nnbdc/util/utils.dart';
+import 'package:nnbdc/util/app_clock.dart';
 
 /// 统一的异常处理工具类
 class ErrorHandler {
@@ -35,6 +38,35 @@ class ErrorHandler {
     _totalErrorCount++;
     _errorTypeCount[errorType] = (_errorTypeCount[errorType] ?? 0) + 1;
   }
+
+  /// 记录异常到数据库
+  static Future<void> _recordExceptionToDb(
+    dynamic error,
+    StackTrace? stackTrace, {
+    String? context,
+  }) async {
+    try {
+      final db = MyDatabase.instance;
+      final userId = Global.getLoggedInUser()?.id;
+      final now = AppClock.now();
+      
+      final exception = LocalException(
+        id: Util.uuid(),
+        errorType: error.runtimeType.toString(),
+        message: error.toString(),
+        stackTrace: stackTrace?.toString(),
+        context: context,
+        userId: userId,
+        createTime: now,
+      );
+      
+      await db.localExceptionsDao.insertException(exception);
+    } catch (e) {
+      // 记录异常到数据库失败时，只记录到日志，不抛出异常，避免循环
+      Global.logger.w('记录异常到数据库失败: $e');
+    }
+  }
+
   /// 处理一般异常，包含日志记录和用户提示
   static void handleError(
     dynamic error,
@@ -50,6 +82,9 @@ class ErrorHandler {
 
     // 使用 Global.logger 的原生功能，它会自动处理异常栈的深度
     Global.logger.e(logMessage, error: error, stackTrace: stackTrace);
+
+    // 异步记录异常到数据库（不等待，避免阻塞）
+    _recordExceptionToDb(error, stackTrace, context: logPrefix);
 
     if (showToast) {
       final displayMessage = userMessage ?? '操作失败，请稍后重试';
@@ -80,7 +115,10 @@ class ErrorHandler {
       await _logForeignKeyViolations(db);
     }
 
-    // 4. 用户提示
+    // 4. 异步记录异常到数据库（不等待，避免阻塞）
+    _recordExceptionToDb(error, stackTrace, context: '数据库操作: ${operation ?? "未知"}');
+
+    // 5. 用户提示
     if (showToast) {
       final userMessage = '数据操作失败，请稍后重试';
       ToastUtil.error(userMessage);

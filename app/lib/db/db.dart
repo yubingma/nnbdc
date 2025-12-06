@@ -41,6 +41,7 @@ part 'db.g.dart';
   UserWrongWords,
   SysDbVersion,
   WordShortDescChineses,
+  LocalExceptions,
 ], daos: [
   UsersDao,
   LocalParamsDao,
@@ -74,6 +75,7 @@ part 'db.g.dart';
   UserWrongWordsDao,
   SysDbVersionDao,
   WordShortDescChinesesDao,
+  LocalExceptionsDao,
 ])
 class MyDatabase extends _$MyDatabase {
   MyDatabase(super.e);
@@ -98,7 +100,7 @@ class MyDatabase extends _$MyDatabase {
   // you should bump this number whenever you change or add a table definition. Migrations
   // are covered later in this readme.
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration {
@@ -116,6 +118,10 @@ class MyDatabase extends _$MyDatabase {
           // 从版本 2 升级到版本 3：修复 dicts 表中 popularityLimit 的 0 值
           if (from < 3) {
             await _migratePopularityLimitFromV2ToV3();
+          }
+          // 从版本 3 升级到版本 4：创建本地异常记录表
+          if (from < 4) {
+            await _migrateFromV3ToV4(m);
           }
         } catch (e, stackTrace) {
           // 升级失败，记录错误日志
@@ -219,6 +225,13 @@ class MyDatabase extends _$MyDatabase {
         }
       }
     });
+  }
+
+  /// 从版本 3 升级到版本 4 的迁移逻辑
+  /// 创建本地异常记录表
+  Future<void> _migrateFromV3ToV4(Migrator m) async {
+    await m.createTable(localExceptions);
+    Global.logger.i('✅ 创建 local_exceptions 表完成');
   }
 
   /// 初始化数据库架构（创建表、索引和基础数据）
@@ -358,6 +371,8 @@ class MyDatabase extends _$MyDatabase {
 
       await delete(userDbLogs).go();
       await delete(userDbVersions).go();
+
+      await delete(localExceptions).go(); // 本地异常记录
 
       await delete(words).go();
       await delete(levels).go();

@@ -1977,3 +1977,44 @@ class WordShortDescChinesesDao extends DatabaseAccessor<MyDatabase> with _$WordS
     return (select(wordShortDescChineses)..where((t) => t.wordId.equals(wordId))).get();
   }
 }
+
+@DriftAccessor(tables: [LocalExceptions])
+class LocalExceptionsDao extends DatabaseAccessor<MyDatabase> with _$LocalExceptionsDaoMixin {
+  LocalExceptionsDao(super.db);
+
+  /// 插入异常记录
+  Future<void> insertException(LocalException exception) async {
+    await into(localExceptions).insert(exception);
+  }
+
+  /// 获取所有异常记录（按时间倒序）
+  Future<List<LocalException>> getAllExceptions({int? limit}) async {
+    var query = select(localExceptions)
+      ..orderBy([(e) => OrderingTerm(expression: e.createTime, mode: OrderingMode.desc)]);
+    if (limit != null) {
+      query = query..limit(limit);
+    }
+    return query.get();
+  }
+
+  /// 根据ID获取异常记录
+  Future<LocalException?> getExceptionById(String id) async {
+    return (select(localExceptions)..where((e) => e.id.equals(id))).getSingleOrNull();
+  }
+
+  /// 删除异常记录
+  Future<void> deleteException(String id) async {
+    await (delete(localExceptions)..where((e) => e.id.equals(id))).go();
+  }
+
+  /// 删除所有异常记录
+  Future<void> deleteAllExceptions() async {
+    await delete(localExceptions).go();
+  }
+
+  /// 获取异常记录数量
+  Future<int> getExceptionCount() async {
+    final result = await (selectOnly(localExceptions)..addColumns([localExceptions.id.count()])).getSingle();
+    return result.read(localExceptions.id.count()) ?? 0;
+  }
+}
