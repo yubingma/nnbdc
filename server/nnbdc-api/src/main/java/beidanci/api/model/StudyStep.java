@@ -1,8 +1,8 @@
 package beidanci.api.model;
 
 public enum StudyStep {
-    Word("英→中"),
-    Meaning("中→英");
+    En2Ch("英→中"),
+    Ch2En("中→英");
 
     private String description;
 

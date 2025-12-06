@@ -13,6 +13,8 @@ import java.util.Objects;
 import java.util.Set;
 
 import javax.persistence.Column;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -319,15 +321,13 @@ public abstract class BaseDao<E extends Po> {
             setJdbcTemplate(jdbcTemplate);
         }
         
-        String convertedSql = convertHqlToSql(sql);
-        
         MapSqlParameterSource paramSource = new MapSqlParameterSource();
         for (Pair<String, Object> param : parameters) {
             paramSource.addValue(Objects.requireNonNull(param.getLeft(), "Parameter key cannot be null"), param.getRight());
         }
         
         List<E> results = namedParameterJdbcTemplate.query(
-            Objects.requireNonNull(convertedSql, "SQL cannot be null"), 
+            Objects.requireNonNull(sql, "SQL cannot be null"), 
             paramSource, 
             Objects.requireNonNull(rowMapper, "RowMapper cannot be null"));
         return results.isEmpty() ? null : results.get(0);
@@ -893,6 +893,19 @@ public abstract class BaseDao<E extends Po> {
                     keyField.setAccessible(true);
                     Object keyValue = keyField.get(compositeKey);
                     String columnName = Objects.requireNonNull(EntityTableInfo.getColumnName(keyField));
+                    
+                    // 处理枚举类型：如果字段是枚举且使用 @Enumerated(EnumType.STRING)，转换为字符串
+                    if (keyValue != null && keyField.getType().isEnum()) {
+                        if (keyField.isAnnotationPresent(Enumerated.class)) {
+                            Enumerated enumerated = keyField.getAnnotation(Enumerated.class);
+                            if (enumerated.value() == EnumType.STRING) {
+                                keyValue = ((Enum<?>) keyValue).name();
+                            }
+                        } else {
+                            // 如果没有 @Enumerated 注解，默认使用字符串形式
+                            keyValue = ((Enum<?>) keyValue).name();
+                        }
+                    }
                     
                     if (!first) {
                         whereClause.append(" AND ");

@@ -56,16 +56,16 @@ public class UserStudyStepBo extends BaseBo<UserStudyStep> {
 
             List<UserStudyStep> newSteps = getUserStudySteps(userId);
 
-            if (!existingSteps.contains(StudyStep.Word)) {
-                id = new UserStudyStepId(userId, StudyStep.Word);
+            if (!existingSteps.contains(StudyStep.En2Ch)) {
+                id = new UserStudyStepId(userId, StudyStep.En2Ch);
                 step = new UserStudyStep(id);
                 step.setSeq(1);
                 step.setState(StudyStepState.Active);
                 newSteps.add(step);
             }
 
-            if (!existingSteps.contains(StudyStep.Meaning)) {
-                id = new UserStudyStepId(userId, StudyStep.Meaning);
+            if (!existingSteps.contains(StudyStep.Ch2En)) {
+                id = new UserStudyStepId(userId, StudyStep.Ch2En);
                 step = new UserStudyStep(id);
                 step.setSeq(2);
                 step.setState(StudyStepState.Active);

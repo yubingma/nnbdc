@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:drift/drift.dart';
 import 'package:nnbdc/db/dao.dart';
 import 'package:nnbdc/db/table.dart';
@@ -95,7 +96,7 @@ class MyDatabase extends _$MyDatabase {
   // you should bump this number whenever you change or add a table definition. Migrations
   // are covered later in this readme.
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration {
@@ -116,13 +117,70 @@ class MyDatabase extends _$MyDatabase {
       },
 
       onUpgrade: (Migrator m, int from, int to) async {
-        
+        // 从版本 1 升级到版本 2：更新 studyStep 字段值
+        if (from < 2) {
+          await _migrateStudyStepFromV1ToV2();
+        }
       },
       
       beforeOpen: (details) async {
 
       },
     );
+  }
+
+  /// 从版本 1 升级到版本 2 的迁移逻辑
+  /// 更新 studyStep 字段：'Word' -> 'En2Ch', 'Meaning' -> 'Ch2En'
+  Future<void> _migrateStudyStepFromV1ToV2() async {
+    await transaction(() async {
+      // 1. 更新 user_study_steps 表中的 studyStep 字段
+      await customStatement('''
+        UPDATE user_study_steps 
+        SET study_step = 'En2Ch' 
+        WHERE study_step = 'Word'
+      ''');
+      
+      await customStatement('''
+        UPDATE user_study_steps 
+        SET study_step = 'Ch2En' 
+        WHERE study_step = 'Meaning'
+      ''');
+      
+      // 2. 更新 user_db_logs 表中的 JSON 记录
+      // 获取所有需要更新的日志记录
+      final logsToUpdate = await (select(userDbLogs)
+            ..where((log) => log.tblName.equals('userStudySteps')))
+          .get();
+      
+      for (final log in logsToUpdate) {
+        try {
+          // 解析 JSON
+          final recordJson = jsonDecode(log.record) as Map<String, dynamic>;
+          
+          // 检查并更新 studyStep 字段
+          if (recordJson.containsKey('studyStep')) {
+            final studyStep = recordJson['studyStep'] as String;
+            if (studyStep == 'Word') {
+              recordJson['studyStep'] = 'En2Ch';
+            } else if (studyStep == 'Meaning') {
+              recordJson['studyStep'] = 'Ch2En';
+            } else {
+              // 已经是新值，跳过
+              continue;
+            }
+            
+            // 更新记录
+            await (update(userDbLogs)..where((l) => l.id.equals(log.id)))
+                .write(UserDbLogsCompanion(
+              record: Value(jsonEncode(recordJson)),
+            ));
+          }
+        } catch (e) {
+          // 如果 JSON 解析失败，跳过该记录
+          continue;
+        }
+      }
+    });
   }
 
   /// 创建性能优化索引的共用方法
