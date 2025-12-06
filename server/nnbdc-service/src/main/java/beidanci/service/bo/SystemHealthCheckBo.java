@@ -14,6 +14,7 @@ import beidanci.api.model.SystemHealthFixResult;
 import beidanci.api.model.SystemHealthIssue;
 import beidanci.service.dao.UserDbVersionDao;
 import beidanci.service.po.Dict;
+import beidanci.service.po.User;
 import beidanci.util.Constants;
 
 /**
@@ -36,6 +37,9 @@ public class SystemHealthCheckBo {
     
     @Autowired
     private SentenceBo sentenceBo;
+    
+    @Autowired
+    private UserBo userBo;
     
     @Autowired
     private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
@@ -261,6 +265,51 @@ public class SystemHealthCheckBo {
     }
 
     /**
+     * 检查用户是否缺失生词本
+     */
+    public SystemHealthCheckResult checkMissingRawWordDict() {
+        List<SystemHealthIssue> issues = new ArrayList<>();
+        List<String> errors = new ArrayList<>();
+        
+        try {
+            // 使用 SQL 查询找出所有没有生词本的用户
+            String sql = "SELECT u.id, u.userName, u.nickName " +
+                        "FROM user u " +
+                        "LEFT JOIN dict d ON u.id = d.ownerId AND d.name = '生词本' " +
+                        "WHERE d.id IS NULL " +
+                        "ORDER BY u.createTime DESC";
+            
+            List<Object[]> usersWithoutRawDict = namedParameterJdbcTemplate.query(sql, 
+                new MapSqlParameterSource(), 
+                (rs, rowNum) -> new Object[]{
+                    rs.getString("id"),
+                    rs.getString("userName"),
+                    rs.getString("nickName")
+                }
+            );
+            
+            // 将查询结果转换为问题列表
+            for (Object[] record : usersWithoutRawDict) {
+                String userId = (String) record[0];
+                String userName = (String) record[1];
+                String nickName = (String) record[2];
+                
+                issues.add(new SystemHealthIssue(
+                    "用户缺失生词本",
+                    String.format("用户 %s (%s, ID: %s) 缺少生词本", 
+                                nickName != null ? nickName : userName, userName, userId),
+                    "missing_raw_word_dict"
+                ));
+            }
+            
+        } catch (Exception e) {
+            errors.add("检查用户生词本缺失时出错: " + e.getMessage());
+        }
+        
+        return new SystemHealthCheckResult(issues.isEmpty() && errors.isEmpty(), issues, errors);
+    }
+
+    /**
      * 自动修复系统问题
      */
     @Transactional
@@ -289,6 +338,9 @@ public class SystemHealthCheckBo {
                         break;
                     case "user_study_steps":
                         fixedCount += fixUserStudySteps(fixed);
+                        break;
+                    case "missing_raw_word_dict":
+                        fixedCount += fixMissingRawWordDict(fixed);
                         break;
                     default:
                         errors.add("未知的问题类型: " + issueType);
@@ -326,14 +378,17 @@ public class SystemHealthCheckBo {
             
             // 检查空词书
             if (dictWords.isEmpty()) {
-                // 系统词书（ownerId == '15118'）如果为空，是异常情况
-                if (Constants.SYS_USER_SYS_ID.equals(ownerId)) {
+                // 系统用户的生词本（这是一个特殊的系统词书）允许为空
+                boolean isSystemUserRawDict = Constants.SYS_USER_SYS_ID.equals(ownerId) && "生词本".equals(dictName);
+                
+                if (Constants.SYS_USER_SYS_ID.equals(ownerId) && !isSystemUserRawDict) {
+                    // 其他系统词书如果为空，是异常情况
                     issues.add(new SystemHealthIssue(
                         "系统词书为空",
                         String.format("系统词书 %s 为空，需要删除", dictName),
                         "empty_system_dict"
                     ));
-                } else {
+                } else if (!isSystemUserRawDict) {
                     // 如果词书为空但dict表记录的wordCount不为0，这也是个问题
                     if (expectedWordCount != null && expectedWordCount != 0) {
                         issues.add(new SystemHealthIssue(
@@ -343,6 +398,7 @@ public class SystemHealthCheckBo {
                         ));
                     }
                 }
+                // 系统用户的生词本允许为空，直接返回，不报告问题
                 return;
             }
             
@@ -421,14 +477,18 @@ public class SystemHealthCheckBo {
             
             // 检查空词书
             if (dictWords.isEmpty()) {
-                // 系统词书（ownerId == '15118'）如果为空，是异常情况
-                if (Constants.SYS_USER_SYS_ID.equals(dict.getOwner().getId())) {
+                // 系统用户的生词本（这是一个特殊的系统词书）允许为空
+                boolean isSystemUserRawDict = Constants.SYS_USER_SYS_ID.equals(dict.getOwner().getId()) 
+                        && "生词本".equals(dict.getName());
+                
+                if (Constants.SYS_USER_SYS_ID.equals(dict.getOwner().getId()) && !isSystemUserRawDict) {
+                    // 其他系统词书如果为空，是异常情况
                     issues.add(new SystemHealthIssue(
                         "系统词书为空",
                         String.format("系统词书 %s 为空，需要删除", dict.getName()),
                         "empty_system_dict"
                     ));
-                } else {
+                } else if (!isSystemUserRawDict) {
                     // 如果词书为空但dict表记录的wordCount不为0，这也是个问题
                     if (dict.getWordCount() != 0) {
                         issues.add(new SystemHealthIssue(
@@ -438,6 +498,7 @@ public class SystemHealthCheckBo {
                         ));
                     }
                 }
+                // 系统用户的生词本允许为空，直接返回，不报告问题
                 return;
             }
             
@@ -651,6 +712,54 @@ public class SystemHealthCheckBo {
                 fixed.add(String.format("批量插入 %d 个用户的 Ch2En 学习步骤", ch2EnCount));
             }
             
+        } catch (Exception e) {
+            // 错误已在调用方处理
+        }
+        return fixedCount;
+    }
+
+    private int fixMissingRawWordDict(List<String> fixed) {
+        int fixedCount = 0;
+        try {
+            // 查找所有没有生词本的用户
+            String sql = "SELECT u.id, u.userName, u.nickName " +
+                        "FROM user u " +
+                        "LEFT JOIN dict d ON u.id = d.ownerId AND d.name = '生词本' " +
+                        "WHERE d.id IS NULL";
+            
+            List<Object[]> usersWithoutRawDict = namedParameterJdbcTemplate.query(sql, 
+                new MapSqlParameterSource(), 
+                (rs, rowNum) -> new Object[]{
+                    rs.getString("id"),
+                    rs.getString("userName"),
+                    rs.getString("nickName")
+                }
+            );
+            
+            // 为每个缺失生词本的用户创建生词本
+            for (Object[] record : usersWithoutRawDict) {
+                String userId = (String) record[0];
+                String userName = (String) record[1];
+                String nickName = (String) record[2];
+                
+                try {
+                    User user = userBo.findById(userId);
+                    if (user == null) {
+                        continue;
+                    }
+                    
+                    // 使用公共方法创建生词本
+                    dictBo.createRawWordDictForUser(user);
+                    
+                    fixed.add(String.format("为用户 %s (%s, ID: %s) 创建生词本", 
+                            nickName != null ? nickName : userName, userName, userId));
+                    fixedCount++;
+                } catch (Exception e) {
+                    // 记录错误但继续处理其他用户
+                    fixed.add(String.format("为用户 %s (ID: %s) 创建生词本失败: %s", 
+                            userName, userId, e.getMessage()));
+                }
+            }
         } catch (Exception e) {
             // 错误已在调用方处理
         }

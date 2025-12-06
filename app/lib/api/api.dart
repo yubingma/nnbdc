@@ -521,6 +521,9 @@ abstract class RestClient {
   @GET("/admin/checkUserStudySteps.do")
   Future<Result<SystemHealthCheckResult>> checkUserStudySteps();
 
+  @GET("/admin/checkMissingRawWordDict.do")
+  Future<Result<SystemHealthCheckResult>> checkMissingRawWordDict();
+
   @POST("/admin/autoFixSystemIssues.do")
   @FormUrlEncoded()
   Future<Result<SystemHealthFixResult>> autoFixSystemIssues(

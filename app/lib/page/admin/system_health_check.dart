@@ -45,9 +45,10 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
       'step': 6,
       'category': 'common_dict_integrity'
     },
-    {'id': 7, 'title': '网络连接', 'step': 7, 'category': 'network_connectivity'},
-    {'id': 8, 'title': '后端服务器连通性', 'step': 8, 'category': 'backend_server'},
-    {'id': 9, 'title': '游戏服务器连通性', 'step': 9, 'category': 'game_server'},
+    {'id': 7, 'title': '用户生词本完整性', 'step': 7, 'category': 'missing_raw_word_dict'},
+    {'id': 8, 'title': '网络连接', 'step': 8, 'category': 'network_connectivity'},
+    {'id': 9, 'title': '后端服务器连通性', 'step': 9, 'category': 'backend_server'},
+    {'id': 10, 'title': '游戏服务器连通性', 'step': 10, 'category': 'game_server'},
   ];
 
   @override
@@ -642,14 +643,17 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
       // 6. 检查通用词典完整性
       await _checkCommonDictIntegrity(result, 6);
 
-      // 7. 检查网络连接
-      await _checkNetworkConnectivity(result, 7);
+      // 7. 检查用户生词本完整性
+      await _checkMissingRawWordDict(result, 7);
 
-      // 8. 检查后端服务器连通性
-      await _checkBackendServer(result, 8);
+      // 8. 检查网络连接
+      await _checkNetworkConnectivity(result, 8);
 
-      // 9. 检查游戏服务器连通性
-      await _checkGameServer(result, 9);
+      // 9. 检查后端服务器连通性
+      await _checkBackendServer(result, 9);
+
+      // 10. 检查游戏服务器连通性
+      await _checkGameServer(result, 10);
 
       setState(() {
         _checkResult = result;
@@ -956,6 +960,53 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
         'common_dict_integrity',
         stackTrace: stackTrace.toString(),
         logMessage: '通用词典完整性检查: $e',
+      );
+      setState(() {
+        _checkStates[step] = 'failed';
+      });
+    }
+  }
+
+  Future<void> _checkMissingRawWordDict(
+      SystemHealthResult result, int step) async {
+    setState(() {
+      _checkStates[step] = false; // 进行中
+    });
+
+    try {
+      final apiResult = await Api.client.checkMissingRawWordDict();
+
+      if (apiResult.success && apiResult.data != null) {
+        final data = apiResult.data!;
+
+        if ((data.isHealthy == false) && data.issues.isNotEmpty) {
+          for (final issue in data.issues) {
+            result.addIssue(
+                issue.type, issue.description, 'missing_raw_word_dict');
+          }
+          setState(() {
+            _checkStates[step] = 'failed';
+          });
+        } else {
+          setState(() {
+            _checkStates[step] = true; // 通过
+          });
+        }
+      } else {
+        result.addIssue(
+            '用户生词本完整性', 'API调用失败: ${apiResult.msg}', 'missing_raw_word_dict');
+        setState(() {
+          _checkStates[step] = 'failed';
+        });
+      }
+    } catch (e, stackTrace) {
+      Global.logger.e('检查用户生词本完整性时出错: $e', error: e, stackTrace: stackTrace);
+      result.addIssue(
+        '用户生词本完整性',
+        '检查用户生词本完整性时出错: $e',
+        'missing_raw_word_dict',
+        stackTrace: stackTrace.toString(),
+        logMessage: '用户生词本完整性检查: $e',
       );
       setState(() {
         _checkStates[step] = 'failed';

@@ -221,6 +221,32 @@ public class DictBo extends BaseBo<Dict> {
         return queryUnique(exam);
     }
 
+    /**
+     * 为用户创建生词本（包括创建生词本和学习词典关联）
+     * 
+     * @param user 用户对象
+     * @return 创建的生词本对象
+     */
+    public Dict createRawWordDictForUser(User user) {
+        // 创建生词本
+        Dict rawDict = new Dict();
+        rawDict.setName("生词本");
+        rawDict.setWordCount(0);
+        rawDict.setIsReady(true);
+        rawDict.setIsShared(false);
+        rawDict.setVisible(true);
+        rawDict.setOwner(user);
+        rawDict.setPopularityLimit(5); // 新用户生词本默认 popularityLimit 为 5
+        createEntity(rawDict);
+
+        // 创建学习词典关联
+        LearningDictId learningDictId = new LearningDictId(user.getId(), rawDict.getId());
+        LearningDict learningDict = new LearningDict(learningDictId, rawDict, user, false, true);
+        learningDictBo.createEntity(learningDict);
+
+        return rawDict;
+    }
+
     public void clearDict(User user, Dict dict) throws IllegalAccessException {
         if (!dict.getOwner().equals(user)) {
             throw new RuntimeException("用户不得删除不属于自己的词书");

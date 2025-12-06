@@ -208,6 +208,15 @@ public class SystemController {
     }
 
     /**
+     * 检查用户是否缺失生词本
+     */
+    @GetMapping("/admin/checkMissingRawWordDict.do")
+    public Result<SystemHealthCheckResult> checkMissingRawWordDict() {
+        SystemHealthCheckResult result = systemHealthCheckBo.checkMissingRawWordDict();
+        return Result.success(result);
+    }
+
+    /**
      * 自动修复系统问题
      */
     @PostMapping("/admin/autoFixSystemIssues.do")

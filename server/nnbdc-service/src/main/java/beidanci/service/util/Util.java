@@ -87,7 +87,6 @@ import beidanci.service.bo.UserBo;
 import beidanci.service.po.Dict;
 import beidanci.service.po.DictWord;
 import beidanci.service.po.LearningDict;
-import beidanci.service.po.LearningDictId;
 import beidanci.service.po.Level;
 import beidanci.service.po.SysParam;
 import beidanci.service.po.User;
@@ -656,19 +655,7 @@ public class Util {
         log.info(String.format("创建了新用户:[%s]", user.getDisplayNickName()));
 
         // 创建用户的生词本
-        Dict rawDict = new Dict();
-        rawDict.setName("生词本");
-        rawDict.setWordCount(0);
-        rawDict.setIsReady(true);
-        rawDict.setIsShared(false);
-        rawDict.setVisible(true);
-        rawDict.setOwner(user);
-        rawDict.setPopularityLimit(5); // 新用户生词本默认 popularityLimit 为 5
-        dictBo.createEntity(rawDict);
-
-        LearningDictId id = new LearningDictId(user.getId(), rawDict.getId());
-        LearningDict learningDict = new LearningDict(id, rawDict, user, false, true);
-        learningDictBo.createEntity(learningDict);
+        dictBo.createRawWordDictForUser(user);
 
         return user;
     }
