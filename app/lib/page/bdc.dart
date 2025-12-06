@@ -1191,7 +1191,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       if (_studyStep == StudyStep.en2Ch.json || _studyStep == StudyStep.ch2En.json) {
         // 把当前单词及混淆单词放入数组，并随机打乱
         if (getWordResult.otherWords == null || getWordResult.otherWords!.length < 2) {
-          Global.logger.d('混淆单词数量（${getWordResult.otherWords!.length}）不足');
+          Global.logger.e('混淆单词数量（${getWordResult.otherWords!.length}）不足');
           ToastUtil.error('混淆单词数量（${getWordResult.otherWords!.length}）不足');
           return;
         }

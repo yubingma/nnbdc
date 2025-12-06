@@ -78,9 +78,9 @@ extension StudyStepExt on StudyStep {
   String get json {
     switch (this) {
       case StudyStep.en2Ch:
-        return "Word";
+        return "En2Ch";
       case StudyStep.ch2En:
-        return "Meaning";
+        return "Ch2En";
     }
   }
 
@@ -95,9 +95,9 @@ extension StudyStepExt on StudyStep {
 
   static StudyStep fromString(String value) {
     switch (value) {
-      case "Word":
+      case "En2Ch":
         return StudyStep.en2Ch;
-      case "Meaning":
+      case "Ch2En":
         return StudyStep.ch2En;
       default:
         throw ArgumentError('无效的StudyStep值：$value');
