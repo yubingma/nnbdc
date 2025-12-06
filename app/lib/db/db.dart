@@ -396,14 +396,9 @@ class MyDatabase extends _$MyDatabase {
           final tableName = table.data['name'] as String;
           if (tableName.isEmpty) continue;
 
-          try {
-            // 使用参数化查询避免 SQL 注入（虽然表名来自系统表，但为了安全还是使用引号）
-            await customStatement('DROP TABLE IF EXISTS "$tableName"');
-            Global.logger.d('🗑️ 删除表: $tableName');
-          } catch (e) {
-            Global.logger.w('⚠️ 删除表失败: $tableName - $e');
-            // 继续删除其他表，不因单个表删除失败而中断
-          }
+          // 使用参数化查询避免 SQL 注入（虽然表名来自系统表，但为了安全还是使用引号）
+          await customStatement('DROP TABLE IF EXISTS "$tableName"');
+          Global.logger.d('🗑️ 删除表: $tableName');
         }
 
         // 重新启用外键约束
