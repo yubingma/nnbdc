@@ -38,12 +38,6 @@ public class SystemHealthCheckBo {
     private SentenceBo sentenceBo;
     
     @Autowired
-    private UserStudyStepBo userStudyStepBo;
-    
-    @Autowired
-    private UserBo userBo;
-    
-    @Autowired
     private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
     /**
