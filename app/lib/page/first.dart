@@ -19,6 +19,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../config.dart';
 import '../global.dart';
@@ -1171,6 +1172,19 @@ endlocal
               ? Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    // 版本信息提示
+                    if (_buildNumber != null && newVerCode != null)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        child: Text(
+                          '版本 $_buildNumber -> $newVerCode',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Colors.white,
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                      ),
                     SizedBox(
                       height: 250,
                       width: 250,
@@ -1315,6 +1329,29 @@ endlocal
                                   ],
                                 ),
                               ),
+                              // 底部提示（仅对桌面平台显示）
+                              if (PlatformUtils.isWindows || PlatformUtils.isLinux || PlatformUtils.isMacOS)
+                                Align(
+                                  alignment: const Alignment(0, 0.85),
+                                  child: GestureDetector(
+                                    onTap: () async {
+                                      final uri = Uri.parse('http://www.nnbdc.com');
+                                      if (await canLaunchUrl(uri)) {
+                                        await launchUrl(uri, mode: LaunchMode.externalApplication);
+                                      }
+                                    },
+                                    child: Text(
+                                      '如果升级失败，请到 www.nnbdc.com 重新下载',
+                                      textScaler: const TextScaler.linear(1.0),
+                                      style: TextStyle(
+                                        color: Colors.white.withValues(alpha: 0.6),
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w300,
+                                        decoration: TextDecoration.underline,
+                                      ),
+                                    ),
+                                  ),
+                                ),
                             ],
                           ),
                         );
