@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:nnbdc/api/bo/user_bo.dart';
 import 'package:nnbdc/api/bo/study_bo.dart';
@@ -149,7 +150,7 @@ class FinishPageState extends State<FinishPage> {
   // 构建顶部装饰区域
   Widget _buildHeaderSection(bool isDarkMode) {
     return Container(
-      height: 160,
+      height: 140,
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -162,69 +163,31 @@ class FinishPageState extends State<FinishPage> {
       ),
       child: Stack(
         children: [
-          // 庆祝光晕效果
-          _buildCelebrationGlow(),
+          // 简洁的庆祝装饰
+          _buildSimpleCelebration(),
           
-          // 星星装饰
-          _buildStars(),
-          
-          // 彩带装饰
-          _buildConfetti(),
-          
-          // 标题文本
+          // 副标题文本
           Positioned(
             bottom: 24,
             left: 20,
             right: 20,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.celebration,
-                      color: Colors.amber[300],
-                      size: 28,
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        '学习完成',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 24,
-                          fontWeight: FontWeight.w400,
-                          letterSpacing: 0.8,
-                          shadows: [
-                            Shadow(
-                              color: Colors.black.withValues(alpha: 0.3),
-                              blurRadius: 6,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                      ),
+            child: Center(
+              child: Text(
+                '继续坚持，每天进步一点点',
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.95),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w400,
+                  letterSpacing: 0.3,
+                  shadows: [
+                    Shadow(
+                      color: Colors.black.withValues(alpha: 0.2),
+                      blurRadius: 3,
+                      offset: const Offset(0, 1),
                     ),
                   ],
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  '继续坚持，每天进步一点点',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.95),
-                    fontSize: 14,
-                    fontWeight: FontWeight.w400,
-                    letterSpacing: 0.3,
-                    shadows: [
-                      Shadow(
-                        color: Colors.black.withValues(alpha: 0.2),
-                        blurRadius: 3,
-                        offset: const Offset(0, 1),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
         ],
@@ -232,190 +195,27 @@ class FinishPageState extends State<FinishPage> {
     );
   }
 
-  // 构建庆祝光晕效果
-  Widget _buildCelebrationGlow() {
+  // 构建简洁的庆祝装饰
+  Widget _buildSimpleCelebration() {
     return Stack(
       children: [
-        // 主光晕 - 顶部中央
+        // 顶部柔和的中心光晕
         Positioned(
-          top: -60,
+          top: -30,
           left: 0,
           right: 0,
           child: Center(
             child: Container(
-              width: 200,
-              height: 200,
+              width: 150,
+              height: 150,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    Colors.amber.withValues(alpha: 0.3),
-                    Colors.orange.withValues(alpha: 0.2),
+                    Colors.white.withValues(alpha: 0.15),
+                    Colors.white.withValues(alpha: 0.05),
                     Colors.transparent,
                   ],
-                ),
-              ),
-            ),
-          ),
-        ),
-        // 左侧光晕
-        Positioned(
-          top: 60,
-          left: -40,
-          child: Container(
-            width: 120,
-            height: 120,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: RadialGradient(
-                colors: [
-                  Colors.pink.withValues(alpha: 0.25),
-                  Colors.purple.withValues(alpha: 0.15),
-                  Colors.transparent,
-                ],
-              ),
-            ),
-          ),
-        ),
-        // 右侧光晕
-        Positioned(
-          top: 80,
-          right: -30,
-          child: Container(
-            width: 100,
-            height: 100,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: RadialGradient(
-                colors: [
-                  Colors.cyan.withValues(alpha: 0.25),
-                  Colors.blue.withValues(alpha: 0.15),
-                  Colors.transparent,
-                ],
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  // 构建星星装饰
-  Widget _buildStars() {
-    return Stack(
-      children: [
-        // 左上角星星
-        Positioned(
-          top: 50,
-          left: 30,
-          child: Icon(
-            Icons.star,
-            color: Colors.amber[200],
-            size: 24,
-          ),
-        ),
-        // 右上角大星星
-        Positioned(
-          top: 40,
-          right: 50,
-          child: Icon(
-            Icons.star,
-            color: Colors.amber[300],
-            size: 32,
-          ),
-        ),
-        // 中间小星星
-        Positioned(
-          top: 80,
-          right: 100,
-          child: Icon(
-            Icons.star,
-            color: Colors.white.withValues(alpha: 0.8),
-            size: 16,
-          ),
-        ),
-        // 左侧小星星
-        Positioned(
-          top: 100,
-          left: 80,
-          child: Icon(
-            Icons.star,
-            color: Colors.white.withValues(alpha: 0.7),
-            size: 14,
-          ),
-        ),
-      ],
-    );
-  }
-
-  // 构建彩带装饰
-  Widget _buildConfetti() {
-    return Stack(
-      children: [
-        // 左侧彩带
-        Positioned(
-          top: 20,
-          left: 20,
-          child: Transform.rotate(
-            angle: -0.3,
-            child: Container(
-              width: 60,
-              height: 4,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Colors.red.withValues(alpha: 0.8),
-                    Colors.orange.withValues(alpha: 0.8),
-                    Colors.yellow.withValues(alpha: 0.8),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
-        ),
-        // 右侧彩带
-        Positioned(
-          top: 30,
-          right: 30,
-          child: Transform.rotate(
-            angle: 0.4,
-            child: Container(
-              width: 50,
-              height: 4,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Colors.purple.withValues(alpha: 0.8),
-                    Colors.pink.withValues(alpha: 0.8),
-                    Colors.cyan.withValues(alpha: 0.8),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
-        ),
-        // 中间彩带
-        Positioned(
-          top: 10,
-          left: 0,
-          right: 0,
-          child: Center(
-            child: Transform.rotate(
-              angle: 0.2,
-              child: Container(
-                width: 70,
-                height: 4,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Colors.green.withValues(alpha: 0.8),
-                      Colors.blue.withValues(alpha: 0.8),
-                      Colors.purple.withValues(alpha: 0.8),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(2),
                 ),
               ),
             ),
@@ -850,6 +650,73 @@ class FinishPageState extends State<FinishPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        systemOverlayStyle: SystemUiOverlayStyle.light,
+        leading: Container(
+          margin: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.2),
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.1),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: IconButton(
+            icon: const Icon(
+              Icons.arrow_back,
+              color: Colors.white,
+              size: 20,
+            ),
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+          ),
+        ),
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.celebration,
+              color: Colors.amber[300],
+              size: 24,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              '学习完成',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.w500,
+                letterSpacing: 0.5,
+                shadows: [
+                  Shadow(
+                    color: Colors.black.withValues(alpha: 0.3),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        centerTitle: true,
+        // 添加一个与leading相同宽度的透明占位符，使标题完全居中
+        actions: [
+          Container(
+            margin: const EdgeInsets.all(8),
+            width: 48, // 与leading的IconButton宽度相同（56 - 8*2 margin）
+            height: 48,
+          ),
+        ],
+      ),
       body: (!dataLoaded)
           ? const Center(
               child: CircularProgressIndicator(),
