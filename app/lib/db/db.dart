@@ -96,7 +96,7 @@ class MyDatabase extends _$MyDatabase {
   // you should bump this number whenever you change or add a table definition. Migrations
   // are covered later in this readme.
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration {
@@ -120,6 +120,10 @@ class MyDatabase extends _$MyDatabase {
         // 从版本 1 升级到版本 2：更新 studyStep 字段值
         if (from < 2) {
           await _migrateStudyStepFromV1ToV2();
+        }
+        // 从版本 2 升级到版本 3：修复 dicts 表中 popularityLimit 的 0 值
+        if (from < 3) {
+          await _migratePopularityLimitFromV2ToV3();
         }
       },
       
@@ -174,6 +178,51 @@ class MyDatabase extends _$MyDatabase {
                 .write(UserDbLogsCompanion(
               record: Value(jsonEncode(recordJson)),
             ));
+          }
+        } catch (e) {
+          // 如果 JSON 解析失败，跳过该记录
+          continue;
+        }
+      }
+    });
+  }
+
+  /// 从版本 2 升级到版本 3 的迁移逻辑
+  /// 修复 dicts 表中 popularityLimit 字段的 0 值，将其修正为 null
+  Future<void> _migratePopularityLimitFromV2ToV3() async {
+    await transaction(() async {
+      // 将 popularity_limit 为 0 的记录更新为 null
+      // 注意：SQLite 中需要使用 CASE 语句或者直接 SET popularity_limit = NULL
+      await customStatement('''
+        UPDATE dicts 
+        SET popularity_limit = NULL 
+        WHERE popularity_limit = 0
+      ''');
+      
+      // 同时需要更新 user_db_logs 表中 dicts 相关的 JSON 记录
+      // 获取所有需要更新的日志记录
+      final logsToUpdate = await (select(userDbLogs)
+            ..where((log) => log.tblName.equals('dicts')))
+          .get();
+      
+      for (final log in logsToUpdate) {
+        try {
+          // 解析 JSON
+          final recordJson = jsonDecode(log.record) as Map<String, dynamic>;
+          
+          // 检查并更新 popularityLimit 字段
+          if (recordJson.containsKey('popularityLimit')) {
+            final popularityLimit = recordJson['popularityLimit'];
+            // 如果值为 0，将其设置为 null
+            if (popularityLimit == 0) {
+              recordJson['popularityLimit'] = null;
+              
+              // 更新记录
+              await (update(userDbLogs)..where((l) => l.id.equals(log.id)))
+                  .write(UserDbLogsCompanion(
+                record: Value(jsonEncode(recordJson)),
+              ));
+            }
           }
         } catch (e) {
           // 如果 JSON 解析失败，跳过该记录

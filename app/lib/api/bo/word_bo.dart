@@ -740,6 +740,7 @@ class WordBo {
   Future<PagedResults<DictWordVo>> getDictWordsForAPage(
       String dictId, int fromIndex, int pageSize) async {
     try {
+      // 获取词典单词总数
       final results = PagedResults<DictWordVo>(0);
       final db = MyDatabase.instance;
       final countQuery = db.selectOnly(db.dictWords)

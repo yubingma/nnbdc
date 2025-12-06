@@ -82,7 +82,7 @@ Future<void> _applySysDbLogs(List<SysDbLogDto> logs) async {
         Map<String, dynamic> entityJson = jsonDecode(log.record);
         
         // === 静态元数据表 ===
-        if (log.tblName == 'level' || log.tblName == 'levels') {
+        if (log.tblName == 'level') {
           // 用户等级
           if (log.operate == 'DELETE') {
             await (db.delete(db.levels)..where((t) => t.id.equals(log.recordId))).go();
@@ -91,7 +91,7 @@ Future<void> _applySysDbLogs(List<SysDbLogDto> logs) async {
             await db.into(db.levels).insertOnConflictUpdate(entity);
           }
           
-        } else if (log.tblName == 'dict_group' || log.tblName == 'dictGroups') {
+        } else if (log.tblName == 'dict_group') {
           // 词典分组
           if (log.operate == 'DELETE') {
             await (db.delete(db.dictGroups)..where((t) => t.id.equals(log.recordId))).go();
@@ -100,7 +100,7 @@ Future<void> _applySysDbLogs(List<SysDbLogDto> logs) async {
             await db.into(db.dictGroups).insertOnConflictUpdate(entity);
           }
           
-        } else if (log.tblName == 'group_and_dict_link' || log.tblName == 'groupAndDictLinks') {
+        } else if (log.tblName == 'group_and_dict_link') {
           // 分组与词典关联
           if (log.operate == 'DELETE') {
             var parts = log.recordId.split('-');
@@ -114,7 +114,7 @@ Future<void> _applySysDbLogs(List<SysDbLogDto> logs) async {
             await db.into(db.groupAndDictLinks).insertOnConflictUpdate(entity);
           }
           
-        } else if (log.tblName == 'dict' || log.tblName == 'dicts') {
+        } else if (log.tblName == 'dict') {
           // 词典
           if (log.operate == 'DELETE') {
             await (db.delete(db.dicts)..where((t) => t.id.equals(log.recordId))).go();
@@ -123,7 +123,7 @@ Future<void> _applySysDbLogs(List<SysDbLogDto> logs) async {
             await db.dictsDao.saveEntity(entity, false);
           }
           
-        } else if (log.tblName == 'dict_word' || log.tblName == 'dictWords') {
+        } else if (log.tblName == 'dict_word') {
           // 词典单词关联（系统词典的单词变更）
           if (log.operate == 'DELETE') {
             // recordId格式为 "dictId_wordId"
@@ -141,7 +141,7 @@ Future<void> _applySysDbLogs(List<SysDbLogDto> logs) async {
           }
           
         // === UGC内容表 ===
-        } else if (log.tblName == 'sentences' || log.tblName == 'sentence') {
+        } else if (log.tblName == 'sentence') {
           // 例句
           if (log.operate == 'DELETE') {
             await (db.delete(db.sentences)..where((t) => t.id.equals(log.recordId))).go();
@@ -150,7 +150,7 @@ Future<void> _applySysDbLogs(List<SysDbLogDto> logs) async {
             await db.sentencesDao.insertEntity(entity);
           }
           
-        } else if (log.tblName == 'word_image' || log.tblName == 'wordImages') {
+        } else if (log.tblName == 'word_image') {
           // 单词配图
           if (log.operate == 'DELETE') {
             await (db.delete(db.wordImages)..where((t) => t.id.equals(log.recordId))).go();
@@ -159,7 +159,7 @@ Future<void> _applySysDbLogs(List<SysDbLogDto> logs) async {
             await db.wordImagesDao.insertEntity(entity);
           }
           
-        } else if (log.tblName == 'word_shortdesc_chinese' || log.tblName == 'wordShortDescChinese') {
+        } else if (log.tblName == 'word_shortdesc_chinese') {
           // 短描述中文翻译
           if (log.operate == 'DELETE') {
             await db.wordShortDescChinesesDao.deleteById(log.recordId);
