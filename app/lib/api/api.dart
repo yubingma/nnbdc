@@ -563,7 +563,7 @@ abstract class RestClient {
   Future<Result<JsonMap>> queryAliyunBalance();
 
   @GET("/admin/queryAliyunResourcePackages.do")
-  Future<Result<JsonMap>> queryAliyunResourcePackages();
+  Future<Result<String>> queryAliyunResourcePackages();
 
   // 需求墙相关API
   @GET("/getAllFeatureRequests.do")

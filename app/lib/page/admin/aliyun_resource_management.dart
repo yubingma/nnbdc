@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:nnbdc/api/api.dart';
 import 'package:nnbdc/global.dart';
@@ -431,15 +432,51 @@ class _AliyunResourceManagementPageState extends State<AliyunResourceManagementP
       });
 
       if (result.success && result.data != null) {
-        setState(() {
-          _resourcePackages = result.data!.data['Instances'] as List<dynamic>?;
-        });
+        // 服务器返回的是 JSON 字符串，需要手动解析
+        try {
+          final jsonString = result.data!;
+          
+          // 解析 JSON 字符串
+          final dataMap = jsonDecode(jsonString) as Map<String, dynamic>;
+          
+          // 根据后端日志，数据结构是: Instances.Instance 才是数组
+          // {"Instances":{"Instance":[]},...}
+          final instancesObj = dataMap['Instances'];
+          if (instancesObj is Map<String, dynamic>) {
+            final instanceList = instancesObj['Instance'];
+            if (instanceList is List) {
+              setState(() {
+                _resourcePackages = instanceList;
+              });
+            } else {
+              Global.logger.w('资源包数据格式错误: Instance 不是 List 类型，实际类型: ${instanceList.runtimeType}');
+              setState(() {
+                _resourcePackages = [];
+              });
+            }
+          } else {
+            Global.logger.w('资源包数据格式错误: Instances 不是 Map 类型，实际类型: ${instancesObj.runtimeType}');
+            Global.logger.w('完整数据: $dataMap');
+            setState(() {
+              _resourcePackages = [];
+            });
+          }
+        } catch (e) {
+          Global.logger.e('解析资源包 JSON 数据失败', error: e);
+          Global.logger.w('原始数据: ${result.data}');
+          setState(() {
+            _resourcePackages = [];
+          });
+        }
       } else {
         // 资源包查询失败不显示错误，因为可能没有资源包
         Global.logger.w('资源包查询失败: ${result.msg ?? "未知错误"}');
       }
     } catch (e) {
       Global.logger.e('查询资源包失败', error: e);
+      setState(() {
+        _resourcePackages = [];
+      });
     }
   }
 }
