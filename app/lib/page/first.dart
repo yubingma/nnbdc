@@ -1335,7 +1335,7 @@ endlocal
                                   alignment: const Alignment(0, 0.85),
                                   child: GestureDetector(
                                     onTap: () async {
-                                      final uri = Uri.parse('http://www.nnbdc.com');
+                                      final uri = Uri.parse('http://www.nnbdc.com/download.html');
                                       if (await canLaunchUrl(uri)) {
                                         await launchUrl(uri, mode: LaunchMode.externalApplication);
                                       }

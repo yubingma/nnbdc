@@ -38,6 +38,12 @@ public class SystemHealthCheckBo {
     private SentenceBo sentenceBo;
     
     @Autowired
+    private UserStudyStepBo userStudyStepBo;
+    
+    @Autowired
+    private UserBo userBo;
+    
+    @Autowired
     private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
     /**
@@ -174,6 +180,55 @@ public class SystemHealthCheckBo {
     }
 
     /**
+     * 检查所有用户的学习步骤完整性
+     * 使用单个 SQL 查询直接找出缺少学习步骤的用户，性能最优
+     */
+    public SystemHealthCheckResult checkUserStudySteps() {
+        List<SystemHealthIssue> issues = new ArrayList<>();
+        List<String> errors = new ArrayList<>();
+        
+        try {
+            // 使用一个 SQL 查询直接找出缺少 En2Ch 或 Ch2En 的用户
+            String sql = "SELECT u.id, u.userName, 'En2Ch' as missingStep " +
+                        "FROM user u " +
+                        "LEFT JOIN user_study_step uss ON u.id = uss.userId AND uss.studyStep = 'En2Ch' " +
+                        "WHERE uss.userId IS NULL " +
+                        "UNION ALL " +
+                        "SELECT u.id, u.userName, 'Ch2En' as missingStep " +
+                        "FROM user u " +
+                        "LEFT JOIN user_study_step uss ON u.id = uss.userId AND uss.studyStep = 'Ch2En' " +
+                        "WHERE uss.userId IS NULL";
+            
+            List<Object[]> missingSteps = namedParameterJdbcTemplate.query(sql, 
+                new MapSqlParameterSource(), 
+                (rs, rowNum) -> new Object[]{
+                    rs.getString("id"),
+                    rs.getString("userName"),
+                    rs.getString("missingStep")
+                }
+            );
+            
+            // 将查询结果转换为问题列表
+            for (Object[] record : missingSteps) {
+                String userId = (String) record[0];
+                String userName = (String) record[1];
+                String missingStep = (String) record[2];
+                
+                issues.add(new SystemHealthIssue(
+                    "学习步骤缺失",
+                    String.format("用户 %s (%s) 缺少学习步骤：%s", userName, userId, missingStep),
+                    "user_study_steps"
+                ));
+            }
+            
+        } catch (Exception e) {
+            errors.add("检查用户学习步骤时出错: " + e.getMessage());
+        }
+        
+        return new SystemHealthCheckResult(issues.isEmpty() && errors.isEmpty(), issues, errors);
+    }
+
+    /**
      * 检查通用词典完整性
      */
     public SystemHealthCheckResult checkCommonDictIntegrity() {
@@ -237,6 +292,9 @@ public class SystemHealthCheckBo {
                         break;
                     case "common_dict_integrity":
                         fixedCount += fixCommonDictIntegrity(fixed);
+                        break;
+                    case "user_study_steps":
+                        fixedCount += fixUserStudySteps(fixed);
                         break;
                     default:
                         errors.add("未知的问题类型: " + issueType);
@@ -566,5 +624,42 @@ public class SystemHealthCheckBo {
         // 通用词典完整性修复比较复杂，需要根据具体业务逻辑实现
         // 这里暂时返回0，表示暂不支持自动修复
         return 0;
+    }
+
+    private int fixUserStudySteps(List<String> fixed) {
+        int fixedCount = 0;
+        try {
+            // 使用 SQL 批量插入缺失的学习步骤
+            // 1. 批量插入缺失的 En2Ch 步骤
+            String insertEn2ChSql = "INSERT INTO user_study_step (userId, studyStep, seq, state, createTime) " +
+                                   "SELECT u.id, 'En2Ch', 1, 'Active', NOW() " +
+                                   "FROM user u " +
+                                   "LEFT JOIN user_study_step uss ON u.id = uss.userId AND uss.studyStep = 'En2Ch' " +
+                                   "WHERE uss.userId IS NULL";
+            
+            int en2ChCount = namedParameterJdbcTemplate.update(insertEn2ChSql, new MapSqlParameterSource());
+            
+            // 2. 批量插入缺失的 Ch2En 步骤
+            String insertCh2EnSql = "INSERT INTO user_study_step (userId, studyStep, seq, state, createTime) " +
+                                   "SELECT u.id, 'Ch2En', 2, 'Active', NOW() " +
+                                   "FROM user u " +
+                                   "LEFT JOIN user_study_step uss ON u.id = uss.userId AND uss.studyStep = 'Ch2En' " +
+                                   "WHERE uss.userId IS NULL";
+            
+            int ch2EnCount = namedParameterJdbcTemplate.update(insertCh2EnSql, new MapSqlParameterSource());
+            
+            fixedCount = en2ChCount + ch2EnCount;
+            
+            if (en2ChCount > 0) {
+                fixed.add(String.format("批量插入 %d 个用户的 En2Ch 学习步骤", en2ChCount));
+            }
+            if (ch2EnCount > 0) {
+                fixed.add(String.format("批量插入 %d 个用户的 Ch2En 学习步骤", ch2EnCount));
+            }
+            
+        } catch (Exception e) {
+            // 错误已在调用方处理
+        }
+        return fixedCount;
     }
 }

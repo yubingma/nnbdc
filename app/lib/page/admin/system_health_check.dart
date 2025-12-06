@@ -37,16 +37,17 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
     },
     {'id': 2, 'title': '用户词典完整性', 'step': 2, 'category': 'user_dict_integrity'},
     {'id': 3, 'title': '学习进度合理性', 'step': 3, 'category': 'learning_progress'},
-    {'id': 4, 'title': '数据库版本一致性', 'step': 4, 'category': 'db_version'},
+    {'id': 4, 'title': '用户学习步骤完整性', 'step': 4, 'category': 'user_study_steps'},
+    {'id': 5, 'title': '数据库版本一致性', 'step': 5, 'category': 'db_version'},
     {
-      'id': 5,
+      'id': 6,
       'title': '通用词典完整性',
-      'step': 5,
+      'step': 6,
       'category': 'common_dict_integrity'
     },
-    {'id': 6, 'title': '网络连接', 'step': 6, 'category': 'network_connectivity'},
-    {'id': 7, 'title': '后端服务器连通性', 'step': 7, 'category': 'backend_server'},
-    {'id': 8, 'title': '游戏服务器连通性', 'step': 8, 'category': 'game_server'},
+    {'id': 7, 'title': '网络连接', 'step': 7, 'category': 'network_connectivity'},
+    {'id': 8, 'title': '后端服务器连通性', 'step': 8, 'category': 'backend_server'},
+    {'id': 9, 'title': '游戏服务器连通性', 'step': 9, 'category': 'game_server'},
   ];
 
   @override
@@ -632,20 +633,23 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
       // 3. 检查学习进度合理性
       await _checkLearningProgress(result, 3);
 
-      // 4. 检查数据库版本一致性
-      await _checkDbVersionConsistency(result, 4);
+      // 4. 检查用户学习步骤完整性
+      await _checkUserStudySteps(result, 4);
 
-      // 5. 检查通用词典完整性
-      await _checkCommonDictIntegrity(result, 5);
+      // 5. 检查数据库版本一致性
+      await _checkDbVersionConsistency(result, 5);
 
-      // 6. 检查网络连接
-      await _checkNetworkConnectivity(result, 6);
+      // 6. 检查通用词典完整性
+      await _checkCommonDictIntegrity(result, 6);
 
-      // 7. 检查后端服务器连通性
-      await _checkBackendServer(result, 7);
+      // 7. 检查网络连接
+      await _checkNetworkConnectivity(result, 7);
 
-      // 8. 检查游戏服务器连通性
-      await _checkGameServer(result, 8);
+      // 8. 检查后端服务器连通性
+      await _checkBackendServer(result, 8);
+
+      // 9. 检查游戏服务器连通性
+      await _checkGameServer(result, 9);
 
       setState(() {
         _checkResult = result;
@@ -814,6 +818,52 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
         'learning_progress',
         stackTrace: stackTrace.toString(),
         logMessage: '学习进度合理性检查: $e',
+      );
+      setState(() {
+        _checkStates[step] = 'failed';
+      });
+    }
+  }
+
+  Future<void> _checkUserStudySteps(
+      SystemHealthResult result, int step) async {
+    setState(() {
+      _checkStates[step] = false; // 进行中
+    });
+
+    try {
+      final apiResult = await Api.client.checkUserStudySteps();
+
+      if (apiResult.success && apiResult.data != null) {
+        final data = apiResult.data!;
+
+        if ((data.isHealthy == false) && data.issues.isNotEmpty) {
+          for (final issue in data.issues) {
+            result.addIssue(issue.type, issue.description, 'user_study_steps');
+          }
+          setState(() {
+            _checkStates[step] = 'failed';
+          });
+        } else {
+          setState(() {
+            _checkStates[step] = true; // 通过
+          });
+        }
+      } else {
+        result.addIssue(
+            '用户学习步骤完整性', 'API调用失败: ${apiResult.msg}', 'user_study_steps');
+        setState(() {
+          _checkStates[step] = 'failed';
+        });
+      }
+    } catch (e, stackTrace) {
+      Global.logger.e('检查用户学习步骤完整性时出错: $e', error: e, stackTrace: stackTrace);
+      result.addIssue(
+        '用户学习步骤完整性',
+        '检查用户学习步骤完整性时出错: $e',
+        'user_study_steps',
+        stackTrace: stackTrace.toString(),
+        logMessage: '用户学习步骤完整性检查: $e',
       );
       setState(() {
         _checkStates[step] = 'failed';

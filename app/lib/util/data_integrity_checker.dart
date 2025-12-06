@@ -86,59 +86,69 @@ class DataIntegrityChecker {
       onProgress?.call(3, '检查学习进度合理性...', result: result);
       await Future.delayed(const Duration(milliseconds: 200)); // 给UI时间显示结果
       
-      // 4. 检查用户数据库版本一致性
-      onProgress?.call(4, '检查数据库版本一致性...');
+      // 4. 检查用户学习步骤完整性
+      onProgress?.call(4, '检查学习步骤完整性...');
       await Future.delayed(const Duration(milliseconds: 100)); // 给UI一点时间显示
       final timer4 = Stopwatch()..start();
-      await _checkUserDbVersions(result, userId);
+      await _checkUserStudySteps(result, userId);
       timer4.stop();
-      Global.logger.d('✓ 检查数据库版本一致性: ${timer4.elapsedMilliseconds}ms');
-      onProgress?.call(4, '检查数据库版本一致性...', result: result);
+      Global.logger.d('✓ 检查学习步骤完整性: ${timer4.elapsedMilliseconds}ms');
+      onProgress?.call(4, '检查学习步骤完整性...', result: result);
       await Future.delayed(const Duration(milliseconds: 200)); // 给UI时间显示结果
       
-      // 5. 检查通用词典完整性
-      onProgress?.call(5, '检查通用词典完整性...');
+      // 5. 检查用户数据库版本一致性
+      onProgress?.call(5, '检查数据库版本一致性...');
       await Future.delayed(const Duration(milliseconds: 100)); // 给UI一点时间显示
       final timer5 = Stopwatch()..start();
-      await _checkCommonDictIntegrity(result);
+      await _checkUserDbVersions(result, userId);
       timer5.stop();
-      Global.logger.d('✓ 检查通用词典完整性: ${timer5.elapsedMilliseconds}ms');
-      onProgress?.call(5, '检查通用词典完整性...', result: result);
+      Global.logger.d('✓ 检查数据库版本一致性: ${timer5.elapsedMilliseconds}ms');
+      onProgress?.call(5, '检查数据库版本一致性...', result: result);
       await Future.delayed(const Duration(milliseconds: 200)); // 给UI时间显示结果
       
-      // 6. 检查网络连接
-      onProgress?.call(6, '检查网络连接...');
-      await Future.delayed(const Duration(milliseconds: 100));
+      // 6. 检查通用词典完整性
+      onProgress?.call(6, '检查通用词典完整性...');
+      await Future.delayed(const Duration(milliseconds: 100)); // 给UI一点时间显示
       final timer6 = Stopwatch()..start();
-      await _checkNetworkConnectivity(result);
+      await _checkCommonDictIntegrity(result);
       timer6.stop();
-      Global.logger.d('✓ 检查网络连接: ${timer6.elapsedMilliseconds}ms');
-      onProgress?.call(6, '检查网络连接...', result: result);
-      await Future.delayed(const Duration(milliseconds: 200));
+      Global.logger.d('✓ 检查通用词典完整性: ${timer6.elapsedMilliseconds}ms');
+      onProgress?.call(6, '检查通用词典完整性...', result: result);
+      await Future.delayed(const Duration(milliseconds: 200)); // 给UI时间显示结果
       
-      // 7. 检查后端服务器连通性
-      onProgress?.call(7, '检查后端服务器连通性...');
+      // 7. 检查网络连接
+      onProgress?.call(7, '检查网络连接...');
       await Future.delayed(const Duration(milliseconds: 100));
       final timer7 = Stopwatch()..start();
-      await _checkBackendServer(result);
+      await _checkNetworkConnectivity(result);
       timer7.stop();
-      Global.logger.d('✓ 检查后端服务器: ${timer7.elapsedMilliseconds}ms');
-      onProgress?.call(7, '检查后端服务器连通性...', result: result);
+      Global.logger.d('✓ 检查网络连接: ${timer7.elapsedMilliseconds}ms');
+      onProgress?.call(7, '检查网络连接...', result: result);
       await Future.delayed(const Duration(milliseconds: 200));
       
-      // 8. 检查游戏服务器连通性
-      onProgress?.call(8, '检查游戏服务器连通性...');
+      // 8. 检查后端服务器连通性
+      onProgress?.call(8, '检查后端服务器连通性...');
       await Future.delayed(const Duration(milliseconds: 100));
       final timer8 = Stopwatch()..start();
-      await _checkGameServer(result);
+      await _checkBackendServer(result);
       timer8.stop();
-      Global.logger.d('✓ 检查游戏服务器: ${timer8.elapsedMilliseconds}ms');
-      onProgress?.call(8, '检查游戏服务器连通性...', result: result);
+      Global.logger.d('✓ 检查后端服务器: ${timer8.elapsedMilliseconds}ms');
+      onProgress?.call(8, '检查后端服务器连通性...', result: result);
+      await Future.delayed(const Duration(milliseconds: 200));
+      
+      // 9. 检查游戏服务器连通性
+      onProgress?.call(9, '检查游戏服务器连通性...');
+      await Future.delayed(const Duration(milliseconds: 100));
+      final timer9 = Stopwatch()..start();
+      await _checkGameServer(result);
+      timer9.stop();
+      Global.logger.d('✓ 检查游戏服务器: ${timer9.elapsedMilliseconds}ms');
+      onProgress?.call(9, '检查游戏服务器连通性...', result: result);
       await Future.delayed(const Duration(milliseconds: 200));
       
       stopwatch.stop();
       Global.logger.d('✓ 健康检查完成，总耗时: ${stopwatch.elapsedMilliseconds}ms');
-      onProgress?.call(8, '检查完成！', result: result);
+      onProgress?.call(9, '检查完成！', result: result);
       await Future.delayed(const Duration(milliseconds: 200)); // 给UI时间显示最后一项的结果
       
     } catch (e, stackTrace) {
@@ -290,6 +300,32 @@ class DataIntegrityChecker {
       }
     } catch (e) {
       result.addError('检查用户学习进度时出错: $e');
+    }
+  }
+
+  /// 检查用户学习步骤完整性
+  Future<void> _checkUserStudySteps(IntegrityCheckResult result, String userId) async {
+    try {
+      // 获取用户的所有学习步骤
+      final steps = await _db.userStudyStepsDao.getUserStudySteps(userId);
+      
+      // 检查是否缺少 En2Ch
+      final hasEn2Ch = steps.any((step) => step.studyStep == 'En2Ch');
+      if (!hasEn2Ch) {
+        result.addIssue('学习步骤缺失', 
+          '用户缺少学习步骤：En2Ch', 
+          'user_study_steps');
+      }
+      
+      // 检查是否缺少 Ch2En
+      final hasCh2En = steps.any((step) => step.studyStep == 'Ch2En');
+      if (!hasCh2En) {
+        result.addIssue('学习步骤缺失', 
+          '用户缺少学习步骤：Ch2En', 
+          'user_study_steps');
+      }
+    } catch (e) {
+      result.addError('检查用户学习步骤时出错: $e');
     }
   }
 
@@ -455,6 +491,11 @@ class DataIntegrityChecker {
         await _fixLearningProgress(fixResult);
       }
       
+      // 修复学习步骤缺失问题
+      if (checkResult.hasIssue('user_study_steps')) {
+        await _fixUserStudySteps(fixResult);
+      }
+      
       // 修复版本号异常问题
       if (checkResult.hasIssue('user_db_version')) {
         await _fixUserDbVersions(fixResult);
@@ -530,6 +571,40 @@ class DataIntegrityChecker {
       }
     } catch (e) {
       fixResult.addError('修复学习进度时出错: $e');
+    }
+  }
+
+  /// 修复用户学习步骤缺失问题
+  Future<void> _fixUserStudySteps(IntegrityFixResult fixResult) async {
+    try {
+      // 获取当前登录用户
+      final currentUser = Global.getLoggedInUser();
+      if (currentUser == null) {
+        fixResult.addError('用户未登录，无法修复学习步骤');
+        return;
+      }
+      
+      // 初始化用户的学习步骤（如果缺失会自动添加）
+      final clientType = 'Flutter'; // 根据实际情况设置
+      await _db.userStudyStepsDao.initUserStudySteps(clientType, currentUser.id, true);
+      
+      // 验证修复后是否完整
+      final steps = await _db.userStudyStepsDao.getUserStudySteps(currentUser.id);
+      final hasEn2Ch = steps.any((step) => step.studyStep == 'En2Ch');
+      final hasCh2En = steps.any((step) => step.studyStep == 'Ch2En');
+      
+      if (hasEn2Ch && hasCh2En) {
+        fixResult.addFixed('修复用户学习步骤：已添加缺失的 En2Ch 和 Ch2En 步骤');
+      } else {
+        if (!hasEn2Ch) {
+          fixResult.addError('修复失败：仍缺少 En2Ch 步骤');
+        }
+        if (!hasCh2En) {
+          fixResult.addError('修复失败：仍缺少 Ch2En 步骤');
+        }
+      }
+    } catch (e) {
+      fixResult.addError('修复用户学习步骤时出错: $e');
     }
   }
 

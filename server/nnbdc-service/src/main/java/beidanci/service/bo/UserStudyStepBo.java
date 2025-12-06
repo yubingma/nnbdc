@@ -1,12 +1,12 @@
 package beidanci.service.bo;
-import javax.annotation.PostConstruct;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+
+import javax.annotation.PostConstruct;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,7 +16,6 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import beidanci.api.model.ClientType;
 import beidanci.api.model.StudyStep;
 import beidanci.api.model.StudyStepState;
 import beidanci.api.model.UserStudyStepDto;
@@ -43,10 +42,9 @@ public class UserStudyStepBo extends BaseBo<UserStudyStep> {
     /**
      * 如果用户的学习步骤不足， 则添加缺失的学习步骤
      *
-     * @param clientType
      * @param userId
      */
-    public void initUserStudySteps(ClientType clientType, String userId) {
+    public void initUserStudySteps(String userId) {
         // 如果用户的学习步骤不足， 则添加缺失的学习步骤
         List<UserStudyStep> userStudySteps = getUserStudySteps(userId);
         List<StudyStep> existingSteps = userStudySteps.stream().map(UserStudyStep::getStudyStep).collect(Collectors.toList());

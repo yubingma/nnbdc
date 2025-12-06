@@ -735,7 +735,7 @@ public class UserBo extends BaseBo<User> {
             loginLogBo.createEntity(loginLog);
 
             // 如果用户还没有学习步骤数据，创建之
-            userStudyStepBo.initUserStudySteps(clientType, user.getId());
+            userStudyStepBo.initUserStudySteps(user.getId());
             return new Result<>(true,
                     null, user);
         } else {
@@ -1173,7 +1173,7 @@ public class UserBo extends BaseBo<User> {
             loginLogBo.createEntity(loginLog);
 
             // 如果用户还没有学习步骤数据，创建之
-            userStudyStepBo.initUserStudySteps(clientType, user.getId());
+            userStudyStepBo.initUserStudySteps(user.getId());
 
             return new Result<>(true, "登录成功", user);
 

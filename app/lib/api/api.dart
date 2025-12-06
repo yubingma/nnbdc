@@ -518,6 +518,9 @@ abstract class RestClient {
   @GET("/admin/checkCommonDictIntegrity.do")
   Future<Result<SystemHealthCheckResult>> checkCommonDictIntegrity();
 
+  @GET("/admin/checkUserStudySteps.do")
+  Future<Result<SystemHealthCheckResult>> checkUserStudySteps();
+
   @POST("/admin/autoFixSystemIssues.do")
   @FormUrlEncoded()
   Future<Result<SystemHealthFixResult>> autoFixSystemIssues(

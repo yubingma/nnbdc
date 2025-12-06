@@ -199,6 +199,15 @@ public class SystemController {
     }
 
     /**
+     * 检查所有用户的学习步骤完整性
+     */
+    @GetMapping("/admin/checkUserStudySteps.do")
+    public Result<SystemHealthCheckResult> checkUserStudySteps() {
+        SystemHealthCheckResult result = systemHealthCheckBo.checkUserStudySteps();
+        return Result.success(result);
+    }
+
+    /**
      * 自动修复系统问题
      */
     @PostMapping("/admin/autoFixSystemIssues.do")
