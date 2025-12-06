@@ -192,7 +192,7 @@ class MyDatabase extends _$MyDatabase {
       // 注意：SQLite 中需要使用 CASE 语句或者直接 SET popularity_limit = NULL
       await customStatement('''
         UPDATE dicts 
-        SET popularity_limit = NULL 
+        SET popularity_limit = 5 
         WHERE popularity_limit = 0
       ''');
 
@@ -209,7 +209,7 @@ class MyDatabase extends _$MyDatabase {
           final popularityLimit = recordJson['popularityLimit'];
           // 如果值为 0，将其设置为 null
           if (popularityLimit == 0) {
-            recordJson['popularityLimit'] = null;
+            recordJson['popularityLimit'] = 5;
 
             // 更新记录
             await (update(userDbLogs)..where((l) => l.id.equals(log.id))).write(UserDbLogsCompanion(
