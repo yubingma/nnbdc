@@ -876,11 +876,11 @@ class Util {
       'learning_dict': 'learningDicts',
       'user': 'users',
       'book_mark': 'bookMarks',
-      // 'user_stage_word': 'userStageWords', // UserStageWords table has been removed
       'mastered_word': 'masteredWords',
       'user_cow_dung_log': 'userCowDungLogs',
       'user_wrong_word': 'userWrongWords',
       'dict_word': 'dictWords',
+      'dict': 'dicts',
     };
 
     if (specialMappings.containsKey(remoteTableName)) {
