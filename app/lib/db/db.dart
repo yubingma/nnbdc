@@ -3,6 +3,8 @@ import 'package:drift/drift.dart';
 import 'package:nnbdc/db/dao.dart';
 import 'package:nnbdc/db/table.dart';
 import 'package:nnbdc/db/shared.dart';
+import 'package:nnbdc/global.dart';
+import 'package:nnbdc/util/toast_util.dart';
 
 part 'db.g.dart';
 
@@ -102,28 +104,32 @@ class MyDatabase extends _$MyDatabase {
   MigrationStrategy get migration {
     return MigrationStrategy(
       onCreate: (Migrator m) async {
-        // 创建系统所有表
-        await m.createAll();
-
-        // 创建性能优化索引（新安装时直接创建）
-        await _createPerformanceIndexes();
-
-        // 初始化数据
-        await batch((b) {
-          b.insertAll(localParams, [
-            LocalParamsCompanion.insert(name: 'isDarkMode', value: 'false'),
-          ]);
-        });
+        // 创建表、索引和初始化数据
+        await _initializeDatabaseSchema(m);
       },
 
       onUpgrade: (Migrator m, int from, int to) async {
-        // 从版本 1 升级到版本 2：更新 studyStep 字段值
-        if (from < 2) {
-          await _migrateStudyStepFromV1ToV2();
-        }
-        // 从版本 2 升级到版本 3：修复 dicts 表中 popularityLimit 的 0 值
-        if (from < 3) {
-          await _migratePopularityLimitFromV2ToV3();
+        try {
+          // 从版本 1 升级到版本 2：更新 studyStep 字段值
+          if (from < 2) {
+            await _migrateStudyStepFromV1ToV2();
+          }
+          // 从版本 2 升级到版本 3：修复 dicts 表中 popularityLimit 的 0 值
+          if (from < 3) {
+            await _migratePopularityLimitFromV2ToV3();
+          }
+        } catch (e, stackTrace) {
+          // 升级失败，记录错误日志
+          Global.logger.e('❌ 数据库升级失败，将删除所有表并重建: $e', error: e, stackTrace: stackTrace);
+          
+          // 给用户提示
+          _showDatabaseRebuildNotification();
+          
+          // 删除所有表并重建
+          await _recreateDatabaseOnUpgradeFailure(m);
+          
+          // 重建完成后提示用户
+          _showDatabaseRebuildSuccessNotification();
         }
       },
       
@@ -234,6 +240,30 @@ class MyDatabase extends _$MyDatabase {
         }
       }
     });
+  }
+
+  /// 初始化数据库架构（创建表、索引和基础数据）
+  /// 
+  /// 此方法会：
+  /// 1. 创建所有表
+  /// 2. 创建性能优化索引
+  /// 3. 初始化基础数据
+  Future<void> _initializeDatabaseSchema(Migrator m) async {
+    // 1. 创建系统所有表
+    await m.createAll();
+    Global.logger.i('✅ 创建所有表完成');
+
+    // 2. 创建性能优化索引
+    await _createPerformanceIndexes();
+    Global.logger.i('✅ 创建性能优化索引完成');
+
+    // 3. 初始化基础数据
+    await batch((b) {
+      b.insertAll(localParams, [
+        LocalParamsCompanion.insert(name: 'isDarkMode', value: 'false'),
+      ]);
+    });
+    Global.logger.i('✅ 初始化基础数据完成');
   }
 
   /// 创建性能优化索引的共用方法
@@ -359,6 +389,82 @@ class MyDatabase extends _$MyDatabase {
       await delete(users).go();
 
       await customStatement('PRAGMA foreign_keys = ON');
+    });
+  }
+
+  /// 在升级失败时，删除所有表并重建数据库
+  /// 
+  /// 此方法会：
+  /// 1. 删除所有现有的表（包括表结构）
+  /// 2. 重新创建所有表
+  /// 3. 创建性能优化索引
+  /// 4. 初始化基础数据
+  Future<void> _recreateDatabaseOnUpgradeFailure(Migrator m) async {
+    Global.logger.i('🔄 开始重建数据库...');
+    
+    try {
+      // 1. 获取所有表名并删除
+      final tables = await customSelect(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'",
+        readsFrom: {},
+      ).get();
+      
+      await transaction(() async {
+        // 关闭外键约束
+        await customStatement('PRAGMA foreign_keys = OFF');
+        
+        // 删除所有表（使用 IF EXISTS 避免表不存在时的错误）
+        for (final table in tables) {
+          final tableName = table.data['name'] as String;
+          if (tableName.isEmpty) continue;
+          
+          try {
+            // 使用参数化查询避免 SQL 注入（虽然表名来自系统表，但为了安全还是使用引号）
+            await customStatement('DROP TABLE IF EXISTS "$tableName"');
+            Global.logger.d('🗑️ 删除表: $tableName');
+          } catch (e) {
+            Global.logger.w('⚠️ 删除表失败: $tableName - $e');
+            // 继续删除其他表，不因单个表删除失败而中断
+          }
+        }
+        
+        // 重新启用外键约束
+        await customStatement('PRAGMA foreign_keys = ON');
+      });
+      
+      // 2. 重新创建表、索引和初始化数据
+      await _initializeDatabaseSchema(m);
+      
+      Global.logger.i('🎉 数据库重建完成');
+    } catch (e, stackTrace) {
+      Global.logger.e('❌ 重建数据库失败: $e', error: e, stackTrace: stackTrace);
+      // 重建失败时也提示用户
+      _showDatabaseRebuildFailureNotification();
+      rethrow;
+    }
+  }
+
+  /// 显示数据库重建通知（开始重建时）
+  void _showDatabaseRebuildNotification() {
+    // 使用 Future.microtask 确保在 UI 初始化完成后再显示提示
+    Future.microtask(() {
+      ToastUtil.info('数据库升级失败，正在重建本地数据库...');
+    });
+  }
+
+  /// 显示数据库重建成功通知
+  void _showDatabaseRebuildSuccessNotification() {
+    // 使用 Future.microtask 确保在 UI 初始化完成后再显示提示
+    Future.microtask(() {
+      ToastUtil.success('本地数据库重建完成，请重新登录以同步数据');
+    });
+  }
+
+  /// 显示数据库重建失败通知
+  void _showDatabaseRebuildFailureNotification() {
+    // 使用 Future.microtask 确保在 UI 初始化完成后再显示提示
+    Future.microtask(() {
+      ToastUtil.error('数据库重建失败，请重启应用');
     });
   }
 }
