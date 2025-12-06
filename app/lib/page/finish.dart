@@ -81,23 +81,35 @@ class FinishPageState extends State<FinishPage> with TickerProviderStateMixin {
       }*/
     }
 
-    dakaResult = await StudyBo().saveDakaRecord("好好学习，天天向上");
-    if (dakaResult.success) {
-      var user = await UserBo().getLoggedInUser();
-      await Global.setLoggedInUser(user.data!);
+    // 检查是否从页面查看器进入，如果是则跳过打卡逻辑
+    final arguments = Get.arguments;
+    final isFromPageViewer = arguments is Map && arguments['fromPageViewer'] == true;
+    
+    if (!isFromPageViewer) {
+      // 正常流程：执行打卡逻辑
+      dakaResult = await StudyBo().saveDakaRecord("好好学习，天天向上");
+      if (dakaResult.success) {
+        var user = await UserBo().getLoggedInUser();
+        await Global.setLoggedInUser(user.data!);
 
-      // 记录用户打卡操作
-      await MyDatabase.instance.userOpersDao.recordDaka(user.data!.id!, remark: "用户完成打卡，获得1积分");
+        // 记录用户打卡操作
+        await MyDatabase.instance.userOpersDao.recordDaka(user.data!.id!, remark: "用户完成打卡，获得1积分");
 
-      todayDakaScore = 1; // 每天固定1分
+        todayDakaScore = 1; // 每天固定1分
 
-      var result = await StudyBo().throwDiceAndSave();
-      if (result.success) {
-        cowDung = result.data!;
-        // 不再播放特殊声音，因为不再有翻倍机制
-      } else {
-        ToastUtil.error(result.msg!);
+        var result = await StudyBo().throwDiceAndSave();
+        if (result.success) {
+          cowDung = result.data!;
+          // 不再播放特殊声音，因为不再有翻倍机制
+        } else {
+          ToastUtil.error(result.msg!);
+        }
       }
+    } else {
+      // 从页面查看器进入：跳过打卡，初始化默认值
+      dakaResult = Result("SKIP", "页面查看器模式，跳过打卡", false);
+      todayDakaScore = 0;
+      cowDung = 0;
     }
 
     setState(() {

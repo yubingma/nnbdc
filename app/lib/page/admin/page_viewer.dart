@@ -59,7 +59,12 @@ class _PageViewerPageState extends State<PageViewerPage> {
 
   void _navigateToPage(String route) {
     try {
-      Get.toNamed(route);
+      // 如果是finish页面，传递标志表示从页面查看器进入，避免触发打卡
+      if (route == '/finish') {
+        Get.toNamed(route, arguments: {'fromPageViewer': true});
+      } else {
+        Get.toNamed(route);
+      }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
