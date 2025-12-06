@@ -835,6 +835,15 @@ public class UserBo extends BaseBo<User> {
 
     @Transactional
     public void adjustCowDung(User user, int delta, String reason) throws IllegalAccessException {
+        // 如果传入的 User 对象是部分加载的（只有 id，其他字段为 null），需要重新加载完整对象
+        if (user.getCowDung() == null && user.getId() != null) {
+            String userId = user.getId();
+            user = findById(userId);
+            if (user == null) {
+                throw new IllegalAccessException("用户不存在: " + userId);
+            }
+        }
+        
         UserCowDungLogBo bo = userCowDungLogBo;
         int currCowDung = user.getCowDung();
         UserCowDungLog userCowDungLog = new UserCowDungLog(user, delta, currCowDung + delta,
