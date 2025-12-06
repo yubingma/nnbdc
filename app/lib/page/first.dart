@@ -1177,7 +1177,7 @@ endlocal
                       Padding(
                         padding: const EdgeInsets.only(bottom: 16),
                         child: Text(
-                          '版本 $_buildNumber -> $newVerCode',
+                          '版本 $_buildNumber ➜ $newVerCode',
                           style: const TextStyle(
                             fontSize: 14,
                             color: Colors.white,
