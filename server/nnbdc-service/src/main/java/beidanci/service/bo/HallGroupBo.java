@@ -79,32 +79,60 @@ public class HallGroupBo extends BaseBo<HallGroup> {
 
     /**
      * 批量加载 GameHall 的 dictGroup 对象
+     * 递归加载所有嵌套的父分组（dictGroup.dictGroup）
      */
     private void loadDictGroupsForGameHalls(List<GameHall> gameHalls) {
         if (gameHalls == null || gameHalls.isEmpty()) {
             return;
         }
 
-        // 收集所有 dictGroupId
-        Set<String> dictGroupIds = new HashSet<>();
+        // 收集所有 dictGroupId（包括嵌套的父分组ID）
+        Set<String> allDictGroupIds = new HashSet<>();
+        Set<String> currentLevelIds = new HashSet<>();
         for (GameHall gameHall : gameHalls) {
             if (gameHall.getDictGroup() != null && gameHall.getDictGroup().getId() != null) {
-                dictGroupIds.add(gameHall.getDictGroup().getId());
+                currentLevelIds.add(gameHall.getDictGroup().getId());
+            }
+        }
+        allDictGroupIds.addAll(currentLevelIds);
+
+        // 递归收集所有父分组的ID
+        while (!currentLevelIds.isEmpty()) {
+            String sql = "SELECT DISTINCT parentId FROM dict_group WHERE id IN (:ids) AND parentId IS NOT NULL";
+            MapSqlParameterSource params = new MapSqlParameterSource("ids", new ArrayList<>(currentLevelIds));
+            List<String> parentIds = namedParameterJdbcTemplate.queryForList(sql, params, String.class);
+            
+            currentLevelIds.clear();
+            for (String parentId : parentIds) {
+                if (parentId != null && !allDictGroupIds.contains(parentId)) {
+                    currentLevelIds.add(parentId);
+                    allDictGroupIds.add(parentId);
+                }
             }
         }
 
-        if (dictGroupIds.isEmpty()) {
+        if (allDictGroupIds.isEmpty()) {
             return;
         }
 
-        // 批量查询 DictGroup
+        // 批量查询所有需要的 DictGroup（包括嵌套的父分组）
         String sql = "SELECT * FROM dict_group WHERE id IN (:ids)";
-        MapSqlParameterSource params = new MapSqlParameterSource("ids", new ArrayList<>(dictGroupIds));
+        MapSqlParameterSource params = new MapSqlParameterSource("ids", new ArrayList<>(allDictGroupIds));
         List<DictGroup> dictGroups = namedParameterJdbcTemplate.query(sql, params,
                 new EntityRowMapper<>(DictGroup.class));
 
         Map<String, DictGroup> dictGroupMap = dictGroups.stream()
                 .collect(Collectors.toMap(DictGroup::getId, dg -> dg));
+
+        // 为每个 DictGroup 设置完整的父分组对象
+        for (DictGroup dictGroup : dictGroups) {
+            if (dictGroup.getDictGroup() != null && dictGroup.getDictGroup().getId() != null) {
+                DictGroup parentDictGroup = dictGroupMap.get(dictGroup.getDictGroup().getId());
+                if (parentDictGroup != null) {
+                    dictGroup.setDictGroup(parentDictGroup);
+                }
+            }
+        }
 
         // 为每个 GameHall 设置完整的 DictGroup 对象
         for (GameHall gameHall : gameHalls) {
