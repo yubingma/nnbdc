@@ -106,7 +106,10 @@ void main() async {
           // 初始化加载服务
           Api.loadingService.init();
 
+          // 初始化数据库并确保数据库完整性
           MyDatabase.instance;
+          await MyDatabase.ensureDatabaseIntegrity();
+          
           // SocketIoClient改为延迟连接，只在需要时才连接（如进入russia页面）
           LocalWordCache.instance;
 

@@ -782,6 +782,9 @@ class LoginPageState extends State<LoginPage> {
       String version = packageInfo.version;
       String buildNumber = packageInfo.buildNumber;
       String profile = Config.profileName;
+      
+      // 获取数据库版本号
+      int dbVersion = MyDatabase.instance.schemaVersion;
 
       if (!mounted) return;
 
@@ -799,6 +802,8 @@ class LoginPageState extends State<LoginPage> {
                 Text('构建号: $buildNumber'),
                 const SizedBox(height: 8),
                 Text('Profile: $profile'),
+                const SizedBox(height: 8),
+                Text('数据库版本: $dbVersion'),
               ],
             ),
             actions: [

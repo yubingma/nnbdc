@@ -1,5 +1,8 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:drift/drift.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import 'package:nnbdc/db/dao.dart';
 import 'package:nnbdc/db/table.dart';
 import 'package:nnbdc/db/shared.dart';
@@ -93,6 +96,50 @@ class MyDatabase extends _$MyDatabase {
       _instance = null;
     }
   }
+
+  /// 确保数据库完整性，如果检测到表缺失会自动重建
+  ///
+  /// 此方法会检查关键表是否存在，如果不存在则自动重建数据库
+  /// 应该在应用启动时调用，确保数据库在使用前是完整的
+  static Future<void> ensureDatabaseIntegrity() async {
+    try {
+      final db = instance;
+      
+      // 先触发数据库打开（如果还没打开的话），确保迁移已完成
+      try {
+        await db.customSelect('SELECT 1', readsFrom: {}).get();
+      } catch (e) {
+        // 如果数据库打开失败，可能表不存在，继续检查
+      }
+      
+      // 检查关键表是否存在（通过查询 sqlite_master 来判断）
+      try {
+        final tables = await db.customSelect(
+          "SELECT name FROM sqlite_master WHERE type='table' AND name='users'",
+          readsFrom: {},
+        ).get();
+        
+        // 如果查询返回结果，说明表存在，数据库完整
+        if (tables.isNotEmpty) {
+          Global.logger.d('✅ 数据库完整性检查通过');
+          return;
+        }
+      } catch (e) {
+        // 如果查询失败，可能是表不存在或其他问题
+        Global.logger.d('数据库完整性检查查询失败: $e');
+      }
+      
+      // 如果表不存在，自动重建数据库
+      // 直接使用 wipeAllTables 进行完整重建，确保表结构正确
+      Global.logger.w('⚠️ 检测到数据库表缺失，自动重建数据库...');
+      await db.wipeAllTables();
+      Global.logger.i('✅ 数据库自动重建完成');
+    } catch (e, stackTrace) {
+      Global.logger.e('❌ 数据库完整性检查失败: $e', error: e, stackTrace: stackTrace);
+      // 不抛出异常，让应用继续启动
+    }
+  }
+
 
   // we tell the database where to store the data with this constructor
   //MyDatabase() : super(_openConnection());
@@ -234,6 +281,7 @@ class MyDatabase extends _$MyDatabase {
     Global.logger.i('✅ 创建 local_exceptions 表完成');
   }
 
+
   /// 初始化数据库架构（创建表、索引和基础数据）
   ///
   /// 此方法会：
@@ -331,59 +379,108 @@ class MyDatabase extends _$MyDatabase {
   /// 将会清空数据库中所有表的数据，包括登录信息与本地设置。
   /// 注意：调用后应用将回到近似初始安装状态。
   Future<void> wipeLocalData() async {
-    // 直接复用全清逻辑，保持与“重新安装”效果一致
+    // 直接复用全清逻辑，保持与"重新安装"效果一致
     await wipeAllTables();
   }
 
-  /// 清空数据库中所有表的数据（包括用户与本地设置）
-  /// 使用后应用将回到近似初始安装状态
+  /// 删除所有表并重建数据库（使用最新的数据库表结构）
+  ///
+  /// 此方法会：
+  /// 1. 删除所有现有的表（包括表结构）
+  /// 2. 删除 drift_schema 表以触发 onCreate
+  /// 3. 重新创建所有表
+  /// 4. 创建性能优化索引
+  /// 5. 初始化基础数据
+  ///
+  /// 使用后应用将回到近似初始安装状态，但表结构是最新的
   Future<void> wipeAllTables() async {
+    Global.logger.i('🔄 开始删除所有表并重建数据库...');
+
+    try {
+      // 1. 关闭数据库连接
+      final wasCurrentInstance = (_instance == this);
+      if (wasCurrentInstance) {
+        close();
+        _instance = null;
+      }
+
+      // 2. 删除数据库文件，确保重新创建时触发 onCreate
+      // 这是最可靠的方法，因为删除文件后重新创建会确保 onCreate 被触发
+      try {
+        final dbFolder = await getApplicationDocumentsDirectory();
+        final dbFile = File(p.join(dbFolder.path, 'db.sqlite'));
+        if (await dbFile.exists()) {
+          await dbFile.delete();
+          Global.logger.i('🗑️ 删除数据库文件: ${dbFile.path}');
+        }
+      } catch (e) {
+        Global.logger.w('删除数据库文件失败: $e，尝试删除表...');
+        // 如果删除文件失败（可能文件被锁定），尝试删除表
+        // 需要先创建一个临时实例来删除表
+        final tempDb = constructDb();
+        try {
+          await tempDb._dropAllTables();
+          tempDb.close();
+        } catch (e2) {
+          Global.logger.w('删除表也失败: $e2');
+          tempDb.close();
+        }
+      }
+
+      // 3. 重新创建数据库实例，这会触发 onCreate
+      final newDb = constructDb();
+      if (wasCurrentInstance) {
+        _instance = newDb;
+      }
+
+      // 4. 通过执行一个查询来触发数据库打开和迁移
+      // 由于数据库文件不存在，Drift 会调用 onCreate 回调，并同步等待其完成
+      await newDb.customSelect('SELECT 1', readsFrom: {}).get();
+
+      Global.logger.i('🎉 数据库重建完成');
+    } catch (e, stackTrace) {
+      Global.logger.e('❌ 重建数据库失败: $e', error: e, stackTrace: stackTrace);
+      rethrow;
+    }
+  }
+
+  /// 删除所有表的通用方法
+  Future<void> _dropAllTables() async {
+    // 获取所有表名并删除
+    final tables = await customSelect(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'",
+      readsFrom: {},
+    ).get();
+
     await transaction(() async {
+      // 关闭外键约束
       await customStatement('PRAGMA foreign_keys = OFF');
 
-      // 先清理强依赖子表（按依赖层级从深到浅）
-      await delete(votedSentences).go(); // 依赖 users, sentences
-      await delete(votedChineses).go(); // 依赖 users, wordShortDescChineses
-      await delete(votedWordImages).go(); // 依赖 users, wordImages
-      await delete(synonyms).go(); // 依赖 meaningItems, words
-      await delete(sentences).go(); // 依赖 meaningItems
-      await delete(meaningItems).go(); // 依赖 words, dicts(可选)
-      await delete(dictWords).go(); // 依赖 dicts, words
-      await delete(wordImages).go(); // 依赖 words
-      await delete(verbTenses).go(); // 依赖 words
-      await delete(similarWords).go(); // 依赖 words
-      await delete(cigenWordLinks).go(); // 依赖 cigens, words
-      await delete(cigens).go();
-      await delete(wordShortDescChineses).go(); // 依赖 words
+      // 删除所有表（使用 IF EXISTS 避免表不存在时的错误）
+      for (final table in tables) {
+        final tableName = table.data['name'] as String;
+        if (tableName.isEmpty) continue;
 
-      await delete(learningWords).go();
-      await delete(masteredWords).go();
-      await delete(userWrongWords).go();
-      await delete(bookMarks).go();
-      await delete(userStudySteps).go();
-      await delete(dakas).go();
-      await delete(userOpers).go();
-      await delete(userCowDungLogs).go();
+        // 使用参数化查询避免 SQL 注入（虽然表名来自系统表，但为了安全还是使用引号）
+        await customStatement('DROP TABLE IF EXISTS "$tableName"');
+        Global.logger.d('🗑️ 删除表: $tableName');
+      }
 
-      await delete(learningDicts).go();
-      await delete(groupAndDictLinks).go(); // 依赖 dictGroups 和 dicts，需先删
-      await delete(dicts).go();
+      // 删除 Drift 的内部版本表，这样重新打开数据库时会触发 onCreate
+      await customStatement('DROP TABLE IF EXISTS "drift_schema"');
+      Global.logger.d('🗑️ 删除 drift_schema 表');
 
-      await delete(userDbLogs).go();
-      await delete(userDbVersions).go();
-
-      await delete(localExceptions).go(); // 本地异常记录
-
-      await delete(words).go();
-      await delete(levels).go();
-      await delete(dictGroups).go();
-      await delete(sysDbVersion).go();
-      await delete(localParams).go();
-      await delete(users).go();
-
+      // 重新启用外键约束
       await customStatement('PRAGMA foreign_keys = ON');
     });
   }
+
+  /// 重建所有表的通用方法（需要 Migrator）
+  Future<void> _recreateAllTablesWithMigrator(Migrator m) async {
+    // 重新创建表、索引和初始化数据
+    await _initializeDatabaseSchema(m);
+  }
+
 
   /// 在升级失败时，删除所有表并重建数据库
   ///
@@ -396,32 +493,11 @@ class MyDatabase extends _$MyDatabase {
     Global.logger.i('🔄 开始重建数据库...');
 
     try {
-      // 1. 获取所有表名并删除
-      final tables = await customSelect(
-        "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'",
-        readsFrom: {},
-      ).get();
-
-      await transaction(() async {
-        // 关闭外键约束
-        await customStatement('PRAGMA foreign_keys = OFF');
-
-        // 删除所有表（使用 IF EXISTS 避免表不存在时的错误）
-        for (final table in tables) {
-          final tableName = table.data['name'] as String;
-          if (tableName.isEmpty) continue;
-
-          // 使用参数化查询避免 SQL 注入（虽然表名来自系统表，但为了安全还是使用引号）
-          await customStatement('DROP TABLE IF EXISTS "$tableName"');
-          Global.logger.d('🗑️ 删除表: $tableName');
-        }
-
-        // 重新启用外键约束
-        await customStatement('PRAGMA foreign_keys = ON');
-      });
+      // 1. 删除所有表
+      await _dropAllTables();
 
       // 2. 重新创建表、索引和初始化数据
-      await _initializeDatabaseSchema(m);
+      await _recreateAllTablesWithMigrator(m);
 
       Global.logger.i('🎉 数据库重建完成');
     } catch (e, stackTrace) {
@@ -434,7 +510,6 @@ class MyDatabase extends _$MyDatabase {
 
   /// 显示数据库重建通知（开始重建时）
   void _showDatabaseRebuildNotification() {
-    // 使用 Future.microtask 确保在 UI 初始化完成后再显示提示
     Future.microtask(() {
       ToastUtil.info('数据库升级失败，正在重建本地数据库...');
     });

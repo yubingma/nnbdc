@@ -1843,8 +1843,8 @@ class _MePageState extends State<MePage> {
       builder: (context) {
         return AlertDialog(
           backgroundColor: isDarkModeEnabled ? const Color(0xFF2D2D2D) : Colors.white,
-          title: const Text('确认清空所有表'),
-          content: const Text('此操作将清空本地所有数据，应用将回到初始状态，是否继续？'),
+          title: const Text('确认重建数据库'),
+          content: const Text('此操作将清除所有本地数据并重建数据库，应用将回到初始状态，是否继续？'),
           actions: [
             TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('取消')),
             TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('继续')),
@@ -1857,11 +1857,11 @@ class _MePageState extends State<MePage> {
       await ErrorHandler.safeExecute(
         () async {
           await MyDatabase.instance.wipeAllTables();
-          ToastUtil.info('已清空所有表');
-          // 清空后跳转到登录页面
+          ToastUtil.info('已重建数据库');
+          // 重建后跳转到登录页面
           Get.offAllNamed('/email_login');
         },
-        operationName: '清空所有表',
+        operationName: '重建数据库',
       );
     }
   }

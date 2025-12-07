@@ -104,6 +104,21 @@ class ErrorHandler {
     _databaseErrorCount++;
     _recordErrorStats('database_${operation ?? "unknown"}');
     
+    // 检测是否是表不存在的错误，如果是则自动重建数据库
+    if (_isTableNotFoundError(error)) {
+      Global.logger.w('⚠️ 检测到表不存在错误，自动重建数据库...');
+      try {
+        // 直接调用 wipeAllTables 来重建数据库
+        await MyDatabase.instance.wipeAllTables();
+        Global.logger.i('✅ 数据库自动重建完成');
+        // 重建后不显示错误提示，让操作可以重试
+        return;
+      } catch (e, st) {
+        Global.logger.e('❌ 自动重建数据库失败: $e', error: e, stackTrace: st);
+        // 如果重建失败，继续正常的错误处理流程
+      }
+    }
+    
     // 增强日志输出，确保能看到错误信息
     final errorMessage = '数据库操作失败: ${operation ?? "未知操作"}';
 
@@ -123,6 +138,12 @@ class ErrorHandler {
       final userMessage = '数据操作失败，请稍后重试';
       ToastUtil.error(userMessage);
     }
+  }
+
+  /// 判断是否是表不存在的错误
+  static bool _isTableNotFoundError(Object error) {
+    return error.runtimeType.toString().contains('SqliteException') && 
+           error.toString().contains('no such table');
   }
 
   static bool _isForeignKeyConstraintError(Object error) {
