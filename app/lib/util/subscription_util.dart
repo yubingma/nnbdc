@@ -73,14 +73,29 @@ class SubscriptionUtil {
     try {
       final ProductDetailsResponse response = await _iap.queryProductDetails(_productIds);
       
+      // 检查是否有未找到的产品
       if (response.notFoundIDs.isNotEmpty) {
         Global.logger.w('未找到产品: ${response.notFoundIDs}');
-        // 提示用户检查产品配置
+        
+        // 如果所有产品都未找到，提供详细提示
         if (response.notFoundIDs.length == _productIds.length) {
-          ToastUtil.info('未找到订阅产品，请检查App Store Connect配置或使用真实设备测试');
+          String missingProducts = response.notFoundIDs.join(', ');
+          ToastUtil.error(
+            '订阅产品未找到：$missingProducts\n\n'
+            '可能原因：\n'
+            '1. App Store Connect 中产品状态为"元数据丢失"\n'
+            '2. 产品未关联到 App 版本并提交审核\n'
+            '3. 需要在真实设备上测试（模拟器不支持）\n\n'
+            '请检查 App Store Connect 中的产品配置'
+          );
+        } else {
+          // 部分产品未找到
+          String missingProducts = response.notFoundIDs.join(', ');
+          ToastUtil.info('部分产品未找到：$missingProducts');
         }
       }
       
+      // 检查是否有错误
       if (response.error != null) {
         final error = response.error!;
         Global.logger.e('查询产品失败', error: error);
@@ -88,9 +103,18 @@ class SubscriptionUtil {
         // 针对常见错误提供更友好的提示
         String errorMessage = '获取订阅信息失败';
         if (error.code == 'storekit_no_response') {
-          errorMessage = '无法连接到App Store\n请使用真实设备测试（模拟器不支持）\n或检查网络连接和App Store Connect配置';
+          errorMessage = '无法连接到 App Store\n\n'
+              '请检查：\n'
+              '1. 使用真实设备测试（模拟器不支持）\n'
+              '2. 设备已登录 Apple ID\n'
+              '3. App Store Connect 中产品元数据完整\n'
+              '4. 产品已关联到 App 版本';
         } else if (error.code == 'storekit_product_not_available') {
-          errorMessage = '订阅产品暂不可用\n请检查App Store Connect中的产品配置';
+          errorMessage = '订阅产品暂不可用\n\n'
+              '请检查 App Store Connect：\n'
+              '1. 产品状态是否为"准备提交"或"已批准"\n'
+              '2. 产品元数据是否完整\n'
+              '3. 产品是否已关联到 App 版本';
         } else {
           errorMessage = '获取订阅信息失败：${error.message}';
         }
@@ -99,6 +123,7 @@ class SubscriptionUtil {
         return [];
       }
 
+      // 如果部分产品找到，返回找到的产品
       return response.productDetails;
     } catch (e, stackTrace) {
       Global.logger.e('查询产品异常', error: e, stackTrace: stackTrace);
