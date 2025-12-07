@@ -237,20 +237,11 @@ class SoundUtil {
     double volume,
   ) async {
     try {
-      // 在 Android 上设置 AudioContext 以支持在录音时播放音效
-      // Android 需要单独配置音频焦点，才能在录音（AudioRecord）的同时播放音效
-      if (PlatformUtils.isAndroid) {
-        await player.setAudioContext(AudioContext(
-          android: AudioContextAndroid(
-            audioFocus: AndroidAudioFocus.gainTransientMayDuck,
-            contentType: AndroidContentType.sonification,
-            usageType: AndroidUsageType.assistanceSonification,
-            isSpeakerphoneOn: true,
-            stayAwake: false,
-          ),
-        ));
-      }
-
+      // iOS 上不设置 AudioContext，保持原有行为以确保正常工作
+      // Android 上也不设置 AudioContext，与 playAssetSound 保持一致，确保能正常播放
+      // 虽然理论上 Android 在录音时需要 AudioContext 才能在录音时播放音效，
+      // 但实际测试发现设置 AudioContext 会导致音频无法播放，而不设置反而能正常工作
+      
       await player.setPlaybackRate(speed);
       await player.setVolume(volume);
 
@@ -263,7 +254,17 @@ class SoundUtil {
       await player.play(AssetSource('audio/$soundFileName'));
 
       // 等待播放完成，避免立即释放播放器
-      await player.onPlayerComplete.first;
+      // 在 Android 上，如果 onPlayerComplete 不触发，使用超时机制确保 Future 能够完成
+      if (PlatformUtils.isAndroid) {
+        // 使用 Future.any 添加超时保护，确保即使 onPlayerComplete 不触发，Future 也能完成
+        // 超时时间设置为 3 秒（correct.mp3 通常播放时间较短）
+        await Future.any([
+          player.onPlayerComplete.first,
+          Future.delayed(Duration(milliseconds: 3000)),
+        ]);
+      } else {
+        await player.onPlayerComplete.first;
+      }
 
       // 添加一个小延迟确保声音完全播放
       await Future.delayed(Duration(milliseconds: 100));
