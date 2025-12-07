@@ -237,6 +237,19 @@ class SoundUtil {
     double volume,
   ) async {
     try {
+      // 在 Android 上设置 AudioContext 以支持在录音时播放音效
+      // Android 需要单独配置音频焦点，才能在录音（AudioRecord）的同时播放音效
+      if (PlatformUtils.isAndroid) {
+        await player.setAudioContext(AudioContext(
+          android: AudioContextAndroid(
+            audioFocus: AndroidAudioFocus.gainTransientMayDuck,
+            contentType: AndroidContentType.sonification,
+            usageType: AndroidUsageType.assistanceSonification,
+            isSpeakerphoneOn: true,
+            stayAwake: false,
+          ),
+        ));
+      }
 
       await player.setPlaybackRate(speed);
       await player.setVolume(volume);
