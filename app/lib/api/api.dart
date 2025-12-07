@@ -615,4 +615,18 @@ abstract class RestClient {
 
   @GET("/getAllFeatureRequestReports.do")
   Future<List<FeatureRequestReportVo>> getAllFeatureRequestReports();
+
+  // 订阅相关API
+  @POST("/verifySubscription.do")
+  @FormUrlEncoded()
+  Future<Result> verifySubscription(
+      @Field("userId") String userId,
+      @Field("receiptData") String receiptData,
+      @Field("productId") String productId,
+      @Field("transactionId") String? transactionId,
+      @Field("platform") String platform);
+
+  @POST("/restoreSubscription.do")
+  @FormUrlEncoded()
+  Future<Result> restoreSubscription(@Field("userId") String userId);
 }

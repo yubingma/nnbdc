@@ -211,6 +211,21 @@ class UserVo {
 
   bool? enableAllWrong;
 
+  /// 订阅相关字段（按平台区分，符合苹果和Google Play规则）
+  
+  // iOS订阅字段
+  /// iOS是否为会员
+  bool? isPremiumIOS;
+  
+  /// iOS订阅到期时间
+  DateTime? subscriptionExpireDateIOS;
+  
+  /// iOS订阅类型：monthly/annual
+  String? subscriptionTypeIOS;
+  
+  /// iOS订阅状态：active/expired/cancelled
+  String? subscriptionStatusIOS;
+
   UserVo(this.id, this.userName);
 
   UserVo.c2(this.id);
@@ -252,6 +267,12 @@ class UserVo {
     userVo.totalScore = user.totalScore;
     userVo.dakaRatio = user.dakaRatio;
     userVo.enableAllWrong = user.enableAllWrong;
+    
+    // 订阅相关字段（iOS平台）
+    userVo.isPremiumIOS = user.isPremiumIOS;
+    userVo.subscriptionExpireDateIOS = user.subscriptionExpireDateIOS;
+    userVo.subscriptionTypeIOS = user.subscriptionTypeIOS;
+    userVo.subscriptionStatusIOS = user.subscriptionStatusIOS;
 
     userVo.password = user.password;
     userVo.lastLoginTime = user.lastLoginTime;
@@ -1196,7 +1217,13 @@ User userVo2User(UserVo userVo) {
       lastLearningPosition: userVo.lastLearningPosition,
       lastLoginTime: userVo.lastLoginTime,
       lastShareTime: userVo.lastShareTime,
-      nickName: userVo.nickName);
+      nickName: userVo.nickName,
+      // 订阅相关字段（iOS平台）
+      isPremiumIOS: userVo.isPremiumIOS ?? false,
+      subscriptionExpireDateIOS: userVo.subscriptionExpireDateIOS,
+      subscriptionTypeIOS: userVo.subscriptionTypeIOS,
+      subscriptionStatusIOS: userVo.subscriptionStatusIOS,
+      lastReceiptDataIOS: null); // 收据数据不从前端传输
 
   return user;
 }

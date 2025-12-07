@@ -27,6 +27,9 @@ import 'package:nnbdc/page/admin/health_check.dart';
 import 'package:nnbdc/page/admin/page_viewer.dart';
 import 'package:nnbdc/page/admin/exception_log_viewer.dart';
 import 'package:nnbdc/page/feature_request_wall.dart';
+import 'package:nnbdc/page/subscription.dart';
+import 'package:nnbdc/util/subscription_util.dart';
+import 'package:nnbdc/util/platform_util.dart';
 
 import '../global.dart';
 import '../state.dart';
@@ -694,6 +697,109 @@ class _MePageState extends State<MePage> {
             ],
           ),
         ),
+
+        // 订阅会员卡片（仅iOS平台显示）
+        if (PlatformUtils.isIOS)
+          GestureDetector(
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const SubscriptionPage(),
+                ),
+              ).then((_) {
+                // 返回时刷新用户信息
+                loadData();
+              });
+            },
+            child: Container(
+              margin: EdgeInsets.symmetric(
+                vertical: MediaQuery.of(context).size.width > 600 ? 8 : 6,
+              ),
+              padding: EdgeInsets.all(MediaQuery.of(context).size.width > 600 ? 16 : 12),
+              decoration: BoxDecoration(
+                gradient: SubscriptionUtil.isPremium()
+                    ? LinearGradient(
+                        colors: [
+                          Colors.amber.shade400,
+                          Colors.orange.shade600,
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      )
+                    : null,
+                color: SubscriptionUtil.isPremium() ? null : cardColor,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: isDarkModeEnabled ? Colors.black.withValues(alpha: 0.3) : Colors.grey.withValues(alpha: 0.1),
+                    spreadRadius: 1,
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        SubscriptionUtil.isPremium() ? Icons.star : Icons.star_border,
+                        color: SubscriptionUtil.isPremium() ? Colors.white : AppTheme.primaryColor,
+                        size: 24,
+                      ),
+                      const SizedBox(width: 12),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '订阅会员',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              color: SubscriptionUtil.isPremium() ? Colors.white : textColor,
+                              height: 1.2,
+                              fontFamily: 'NotoSansSC',
+                            ),
+                            textScaler: const TextScaler.linear(1.0),
+                          ),
+                          if (SubscriptionUtil.isPremium()) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              SubscriptionUtil.getSubscriptionType() == 'monthly' ? '月度会员' : '年度会员',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.white.withValues(alpha: 0.9),
+                                fontFamily: 'NotoSansSC',
+                              ),
+                              textScaler: const TextScaler.linear(1.0),
+                            ),
+                          ] else ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              '解锁全部功能',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: isDarkModeEnabled ? Colors.grey[400] : Colors.grey[600],
+                                fontFamily: 'NotoSansSC',
+                              ),
+                              textScaler: const TextScaler.linear(1.0),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
+                  ),
+                  Icon(
+                    Icons.chevron_right,
+                    color: SubscriptionUtil.isPremium()
+                        ? Colors.white.withValues(alpha: 0.8)
+                        : (isDarkModeEnabled ? Colors.grey[400] : const Color(0xFF7F8C8D)),
+                  ),
+                ],
+              ),
+            ),
+          ),
 
         // 统计数据网格
         Container(

@@ -82,6 +82,7 @@ dependencies:
   flutter_native_splash: ^2.4.3 
   fluwx: ^5.7.5  # 微信登录SDK (需要 Kotlin 2.2.21)
   connectivity_plus: ^6.0.5  # 网络连接检测
+  in_app_purchase: ^3.1.11  # iOS/Android 应用内购买
 
   http: any
   uuid: any

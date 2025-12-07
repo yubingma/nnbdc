@@ -191,12 +191,88 @@ public class User extends UuidPo {
     @Column(name = "asrPassRule", length = 10)
     private String asrPassRule;
 
+    /**
+     * 订阅相关字段（仅支持iOS平台）
+     */
+    
+    // iOS订阅字段
+    /**
+     * iOS是否为会员
+     */
+    @Column(name = "isPremiumIOS", nullable = false)
+    private Boolean isPremiumIOS;
+
+    /**
+     * iOS订阅到期时间
+     */
+    @Column(name = "subscriptionExpireDateIOS", nullable = true)
+    private Date subscriptionExpireDateIOS;
+
+    /**
+     * iOS订阅类型：monthly/annual
+     */
+    @Column(name = "subscriptionTypeIOS", length = 20, nullable = true)
+    private String subscriptionTypeIOS;
+
+    /**
+     * iOS订阅状态：active/expired/cancelled
+     */
+    @Column(name = "subscriptionStatusIOS", length = 20, nullable = true)
+    private String subscriptionStatusIOS;
+
+    /**
+     * iOS最后验证的收据数据（用于恢复购买）
+     */
+    @Column(name = "lastReceiptDataIOS", columnDefinition = "TEXT", nullable = true)
+    private String lastReceiptDataIOS;
+
     public Boolean getEnableAllWrong() {
         return enableAllWrong;
     }
 
     public void setEnableAllWrong(Boolean enableAllWrong) {
         this.enableAllWrong = enableAllWrong;
+    }
+
+    // iOS订阅字段的getter/setter
+    public Boolean getIsPremiumIOS() {
+        return isPremiumIOS;
+    }
+
+    public void setIsPremiumIOS(Boolean isPremiumIOS) {
+        this.isPremiumIOS = isPremiumIOS;
+    }
+
+    public Date getSubscriptionExpireDateIOS() {
+        return subscriptionExpireDateIOS;
+    }
+
+    public void setSubscriptionExpireDateIOS(Date subscriptionExpireDateIOS) {
+        this.subscriptionExpireDateIOS = subscriptionExpireDateIOS;
+    }
+
+    public String getSubscriptionTypeIOS() {
+        return subscriptionTypeIOS;
+    }
+
+    public void setSubscriptionTypeIOS(String subscriptionTypeIOS) {
+        this.subscriptionTypeIOS = subscriptionTypeIOS;
+    }
+
+    public String getSubscriptionStatusIOS() {
+        return subscriptionStatusIOS;
+    }
+
+    public void setSubscriptionStatusIOS(String subscriptionStatusIOS) {
+        this.subscriptionStatusIOS = subscriptionStatusIOS;
+    }
+
+    public String getLastReceiptDataIOS() {
+        return lastReceiptDataIOS;
+    }
+
+    public void setLastReceiptDataIOS(String lastReceiptDataIOS) {
+        this.lastReceiptDataIOS = lastReceiptDataIOS;
     }
 
     /**

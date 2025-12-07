@@ -43,6 +43,12 @@ extension UserExtensions on User {
     int? totalScore,
     double? dakaRatio,
     bool? enableAllWrong,
+    // iOS订阅字段
+    bool? isPremiumIOS,
+    DateTime? subscriptionExpireDateIOS,
+    String? subscriptionTypeIOS,
+    String? subscriptionStatusIOS,
+    String? lastReceiptDataIOS,
     
   }) {
     return User(
@@ -82,6 +88,12 @@ extension UserExtensions on User {
       totalScore: totalScore ?? this.totalScore,
       dakaRatio: dakaRatio ?? this.dakaRatio,
       enableAllWrong: enableAllWrong ?? this.enableAllWrong,
+      // iOS订阅字段
+      isPremiumIOS: isPremiumIOS ?? this.isPremiumIOS,
+      subscriptionExpireDateIOS: subscriptionExpireDateIOS ?? this.subscriptionExpireDateIOS,
+      subscriptionTypeIOS: subscriptionTypeIOS ?? this.subscriptionTypeIOS,
+      subscriptionStatusIOS: subscriptionStatusIOS ?? this.subscriptionStatusIOS,
+      lastReceiptDataIOS: lastReceiptDataIOS ?? this.lastReceiptDataIOS,
     );
   }
   
@@ -124,6 +136,12 @@ extension UserExtensions on User {
       totalScore: Value(totalScore),
       dakaRatio: Value(dakaRatio),
       enableAllWrong: Value(enableAllWrong),
+      // iOS订阅字段
+      isPremiumIOS: Value(isPremiumIOS),
+      subscriptionExpireDateIOS: Value(subscriptionExpireDateIOS),
+      subscriptionTypeIOS: Value(subscriptionTypeIOS),
+      subscriptionStatusIOS: Value(subscriptionStatusIOS),
+      lastReceiptDataIOS: Value(lastReceiptDataIOS),
       
     );
   }
@@ -167,6 +185,12 @@ extension UserExtensions on User {
       totalScore: Value(totalScore),
       dakaRatio: Value(dakaRatio),
       enableAllWrong: Value(enableAllWrong),
+      // iOS订阅字段
+      isPremiumIOS: Value(isPremiumIOS),
+      subscriptionExpireDateIOS: Value(subscriptionExpireDateIOS),
+      subscriptionTypeIOS: Value(subscriptionTypeIOS),
+      subscriptionStatusIOS: Value(subscriptionStatusIOS),
+      lastReceiptDataIOS: Value(lastReceiptDataIOS),
       
     );
   }
@@ -218,6 +242,11 @@ extension UserExtensions on User {
     userVo.dakaRatio = dakaRatio;
     userVo.enableAllWrong = enableAllWrong;
     
+    // 订阅相关字段（iOS平台）
+    userVo.isPremiumIOS = isPremiumIOS;
+    userVo.subscriptionExpireDateIOS = subscriptionExpireDateIOS;
+    userVo.subscriptionTypeIOS = subscriptionTypeIOS;
+    userVo.subscriptionStatusIOS = subscriptionStatusIOS;
     
     return userVo;
   }

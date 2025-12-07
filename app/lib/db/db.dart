@@ -147,7 +147,7 @@ class MyDatabase extends _$MyDatabase {
   // you should bump this number whenever you change or add a table definition. Migrations
   // are covered later in this readme.
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration {
@@ -169,6 +169,10 @@ class MyDatabase extends _$MyDatabase {
           // 从版本 3 升级到版本 4：创建本地异常记录表
           if (from < 4) {
             await _migrateFromV3ToV4(m);
+          }
+          // 从版本 4 升级到版本 5：添加订阅相关字段（按平台区分）
+          if (from < 5) {
+            await _migrateFromV4ToV5(m);
           }
         } catch (e, stackTrace) {
           // 升级失败，记录错误日志
@@ -279,6 +283,41 @@ class MyDatabase extends _$MyDatabase {
   Future<void> _migrateFromV3ToV4(Migrator m) async {
     await m.createTable(localExceptions);
     Global.logger.i('✅ 创建 local_exceptions 表完成');
+  }
+
+  /// 从版本 4 升级到版本 5 的迁移逻辑
+  /// 添加订阅相关字段（仅支持iOS平台）
+  Future<void> _migrateFromV4ToV5(Migrator m) async {
+    await transaction(() async {
+      // 添加iOS订阅字段
+      // isPremiumIOS 设置为 NOT NULL，默认值为 0 (false)
+      await customStatement('''
+        ALTER TABLE users 
+        ADD COLUMN isPremiumIOS INTEGER NOT NULL DEFAULT 0
+      ''');
+      
+      await customStatement('''
+        ALTER TABLE users 
+        ADD COLUMN subscriptionExpireDateIOS INTEGER
+      ''');
+      
+      await customStatement('''
+        ALTER TABLE users 
+        ADD COLUMN subscriptionTypeIOS TEXT
+      ''');
+      
+      await customStatement('''
+        ALTER TABLE users 
+        ADD COLUMN subscriptionStatusIOS TEXT
+      ''');
+      
+      await customStatement('''
+        ALTER TABLE users 
+        ADD COLUMN lastReceiptDataIOS TEXT
+      ''');
+      
+      Global.logger.i('✅ 添加iOS订阅相关字段完成（版本4→5）');
+    });
   }
 
 
