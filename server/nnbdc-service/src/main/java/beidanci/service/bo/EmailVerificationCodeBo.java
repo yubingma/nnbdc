@@ -62,6 +62,11 @@ public class EmailVerificationCodeBo extends BaseBo<EmailVerificationCode> {
      * @return 发送结果，"OK"表示成功，其他为错误信息
      */
     public String sendVerificationCode(String email, EmailCodeType type) {
+        // 特殊邮箱处理：test@nnbdc.com 用于审核，固定验证码123456，不发送邮件
+        if ("test@nnbdc.com".equalsIgnoreCase(email)) {
+            return "OK";
+        }
+
         // 检查发送间隔
         Date now = new Date();
         Date minSendTime = new Date(now.getTime() - sendIntervalSeconds * 1000L);
@@ -109,6 +114,11 @@ public class EmailVerificationCodeBo extends BaseBo<EmailVerificationCode> {
      * @return 验证结果，"OK"表示成功，其他为错误信息
      */
     public String verifyCode(String email, String code, EmailCodeType type) {
+        // 特殊邮箱处理：test@nnbdc.com 用于审核，验证码固定为123456时直接通过
+        if ("test@nnbdc.com".equalsIgnoreCase(email) && "123456".equals(code)) {
+            return "OK";
+        }
+
         String sql = "SELECT * FROM email_verification_code WHERE email = :email AND code = :code AND type = :type ORDER BY createTime DESC LIMIT 1";
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("email", email);
