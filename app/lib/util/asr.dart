@@ -426,6 +426,12 @@ class Asr {
             if (!permissionGranted) {
               ToastUtil.error("语音识别启动失败: ${e.message}");
             } else {
+              // iOS 上即使抛出异常，ASR 通常已经启动，需要更新状态以便 UI 正确显示
+              // 这样"请等待播音结束"才能自动切换到"请说出或输入释义"
+              if (Platform.isIOS) {
+                setState(AsrState.started);
+                Global.logger.i('===== ASR: iOS 异常但已设置状态为 started，ASR 应该可以正常使用');
+              }
               ToastUtil.info("语音识别已在运行，可直接说出答案");
             }
           }
