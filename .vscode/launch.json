@@ -38,6 +38,15 @@
             "flutterMode": "debug"
         },
         {
+            "name": "App-ios-simulator-13-pro-max",
+            "request": "launch",
+            "type": "dart",
+            "program": "${workspaceFolder}/app/lib/main.dart",
+            "deviceId": "7D73A734-78E6-4B44-A97B-CEE5F60EFFEE",
+            "flutterMode": "debug"
+        },
+        
+        {
             "name": "App-iphone",
             "request": "launch",
             "type": "dart",
