@@ -25,6 +25,7 @@ import 'package:provider/provider.dart';
 import 'package:nnbdc/widget/dict_download_dialog.dart';
 import 'package:nnbdc/page/admin/health_check.dart';
 import 'package:nnbdc/page/admin/page_viewer.dart';
+import 'package:nnbdc/page/admin/exception_log_viewer.dart';
 import 'package:nnbdc/page/feature_request_wall.dart';
 
 import '../global.dart';
@@ -1094,6 +1095,18 @@ class _MePageState extends State<MePage> {
                       context,
                       MaterialPageRoute(
                         builder: (context) => const PageViewerPage(),
+                      ),
+                    );
+                  },
+                ),
+                _buildMenuTile(
+                  icon: Icons.bug_report,
+                  title: '异常日志',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ExceptionLogViewerPage(),
                       ),
                     );
                   },

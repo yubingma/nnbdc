@@ -3,8 +3,6 @@ import 'package:get/get.dart';
 import 'package:nnbdc/theme/app_theme.dart';
 import 'package:provider/provider.dart';
 import 'package:nnbdc/state.dart';
-import 'package:nnbdc/global.dart';
-import 'package:nnbdc/page/admin/exception_log_viewer.dart';
 
 /// 页面查看器 - 方便开发时快速跳转到指定页面
 class PageViewerPage extends StatefulWidget {
@@ -225,74 +223,6 @@ class _PageViewerPageState extends State<PageViewerPage> {
                     },
                   ),
           ),
-          // 管理员功能：查看异常日志
-          if (Global.getLoggedInUser()?.isAdmin == true)
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: cardColor,
-                border: Border(
-                  top: BorderSide(
-                    color: isDarkMode ? Colors.grey[700]! : Colors.grey[200]!,
-                    width: 1,
-                  ),
-                ),
-              ),
-              child: Card(
-                color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  side: BorderSide(
-                    color: AppTheme.primaryColor.withValues(alpha: 0.3),
-                    width: 1,
-                  ),
-                ),
-                child: ListTile(
-                  leading: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: AppTheme.primaryColor.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(
-                      Icons.bug_report,
-                      color: AppTheme.primaryColor,
-                      size: 24,
-                    ),
-                  ),
-                  title: const Text(
-                    '查看异常日志',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      fontFamily: 'NotoSansSC',
-                      color: AppTheme.primaryColor,
-                    ),
-                  ),
-                  subtitle: const Text(
-                    '查看本地记录的异常信息',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontFamily: 'NotoSansSC',
-                    ),
-                  ),
-                  trailing: const Icon(
-                    Icons.arrow_forward_ios,
-                    size: 16,
-                    color: AppTheme.primaryColor,
-                  ),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const ExceptionLogViewerPage(),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ),
         ],
       ),
     );

@@ -138,8 +138,25 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
   }
 
   Widget _buildResultSummary(bool isDarkMode) {
-    final isHealthy = _checkResult!.isHealthy;
-    final totalIssues = _checkResult!.totalIssues;
+    // 获取所有检查项的 category
+    final checkItemCategories = _checkItems.map((item) => item['category'] as String).toSet();
+    
+    // 只统计已分类的问题（匹配检查项 category 的问题）
+    final categorizedIssues = _checkResult!.issues.where((issue) {
+      return checkItemCategories.contains(issue.category);
+    }).toList();
+    
+    // 检查是否有检查项失败
+    final hasFailedCheckItem = _checkStates.values.any((state) => state == 'failed');
+    
+    // 统计已分类的问题数量
+    final categorizedIssueCount = categorizedIssues.length;
+    // errors 也应该被统计
+    final errorCount = _checkResult!.errors.length;
+    final totalIssues = categorizedIssueCount + errorCount;
+    
+    // 判断是否健康：所有检查项都通过，且没有已分类的问题和错误
+    final isHealthy = !hasFailedCheckItem && totalIssues == 0;
     
     return Card(
       color: isDarkMode ? const Color(0xFF2D2D2D) : Colors.white,
@@ -436,6 +453,23 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
       
       // 检查完成后，统一更新所有项的状态
       setState(() {
+        // 获取所有检查项的 category
+        final checkItemCategories = _checkItems.map((item) => item['category'] as String).toSet();
+        
+        // 检查是否有未分类的问题
+        final uncategorizedIssues = checkResult.issues.where(
+          (issue) => !checkItemCategories.contains(issue.category)
+        ).toList();
+        
+        if (uncategorizedIssues.isNotEmpty) {
+          Global.logger.w('发现 ${uncategorizedIssues.length} 个未分类的问题: ${uncategorizedIssues.map((i) => i.category).join(", ")}');
+        }
+        
+        // 检查是否有 errors
+        if (checkResult.errors.isNotEmpty) {
+          Global.logger.w('发现 ${checkResult.errors.length} 个错误: ${checkResult.errors.join(", ")}');
+        }
+        
         for (var item in _checkItems) {
           final int itemId = item['id'] as int;
           final String category = item['category'] as String;
