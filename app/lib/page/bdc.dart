@@ -849,7 +849,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       if (inputText == correctSpell) {
         _isAnswerCorrect = true;
 
-        // 播放真确提示音
+        // 播放正确提示音
         final soundFuture = SoundUtil.playAssetSoundConcurrent('correct.mp3', 1.5, 0.2);
         soundFuture.whenComplete(() async {
           // 播放一遍单词的标准发音
