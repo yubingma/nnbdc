@@ -830,10 +830,10 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         _playingCorrectSounds.add(soundFuture);
         debugPrint('checkAsrResult: 添加提示音到列表，当前有 ${_playingCorrectSounds.length} 个提示音正在播放');
 
-        // 等待音频播放完成，然后再等待200毫秒后执行后续逻辑
+        // 等待音频播放完成，然后再等待短暂延迟后执行后续逻辑
         // 这样用户有机会说出下一个释义, 用户体验会更好一点
         soundFuture.whenComplete(() {
-          Future.delayed(Duration(milliseconds: 300)).then((_) {
+          Future.delayed(Duration(milliseconds: 150)).then((_) {
             _playingCorrectSounds.remove(soundFuture);
             if (_playingCorrectSounds.isEmpty && _isAnswerCorrect) {
               getNextWord(true);

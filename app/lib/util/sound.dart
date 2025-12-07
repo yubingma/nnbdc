@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:nnbdc/util/platform_util.dart';
@@ -254,20 +256,32 @@ class SoundUtil {
       await player.play(AssetSource('audio/$soundFileName'));
 
       // 等待播放完成，避免立即释放播放器
-      // 在 Android 上，如果 onPlayerComplete 不触发，使用超时机制确保 Future 能够完成
+      // 在 Android 上，如果 onPlayerComplete 不触发，使用播放状态监听 + 超时机制确保 Future 能够完成
       if (PlatformUtils.isAndroid) {
-        // 使用 Future.any 添加超时保护，确保即使 onPlayerComplete 不触发，Future 也能完成
-        // 超时时间设置为 3 秒（correct.mp3 通常播放时间较短）
+        // 使用播放状态监听来判断是否完成，比单纯等待 onPlayerComplete 更可靠
+        // correct.mp3 通常播放时间很短（约 200-500 毫秒），设置 800 毫秒超时足够
+        final completer = Completer<void>();
+        late StreamSubscription stateSubscription;
+
+        stateSubscription = player.onPlayerStateChanged.listen((state) {
+          if (state == PlayerState.completed || state == PlayerState.stopped) {
+            if (!completer.isCompleted) {
+              completer.complete();
+            }
+          }
+        });
+
+        // 等待播放完成或超时
         await Future.any([
           player.onPlayerComplete.first,
-          Future.delayed(Duration(milliseconds: 3000)),
+          completer.future,
+          Future.delayed(Duration(milliseconds: 800)), // 800 毫秒超时
         ]);
+
+        await stateSubscription.cancel();
       } else {
         await player.onPlayerComplete.first;
       }
-
-      // 添加一个小延迟确保声音完全播放
-      await Future.delayed(Duration(milliseconds: 100));
     } on Exception catch (e, stackTrace) {
       ErrorHandler.handleError(e, stackTrace, logPrefix: '播放音效出错', showToast: false);
     } finally {
