@@ -3377,6 +3377,21 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    // 桌面版本最大内容宽度，自动居中显示
+    final isDesktop = PlatformUtils.isWindows || PlatformUtils.isLinux || PlatformUtils.isMacOS;
+    const double maxContentWidth = 600.0;
+
+    Widget pageContent = (!dataLoaded) ? const Center(child: Text('')) : renderPage();
+    
+    if (isDesktop) {
+      pageContent = Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: maxContentWidth),
+          child: pageContent,
+        ),
+      );
+    }
+
     return KeyboardDismissOnTap(
       child: Scaffold(
         resizeToAvoidBottomInset: true,
@@ -3399,7 +3414,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
               end: Alignment.bottomCenter,
             ),
           ),
-          child: (!dataLoaded) ? const Center(child: Text('')) : renderPage(),
+          child: pageContent,
         ),
       ),
     );

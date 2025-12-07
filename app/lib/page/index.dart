@@ -5,7 +5,6 @@ import 'package:nnbdc/page/search.dart';
 import 'package:nnbdc/page/word_lists.dart';
 import 'package:nnbdc/theme/app_theme.dart';
 import 'package:provider/provider.dart';
-import 'package:nnbdc/util/platform_util.dart';
 
 import 'game.dart'; // 如果是在同一个包的路径下，可以直接使用对应的文件名
 import 'me.dart';
@@ -170,20 +169,9 @@ class _IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
         ),
       ),
     );
-    // 桌面版本最大内容宽度，自动居中显示
-    final isDesktop = PlatformUtils.isWindows || PlatformUtils.isLinux || PlatformUtils.isMacOS;
-    const double maxContentWidth = 600.0;
-
-    Widget pageContent = _currentPage ?? const SizedBox();
-    if (isDesktop) {
-      pageContent = ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: maxContentWidth),
-        child: pageContent,
-      );
-    }
-
     return Scaffold(
-      body: Center(child: pageContent),
+      body: Center(child: _currentPage // 动态的展示我们当前的页面
+          ),
       bottomNavigationBar: customBottomNav, // 底部工具栏
     );
   }
