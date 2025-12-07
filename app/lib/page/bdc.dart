@@ -85,50 +85,61 @@ class WordImagesWidget extends StatefulWidget {
 class _WordImagesWidgetState extends State<WordImagesWidget> {
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(0, 12, 0, 12),
-      width: MediaQuery.of(context).size.width,
-      alignment: Alignment.center,
-      child: Wrap(
-        alignment: WrapAlignment.start,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        spacing: (MediaQuery.of(context).size.width - (PlatformUtils.isWeb ? 160 * 4 : 80 * 4) - 16 - 16) / 3,
-        runSpacing: 4,
-        children: [
-          for (var image in widget.images.take(8))
-            GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () {
-                Global.logger.d('GestureDetector onTap image: ${image.imageFile}');
-                widget.onImageTap(image);
-              },
-              child: SizedBox(
-                width: PlatformUtils.isWeb ? 160 : 80,
-                child: IgnorePointer(
-                  ignoring: true,
-                  child: ImageNetwork(
-                    image: '${Config.wordImageBaseUrl}${image.imageFile}',
-                    width: PlatformUtils.isWeb ? 160 : 80,
-                    height: PlatformUtils.isWeb ? 120 : 60,
-                    duration: 1500,
-                    curve: Curves.easeIn,
-                    onPointer: true,
-                    debugPrint: true, // 启用调试打印
-                    onLoading: const LinearProgressIndicator(
-                      color: Colors.indigoAccent,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // 使用实际可用宽度而不是屏幕宽度
+        final availableWidth = constraints.maxWidth;
+        final imageWidth = PlatformUtils.isWeb ? 160.0 : 80.0;
+        final imageCount = 4; // 每行显示4张图片
+        final horizontalPadding = 16.0 * 2; // 左右内边距
+        final spacing = (availableWidth - imageWidth * imageCount - horizontalPadding) / (imageCount - 1);
+
+        return Container(
+          margin: const EdgeInsets.fromLTRB(0, 12, 0, 12),
+          width: availableWidth,
+          alignment: Alignment.center,
+          child: Wrap(
+            alignment: WrapAlignment.start,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: spacing > 0 ? spacing : 4, // 确保间距不为负数
+            runSpacing: 4,
+            children: [
+              for (var image in widget.images.take(8))
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () {
+                    Global.logger.d('GestureDetector onTap image: ${image.imageFile}');
+                    widget.onImageTap(image);
+                  },
+                  child: SizedBox(
+                    width: imageWidth,
+                    child: IgnorePointer(
+                      ignoring: true,
+                      child: ImageNetwork(
+                        image: '${Config.wordImageBaseUrl}${image.imageFile}',
+                        width: imageWidth,
+                        height: PlatformUtils.isWeb ? 120 : 60,
+                        duration: 1500,
+                        curve: Curves.easeIn,
+                        onPointer: true,
+                        debugPrint: true, // 启用调试打印
+                        onLoading: const LinearProgressIndicator(
+                          color: Colors.indigoAccent,
+                        ),
+                        onError: const Icon(
+                          Icons.error,
+                          color: Colors.red,
+                        ),
+                        fitAndroidIos: BoxFit.contain,
+                        fitWeb: BoxFitWeb.cover,
+                      ),
                     ),
-                    onError: const Icon(
-                      Icons.error,
-                      color: Colors.red,
-                    ),
-                    fitAndroidIos: BoxFit.contain,
-                    fitWeb: BoxFitWeb.cover,
                   ),
                 ),
-              ),
-            ),
-        ],
-      ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
@@ -534,7 +545,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
       _handleTabChangeForAsr();
     });
-
   }
 
   /// 根据当前tab状态处理ASR启动/停止逻辑
@@ -3382,7 +3392,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     const double maxContentWidth = 600.0;
 
     Widget pageContent = (!dataLoaded) ? const Center(child: Text('')) : renderPage();
-    
+
     if (isDesktop) {
       pageContent = Center(
         child: ConstrainedBox(
