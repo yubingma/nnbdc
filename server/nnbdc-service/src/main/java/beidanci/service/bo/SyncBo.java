@@ -393,6 +393,14 @@ public class SyncBo {
                     userFromClient.setIsAdmin(user.getIsAdmin());
                     userFromClient.setIsSuperAdmin(user.getIsSuperAdmin());
                     userFromClient.setIsSysUser(user.getIsSysUser());
+
+                    // 订阅字段仅允许后端维护（客户端同步UserDto不包含这些字段）
+                    // 如果不回填，update 时会把字段覆盖成 null/默认值，甚至触发 NOT NULL 约束
+                    userFromClient.setIsPremiumIos(user.getIsPremiumIos() != null ? user.getIsPremiumIos() : false);
+                    userFromClient.setSubscriptionExpireDateIos(user.getSubscriptionExpireDateIos());
+                    userFromClient.setSubscriptionTypeIos(user.getSubscriptionTypeIos());
+                    userFromClient.setSubscriptionStatusIos(user.getSubscriptionStatusIos());
+                    userFromClient.setLastReceiptDataIos(user.getLastReceiptDataIos());
                     
                     userBo.updateEntity(userFromClient);
                     logger.info("同步更新用户成功: userId={}, userName={}", userId, userFromClient.getUserName());
