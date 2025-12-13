@@ -6,7 +6,6 @@ import java.util.List;
 import javax.naming.NamingException;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -27,7 +26,6 @@ public class FeatureRequestReportController {
      * 保存需求墙举报
      */
     @PostMapping("/saveFeatureRequestReport.do")
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     public Result<String> saveFeatureRequestReport(
             @RequestParam("requestId") String requestId,
             @RequestParam("content") String content,
@@ -40,7 +38,6 @@ public class FeatureRequestReportController {
      * 获取所有举报（管理员功能）
      */
     @GetMapping("/getAllFeatureRequestReports.do")
-    @PreAuthorize("hasAnyRole('ADMIN')")
     public List<FeatureRequestReportVo> getAllFeatureRequestReports() throws IllegalAccessException {
         List<FeatureRequestReport> reports = featureRequestReportBo.getAllReports();
         return BeanUtils.makeVos(reports, FeatureRequestReportVo.class,

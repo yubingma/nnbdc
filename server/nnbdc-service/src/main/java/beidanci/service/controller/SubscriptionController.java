@@ -1,7 +1,6 @@
 package beidanci.service.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -29,7 +28,6 @@ public class SubscriptionController {
      * @return 验证结果
      */
     @PostMapping("/verifySubscription.do")
-    @PreAuthorize("hasAnyRole('USER')")
     public Result<Void> verifySubscription(
             @RequestParam String userId,
             @RequestParam String receiptData,
@@ -46,7 +44,6 @@ public class SubscriptionController {
      * @return 恢复结果
      */
     @PostMapping("/restoreSubscription.do")
-    @PreAuthorize("hasAnyRole('USER')")
     public Result<Void> restoreSubscription(@RequestParam String userId) {
         return subscriptionBo.restoreSubscription(userId);
     }

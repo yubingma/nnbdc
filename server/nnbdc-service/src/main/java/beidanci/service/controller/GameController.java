@@ -12,7 +12,6 @@ import beidanci.service.socket.system.game.russia.Hall;
 import beidanci.service.socket.system.game.russia.Russia;
 import beidanci.service.util.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -32,7 +31,6 @@ public class GameController {
     @Autowired
     HallGroupBo hallGroupBo;
 
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping("getGameHallData.do")
     public GetGameHallDataResult getGameHallData() throws IllegalAccessException {
         GetGameHallDataResult result = new GetGameHallDataResult();

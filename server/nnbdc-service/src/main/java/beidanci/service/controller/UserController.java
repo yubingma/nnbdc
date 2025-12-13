@@ -3,7 +3,6 @@ package beidanci.service.controller;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -28,7 +27,6 @@ public class UserController {
     UserBo userBo;
 
     @DeleteMapping("unRegister.do")
-    @PreAuthorize("hasAnyRole('USER')")
     public Result<Void> unRegister(String userId) throws IllegalAccessException {
         User user = userBo.findById(userId);
         if (user == null) { // 用户不存在是可能的, 比如用户注销了账户(通过某台设备), 但是用户有多个设备
@@ -56,7 +54,6 @@ public class UserController {
      * @throws IllegalAccessException
      */
     @GetMapping("/admin/searchUsers.do")
-    @PreAuthorize("hasAnyRole('ADMIN')")
     public Result<PagedResults<UserVo>> searchUsers(
             @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "1") int pageNo,
@@ -85,7 +82,6 @@ public class UserController {
      * @throws IllegalAccessException
      */
     @PostMapping("/admin/updateAdminPermission.do")
-    @PreAuthorize("hasAnyRole('ADMIN')")
     public Result<Void> updateAdminPermission(
             @RequestParam String userId,
             @RequestParam(required = false) Boolean isAdmin,
@@ -102,7 +98,6 @@ public class UserController {
      * @throws IllegalAccessException
      */
     @DeleteMapping("/admin/deleteUser.do")
-    @PreAuthorize("hasAnyRole('ADMIN')")
     public Result<Void> deleteUser(@RequestParam String userId) throws IllegalAccessException {
         User user = userBo.findById(userId);
         if (user == null) {

@@ -1,11 +1,13 @@
 
 class Config {
-  static String profileName = "dev";
+  static String profileName = "prod";
 
   static final Map profiles = {
     "prod": {
-      "service_url": "http://back.nnbdc.com",
-      "socketServerUrl": "http://back.nnbdc.com:9090/all",
+      // 后端域名支持 HTTPS，iOS/macOS 也建议强制走 HTTPS，避免 ATS/审核问题
+      "service_url": "https://back.nnbdc.com",
+      // Socket.IO 走同域 HTTPS，由 nginx 转发到 9090（namespace: /all）
+      "socketServerUrl": "https://back.nnbdc.com/all",
       "sound_base_url": "http://www.nnbdc.com/sound/",
       "updateUrl": "http://www.nnbdc.com/app/ver.json",
       "apkUrl": "http://www.nnbdc.com/app/nnbdc-android.apk",

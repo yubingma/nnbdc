@@ -6,7 +6,6 @@ import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.mail.EmailException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -33,7 +32,6 @@ public class MsgController {
     UserBo userBo;
 
     @PostMapping("/sendAdvice.do")
-    @PreAuthorize("hasAnyRole('USER','ADMIN')")
     @ResponseBody
     public Result<Void> sendAdvice(String content, String clientType, String userId) throws EmailException {
         System.out.println("DEBUG: MsgController.sendAdvice - content: " + content);
@@ -67,7 +65,6 @@ public class MsgController {
      * @throws IOException
      */
     @GetMapping("/getLastestMsgsBetweenUserAndSys.do")
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     public List<MsgVo> getLastestMsgsBetweenUserAndSys(String user, int msgCount) throws IllegalAccessException {
         List<Msg> msgs = msgBo.getLastestMsgsBetweenUserAndSys(user, msgCount, userBo);
 
@@ -83,7 +80,6 @@ public class MsgController {
      * @throws IOException
      */
     @PutMapping("/setMsgsAsViewed.do")
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     public Result<Void> setMsgsAsViewed(@RequestParam(name = "msgIds") List<String> msgIds,
                                         @RequestParam(name = "userId") String userId) {
         msgBo.setMsgsAsViewed(msgIds, userId, userBo);
@@ -114,7 +110,6 @@ public class MsgController {
      * @throws IllegalAccessException
      */
     @GetMapping("/getAllAdviceMessages.do")
-    @PreAuthorize("hasAnyRole('ADMIN')")
     public List<MsgVo> getAllAdviceMessages() throws IllegalAccessException {
         List<Msg> msgs = msgBo.getAllAdviceMessages();
         List<MsgVo> vos = BeanUtils.makeVos(msgs, MsgVo.class, new String[]{"invitedBy", "StudyGroupVo.creator",
@@ -129,7 +124,6 @@ public class MsgController {
      * @throws IllegalAccessException
      */
     @PostMapping("/replyAdvice.do")
-    @PreAuthorize("hasAnyRole('ADMIN')")
     public Result<Void> replyAdvice(@RequestParam(name = "content") String content,
                                    @RequestParam(name = "toUserId") String toUserId,
                                    @RequestParam(name = "adminUserId") String adminUserId) throws IllegalAccessException {

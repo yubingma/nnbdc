@@ -11,7 +11,6 @@ import javax.servlet.http.HttpServletResponse;
 import javax.xml.bind.DatatypeConverter;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -94,7 +93,6 @@ public class WordController {
 
 
     @PutMapping("/handImage.do")
-    @PreAuthorize("hasAnyRole('USER','ADMIN')")
     public Result<Integer> handImage(HttpServletRequest request, HttpServletResponse response, String id, String userId)
             throws IllegalArgumentException, IllegalAccessException, IOException {
         User user = userBo.findById(userId);
@@ -103,7 +101,6 @@ public class WordController {
     }
 
     @PutMapping("/footImage.do")
-    @PreAuthorize("hasAnyRole('USER','ADMIN')")
     public Result<Integer> footImage(HttpServletRequest request, HttpServletResponse response, String id, String userId)
             throws IllegalArgumentException, IllegalAccessException, IOException {
         User user = userBo.findById(userId);
@@ -112,7 +109,6 @@ public class WordController {
     }
 
     @DeleteMapping("/deleteImage.do")
-    @PreAuthorize("hasAnyRole('USER','ADMIN')")
     public Result<Object> deleteImage(HttpServletRequest request, HttpServletResponse response, String id, String userId)
             throws IllegalArgumentException, IllegalAccessException, IOException {
         User user = userBo.findById(userId);

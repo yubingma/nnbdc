@@ -5,7 +5,6 @@ import 'package:cookie_jar/cookie_jar.dart';
 import 'package:dio/dio.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:nnbdc/api/dto.dart';
 import 'package:nnbdc/api/result.dart';
 import 'package:nnbdc/api/vo.dart';
@@ -164,9 +163,13 @@ class CustomInterceptors extends Interceptor {
       _loadingService.dismiss();
     }
 
+    // 说明：后端安全机制计划废除，因此这里不再把 401 作为“会话超时”强制跳转登录页。
+    // 若仍出现 401，更多可能是：
+    // - 连接到了错误的服务（如代理/门户/旧后端）
+    // - 个别接口仍在服务端侧返回 401
+    // 具体页面可按需做兜底（如忽略消息数、提示用户检查环境）。
     if (err.response?.statusCode == 401) {
-      ToastUtil.error('会话超时，请重新登录');
-      Get.toNamed("/email_login");
+      Global.logger.w('收到 401: ${err.requestOptions.uri}');
     } else if (err.type == DioExceptionType.connectionTimeout ||
         err.type == DioExceptionType.receiveTimeout ||
         err.type == DioExceptionType.sendTimeout) {

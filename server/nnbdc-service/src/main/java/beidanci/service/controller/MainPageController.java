@@ -1,7 +1,6 @@
 package beidanci.service.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -32,7 +31,6 @@ public class MainPageController {
     LearningDictBo learningDictBo;
 
     @GetMapping("getUserRank.do")
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     public Result<Integer> getUserRank(@RequestParam("userId") String userId) throws IllegalAccessException {
         User user = userBo.findById(userId);
         if (user == null) {

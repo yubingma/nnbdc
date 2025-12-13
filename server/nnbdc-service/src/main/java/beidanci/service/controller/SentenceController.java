@@ -6,7 +6,6 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -44,7 +43,6 @@ public class SentenceController {
     SentenceCache sentenceCache;
 
     @PostMapping("/saveSentenceChinese.do")
-    @PreAuthorize("hasAnyRole('USER','ADMIN')")
     public Result<SentenceVo> saveSentenceChinese(String sentenceId, String chinese, String currWord)
             throws IllegalArgumentException, IllegalAccessException, InvalidMeaningFormatException, EmptySpellException, ParseException, IOException {
         if (chinese == null || !StringUtils.hasText(chinese.trim())) {
@@ -65,7 +63,6 @@ public class SentenceController {
     }
 
     @PostMapping("/saveSentence.do")
-    @PreAuthorize("hasAnyRole('USER','ADMIN')")
     public Result<SentenceVo> saveSentence(String english, String chinese, String wordId, int payCowdung, String currWord, String userId)
             throws IllegalArgumentException, IllegalAccessException, InvalidMeaningFormatException, EmptySpellException, ParseException, IOException {
         if (!StringUtils.hasText(english)) {
@@ -118,7 +115,6 @@ public class SentenceController {
     }
 
     @DeleteMapping("/deleteSentence.do")
-    @PreAuthorize("hasAnyRole('USER','ADMIN')")
     public Result<Void> deleteSentence(String id, String currWord, String userId)
             throws IllegalArgumentException, InvalidMeaningFormatException, EmptySpellException, ParseException, IOException {
         return sentenceBo.deleteSentence(id, currWord, userId);
@@ -126,7 +122,6 @@ public class SentenceController {
 
 
     @PutMapping("/handSentence.do")
-    @PreAuthorize("hasAnyRole('USER','ADMIN')")
     public Result<Integer> handSentence(String id, String currWord, String userId)
             throws IllegalArgumentException, IllegalAccessException, InvalidMeaningFormatException, EmptySpellException, ParseException, IOException {
         User user = userBo.findById(userId);
@@ -135,7 +130,6 @@ public class SentenceController {
     }
 
     @PutMapping("/footSentence.do")
-    @PreAuthorize("hasAnyRole('USER','ADMIN')") 
     public Result<Integer> footSentence(String id, String currWord, String userId)
             throws IllegalArgumentException, IllegalAccessException, InvalidMeaningFormatException, EmptySpellException, ParseException, IOException {
         User user = userBo.findById(userId);

@@ -4,7 +4,6 @@ import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -37,7 +36,6 @@ public class FeatureRequestController {
      * 获取所有需求列表（按投票数降序）
      */
     @GetMapping("/getAllFeatureRequests.do")
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     public List<FeatureRequestVo> getAllFeatureRequests() throws IllegalAccessException {
         List<FeatureRequest> requests = featureRequestBo.getAllFeatureRequests();
         return BeanUtils.makeVos(requests, FeatureRequestVo.class, 
@@ -50,7 +48,6 @@ public class FeatureRequestController {
      * 创建需求
      */
     @PostMapping("/createFeatureRequest.do")
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @ResponseBody
     public Result<FeatureRequestVo> createFeatureRequest(@RequestParam(name = "title") String title,
                                                          @RequestParam(name = "content") String content,
@@ -81,7 +78,6 @@ public class FeatureRequestController {
      * 投票
      */
     @PostMapping("/voteFeatureRequest.do")
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @ResponseBody
     public Result<Void> voteFeatureRequest(@RequestParam(name = "requestId") String requestId,
                                           @RequestParam(name = "userId") String userId) {
@@ -102,7 +98,6 @@ public class FeatureRequestController {
      * 检查用户是否已投票
      */
     @GetMapping("/hasUserVoted.do")
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     public Result<Boolean> hasUserVoted(@RequestParam(name = "requestId") String requestId,
                                         @RequestParam(name = "userId") String userId) {
         User user = userBo.findById(userId);
@@ -118,7 +113,6 @@ public class FeatureRequestController {
      * 更新需求状态（管理员功能）
      */
     @PutMapping("/updateFeatureRequestStatus.do")
-    @PreAuthorize("hasAnyRole('ADMIN')")
     @ResponseBody
     public Result<Void> updateFeatureRequestStatus(@RequestParam(name = "requestId") String requestId,
                                                    @RequestParam(name = "status") String statusStr,
@@ -144,7 +138,6 @@ public class FeatureRequestController {
      * 删除需求（管理员功能）
      */
     @DeleteMapping("/deleteFeatureRequest.do")
-    @PreAuthorize("hasAnyRole('ADMIN')")
     @ResponseBody
     public Result<Void> deleteFeatureRequest(@RequestParam(name = "requestId") String requestId,
                                             @RequestParam(name = "adminUserId") String adminUserId) {

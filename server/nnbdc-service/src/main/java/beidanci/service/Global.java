@@ -4,7 +4,6 @@ import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.lang.NonNull;
-import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.WebApplicationContext;
 
@@ -37,11 +36,6 @@ public class Global implements ApplicationContextAware {
     //     ensureInitialized();
     //     return (SessionFactory) webAppCtx.getBean("sessionFactory");
     // }
-
-    public static SessionRegistry getSessionRegistry() {
-        ensureInitialized();
-        return (SessionRegistry) webAppCtx.getBean("sessionRegistry");
-    }
 
     public static WordBo getWordBo() {
         ensureInitialized();

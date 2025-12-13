@@ -34,7 +34,11 @@ public class ExceptionHandlerFilter extends OncePerRequestFilter {
             log.info("Request URL: {} {}", request.getMethod(), request.getRequestURI());
             long startTime = System.currentTimeMillis();
             filterChain.doFilter(request, response);
-            log.info("Request URL: {} {}, 耗时: {}ms", request.getMethod(), request.getRequestURI(), System.currentTimeMillis() - startTime);
+            log.info("Request URL: {} {}, status: {}, 耗时: {}ms",
+                    request.getMethod(),
+                    request.getRequestURI(),
+                    response.getStatus(),
+                    System.currentTimeMillis() - startTime);
         } catch (IOException | ServletException e) {
             log.error("", e);
             String errCode = applicationName + "-EXCEPTION";

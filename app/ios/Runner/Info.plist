@@ -59,10 +59,24 @@
 	</array>
 	<key>NSAppTransportSecurity</key>
 	<dict>
-		<key>NSAllowsArbitraryLoads</key>
+		<!--
+		  ATS 策略（上线前收敛）：
+		  - 允许本地网络（开发环境可能直连局域网 IP）
+		  - 仅对 www.nnbdc.com 开放 HTTP（CDN/静态资源当前为 HTTP only）
+		  - 其他请求默认要求 HTTPS
+		-->
+		<key>NSAllowsLocalNetworking</key>
 		<true/>
-		<key>NSAllowsArbitraryLoadsInWebContent</key>
-		<true/>
+		<key>NSExceptionDomains</key>
+		<dict>
+			<key>www.nnbdc.com</key>
+			<dict>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+			</dict>
+		</dict>
 	</dict>
 </dict>
 </plist>
