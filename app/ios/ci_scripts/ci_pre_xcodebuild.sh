@@ -108,7 +108,9 @@ fi
 install_flutter_if_needed() {
   # Xcode Cloud 默认不会预装 Flutter，找不到时自动下载到 $HOME/flutter（可复用缓存）
   # 默认使用 $HOME/flutter（可写），避免 /Users/local/flutter 这类不可控/残缺的 Flutter
-  MANAGED_FLUTTER_ROOT="${MANAGED_FLUTTER_ROOT:-$HOME/flutter}"
+  # 注意：Xcode Cloud 的 HOME 可能就是 /Users/local，历史上这里可能存在一个“0.0.0-unknown”的残缺 Flutter；
+  # 为避免与系统/历史目录冲突，默认安装到隐藏目录（可通过环境变量覆盖）。
+  MANAGED_FLUTTER_ROOT="${MANAGED_FLUTTER_ROOT:-$HOME/.nnbdc_flutter}"
 
   if [ -z "$FLUTTER_ROOT" ] && [ -d "$HOME/flutter" ]; then
     export FLUTTER_ROOT="$HOME/flutter"
@@ -157,6 +159,13 @@ install_flutter_if_needed() {
   log "🧰 git 版本: $(git --version 2>/dev/null || echo "<未知>")"
 
   export FLUTTER_ROOT="${FLUTTER_ROOT:-$MANAGED_FLUTTER_ROOT}"
+
+  # 若目标目录存在但不完整（不是 git 仓库），可能是历史残留/下载中断导致，先清理再装
+  if [ -d "$FLUTTER_ROOT" ] && [ ! -d "$FLUTTER_ROOT/.git" ]; then
+    log "🧹 检测到 Flutter 目录存在但不是 git 仓库，将清理后重新安装：$FLUTTER_ROOT"
+    rm -rf "$FLUTTER_ROOT"
+  fi
+
   if [ ! -d "$FLUTTER_ROOT/.git" ]; then
     log "⬇️  克隆 Flutter SDK 到: $FLUTTER_ROOT"
     # 使用 shallow clone 提升 Xcode Cloud 首次构建速度；如需指定 revision，则后续再 fetch 单个 commit
