@@ -9,7 +9,7 @@ log() {
   printf "%s\n" "$*"
 }
 
-SCRIPT_VERSION="2025-12-13.1"
+SCRIPT_VERSION="2025-12-13.2"
 
 fail() {
   log ""
@@ -57,6 +57,37 @@ is_flutter_healthy() {
   # Xcode Cloud 上经常会出现某个“残缺 Flutter”导致版本显示 unknown
   echo "$VER_OUT" | grep -q "0.0.0-unknown" && return 1
   return 0
+}
+
+ensure_flutter_version_known() {
+  # 某些情况下 shallow clone + 未拉取 tags 会导致 flutter --version 显示 0.0.0-unknown
+  if is_flutter_healthy; then
+    return 0
+  fi
+
+  log "🩺 检测到 Flutter 版本为 unknown，尝试修复（拉取 tags / 补全历史）..."
+  cd "$FLUTTER_ROOT" || fail "无法进入 Flutter 目录: $FLUTTER_ROOT"
+
+  # 先拉取 tags（大多数情况下即可恢复正常版本号）
+  git fetch --tags --force >/dev/null 2>&1 || true
+
+  if is_flutter_healthy; then
+    return 0
+  fi
+
+  # 再尝试补全 shallow 仓库（unshallow），避免 git describe 找不到版本
+  git fetch --unshallow >/dev/null 2>&1 || true
+  git fetch --tags --force >/dev/null 2>&1 || true
+
+  if is_flutter_healthy; then
+    return 0
+  fi
+
+  # 仍然 unknown，直接报错并提示如何处理
+  VER_OUT=$("$FLUTTER_ROOT/bin/flutter" --version 2>/dev/null || true)
+  log "⚠️  当前 flutter --version 输出:"
+  log "$VER_OUT"
+  fail "Flutter 版本仍为 unknown（通常是仓库 tags/历史未完整，或网络受限导致 fetch 失败）。可在 Xcode Cloud Workflow 设置 FLUTTER_GIT_URL 为可访问镜像后重试。"
 }
 
 # 进入应用目录（相对于脚本位置）
@@ -201,6 +232,9 @@ install_flutter_if_needed() {
     git fetch origin "$FLUTTER_CHANNEL" || true
     git checkout "$FLUTTER_CHANNEL" || true
   fi
+
+  # 确保 flutter --version 不为 0.0.0-unknown，否则 pub 解析依赖会失败
+  ensure_flutter_version_known
 }
 
 # 获取 Flutter 路径
