@@ -41,6 +41,21 @@ log "  - XCODE_CLOUD_WORKFLOW: ${XCODE_CLOUD_WORKFLOW:-<未设置>}"
 log "  - CI: ${CI:-<未设置>}"
 log "  - 脚本路径: $0"
 
+is_flutter_healthy() {
+  # 返回 0 表示可用；1 表示不可用（比如 0.0.0-unknown）
+  if [ -z "$FLUTTER_ROOT" ] || [ ! -x "$FLUTTER_ROOT/bin/flutter" ]; then
+    return 1
+  fi
+  VER_OUT=$("$FLUTTER_ROOT/bin/flutter" --version 2>/dev/null)
+  CODE=$?
+  if [ $CODE -ne 0 ]; then
+    return 1
+  fi
+  # Xcode Cloud 上经常会出现某个“残缺 Flutter”导致版本显示 unknown
+  echo "$VER_OUT" | grep -q "0.0.0-unknown" && return 1
+  return 0
+}
+
 # 进入应用目录（相对于脚本位置）
 # Xcode Cloud 的工作目录通常是项目根目录（包含 .xcodeproj 的目录）
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -89,8 +104,25 @@ fi
 
 install_flutter_if_needed() {
   # Xcode Cloud 默认不会预装 Flutter，找不到时自动下载到 $HOME/flutter（可复用缓存）
+  # 默认使用 $HOME/flutter（可写），避免 /Users/local/flutter 这类不可控/残缺的 Flutter
+  MANAGED_FLUTTER_ROOT="${MANAGED_FLUTTER_ROOT:-$HOME/flutter}"
+
   if [ -z "$FLUTTER_ROOT" ] && [ -d "$HOME/flutter" ]; then
     export FLUTTER_ROOT="$HOME/flutter"
+  fi
+
+  # 若外部环境已经设置了 FLUTTER_ROOT，但 Flutter 版本是 unknown，则忽略并切换到可控目录
+  if [ -n "$FLUTTER_ROOT" ] && [ -x "$FLUTTER_ROOT/bin/flutter" ]; then
+    if is_flutter_healthy; then
+      return 0
+    fi
+    if [ -z "$NNBDC_RESPECT_FLUTTER_ROOT" ]; then
+      log "⚠️  检测到现有 Flutter 不可用（版本 unknown 或执行失败）：$FLUTTER_ROOT"
+      log "➡️  将改用可控的 Flutter 目录：$MANAGED_FLUTTER_ROOT"
+      export FLUTTER_ROOT="$MANAGED_FLUTTER_ROOT"
+    else
+      fail "现有 FLUTTER_ROOT 指向的 Flutter 不可用: $FLUTTER_ROOT（已设置 NNBDC_RESPECT_FLUTTER_ROOT，拒绝自动切换）"
+    fi
   fi
 
   if [ -n "$FLUTTER_ROOT" ] && [ -x "$FLUTTER_ROOT/bin/flutter" ]; then
@@ -102,7 +134,17 @@ install_flutter_if_needed() {
     FLUTTER_BIN=$(command -v flutter 2>/dev/null)
     if [ -n "$FLUTTER_BIN" ]; then
       export FLUTTER_ROOT=$(dirname "$(dirname "$FLUTTER_BIN")")
-      return 0
+      if is_flutter_healthy; then
+        return 0
+      fi
+      # PATH 里的 flutter 也可能是“残缺版”，同样忽略
+      if [ -z "$NNBDC_RESPECT_FLUTTER_ROOT" ]; then
+        log "⚠️  PATH 中的 flutter 不可用（版本 unknown 或执行失败）：$FLUTTER_ROOT"
+        log "➡️  将改用可控的 Flutter 目录：$MANAGED_FLUTTER_ROOT"
+        export FLUTTER_ROOT="$MANAGED_FLUTTER_ROOT"
+      else
+        fail "PATH 中的 flutter 不可用且已设置 NNBDC_RESPECT_FLUTTER_ROOT，无法继续"
+      fi
     fi
   fi
 
@@ -111,7 +153,7 @@ install_flutter_if_needed() {
   command -v git >/dev/null 2>&1 || fail "git 不存在，无法自动安装 Flutter（请在 Xcode Cloud 环境中确保 git 可用）"
   log "🧰 git 版本: $(git --version 2>/dev/null || echo "<未知>")"
 
-  export FLUTTER_ROOT="${FLUTTER_ROOT:-$HOME/flutter}"
+  export FLUTTER_ROOT="${FLUTTER_ROOT:-$MANAGED_FLUTTER_ROOT}"
   if [ ! -d "$FLUTTER_ROOT/.git" ]; then
     log "⬇️  克隆 Flutter SDK 到: $FLUTTER_ROOT"
     # 使用 shallow clone 提升 Xcode Cloud 首次构建速度；如需指定 revision，则后续再 fetch 单个 commit
