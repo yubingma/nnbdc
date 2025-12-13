@@ -15,6 +15,22 @@ fail() {
   exit 1
 }
 
+run_cmd() {
+  # 用法: run_cmd "描述" command...
+  DESC="$1"
+  shift
+  log ""
+  log "▶️  $DESC"
+  log "    命令: $*"
+  "$@"
+  CODE=$?
+  if [ $CODE -ne 0 ]; then
+    log "❌ 命令失败 (退出码: $CODE): $DESC"
+    return $CODE
+  fi
+  return 0
+}
+
 log "🔧 开始 Xcode Cloud 构建前准备..."
 log "📋 环境信息:"
 log "  - 当前目录: $PWD"
@@ -23,6 +39,7 @@ log "  - HOME: $HOME"
 log "  - PATH: $PATH"
 log "  - XCODE_CLOUD_WORKFLOW: ${XCODE_CLOUD_WORKFLOW:-<未设置>}"
 log "  - CI: ${CI:-<未设置>}"
+log "  - 脚本路径: $0"
 
 # 进入应用目录（相对于脚本位置）
 # Xcode Cloud 的工作目录通常是项目根目录（包含 .xcodeproj 的目录）
@@ -90,14 +107,30 @@ install_flutter_if_needed() {
   fi
 
   log "🔍 未找到 Flutter SDK，开始自动安装..."
+  export GIT_TERMINAL_PROMPT=0
   command -v git >/dev/null 2>&1 || fail "git 不存在，无法自动安装 Flutter（请在 Xcode Cloud 环境中确保 git 可用）"
+  log "🧰 git 版本: $(git --version 2>/dev/null || echo "<未知>")"
 
   export FLUTTER_ROOT="${FLUTTER_ROOT:-$HOME/flutter}"
   if [ ! -d "$FLUTTER_ROOT/.git" ]; then
     log "⬇️  克隆 Flutter SDK 到: $FLUTTER_ROOT"
     # 使用 shallow clone 提升 Xcode Cloud 首次构建速度；如需指定 revision，则后续再 fetch 单个 commit
     CLONE_REF="${FLUTTER_CHANNEL:-stable}"
-    git clone --depth 1 --branch "$CLONE_REF" "$FLUTTER_GIT_URL" "$FLUTTER_ROOT" || fail "克隆 Flutter 仓库失败: $FLUTTER_GIT_URL"
+    git clone --depth 1 --branch "$CLONE_REF" "$FLUTTER_GIT_URL" "$FLUTTER_ROOT"
+    CLONE_CODE=$?
+    if [ $CLONE_CODE -ne 0 ]; then
+      log ""
+      log "❌ 克隆 Flutter 仓库失败 (退出码: $CLONE_CODE)"
+      log "  - 仓库地址: $FLUTTER_GIT_URL"
+      log "  - 分支/频道: $CLONE_REF"
+      log ""
+      log "可能原因/解决方案:"
+      log "1) Xcode Cloud 构建机无法访问该地址（网络限制/DNS/需要代理）"
+      log "   - 可在 Workflow 环境变量中设置 FLUTTER_GIT_URL 为可用镜像"
+      log "2) 你已在 Workflow 配置了 FLUTTER_ROOT，但路径不正确"
+      log "   - 请确保 FLUTTER_ROOT/bin/flutter 存在且可执行"
+      exit $CLONE_CODE
+    fi
   else
     log "✅ 已存在 Flutter SDK: $FLUTTER_ROOT"
   fi
@@ -108,7 +141,7 @@ install_flutter_if_needed() {
     log "🔁 切换 Flutter 到 revision: $FLUTTER_GIT_REVISION"
     # shallow clone 场景下，先尝试 fetch 单个 commit
     git fetch --depth 1 origin "$FLUTTER_GIT_REVISION" || git fetch origin "$FLUTTER_GIT_REVISION" || true
-    git checkout "$FLUTTER_GIT_REVISION" || fail "无法 checkout Flutter revision: $FLUTTER_GIT_REVISION"
+    git checkout "$FLUTTER_GIT_REVISION" || fail "无法 checkout Flutter revision: $FLUTTER_GIT_REVISION（可能是网络导致 fetch 不到该 commit）"
   elif [ -n "$FLUTTER_CHANNEL" ]; then
     log "🔁 切换 Flutter 到 channel: $FLUTTER_CHANNEL"
     git fetch origin "$FLUTTER_CHANNEL" || true
@@ -162,11 +195,10 @@ export PATH="$FLUTTER_ROOT/bin:$PATH"
 cd "$APP_DIR" || fail "无法进入应用目录: $APP_DIR"
 
 # 预缓存 iOS 相关产物，避免首次构建下载导致失败/超时
-log "📦 运行 flutter precache --ios..."
-flutter precache --ios
+run_cmd "运行 flutter precache --ios" flutter precache --ios
 PRECACHE_EXIT_CODE=$?
 if [ $PRECACHE_EXIT_CODE -ne 0 ]; then
-  fail "flutter precache --ios 执行失败 (退出码: $PRECACHE_EXIT_CODE)"
+  fail "flutter precache --ios 执行失败"
 fi
 
 # 运行 flutter pub get 生成 Generated.xcconfig
