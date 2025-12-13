@@ -5,16 +5,16 @@
 
 -- 添加iOS订阅字段
 ALTER TABLE `user` 
-ADD COLUMN `isPremiumIOS` TINYINT(1) NOT NULL DEFAULT 0 COMMENT 'iOS是否为会员' AFTER `enableAllWrong`;
+ADD COLUMN `isPremiumIos` TINYINT(1) NOT NULL DEFAULT 0 COMMENT 'iOS是否为会员' AFTER `enableAllWrong`;
 
 ALTER TABLE `user` 
-ADD COLUMN `subscriptionExpireDateIOS` DATETIME NULL COMMENT 'iOS订阅到期时间' AFTER `isPremiumIOS`;
+ADD COLUMN `subscriptionExpireDateIos` DATETIME NULL COMMENT 'iOS订阅到期时间' AFTER `isPremiumIos`;
 
 ALTER TABLE `user` 
-ADD COLUMN `subscriptionTypeIOS` VARCHAR(20) NULL COMMENT 'iOS订阅类型：monthly/annual' AFTER `subscriptionExpireDateIOS`;
+ADD COLUMN `subscriptionTypeIos` VARCHAR(20) NULL COMMENT 'iOS订阅类型：monthly/annual' AFTER `subscriptionExpireDateIos`;
 
 ALTER TABLE `user` 
-ADD COLUMN `subscriptionStatusIOS` VARCHAR(20) NULL COMMENT 'iOS订阅状态：active/expired/cancelled' AFTER `subscriptionTypeIOS`;
+ADD COLUMN `subscriptionStatusIos` VARCHAR(20) NULL COMMENT 'iOS订阅状态：active/expired/cancelled' AFTER `subscriptionTypeIos`;
 
 ALTER TABLE `user` 
-ADD COLUMN `lastReceiptDataIOS` TEXT NULL COMMENT 'iOS最后验证的收据数据（用于恢复购买）' AFTER `subscriptionStatusIOS`;
+ADD COLUMN `lastReceiptDataIos` TEXT NULL COMMENT 'iOS最后验证的收据数据（用于恢复购买）' AFTER `subscriptionStatusIos`;

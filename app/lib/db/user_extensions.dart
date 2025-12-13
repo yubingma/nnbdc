@@ -44,11 +44,11 @@ extension UserExtensions on User {
     double? dakaRatio,
     bool? enableAllWrong,
     // iOS订阅字段
-    bool? isPremiumIOS,
-    DateTime? subscriptionExpireDateIOS,
-    String? subscriptionTypeIOS,
-    String? subscriptionStatusIOS,
-    String? lastReceiptDataIOS,
+    bool? isPremiumIos,
+    DateTime? subscriptionExpireDateIos,
+    String? subscriptionTypeIos,
+    String? subscriptionStatusIos,
+    String? lastReceiptDataIos,
     
   }) {
     return User(
@@ -89,11 +89,11 @@ extension UserExtensions on User {
       dakaRatio: dakaRatio ?? this.dakaRatio,
       enableAllWrong: enableAllWrong ?? this.enableAllWrong,
       // iOS订阅字段
-      isPremiumIOS: isPremiumIOS ?? this.isPremiumIOS,
-      subscriptionExpireDateIOS: subscriptionExpireDateIOS ?? this.subscriptionExpireDateIOS,
-      subscriptionTypeIOS: subscriptionTypeIOS ?? this.subscriptionTypeIOS,
-      subscriptionStatusIOS: subscriptionStatusIOS ?? this.subscriptionStatusIOS,
-      lastReceiptDataIOS: lastReceiptDataIOS ?? this.lastReceiptDataIOS,
+      isPremiumIos: isPremiumIos ?? this.isPremiumIos,
+      subscriptionExpireDateIos: subscriptionExpireDateIos ?? this.subscriptionExpireDateIos,
+      subscriptionTypeIos: subscriptionTypeIos ?? this.subscriptionTypeIos,
+      subscriptionStatusIos: subscriptionStatusIos ?? this.subscriptionStatusIos,
+      lastReceiptDataIos: lastReceiptDataIos ?? this.lastReceiptDataIos,
     );
   }
   
@@ -137,11 +137,11 @@ extension UserExtensions on User {
       dakaRatio: Value(dakaRatio),
       enableAllWrong: Value(enableAllWrong),
       // iOS订阅字段
-      isPremiumIOS: Value(isPremiumIOS),
-      subscriptionExpireDateIOS: Value(subscriptionExpireDateIOS),
-      subscriptionTypeIOS: Value(subscriptionTypeIOS),
-      subscriptionStatusIOS: Value(subscriptionStatusIOS),
-      lastReceiptDataIOS: Value(lastReceiptDataIOS),
+      isPremiumIos: Value(isPremiumIos),
+      subscriptionExpireDateIos: Value(subscriptionExpireDateIos),
+      subscriptionTypeIos: Value(subscriptionTypeIos),
+      subscriptionStatusIos: Value(subscriptionStatusIos),
+      lastReceiptDataIos: Value(lastReceiptDataIos),
       
     );
   }
@@ -186,11 +186,11 @@ extension UserExtensions on User {
       dakaRatio: Value(dakaRatio),
       enableAllWrong: Value(enableAllWrong),
       // iOS订阅字段
-      isPremiumIOS: Value(isPremiumIOS),
-      subscriptionExpireDateIOS: Value(subscriptionExpireDateIOS),
-      subscriptionTypeIOS: Value(subscriptionTypeIOS),
-      subscriptionStatusIOS: Value(subscriptionStatusIOS),
-      lastReceiptDataIOS: Value(lastReceiptDataIOS),
+      isPremiumIos: Value(isPremiumIos),
+      subscriptionExpireDateIos: Value(subscriptionExpireDateIos),
+      subscriptionTypeIos: Value(subscriptionTypeIos),
+      subscriptionStatusIos: Value(subscriptionStatusIos),
+      lastReceiptDataIos: Value(lastReceiptDataIos),
       
     );
   }
@@ -243,10 +243,10 @@ extension UserExtensions on User {
     userVo.enableAllWrong = enableAllWrong;
     
     // 订阅相关字段（iOS平台）
-    userVo.isPremiumIOS = isPremiumIOS;
-    userVo.subscriptionExpireDateIOS = subscriptionExpireDateIOS;
-    userVo.subscriptionTypeIOS = subscriptionTypeIOS;
-    userVo.subscriptionStatusIOS = subscriptionStatusIOS;
+    userVo.isPremiumIos = isPremiumIos;
+    userVo.subscriptionExpireDateIos = subscriptionExpireDateIos;
+    userVo.subscriptionTypeIos = subscriptionTypeIos;
+    userVo.subscriptionStatusIos = subscriptionStatusIos;
     
     return userVo;
   }

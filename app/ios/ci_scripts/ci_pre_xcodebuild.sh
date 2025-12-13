@@ -3,70 +3,26 @@
 # Xcode Cloud 构建前脚本
 # 在 Xcode 构建之前运行 Flutter 命令来生成必要的配置文件
 
-# 不要使用 set -e，以便更好地处理错误和提供调试信息
 set +e
 
-echo "🔧 开始 Xcode Cloud 构建前准备..."
-echo "📋 环境信息:"
-echo "  - 当前目录: $PWD"
-echo "  - 用户: $(whoami)"
-echo "  - HOME: $HOME"
-echo "  - PATH: $PATH"
+log() {
+  printf "%s\n" "$*"
+}
 
-# 获取 Flutter 路径
-# Xcode Cloud 通常会在环境变量中设置 FLUTTER_ROOT
-# 如果没有，尝试使用默认路径或从 PATH 中查找
-if [ -z "$FLUTTER_ROOT" ]; then
-    echo "🔍 FLUTTER_ROOT 未设置，尝试自动查找..."
-    
-    # 尝试从常见位置查找 Flutter
-    if [ -d "$HOME/flutter" ]; then
-        export FLUTTER_ROOT="$HOME/flutter"
-        echo "✅ 在 $HOME/flutter 找到 Flutter"
-    elif command -v flutter >/dev/null 2>&1; then
-        # 从 flutter 命令推断路径
-        FLUTTER_BIN=$(which flutter 2>/dev/null)
-        if [ -n "$FLUTTER_BIN" ]; then
-            export FLUTTER_ROOT=$(dirname $(dirname "$FLUTTER_BIN"))
-            echo "✅ 从 PATH 中找到 Flutter: $FLUTTER_ROOT"
-        fi
-    else
-        echo "⚠️  未找到 Flutter SDK"
-        echo "尝试的路径:"
-        echo "  - $HOME/flutter"
-        echo "  - PATH 中的 flutter 命令"
-        echo ""
-        echo "❌ 错误: 无法找到 Flutter SDK"
-        echo ""
-        echo "解决方案:"
-        echo "1. 在 Xcode Cloud 工作流设置中添加环境变量 FLUTTER_ROOT"
-        echo "2. 或者在脚本中安装 Flutter SDK"
-        echo ""
-        echo "当前环境变量:"
-        env | grep -i flutter || echo "  无 Flutter 相关环境变量"
-        exit 1
-    fi
-else
-    echo "✅ 使用环境变量 FLUTTER_ROOT: $FLUTTER_ROOT"
-fi
+fail() {
+  log ""
+  log "❌ 错误: $*"
+  exit 1
+}
 
-# 验证 Flutter 路径
-if [ ! -d "$FLUTTER_ROOT" ]; then
-    echo "❌ 错误: Flutter SDK 路径不存在: $FLUTTER_ROOT"
-    exit 1
-fi
-
-if [ ! -f "$FLUTTER_ROOT/bin/flutter" ]; then
-    echo "❌ 错误: Flutter 可执行文件不存在: $FLUTTER_ROOT/bin/flutter"
-    exit 1
-fi
-
-echo "📦 Flutter SDK 路径: $FLUTTER_ROOT"
-echo "📦 Flutter 版本:"
-"$FLUTTER_ROOT/bin/flutter" --version || echo "  ⚠️  无法获取 Flutter 版本"
-
-# 添加 Flutter 到 PATH
-export PATH="$FLUTTER_ROOT/bin:$PATH"
+log "🔧 开始 Xcode Cloud 构建前准备..."
+log "📋 环境信息:"
+log "  - 当前目录: $PWD"
+log "  - 用户: $(whoami)"
+log "  - HOME: $HOME"
+log "  - PATH: $PATH"
+log "  - XCODE_CLOUD_WORKFLOW: ${XCODE_CLOUD_WORKFLOW:-<未设置>}"
+log "  - CI: ${CI:-<未设置>}"
 
 # 进入应用目录（相对于脚本位置）
 # Xcode Cloud 的工作目录通常是项目根目录（包含 .xcodeproj 的目录）
@@ -76,7 +32,7 @@ APP_DIR="$(cd "$IOS_DIR/.." && pwd)"
 
 # 验证是否在正确的目录
 if [ ! -f "$APP_DIR/pubspec.yaml" ]; then
-    echo "⚠️  警告: 未找到 pubspec.yaml，尝试从当前工作目录查找..."
+    log "⚠️  警告: 未找到 pubspec.yaml，尝试从当前工作目录查找..."
     # 尝试从当前目录向上查找
     CURRENT_DIR="$PWD"
     while [ "$CURRENT_DIR" != "/" ]; do
@@ -89,52 +45,180 @@ if [ ! -f "$APP_DIR/pubspec.yaml" ]; then
 fi
 
 if [ ! -f "$APP_DIR/pubspec.yaml" ]; then
-    echo "❌ 错误: 无法找到 pubspec.yaml 文件"
-    echo "当前目录: $PWD"
-    echo "尝试的路径: $APP_DIR"
-    exit 1
+    fail "无法找到 pubspec.yaml 文件。当前目录: $PWD，尝试的路径: $APP_DIR"
 fi
 
-cd "$APP_DIR"
-echo "📂 应用目录: $APP_DIR"
+log "📂 应用目录: $APP_DIR"
+
+# 从 .metadata 推断 Flutter channel/revision（用于 Xcode Cloud 自动安装 Flutter，避免版本漂移）
+METADATA_FILE="$APP_DIR/.metadata"
+METADATA_REVISION=""
+METADATA_CHANNEL=""
+if [ -f "$METADATA_FILE" ]; then
+  METADATA_REVISION=$(sed -n 's/^[[:space:]]*revision:[[:space:]]*"\(.*\)".*/\1/p' "$METADATA_FILE" | head -n 1)
+  METADATA_CHANNEL=$(sed -n 's/^[[:space:]]*channel:[[:space:]]*"\(.*\)".*/\1/p' "$METADATA_FILE" | head -n 1)
+fi
+
+# 允许通过环境变量覆盖（优先级更高）
+FLUTTER_GIT_URL="${FLUTTER_GIT_URL:-https://github.com/flutter/flutter.git}"
+FLUTTER_GIT_REVISION="${FLUTTER_GIT_REVISION:-$METADATA_REVISION}"
+FLUTTER_CHANNEL="${FLUTTER_CHANNEL:-$METADATA_CHANNEL}"
+
+if [ -n "$FLUTTER_GIT_REVISION" ]; then
+  log "📌 Flutter 期望 revision: $FLUTTER_GIT_REVISION${FLUTTER_CHANNEL:+ (channel: $FLUTTER_CHANNEL)}"
+else
+  log "⚠️  未从 .metadata 解析到 Flutter revision，将使用已安装 Flutter 或下载 stable 最新。"
+fi
+
+install_flutter_if_needed() {
+  # Xcode Cloud 默认不会预装 Flutter，找不到时自动下载到 $HOME/flutter（可复用缓存）
+  if [ -z "$FLUTTER_ROOT" ] && [ -d "$HOME/flutter" ]; then
+    export FLUTTER_ROOT="$HOME/flutter"
+  fi
+
+  if [ -n "$FLUTTER_ROOT" ] && [ -x "$FLUTTER_ROOT/bin/flutter" ]; then
+    return 0
+  fi
+
+  if command -v flutter >/dev/null 2>&1; then
+    # 从 flutter 命令推断路径
+    FLUTTER_BIN=$(command -v flutter 2>/dev/null)
+    if [ -n "$FLUTTER_BIN" ]; then
+      export FLUTTER_ROOT=$(dirname "$(dirname "$FLUTTER_BIN")")
+      return 0
+    fi
+  fi
+
+  log "🔍 未找到 Flutter SDK，开始自动安装..."
+  command -v git >/dev/null 2>&1 || fail "git 不存在，无法自动安装 Flutter（请在 Xcode Cloud 环境中确保 git 可用）"
+
+  export FLUTTER_ROOT="${FLUTTER_ROOT:-$HOME/flutter}"
+  if [ ! -d "$FLUTTER_ROOT/.git" ]; then
+    log "⬇️  克隆 Flutter SDK 到: $FLUTTER_ROOT"
+    # 使用 shallow clone 提升 Xcode Cloud 首次构建速度；如需指定 revision，则后续再 fetch 单个 commit
+    CLONE_REF="${FLUTTER_CHANNEL:-stable}"
+    git clone --depth 1 --branch "$CLONE_REF" "$FLUTTER_GIT_URL" "$FLUTTER_ROOT" || fail "克隆 Flutter 仓库失败: $FLUTTER_GIT_URL"
+  else
+    log "✅ 已存在 Flutter SDK: $FLUTTER_ROOT"
+  fi
+
+  cd "$FLUTTER_ROOT" || fail "无法进入 Flutter 目录: $FLUTTER_ROOT"
+  # 尽量 checkout 到 .metadata 的 revision，确保与本地一致
+  if [ -n "$FLUTTER_GIT_REVISION" ]; then
+    log "🔁 切换 Flutter 到 revision: $FLUTTER_GIT_REVISION"
+    # shallow clone 场景下，先尝试 fetch 单个 commit
+    git fetch --depth 1 origin "$FLUTTER_GIT_REVISION" || git fetch origin "$FLUTTER_GIT_REVISION" || true
+    git checkout "$FLUTTER_GIT_REVISION" || fail "无法 checkout Flutter revision: $FLUTTER_GIT_REVISION"
+  elif [ -n "$FLUTTER_CHANNEL" ]; then
+    log "🔁 切换 Flutter 到 channel: $FLUTTER_CHANNEL"
+    git fetch origin "$FLUTTER_CHANNEL" || true
+    git checkout "$FLUTTER_CHANNEL" || true
+  fi
+}
+
+# 获取 Flutter 路径
+# Xcode Cloud 通常会在环境变量中设置 FLUTTER_ROOT
+# 如果没有，尝试使用默认路径或从 PATH 中查找
+if [ -z "$FLUTTER_ROOT" ]; then
+    log "🔍 FLUTTER_ROOT 未设置，尝试自动查找..."
+    
+    # 尝试从常见位置查找 Flutter
+    if [ -d "$HOME/flutter" ]; then
+        export FLUTTER_ROOT="$HOME/flutter"
+        log "✅ 在 $HOME/flutter 找到 Flutter"
+    elif command -v flutter >/dev/null 2>&1; then
+        # 从 flutter 命令推断路径
+        FLUTTER_BIN=$(which flutter 2>/dev/null)
+        if [ -n "$FLUTTER_BIN" ]; then
+            export FLUTTER_ROOT=$(dirname $(dirname "$FLUTTER_BIN"))
+            log "✅ 从 PATH 中找到 Flutter: $FLUTTER_ROOT"
+        fi
+    else
+        log "⚠️  未找到 Flutter SDK（将尝试自动安装）"
+    fi
+else
+    log "✅ 使用环境变量 FLUTTER_ROOT: $FLUTTER_ROOT"
+fi
+
+# 找不到则自动安装
+install_flutter_if_needed
+
+# 验证 Flutter 路径
+if [ ! -d "$FLUTTER_ROOT" ]; then
+    fail "Flutter SDK 路径不存在: $FLUTTER_ROOT"
+fi
+
+if [ ! -f "$FLUTTER_ROOT/bin/flutter" ]; then
+    fail "Flutter 可执行文件不存在: $FLUTTER_ROOT/bin/flutter"
+fi
+
+log "📦 Flutter SDK 路径: $FLUTTER_ROOT"
+log "📦 Flutter 版本:"
+"$FLUTTER_ROOT/bin/flutter" --version || log "  ⚠️  无法获取 Flutter 版本"
+
+# 添加 Flutter 到 PATH
+export PATH="$FLUTTER_ROOT/bin:$PATH"
+
+cd "$APP_DIR" || fail "无法进入应用目录: $APP_DIR"
+
+# 预缓存 iOS 相关产物，避免首次构建下载导致失败/超时
+log "📦 运行 flutter precache --ios..."
+flutter precache --ios
+PRECACHE_EXIT_CODE=$?
+if [ $PRECACHE_EXIT_CODE -ne 0 ]; then
+  fail "flutter precache --ios 执行失败 (退出码: $PRECACHE_EXIT_CODE)"
+fi
 
 # 运行 flutter pub get 生成 Generated.xcconfig
-echo "📥 运行 flutter pub get..."
+log "📥 运行 flutter pub get..."
 flutter pub get
 PUB_GET_EXIT_CODE=$?
 
 if [ $PUB_GET_EXIT_CODE -ne 0 ]; then
-    echo "❌ 错误: flutter pub get 执行失败 (退出码: $PUB_GET_EXIT_CODE)"
-    echo ""
-    echo "调试信息:"
-    echo "  - Flutter 路径: $FLUTTER_ROOT"
-    echo "  - 应用目录: $APP_DIR"
-    echo "  - pubspec.yaml 存在: $([ -f "$APP_DIR/pubspec.yaml" ] && echo "是" || echo "否")"
-    exit $PUB_GET_EXIT_CODE
+    log "调试信息:"
+    log "  - Flutter 路径: $FLUTTER_ROOT"
+    log "  - 应用目录: $APP_DIR"
+    log "  - pubspec.yaml 存在: $([ -f "$APP_DIR/pubspec.yaml" ] && echo "是" || echo "否")"
+    exit "$PUB_GET_EXIT_CODE"
 fi
 
-echo "✅ flutter pub get 执行成功"
+log "✅ flutter pub get 执行成功"
 
 # 验证 Generated.xcconfig 是否已生成
 GENERATED_XCCONFIG="$APP_DIR/ios/Flutter/Generated.xcconfig"
 if [ ! -f "$GENERATED_XCCONFIG" ]; then
-    echo "❌ 错误: Generated.xcconfig 文件未生成"
-    echo "文件路径: $GENERATED_XCCONFIG"
-    echo ""
-    echo "调试信息:"
-    echo "  - ios/Flutter 目录存在: $([ -d "$APP_DIR/ios/Flutter" ] && echo "是" || echo "否")"
+    log "调试信息:"
+    log "  - ios/Flutter 目录存在: $([ -d "$APP_DIR/ios/Flutter" ] && echo "是" || echo "否")"
     if [ -d "$APP_DIR/ios/Flutter" ]; then
-        echo "  - ios/Flutter 目录内容:"
+        log "  - ios/Flutter 目录内容:"
         ls -la "$APP_DIR/ios/Flutter" || true
     fi
-    exit 1
+    fail "Generated.xcconfig 文件未生成，路径: $GENERATED_XCCONFIG"
 fi
 
-echo "✅ Generated.xcconfig 已生成: $GENERATED_XCCONFIG"
+log "✅ Generated.xcconfig 已生成: $GENERATED_XCCONFIG"
 
 # 显示文件内容的前几行（用于调试）
-echo "📄 Generated.xcconfig 内容预览:"
-head -10 "$GENERATED_XCCONFIG" || echo "  ⚠️  无法读取文件内容"
+log "📄 Generated.xcconfig 内容预览:"
+head -10 "$GENERATED_XCCONFIG" || log "  ⚠️  无法读取文件内容"
 
-echo ""
-echo "✅ Xcode Cloud 构建前准备完成！"
+# 预先执行 pod install（Xcode Cloud 不一定会自动执行，且 Flutter 的 Podfile 依赖 Generated.xcconfig）
+IOS_WORKDIR="$APP_DIR/ios"
+if [ -d "$IOS_WORKDIR" ]; then
+  if command -v pod >/dev/null 2>&1; then
+    log "📦 CocoaPods 版本: $(pod --version 2>/dev/null || echo "<未知>")"
+    log "📦 运行 pod install..."
+    cd "$IOS_WORKDIR" || fail "无法进入 iOS 目录: $IOS_WORKDIR"
+    pod install
+    POD_EXIT_CODE=$?
+    if [ $POD_EXIT_CODE -ne 0 ]; then
+      fail "pod install 执行失败 (退出码: $POD_EXIT_CODE)"
+    fi
+    cd "$APP_DIR" || fail "无法返回应用目录: $APP_DIR"
+  else
+    log "⚠️  未找到 pod 命令，跳过 pod install（如后续构建失败，请在 Xcode Cloud 镜像中安装 CocoaPods）"
+  fi
+fi
+
+log ""
+log "✅ Xcode Cloud 构建前准备完成！"

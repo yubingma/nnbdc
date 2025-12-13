@@ -290,30 +290,30 @@ class MyDatabase extends _$MyDatabase {
   Future<void> _migrateFromV4ToV5(Migrator m) async {
     await transaction(() async {
       // 添加iOS订阅字段
-      // isPremiumIOS 设置为 NOT NULL，默认值为 0 (false)
+      // isPremiumIos 设置为 NOT NULL，默认值为 0 (false)
       await customStatement('''
         ALTER TABLE users 
-        ADD COLUMN isPremiumIOS INTEGER NOT NULL DEFAULT 0
+        ADD COLUMN isPremiumIos INTEGER NOT NULL DEFAULT 0
       ''');
       
       await customStatement('''
         ALTER TABLE users 
-        ADD COLUMN subscriptionExpireDateIOS INTEGER
+        ADD COLUMN subscriptionExpireDateIos INTEGER
       ''');
       
       await customStatement('''
         ALTER TABLE users 
-        ADD COLUMN subscriptionTypeIOS TEXT
+        ADD COLUMN subscriptionTypeIos TEXT
       ''');
       
       await customStatement('''
         ALTER TABLE users 
-        ADD COLUMN subscriptionStatusIOS TEXT
+        ADD COLUMN subscriptionStatusIos TEXT
       ''');
       
       await customStatement('''
         ALTER TABLE users 
-        ADD COLUMN lastReceiptDataIOS TEXT
+        ADD COLUMN lastReceiptDataIos TEXT
       ''');
       
       Global.logger.i('✅ 添加iOS订阅相关字段完成（版本4→5）');

@@ -187,19 +187,19 @@ class Users extends Table {
   
   // iOS订阅字段
   /// iOS是否为会员
-  BoolColumn get isPremiumIOS => boolean().withDefault(const Constant(false))();
+  BoolColumn get isPremiumIos => boolean().withDefault(const Constant(false))();
   
   /// iOS订阅到期时间
-  DateTimeColumn get subscriptionExpireDateIOS => dateTime().nullable()();
+  DateTimeColumn get subscriptionExpireDateIos => dateTime().nullable()();
   
   /// iOS订阅类型：monthly/annual
-  TextColumn get subscriptionTypeIOS => text().nullable()();
+  TextColumn get subscriptionTypeIos => text().nullable()();
   
   /// iOS订阅状态：active/expired/cancelled
-  TextColumn get subscriptionStatusIOS => text().nullable()();
+  TextColumn get subscriptionStatusIos => text().nullable()();
   
   /// iOS最后验证的收据数据（用于恢复购买）
-  TextColumn get lastReceiptDataIOS => text().nullable()();
+  TextColumn get lastReceiptDataIos => text().nullable()();
 
   // 旧字段 passIfSpeakOutOneMeaning 已移除
 

@@ -85,7 +85,7 @@ public class SubscriptionBo extends BaseBo<User> {
             updateUserSubscription(user, verificationResult);
 
             // 保存收据数据（用于恢复购买）
-            user.setLastReceiptDataIOS(receiptData);
+            user.setLastReceiptDataIos(receiptData);
             try {
                 userBo.updateEntity(user);
             } catch (IllegalAccessException e) {
@@ -233,10 +233,10 @@ public class SubscriptionBo extends BaseBo<User> {
         boolean isActive = expiresDate != null && expiresDate.after(now);
 
         // 更新iOS订阅字段
-        user.setIsPremiumIOS(isActive);
-        user.setSubscriptionExpireDateIOS(expiresDate);
-        user.setSubscriptionTypeIOS(verificationResult.subscriptionType);
-        user.setSubscriptionStatusIOS(isActive ? "active" : "expired");
+        user.setIsPremiumIos(isActive);
+        user.setSubscriptionExpireDateIos(expiresDate);
+        user.setSubscriptionTypeIos(verificationResult.subscriptionType);
+        user.setSubscriptionStatusIos(isActive ? "active" : "expired");
 
         logger.info("更新用户订阅状态: userId={}, platform=ios, isPremium={}, expireDate={}, type={}", 
                 user.getId(), isActive, expiresDate, verificationResult.subscriptionType);

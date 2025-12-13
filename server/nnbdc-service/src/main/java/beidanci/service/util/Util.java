@@ -651,6 +651,11 @@ public class Util {
         user.setEnableAllWrong(false);
         user.setAsrPassRule("ONE");
         user.setIsSysUser(isSysUser);
+        user.setIsPremiumIos(false);
+        user.setSubscriptionExpireDateIos(null);
+        user.setSubscriptionTypeIos(null);
+        user.setSubscriptionStatusIos(null);
+        user.setLastReceiptDataIos(null);
         userBo.createEntity(user);
         log.info(String.format("创建了新用户:[%s]", user.getDisplayNickName()));
 

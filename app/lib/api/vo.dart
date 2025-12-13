@@ -215,16 +215,16 @@ class UserVo {
   
   // iOS订阅字段
   /// iOS是否为会员
-  bool? isPremiumIOS;
+  bool? isPremiumIos;
   
   /// iOS订阅到期时间
-  DateTime? subscriptionExpireDateIOS;
+  DateTime? subscriptionExpireDateIos;
   
   /// iOS订阅类型：monthly/annual
-  String? subscriptionTypeIOS;
+  String? subscriptionTypeIos;
   
   /// iOS订阅状态：active/expired/cancelled
-  String? subscriptionStatusIOS;
+  String? subscriptionStatusIos;
 
   UserVo(this.id, this.userName);
 
@@ -269,10 +269,10 @@ class UserVo {
     userVo.enableAllWrong = user.enableAllWrong;
     
     // 订阅相关字段（iOS平台）
-    userVo.isPremiumIOS = user.isPremiumIOS;
-    userVo.subscriptionExpireDateIOS = user.subscriptionExpireDateIOS;
-    userVo.subscriptionTypeIOS = user.subscriptionTypeIOS;
-    userVo.subscriptionStatusIOS = user.subscriptionStatusIOS;
+    userVo.isPremiumIos = user.isPremiumIos;
+    userVo.subscriptionExpireDateIos = user.subscriptionExpireDateIos;
+    userVo.subscriptionTypeIos = user.subscriptionTypeIos;
+    userVo.subscriptionStatusIos = user.subscriptionStatusIos;
 
     userVo.password = user.password;
     userVo.lastLoginTime = user.lastLoginTime;
@@ -1219,11 +1219,11 @@ User userVo2User(UserVo userVo) {
       lastShareTime: userVo.lastShareTime,
       nickName: userVo.nickName,
       // 订阅相关字段（iOS平台）
-      isPremiumIOS: userVo.isPremiumIOS ?? false,
-      subscriptionExpireDateIOS: userVo.subscriptionExpireDateIOS,
-      subscriptionTypeIOS: userVo.subscriptionTypeIOS,
-      subscriptionStatusIOS: userVo.subscriptionStatusIOS,
-      lastReceiptDataIOS: null); // 收据数据不从前端传输
+      isPremiumIos: userVo.isPremiumIos ?? false,
+      subscriptionExpireDateIos: userVo.subscriptionExpireDateIos,
+      subscriptionTypeIos: userVo.subscriptionTypeIos,
+      subscriptionStatusIos: userVo.subscriptionStatusIos,
+      lastReceiptDataIos: null); // 收据数据不从前端传输
 
   return user;
 }

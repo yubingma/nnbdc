@@ -319,16 +319,16 @@ class SubscriptionUtil {
     // 只支持iOS平台订阅
     if (PlatformUtils.isIOS) {
       // 检查iOS订阅
-      if (user.isPremiumIOS == true) {
+      if (user.isPremiumIos == true) {
         // 检查订阅是否过期
-        if (user.subscriptionExpireDateIOS != null) {
+        if (user.subscriptionExpireDateIos != null) {
           final now = DateTime.now();
-          final expireDate = user.subscriptionExpireDateIOS!;
+          final expireDate = user.subscriptionExpireDateIos!;
           if (expireDate.isAfter(now)) {
             return true;
           }
         } else {
-          // 如果没有过期时间，但isPremiumIOS为true，也认为是会员
+          // 如果没有过期时间，但isPremiumIos为true，也认为是会员
           return true;
         }
       }
@@ -345,7 +345,7 @@ class SubscriptionUtil {
     }
 
     if (PlatformUtils.isIOS) {
-      return user.subscriptionExpireDateIOS;
+      return user.subscriptionExpireDateIos;
     }
 
     return null;
@@ -359,7 +359,7 @@ class SubscriptionUtil {
     }
 
     if (PlatformUtils.isIOS) {
-      return user.subscriptionTypeIOS;
+      return user.subscriptionTypeIos;
     }
 
     return null;
