@@ -9,7 +9,7 @@ log() {
   printf "%s\n" "$*"
 }
 
-SCRIPT_VERSION="2025-12-13.5"
+SCRIPT_VERSION="2025-12-13.6"
 
 fail() {
   log ""
@@ -54,14 +54,23 @@ is_flutter_healthy() {
   if [ $CODE -ne 0 ]; then
     return 1
   fi
-  # Xcode Cloud 上经常会出现某个“残缺 Flutter”导致版本显示 unknown
+  # Xcode Cloud 上经常会出现某个“残缺 Flutter”导致版本显示 unknown/unknown source，
+  # 这会导致 flutter pub get 把 Flutter 版本当作 0.0.0-unknown 进而解析失败。
   echo "$VER_OUT" | grep -q "0.0.0-unknown" && return 1
+  echo "$VER_OUT" | grep -q "unknown source" && return 1
+  # 正常情况下第一行会包含语义化版本号，例如：Flutter 3.32.5 • channel stable • ...
+  echo "$VER_OUT" | head -n 1 | grep -Eq 'Flutter[[:space:]]+[0-9]+\.[0-9]+\.[0-9]+' || return 1
   return 0
 }
 
 decode_base64() {
   # macOS 的 base64 参数在不同环境可能不同，直接用 python3 解码更稳
-  python3 -c 'import base64,sys; print(base64.b64decode(sys.argv[1]).decode("utf-8", "ignore"))' "$1" 2>/dev/null
+  if command -v python3 >/dev/null 2>&1; then
+    python3 -c 'import base64,sys; print(base64.b64decode(sys.argv[1]).decode("utf-8", "ignore"))' "$1" 2>/dev/null
+    return $?
+  fi
+  # fallback：兼容 GNU/macOS base64
+  echo "$1" | base64 --decode 2>/dev/null || echo "$1" | base64 -D 2>/dev/null
 }
 
 detect_flutter_version_from_project() {
@@ -109,6 +118,8 @@ ensure_flutter_version_known() {
 
   # 先拉取 tags（大多数情况下即可恢复正常版本号）
   run_cmd "git fetch --tags --force（用于恢复 flutter --version）" git fetch --tags --force || true
+  # 触发 Flutter 重新生成版本信息
+  "$FLUTTER_ROOT/bin/flutter" --version >/dev/null 2>&1 || true
 
   if is_flutter_healthy; then
     return 0
@@ -117,6 +128,7 @@ ensure_flutter_version_known() {
   # 再尝试补全 shallow 仓库（unshallow），避免 git describe 找不到版本
   run_cmd "git fetch --unshallow（补全 shallow 历史）" git fetch --unshallow || true
   run_cmd "git fetch --tags --force（再次拉取 tags）" git fetch --tags --force || true
+  "$FLUTTER_ROOT/bin/flutter" --version >/dev/null 2>&1 || true
 
   if is_flutter_healthy; then
     return 0
@@ -353,21 +365,22 @@ log "📦 Flutter SDK 路径: $FLUTTER_ROOT"
 log "📦 Flutter 版本:"
 "$FLUTTER_ROOT/bin/flutter" --version || log "  ⚠️  无法获取 Flutter 版本"
 
+# 添加 Flutter 到 PATH
+export PATH="$FLUTTER_ROOT/bin:$PATH"
+hash -r 2>/dev/null || true
+
 log "🔎 Flutter 自检（用于定位 0.0.0-unknown）:"
 log "  - which flutter: $(command -v flutter 2>/dev/null || echo "<未找到>")"
-log "  - flutter --version: $(flutter --version 2>/dev/null | head -n 1 || echo "<失败>")"
+log "  - flutter --version: $("$FLUTTER_ROOT/bin/flutter" --version 2>/dev/null | head -n 1 || echo "<失败>")"
 if [ -d "$FLUTTER_ROOT/.git" ]; then
   log "  - git describe: $(git -C "$FLUTTER_ROOT" describe --tags --always --dirty 2>/dev/null || echo "<失败>")"
   log "  - is-shallow: $(git -C "$FLUTTER_ROOT" rev-parse --is-shallow-repository 2>/dev/null || echo "<未知>")"
 fi
 
-# 添加 Flutter 到 PATH
-export PATH="$FLUTTER_ROOT/bin:$PATH"
-
 cd "$APP_DIR" || fail "无法进入应用目录: $APP_DIR"
 
 # 预缓存 iOS 相关产物，避免首次构建下载导致失败/超时
-run_cmd "运行 flutter precache --ios" flutter precache --ios
+run_cmd "运行 flutter precache --ios" "$FLUTTER_ROOT/bin/flutter" precache --ios
 PRECACHE_EXIT_CODE=$?
 if [ $PRECACHE_EXIT_CODE -ne 0 ]; then
   fail "flutter precache --ios 执行失败"
@@ -375,13 +388,13 @@ fi
 
 # 运行 flutter pub get 生成 Generated.xcconfig
 log "📥 运行 flutter pub get..."
-flutter pub get
+"$FLUTTER_ROOT/bin/flutter" pub get
 PUB_GET_EXIT_CODE=$?
 
 if [ $PUB_GET_EXIT_CODE -ne 0 ]; then
     log "调试信息:"
     log "  - Flutter 路径: $FLUTTER_ROOT"
-    log "  - flutter --version: $(flutter --version 2>/dev/null | head -n 1 || echo "<失败>")"
+    log "  - flutter --version: $("$FLUTTER_ROOT/bin/flutter" --version 2>/dev/null | head -n 1 || echo "<失败>")"
     log "  - 应用目录: $APP_DIR"
     log "  - pubspec.yaml 存在: $([ -f "$APP_DIR/pubspec.yaml" ] && echo "是" || echo "否")"
     exit "$PUB_GET_EXIT_CODE"
