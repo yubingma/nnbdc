@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:nnbdc/api/api.dart';
 import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/theme/app_theme.dart';
+import 'package:nnbdc/util/loading_utils.dart';
 import 'package:provider/provider.dart';
 import 'package:nnbdc/state.dart';
 import 'package:nnbdc/page/admin/feedback_management.dart';
@@ -23,6 +25,7 @@ class AdminPage extends StatefulWidget {
 class _AdminPageState extends State<AdminPage> {
   bool _isLoading = true;
   UserVo? _currentUser;
+  int _adviceUnreadCount = 0;
 
   List<Widget> _buildManagementItems() {
     return [
@@ -30,6 +33,7 @@ class _AdminPageState extends State<AdminPage> {
         title: '意见建议',
         icon: Icons.feedback,
         color: const Color(0xFF4CAF50),
+        badgeCount: _adviceUnreadCount,
         onTap: () => _navigateToFeedback(),
       ),
       _buildManagementCard(
@@ -123,6 +127,25 @@ class _AdminPageState extends State<AdminPage> {
     setState(() {
       _isLoading = false;
     });
+
+    // 异步加载“意见建议”未读数量（不阻塞主 UI）
+    _loadAdviceMsgCounts();
+  }
+
+  Future<void> _loadAdviceMsgCounts() async {
+    try {
+      final res = await LoadingUtils.withoutApiLoading(() async {
+        return await Api.client.getMsgCounts(Global.sysUserId);
+      });
+      if (!mounted) return;
+      if (res.success) {
+        setState(() {
+          _adviceUnreadCount = res.data?.second ?? 0;
+        });
+      }
+    } catch (_) {
+      // 获取失败不影响主功能
+    }
   }
 
   Widget _buildNoPermissionPage() {
@@ -235,6 +258,7 @@ class _AdminPageState extends State<AdminPage> {
     required IconData icon,
     required Color color,
     required VoidCallback onTap,
+    int? badgeCount,
   }) {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
     final textColor = isDarkMode ? Colors.white : Colors.black87;
@@ -247,10 +271,22 @@ class _AdminPageState extends State<AdminPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              icon,
-              size: 44,
-              color: color,
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Icon(
+                  icon,
+                  size: 44,
+                  color: color,
+                ),
+                if ((badgeCount ?? 0) > 0)
+                  Positioned(
+                    // 绑定在图标右上角，略微外扩，视觉更贴近
+                    right: -10,
+                    top: -10,
+                    child: _buildBadge(badgeCount!),
+                  ),
+              ],
             ),
             const SizedBox(height: 6),
             Text(
@@ -272,13 +308,42 @@ class _AdminPageState extends State<AdminPage> {
     );
   }
 
+  Widget _buildBadge(int count) {
+    final display = count > 99 ? '99+' : '$count';
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: Colors.red,
+        borderRadius: BorderRadius.circular(999),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.15),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Text(
+        display,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+
   void _navigateToFeedback() {
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => const FeedbackManagementWidget(),
       ),
-    );
+    ).then((_) {
+      // 从意见建议页面返回后刷新未读数量
+      _loadAdviceMsgCounts();
+    });
   }
 
   void _navigateToDictionary() {
