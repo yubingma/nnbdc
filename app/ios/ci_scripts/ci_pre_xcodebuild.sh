@@ -9,6 +9,8 @@ log() {
   printf "%s\n" "$*"
 }
 
+SCRIPT_VERSION="2025-12-13.1"
+
 fail() {
   log ""
   log "❌ 错误: $*"
@@ -32,6 +34,7 @@ run_cmd() {
 }
 
 log "🔧 开始 Xcode Cloud 构建前准备..."
+log "🧾 脚本版本: $SCRIPT_VERSION"
 log "📋 环境信息:"
 log "  - 当前目录: $PWD"
 log "  - 用户: $(whoami)"

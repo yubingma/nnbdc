@@ -56,6 +56,7 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
   
   // 版本信息
   String? _buildNumber;
+  String? _versionName;
 
   // 动态闪屏：动画控制与数据
   late AnimationController _splashController;
@@ -121,6 +122,31 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
     } else {
       /// 非android/windows/linux
       tryAutoLogin();
+    }
+  }
+
+  /// 设置准备阶段提示文案（自动判断 mounted，避免异步 setState 异常）
+  void _setPreparingMessage(String msg) {
+    if (!mounted) return;
+    if (_preparingMessage == msg) return;
+    setState(() {
+      _preparingMessage = msg;
+    });
+  }
+
+  /// 初始化版本信息，避免出现“版本 null (dev)”这种误导信息
+  Future<void> _initVersionInfo() async {
+    try {
+      final packageInfo = await PackageInfo.fromPlatform();
+      Global.version = packageInfo.version;
+      if (!mounted) return;
+      setState(() {
+        _buildNumber = packageInfo.buildNumber;
+        _versionName = packageInfo.version;
+      });
+    } catch (e, stackTrace) {
+      // 仅记录日志，不影响启动流程
+      Global.logger.w('获取版本信息失败', error: e, stackTrace: stackTrace);
     }
   }
 
@@ -1151,7 +1177,7 @@ endlocal
         }
       })
       ..repeat();
-    checkNewVersion();
+    _initVersionInfo().then((_) => checkNewVersion());
   }
 
   @override
@@ -1293,7 +1319,7 @@ endlocal
                                     const SizedBox(height: 24),
                                     // 版本号显示
                                     Text(
-                                      '版本 $_buildNumber (${Config.profileName})',
+                                      '版本 ${_versionName ?? Global.version}${_buildNumber != null ? '($_buildNumber)' : ''} (${Config.profileName})',
                                       textScaler: const TextScaler.linear(1.0),
                                       style: TextStyle(
                                         color: Colors.white.withValues(alpha: 0.7),
@@ -1330,7 +1356,9 @@ endlocal
                                 ),
                               ),
                               // 底部提示（仅对桌面平台显示）
-                              if (PlatformUtils.isWindows || PlatformUtils.isLinux || PlatformUtils.isMacOS)
+                              // 仅在“确实进入升级流程/发现新版本/正在下载安装”时展示，避免登录阶段误导用户
+                              if ((PlatformUtils.isWindows || PlatformUtils.isLinux || PlatformUtils.isMacOS) &&
+                                  ((newVersionFound && !newVersionIgnored) || downloading || installing || downloadSuccess))
                                 Align(
                                   alignment: const Alignment(0, 0.85),
                                   child: GestureDetector(
@@ -1361,15 +1389,12 @@ endlocal
   }
 
   tryAutoLogin() async {
-    setState(() {
-      _preparingMessage = '正在同步数据…';
-    });
+    // 这里是“登录阶段”，不要显示“同步/升级”相关文案，避免误导
+    _setPreparingMessage('正在自动登录…');
     
     var user = await MyDatabase.instance.usersDao.getLastLoggedInUser();
     if (user != null && user.email != null) {
-      setState(() {
-        _preparingMessage = '正在加载用户信息…';
-      });
+      _setPreparingMessage('正在加载用户信息…');
       
       // CS架构下，本地有用户信息就可以直接登录，不需要密码验证
       // 直接获取用户信息并登录
@@ -1382,9 +1407,11 @@ endlocal
 
         Get.offNamed("/index", arguments: IndexPageArgs(4));
       } else {
+        _setPreparingMessage('自动登录失败，正在跳转登录页…');
         Get.offNamed("/email_login");
       }
     } else {
+      _setPreparingMessage('未检测到登录信息，正在跳转登录页…');
       Get.offNamed("/email_login");
     }
   }
