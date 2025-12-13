@@ -9,7 +9,7 @@ log() {
   printf "%s\n" "$*"
 }
 
-SCRIPT_VERSION="2025-12-13.3"
+SCRIPT_VERSION="2025-12-13.4"
 
 fail() {
   log ""
@@ -59,6 +59,39 @@ is_flutter_healthy() {
   return 0
 }
 
+decode_base64() {
+  # macOS 的 base64 参数在不同环境可能不同，直接用 python3 解码更稳
+  python3 -c 'import base64,sys; print(base64.b64decode(sys.argv[1]).decode("utf-8", "ignore"))' "$1" 2>/dev/null
+}
+
+detect_flutter_version_from_project() {
+  # 尝试从 ios/Flutter/flutter_export_environment.sh 中解析 DART_DEFINES 里的 FLUTTER_VERSION
+  # 该文件在 Flutter 构建流程中常见（本仓库也存在），可用来锁定稳定的 Flutter 发布版本
+  ENV_SH="$APP_DIR/ios/Flutter/flutter_export_environment.sh"
+  if [ ! -f "$ENV_SH" ]; then
+    return 1
+  fi
+  DART_DEFINES_LINE=$(grep '^export "DART_DEFINES=' "$ENV_SH" 2>/dev/null | head -n 1)
+  if [ -z "$DART_DEFINES_LINE" ]; then
+    return 1
+  fi
+  # 提取引号内内容
+  DART_DEFINES=$(echo "$DART_DEFINES_LINE" | sed -n 's/^export "DART_DEFINES=\(.*\)"$/\1/p')
+  if [ -z "$DART_DEFINES" ]; then
+    return 1
+  fi
+  for seg in $(echo "$DART_DEFINES" | tr ',' ' '); do
+    decoded=$(decode_base64 "$seg")
+    case "$decoded" in
+      FLUTTER_VERSION=*)
+        echo "${decoded#FLUTTER_VERSION=}"
+        return 0
+        ;;
+    esac
+  done
+  return 1
+}
+
 ensure_flutter_version_known() {
   # 某些情况下 shallow clone + 未拉取 tags 会导致 flutter --version 显示 0.0.0-unknown
   if is_flutter_healthy; then
@@ -69,15 +102,15 @@ ensure_flutter_version_known() {
   cd "$FLUTTER_ROOT" || fail "无法进入 Flutter 目录: $FLUTTER_ROOT"
 
   # 先拉取 tags（大多数情况下即可恢复正常版本号）
-  git fetch --tags --force >/dev/null 2>&1 || true
+  run_cmd "git fetch --tags --force（用于恢复 flutter --version）" git fetch --tags --force || true
 
   if is_flutter_healthy; then
     return 0
   fi
 
   # 再尝试补全 shallow 仓库（unshallow），避免 git describe 找不到版本
-  git fetch --unshallow >/dev/null 2>&1 || true
-  git fetch --tags --force >/dev/null 2>&1 || true
+  run_cmd "git fetch --unshallow（补全 shallow 历史）" git fetch --unshallow || true
+  run_cmd "git fetch --tags --force（再次拉取 tags）" git fetch --tags --force || true
 
   if is_flutter_healthy; then
     return 0
@@ -202,6 +235,15 @@ install_flutter_if_needed() {
 
   export FLUTTER_ROOT="${FLUTTER_ROOT:-$MANAGED_FLUTTER_ROOT}"
 
+  # 优先从项目解析 Flutter 发布版本号（例如 3.32.5），用 tag clone 能避免版本 unknown
+  if [ -z "$FLUTTER_TAG" ]; then
+    DETECTED_VER=$(detect_flutter_version_from_project 2>/dev/null || true)
+    if [ -n "$DETECTED_VER" ]; then
+      FLUTTER_TAG="$DETECTED_VER"
+      log "🏷️  从项目解析到 Flutter 版本: $FLUTTER_TAG（将优先使用该 tag）"
+    fi
+  fi
+
   # 若目标目录存在但不完整（不是 git 仓库），可能是历史残留/下载中断导致，先清理再装
   if [ -d "$FLUTTER_ROOT" ] && [ ! -d "$FLUTTER_ROOT/.git" ]; then
     log "🧹 检测到 Flutter 目录存在但不是 git 仓库，将清理后重新安装：$FLUTTER_ROOT"
@@ -210,8 +252,13 @@ install_flutter_if_needed() {
 
   if [ ! -d "$FLUTTER_ROOT/.git" ]; then
     log "⬇️  克隆 Flutter SDK 到: $FLUTTER_ROOT"
-    # 使用 shallow clone 提升 Xcode Cloud 首次构建速度；如需指定 revision，则后续再 fetch 单个 commit
-    CLONE_REF="${FLUTTER_CHANNEL:-stable}"
+    # 使用 shallow clone 提升 Xcode Cloud 首次构建速度
+    # 如果已解析到 Flutter 发布版本（tag），优先按 tag clone，可避免 flutter --version 为 unknown
+    if [ -n "$FLUTTER_TAG" ]; then
+      CLONE_REF="$FLUTTER_TAG"
+    else
+      CLONE_REF="${FLUTTER_CHANNEL:-stable}"
+    fi
     git clone --depth 1 --branch "$CLONE_REF" "$FLUTTER_GIT_URL" "$FLUTTER_ROOT"
     CLONE_CODE=$?
     if [ $CLONE_CODE -ne 0 ]; then
