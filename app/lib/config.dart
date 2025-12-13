@@ -14,14 +14,14 @@ class Config {
       "wordImageBaseUrl": 'http://www.nnbdc.com/img/word/'
     },
     "dev": {
-      "service_url": "http://192.168.1.170:5200",
-      "socketServerUrl": "http://192.168.1.170:9090/all",
-      "sound_base_url": "http://192.168.1.170:80/sound/",
-      "updateUrl": "http://192.168.1.170:80/app/ver.json",
-      "apkUrl": "http://192.168.1.170:80/app/nnbdc-android.apk",
-      "windowsUrl": "http://192.168.1.170:80/app/nnbdc-windows.zip",
-      "linuxUrl": "http://192.168.1.170:80/app/nnbdc-linux.AppImage",
-      "wordImageBaseUrl": 'http://192.168.1.170:80/img/word/'
+      "service_url": "http://192.168.43.53:5200",
+      "socketServerUrl": "http://192.168.43.53:9090/all",
+      "sound_base_url": "http://192.168.43.53:80/sound/",
+      "updateUrl": "http://192.168.43.53:80/app/ver.json",
+      "apkUrl": "http://192.168.43.53:80/app/nnbdc-android.apk",
+      "windowsUrl": "http://192.168.43.53:80/app/nnbdc-windows.zip",
+      "linuxUrl": "http://192.168.43.53:80/app/nnbdc-linux.AppImage",
+      "wordImageBaseUrl": 'http://192.168.43.53:80/img/word/'
     },
     "dev_web": {
       "service_url": "http://localhost:5200",
