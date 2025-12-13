@@ -117,6 +117,8 @@ void main() async {
           await Global.loadUserFromDb();
         } catch (e, stackTrace) {
           // 初始化过程中的错误
+          // 同时将错误写入全局状态，供启动页展示（不是toast）
+          Global.setStartupError('应用初始化失败：$e');
           ErrorHandler.handleError(
             e,
             stackTrace,

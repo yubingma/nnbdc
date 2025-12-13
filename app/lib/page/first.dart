@@ -53,6 +53,9 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
 
   // 准备阶段状态提示
   String _preparingMessage = '正在准备学习环境…';
+
+  /// 自动登录阶段错误（显示在启动页文案下方，不使用toast）
+  String? _autoLoginError;
   
   // 版本信息
   String? _buildNumber;
@@ -132,6 +135,21 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
     setState(() {
       _preparingMessage = msg;
     });
+  }
+
+  void _setAutoLoginError(String? msg) {
+    if (!mounted) return;
+    setState(() {
+      _autoLoginError = msg;
+    });
+  }
+
+  Future<void> _retryStartup() async {
+    Global.clearStartupError();
+    _setAutoLoginError(null);
+    _setPreparingMessage('正在重试…');
+    // 重新走一遍启动流程：先检查更新，再自动登录
+    checkNewVersion();
   }
 
   /// 初始化版本信息，避免出现“版本 null (dev)”这种误导信息
@@ -1352,6 +1370,43 @@ endlocal
                                         ),
                                       ],
                                     ),
+                                    // 错误提示：显示在“正在自动登录…”下方（非toast）
+                                    ValueListenableBuilder<String?>(
+                                      valueListenable: Global.startupError,
+                                      builder: (context, startupError, _) {
+                                        final err = startupError ?? _autoLoginError;
+                                        if (err == null || err.isEmpty) {
+                                          return const SizedBox.shrink();
+                                        }
+                                        return Padding(
+                                          padding: const EdgeInsets.only(top: 10),
+                                          child: Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Text(
+                                                err,
+                                                textAlign: TextAlign.center,
+                                                textScaler: const TextScaler.linear(1.0),
+                                                style: TextStyle(
+                                                  color: Colors.red.shade100,
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.w400,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 6),
+                                              TextButton(
+                                                onPressed: _retryStartup,
+                                                child: const Text(
+                                                  '重试',
+                                                  textScaler: TextScaler.linear(1.0),
+                                                  style: TextStyle(color: Colors.white),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      },
+                                    ),
                                   ],
                                 ),
                               ),
@@ -1391,28 +1446,35 @@ endlocal
   tryAutoLogin() async {
     // 这里是“登录阶段”，不要显示“同步/升级”相关文案，避免误导
     _setPreparingMessage('正在自动登录…');
+    _setAutoLoginError(null);
     
-    var user = await MyDatabase.instance.usersDao.getLastLoggedInUser();
-    if (user != null && user.email != null) {
-      _setPreparingMessage('正在加载用户信息…');
-      
-      // CS架构下，本地有用户信息就可以直接登录，不需要密码验证
-      // 直接获取用户信息并登录
-      var result = await UserBo().getLoggedInUser();
-      if (result.success && result.data != null) {
-        await Global.setLoggedInUser(result.data!);
-        // 注意：由于改为延迟连接，此处不再主动上报用户信息
-        // 用户信息会在进入需要socket的页面（如me、russia）时自动上报
-        // SocketIoClient.instance.tryReportUserToSocketServer();
+    try {
+      var user = await MyDatabase.instance.usersDao.getLastLoggedInUser();
+      if (user != null && user.email != null) {
+        _setPreparingMessage('正在加载用户信息…');
+        
+        // CS架构下，本地有用户信息就可以直接登录，不需要密码验证
+        // 直接获取用户信息并登录
+        var result = await UserBo().getLoggedInUser();
+        if (result.success && result.data != null) {
+          await Global.setLoggedInUser(result.data!);
+          // 注意：由于改为延迟连接，此处不再主动上报用户信息
+          // 用户信息会在进入需要socket的页面（如me、russia）时自动上报
+          // SocketIoClient.instance.tryReportUserToSocketServer();
 
-        Get.offNamed("/index", arguments: IndexPageArgs(4));
+          Get.offNamed("/index", arguments: IndexPageArgs(4));
+        } else {
+          _setPreparingMessage('自动登录失败，正在跳转登录页…');
+          Get.offNamed("/email_login");
+        }
       } else {
-        _setPreparingMessage('自动登录失败，正在跳转登录页…');
+        _setPreparingMessage('未检测到登录信息，正在跳转登录页…');
         Get.offNamed("/email_login");
       }
-    } else {
-      _setPreparingMessage('未检测到登录信息，正在跳转登录页…');
-      Get.offNamed("/email_login");
+    } catch (e, stackTrace) {
+      // 不吃异常：记录日志 + 显示在界面上（非toast）
+      Global.logger.e('自动登录异常', error: e, stackTrace: stackTrace);
+      _setAutoLoginError('自动登录失败：$e');
     }
   }
 }

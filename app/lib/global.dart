@@ -12,6 +12,17 @@ class Global {
   static String version = 'NONE';
   static const Color highlight = Colors.teal;
 
+  /// 启动/初始化阶段错误（用于在启动页展示，而不是toast）
+  static final ValueNotifier<String?> startupError = ValueNotifier<String?>(null);
+
+  static void setStartupError(String message) {
+    startupError.value = message;
+  }
+
+  static void clearStartupError() {
+    startupError.value = null;
+  }
+
   // 改进日志配置，确保能看到详细错误信息
   static final logger = logger_pkg.Logger(
     printer: _TimestampPrinter(),
