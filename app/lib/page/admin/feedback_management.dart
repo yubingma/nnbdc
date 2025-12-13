@@ -20,6 +20,7 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
   List<MsgVo> _messages = [];
   bool _isLoading = true;
   Map<String, int> _clientTypeStats = {};
+  bool _isMarkingViewed = false;
 
   @override
   void initState() {
@@ -43,6 +44,14 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
         }
       }
       
+      // 未读优先，其次按时间倒序
+      messages.sort((a, b) {
+        if (a.viewed != b.viewed) {
+          return a.viewed ? 1 : -1; // 未读在前
+        }
+        return b.createTime.compareTo(a.createTime); // 新的在前
+      });
+
       setState(() {
         _messages = messages;
         _clientTypeStats = stats;
@@ -53,6 +62,84 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
         _isLoading = false;
       });
     }
+  }
+
+  Future<void> _markMsgsAsViewed(List<String> msgIds) async {
+    if (msgIds.isEmpty) return;
+    if (_isMarkingViewed) return;
+
+    setState(() {
+      _isMarkingViewed = true;
+    });
+
+    try {
+      // advice 消息通常是发给系统用户（Global.sysUserId）
+      await Api.client.setMsgsAsViewed(msgIds, Global.sysUserId);
+
+      // 本地立即更新状态，避免刷新前 UI 不一致
+      final idSet = msgIds.toSet();
+      setState(() {
+        _messages = _messages
+            .map((m) => idSet.contains(m.id)
+                ? MsgVo(
+                    m.id,
+                    m.fromUserName,
+                    m.fromUserNickName,
+                    m.toUserName,
+                    m.toUserNickName,
+                    m.content,
+                    m.createTimeForDisplay,
+                    m.msgType,
+                    m.clientType,
+                    m.fromUser,
+                    m.toUser,
+                    m.createTime,
+                    true,
+                  )
+                : m)
+            .toList();
+      });
+    } catch (e) {
+      // 标记已读失败不阻塞主流程，避免打断管理员处理
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isMarkingViewed = false;
+        });
+      }
+    }
+  }
+
+  Widget _buildViewedBadge(MsgVo message) {
+    final isDarkMode = context.watch<DarkMode>().isDarkMode;
+    final bool isViewed = message.viewed;
+    final Color bg = isViewed
+        ? (isDarkMode ? Colors.grey[700]! : Colors.grey[200]!)
+        : const Color(0xFFFFEBEE);
+    final Color fg = isViewed
+        ? (isDarkMode ? Colors.white70 : Colors.black54)
+        : const Color(0xFFD32F2F);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(
+          color: isViewed
+              ? (isDarkMode ? Colors.grey[600]! : Colors.grey[300]!)
+              : const Color(0xFFFFCDD2),
+        ),
+      ),
+      child: Text(
+        isViewed ? '已读' : '未读',
+        style: TextStyle(
+          color: fg,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
   }
 
   @override
@@ -129,29 +216,38 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
     final cardColor = isDarkMode ? const Color(0xFF2D2D2D) : Colors.white;
     final textColor = isDarkMode ? Colors.white : Colors.black87;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: isDarkMode 
-                ? Colors.black.withValues(alpha: 0.3) 
-                : Colors.grey.withValues(alpha: 0.15),
-            spreadRadius: 0,
-            blurRadius: 8,
-            offset: const Offset(0, 4),
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: () async {
+        // 点开即视为管理员已读（先标记，再打开对话）
+        if (!message.viewed) {
+          await _markMsgsAsViewed([message.id]);
+        }
+        _replyToMessage(message);
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        decoration: BoxDecoration(
+          color: cardColor,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: isDarkMode 
+                  ? Colors.black.withValues(alpha: 0.3) 
+                  : Colors.grey.withValues(alpha: 0.15),
+              spreadRadius: 0,
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+          border: Border.all(
+            color: isDarkMode ? Colors.grey[700]! : Colors.grey[200]!,
+            width: 1,
           ),
-        ],
-        border: Border.all(
-          color: isDarkMode ? Colors.grey[700]! : Colors.grey[200]!,
-          width: 1,
         ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
@@ -198,6 +294,8 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
                             color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
                           ),
                         ),
+                        const SizedBox(width: 8),
+                        _buildViewedBadge(message),
                         if (message.clientType != null) ...[
                           const SizedBox(width: 8),
                           Container(
@@ -237,7 +335,12 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               TextButton.icon(
-                onPressed: () => _replyToMessage(message),
+                onPressed: () async {
+                  if (!message.viewed) {
+                    await _markMsgsAsViewed([message.id]);
+                  }
+                  _replyToMessage(message);
+                },
                 icon: const Icon(Icons.reply, size: 16),
                 label: const Text('回复'),
                 style: TextButton.styleFrom(
@@ -247,6 +350,7 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
             ],
           ),
         ],
+          ),
         ),
       ),
     );
@@ -456,6 +560,7 @@ class _ReplyDialogState extends State<_ReplyDialog> {
   List<MsgVo> _conversationHistory = [];
   bool _isLoading = true;
   bool _isSending = false;
+  bool _isMarkingViewed = false;
 
   @override
   void initState() {
@@ -481,10 +586,61 @@ class _ReplyDialogState extends State<_ReplyDialog> {
         _conversationHistory = messages;
         _isLoading = false;
       });
+
+      // 对话加载后：将发给系统用户的“建议”消息标记为已读
+      await _markConversationAdviceAsViewed(messages);
     } catch (e) {
       setState(() {
         _isLoading = false;
       });
+    }
+  }
+
+  Future<void> _markConversationAdviceAsViewed(List<MsgVo> messages) async {
+    if (_isMarkingViewed) return;
+    final ids = messages
+        .where((m) => m.toUser.id == Global.sysUserId && !m.viewed)
+        .map((m) => m.id)
+        .toList();
+    if (ids.isEmpty) return;
+
+    setState(() {
+      _isMarkingViewed = true;
+    });
+
+    try {
+      await Api.client.setMsgsAsViewed(ids, Global.sysUserId);
+      if (mounted) {
+        setState(() {
+          _conversationHistory = _conversationHistory
+              .map((m) => (ids.contains(m.id))
+                  ? MsgVo(
+                      m.id,
+                      m.fromUserName,
+                      m.fromUserNickName,
+                      m.toUserName,
+                      m.toUserNickName,
+                      m.content,
+                      m.createTimeForDisplay,
+                      m.msgType,
+                      m.clientType,
+                      m.fromUser,
+                      m.toUser,
+                      m.createTime,
+                      true,
+                    )
+                  : m)
+              .toList();
+        });
+      }
+    } catch (_) {
+      // 忽略：不影响对话展示
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isMarkingViewed = false;
+        });
+      }
     }
   }
 

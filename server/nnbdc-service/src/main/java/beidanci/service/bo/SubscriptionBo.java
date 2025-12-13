@@ -254,9 +254,9 @@ public class SubscriptionBo extends BaseBo<User> {
             }
 
             // 恢复iOS订阅
-            if (user.getLastReceiptDataIOS() != null && !user.getLastReceiptDataIOS().isEmpty()) {
+            if (user.getLastReceiptDataIos() != null && !user.getLastReceiptDataIos().isEmpty()) {
                 try {
-                    ReceiptVerificationResult verificationResult = verifyReceiptWithApple(user.getLastReceiptDataIOS());
+                    ReceiptVerificationResult verificationResult = verifyReceiptWithApple(user.getLastReceiptDataIos());
                     if (verificationResult.isValid) {
                         updateUserSubscription(user, verificationResult);
                         try {

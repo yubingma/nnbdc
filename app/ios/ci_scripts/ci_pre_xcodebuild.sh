@@ -9,7 +9,7 @@ log() {
   printf "%s\n" "$*"
 }
 
-SCRIPT_VERSION="2025-12-13.2"
+SCRIPT_VERSION="2025-12-13.3"
 
 fail() {
   log ""
@@ -161,8 +161,13 @@ install_flutter_if_needed() {
     fi
   fi
 
+  # 若切换后的 FLUTTER_ROOT 已存在 flutter，可用则直接用；不可用则继续走“修复/重装”逻辑
   if [ -n "$FLUTTER_ROOT" ] && [ -x "$FLUTTER_ROOT/bin/flutter" ]; then
-    return 0
+    if is_flutter_healthy; then
+      return 0
+    fi
+    log "⚠️  检测到当前 Flutter 不可用（版本 unknown 或执行失败）：$FLUTTER_ROOT"
+    log "➡️  将尝试修复或重新安装"
   fi
 
   if command -v flutter >/dev/null 2>&1; then
@@ -182,6 +187,12 @@ install_flutter_if_needed() {
         fail "PATH 中的 flutter 不可用且已设置 NNBDC_RESPECT_FLUTTER_ROOT，无法继续"
       fi
     fi
+  fi
+
+  # 如果目标目录已存在 flutter，但版本 unknown，优先尝试修复（拉 tags / unshallow）
+  if [ -n "$FLUTTER_ROOT" ] && [ -x "$FLUTTER_ROOT/bin/flutter" ]; then
+    ensure_flutter_version_known
+    return 0
   fi
 
   log "🔍 未找到 Flutter SDK，开始自动安装..."

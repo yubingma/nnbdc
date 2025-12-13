@@ -24,6 +24,77 @@ class _AdminPageState extends State<AdminPage> {
   bool _isLoading = true;
   UserVo? _currentUser;
 
+  List<Widget> _buildManagementItems() {
+    return [
+      _buildManagementCard(
+        title: '意见建议',
+        icon: Icons.feedback,
+        color: const Color(0xFF4CAF50),
+        onTap: () => _navigateToFeedback(),
+      ),
+      _buildManagementCard(
+        title: '需求管理',
+        icon: Icons.rate_review,
+        color: const Color(0xFFE53935),
+        onTap: () => _navigateToFeatureRequestManagement(),
+      ),
+      _buildManagementCard(
+        title: '需求举报',
+        icon: Icons.flag,
+        color: Colors.red,
+        onTap: () => _navigateToFeatureRequestReportManagement(),
+      ),
+      _buildManagementCard(
+        title: '系统词典',
+        icon: Icons.book,
+        color: const Color(0xFF2196F3),
+        onTap: () => _navigateToDictionary(),
+      ),
+      _buildManagementCard(
+        title: '系统健康检查',
+        icon: Icons.health_and_safety,
+        color: const Color(0xFFE91E63),
+        onTap: () => _navigateToSystemHealthCheck(),
+      ),
+      _buildManagementCard(
+        title: '用户管理',
+        icon: Icons.people,
+        color: const Color(0xFFFF9800),
+        onTap: () => _navigateToUserManagement(),
+      ),
+      _buildManagementCard(
+        title: '系统设置',
+        icon: Icons.settings,
+        color: const Color(0xFF9C27B0),
+        onTap: () => _showComingSoon('系统设置'),
+      ),
+      _buildManagementCard(
+        title: '数据统计',
+        icon: Icons.analytics,
+        color: const Color(0xFF00BCD4),
+        onTap: () => _showComingSoon('数据统计'),
+      ),
+      _buildManagementCard(
+        title: '日志管理',
+        icon: Icons.description,
+        color: const Color(0xFF795548),
+        onTap: () => _showComingSoon('日志管理'),
+      ),
+      _buildManagementCard(
+        title: 'CDN管理',
+        icon: Icons.cloud_sync,
+        color: const Color(0xFF009688),
+        onTap: () => _navigateToCdnManagement(),
+      ),
+      _buildManagementCard(
+        title: '阿里云资源',
+        icon: Icons.cloud,
+        color: const Color(0xFFFF6B00),
+        onTap: () => _navigateToAliyunResourceManagement(),
+      ),
+    ];
+  }
+
   @override
   void initState() {
     super.initState();
@@ -82,7 +153,7 @@ class _AdminPageState extends State<AdminPage> {
               '无权限访问',
               style: TextStyle(
                 fontSize: 24,
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w600,
                 color: textColor,
               ),
             ),
@@ -127,82 +198,35 @@ class _AdminPageState extends State<AdminPage> {
   }
 
   Widget _buildManagementGrid() {
-    return Padding(
-      padding: const EdgeInsets.all(8),
-      child: GridView.count(
-        crossAxisCount: 3,
-        crossAxisSpacing: 8,
-        mainAxisSpacing: 8,
-        childAspectRatio: 0.85,
-        children: [
-          _buildManagementCard(
-            title: '意见建议',
-            icon: Icons.feedback,
-            color: const Color(0xFF4CAF50),
-            onTap: () => _navigateToFeedback(),
+    final items = _buildManagementItems();
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // macOS/桌面端窗口通常更宽：限制内容最大宽度并居中，避免按钮过度分散
+        final maxWidth = constraints.maxWidth;
+        final contentMaxWidth = maxWidth >= 900 ? 780.0 : maxWidth;
+        final maxCrossAxisExtent = maxWidth >= 900 ? 180.0 : 160.0;
+
+        return Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: contentMaxWidth),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: GridView.builder(
+                gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                  maxCrossAxisExtent: maxCrossAxisExtent,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                  childAspectRatio: 1.05,
+                ),
+                itemCount: items.length,
+                itemBuilder: (context, index) => items[index],
+              ),
+            ),
           ),
-          _buildManagementCard(
-            title: '需求管理',
-            icon: Icons.rate_review,
-            color: const Color(0xFFE53935),
-            onTap: () => _navigateToFeatureRequestManagement(),
-          ),
-          _buildManagementCard(
-            title: '需求举报',
-            icon: Icons.flag,
-            color: Colors.red,
-            onTap: () => _navigateToFeatureRequestReportManagement(),
-          ),
-          _buildManagementCard(
-            title: '系统词典',
-            icon: Icons.book,
-            color: const Color(0xFF2196F3),
-            onTap: () => _navigateToDictionary(),
-          ),
-          _buildManagementCard(
-            title: '系统健康检查',
-            icon: Icons.health_and_safety,
-            color: const Color(0xFFE91E63),
-            onTap: () => _navigateToSystemHealthCheck(),
-          ),
-          _buildManagementCard(
-            title: '用户管理',
-            icon: Icons.people,
-            color: const Color(0xFFFF9800),
-            onTap: () => _navigateToUserManagement(),
-          ),
-          _buildManagementCard(
-            title: '系统设置',
-            icon: Icons.settings,
-            color: const Color(0xFF9C27B0),
-            onTap: () => _showComingSoon('系统设置'),
-          ),
-          _buildManagementCard(
-            title: '数据统计',
-            icon: Icons.analytics,
-            color: const Color(0xFF00BCD4),
-            onTap: () => _showComingSoon('数据统计'),
-          ),
-          _buildManagementCard(
-            title: '日志管理',
-            icon: Icons.description,
-            color: const Color(0xFF795548),
-            onTap: () => _showComingSoon('日志管理'),
-          ),
-          _buildManagementCard(
-            title: 'CDN管理',
-            icon: Icons.cloud_sync,
-            color: const Color(0xFF009688),
-            onTap: () => _navigateToCdnManagement(),
-          ),
-          _buildManagementCard(
-            title: '阿里云资源',
-            icon: Icons.cloud,
-            color: const Color(0xFFFF6B00),
-            onTap: () => _navigateToAliyunResourceManagement(),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
