@@ -20,6 +20,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:get_storage/get_storage.dart';
 
 import '../config.dart';
 import '../global.dart';
@@ -147,9 +148,28 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
   Future<void> _retryStartup() async {
     Global.clearStartupError();
     _setAutoLoginError(null);
-    _setPreparingMessage('正在重试…');
-    // 重新走一遍启动流程：先检查更新，再自动登录
-    checkNewVersion();
+
+    try {
+      // 1) 清空并重建本地数据库（与 me.dart 的“重建数据库”保持一致）
+      _setPreparingMessage('正在清空本地数据…');
+      await MyDatabase.instance.wipeAllTables();
+
+      // 2) 清理本地登录态与内存缓存，避免残留 userId 导致后续流程异常
+      try {
+        await GetStorage().remove('currentUserId');
+      } catch (e) {
+        // GetStorage 可能尚未初始化；忽略并继续
+      }
+      Global.clearUserCache();
+      Global.currentUserId = null;
+
+      // 3) 重建后重新走启动流程：先检查更新，再自动登录
+      _setPreparingMessage('正在重试…');
+      checkNewVersion();
+    } catch (e, stackTrace) {
+      Global.logger.e('清空本地数据并重试失败', error: e, stackTrace: stackTrace);
+      _setAutoLoginError('清空本地数据失败：$e');
+    }
   }
 
   /// 初始化版本信息，避免出现“版本 null (dev)”这种误导信息
@@ -1346,64 +1366,83 @@ endlocal
                                       ),
                                     ),
                                     const SizedBox(height: 16),
-                                    // 轻量的进度提示
-                                    Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        SizedBox(
-                                          width: 14,
-                                          height: 14,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                            valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
-                                          ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Text(
-                                          _preparingMessage,
-                                          textScaler: const TextScaler.linear(1.0),
-                                          style: TextStyle(
-                                            color: Colors.white.withValues(alpha: 0.9),
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w300,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    // 错误提示：显示在“正在自动登录…”下方（非toast）
+                                    // 进度/错误提示：发生异常时，用错误图标替换转圈，并在下方展示错误与按钮（非toast）
                                     ValueListenableBuilder<String?>(
                                       valueListenable: Global.startupError,
                                       builder: (context, startupError, _) {
                                         final err = startupError ?? _autoLoginError;
-                                        if (err == null || err.isEmpty) {
-                                          return const SizedBox.shrink();
-                                        }
-                                        return Padding(
-                                          padding: const EdgeInsets.only(top: 10),
-                                          child: Column(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Text(
-                                                err,
-                                                textAlign: TextAlign.center,
-                                                textScaler: const TextScaler.linear(1.0),
-                                                style: TextStyle(
-                                                  color: Colors.red.shade100,
-                                                  fontSize: 12,
-                                                  fontWeight: FontWeight.w400,
+                                        final hasError = err != null && err.isNotEmpty;
+
+                                        return Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            // 轻量的进度提示（异常时用错误图标替换转圈）
+                                            Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                SizedBox(
+                                                  width: 16,
+                                                  height: 16,
+                                                  child: hasError
+                                                      ? Icon(
+                                                          Icons.error_outline,
+                                                          size: 18,
+                                                          color: Colors.red.shade100,
+                                                        )
+                                                      : const CircularProgressIndicator(
+                                                          strokeWidth: 2,
+                                                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                                        ),
+                                                ),
+                                                const SizedBox(width: 8),
+                                                Text(
+                                                  _preparingMessage,
+                                                  textScaler: const TextScaler.linear(1.0),
+                                                  style: TextStyle(
+                                                    color: Colors.white.withValues(alpha: 0.9),
+                                                    fontSize: 14,
+                                                    fontWeight: FontWeight.w300,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            if (hasError)
+                                              Padding(
+                                                padding: const EdgeInsets.only(top: 10),
+                                                child: Column(
+                                                  mainAxisSize: MainAxisSize.min,
+                                                  children: [
+                                                    Text(
+                                                      err,
+                                                      textAlign: TextAlign.center,
+                                                      textScaler: const TextScaler.linear(1.0),
+                                                      style: TextStyle(
+                                                        color: Colors.red.shade100,
+                                                        fontSize: 12,
+                                                        fontWeight: FontWeight.w400,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(height: 10),
+                                                    ElevatedButton.icon(
+                                                      onPressed: _retryStartup,
+                                                      icon: const Icon(Icons.refresh, size: 18),
+                                                      label: const Text(
+                                                        '清空本地数据并重试',
+                                                        textScaler: TextScaler.linear(1.0),
+                                                      ),
+                                                      style: ElevatedButton.styleFrom(
+                                                        backgroundColor: Colors.white.withValues(alpha: 0.92),
+                                                        foregroundColor: const Color(0xFF2E5F8A),
+                                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                                        shape: RoundedRectangleBorder(
+                                                          borderRadius: BorderRadius.circular(20),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
                                                 ),
                                               ),
-                                              const SizedBox(height: 6),
-                                              TextButton(
-                                                onPressed: _retryStartup,
-                                                child: const Text(
-                                                  '重试',
-                                                  textScaler: TextScaler.linear(1.0),
-                                                  style: TextStyle(color: Colors.white),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
+                                          ],
                                         );
                                       },
                                     ),
