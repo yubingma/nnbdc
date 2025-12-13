@@ -9,7 +9,7 @@ log() {
   printf "%s\n" "$*"
 }
 
-SCRIPT_VERSION="2025-12-13.4"
+SCRIPT_VERSION="2025-12-13.5"
 
 fail() {
   log ""
@@ -101,6 +101,12 @@ ensure_flutter_version_known() {
   log "🩺 检测到 Flutter 版本为 unknown，尝试修复（拉取 tags / 补全历史）..."
   cd "$FLUTTER_ROOT" || fail "无法进入 Flutter 目录: $FLUTTER_ROOT"
 
+  # Flutter 版本信息可能被缓存为 unknown，先清理缓存文件
+  if [ -f "$FLUTTER_ROOT/bin/cache/flutter.version.json" ]; then
+    log "🧹 清理 Flutter 版本缓存: $FLUTTER_ROOT/bin/cache/flutter.version.json"
+    rm -f "$FLUTTER_ROOT/bin/cache/flutter.version.json"
+  fi
+
   # 先拉取 tags（大多数情况下即可恢复正常版本号）
   run_cmd "git fetch --tags --force（用于恢复 flutter --version）" git fetch --tags --force || true
 
@@ -120,6 +126,18 @@ ensure_flutter_version_known() {
   VER_OUT=$("$FLUTTER_ROOT/bin/flutter" --version 2>/dev/null || true)
   log "⚠️  当前 flutter --version 输出:"
   log "$VER_OUT"
+
+  log ""
+  log "🔎 Flutter Git 诊断信息:"
+  if [ -d "$FLUTTER_ROOT/.git" ]; then
+    log "  - is-shallow: $(git -C "$FLUTTER_ROOT" rev-parse --is-shallow-repository 2>/dev/null || echo "<未知>")"
+    log "  - head: $(git -C "$FLUTTER_ROOT" rev-parse --short HEAD 2>/dev/null || echo "<未知>")"
+    log "  - describe: $(git -C "$FLUTTER_ROOT" describe --tags --always --dirty 2>/dev/null || echo "<失败>")"
+    log "  - tag count: $(git -C "$FLUTTER_ROOT" tag -l 2>/dev/null | wc -l | tr -d ' ')"
+  else
+    log "  - 不是 git 仓库: $FLUTTER_ROOT/.git 不存在"
+  fi
+
   fail "Flutter 版本仍为 unknown（通常是仓库 tags/历史未完整，或网络受限导致 fetch 失败）。可在 Xcode Cloud Workflow 设置 FLUTTER_GIT_URL 为可访问镜像后重试。"
 }
 
@@ -335,6 +353,14 @@ log "📦 Flutter SDK 路径: $FLUTTER_ROOT"
 log "📦 Flutter 版本:"
 "$FLUTTER_ROOT/bin/flutter" --version || log "  ⚠️  无法获取 Flutter 版本"
 
+log "🔎 Flutter 自检（用于定位 0.0.0-unknown）:"
+log "  - which flutter: $(command -v flutter 2>/dev/null || echo "<未找到>")"
+log "  - flutter --version: $(flutter --version 2>/dev/null | head -n 1 || echo "<失败>")"
+if [ -d "$FLUTTER_ROOT/.git" ]; then
+  log "  - git describe: $(git -C "$FLUTTER_ROOT" describe --tags --always --dirty 2>/dev/null || echo "<失败>")"
+  log "  - is-shallow: $(git -C "$FLUTTER_ROOT" rev-parse --is-shallow-repository 2>/dev/null || echo "<未知>")"
+fi
+
 # 添加 Flutter 到 PATH
 export PATH="$FLUTTER_ROOT/bin:$PATH"
 
@@ -355,6 +381,7 @@ PUB_GET_EXIT_CODE=$?
 if [ $PUB_GET_EXIT_CODE -ne 0 ]; then
     log "调试信息:"
     log "  - Flutter 路径: $FLUTTER_ROOT"
+    log "  - flutter --version: $(flutter --version 2>/dev/null | head -n 1 || echo "<失败>")"
     log "  - 应用目录: $APP_DIR"
     log "  - pubspec.yaml 存在: $([ -f "$APP_DIR/pubspec.yaml" ] && echo "是" || echo "否")"
     exit "$PUB_GET_EXIT_CODE"
