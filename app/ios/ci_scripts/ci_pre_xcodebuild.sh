@@ -9,7 +9,7 @@ log() {
   printf "%s\n" "$*"
 }
 
-SCRIPT_VERSION="2025-12-13.8"
+SCRIPT_VERSION="2025-12-14.1"
 
 fail() {
   log ""
@@ -400,6 +400,21 @@ if [ $PUB_GET_EXIT_CODE -ne 0 ]; then
 fi
 
 log "✅ flutter pub get 执行成功"
+
+# 运行代码生成（retrofit/json_serializable/drift 等）
+# Xcode Cloud 环境不会自动生成，缺失会导致编译失败（例如 lib/api/api.g.dart 不存在）
+log "🛠️  运行 build_runner 生成代码..."
+"$FLUTTER_ROOT/bin/flutter" pub run build_runner build --delete-conflicting-outputs
+BUILD_RUNNER_EXIT_CODE=$?
+if [ $BUILD_RUNNER_EXIT_CODE -ne 0 ]; then
+    fail "build_runner 执行失败 (退出码: $BUILD_RUNNER_EXIT_CODE)"
+fi
+
+# 关键生成文件校验（避免后续 archive 才报错）
+if [ ! -f "$APP_DIR/lib/api/api.g.dart" ]; then
+    fail "代码生成后仍未找到文件: $APP_DIR/lib/api/api.g.dart（请检查 retrofit_generator/build_runner 配置）"
+fi
+log "✅ build_runner 生成完成"
 
 # 验证 Generated.xcconfig 是否已生成
 GENERATED_XCCONFIG="$APP_DIR/ios/Flutter/Generated.xcconfig"
