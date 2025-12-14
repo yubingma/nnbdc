@@ -1,6 +1,6 @@
 package beidanci.service.security;
 
-import java.util.Collections;
+import java.util.Arrays;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -29,14 +29,24 @@ public class WebSecurityConfig {
     @Bean
     public FilterRegistrationBean<CorsFilter> filterRegistrationBean() {
         CorsConfiguration corsConfiguration = new CorsConfiguration();
-        //1.允许任何来源
-        corsConfiguration.setAllowedOriginPatterns(Collections.singletonList("*"));
+        // 主流做法：允许携带 Cookie/凭证时，不能使用 "*"，必须指定允许的 Origin 白名单/模式
+        // 覆盖生产域名 + 本地开发（Flutter Web/调试页面）
+        corsConfiguration.setAllowedOriginPatterns(Arrays.asList(
+                "http://localhost:*",
+                "http://127.0.0.1:*",
+                "http://nnbdc.com",
+                "http://www.nnbdc.com",
+                "https://nnbdc.com",
+                "https://www.nnbdc.com"
+        ));
         //2.允许任何请求头
         corsConfiguration.addAllowedHeader(CorsConfiguration.ALL);
         //3.允许任何方法
         corsConfiguration.addAllowedMethod(CorsConfiguration.ALL);
         //4.允许凭证
         corsConfiguration.setAllowCredentials(true);
+        // 预检请求缓存（浏览器）
+        corsConfiguration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", corsConfiguration);
