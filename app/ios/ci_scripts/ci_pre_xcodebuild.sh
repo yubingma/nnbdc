@@ -9,7 +9,7 @@ log() {
   printf "%s\n" "$*"
 }
 
-SCRIPT_VERSION="2025-12-13.7"
+SCRIPT_VERSION="2025-12-13.8"
 
 fail() {
   log ""
@@ -424,14 +424,29 @@ IOS_WORKDIR="$APP_DIR/ios"
 if [ -d "$IOS_WORKDIR" ]; then
   if command -v pod >/dev/null 2>&1; then
     log "📦 CocoaPods 版本: $(pod --version 2>/dev/null || echo "<未知>")"
-    log "📦 运行 pod install..."
-    cd "$IOS_WORKDIR" || fail "无法进入 iOS 目录: $IOS_WORKDIR"
-    pod install
-    POD_EXIT_CODE=$?
-    if [ $POD_EXIT_CODE -ne 0 ]; then
-      fail "pod install 执行失败 (退出码: $POD_EXIT_CODE)"
+    # Xcode Cloud 环境下可能无法解析 dldir1.qq.com，导致 WechatOpenSDK-XCFramework 下载失败。
+    # 本仓库已提交 Pods（包含 WechatOpenSDK.xcframework），因此在 CI 下优先复用已存在的 Pods，避免联网下载。
+    PODS_DIR="$IOS_WORKDIR/Pods"
+    WECHAT_POD_XCFRAMEWORK="$PODS_DIR/WechatOpenSDK-XCFramework/WechatOpenSDK.xcframework"
+
+    if [ "${CI:-}" = "TRUE" ] && [ -d "$WECHAT_POD_XCFRAMEWORK" ] && [ -f "$PODS_DIR/Manifest.lock" ] && [ "${NNBDC_FORCE_POD_INSTALL:-}" != "1" ]; then
+      log "✅ 检测到已提交的 Pods 且包含 WechatOpenSDK，跳过 pod install（避免 dldir1.qq.com DNS 失败）"
+      log "  - Pods: $PODS_DIR"
+      log "  - WechatOpenSDK: $WECHAT_POD_XCFRAMEWORK"
+      log "  - 如需强制执行 pod install，可设置环境变量 NNBDC_FORCE_POD_INSTALL=1"
+    else
+      if [ "${NNBDC_FORCE_POD_INSTALL:-}" = "1" ]; then
+        log "⚙️  已设置 NNBDC_FORCE_POD_INSTALL=1，将强制执行 pod install"
+      fi
+      log "📦 运行 pod install..."
+      cd "$IOS_WORKDIR" || fail "无法进入 iOS 目录: $IOS_WORKDIR"
+      pod install
+      POD_EXIT_CODE=$?
+      if [ $POD_EXIT_CODE -ne 0 ]; then
+        fail "pod install 执行失败 (退出码: $POD_EXIT_CODE)"
+      fi
+      cd "$APP_DIR" || fail "无法返回应用目录: $APP_DIR"
     fi
-    cd "$APP_DIR" || fail "无法返回应用目录: $APP_DIR"
   else
     log "⚠️  未找到 pod 命令，跳过 pod install（如后续构建失败，请在 Xcode Cloud 镜像中安装 CocoaPods）"
   fi
