@@ -13,7 +13,7 @@ import org.springframework.web.filter.CorsFilter;
 import beidanci.service.error.ExceptionHandlerFilter;
 
 @Configuration
-public class WebSecurityConfig {
+public class WebConfig {
 
     @Value("${spring.application.name}")
     private String applicationName;
