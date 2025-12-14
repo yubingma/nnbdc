@@ -10,6 +10,10 @@ project 'Runner', {
   'Release' => :release,
 }
 
+# Xcode Cloud/CI 可能无法解析 dldir1.qq.com（微信 OpenSDK 默认下载域名）。
+# 这里提供一个可选覆盖：在 CI 中设置环境变量 WECHAT_OPENSDK_ZIP_URL（指向可访问镜像 zip）
+# 即可使用本地 podspec 下载，从而绕开 DNS 问题。
+
 def flutter_root
   generated_xcode_build_settings_path = File.expand_path(File.join('..', 'Flutter', 'Generated.xcconfig'), __FILE__)
   unless File.exist?(generated_xcode_build_settings_path)
@@ -29,6 +33,14 @@ flutter_ios_podfile_setup
 
 target 'Runner' do
   use_frameworks!
+
+  wechat_podspec = File.join(__dir__, 'WechatOpenSDK-XCFramework.podspec')
+  if ENV['CI'] == 'TRUE' && (ENV['WECHAT_OPENSDK_ZIP_URL'].nil? || ENV['WECHAT_OPENSDK_ZIP_URL'].strip.empty?)
+    raise "CI 环境检测到 WechatOpenSDK-XCFramework 可能因 dldir1.qq.com DNS 失败。请在 Xcode Cloud Workflow 设置 WECHAT_OPENSDK_ZIP_URL（指向可访问镜像，例如 GitHub Release 上的 OpenSDK2.0.5.zip）。"
+  end
+  if !ENV['WECHAT_OPENSDK_ZIP_URL'].nil? && !ENV['WECHAT_OPENSDK_ZIP_URL'].strip.empty?
+    pod 'WechatOpenSDK-XCFramework', :podspec => wechat_podspec
+  end
 
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
 end

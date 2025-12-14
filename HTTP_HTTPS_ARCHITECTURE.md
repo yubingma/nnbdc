@@ -1,5 +1,31 @@
 # NNBDC HTTP/HTTPS 架构设计
 
+## 维护速查（路径汇总）
+
+### 证书目录（宿主机）
+
+- **主域名证书（用于 www/nnbdc.com）**：
+  - `/etc/letsencrypt/live/nnbdc.com/fullchain.pem`
+  - `/etc/letsencrypt/live/nnbdc.com/privkey.pem`
+- **后端域名证书（用于 back.nnbdc.com）**：
+  - `/etc/letsencrypt/live/back.nnbdc.com/fullchain.pem`
+  - `/etc/letsencrypt/live/back.nnbdc.com/privkey.pem`
+- **续期配置**：
+  - `/etc/letsencrypt/renewal/*.conf`
+- **续期 Hook（示例：CDN 证书同步）**：
+  - `/etc/letsencrypt/renewal-hooks/deploy/aliyun-cdn.sh`
+
+### 运维脚本与服务（生产机）
+
+- **证书续签脚本（crontab 调用）**：`/root/renew-cert.sh`
+- **crontab**：`crontab -l`
+- **nginx 容器**：`nginx`（systemd + Docker）
+
+### 日志路径（生产机）
+
+- **续签执行日志**：`/var/log/certbot-renew.log`
+- **certbot 详细日志**：`/var/log/letsencrypt/letsencrypt.log`
+
 ## 架构概述
 
 本文档说明 NNBDC 应用与服务器之间的 HTTP/HTTPS 通信架构设计。
@@ -8,14 +34,14 @@
 
 | 域名 | 用途 | DNS 指向 | 协议支持 |
 |------|------|---------|---------|
-| www.nnbdc.com | 前端服务 | 昆仑灿 CDN | HTTP only |
-| back.nnbdc.com | 后端服务 | 47.108.27.205 | HTTPS only |
+| www.nnbdc.com | 前端服务（含下载/更新/公共资源） | 昆仑灿 CDN | HTTP + HTTPS |
+| back.nnbdc.com | 后端服务（API/WebSocket/私有资源） | 47.108.27.205 | HTTPS（主） + HTTP（兼容/ACME） |
 
 ## HTTPS 证书说明
 
 - **back.nnbdc.com**: 使用 Let's Encrypt 证书（有效期90天），实际启用 HTTPS
-- **自动续签**: 通过 crontab + certbot 实现自动续签
-- **www.nnbdc.com / nnbdc.com**: 虽然脚本申请了证书，但**实际未启用 HTTPS**（因中间经过昆仑灿 CDN，多了一跳，配置复杂且无实际需求）
+- **www.nnbdc.com / nnbdc.com**: 使用 Let's Encrypt 证书（证书 SAN 同时包含 `nnbdc.com` 与 `www.nnbdc.com`），并在 CDN 侧启用 HTTPS
+- **自动续签**: 通过 crontab + certbot 实现自动续签；若前端启用了 CDN HTTPS，需配合 deploy-hook 将新证书同步到 CDN
 
 ## 架构图
 
@@ -31,11 +57,11 @@ graph TB
     end
     
     subgraph "CDN层"
-        CDN[昆仑灿 CDN<br/>仅支持 HTTP]
+        CDN[昆仑灿 CDN<br/>HTTP + HTTPS]
     end
     
     subgraph "服务器 47.108.27.205"
-        FRONTEND[前端服务<br/>www.nnbdc.com<br/>HTTP only]
+        FRONTEND[前端服务<br/>www.nnbdc.com<br/>HTTP + HTTPS]
         BACKEND[后端服务<br/>back.nnbdc.com<br/>HTTP + HTTPS]
         CERT[Let's Encrypt 证书<br/>有效期90天<br/>crontab+certbot自动续签]
     end
@@ -48,11 +74,11 @@ graph TB
     APP -->|"① 后端 API 调用<br/>HTTPS"| DNS2
     DNS2 -->|"HTTPS"| BACKEND
     
-    %% 共享词书资源 - HTTP
-    APP -->|"② 共享词书资源<br/>HTTP"| DNS1
-    DNS1 -->|"HTTP"| CDN
-    CDN -->|"HTTP<br/>CDN 加速"| FRONTEND
-    FRONTEND -->|"HTTP<br/>转发"| BACKEND
+    %% 共享词书资源 - HTTPS（经 CDN）
+    APP -->|"② 共享词书资源<br/>HTTPS"| DNS1
+    DNS1 -->|"HTTPS"| CDN
+    CDN -->|"HTTPS<br/>CDN 加速"| FRONTEND
+    FRONTEND -->|"HTTP/HTTPS<br/>转发"| BACKEND
     
     %% 用户词书资源 - HTTPS
     APP -->|"③ 用户词书<br/>HTTPS"| DNS2
@@ -74,8 +100,8 @@ graph TB
     %% 连接线颜色 - 蓝色表示HTTP，绿色表示HTTPS
     linkStyle 0 stroke:#4CAF50,stroke-width:3px
     linkStyle 1 stroke:#4CAF50,stroke-width:3px
-    linkStyle 2 stroke:#2196F3,stroke-width:3px
-    linkStyle 3 stroke:#2196F3,stroke-width:3px
+    linkStyle 2 stroke:#4CAF50,stroke-width:3px
+    linkStyle 3 stroke:#4CAF50,stroke-width:3px
     linkStyle 4 stroke:#2196F3,stroke-width:3px
     linkStyle 5 stroke:#2196F3,stroke-width:3px
     linkStyle 6 stroke:#4CAF50,stroke-width:3px
@@ -92,15 +118,15 @@ graph TB
 ## 资源访问策略
 
 ### 1. 后端 API 访问
-- **URL**: `https://back.nnbdc.com/api/*`
+- **URL**: `https://back.nnbdc.com/*`（当前后端接口多为 `*.do`，不强制 `/api/` 前缀）
 - **协议**: **HTTPS（强制）**
 - **路由**: App → back.nnbdc.com (直连)
 - **用途**: 所有后端业务 API 调用
 - **安全**: TLS 1.2/1.3 加密，HSTS 保护
 
 ### 2. 共享词书资源
-- **URL**: `http://www.nnbdc.com/back/getDictResById.do`
-- **协议**: HTTP
+- **URL**: `https://www.nnbdc.com/back/getDictResById.do`
+- **协议**: **HTTPS（推荐）**（CDN 对外终端可同时支持 HTTP/HTTPS）
 - **路由**: App → www.nnbdc.com (CDN) → 前端 nginx (`/back/` 代理) → 后端服务
 - **优势**: 利用昆仑灿 CDN 加速资源分发
 - **适用**: 公共词书、共享词典等静态资源
@@ -134,10 +160,10 @@ sequenceDiagram
     App->>Back: HTTPS: back.nnbdc.com/api/xxx
     Back-->>App: JSON Response (加密)
 
-    Note over App,Back: 场景2: 共享词书资源 (HTTP + CDN加速)
-    App->>CDN: HTTP: www.nnbdc.com/back/getDictResById.do
-    CDN->>Front: HTTP 转发
-    Front->>Back: HTTP 内部转发
+    Note over App,Back: 场景2: 共享词书资源 (HTTPS + CDN加速)
+    App->>CDN: HTTPS: www.nnbdc.com/back/getDictResById.do
+    CDN->>Front: HTTPS 转发
+    Front->>Back: HTTP/HTTPS 内部转发
     Back-->>Front: 资源数据
     Front-->>CDN: 返回资源
     CDN-->>App: 缓存并返回（加速）
@@ -160,16 +186,15 @@ sequenceDiagram
 
 ## 设计决策说明
 
-### 为什么 www.nnbdc.com 不支持 HTTPS？
+### 为什么 www.nnbdc.com 需要 HTTPS？
 
-由于 www.nnbdc.com 的 DNS 指向昆仑灿 CDN，中间多了一跳，配置和管理复杂度增加：
+前端已启用 HTTPS，主要原因：
 
-1. **证书管理复杂**: 需要在 CDN 层配置证书
-2. **多层转发**: CDN → 源服务器的链路需要额外配置
-3. **成本考虑**: CDN HTTPS 可能产生额外费用
-4. **实际需求**: 前端静态资源和公共词书资源对 HTTPS 需求不强
+1. **平台合规与用户信任**：iOS/macOS（ATS）与现代浏览器对 HTTPS 越来越“默认要求”
+2. **避免混合内容**：App/Web 访问更新/下载/资源链接时统一走 HTTPS，减少线上大改风险
+3. **统一入口**：用户侧永远访问 `https://www.nnbdc.com`，HTTPS 由 CDN 终端提供，回源可按成本选择 HTTP/HTTPS
 
-> **注意**: 虽然 `setup-https.sh` 脚本会为主域名申请 Let's Encrypt 证书，但在 nginx 配置中并未启用 HTTPS 监听，该证书实际处于未使用状态。
+> **说明**：`nnbdc.com` 的 Let's Encrypt 证书包含 `www.nnbdc.com`（SAN），可用于 CDN 侧配置 www 的 HTTPS。
 
 ### 为什么 back.nnbdc.com 强制使用 HTTPS？
 
@@ -257,8 +282,11 @@ echo "证书续期完成（服务未中断）: $(date)"
 - **续签时机**: 证书剩余30天时自动续签
 - **日志位置**: `/var/log/certbot-renew.log`
 - **申请的证书**: 
-  - nnbdc.com + www.nnbdc.com（已申请但**未启用**）
+  - nnbdc.com + www.nnbdc.com（已启用：用于 CDN HTTPS）
   - back.nnbdc.com（**实际使用中**）
+
+> **提示**：若使用 deploy-hook（例如同步证书到阿里云 CDN），脚本通常位于：
+> `/etc/letsencrypt/renewal-hooks/deploy/aliyun-cdn.sh`
 
 **Docker 部署关键配置**：
 ```bash
@@ -304,12 +332,11 @@ echo "证书续期完成（服务未中断）: $(date)"
 虽然 `setup-https.sh` 脚本会为主域名（nnbdc.com, www.nnbdc.com）和后端域名（back.nnbdc.com）同时申请证书，但在实际部署中：
 
 - ✅ **back.nnbdc.com 证书正在使用** - 用于微信登录回调等需要 HTTPS 的场景
-- ⚠️ **主域名证书未启用** - www.nnbdc.com 只提供 HTTP 服务，nginx 配置中未启用 HTTPS 监听
+- ✅ **主域名证书正在使用** - www.nnbdc.com 已在 CDN 侧启用 HTTPS（证书 SAN 覆盖 www）
 
-这样设计的原因：
-1. 主域名通过昆仑灿 CDN 分发，HTTPS 配置复杂
-2. 前端静态资源和公共词书资源对 HTTPS 需求不强
-3. 减少不必要的资源占用和维护成本
+说明：
+1. **www.nnbdc.com 的 HTTPS 在 CDN 层终止**：证书需配置在 CDN（或由 CDN 托管/自动续期）
+2. **源站 nginx 是否启用 www 的 HTTPS**：与 CDN 回源策略相关（可选 HTTP 或 HTTPS）
 
 ## 部署步骤
 
@@ -342,7 +369,7 @@ docker exec nginx nginx -t
 docker exec nginx nginx -s reload
 
 # 验证 /back/ 代理配置
-curl -I http://www.nnbdc.com/back/
+curl -I https://www.nnbdc.com/back/
 ```
 
 ### 2. 确保 webroot 目录存在
@@ -572,12 +599,11 @@ add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" alway
 
 1. 🔐 **证书申请 vs 证书使用**: 
    - `setup-https.sh` 会为 nnbdc.com, www.nnbdc.com 和 back.nnbdc.com 三个域名申请证书
-   - **实际只有 back.nnbdc.com 的证书在使用**（nginx 配置中启用了 HTTPS）
-   - 主域名证书虽然申请并自动续签，但未在 nginx 中启用，处于备用状态
+   - **back.nnbdc.com** 证书用于后端 HTTPS
+   - **nnbdc.com / www.nnbdc.com** 证书用于 CDN 侧前端 HTTPS（SAN 覆盖 www）
    
 2. ⚠️ **强制 HTTPS**: 
-   - back.nnbdc.com 仅支持 HTTPS 访问
-   - 所有 HTTP 请求自动重定向到 HTTPS（301 永久重定向）
+   - back.nnbdc.com 推荐仅用 HTTPS（HTTP 可保留给 ACME/兼容路径）
    - App 客户端必须使用 HTTPS URL（`https://back.nnbdc.com`）
    - Let's Encrypt 证书验证通过 `/.well-known/acme-challenge/` 特殊路径，不受重定向影响
 
@@ -587,7 +613,7 @@ add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" alway
 
 5. ⚠️ **证书过期监控**: 虽然有自动续签，但建议配置证书过期监控作为备份
 
-6. ⚠️ **混合内容警告**: 如果未来前端需要启用 HTTPS，需要确保所有资源请求也使用 HTTPS
+6. ⚠️ **混合内容警告**: 前端已启用 HTTPS，需确保所有资源请求也使用 HTTPS（更新/下载/静态资源等）
 
 7. 🔧 **配置变更**: 修改配置后建议在低峰期操作，并验证：
    - HTTP 到 HTTPS 重定向是否正常
