@@ -9,7 +9,7 @@ log() {
   printf "%s\n" "$*"
 }
 
-SCRIPT_VERSION="2025-12-13.6"
+SCRIPT_VERSION="2025-12-13.7"
 
 fail() {
   log ""
@@ -57,7 +57,6 @@ is_flutter_healthy() {
   # Xcode Cloud 上经常会出现某个“残缺 Flutter”导致版本显示 unknown/unknown source，
   # 这会导致 flutter pub get 把 Flutter 版本当作 0.0.0-unknown 进而解析失败。
   echo "$VER_OUT" | grep -q "0.0.0-unknown" && return 1
-  echo "$VER_OUT" | grep -q "unknown source" && return 1
   # 正常情况下第一行会包含语义化版本号，例如：Flutter 3.32.5 • channel stable • ...
   echo "$VER_OUT" | head -n 1 | grep -Eq 'Flutter[[:space:]]+[0-9]+\.[0-9]+\.[0-9]+' || return 1
   return 0
@@ -107,7 +106,7 @@ ensure_flutter_version_known() {
     return 0
   fi
 
-  log "🩺 检测到 Flutter 版本为 unknown，尝试修复（拉取 tags / 补全历史）..."
+  log "🩺 检测到 Flutter 版本异常（可能是 0.0.0-unknown 或无法识别语义版本），尝试修复（拉取 tags / 补全历史）..."
   cd "$FLUTTER_ROOT" || fail "无法进入 Flutter 目录: $FLUTTER_ROOT"
 
   # Flutter 版本信息可能被缓存为 unknown，先清理缓存文件
