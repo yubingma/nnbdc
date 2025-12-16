@@ -55,7 +55,7 @@ class _DictDownloadDialogState extends State<DictDownloadDialog> {
       try {
         Global.logger.i('开始下载词书, ID: ${dict.id}, 名称: ${dict.name}');
         await SelectBookPageState.downloadADict(
-          dict.id,
+          dict,
           onProgress: (progress) {
             setState(() {
               _downloadProgress[dict.id] = progress;

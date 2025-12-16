@@ -56,9 +56,18 @@ class Api {
 
     dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) {
+        // 系统/公共词书资源走 CDN（www + /back 反代）以获得缓存加速
+        // 注意：为了让 CDN 更容易缓存，强制不携带 Cookie
+        if (options.path.contains('getSysDictResById.do')) {
+          options.baseUrl = Config.cdnBackUrl;
+          options.headers.remove('cookie');
+          options.headers.remove('Cookie');
+        }
+
         // 简化的请求日志，避免重复构建
-        if (options.path.contains('getDictResById.do')) {
-          Global.logger.d('🔄 getDictResById 请求开始: ${options.uri}');
+        if (options.path.contains('getSysDictResById.do') ||
+            options.path.contains('getUserDictResById.do')) {
+          Global.logger.d('🔄 词典资源请求开始: ${options.uri}');
           
           // 清理无效的 Cookie 头
           if (options.headers.containsKey('cookie') &&
@@ -70,14 +79,16 @@ class Api {
         }
 
         options.onReceiveProgress = (received, total) {
-          if (options.path.contains('getDictResById.do')) {
+          if (options.path.contains('getSysDictResById.do') ||
+              options.path.contains('getUserDictResById.do')) {
             _DownloadProgress.update(options.path, received, total);
           }
         };
         handler.next(options);
       },
       onResponse: (response, handler) async {
-        if (response.requestOptions.path.contains('getDictResById.do')) {
+        if (response.requestOptions.path.contains('getSysDictResById.do') ||
+            response.requestOptions.path.contains('getUserDictResById.do')) {
           // 简化的响应日志，只记录关键信息
           String? contentLength = response.headers.value('content-length');
           String? contentEncoding = response.headers.value('content-encoding');
@@ -137,7 +148,9 @@ class CustomInterceptors extends Interceptor {
       int statusCode = response.statusCode ?? 0;
       
       // 只对关键接口记录详细日志
-      if (path.contains('getDictResById.do') || path.contains('getUserDbLogsFromVersion.do')) {
+      if (path.contains('getSysDictResById.do') ||
+          path.contains('getUserDictResById.do') ||
+          path.contains('getUserDbLogsFromVersion.do')) {
         Global.logger.i('📥 收到完整应答 - $path, 状态码: $statusCode');
         
         // 记录响应大小（如果还没有记录过）
@@ -174,9 +187,10 @@ class CustomInterceptors extends Interceptor {
         err.type == DioExceptionType.receiveTimeout ||
         err.type == DioExceptionType.sendTimeout) {
       // 超时错误处理
-      if (err.requestOptions.path.contains('getDictResById.do')) {
+      if (err.requestOptions.path.contains('getSysDictResById.do') ||
+          err.requestOptions.path.contains('getUserDictResById.do')) {
         ToastUtil.error('词典数据下载超时，请检查网络连接或稍后重试');
-        Global.logger.e('❌ getDictResById 接口超时: ${err.message}');
+        Global.logger.e('❌ 词典资源接口超时: ${err.message}');
         Global.logger.e('❌ 超时类型: ${err.type}');
         Global.logger.e('❌ 请求路径: ${err.requestOptions.path}');
         Global.logger.e('❌ 实际超时配置:');
@@ -337,8 +351,17 @@ abstract class RestClient {
       @Field("clientType") String clientType,
       @Query("userId") String userId);
 
-  @GET("/res/getDictResById.do")
-  Future<Result<DictRes>> getDictResById(@Query("dictId") String dictId);
+  // 系统/公共词书资源（可走 CDN）
+  @GET("/res/getSysDictResById.do")
+  Future<Result<DictRes>> getSysDictResById(@Query("dictId") String dictId);
+
+  // 用户词书资源（不建议走 CDN）
+  @GET("/res/getUserDictResById.do")
+  Future<Result<DictRes>> getUserDictResById(@Query("dictId") String dictId);
+
+  // 词书基础信息（轻量）
+  @GET("/getDictInfo.do")
+  Future<Result<DictDto>> getDictInfo(@Query("dictId") String dictId);
 
   @GET("/getGameHallData.do")
   Future<GetGameHallDataResult> getGameHallData();

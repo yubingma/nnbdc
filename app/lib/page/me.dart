@@ -9,7 +9,6 @@ import 'package:nnbdc/api/enum.dart';
 import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:drift/drift.dart' as drift;
-import 'package:nnbdc/page/select_book.dart';
 import 'package:nnbdc/util/error_handler.dart';
 import 'package:nnbdc/util/app_clock.dart';
 
@@ -161,9 +160,10 @@ class _MePageState extends State<MePage> {
             // 获取词书名称，如果获取不到则使用ID
             String dictName = '词书 ${learningDict.dictId}';
             try {
-              var dictRes = await SelectBookPageState.getDictRes(learningDict.dictId);
-              if (dictRes?.dict?.name != null) {
-                dictName = dictRes!.dict!.name;
+              // 这里只是获取名称：使用轻量接口，避免下载完整词书资源
+              final result = await Api.client.getDictInfo(learningDict.dictId);
+              if (result.success && result.data?.name != null) {
+                dictName = result.data!.name;
               }
             } catch (e) {
               Global.logger.e("获取词书名称失败: $e");

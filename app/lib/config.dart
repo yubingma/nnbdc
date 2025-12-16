@@ -8,6 +8,8 @@ class Config {
       "service_url": "https://back.nnbdc.com",
       // Socket.IO 走同域 HTTPS，由 nginx 转发到 9090（namespace: /all）
       "socketServerUrl": "https://back.nnbdc.com/all",
+      // 公共资源/共享词书通过 CDN（www + /back 反代）访问
+      "cdnBackUrl": "https://www.nnbdc.com/back",
       "sound_base_url": "http://www.nnbdc.com/sound/",
       "updateUrl": "http://www.nnbdc.com/app/ver.json",
       "apkUrl": "http://www.nnbdc.com/app/nnbdc-android.apk",
@@ -18,6 +20,7 @@ class Config {
     "dev": {
       "service_url": "http://192.168.43.53:5200",
       "socketServerUrl": "http://192.168.43.53:9090/all",
+      "cdnBackUrl": "http://192.168.43.53:80/back",
       "sound_base_url": "http://192.168.43.53:80/sound/",
       "updateUrl": "http://192.168.43.53:80/app/ver.json",
       "apkUrl": "http://192.168.43.53:80/app/nnbdc-android.apk",
@@ -28,6 +31,7 @@ class Config {
     "dev_web": {
       "service_url": "http://localhost:5200",
       "socketServerUrl": "http://localhost:9090/all",
+      "cdnBackUrl": "http://localhost:80/back",
       "sound_base_url": "http://localhost:80/sound/",
       "updateUrl": "http://localhost:80/app/ver.json",
       "apkUrl": "http://localhost:80/app/nnbdc-android.apk",
@@ -38,6 +42,7 @@ class Config {
     "test": {
       "service_url": "http://localhost:5201",
       "socketServerUrl": "http://localhost:9091/all",
+      "cdnBackUrl": "http://localhost:80/back",
       "sound_base_url": "http://localhost:80/sound/",
       "updateUrl": "http://localhost:80/app/ver.json",
       "apkUrl": "http://localhost:80/app/nnbdc-android.apk",
@@ -51,6 +56,7 @@ class Config {
 
   static final String serviceUrl = profile["service_url"];
   static final String socketServerUrl = profile["socketServerUrl"];
+  static final String cdnBackUrl = profile["cdnBackUrl"];
   static final String soundBaseUrl = profile["sound_base_url"];
   static final String updateUrl = profile["updateUrl"];
   static final String apkUrl = profile["apkUrl"];

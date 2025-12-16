@@ -396,13 +396,26 @@ class SelectBookPageState extends State<SelectBookPage> {
     return tabs;
   }
 
-  static Future<DictRes?> getDictRes(String dictId) async {
+  static Future<DictRes?> getDictRes(DictVo dict) async {
     final stopwatch = Stopwatch()..start();
 
     try {
+      final dictId = dict.id;
       Global.logger.d('🔄 开始获取词典资源: $dictId');
 
-      var result = await Api.client.getDictResById(dictId);
+      // 前端判断：ownerId == 当前用户ID -> 用户词书；否则 -> 系统/公共词书
+      final currUserId = Global.getLoggedInUser()?.id ?? Global.currentUserId;
+      String? ownerId = dict.owner?.id;
+      // 若接口返回的 DictVo 未携带 owner，则尝试从本地数据库补齐 ownerId（用于判断是否为用户词书）
+      if (ownerId == null) {
+        final dictMeta = await MyDatabase.instance.dictsDao.findById(dictId);
+        ownerId = dictMeta?.ownerId;
+      }
+      final isUserDict = currUserId != null && ownerId == currUserId;
+
+      final result = isUserDict
+          ? await Api.client.getUserDictResById(dictId)
+          : await Api.client.getSysDictResById(dictId);
 
       stopwatch.stop();
       Global.logger.d('📥 API调用完成: ${stopwatch.elapsedMilliseconds}ms');
@@ -425,7 +438,7 @@ class SelectBookPageState extends State<SelectBookPage> {
       }
     } catch (e, stackTrace) {
       stopwatch.stop();
-      Global.logger.e('❌ 获取词典资源失败: $dictId, 耗时: ${stopwatch.elapsedMilliseconds}ms', error: e, stackTrace: stackTrace);
+      Global.logger.e('❌ 获取词典资源失败: ${dict.id}, 耗时: ${stopwatch.elapsedMilliseconds}ms', error: e, stackTrace: stackTrace);
       rethrow;
     }
   }
@@ -555,13 +568,14 @@ class SelectBookPageState extends State<SelectBookPage> {
   }
 
   /// 下载词书，并保存到本地数据库
-  static Future<bool> downloadADict(String dictId, {Function(double)? onProgress}) async {
+  static Future<bool> downloadADict(DictVo dict, {Function(double)? onProgress}) async {
     // 禁用API调用的自动loading
     Api.disableAutoLoading = true;
 
     try {
       // 获取词书资源
-      DictRes? dictRes = await getDictRes(dictId);
+      final dictId = dict.id;
+      DictRes? dictRes = await getDictRes(dict);
       if (dictRes == null) {
         ToastUtil.error("[$dictId]下载失败");
         return false;
