@@ -388,14 +388,27 @@ public abstract class BaseDao<E extends Po> {
         if (preciseEntity != null) {
             List<Field> fields = BeanUtils.getFields(valueClass, true);
             for (Field field : fields) {
-                // 跳过集合类型字段和关联对象字段（这些在查询条件中不需要）
-                if (java.util.Collection.class.isAssignableFrom(field.getType()) ||
-                    (Po.class.isAssignableFrom(field.getType()) && !field.getName().endsWith("Id"))) {
-                    continue;
-                }
-                
                 try {
                     Object fieldValue = ReflectionUtil.getFieldValue(preciseEntity, field.getName());
+
+                    // 重要：关联对象字段（Po 子类，且字段名不以 Id 结尾）在本 DAO 的动态 SQL 里
+                    // 不会被转换为外键条件（例如 WordImage.word -> wordId）。
+                    // 如果调用方传入了非空的关联对象字段，会产生“条件被静默忽略”的高风险行为。
+                    // 因此这里直接抛异常，强制调用方改用显式 SQL 或改传外键字段（xxxId）。
+                    if (Po.class.isAssignableFrom(field.getType()) && !field.getName().endsWith("Id")) {
+                        if (fieldValue != null) {
+                            throw new IllegalArgumentException(
+                                    "BaseDao.pagedQuery 不支持使用关联对象字段作为查询条件: " + field.getName()
+                                            + "。请改用外键字段（如 " + field.getName() + "Id）或使用显式 SQL。");
+                        }
+                        continue;
+                    }
+
+                    // 跳过集合类型字段（这些在查询条件中不需要）
+                    if (java.util.Collection.class.isAssignableFrom(field.getType())) {
+                        continue;
+                    }
+
                     if (fieldValue != null) {
                         String columnName = EntityTableInfo.getColumnName(field);
                         sql.append(" AND ").append(columnName).append(" = ?");

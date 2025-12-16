@@ -6,6 +6,9 @@ import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.TimeZone;
 
+import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +29,8 @@ import beidanci.service.util.SysParamUtil;
 @Service
 @Transactional(rollbackFor = Throwable.class)
 public class WordImageBo extends BaseBo<WordImage> {
+    private static final Logger log = LoggerFactory.getLogger(WordImageBo.class);
+
     @Autowired
     WordBo wordBo;
 
@@ -99,13 +104,33 @@ public class WordImageBo extends BaseBo<WordImage> {
     }
 
     /**
+     * 注意：BaseDao.pagedQuery(preciseEntity) 会跳过关联对象字段（Po类型字段），
+     * 例如 WordImage.word（对应 wordId）不会进入 WHERE 条件。
+     * 因此这里必须用显式 SQL 按 wordId 查询，避免误查全表导致“末位淘汰”误删。
+     */
+    private List<WordImage> listImagesByWordId(String wordId) {
+        return pagedQuery("SELECT * FROM word_image WHERE wordId = :wordId",
+                1,
+                Integer.MAX_VALUE,
+                Pair.of("wordId", wordId)).getRows();
+    }
+
+    /**
      * 获取一个单词对应的前10个图片
      */
     public WordImageVo[] getImagesOfWord(String wordId, SessionData sessionData) {
 
-        // 对图片进行排序，被点赞绝对次数多的排在前面
         Word word = wordBo.findById(wordId);
-        List<WordImage> wordImages = word.getImages();
+        if (word == null) {
+            return new WordImageVo[0];
+        }
+        List<WordImage> wordImages = listImagesByWordId(wordId);
+        // 补齐关联对象的 spell（JDBC 映射只会填充 wordId -> Word{id}）
+        for (WordImage img : wordImages) {
+            if (img.getWord() != null && img.getWord().getId() != null) {
+                img.getWord().setSpell(word.getSpell());
+            }
+        }
         sortWordImages(wordImages);
 
         int total = wordImages.size();
@@ -128,17 +153,32 @@ public class WordImageBo extends BaseBo<WordImage> {
     public void addWordImage(WordImage wordImage, User user) throws IllegalArgumentException, IllegalAccessException {
         // 如果单词的配图已经大于等于12个了，则把最后一个图片删掉（末位淘汰制）
         Word word = wordImage.getWord();
-        List<WordImage> images = word.getImages();
+        if (word == null) {
+            throw new IllegalArgumentException("wordImage.word 不能为空");
+        }
+        if (word.getId() == null) {
+            throw new IllegalArgumentException("wordImage.word.id 不能为空");
+        }
+
+        // 必须按 wordId 精确查询，避免误查全表导致误删
+        List<WordImage> images = listImagesByWordId(word.getId());
         sortWordImages(images);
+
         while (images.size() >= 12) {
             // 删除数据库记录
             WordImage lastImage = images.remove(images.size() - 1);
-            deleteWordImage(lastImage.getId(), user, false);
+            Result<Object> del = deleteWordImage(lastImage.getId(), user, false);
+            if (del == null || !del.isSuccess()) {
+                // 说明：如果 event 表存在外键约束（event.wordImageId -> word_image.id），
+                // event 清理失败会导致图片无法删除。此时不再强行淘汰，避免上传失败。
+                log.warn("末位淘汰删除失败，临时放宽配图数量限制。wordId={}, imageId={}, msg={}",
+                        word.getId(), lastImage.getId(), del != null ? del.getMsg() : "null");
+                break;
+            }
         }
 
         // 添加新的单词图片
         createEntity(wordImage);
-        images.add(wordImage);
 
         // 记录系统数据日志（新增配图）
         sysDbLogBo.logOperation("INSERT", "word_image", wordImage.getId(), 
@@ -150,6 +190,9 @@ public class WordImageBo extends BaseBo<WordImage> {
 
     public Result<Object> deleteWordImage(String imageId, User user, boolean checkPermission) {
         WordImage image = findById(imageId);
+        if (image == null) {
+            return new Result<>(true, null, null);
+        }
         if (checkPermission) {
             if (!user.getIsAdmin() && !user.getIsSuperAdmin() && (image.getAuthor() == null
                     || !image.getAuthor().getUserName().equalsIgnoreCase(user.getUserName()))) {
@@ -158,15 +201,15 @@ public class WordImageBo extends BaseBo<WordImage> {
         }
 
         // 删除相关的事件记录
-        Event exam = new Event();
-        exam.setWordImage(image);
-        List<Event> events = eventBo.queryAll(exam, false);
-        for (Event event : events) {
-            eventBo.deleteEntity(event);
+        // 直接按 wordImageId 批量删除，减少查询与逐行删除带来的锁竞争。
+        // 注意：如果数据库存在外键约束（event.wordImageId -> word_image.id），则必须先删 event 才能删图片。
+        boolean eventsDeleted = eventBo.deleteEventsByWordImageId(image.getId());
+        if (!eventsDeleted) {
+            return new Result<>(false, "系统繁忙，请稍后再试", null);
         }
 
         // 删除数据库记录
-        image.getWord().getImages().remove(image);
+        // JDBC 模式下不维护 Word.images 这种内存关系，直接删记录即可
         image.setWord(null);
         deleteEntity(image);
 
