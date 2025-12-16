@@ -1,6 +1,6 @@
 
 class Config {
-  static String profileName = "prod";
+  static String profileName = "dev";
 
   static final Map profiles = {
     "prod": {
@@ -20,7 +20,7 @@ class Config {
     "dev": {
       "service_url": "http://192.168.43.53:5200",
       "socketServerUrl": "http://192.168.43.53:9090/all",
-      "cdnBackUrl": "http://192.168.43.53:80/back",
+      "cdnBackUrl": "http://192.168.43.53:5200",
       "sound_base_url": "http://192.168.43.53:80/sound/",
       "updateUrl": "http://192.168.43.53:80/app/ver.json",
       "apkUrl": "http://192.168.43.53:80/app/nnbdc-android.apk",

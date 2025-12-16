@@ -147,7 +147,7 @@ class MyDatabase extends _$MyDatabase {
   // you should bump this number whenever you change or add a table definition. Migrations
   // are covered later in this readme.
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration {
@@ -173,6 +173,10 @@ class MyDatabase extends _$MyDatabase {
           // 从版本 4 升级到版本 5：添加订阅相关字段（按平台区分）
           if (from < 5) {
             await _migrateFromV4ToV5(m);
+          }
+          // 从版本 5 升级到版本 6：修复订阅字段列名（历史版本曾误用驼峰列名）
+          if (from < 6) {
+            await _migrateFromV5ToV6FixIosSubscriptionColumns();
           }
         } catch (e, stackTrace) {
           // 升级失败，记录错误日志
@@ -290,33 +294,84 @@ class MyDatabase extends _$MyDatabase {
   Future<void> _migrateFromV4ToV5(Migrator m) async {
     await transaction(() async {
       // 添加iOS订阅字段
-      // isPremiumIos 设置为 NOT NULL，默认值为 0 (false)
+      // 注意：Drift 在 SQLite 中使用下划线列名（snake_case）
+      // is_premium_ios 设置为 NOT NULL，默认值为 0 (false)
       await customStatement('''
         ALTER TABLE users 
-        ADD COLUMN isPremiumIos INTEGER NOT NULL DEFAULT 0
+        ADD COLUMN is_premium_ios INTEGER NOT NULL DEFAULT 0
       ''');
       
       await customStatement('''
         ALTER TABLE users 
-        ADD COLUMN subscriptionExpireDateIos INTEGER
+        ADD COLUMN subscription_expire_date_ios INTEGER
       ''');
       
       await customStatement('''
         ALTER TABLE users 
-        ADD COLUMN subscriptionTypeIos TEXT
+        ADD COLUMN subscription_type_ios TEXT
       ''');
       
       await customStatement('''
         ALTER TABLE users 
-        ADD COLUMN subscriptionStatusIos TEXT
+        ADD COLUMN subscription_status_ios TEXT
       ''');
       
       await customStatement('''
         ALTER TABLE users 
-        ADD COLUMN lastReceiptDataIos TEXT
+        ADD COLUMN last_receipt_data_ios TEXT
       ''');
       
       Global.logger.i('✅ 添加iOS订阅相关字段完成（版本4→5）');
+    });
+  }
+
+  /// 从版本 5 升级到版本 6：修复订阅字段列名
+  ///
+  /// 历史版本曾通过 SQL 手工添加了驼峰列名（如 isPremiumIos），而 Drift 读取的是 snake_case（如 is_premium_ios），
+  /// 会导致查询映射时出现空值并触发 `!` 崩溃。
+  Future<void> _migrateFromV5ToV6FixIosSubscriptionColumns() async {
+    await transaction(() async {
+      final cols = await customSelect("PRAGMA table_info(users)", readsFrom: {}).get();
+      final colNames = cols.map((r) => (r.data['name'] as String?) ?? '').toSet();
+
+      bool has(String name) => colNames.contains(name);
+
+      // 1) 确保 snake_case 列存在（Drift 读取依赖这些列名）
+      if (!has('is_premium_ios')) {
+        await customStatement("ALTER TABLE users ADD COLUMN is_premium_ios INTEGER NOT NULL DEFAULT 0");
+      }
+      if (!has('subscription_expire_date_ios')) {
+        await customStatement("ALTER TABLE users ADD COLUMN subscription_expire_date_ios INTEGER");
+      }
+      if (!has('subscription_type_ios')) {
+        await customStatement("ALTER TABLE users ADD COLUMN subscription_type_ios TEXT");
+      }
+      if (!has('subscription_status_ios')) {
+        await customStatement("ALTER TABLE users ADD COLUMN subscription_status_ios TEXT");
+      }
+      if (!has('last_receipt_data_ios')) {
+        await customStatement("ALTER TABLE users ADD COLUMN last_receipt_data_ios TEXT");
+      }
+
+      // 2) 若存在历史驼峰列名，则把数据迁移到 snake_case 列
+      // 注：SQLite 不支持 DROP COLUMN（老版本），所以保留旧列不影响。
+      if (has('isPremiumIos')) {
+        await customStatement("UPDATE users SET is_premium_ios = COALESCE(isPremiumIos, 0)");
+      }
+      if (has('subscriptionExpireDateIos')) {
+        await customStatement("UPDATE users SET subscription_expire_date_ios = subscriptionExpireDateIos");
+      }
+      if (has('subscriptionTypeIos')) {
+        await customStatement("UPDATE users SET subscription_type_ios = subscriptionTypeIos");
+      }
+      if (has('subscriptionStatusIos')) {
+        await customStatement("UPDATE users SET subscription_status_ios = subscriptionStatusIos");
+      }
+      if (has('lastReceiptDataIos')) {
+        await customStatement("UPDATE users SET last_receipt_data_ios = lastReceiptDataIos");
+      }
+
+      Global.logger.i('✅ 修复 users 表 iOS 订阅字段列名完成（版本5→6）');
     });
   }
 
