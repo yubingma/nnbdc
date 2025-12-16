@@ -30,6 +30,8 @@ import beidanci.service.util.SysParamUtil;
 @Transactional(rollbackFor = Throwable.class)
 public class WordImageBo extends BaseBo<WordImage> {
     private static final Logger log = LoggerFactory.getLogger(WordImageBo.class);
+    private static final int MAX_IMAGES_PER_WORD = 9;
+    private static final int MAX_IMAGES_FOR_DISPLAY = 9;
 
     @Autowired
     WordBo wordBo;
@@ -134,7 +136,7 @@ public class WordImageBo extends BaseBo<WordImage> {
         sortWordImages(wordImages);
 
         int total = wordImages.size();
-        WordImageVo[] images = new WordImageVo[Math.min(total, 10)];
+        WordImageVo[] images = new WordImageVo[Math.min(total, MAX_IMAGES_FOR_DISPLAY)];
         for (int i = 0; i < images.length; i++) {
             WordImage po = wordImages.get(i);
             WordImageVo vo = BeanUtils.makeVo(po, WordImageVo.class, new String[]{"author", "createTime", "updateTime", "word.^id,spell"});
@@ -151,7 +153,7 @@ public class WordImageBo extends BaseBo<WordImage> {
     }
 
     public void addWordImage(WordImage wordImage, User user) throws IllegalArgumentException, IllegalAccessException {
-        // 如果单词的配图已经大于等于12个了，则把最后一个图片删掉（末位淘汰制）
+        // 如果单词的配图已经大于等于上限，则把最后一个图片删掉（末位淘汰制）
         Word word = wordImage.getWord();
         if (word == null) {
             throw new IllegalArgumentException("wordImage.word 不能为空");
@@ -164,7 +166,7 @@ public class WordImageBo extends BaseBo<WordImage> {
         List<WordImage> images = listImagesByWordId(word.getId());
         sortWordImages(images);
 
-        while (images.size() >= 12) {
+        while (images.size() >= MAX_IMAGES_PER_WORD) {
             // 删除数据库记录
             WordImage lastImage = images.remove(images.size() - 1);
             Result<Object> del = deleteWordImage(lastImage.getId(), user, false);
