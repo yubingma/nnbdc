@@ -21,9 +21,9 @@ spring:
     name: single-service
   datasource:
     driverClassName: com.p6spy.engine.spy.P6SpyDriver
-    url: jdbc:p6spy:mysql://${mysql_host}:${mysql_port}/${nnbdc_db}?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
-    username: ${mysql_username}
-    password: ${mysql_password}
+    url: jdbc:p6spy:mysql://${db_host}:${db_port}/${db}?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: ${db_username}
+    password: ${db_password}
     type: com.zaxxer.hikari.HikariDataSource
     hikari:
       maxLifetime: 1765000 #一个连接的生命时长（毫秒），超时而且没被使用则被释放（retired），缺省:30分钟，建议设置比数据库超时时长少30秒以上
