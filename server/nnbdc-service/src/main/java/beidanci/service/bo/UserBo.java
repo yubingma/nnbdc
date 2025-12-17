@@ -8,9 +8,12 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.annotation.PostConstruct;
 import javax.naming.NamingException;
@@ -1038,6 +1041,41 @@ public class UserBo extends BaseBo<User> {
                         dto.getUpdateTime());
                 logs.add(log);
             }
+
+            // 打印全量同步日志分类统计（便于定位日志量过大的原因）
+            // 注意：tblName 需要与客户端同步消费的表名保持一致
+            Map<String, Integer> counts = new HashMap<>();
+            for (UserDbLogDto l : logs) {
+                String tbl = l.getTblName();
+                if (tbl == null) {
+                    tbl = "null";
+                }
+                counts.put(tbl, counts.getOrDefault(tbl, 0) + 1);
+            }
+
+            // 按固定顺序输出，方便排查
+            Map<String, Integer> ordered = new LinkedHashMap<>();
+            ordered.put("learning_word", counts.getOrDefault("learning_word", 0));
+            ordered.put("learning_dict", counts.getOrDefault("learning_dict", 0));
+            ordered.put("user_study_step", counts.getOrDefault("user_study_step", 0));
+            ordered.put("daka", counts.getOrDefault("daka", 0));
+            ordered.put("user_oper", counts.getOrDefault("user_oper", 0));
+            ordered.put("user_wrong_word", counts.getOrDefault("user_wrong_word", 0));
+            ordered.put("dict_word", counts.getOrDefault("dict_word", 0));
+            ordered.put("mastered_word", counts.getOrDefault("mastered_word", 0));
+            ordered.put("user_cow_dung_log", counts.getOrDefault("user_cow_dung_log", 0));
+
+            // 输出未在固定列表中的表名（如果有）
+            Map<String, Integer> extra = new LinkedHashMap<>();
+            for (Map.Entry<String, Integer> e : counts.entrySet()) {
+                if (!ordered.containsKey(e.getKey())) {
+                    extra.put(e.getKey(), e.getValue());
+                }
+            }
+            if (!extra.isEmpty()) {
+                logger.info("为用户{}进行全量同步分类统计(其他明细): {}", userId, extra);
+            }
+            logger.info("为用户{}进行全量同步分类统计: {}", userId, ordered);
 
             logger.info("为用户{}进行全量同步, 共生成{}条同步日志, 服务端/客户端数据版本号为{}", userId, logs.size(),
                     userDbVersion + "-" + fromVersion);

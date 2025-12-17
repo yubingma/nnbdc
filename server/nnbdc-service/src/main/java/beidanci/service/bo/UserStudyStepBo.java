@@ -20,7 +20,7 @@ import beidanci.api.model.StudyStep;
 import beidanci.api.model.StudyStepState;
 import beidanci.api.model.UserStudyStepDto;
 import beidanci.service.dao.BaseDao;
-import beidanci.service.po.User;
+import beidanci.service.dao.EntityRowMapper;
 import beidanci.service.po.UserStudyStep;
 import beidanci.service.po.UserStudyStepId;
 
@@ -102,10 +102,12 @@ public class UserStudyStepBo extends BaseBo<UserStudyStep> {
      * @return
      */
     public List<UserStudyStep> getUserStudySteps(String userId) {
-        UserStudyStep exam = new UserStudyStep();
-        exam.setUser(new User(userId));
-        List<UserStudyStep> steps = queryAll(exam, "seq", "asc", false);
-        return steps;
+        // 重要：不要使用 BaseDao 的动态条件查询来过滤 user 字段。
+        // BaseDao.pagedQuery 明确不支持用关联对象字段（Po 子类）作为查询条件，并且该异常会被吞掉，
+        // 从而导致 userId 条件被静默忽略，误返回全表数据。
+        String sql = "SELECT * FROM user_study_step WHERE user_id = :userId ORDER BY seq ASC";
+        MapSqlParameterSource params = new MapSqlParameterSource("userId", userId);
+        return namedParameterJdbcTemplate.query(sql, params, new EntityRowMapper<>(UserStudyStep.class));
     }
 
     /**
@@ -115,11 +117,12 @@ public class UserStudyStepBo extends BaseBo<UserStudyStep> {
      * @return
      */
     public List<UserStudyStep> getActiveStudyStepsOfUser(String userId) {
-        UserStudyStep exam = new UserStudyStep();
-        exam.setUser(new User(userId));
-        exam.setState(StudyStepState.Active);
-        List<UserStudyStep> activeSteps = queryAll(exam, "seq", "asc", false);
-        return activeSteps;
+        // 同 getUserStudySteps：避免动态条件查询忽略 userId 过滤
+        String sql = "SELECT * FROM user_study_step WHERE user_id = :userId AND state = :state ORDER BY seq ASC";
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        params.addValue("userId", userId);
+        params.addValue("state", StudyStepState.Active.name());
+        return namedParameterJdbcTemplate.query(sql, params, new EntityRowMapper<>(UserStudyStep.class));
     }
 
     /**

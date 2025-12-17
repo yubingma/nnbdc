@@ -1963,7 +1963,7 @@ class _MePageState extends State<MePage> {
         return AlertDialog(
           backgroundColor: isDarkModeEnabled ? const Color(0xFF2D2D2D) : Colors.white,
           title: const Text('确认重建数据库'),
-          content: const Text('此操作将清除所有本地数据并重建数据库，应用将回到初始状态，是否继续？'),
+          content: const Text('清除所有本地数据(服务端数据不受影响)吗？'),
           actions: [
             TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('取消')),
             TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('继续')),

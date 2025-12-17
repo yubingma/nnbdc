@@ -425,7 +425,11 @@ public abstract class BaseDao<E extends Po> {
                         params.add(fieldValue);
                     }
                 } catch (Exception e) {
-                    // 忽略获取字段值失败的情况
+                    // 重要：不要吞掉参数构建阶段的非法用法异常（否则会出现“条件被忽略→全表查询”的隐蔽坑）
+                    if (e instanceof IllegalArgumentException) {
+                        throw (IllegalArgumentException) e;
+                    }
+                    // 其他反射/读取字段异常仍然忽略（保持兼容）
                 }
             }
         }
