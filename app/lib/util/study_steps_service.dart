@@ -2,12 +2,14 @@ import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/api/enum.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/global.dart';
-import 'package:nnbdc/db/dao.dart';
 import 'package:nnbdc/util/app_clock.dart';
 
 /// 用户学习步骤服务，提供本地数据库操作实现
 class StudyStepsService {
-  final _db = MyDatabase.instance;
+  /// 注意：不要缓存 `MyDatabase.instance`。
+  /// 数据库在 `wipeAllTables()` / `closeDatabase()` 后会重建实例，
+  /// 若缓存旧实例会导致 "Can't re-open a database after closing it"。
+  MyDatabase get _db => MyDatabase.instance;
 
   /// 获取当前用户的所有学习步骤
   Future<List<UserStudyStepVo>> getUserStudySteps() async {
@@ -50,7 +52,6 @@ class StudyStepsService {
       throw Exception('用户未登录');
     }
 
-    final dao = UserStudyStepsDao(_db);
     try {
       // 转换为实体对象
       final entities = steps
@@ -63,7 +64,7 @@ class StudyStepsService {
               ))
           .toList();
 
-      await dao.saveUserStudySteps(entities, user.id, true);
+      await _db.userStudyStepsDao.saveUserStudySteps(entities, user.id, true);
     } catch (e) {
       Global.logger.d('保存学习步骤到本地数据库失败: $e');
       rethrow;

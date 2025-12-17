@@ -15,7 +15,10 @@ class DataIntegrityChecker {
   factory DataIntegrityChecker() => _instance;
   DataIntegrityChecker._internal();
 
-  final MyDatabase _db = MyDatabase.instance;
+  /// 注意：不要缓存 `MyDatabase.instance`。
+  /// 数据库在 `wipeAllTables()` / `closeDatabase()` 后会重建实例，
+  /// 若缓存旧实例会导致 "Can't re-open a database after closing it"。
+  MyDatabase get _db => MyDatabase.instance;
 
   /// 执行完整的数据完整性检查
   Future<IntegrityCheckResult> performFullCheck() async {

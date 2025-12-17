@@ -18,7 +18,10 @@ import '../../util/app_clock.dart';
 
 class DictWordsProvider implements WordsProvider {
   DictVo dict;
-  final _db = MyDatabase.instance;
+  /// 注意：不要缓存 `MyDatabase.instance`。
+  /// 数据库在 `wipeAllTables()` / `closeDatabase()` 后会重建实例，
+  /// 若缓存旧实例会导致 "Can't re-open a database after closing it"。
+  MyDatabase get _db => MyDatabase.instance;
 
   DictWordsProvider(this.dict);
 
@@ -85,7 +88,10 @@ class DictWordsProgressProvider implements WordProgressProvider {
 class DictWordsBookMarkProvider implements BookMarkProvider {
   DictVo dict;
   late final String bookMarkName;
-  final _db = MyDatabase.instance;
+  /// 注意：不要缓存 `MyDatabase.instance`。
+  /// 数据库在 `wipeAllTables()` / `closeDatabase()` 后会重建实例，
+  /// 若缓存旧实例会导致 "Can't re-open a database after closing it"。
+  MyDatabase get _db => MyDatabase.instance;
 
   DictWordsBookMarkProvider(this.dict) {
     bookMarkName = 'dict_${dict.id}_words_list';

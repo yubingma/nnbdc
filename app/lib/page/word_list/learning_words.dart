@@ -63,7 +63,10 @@ class LearningWordsProgressProvider implements WordProgressProvider {
 
 class LearningWordsBookMarkProvider implements BookMarkProvider {
   static const String bookMarkName = 'learning_words_list';
-  final _db = MyDatabase.instance;
+  /// 注意：不要缓存 `MyDatabase.instance`。
+  /// 数据库在 `wipeAllTables()` / `closeDatabase()` 后会重建实例，
+  /// 若缓存旧实例会导致 "Can't re-open a database after closing it"。
+  MyDatabase get _db => MyDatabase.instance;
 
   @override
   Future<BookMarkVo?> getBookMark() async {
