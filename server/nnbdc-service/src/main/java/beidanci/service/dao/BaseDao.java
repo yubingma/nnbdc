@@ -87,6 +87,16 @@ public abstract class BaseDao<E extends Po> {
                 if (compositeKey != null) {
                     List<Field> keyFields = BeanUtils.getFields(compositeKey.getClass(), true);
                     for (Field keyField : keyFields) {
+                        // 复合主键类里可能存在 static/final 字段（如 serialVersionUID），这些不是数据库列
+                        int modifiers = keyField.getModifiers();
+                        if (Modifier.isStatic(modifiers) || Modifier.isFinal(modifiers)) {
+                            continue;
+                        }
+                        // 复合主键的组件字段必须显式声明 @Column(name="...")，否则严格模式下会报错
+                        if (!keyField.isAnnotationPresent(Column.class)) {
+                            continue;
+                        }
+
                         String columnName = EntityTableInfo.getColumnName(keyField);
                         compositeKeyColumnNames.add(columnName.toLowerCase());
                     }

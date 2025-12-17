@@ -51,15 +51,16 @@ public class EntityTableInfo {
             Table table = entityClass.getAnnotation(Table.class);
             String name = table.name();
             if (!name.isEmpty()) {
+                // 严格模式：表名也必须是 snake_case
+                assertSnakeCase(name, entityClass.getName() + "#@Table(name)");
                 tableNameCache.put(entityClass, name);
                 return name;
             }
         }
         
-        // 如果没有 @Table 注解，直接使用类名（驼峰格式）
-        String tableName = entityClass.getSimpleName();
-        tableNameCache.put(entityClass, tableName);
-        return tableName;
+        // 严格模式下，不允许缺省用类名（通常是驼峰），必须显式声明 @Table(name="...")。
+        throw new IllegalArgumentException("严格 snake_case 模式下，实体必须显式声明 @Table(name=\"...\")："
+                + entityClass.getName());
     }
     
     /**

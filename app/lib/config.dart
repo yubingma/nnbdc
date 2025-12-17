@@ -18,15 +18,15 @@ class Config {
       "wordImageBaseUrl": 'https://www.nnbdc.com/img/word/'
     },
     "dev": {
-      "service_url": "http://192.168.43.53:5200",
-      "socketServerUrl": "http://192.168.43.53:9090/all",
-      "cdnBackUrl": "http://192.168.43.53:5200",
-      "sound_base_url": "http://192.168.43.53:80/sound/",
-      "updateUrl": "http://192.168.43.53:80/app/ver.json",
-      "apkUrl": "http://192.168.43.53:80/app/nnbdc-android.apk",
-      "windowsUrl": "http://192.168.43.53:80/app/nnbdc-windows.zip",
-      "linuxUrl": "http://192.168.43.53:80/app/nnbdc-linux.AppImage",
-      "wordImageBaseUrl": 'http://192.168.43.53:80/img/word/'
+      "service_url": "http://192.168.43.92:5200",
+      "socketServerUrl": "http://192.168.43.92:9090/all",
+      "cdnBackUrl": "http://192.168.43.92:5200",
+      "sound_base_url": "http://192.168.43.92:80/sound/",
+      "updateUrl": "http://192.168.43.92:80/app/ver.json",
+      "apkUrl": "http://192.168.43.92:80/app/nnbdc-android.apk",
+      "windowsUrl": "http://192.168.43.92:80/app/nnbdc-windows.zip",
+      "linuxUrl": "http://192.168.43.92:80/app/nnbdc-linux.AppImage",
+      "wordImageBaseUrl": 'http://192.168.43.92:80/img/word/'
     },
     "dev_web": {
       "service_url": "http://localhost:5200",
