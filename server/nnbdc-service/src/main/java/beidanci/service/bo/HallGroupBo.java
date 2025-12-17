@@ -52,7 +52,7 @@ public class HallGroupBo extends BaseBo<HallGroup> {
         }
 
         // 查询所有属于这些 HallGroup 的 GameHall
-        String sql = "SELECT * FROM game_hall WHERE hallGroupId IN (:hallGroupIds) ORDER BY displayOrder ASC";
+        String sql = "SELECT * FROM game_hall WHERE hall_group_id IN (:hallGroupIds) ORDER BY display_order ASC";
         MapSqlParameterSource params = new MapSqlParameterSource("hallGroupIds", new ArrayList<>(hallGroupIds));
         List<GameHall> gameHalls = namedParameterJdbcTemplate.query(sql, params,
                 new EntityRowMapper<>(GameHall.class));
@@ -98,7 +98,7 @@ public class HallGroupBo extends BaseBo<HallGroup> {
 
         // 递归收集所有父分组的ID
         while (!currentLevelIds.isEmpty()) {
-            String sql = "SELECT DISTINCT parentId FROM dict_group WHERE id IN (:ids) AND parentId IS NOT NULL";
+            String sql = "SELECT DISTINCT parent_id FROM dict_group WHERE id IN (:ids) AND parent_id IS NOT NULL";
             MapSqlParameterSource params = new MapSqlParameterSource("ids", new ArrayList<>(currentLevelIds));
             List<String> parentIds = namedParameterJdbcTemplate.queryForList(sql, params, String.class);
             

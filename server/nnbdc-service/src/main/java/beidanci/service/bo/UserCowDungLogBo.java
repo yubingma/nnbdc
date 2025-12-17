@@ -35,19 +35,19 @@ public class UserCowDungLogBo extends BaseBo<UserCowDungLog> {
      * 获取用户所有魔法泡泡日志的DTO列表，用于全量同步
      */
     public List<UserCowDungLogDto> getUserCowDungLogDtosOfUser(String userId) {
-        String sql = "SELECT id, userId, delta, cowDung, theTime, reason, createTime, updateTime FROM user_cow_dung_log WHERE userId = :userId ORDER BY createTime";
+        String sql = "SELECT id, user_id, delta, cow_dung, the_time, reason, create_time, update_time FROM user_cow_dung_log WHERE user_id = :userId ORDER BY create_time";
         MapSqlParameterSource params = new MapSqlParameterSource("userId", userId);
         
         List<UserCowDungLogDto> userCowDungLogDtos = namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> {
             UserCowDungLogDto userCowDungLogDto = new UserCowDungLogDto();
             userCowDungLogDto.setId(rs.getString("id"));
-            userCowDungLogDto.setUserId(rs.getString("userId"));
+            userCowDungLogDto.setUserId(rs.getString("user_id"));
             userCowDungLogDto.setDelta(rs.getInt("delta"));
-            userCowDungLogDto.setCowDung(rs.getInt("cowDung"));
-            userCowDungLogDto.setTheTime(rs.getTimestamp("theTime"));
+            userCowDungLogDto.setCowDung(rs.getInt("cow_dung"));
+            userCowDungLogDto.setTheTime(rs.getTimestamp("the_time"));
             userCowDungLogDto.setReason(rs.getString("reason"));
-            userCowDungLogDto.setCreateTime(rs.getTimestamp("createTime"));
-            userCowDungLogDto.setUpdateTime(rs.getTimestamp("updateTime"));
+            userCowDungLogDto.setCreateTime(rs.getTimestamp("create_time"));
+            userCowDungLogDto.setUpdateTime(rs.getTimestamp("update_time"));
             return userCowDungLogDto;
         });
         return userCowDungLogDtos;
@@ -67,7 +67,7 @@ public class UserCowDungLogBo extends BaseBo<UserCowDungLog> {
             }
             
             // 构建删除SQL
-            StringBuilder sql = new StringBuilder("DELETE FROM user_cow_dung_log WHERE userId = :userId");
+            StringBuilder sql = new StringBuilder("DELETE FROM user_cow_dung_log WHERE user_id = :userId");
             Map<String, Object> parameters = new HashMap<>();
             parameters.put("userId", userId);
             
@@ -77,11 +77,11 @@ public class UserCowDungLogBo extends BaseBo<UserCowDungLog> {
                 parameters.put("delta", filters.get("delta"));
             }
             if (filters.containsKey("cowDung")) {
-                sql.append(" AND cowDung = :cowDung");
+                sql.append(" AND cow_dung = :cowDung");
                 parameters.put("cowDung", filters.get("cowDung"));
             }
             if (filters.containsKey("theTime")) {
-                sql.append(" AND theTime = :theTime");
+                sql.append(" AND the_time = :theTime");
                 parameters.put("theTime", filters.get("theTime"));
             }
             if (filters.containsKey("reason")) {

@@ -149,7 +149,7 @@ public class StudyGroupBo extends BaseBo<StudyGroup> {
      * 获取小组快照（按日期）
      */
     private StudyGroupSnapshotDaily getSnapshotOfDay(String groupId, Calendar calendar) throws ParseException {
-        String sql = "SELECT * FROM study_group_snapshot_daily WHERE groupId = :groupId AND theDate = :theDate";
+        String sql = "SELECT * FROM study_group_snapshot_daily WHERE group_id = :groupId AND the_date = :theDate";
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("groupId", groupId);
         params.addValue("theDate", Util.removeTimePart(calendar.getTime()));

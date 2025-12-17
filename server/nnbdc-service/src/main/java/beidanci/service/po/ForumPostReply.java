@@ -8,10 +8,10 @@ import javax.persistence.Table;
 @Table(name = "forum_post_reply")
 public class ForumPostReply extends UuidPo {
 
-    @Column(name = "userId")
+    @Column(name = "user_id")
     private User user;
 
-    @Column(name = "forumPostId")
+    @Column(name = "forum_post_id")
     private ForumPost forumPost;
 
     @Column(name = "content", length = 1048576, nullable = false)

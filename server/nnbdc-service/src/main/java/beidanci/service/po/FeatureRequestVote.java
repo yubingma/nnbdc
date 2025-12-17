@@ -7,13 +7,13 @@ import javax.persistence.UniqueConstraint;
 
 @Entity
 @Table(name = "feature_request_vote", 
-       uniqueConstraints = {@UniqueConstraint(columnNames = {"requestId", "userId"})})
+       uniqueConstraints = {@UniqueConstraint(columnNames = {"request_id", "user_id"})})
 public class FeatureRequestVote extends UuidPo {
 
-    @Column(name = "requestId", nullable = false)
+    @Column(name = "request_id", nullable = false)
     private FeatureRequest request;
 
-    @Column(name = "userId", nullable = false)
+    @Column(name = "user_id", nullable = false)
     private User user;
 
     public FeatureRequestVote() {

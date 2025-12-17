@@ -18,25 +18,25 @@ public class LearningDict extends Po {
     @Id
     private LearningDictId id;
 
-    @Column(name = "dictId")
+    @Column(name = "dict_id")
     private Dict dict;
 
-    @Column(name = "userId")
+    @Column(name = "user_id")
     private User user;
 
-    @Column(name = "currentWordId")
+    @Column(name = "current_word_id")
     private Word currentWord;
 
-    @Column(name = "currentWordSeq")
+    @Column(name = "current_word_seq")
     private Integer currentWordSeq;
 
-    @Column(name = "IsPrivileged", nullable = false)
+    @Column(name = "is_privileged", nullable = false)
     private Boolean isPrivileged;
 
     /**
      * 如果某单词已经掌握，是否还是要从词书取出该单词进行学习?
      */
-    @Column(name = "fetchMastered", nullable = false)
+    @Column(name = "fetch_mastered", nullable = false)
     private Boolean fetchMastered;
 
     // Constructors

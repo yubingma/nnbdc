@@ -53,7 +53,7 @@ public class DakaBo extends BaseBo<Daka> {
     }
 
     public List<Daka> getDakaRecords(User user, Date startDate, Date endDate) {
-        String sql = "SELECT * FROM daka WHERE userId = :userId AND forLearningDate >= :startDate AND forLearningDate <= :endDate";
+        String sql = "SELECT * FROM daka WHERE user_id = :userId AND for_learning_date >= :startDate AND for_learning_date <= :endDate";
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("userId", user.getId());
         params.addValue("startDate", startDate);
@@ -90,7 +90,7 @@ public class DakaBo extends BaseBo<Daka> {
      * @return 打卡记录DTO列表
      */
     public List<DakaDto> getDakaDtosOfUser(String userId) {
-        String sql = "SELECT * FROM daka WHERE userId = :userId";
+        String sql = "SELECT * FROM daka WHERE user_id = :userId";
         MapSqlParameterSource params = new MapSqlParameterSource("userId", userId);
         List<Daka> dakas = namedParameterJdbcTemplate.query(sql, params, 
             new EntityRowMapper<>(Daka.class));
@@ -144,13 +144,13 @@ public class DakaBo extends BaseBo<Daka> {
             }
             
             // 构建删除SQL
-            StringBuilder sql = new StringBuilder("DELETE FROM daka WHERE userId = :userId");
+            StringBuilder sql = new StringBuilder("DELETE FROM daka WHERE user_id = :userId");
             Map<String, Object> parameters = new HashMap<>();
             parameters.put("userId", userId);
             
             // 添加过滤条件
             if (filters.containsKey("forLearningDate")) {
-                sql.append(" AND forLearningDate = :forLearningDate");
+                sql.append(" AND for_learning_date = :forLearningDate");
                 parameters.put("forLearningDate", filters.get("forLearningDate"));
             }
             if (filters.containsKey("textContent")) {

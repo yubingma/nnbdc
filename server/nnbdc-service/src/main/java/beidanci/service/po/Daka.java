@@ -12,7 +12,7 @@ public class Daka extends Po {
     @Id
     private DakaId id;
 
-    @Column(name = "userId")
+    @Column(name = "user_id")
     private User user;
 
     @Column(name = "text", length = 4000)

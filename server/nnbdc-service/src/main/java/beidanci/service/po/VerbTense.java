@@ -22,17 +22,17 @@ import beidanci.api.model.TenseType;
 // @Cache(region = "wordCache", usage = CacheConcurrencyStrategy.READ_WRITE)  // JDBC 不支持缓存
 public class VerbTense extends UuidPo {
 
-    @Column(name = "wordId")
+    @Column(name = "word_id")
     private Word word;
 
     /**
      * 时态的类型 - ORDR_PMTR
      */
     @Enumerated(EnumType.STRING)
-    @Column(name = "tenseType", nullable = false, length = 20)
+    @Column(name = "tense_type", nullable = false, length = 20)
     private TenseType tenseType;
 
-    @Column(name = "tensedSpell")
+    @Column(name = "tensed_spell")
     private String tensedSpell;
 
     public Word getWord() {

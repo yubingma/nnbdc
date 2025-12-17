@@ -32,8 +32,8 @@ public class UserGameBo extends BaseBo<UserGame> {
 
     public List<UserGame> getUserGamesWithTopScore(final int count) {
         String sql = "SELECT ug.* FROM user_game ug " +
-                "INNER JOIN user u ON ug.userId = u.id " +
-                "WHERE u.userName NOT LIKE 'guest%' AND u.userName NOT LIKE 'guess%' AND u.userName NOT LIKE '游客%' " +
+                "INNER JOIN user u ON ug.user_id = u.id " +
+                "WHERE u.user_name NOT LIKE 'guest%' AND u.user_name NOT LIKE 'guess%' AND u.user_name NOT LIKE '游客%' " +
                 "ORDER BY ug.Score DESC LIMIT :count";
         MapSqlParameterSource params = new MapSqlParameterSource("count", count);
         List<UserGame> userGames = namedParameterJdbcTemplate.query(sql, params, 
@@ -50,7 +50,7 @@ public class UserGameBo extends BaseBo<UserGame> {
      */
     public List<UserGame> getUserGamesOfUser(String userId, boolean openNewSession) {
         // JDBC 不需要管理 Session，openNewSession 参数保留以保持接口兼容性
-        String sql = "SELECT * FROM user_game WHERE userId = :userId";
+        String sql = "SELECT * FROM user_game WHERE user_id = :userId";
         MapSqlParameterSource params = new MapSqlParameterSource("userId", userId);
         List<UserGame> userGames = namedParameterJdbcTemplate.query(sql, params, 
             new EntityRowMapper<>(UserGame.class));

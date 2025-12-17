@@ -10,10 +10,10 @@ import javax.persistence.Table;
 @Table(name = "get_pwd_log")
 public class GetPwdLog extends UuidPo {
 
-    @Column(name = "toEmail", length = 100)
+    @Column(name = "to_email", length = 100)
     private String toEmail;
 
-    @Column(name = "sendTime")
+    @Column(name = "send_time")
     private Date sendTime;
 
     @Column(name = "content", length = 4000)

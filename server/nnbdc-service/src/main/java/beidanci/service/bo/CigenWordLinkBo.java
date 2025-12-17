@@ -26,7 +26,7 @@ public class CigenWordLinkBo extends BaseBo<CigenWordLink> {
     }
 
     public List<CigenWordLink> findByWordId(String wordId) {
-        String sql = "SELECT * FROM cigen_word_link WHERE wordId = :wordId";
+        String sql = "SELECT * FROM cigen_word_link WHERE word_id = :wordId";
         MapSqlParameterSource params = new MapSqlParameterSource("wordId", wordId);
         return namedParameterJdbcTemplate.query(sql, params, 
             new EntityRowMapper<>(CigenWordLink.class));

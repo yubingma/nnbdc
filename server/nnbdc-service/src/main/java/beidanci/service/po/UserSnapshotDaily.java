@@ -14,22 +14,22 @@ public class UserSnapshotDaily extends Po {
     @Id
     private UserSnapshotDailyId id;
 
-    @Column(name = "userId")
+    @Column(name = "user_id")
     private User user;
 
-    @Column(name = "learnedWords", nullable = false)
+    @Column(name = "learned_words", nullable = false)
     private Integer learnedWords;
 
-    @Column(name = "masteredWords", nullable = false)
+    @Column(name = "mastered_words", nullable = false)
     private Integer masteredWords;
 
-    @Column(name = "cowDung", nullable = false)
+    @Column(name = "cow_dung", nullable = false)
     private Integer cowDung;
 
-    @Column(name = "russiaScore", nullable = false)
+    @Column(name = "russia_score", nullable = false)
     private Integer russiaScore;
 
-    @Column(name = "dakaDays", nullable = false)
+    @Column(name = "daka_days", nullable = false)
     private Integer dakaDays;
 
     // Constructors

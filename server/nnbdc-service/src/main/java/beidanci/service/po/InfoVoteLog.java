@@ -23,16 +23,16 @@ public class InfoVoteLog extends Po {
         this.id = id;
     }
 
-    @Column(name = "wordAdditionalInfoId")
+    @Column(name = "word_additional_info_id")
     private WordAdditionalInfo wordAdditionalInfo;
 
-    @Column(name = "userId")
+    @Column(name = "user_id")
     private User user;
 
-    @Column(name = "voteType", length = 4, nullable = false)
+    @Column(name = "vote_type", length = 4, nullable = false)
     private String voteType;
 
-    @Column(name = "voteTime", nullable = false)
+    @Column(name = "vote_time", nullable = false)
     private Date voteTime;
 
     // Constructors

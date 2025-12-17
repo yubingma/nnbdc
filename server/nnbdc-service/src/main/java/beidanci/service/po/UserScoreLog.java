@@ -11,7 +11,7 @@ import javax.persistence.Table;
 @Table(name = "user_score_log")
 public class UserScoreLog extends UuidPo {
 
-    @Column(name = "userId")
+    @Column(name = "user_id")
     private User user;
 
     @Column(name = "delta")
@@ -20,7 +20,7 @@ public class UserScoreLog extends UuidPo {
     @Column(name = "score")
     private Integer score;
 
-    @Column(name = "theTime")
+    @Column(name = "the_time")
     private Date theTime;
 
     @Column(name = "reason", length = 1024)

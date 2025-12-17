@@ -23,13 +23,13 @@ public abstract class Po {
      */
     @Temporal(TemporalType.TIMESTAMP)
     // @CreationTimestamp  // JDBC 不再支持，需要在代码中手动设置
-    @Column(name = "createTime", nullable = false)
+    @Column(name = "create_time", nullable = false)
     protected Date createTime;
 
     /**
      * 对象最近更新时间
      */
-    @Column(name = "updateTime")
+    @Column(name = "update_time")
     protected Date updateTime;
 
     public Date getCreateTime() {

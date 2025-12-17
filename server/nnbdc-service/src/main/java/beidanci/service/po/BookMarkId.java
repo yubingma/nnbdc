@@ -12,10 +12,10 @@ public class BookMarkId implements java.io.Serializable {
 
 
 
-    @Column(name = "userId", nullable = false)
+    @Column(name = "user_id", nullable = false)
     private String userId;
 
-    @Column(name = "bookMarkName", nullable = false)
+    @Column(name = "book_mark_name", nullable = false)
     private String bookMarkName;
 
     public BookMarkId() {

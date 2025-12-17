@@ -12,13 +12,13 @@ public class UserGame extends Po {
     @Id
     private UserGameId id;
 
-    @Column(name = "userId")
+    @Column(name = "user_id")
     private User user;
 
-    @Column(name = "winCount")
+    @Column(name = "win_count")
     private Integer winCount;
 
-    @Column(name = "loseCount")
+    @Column(name = "lose_count")
     private Integer loseCount;
 
     @Column(name = "score")

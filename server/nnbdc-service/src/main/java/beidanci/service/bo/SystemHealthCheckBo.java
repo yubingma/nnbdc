@@ -79,17 +79,17 @@ public class SystemHealthCheckBo {
         
         try {
             // 使用原生SQL一次性获取所有用户词典信息，参考check_db.py的高效查询
-            String sql = "SELECT d.id, d.name, d.ownerId, d.wordCount, d.createTime " +
+            String sql = "SELECT d.id, d.name, d.owner_id, d.word_count, d.create_time " +
                         "FROM dict d " +
-                        "WHERE d.visible = 1 AND d.isReady = 1 AND d.ownerId != :sysUserId " +
-                        "ORDER BY d.createTime DESC";
+                        "WHERE d.visible = 1 AND d.is_ready = 1 AND d.owner_id != :sysUserId " +
+                        "ORDER BY d.create_time DESC";
             
             MapSqlParameterSource params = new MapSqlParameterSource("sysUserId", Constants.SYS_USER_SYS_ID);
             List<Object[]> dicts = namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> 
                 new Object[]{
                     rs.getString("id"),
                     rs.getString("name"),
-                    rs.getString("ownerId"),
+                    rs.getString("owner_id"),
                     rs.getObject("wordCount", Integer.class)
                 }
             );
@@ -187,22 +187,22 @@ public class SystemHealthCheckBo {
         
         try {
             // 使用一个 SQL 查询直接找出缺少 En2Ch 或 Ch2En 的用户
-            String sql = "SELECT u.id, u.userName, 'En2Ch' as missingStep " +
+            String sql = "SELECT u.id, u.user_name, 'En2Ch' as missing_step " +
                         "FROM user u " +
-                        "LEFT JOIN user_study_step uss ON u.id = uss.userId AND uss.studyStep = 'En2Ch' " +
-                        "WHERE uss.userId IS NULL " +
+                        "LEFT JOIN user_study_step uss ON u.id = uss.user_id AND uss.study_step = 'En2Ch' " +
+                        "WHERE uss.user_id IS NULL " +
                         "UNION ALL " +
-                        "SELECT u.id, u.userName, 'Ch2En' as missingStep " +
+                        "SELECT u.id, u.user_name, 'Ch2En' as missing_step " +
                         "FROM user u " +
-                        "LEFT JOIN user_study_step uss ON u.id = uss.userId AND uss.studyStep = 'Ch2En' " +
-                        "WHERE uss.userId IS NULL";
+                        "LEFT JOIN user_study_step uss ON u.id = uss.user_id AND uss.study_step = 'Ch2En' " +
+                        "WHERE uss.user_id IS NULL";
             
             List<Object[]> missingSteps = namedParameterJdbcTemplate.query(sql, 
                 new MapSqlParameterSource(), 
                 (rs, rowNum) -> new Object[]{
                     rs.getString("id"),
-                    rs.getString("userName"),
-                    rs.getString("missingStep")
+                    rs.getString("user_name"),
+                    rs.getString("missing_step")
                 }
             );
             
@@ -273,18 +273,18 @@ public class SystemHealthCheckBo {
         
         try {
             // 使用 SQL 查询找出所有没有生词本的用户
-            String sql = "SELECT u.id, u.userName, u.nickName " +
+            String sql = "SELECT u.id, u.user_name, u.nick_name " +
                         "FROM user u " +
-                        "LEFT JOIN dict d ON u.id = d.ownerId AND d.name = '生词本' " +
+                        "LEFT JOIN dict d ON u.id = d.owner_id AND d.name = '生词本' " +
                         "WHERE d.id IS NULL " +
-                        "ORDER BY u.createTime DESC";
+                        "ORDER BY u.create_time DESC";
             
             List<Object[]> usersWithoutRawDict = namedParameterJdbcTemplate.query(sql, 
                 new MapSqlParameterSource(), 
                 (rs, rowNum) -> new Object[]{
                     rs.getString("id"),
-                    rs.getString("userName"),
-                    rs.getString("nickName")
+                    rs.getString("user_name"),
+                    rs.getString("nick_name")
                 }
             );
             
@@ -361,16 +361,16 @@ public class SystemHealthCheckBo {
     private void checkDictWordSequenceAndCount(String dictId, String dictName, String ownerId, Integer expectedWordCount, List<SystemHealthIssue> issues) {
         try {
             // 使用原生SQL一次性获取词典中的所有单词，按seq排序
-            String sql = "SELECT dw.wordId, dw.seq, w.spell " +
+            String sql = "SELECT dw.word_id, dw.seq, w.spell " +
                         "FROM dict_word dw " +
-                        "JOIN word w ON dw.wordId = w.id " +
-                        "WHERE dw.dictId = :dictId " +
+                        "JOIN word w ON dw.word_id = w.id " +
+                        "WHERE dw.dict_id = :dictId " +
                         "ORDER BY dw.seq ASC";
             
             MapSqlParameterSource params = new MapSqlParameterSource("dictId", dictId);
             List<Object[]> dictWords = namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> 
                 new Object[]{
-                    rs.getString("wordId"),
+                    rs.getString("word_id"),
                     rs.getObject("seq", Integer.class),
                     rs.getString("spell")
                 }
@@ -686,20 +686,20 @@ public class SystemHealthCheckBo {
         try {
             // 使用 SQL 批量插入缺失的学习步骤
             // 1. 批量插入缺失的 En2Ch 步骤
-            String insertEn2ChSql = "INSERT INTO user_study_step (userId, studyStep, seq, state, createTime) " +
+            String insertEn2ChSql = "INSERT INTO user_study_step (user_id, study_step, seq, state, create_time) " +
                                    "SELECT u.id, 'En2Ch', 1, 'Active', NOW() " +
                                    "FROM user u " +
-                                   "LEFT JOIN user_study_step uss ON u.id = uss.userId AND uss.studyStep = 'En2Ch' " +
-                                   "WHERE uss.userId IS NULL";
+                                   "LEFT JOIN user_study_step uss ON u.id = uss.user_id AND uss.study_step = 'En2Ch' " +
+                                   "WHERE uss.user_id IS NULL";
             
             int en2ChCount = namedParameterJdbcTemplate.update(insertEn2ChSql, new MapSqlParameterSource());
             
             // 2. 批量插入缺失的 Ch2En 步骤
-            String insertCh2EnSql = "INSERT INTO user_study_step (userId, studyStep, seq, state, createTime) " +
+            String insertCh2EnSql = "INSERT INTO user_study_step (user_id, study_step, seq, state, create_time) " +
                                    "SELECT u.id, 'Ch2En', 2, 'Active', NOW() " +
                                    "FROM user u " +
-                                   "LEFT JOIN user_study_step uss ON u.id = uss.userId AND uss.studyStep = 'Ch2En' " +
-                                   "WHERE uss.userId IS NULL";
+                                   "LEFT JOIN user_study_step uss ON u.id = uss.user_id AND uss.study_step = 'Ch2En' " +
+                                   "WHERE uss.user_id IS NULL";
             
             int ch2EnCount = namedParameterJdbcTemplate.update(insertCh2EnSql, new MapSqlParameterSource());
             
@@ -722,17 +722,17 @@ public class SystemHealthCheckBo {
         int fixedCount = 0;
         try {
             // 查找所有没有生词本的用户
-            String sql = "SELECT u.id, u.userName, u.nickName " +
+            String sql = "SELECT u.id, u.user_name, u.nick_name " +
                         "FROM user u " +
-                        "LEFT JOIN dict d ON u.id = d.ownerId AND d.name = '生词本' " +
+                        "LEFT JOIN dict d ON u.id = d.owner_id AND d.name = '生词本' " +
                         "WHERE d.id IS NULL";
             
             List<Object[]> usersWithoutRawDict = namedParameterJdbcTemplate.query(sql, 
                 new MapSqlParameterSource(), 
                 (rs, rowNum) -> new Object[]{
                     rs.getString("id"),
-                    rs.getString("userName"),
-                    rs.getString("nickName")
+                    rs.getString("user_name"),
+                    rs.getString("nick_name")
                 }
             );
             

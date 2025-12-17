@@ -10,11 +10,11 @@ import javax.persistence.UniqueConstraint;
  */
 @Entity
 @Table(name = "user_db_version", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"userId"})
+    @UniqueConstraint(columnNames = {"user_id"})
 })
 public class UserDbVersion extends UuidPo {
 
-    @Column(name = "userId")
+    @Column(name = "user_id")
     private User user;
 
     @Column(name = "version", nullable = false)

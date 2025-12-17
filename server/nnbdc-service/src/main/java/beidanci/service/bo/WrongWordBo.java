@@ -47,7 +47,7 @@ public class WrongWordBo extends BaseBo<WrongWord> {
         }
 
         // 转换为 SQL（注意：复合主键需要特殊处理）
-        String sql = "SELECT * FROM user_wrong_word WHERE userId = :userId AND wordId = :wordId";
+        String sql = "SELECT * FROM user_wrong_word WHERE user_id = :userId AND word_id = :wordId";
         WrongWord wrongWord = queryUnique(sql,
                 new ImmutablePair<>("userId", userId),
                 new ImmutablePair<>("wordId", word.getId()));
@@ -56,7 +56,7 @@ public class WrongWordBo extends BaseBo<WrongWord> {
         }
 
         // 转换为 SQL
-        String countSql = "SELECT COUNT(*) FROM user_wrong_word WHERE userId = :userId AND createTime <= :createTime";
+        String countSql = "SELECT COUNT(*) FROM user_wrong_word WHERE user_id = :userId AND create_time <= :createTime";
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("userId", userId);
         params.addValue("createTime", wrongWord.getCreateTime());
@@ -80,15 +80,15 @@ public class WrongWordBo extends BaseBo<WrongWord> {
      * 获取用户所有错词的DTO列表，用于全量同步
      */
     public List<WrongWordDto> getWrongWordDtosOfUser(String userId) {
-        String sql = "SELECT userId, wordId, createTime, updateTime FROM user_wrong_word WHERE userId = :userId ORDER BY createTime";
+        String sql = "SELECT user_id, word_id, create_time, update_time FROM user_wrong_word WHERE user_id = :userId ORDER BY create_time";
         MapSqlParameterSource params = new MapSqlParameterSource("userId", userId);
         
         List<WrongWordDto> dtos = namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> {
             WrongWordDto dto = new WrongWordDto();
-            dto.setUserId(rs.getString("userId"));
-            dto.setWordId(rs.getString("wordId"));
-            dto.setCreateTime(rs.getTimestamp("createTime"));
-            dto.setUpdateTime(rs.getTimestamp("updateTime"));
+            dto.setUserId(rs.getString("user_id"));
+            dto.setWordId(rs.getString("word_id"));
+            dto.setCreateTime(rs.getTimestamp("create_time"));
+            dto.setUpdateTime(rs.getTimestamp("update_time"));
             return dto;
         });
 
@@ -109,16 +109,16 @@ public class WrongWordBo extends BaseBo<WrongWord> {
             }
             
             // 构建删除SQL
-            StringBuilder sql = new StringBuilder("DELETE FROM user_wrong_word WHERE userId = :userId");
+            StringBuilder sql = new StringBuilder("DELETE FROM user_wrong_word WHERE user_id = :userId");
             MapSqlParameterSource params = new MapSqlParameterSource("userId", userId);
             
             // 添加过滤条件
             if (filters.containsKey("wordId")) {
-                sql.append(" AND wordId = :wordId");
+                sql.append(" AND word_id = :wordId");
                 params.addValue("wordId", filters.get("wordId"));
             }
             if (filters.containsKey("createTime")) {
-                sql.append(" AND createTime = :createTime");
+                sql.append(" AND create_time = :createTime");
                 params.addValue("createTime", filters.get("createTime"));
             }
             

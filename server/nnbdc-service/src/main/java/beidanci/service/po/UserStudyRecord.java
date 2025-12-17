@@ -7,15 +7,15 @@ import javax.persistence.Table;
 import java.util.Date;
 
 @Entity
-@Table(name = "study_record")
+@Table(name = "user_study_record")
 public class UserStudyRecord extends Po {
     @Id
     private UserStudyRecordId id;
 
-    @Column(name = "startTime")
+    @Column(name = "start_time")
     private Date startTime;
 
-    @Column(name = "endTime")
+    @Column(name = "end_time")
     private Date endTime;
 
     public Date getStartTime() {

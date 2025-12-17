@@ -19,35 +19,35 @@ import beidanci.service.exception.ParseException;
 import beidanci.service.store.WordCache;
 
 @Entity
-@Table(name = "learning_word", indexes = {@Index(name = "idx_userid", columnList = "userId")})
+@Table(name = "learning_word", indexes = {@Index(name = "idx_userid", columnList = "user_id")})
 public class LearningWord extends Po {
     public static final Integer NEW_LEARNING_WORD_LIFE_VALUE = 5;
 
     @Id
     private LearningWordId id;
 
-    @Column(name = "userId")
+    @Column(name = "user_id")
     private User user;
 
-    @Column(name = "addTime", nullable = false)
+    @Column(name = "add_time", nullable = false)
     private Date addTime;
 
-    @Column(name = "addDay", nullable = false)
+    @Column(name = "add_day", nullable = false)
     private Integer addDay;
 
-    @Column(name = "lifeValue", nullable = false)
+    @Column(name = "life_value", nullable = false)
     private Integer lifeValue;
 
-    @Column(name = "lastLearningDate")
+    @Column(name = "last_learning_date")
     private Date lastLearningDate;
 
-    @Column(name = "learningOrder")
+    @Column(name = "learning_order")
     private Integer learningOrder;
 
     /**
      * 已学习次数，一个单词完成一天的学习，这个值增加的值一般大于1（因为用户一般会选择多个学习步骤）
      */
-    @Column(name = "learnedTimes", nullable = false)
+    @Column(name = "learned_times", nullable = false)
     private Integer learnedTimes;
 
 
@@ -56,7 +56,7 @@ public class LearningWord extends Po {
      * 为本属性赋值的逻辑是：
      * 当从学习中单词列表选择今日单词时，判断所选单词的已学习次数，如果已学习次数为0，则本属性赋值为true
      */
-    @Column(name = "isTodayNewWord", nullable = false)
+    @Column(name = "is_today_new_word", nullable = false)
     private Boolean isTodayNewWord;
 
     /**

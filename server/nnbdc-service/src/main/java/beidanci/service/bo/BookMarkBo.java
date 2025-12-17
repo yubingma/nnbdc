@@ -56,13 +56,13 @@ public class BookMarkBo extends BaseBo<BookMark> {
             }
             
             // 构建删除SQL
-            StringBuilder sql = new StringBuilder("DELETE FROM book_mark WHERE userId = :userId");
+            StringBuilder sql = new StringBuilder("DELETE FROM book_mark WHERE user_id = :userId");
             Map<String, Object> parameters = new HashMap<>();
             parameters.put("userId", userId);
             
             // 添加过滤条件
             if (filters.containsKey("bookMarkName")) {
-                sql.append(" AND bookMarkName = :bookMarkName");
+                sql.append(" AND book_mark_name = :bookMarkName");
                 parameters.put("bookMarkName", filters.get("bookMarkName"));
             }
             if (filters.containsKey("spell")) {
@@ -70,7 +70,7 @@ public class BookMarkBo extends BaseBo<BookMark> {
                 parameters.put("spell", filters.get("spell"));
             }
             if (filters.containsKey("createTime")) {
-                sql.append(" AND createTime = :createTime");
+                sql.append(" AND create_time = :createTime");
                 parameters.put("createTime", filters.get("createTime"));
             }
             

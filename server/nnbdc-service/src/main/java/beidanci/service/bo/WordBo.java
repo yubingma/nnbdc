@@ -212,35 +212,35 @@ public class WordBo extends BaseBo<Word> {
 
     public List<WordDto> getWordsOfDict(String dictId) {
         // 通用词典现在也有dict_word记录，统一查询逻辑
-        String sql = "SELECT id, americaPronounce, britishPronounce, groupInfo, longDesc, shortDesc, popularity, pronounce, spell, createTime, updateTime FROM word w WHERE w.id IN (SELECT dw.wordId FROM dict_word dw WHERE dw.dictId=:dictId)";
+        String sql = "SELECT id, america_pronounce, british_pronounce, group_info, long_desc, short_desc, popularity, pronounce, spell, create_time, update_time FROM word w WHERE w.id IN (SELECT dw.word_id FROM dict_word dw WHERE dw.dict_id=:dictId)";
         MapSqlParameterSource params = new MapSqlParameterSource("dictId", dictId);
         
         return namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> {
             WordDto wordDto = new WordDto();
             wordDto.setId(rs.getString("id"));
-            wordDto.setAmericaPronounce(rs.getString("americaPronounce"));
-            wordDto.setBritishPronounce(rs.getString("britishPronounce"));
-            wordDto.setGroupInfo(rs.getString("groupInfo"));
-            wordDto.setLongDesc(rs.getString("longDesc"));
-            wordDto.setShortDesc(rs.getString("shortDesc"));
+            wordDto.setAmericaPronounce(rs.getString("america_pronounce"));
+            wordDto.setBritishPronounce(rs.getString("british_pronounce"));
+            wordDto.setGroupInfo(rs.getString("group_info"));
+            wordDto.setLongDesc(rs.getString("long_desc"));
+            wordDto.setShortDesc(rs.getString("short_desc"));
             wordDto.setPopularity(rs.getObject("popularity", Integer.class));
             wordDto.setPronounce(rs.getString("pronounce"));
             wordDto.setSpell(rs.getString("spell"));
-            wordDto.setCreateTime(rs.getTimestamp("createTime"));
-            wordDto.setUpdateTime(rs.getTimestamp("updateTime"));
+            wordDto.setCreateTime(rs.getTimestamp("create_time"));
+            wordDto.setUpdateTime(rs.getTimestamp("update_time"));
             return wordDto;
         });
     }
 
     public List<SimilarWordDto> getSimilarWordsOfDict(String dictId) {
         // 通用词典现在也有dict_word记录，统一查询逻辑
-        String sql = "SELECT sw.wordId, sw.similarWordId, sw.distance, w.spell FROM similar_word sw LEFT JOIN word w ON w.id=sw.similarWordId WHERE sw.wordId IN (SELECT dw.wordId FROM dict_word dw WHERE dw.dictId=:dictId)";
+        String sql = "SELECT sw.word_id, sw.similar_word_id, sw.distance, w.spell FROM similar_word sw LEFT JOIN word w ON w.id=sw.similar_word_id WHERE sw.word_id IN (SELECT dw.word_id FROM dict_word dw WHERE dw.dict_id=:dictId)";
         MapSqlParameterSource params = new MapSqlParameterSource("dictId", dictId);
         
         return namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> {
             SimilarWordDto wordDto = new SimilarWordDto();
-            wordDto.setWordId(rs.getString("wordId"));
-            wordDto.setSimilarWordId(rs.getString("similarWordId"));
+            wordDto.setWordId(rs.getString("word_id"));
+            wordDto.setSimilarWordId(rs.getString("similar_word_id"));
             wordDto.setDistance(rs.getObject("distance", Integer.class));
             wordDto.setSimilarWordSpell(rs.getString("spell"));
             return wordDto;
@@ -249,7 +249,7 @@ public class WordBo extends BaseBo<Word> {
 
     public List<WordImageDto> getWordImagesOfDict(String dictId) {
         // 通用词典现在也有dict_word记录，统一查询逻辑
-        String sql = "SELECT id, foot, hand, imageFile, authorId, wordId, createTime, updateTime FROM word_image wi WHERE wi.wordId IN (SELECT dw.wordId FROM dict_word dw WHERE dw.dictId=:dictId)";
+        String sql = "SELECT id, foot, hand, image_file, author_id, word_id, create_time, update_time FROM word_image wi WHERE wi.word_id IN (SELECT dw.word_id FROM dict_word dw WHERE dw.dict_id=:dictId)";
         MapSqlParameterSource params = new MapSqlParameterSource("dictId", dictId);
         
         return namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> {
@@ -257,11 +257,11 @@ public class WordBo extends BaseBo<Word> {
             wordImageDto.setId(rs.getString("id"));
             wordImageDto.setFoot(rs.getObject("foot", Integer.class));
             wordImageDto.setHand(rs.getObject("hand", Integer.class));
-            wordImageDto.setImageFile(rs.getString("imageFile"));
-            wordImageDto.setAuthorId(rs.getString("authorId"));
-            wordImageDto.setWordId(rs.getString("wordId"));
-            wordImageDto.setCreateTime(rs.getTimestamp("createTime"));
-            wordImageDto.setUpdateTime(rs.getTimestamp("updateTime"));
+            wordImageDto.setImageFile(rs.getString("image_file"));
+            wordImageDto.setAuthorId(rs.getString("author_id"));
+            wordImageDto.setWordId(rs.getString("word_id"));
+            wordImageDto.setCreateTime(rs.getTimestamp("create_time"));
+            wordImageDto.setUpdateTime(rs.getTimestamp("update_time"));
             return wordImageDto;
         });
     }

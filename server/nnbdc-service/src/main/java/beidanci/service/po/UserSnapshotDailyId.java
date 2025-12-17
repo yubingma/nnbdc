@@ -10,10 +10,10 @@ public class UserSnapshotDailyId implements java.io.Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    @Column(name = "userId", nullable = false, length = 32)
+    @Column(name = "user_id", nullable = false, length = 32)
     private String userId;
 
-    @Column(name = "theDate", nullable = false)
+    @Column(name = "the_date", nullable = false)
     private Date theDate;
 
     // Constructors

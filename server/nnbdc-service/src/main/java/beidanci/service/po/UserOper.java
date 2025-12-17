@@ -19,13 +19,13 @@ public class UserOper extends Po {
     @Column(name = "id", nullable = false, length = 32)
     private String id;
 
-    @Column(name = "userId", nullable = false, length = 32)
+    @Column(name = "user_id", nullable = false, length = 32)
     private String userId;
 
-    @Column(name = "operType", nullable = false, length = 20)
+    @Column(name = "oper_type", nullable = false, length = 20)
     private String operType;  // 操作类型：LOGIN、START_LEARN、DAKA
 
-    @Column(name = "operTime", nullable = false)
+    @Column(name = "oper_time", nullable = false)
     private Date operTime;    // 操作时间
 
     @Column(name = "remark", nullable = true, length = 200)

@@ -13,10 +13,10 @@ public class WordSentence extends Po {
     @Id
     private WordSentenceId id;
 
-    @Column(name = "wordId")
+    @Column(name = "word_id")
     private Word word;
 
-    @Column(name = "sentenceId")
+    @Column(name = "sentence_id")
     private Sentence sentence;
 
     public Sentence getSentence() {

@@ -32,40 +32,40 @@ public class Sentence extends UuidPo {
     @Column(name = "chinese", length = 300)
     private String chinese;
 
-    @Column(name = "wordMeaning", length = 300)
+    @Column(name = "word_meaning", length = 300)
     private String wordMeaning;
 
-    @Column(name = "theType", length = 45)
+    @Column(name = "the_type", length = 45)
     private String theType;
 
-    @Column(name = "englishDigest", length = 32)
+    @Column(name = "english_digest", length = 32)
     private String englishDigest;
 
-    @Column(name = "lastDiyUpdateTime")
+    @Column(name = "last_diy_update_time")
     private Date lastDiyUpdateTime;
 
     @Column(name = "producer", length = 20)
     private String soundProducer;
 
-    @Column(name = "needTts")
+    @Column(name = "need_tts")
     private Boolean needTts;
 
-    @Column(name = "footCount")
+    @Column(name = "foot_count")
     private Integer footCount = 0;
 
-    @Column(name = "handCount")
+    @Column(name = "hand_count")
     private Integer handCount = 0;
 
-    @Column(name = "authorId")
+    @Column(name = "author_id")
     private User author;
 
-    @Column(name = "meaningItemId")
+    @Column(name = "meaning_item_id")
     private MeaningItem meaningItem;
 
     @Column(name = "popularity")
     private Integer popularity = 1;
 
-    @Column(name = "partOfSpeech", length = 10)
+    @Column(name = "part_of_speech", length = 10)
     private String partOfSpeech;
 
     public String getSoundProducer() {

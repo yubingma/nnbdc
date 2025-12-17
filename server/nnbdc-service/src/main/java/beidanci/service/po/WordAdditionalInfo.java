@@ -15,19 +15,19 @@ import javax.persistence.Table;
 // @Cache(region = "wordCache", usage = CacheConcurrencyStrategy.READ_WRITE)  // JDBC 不支持缓存
 public class WordAdditionalInfo extends UuidPo {
 
-    @Column(name = "userId")
+    @Column(name = "user_id")
     private User user;
 
-    @Column(name = "wordId")
+    @Column(name = "word_id")
     private Word word;
 
     @Column(name = "content", length = 1024, nullable = false)
     private String content;
 
-    @Column(name = "handCount", nullable = false)
+    @Column(name = "hand_count", nullable = false)
     private Integer handCount;
 
-    @Column(name = "footCount", nullable = false)
+    @Column(name = "foot_count", nullable = false)
     private Integer footCount;
 
     private Set<InfoVoteLog> voteLogs;

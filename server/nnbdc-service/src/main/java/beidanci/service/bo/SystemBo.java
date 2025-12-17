@@ -81,7 +81,7 @@ public class SystemBo {
 
         // 获取单词书分组与词书关联数据
         List<GroupAndDictLinkDto> groupAndDictLinkDtos = new ArrayList<>();
-        String sql = "SELECT groupId, dictId FROM group_and_dict_link";
+        String sql = "SELECT group_id, dict_id FROM group_and_dict_link";
         List<Object[]> results = entityManager.createNativeQuery(sql).getResultList();
         for (Object[] row : results) {
             GroupAndDictLinkDto linkDto = new GroupAndDictLinkDto();

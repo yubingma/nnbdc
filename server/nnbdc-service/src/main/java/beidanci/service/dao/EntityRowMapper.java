@@ -23,7 +23,7 @@ import beidanci.service.util.BeanUtils;
 
 /**
  * 通用的 RowMapper，用于将 ResultSet 映射到 PO 对象
- * 支持通过 @Column 注解指定列名，如果没有注解则直接使用字段名（因为数据库表字段也是驼峰格式）
+ * 支持通过 @Column 注解指定列名；统一使用 snake_case（小写+下划线）映射数据库字段
  * 
  * @param <E> PO 类型
  */
@@ -72,24 +72,10 @@ public class EntityRowMapper<E extends Po> implements RowMapper<E> {
             
             // 跳过关联对象字段（类型为 Po 的子类，且不是以 "Id" 结尾的字段）
             // 这些字段对应的外键列会在 ResultSet 中，但我们需要映射到外键列名
-            // 优先使用 @Column 注解指定的列名，否则使用默认规则（字段名 + "Id"）
+            // 优先使用 @Column 注解指定的列名，否则使用默认规则（字段名 + "Id"），并统一转为 snake_case
             if (Po.class.isAssignableFrom(field.getType()) && !field.getName().endsWith("Id")) {
                 // 关联对象字段：映射外键列名到字段
-                String foreignKeyColumnName;
-                // 优先使用 @Column 注解指定的列名
-                if (field.isAnnotationPresent(Column.class)) {
-                    Column column = field.getAnnotation(Column.class);
-                    String columnName = column.name();
-                    if (!columnName.isEmpty()) {
-                        foreignKeyColumnName = columnName;
-                    } else {
-                        // 如果 @Column 注解存在但没有指定 name，使用默认规则
-                        foreignKeyColumnName = field.getName() + "Id";
-                    }
-                } else {
-                    // 没有 @Column 注解，使用默认规则
-                    foreignKeyColumnName = field.getName() + "Id";
-                }
+                String foreignKeyColumnName = EntityTableInfo.getForeignKeyColumnName(field);
                 map.put(foreignKeyColumnName.toLowerCase(), field);
                 continue;
             }
@@ -124,28 +110,11 @@ public class EntityRowMapper<E extends Po> implements RowMapper<E> {
                 continue;
             }
             
-            String columnName = getColumnName(field);
+            String columnName = EntityTableInfo.getColumnName(field);
             map.put(columnName.toLowerCase(), field);
         }
         
         return map;
-    }
-    
-    /**
-     * 获取字段对应的数据库列名
-     */
-    private String getColumnName(Field field) {
-        // 优先使用 @Column 注解
-        if (field.isAnnotationPresent(Column.class)) {
-            Column column = field.getAnnotation(Column.class);
-            String name = column.name();
-            if (!name.isEmpty()) {
-                return name;
-            }
-        }
-        
-        // 如果没有 @Column，直接使用字段名（驼峰格式）
-        return field.getName();
     }
     
     @Override

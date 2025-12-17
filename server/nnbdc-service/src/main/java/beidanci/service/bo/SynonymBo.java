@@ -27,14 +27,14 @@ public class SynonymBo extends BaseBo<Synonym> {
 
     public List<SynonymDto> getSynonymsOfDict(String dictId) {
         // 通用词典现在是数据库中的实际记录，统一查询
-        String sql = "SELECT s.meaningItemId, s.wordId, s.createTime, s.updateTime, w.spell FROM synonym s LEFT JOIN word w ON w.id=s.wordId WHERE s.meaningItemId IN (SELECT mi.id FROM meaning_item mi WHERE mi.dictId=:dictId)";
+        String sql = "SELECT s.meaning_item_id, s.word_id, s.create_time, s.update_time, w.spell FROM synonym s LEFT JOIN word w ON w.id=s.word_id WHERE s.meaning_item_id IN (SELECT mi.id FROM meaning_item mi WHERE mi.dict_id=:dictId)";
         MapSqlParameterSource params = new MapSqlParameterSource("dictId", dictId);
         List<SynonymDto> synonymDtos = namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> {
             SynonymDto synonymDto = new SynonymDto();
-            synonymDto.setMeaningItemId(rs.getString("meaningItemId"));
-            synonymDto.setWordId(rs.getString("wordId"));
-            synonymDto.setCreateTime(rs.getTimestamp("createTime"));
-            synonymDto.setUpdateTime(rs.getTimestamp("updateTime"));
+            synonymDto.setMeaningItemId(rs.getString("meaning_item_id"));
+            synonymDto.setWordId(rs.getString("word_id"));
+            synonymDto.setCreateTime(rs.getTimestamp("create_time"));
+            synonymDto.setUpdateTime(rs.getTimestamp("update_time"));
             synonymDto.setSpell(rs.getString("spell"));
             return synonymDto;
         });

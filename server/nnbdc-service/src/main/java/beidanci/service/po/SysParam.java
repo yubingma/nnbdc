@@ -18,10 +18,10 @@ public class SysParam extends Po {
     // Fields
 
     @Id
-    @Column(name = "paramName", length = 100)
+    @Column(name = "param_name", length = 100)
     private String paramName;
 
-    @Column(name = "paramValue", length = 4096)
+    @Column(name = "param_value", length = 4096)
     private String paramValue;
 
     @Column(name = "comment", length = 4096)

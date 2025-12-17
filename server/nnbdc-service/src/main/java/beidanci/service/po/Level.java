@@ -20,10 +20,10 @@ public class Level extends UuidPo {
     @Column(name = "figure", length = 200)
     private String figure;
 
-    @Column(name = "minScore", nullable = false)
+    @Column(name = "min_score", nullable = false)
     private Integer minScore;
 
-    @Column(name = "maxScore", nullable = false)
+    @Column(name = "max_score", nullable = false)
     private Integer maxScore;
 
     @Column(name = "style", length = 1024, nullable = false)

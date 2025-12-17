@@ -9,7 +9,7 @@ public class UserGameId implements java.io.Serializable {
     private static final long serialVersionUID = 1L;
 
 
-    @Column(name = "userId", nullable = false)
+    @Column(name = "user_id", nullable = false)
     private String userId;
 
     @Column(name = "game", length = 100)

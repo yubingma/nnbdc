@@ -14,10 +14,10 @@ public class UserStudyRecordId implements java.io.Serializable {
     private static final long serialVersionUID = 1L;
 
 
-    @Column(name = "userId", nullable = false)
+    @Column(name = "user_id", nullable = false)
     private String userId;
 
-    @Column(name = "theDate", nullable = false)
+    @Column(name = "the_date", nullable = false)
     private Date theDate;
 
     public Date getTheDate() {

@@ -31,7 +31,7 @@ public class EventBo extends BaseBo<Event> {
     }
 
     public void clearUserEvents(User user) {
-        String sql = "DELETE FROM event WHERE userId = :userId";
+        String sql = "DELETE FROM event WHERE user_id = :userId";
         MapSqlParameterSource params = new MapSqlParameterSource("userId", user.getId());
         namedParameterJdbcTemplate.update(sql, params);
     }
@@ -46,7 +46,7 @@ public class EventBo extends BaseBo<Event> {
         if (wordImageId == null) {
             return true;
         }
-        String sql = "DELETE FROM event WHERE wordImageId = :wordImageId";
+        String sql = "DELETE FROM event WHERE word_image_id = :wordImageId";
         MapSqlParameterSource params = new MapSqlParameterSource("wordImageId", wordImageId);
 
         try {

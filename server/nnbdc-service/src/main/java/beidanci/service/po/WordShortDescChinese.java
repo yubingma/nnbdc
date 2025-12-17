@@ -16,7 +16,7 @@ import javax.persistence.*;
 // @Cache(region = "wordCache", usage = CacheConcurrencyStrategy.READ_WRITE)  // JDBC 不支持缓存
 public class WordShortDescChinese extends UuidPo {
 
-    @Column(name = "wordId")
+    @Column(name = "word_id")
     private Word word;
 
     @Column(name = "hand")
@@ -28,7 +28,7 @@ public class WordShortDescChinese extends UuidPo {
     @Column(name = "content")
     private String content;
 
-    @Column(name = "authorId")
+    @Column(name = "author_id")
     private User author;
 
     public Word getWord() {

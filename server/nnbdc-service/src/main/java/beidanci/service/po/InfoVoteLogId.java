@@ -12,10 +12,10 @@ public class InfoVoteLogId implements java.io.Serializable {
      *
      */
 
-    @Column(name = "userId", nullable = false)
+    @Column(name = "user_id", nullable = false)
     private String userId;
 
-    @Column(name = "infoId", nullable = false)
+    @Column(name = "info_id", nullable = false)
     private String infoId;
 
     // Constructors

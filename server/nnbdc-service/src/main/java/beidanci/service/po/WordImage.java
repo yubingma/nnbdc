@@ -24,10 +24,10 @@ public class WordImage extends UuidPo {
         super();
     }
 
-    @Column(name = "wordId")
+    @Column(name = "word_id")
     private Word word;
 
-    @Column(name = "imageFile")
+    @Column(name = "image_file")
     private String imageFile;
 
     @Column(name = "hand")
@@ -36,7 +36,7 @@ public class WordImage extends UuidPo {
     @Column(name = "foot")
     private Integer foot;
 
-    @Column(name = "authorId")
+    @Column(name = "author_id")
     private User author;
 
     public User getAuthor() {

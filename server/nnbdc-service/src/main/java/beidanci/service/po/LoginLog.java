@@ -35,9 +35,9 @@ public class LoginLog extends UuidPo {
         this.loginTime = loginTime;
     }
 
-    @Column(name = "userId")
+    @Column(name = "user_id")
     private User user;
 
-    @Column(name = "loginTime", nullable = false)
+    @Column(name = "login_time", nullable = false)
     private Date loginTime;
 }

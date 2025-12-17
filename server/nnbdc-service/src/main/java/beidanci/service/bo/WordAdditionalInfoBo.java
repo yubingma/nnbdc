@@ -26,7 +26,7 @@ public class WordAdditionalInfoBo extends BaseBo<WordAdditionalInfo> {
     }
 
     public List<WordAdditionalInfo> findByWordSpell(String wordSpell) {
-        String sql = "SELECT wai.* FROM word_additional_info wai INNER JOIN word w ON wai.wordId = w.id WHERE w.spell = :spell";
+        String sql = "SELECT wai.* FROM word_additional_info wai INNER JOIN word w ON wai.word_id = w.id WHERE w.spell = :spell";
         MapSqlParameterSource params = new MapSqlParameterSource("spell", wordSpell);
         return namedParameterJdbcTemplate.query(sql, params, 
             new EntityRowMapper<>(WordAdditionalInfo.class));

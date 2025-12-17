@@ -28,7 +28,7 @@ public class StudyRecordBo extends BaseBo<UserStudyRecord> {
     }
 
     public List<UserStudyRecord> getStudyRecords(User user, Date startDate, Date endDate) {
-        String sql = "SELECT * FROM user_study_record WHERE userId = :userId AND theDate >= :startDate AND theDate <= :endDate";
+        String sql = "SELECT * FROM user_study_record WHERE user_id = :userId AND the_date >= :startDate AND the_date <= :endDate";
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("userId", user.getId());
         params.addValue("startDate", startDate);

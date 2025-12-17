@@ -355,7 +355,7 @@ public class SyncBo {
                     if (existing == null) {
                         learningDictBo.createEntity(learningDict);
                     } else {
-                        logger.info("learning_dict 已存在，忽略重复 INSERT: userId={}, dictId={}",
+                        logger.info("learning_dict 已存在，忽略重复 INSERT: user_id={}, dict_id={}",
                                 userId, learningDictDto.getDictId());
                     }
                     break;
@@ -525,7 +525,7 @@ public class SyncBo {
                         if (existing == null) {
                             userStudyStepBo.createEntity(studyStep);
                         } else {
-                            logger.info("user_study_step 已存在，忽略重复 INSERT: userId={}, studyStep={}",
+                            logger.info("user_study_step 已存在，忽略重复 INSERT: user_id={}, study_step={}",
                                     userId, stepDto.getStudyStep());
                         }
                         break;
@@ -699,7 +699,7 @@ public class SyncBo {
         } catch (Exception deleteEx) {
             logger.warn("删除dict_word时出现异常，尝试使用原生SQL删除: {}", deleteEx.getMessage());
             try {
-                String deleteSql = "DELETE FROM dict_word WHERE dictId = ? AND wordId = ?";
+                String deleteSql = "DELETE FROM dict_word WHERE dict_id = ? AND word_id = ?";
                 int deletedRows = jdbcTemplate.update(deleteSql, 
                     dictWord.getId().getDictId(), 
                     dictWord.getId().getWordId());

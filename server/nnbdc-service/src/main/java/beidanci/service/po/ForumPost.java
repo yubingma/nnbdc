@@ -12,25 +12,25 @@ import javax.persistence.Table;
 @Table(name = "forum_post")
 public class ForumPost extends UuidPo  {
 
-    @Column(name = "userId")
+    @Column(name = "user_id")
     private User user;
 
-    @Column(name = "forumId")
+    @Column(name = "forum_id")
     private Forum forum;
 
-    @Column(name = "postTitle", length = 100, nullable = false)
+    @Column(name = "post_title", length = 100, nullable = false)
     private String postTitle;
 
-    @Column(name = "postContent", length = 1048576, nullable = false)
+    @Column(name = "post_content", length = 1048576, nullable = false)
     private String postContent;
 
-    @Column(name = "replyCount", nullable = false)
+    @Column(name = "reply_count", nullable = false)
     private Integer replyCount;
 
-    @Column(name = "browseCount", nullable = false)
+    @Column(name = "browse_count", nullable = false)
     private Integer browseCount;
 
-    @Column(name = "lastReplyTime")
+    @Column(name = "last_reply_time")
     private Date lastReplyTime;
 
     @OrderBy("updateTime asc")

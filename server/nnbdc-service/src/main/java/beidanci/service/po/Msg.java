@@ -13,21 +13,21 @@ import beidanci.api.model.ClientType;
 @Table(name = "msg")
 public class Msg extends UuidPo {
 
-    @Column(name = "fromUserId")
+    @Column(name = "from_user_id")
     private User fromUser;
 
-    @Column(name = "toUserId")
+    @Column(name = "to_user_id")
     private User toUser;
 
     @Column(name = "content", length = 4000)
     private String content;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "msgType", nullable = false, length = 20)
+    @Column(name = "msg_type", nullable = false, length = 20)
     private MsgType msgType;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "clientType", length = 20)
+    @Column(name = "client_type", length = 20)
     private ClientType clientType;
 
     public Boolean getViewed() {

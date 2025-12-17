@@ -203,9 +203,9 @@ public class UserBo extends BaseBo<User> {
     public List<User> findUsersTotalScoreMoreThan(int score, boolean includeGuest) {
         String sql;
         if (includeGuest) {
-            sql = "SELECT * FROM user WHERE (gameScore > 0 OR dakaScore > 0)";
+            sql = "SELECT * FROM user WHERE (game_score > 0 OR daka_score > 0)";
         } else {
-            sql = "SELECT * FROM user WHERE userName NOT LIKE 'guest%' AND userName NOT LIKE 'guess%' AND userName NOT LIKE '游客%' AND (gameScore > 0 OR dakaScore > 0)";
+            sql = "SELECT * FROM user WHERE user_name NOT LIKE 'guest%' AND user_name NOT LIKE 'guess%' AND user_name NOT LIKE '游客%' AND (game_score > 0 OR daka_score > 0)";
         }
         return jdbcTemplate.query(sql, new EntityRowMapper<>(User.class));
     }
@@ -406,7 +406,7 @@ public class UserBo extends BaseBo<User> {
 
     public void deleteDeadUsers(int idleDays) throws IllegalAccessException {
         // 查询长期未登录的用户
-        String sql = "SELECT * FROM user WHERE isSysUser = 0 AND lastLoginTime < :time";
+        String sql = "SELECT * FROM user WHERE is_sys_user = 0 AND last_login_time < :time";
         MapSqlParameterSource params = new MapSqlParameterSource("time", 
             Utils.localDate2Date(LocalDate.now().plusDays(-idleDays)));
         List<User> users = namedParameterJdbcTemplate.query(sql, params, 
@@ -424,7 +424,7 @@ public class UserBo extends BaseBo<User> {
         trxTemplate.execute((status -> {
             try {
                 // 删除用户选择的单词书（使用批量删除避免OptimisticLockException）
-                String sql = "DELETE FROM learning_dict WHERE userId = ?";
+                String sql = "DELETE FROM learning_dict WHERE user_id = ?";
                 jdbcTemplate.update(sql, user.getId());
 
                 // 删除用户的自定义单词书
@@ -437,51 +437,51 @@ public class UserBo extends BaseBo<User> {
                 userStudyStepBo.clearUserStudySteps(user.getId());
 
                 // 删除用户正在学习的单词（使用批量删除避免外键约束问题）
-                sql = "DELETE FROM learning_word WHERE userId = ?";
+                sql = "DELETE FROM learning_word WHERE user_id = ?";
                 jdbcTemplate.update(sql, user.getId());
 
                 // 删除用户已掌握的单词
-                sql = "DELETE FROM mastered_word WHERE userId = ?";
+                sql = "DELETE FROM mastered_word WHERE user_id = ?";
                 jdbcTemplate.update(sql, user.getId());
 
                 // 删除用户发送的消息（使用批量删除避免外键约束问题）
-                sql = "DELETE FROM msg WHERE fromUserId = ?";
+                sql = "DELETE FROM msg WHERE from_user_id = ?";
                 jdbcTemplate.update(sql, user.getId());
 
                 // 删除用户接收的消息
-                sql = "DELETE FROM msg WHERE toUserId = ?";
+                sql = "DELETE FROM msg WHERE to_user_id = ?";
                 jdbcTemplate.update(sql, user.getId());
 
                 // 删除用户相关事件
                 eventBo.clearUserEvents(user);
 
                 // 删除用户的打卡记录（使用批量删除避免外键约束问题）
-                sql = "DELETE FROM daka WHERE userId = ?";
+                sql = "DELETE FROM daka WHERE user_id = ?";
                 jdbcTemplate.update(sql, user.getId());
 
                 // 删除用户的魔法泡泡收支记录（使用批量删除避免外键约束问题）
-                sql = "DELETE FROM user_cow_dung_log WHERE userId = ?";
+                sql = "DELETE FROM user_cow_dung_log WHERE user_id = ?";
                 jdbcTemplate.update(sql, user.getId());
 
                 // 删除用户的游戏记录（使用批量删除避免外键约束问题）
-                sql = "DELETE FROM user_game WHERE userId = ?";
+                sql = "DELETE FROM user_game WHERE user_id = ?";
                 jdbcTemplate.update(sql, user.getId());
 
                 // 删除用户每日快照记录（使用批量删除避免外键约束问题）
-                sql = "DELETE FROM user_snapshot_daily WHERE userId = ?";
+                sql = "DELETE FROM user_snapshot_daily WHERE user_id = ?";
                 jdbcTemplate.update(sql, user.getId());
 
                 // 删除用户积分记录
-                sql = "DELETE FROM user_score_log WHERE userId = ?";
+                sql = "DELETE FROM user_score_log WHERE user_id = ?";
                 jdbcTemplate.update(sql, user.getId());
 
                 // 清空错题集关联
-                sql = "DELETE FROM user_wrong_word WHERE userId = ?";
+                sql = "DELETE FROM user_wrong_word WHERE user_id = ?";
                 jdbcTemplate.update(sql, user.getId());
 
                 // 解除该用户邀请的用户对其的引用（使用批量更新避免外键约束问题）
                 User sysUser = getSysUser_deleted(false);
-                sql = "UPDATE user SET invitedById = ? WHERE invitedById = ?";
+                sql = "UPDATE user SET invited_by_id = ? WHERE invited_by_id = ?";
                 jdbcTemplate.update(sql, sysUser.getId(), user.getId());
 
                 // 退出所在的小组
@@ -505,39 +505,39 @@ public class UserBo extends BaseBo<User> {
                 loginLogBo.cleanLoginLogs(user);
 
                 // 删除用户数据库日志
-                sql = "DELETE FROM user_db_log WHERE userId = ?";
+                sql = "DELETE FROM user_db_log WHERE user_id = ?";
                 jdbcTemplate.update(sql, user.getId());
 
                 // 将用户UGC转让给系统虚拟用户
-                sql = "UPDATE word_additional_info SET userId = ? WHERE userId = ?";
+                sql = "UPDATE word_additional_info SET user_id = ? WHERE user_id = ?";
                 jdbcTemplate.update(sql, sysUser.getId(), user.getId());
-                sql = "UPDATE sentence SET authorId = ? WHERE authorId = ?";
+                sql = "UPDATE sentence SET author_id = ? WHERE author_id = ?";
                 jdbcTemplate.update(sql, sysUser.getId(), user.getId());
-                sql = "DELETE FROM info_vote_log WHERE userId = ?";
+                sql = "DELETE FROM info_vote_log WHERE user_id = ?";
                 jdbcTemplate.update(sql, user.getId());
-                sql = "UPDATE word_image SET authorId = ? WHERE authorId = ?";
+                sql = "UPDATE word_image SET author_id = ? WHERE author_id = ?";
                 jdbcTemplate.update(sql, sysUser.getId(), user.getId());
-                sql = "UPDATE word_shortdesc_chinese SET authorId = ? WHERE authorId = ?";
+                sql = "UPDATE word_shortdesc_chinese SET author_id = ? WHERE author_id = ?";
                 jdbcTemplate.update(sql, sysUser.getId(), user.getId());
 
                 // 不再作为论坛管理员
-                sql = "DELETE FROM forum_and_manager_link WHERE userId = ?";
+                sql = "DELETE FROM forum_and_manager_link WHERE user_id = ?";
                 jdbcTemplate.update(sql, user.getId());
 
                 // 删除用户回复的帖子
-                sql = "DELETE FROM forum_post_reply WHERE postReplyerId = ?";
+                sql = "DELETE FROM forum_post_reply WHERE user_id = ?";
                 jdbcTemplate.update(sql, user.getId());
 
                 // 删除用户的帖子
-                sql = "DELETE FROM forum_post WHERE postCreatorId = ?";
+                sql = "DELETE FROM forum_post WHERE user_id = ?";
                 jdbcTemplate.update(sql, user.getId());
 
                 // 删除用户报错
-                sql = "DELETE FROM error_report WHERE userId = ?";
+                sql = "DELETE FROM error_report WHERE user_id = ?";
                 jdbcTemplate.update(sql, user.getId());
 
                 // 删除用户数据库版本记录
-                sql = "DELETE FROM user_db_version WHERE userId = ?";
+                sql = "DELETE FROM user_db_version WHERE user_id = ?";
                 jdbcTemplate.update(sql, user.getId());
 
                 // 删除用户记录
@@ -560,7 +560,7 @@ public class UserBo extends BaseBo<User> {
 
     public User getByUserName(String userName, boolean openNewSession) {
         // JDBC 不需要管理 Session，直接查询
-        String sql = "SELECT * FROM user WHERE userName = :userName";
+        String sql = "SELECT * FROM user WHERE user_name = :userName";
         MapSqlParameterSource params = new MapSqlParameterSource("userName", userName);
         List<User> results = namedParameterJdbcTemplate.query(sql, params, 
             new EntityRowMapper<>(User.class));
@@ -578,7 +578,7 @@ public class UserBo extends BaseBo<User> {
      */
     public String pickRandomNonGuestNickName() {
         // JDBC 不需要管理 Session
-        String sql = "SELECT * FROM user WHERE userName NOT LIKE 'guest%' LIMIT 50";
+        String sql = "SELECT * FROM user WHERE user_name NOT LIKE 'guest%' LIMIT 50";
         List<User> candidates = jdbcTemplate.query(sql, 
             new EntityRowMapper<>(User.class));
         if (candidates == null || candidates.isEmpty()) {
@@ -596,8 +596,8 @@ public class UserBo extends BaseBo<User> {
     public User pickRandomInactiveGamer(int idleDays, int maxCandidates) {
         // JDBC 不需要管理 Session
         String sql = "SELECT DISTINCT u.* FROM user_game ug " +
-                     "INNER JOIN user u ON ug.userId = u.id " +
-                     "WHERE u.isSysUser = 0 AND u.lastLoginTime < ? " +
+                     "INNER JOIN user u ON ug.user_id = u.id " +
+                     "WHERE u.is_sys_user = 0 AND u.last_login_time < ? " +
                      "LIMIT ?";
         Date time = Utils.localDate2Date(LocalDate.now().plusDays(-idleDays));
         List<User> candidates = jdbcTemplate.query(sql, 
@@ -878,7 +878,7 @@ public class UserBo extends BaseBo<User> {
     }
 
     private boolean hasVersionLogs(String userId, int version) {
-        String sql = "SELECT COUNT(*) FROM user_db_log WHERE userId = :userId AND version = :version";
+        String sql = "SELECT COUNT(*) FROM user_db_log WHERE user_id = :userId AND version = :version";
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("userId", userId);
         params.addValue("version", version);
@@ -1044,24 +1044,24 @@ public class UserBo extends BaseBo<User> {
 
             return logs;
         } else { // 增量同步
-            String sql = "SELECT e.id, e.userId, e.version, e.operate, e.tblName, e.recordId, e.record, e.createTime, e.updateTime FROM user_db_log e "
+            String sql = "SELECT e.id, e.user_id, e.version, e.operate, e.tbl_name, e.record_id, e.record, e.create_time, e.update_time FROM user_db_log e "
                     +
-                    "WHERE e.userId = :userId AND e.version > :fromVersion AND e.createTime = " +
-                    "(SELECT MAX(e2.createTime) FROM user_db_log e2 WHERE e2.tblName = e.tblName AND e2.recordId = e.recordId) ORDER BY e.version ASC, e.createTime ASC";
+                    "WHERE e.user_id = :userId AND e.version > :fromVersion AND e.create_time = " +
+                    "(SELECT MAX(e2.create_time) FROM user_db_log e2 WHERE e2.tbl_name = e.tbl_name AND e2.record_id = e.record_id) ORDER BY e.version ASC, e.create_time ASC";
             MapSqlParameterSource params = new MapSqlParameterSource();
             params.addValue("userId", userId);
             params.addValue("fromVersion", fromVersion);
             List<UserDbLogDto> logs = namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> {
                 UserDbLogDto log = new UserDbLogDto();
                 log.setId(rs.getString("id"));
-                log.setUserId(rs.getString("userId"));
+                log.setUserId(rs.getString("user_id"));
                 log.setVersion(rs.getInt("version"));
                 log.setOperate(rs.getString("operate"));
-                log.setTblName(rs.getString("tblName"));
-                log.setRecordId(rs.getString("recordId"));
+                log.setTblName(rs.getString("tbl_name"));
+                log.setRecordId(rs.getString("record_id"));
                 log.setRecord(rs.getString("record"));
-                log.setCreateTime(rs.getTimestamp("createTime"));
-                log.setUpdateTime(rs.getTimestamp("updateTime"));
+                log.setCreateTime(rs.getTimestamp("create_time"));
+                log.setUpdateTime(rs.getTimestamp("update_time"));
                 return log;
             });
 
@@ -1082,7 +1082,7 @@ public class UserBo extends BaseBo<User> {
     public User findOrCreateUserByWechat(WechatBo.WechatUserInfo wechatUserInfo) {
         try {
             // 1. 根据openId查找用户
-            String sql = "SELECT * FROM user WHERE wechatOpenId = :openId";
+            String sql = "SELECT * FROM user WHERE wechat_open_id = :openId";
             MapSqlParameterSource params = new MapSqlParameterSource("openId", wechatUserInfo.openId);
             List<User> users = namedParameterJdbcTemplate.query(sql, params, 
                 new EntityRowMapper<>(User.class));
@@ -1212,7 +1212,7 @@ public class UserBo extends BaseBo<User> {
         
         if (keyword != null && !keyword.trim().isEmpty()) {
             // 有搜索关键词，模糊匹配用户名、昵称、邮箱
-            whereClause.append("(userName LIKE :keyword OR nickName LIKE :keyword OR email LIKE :keyword)");
+            whereClause.append("(user_name LIKE :keyword OR nick_name LIKE :keyword OR email LIKE :keyword)");
             hasCondition = true;
         }
         
@@ -1237,9 +1237,9 @@ public class UserBo extends BaseBo<User> {
         
         // 构建完整SQL
         if (hasCondition) {
-            sql = "SELECT * FROM user WHERE " + whereClause.toString() + " ORDER BY lastLoginTime DESC";
+            sql = "SELECT * FROM user WHERE " + whereClause.toString() + " ORDER BY last_login_time DESC";
         } else {
-            sql = "SELECT * FROM user ORDER BY lastLoginTime DESC";
+            sql = "SELECT * FROM user ORDER BY last_login_time DESC";
         }
         
         // 设置参数

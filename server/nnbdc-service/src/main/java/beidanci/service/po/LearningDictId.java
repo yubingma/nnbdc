@@ -14,10 +14,10 @@ public class LearningDictId implements java.io.Serializable {
      *
      */
 
-    @Column(name = "userId", nullable = false)
+    @Column(name = "user_id", nullable = false)
     private String userId;
 
-    @Column(name = "dictId", nullable = false)
+    @Column(name = "dict_id", nullable = false)
     private String dictId;
 
     public LearningDictId() {

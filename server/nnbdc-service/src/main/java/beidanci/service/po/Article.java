@@ -9,7 +9,7 @@ import javax.persistence.Table;
 public class Article extends UuidPo {
     // no Java serialization
 
-    @Column(name = "userId")
+    @Column(name = "user_id")
     private User user;
 
     @Column(name = "title", length = 1024, nullable = false)
@@ -18,10 +18,10 @@ public class Article extends UuidPo {
     @Column(name = "content", length = 8192, nullable = false)
     private String content;
 
-    @Column(name = "viewedCount", nullable = false)
+    @Column(name = "viewed_count", nullable = false)
     private Integer viewedCount;
 
-    @Column(name = "keyWords", length = 1024, nullable = false)
+    @Column(name = "key_words", length = 1024, nullable = false)
     private String keyWords;
 
     @Column(name = "description", length = 1024, nullable = false)

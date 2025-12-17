@@ -92,14 +92,14 @@ public class SysDbLogBo extends BaseBo<SysDbLog> {
 
         if (versions.isEmpty()) {
             // 首次创建版本记录
-            String insertSql = "INSERT INTO sys_db_version (id, version, createTime) VALUES ('singleton', :version, :createTime)";
+            String insertSql = "INSERT INTO sys_db_version (id, version, create_time) VALUES ('singleton', :version, :createTime)";
             MapSqlParameterSource params = new MapSqlParameterSource();
             params.addValue("version", newVersion);
             params.addValue("createTime", new Date());
             namedParameterJdbcTemplate.update(insertSql, params);
         } else {
             // 更新版本号
-            String updateSql = "UPDATE sys_db_version SET version = :version, updateTime = :updateTime WHERE id = 'singleton'";
+            String updateSql = "UPDATE sys_db_version SET version = :version, update_time = :updateTime WHERE id = 'singleton'";
             MapSqlParameterSource params = new MapSqlParameterSource();
             params.addValue("version", newVersion);
             params.addValue("updateTime", new Date());
@@ -166,18 +166,18 @@ public class SysDbLogBo extends BaseBo<SysDbLog> {
     
     private List<SysDbLogDto> generateLevelLogs(int version) {
         // 动态生成Level的INSERT日志
-        String sql = "SELECT id, level, name, figure, minScore, maxScore, style, createTime, updateTime FROM level";
+        String sql = "SELECT id, level, name, figure, min_score, max_score, style, create_time, update_time FROM level";
         List<Object[]> results = namedParameterJdbcTemplate.getJdbcTemplate().query(sql, (rs, rowNum) -> 
             new Object[]{
                 rs.getString("id"),
                 rs.getObject("level"),
                 rs.getString("name"),
                 rs.getObject("figure"),
-                rs.getObject("minScore"),
-                rs.getObject("maxScore"),
+                rs.getObject("min_score"),
+                rs.getObject("max_score"),
                 rs.getString("style"),
-                rs.getTimestamp("createTime"),
-                rs.getTimestamp("updateTime")
+                rs.getTimestamp("create_time"),
+                rs.getTimestamp("update_time")
             });
         
         List<SysDbLogDto> logs = new ArrayList<>();
@@ -209,13 +209,13 @@ public class SysDbLogBo extends BaseBo<SysDbLog> {
     }
     
     private List<SysDbLogDto> generateDictGroupLogs(int version) {
-        String sql = "SELECT id, name, parentId, displayIndex FROM dict_group";
+        String sql = "SELECT id, name, parent_id, display_index FROM dict_group";
         List<Object[]> results = namedParameterJdbcTemplate.getJdbcTemplate().query(sql, (rs, rowNum) -> 
             new Object[]{
                 rs.getString("id"),
                 rs.getString("name"),
-                rs.getString("parentId"),
-                rs.getObject("displayIndex")
+                rs.getString("parent_id"),
+                rs.getObject("display_index")
             });
         
         List<SysDbLogDto> logs = new ArrayList<>();
@@ -240,11 +240,11 @@ public class SysDbLogBo extends BaseBo<SysDbLog> {
     }
     
     private List<SysDbLogDto> generateGroupAndDictLinkLogs(int version) {
-        String sql = "SELECT groupId, dictId FROM group_and_dict_link";
+        String sql = "SELECT group_id, dict_id FROM group_and_dict_link";
         List<Object[]> results = namedParameterJdbcTemplate.getJdbcTemplate().query(sql, (rs, rowNum) -> 
             new Object[]{
-                rs.getString("groupId"),
-                rs.getString("dictId")
+                rs.getString("group_id"),
+                rs.getString("dict_id")
             });
         
         List<SysDbLogDto> logs = new ArrayList<>();
@@ -268,19 +268,19 @@ public class SysDbLogBo extends BaseBo<SysDbLog> {
     
     private List<SysDbLogDto> generateDictLogs(int version) {
         // 只生成系统词典的日志
-        String sql = "SELECT id, name, ownerId, isShared, isReady, visible, wordCount, popularityLimit, createTime, updateTime FROM dict WHERE ownerId='15118'";
+        String sql = "SELECT id, name, owner_id, is_shared, is_ready, visible, word_count, popularity_limit, create_time, update_time FROM dict WHERE owner_id='15118'";
         List<Object[]> results = namedParameterJdbcTemplate.getJdbcTemplate().query(sql, (rs, rowNum) -> 
             new Object[]{
                 rs.getString("id"),
                 rs.getString("name"),
-                rs.getString("ownerId"),
-                rs.getObject("isShared"),
-                rs.getObject("isReady"),
+                rs.getString("owner_id"),
+                rs.getObject("is_shared"),
+                rs.getObject("is_ready"),
                 rs.getObject("visible"),
-                rs.getObject("wordCount"),
-                rs.getObject("popularityLimit"),
-                rs.getTimestamp("createTime"),
-                rs.getTimestamp("updateTime")
+                rs.getObject("word_count"),
+                rs.getObject("popularity_limit"),
+                rs.getTimestamp("create_time"),
+                rs.getTimestamp("update_time")
             });
         
         // 用于格式化日期为ISO-8601格式
@@ -342,7 +342,7 @@ public class SysDbLogBo extends BaseBo<SysDbLog> {
      */
     public int cleanOldLogs() {
         Date thirtyDaysAgo = new Date(System.currentTimeMillis() - 30L * 24 * 60 * 60 * 1000);
-        String sql = "DELETE FROM sys_db_log WHERE createTime < :date";
+        String sql = "DELETE FROM sys_db_log WHERE create_time < :date";
         MapSqlParameterSource params = new MapSqlParameterSource("date", thirtyDaysAgo);
         return namedParameterJdbcTemplate.update(sql, params);
     }

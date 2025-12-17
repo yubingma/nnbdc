@@ -10,7 +10,7 @@ import javax.persistence.Table;
 @Table(name = "user_db_log")
 public class UserDbLog extends UuidPo {
 
-    @Column(name = "userId", length = 32, nullable = false)
+    @Column(name = "user_id", length = 32, nullable = false)
     private String userId;
 
     @Column(name = "version", nullable = false)
@@ -19,13 +19,13 @@ public class UserDbLog extends UuidPo {
     @Column(name = "operate", length = 20, nullable = false)
     private String operate;
 
-    @Column(name = "tblName", length = 50, nullable = false)
+    @Column(name = "tbl_name", length = 50, nullable = false)
     private String table;
 
     /**
      * 记录ID，对于没有定义id的记录，使用自然主键（多个主键用"-"分隔，最多支持4个主键, 所以长度最多131(32*4加3个-号)）
      */
-    @Column(name = "recordId", length = 131, nullable = false)
+    @Column(name = "record_id", length = 131, nullable = false)
     private String recordId;
 
     /**

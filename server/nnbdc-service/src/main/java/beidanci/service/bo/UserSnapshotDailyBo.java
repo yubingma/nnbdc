@@ -28,7 +28,7 @@ public class UserSnapshotDailyBo extends BaseBo<UserSnapshotDaily> {
     }
 
     public List<UserSnapshotDaily> getUserSnapshotDailys(User user, Date startDate, Date endDate) {
-        String sql = "SELECT * FROM user_snapshot_daily WHERE userId = :userId AND theDate >= :startDate AND theDate <= :endDate";
+        String sql = "SELECT * FROM user_snapshot_daily WHERE user_id = :userId AND the_date >= :startDate AND the_date <= :endDate";
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("userId", user.getId());
         params.addValue("startDate", startDate);

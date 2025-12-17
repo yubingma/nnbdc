@@ -10,10 +10,10 @@ public class WordSentenceId implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    @Column(name = "wordId", nullable = false)
+    @Column(name = "word_id", nullable = false)
     private String wordId;
 
-    @Column(name = "sentenceId", nullable = false)
+    @Column(name = "sentence_id", nullable = false)
     private String sentenceId;
 
     public String getWordId() {

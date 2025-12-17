@@ -80,7 +80,7 @@ public class FeatureRequestReportBo extends BaseBo<FeatureRequestReport> {
      * 获取所有举报（管理员功能）
      */
     public List<FeatureRequestReport> getAllReports() {
-        String sql = "SELECT * FROM feature_request_report ORDER BY createTime DESC";
+        String sql = "SELECT * FROM feature_request_report ORDER BY create_time DESC";
         List<FeatureRequestReport> reports = namedParameterJdbcTemplate.query(sql,
                 new EntityRowMapper<>(FeatureRequestReport.class));
 

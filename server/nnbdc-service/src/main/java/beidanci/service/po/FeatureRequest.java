@@ -12,7 +12,7 @@ import beidanci.api.model.FeatureRequestStatus;
 @Table(name = "feature_request")
 public class FeatureRequest extends UuidPo {
 
-    @Column(name = "creatorId", nullable = false)
+    @Column(name = "creator_id", nullable = false)
     private User creator;
 
     @Column(name = "title", length = 200, nullable = false)
@@ -25,7 +25,7 @@ public class FeatureRequest extends UuidPo {
     @Column(name = "status", nullable = false, length = 20)
     private FeatureRequestStatus status;
 
-    @Column(name = "voteCount", nullable = false)
+    @Column(name = "vote_count", nullable = false)
     private Integer voteCount;
 
     public FeatureRequest() {

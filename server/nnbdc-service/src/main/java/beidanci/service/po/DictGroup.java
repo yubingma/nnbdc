@@ -19,7 +19,7 @@ public class DictGroup extends UuidPo {
     @Column(name = "name", length = 20)
     private String name;
 
-    @Column(name = "parentId")
+    @Column(name = "parent_id")
     private DictGroup dictGroup;
 
     public Integer getDisplayIndex() {
@@ -30,7 +30,7 @@ public class DictGroup extends UuidPo {
         this.displayIndex = displayIndex;
     }
 
-    @Column(name = "displayIndex", nullable = false)
+    @Column(name = "display_index", nullable = false)
     private Integer displayIndex;
 
     // @Fetch(FetchMode.SUBSELECT)  // JDBC 不支持

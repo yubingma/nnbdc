@@ -110,7 +110,7 @@ public class DictBo extends BaseBo<Dict> {
 
     // 获取指定用户的所有单词书
     public List<Dict> getOwnDicts(User owner, Integer fetchSize) {
-        String sql = "SELECT * FROM dict WHERE ownerId = :ownerId";
+        String sql = "SELECT * FROM dict WHERE owner_id = :ownerId";
         MapSqlParameterSource params = new MapSqlParameterSource("ownerId", owner.getId());
         List<Dict> result = namedParameterJdbcTemplate.query(sql, params, 
             new EntityRowMapper<>(Dict.class));
@@ -120,7 +120,7 @@ public class DictBo extends BaseBo<Dict> {
 
     // 获取指定用户ID的所有单词书
     public List<Dict> getDictsByOwnerId(String ownerId, Integer fetchSize) {
-        String sql = "SELECT * FROM dict WHERE ownerId = :ownerId";
+        String sql = "SELECT * FROM dict WHERE owner_id = :ownerId";
         MapSqlParameterSource params = new MapSqlParameterSource("ownerId", ownerId);
         List<Dict> result = namedParameterJdbcTemplate.query(sql, params, 
             new EntityRowMapper<>(Dict.class));
@@ -252,7 +252,7 @@ public class DictBo extends BaseBo<Dict> {
             throw new RuntimeException("用户不得删除不属于自己的词书");
         }
 
-        String sql = "DELETE FROM dict_word WHERE dictId = :dictId";
+        String sql = "DELETE FROM dict_word WHERE dict_id = :dictId";
         MapSqlParameterSource params = new MapSqlParameterSource("dictId", dict.getId());
         namedParameterJdbcTemplate.update(sql, params);
 
@@ -266,7 +266,7 @@ public class DictBo extends BaseBo<Dict> {
 
     public List<Word> getDictWords(Dict dict) {
         String sql = "SELECT w.* FROM word w WHERE EXISTS (" +
-                "SELECT 1 FROM dict_word dw WHERE dw.wordId = w.id AND dw.dictId = :dictId)";
+                "SELECT 1 FROM dict_word dw WHERE dw.word_id = w.id AND dw.dict_id = :dictId)";
         MapSqlParameterSource params = new MapSqlParameterSource("dictId", dict.getId());
         return namedParameterJdbcTemplate.query(sql, params, 
             new EntityRowMapper<>(Word.class));
@@ -274,20 +274,20 @@ public class DictBo extends BaseBo<Dict> {
 
     public DictDto getDictDto(String dictId) throws ParseException {
         // 通用词典现在是数据库中的实际记录，统一从数据库查询
-        String sql = "SELECT id, name, ownerId, isShared, isReady, visible, wordCount, popularityLimit, createTime, updateTime FROM dict WHERE id=:dictId";
+        String sql = "SELECT id, name, owner_id, is_shared, is_ready, visible, word_count, popularity_limit, create_time, update_time FROM dict WHERE id=:dictId";
         MapSqlParameterSource params = new MapSqlParameterSource("dictId", dictId);
         List<DictDto> results = namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> {
             DictDto dto = new DictDto();
             dto.setId(rs.getString("id"));
             dto.setName(rs.getString("name"));
-            dto.setOwnerId(rs.getString("ownerId"));
-            dto.setIsShared(rs.getBoolean("isShared"));
-            dto.setIsReady(rs.getBoolean("isReady"));
+            dto.setOwnerId(rs.getString("owner_id"));
+            dto.setIsShared(rs.getBoolean("is_shared"));
+            dto.setIsReady(rs.getBoolean("is_ready"));
             dto.setVisible(rs.getBoolean("visible"));
-            dto.setWordCount(rs.getObject("wordCount", Integer.class));
-            dto.setPopularityLimit(rs.getObject("popularityLimit", Integer.class));
-            dto.setCreateTime(rs.getTimestamp("createTime"));
-            dto.setUpdateTime(rs.getTimestamp("updateTime"));
+            dto.setWordCount(rs.getObject("word_count", Integer.class));
+            dto.setPopularityLimit(rs.getObject("popularity_limit", Integer.class));
+            dto.setCreateTime(rs.getTimestamp("create_time"));
+            dto.setUpdateTime(rs.getTimestamp("update_time"));
             return dto;
         });
         return results.isEmpty() ? null : results.get(0);
@@ -298,26 +298,26 @@ public class DictBo extends BaseBo<Dict> {
      */
     public List<DictStatsVo> getSystemDictsWithStats() {
         // 获取系统词典基本信息
-        String dictSql = "SELECT id, name, ownerId, isShared, isReady, visible, wordCount, popularityLimit, createTime, updateTime " +
-                       "FROM dict WHERE ownerId = :sysUserId ORDER BY createTime DESC";
+        String dictSql = "SELECT id, name, owner_id, is_shared, is_ready, visible, word_count, popularity_limit, create_time, update_time " +
+                       "FROM dict WHERE owner_id = :sysUserId ORDER BY create_time DESC";
         MapSqlParameterSource params = new MapSqlParameterSource("sysUserId", Constants.SYS_USER_SYS_ID);
         List<DictStatsVo> dictResults = namedParameterJdbcTemplate.query(dictSql, params, (rs, rowNum) -> {
             DictStatsVo dto = new DictStatsVo();
             dto.setId(rs.getString("id"));
             dto.setName(rs.getString("name"));
-            dto.setOwnerId(rs.getString("ownerId"));
-            dto.setIsShared(rs.getBoolean("isShared"));
-            dto.setIsReady(rs.getBoolean("isReady"));
+            dto.setOwnerId(rs.getString("owner_id"));
+            dto.setIsShared(rs.getBoolean("is_shared"));
+            dto.setIsReady(rs.getBoolean("is_ready"));
             dto.setVisible(rs.getBoolean("visible"));
-            dto.setWordCount(rs.getObject("wordCount", Integer.class));
-            dto.setPopularityLimit(rs.getObject("popularityLimit", Integer.class));
-            dto.setCreateTime(rs.getTimestamp("createTime"));
-            dto.setUpdateTime(rs.getTimestamp("updateTime"));
+            dto.setWordCount(rs.getObject("word_count", Integer.class));
+            dto.setPopularityLimit(rs.getObject("popularity_limit", Integer.class));
+            dto.setCreateTime(rs.getTimestamp("create_time"));
+            dto.setUpdateTime(rs.getTimestamp("update_time"));
             return dto;
         });
         
         // 获取总用户数
-        String totalUsersSql = "SELECT COUNT(DISTINCT userId) FROM learning_dict";
+        String totalUsersSql = "SELECT COUNT(DISTINCT user_id) FROM learning_dict";
         Long totalUsers = namedParameterJdbcTemplate.getJdbcTemplate().queryForObject(totalUsersSql, Long.class);
         long totalUsersLong = totalUsers != null ? totalUsers : 0L;
         
@@ -327,7 +327,7 @@ public class DictBo extends BaseBo<Dict> {
             dto.setTotalUsers(totalUsersLong);
             
             // 获取该词典被用户选择的数量
-            String selectionSql = "SELECT COUNT(DISTINCT userId) FROM learning_dict WHERE dictId = :dictId";
+            String selectionSql = "SELECT COUNT(DISTINCT user_id) FROM learning_dict WHERE dict_id = :dictId";
             MapSqlParameterSource selectionParams = new MapSqlParameterSource("dictId", dto.getId());
             Long selectionCount = namedParameterJdbcTemplate.queryForObject(selectionSql, selectionParams, Long.class);
             long selectionCountLong = selectionCount != null ? selectionCount : 0L;
@@ -351,21 +351,21 @@ public class DictBo extends BaseBo<Dict> {
      */
     public DictStatsVo getDictStats(String dictId) {
         // 获取词典基本信息
-        String dictSql = "SELECT id, name, ownerId, isShared, isReady, visible, wordCount, popularityLimit, createTime, updateTime " +
+        String dictSql = "SELECT id, name, owner_id, is_shared, is_ready, visible, word_count, popularity_limit, create_time, update_time " +
                        "FROM dict WHERE id = :dictId";
         MapSqlParameterSource params = new MapSqlParameterSource("dictId", dictId);
         List<DictStatsVo> results = namedParameterJdbcTemplate.query(dictSql, params, (rs, rowNum) -> {
             DictStatsVo dto = new DictStatsVo();
             dto.setId(rs.getString("id"));
             dto.setName(rs.getString("name"));
-            dto.setOwnerId(rs.getString("ownerId"));
-            dto.setIsShared(rs.getBoolean("isShared"));
-            dto.setIsReady(rs.getBoolean("isReady"));
+            dto.setOwnerId(rs.getString("owner_id"));
+            dto.setIsShared(rs.getBoolean("is_shared"));
+            dto.setIsReady(rs.getBoolean("is_ready"));
             dto.setVisible(rs.getBoolean("visible"));
-            dto.setWordCount(rs.getObject("wordCount", Integer.class));
-            dto.setPopularityLimit(rs.getObject("popularityLimit", Integer.class));
-            dto.setCreateTime(rs.getTimestamp("createTime"));
-            dto.setUpdateTime(rs.getTimestamp("updateTime"));
+            dto.setWordCount(rs.getObject("word_count", Integer.class));
+            dto.setPopularityLimit(rs.getObject("popularity_limit", Integer.class));
+            dto.setCreateTime(rs.getTimestamp("create_time"));
+            dto.setUpdateTime(rs.getTimestamp("update_time"));
             return dto;
         });
         
@@ -376,13 +376,13 @@ public class DictBo extends BaseBo<Dict> {
         DictStatsVo dto = results.get(0);
         
         // 获取总用户数
-        String totalUsersSql = "SELECT COUNT(DISTINCT userId) FROM learning_dict";
+        String totalUsersSql = "SELECT COUNT(DISTINCT user_id) FROM learning_dict";
         Long totalUsers = namedParameterJdbcTemplate.getJdbcTemplate().queryForObject(totalUsersSql, Long.class);
         long totalUsersLong = totalUsers != null ? totalUsers : 0L;
         dto.setTotalUsers(totalUsersLong);
         
         // 获取该词典被用户选择的数量
-        String selectionSql = "SELECT COUNT(DISTINCT userId) FROM learning_dict WHERE dictId = :dictId";
+        String selectionSql = "SELECT COUNT(DISTINCT user_id) FROM learning_dict WHERE dict_id = :dictId";
         Long selectionCount = namedParameterJdbcTemplate.queryForObject(selectionSql, params, Long.class);
         long selectionCountLong = selectionCount != null ? selectionCount : 0L;
         dto.setUserSelectionCount(selectionCountLong);
@@ -490,7 +490,7 @@ public class DictBo extends BaseBo<Dict> {
         try {
             // 1. 首先获取被删除单词的序号（在删除前获取）
             Integer deletedSeq = null;
-            String getDeletedSeqSql = "SELECT seq FROM dict_word WHERE dictId = :dictId AND wordId = :wordId";
+            String getDeletedSeqSql = "SELECT seq FROM dict_word WHERE dict_id = :dictId AND word_id = :wordId";
             MapSqlParameterSource params = new MapSqlParameterSource();
             params.addValue("dictId", dictId);
             params.addValue("wordId", wordId);
@@ -504,12 +504,12 @@ public class DictBo extends BaseBo<Dict> {
             }
             
             // 2. 删除dict_word表中的记录
-            String deleteDictWordSql = "DELETE FROM dict_word WHERE dictId = :dictId AND wordId = :wordId";
+            String deleteDictWordSql = "DELETE FROM dict_word WHERE dict_id = :dictId AND word_id = :wordId";
             namedParameterJdbcTemplate.update(deleteDictWordSql, params);
             
             // 3. 重新排序剩余单词的序号（删除后，让序号大于被删除单词序号的记录都减1）
             if (deletedSeq != null) {
-                String decreaseSeqSql = "UPDATE dict_word SET seq = seq - 1 WHERE dictId = :dictId AND seq > :deletedSeq";
+                String decreaseSeqSql = "UPDATE dict_word SET seq = seq - 1 WHERE dict_id = :dictId AND seq > :deletedSeq";
                 MapSqlParameterSource decreaseParams = new MapSqlParameterSource();
                 decreaseParams.addValue("dictId", dictId);
                 decreaseParams.addValue("deletedSeq", deletedSeq);
@@ -517,14 +517,14 @@ public class DictBo extends BaseBo<Dict> {
             }
             
             // 4. 更新词典的单词数量
-            String updateCountSql = "UPDATE dict SET wordCount = (SELECT COUNT(*) FROM dict_word WHERE dictId = :dictId) WHERE id = :dictId";
+            String updateCountSql = "UPDATE dict SET word_count = (SELECT COUNT(*) FROM dict_word WHERE dict_id = :dictId) WHERE id = :dictId";
             namedParameterJdbcTemplate.update(updateCountSql, params);
             
             // 5. 检查并修复学习进度
             String fixLearningProgressSql = "UPDATE learning_dict ld " +
-                    "JOIN dict d ON ld.dictId = d.id " +
-                    "SET ld.currentWordSeq = LEAST(ld.currentWordSeq, d.wordCount) " +
-                    "WHERE ld.dictId = :dictId AND ld.currentWordSeq > d.wordCount";
+                    "JOIN dict d ON ld.dict_id = d.id " +
+                    "SET ld.current_word_seq = LEAST(ld.current_word_seq, d.word_count) " +
+                    "WHERE ld.dict_id = :dictId AND ld.current_word_seq > d.word_count";
             namedParameterJdbcTemplate.update(fixLearningProgressSql, params);
             
             // 6. 记录系统数据同步日志
@@ -549,7 +549,7 @@ public class DictBo extends BaseBo<Dict> {
      * 获取系统词典ID列表（只包含可见且就绪的词书）
      */
     public List<String> getSystemDictIds() {
-        String sql = "SELECT id FROM dict WHERE ownerId = :ownerId AND visible = true AND isReady = true";
+        String sql = "SELECT id FROM dict WHERE owner_id = :ownerId AND visible = true AND is_ready = true";
         MapSqlParameterSource params = new MapSqlParameterSource("ownerId", Constants.SYS_USER_SYS_ID);
         return namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> rs.getString("id"));
     }
@@ -565,21 +565,21 @@ public class DictBo extends BaseBo<Dict> {
             
             // 1. 先删除 sentence 表中的关联记录（sentence -> meaning_item -> dict）
             String deleteSentencesSql = "DELETE FROM sentence " +
-                    "WHERE meaningItemId IN (" +
-                    "    SELECT id FROM meaning_item WHERE dictId = :dictId" +
+                    "WHERE meaning_item_id IN (" +
+                    "    SELECT id FROM meaning_item WHERE dict_id = :dictId" +
                     ")";
             int deletedSentences = namedParameterJdbcTemplate.update(deleteSentencesSql, params);
             
             // 2. 删除 meaning_item 表中的关联记录
-            String deleteMeaningItemsSql = "DELETE FROM meaning_item WHERE dictId = :dictId";
+            String deleteMeaningItemsSql = "DELETE FROM meaning_item WHERE dict_id = :dictId";
             int deletedMeaningItems = namedParameterJdbcTemplate.update(deleteMeaningItemsSql, params);
             
             // 3. 删除 learning_dict 表中的关联记录
-            String deleteLearningDictsSql = "DELETE FROM learning_dict WHERE dictId = :dictId";
+            String deleteLearningDictsSql = "DELETE FROM learning_dict WHERE dict_id = :dictId";
             int deletedLearningDicts = namedParameterJdbcTemplate.update(deleteLearningDictsSql, params);
             
             // 4. 删除 dict_word 表中的关联记录
-            String deleteDictWordsSql = "DELETE FROM dict_word WHERE dictId = :dictId";
+            String deleteDictWordsSql = "DELETE FROM dict_word WHERE dict_id = :dictId";
             int deletedDictWords = namedParameterJdbcTemplate.update(deleteDictWordsSql, params);
             
             // 5. 最后删除词典本身
@@ -599,7 +599,7 @@ public class DictBo extends BaseBo<Dict> {
      * 获取用户词典ID列表（只包含可见且就绪的词书）
      */
     public List<String> getUserDictIds() {
-        String sql = "SELECT id FROM dict WHERE ownerId != :ownerId AND visible = true AND isReady = true";
+        String sql = "SELECT id FROM dict WHERE owner_id != :ownerId AND visible = true AND is_ready = true";
         MapSqlParameterSource params = new MapSqlParameterSource("ownerId", Constants.SYS_USER_SYS_ID);
         return namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> rs.getString("id"));
     }
@@ -608,15 +608,15 @@ public class DictBo extends BaseBo<Dict> {
      * 检查词典单词序号连续性
      */
     public List<Object[]> checkDictWordSequence(String dictId) {
-        String sql = "SELECT dw.wordId, dw.seq, w.spell " +
+        String sql = "SELECT dw.word_id, dw.seq, w.spell " +
                 "FROM dict_word dw " +
-                "INNER JOIN word w ON dw.wordId = w.id " +
-                "WHERE dw.dictId = :dictId " +
+                "INNER JOIN word w ON dw.word_id = w.id " +
+                "WHERE dw.dict_id = :dictId " +
                 "ORDER BY dw.seq ASC";
         MapSqlParameterSource params = new MapSqlParameterSource("dictId", dictId);
         return namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> 
             new Object[]{
-                rs.getString("wordId"),
+                rs.getString("word_id"),
                 rs.getObject("seq"),
                 rs.getString("spell")
             });
@@ -626,7 +626,7 @@ public class DictBo extends BaseBo<Dict> {
      * 获取词典实际单词数量
      */
     public Long getDictWordCount(String dictId) {
-        String sql = "SELECT COUNT(*) FROM dict_word WHERE dictId = :dictId";
+        String sql = "SELECT COUNT(*) FROM dict_word WHERE dict_id = :dictId";
         MapSqlParameterSource params = new MapSqlParameterSource("dictId", dictId);
         return namedParameterJdbcTemplate.queryForObject(sql, params, Long.class);
     }
@@ -635,7 +635,7 @@ public class DictBo extends BaseBo<Dict> {
      * 获取词典记录的单词数量
      */
     public Integer getDictRecordedWordCount(String dictId) {
-        String sql = "SELECT wordCount FROM dict WHERE id = :dictId";
+        String sql = "SELECT word_count FROM dict WHERE id = :dictId";
         MapSqlParameterSource params = new MapSqlParameterSource("dictId", dictId);
         return namedParameterJdbcTemplate.queryForObject(sql, params, Integer.class);
     }
@@ -646,12 +646,12 @@ public class DictBo extends BaseBo<Dict> {
     public void fixDictWordSequence(String dictId) {
         String sql = "UPDATE dict_word dw1 " +
                 "JOIN (" +
-                "    SELECT dw2.wordId, ROW_NUMBER() OVER (ORDER BY dw2.seq) as new_seq " +
+                "    SELECT dw2.word_id, ROW_NUMBER() OVER (ORDER BY dw2.seq) as new_seq " +
                 "    FROM dict_word dw2 " +
-                "    WHERE dw2.dictId = :dictId" +
-                ") ranked ON dw1.wordId = ranked.wordId " +
+                "    WHERE dw2.dict_id = :dictId" +
+                ") ranked ON dw1.word_id = ranked.word_id " +
                 "SET dw1.seq = ranked.new_seq " +
-                "WHERE dw1.dictId = :dictId";
+                "WHERE dw1.dict_id = :dictId";
         MapSqlParameterSource params = new MapSqlParameterSource("dictId", dictId);
         namedParameterJdbcTemplate.update(sql, params);
     }
@@ -660,7 +660,7 @@ public class DictBo extends BaseBo<Dict> {
      * 更新词典单词数量
      */
     public void updateDictWordCount(String dictId, Integer newCount) {
-        String sql = "UPDATE dict SET wordCount = :newCount WHERE id = :dictId";
+        String sql = "UPDATE dict SET word_count = :newCount WHERE id = :dictId";
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("newCount", newCount);
         params.addValue("dictId", dictId);

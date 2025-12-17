@@ -8,10 +8,10 @@ public class DictWordId implements java.io.Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    @Column(name = "dictId", nullable = false)
+    @Column(name = "dict_id", nullable = false)
     private String dictId;
 
-    @Column(name = "wordId", nullable = false)
+    @Column(name = "word_id", nullable = false)
     private String wordId;
 
     public String getDictId() {

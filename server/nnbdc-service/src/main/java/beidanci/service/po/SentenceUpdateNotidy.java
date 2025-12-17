@@ -11,7 +11,7 @@ import javax.persistence.Table;
 @Table(name = "sentence_update_notify")
 public class SentenceUpdateNotidy extends UuidPo {
 
-    @Column(name = "sentenceId")
+    @Column(name = "sentence_id")
     private Sentence sentence;
 
     public Sentence getSentence() {

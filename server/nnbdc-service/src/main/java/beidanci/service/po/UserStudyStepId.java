@@ -15,10 +15,10 @@ public class UserStudyStepId implements java.io.Serializable {
     // Fields
 
 
-    @Column(name = "userId", nullable = false)
+    @Column(name = "user_id", nullable = false)
     private String userId;
 
-    @Column(name = "studyStep", nullable = false, length = 20)
+    @Column(name = "study_step", nullable = false, length = 20)
     @Enumerated(EnumType.STRING)
     private StudyStep studyStep;
 

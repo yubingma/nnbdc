@@ -34,14 +34,14 @@ public class LearningDictBo extends BaseBo<LearningDict> {
     }
 
     public List<LearningDict> getLearningDictsOfUser(User user) {
-        String sql = "SELECT * FROM learning_dict WHERE userId = :userId ORDER BY createTime ASC";
+        String sql = "SELECT * FROM learning_dict WHERE user_id = :userId ORDER BY create_time ASC";
         MapSqlParameterSource params = new MapSqlParameterSource("userId", user.getId());
         return namedParameterJdbcTemplate.query(sql, params, 
             new EntityRowMapper<>(LearningDict.class));
     }
 
     public LearningDict getLearningDictOfUser(User user, String dictName) {
-        String sql = "SELECT ld.* FROM learning_dict ld INNER JOIN dict d ON ld.dictId = d.id WHERE ld.userId = :userId AND d.name = :dictName";
+        String sql = "SELECT ld.* FROM learning_dict ld INNER JOIN dict d ON ld.dict_id = d.id WHERE ld.user_id = :userId AND d.name = :dictName";
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("userId", user.getId());
         params.addValue("dictName", dictName);
@@ -65,8 +65,8 @@ public class LearningDictBo extends BaseBo<LearningDict> {
     public boolean isWordInMySelectedDicts(WordVo word, User user) {
         // 判断单词是否在用户选择的词书中
         String sql = "SELECT COUNT(*) FROM dict_word dw " +
-                     "INNER JOIN learning_dict ld ON dw.dictId = ld.dictId " +
-                     "WHERE dw.wordId = :wordId AND ld.userId = :userId";
+                     "INNER JOIN learning_dict ld ON dw.dict_id = ld.dict_id " +
+                     "WHERE dw.word_id = :wordId AND ld.user_id = :userId";
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("wordId", word.getId());
         params.addValue("userId", user.getId());
@@ -81,7 +81,7 @@ public class LearningDictBo extends BaseBo<LearningDict> {
      */
     public void updateCurrentPositionForUserDicts(User user, boolean ignoreCurrent) {
         // JDBC 不需要手动 flush，事务提交时会自动提交
-        String sql = "UPDATE learning_dict SET currentWordSeq = currPosOfLearningDict(userId, dictId, :ignoreCurrent) WHERE userId = :userId";
+        String sql = "UPDATE learning_dict SET current_word_seq = currPosOfLearningDict(user_id, dict_id, :ignoreCurrent) WHERE user_id = :userId";
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("userId", user.getId());
         params.addValue("ignoreCurrent", ignoreCurrent ? 1 : 0);
@@ -95,7 +95,7 @@ public class LearningDictBo extends BaseBo<LearningDict> {
      */
     public void updateCurrentPositionForUserDict(User user, String dictId, boolean ignoreCurrent) {
         // JDBC 不需要手动 flush，事务提交时会自动提交
-        String sql = "UPDATE learning_dict SET currentWordSeq = currPosOfLearningDict(userId, dictId, :ignoreCurrent) WHERE userId = :userId AND dictId = :dictId";
+        String sql = "UPDATE learning_dict SET current_word_seq = currPosOfLearningDict(user_id, dict_id, :ignoreCurrent) WHERE user_id = :userId AND dict_id = :dictId";
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("userId", user.getId());
         params.addValue("dictId", dictId);
@@ -104,19 +104,19 @@ public class LearningDictBo extends BaseBo<LearningDict> {
     }
 
     public List<LearningDictDto> getLearningDictDtosOfUser(String userId) {
-        String sql = "SELECT userId, dictId, currentWordSeq, isPrivileged, currentWordId, fetchMastered, createTime, updateTime FROM learning_dict WHERE userId = :userId";
+        String sql = "SELECT user_id, dict_id, current_word_seq, is_privileged, current_word_id, fetch_mastered, create_time, update_time FROM learning_dict WHERE user_id = :userId";
         MapSqlParameterSource params = new MapSqlParameterSource("userId", userId);
         
         List<LearningDictDto> dtos = namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> {
             LearningDictDto dto = new LearningDictDto();
-            dto.setUserId(rs.getString("userId"));
-            dto.setDictId(rs.getString("dictId"));
-            dto.setCurrentWordSeq(rs.getInt("currentWordSeq"));
-            dto.setIsPrivileged(rs.getBoolean("isPrivileged"));
-            dto.setCurrentWord(rs.getString("currentWordId"));
-            dto.setFetchMastered(rs.getBoolean("fetchMastered"));
-            dto.setCreateTime(rs.getTimestamp("createTime"));
-            dto.setUpdateTime(rs.getTimestamp("updateTime"));
+            dto.setUserId(rs.getString("user_id"));
+            dto.setDictId(rs.getString("dict_id"));
+            dto.setCurrentWordSeq(rs.getInt("current_word_seq"));
+            dto.setIsPrivileged(rs.getBoolean("is_privileged"));
+            dto.setCurrentWord(rs.getString("current_word_id"));
+            dto.setFetchMastered(rs.getBoolean("fetch_mastered"));
+            dto.setCreateTime(rs.getTimestamp("create_time"));
+            dto.setUpdateTime(rs.getTimestamp("update_time"));
             return dto;
         });
         return dtos;
@@ -136,17 +136,17 @@ public class LearningDictBo extends BaseBo<LearningDict> {
             }
             
             // 构建删除SQL
-            StringBuilder sql = new StringBuilder("DELETE FROM learning_dict WHERE userId = :userId");
+            StringBuilder sql = new StringBuilder("DELETE FROM learning_dict WHERE user_id = :userId");
             Map<String, Object> parameters = new HashMap<>();
             parameters.put("userId", userId);
             
             // 添加过滤条件
             if (filters.containsKey("dictId")) {
-                sql.append(" AND dictId = :dictId");
+                sql.append(" AND dict_id = :dictId");
                 parameters.put("dictId", filters.get("dictId"));
             }
             if (filters.containsKey("isPrivileged")) {
-                sql.append(" AND isPrivileged = :isPrivileged");
+                sql.append(" AND is_privileged = :isPrivileged");
                 parameters.put("isPrivileged", filters.get("isPrivileged"));
             }
             
@@ -201,18 +201,18 @@ public class LearningDictBo extends BaseBo<LearningDict> {
      */
     public List<Object[]> findInvalidLearningProgress() {
         String sql = """
-            SELECT ld.userId, ld.dictId, ld.currentWordSeq, d.wordCount
+            SELECT ld.user_id, ld.dict_id, ld.current_word_seq, d.word_count
             FROM learning_dict ld
-            JOIN dict d ON ld.dictId = d.id
-            WHERE ld.currentWordSeq > d.wordCount
-            ORDER BY ld.userId, ld.dictId
+            JOIN dict d ON ld.dict_id = d.id
+            WHERE ld.current_word_seq > d.word_count
+            ORDER BY ld.user_id, ld.dict_id
             """;
         List<Object[]> resultList = namedParameterJdbcTemplate.query(sql, (rs, rowNum) -> 
             new Object[]{
-                rs.getString("userId"),
-                rs.getString("dictId"),
-                rs.getInt("currentWordSeq"),
-                rs.getInt("wordCount")
+                rs.getString("user_id"),
+                rs.getString("dict_id"),
+                rs.getInt("current_word_seq"),
+                rs.getInt("word_count")
             });
         return resultList;
     }
@@ -223,8 +223,8 @@ public class LearningDictBo extends BaseBo<LearningDict> {
     public void fixLearningProgress(String userId, String dictId, Integer correctSeq) {
         String sql = """
             UPDATE learning_dict
-            SET currentWordSeq = :correctSeq
-            WHERE userId = :userId AND dictId = :dictId
+            SET current_word_seq = :correctSeq
+            WHERE user_id = :userId AND dict_id = :dictId
             """;
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("correctSeq", correctSeq);

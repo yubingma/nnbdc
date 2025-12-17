@@ -20,19 +20,19 @@ public class Dict extends UuidPo {
     @Column(name = "name", nullable = false, length = 50)
     private String name;
 
-    @Column(name = "ownerId")
+    @Column(name = "owner_id")
     private User owner;
 
     /**
      * 对于用户自定义的单词书，该标志指明该单词书是否已经共享给其他用户
      */
-    @Column(name = "isShared", nullable = false)
+    @Column(name = "is_shared", nullable = false)
     private Boolean isShared;
 
     /**
      * 该单词书是否已经准备就绪（只有准备就绪的单词书才能供用户使用，并且一旦就绪后就不能再编辑）
      */
-    @Column(name = "isReady", nullable = false)
+    @Column(name = "is_ready", nullable = false)
     private Boolean isReady;
 
     private  List<DictWord> dictWords;
@@ -40,7 +40,7 @@ public class Dict extends UuidPo {
     /**
      * 该单词书的单词数量
      */
-    @Column(name = "wordCount", nullable = false)
+    @Column(name = "word_count", nullable = false)
     private Integer wordCount;
 
     public Boolean getVisible() {
@@ -62,7 +62,7 @@ public class Dict extends UuidPo {
      * popularity大于该设定的通用词典释义项(不太常用的释义项)会被用户隐藏，避免释义项过多。
      * 如果为null，表示不限制。
      */
-    @Column(name = "popularityLimit", nullable = true)
+    @Column(name = "popularity_limit", nullable = true)
     private Integer popularityLimit;
 
     public Integer getPopularityLimit() {

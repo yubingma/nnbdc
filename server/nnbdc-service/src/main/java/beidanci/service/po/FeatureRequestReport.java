@@ -9,10 +9,10 @@ import javax.persistence.Table;
 @Table(name = "feature_request_report")
 public class FeatureRequestReport extends UuidPo {
 
-    @Column(name = "reporterId", nullable = false)
+    @Column(name = "reporter_id", nullable = false)
     private User reporter;
 
-    @Column(name = "featureRequestId", nullable = false)
+    @Column(name = "feature_request_id", nullable = false)
     private FeatureRequest featureRequest;
 
     @Column(name = "content", length = 2000, nullable = false)

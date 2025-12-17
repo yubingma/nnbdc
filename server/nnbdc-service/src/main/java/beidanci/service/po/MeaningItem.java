@@ -29,13 +29,13 @@ public class MeaningItem extends UuidPo {
     /**
      * 释义所属单词
      */
-    @Column(name = "wordId")
+    @Column(name = "word_id")
     private Word word;
 
     /**
      * 单词词性
      */
-    @Column(name = "ciXing", length = 10)
+    @Column(name = "ci_xing", length = 10)
     private String ciXing;
 
     /**
@@ -62,7 +62,7 @@ public class MeaningItem extends UuidPo {
     // @Cache(region = "wordCache", usage = CacheConcurrencyStrategy.READ_WRITE)  // JDBC 不支持缓存
     private List<Sentence> sentences = new ArrayList<>();
 
-    @Column(name = "dictId")
+    @Column(name = "dict_id")
     private Dict dict;
 
     public MeaningItem() {

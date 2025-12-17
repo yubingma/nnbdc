@@ -102,26 +102,26 @@ public class SentenceBo extends BaseBo<Sentence> {
      */
     public List<SentenceDto> getSentencesOfDict(String dictId) {
         // 通用词典现在是数据库中的实际记录，统一查询
-        String sql = "SELECT s.id, s.english, s.englishDigest, s.chinese, s.lastDiyUpdateTime, s.theType, s.producer, s.needTts, s.footCount, s.handCount, s.authorId, s.meaningItemId, s.wordMeaning, s.createTime, s.updateTime FROM sentence s LEFT JOIN meaning_item mi ON mi.id = s.meaningItemId WHERE mi.dictId = :dictId";
+        String sql = "SELECT s.id, s.english, s.english_digest, s.chinese, s.last_diy_update_time, s.the_type, s.producer, s.need_tts, s.foot_count, s.hand_count, s.author_id, s.meaning_item_id, s.word_meaning, s.create_time, s.update_time FROM sentence s LEFT JOIN meaning_item mi ON mi.id = s.meaning_item_id WHERE mi.dict_id = :dictId";
         MapSqlParameterSource params = new MapSqlParameterSource("dictId", dictId);
         
         return namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> {
             SentenceDto sentenceDto = new SentenceDto();
             sentenceDto.setId(rs.getString("id"));
             sentenceDto.setEnglish(rs.getString("english"));
-            sentenceDto.setEnglishDigest(rs.getString("englishDigest"));
+            sentenceDto.setEnglishDigest(rs.getString("english_digest"));
             sentenceDto.setChinese(rs.getString("chinese"));
-            sentenceDto.setLastDiyUpdateTime(rs.getTimestamp("lastDiyUpdateTime"));
-            sentenceDto.setTheType(rs.getString("theType"));
+            sentenceDto.setLastDiyUpdateTime(rs.getTimestamp("last_diy_update_time"));
+            sentenceDto.setTheType(rs.getString("the_type"));
             sentenceDto.setProducer(rs.getString("producer"));
-            sentenceDto.setNeedTts(rs.getBoolean("needTts"));
-            sentenceDto.setFootCount(rs.getInt("footCount"));
-            sentenceDto.setHandCount(rs.getInt("handCount"));
-            sentenceDto.setAuthorId(rs.getString("authorId"));
-            sentenceDto.setMeaningItemId(rs.getString("meaningItemId"));
-            sentenceDto.setWordMeaning(rs.getString("wordMeaning"));
-            sentenceDto.setCreateTime(rs.getTimestamp("createTime"));
-            sentenceDto.setUpdateTime(rs.getTimestamp("updateTime"));
+            sentenceDto.setNeedTts(rs.getBoolean("need_tts"));
+            sentenceDto.setFootCount(rs.getInt("foot_count"));
+            sentenceDto.setHandCount(rs.getInt("hand_count"));
+            sentenceDto.setAuthorId(rs.getString("author_id"));
+            sentenceDto.setMeaningItemId(rs.getString("meaning_item_id"));
+            sentenceDto.setWordMeaning(rs.getString("word_meaning"));
+            sentenceDto.setCreateTime(rs.getTimestamp("create_time"));
+            sentenceDto.setUpdateTime(rs.getTimestamp("update_time"));
             return sentenceDto;
         });
     }
@@ -137,20 +137,20 @@ public class SentenceBo extends BaseBo<Sentence> {
         }
 
         // 从数据库删除 - 例句的事件
-        String sql = "DELETE FROM event WHERE sentenceId = :sentenceId";
+        String sql = "DELETE FROM event WHERE sentence_id = :sentenceId";
         MapSqlParameterSource params = new MapSqlParameterSource("sentenceId", id);
         namedParameterJdbcTemplate.update(sql, params);
 
         // 从数据库删除 - 单词和例句的关联
-        sql = "DELETE FROM word_sentence WHERE sentenceId = :sentenceId";
+        sql = "DELETE FROM word_sentence WHERE sentence_id = :sentenceId";
         namedParameterJdbcTemplate.update(sql, params);
 
         // 从数据库删除 - 例句翻译的事件
-        sql = "DELETE FROM event WHERE sentenceChineseId IN (SELECT id FROM sentence_chinese WHERE sentenceId = :sentenceId)";
+        sql = "DELETE FROM event WHERE sentence_chinese_id IN (SELECT id FROM sentence_chinese WHERE sentence_id = :sentenceId)";
         namedParameterJdbcTemplate.update(sql, params);
 
         // 从数据库删除 - 例句的翻译
-        sql = "DELETE FROM sentence_chinese WHERE sentenceId = :sentenceId";
+        sql = "DELETE FROM sentence_chinese WHERE sentence_id = :sentenceId";
         namedParameterJdbcTemplate.update(sql, params);
 
         // 从数据库删除 - 例句本身
@@ -233,11 +233,11 @@ public class SentenceBo extends BaseBo<Sentence> {
     public List<String> findMeaningsWithoutSentences(String dictId) {
         String sql = "SELECT mi.id " +
                 "FROM meaning_item mi " +
-                "WHERE mi.dictId = :dictId " +
+                "WHERE mi.dict_id = :dictId " +
                 "AND mi.id NOT IN (" +
-                "    SELECT s.meaningItemId " +
+                "    SELECT s.meaning_item_id " +
                 "    FROM sentence s " +
-                "    WHERE s.meaningItemId = mi.id" +
+                "    WHERE s.meaning_item_id = mi.id" +
                 ")";
         MapSqlParameterSource params = new MapSqlParameterSource("dictId", dictId);
         return namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> rs.getString("id"));

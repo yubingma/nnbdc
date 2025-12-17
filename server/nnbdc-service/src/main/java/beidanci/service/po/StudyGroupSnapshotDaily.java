@@ -11,27 +11,31 @@ import javax.persistence.Table;
 public class StudyGroupSnapshotDaily extends UuidPo {
 
 
+    /**
+     * 小组外键（历史表里字段名为 groupId）
+     */
+    @Column(name = "group_id")
     private StudyGroup studyGroup;
 
-    @Column(name = "theDate", nullable = false)
+    @Column(name = "the_date", nullable = false)
     private Date theDate;
 
-    @Column(name = "memberCount", nullable = false)
+    @Column(name = "member_count", nullable = false)
     private Integer memberCount;
 
-    @Column(name = "orderNo", nullable = false)
+    @Column(name = "order_no", nullable = false)
     private Integer orderNo;
 
-    @Column(name = "cowDung", nullable = false)
+    @Column(name = "cow_dung", nullable = false)
     private Integer cowDung;
 
-    @Column(name = "dakaScore", nullable = false)
+    @Column(name = "daka_score", nullable = false)
     private Integer dakaScore;
 
-    @Column(name = "dakaRatio", nullable = false)
+    @Column(name = "daka_ratio", nullable = false)
     private Float dakaRatio;
 
-    @Column(name = "gameScore", nullable = false)
+    @Column(name = "game_score", nullable = false)
     private Integer gameScore;
 
     // Constructors

@@ -111,7 +111,7 @@ public class WordImageBo extends BaseBo<WordImage> {
      * 因此这里必须用显式 SQL 按 wordId 查询，避免误查全表导致“末位淘汰”误删。
      */
     private List<WordImage> listImagesByWordId(String wordId) {
-        return pagedQuery("SELECT * FROM word_image WHERE wordId = :wordId",
+        return pagedQuery("SELECT * FROM word_image WHERE word_id = :wordId",
                 1,
                 Integer.MAX_VALUE,
                 Pair.of("wordId", wordId)).getRows();

@@ -9,7 +9,7 @@ import javax.persistence.Embeddable;
 public class SynonymId implements Serializable {
 
     private static final long serialVersionUID = 1L;
-    @Column(name = "meaningItemId")
+    @Column(name = "meaning_item_id")
     private String meaningItemId;
 
     public String getWordId() {
@@ -20,7 +20,7 @@ public class SynonymId implements Serializable {
         this.wordId = wordId;
     }
 
-    @Column(name = "wordId")
+    @Column(name = "word_id")
     private String wordId;
 
     public String getMeaningItemId() {

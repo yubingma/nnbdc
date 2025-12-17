@@ -12,7 +12,7 @@ import beidanci.service.store.WordCache;
 
 @Entity
 @Table(name = "dict_word", indexes = {
-        @Index(name = "idx_dict_seq", columnList = "dictId,seq", unique = false)})
+        @Index(name = "idx_dict_seq", columnList = "dict_id, seq", unique = false)})
 public class DictWord extends Po  {
 
     public DictWord() {
@@ -22,10 +22,10 @@ public class DictWord extends Po  {
     @Id
     private DictWordId id;
 
-    @Column(name = "dictId")
+    @Column(name = "dict_id")
     private Dict dict;
 
-    @Column(name = "wordId")
+    @Column(name = "word_id")
     private Word word;
 
     /**

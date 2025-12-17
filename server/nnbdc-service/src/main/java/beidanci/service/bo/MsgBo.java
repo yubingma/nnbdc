@@ -58,19 +58,19 @@ public class MsgBo extends BaseBo<Msg> {
         // 构建 SQL 查询
         StringBuilder sqlBuilder = new StringBuilder(
             "SELECT m.* FROM msg m WHERE m.id = (" +
-            "    SELECT MAX(mm.id) FROM msg mm WHERE mm.fromUserId = m.fromUserId"
+            "    SELECT MAX(mm.id) FROM msg mm WHERE mm.from_user_id = m.from_user_id"
         );
         MapSqlParameterSource params = new MapSqlParameterSource();
         
         if (toUserId != null) {
-            sqlBuilder.append(" AND mm.toUserId = :toUserId");
+            sqlBuilder.append(" AND mm.to_user_id = :toUserId");
             params.addValue("toUserId", toUserId);
         }
         if (msgType != null) {
-            sqlBuilder.append(" AND mm.msgType = :msgType");
+            sqlBuilder.append(" AND mm.msg_type = :msgType");
             params.addValue("msgType", msgType.toString());
         }
-        sqlBuilder.append(") ORDER BY m.updateTime DESC");
+        sqlBuilder.append(") ORDER BY m.update_time DESC");
         
         String sql = sqlBuilder.toString();
         
@@ -104,8 +104,8 @@ public class MsgBo extends BaseBo<Msg> {
      */
     public List<Msg> getLastestMsgsBetweenTwoUsers(String user1, String user2, int msgCount) {
         String sql = "SELECT * FROM msg WHERE " +
-                "((fromUserId = :user1Id AND toUserId = :user2Id) OR (fromUserId = :user2Id AND toUserId = :user1Id)) " +
-                "ORDER BY createTime ASC";
+                "((from_user_id = :user1Id AND to_user_id = :user2Id) OR (from_user_id = :user2Id AND to_user_id = :user1Id)) " +
+                "ORDER BY create_time ASC";
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("user1Id", user1);
         params.addValue("user2Id", user2);
@@ -199,7 +199,7 @@ public class MsgBo extends BaseBo<Msg> {
      */
     public int getUnViewedPersistentMsgCountToUser(String toUserId) {
         try {
-            String sql = "SELECT COUNT(*) FROM msg WHERE toUserId = :toUserId AND viewed = false";
+            String sql = "SELECT COUNT(*) FROM msg WHERE to_user_id = :toUserId AND viewed = false";
             MapSqlParameterSource params = new MapSqlParameterSource("toUserId", toUserId);
             Long count = namedParameterJdbcTemplate.queryForObject(sql, params, Long.class);
             // 确保返回非 null 值，避免 JSON 序列化时出现 null
@@ -224,7 +224,7 @@ public class MsgBo extends BaseBo<Msg> {
      */
     public int getAllPersistentMsgCountToUser(String toUserId) {
         try {
-            String sql = "SELECT COUNT(*) FROM msg WHERE toUserId = :toUserId";
+            String sql = "SELECT COUNT(*) FROM msg WHERE to_user_id = :toUserId";
             MapSqlParameterSource params = new MapSqlParameterSource("toUserId", toUserId);
             Long count = namedParameterJdbcTemplate.queryForObject(sql, params, Long.class);
             // 确保返回非 null 值，避免 JSON 序列化时出现 null
@@ -292,7 +292,7 @@ public class MsgBo extends BaseBo<Msg> {
      * @param msgIds
      */
     public void setMsgsAsViewed(List<String> msgIds, String userId, UserBo userBo) {
-        String sql = "UPDATE msg SET viewed = 1 WHERE id IN (:ids) AND (toUserId = :userId OR fromUserId = :userId)";
+        String sql = "UPDATE msg SET viewed = 1 WHERE id IN (:ids) AND (to_user_id = :userId OR from_user_id = :userId)";
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("ids", msgIds);
         params.addValue("userId", userId);
@@ -308,7 +308,7 @@ public class MsgBo extends BaseBo<Msg> {
      * @return 意见建议消息列表
      */
     public List<Msg> getAllAdviceMessages() {
-        String sql = "SELECT * FROM msg WHERE msgType = :msgType ORDER BY createTime DESC";
+        String sql = "SELECT * FROM msg WHERE msg_type = :msgType ORDER BY create_time DESC";
         MapSqlParameterSource params = new MapSqlParameterSource("msgType", MsgType.Advice.toString());
         List<Msg> msgs = namedParameterJdbcTemplate.query(sql, params, 
             new EntityRowMapper<>(Msg.class));

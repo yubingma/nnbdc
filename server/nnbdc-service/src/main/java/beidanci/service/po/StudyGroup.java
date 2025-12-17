@@ -15,26 +15,26 @@ import beidanci.api.model.StudyGroupSummary;
 @Table(name = "study_group")
 public class StudyGroup extends UuidPo  {
 
-    @Column(name = "studyGroupGradeId")
+    @Column(name = "study_group_grade_id")
     private StudyGroupGrade studyGroupGrade;
 
-    @Column(name = "creatorId")
+    @Column(name = "creator_id")
     private User creator;
 
-    @Column(name = "groupName", length = 100, nullable = false, unique = true)
+    @Column(name = "group_name", length = 100, nullable = false, unique = true)
     private String groupName;
 
-    @Column(name = "groupTitle", length = 100, nullable = false)
+    @Column(name = "group_title", length = 100, nullable = false)
     private String groupTitle;
 
-    @Column(name = "groupRemark", length = 4000, nullable = false)
+    @Column(name = "group_remark", length = 4000, nullable = false)
     private String groupRemark;
 
     private  List<User> users;
 
     private   List<User> managers;
 
-    @Column(name = "cowDung", nullable = false)
+    @Column(name = "cow_dung", nullable = false)
     private Integer cowDung;
 
     private   List<StudyGroupSnapshotDaily> snapshotDailys;

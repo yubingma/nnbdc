@@ -9,7 +9,7 @@ import javax.persistence.Table;
 import beidanci.api.model.BookMarkDto;
 
 @Entity
-@Table(name = "book_mark", indexes = {@Index(columnList = "userId")})
+@Table(name = "book_mark", indexes = {@Index(columnList = "user_id")})
 public class BookMark extends Po {
 
     // no Java serialization

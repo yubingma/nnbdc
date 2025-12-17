@@ -13,7 +13,7 @@ public class StudyGroupGrade extends UuidPo {
     @Column(name = "name", nullable = false, unique = true)
     private String name;
 
-    @Column(name = "maxUserCount", nullable = false)
+    @Column(name = "max_user_count", nullable = false)
     private Integer maxUserCount;
 
     private List<StudyGroup> studyGroups;

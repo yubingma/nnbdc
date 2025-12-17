@@ -17,13 +17,13 @@ public class CigenWordLink extends Po {
     @Id
     private CigenWordLinkId id;
 
-    @Column(name = "cigenId")
+    @Column(name = "cigen_id")
     private Cigen cigen;
 
-    @Column(name = "wordId")
+    @Column(name = "word_id")
     private Word word;
 
-    @Column(name = "theExplain", length = 1024, nullable = false)
+    @Column(name = "the_explain", length = 1024, nullable = false)
     private String theExplain;
 
     public Word getWord() {

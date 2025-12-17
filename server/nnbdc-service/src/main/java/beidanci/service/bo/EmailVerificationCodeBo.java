@@ -71,7 +71,7 @@ public class EmailVerificationCodeBo extends BaseBo<EmailVerificationCode> {
         Date now = new Date();
         Date minSendTime = new Date(now.getTime() - sendIntervalSeconds * 1000L);
         
-        String sql = "SELECT * FROM email_verification_code WHERE email = :email AND type = :type AND createTime > :minSendTime ORDER BY createTime DESC LIMIT 1";
+        String sql = "SELECT * FROM email_verification_code WHERE email = :email AND type = :type AND create_time > :minSendTime ORDER BY create_time DESC LIMIT 1";
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("email", email);
         params.addValue("type", type.toString());
@@ -119,7 +119,7 @@ public class EmailVerificationCodeBo extends BaseBo<EmailVerificationCode> {
             return "OK";
         }
 
-        String sql = "SELECT * FROM email_verification_code WHERE email = :email AND code = :code AND type = :type ORDER BY createTime DESC LIMIT 1";
+        String sql = "SELECT * FROM email_verification_code WHERE email = :email AND code = :code AND type = :type ORDER BY create_time DESC LIMIT 1";
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("email", email);
         params.addValue("code", code);

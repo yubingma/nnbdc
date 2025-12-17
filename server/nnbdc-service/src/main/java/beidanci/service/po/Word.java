@@ -28,10 +28,10 @@ public class Word extends UuidPo {
     @Column(name = "spell", length = 100)
     private String spell;
 
-    @Column(name = "britishPronounce", length = 100)
+    @Column(name = "british_pronounce", length = 100)
     private String britishPronounce;
 
-    @Column(name = "americaPronounce", length = 100)
+    @Column(name = "america_pronounce", length = 100)
     private String americaPronounce;
 
     @Column(name = "pronounce", length = 100)
@@ -40,19 +40,19 @@ public class Word extends UuidPo {
     @Column(name = "popularity", nullable = false)
     private Integer popularity;
 
-    @Column(name = "groupInfo", length = 200)
+    @Column(name = "group_info", length = 200)
     private String groupInfo;
 
     /**
      * 单词的简要描述
      */
-    @Column(name = "shortDesc", length = 500)
+    @Column(name = "short_desc", length = 500)
     private String shortDesc;
 
     /**
      * 单词的详细描述
      */
-    @Column(name = "longDesc", length = 1000)
+    @Column(name = "long_desc", length = 1000)
     private String longDesc;
 
     private  List<MeaningItem> meaningItems;

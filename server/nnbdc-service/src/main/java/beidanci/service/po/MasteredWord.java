@@ -21,10 +21,10 @@ public class MasteredWord extends Po {
     @Id
     private MasteredWordId id;
 
-    @Column(name = "userId")
+    @Column(name = "user_id")
     private User user;
 
-    @Column(name = "masterAtTime", nullable = false)
+    @Column(name = "master_at_time", nullable = false)
     private Date masterAtTime;
 
     /**

@@ -12,7 +12,7 @@ public class MasteredWordId implements java.io.Serializable {
      *
      */
 
-    @Column(name = "userId", nullable = false)
+    @Column(name = "user_id", nullable = false)
     private String userId;
 
     public MasteredWordId(String userId, String wordId) {
@@ -28,7 +28,7 @@ public class MasteredWordId implements java.io.Serializable {
         return userId;
     }
 
-    @Column(name = "wordId", nullable = false)
+    @Column(name = "word_id", nullable = false)
     private String wordId;
 
 

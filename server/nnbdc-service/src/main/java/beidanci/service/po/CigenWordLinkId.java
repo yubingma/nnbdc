@@ -9,10 +9,10 @@ import javax.persistence.Embeddable;
 public class CigenWordLinkId implements Serializable {
 
     private static final long serialVersionUID = 1L;
-    @Column(name = "cigenId", nullable = false, length = 32)
+    @Column(name = "cigen_id", nullable = false, length = 32)
     private String cigenId;
 
-    @Column(name = "wordId", nullable = false, length = 32)
+    @Column(name = "word_id", nullable = false, length = 32)
     private String wordId;
 
     // Constructors

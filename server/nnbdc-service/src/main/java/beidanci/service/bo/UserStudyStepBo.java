@@ -90,7 +90,7 @@ public class UserStudyStepBo extends BaseBo<UserStudyStep> {
      * 清除用户的学习步骤
      */
     public void clearUserStudySteps(String userId) {
-        String sql = "DELETE FROM user_study_step WHERE userId = :userId";
+        String sql = "DELETE FROM user_study_step WHERE user_id = :userId";
         MapSqlParameterSource params = new MapSqlParameterSource("userId", userId);
         namedParameterJdbcTemplate.update(sql, params);
     }
@@ -185,13 +185,13 @@ public class UserStudyStepBo extends BaseBo<UserStudyStep> {
             }
             
             // 构建删除SQL
-            StringBuilder sql = new StringBuilder("DELETE FROM user_study_step WHERE userId = :userId");
+            StringBuilder sql = new StringBuilder("DELETE FROM user_study_step WHERE user_id = :userId");
             Map<String, Object> parameters = new HashMap<>();
             parameters.put("userId", userId);
             
             // 添加过滤条件
             if (filters.containsKey("studyStep")) {
-                sql.append(" AND studyStep = :studyStep");
+                sql.append(" AND study_step = :studyStep");
                 parameters.put("studyStep", filters.get("studyStep"));
             }
             if (filters.containsKey("state")) {

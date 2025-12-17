@@ -950,19 +950,10 @@ public abstract class BaseDao<E extends Po> {
 
     /**
      * 获取关联对象字段的外键列名
-     * 优先使用 @Column 注解指定的列名，否则使用默认规则（字段名 + "Id"）
+     * 优先使用 @Column 注解指定的列名，否则使用默认规则（字段名 + "Id"），并统一转为 snake_case
      */
     private String getForeignKeyColumnName(Field field) {
-        // 优先使用 @Column 注解指定的列名
-        if (field.isAnnotationPresent(Column.class)) {
-            Column column = field.getAnnotation(Column.class);
-            String columnName = column.name();
-            if (!columnName.isEmpty()) {
-                return columnName;
-            }
-        }
-        // 没有 @Column 注解或注解未指定 name，使用默认规则
-        return field.getName() + "Id";
+        return EntityTableInfo.getForeignKeyColumnName(field);
     }
 
     /**
@@ -984,8 +975,9 @@ public abstract class BaseDao<E extends Po> {
             }
         }
         
-        // 如果找不到，直接使用字段名（驼峰格式）
-        return fieldName;
+        // 严格模式：找不到就直接报错，避免默默拼出来一个“看似正确”的列名
+        throw new IllegalArgumentException("无法将字段名映射为列名（严格 snake_case 模式）: entityClass="
+                + valueClass.getName() + ", fieldName=" + fieldName);
     }
 
 }

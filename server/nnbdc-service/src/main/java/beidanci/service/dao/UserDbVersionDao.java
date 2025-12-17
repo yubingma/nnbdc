@@ -38,7 +38,7 @@ public class UserDbVersionDao extends BaseDao<UserDbVersion> {
      * @see #getUserDbVersionWithLock(JdbcTemplate, String) 带锁的查询方法，用于事务中的修改操作
      */
     public int getUserDbVersion(JdbcTemplate jdbcTemplate, String userId) {
-        String sql = "SELECT version FROM user_db_version WHERE userId = :userId";
+        String sql = "SELECT version FROM user_db_version WHERE user_id = :userId";
         MapSqlParameterSource params = new MapSqlParameterSource("userId", userId);
         List<Integer> results = namedParameterJdbcTemplate.query(sql, params, 
             (rs, rowNum) -> rs.getInt("version"));
@@ -58,7 +58,7 @@ public class UserDbVersionDao extends BaseDao<UserDbVersion> {
      */
     public int getUserDbVersionWithLock(JdbcTemplate jdbcTemplate, String userId) {
         // 使用原生SQL的 FOR UPDATE 子句来加行锁
-        String sql = "SELECT version FROM user_db_version WHERE userId = :userId FOR UPDATE";
+        String sql = "SELECT version FROM user_db_version WHERE user_id = :userId FOR UPDATE";
         MapSqlParameterSource params = new MapSqlParameterSource("userId", userId);
         List<Integer> results = namedParameterJdbcTemplate.query(sql, params, 
             (rs, rowNum) -> rs.getInt("version"));
@@ -82,7 +82,7 @@ public class UserDbVersionDao extends BaseDao<UserDbVersion> {
                                           int expectedVersion, int newVersion) {
         // 使用 WHERE 条件中的版本号检查来实现 CAS 语义
         String sql = "UPDATE user_db_version SET version = ? " +
-                     "WHERE userId = ? AND version = ?";
+                     "WHERE user_id = ? AND version = ?";
         int updatedRows = jdbcTemplate.update(sql, newVersion, userId, expectedVersion);
         
         return updatedRows > 0;
@@ -102,12 +102,12 @@ public class UserDbVersionDao extends BaseDao<UserDbVersion> {
         
         if (userCount != null && userCount > 0) {
             // 检查版本记录是否存在
-            String checkVersionSql = "SELECT COUNT(*) FROM user_db_version WHERE userId = :userId";
+            String checkVersionSql = "SELECT COUNT(*) FROM user_db_version WHERE user_id = :userId";
             Integer versionCount = namedParameterJdbcTemplate.queryForObject(checkVersionSql, userParams, Integer.class);
             
             if (versionCount == null || versionCount == 0) {
                 // 创建初始版本记录
-                String insertSql = "INSERT INTO user_db_version (id, userId, version, createTime, updateTime) VALUES (?, ?, ?, NOW(), NOW())";
+                String insertSql = "INSERT INTO user_db_version (id, user_id, version, create_time, update_time) VALUES (?, ?, ?, NOW(), NOW())";
                 String id = Util.uuid();
                 jdbcTemplate.update(insertSql, id, userId, Constants.USER_DB_VERSION_INITIAL);
             }
@@ -122,9 +122,9 @@ public class UserDbVersionDao extends BaseDao<UserDbVersion> {
      * 获取所有用户的当前数据库版本
      */
     public List<Object[]> getAllUserVersions() {
-        String sql = "SELECT udv.userId, udv.version FROM user_db_version udv ORDER BY udv.version DESC";
+        String sql = "SELECT udv.user_id, udv.version FROM user_db_version udv ORDER BY udv.version DESC";
         return jdbcTemplate.query(sql, (rs, rowNum) -> new Object[]{
-            rs.getString("userId"),
+            rs.getString("user_id"),
             rs.getInt("version")
         });
     }
@@ -133,7 +133,7 @@ public class UserDbVersionDao extends BaseDao<UserDbVersion> {
      * 统计用户异常日志数量
      */
     public Integer countInvalidLogs(String userId, Integer currentVersion) {
-        String sql = "SELECT COUNT(*) FROM user_db_log WHERE userId = :userId AND version > :currentVersion";
+        String sql = "SELECT COUNT(*) FROM user_db_log WHERE user_id = :userId AND version > :currentVersion";
         MapSqlParameterSource params = new MapSqlParameterSource("userId", userId).addValue("currentVersion", currentVersion);
         return namedParameterJdbcTemplate.queryForObject(sql, params, Integer.class);
     }
@@ -142,7 +142,7 @@ public class UserDbVersionDao extends BaseDao<UserDbVersion> {
      * 删除异常日志
      */
     public void deleteInvalidLogs(String userId, Integer currentVersion) {
-        String sql = "DELETE FROM user_db_log WHERE userId = ? AND version > ?";
+        String sql = "DELETE FROM user_db_log WHERE user_id = ? AND version > ?";
         jdbcTemplate.update(sql, userId, currentVersion);
     }
 }

@@ -72,8 +72,8 @@ public class MasteredWordBo extends BaseBo<MasteredWord> {
     }
 
     public PagedResults<MasteredWord> getMasteredWordsForAPage2(int fromIndex, int pageSize, User user) {
-        String sql = "SELECT * FROM mastered_word WHERE userId = :userId " +
-                "ORDER BY masterAtTime ASC, wordId ASC";
+        String sql = "SELECT * FROM mastered_word WHERE user_id = :userId " +
+                "ORDER BY master_at_time ASC, word_id ASC";
         PagedResults<MasteredWord> learningWords = pagedQuery2(sql, fromIndex, pageSize,
                 new ImmutablePair<>("userId", user.getId()));
         return learningWords;
@@ -135,7 +135,7 @@ public class MasteredWordBo extends BaseBo<MasteredWord> {
         if (word == null) {
             return -1;
         }
-        String sql = "SELECT * FROM mastered_word WHERE userId = :userId AND wordId = :wordId";
+        String sql = "SELECT * FROM mastered_word WHERE user_id = :userId AND word_id = :wordId";
         MasteredWord masteredWord = queryUnique(sql,
                 new ImmutablePair<>("userId", userId),
                 new ImmutablePair<>("wordId", word.getId()));
@@ -144,8 +144,8 @@ public class MasteredWordBo extends BaseBo<MasteredWord> {
         }
 
         // 转换为 SQL
-        String countSql = "SELECT COUNT(*) FROM mastered_word WHERE userId = :userId " +
-                "AND (masterAtTime < :masterAtTime OR (masterAtTime = :masterAtTime AND wordId <= :wordId))";
+        String countSql = "SELECT COUNT(*) FROM mastered_word WHERE user_id = :userId " +
+                "AND (master_at_time < :masterAtTime OR (master_at_time = :masterAtTime AND word_id <= :wordId))";
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("userId", userId);
         params.addValue("masterAtTime", masteredWord.getMasterAtTime());
@@ -160,16 +160,16 @@ public class MasteredWordBo extends BaseBo<MasteredWord> {
      * 获取用户所有已掌握单词的DTO列表，用于全量同步
      */
     public List<MasteredWordDto> getMasteredWordDtosOfUser(String userId) {
-        String sql = "SELECT userId, wordId, masterAtTime, createTime, updateTime FROM mastered_word WHERE userId = :userId ORDER BY masterAtTime, wordId";
+        String sql = "SELECT user_id, word_id, master_at_time, create_time, update_time FROM mastered_word WHERE user_id = :userId ORDER BY master_at_time, word_id";
         MapSqlParameterSource params = new MapSqlParameterSource("userId", userId);
         
         List<MasteredWordDto> masteredWordDtos = namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> {
             MasteredWordDto masteredWordDto = new MasteredWordDto();
-            masteredWordDto.setUserId(rs.getString("userId"));
-            masteredWordDto.setWordId(rs.getString("wordId"));
-            masteredWordDto.setMasterAtTime(rs.getTimestamp("masterAtTime"));
-            masteredWordDto.setCreateTime(rs.getTimestamp("createTime"));
-            masteredWordDto.setUpdateTime(rs.getTimestamp("updateTime"));
+            masteredWordDto.setUserId(rs.getString("user_id"));
+            masteredWordDto.setWordId(rs.getString("word_id"));
+            masteredWordDto.setMasterAtTime(rs.getTimestamp("master_at_time"));
+            masteredWordDto.setCreateTime(rs.getTimestamp("create_time"));
+            masteredWordDto.setUpdateTime(rs.getTimestamp("update_time"));
             return masteredWordDto;
         });
         return masteredWordDtos;
@@ -189,17 +189,17 @@ public class MasteredWordBo extends BaseBo<MasteredWord> {
             }
             
             // 构建删除SQL
-            StringBuilder sql = new StringBuilder("DELETE FROM mastered_word WHERE userId = :userId");
+            StringBuilder sql = new StringBuilder("DELETE FROM mastered_word WHERE user_id = :userId");
             Map<String, Object> parameters = new HashMap<>();
             parameters.put("userId", userId);
             
             // 添加过滤条件
             if (filters.containsKey("wordId")) {
-                sql.append(" AND wordId = :wordId");
+                sql.append(" AND word_id = :wordId");
                 parameters.put("wordId", filters.get("wordId"));
             }
             if (filters.containsKey("masterAtTime")) {
-                sql.append(" AND masterAtTime = :masterAtTime");
+                sql.append(" AND master_at_time = :masterAtTime");
                 parameters.put("masterAtTime", filters.get("masterAtTime"));
             }
             

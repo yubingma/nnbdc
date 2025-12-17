@@ -10,13 +10,13 @@ public class Event extends UuidPo {
 
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "eventType", nullable = false, length = 30)
+    @Column(name = "event_type", nullable = false, length = 30)
     private EventType eventType;
 
-    @Column(name = "userId")
+    @Column(name = "user_id")
     private User user;
 
-    @Column(name = "wordImageId")
+    @Column(name = "word_image_id")
     private WordImage wordImage;
 
     public Sentence getSentence() {
@@ -27,10 +27,10 @@ public class Event extends UuidPo {
         this.sentence = sentence;
     }
 
-    @Column(name = "sentenceId")
+    @Column(name = "sentence_id")
     private Sentence sentence;
 
-    @Column(name = "wordShortDescChineseId")
+    @Column(name = "word_short_desc_chinese_id")
     private WordShortDescChinese wordShortDescChinese;
 
     public Event(EventType eventType, User user, WordImage wordImage) {

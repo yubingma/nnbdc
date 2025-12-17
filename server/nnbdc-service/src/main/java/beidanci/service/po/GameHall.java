@@ -8,22 +8,22 @@ import javax.persistence.Table;
 @Table(name = "game_hall")
 public class GameHall extends UuidPo  {
 
-    @Column(name = "gameType", nullable = false)
+    @Column(name = "game_type", nullable = false)
     private String gameType;
 
-    @Column(name = "hallName", nullable = false)
+    @Column(name = "hall_name", nullable = false)
     private String hallName;
 
-    @Column(name = "dictGroupId")
+    @Column(name = "dict_group_id")
     private DictGroup dictGroup;
 
-    @Column(name = "hallGroupId")
+    @Column(name = "hall_group_id")
     private HallGroup hallGroup;
 
-    @Column(name = "basePoint")
+    @Column(name = "base_point")
     private Integer basePoint;
 
-    @Column(name = "displayOrder")
+    @Column(name = "display_order")
     private Integer displayOrder;
 
     // Constructors

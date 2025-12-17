@@ -32,21 +32,21 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
     /** 获取指定词书的所有单词释义项，通用词典ID为'0' */
     public List<MeaningItemDto> getMeaningItemsOfDict(String dictId) {
         // 通用词典现在是数据库中的实际记录，统一查询
-        String sql = "SELECT id, ciXing, meaning, wordId, dictId, popularity, createTime, updateTime FROM meaning_item WHERE dictId = :dictId";
+        String sql = "SELECT id, ci_xing, meaning, word_id, dict_id, popularity, create_time, update_time FROM meaning_item WHERE dict_id = :dictId";
         MapSqlParameterSource params = new MapSqlParameterSource("dictId", dictId);
         
         return namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> {
             MeaningItemDto meaningItemDto = new MeaningItemDto();
             meaningItemDto.setId(rs.getString("id"));
-            meaningItemDto.setCiXing(rs.getString("ciXing"));
+            meaningItemDto.setCiXing(rs.getString("ci_xing"));
             meaningItemDto.setMeaning(rs.getString("meaning"));
-            meaningItemDto.setWordId(rs.getString("wordId"));
-            meaningItemDto.setDictId(rs.getString("dictId"));
+            meaningItemDto.setWordId(rs.getString("word_id"));
+            meaningItemDto.setDictId(rs.getString("dict_id"));
             // 处理 popularity 可能为 NULL 的情况，默认值为 999
             Integer popularity = rs.getObject("popularity", Integer.class);
             meaningItemDto.setPopularity(popularity != null ? popularity : 999);
-            meaningItemDto.setCreateTime(rs.getTimestamp("createTime"));
-            meaningItemDto.setUpdateTime(rs.getTimestamp("updateTime"));
+            meaningItemDto.setCreateTime(rs.getTimestamp("create_time"));
+            meaningItemDto.setUpdateTime(rs.getTimestamp("update_time"));
             return meaningItemDto;
         });
     }
@@ -60,20 +60,20 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
         }
 
         // 使用原生SQL一次性取回所有候选，再在内存中按 word 聚合取第一条
-        String sql = "SELECT id, ciXing, meaning, wordId, dictId, popularity, createTime, updateTime FROM meaning_item " +
-                     "WHERE dictId IS NOT NULL AND wordId IN (:ids) ORDER BY updateTime DESC";
+        String sql = "SELECT id, ci_xing, meaning, word_id, dict_id, popularity, create_time, update_time FROM meaning_item " +
+                     "WHERE dict_id IS NOT NULL AND word_id IN (:ids) ORDER BY update_time DESC";
         MapSqlParameterSource params = new MapSqlParameterSource("ids", wordIds);
         List<MeaningItemDto> allResults = namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> {
             MeaningItemDto dto = new MeaningItemDto();
             dto.setId(rs.getString("id"));
-            dto.setCiXing(rs.getString("ciXing"));
+            dto.setCiXing(rs.getString("ci_xing"));
             dto.setMeaning(rs.getString("meaning"));
-            dto.setWordId(rs.getString("wordId"));
-            dto.setDictId(rs.getString("dictId"));
+            dto.setWordId(rs.getString("word_id"));
+            dto.setDictId(rs.getString("dict_id"));
             Integer popularity = rs.getObject("popularity", Integer.class);
             dto.setPopularity(popularity != null ? popularity : 999);
-            dto.setCreateTime(rs.getTimestamp("createTime"));
-            dto.setUpdateTime(rs.getTimestamp("updateTime"));
+            dto.setCreateTime(rs.getTimestamp("create_time"));
+            dto.setUpdateTime(rs.getTimestamp("update_time"));
             return dto;
         });
         
@@ -118,11 +118,11 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
      */
     public int supplementCommonMeanings() {
         String sql =
-                "INSERT INTO meaning_item (id, ciXing, meaning, wordId, dictId, popularity, createTime, updateTime) " +
-                "SELECT REPLACE(UUID(),'-',''), mi.ciXing, mi.meaning, mi.wordId, '0', mi.popularity, NOW(6), NOW(6) " +
+                "INSERT INTO meaning_item (id, ci_xing, meaning, word_id, dict_id, popularity, create_time, update_time) " +
+                "SELECT REPLACE(UUID(),'-',''), mi.ci_xing, mi.meaning, mi.word_id, '0', mi.popularity, NOW(6), NOW(6) " +
                 "FROM meaning_item mi " +
-                "LEFT JOIN meaning_item cm ON cm.wordId = mi.wordId AND cm.dictId = '0' " +
-                "WHERE mi.dictId != '0' AND cm.id IS NULL";
+                "LEFT JOIN meaning_item cm ON cm.word_id = mi.word_id AND cm.dict_id = '0' " +
+                "WHERE mi.dict_id != '0' AND cm.id IS NULL";
         return namedParameterJdbcTemplate.getJdbcTemplate().update(sql);
     }
 
@@ -134,15 +134,15 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
      * 查找缺少释义项的单词
      */
     public List<String> findWordsWithoutMeanings(String dictId) {
-        String sql = "SELECT dw.wordId " +
+        String sql = "SELECT dw.word_id " +
                 "FROM dict_word dw " +
-                "WHERE dw.dictId = :dictId " +
-                "AND dw.wordId NOT IN (" +
-                "    SELECT mi.wordId " +
+                "WHERE dw.dict_id = :dictId " +
+                "AND dw.word_id NOT IN (" +
+                "    SELECT mi.word_id " +
                 "    FROM meaning_item mi " +
-                "    WHERE mi.dictId = :dictId" +
+                "    WHERE mi.dict_id = :dictId" +
                 ")";
         MapSqlParameterSource params = new MapSqlParameterSource("dictId", dictId);
-        return namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> rs.getString("wordId"));
+        return namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> rs.getString("word_id"));
     }
 }

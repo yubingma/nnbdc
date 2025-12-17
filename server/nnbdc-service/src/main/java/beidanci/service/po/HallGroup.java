@@ -11,13 +11,13 @@ import javax.persistence.Table;
 @Table(name = "hall_group")
 public class HallGroup extends UuidPo {
 
-    @Column(name = "gameType", length = 100)
+    @Column(name = "game_type", length = 100)
     private String gameType;
 
-    @Column(name = "groupName", length = 100)
+    @Column(name = "group_name", length = 100)
     private String groupName;
 
-    @Column(name = "displayOrder", nullable = false)
+    @Column(name = "display_order", nullable = false)
     private Integer displayOrder;
 
     @OrderBy("displayOrder asc")

@@ -47,7 +47,7 @@ public class FeatureRequestBo extends BaseBo<FeatureRequest> {
      * 获取所有需求，按投票数降序排列
      */
     public List<FeatureRequest> getAllFeatureRequests() {
-        String sql = "SELECT * FROM feature_request ORDER BY voteCount DESC, createTime DESC";
+        String sql = "SELECT * FROM feature_request ORDER BY vote_count DESC, create_time DESC";
         List<FeatureRequest> requests = namedParameterJdbcTemplate.query(sql, 
             new EntityRowMapper<>(FeatureRequest.class));
         
@@ -127,7 +127,7 @@ public class FeatureRequestBo extends BaseBo<FeatureRequest> {
             }
             
             // 检查用户是否已经投票
-            String checkSql = "SELECT * FROM feature_request_vote WHERE requestId = :requestId AND userId = :userId";
+            String checkSql = "SELECT * FROM feature_request_vote WHERE request_id = :requestId AND user_id = :userId";
             MapSqlParameterSource params = new MapSqlParameterSource();
             params.addValue("requestId", requestId);
             params.addValue("userId", user.getId());
@@ -144,7 +144,7 @@ public class FeatureRequestBo extends BaseBo<FeatureRequest> {
             vote.setUser(user);
             // 使用 BaseBo 的 createEntity 方法，需要通过 FeatureRequestVoteBo
             // 或者直接使用 JDBC
-            String insertSql = "INSERT INTO feature_request_vote (id, requestId, userId, createTime, updateTime) VALUES (:id, :requestId, :userId, :createTime, :updateTime)";
+            String insertSql = "INSERT INTO feature_request_vote (id, request_id, user_id, create_time, update_time) VALUES (:id, :requestId, :userId, :createTime, :updateTime)";
             MapSqlParameterSource voteParams = new MapSqlParameterSource();
             voteParams.addValue("id", Util.uuid());
             voteParams.addValue("requestId", request.getId());
@@ -168,7 +168,7 @@ public class FeatureRequestBo extends BaseBo<FeatureRequest> {
      * 检查用户是否已投票
      */
     public boolean hasUserVoted(String requestId, User user) {
-        String sql = "SELECT * FROM feature_request_vote WHERE requestId = :requestId AND userId = :userId";
+        String sql = "SELECT * FROM feature_request_vote WHERE request_id = :requestId AND user_id = :userId";
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("requestId", requestId);
         params.addValue("userId", user.getId());
@@ -194,12 +194,12 @@ public class FeatureRequestBo extends BaseBo<FeatureRequest> {
      */
     public void deleteFeatureRequest(String requestId) {
         // 删除相关的投票记录
-        String deleteVotesSql = "DELETE FROM feature_request_vote WHERE requestId = :requestId";
+        String deleteVotesSql = "DELETE FROM feature_request_vote WHERE request_id = :requestId";
         MapSqlParameterSource voteParams = new MapSqlParameterSource("requestId", requestId);
         namedParameterJdbcTemplate.update(deleteVotesSql, voteParams);
         
         // 删除相关的举报记录
-        String deleteReportsSql = "DELETE FROM feature_request_report WHERE featureRequestId = :requestId";
+        String deleteReportsSql = "DELETE FROM feature_request_report WHERE feature_request_id = :requestId";
         MapSqlParameterSource reportParams = new MapSqlParameterSource("requestId", requestId);
         namedParameterJdbcTemplate.update(deleteReportsSql, reportParams);
         

@@ -71,8 +71,8 @@ public class GameHallBo extends BaseBo<GameHall> {
         List<Dict> dicts = dictGroup.getAllDicts();
         List<String> dictIds = dicts.stream().map(d -> d.getId()).collect(Collectors.toList());
         String sql = "SELECT DISTINCT w.* FROM word w " +
-                "INNER JOIN dict_word dw ON dw.wordId = w.id " +
-                "WHERE dw.dictId IN (:dictIds)";
+                "INNER JOIN dict_word dw ON dw.word_id = w.id " +
+                "WHERE dw.dict_id IN (:dictIds)";
         MapSqlParameterSource params = new MapSqlParameterSource("dictIds", dictIds);
         List<Word> words = namedParameterJdbcTemplate.query(sql, params, 
             new EntityRowMapper<>(Word.class));
@@ -82,20 +82,20 @@ public class GameHallBo extends BaseBo<GameHall> {
         Map<String, List<MeaningItemVo>> meaningItemsByWordId = new HashMap<>();
         if (!wordIds.isEmpty()) {
             // 优先查询通用词典的释义项（dictId = '0'）
-            String meaningSql = "SELECT id, ciXing, meaning, wordId, dictId, popularity, createTime, updateTime FROM meaning_item " +
-                    "WHERE wordId IN (:wordIds) AND dictId = '0' ORDER BY popularity ASC";
+            String meaningSql = "SELECT id, ci_xing, meaning, word_id, dict_id, popularity, create_time, update_time FROM meaning_item " +
+                    "WHERE word_id IN (:wordIds) AND dict_id = '0' ORDER BY popularity ASC";
             MapSqlParameterSource meaningParams = new MapSqlParameterSource("wordIds", wordIds);
             List<MeaningItemDto> commonMeaningItems = namedParameterJdbcTemplate.query(meaningSql, meaningParams, (rs, rowNum) -> {
                 MeaningItemDto dto = new MeaningItemDto();
                 dto.setId(rs.getString("id"));
-                dto.setCiXing(rs.getString("ciXing"));
+                dto.setCiXing(rs.getString("ci_xing"));
                 dto.setMeaning(rs.getString("meaning"));
-                dto.setWordId(rs.getString("wordId"));
-                dto.setDictId(rs.getString("dictId"));
+                dto.setWordId(rs.getString("word_id"));
+                dto.setDictId(rs.getString("dict_id"));
                 Integer popularity = rs.getObject("popularity", Integer.class);
                 dto.setPopularity(popularity != null ? popularity : 999);
-                dto.setCreateTime(rs.getTimestamp("createTime"));
-                dto.setUpdateTime(rs.getTimestamp("updateTime"));
+                dto.setCreateTime(rs.getTimestamp("create_time"));
+                dto.setUpdateTime(rs.getTimestamp("update_time"));
                 return dto;
             });
             

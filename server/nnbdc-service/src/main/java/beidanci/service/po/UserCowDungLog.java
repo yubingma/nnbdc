@@ -13,16 +13,16 @@ import beidanci.api.model.UserCowDungLogDto;
 @Table(name = "user_cow_dung_log")
 public class UserCowDungLog extends UuidPo {
 
-    @Column(name = "userId")
+    @Column(name = "user_id")
     private User user;
 
     @Column(name = "delta", nullable = false)
     private Integer delta;
 
-    @Column(name = "cowDung", nullable = false)
+    @Column(name = "cow_dung", nullable = false)
     private Integer cowDung;
 
-    @Column(name = "theTime", nullable = false)
+    @Column(name = "the_time", nullable = false)
     private Date theTime;
 
     @Column(name = "reason", nullable = false)

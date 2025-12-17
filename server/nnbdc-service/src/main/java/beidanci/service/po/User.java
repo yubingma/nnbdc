@@ -16,72 +16,72 @@ import beidanci.service.util.Util;
 import beidanci.util.Utils;
 
 @Entity
-@Table(name = "user", indexes = { @Index(name = "idx_userName", columnList = "userName", unique = true) })
+@Table(name = "user", indexes = { @Index(name = "idx_userName", columnList = "user_name", unique = true) })
 public class User extends UuidPo {
 
 
-    @Column(name = "userName", length = 100, unique = true)
+    @Column(name = "user_name", length = 100, unique = true)
     private String userName;
-    @Column(name = "nickName", length = 100)
+    @Column(name = "nick_name", length = 100)
     private String nickName;
     @Column(name = "password", length = 64)
     private String password;
-    @Column(name = "lastLoginTime")
+    @Column(name = "last_login_time")
     private Date lastLoginTime;
-    @Column(name = "lastShareTime")
+    @Column(name = "last_share_time")
     private Date lastShareTime;
     @Column(name = "email", length = 100, unique = true)
     private String email;
 
     // 微信相关字段
-    @Column(name = "wechatOpenId", length = 100, unique = true)
+    @Column(name = "wechat_open_id", length = 100, unique = true)
     private String wechatOpenId;
     
-    @Column(name = "wechatUnionId", length = 100)
+    @Column(name = "wechat_union_id", length = 100)
     private String wechatUnionId;
     
-    @Column(name = "wechatNickname", length = 200)
+    @Column(name = "wechat_nickname", length = 200)
     private String wechatNickname;
     
-    @Column(name = "wechatAvatar", length = 500)
+    @Column(name = "wechat_avatar", length = 500)
     private String wechatAvatar;
 
-    @Column(name = "lastLearningDate")
+    @Column(name = "last_learning_date")
     private Date lastLearningDate;
-    @Column(name = "learnedDays", nullable = false)
+    @Column(name = "learned_days", nullable = false)
     private Integer learnedDays;
 
     /**
      * 正在学习的单词在今日学习单词列表中的序号
      */
-    @Column(name = "lastLearningPosition")
+    @Column(name = "last_learning_position")
     private Integer lastLearningPosition;
 
-    @Column(name = "lastLearningMode")
+    @Column(name = "last_learning_mode")
     private Integer lastLearningMode;
-    @Column(name = "learningFinished", nullable = false)
+    @Column(name = "learning_finished", nullable = false)
     private Boolean learningFinished;
-    @Column(name = "inviteAwardTaken", nullable = false)
+    @Column(name = "invite_award_taken", nullable = false)
     private Boolean inviteAwardTaken;
-    @Column(name = "isSuperAdmin", nullable = false)
+    @Column(name = "is_super_admin", nullable = false)
     private Boolean isSuperAdmin;
-    @Column(name = "isAdmin", nullable = false)
+    @Column(name = "is_admin", nullable = false)
     private Boolean isAdmin;
-    @Column(name = "isInputor", nullable = false)
+    @Column(name = "is_inputor", nullable = false)
     private Boolean isInputor;
-    @Column(name = "isSysUser", nullable = false)
+    @Column(name = "is_sys_user", nullable = false)
     private Boolean isSysUser;
-    @Column(name = "autoPlaySentence", nullable = false)
+    @Column(name = "auto_play_sentence", nullable = false)
     private Boolean autoPlaySentence;
-    @Column(name = "wordsPerDay", nullable = false)
+    @Column(name = "words_per_day", nullable = false)
     private Integer wordsPerDay;
-    @Column(name = "dakaDayCount", nullable = false)
+    @Column(name = "daka_day_count", nullable = false)
     private Integer dakaDayCount;
-    @Column(name = "masteredWords", nullable = false)
+    @Column(name = "mastered_words", nullable = false)
     private Integer masteredWordsCount;
-    @Column(name = "cowDung", nullable = false)
+    @Column(name = "cow_dung", nullable = false)
     private Integer cowDung;
-    @Column(name = "throwDiceChance", nullable = false)
+    @Column(name = "throw_dice_chance", nullable = false)
     private Integer throwDiceChance;
 
     public Integer getGameScore() {
@@ -92,18 +92,18 @@ public class User extends UuidPo {
         this.gameScore = gameScore;
     }
 
-    @Column(name = "gameScore", nullable = false)
+    @Column(name = "game_score", nullable = false)
     private Integer gameScore;
 
     /**
      * 是否直接显示备选答案
      */
-    @Column(name = "showAnswersDirectly", nullable = false)
+    @Column(name = "show_answers_directly", nullable = false)
     private Boolean showAnswersDirectly;
     /**
      * 是否自动朗读单词发音
      */
-    @Column(name = "autoPlayWord", nullable = false)
+    @Column(name = "auto_play_word", nullable = false)
     private Boolean autoPlayWord;
 
     @OrderBy("dictId asc")
@@ -125,10 +125,10 @@ public class User extends UuidPo {
     private  List<UserScoreLog> userScoreLogs;
     @OrderBy("theDate asc")
     private  List<UserSnapshotDaily> userSnapshotDailys;
-    @Column(name = "invitedById")
+    @Column(name = "invited_by_id")
     private User invitedBy;
 
-    @Column(name = "levelId")
+    @Column(name = "level_id")
     private Level level;
 
     private  List<User> invitedUsers;
@@ -157,38 +157,38 @@ public class User extends UuidPo {
     /**
      * 连续打卡天数
      */
-    @Column(name = "continuousDakaDayCount", nullable = false)
+    @Column(name = "continuous_daka_day_count", nullable = false)
     private Integer continuousDakaDayCount;
 
     /**
      * 最大连续打卡天数
      */
-    @Column(name = "maxContinuousDakaDayCount", nullable = false)
+    @Column(name = "max_continuous_daka_day_count", nullable = false)
     private Integer maxContinuousDakaDayCount;
 
     /**
      * 最近一次打卡的日期
      */
-    @Column(name = "lastDakaDate", nullable = true)
+    @Column(name = "last_daka_date", nullable = true)
     private Date lastDakaDate;
 
     /**
      * 打卡积分
      */
-    @Column(name = "dakaScore", nullable = false)
+    @Column(name = "daka_score", nullable = false)
     private Integer dakaScore;
 
     /**
      * 是否显示[都不对]的选项（增加选择题难度）
      */
-    @Column(name = "enableAllWrong", nullable = false)
+    @Column(name = "enable_all_wrong", nullable = false)
     private Boolean enableAllWrong;
 
 
     /**
      * ASR答对判定规则：ONE/HALF/ALL
      */
-    @Column(name = "asrPassRule", length = 10)
+    @Column(name = "asr_pass_rule", length = 10)
     private String asrPassRule;
 
     /**
@@ -199,31 +199,31 @@ public class User extends UuidPo {
     /**
      * iOS是否为会员
      */
-    @Column(name = "isPremiumIos", nullable = false)
+    @Column(name = "is_premium_ios", nullable = false)
     private Boolean isPremiumIos;
 
     /**
      * iOS订阅到期时间
      */
-    @Column(name = "subscriptionExpireDateIos", nullable = true)
+    @Column(name = "subscription_expire_date_ios", nullable = true)
     private Date subscriptionExpireDateIos;
 
     /**
      * iOS订阅类型：monthly/annual
      */
-    @Column(name = "subscriptionTypeIos", length = 20, nullable = true)
+    @Column(name = "subscription_type_ios", length = 20, nullable = true)
     private String subscriptionTypeIos;
 
     /**
      * iOS订阅状态：active/expired/cancelled
      */
-    @Column(name = "subscriptionStatusIos", length = 20, nullable = true)
+    @Column(name = "subscription_status_ios", length = 20, nullable = true)
     private String subscriptionStatusIos;
 
     /**
      * iOS最后验证的收据数据（用于恢复购买）
      */
-    @Column(name = "lastReceiptDataIos", columnDefinition = "TEXT", nullable = true)
+    @Column(name = "last_receipt_data_ios", columnDefinition = "TEXT", nullable = true)
     private String lastReceiptDataIos;
 
     public Boolean getEnableAllWrong() {

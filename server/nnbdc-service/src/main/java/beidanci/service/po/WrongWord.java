@@ -23,7 +23,7 @@ public class WrongWord extends Po {
     @Id
     private WrongWordId id;
 
-    @Column(name = "userId")
+    @Column(name = "user_id")
     private User user;
 
     /**

@@ -25,7 +25,7 @@ public class LoginLogBo extends BaseBo<LoginLog> {
 
     public void cleanLoginLogs(User user) {
         // 后面的单词前移
-        String sql = "DELETE FROM login_log WHERE userId = :userId";
+        String sql = "DELETE FROM login_log WHERE user_id = :userId";
         MapSqlParameterSource params = new MapSqlParameterSource("userId", user.getId());
         namedParameterJdbcTemplate.update(sql, params);
     }

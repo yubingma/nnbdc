@@ -11,10 +11,10 @@ import javax.persistence.Table;
 @Table(name = "user_db_issue")
 public class UserDbIssue extends UuidPo {
 
-    @Column(name = "userId")
+    @Column(name = "user_id")
     private User user;
 
-    @Column(name = "issueType", nullable = false, length = 64)
+    @Column(name = "issue_type", nullable = false, length = 64)
     private String issueType;
 
     @Column(name = "details", nullable = true, length = 2000)

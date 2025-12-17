@@ -86,7 +86,7 @@ public class UserOperBo extends BaseBo<UserOper> {
      * @return 操作历史记录DTO列表
      */
     public List<UserOperDto> getUserOperDtosOfUser(String userId) {
-        String sql = "SELECT * FROM user_oper WHERE userId = :userId ORDER BY operTime DESC";
+        String sql = "SELECT * FROM user_oper WHERE user_id = :userId ORDER BY oper_time DESC";
         MapSqlParameterSource params = new MapSqlParameterSource("userId", userId);
         List<UserOper> opers = namedParameterJdbcTemplate.query(sql, params, 
             new EntityRowMapper<>(UserOper.class));
@@ -166,17 +166,17 @@ public class UserOperBo extends BaseBo<UserOper> {
             }
             
             // 构建删除SQL
-            StringBuilder sql = new StringBuilder("DELETE FROM user_oper WHERE userId = :userId");
+            StringBuilder sql = new StringBuilder("DELETE FROM user_oper WHERE user_id = :userId");
             Map<String, Object> parameters = new HashMap<>();
             parameters.put("userId", userId);
             
             // 添加过滤条件
             if (filters.containsKey("operType")) {
-                sql.append(" AND operType = :operType");
+                sql.append(" AND oper_type = :operType");
                 parameters.put("operType", filters.get("operType"));
             }
             if (filters.containsKey("operTime")) {
-                sql.append(" AND operTime = :operTime");
+                sql.append(" AND oper_time = :operTime");
                 parameters.put("operTime", filters.get("operTime"));
             }
             if (filters.containsKey("remark")) {

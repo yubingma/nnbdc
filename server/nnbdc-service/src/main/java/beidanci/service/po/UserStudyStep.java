@@ -17,11 +17,11 @@ public class UserStudyStep extends Po {
     @Id
     private UserStudyStepId id;
 
-    @Column(name = "userId")
+    @Column(name = "user_id")
     private User user;
 
 
-    @Column(name = "studyStep", nullable = false, updatable = false, insertable = false)
+    @Column(name = "study_step", nullable = false, updatable = false, insertable = false)
     @Enumerated(EnumType.STRING)
     private StudyStep studyStep;
 
