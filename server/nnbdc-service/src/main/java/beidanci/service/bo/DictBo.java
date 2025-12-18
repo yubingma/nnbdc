@@ -215,10 +215,14 @@ public class DictBo extends BaseBo<Dict> {
     }
 
     public Dict getRawWordDict(User user) {
-        Dict exam = new Dict();
-        exam.setOwner(user);
-        exam.setName("生词本");
-        return queryUnique(exam);
+        // 注意：BaseDao.pagedQuery 不支持用关联对象字段（owner）作为查询条件，否则会触发 fail-fast。
+        // 生词本按“owner_id + name=生词本”唯一定位。
+        String sql = "SELECT * FROM dict WHERE owner_id = :ownerId AND name = :name LIMIT 1";
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        params.addValue("ownerId", user.getId());
+        params.addValue("name", "生词本");
+        List<Dict> results = namedParameterJdbcTemplate.query(sql, params, new EntityRowMapper<>(Dict.class));
+        return results.isEmpty() ? null : results.get(0);
     }
 
     /**
