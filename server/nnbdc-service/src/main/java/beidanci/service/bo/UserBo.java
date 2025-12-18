@@ -193,12 +193,10 @@ public class UserBo extends BaseBo<User> {
             sysUser_deleted = getByUserName(Constants.SYS_USER_DELETED, openNewSession);
 
             if (sysUser_deleted == null) {
-                sysUser_deleted = Util.genNewUser(Constants.SYS_USER_DELETED, "YouCantGuessIt~", "已删除用户(虚拟)", null,
+                sysUser_deleted = Util.createNewUser(Constants.SYS_USER_DELETED, "YouCantGuessIt~", "已删除用户(虚拟)", null,
                         null, sysParamBo,
                         dictBo, this, learningDictBo, true);
-                createEntity(sysUser_deleted);
             }
-
         }
         return sysUser_deleted;
     }
@@ -528,11 +526,13 @@ public class UserBo extends BaseBo<User> {
                 jdbcTemplate.update(sql, user.getId());
 
                 // 删除用户回复的帖子
-                sql = "DELETE FROM forum_post_reply WHERE user_id = ?";
+                // 历史库已执行列名 snake_case 修复：postReplyerId -> post_replyer_id
+                sql = "DELETE FROM forum_post_reply WHERE post_replyer_id = ?";
                 jdbcTemplate.update(sql, user.getId());
 
                 // 删除用户的帖子
-                sql = "DELETE FROM forum_post WHERE user_id = ?";
+                // 历史库已执行列名 snake_case 修复：postCreatorId -> post_creator_id
+                sql = "DELETE FROM forum_post WHERE post_creator_id = ?";
                 jdbcTemplate.update(sql, user.getId());
 
                 // 删除用户报错
@@ -641,7 +641,7 @@ public class UserBo extends BaseBo<User> {
                     user = getByUserName(userName, false);
                     if (user == null) {
                         // 如果用户不存在，创建一个新用户
-                        user = Util.genNewUser(userName + "@example.com", password, userName, userName + "@example.com",
+                        user = Util.createNewUser(userName + "@example.com", password, userName, userName + "@example.com",
                                 null, sysParamBo,
                                 dictBo, this, learningDictBo, false);
                         user.setWordsPerDay(20);
@@ -661,7 +661,7 @@ public class UserBo extends BaseBo<User> {
                     } else {
                         // 如果Email对应的账户不存在，自动创建账户
                         String nickname = email != null && email.contains("@") ? email.split("@")[0] : "user";
-                        user = Util.genNewUser(email, password, nickname, email, null, sysParamBo,
+                        user = Util.createNewUser(email, password, nickname, email, null, sysParamBo,
                                 dictBo, this, learningDictBo, false);
                         user.setWordsPerDay(20);
                         try {
@@ -708,7 +708,7 @@ public class UserBo extends BaseBo<User> {
             // 密码设为空字符串（CS架构下不再使用密码，登录后自动登录）
             String nickname = email != null && email.contains("@") ? email.split("@")[0] : "user";
             try {
-                user = Util.genNewUser(email, "", nickname, email, null, sysParamBo,
+                user = Util.createNewUser(email, "", nickname, email, null, sysParamBo,
                         dictBo, this, learningDictBo, false);
                 user.setWordsPerDay(20);
                 // 注意：genNewUser 内部已经调用了 createEntity，所以这里只需要更新 wordsPerDay

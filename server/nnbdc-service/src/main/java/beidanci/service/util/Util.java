@@ -615,7 +615,7 @@ public class Util {
         return request.getHeader("User-Agent");
     }
 
-    public static User genNewUser(String userName, String password, String nickName, String email, User invitedBy,
+    public static User createNewUser(String userName, String password, String nickName, String email, User invitedBy,
             SysParamBo sysParamBo, DictBo dictBo, UserBo userBo, LearningDictBo learningDictBo, boolean isSysUser) {
         User user = new User();
         user.setUserName(userName.toLowerCase());
