@@ -16,4 +16,5 @@ Previous preparation error: The developer disk image could not be mounted on thi
 生产数据库导入到本地后:
 bdc数据库sys_param在本机的特殊配置:
 imgBaseDir	/opt/homebrew/opt/nginx/html/img
-create database bdc CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;
+-- PostgreSQL创建数据库命令:
+-- CREATE DATABASE bdc WITH ENCODING 'UTF8' LC_COLLATE='en_US.UTF-8' LC_CTYPE='en_US.UTF-8';

@@ -36,7 +36,7 @@ export ALIYUN_SMS_ACCESS_KEY_SECRET=your_access_key_secret
 
 ### 3. 数据库迁移
 
-执行数据库迁移脚本：
+执行数据库迁移脚本（PostgreSQL语法）：
 ```sql
 -- 创建短信验证码表
 CREATE TABLE IF NOT EXISTS sms_verification_code (
@@ -44,14 +44,16 @@ CREATE TABLE IF NOT EXISTS sms_verification_code (
     phone VARCHAR(20) NOT NULL,
     code VARCHAR(6) NOT NULL,
     type VARCHAR(20) NOT NULL,
-    expire_time DATETIME NOT NULL,
+    expire_time TIMESTAMP NOT NULL,
     used BOOLEAN DEFAULT FALSE,
-    create_time DATETIME NOT NULL,
-    update_time DATETIME NOT NULL,
-    PRIMARY KEY (id),
-    INDEX idx_phone_type (phone, type),
-    INDEX idx_create_time (create_time)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    create_time TIMESTAMP NOT NULL,
+    update_time TIMESTAMP NOT NULL,
+    PRIMARY KEY (id)
+);
+
+-- 创建索引
+CREATE INDEX IF NOT EXISTS idx_phone_type ON sms_verification_code (phone, type);
+CREATE INDEX IF NOT EXISTS idx_create_time ON sms_verification_code (create_time);
 ```
 
 ## API接口

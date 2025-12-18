@@ -69,20 +69,20 @@ wechat.app.secret=1234567890abcdef1234567890abcdef
 
 ```bash
 cd server
-mysql -u your_username -p your_database < db-upgrade/upgrade.sql
+psql -h your_host -U your_username -d your_database -f dbupgrade/upgrade.sql
 ```
 
-或手动执行SQL：
+或手动执行SQL（PostgreSQL语法）：
 
 ```sql
--- 添加微信登录相关字段
-ALTER TABLE `user` ADD COLUMN wechat_open_id VARCHAR(100) NULL COMMENT '微信OpenID' AFTER email;
-ALTER TABLE `user` ADD COLUMN wechat_union_id VARCHAR(100) NULL COMMENT '微信UnionID' AFTER wechat_open_id;
-ALTER TABLE `user` ADD COLUMN wechat_nickname VARCHAR(200) NULL COMMENT '微信昵称' AFTER wechat_union_id;
-ALTER TABLE `user` ADD COLUMN wechat_avatar VARCHAR(500) NULL COMMENT '微信头像URL' AFTER wechat_nickname;
+-- 添加微信登录相关字段（PostgreSQL语法）
+ALTER TABLE "user" ADD COLUMN wechat_open_id VARCHAR(100) NULL;
+ALTER TABLE "user" ADD COLUMN wechat_union_id VARCHAR(100) NULL;
+ALTER TABLE "user" ADD COLUMN wechat_nickname VARCHAR(200) NULL;
+ALTER TABLE "user" ADD COLUMN wechat_avatar VARCHAR(500) NULL;
 
 -- 为wechat_open_id添加唯一索引
-CREATE UNIQUE INDEX idx_wechat_open_id ON `user` (wechat_open_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_wechat_open_id ON "user" (wechat_open_id);
 ```
 
 ### 3. 添加Maven依赖

@@ -8,7 +8,7 @@
 - 采用线程池并发下载与处理，加速批量任务执行。
 
 使用前提：
-- 可访问的 MySQL 数据库（参见下方 `db_config`）与 `sentence` 表字段：
+- 可访问的 PostgreSQL 数据库（参见下方 `db_config`）与 `sentence` 表字段：
   `English, englishDigest, id, temp_sound_url, needTts, producer, theType, updateTime`；
 - 目标目录 `mp3_target_dir` 可写；
 - 稳定的网络访问以下载音频文件。

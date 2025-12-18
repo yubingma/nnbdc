@@ -13,7 +13,7 @@ fi
 
 # 检查依赖包
 echo "检查依赖包..."
-python3 -c "import flask, pymysql" 2>/dev/null
+python3 -c "import flask, psycopg2" 2>/dev/null
 if [ $? -ne 0 ]; then
     echo "安装依赖包..."
     pip3 install -r requirements.txt
