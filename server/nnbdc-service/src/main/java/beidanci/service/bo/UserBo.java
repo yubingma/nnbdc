@@ -482,7 +482,8 @@ public class UserBo extends BaseBo<User> {
 
                 // 解除该用户邀请的用户对其的引用（使用批量更新避免外键约束问题）
                 User sysUser = getSysUser_deleted(false);
-                sql = "UPDATE user SET invited_by_id = ? WHERE invited_by_id = ?";
+                // PostgreSQL 中 user 是保留字，这里需要加双引号
+                sql = "UPDATE \"user\" SET invited_by_id = ? WHERE invited_by_id = ?";
                 jdbcTemplate.update(sql, sysUser.getId(), user.getId());
 
                 // 退出所在的小组
