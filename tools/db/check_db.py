@@ -9,7 +9,7 @@
 检查通用词典（id='0'）的所有单词都有释义项，且每个释义项都有例句
 """
 
-import pymysql
+import psycopg2
 import sys
 import traceback
 from datetime import datetime
@@ -17,17 +17,16 @@ from datetime import datetime
 # 数据库配置
 DB_CONFIG = {
     'host': 'localhost',
-    'port': 3306,
+    'port': 5432,
     'user': 'root',
-    'passwd': 'root',
-    'db': 'bdc',
-    'charset': 'utf8'
+    'password': 'root',
+    'database': 'bdc'
 }
 
 def connect_db():
     """连接数据库"""
     try:
-        db = pymysql.connect(**DB_CONFIG)
+        db = psycopg2.connect(**DB_CONFIG)
         return db
     except Exception as e:
         print(f"❌ 数据库连接失败: {e}")
@@ -538,7 +537,7 @@ def fix_dict_word_count(cursor, dict_id, dict_name, actual_count):
     
     update_sql = """
     UPDATE dict 
-    SET wordCount = %s, updateTime = NOW()
+    SET wordCount = %s, updateTime = CURRENT_TIMESTAMP
     WHERE id = %s
     """
     cursor.execute(update_sql, (actual_count, dict_id))
@@ -572,7 +571,7 @@ def fix_dict_word_order(cursor, dict_id, dict_name, owner):
             # 更新序号
             update_sql = """
             UPDATE dict_word 
-            SET seq = %s, updateTime = NOW()
+            SET seq = %s, updateTime = CURRENT_TIMESTAMP
             WHERE dictId = %s AND wordId = %s
             """
             cursor.execute(update_sql, (new_index, dict_id, word_id))
@@ -604,7 +603,7 @@ def fix_learning_progress_issues(cursor, issues):
             # 学习进度字段为 currentWordSeq (首字母大写!)
             update_sql = """
             UPDATE learning_dict 
-            SET currentWordSeq = %s, updateTime = NOW()
+            SET currentWordSeq = %s, updateTime = CURRENT_TIMESTAMP
             WHERE userId = %s AND dictId = %s
             """
             cursor.execute(update_sql, (issue['word_count'], issue['user_id'], issue['dict_id']))

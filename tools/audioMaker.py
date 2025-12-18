@@ -23,7 +23,7 @@
 - 失败任务不会影响其他任务继续执行。
 """
 
-import pymysql
+import psycopg2
 import os
 import logging
 import requests
@@ -37,10 +37,10 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 # 数据库配置
 db_config = {
     "host": "127.0.0.1",
+    "port": 5432,
     "user": "root",
-    "passwd": "root",
-    "db": "bdc",
-    "charset": "utf8"
+    "password": "root",
+    "database": "bdc"
 }
 
 mp3_target_dir = "/var/www/html/sound/sentence"
@@ -81,12 +81,12 @@ def process_sentence(row):
         raise Exception(f"下载失败：{temp_sound_url}")
 
     # 使用每个线程自己的数据库连接
-    db = pymysql.connect(**db_config)
+    db = psycopg2.connect(**db_config)
     try:
         with db.cursor() as cursor:
             cursor.execute("""
                 UPDATE sentence
-                SET needTts=0, producer='coze', theType='tts', updateTime=NOW()
+                SET needTts=0, producer='coze', theType='tts', updateTime=CURRENT_TIMESTAMP
                 WHERE id=%s
             """, (sentence_id,))
         db.commit()
@@ -102,7 +102,7 @@ def process_sentence(row):
 def main():
     db = None
     try:
-        db = pymysql.connect(**db_config)  # 主线程的数据库连接
+        db = psycopg2.connect(**db_config)  # 主线程的数据库连接
         with db.cursor() as cursor:
             cursor.execute("SELECT English, englishDigest, id, temp_sound_url FROM sentence WHERE theType='temp_sound' LIMIT 20")
             results = cursor.fetchall()

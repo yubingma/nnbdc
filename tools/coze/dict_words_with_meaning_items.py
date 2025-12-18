@@ -1,4 +1,4 @@
-import pymysql
+import psycopg2
 from typing import TypedDict, List
 from flask import jsonify
 
@@ -16,18 +16,17 @@ class WordWithMeaningItems(TypedDict):
 def query_words_with_meaning_items(limit: int) -> dict:
     """查询通用词典的单词及其释义项"""
     db_host = 'localhost'
-    db_port = 3306
+    db_port = 5432
     db_user = 'root'
     db_password = 'root'
     db_name = 'bdc'
 
-    connection = pymysql.connect(
+    connection = psycopg2.connect(
         host=db_host,
         port=db_port,
         user=db_user,
         password=db_password,
-        database=db_name,
-        charset='utf8mb4'
+        database=db_name
     )
     
     try:
@@ -41,12 +40,12 @@ def query_words_with_meaning_items(limit: int) -> dict:
                     mi.id as meaningItemId,
                     mi.ciXing,
                     mi.meaning,
-                    IFNULL(mi.popularity, 999) as popularity
+                    COALESCE(mi.popularity, 999) as popularity
                 FROM word w
                 JOIN meaning_item mi ON mi.wordId = w.id
                 WHERE mi.dictId = '0'
-                and (mi.updateTime is null or mi.updateTime<'2025-10-08 17:00:00') # 数据是老版本
-                AND (mi.isUpdating = 0 OR TIMESTAMPDIFF(HOUR, mi.updatingStartAt, NOW()) >= 2) # 数据不是正在更新
+                and (mi.updateTime is null or mi.updateTime<'2025-10-08 17:00:00') -- 数据是老版本
+                AND (mi.isUpdating = 0 OR EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - mi.updatingStartAt))/3600 >= 2) -- 数据不是正在更新
                 ORDER BY w.spell, mi.popularity, mi.createTime
                 LIMIT %s
             """, (limit * 20,))
@@ -85,7 +84,7 @@ def query_words_with_meaning_items(limit: int) -> dict:
             if all_meaning_ids:
                 placeholders = ','.join(['%s'] * len(all_meaning_ids))
                 cursor.execute(
-                    f"UPDATE meaning_item SET isUpdating = 1, updatingStartAt = NOW() WHERE id IN ({placeholders})",
+                    f"UPDATE meaning_item SET isUpdating = 1, updatingStartAt = CURRENT_TIMESTAMP WHERE id IN ({placeholders})",
                     all_meaning_ids
                 )
                 connection.commit()

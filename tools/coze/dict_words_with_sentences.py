@@ -1,4 +1,5 @@
-import pymysql
+import psycopg2
+from psycopg2.extras import RealDictCursor
 from typing import TypedDict, List
 from flask import jsonify
 
@@ -16,33 +17,31 @@ class WordWithSentences(TypedDict):
 def query_dict_words_with_sentences(dictName: str, limit: int) -> dict:
     """查询词典单词及其例句的核心函数"""
     db_host = 'localhost'
-    db_port = 3306
+    db_port = 5432
     db_user = 'root'
     db_password = 'root'
     db_name = 'bdc'
 
-    connection = pymysql.connect(
+    connection = psycopg2.connect(
         host=db_host,
         port=db_port,
         user=db_user,
         password=db_password,
-        database=db_name,
-        charset='utf8mb4',
-        cursorclass=pymysql.cursors.DictCursor
+        database=db_name
     )
     
     try:
-        with connection.cursor() as cursor:
+        with connection.cursor(cursor_factory=RealDictCursor) as cursor:
             # 第一步：查询指定数量的单词（不包含例句）
             if dictName == '通用词典':
                 sql_words = """
                 SELECT DISTINCT w.id as wordId, w.spell as wordSpell
                 FROM sentence s
                 LEFT JOIN meaning_item mi ON mi.id = s.meaningItemId
-                LEFT JOIN word w ON w.id = mi.word
+                LEFT JOIN word w ON w.id = mi.wordId
                 WHERE mi.dictId = '0'
-                and (s.updateTime is null or s.updateTime<'2025-08-30 00:00:00') # 数据是老版本
-                and (s.isUpdating = 0 or TIMESTAMPDIFF(HOUR, s.updatingStartAt, now() ) >= 2) # 数据不是正在更新 
+                and (s.updateTime is null or s.updateTime<'2025-08-30 00:00:00') -- 数据是老版本
+                and (s.isUpdating = 0 or EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - s.updatingStartAt))/3600 >= 2) -- 数据不是正在更新 
                 ORDER BY w.id
                 LIMIT %s
                 """
@@ -52,11 +51,11 @@ def query_dict_words_with_sentences(dictName: str, limit: int) -> dict:
                 SELECT DISTINCT w.id as wordId, w.spell as wordSpell
                 FROM sentence s
                 LEFT JOIN meaning_item mi ON mi.id = s.meaningItemId
-                LEFT JOIN word w ON w.id = mi.word
+                LEFT JOIN word w ON w.id = mi.wordId
                 left join dict d on d.id = mi.dictId
                 WHERE d.name = %s
-                and (s.updateTime is null or s.updateTime<'2025-08-30 00:00:00') # 数据是老版本
-                and (s.isUpdating = 0 or TIMESTAMPDIFF(HOUR, s.updatingStartAt, now() ) >= 2) # 数据不是正在更新    
+                and (s.updateTime is null or s.updateTime<'2025-08-30 00:00:00') -- 数据是老版本
+                and (s.isUpdating = 0 or EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - s.updatingStartAt))/3600 >= 2) -- 数据不是正在更新    
                 ORDER BY w.id
                 LIMIT %s
                 """
@@ -75,7 +74,7 @@ def query_dict_words_with_sentences(dictName: str, limit: int) -> dict:
                     SELECT s.id as sentenceId, s.english_raw as englishRaw, s.chinese_raw as chineseRaw, s.wordMeaning
                     FROM sentence s
                     LEFT JOIN meaning_item mi ON mi.id = s.meaningItemId
-                    WHERE mi.word = %s AND mi.dictId = '0'
+                    WHERE mi.wordId = %s AND mi.dictId = '0'
                     ORDER BY s.id
                     """
                     cursor.execute(sql_sentences, (word_id,))
@@ -85,7 +84,7 @@ def query_dict_words_with_sentences(dictName: str, limit: int) -> dict:
                     FROM sentence s
                     LEFT JOIN meaning_item mi ON mi.id = s.meaningItemId
                     left join dict d on d.id = mi.dictId
-                    WHERE mi.word = %s AND d.name = %s
+                    WHERE mi.wordId = %s AND d.name = %s
                     ORDER BY s.id
                     """
                     cursor.execute(sql_sentences, (word_id, dictName))
@@ -113,7 +112,7 @@ def query_dict_words_with_sentences(dictName: str, limit: int) -> dict:
                 # 给数据至正在更新标记, 避免重复更新
                 ids = [item['sentenceId'] for item in sentences]
                 if ids:
-                    cursor.execute("UPDATE sentence SET isUpdating = 1, updatingStartAt=now() WHERE id IN (%s)" % ','.join(['%s'] * len(ids)), ids)
+                    cursor.execute("UPDATE sentence SET isUpdating = 1, updatingStartAt=CURRENT_TIMESTAMP WHERE id IN (%s)" % ','.join(['%s'] * len(ids)), ids)
                     connection.commit()
             
             return {"dictName": dictName, "words": words}

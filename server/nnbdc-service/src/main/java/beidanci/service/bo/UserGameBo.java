@@ -32,7 +32,7 @@ public class UserGameBo extends BaseBo<UserGame> {
 
     public List<UserGame> getUserGamesWithTopScore(final int count) {
         String sql = "SELECT ug.* FROM user_game ug " +
-                "INNER JOIN user u ON ug.user_id = u.id " +
+                "INNER JOIN \"user\" u ON ug.user_id = u.id " +
                 "WHERE u.user_name NOT LIKE 'guest%' AND u.user_name NOT LIKE 'guess%' AND u.user_name NOT LIKE '游客%' " +
                 "ORDER BY ug.Score DESC LIMIT :count";
         MapSqlParameterSource params = new MapSqlParameterSource("count", count);
@@ -82,7 +82,7 @@ public class UserGameBo extends BaseBo<UserGame> {
         }
         
         // 批量查询 User 对象
-        String sql = "SELECT * FROM user WHERE id IN (:ids)";
+        String sql = "SELECT * FROM \"user\" WHERE id IN (:ids)";
         MapSqlParameterSource params = new MapSqlParameterSource("ids", userIds);
         List<User> users = namedParameterJdbcTemplate.query(sql, params,
             new EntityRowMapper<>(User.class));

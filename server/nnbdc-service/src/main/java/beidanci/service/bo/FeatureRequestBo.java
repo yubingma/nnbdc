@@ -78,7 +78,7 @@ public class FeatureRequestBo extends BaseBo<FeatureRequest> {
         }
         
         // 批量查询 User 对象
-        String sql = "SELECT * FROM user WHERE id IN (:ids)";
+        String sql = "SELECT * FROM \"user\" WHERE id IN (:ids)";
         MapSqlParameterSource params = new MapSqlParameterSource("ids", userIds);
         List<User> users = namedParameterJdbcTemplate.query(sql, params,
             new EntityRowMapper<>(User.class));

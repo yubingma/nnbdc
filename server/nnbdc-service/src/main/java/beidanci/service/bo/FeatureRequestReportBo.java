@@ -113,7 +113,7 @@ public class FeatureRequestReportBo extends BaseBo<FeatureRequestReport> {
         // 批量查询 User 对象
         Map<String, User> userMap = new HashMap<>();
         if (!userIds.isEmpty()) {
-            String sql = "SELECT * FROM user WHERE id IN (:ids)";
+            String sql = "SELECT * FROM \"user\" WHERE id IN (:ids)";
             MapSqlParameterSource params = new MapSqlParameterSource("ids", userIds);
             List<User> users = namedParameterJdbcTemplate.query(sql, params,
                     new EntityRowMapper<>(User.class));
@@ -142,7 +142,7 @@ public class FeatureRequestReportBo extends BaseBo<FeatureRequestReport> {
             // 批量加载 FeatureRequest 的 creator
             Map<String, User> creatorMap = new HashMap<>();
             if (!creatorIds.isEmpty()) {
-                String creatorSql = "SELECT * FROM user WHERE id IN (:ids)";
+                String creatorSql = "SELECT * FROM \"user\" WHERE id IN (:ids)";
                 MapSqlParameterSource creatorParams = new MapSqlParameterSource("ids", creatorIds);
                 List<User> creators = namedParameterJdbcTemplate.query(creatorSql, creatorParams,
                         new EntityRowMapper<>(User.class));

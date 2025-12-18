@@ -188,12 +188,12 @@ public class SystemHealthCheckBo {
         try {
             // 使用一个 SQL 查询直接找出缺少 En2Ch 或 Ch2En 的用户
             String sql = "SELECT u.id, u.user_name, 'En2Ch' as missing_step " +
-                        "FROM user u " +
+                        "FROM \"user\" u " +
                         "LEFT JOIN user_study_step uss ON u.id = uss.user_id AND uss.study_step = 'En2Ch' " +
                         "WHERE uss.user_id IS NULL " +
                         "UNION ALL " +
                         "SELECT u.id, u.user_name, 'Ch2En' as missing_step " +
-                        "FROM user u " +
+                        "FROM \"user\" u " +
                         "LEFT JOIN user_study_step uss ON u.id = uss.user_id AND uss.study_step = 'Ch2En' " +
                         "WHERE uss.user_id IS NULL";
             
@@ -274,7 +274,7 @@ public class SystemHealthCheckBo {
         try {
             // 使用 SQL 查询找出所有没有生词本的用户
             String sql = "SELECT u.id, u.user_name, u.nick_name " +
-                        "FROM user u " +
+                        "FROM \"user\" u " +
                         "LEFT JOIN dict d ON u.id = d.owner_id AND d.name = '生词本' " +
                         "WHERE d.id IS NULL " +
                         "ORDER BY u.create_time DESC";
@@ -687,8 +687,8 @@ public class SystemHealthCheckBo {
             // 使用 SQL 批量插入缺失的学习步骤
             // 1. 批量插入缺失的 En2Ch 步骤
             String insertEn2ChSql = "INSERT INTO user_study_step (user_id, study_step, seq, state, create_time) " +
-                                   "SELECT u.id, 'En2Ch', 1, 'Active', NOW() " +
-                                   "FROM user u " +
+                                   "SELECT u.id, 'En2Ch', 1, 'Active', CURRENT_TIMESTAMP " +
+                                   "FROM \"user\" u " +
                                    "LEFT JOIN user_study_step uss ON u.id = uss.user_id AND uss.study_step = 'En2Ch' " +
                                    "WHERE uss.user_id IS NULL";
             
@@ -696,8 +696,8 @@ public class SystemHealthCheckBo {
             
             // 2. 批量插入缺失的 Ch2En 步骤
             String insertCh2EnSql = "INSERT INTO user_study_step (user_id, study_step, seq, state, create_time) " +
-                                   "SELECT u.id, 'Ch2En', 2, 'Active', NOW() " +
-                                   "FROM user u " +
+                                   "SELECT u.id, 'Ch2En', 2, 'Active', CURRENT_TIMESTAMP " +
+                                   "FROM \"user\" u " +
                                    "LEFT JOIN user_study_step uss ON u.id = uss.user_id AND uss.study_step = 'Ch2En' " +
                                    "WHERE uss.user_id IS NULL";
             
@@ -723,7 +723,7 @@ public class SystemHealthCheckBo {
         try {
             // 查找所有没有生词本的用户
             String sql = "SELECT u.id, u.user_name, u.nick_name " +
-                        "FROM user u " +
+                        "FROM \"user\" u " +
                         "LEFT JOIN dict d ON u.id = d.owner_id AND d.name = '生词本' " +
                         "WHERE d.id IS NULL";
             

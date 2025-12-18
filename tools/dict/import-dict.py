@@ -2,7 +2,7 @@
 # 根据给定的单词书文件(包含或不包含释义项), 导入(创建)单词书
 import uu
 import uuid
-import pymysql;
+import psycopg2;
 import hashlib;
 import sys;
 import shutil;
@@ -22,9 +22,8 @@ def getMd5OfWord(word):
 Soup = BeautifulSoup
 
 # 打开数据库连接
-db = pymysql.connect(host="localhost", port=3306,
-                     user="root", passwd="root", db="bdc",
-                     charset="utf8");
+db = psycopg2.connect(host="localhost", port=5432,
+                     user="root", password="root", database="bdc");
 
 # 使用cursor()方法获取操作游标 
 cursor = db.cursor()
@@ -46,7 +45,7 @@ try:
     # 创建单词书
     dictId = str(uuid.uuid4()).replace('-', '')
     parts = filename.split('.')
-    cursor.execute('insert into dict(id, isReady, isShared, name, wordCount, ownerId, createTime, visible) values (%s, 1, 0, %s, %s, %s, sysdate(), 1)', (dictId, f"{dictName}.dict", len(words), 15118))
+    cursor.execute('insert into dict(id, isReady, isShared, name, wordCount, ownerId, createTime, visible) values (%s, 1, 0, %s, %s, %s, CURRENT_TIMESTAMP, 1)', (dictId, f"{dictName}.dict", len(words), 15118))
     cursor.execute("update id_gen set next_val = next_val + 1 where sequence_name='dict'")
 
     # 导入牛牛数据库中没有的单词
@@ -61,12 +60,12 @@ try:
             newWord = crawle(word.spell, '/var/nnbdc/res/sound') 
             print (newWord)
             maxWordId = str(uuid.uuid4()).replace('-', '')
-            cursor.execute('insert into word (id, americaPronounce, britishPronounce, popularity, pronounce, spell, createTime) values (%s, %s, %s, %s, %s, %s, sysdate())', \
+            cursor.execute('insert into word (id, americaPronounce, britishPronounce, popularity, pronounce, spell, createTime) values (%s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP)', \
                 (maxWordId, newWord.americaPronounce, newWord.britishPronounce, 0, newWord.pronounce, newWord.spell))
             cursor.execute("update id_gen set next_val = next_val + 1 where sequence_name = 'word'")
             for meaningItem in newWord.meaningItems:
                 maxMeaningItemId = str(uuid.uuid4()).replace('-', '')
-                cursor.execute("insert into meaning_item (id, ciXing, meaning, wordId, dictId, createTime) values (%s, %s, %s, %s, '0', sysdate())", \
+                cursor.execute("insert into meaning_item (id, ciXing, meaning, wordId, dictId, createTime) values (%s, %s, %s, %s, '0', CURRENT_TIMESTAMP)", \
                     (maxMeaningItemId, meaningItem.ciXing, meaningItem.content, maxWordId)) # 为单词添加通用词典释义
                 cursor.execute("update id_gen set next_val = next_val + 1 where sequence_name = 'meaning_item'")
             count += 1
@@ -77,11 +76,11 @@ try:
         word = words[i]
         cursor.execute("select id from word where spell = %s", (word.spell))
         wordId = cursor.fetchall()[0][0]
-        cursor.execute("insert into dict_word (dictId, wordId, seq, createTime) values (%s, %s, %s, sysdate())", (dictId, wordId, i + 1))
+        cursor.execute("insert into dict_word (dictId, wordId, seq, createTime) values (%s, %s, %s, CURRENT_TIMESTAMP)", (dictId, wordId, i + 1))
         for j in range(0, len(word.meaningItems), 1):
             meaningItem = word.meaningItems[j] 
             maxMeaningItemId = str(uuid.uuid4()).replace('-', '')
-            cursor.execute("insert into meaning_item (id, ciXing, meaning, wordId, dictId, createTime) values (%s, %s, %s, %s, %s, sysdate())", \
+            cursor.execute("insert into meaning_item (id, ciXing, meaning, wordId, dictId, createTime) values (%s, %s, %s, %s, %s, CURRENT_TIMESTAMP)", \
                     (maxMeaningItemId, meaningItem.ciXing, meaningItem.content, wordId, dictId)) 
             cursor.execute("update id_gen set next_val = next_val + 1 where sequence_name = 'meaning_item'")
     print ("新单词书[%s]创建成功, %d个单词" % (dictName, len(words)))

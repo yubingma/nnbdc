@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import pymysql;
+import psycopg2;
 import hashlib;
 import sys;
 import shutil;

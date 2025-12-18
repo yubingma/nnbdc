@@ -204,9 +204,9 @@ public class UserBo extends BaseBo<User> {
     public List<User> findUsersTotalScoreMoreThan(int score, boolean includeGuest) {
         String sql;
         if (includeGuest) {
-            sql = "SELECT * FROM user WHERE (game_score > 0 OR daka_score > 0)";
+            sql = "SELECT * FROM \"user\" WHERE (game_score > 0 OR daka_score > 0)";
         } else {
-            sql = "SELECT * FROM user WHERE user_name NOT LIKE 'guest%' AND user_name NOT LIKE 'guess%' AND user_name NOT LIKE '游客%' AND (game_score > 0 OR daka_score > 0)";
+            sql = "SELECT * FROM \"user\" WHERE user_name NOT LIKE 'guest%' AND user_name NOT LIKE 'guess%' AND user_name NOT LIKE '游客%' AND (game_score > 0 OR daka_score > 0)";
         }
         return jdbcTemplate.query(sql, new EntityRowMapper<>(User.class));
     }
@@ -407,7 +407,7 @@ public class UserBo extends BaseBo<User> {
 
     public void deleteDeadUsers(int idleDays) throws IllegalAccessException {
         // 查询长期未登录的用户
-        String sql = "SELECT * FROM user WHERE is_sys_user = 0 AND last_login_time < :time";
+        String sql = "SELECT * FROM \"user\" WHERE is_sys_user = 0 AND last_login_time < :time";
         MapSqlParameterSource params = new MapSqlParameterSource("time", 
             Utils.localDate2Date(LocalDate.now().plusDays(-idleDays)));
         List<User> users = namedParameterJdbcTemplate.query(sql, params, 
@@ -555,7 +555,7 @@ public class UserBo extends BaseBo<User> {
     }
 
     public List<User> findByEmail(String email) {
-        String sql = "SELECT * FROM user WHERE email = :email";
+        String sql = "SELECT * FROM \"user\" WHERE email = :email";
         MapSqlParameterSource params = new MapSqlParameterSource("email", email);
         return namedParameterJdbcTemplate.query(sql, params, 
             new EntityRowMapper<>(User.class));
@@ -563,7 +563,7 @@ public class UserBo extends BaseBo<User> {
 
     public User getByUserName(String userName, boolean openNewSession) {
         // JDBC 不需要管理 Session，直接查询
-        String sql = "SELECT * FROM user WHERE user_name = :userName";
+        String sql = "SELECT * FROM \"user\" WHERE user_name = :userName";
         MapSqlParameterSource params = new MapSqlParameterSource("userName", userName);
         List<User> results = namedParameterJdbcTemplate.query(sql, params, 
             new EntityRowMapper<>(User.class));
@@ -571,7 +571,7 @@ public class UserBo extends BaseBo<User> {
     }
 
     public List<User> findAll() {
-        String sql = "SELECT * FROM user";
+        String sql = "SELECT * FROM \"user\"";
         return jdbcTemplate.query(sql, new EntityRowMapper<>(User.class));
     }
 
@@ -581,7 +581,7 @@ public class UserBo extends BaseBo<User> {
      */
     public String pickRandomNonGuestNickName() {
         // JDBC 不需要管理 Session
-        String sql = "SELECT * FROM user WHERE user_name NOT LIKE 'guest%' LIMIT 50";
+        String sql = "SELECT * FROM \"user\" WHERE user_name NOT LIKE 'guest%' LIMIT 50";
         List<User> candidates = jdbcTemplate.query(sql, 
             new EntityRowMapper<>(User.class));
         if (candidates == null || candidates.isEmpty()) {
@@ -599,7 +599,7 @@ public class UserBo extends BaseBo<User> {
     public User pickRandomInactiveGamer(int idleDays, int maxCandidates) {
         // JDBC 不需要管理 Session
         String sql = "SELECT DISTINCT u.* FROM user_game ug " +
-                     "INNER JOIN user u ON ug.user_id = u.id " +
+                     "INNER JOIN \"user\" u ON ug.user_id = u.id " +
                      "WHERE u.is_sys_user = 0 AND u.last_login_time < ? " +
                      "LIMIT ?";
         Date time = Utils.localDate2Date(LocalDate.now().plusDays(-idleDays));
@@ -1120,7 +1120,7 @@ public class UserBo extends BaseBo<User> {
     public User findOrCreateUserByWechat(WechatBo.WechatUserInfo wechatUserInfo) {
         try {
             // 1. 根据openId查找用户
-            String sql = "SELECT * FROM user WHERE wechat_open_id = :openId";
+            String sql = "SELECT * FROM \"user\" WHERE wechat_open_id = :openId";
             MapSqlParameterSource params = new MapSqlParameterSource("openId", wechatUserInfo.openId);
             List<User> users = namedParameterJdbcTemplate.query(sql, params, 
                 new EntityRowMapper<>(User.class));
@@ -1275,9 +1275,9 @@ public class UserBo extends BaseBo<User> {
         
         // 构建完整SQL
         if (hasCondition) {
-            sql = "SELECT * FROM user WHERE " + whereClause.toString() + " ORDER BY last_login_time DESC";
+            sql = "SELECT * FROM \"user\" WHERE " + whereClause.toString() + " ORDER BY last_login_time DESC";
         } else {
-            sql = "SELECT * FROM user ORDER BY last_login_time DESC";
+            sql = "SELECT * FROM \"user\" ORDER BY last_login_time DESC";
         }
         
         // 设置参数

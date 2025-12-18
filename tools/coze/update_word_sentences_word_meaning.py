@@ -1,4 +1,5 @@
-import pymysql
+import psycopg2
+from psycopg2.extras import RealDictCursor
 from typing import TypedDict, List
 from flask import jsonify
 import json
@@ -15,23 +16,21 @@ class UpdateWordSentencesRequest(TypedDict):
 def update_word_sentences_word_meaning(request_data: UpdateWordSentencesRequest) -> dict:
     """更新例句表的单词释义数据"""
     db_host = 'localhost'
-    db_port = 3306
+    db_port = 5432
     db_user = 'root'
     db_password = 'root'
     db_name = 'bdc'
 
-    connection = pymysql.connect(
+    connection = psycopg2.connect(
         host=db_host,
         port=db_port,
         user=db_user,
         password=db_password,
-        database=db_name,
-        charset='utf8mb4',
-        cursorclass=pymysql.cursors.DictCursor
+        database=db_name
     )
     
     try:
-        with connection.cursor() as cursor:
+        with connection.cursor(cursor_factory=RealDictCursor) as cursor:
  
             
             # 批量更新例句数据
@@ -55,7 +54,7 @@ def update_word_sentences_word_meaning(request_data: UpdateWordSentencesRequest)
                 SET popularity = %s, 
                     partOfSpeech = %s, 
                     wordMeaning = %s, 
-                    updateTime = NOW(),
+                    updateTime = CURRENT_TIMESTAMP,
                     isUpdating = 0,
                     updatingStartAt = NULL
                 WHERE id = %s

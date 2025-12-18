@@ -1,12 +1,11 @@
 # 检查例句的mp3文件是否存在或为空, 同时复制所有通过检查的例句mp3到/tmp/sentence/, 对于未通过检查的例句，置重新生成mp3标志, 或重新下载
 
 # 打开数据库连接
-import pymysql;
+import psycopg2;
 import os;
 import time;
-db = pymysql.connect(host="127.0.0.1",
-  user="root", passwd="root", db="bdc",
-  charset="utf8");
+db = psycopg2.connect(host="127.0.0.1", port=5432,
+  user="root", password="root", database="bdc");
 
 # 使用cursor()方法获取操作游标
 cursor = db.cursor()
@@ -16,7 +15,7 @@ print("%s - 从数据库读出%d条待检查的例句" % (time.strftime('%Y-%m-%
 if cursor.rowcount == 0:
   os._exit(0)
 
-import pymysql;
+import psycopg2;
 import hashlib;
 import sys;
 import shutil;
@@ -59,13 +58,13 @@ try:
             if (tempSoundUrl == ''): # 未生成例句音频, 重新生成
                 cursor.execute("""
                     UPDATE sentence
-                    SET needTts=1, producer='coze', theType='no_sound', updateTime=NOW()
+                    SET needTts=1, producer='coze', theType='no_sound', updateTime=CURRENT_TIMESTAMP
                     WHERE id=%s
                 """, (sentenceId,))
             else: # 已生成例句音频(但下载失败)，重新下载
                 cursor.execute("""
                     UPDATE sentence
-                    SET theType='temp_sound', updateTime=NOW()
+                    SET theType='temp_sound', updateTime=CURRENT_TIMESTAMP
                     WHERE id=%s
                 """, (sentenceId,)) 
 

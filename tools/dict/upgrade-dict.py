@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # 升级单词书， 将词书中单词的释义更新为指定文件中的释义（一般词书使用的是词典释义，释义太多了）
-import pymysql;
+import psycopg2;
 import hashlib;
 import sys;
 import shutil;
@@ -40,7 +40,7 @@ def updateMeaningForDict(dictId, words, replaceIfExists):
             if len(existings) == 0 or replaceIfExists:
                 for meaningItem in word.meaningItems:
                     maxMeaningItemId += 1
-                    cursor.execute('insert into meaning_item (id, ciXing, meaning, wordId, dictId, createTime) values (%s, %s, %s, %s, %s, sysdate())', (maxMeaningItemId, meaningItem.ciXing, meaningItem.content, wordId, dictId))
+                    cursor.execute('insert into meaning_item (id, ciXing, meaning, wordId, dictId, createTime) values (%s, %s, %s, %s, %s, CURRENT_TIMESTAMP)', (maxMeaningItemId, meaningItem.ciXing, meaningItem.content, wordId, dictId))
                 
                 count += 1
             
@@ -54,9 +54,8 @@ def updateMeaningForDict(dictId, words, replaceIfExists):
 Soup = BeautifulSoup
 
 # 打开数据库连接
-db = pymysql.connect(host="localhost", port=3306,
-                     user="root", passwd="root", db="bdc",
-                     charset="utf8");
+db = psycopg2.connect(host="localhost", port=5432,
+                     user="root", password="root", database="bdc");
 
 # 使用cursor()方法获取操作游标 
 cursor = db.cursor()

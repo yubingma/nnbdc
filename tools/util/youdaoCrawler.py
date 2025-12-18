@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # 对指定单词书的所有例句置"needTts"标记，这些例句随后会被tts程序进行处理，生成tts语音
-import pymysql;
+import psycopg2;
 import hashlib;
 import sys;
 import shutil;

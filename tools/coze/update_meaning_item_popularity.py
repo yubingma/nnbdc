@@ -1,4 +1,5 @@
-import pymysql
+import psycopg2
+from psycopg2.extras import RealDictCursor
 from typing import TypedDict, List
 from flask import jsonify
 
@@ -12,23 +13,21 @@ class UpdateMeaningItemsRequest(TypedDict):
 def update_meaning_item_popularity(request_data: UpdateMeaningItemsRequest) -> dict:
     """批量更新释义项的 popularity"""
     db_host = 'localhost'
-    db_port = 3306
+    db_port = 5432
     db_user = 'root'
     db_password = 'root'
     db_name = 'bdc'
 
-    connection = pymysql.connect(
+    connection = psycopg2.connect(
         host=db_host,
         port=db_port,
         user=db_user,
         password=db_password,
-        database=db_name,
-        charset='utf8mb4',
-        cursorclass=pymysql.cursors.DictCursor
+        database=db_name
     )
     
     try:
-        with connection.cursor() as cursor:
+        with connection.cursor(cursor_factory=RealDictCursor) as cursor:
             meaning_items = request_data.get('meaningItems', [])
             if not meaning_items:
                 return {"error": "没有提供释义项数据"}
@@ -53,7 +52,7 @@ def update_meaning_item_popularity(request_data: UpdateMeaningItemsRequest) -> d
                     sql = """
                     UPDATE meaning_item 
                     SET popularity = %s,
-                        updateTime = NOW(),
+                        updateTime = CURRENT_TIMESTAMP,
                         isUpdating = 0,
                         updatingStartAt = NULL
                     WHERE id = %s

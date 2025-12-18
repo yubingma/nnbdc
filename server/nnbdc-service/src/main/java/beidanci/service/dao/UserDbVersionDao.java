@@ -96,7 +96,7 @@ public class UserDbVersionDao extends BaseDao<UserDbVersion> {
      */
     public void ensureUserDbVersionExists(JdbcTemplate jdbcTemplate, String userId) {
         // 检查用户是否存在
-        String checkUserSql = "SELECT COUNT(*) FROM user WHERE id = :userId";
+        String checkUserSql = "SELECT COUNT(*) FROM \"user\" WHERE id = :userId";
         MapSqlParameterSource userParams = new MapSqlParameterSource("userId", userId);
         Integer userCount = namedParameterJdbcTemplate.queryForObject(checkUserSql, userParams, Integer.class);
         
