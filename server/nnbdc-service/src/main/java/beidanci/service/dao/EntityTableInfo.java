@@ -38,7 +38,14 @@ public class EntityTableInfo {
     }
     
     /**
-     * 获取实体类对应的表名
+     * PostgreSQL保留字列表（需要加引号的表名）
+     */
+    private static final java.util.Set<String> POSTGRESQL_RESERVED_WORDS = java.util.Set.of(
+        "user", "order", "group", "select", "table", "index", "view", "type"
+    );
+    
+    /**
+     * 获取实体类对应的表名（PostgreSQL保留字会自动加引号）
      */
     public static String getTableName(Class<? extends Po> entityClass) {
         String cached = tableNameCache.get(entityClass);
@@ -53,8 +60,12 @@ public class EntityTableInfo {
             if (!name.isEmpty()) {
                 // 严格模式：表名也必须是 snake_case
                 assertSnakeCase(name, entityClass.getName() + "#@Table(name)");
-                tableNameCache.put(entityClass, name);
-                return name;
+                // 如果是PostgreSQL保留字，需要加引号
+                String quotedName = POSTGRESQL_RESERVED_WORDS.contains(name.toLowerCase()) 
+                    ? "\"" + name + "\"" 
+                    : name;
+                tableNameCache.put(entityClass, quotedName);
+                return quotedName;
             }
         }
         
