@@ -2195,8 +2195,8 @@ class WordListPageState extends State<WordListPage> {
                   ],
                 ),
               ),
-            // 回到顶部按钮（非背中文模式时单独显示）
-            if (studyMode != WordListStudyMode.speakChinese && showToTopBtn)
+            // 回到顶部按钮（非语音模式时单独显示，语音模式下与设置按钮一起显示）
+            if (studyMode != WordListStudyMode.speakChinese && studyMode != WordListStudyMode.speakEnglish && showToTopBtn)
               Positioned(
                 right: 16,
                 bottom: 16,
