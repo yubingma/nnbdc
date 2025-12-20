@@ -1457,7 +1457,7 @@ class WordListPageState extends State<WordListPage> {
                                   children: [
                                     const SizedBox(height: 8),
                                     if (!word.speakEnglishPassed) ...[
-                                      // 下划线内显示占位文本，提示用户说出发音
+                                      // 下划线：只有当前单词显示提示，其他只显示下划线
                                       Padding(
                                         padding: const EdgeInsets.only(top: 2),
                                         child: Container(
@@ -1472,11 +1472,14 @@ class WordListPageState extends State<WordListPage> {
                                             ),
                                           ),
                                           child: Text(
-                                            ((isBookmarked) && (asrResult is String && (asrResult as String).isNotEmpty))
-                                                ? (asrResult as String)
-                                                : (word.hintLetterCount > 0
-                                                    ? word.word.spell.substring(0, word.hintLetterCount)
-                                                    : '请说出单词发音'),
+                                            // 只有当前单词才显示提示文字或识别结果
+                                            isBookmarked
+                                                ? ((asrResult is String && (asrResult as String).isNotEmpty)
+                                                    ? (asrResult as String)
+                                                    : (word.hintLetterCount > 0
+                                                        ? word.word.spell.substring(0, word.hintLetterCount)
+                                                        : '请说出单词发音'))
+                                                : '', // 非当前单词只显示下划线，不显示文字
                                             textScaler: TextScaler.linear(1.0),
                                             style: TextStyle(
                                               fontSize: 14,
