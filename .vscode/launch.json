@@ -45,7 +45,14 @@
             "deviceId": "7D73A734-78E6-4B44-A97B-CEE5F60EFFEE",
             "flutterMode": "debug"
         },
-        
+        {
+            "name": "App-ipad-simulator-13-inch",
+            "request": "launch",
+            "type": "dart",
+            "program": "${workspaceFolder}/app/lib/main.dart",
+            "deviceId": "8308A5A8-D214-4EB7-8E4F-B89A148E7064",
+            "flutterMode": "debug"
+        },
         {
             "name": "App-iphone",
             "request": "launch",

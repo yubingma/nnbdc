@@ -432,6 +432,9 @@ upload_with_altool() {
 
 # 主函数
 main() {
+    # 记录开始时间
+    local start_time=$(date +%s)
+    
     # 设置退出时恢复配置的 trap（确保即使脚本被中断也能恢复）
     trap 'restore_config' EXIT INT TERM
     
@@ -487,8 +490,22 @@ main() {
     # 移除 trap（配置已恢复，脚本正常结束）
     trap - EXIT INT TERM
     
+    # 计算并打印总耗时
+    local end_time=$(date +%s)
+    local total_seconds=$((end_time - start_time))
+    local hours=$((total_seconds / 3600))
+    local minutes=$(((total_seconds % 3600) / 60))
+    local seconds=$((total_seconds % 60))
+    
     print_info "========================================="
     print_info "完成！"
+    if [ $hours -gt 0 ]; then
+        print_info "总耗时: ${hours}小时 ${minutes}分钟 ${seconds}秒"
+    elif [ $minutes -gt 0 ]; then
+        print_info "总耗时: ${minutes}分钟 ${seconds}秒"
+    else
+        print_info "总耗时: ${seconds}秒"
+    fi
     print_info "========================================="
 }
 
