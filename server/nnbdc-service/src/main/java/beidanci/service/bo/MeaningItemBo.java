@@ -111,6 +111,7 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
     }
 
     /**
+     * 补丁:
      * 在数据库中为缺失通用释义（dictId = '0'）的单词，补充一条通用释义。
      * 逻辑：从任意词典的释义中拷贝一条，写入为通用释义（dictId='0'）。
      * 仅补充缺失项（NOT EXISTS 保证幂等）。
@@ -119,7 +120,7 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
     public int supplementCommonMeanings() {
         String sql =
                 "INSERT INTO meaning_item (id, ci_xing, meaning, word_id, dict_id, popularity, create_time, update_time) " +
-                "SELECT REPLACE(UUID(),'-',''), mi.ci_xing, mi.meaning, mi.word_id, '0', mi.popularity, NOW(6), NOW(6) " +
+                "SELECT REPLACE(gen_random_uuid()::text, '-', ''), mi.ci_xing, mi.meaning, mi.word_id, '0', mi.popularity, NOW(), NOW() " +
                 "FROM meaning_item mi " +
                 "LEFT JOIN meaning_item cm ON cm.word_id = mi.word_id AND cm.dict_id = '0' " +
                 "WHERE mi.dict_id != '0' AND cm.id IS NULL";
