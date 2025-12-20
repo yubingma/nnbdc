@@ -73,12 +73,17 @@ class SubscriptionUtil {
     try {
       final ProductDetailsResponse response = await _iap.queryProductDetails(_productIds);
       
+      // 记录查询结果详情
+      Global.logger.i('产品查询结果: 找到 ${response.productDetails.length} 个产品, '
+          '未找到 ${response.notFoundIDs.length} 个产品, '
+          '错误: ${response.error?.code ?? "无"}');
+      
       // 检查是否有未找到的产品
       if (response.notFoundIDs.isNotEmpty) {
         Global.logger.w('未找到产品: ${response.notFoundIDs}');
         
         // 如果所有产品都未找到，提供详细提示
-        if (response.notFoundIDs.length == _productIds.length) {
+        if (response.notFoundIDs.length == _productIds.length && response.productDetails.isEmpty) {
           String missingProducts = response.notFoundIDs.join(', ');
           ToastUtil.error(
             '订阅产品未找到：$missingProducts\n\n'
@@ -88,8 +93,12 @@ class SubscriptionUtil {
             '3. 需要在真实设备上测试（模拟器不支持）\n\n'
             '请检查 App Store Connect 中的产品配置'
           );
+        } else if (response.productDetails.isNotEmpty) {
+          // 部分产品未找到，但已找到部分产品，只记录警告不弹窗
+          String missingProducts = response.notFoundIDs.join(', ');
+          Global.logger.w('部分产品未找到（已找到 ${response.productDetails.length} 个）: $missingProducts');
         } else {
-          // 部分产品未找到
+          // 部分产品未找到，但没有找到任何产品
           String missingProducts = response.notFoundIDs.join(', ');
           ToastUtil.info('部分产品未找到：$missingProducts');
         }
@@ -100,7 +109,17 @@ class SubscriptionUtil {
         final error = response.error!;
         Global.logger.e('查询产品失败', error: error);
         
-        // 针对常见错误提供更友好的提示
+        // 即使有错误，如果找到了部分产品，也返回找到的产品
+        if (response.productDetails.isNotEmpty) {
+          Global.logger.w('虽然有错误，但已找到 ${response.productDetails.length} 个产品，将返回这些产品');
+          // 针对常见错误提供提示，但不阻止返回已找到的产品
+          if (error.code == 'storekit_no_response') {
+            ToastUtil.info('部分产品加载失败，请检查网络连接和 App Store Connect 配置');
+          }
+          return response.productDetails;
+        }
+        
+        // 如果没有找到任何产品，才显示错误提示
         String errorMessage = '获取订阅信息失败';
         if (error.code == 'storekit_no_response') {
           errorMessage = '无法连接到 App Store\n\n'
@@ -108,7 +127,8 @@ class SubscriptionUtil {
               '1. 使用真实设备测试（模拟器不支持）\n'
               '2. 设备已登录 Apple ID\n'
               '3. App Store Connect 中产品元数据完整\n'
-              '4. 产品已关联到 App 版本';
+              '4. 产品已关联到 App 版本\n'
+              '5. 网络连接正常';
         } else if (error.code == 'storekit_product_not_available') {
           errorMessage = '订阅产品暂不可用\n\n'
               '请检查 App Store Connect：\n'
@@ -116,14 +136,15 @@ class SubscriptionUtil {
               '2. 产品元数据是否完整\n'
               '3. 产品是否已关联到 App 版本';
         } else {
-          errorMessage = '获取订阅信息失败：${error.message}';
+          final message = error.message.isNotEmpty ? error.message : error.code;
+          errorMessage = '获取订阅信息失败：$message';
         }
         
         ToastUtil.error(errorMessage);
         return [];
       }
 
-      // 如果部分产品找到，返回找到的产品
+      // 返回找到的产品（可能为空，也可能部分找到）
       return response.productDetails;
     } catch (e, stackTrace) {
       Global.logger.e('查询产品异常', error: e, stackTrace: stackTrace);

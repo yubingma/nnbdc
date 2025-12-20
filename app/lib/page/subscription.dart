@@ -131,6 +131,20 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
     }
   }
 
+  /// 获取订阅类型文本
+  String _getSubscriptionTypeText(String? subscriptionType) {
+    if (subscriptionType == null) {
+      return '未知';
+    }
+    if (subscriptionType == 'monthly' || subscriptionType.contains('monthly')) {
+      return '月度订阅';
+    } else if (subscriptionType == 'annual' || subscriptionType == 'yearly' || subscriptionType.contains('yearly') || subscriptionType.contains('annual')) {
+      return '年度订阅';
+    } else {
+      return '订阅';
+    }
+  }
+
   /// 获取订阅状态文本
   String _getSubscriptionStatusText() {
     final user = Global.getLoggedInUser();
@@ -145,7 +159,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
       
       if (expireDate != null) {
         final formatter = DateFormat('yyyy年MM月dd日');
-        final typeText = subscriptionType == 'monthly' ? '月度' : '年度';
+        final typeText = _getSubscriptionTypeText(subscriptionType).replaceAll('订阅', '');
         return 'iOS $typeText会员，有效期至：${formatter.format(expireDate)}';
       } else {
         return 'iOS 会员（永久）';
@@ -204,7 +218,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                           if (isPremium) ...[
                             const SizedBox(height: 8),
                             Text(
-                              '订阅类型：${SubscriptionUtil.getSubscriptionType() == "monthly" ? "月度订阅" : "年度订阅"}',
+                              '订阅类型：${_getSubscriptionTypeText(SubscriptionUtil.getSubscriptionType())}',
                               style: Theme.of(context).textTheme.bodyMedium,
                             ),
                           ],
@@ -261,7 +275,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
   /// 构建产品卡片
   Widget _buildProductCard(ProductDetails product) {
     final isMonthly = product.id.contains('monthly');
-    final isAnnual = product.id.contains('annual');
+    final isAnnual = product.id.contains('yearly') || product.id.contains('annual');
     final isRecommended = isAnnual; // 推荐年度订阅
 
     return Card(
