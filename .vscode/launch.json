@@ -30,15 +30,15 @@
             "flutterMode": "debug"
         },
         {
-            "name": "App-ios-simulator",
+            "name": "App-iphone-simulator",
             "request": "launch",
             "type": "dart",
             "program": "${workspaceFolder}/app/lib/main.dart",
-            "deviceId": "2F66774E-CE21-4878-9D7F-7DE658751FF5",
+            "deviceId": "9759342B-477D-431E-9A2F-9AD6665B0362",
             "flutterMode": "debug"
         },
         {
-            "name": "App-ios-simulator-13-pro-max",
+            "name": "App-iphone-simulator-13-pro-max",
             "request": "launch",
             "type": "dart",
             "program": "${workspaceFolder}/app/lib/main.dart",
