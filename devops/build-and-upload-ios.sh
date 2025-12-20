@@ -251,8 +251,8 @@ ensure_prod_config() {
         exit 1
     fi
     
-    # 检查当前配置
-    local current_profile=$(grep -E '^\s*static\s+String\s+profileName\s*=' "$config_file" | sed -E 's/.*profileName\s*=\s*"([^"]+)".*/\1/')
+    # 检查当前配置（使用 awk 提取）
+    local current_profile=$(awk -F'"' '/profileName =/ {print $2; exit}' "$config_file" 2>/dev/null || echo "")
     
     if [ -z "$current_profile" ]; then
         print_warn "无法解析当前 profile，尝试设置为 prod"
@@ -262,22 +262,36 @@ ensure_prod_config() {
     if [ "$current_profile" != "prod" ]; then
         print_warn "当前 profile 为 '$current_profile'，将切换为 'prod'"
         
-        # 备份原文件（可选，但建议保留）
-        local backup_file="${config_file}.backup.$(date +%Y%m%d_%H%M%S)"
+        # 备份原文件到相同目录
+        local backup_file="${config_file}.bak"
         cp "$config_file" "$backup_file"
         print_info "已备份配置文件: $backup_file"
         
         # 使用 sed 替换 profileName
         if [[ "$OSTYPE" == "darwin"* ]]; then
             # macOS 使用 BSD sed
-            sed -i '' 's/static String profileName = "[^"]*"/static String profileName = "prod"/' "$config_file"
+            sed -i '' 's/profileName = "[^"]*"/profileName = "prod"/' "$config_file" || {
+                print_error "配置文件修改失败"
+                # 恢复备份
+                if [ -f "$backup_file" ]; then
+                    mv "$backup_file" "$config_file"
+                fi
+                exit 1
+            }
         else
             # Linux 使用 GNU sed
-            sed -i 's/static String profileName = "[^"]*"/static String profileName = "prod"/' "$config_file"
+            sed -i 's/profileName = "[^"]*"/profileName = "prod"/' "$config_file" || {
+                print_error "配置文件修改失败"
+                # 恢复备份
+                if [ -f "$backup_file" ]; then
+                    mv "$backup_file" "$config_file"
+                fi
+                exit 1
+            }
         fi
         
-        # 验证修改是否成功
-        local new_profile=$(grep -E '^\s*static\s+String\s+profileName\s*=' "$config_file" | sed -E 's/.*profileName\s*=\s*"([^"]+)".*/\1/')
+        # 验证修改是否成功（使用 awk 提取）
+        local new_profile=$(awk -F'"' '/profileName =/ {print $2; exit}' "$config_file" 2>/dev/null || echo "")
         if [ "$new_profile" = "prod" ]; then
             print_info "配置文件已成功设置为 prod 环境"
             CONFIG_BACKUP_FILE="$backup_file"  # 保存备份文件名，用于后续恢复
