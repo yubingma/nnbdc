@@ -484,10 +484,10 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver 
         timer.cancel();
         return;
       }
-      
+
       // 检查页面是否可见（通过GetX的路由检查）
       final isPageVisible = Get.currentRoute == '/word_list';
-      
+
       // 只在页面可见且语音模式下检查
       if (isPageVisible && (studyMode == WordListStudyMode.speakChinese || studyMode == WordListStudyMode.speakEnglish)) {
         _restoreAsrIfNeeded();
@@ -516,7 +516,7 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver 
           // 再次延迟，确保菜单按钮完全渲染
           Future.delayed(const Duration(milliseconds: 500), () {
             if (!mounted) return;
-            
+
             try {
               final RenderBox? rb = _menuKey.currentContext?.findRenderObject() as RenderBox?;
               final Offset? topLeft = rb?.localToGlobal(Offset.zero);
@@ -529,7 +529,7 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver 
             } catch (e) {
               Global.logger.e('获取菜单按钮位置失败: $e');
             }
-            
+
             Global.logger.d('准备显示引导: mounted=$mounted, dataLoaded=$dataLoaded, _menuRect=$_menuRect');
             if (mounted) {
               setState(() {
@@ -676,9 +676,19 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver 
           // 播放提示音，等待播放完成后再播放单词发音，避免重叠
           await SoundUtil.playAssetSound('correct.mp3', 1.5, 0.2);
           // 识别正确后，先关闭语音识别，避免录到系统发音
-          asr.stopAsr();
-          asr.reset();
-          // 然后播放一次标准发音（提示音已播放完成，不会重叠）
+          // 不等待ASR停止/重置完成，让它们在后台执行，避免阻塞播放单词发音
+          // 这样可以避免卡顿，因为stopAsr可能包含等待逻辑（最多等待2秒）
+          // 使用微任务延迟执行，确保不阻塞当前流程
+          Future.microtask(() {
+            asr.stopAsr().catchError((e) {
+              Global.logger.d("停止ASR失败: $e");
+            });
+            asr.reset().catchError((e) {
+              Global.logger.d("重置ASR失败: $e");
+            });
+          });
+          // 然后立即播放一次标准发音（提示音已播放完成，不会重叠）
+          // 不等待ASR停止/重置完成，直接播放单词发音，避免卡顿
           try {
             if (!_audioPlayerDisposed) {
               await SoundUtil.playPronounceSound2(words[currWordIndex].word, audioPlayer);
@@ -1551,9 +1561,7 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver 
                                             isBookmarked
                                                 ? (word.hintLetterCount > 0
                                                     ? word.word.spell.substring(0, word.hintLetterCount)
-                                                    : ((asrResult is String && (asrResult as String).isNotEmpty)
-                                                        ? (asrResult as String)
-                                                        : '请说出单词发音'))
+                                                    : ((asrResult is String && (asrResult as String).isNotEmpty) ? (asrResult as String) : '请说出单词发音'))
                                                 : '', // 非当前单词只显示下划线，不显示文字
                                             textScaler: TextScaler.linear(1.0),
                                             style: TextStyle(
@@ -1577,7 +1585,8 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver 
                                           final totalWidth = spellWidth + pronounceWidth + 8.0; // 包括间距
 
                                           // 如果总宽度超过可用宽度，或者音标很长，则换行显示
-                                          final shouldWrap = totalWidth > constraints.maxWidth || (word.word.mergedPronounce.isNotEmpty && word.word.mergedPronounce.length > 25);
+                                          final shouldWrap = totalWidth > constraints.maxWidth ||
+                                              (word.word.mergedPronounce.isNotEmpty && word.word.mergedPronounce.length > 25);
 
                                           if (shouldWrap && word.word.mergedPronounce.isNotEmpty) {
                                             // 换行显示：单词一行，音标一行
@@ -1590,7 +1599,9 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver 
                                                   word.word.spell,
                                                   textScaler: TextScaler.linear(1.0),
                                                   style: TextStyle(
-                                                    color: isBookmarked ? const Color(0xFF0097A7) : (isDarkMode ? Colors.white : const Color(0xFF1F2937)),
+                                                    color: isBookmarked
+                                                        ? const Color(0xFF0097A7)
+                                                        : (isDarkMode ? Colors.white : const Color(0xFF1F2937)),
                                                     fontSize: 18,
                                                     fontWeight: FontWeight.w600,
                                                     letterSpacing: 0.6,
@@ -1632,7 +1643,9 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver 
                                                     word.word.spell,
                                                     textScaler: TextScaler.linear(1.0),
                                                     style: TextStyle(
-                                                      color: isBookmarked ? const Color(0xFF0097A7) : (isDarkMode ? Colors.white : const Color(0xFF1F2937)),
+                                                      color: isBookmarked
+                                                          ? const Color(0xFF0097A7)
+                                                          : (isDarkMode ? Colors.white : const Color(0xFF1F2937)),
                                                       fontSize: 18,
                                                       fontWeight: FontWeight.w600,
                                                       letterSpacing: 0.6,
@@ -1698,7 +1711,10 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver 
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   // 给点提示
-                  if ((studyMode == WordListStudyMode.dictation || studyMode == WordListStudyMode.speakChinese || studyMode == WordListStudyMode.speakEnglish) && isBookmarked)
+                  if ((studyMode == WordListStudyMode.dictation ||
+                          studyMode == WordListStudyMode.speakChinese ||
+                          studyMode == WordListStudyMode.speakEnglish) &&
+                      isBookmarked)
                     Container(
                       margin: const EdgeInsets.only(bottom: 6),
                       decoration: BoxDecoration(
@@ -1729,7 +1745,10 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver 
                     ),
 
                   // 清除提示
-                  if ((studyMode == WordListStudyMode.dictation || studyMode == WordListStudyMode.speakChinese || studyMode == WordListStudyMode.speakEnglish) && isBookmarked)
+                  if ((studyMode == WordListStudyMode.dictation ||
+                          studyMode == WordListStudyMode.speakChinese ||
+                          studyMode == WordListStudyMode.speakEnglish) &&
+                      isBookmarked)
                     Container(
                       margin: const EdgeInsets.only(bottom: 6),
                       decoration: BoxDecoration(
@@ -1902,10 +1921,10 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver 
     if (dataLoaded) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        
+
         // 使用GetX的路由检查，更可靠
         final isPageVisible = Get.currentRoute == '/word_list';
-        
+
         if (isPageVisible) {
           // 页面可见：如果在语音模式下，确保ASR已启动
           if (studyMode == WordListStudyMode.speakChinese || studyMode == WordListStudyMode.speakEnglish) {
@@ -1933,480 +1952,474 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver 
     return Stack(
       children: [
         Scaffold(
-      backgroundColor: isDarkMode ? const Color(0xFF121212) : const Color(0xFFF5F7FA),
-      appBar: !dataLoaded
-          ? null
-          : AppBar(
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              flexibleSpace: Container(
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [
-                      AppTheme.gradientStartColor,
-                      AppTheme.gradientEndColor,
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppTheme.primaryColor.withValues(alpha: 0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-              ),
-              titleSpacing: 0,
-              automaticallyImplyLeading: false,
-              title: Row(
-                children: [
-                  args.showBackBtn
-                      ? IconButton(
-                          onPressed: () => Navigator.pop(context),
-                          icon: const Icon(Icons.arrow_back, color: Colors.white),
-                        )
-                      : const SizedBox(width: 16),
-                  Expanded(
-                    child: Row(
-                      children: [
-                        Flexible(
-                          child: Text(
-                            args.appBarTitle,
-                            textScaler: TextScaler.linear(1.0),
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.white,
-                              height: 1.3,
-                              letterSpacing: 0.3,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        Text(
-                          ' ($totalWordCount)',
-                          textScaler: TextScaler.linear(1.0),
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w400,
-                            color: Colors.white.withValues(alpha: 0.9),
-                            height: 1.3,
-                            letterSpacing: 0.2,
-                          ),
+          backgroundColor: isDarkMode ? const Color(0xFF121212) : const Color(0xFFF5F7FA),
+          appBar: !dataLoaded
+              ? null
+              : AppBar(
+                  backgroundColor: Colors.transparent,
+                  elevation: 0,
+                  flexibleSpace: Container(
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [
+                          AppTheme.gradientStartColor,
+                          AppTheme.gradientEndColor,
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppTheme.primaryColor.withValues(alpha: 0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 4),
                         ),
                       ],
                     ),
                   ),
-
-                  /// 书签图标 - 跳到第一个单词
-                  InkWell(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(8, 4, 4, 4),
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          const Icon(Icons.bookmark, color: Colors.white, size: 28),
-                          Text(
-                            'S',
-                            style: TextStyle(fontSize: 10, fontWeight: FontWeight.w500, color: AppTheme.primaryColor),
-                          ),
-                        ],
-                      ),
-                    ),
-                    onTap: () async {
-                      setState(() {
-                        clearQueryResult();
-                        baseIndex = 0;
-                        doQuery(false, 0, 50, false).then((_) {
-                          // 添加这一行，确保跳转到第一个单词
-                          WidgetsBinding.instance.addPostFrameCallback((_) {
-                            itemScrollController.scrollTo(index: 0, duration: const Duration(milliseconds: 300), alignment: 0.5); // 显示在屏幕中部
-                          });
-                        });
-                      });
-                    },
-                  ),
-
-                  /// 书签图标 - 跳到书签位置
-                  InkWell(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          const Icon(Icons.bookmark, color: Colors.white, size: 28),
-                          Text(
-                            isBookMarkValid(bookMark) ? '${getBookMarkRawPosition(bookMark) + 1}' : '书签\n无效',
-                            textScaler: TextScaler.linear(1.0),
-                            style: TextStyle(
-                                fontSize: 9,
-                                fontWeight: FontWeight.w500,
-                                height: 1.1,
-                                letterSpacing: 0.1,
-                                color: isBookMarkValid(bookMark) ? AppTheme.primaryColor : Colors.red[300]),
-                          ),
-                        ],
-                      ),
-                    ),
-                    onTap: () {
-                      if (isBookMarkValid(bookMark)) {
-                        final bookMarkUiPos = getBookMarkUiPosition();
-                        if (bookMarkUiPos >= 0 && bookMarkUiPos < words.length) {
-                          // 书签在当前加载的单词范围内，直接跳转
-                          jumpToBookMark();
-                        } else {
-                          // 书签不在当前范围内，重新加载数据到书签位置
-                          clearQueryResult();
-                          // 计算书签所在页的起始位置
-                          baseIndex = (bookMark!.position ~/ _pageSize) * _pageSize;
-                          doQuery(true, baseIndex!, _pageSize, false).then((_) {
-                            // 滚动到书签位置，增加延迟确保UI完全更新
-                            Future.delayed(const Duration(milliseconds: 100), () {
-                              WidgetsBinding.instance.addPostFrameCallback((_) {
-                                final newBookMarkUiPos = getBookMarkUiPosition();
-                                if (newBookMarkUiPos >= 0 && newBookMarkUiPos < words.length) {
-                                  // 直接滚动到书签位置，不使用jumpToBookMark避免位置检查
-                                  itemScrollController.scrollTo(index: newBookMarkUiPos, duration: const Duration(milliseconds: 300), alignment: 0.5);
-                                }
-                              });
-                            });
-                          });
-                        }
-                      }
-                    },
-                  ),
-
-                  /// 书签图标 - 跳到最后一个单词
-                  InkWell(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(4, 4, 8, 4),
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          const Icon(Icons.bookmark, color: Colors.white, size: 28),
-                          Text(
-                            'E',
-                            style: TextStyle(fontSize: 10, fontWeight: FontWeight.w500, color: AppTheme.primaryColor),
-                          ),
-                        ],
-                      ),
-                    ),
-                    onTap: () async {
-                      setState(() {
-                        clearQueryResult();
-                        baseIndex = totalWordCount - 50;
-                        baseIndex = baseIndex! < 0 ? 0 : baseIndex;
-                        doQuery(false, baseIndex!, 50, true).then((_) {
-                          // 添加这一行，确保跳转到最后一个单词
-                          WidgetsBinding.instance.addPostFrameCallback((_) {
-                            itemScrollController.scrollTo(
-                                index: words.length - 1, duration: const Duration(milliseconds: 300), alignment: 0.5); // 显示在屏幕中部
-                          });
-                        });
-                      });
-                    },
-                  ),
-                ],
-              ),
-              actions: <Widget>[
-                // 使用GlobalKey包裹图标，便于计算其全局坐标
-                Container(
-                  key: _menuKey,
-                  alignment: Alignment.center,
-                  child: PopupMenuButton<String>(
-                  icon: const Icon(
-                    Icons.more_vert,
-                    color: Colors.white,
-                  ),
-                  onSelected: (value) {
-                    switch (value) {
-                      case menuWordList:
-                        setState(() {
-                          studyMode = WordListStudyMode.list;
-                        });
-                        _unsubscribeMeter();
-                        asr.stopAsr();
-                        break;
-                      case menuWriteSpell:
-                        setState(() {
-                          // 进入默写模式：清空所有单词的输入与系统填充状态
-                          studyMode = WordListStudyMode.dictation;
-                          for (final w in words) {
-                            w.spellController.text = '';
-                            w.isAnswerProvidedBySystem = false;
-                            w.hintLetterCount = 0;
-                          }
-                        });
-                        _unsubscribeMeter();
-                        asr.stopAsr();
-                        break;
-                      case menuSpeakChinese:
-                      // 先停止并重置当前ASR，避免前一模式的缓存/语言残留
-                        asr.stopAsr();
-                        asr.reset();
-                        setState(() {
-                          clearWordStates();
-                          // 切到中文识别前，清空英文下划线的识别展示
-                          asrResult = "";
-                          handlingAsrChinese = "";
-                          studyMode = WordListStudyMode.speakChinese;
-                        });
-                        asr.startAsr(decideAsrLanguage());
-                        _subscribeMeterIfNeeded();
-                        break;
-                      case menuSpeakEnglish:
-                        // 先停止并重置当前ASR，避免前一模式的缓存/语言残留
-                        asr.stopAsr();
-                        asr.reset();
-                        setState(() {
-                          clearWordStates();
-                          // 清空上一次的识别展示，避免把中文结果带到英文下划线
-                          asrResult = "";
-                          handlingAsrChinese = "";
-                          studyMode = WordListStudyMode.speakEnglish;
-                        });
-                        // 用英文识别重启ASR，并订阅电平
-                        asr.startAsr(decideAsrLanguage());
-                        _subscribeMeterIfNeeded();
-                        break;
-                      case menuWalkman:
-                        // 跳转到walkman前，如果在语音模式下，先停止ASR
-                        if (studyMode == WordListStudyMode.speakChinese || studyMode == WordListStudyMode.speakEnglish) {
-                          asr.stopAsr();
-                          asr.reset();
-                        }
-                        Get.toNamed('/walkman', arguments: WalkmanParams(args.wordsProvider));
-                        break;
-                    }
-                  },
-                  itemBuilder: (BuildContext context) {
-                    List<String> menus = [
-                      menuWordList,
-                      menuWalkman,
-                    ];
-                    
-                    // 根据ASR支持情况添加语音相关菜单
-                    if (PlatformUtils.isAsrSupported()) {
-                      menus.add(menuSpeakChinese); // 背中文（iOS和Android都支持）
-                    }
-                    if (PlatformUtils.isEnglishAsrSupported()) {
-                      menus.add(menuSpeakEnglish); // 背英文（仅iOS支持）
-                    }
-                    
-                    menus.add(menuWriteSpell);
-                    return menus.map((String choice) {
-                      IconData icon;
-                      switch (choice) {
-                        case menuWordList:
-                          icon = Icons.list_alt;
-                          break;
-                        case menuWalkman:
-                          icon = Icons.headphones;
-                          break;
-                        case menuSpeakChinese:
-                          icon = Icons.record_voice_over;
-                          break;
-                        case menuSpeakEnglish:
-                          icon = Icons.record_voice_over;
-                          break;
-                        case menuWriteSpell:
-                          icon = Icons.edit;
-                          break;
-                        default:
-                          icon = Icons.help_outline;
-                      }
-                      
-                      // 判断当前菜单项是否被选中
-                      bool isSelected = false;
-                      switch (choice) {
-                        case menuWordList:
-                          isSelected = studyMode == WordListStudyMode.list;
-                          break;
-                        case menuSpeakChinese:
-                          isSelected = studyMode == WordListStudyMode.speakChinese;
-                          break;
-                        case menuSpeakEnglish:
-                          isSelected = studyMode == WordListStudyMode.speakEnglish;
-                          break;
-                        case menuWriteSpell:
-                          isSelected = studyMode == WordListStudyMode.dictation;
-                          break;
-                      }
-                      
-                      return PopupMenuItem<String>(
-                        value: choice,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: isSelected 
-                                ? const Color(0xFF0097A7).withValues(alpha: 0.15)
-                                : Colors.transparent,
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          child: Row(
-                            children: [
-                              Icon(
-                                icon,
-                                size: 20,
-                                color: isSelected 
-                                    ? const Color(0xFF0097A7)
-                                    : (isDarkMode ? Colors.white : Colors.grey[700]),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                choice,
-                                style: TextStyle(
-                                  color: isSelected 
-                                      ? const Color(0xFF0097A7)
-                                      : (isDarkMode ? Colors.white : Colors.grey[700]),
-                                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                  titleSpacing: 0,
+                  automaticallyImplyLeading: false,
+                  title: Row(
+                    children: [
+                      args.showBackBtn
+                          ? IconButton(
+                              onPressed: () => Navigator.pop(context),
+                              icon: const Icon(Icons.arrow_back, color: Colors.white),
+                            )
+                          : const SizedBox(width: 16),
+                      Expanded(
+                        child: Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                args.appBarTitle,
+                                textScaler: TextScaler.linear(1.0),
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.white,
+                                  height: 1.3,
+                                  letterSpacing: 0.3,
                                 ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            Text(
+                              ' ($totalWordCount)',
+                              textScaler: TextScaler.linear(1.0),
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w400,
+                                color: Colors.white.withValues(alpha: 0.9),
+                                height: 1.3,
+                                letterSpacing: 0.2,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      /// 书签图标 - 跳到第一个单词
+                      InkWell(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(8, 4, 4, 4),
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              const Icon(Icons.bookmark, color: Colors.white, size: 28),
+                              Text(
+                                'S',
+                                style: TextStyle(fontSize: 10, fontWeight: FontWeight.w500, color: AppTheme.primaryColor),
                               ),
                             ],
                           ),
                         ),
-                      );
-                    }).toList();
-                  },
-                ),
-                ),
-              ],
-            ),
-      body: SafeArea(
-        bottom: false, // 不使用底部安全区域，充分利用屏幕
-        child: Stack(
-          children: [
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: isDarkMode
-                      ? [
-                          const Color(0xFF121212),
-                          const Color(0xFF1A1A1A),
-                          const Color(0xFF121212),
-                        ]
-                      : [
-                          const Color(0xFFF5F7FA),
-                          const Color(0xFFE8ECF1),
-                          const Color(0xFFF5F7FA),
-                        ],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                ),
-              ),
-              child: (!dataLoaded)
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              const Color(0xFF0097A7),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            '正在加载单词...',
-                            textScaler: TextScaler.linear(1.0),
-                            style: TextStyle(
-                              color: isDarkMode ? Colors.white : const Color(0xFF2C3E50),
-                              fontSize: 18,
-                              fontWeight: FontWeight.w400,
-                              height: 1.4,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                  : Padding(
-                      padding: const EdgeInsets.fromLTRB(leftPadding, 2, rightPadding, 0),
-                      child: renderPage(),
-                    ),
-            ),
-            // 设置按钮 - 固定在右下角，使用 Column 垂直排列
-            if (studyMode == WordListStudyMode.speakChinese || studyMode == WordListStudyMode.speakEnglish)
-              Positioned(
-                right: 16,
-                bottom: 16,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // 设置按钮
-                    FloatingActionButton(
-                      mini: true,
-                      heroTag: "settings",
-                      child: const Icon(Icons.settings),
-                      onPressed: () {
-                        _showSettingsDialog();
-                      },
-                    ),
-                    // 回到顶部按钮（仅在需要时显示）
-                    if (showToTopBtn) ...[
-                      const SizedBox(height: 4), // 减少按钮间距
-                      FloatingActionButton(
-                        mini: true,
-                        heroTag: "toTop",
-                        child: const Icon(Icons.arrow_upward),
-                        onPressed: () {
-                          // 置"请勿查询"标志，避免返回顶部时触发查询
-                          doNotQueryPlease = true;
-
-                          // 返回到顶部
-                          itemScrollController.scrollTo(index: 0, duration: const Duration(milliseconds: 300), alignment: 0.5); // 显示在屏幕中部
+                        onTap: () async {
                           setState(() {
-                            showToTopBtn = false;
+                            clearQueryResult();
+                            baseIndex = 0;
+                            doQuery(false, 0, 50, false).then((_) {
+                              // 添加这一行，确保跳转到第一个单词
+                              WidgetsBinding.instance.addPostFrameCallback((_) {
+                                itemScrollController.scrollTo(index: 0, duration: const Duration(milliseconds: 300), alignment: 0.5); // 显示在屏幕中部
+                              });
+                            });
                           });
+                        },
+                      ),
 
-                          // 一段时间后，清除 "请勿查询"标志
-                          Future.delayed(const Duration(milliseconds: 500), () {
-                            doNotQueryPlease = false;
+                      /// 书签图标 - 跳到书签位置
+                      InkWell(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              const Icon(Icons.bookmark, color: Colors.white, size: 28),
+                              Text(
+                                isBookMarkValid(bookMark) ? '${getBookMarkRawPosition(bookMark) + 1}' : '书签\n无效',
+                                textScaler: TextScaler.linear(1.0),
+                                style: TextStyle(
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w500,
+                                    height: 1.1,
+                                    letterSpacing: 0.1,
+                                    color: isBookMarkValid(bookMark) ? AppTheme.primaryColor : Colors.red[300]),
+                              ),
+                            ],
+                          ),
+                        ),
+                        onTap: () {
+                          if (isBookMarkValid(bookMark)) {
+                            final bookMarkUiPos = getBookMarkUiPosition();
+                            if (bookMarkUiPos >= 0 && bookMarkUiPos < words.length) {
+                              // 书签在当前加载的单词范围内，直接跳转
+                              jumpToBookMark();
+                            } else {
+                              // 书签不在当前范围内，重新加载数据到书签位置
+                              clearQueryResult();
+                              // 计算书签所在页的起始位置
+                              baseIndex = (bookMark!.position ~/ _pageSize) * _pageSize;
+                              doQuery(true, baseIndex!, _pageSize, false).then((_) {
+                                // 滚动到书签位置，增加延迟确保UI完全更新
+                                Future.delayed(const Duration(milliseconds: 100), () {
+                                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                                    final newBookMarkUiPos = getBookMarkUiPosition();
+                                    if (newBookMarkUiPos >= 0 && newBookMarkUiPos < words.length) {
+                                      // 直接滚动到书签位置，不使用jumpToBookMark避免位置检查
+                                      itemScrollController.scrollTo(
+                                          index: newBookMarkUiPos, duration: const Duration(milliseconds: 300), alignment: 0.5);
+                                    }
+                                  });
+                                });
+                              });
+                            }
+                          }
+                        },
+                      ),
+
+                      /// 书签图标 - 跳到最后一个单词
+                      InkWell(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(4, 4, 8, 4),
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              const Icon(Icons.bookmark, color: Colors.white, size: 28),
+                              Text(
+                                'E',
+                                style: TextStyle(fontSize: 10, fontWeight: FontWeight.w500, color: AppTheme.primaryColor),
+                              ),
+                            ],
+                          ),
+                        ),
+                        onTap: () async {
+                          setState(() {
+                            clearQueryResult();
+                            baseIndex = totalWordCount - 50;
+                            baseIndex = baseIndex! < 0 ? 0 : baseIndex;
+                            doQuery(false, baseIndex!, 50, true).then((_) {
+                              // 添加这一行，确保跳转到最后一个单词
+                              WidgetsBinding.instance.addPostFrameCallback((_) {
+                                itemScrollController.scrollTo(
+                                    index: words.length - 1, duration: const Duration(milliseconds: 300), alignment: 0.5); // 显示在屏幕中部
+                              });
+                            });
                           });
                         },
                       ),
                     ],
+                  ),
+                  actions: <Widget>[
+                    // 使用GlobalKey包裹图标，便于计算其全局坐标
+                    Container(
+                      key: _menuKey,
+                      alignment: Alignment.center,
+                      child: PopupMenuButton<String>(
+                        icon: const Icon(
+                          Icons.more_vert,
+                          color: Colors.white,
+                        ),
+                        onSelected: (value) {
+                          switch (value) {
+                            case menuWordList:
+                              setState(() {
+                                studyMode = WordListStudyMode.list;
+                              });
+                              _unsubscribeMeter();
+                              asr.stopAsr();
+                              break;
+                            case menuWriteSpell:
+                              setState(() {
+                                // 进入默写模式：清空所有单词的输入与系统填充状态
+                                studyMode = WordListStudyMode.dictation;
+                                for (final w in words) {
+                                  w.spellController.text = '';
+                                  w.isAnswerProvidedBySystem = false;
+                                  w.hintLetterCount = 0;
+                                }
+                              });
+                              _unsubscribeMeter();
+                              asr.stopAsr();
+                              break;
+                            case menuSpeakChinese:
+                              // 先停止并重置当前ASR，避免前一模式的缓存/语言残留
+                              asr.stopAsr();
+                              asr.reset();
+                              setState(() {
+                                clearWordStates();
+                                // 切到中文识别前，清空英文下划线的识别展示
+                                asrResult = "";
+                                handlingAsrChinese = "";
+                                studyMode = WordListStudyMode.speakChinese;
+                              });
+                              asr.startAsr(decideAsrLanguage());
+                              _subscribeMeterIfNeeded();
+                              break;
+                            case menuSpeakEnglish:
+                              // 先停止并重置当前ASR，避免前一模式的缓存/语言残留
+                              asr.stopAsr();
+                              asr.reset();
+                              setState(() {
+                                clearWordStates();
+                                // 清空上一次的识别展示，避免把中文结果带到英文下划线
+                                asrResult = "";
+                                handlingAsrChinese = "";
+                                studyMode = WordListStudyMode.speakEnglish;
+                              });
+                              // 用英文识别重启ASR，并订阅电平
+                              asr.startAsr(decideAsrLanguage());
+                              _subscribeMeterIfNeeded();
+                              break;
+                            case menuWalkman:
+                              // 跳转到walkman前，如果在语音模式下，先停止ASR
+                              if (studyMode == WordListStudyMode.speakChinese || studyMode == WordListStudyMode.speakEnglish) {
+                                asr.stopAsr();
+                                asr.reset();
+                              }
+                              Get.toNamed('/walkman', arguments: WalkmanParams(args.wordsProvider));
+                              break;
+                          }
+                        },
+                        itemBuilder: (BuildContext context) {
+                          List<String> menus = [
+                            menuWordList,
+                            menuWalkman,
+                          ];
+
+                          // 根据ASR支持情况添加语音相关菜单
+                          if (PlatformUtils.isAsrSupported()) {
+                            menus.add(menuSpeakChinese); // 背中文（iOS和Android都支持）
+                          }
+                          if (PlatformUtils.isEnglishAsrSupported()) {
+                            menus.add(menuSpeakEnglish); // 背英文（仅iOS支持）
+                          }
+
+                          menus.add(menuWriteSpell);
+                          return menus.map((String choice) {
+                            IconData icon;
+                            switch (choice) {
+                              case menuWordList:
+                                icon = Icons.list_alt;
+                                break;
+                              case menuWalkman:
+                                icon = Icons.headphones;
+                                break;
+                              case menuSpeakChinese:
+                                icon = Icons.record_voice_over;
+                                break;
+                              case menuSpeakEnglish:
+                                icon = Icons.record_voice_over;
+                                break;
+                              case menuWriteSpell:
+                                icon = Icons.edit;
+                                break;
+                              default:
+                                icon = Icons.help_outline;
+                            }
+
+                            // 判断当前菜单项是否被选中
+                            bool isSelected = false;
+                            switch (choice) {
+                              case menuWordList:
+                                isSelected = studyMode == WordListStudyMode.list;
+                                break;
+                              case menuSpeakChinese:
+                                isSelected = studyMode == WordListStudyMode.speakChinese;
+                                break;
+                              case menuSpeakEnglish:
+                                isSelected = studyMode == WordListStudyMode.speakEnglish;
+                                break;
+                              case menuWriteSpell:
+                                isSelected = studyMode == WordListStudyMode.dictation;
+                                break;
+                            }
+
+                            return PopupMenuItem<String>(
+                              value: choice,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: isSelected ? const Color(0xFF0097A7).withValues(alpha: 0.15) : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      icon,
+                                      size: 20,
+                                      color: isSelected ? const Color(0xFF0097A7) : (isDarkMode ? Colors.white : Colors.grey[700]),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      choice,
+                                      style: TextStyle(
+                                        color: isSelected ? const Color(0xFF0097A7) : (isDarkMode ? Colors.white : Colors.grey[700]),
+                                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }).toList();
+                        },
+                      ),
+                    ),
                   ],
                 ),
-              ),
-            // 回到顶部按钮（非语音模式时单独显示，语音模式下与设置按钮一起显示）
-            if (studyMode != WordListStudyMode.speakChinese && studyMode != WordListStudyMode.speakEnglish && showToTopBtn)
-              Positioned(
-                right: 16,
-                bottom: 16,
-                child: FloatingActionButton(
-                  mini: true,
-                  heroTag: "toTop",
-                  child: const Icon(Icons.arrow_upward),
-                  onPressed: () {
-                    // 置"请勿查询"标志，避免返回顶部时触发查询
-                    doNotQueryPlease = true;
-
-                    // 返回到顶部
-                    itemScrollController.scrollTo(index: 0, duration: const Duration(milliseconds: 300), alignment: 0.5); // 0.5表示中央对齐
-                    setState(() {
-                      showToTopBtn = false;
-                    });
-
-                    // 一段时间后，清除 "请勿查询"标志
-                    Future.delayed(const Duration(milliseconds: 500), () {
-                      doNotQueryPlease = false;
-                    });
-                  },
+          body: SafeArea(
+            bottom: false, // 不使用底部安全区域，充分利用屏幕
+            child: Stack(
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: isDarkMode
+                          ? [
+                              const Color(0xFF121212),
+                              const Color(0xFF1A1A1A),
+                              const Color(0xFF121212),
+                            ]
+                          : [
+                              const Color(0xFFF5F7FA),
+                              const Color(0xFFE8ECF1),
+                              const Color(0xFFF5F7FA),
+                            ],
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                    ),
+                  ),
+                  child: (!dataLoaded)
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              CircularProgressIndicator(
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  const Color(0xFF0097A7),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                '正在加载单词...',
+                                textScaler: TextScaler.linear(1.0),
+                                style: TextStyle(
+                                  color: isDarkMode ? Colors.white : const Color(0xFF2C3E50),
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w400,
+                                  height: 1.4,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : Padding(
+                          padding: const EdgeInsets.fromLTRB(leftPadding, 2, rightPadding, 0),
+                          child: renderPage(),
+                        ),
                 ),
-              ),
-          ],
+                // 设置按钮 - 固定在右下角，使用 Column 垂直排列
+                if (studyMode == WordListStudyMode.speakChinese || studyMode == WordListStudyMode.speakEnglish)
+                  Positioned(
+                    right: 16,
+                    bottom: 16,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // 设置按钮
+                        FloatingActionButton(
+                          mini: true,
+                          heroTag: "settings",
+                          child: const Icon(Icons.settings),
+                          onPressed: () {
+                            _showSettingsDialog();
+                          },
+                        ),
+                        // 回到顶部按钮（仅在需要时显示）
+                        if (showToTopBtn) ...[
+                          const SizedBox(height: 4), // 减少按钮间距
+                          FloatingActionButton(
+                            mini: true,
+                            heroTag: "toTop",
+                            child: const Icon(Icons.arrow_upward),
+                            onPressed: () {
+                              // 置"请勿查询"标志，避免返回顶部时触发查询
+                              doNotQueryPlease = true;
+
+                              // 返回到顶部
+                              itemScrollController.scrollTo(index: 0, duration: const Duration(milliseconds: 300), alignment: 0.5); // 显示在屏幕中部
+                              setState(() {
+                                showToTopBtn = false;
+                              });
+
+                              // 一段时间后，清除 "请勿查询"标志
+                              Future.delayed(const Duration(milliseconds: 500), () {
+                                doNotQueryPlease = false;
+                              });
+                            },
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                // 回到顶部按钮（非语音模式时单独显示，语音模式下与设置按钮一起显示）
+                if (studyMode != WordListStudyMode.speakChinese && studyMode != WordListStudyMode.speakEnglish && showToTopBtn)
+                  Positioned(
+                    right: 16,
+                    bottom: 16,
+                    child: FloatingActionButton(
+                      mini: true,
+                      heroTag: "toTop",
+                      child: const Icon(Icons.arrow_upward),
+                      onPressed: () {
+                        // 置"请勿查询"标志，避免返回顶部时触发查询
+                        doNotQueryPlease = true;
+
+                        // 返回到顶部
+                        itemScrollController.scrollTo(index: 0, duration: const Duration(milliseconds: 300), alignment: 0.5); // 0.5表示中央对齐
+                        setState(() {
+                          showToTopBtn = false;
+                        });
+
+                        // 一段时间后，清除 "请勿查询"标志
+                        Future.delayed(const Duration(milliseconds: 500), () {
+                          doNotQueryPlease = false;
+                        });
+                      },
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          floatingActionButton: null,
         ),
-      ),
-      floatingActionButton: null,
-    ),
         // 新手引导覆盖层 - 在Scaffold之上，覆盖整个屏幕包括AppBar
-        if (showGuide)
-          _buildGuideOverlay(),
+        if (showGuide) _buildGuideOverlay(),
       ],
     );
   }
@@ -2416,18 +2429,18 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver 
     final isDarkMode = context.read<DarkMode>().isDarkMode;
     final screenWidth = MediaQuery.of(context).size.width;
     final safePadding = MediaQuery.of(context).padding;
-    
+
     final double defaultTop = safePadding.top + kToolbarHeight + 8;
-    
+
     // 覆盖层现在在Stack顶层，和AppBar同一坐标系，直接使用全局坐标
     final double appBarTotalHeight = safePadding.top + kToolbarHeight;
-    
+
     // 箭头组件的顶部位置：让箭头尖端对齐到图标底部
     // PopupMenuButton的Container高56px，实际图标约24px在中心，所以图标底部约在中心+12
-    final double columnTop = _menuRect != null 
+    final double columnTop = _menuRect != null
         ? _menuRect!.center.dy + 12 // 直接使用全局坐标，不需要转换
         : defaultTop;
-    
+
     // 箭头长度：固定值
     const double arrowHeight = 30.0;
 
@@ -2471,100 +2484,98 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver 
                   // 阻止事件冒泡，避免点击气泡内容时关闭
                 },
                 child: Container(
-                      constraints: const BoxConstraints(maxWidth: 280),
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [
-                            AppTheme.gradientStartColor,
-                            AppTheme.gradientEndColor,
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppTheme.primaryColor.withValues(alpha: 0.4),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
+                  constraints: const BoxConstraints(maxWidth: 280),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [
+                        AppTheme.gradientStartColor,
+                        AppTheme.gradientEndColor,
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppTheme.primaryColor.withValues(alpha: 0.4),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.lightbulb,
+                            color: Colors.white,
+                            size: 24,
+                          ),
+                          const SizedBox(width: 8),
+                          const Text(
+                            '新手提示',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              decoration: TextDecoration.none,
+                              fontWeight: FontWeight.w400,
+                            ),
                           ),
                         ],
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(
-                                Icons.lightbulb,
-                                color: Colors.white,
-                                size: 24,
-                              ),
-                              const SizedBox(width: 8),
-                              const Text(
-                                '新手提示',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  decoration: TextDecoration.none,
-                                  fontWeight: FontWeight.w400,
-                                ),
-                              ),
-                            ],
+                      const SizedBox(height: 12),
+                      const Text(
+                        '这里有一些有趣的功能，你可以试试看:',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          height: 1.5,
+                          fontWeight: FontWeight.w400,
+                          decoration: TextDecoration.none,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      _buildMenuItem(Icons.list_alt, '词表浏览'),
+                      _buildMenuItem(Icons.headphones, '随身听'),
+                      // 根据平台支持情况动态显示功能
+                      if (PlatformUtils.isAsrSupported()) _buildMenuItem(Icons.record_voice_over, '背中文'),
+                      if (PlatformUtils.isEnglishAsrSupported()) _buildMenuItem(Icons.record_voice_over, '背英文'),
+                      _buildMenuItem(Icons.edit, '默写'),
+                      const SizedBox(height: 16),
+                      // 不再显示按钮
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            // 点击按钮标记为不再显示
+                            _dismissGuideForever();
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: AppTheme.primaryColor,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            elevation: 2,
                           ),
-                          const SizedBox(height: 12),
-                          const Text(
-                            '这里有一些有趣的功能，你可以试试看:',
+                          child: const Text(
+                            '不再显示',
                             style: TextStyle(
-                              color: Colors.white,
                               fontSize: 14,
-                              height: 1.5,
-                              fontWeight: FontWeight.w400,
                               decoration: TextDecoration.none,
                             ),
                           ),
-                          const SizedBox(height: 8),
-                          _buildMenuItem(Icons.list_alt, '词表浏览'),
-                          _buildMenuItem(Icons.headphones, '随身听'),
-                          // 根据平台支持情况动态显示功能
-                          if (PlatformUtils.isAsrSupported())
-                            _buildMenuItem(Icons.record_voice_over, '背中文'),
-                          if (PlatformUtils.isEnglishAsrSupported())
-                            _buildMenuItem(Icons.record_voice_over, '背英文'),
-                          _buildMenuItem(Icons.edit, '默写'),
-                          const SizedBox(height: 16),
-                          // 不再显示按钮
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed: () {
-                                // 点击按钮标记为不再显示
-                                _dismissGuideForever();
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.white,
-                                foregroundColor: AppTheme.primaryColor,
-                                padding: const EdgeInsets.symmetric(vertical: 12),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                elevation: 2,
-                              ),
-                              child: const Text(
-                                '不再显示',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  decoration: TextDecoration.none,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
-                    ),
+                    ],
+                  ),
+                ),
               ),
             ),
           ],
