@@ -44,6 +44,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
   static const double rightPadding = 16;
 
   void reorderData(int oldIndex, int newIndex) {
+    if (!mounted) return;
     setState(() {
       if (newIndex > oldIndex) {
         newIndex -= 1;
@@ -134,9 +135,12 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
       // 获取用户的今日打卡状态
       hasDakaToday = (await UserBo().hasDakaToday(user!.id!)).data!;
 
-      setState(() {
-        dataLoaded = true;
-      });
+      // 检查页面是否仍然挂载，避免在dispose后调用setState
+      if (mounted) {
+        setState(() {
+          dataLoaded = true;
+        });
+      }
     } finally {
       // 重新启用loading提示
       Api.setLoadingDisabled(false);
@@ -691,6 +695,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
                       child: InkWell(
                         borderRadius: BorderRadius.circular(16),
                         onTap: () {
+                          if (!mounted) return;
                           setState(() {
                             step.state = step.state == StudyStepState.active.json ? StudyStepState.inactive.json : StudyStepState.active.json;
                             saveStudyStep();
