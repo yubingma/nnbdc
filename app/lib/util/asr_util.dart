@@ -24,8 +24,66 @@ class AsrUtil {
     'mail': 'male',
   };
 
+  /// 将阿拉伯数字转换为中文数字（支持0-9999）
+  /// 例如：12 -> 十二，123 -> 一百二十三
+  static String _convertArabicToChinese(int num) {
+    if (num == 0) return '零';
+    if (num > 9999) return num.toString(); // 超过范围，返回原数字
+
+    const List<String> digits = ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九'];
+
+    if (num < 10) {
+      return digits[num];
+    }
+
+    if (num < 20) {
+      // 10-19的特殊处理：十、十一、十二...十九
+      if (num == 10) return '十';
+      return '十${digits[num % 10]}';
+    }
+
+    if (num < 100) {
+      // 20-99：二十、二十一...九十九
+      int tens = num ~/ 10;
+      int ones = num % 10;
+      String result = '${digits[tens]}十';
+      if (ones > 0) {
+        result += digits[ones];
+      }
+      return result;
+    }
+
+    if (num < 1000) {
+      // 100-999：一百、一百零一...九百九十九
+      int hundreds = num ~/ 100;
+      int remainder = num % 100;
+      String result = '${digits[hundreds]}百';
+      if (remainder > 0) {
+        if (remainder < 10) {
+          result += '零${digits[remainder]}';
+        } else {
+          result += _convertArabicToChinese(remainder);
+        }
+      }
+      return result;
+    }
+
+    // 1000-9999：一千、一千零一...九千九百九十九
+    int thousands = num ~/ 1000;
+    int remainder = num % 1000;
+    String result = '${digits[thousands]}千';
+    if (remainder > 0) {
+      if (remainder < 100) {
+        result += '零${_convertArabicToChinese(remainder)}';
+      } else {
+        result += _convertArabicToChinese(remainder);
+      }
+    }
+    return result;
+  }
+
   /// 预处理语音识别结果
-  /// 主要处理发音相似的中英文替换
+  /// 主要处理发音相似的中英文替换，并将阿拉伯数字转换为中文数字
   static String preprocess(String result) {
     if (result.isEmpty) return result;
 
@@ -36,6 +94,22 @@ class AsrUtil {
     for (String english in _pronunciationMap.keys) {
       lowerResult = lowerResult.replaceAll(english, _pronunciationMap[english]!);
     }
+
+    // 将阿拉伯数字转换为中文数字
+    // 使用正则表达式匹配所有数字（包括多位数）
+    lowerResult = lowerResult.replaceAllMapped(RegExp(r'\d+'), (match) {
+      final numStr = match.group(0);
+      if (numStr != null) {
+        try {
+          final num = int.parse(numStr);
+          return _convertArabicToChinese(num);
+        } catch (e) {
+          // 解析失败，返回原数字
+          return numStr;
+        }
+      }
+      return match.group(0) ?? '';
+    });
 
     // 仅提取汉字，聚焦中文匹配，避免英文/符号噪声影响
     String chineseOnly = lowerResult.replaceAll(RegExp(r"[^\u4e00-\u9fa5]"), '');
