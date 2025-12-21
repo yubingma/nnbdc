@@ -488,9 +488,13 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver 
       // 检查页面是否可见（通过GetX的路由检查）
       final isPageVisible = Get.currentRoute == '/word_list';
 
-      // 只在页面可见且语音模式下检查
+      // 只在页面可见且语音模式下检查（但要避免在播放音频时恢复ASR，防止干扰播放）
       if (isPageVisible && (studyMode == WordListStudyMode.speakChinese || studyMode == WordListStudyMode.speakEnglish)) {
-        _restoreAsrIfNeeded();
+        // 检查音频播放器是否正在播放，如果正在播放则跳过ASR恢复，避免干扰
+        final isPlaying = audioPlayer.state == PlayerState.playing;
+        if (!isPlaying) {
+          _restoreAsrIfNeeded();
+        }
       } else if (!isPageVisible) {
         // 页面不可见时，如果在语音模式下且ASR正在运行，停止它
         if (studyMode == WordListStudyMode.speakChinese || studyMode == WordListStudyMode.speakEnglish) {
@@ -676,19 +680,23 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver 
           // 播放提示音，等待播放完成后再播放单词发音，避免重叠
           await SoundUtil.playAssetSound('correct.mp3', 1.5, 0.2);
           // 识别正确后，先关闭语音识别，避免录到系统发音
-          // 不等待ASR停止/重置完成，让它们在后台执行，避免阻塞播放单词发音
-          // 这样可以避免卡顿，因为stopAsr可能包含等待逻辑（最多等待2秒）
-          // 使用微任务延迟执行，确保不阻塞当前流程
-          Future.microtask(() {
-            asr.stopAsr().catchError((e) {
-              Global.logger.d("停止ASR失败: $e");
-            });
+          // 先停止ASR（但使用超时，避免长时间等待）
+          try {
+            await asr.stopAsr().timeout(
+              const Duration(milliseconds: 500),
+              onTimeout: () {
+                Global.logger.w('停止ASR超时，继续播放单词发音');
+              },
+            );
+            // reset操作不等待，在后台执行
             asr.reset().catchError((e) {
               Global.logger.d("重置ASR失败: $e");
             });
-          });
-          // 然后立即播放一次标准发音（提示音已播放完成，不会重叠）
-          // 不等待ASR停止/重置完成，直接播放单词发音，避免卡顿
+          } catch (e) {
+            Global.logger.d("停止ASR失败: $e");
+            // 即使停止失败，也继续播放单词发音
+          }
+          // 然后播放一次标准发音（提示音已播放完成，ASR已停止，不会干扰播放）
           try {
             if (!_audioPlayerDisposed) {
               await SoundUtil.playPronounceSound2(words[currWordIndex].word, audioPlayer);
