@@ -154,9 +154,6 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver 
   /// 是否显示新手引导
   bool showGuide = false;
 
-  /// 是否已经添加了ASR恢复检查的postFrameCallback（用于避免重复添加）
-  bool _asrRestoreCheckAdded = false;
-
   /// ASR恢复检查定时器（用于定期检查并恢复ASR状态）
   Timer? _asrRestoreTimer;
 
@@ -215,6 +212,15 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver 
     setState(() {
       dataLoaded = true;
     });
+
+    // 数据加载完成后，如果当前是语音模式，启动ASR
+    if (studyMode == WordListStudyMode.speakChinese || studyMode == WordListStudyMode.speakEnglish) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _restoreAsrIfNeeded();
+        }
+      });
+    }
   }
 
   doQuery(bool clearCurrent, int fromIndex, final int pageSize, bool jumpToTailWhenReady) async {
@@ -478,9 +484,22 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver 
         timer.cancel();
         return;
       }
-      // 只在语音模式下检查
-      if (studyMode == WordListStudyMode.speakChinese || studyMode == WordListStudyMode.speakEnglish) {
+      
+      // 检查页面是否可见（通过GetX的路由检查）
+      final isPageVisible = Get.currentRoute == '/word_list';
+      
+      // 只在页面可见且语音模式下检查
+      if (isPageVisible && (studyMode == WordListStudyMode.speakChinese || studyMode == WordListStudyMode.speakEnglish)) {
         _restoreAsrIfNeeded();
+      } else if (!isPageVisible) {
+        // 页面不可见时，如果在语音模式下且ASR正在运行，停止它
+        if (studyMode == WordListStudyMode.speakChinese || studyMode == WordListStudyMode.speakEnglish) {
+          if (asr.state == AsrState.started) {
+            Global.logger.d('页面不可见（当前路由: ${Get.currentRoute}），停止ASR');
+            asr.stopAsr();
+            _unsubscribeMeter();
+          }
+        }
       }
     });
   }
@@ -1878,13 +1897,35 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver 
   Widget build(BuildContext context) {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
 
-    // 在页面build时，如果是语音模式且数据已加载，检查并恢复ASR（用于从其他页面返回后的恢复）
-    if (dataLoaded && (studyMode == WordListStudyMode.speakChinese || studyMode == WordListStudyMode.speakEnglish) && !_asrRestoreCheckAdded) {
-      _asrRestoreCheckAdded = true;
+    // 在页面build时，检查页面是否可见，如果可见且在语音模式下，确保ASR已启动
+    // 如果不可见且在语音模式下，停止ASR（用于从页面离开时停止）
+    if (dataLoaded) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        _asrRestoreCheckAdded = false; // 重置标志，允许下次检查
-        if (mounted && asr.state != AsrState.started) {
-          _restoreAsrIfNeeded();
+        if (!mounted) return;
+        
+        // 使用GetX的路由检查，更可靠
+        final isPageVisible = Get.currentRoute == '/word_list';
+        
+        if (isPageVisible) {
+          // 页面可见：如果在语音模式下，确保ASR已启动
+          if (studyMode == WordListStudyMode.speakChinese || studyMode == WordListStudyMode.speakEnglish) {
+            _restoreAsrIfNeeded();
+          } else {
+            // 非语音模式：如果ASR正在运行，停止它
+            if (asr.state == AsrState.started) {
+              asr.stopAsr();
+              _unsubscribeMeter();
+            }
+          }
+        } else {
+          // 页面不可见：如果在语音模式下，停止ASR
+          if (studyMode == WordListStudyMode.speakChinese || studyMode == WordListStudyMode.speakEnglish) {
+            if (asr.state == AsrState.started) {
+              Global.logger.d('页面不可见（当前路由: ${Get.currentRoute}），停止ASR');
+              asr.stopAsr();
+              _unsubscribeMeter();
+            }
+          }
         }
       });
     }
