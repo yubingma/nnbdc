@@ -91,7 +91,7 @@ class WordListPage extends StatefulWidget {
   }
 }
 
-class WordListPageState extends State<WordListPage> {
+class WordListPageState extends State<WordListPage> with WidgetsBindingObserver {
   static const double leftPadding = 12;
   static const double rightPadding = 16;
   static const double delBtnSize = 24;
@@ -153,6 +153,12 @@ class WordListPageState extends State<WordListPage> {
 
   /// 是否显示新手引导
   bool showGuide = false;
+
+  /// 是否已经添加了ASR恢复检查的postFrameCallback（用于避免重复添加）
+  bool _asrRestoreCheckAdded = false;
+
+  /// ASR恢复检查定时器（用于定期检查并恢复ASR状态）
+  Timer? _asrRestoreTimer;
 
   /// 用于获取右上角菜单按钮的坐标
   final GlobalKey _menuKey = GlobalKey();
@@ -460,10 +466,23 @@ class WordListPageState extends State<WordListPage> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
 
     doInit();
     loadData();
     _checkAndShowGuide();
+
+    // 启动ASR恢复检查定时器（每1.5秒检查一次，如果当前在语音模式下但ASR未启动，则启动它）
+    _asrRestoreTimer = Timer.periodic(const Duration(milliseconds: 1500), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      // 只在语音模式下检查
+      if (studyMode == WordListStudyMode.speakChinese || studyMode == WordListStudyMode.speakEnglish) {
+        _restoreAsrIfNeeded();
+      }
+    });
   }
 
   /// 检查并显示新手引导
@@ -774,6 +793,9 @@ class WordListPageState extends State<WordListPage> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _asrRestoreTimer?.cancel();
+    _asrRestoreTimer = null;
     asr.stopAsr();
     _audioPlayerDisposed = true; // 标记为已释放
     _unsubscribeMeter();
@@ -793,6 +815,38 @@ class WordListPageState extends State<WordListPage> {
       word.focusNode.dispose();
     }
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (!mounted) return;
+
+    if (state == AppLifecycleState.resumed) {
+      // 应用恢复时，如果在语音模式下且ASR未启动，则启动ASR
+      _restoreAsrIfNeeded();
+    } else if (state == AppLifecycleState.paused) {
+      // 应用进入后台时，停止ASR以节省资源
+      asr.stopAsr();
+    }
+  }
+
+  /// 恢复ASR（如果当前在语音模式下且ASR未启动）
+  void _restoreAsrIfNeeded() {
+    if (studyMode == WordListStudyMode.speakChinese || studyMode == WordListStudyMode.speakEnglish) {
+      if (asr.state != AsrState.started && asr.state != AsrState.stopping) {
+        Global.logger.d('检测到ASR未启动（当前状态: ${asr.state}），尝试恢复ASR，模式: $studyMode');
+        try {
+          // 重新初始化事件监听，确保事件订阅有效（类似bdc.dart中的处理）
+          asr.initAsr(onAsrResult);
+          // 然后启动ASR
+          asr.startAsr(decideAsrLanguage());
+          _subscribeMeterIfNeeded();
+        } catch (e, stackTrace) {
+          Global.logger.e('恢复ASR失败', error: e, stackTrace: stackTrace);
+        }
+      }
+    }
   }
 
   jumpToBookMark() {
@@ -1010,9 +1064,10 @@ class WordListPageState extends State<WordListPage> {
       soundFinishListener?.call();
     }
 
-    // 在背中文模式下，播放完成后启动语音识别
-    if (studyMode == WordListStudyMode.speakChinese) {
+    // 在语音模式下，播放完成后启动语音识别
+    if (studyMode == WordListStudyMode.speakChinese || studyMode == WordListStudyMode.speakEnglish) {
       asr.startAsr(decideAsrLanguage());
+      _subscribeMeterIfNeeded();
     }
   }
 
@@ -1493,43 +1548,109 @@ class WordListPageState extends State<WordListPage> {
                                       ),
                                     ] else ...[
                                       // 显示英文拼写与音标
-                                      Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Text(
-                                            word.word.spell,
-                                            textScaler: TextScaler.linear(1.0),
-                                            style: TextStyle(
-                                              color: isBookmarked ? const Color(0xFF0097A7) : (isDarkMode ? Colors.white : const Color(0xFF1F2937)),
-                                              fontSize: 18,
-                                              fontWeight: FontWeight.w600,
-                                              letterSpacing: 0.6,
-                                            ),
-                                          ),
-                                          if (word.word.mergedPronounce.isNotEmpty) ...[
-                                            const SizedBox(width: 8),
-                                            Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                              decoration: BoxDecoration(
-                                                color: (isDarkMode ? Colors.grey[700] : Colors.grey[200])?.withValues(alpha: 0.7),
-                                                borderRadius: BorderRadius.circular(6),
-                                              ),
-                                              child: Text(
-                                                '[${word.word.mergedPronounce}]',
-                                                textScaler: TextScaler.linear(1.0),
-                                                style: TextStyle(
-                                                  color: isDarkMode ? Colors.grey[300] : Colors.grey[600],
-                                                  fontSize: 12,
-                                                  fontFamily: 'NotoSans',
-                                                  fontWeight: FontWeight.w500,
-                                                  height: 1.3,
+                                      LayoutBuilder(
+                                        builder: (context, constraints) {
+                                          // 估算单词和音标所需的宽度
+                                          final spellWidth = word.word.spell.length * 11.0; // 估算单词宽度
+                                          final pronounceWidth = word.word.mergedPronounce.isNotEmpty
+                                              ? (word.word.mergedPronounce.length * 7.0 + 24.0) // 估算音标宽度（包括容器padding）
+                                              : 0.0;
+                                          final totalWidth = spellWidth + pronounceWidth + 8.0; // 包括间距
+
+                                          // 如果总宽度超过可用宽度，或者音标很长，则换行显示
+                                          final shouldWrap = totalWidth > constraints.maxWidth || (word.word.mergedPronounce.isNotEmpty && word.word.mergedPronounce.length > 25);
+
+                                          if (shouldWrap && word.word.mergedPronounce.isNotEmpty) {
+                                            // 换行显示：单词一行，音标一行
+                                            return Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                // 单词行
+                                                Text(
+                                                  word.word.spell,
+                                                  textScaler: TextScaler.linear(1.0),
+                                                  style: TextStyle(
+                                                    color: isBookmarked ? const Color(0xFF0097A7) : (isDarkMode ? Colors.white : const Color(0xFF1F2937)),
+                                                    fontSize: 18,
+                                                    fontWeight: FontWeight.w600,
+                                                    letterSpacing: 0.6,
+                                                  ),
                                                 ),
-                                                overflow: TextOverflow.ellipsis,
-                                                maxLines: 1,
-                                              ),
-                                            ),
-                                          ],
-                                        ],
+                                                // 音标行
+                                                Padding(
+                                                  padding: const EdgeInsets.only(top: 4),
+                                                  child: Container(
+                                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                    decoration: BoxDecoration(
+                                                      color: (isDarkMode ? Colors.grey[700] : Colors.grey[200])?.withValues(alpha: 0.7),
+                                                      borderRadius: BorderRadius.circular(6),
+                                                    ),
+                                                    child: Text(
+                                                      '[${word.word.mergedPronounce}]',
+                                                      textScaler: TextScaler.linear(1.0),
+                                                      style: TextStyle(
+                                                        color: isDarkMode ? Colors.grey[300] : Colors.grey[600],
+                                                        fontSize: 12,
+                                                        fontFamily: 'NotoSans',
+                                                        fontWeight: FontWeight.w500,
+                                                        height: 1.3,
+                                                      ),
+                                                      overflow: TextOverflow.ellipsis,
+                                                      maxLines: 1,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            );
+                                          } else {
+                                            // 同行显示：单词和音标在一行
+                                            return Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Flexible(
+                                                  child: Text(
+                                                    word.word.spell,
+                                                    textScaler: TextScaler.linear(1.0),
+                                                    style: TextStyle(
+                                                      color: isBookmarked ? const Color(0xFF0097A7) : (isDarkMode ? Colors.white : const Color(0xFF1F2937)),
+                                                      fontSize: 18,
+                                                      fontWeight: FontWeight.w600,
+                                                      letterSpacing: 0.6,
+                                                    ),
+                                                    overflow: TextOverflow.ellipsis,
+                                                    maxLines: 1,
+                                                  ),
+                                                ),
+                                                if (word.word.mergedPronounce.isNotEmpty) ...[
+                                                  const SizedBox(width: 8),
+                                                  Flexible(
+                                                    child: Container(
+                                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                      decoration: BoxDecoration(
+                                                        color: (isDarkMode ? Colors.grey[700] : Colors.grey[200])?.withValues(alpha: 0.7),
+                                                        borderRadius: BorderRadius.circular(6),
+                                                      ),
+                                                      child: Text(
+                                                        '[${word.word.mergedPronounce}]',
+                                                        textScaler: TextScaler.linear(1.0),
+                                                        style: TextStyle(
+                                                          color: isDarkMode ? Colors.grey[300] : Colors.grey[600],
+                                                          fontSize: 12,
+                                                          fontFamily: 'NotoSans',
+                                                          fontWeight: FontWeight.w500,
+                                                          height: 1.3,
+                                                        ),
+                                                        overflow: TextOverflow.ellipsis,
+                                                        maxLines: 1,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ],
+                                            );
+                                          }
+                                        },
                                       ),
                                     ],
                                   ],
@@ -1756,6 +1877,17 @@ class WordListPageState extends State<WordListPage> {
   @override
   Widget build(BuildContext context) {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
+
+    // 在页面build时，如果是语音模式且数据已加载，检查并恢复ASR（用于从其他页面返回后的恢复）
+    if (dataLoaded && (studyMode == WordListStudyMode.speakChinese || studyMode == WordListStudyMode.speakEnglish) && !_asrRestoreCheckAdded) {
+      _asrRestoreCheckAdded = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _asrRestoreCheckAdded = false; // 重置标志，允许下次检查
+        if (mounted && asr.state != AsrState.started) {
+          _restoreAsrIfNeeded();
+        }
+      });
+    }
 
     return Stack(
       children: [
@@ -2002,6 +2134,11 @@ class WordListPageState extends State<WordListPage> {
                         _subscribeMeterIfNeeded();
                         break;
                       case menuWalkman:
+                        // 跳转到walkman前，如果在语音模式下，先停止ASR
+                        if (studyMode == WordListStudyMode.speakChinese || studyMode == WordListStudyMode.speakEnglish) {
+                          asr.stopAsr();
+                          asr.reset();
+                        }
                         Get.toNamed('/walkman', arguments: WalkmanParams(args.wordsProvider));
                         break;
                     }
