@@ -1358,56 +1358,8 @@ class _TreeGrowthPainter extends CustomPainter {
       final double pixelsPerMeter = size.width / _targetWorldWidthMeters;
       final double stemHeight = math.max(14.0, treeHeightMeters * pixelsPerMeter);
       // 树干粗度随高度持续增长，但速度放缓
-      final double baseWidth = 8 + math.log(treeHeightMeters + 1) * 6;
-      final double topWidth = 1.6 + math.log(treeHeightMeters + 1) * 2.5;
-      final double trunkBaseWidth = baseWidth.clamp(8.0, 80.0);
-      final double trunkTopWidth = topWidth.clamp(1.6, 30.0);
-      final double trunkLeftBase = centerX - trunkBaseWidth;
-      final double trunkRightBase = centerX + trunkBaseWidth;
-      final double trunkLeftTop = centerX - trunkTopWidth;
-      final double trunkRightTop = centerX + trunkTopWidth;
-
-      final double woodStage = math.pow(stageBranch, 0.78).toDouble();
-      final Color trunkHighlight = Color.lerp(
-        const Color(0xFFAF7C48),
-        const Color(0xFF885932),
-        woodStage,
-      )!;
-      final Color trunkShadow = Color.lerp(
-        const Color(0xFF6B4525),
-        const Color(0xFF3F2412),
-        woodStage * 0.6,
-      )!;
-      final Paint trunkPaint = Paint()
-        ..shader = LinearGradient(
-          colors: [
-            trunkHighlight,
-            trunkShadow,
-          ],
-          begin: Alignment.bottomCenter,
-          end: Alignment.topCenter,
-        ).createShader(
-          Rect.fromLTRB(trunkLeftBase, soilTop - stemHeight, trunkRightBase, soilTop),
-        );
-
-      final Path trunkPath = Path()
-        ..moveTo(trunkLeftBase, soilTop)
-        ..lineTo(trunkRightBase, soilTop)
-        ..quadraticBezierTo(
-          centerX + trunkBaseWidth * 0.45,
-          soilTop - stemHeight * 0.48,
-          trunkRightTop,
-          soilTop - stemHeight,
-        )
-        ..lineTo(trunkLeftTop, soilTop - stemHeight)
-        ..quadraticBezierTo(
-          centerX - trunkBaseWidth * 0.45,
-          soilTop - stemHeight * 0.44,
-          trunkLeftBase,
-          soilTop,
-        )
-        ..close();
-      canvas.drawPath(trunkPath, trunkPaint);
+      // 移除不再使用的旧变量以清理代码
+      // 移除旧的渐变树干绘制，以解决变量名称重复和视觉冲突的问题
 
       double fastNoise(int hash) {
         return ((hash & 0x7fffffff) / 0x7fffffff) * 2 - 1;
@@ -1430,18 +1382,19 @@ class _TreeGrowthPainter extends CustomPainter {
 
         // 卡通风格颜色：更饱和，更分明
         final Color baseColor = Color.lerp(
-          const Color(0xFF66BB6A), // 鲜艳的绿
-          const Color(0xFF43A047),
+          const Color(0xFF81C784), // 更亮，更卡通的绿
+          const Color(0xFF4CAF50),
           stageEased * 0.3,
         )!;
         final Color shadowColor = Color.lerp(
+          const Color(0xFF388E3C),
           const Color(0xFF2E7D32),
-          const Color(0xFF1B5E20),
           normalizedScale * 0.3,
         )!;
         final Color outlineColor = const Color(0xFF1B5E20); // 深绿色轮廓
 
-        final double clusterRadius = (canopyHeightPx * 0.55 * scale).clamp(6.0, 70.0);
+        // 增加基础半径倍率，并放宽最大限制 (从 80 增加到 250)
+        final double clusterRadius = (canopyHeightPx * 0.85 * scale).clamp(8.0, 250.0);
 
         final Paint fillPaint = Paint()
           ..color = baseColor
@@ -1454,45 +1407,41 @@ class _TreeGrowthPainter extends CustomPainter {
         final Paint outlinePaint = Paint()
           ..color = outlineColor
           ..style = PaintingStyle.stroke
-          ..strokeWidth = math.max(1.5, clusterRadius * 0.08)
+          ..strokeWidth = math.max(2.0, clusterRadius * 0.08)
           ..strokeCap = StrokeCap.round
           ..strokeJoin = StrokeJoin.round;
 
         canvas.save();
         canvas.translate(origin.dx, origin.dy);
-        canvas.rotate(directionDeg * math.pi / 180);
+        // 树叶不需要跟随树枝完全旋转，保持相对竖直的蓬松感，稍微跟随一点点
+        canvas.rotate(directionDeg * 0.3 * math.pi / 180);
 
-        // 卡通风格：只绘制少量大块的"云朵"形状
-        // 3-4个大圆组成一个团簇
-
-        final double w = clusterRadius * 2.2;
-        final double h = clusterRadius * 1.5;
+        // 极简云朵造型：一个大球 + 两个小球
+        final double w = clusterRadius * 2.0;
+        final double h = clusterRadius * 1.6;
 
         final Path cloudPath = Path();
 
-        // 主体大圆
-        cloudPath.addOval(Rect.fromCenter(center: Offset(0, 0), width: w * 0.9, height: h * 0.9));
+        // 主球
+        cloudPath.addOval(Rect.fromCenter(center: const Offset(0, 0), width: w, height: h));
 
-        // 左右两个辅助圆
-        cloudPath.addOval(Rect.fromCenter(center: Offset(-w * 0.25, h * 0.1), width: w * 0.6, height: h * 0.7));
-        cloudPath.addOval(Rect.fromCenter(center: Offset(w * 0.25, -h * 0.1), width: w * 0.55, height: h * 0.65));
+        // 随机添加 1-2 个子球，增加不对称性
+        if (fastNoise(mix(seed, 900)) > 0) {
+          cloudPath.addOval(Rect.fromCenter(center: Offset(w * 0.35, -h * 0.2), width: w * 0.6, height: h * 0.6));
+        } else {
+          cloudPath.addOval(Rect.fromCenter(center: Offset(-w * 0.35, -h * 0.2), width: w * 0.6, height: h * 0.6));
+        }
 
-        // 顶部一个小圆突起
-        cloudPath.addOval(Rect.fromCenter(center: Offset(-w * 0.1, -h * 0.25), width: w * 0.5, height: h * 0.5));
-
-        // 绘制阴影（在下半部分）
-        final Path shadowPath = Path.combine(PathOperation.intersect, cloudPath, Path()..addRect(Rect.fromLTWH(-w, h * 0.15, w * 2, h)));
-
-        // 先画轮廓背景（稍微放大一点点以消除接缝，或者直接画Stroke）
-        // 在卡通风格中，先画填充，最后画统一的轮廓
+        // 简单的底部阴影（新月形）
+        final Path shadowPath = Path.combine(
+            PathOperation.intersect, cloudPath, Path()..addOval(Rect.fromCenter(center: Offset(w * 0.1, h * 0.3), width: w * 0.9, height: h * 0.8)));
 
         canvas.drawPath(cloudPath, fillPaint);
         canvas.drawPath(shadowPath, shadowPaint);
         canvas.drawPath(cloudPath, outlinePaint);
 
-        // 高光：左上角一个简单的圆斑
-        canvas.drawOval(Rect.fromCenter(center: Offset(-w * 0.2, -h * 0.25), width: w * 0.25, height: h * 0.15),
-            Paint()..color = Colors.white.withValues(alpha: 0.25));
+        // 可爱的圆点高光
+        canvas.drawCircle(Offset(-w * 0.25, -h * 0.25), w * 0.1, Paint()..color = Colors.white.withValues(alpha: 0.4));
 
         canvas.restore();
       }
@@ -1527,22 +1476,45 @@ class _TreeGrowthPainter extends CustomPainter {
         );
       }
 
-      // 树枝：递归生成向上分叉的枝干形态（与根系算法一致）
-      // 树枝随树木高度持续生长
-      final double branchBaseLength = 26 + math.log(treeHeightMeters + 1) * 35;
-      final double branchBaseThickness = 4.2 + math.log(treeHeightMeters + 1) * 2.8;
-      final double branchingFactor = stageBranch.clamp(0.0, 1.0);
-      final double easedBranch = math.pow(stageBranch, 1.35).toDouble();
-      // 增加分支深度，形成茂密的树冠
-      // 减少分支深度，让树看起来更"块状" (Chunky)，提高性能
-      final int branchDepth = math.max(1, 1 + (easedBranch * 3.5).floor());
+      // 树枝：完全重写为"棒棒糖/橡树"风格的生成算法
+      // 不再依赖高度生成细长的树，而是由粗干+大树冠组成
 
-      Color branchColor(int generation) {
-        // 卡通树干：简单的棕色，不用太复杂的渐变
-        return const Color(0xFF795548);
-      }
+      // 基础参数配置
 
-      void drawTreeBranch(
+      // 树干颜色
+      final Paint trunkPaint = Paint()
+        ..color = const Color(0xFF8D6E63) // 较浅的棕色
+        ..style = PaintingStyle.fill;
+      final Paint trunkOutlinePaint = Paint()
+        ..color = const Color(0xFF3E2723) // 深棕色轮廓
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.5
+        ..strokeCap = StrokeCap.round;
+
+      // 根部位置
+      final Offset roots = Offset(centerX, soilTop);
+
+      // 主干高度由 stemHeight 决定，它是根据 treeHeightMeters 计算出来的
+      // 我们将主干分配为总高度的一部分（例如 45%），其余为树冠分叉
+      final double trunkHeight = stemHeight * 0.45;
+      final Offset trunkEnd = roots + Offset(0, -trunkHeight);
+
+      // 树干粗度也随高度增加
+      // 增加树干粗度随高度增加的强度
+      final double trunkThickness = (18.0 + math.pow(treeHeightMeters, 0.72) * 18.0).clamp(18.0, 360.0);
+
+      final Path trunkPath = Path();
+      trunkPath.moveTo(roots.dx - trunkThickness * 0.5, roots.dy);
+      trunkPath.lineTo(roots.dx + trunkThickness * 0.5, roots.dy);
+      trunkPath.lineTo(trunkEnd.dx + trunkThickness * 0.35, trunkEnd.dy);
+      trunkPath.lineTo(trunkEnd.dx - trunkThickness * 0.35, trunkEnd.dy);
+      trunkPath.close();
+
+      canvas.drawPath(trunkPath, trunkPaint);
+      canvas.drawPath(trunkPath, trunkOutlinePaint);
+
+      // 递归绘制树枝（调整为基于主干高度的比例）
+      void drawSimpleBranch(
         Offset start,
         double length,
         double angleDeg,
@@ -1550,207 +1522,103 @@ class _TreeGrowthPainter extends CustomPainter {
         int depth,
         int seed,
       ) {
-        if (depth <= 0 || thickness < 0.6) return;
-
-        // 增加重力影响：角度越接近水平(0或180)，下垂越明显
-        final double adjustedAngle = angleDeg % 360;
-        final double gravityFactor = math.cos(adjustedAngle * math.pi / 180).abs();
-        // 基础弯曲 + 重力下垂
-        // gravity: 向下弯曲 (增大Y)
-        // 注意：坐标系Y向下为正。如果角度是0(水平向右)，增加角度会向下；180(水平向左)，减少角度会向下
-        // 简化模型：直接修改 bend 倾向于增加Y
-
-        // 自然弯曲
-        final double naturalBend = fastNoise(mix(seed, 10)) * (5 + easedBranch * 8);
-        // 重力下垂 (老枝干更重)
-        final double gravityBend = gravityFactor * (10 + easedBranch * 15) * (adjustedAngle > 90 && adjustedAngle < 270 ? -1 : 1);
-
-        final double totalBend = naturalBend + gravityBend * 0.6;
+        if (depth <= 0) {
+          drawLeafCluster(
+            origin: start,
+            directionDeg: 0,
+            // 将树叶大小直接与生长阶段挂钩 (0.5 -> 1.5倍)
+            scale: (0.6 + stageFoliage * 1.0) * (1.0 + fastNoise(mix(seed, 99)) * 0.2),
+            growth: stageFoliage,
+            seed: mix(seed, 100),
+            canopyHeightPx: length * 1.8, // 进一步增大比例
+          );
+          return;
+        }
 
         final double angle = angleDeg * math.pi / 180;
-        final double controlAngle = (angleDeg + totalBend * 0.4) * math.pi / 180;
-        final Offset control = start +
-            Offset(
-              math.cos(controlAngle) * length * 0.5,
-              math.sin(controlAngle) * length * 0.5,
-            );
         final Offset end = start +
             Offset(
-              math.cos(angle + totalBend * math.pi / 180 * 0.8) * length,
-              math.sin(angle + totalBend * math.pi / 180 * 0.8) * length,
+              math.cos(angle) * length,
+              math.sin(angle) * length,
             );
 
-        final Path branchPath = Path()
-          ..moveTo(start.dx, start.dy)
-          ..quadraticBezierTo(control.dx, control.dy, end.dx, end.dy);
-
-        final int generation = branchDepth - depth;
-
-        bool shouldCullBranch() {
-          if (generation <= 0) return false;
-          if (depth > 1) return false;
-          final double maturity = stageBranch.clamp(0.0, 1.0);
-          if (maturity <= 0.35) return false;
-
-          final double deathChance = 0.15;
-          final double randomValue = (fastNoise(mix(seed, 20)) + 1.0) * 0.5;
-          return randomValue < deathChance;
-        }
-
-        if (shouldCullBranch()) return;
-
-        // 绘制树枝轮廓
-        /* canvas.drawPath(
-          branchPath,
-          Paint()
-            ..color = const Color(0xFF3E2723)
-            ..style = PaintingStyle.stroke
-            ..strokeCap = StrokeCap.round
-            ..strokeWidth = thickness + 1.5,
-        ); */
-        // 简单起见，树枝可以不画轮廓，或者只画填充。
-        // 为了卡通效果，画粗一点
-
-        canvas.drawPath(
-          branchPath,
-          Paint()
-            ..color = branchColor(generation)
-            ..style = PaintingStyle.stroke
-            ..strokeCap = StrokeCap.round
-            ..strokeWidth = thickness * 1.2, // 稍微加粗
+        final Path limbPath = Path();
+        limbPath.moveTo(
+          start.dx + math.cos(angle + math.pi / 2) * thickness * 0.5,
+          start.dy + math.sin(angle + math.pi / 2) * thickness * 0.5,
         );
-
-        final double generationRatio = (generation + 1) / (branchDepth + 1);
-        final double foliageStrength = (stageFoliage * (0.6 + generationRatio * 0.6) + 0.12).clamp(0.12, 1.0);
-
-        // 树梢叶簇
-        final double tipScale = ui.lerpDouble(0.34, 1.2, foliageStrength) ?? 0.6; // 稍微变大
-        final double canopyHeightForTip = math.max(12.0, length * 0.5);
-
-        drawLeafCluster(
-          origin: end,
-          directionDeg: angleDeg + fastNoise(mix(seed, 30)) * 15, // 随机角度
-          scale: tipScale,
-          growth: foliageStrength,
-          seed: mix(seed, 31),
-          canopyHeightPx: canopyHeightForTip,
+        limbPath.lineTo(
+          end.dx + math.cos(angle + math.pi / 2) * thickness * 0.4,
+          end.dy + math.sin(angle + math.pi / 2) * thickness * 0.4,
         );
+        limbPath.lineTo(
+          end.dx - math.cos(angle + math.pi / 2) * thickness * 0.4,
+          end.dy - math.sin(angle + math.pi / 2) * thickness * 0.4,
+        );
+        limbPath.lineTo(
+          start.dx - math.cos(angle + math.pi / 2) * thickness * 0.5,
+          start.dy - math.sin(angle + math.pi / 2) * thickness * 0.5,
+        );
+        limbPath.close();
 
-        // 侧芽叶簇 - 随机出现
-        if (foliageStrength > 0.3 && depth > 1) {
-          if (fastNoise(mix(seed, 38)) > 0) {
-            // 50%概率
-            final double budT = 0.5 + fastNoise(mix(seed, 39)) * 0.2;
-            final double invT = 1 - budT;
-            final Offset budPoint = Offset(
-              invT * invT * start.dx + 2 * invT * budT * control.dx + budT * budT * end.dx,
-              invT * invT * start.dy + 2 * invT * budT * control.dy + budT * budT * end.dy,
-            );
-            drawLeafCluster(
-              origin: budPoint,
-              directionDeg: angleDeg - 30 + fastNoise(mix(seed, 41)) * 20,
-              scale: tipScale * 0.7,
-              growth: foliageStrength,
-              seed: mix(seed, 42),
-              canopyHeightPx: canopyHeightForTip * 0.7,
-            );
-          }
+        canvas.drawPath(limbPath, trunkPaint);
+        canvas.drawPath(limbPath, trunkOutlinePaint);
+
+        final int splitCount = 2 + (fastNoise(mix(seed, 10)) > 0 ? 1 : 0);
+
+        for (int i = 0; i < splitCount; i++) {
+          final double spread = 45.0 + fastNoise(mix(seed, 20 + i)) * 15.0;
+          final double newAngle = angleDeg - (spread * (splitCount - 1) / 2) + spread * i;
+          final double jitter = fastNoise(mix(seed, 30 + i)) * 10;
+
+          drawSimpleBranch(
+              end,
+              length * 0.72,
+              newAngle + jitter,
+              thickness * 0.82, // 再次提高子分支粗度保留比例 (从 0.75 提高到 0.82)
+              depth - 1,
+              mix(seed, 40 + i));
         }
 
-        // 不对称分叉
-        // 决定哪个是"主枝"（维持方向），哪个是"侧枝"（分叉出去）
-        // 随机决定 Left or Right 是主枝
-        final bool rightIsMain = fastNoise(mix(seed, 55)) > 0;
-
-        final double nextLength = length * (0.75 + fastNoise(mix(seed, 50)) * 0.1);
-        final double nextThickness = math.max(0.6, thickness * 0.72);
-
-        // 分叉角度
-        final double spreadBase = 25 + easedBranch * 15;
-        final double spreadVar = fastNoise(mix(seed, 51)) * 10;
-
-        // 主枝：角度偏移小，长度较长，且保留更多粗度
-        final double mainAngleOffset = (fastNoise(mix(seed, 52)) * 10);
-        final double sideAngleOffset = spreadBase + spreadVar; // 分叉较大
-
-        final double mainLength = nextLength * 1.1;
-        final double sideLength = nextLength * 0.85;
-
-        final double mainThickness = nextThickness * 0.9;
-        final double sideThickness = nextThickness * 0.7; // 侧枝更细
-
-        if (rightIsMain) {
-          // 右侧为主
-          drawTreeBranch(end, mainLength, angleDeg + mainAngleOffset, mainThickness, depth - 1, mix(seed, 1));
-
-          drawTreeBranch(end, sideLength, angleDeg - sideAngleOffset, sideThickness, depth - 1, mix(seed, 2));
-        } else {
-          // 左侧为主
-          drawTreeBranch(end, sideLength, angleDeg + sideAngleOffset, sideThickness, depth - 1, mix(seed, 1));
-
-          drawTreeBranch(end, mainLength, angleDeg - mainAngleOffset, mainThickness, depth - 1, mix(seed, 2));
-        }
-
-        // 偶尔生出的第三枝 (更少见)
-        if (depth > 2 && fastNoise(mix(seed, 60)) > 0.6) {
-          final double extraLength = nextLength * 0.6;
-          final double extraAngle = angleDeg + fastNoise(mix(seed, 61)) * 40;
-          drawTreeBranch(end, extraLength, extraAngle, nextThickness * 0.6, depth - 2, mix(seed, 3));
-        }
-      }
-
-      final Offset trunkTop = Offset(centerX, soilTop - stemHeight);
-      // 主干顶部的中央枝
-      drawTreeBranch(
-        trunkTop,
-        branchBaseLength,
-        -90,
-        branchBaseThickness * 0.85,
-        branchDepth,
-        mix(branchSeed, 300),
-      );
-      if (branchingFactor > 0.18) {
-        final int baseLateralLevels = 3;
-        final int heightDrivenLevels = math.max(0, (treeHeightMeters / 2.2).floor());
-        final int lateralLevels = (baseLateralLevels + heightDrivenLevels).clamp(3, 14);
-
-        for (int i = 0; i < lateralLevels; i++) {
-          final double levelT = (i + 1) / (lateralLevels + 1);
-          final double anchorFactor = (ui.lerpDouble(0.22, 0.92, levelT) ?? 0.5).clamp(0.18, 0.94);
-          final Offset anchor = Offset(centerX, soilTop - stemHeight * anchorFactor);
-
-          final double strengthNoise = fastNoise(mix(branchSeed, 400 + i)) * 0.08;
-          final double levelStrength = (branchingFactor * (0.52 + levelT * 0.68) + strengthNoise).clamp(0.2, 1.0);
-
-          final double lengthFactor = (ui.lerpDouble(0.42, 0.9, levelStrength) ?? 0.66) * (0.9 + fastNoise(mix(branchSeed, 500 + i)) * 0.08);
-          final double thicknessFactor = (ui.lerpDouble(0.32, 0.78, levelStrength) ?? 0.54) * (0.92 + fastNoise(mix(branchSeed, 600 + i)) * 0.06);
-
-          final double levelLength = branchBaseLength * lengthFactor;
-          final double levelThickness = branchBaseThickness * thicknessFactor;
-
-          final int levelDepth = math.max(1, branchDepth - (i ~/ 2) - 1);
-          final double baseAngle = ui.lerpDouble(84, 72, levelStrength) ?? 78;
-          final double spreadAngle = (ui.lerpDouble(18, 32, levelStrength) ?? 22) * (0.9 + fastNoise(mix(branchSeed, 700 + i)) * 0.05);
-          final double upwardBias = ui.lerpDouble(6, 14, levelStrength) ?? 10;
-
-          drawTreeBranch(
-            anchor,
-            levelLength,
-            -(baseAngle - spreadAngle + upwardBias) + fastNoise(mix(branchSeed, 800 + i)) * 4,
-            levelThickness,
-            levelDepth,
-            mix(branchSeed, 900 + i),
-          );
-          drawTreeBranch(
-            anchor,
-            levelLength,
-            -(baseAngle + spreadAngle + upwardBias) - fastNoise(mix(branchSeed, 1000 + i)) * 4,
-            levelThickness,
-            levelDepth,
-            mix(branchSeed, 1100 + i),
+        if ((fastNoise(mix(seed, 50)) > 0.4)) {
+          drawLeafCluster(
+            origin: end,
+            directionDeg: 0,
+            // 侧边叶团也随生长缩放
+            scale: (0.4 + stageFoliage * 0.5),
+            growth: stageFoliage,
+            seed: mix(seed, 51),
+            canopyHeightPx: length * 1.3,
           );
         }
       }
+
+      // 从主干顶部开始爆发式生长
+      if (stageBranch > 0.2) {
+        final int depth = 2 + (stageBranch * 1.5).floor(); // 保持卡通感，不宜太深
+
+        const int mainBranches = 3;
+        // 树枝的基础长度随高度增长
+        final double baseBranchLength = stemHeight * (0.35 + stageBranch * 0.1);
+
+        for (int i = 0; i < mainBranches; i++) {
+          final double angle = -90.0 + (i - 1) * 45.0 + fastNoise(mix(branchSeed, i)) * 10;
+          drawSimpleBranch(
+              trunkEnd,
+              baseBranchLength,
+              angle,
+              trunkThickness * 0.65, // 再次提高主分支与主干的比例 (从 0.55 提高到 0.65)
+              depth,
+              mix(branchSeed, 1000 + i));
+        }
+      }
+
+      // 根部叶子装饰也随缩放
+      final double shrubSize = (trunkThickness * 1.5).clamp(15.0, 50.0);
+      drawLeafCluster(
+          origin: roots + Offset(-trunkThickness * 0.8, -5), directionDeg: -45, scale: 0.5, growth: 1.0, seed: 1, canopyHeightPx: shrubSize);
+      drawLeafCluster(
+          origin: roots + Offset(trunkThickness * 0.8, -5), directionDeg: 45, scale: 0.5, growth: 1.0, seed: 2, canopyHeightPx: shrubSize);
     }
   }
 
