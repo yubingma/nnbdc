@@ -81,7 +81,20 @@ class Api {
         options.onReceiveProgress = (received, total) {
           if (options.path.contains('getSysDictResById.do') ||
               options.path.contains('getUserDictResById.do')) {
-            _DownloadProgress.update(options.path, received, total);
+            // 使用路径+dictId作为资源ID，便于精确监听特定词书的下载进度
+            // 确保资源ID格式与downloadADict中构造的一致
+            String? dictId = options.queryParameters['dictId'];
+            String resourceId;
+            if (dictId != null) {
+              // 标准化路径格式，确保以/res/开头
+              String normalizedPath = options.path.startsWith('/res/') 
+                  ? options.path 
+                  : '/res/${options.path.split('/').last}';
+              resourceId = '$normalizedPath?dictId=$dictId';
+            } else {
+              resourceId = options.path;
+            }
+            _DownloadProgress.update(resourceId, received, total);
           }
         };
         handler.next(options);
@@ -215,6 +228,8 @@ class CustomInterceptors extends Interceptor {
 class _DownloadProgress {
   static final Map<String, Map<String, dynamic>> _progressMap = {};
   static final Map<String, List<Function(int, int)>> _listeners = {};
+  static final Map<String, int> _lastNotifiedReceived = {};
+  static final Map<String, int> _lastNotifiedAtMs = {};
 
   /// 更新指定资源的下载进度
   static void update(String resourceId, int received, int total) {
@@ -223,8 +238,24 @@ class _DownloadProgress {
       'total': total,
     };
 
-    // 减少监听器通知频率，只在关键节点通知
-    if (received % (1024 * 1024) == 0 || received >= total) { // 每1MB通知一次
+    // 说明：
+    // - 不能使用 received % N == 0 的方式节流：received 的增长步长不固定，几乎不会刚好命中整数倍
+    // - 改为：累计增量达到阈值 或 时间间隔达到阈值 或 下载完成 时通知
+    final nowMs = DateTime.now().millisecondsSinceEpoch;
+    final lastReceived = _lastNotifiedReceived[resourceId] ?? 0;
+    final lastAtMs = _lastNotifiedAtMs[resourceId] ?? 0;
+
+    // 每 32KB 或 200ms 通知一次（两者取其一），下载完成时强制通知
+    const minBytesDelta = 32 * 1024;
+    const minTimeDeltaMs = 200;
+
+    final bytesDelta = (received - lastReceived).abs();
+    final timeDeltaMs = (nowMs - lastAtMs).abs();
+    final bool isDone = (total > 0) && (received >= total);
+
+    if (isDone || bytesDelta >= minBytesDelta || timeDeltaMs >= minTimeDeltaMs) {
+      _lastNotifiedReceived[resourceId] = received;
+      _lastNotifiedAtMs[resourceId] = nowMs;
       _notifyListeners(resourceId, received, total);
     }
   }
@@ -237,11 +268,15 @@ class _DownloadProgress {
   /// 清除指定资源的下载进度
   static void clear(String resourceId) {
     _progressMap.remove(resourceId);
+    _lastNotifiedReceived.remove(resourceId);
+    _lastNotifiedAtMs.remove(resourceId);
   }
 
   /// 清除所有资源的下载进度
   static void clearAll() {
     _progressMap.clear();
+    _lastNotifiedReceived.clear();
+    _lastNotifiedAtMs.clear();
   }
 
   // 监听器管理
