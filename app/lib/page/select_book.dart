@@ -1,7 +1,9 @@
 import 'dart:async';
 
+import 'dart:math' as math;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:nnbdc/api/api.dart';
 import 'package:nnbdc/api/dto.dart';
 import 'package:nnbdc/api/vo.dart';
@@ -14,7 +16,6 @@ import 'package:nnbdc/util/error_handler.dart';
 import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/widget/dict_download_dialog.dart';
 import 'package:provider/provider.dart';
-import 'package:dio/dio.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
@@ -645,6 +646,7 @@ class SelectBookPageState extends State<SelectBookPage> {
         }
 
         // 非 Web：下载到临时文件，避免把大包 bytes 在主 isolate 里做拷贝（会导致 20%→21% 仍卡几秒）
+        final nonWebStopwatch = Stopwatch()..start();
         double downloadLastEmitted = 0.0;
         final tmpDir = await getTemporaryDirectory();
         final tmpPath = p.join(tmpDir.path, 'dict_res_$dictId.bin');
@@ -652,7 +654,7 @@ class SelectBookPageState extends State<SelectBookPage> {
           apiPath,
           tmpPath,
           queryParameters: {'dictId': dictId},
-          options: Options(responseType: ResponseType.bytes),
+          // 让 Dio 走默认的流式下载路径，避免 bytes 模式在结束阶段产生额外解码/缓存开销
           onReceiveProgress: (received, total) {
             if (onProgress != null && total > 0) {
               final p0 = (received / total).clamp(0.0, 1.0);
@@ -664,11 +666,14 @@ class SelectBookPageState extends State<SelectBookPage> {
             }
           },
         );
+        Global.logger.d('✅ 词典资源下载完成(文件) - dictId=$dictId, 耗时=${nonWebStopwatch.elapsedMilliseconds}ms');
 
         // 下载完成：进度到 20%
         if (onProgress != null) {
           onProgress(0.2);
         }
+        // 让 UI 先有机会渲染 20%（避免紧接着的后续逻辑抢占一帧）
+        await Future<void>.delayed(Duration.zero);
 
         // 解析/准备阶段伪进度（覆盖“反序列化卡顿”）：20% -> 最多 25%，最长 10 秒
         double prepareBase = 0.2;
@@ -683,22 +688,40 @@ class SelectBookPageState extends State<SelectBookPage> {
           prepareTimer = Timer.periodic(const Duration(milliseconds: 200), (_) {
             final elapsedMs = prepareStopwatch!.elapsedMilliseconds;
             final t = (elapsedMs / (prepareMaxSeconds * 1000)).clamp(0.0, 1.0);
-            final next = 0.2 + prepareWeightMax * t;
+            // ease-out：前期上升更明显，避免用户感觉 20% 卡住
+            // 归一化到 [0,1]
+            const k = 4.0;
+            final eased = (1 - math.exp(-k * t)) / (1 - math.exp(-k));
+            final next = 0.2 + prepareWeightMax * eased;
             if (next > lastEmitted) {
               lastEmitted = next;
               prepareBase = next;
               onProgress(next.clamp(0.2, 0.2 + prepareWeightMax));
             }
           });
+
+          // 关键：立即给一个“可见的最小增量”，让用户确认 20% 后进入解析阶段。
+          // 然后再把任务交给后台（后台 gzip+jsonDecode 可能会短时间吃满 CPU，导致 UI 定时器被饿死）。
+          const immediate = 0.201; // 20.1%
+          if (immediate > lastEmitted) {
+            lastEmitted = immediate;
+            prepareBase = immediate;
+            onProgress(immediate);
+          }
+          // 确保 UI 至少渲染一帧（否则用户会看到 20% 卡住几秒才开始变化）
+          await WidgetsBinding.instance.endOfFrame;
         }
 
         // 计算 db.sqlite 路径（主 isolate 里做，并缓存，避免首次调用 path_provider 导致 20% 附近卡顿）
+        final dbPathStart = nonWebStopwatch.elapsedMilliseconds;
         final dbPath = await MyDatabase.getDbFilePath();
+        Global.logger.d('📍 获取dbPath耗时=${nonWebStopwatch.elapsedMilliseconds - dbPathStart}ms');
 
         bool importStarted = false;
         Exception? importError;
         bool done = false;
 
+        Global.logger.d('🚀 开始提交导入任务 - dictId=$dictId');
         await for (final msg in DictImportWorker.instance.submit(dbPath: dbPath, filePath: tmpPath)) {
           final type = msg['type'];
           if (type == 'phase') {
