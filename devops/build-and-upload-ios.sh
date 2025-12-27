@@ -5,6 +5,12 @@
 
 set -e
 
+# 确保使用 bash 执行（脚本内部使用了 bash 语法，如 [[ ]]、数组等）
+if [ -z "${BASH_VERSION:-}" ]; then
+    echo "[ERROR] 请使用 bash 执行此脚本，例如: bash $0"
+    exit 1
+fi
+
 # 颜色定义
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -40,7 +46,24 @@ CONFIGURATION="Release"
 EXPORT_METHOD="app-store"  # app-store, ad-hoc, enterprise, development
 
 # 目录配置
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+#
+# 说明：为了支持“在任意目录下执行”，不能直接用 dirname "${BASH_SOURCE[0]}"
+# 因为当脚本通过 PATH 以“文件名”形式执行时，BASH_SOURCE[0] 可能不含路径，dirname 会变成 "."
+# 这里通过 command -v 定位脚本真实路径，并解析 symlink，得到稳定的 SCRIPT_DIR。
+SCRIPT_PATH="${BASH_SOURCE[0]:-$0}"
+if [[ "$SCRIPT_PATH" != */* ]]; then
+    SCRIPT_PATH="$(command -v -- "$SCRIPT_PATH" 2>/dev/null || true)"
+fi
+if [ -z "$SCRIPT_PATH" ]; then
+    echo -e "${RED}[ERROR]${NC} 无法定位脚本路径，请使用带路径的方式执行（例如: ./devops/build-and-upload-ios.sh）"
+    exit 1
+fi
+while [ -L "$SCRIPT_PATH" ]; do
+    SCRIPT_LINK_DIR="$(cd -P "$(dirname "$SCRIPT_PATH")" && pwd)"
+    SCRIPT_PATH="$(readlink "$SCRIPT_PATH")"
+    [[ "$SCRIPT_PATH" != /* ]] && SCRIPT_PATH="$SCRIPT_LINK_DIR/$SCRIPT_PATH"
+done
+SCRIPT_DIR="$(cd -P "$(dirname "$SCRIPT_PATH")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 APP_DIR="$PROJECT_ROOT/app"
 IOS_DIR="$APP_DIR/ios"
