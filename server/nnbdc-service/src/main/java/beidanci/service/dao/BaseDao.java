@@ -718,6 +718,14 @@ public abstract class BaseDao<E extends Po> {
                 continue;
             }
             
+            // 检查 @Column 注解的 updatable 属性
+            if (field.isAnnotationPresent(Column.class)) {
+                Column column = field.getAnnotation(Column.class);
+                if (!column.updatable()) {
+                    continue; // 跳过 updatable = false 的字段
+                }
+            }
+            
             String columnName = EntityTableInfo.getColumnName(field);
             setParts.add(columnName + " = ?");
             
@@ -781,6 +789,19 @@ public abstract class BaseDao<E extends Po> {
                     keyField.setAccessible(true);
                     Object keyValue = keyField.get(compositeKey);
                     String columnName = EntityTableInfo.getColumnName(keyField);
+                    
+                    // 处理枚举类型：如果字段是枚举且使用 @Enumerated(EnumType.STRING)，转换为字符串
+                    if (keyValue != null && keyField.getType().isEnum()) {
+                        if (keyField.isAnnotationPresent(javax.persistence.Enumerated.class)) {
+                            javax.persistence.Enumerated enumerated = keyField.getAnnotation(javax.persistence.Enumerated.class);
+                            if (enumerated.value() == javax.persistence.EnumType.STRING) {
+                                keyValue = ((Enum<?>) keyValue).name();
+                            }
+                        } else {
+                            // 如果没有 @Enumerated 注解，默认使用字符串形式
+                            keyValue = ((Enum<?>) keyValue).name();
+                        }
+                    }
                     
                     if (!first) {
                         whereClause.append(" AND ");
@@ -852,6 +873,19 @@ public abstract class BaseDao<E extends Po> {
                     keyField.setAccessible(true);
                     Object keyValue = keyField.get(compositeKey);
                     String columnName = EntityTableInfo.getColumnName(keyField);
+                    
+                    // 处理枚举类型：如果字段是枚举且使用 @Enumerated(EnumType.STRING)，转换为字符串
+                    if (keyValue != null && keyField.getType().isEnum()) {
+                        if (keyField.isAnnotationPresent(javax.persistence.Enumerated.class)) {
+                            javax.persistence.Enumerated enumerated = keyField.getAnnotation(javax.persistence.Enumerated.class);
+                            if (enumerated.value() == javax.persistence.EnumType.STRING) {
+                                keyValue = ((Enum<?>) keyValue).name();
+                            }
+                        } else {
+                            // 如果没有 @Enumerated 注解，默认使用字符串形式
+                            keyValue = ((Enum<?>) keyValue).name();
+                        }
+                    }
                     
                     if (!first) {
                         whereClause.append(" AND ");
