@@ -1,10 +1,14 @@
 import 'dart:async';
+import 'dart:isolate';
+import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:nnbdc/api/api.dart';
 import 'package:nnbdc/api/dto.dart';
 import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/db/db.dart';
+import 'package:nnbdc/db/dict_import_isolate.dart';
 import 'package:nnbdc/services/throttled_sync_service.dart';
 import 'package:nnbdc/util/loading_utils.dart';
 import 'package:nnbdc/util/toast_util.dart';
@@ -12,6 +16,9 @@ import 'package:nnbdc/util/error_handler.dart';
 import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/widget/dict_download_dialog.dart';
 import 'package:provider/provider.dart';
+import 'package:dio/dio.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 
 import '../global.dart';
 import '../state.dart';
@@ -616,24 +623,120 @@ class SelectBookPageState extends State<SelectBookPage> {
       }
       
       try {
-        DictRes? dictRes = await getDictRes(dict);
-        if (dictRes == null) {
+        // Web 端先不处理（Web 无 isolate/插件限制较多），继续走现有逻辑
+        if (kIsWeb) {
+          DictRes? dictRes = await getDictRes(dict);
+          if (dictRes == null) {
+            ToastUtil.error("[$dictId]下载失败");
+            return false;
+          }
+          if (onProgress != null) {
+            onProgress(0.2);
+          }
+          await importDictRes(dictRes, onProgress: (progress) {
+            if (onProgress != null) {
+              onProgress(0.2 + progress * 0.8);
+            }
+          });
+          return true;
+        }
+
+        // 非 Web：使用 Dio 直接拿 bytes，避免 retrofit 在 UI isolate 反序列化大 JSON 导致卡顿
+        final resp = await Api.dio.get<List<int>>(
+          apiPath,
+          queryParameters: {'dictId': dictId},
+          options: Options(responseType: ResponseType.bytes),
+        );
+        final data = resp.data;
+        if (data == null || data.isEmpty) {
           ToastUtil.error("[$dictId]下载失败");
           return false;
         }
 
-        // 下载完成,确保进度更新到20%
+        // 下载完成：进度到 20%
         if (onProgress != null) {
           onProgress(0.2);
         }
 
-        await importDictRes(dictRes, onProgress: (progress) {
-          // 导入进度占剩余的80%
-          if (onProgress != null) {
-            onProgress(0.2 + progress * 0.8);
+        // 解析/准备阶段伪进度（覆盖“反序列化卡顿”）：20% -> 最多 25%，最长 10 秒
+        double prepareBase = 0.2;
+        double lastEmitted = 0.2;
+        Timer? prepareTimer;
+        Stopwatch? prepareStopwatch;
+        const double prepareWeightMax = 0.05; // 20%~25%
+        const int prepareMaxSeconds = 10;
+
+        if (onProgress != null) {
+          prepareStopwatch = Stopwatch()..start();
+          prepareTimer = Timer.periodic(const Duration(milliseconds: 200), (_) {
+            final elapsedMs = prepareStopwatch!.elapsedMilliseconds;
+            final t = (elapsedMs / (prepareMaxSeconds * 1000)).clamp(0.0, 1.0);
+            final next = 0.2 + prepareWeightMax * t;
+            if (next > lastEmitted) {
+              lastEmitted = next;
+              prepareBase = next;
+              onProgress(next.clamp(0.2, 0.2 + prepareWeightMax));
+            }
+          });
+        }
+
+        // 计算 db.sqlite 路径（主 isolate 里做，避免后台 isolate 调用 path_provider）
+        final dbFolder = await getApplicationDocumentsDirectory();
+        final dbPath = p.join(dbFolder.path, 'db.sqlite');
+
+        // 启动后台 isolate：解析 JSON + 写库，并回传导入进度
+        final receivePort = ReceivePort();
+        final completer = Completer<bool>();
+
+        bool importStarted = false;
+        final sub = receivePort.listen((msg) {
+          try {
+            if (msg is Map) {
+              final type = msg['type'];
+              if (type == 'phase') {
+                // 后台真正进入 import 阶段时停止“准备阶段”伪进度
+                if (msg['value'] == 'import' && !importStarted) {
+                  importStarted = true;
+                  prepareTimer?.cancel();
+                  prepareStopwatch?.stop();
+                }
+              } else if (type == 'progress') {
+                if (onProgress != null) {
+                  final double p0 = (msg['value'] as num).toDouble().clamp(0.0, 1.0);
+                  // 导入阶段使用剩余区间（从 prepareBase 到 100%），保证连续
+                  final overall = prepareBase + p0 * (1.0 - prepareBase);
+                  if (overall > lastEmitted) {
+                    lastEmitted = overall;
+                    onProgress(overall.clamp(prepareBase, 1.0));
+                  }
+                }
+              } else if (type == 'done') {
+                completer.complete(true);
+              } else if (type == 'error') {
+                final message = (msg['message'] ?? '后台导入失败').toString();
+                completer.completeError(Exception(message));
+              }
+            }
+          } catch (e) {
+            completer.completeError(e);
           }
         });
-        return true;
+
+        await Isolate.spawn(dictImportIsolateMain, {
+          'sendPort': receivePort.sendPort,
+          'dbPath': dbPath,
+          'bytes': TransferableTypedData.fromList([Uint8List.fromList(data)]),
+        });
+
+        try {
+          final ok = await completer.future;
+          return ok;
+        } finally {
+          await sub.cancel();
+          receivePort.close();
+          prepareTimer?.cancel();
+          prepareStopwatch?.stop();
+        }
       } finally {
         // 移除下载进度监听器
         if (downloadProgressListener != null) {
@@ -660,6 +763,18 @@ class SelectBookPageState extends State<SelectBookPage> {
 
   static Future<void> importDictRes(DictRes dictRes, {Function(double)? onProgress}) async {
     final totalStopwatch = Stopwatch()..start();
+    final yieldStopwatch = Stopwatch()..start();
+    Future<void> yieldToUiIfNeeded([int? forceEveryItems, int? i]) async {
+      // 让 UI/Timer 有机会刷新，避免在大列表转换时卡住几秒
+      if (forceEveryItems != null && i != null && i % forceEveryItems != 0) {
+        return;
+      }
+      if (yieldStopwatch.elapsedMilliseconds >= 16) {
+        yieldStopwatch.reset();
+        yieldStopwatch.start();
+        await Future<void>.delayed(Duration.zero);
+      }
+    }
 
     // 计算每种资源的记录条数
     final resourceCounts = {
@@ -681,6 +796,9 @@ class SelectBookPageState extends State<SelectBookPage> {
     Global.logger.d('📊 资源统计: $resourceCounts');
 
     try {
+      // 先让一帧 UI 有机会刷新（例如 20% 后的“准备阶段”伪进度）
+      await Future<void>.delayed(Duration.zero);
+
       // 收集所有需要执行的操作和对应的记录数
       List<Map<String, dynamic>> operations = [];
 
@@ -706,35 +824,41 @@ class SelectBookPageState extends State<SelectBookPage> {
       }
 
       // 添加单词操作(批量) - 必须在词书-单词关系之前插入
-      List<Word> words = dictRes.words
-              ?.map((word) => Word(
-                  id: word.id,
-                  americaPronounce: word.americaPronounce,
-                  britishPronounce: word.britishPronounce,
-                  groupInfo: word.groupInfo,
-                  longDesc: word.longDesc,
-                  pronounce: word.pronounce,
-                  shortDesc: word.shortDesc,
-                  popularity: word.popularity,
-                  spell: word.spell,
-                  createTime: word.createTime,
-                  updateTime: word.updateTime))
-              .toList() ??
-          [];
+      final srcWords = dictRes.words ?? <WordDto>[];
+      final List<Word> words = <Word>[];
+      for (int i = 0; i < srcWords.length; i++) {
+        final word = srcWords[i];
+        words.add(Word(
+            id: word.id,
+            americaPronounce: word.americaPronounce,
+            britishPronounce: word.britishPronounce,
+            groupInfo: word.groupInfo,
+            longDesc: word.longDesc,
+            pronounce: word.pronounce,
+            shortDesc: word.shortDesc,
+            popularity: word.popularity,
+            spell: word.spell,
+            createTime: word.createTime,
+            updateTime: word.updateTime));
+        await yieldToUiIfNeeded(1500, i);
+      }
       if (words.isNotEmpty) {
         operations.add({'operation': () => MyDatabase.instance.wordsDao.insertEntities(words), 'count': resourceCounts['单词']!, 'name': '单词'});
       }
 
       // 添加词书-单词关系操作(批量) - 必须在单词插入之后
-      List<DictWord> dictWords = dictRes.dictWords
-              ?.map((dictWord) => DictWord(
-                  dictId: dictWord.dictId.toString(), // 确保 dictId 是字符串
-                  wordId: dictWord.wordId,
-                  seq: dictWord.seq,
-                  createTime: dictWord.createTime,
-                  updateTime: dictWord.updateTime))
-              .toList() ??
-          [];
+      final srcDictWords = dictRes.dictWords ?? <DictWordDto>[];
+      final List<DictWord> dictWords = <DictWord>[];
+      for (int i = 0; i < srcDictWords.length; i++) {
+        final dictWord = srcDictWords[i];
+        dictWords.add(DictWord(
+            dictId: dictWord.dictId.toString(), // 确保 dictId 是字符串
+            wordId: dictWord.wordId,
+            seq: dictWord.seq,
+            createTime: dictWord.createTime,
+            updateTime: dictWord.updateTime));
+        await yieldToUiIfNeeded(2000, i);
+      }
       if (dictWords.isNotEmpty) {
         operations.add({
           'operation': () => MyDatabase.instance.dictWordsDao.insertEntities(dictWords, false),
@@ -744,86 +868,101 @@ class SelectBookPageState extends State<SelectBookPage> {
       }
 
       // 添加释义操作（批量）- 依赖 Words 和 Dicts
-      List<MeaningItem> meaningItems = dictRes.meaningItems
-              ?.map((meaningItem) => MeaningItem(
-                  id: meaningItem.id,
-                  wordId: meaningItem.wordId,
-                  dictId: meaningItem.dictId,
-                  ciXing: meaningItem.ciXing,
-                  meaning: meaningItem.meaning,
-                  popularity: meaningItem.popularity,
-                  createTime: meaningItem.createTime,
-                  updateTime: meaningItem.updateTime))
-              .toList() ??
-          [];
+      final srcMeaningItems = dictRes.meaningItems ?? <MeaningItemDto>[];
+      final List<MeaningItem> meaningItems = <MeaningItem>[];
+      for (int i = 0; i < srcMeaningItems.length; i++) {
+        final meaningItem = srcMeaningItems[i];
+        meaningItems.add(MeaningItem(
+            id: meaningItem.id,
+            wordId: meaningItem.wordId,
+            dictId: meaningItem.dictId,
+            ciXing: meaningItem.ciXing,
+            meaning: meaningItem.meaning,
+            popularity: meaningItem.popularity,
+            createTime: meaningItem.createTime,
+            updateTime: meaningItem.updateTime));
+        await yieldToUiIfNeeded(2000, i);
+      }
       if (meaningItems.isNotEmpty) {
         operations
             .add({'operation': () => MyDatabase.instance.meaningItemsDao.insertEntities(meaningItems), 'count': resourceCounts['释义']!, 'name': '释义'});
       }
 
       // 添加单词图片操作(批量) - 依赖 Words
-      List<WordImage> wordImages = dictRes.images
-              ?.map((image) => WordImage(
-                  id: image.id,
-                  imageFile: image.imageFile,
-                  foot: image.foot,
-                  hand: image.hand,
-                  authorId: image.authorId,
-                  wordId: image.wordId, // 确保 wordId 是字符串
-                  createTime: image.createTime,
-                  updateTime: image.updateTime))
-              .toList() ??
-          [];
+      final srcImages = dictRes.images ?? <WordImageDto>[];
+      final List<WordImage> wordImages = <WordImage>[];
+      for (int i = 0; i < srcImages.length; i++) {
+        final image = srcImages[i];
+        wordImages.add(WordImage(
+            id: image.id,
+            imageFile: image.imageFile,
+            foot: image.foot,
+            hand: image.hand,
+            authorId: image.authorId,
+            wordId: image.wordId, // 确保 wordId 是字符串
+            createTime: image.createTime,
+            updateTime: image.updateTime));
+        await yieldToUiIfNeeded(2000, i);
+      }
       if (wordImages.isNotEmpty) {
         operations
             .add({'operation': () => MyDatabase.instance.wordImagesDao.insertEntities(wordImages), 'count': resourceCounts['单词图片']!, 'name': '单词图片'});
       }
 
       // 添加形近词操作（批量）- 依赖 Words
-      List<SimilarWord> similarWords = dictRes.similarWords
-              ?.map((similarWord) => SimilarWord(
-                  wordId: similarWord.wordId,
-                  similarWordId: similarWord.similarWordId,
-                  similarWordSpell: similarWord.similarWordSpell,
-                  distance: similarWord.distance))
-              .toList() ??
-          [];
+      final srcSimilarWords = dictRes.similarWords ?? <SimilarWordDto>[];
+      final List<SimilarWord> similarWords = <SimilarWord>[];
+      for (int i = 0; i < srcSimilarWords.length; i++) {
+        final similarWord = srcSimilarWords[i];
+        similarWords.add(SimilarWord(
+            wordId: similarWord.wordId,
+            similarWordId: similarWord.similarWordId,
+            similarWordSpell: similarWord.similarWordSpell,
+            distance: similarWord.distance));
+        await yieldToUiIfNeeded(4000, i);
+      }
       if (similarWords.isNotEmpty) {
         operations.add(
             {'operation': () => MyDatabase.instance.similarWordsDao.insertEntities(similarWords), 'count': resourceCounts['形近词']!, 'name': '形近词'});
       }
 
       // 添加同义词操作(批量) - 依赖 MeaningItems 和 Words
-      List<Synonym> synonyms = dictRes.synonyms
-              ?.map((synonym) => Synonym(
-                  meaningItemId: synonym.meaningItemId,
-                  wordId: synonym.wordId,
-                  spell: synonym.spell,
-                  createTime: synonym.createTime,
-                  updateTime: synonym.updateTime))
-              .toList() ??
-          [];
+      final srcSynonyms = dictRes.synonyms ?? <SynonymDto>[];
+      final List<Synonym> synonyms = <Synonym>[];
+      for (int i = 0; i < srcSynonyms.length; i++) {
+        final synonym = srcSynonyms[i];
+        synonyms.add(Synonym(
+            meaningItemId: synonym.meaningItemId,
+            wordId: synonym.wordId,
+            spell: synonym.spell,
+            createTime: synonym.createTime,
+            updateTime: synonym.updateTime));
+        await yieldToUiIfNeeded(4000, i);
+      }
       if (synonyms.isNotEmpty) {
         operations.add({'operation': () => MyDatabase.instance.synonymsDao.insertEntities(synonyms), 'count': resourceCounts['同义词']!, 'name': '同义词'});
       }
 
       // 添加例句操作(批量) - 依赖 MeaningItems
-      List<Sentence> sentences = dictRes.sentences
-              ?.map((sentence) => Sentence(
-                  id: sentence.id,
-                  english: sentence.english,
-                  chinese: sentence.chinese,
-                  englishDigest: sentence.englishDigest,
-                  theType: sentence.theType,
-                  handCount: sentence.handCount,
-                  footCount: sentence.footCount,
-                  authorId: sentence.authorId,
-                  meaningItemId: sentence.meaningItemId,
-                  wordMeaning: sentence.wordMeaning,
-                  createTime: sentence.createTime,
-                  updateTime: sentence.updateTime))
-              .toList() ??
-          [];
+      final srcSentences = dictRes.sentences ?? <SentenceDto>[];
+      final List<Sentence> sentences = <Sentence>[];
+      for (int i = 0; i < srcSentences.length; i++) {
+        final sentence = srcSentences[i];
+        sentences.add(Sentence(
+            id: sentence.id,
+            english: sentence.english,
+            chinese: sentence.chinese,
+            englishDigest: sentence.englishDigest,
+            theType: sentence.theType,
+            handCount: sentence.handCount,
+            footCount: sentence.footCount,
+            authorId: sentence.authorId,
+            meaningItemId: sentence.meaningItemId,
+            wordMeaning: sentence.wordMeaning,
+            createTime: sentence.createTime,
+            updateTime: sentence.updateTime));
+        await yieldToUiIfNeeded(2000, i);
+      }
       if (sentences.isNotEmpty) {
         operations.add({'operation': () => MyDatabase.instance.sentencesDao.insertEntities(sentences), 'count': resourceCounts['例句']!, 'name': '例句'});
       }

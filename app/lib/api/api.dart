@@ -22,6 +22,7 @@ part 'api.g.dart';
 
 class Api {
   static RestClient? _client;
+  static Dio? _dio;
   static final LoadingService loadingService = LoadingService();
   static bool disableAutoLoading = false;
 
@@ -34,6 +35,12 @@ class Api {
   static RestClient get client {
     _client ??= initClient();
     return _client!;
+  }
+
+  /// 获取内部 Dio 实例（用于少数需要绕过 retrofit 反序列化的场景，例如大 JSON 下载后在后台 isolate 解析）
+  static Dio get dio {
+    _client ??= initClient();
+    return _dio!;
   }
 
   static RestClient initClient() {
@@ -121,6 +128,7 @@ class Api {
     dio.interceptors.add(NetworkInterceptor());
     dio.interceptors.add(CustomInterceptors());
     final client = RestClient(dio, baseUrl: Config.serviceUrl);
+    _dio = dio;
     return client;
   }
 }
