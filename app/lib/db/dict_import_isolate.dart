@@ -173,7 +173,8 @@ Future<void> _runImport({
       final srcWords = dictRes.words ?? <WordDto>[];
       if (srcWords.isNotEmpty) {
         final List<Word> words = <Word>[];
-        for (final w in srcWords) {
+        for (int i = 0; i < srcWords.length; i++) {
+          final w = srcWords[i];
           words.add(Word(
               id: w.id,
               americaPronounce: w.americaPronounce,
@@ -186,6 +187,11 @@ Future<void> _runImport({
               spell: w.spell,
               createTime: w.createTime,
               updateTime: w.updateTime));
+          
+          // 每处理100个单词，yield一次，避免阻塞
+          if (i % 100 == 0) {
+            await Future<void>.delayed(Duration.zero);
+          }
         }
         await db!.wordsDao.insertEntities(words);
         await bump(resourceCounts['单词']!);
@@ -195,13 +201,19 @@ Future<void> _runImport({
       final srcDictWords = dictRes.dictWords ?? <DictWordDto>[];
       if (srcDictWords.isNotEmpty) {
         final List<DictWord> dictWords = <DictWord>[];
-        for (final dw in srcDictWords) {
+        for (int i = 0; i < srcDictWords.length; i++) {
+          final dw = srcDictWords[i];
           dictWords.add(DictWord(
               dictId: dw.dictId.toString(),
               wordId: dw.wordId,
               seq: dw.seq,
               createTime: dw.createTime,
               updateTime: dw.updateTime));
+                
+          // 每处理100个词书-单词关系，yield一次，避免阻塞
+          if (i % 100 == 0) {
+            await Future<void>.delayed(Duration.zero);
+          }
         }
         await db!.dictWordsDao.insertEntities(dictWords, false);
         await bump(resourceCounts['词书-单词关系']!);
@@ -211,7 +223,8 @@ Future<void> _runImport({
       final srcMeaningItems = dictRes.meaningItems ?? <MeaningItemDto>[];
       if (srcMeaningItems.isNotEmpty) {
         final List<MeaningItem> meaningItems = <MeaningItem>[];
-        for (final m in srcMeaningItems) {
+        for (int i = 0; i < srcMeaningItems.length; i++) {
+          final m = srcMeaningItems[i];
           meaningItems.add(MeaningItem(
               id: m.id,
               wordId: m.wordId,
@@ -221,6 +234,11 @@ Future<void> _runImport({
               popularity: m.popularity,
               createTime: m.createTime,
               updateTime: m.updateTime));
+          
+          // 每处理100个释义，yield一次，避免阻塞
+          if (i % 100 == 0) {
+            await Future<void>.delayed(Duration.zero);
+          }
         }
         await db!.meaningItemsDao.insertEntities(meaningItems);
         await bump(resourceCounts['释义']!);
@@ -230,7 +248,8 @@ Future<void> _runImport({
       final srcImages = dictRes.images ?? <WordImageDto>[];
       if (srcImages.isNotEmpty) {
         final List<WordImage> images = <WordImage>[];
-        for (final im in srcImages) {
+        for (int i = 0; i < srcImages.length; i++) {
+          final im = srcImages[i];
           images.add(WordImage(
               id: im.id,
               imageFile: im.imageFile,
@@ -240,6 +259,11 @@ Future<void> _runImport({
               wordId: im.wordId,
               createTime: im.createTime,
               updateTime: im.updateTime));
+          
+          // 每处理100个单词图片，yield一次，避免阻塞
+          if (i % 100 == 0) {
+            await Future<void>.delayed(Duration.zero);
+          }
         }
         await db!.wordImagesDao.insertEntities(images);
         await bump(resourceCounts['单词图片']!);
@@ -249,12 +273,18 @@ Future<void> _runImport({
       final srcSimilarWords = dictRes.similarWords ?? <SimilarWordDto>[];
       if (srcSimilarWords.isNotEmpty) {
         final List<SimilarWord> similarWords = <SimilarWord>[];
-        for (final sw in srcSimilarWords) {
+        for (int i = 0; i < srcSimilarWords.length; i++) {
+          final sw = srcSimilarWords[i];
           similarWords.add(SimilarWord(
               wordId: sw.wordId,
               similarWordId: sw.similarWordId,
               similarWordSpell: sw.similarWordSpell,
               distance: sw.distance));
+          
+          // 每处理100个形近词，yield一次，避免阻塞
+          if (i % 100 == 0) {
+            await Future<void>.delayed(Duration.zero);
+          }
         }
         await db!.similarWordsDao.insertEntities(similarWords);
         await bump(resourceCounts['形近词']!);
@@ -264,13 +294,19 @@ Future<void> _runImport({
       final srcSynonyms = dictRes.synonyms ?? <SynonymDto>[];
       if (srcSynonyms.isNotEmpty) {
         final List<Synonym> synonyms = <Synonym>[];
-        for (final s in srcSynonyms) {
+        for (int i = 0; i < srcSynonyms.length; i++) {
+          final s = srcSynonyms[i];
           synonyms.add(Synonym(
               meaningItemId: s.meaningItemId,
               wordId: s.wordId,
               spell: s.spell,
               createTime: s.createTime,
               updateTime: s.updateTime));
+          
+          // 每处理100个同义词，yield一次，避免阻塞
+          if (i % 100 == 0) {
+            await Future<void>.delayed(Duration.zero);
+          }
         }
         await db!.synonymsDao.insertEntities(synonyms);
         await bump(resourceCounts['同义词']!);
@@ -280,7 +316,8 @@ Future<void> _runImport({
       final srcSentences = dictRes.sentences ?? <SentenceDto>[];
       if (srcSentences.isNotEmpty) {
         final List<Sentence> sentences = <Sentence>[];
-        for (final s in srcSentences) {
+        for (int i = 0; i < srcSentences.length; i++) {
+          final s = srcSentences[i];
           sentences.add(Sentence(
               id: s.id,
               english: s.english,
@@ -294,6 +331,11 @@ Future<void> _runImport({
               wordMeaning: s.wordMeaning,
               createTime: s.createTime,
               updateTime: s.updateTime));
+          
+          // 每处理100个例句，yield一次，避免阻塞
+          if (i % 100 == 0) {
+            await Future<void>.delayed(Duration.zero);
+          }
         }
         await db!.sentencesDao.insertEntities(sentences);
         await bump(resourceCounts['例句']!);

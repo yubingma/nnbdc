@@ -858,7 +858,7 @@ class SelectBookPageState extends State<SelectBookPage> {
             spell: word.spell,
             createTime: word.createTime,
             updateTime: word.updateTime));
-        await yieldToUiIfNeeded(1500, i);
+        await yieldToUiIfNeeded(100, i); // 更频繁地让出UI
       }
       if (words.isNotEmpty) {
         operations.add({'operation': () => MyDatabase.instance.wordsDao.insertEntities(words), 'count': resourceCounts['单词']!, 'name': '单词'});
@@ -875,7 +875,7 @@ class SelectBookPageState extends State<SelectBookPage> {
             seq: dictWord.seq,
             createTime: dictWord.createTime,
             updateTime: dictWord.updateTime));
-        await yieldToUiIfNeeded(2000, i);
+        await yieldToUiIfNeeded(100, i); // 更频繁地让出UI
       }
       if (dictWords.isNotEmpty) {
         operations.add({
@@ -899,7 +899,7 @@ class SelectBookPageState extends State<SelectBookPage> {
             popularity: meaningItem.popularity,
             createTime: meaningItem.createTime,
             updateTime: meaningItem.updateTime));
-        await yieldToUiIfNeeded(2000, i);
+        await yieldToUiIfNeeded(100, i); // 更频繁地让出UI
       }
       if (meaningItems.isNotEmpty) {
         operations
@@ -920,7 +920,7 @@ class SelectBookPageState extends State<SelectBookPage> {
             wordId: image.wordId, // 确保 wordId 是字符串
             createTime: image.createTime,
             updateTime: image.updateTime));
-        await yieldToUiIfNeeded(2000, i);
+        await yieldToUiIfNeeded(100, i); // 更频繁地让出UI
       }
       if (wordImages.isNotEmpty) {
         operations
@@ -937,7 +937,7 @@ class SelectBookPageState extends State<SelectBookPage> {
             similarWordId: similarWord.similarWordId,
             similarWordSpell: similarWord.similarWordSpell,
             distance: similarWord.distance));
-        await yieldToUiIfNeeded(4000, i);
+        await yieldToUiIfNeeded(100, i); // 更频繁地让出UI
       }
       if (similarWords.isNotEmpty) {
         operations.add(
@@ -955,7 +955,7 @@ class SelectBookPageState extends State<SelectBookPage> {
             spell: synonym.spell,
             createTime: synonym.createTime,
             updateTime: synonym.updateTime));
-        await yieldToUiIfNeeded(4000, i);
+        await yieldToUiIfNeeded(100, i); // 更频繁地让出UI
       }
       if (synonyms.isNotEmpty) {
         operations.add({'operation': () => MyDatabase.instance.synonymsDao.insertEntities(synonyms), 'count': resourceCounts['同义词']!, 'name': '同义词'});
@@ -979,7 +979,7 @@ class SelectBookPageState extends State<SelectBookPage> {
             wordMeaning: sentence.wordMeaning,
             createTime: sentence.createTime,
             updateTime: sentence.updateTime));
-        await yieldToUiIfNeeded(2000, i);
+        await yieldToUiIfNeeded(100, i); // 更频繁地让出UI
       }
       if (sentences.isNotEmpty) {
         operations.add({'operation': () => MyDatabase.instance.sentencesDao.insertEntities(sentences), 'count': resourceCounts['例句']!, 'name': '例句'});
