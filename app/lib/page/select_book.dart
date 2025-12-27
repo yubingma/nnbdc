@@ -1,6 +1,4 @@
 import 'dart:async';
-import 'dart:isolate';
-import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
@@ -8,7 +6,7 @@ import 'package:nnbdc/api/api.dart';
 import 'package:nnbdc/api/dto.dart';
 import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/db/db.dart';
-import 'package:nnbdc/db/dict_import_isolate.dart';
+import 'package:nnbdc/db/dict_import_worker.dart';
 import 'package:nnbdc/services/throttled_sync_service.dart';
 import 'package:nnbdc/util/loading_utils.dart';
 import 'package:nnbdc/util/toast_util.dart';
@@ -17,6 +15,8 @@ import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/widget/dict_download_dialog.dart';
 import 'package:provider/provider.dart';
 import 'package:dio/dio.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 
 import '../global.dart';
 import '../state.dart';
@@ -591,6 +591,11 @@ class SelectBookPageState extends State<SelectBookPage> {
       final isUserDict = currUserId != null && ownerId == currUserId;
       final apiPath = isUserDict ? '/res/getUserDictResById.do' : '/res/getSysDictResById.do';
       final resourceId = '$apiPath?dictId=$dictId';
+
+      // 预热后台导入 worker（避免下载完成后第一次 Isolate.spawn 卡住 UI）
+      if (!kIsWeb) {
+        unawaited(DictImportWorker.instance.ensureStarted());
+      }
       
       // 监听下载进度，将下载进度映射到0-20%的范围
       Function(int, int)? downloadProgressListener;
@@ -639,17 +644,26 @@ class SelectBookPageState extends State<SelectBookPage> {
           return true;
         }
 
-        // 非 Web：使用 Dio 直接拿 bytes，避免 retrofit 在 UI isolate 反序列化大 JSON 导致卡顿
-        final resp = await Api.dio.get<List<int>>(
+        // 非 Web：下载到临时文件，避免把大包 bytes 在主 isolate 里做拷贝（会导致 20%→21% 仍卡几秒）
+        double downloadLastEmitted = 0.0;
+        final tmpDir = await getTemporaryDirectory();
+        final tmpPath = p.join(tmpDir.path, 'dict_res_$dictId.bin');
+        await Api.dio.download(
           apiPath,
+          tmpPath,
           queryParameters: {'dictId': dictId},
           options: Options(responseType: ResponseType.bytes),
+          onReceiveProgress: (received, total) {
+            if (onProgress != null && total > 0) {
+              final p0 = (received / total).clamp(0.0, 1.0);
+              final next = p0 * 0.2;
+              if (next > downloadLastEmitted) {
+                downloadLastEmitted = next;
+                onProgress(next.clamp(0.0, 0.2));
+              }
+            }
+          },
         );
-        final data = resp.data;
-        if (data == null || data.isEmpty) {
-          ToastUtil.error("[$dictId]下载失败");
-          return false;
-        }
 
         // 下载完成：进度到 20%
         if (onProgress != null) {
@@ -681,62 +695,43 @@ class SelectBookPageState extends State<SelectBookPage> {
         // 计算 db.sqlite 路径（主 isolate 里做，并缓存，避免首次调用 path_provider 导致 20% 附近卡顿）
         final dbPath = await MyDatabase.getDbFilePath();
 
-        // 启动后台 isolate：解析 JSON + 写库，并回传导入进度
-        final receivePort = ReceivePort();
-        final completer = Completer<bool>();
-
         bool importStarted = false;
-        final sub = receivePort.listen((msg) {
-          try {
-            if (msg is Map) {
-              final type = msg['type'];
-              if (type == 'phase') {
-                // 后台真正进入 import 阶段时停止“准备阶段”伪进度
-                if (msg['value'] == 'import' && !importStarted) {
-                  importStarted = true;
-                  prepareTimer?.cancel();
-                  prepareStopwatch?.stop();
-                }
-              } else if (type == 'progress') {
-                if (onProgress != null) {
-                  final double p0 = (msg['value'] as num).toDouble().clamp(0.0, 1.0);
-                  // 导入阶段使用剩余区间（从 prepareBase 到 100%），保证连续
-                  final overall = prepareBase + p0 * (1.0 - prepareBase);
-                  if (overall > lastEmitted) {
-                    lastEmitted = overall;
-                    onProgress(overall.clamp(prepareBase, 1.0));
-                  }
-                }
-              } else if (type == 'done') {
-                completer.complete(true);
-              } else if (type == 'error') {
-                final message = (msg['message'] ?? '后台导入失败').toString();
-                completer.completeError(Exception(message));
+        Exception? importError;
+        bool done = false;
+
+        await for (final msg in DictImportWorker.instance.submit(dbPath: dbPath, filePath: tmpPath)) {
+          final type = msg['type'];
+          if (type == 'phase') {
+            if (msg['value'] == 'import' && !importStarted) {
+              importStarted = true;
+              prepareTimer?.cancel();
+              prepareStopwatch?.stop();
+            }
+          } else if (type == 'progress') {
+            if (onProgress != null) {
+              final double p0 = (msg['value'] as num).toDouble().clamp(0.0, 1.0);
+              final overall = prepareBase + p0 * (1.0 - prepareBase);
+              if (overall > lastEmitted) {
+                lastEmitted = overall;
+                onProgress(overall.clamp(prepareBase, 1.0));
               }
             }
-          } catch (e) {
-            completer.completeError(e);
+          } else if (type == 'done') {
+            done = true;
+            break;
+          } else if (type == 'error') {
+            importError = Exception((msg['message'] ?? '后台导入失败').toString());
+            break;
           }
-        });
-
-        await Isolate.spawn(dictImportIsolateMain, {
-          'sendPort': receivePort.sendPort,
-          'dbPath': dbPath,
-          // 尽量避免不必要的 copy（大包会导致 20%→21% 附近 UI 短暂卡顿）
-          'bytes': TransferableTypedData.fromList([
-            data is Uint8List ? data : Uint8List.fromList(data),
-          ]),
-        });
-
-        try {
-          final ok = await completer.future;
-          return ok;
-        } finally {
-          await sub.cancel();
-          receivePort.close();
-          prepareTimer?.cancel();
-          prepareStopwatch?.stop();
         }
+
+        prepareTimer?.cancel();
+        prepareStopwatch?.stop();
+
+        if (importError != null) {
+          throw importError;
+        }
+        return done;
       } finally {
         // 移除下载进度监听器
         if (downloadProgressListener != null) {

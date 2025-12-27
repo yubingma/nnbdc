@@ -85,7 +85,12 @@ class Api {
           Global.logger.d('📤 请求: ${options.path}');
         }
 
+        final existingOnReceiveProgress = options.onReceiveProgress;
         options.onReceiveProgress = (received, total) {
+          // 先执行调用方自己的 progress 回调（例如 dio.download）
+          if (existingOnReceiveProgress != null) {
+            existingOnReceiveProgress(received, total);
+          }
           if (options.path.contains('getSysDictResById.do') ||
               options.path.contains('getUserDictResById.do')) {
             // 使用路径+dictId作为资源ID，便于精确监听特定词书的下载进度
@@ -94,8 +99,8 @@ class Api {
             String resourceId;
             if (dictId != null) {
               // 标准化路径格式，确保以/res/开头
-              String normalizedPath = options.path.startsWith('/res/') 
-                  ? options.path 
+              String normalizedPath = options.path.startsWith('/res/')
+                  ? options.path
                   : '/res/${options.path.split('/').last}';
               resourceId = '$normalizedPath?dictId=$dictId';
             } else {

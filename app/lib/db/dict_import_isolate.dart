@@ -18,12 +18,42 @@ import 'package:nnbdc/global.dart';
 /// 入参使用 Map，确保可跨 isolate 传递：
 /// - sendPort: SendPort
 /// - dbPath: String (db.sqlite 完整路径，由主 isolate 计算好传入，避免 path_provider 在后台不可用)
-/// - bytes: TransferableTypedData (HTTP 响应体 bytes，可能是 gzip，也可能是 plain json)
+/// - filePath: String (下载到本地的临时文件路径；避免主 isolate 大字节 copy 导致 20% 附近卡顿)
+/// - bytes: TransferableTypedData（可选，兼容旧逻辑）
 void dictImportIsolateMain(Map<String, dynamic> args) async {
   final SendPort sendPort = args['sendPort'] as SendPort;
   final String dbPath = args['dbPath'] as String;
-  final TransferableTypedData t = args['bytes'] as TransferableTypedData;
+  final String? filePath = args['filePath'] as String?;
+  final TransferableTypedData? t = args['bytes'] as TransferableTypedData?;
 
+  await _runImport(sendPort: sendPort, dbPath: dbPath, filePath: filePath, bytes: t);
+}
+
+/// Worker 模式入口：启动后常驻，接收多次任务，避免反复 spawn。
+///
+/// 初始消息：主 isolate 传入一个 SendPort，用于回传 worker 的 taskPort。
+void dictImportWorkerMain(SendPort initPort) async {
+  final taskPort = ReceivePort();
+  initPort.send(taskPort.sendPort);
+
+  await for (final msg in taskPort) {
+    if (msg is! Map) continue;
+    final SendPort? replyPort = msg['replyPort'] as SendPort?;
+    final String? dbPath = msg['dbPath'] as String?;
+    final String? filePath = msg['filePath'] as String?;
+    if (replyPort == null || dbPath == null || filePath == null) {
+      continue;
+    }
+    await _runImport(sendPort: replyPort, dbPath: dbPath, filePath: filePath, bytes: null);
+  }
+}
+
+Future<void> _runImport({
+  required SendPort sendPort,
+  required String dbPath,
+  String? filePath,
+  TransferableTypedData? bytes,
+}) async {
   void sendProgress(double v) {
     sendPort.send({'type': 'progress', 'value': v});
   }
@@ -44,7 +74,19 @@ void dictImportIsolateMain(Map<String, dynamic> args) async {
   MyDatabase? db;
   try {
     sendPhase('parse');
-    final Uint8List raw = t.materialize().asUint8List();
+    Uint8List raw;
+    if (filePath != null) {
+      raw = await File(filePath).readAsBytes();
+      // 读完就删，避免临时文件堆积
+      try {
+        await File(filePath).delete();
+      } catch (_) {}
+    } else if (bytes != null) {
+      raw = bytes.materialize().asUint8List();
+    } else {
+      sendError('后台导入缺少输入数据(filePath/bytes)');
+      return;
+    }
 
     // 兼容 gzip / plain
     Uint8List jsonBytes;
