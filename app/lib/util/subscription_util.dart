@@ -7,6 +7,7 @@ import 'package:nnbdc/api/api.dart';
 import 'package:nnbdc/api/result.dart';
 import 'package:nnbdc/api/bo/user_bo.dart';
 import 'package:nnbdc/util/platform_util.dart';
+import 'package:flutter/foundation.dart';
 
 /// 订阅工具类
 /// 用于处理iOS应用内购买订阅功能（仅支持iOS平台）
@@ -122,13 +123,19 @@ class SubscriptionUtil {
         // 如果没有找到任何产品，才显示错误提示
         String errorMessage = '获取订阅信息失败';
         if (error.code == 'storekit_no_response') {
+          // storekit_no_response 错误在开发测试阶段很常见，特别是当产品未在 App Store Connect 中配置时
+          // 提供更详细的说明，包括开发和生产环境的区别
           errorMessage = '无法连接到 App Store\n\n'
+              '开发测试说明：\n'
+              '1. 此错误在开发测试阶段很常见\n'
+              '2. 真机测试需要使用 TestFlight 或发布版本\n'
+              '3. 模拟器无法使用应用内购买功能\n'
+              '4. 首次发布前产品在 App Store Connect 中不可用\n\n'
               '请检查：\n'
-              '1. 使用真实设备测试（模拟器不支持）\n'
-              '2. 设备已登录 Apple ID\n'
-              '3. App Store Connect 中产品元数据完整\n'
-              '4. 产品已关联到 App 版本\n'
-              '5. 网络连接正常';
+              '• 使用真实设备测试（模拟器不支持）\n'
+              '• 设备已登录有效的 Apple ID\n'
+              '• 网络连接正常\n'
+              '• 产品ID已在 App Store Connect 中创建';
         } else if (error.code == 'storekit_product_not_available') {
           errorMessage = '订阅产品暂不可用\n\n'
               '请检查 App Store Connect：\n'
