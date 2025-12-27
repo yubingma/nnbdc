@@ -213,25 +213,32 @@ public class ResController {
             // 声明实际传输字节数变量
             long actualBytes;
 
-            // 对于词典资源这种已知大小的响应，使用 Content-Length 模式
-            // 这样可以提供准确的进度显示和完整性验证
+            // 为了让客户端显示“真实下载进度”，必须有 Content-Length。
+            // - 不压缩：Content-Length = 原始 JSON 大小
+            // - gzip：先在服务端完成压缩，得到压缩后字节数组，再设置 Content-Length
+            //   这样压缩对外透明（只前后端知道），且进度条可以使用 total 计算百分比。
             if (supportsGzip) {
-                // 使用 gzip 压缩时，由于压缩后大小未知，使用 chunked 模式
-                logger.info("使用 chunked 模式 + gzip 压缩传输");
+                logger.info("使用 gzip + Content-Length 模式传输（服务端预压缩以获得真实进度）");
 
-                CountingOutputStream countingOut = new CountingOutputStream(response.getOutputStream());
-                try (GZIPOutputStream gzipOut = new GZIPOutputStream(countingOut)) {
+                // 注意：这里会额外占用一次压缩后字节数组的内存。
+                // 若后续发现内存压力，可改为：写入临时文件后再按文件长度流式输出，或引入缓存复用压缩结果。
+                java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream((int) Math.min(Integer.MAX_VALUE, originalSize));
+                try (java.util.zip.GZIPOutputStream gzipOut = new java.util.zip.GZIPOutputStream(baos)) {
                     mapper.writeValue(gzipOut, result);
-                    gzipOut.flush();
+                    gzipOut.finish();
                 }
-                actualBytes = countingOut.getByteCount();
+
+                byte[] gzipped = baos.toByteArray();
+                response.setHeader("Content-Length", String.valueOf(gzipped.length));
+                response.getOutputStream().write(gzipped);
+                response.getOutputStream().flush();
+                actualBytes = gzipped.length;
             } else {
-                // 不压缩时使用 Content-Length 模式
                 response.setHeader("Content-Length", String.valueOf(originalSize));
                 logger.info("使用 Content-Length 模式传输");
 
                 mapper.writeValue(response.getOutputStream(), result);
-                actualBytes = originalSize; // 使用原始大小作为实际传输大小
+                actualBytes = originalSize;
             }
 
             // 获取实际传输的字节数

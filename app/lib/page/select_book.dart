@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:nnbdc/api/api.dart';
@@ -590,45 +589,27 @@ class SelectBookPageState extends State<SelectBookPage> {
       
       // 监听下载进度，将下载进度映射到0-20%的范围
       Function(int, int)? downloadProgressListener;
-      Timer? simulatedDownloadTimer;
       if (onProgress != null) {
-        // 显示初始进度，让用户知道下载已经开始
-        onProgress(0.01);
-        double lastEmitted = 0.01;
-
-        // 兜底：如果平台/代理导致 onReceiveProgress 不持续触发（例如 total 缺失或浏览器限制），
-        // 则用时间驱动的平滑伪进度让用户看到“下载在进行”。
-        // 注意：伪进度最多到 19%，真正下载结束后会直接拉到 20% 并进入导入阶段。
-        final stopwatch = Stopwatch()..start();
-        simulatedDownloadTimer = Timer.periodic(const Duration(milliseconds: 200), (_) {
-          // 指数趋近曲线：前期增长快，后期趋于平缓
-          final t = stopwatch.elapsedMilliseconds / 1000.0;
-          final simulated = 0.01 + 0.18 * (1 - exp(-t / 3.0));
-          if (simulated > lastEmitted) {
-            lastEmitted = simulated;
-            onProgress(simulated.clamp(0.01, 0.19));
-          }
-        });
+        double lastEmitted = 0.0;
+        bool warnedNoTotal = false;
 
         downloadProgressListener = (received, total) {
-          double next;
-          if (total > 0) {
-            // 有 content-length（或 total 可用）：用真实比例映射到 1%~20%
-            final downloadProgress = (received / total).clamp(0.0, 1.0);
-            next = 0.01 + downloadProgress * 0.19;
-          } else {
-            // total 缺失/未知（常见于 chunked 或某些压缩/代理场景）：
-            // 无法计算真实百分比，使用“字节驱动的平滑伪进度”让用户看到下载在进行。
-            // 伪进度最多到 19%，下载结束后会直接拉到 20%。
-            final mb = received / (1024 * 1024);
-            // log1p 曲线：前期增长明显，后期趋于平缓
-            final pseudo01to19 = (0.06 * (log(mb + 1) / log(2))).clamp(0.0, 0.18);
-            next = 0.01 + pseudo01to19;
+          if (total <= 0) {
+            // 真实进度必须依赖 Content-Length。
+            // 这里不再做伪进度：用户要求展示真实百分比。
+            if (!warnedNoTotal) {
+              warnedNoTotal = true;
+              Global.logger.w('词典资源下载缺少 Content-Length，无法计算真实下载进度: resourceId=$resourceId');
+            }
+            return;
           }
 
+          // 有 content-length（或 total 可用）：用真实比例映射到 0%~20%
+          final downloadProgress = (received / total).clamp(0.0, 1.0);
+          final next = downloadProgress * 0.2;
           if (next > lastEmitted) {
             lastEmitted = next;
-            onProgress(next.clamp(0.01, 0.19));
+            onProgress(next.clamp(0.0, 0.2));
           }
         };
         DownloadProgressManager.addListener(resourceId, downloadProgressListener);
@@ -654,7 +635,6 @@ class SelectBookPageState extends State<SelectBookPage> {
         });
         return true;
       } finally {
-        simulatedDownloadTimer?.cancel();
         // 移除下载进度监听器
         if (downloadProgressListener != null) {
           DownloadProgressManager.removeListener(resourceId, downloadProgressListener);
