@@ -85,10 +85,12 @@ class _DictDownloadDialogState extends State<DictDownloadDialog> {
   }
 
   String _getProgressText(double progress) {
+    // 将进度转换为百分比显示
+    int percent = (progress * 100).round();
     if (progress <= 0.2) {
-      return '下载中...';
+      return '下载中... $percent%';
     } else {
-      return '导入中...';
+      return '导入中... $percent%';
     }
   }
 
