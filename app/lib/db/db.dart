@@ -84,10 +84,22 @@ class MyDatabase extends _$MyDatabase {
   MyDatabase(super.e);
 
   static MyDatabase? _instance;
+  static String? _dbFilePathCache;
 
   static MyDatabase get instance {
     _instance ??= constructDb();
     return _instance!;
+  }
+
+  /// 获取本地 SQLite 文件路径（非 Web），并做缓存。
+  ///
+  /// 说明：getApplicationDocumentsDirectory() 在某些设备/首次调用时可能较慢，
+  /// 下载完成后如果再调用会导致 UI 在 20% 附近短暂卡顿（Timer 无法及时刷新）。
+  static Future<String> getDbFilePath() async {
+    if (_dbFilePathCache != null) return _dbFilePathCache!;
+    final dbFolder = await getApplicationDocumentsDirectory();
+    _dbFilePathCache = p.join(dbFolder.path, 'db.sqlite');
+    return _dbFilePathCache!;
   }
 
   static void closeDatabase() {

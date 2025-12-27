@@ -17,8 +17,6 @@ import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/widget/dict_download_dialog.dart';
 import 'package:provider/provider.dart';
 import 'package:dio/dio.dart';
-import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
 
 import '../global.dart';
 import '../state.dart';
@@ -680,9 +678,8 @@ class SelectBookPageState extends State<SelectBookPage> {
           });
         }
 
-        // 计算 db.sqlite 路径（主 isolate 里做，避免后台 isolate 调用 path_provider）
-        final dbFolder = await getApplicationDocumentsDirectory();
-        final dbPath = p.join(dbFolder.path, 'db.sqlite');
+        // 计算 db.sqlite 路径（主 isolate 里做，并缓存，避免首次调用 path_provider 导致 20% 附近卡顿）
+        final dbPath = await MyDatabase.getDbFilePath();
 
         // 启动后台 isolate：解析 JSON + 写库，并回传导入进度
         final receivePort = ReceivePort();
@@ -725,7 +722,10 @@ class SelectBookPageState extends State<SelectBookPage> {
         await Isolate.spawn(dictImportIsolateMain, {
           'sendPort': receivePort.sendPort,
           'dbPath': dbPath,
-          'bytes': TransferableTypedData.fromList([Uint8List.fromList(data)]),
+          // 尽量避免不必要的 copy（大包会导致 20%→21% 附近 UI 短暂卡顿）
+          'bytes': TransferableTypedData.fromList([
+            data is Uint8List ? data : Uint8List.fromList(data),
+          ]),
         });
 
         try {
