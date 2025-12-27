@@ -14,6 +14,8 @@ class ThrottledDbSyncService {
   Timer? _syncTimer;
   DateTime? _lastSyncAttemptTime;
   bool _syncScheduled = false;  // 是否有同步任务已安排
+  int _suspendCount = 0;
+  bool _syncRequestedWhileSuspended = false;  // 在暂停期间是否有同步请求被记录
   final NetworkUtil _networkUtil = NetworkUtil();
   
   // 同步请求计数器，用于调试
@@ -30,6 +32,13 @@ class ThrottledDbSyncService {
   /// [immediate] 如果为 true，则忽略节流控制，立即执行同步
   Future<void> requestSync({bool immediate = false}) async {
     _syncRequestCount++;
+
+    // 导入/大事务期间暂停同步，避免 database is locked
+    if (_suspendCount > 0) {
+      _syncRequestedWhileSuspended = true;
+      Global.logger.d('⏸️ 同步已暂停（导入中），记录待同步请求 (请求计数: $_syncRequestCount)');
+      return;
+    }
     
     // 如果已有同步任务安排且不是立即执行，直接返回
     if (_syncScheduled && !immediate) {
@@ -75,6 +84,14 @@ class ThrottledDbSyncService {
     final startTime = AppClock.now();
     Global.logger.d('🔄 开始执行数据库同步操作');
 
+    // 若正在导入/大事务，直接跳过，待恢复后再触发一次
+    if (_suspendCount > 0) {
+      _syncRequestedWhileSuspended = true;
+      Global.logger.d('⏸️ 同步被暂停（导入中），跳过本次执行');
+      _syncScheduled = false;
+      return;
+    }
+
     // 检查网络连接
     bool isConnected = await _networkUtil.isConnected();
     if (!isConnected) {
@@ -114,6 +131,29 @@ class ThrottledDbSyncService {
         }
       }
       _waiters.clear();
+    }
+  }
+
+  /// 暂停同步（可重入）
+  void suspend() {
+    _suspendCount++;
+    // 暂停期间取消已安排的定时器，避免到点触发占用资源
+    _syncTimer?.cancel();
+    _syncTimer = null;
+    _syncScheduled = false;
+    Global.logger.d('⏸️ 暂停数据库同步: suspendCount=$_suspendCount');
+  }
+
+  /// 恢复同步（与 suspend 配对）
+  void resume() {
+    if (_suspendCount > 0) {
+      _suspendCount--;
+    }
+    Global.logger.d('▶️ 恢复数据库同步: suspendCount=$_suspendCount');
+    if (_suspendCount == 0 && _syncRequestedWhileSuspended) {
+      _syncRequestedWhileSuspended = false;
+      // 恢复后触发一次同步（受节流控制）
+      unawaited(requestSync());
     }
   }
 

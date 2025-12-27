@@ -204,7 +204,18 @@ class MyDatabase extends _$MyDatabase {
           _showDatabaseRebuildSuccessNotification();
         }
       },
-      beforeOpen: (details) async {},
+      beforeOpen: (details) async {
+        // 允许读写并发，并在锁冲突时等待而不是直接抛错
+        // - WAL：写入不阻塞读取（读看到旧快照）
+        // - busy_timeout：遇到锁时等待一段时间
+        try {
+          await customStatement('PRAGMA journal_mode=WAL;');
+          await customStatement('PRAGMA busy_timeout=5000;');
+        } catch (e) {
+          // 某些平台/场景下 pragma 可能失败，不影响继续运行
+          Global.logger.w('设置 SQLite PRAGMA 失败: $e');
+        }
+      },
     );
   }
 

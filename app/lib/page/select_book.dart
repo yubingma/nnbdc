@@ -721,6 +721,8 @@ class SelectBookPageState extends State<SelectBookPage> {
         Exception? importError;
         bool done = false;
 
+        // 导入期间暂停数据库同步，避免与后台写库并发导致 database is locked
+        ThrottledDbSyncService().suspend();
         Global.logger.d('🚀 开始提交导入任务 - dictId=$dictId');
         await for (final msg in DictImportWorker.instance.submit(dbPath: dbPath, filePath: tmpPath)) {
           final type = msg['type'];
@@ -756,6 +758,10 @@ class SelectBookPageState extends State<SelectBookPage> {
         }
         return done;
       } finally {
+        // 恢复数据库同步
+        if (!kIsWeb) {
+          ThrottledDbSyncService().resume();
+        }
         // 移除下载进度监听器
         if (downloadProgressListener != null) {
           DownloadProgressManager.removeListener(resourceId, downloadProgressListener);

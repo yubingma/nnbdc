@@ -123,6 +123,11 @@ Future<void> _runImport({
     db = MyDatabase(NativeDatabase(File(dbPath)));
     // 触发打开
     await db.customSelect('SELECT 1', readsFrom: {}).get();
+    // 与主库保持一致：WAL + busy_timeout，避免 database is locked
+    try {
+      await db.customStatement('PRAGMA journal_mode=WAL;');
+      await db.customStatement('PRAGMA busy_timeout=5000;');
+    } catch (_) {}
 
     // 计算总记录数
     final resourceCounts = <String, int>{
