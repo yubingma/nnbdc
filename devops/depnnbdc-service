@@ -10,7 +10,7 @@ send "exit\r"
 interact
 
 #构建程序
-cd /Users/myb/nnbdc/server
+cd /Volumes/ssd/nnbdc/server
 spawn mvn clean install -Dmaven.test.skip=true
 expect "BUILD SUCCESS"
 interact
@@ -28,7 +28,7 @@ send "exit\r"
 interact
 
 #复制程序到远程服务器
-spawn scp -P22 /Users/myb/nnbdc/server/nnbdc-service/target/nnbdc-service.jar root@47.108.27.205:/opt/nnbdc/
+spawn scp -P22 /Volumes/ssd/nnbdc/server/nnbdc-service/target/nnbdc-service.jar root@47.108.27.205:/opt/nnbdc/
 expect "root@47.108.27.205's password:"
 send "$env(nnbdc_server_pwd)\r"
 interact
