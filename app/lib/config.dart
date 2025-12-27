@@ -1,4 +1,3 @@
-
 class Config {
   static String profileName = "dev";
 
