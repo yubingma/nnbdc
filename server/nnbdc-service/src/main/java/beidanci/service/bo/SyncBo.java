@@ -7,10 +7,12 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.TransactionException;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 
@@ -178,7 +180,7 @@ public class SyncBo {
                     userDbLog.setOperate(log.getOperate());
                     userDbLog.setRecord(recordJson);
                     userDbLogBo.createEntity(userDbLog);
-                } catch (Exception e) {
+                } catch (IllegalAccessException | IllegalArgumentException e) {
                     // 任何异常都会导致整个事务回滚
                     logger.error("同步数据失败，将回滚整个事务, 用户[{}], 表[{}], 记录[{}], 错误: {}",
                             userId, log.getTblName(), recordJson, e.getMessage());
@@ -192,7 +194,7 @@ public class SyncBo {
 
             transactionManager.commit(status);
             return lastVersion + 1;
-        } catch (Throwable e) {
+        } catch (DbVersionNotMatchException | RawWordDataErrorException | IllegalAccessException | RuntimeException e) {
             try {
                 // 检查事务状态，只有在事务仍然活跃时才回滚
                 if (!status.isCompleted()) {
@@ -200,15 +202,15 @@ public class SyncBo {
                 } else {
                     logger.warn("事务已经完成，跳过回滚操作");
                 }
-            } catch (Exception ex) {
+            } catch (TransactionException ex) {
                 logger.error("回滚事务失败: {}", ex.getMessage(), ex);
             }
-            if (e instanceof DbVersionNotMatchException)
-                throw (DbVersionNotMatchException) e;
-            if (e instanceof IllegalAccessException)
-                throw (IllegalAccessException) e;
-            if (e instanceof RawWordDataErrorException)
-                throw (RawWordDataErrorException) e;
+            if (e instanceof DbVersionNotMatchException dbVersionNotMatchException)
+                throw dbVersionNotMatchException;
+            if (e instanceof IllegalAccessException illegalAccessException)
+                throw illegalAccessException;
+            if (e instanceof RawWordDataErrorException rawWordDataErrorException)
+                throw rawWordDataErrorException;
             throw new RuntimeException(e.getMessage(), e);
         }
     }
@@ -260,52 +262,26 @@ public class SyncBo {
         String operation = log.getOperate().toUpperCase();
 
         switch (tableName) {
-            case "learning_word":
-                processLearningWordSync(userId, log, recordJson, operation);
-                break;
-            case "learning_dict":
-                processLearningDictSync(userId, log, recordJson, operation);
-                break;
-            case "user":
-                processUserSync(userId, log, recordJson, operation);
-                break;
-            case "dict":
-                processDictSync(userId, log, recordJson, operation);
-                break;
-            case "book_mark":
-                processBookMarkSync(userId, log, recordJson, operation);
-                break;
-            case "user_study_step":
-                processUserStudyStepSync(userId, log, recordJson, operation);
-                break;
-            case "daka":
-                processDakasSync(userId, log, recordJson, operation);
-                break;
-            case "user_oper":
-                processUserOperSync(userId, log, recordJson, operation);
-                break;
-            case "user_wrong_word":
-                processUserWrongWordSync(userId, log, recordJson, operation);
-                break;
-            case "dict_word":
-                processDictWordSync(userId, log, recordJson, operation);
-                break;
-            case "mastered_word":
-                processMasteredWordSync(userId, log, recordJson, operation);
-                break;
-            case "user_cow_dung_log":
-                processUserCowDungLogSync(userId, log, recordJson, operation);
-                break;
-            default:
-                logger.warn("不支持的表同步: {}", tableName);
-                break;
+            case "learning_word" -> processLearningWordSync(userId, recordJson, operation);
+            case "learning_dict" -> processLearningDictSync(userId, recordJson, operation);
+            case "user" -> processUserSync(userId, recordJson, operation);
+            case "dict" -> processDictSync(userId, recordJson, operation);
+            case "book_mark" -> processBookMarkSync(userId, recordJson, operation);
+            case "user_study_step" -> processUserStudyStepSync(userId, recordJson, operation);
+            case "daka" -> processDakasSync(userId, recordJson, operation);
+            case "user_oper" -> processUserOperSync(userId, recordJson, operation);
+            case "user_wrong_word" -> processUserWrongWordSync(userId, recordJson, operation);
+            case "dict_word" -> processDictWordSync(userId, recordJson, operation);
+            case "mastered_word" -> processMasteredWordSync(userId, recordJson, operation);
+            case "user_cow_dung_log" -> processUserCowDungLogSync(userId, recordJson, operation);
+            default -> logger.warn("不支持的表同步: {}", tableName);
         }
     }
 
     /**
      * 处理学习单词同步
      */
-    private void processLearningWordSync(String userId, UserDbLogDto log, String recordJson, String operation)
+    private void processLearningWordSync(String userId, String recordJson, String operation)
             throws IllegalAccessException {
         if ("BATCH_DELETE".equals(operation)) {
             learningWordBo.batchDeleteUserRecords(userId, recordJson);
@@ -313,7 +289,7 @@ public class SyncBo {
             LearningWordDto learningWordDto = JsonUtils.makeObject(recordJson, LearningWordDto.class);
             LearningWord learningWord = LearningWord.fromDto(learningWordDto);
             switch (operation) {
-                case "INSERT":
+                case "INSERT" -> {
                     // 检查记录是否已存在，避免主键冲突
                     LearningWord existing = learningWordBo.findById(learningWord.getId());
                     if (existing == null) {
@@ -321,8 +297,8 @@ public class SyncBo {
                     } else {
                         logger.info("learning_word 已存在，忽略重复 INSERT: id={}", learningWord.getId());
                     }
-                    break;
-                case "UPDATE":
+                }
+                case "UPDATE" -> {
                     // 检查记录是否存在，不存在则创建
                     LearningWord existingForUpdate = learningWordBo.findById(learningWord.getId());
                     if (existingForUpdate == null) {
@@ -330,10 +306,8 @@ public class SyncBo {
                     } else {
                         learningWordBo.updateEntity(learningWord);
                     }
-                    break;
-                case "DELETE":
-                    learningWordBo.deleteEntity(learningWord);
-                    break;
+                }
+                case "DELETE" -> learningWordBo.deleteEntity(learningWord);
             }
         }
     }
@@ -341,7 +315,7 @@ public class SyncBo {
     /**
      * 处理学习词典同步
      */
-    private void processLearningDictSync(String userId, UserDbLogDto log, String recordJson, String operation)
+    private void processLearningDictSync(String userId, String recordJson, String operation)
             throws IllegalAccessException {
         if ("BATCH_DELETE".equals(operation)) {
             learningDictBo.batchDeleteUserRecords(userId, recordJson);
@@ -349,7 +323,7 @@ public class SyncBo {
             LearningDictDto learningDictDto = JsonUtils.makeObject(recordJson, LearningDictDto.class);
             LearningDict learningDict = LearningDict.fromDto(learningDictDto, wordBo, dictBo, userBo);
             switch (operation) {
-                case "INSERT":
+                case "INSERT" -> {
                     // 检查记录是否已存在，避免主键冲突
                     LearningDict existing = learningDictBo.findById(learningDict.getId());
                     if (existing == null) {
@@ -358,8 +332,8 @@ public class SyncBo {
                         logger.info("learning_dict 已存在，忽略重复 INSERT: user_id={}, dict_id={}",
                                 userId, learningDictDto.getDictId());
                     }
-                    break;
-                case "UPDATE":
+                }
+                case "UPDATE" -> {
                     // 检查记录是否存在，不存在则创建
                     LearningDict existingForUpdate = learningDictBo.findById(learningDict.getId());
                     if (existingForUpdate == null) {
@@ -367,10 +341,8 @@ public class SyncBo {
                     } else {
                         learningDictBo.updateEntity(learningDict);
                     }
-                    break;
-                case "DELETE":
-                    learningDictBo.deleteEntity(learningDict);
-                    break;
+                }
+                case "DELETE" -> learningDictBo.deleteEntity(learningDict);
             }
         }
     }
@@ -379,7 +351,7 @@ public class SyncBo {
      * 处理用户同步
      * 注意：isAdmin、isSuperAdmin、isSysUser 这三个字段只允许后端同步到前端，不允许前端修改
      */
-    private void processUserSync(String userId, UserDbLogDto log, String recordJson, String operation)
+    private void processUserSync(String userId, String recordJson, String operation)
             throws IllegalAccessException {
         if ("UPDATE".equals(operation)) {
             try {
@@ -421,7 +393,7 @@ public class SyncBo {
     /**
      * 处理词书同步
      */
-    private void processDictSync(String userId, UserDbLogDto log, String recordJson, String operation)
+    private void processDictSync(String userId, String recordJson, String operation)
             throws IllegalAccessException {
         try {
             DictDto dictDto = JsonUtils.makeObject(recordJson, DictDto.class);
@@ -471,7 +443,7 @@ public class SyncBo {
                 }
             }
             // 暂不支持DELETE操作，词书通常不会被删除
-        } catch (Exception e) {
+        } catch (IllegalAccessException | IllegalArgumentException e) {
             logger.error("同步词书数据失败：" + e.getMessage(), e);
             throw e;
         }
@@ -480,7 +452,7 @@ public class SyncBo {
     /**
      * 处理书签同步
      */
-    private void processBookMarkSync(String userId, UserDbLogDto log, String recordJson, String operation)
+    private void processBookMarkSync(String userId, String recordJson, String operation)
             throws IllegalAccessException {
         if ("BATCH_DELETE".equals(operation)) {
             bookMarkBo.batchDeleteUserRecords(userId, recordJson);
@@ -505,7 +477,7 @@ public class SyncBo {
     /**
      * 处理用户学习步骤同步
      */
-    private void processUserStudyStepSync(String userId, UserDbLogDto log, String recordJson, String operation)
+    private void processUserStudyStepSync(String userId, String recordJson, String operation)
             throws IllegalAccessException {
         if ("BATCH_DELETE".equals(operation)) {
             userStudyStepBo.batchDeleteUserRecords(userId, recordJson);
@@ -525,7 +497,7 @@ public class SyncBo {
                 }
 
                 switch (operation) {
-                    case "INSERT":
+                    case "INSERT" -> {
                         // 检查记录是否已存在，避免主键冲突
                         UserStudyStep existing = userStudyStepBo.findById(id);
                         if (existing == null) {
@@ -534,8 +506,8 @@ public class SyncBo {
                             logger.info("user_study_step 已存在，忽略重复 INSERT: user_id={}, study_step={}",
                                     userId, stepDto.getStudyStep());
                         }
-                        break;
-                    case "UPDATE":
+                    }
+                    case "UPDATE" -> {
                         // 检查记录是否存在，不存在则创建
                         UserStudyStep existingForUpdate = userStudyStepBo.findById(id);
                         if (existingForUpdate == null) {
@@ -543,10 +515,8 @@ public class SyncBo {
                         } else {
                             userStudyStepBo.updateEntity(studyStep);
                         }
-                        break;
-                    case "DELETE":
-                        userStudyStepBo.deleteEntity(studyStep);
-                        break;
+                    }
+                    case "DELETE" -> userStudyStepBo.deleteEntity(studyStep);
                 }
             } catch (IllegalAccessException | IllegalArgumentException e) {
                 logger.error("同步用户学习步骤数据失败：" + e.getMessage(), e);
@@ -557,7 +527,7 @@ public class SyncBo {
     /**
      * 处理打卡同步
      */
-    private void processDakasSync(String userId, UserDbLogDto log, String recordJson, String operation) {
+    private void processDakasSync(String userId, String recordJson, String operation) {
         if ("BATCH_DELETE".equals(operation)) {
             dakaBo.batchDeleteUserRecords(userId, recordJson);
         } else {
@@ -566,7 +536,7 @@ public class SyncBo {
                 Daka daka = dakaBo.fromDto(dakaDto);
                 
                 switch (operation) {
-                    case "INSERT":
+                    case "INSERT" -> {
                         // 检查记录是否已存在，避免主键冲突
                         Daka existing = dakaBo.findById(daka.getId());
                         if (existing == null) {
@@ -574,8 +544,8 @@ public class SyncBo {
                         } else {
                             logger.info("daka 已存在，忽略重复 INSERT: id={}", daka.getId());
                         }
-                        break;
-                    case "UPDATE":
+                    }
+                    case "UPDATE" -> {
                         // 检查记录是否存在，不存在则创建
                         Daka existingForUpdate = dakaBo.findById(daka.getId());
                         if (existingForUpdate == null) {
@@ -583,12 +553,10 @@ public class SyncBo {
                         } else {
                             dakaBo.updateEntity(daka);
                         }
-                        break;
-                    case "DELETE":
-                        dakaBo.deleteEntity(daka);
-                        break;
+                    }
+                    case "DELETE" -> dakaBo.deleteEntity(daka);
                 }
-            } catch (Exception e) {
+            } catch (IllegalAccessException | IllegalArgumentException e) {
                 logger.error("同步打卡数据失败：" + e.getMessage(), e);
             }
         }
@@ -597,7 +565,7 @@ public class SyncBo {
     /**
      * 处理用户操作历史同步
      */
-    private void processUserOperSync(String userId, UserDbLogDto log, String recordJson, String operation) {
+    private void processUserOperSync(String userId, String recordJson, String operation) {
         if ("BATCH_DELETE".equals(operation)) {
             userOperBo.batchDeleteUserRecords(userId, recordJson);
         } else {
@@ -624,7 +592,7 @@ public class SyncBo {
     /**
      * 处理错词同步
      */
-    private void processUserWrongWordSync(String userId, UserDbLogDto log, String recordJson, String operation) {
+    private void processUserWrongWordSync(String userId, String recordJson, String operation) {
         if ("BATCH_DELETE".equals(operation)) {
             wrongWordBo.batchDeleteUserRecords(userId, recordJson);
         } else {
@@ -632,10 +600,8 @@ public class SyncBo {
                 WrongWordDto wrongWordDto = JsonUtils.makeObject(recordJson, WrongWordDto.class);
                 WrongWord wrongWord = WrongWord.fromDto(wrongWordDto);
                 switch (operation) {
-                    case "INSERT":
-                        wrongWordBo.createIfAbsent(wrongWord);
-                        break;
-                    case "UPDATE":
+                    case "INSERT" -> wrongWordBo.createIfAbsent(wrongWord);
+                    case "UPDATE" -> {
                         // 检查记录是否存在，不存在则创建
                         WrongWord existingForUpdate = wrongWordBo.findById(wrongWord.getId());
                         if (existingForUpdate == null) {
@@ -643,10 +609,8 @@ public class SyncBo {
                         } else {
                             wrongWordBo.updateEntity(wrongWord);
                         }
-                        break;
-                    case "DELETE":
-                        wrongWordBo.deleteEntity(wrongWord);
-                        break;
+                    }
+                    case "DELETE" -> wrongWordBo.deleteEntity(wrongWord);
                 }
             } catch (IllegalArgumentException | IllegalAccessException e) {
                 logger.error("同步错词数据失败：" + e.getMessage(), e);
@@ -657,7 +621,7 @@ public class SyncBo {
     /**
      * 处理生词本同步
      */
-    private void processDictWordSync(String userId, UserDbLogDto log, String recordJson, String operation) {
+    private void processDictWordSync(String userId, String recordJson, String operation) {
         if ("BATCH_DELETE".equals(operation)) {
             dictWordBo.batchDeleteUserRecords(userId, recordJson);
         } else {
@@ -667,25 +631,25 @@ public class SyncBo {
                 DictWord existing = dictWordBo.findById(dictWord.getId());
 
                 switch (operation) {
-                    case "INSERT":
+                    case "INSERT" -> {
                         if (existing == null) {
                             dictWordBo.createEntity(dictWord);
                         } else {
                             logger.info("dict_word 已存在，忽略重复 INSERT");
                         }
-                        break;
-                    case "UPDATE":
+                    }
+                    case "UPDATE" -> {
                         if (existing == null) {
                             dictWordBo.createEntity(dictWord);
                         } else {
                             dictWordBo.updateEntity(dictWord);
                         }
-                        break;
-                    case "DELETE":
+                    }
+                    case "DELETE" -> {
                         if (existing != null) {
                             deleteDictWordSafely(dictWord);
                         }
-                        break;
+                    }
                 }
             } catch (IllegalArgumentException | IllegalAccessException e) {
                 logger.error("同步生词数据失败：" + e.getMessage(), e);
@@ -713,7 +677,7 @@ public class SyncBo {
                     logger.info("使用原生SQL成功删除dict_word: dictId={}, wordId={}",
                             dictWord.getId().getDictId(), dictWord.getId().getWordId());
                 }
-            } catch (Exception sqlEx) {
+            } catch (DataAccessException sqlEx) {
                 logger.error("使用原生SQL删除dict_word也失败: {}", sqlEx.getMessage(), sqlEx);
                 throw sqlEx;
             }
@@ -723,7 +687,7 @@ public class SyncBo {
     /**
      * 处理已掌握单词同步
      */
-    private void processMasteredWordSync(String userId, UserDbLogDto log, String recordJson, String operation) {
+    private void processMasteredWordSync(String userId, String recordJson, String operation) {
         if ("BATCH_DELETE".equals(operation)) {
             masteredWordBo.batchDeleteUserRecords(userId, recordJson);
         } else {
@@ -751,7 +715,7 @@ public class SyncBo {
     /**
      * 处理魔法泡泡日志同步
      */
-    private void processUserCowDungLogSync(String userId, UserDbLogDto log, String recordJson, String operation) {
+    private void processUserCowDungLogSync(String userId, String recordJson, String operation) {
         if ("BATCH_DELETE".equals(operation)) {
             userCowDungLogBo.batchDeleteUserRecords(userId, recordJson);
         } else {

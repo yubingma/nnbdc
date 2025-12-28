@@ -54,33 +54,41 @@ class _UserManagementWidgetState extends State<UserManagementWidget> {
         );
       });
 
-      if (result.success && result.data != null) {
-        setState(() {
-          _users = result.data!.rows;
-          _total = result.data!.total;
-          _isLoading = false;
-        });
-      } else {
+      if (mounted) {
+        // 确保组件仍然挂载
+        if (result.success && result.data != null) {
+          setState(() {
+            _users = result.data!.rows;
+            _total = result.data!.total;
+            _isLoading = false;
+          });
+        } else {
+          setState(() {
+            _users = [];
+            _total = 0;
+            _isLoading = false;
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        // 确保组件仍然挂载
         setState(() {
           _users = [];
           _total = 0;
           _isLoading = false;
         });
       }
-    } catch (e) {
-      setState(() {
-        _users = [];
-        _total = 0;
-        _isLoading = false;
-      });
     }
   }
 
   void _onSearchChanged() {
     // 搜索防抖处理，实际项目中可以使用debounce
     Future.delayed(const Duration(milliseconds: 500), () {
-      if (mounted && _searchController.text == _searchController.text) {
-        _loadUsers(resetPage: true);
+      if (mounted) {
+        if (_searchController.text == _searchController.text) {
+          _loadUsers(resetPage: true);
+        }
       }
     });
   }
@@ -236,6 +244,7 @@ class _UserManagementWidgetState extends State<UserManagementWidget> {
   }
 
   Widget _buildUserCard(UserVo user) {
+    if (!mounted) return Container(); // 如果组件未挂载，返回空容器
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
     final cardColor = isDarkMode ? const Color(0xFF2D2D2D) : Colors.white;
     final textColor = isDarkMode ? Colors.white : Colors.black87;
@@ -247,9 +256,7 @@ class _UserManagementWidgetState extends State<UserManagementWidget> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: isDarkMode
-                ? Colors.black.withValues(alpha: 0.3)
-                : Colors.grey.withValues(alpha: 0.15),
+            color: isDarkMode ? Colors.black.withValues(alpha: 0.3) : Colors.grey.withValues(alpha: 0.15),
             spreadRadius: 0,
             blurRadius: 8,
             offset: const Offset(0, 4),
@@ -309,14 +316,10 @@ class _UserManagementWidgetState extends State<UserManagementWidget> {
             Wrap(
               spacing: 8,
               children: [
-                if (user.isAdmin == true)
-                  _buildBadge('管理员', Colors.blue),
-                if (user.isSuperAdmin == true)
-                  _buildBadge('超级管理员', Colors.purple),
-                if (user.isInputor == true)
-                  _buildBadge('录入员', Colors.green),
-                if (user.premiumOverrideEnabled == true)
-                  _buildBadge('强制会员', Colors.orange),
+                if (user.isAdmin == true) _buildBadge('管理员', Colors.blue),
+                if (user.isSuperAdmin == true) _buildBadge('超级管理员', Colors.purple),
+                if (user.isInputor == true) _buildBadge('录入员', Colors.green),
+                if (user.premiumOverrideEnabled == true) _buildBadge('强制会员', Colors.orange),
               ],
             ),
           ],
@@ -372,7 +375,7 @@ class _UserManagementWidgetState extends State<UserManagementWidget> {
   Widget _buildFilterTab(String label, int filterIndex) {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
     final isSelected = _selectedFilter == filterIndex;
-    
+
     return InkWell(
       onTap: () {
         setState(() {
@@ -382,9 +385,7 @@ class _UserManagementWidgetState extends State<UserManagementWidget> {
       },
       child: Container(
         decoration: BoxDecoration(
-          color: isSelected
-              ? AppTheme.primaryColor.withValues(alpha: 0.2)
-              : Colors.transparent,
+          color: isSelected ? AppTheme.primaryColor.withValues(alpha: 0.2) : Colors.transparent,
           border: Border(
             bottom: BorderSide(
               color: isSelected ? AppTheme.primaryColor : Colors.transparent,
@@ -397,9 +398,7 @@ class _UserManagementWidgetState extends State<UserManagementWidget> {
           label,
           textScaler: const TextScaler.linear(1.0),
           style: TextStyle(
-            color: isSelected
-                ? AppTheme.primaryColor
-                : (isDarkMode ? Colors.grey[400] : Colors.grey[600]),
+            color: isSelected ? AppTheme.primaryColor : (isDarkMode ? Colors.grey[400] : Colors.grey[600]),
             fontSize: 14,
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
             fontFamily: 'NotoSansSC',
@@ -456,15 +455,17 @@ class _UserManagementWidgetState extends State<UserManagementWidget> {
   }
 
   void _editUserPermission(UserVo user) {
-    showDialog(
-      context: context,
-      builder: (context) => _EditPermissionDialog(
-        user: user,
-        onPermissionUpdated: () {
-          _loadUsers(); // 重新加载用户列表
-        },
-      ),
-    );
+    if (mounted) {
+      showDialog(
+        context: context,
+        builder: (context) => _EditPermissionDialog(
+          user: user,
+          onPermissionUpdated: () {
+            _loadUsers(); // 重新加载用户列表
+          },
+        ),
+      );
+    }
   }
 
   void _deleteUser(UserVo user) {
@@ -822,7 +823,8 @@ class _EditPermissionDialogState extends State<_EditPermissionDialog> {
               Navigator.pop(context);
               widget.onPermissionUpdated();
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text(
+                const SnackBar(
+                    content: Text(
                   '权限更新成功',
                   textScaler: TextScaler.linear(1.0),
                 )),
@@ -831,7 +833,8 @@ class _EditPermissionDialogState extends State<_EditPermissionDialog> {
               Navigator.pop(context);
               widget.onPermissionUpdated();
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(
+                SnackBar(
+                    content: Text(
                   '权限更新成功但获取最新信息失败: ${updatedUserResult.msg ?? "未知错误"}',
                   textScaler: const TextScaler.linear(1.0),
                 )),
@@ -847,7 +850,8 @@ class _EditPermissionDialogState extends State<_EditPermissionDialog> {
               Navigator.pop(context);
               widget.onPermissionUpdated();
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(
+                SnackBar(
+                    content: Text(
                   '强制会员状态更新失败: ${premiumResult.msg ?? "未知错误"}',
                   textScaler: const TextScaler.linear(1.0),
                 )),
@@ -856,7 +860,8 @@ class _EditPermissionDialogState extends State<_EditPermissionDialog> {
               Navigator.pop(context);
               widget.onPermissionUpdated();
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(
+                SnackBar(
+                    content: Text(
                   '强制会员状态更新失败且获取最新信息失败: ${premiumResult.msg ?? "未知错误"}, ${updatedUserResult.msg ?? ""}',
                   textScaler: const TextScaler.linear(1.0),
                 )),
@@ -867,7 +872,8 @@ class _EditPermissionDialogState extends State<_EditPermissionDialog> {
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(
+            SnackBar(
+                content: Text(
               '更新失败: ${result.msg ?? "未知错误"}',
               textScaler: const TextScaler.linear(1.0),
             )),
@@ -877,7 +883,8 @@ class _EditPermissionDialogState extends State<_EditPermissionDialog> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(
+          SnackBar(
+              content: Text(
             '更新失败: $e',
             textScaler: const TextScaler.linear(1.0),
           )),
@@ -892,4 +899,3 @@ class _EditPermissionDialogState extends State<_EditPermissionDialog> {
     }
   }
 }
-

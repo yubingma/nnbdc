@@ -148,7 +148,6 @@ public class UserBo extends BaseBo<User> {
     @Autowired
     private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
-
     @PostConstruct
     public void init() {
         setDao(new BaseDao<User>() {
@@ -398,10 +397,10 @@ public class UserBo extends BaseBo<User> {
     public void deleteDeadUsers(int idleDays) throws IllegalAccessException {
         // 查询长期未登录的用户
         String sql = "SELECT * FROM \"user\" WHERE is_sys_user = 0 AND last_login_time < :time";
-        MapSqlParameterSource params = new MapSqlParameterSource("time", 
-            Utils.localDate2Date(LocalDate.now().plusDays(-idleDays)));
-        List<User> users = namedParameterJdbcTemplate.query(sql, params, 
-            new EntityRowMapper<>(User.class));
+        MapSqlParameterSource params = new MapSqlParameterSource("time",
+                Utils.localDate2Date(LocalDate.now().plusDays(-idleDays)));
+        List<User> users = namedParameterJdbcTemplate.query(sql, params,
+                new EntityRowMapper<>(User.class));
         logger.info("发现{}个长期未登录用户", users.size());
 
         // 删除这些用户
@@ -548,16 +547,16 @@ public class UserBo extends BaseBo<User> {
     public List<User> findByEmail(String email) {
         String sql = "SELECT * FROM \"user\" WHERE email = :email";
         MapSqlParameterSource params = new MapSqlParameterSource("email", email);
-        return namedParameterJdbcTemplate.query(sql, params, 
-            new EntityRowMapper<>(User.class));
+        return namedParameterJdbcTemplate.query(sql, params,
+                new EntityRowMapper<>(User.class));
     }
 
     public User getByUserName(String userName, boolean openNewSession) {
         // JDBC 不需要管理 Session，直接查询
         String sql = "SELECT * FROM \"user\" WHERE user_name = :userName";
         MapSqlParameterSource params = new MapSqlParameterSource("userName", userName);
-        List<User> results = namedParameterJdbcTemplate.query(sql, params, 
-            new EntityRowMapper<>(User.class));
+        List<User> results = namedParameterJdbcTemplate.query(sql, params,
+                new EntityRowMapper<>(User.class));
         return results.isEmpty() ? null : results.get(0);
     }
 
@@ -573,8 +572,8 @@ public class UserBo extends BaseBo<User> {
     public String pickRandomNonGuestNickName() {
         // JDBC 不需要管理 Session
         String sql = "SELECT * FROM \"user\" WHERE user_name NOT LIKE 'guest%' LIMIT 50";
-        List<User> candidates = jdbcTemplate.query(sql, 
-            new EntityRowMapper<>(User.class));
+        List<User> candidates = jdbcTemplate.query(sql,
+                new EntityRowMapper<>(User.class));
         if (candidates == null || candidates.isEmpty()) {
             return null;
         }
@@ -590,13 +589,13 @@ public class UserBo extends BaseBo<User> {
     public User pickRandomInactiveGamer(int idleDays, int maxCandidates) {
         // JDBC 不需要管理 Session
         String sql = "SELECT DISTINCT u.* FROM user_game ug " +
-                     "INNER JOIN \"user\" u ON ug.user_id = u.id " +
-                     "WHERE u.is_sys_user = 0 AND u.last_login_time < ? " +
-                     "LIMIT ?";
+                "INNER JOIN \"user\" u ON ug.user_id = u.id " +
+                "WHERE u.is_sys_user = 0 AND u.last_login_time < ? " +
+                "LIMIT ?";
         Date time = Utils.localDate2Date(LocalDate.now().plusDays(-idleDays));
-        List<User> candidates = jdbcTemplate.query(sql, 
-            new EntityRowMapper<>(User.class), 
-            time, maxCandidates);
+        List<User> candidates = jdbcTemplate.query(sql,
+                new EntityRowMapper<>(User.class),
+                time, maxCandidates);
         if (candidates == null || candidates.isEmpty()) {
             return null;
         }
@@ -632,7 +631,8 @@ public class UserBo extends BaseBo<User> {
                     user = getByUserName(userName, false);
                     if (user == null) {
                         // 如果用户不存在，创建一个新用户
-                        user = Util.createNewUser(userName + "@example.com", password, userName, userName + "@example.com",
+                        user = Util.createNewUser(userName + "@example.com", password, userName,
+                                userName + "@example.com",
                                 null, sysParamBo,
                                 dictBo, this, learningDictBo, false);
                         user.setWordsPerDay(20);
@@ -676,9 +676,10 @@ public class UserBo extends BaseBo<User> {
     /**
      * 通过邮箱验证码登录（验证码已在Controller中验证，不需要密码）
      * 如果用户存在，直接登录；如果不存在，自动创建账户
-     * @param request HTTP请求
-     * @param email 邮箱地址
-     * @param clientType 客户端类型
+     * 
+     * @param request       HTTP请求
+     * @param email         邮箱地址
+     * @param clientType    客户端类型
      * @param clientVersion 客户端版本
      * @return 用户验证结果
      */
@@ -690,7 +691,7 @@ public class UserBo extends BaseBo<User> {
 
         List<User> users = findByEmail(email);
         User user;
-        
+
         if (!users.isEmpty()) {
             // 用户存在，直接登录（验证码已验证通过）
             user = users.get(0);
@@ -1003,7 +1004,7 @@ public class UserBo extends BaseBo<User> {
                 throw new IllegalAccessException("用户不存在: " + userId);
             }
         }
-        
+
         UserCowDungLogBo bo = userCowDungLogBo;
         int currCowDung = user.getCowDung();
         UserCowDungLog userCowDungLog = new UserCowDungLog(user, delta, currCowDung + delta,
@@ -1279,8 +1280,8 @@ public class UserBo extends BaseBo<User> {
             // 1. 根据openId查找用户
             String sql = "SELECT * FROM \"user\" WHERE wechat_open_id = :openId";
             MapSqlParameterSource params = new MapSqlParameterSource("openId", wechatUserInfo.openId);
-            List<User> users = namedParameterJdbcTemplate.query(sql, params, 
-                new EntityRowMapper<>(User.class));
+            List<User> users = namedParameterJdbcTemplate.query(sql, params,
+                    new EntityRowMapper<>(User.class));
 
             if (!users.isEmpty()) {
                 // 用户已存在，更新微信信息（昵称和头像可能变化）
@@ -1297,22 +1298,22 @@ public class UserBo extends BaseBo<User> {
 
             // 2. 用户不存在，创建新用户
             User newUser = new User();
-            
+
             // 设置微信相关信息
             newUser.setWechatOpenId(wechatUserInfo.openId);
             newUser.setWechatUnionId(wechatUserInfo.unionId);
             newUser.setWechatNickname(wechatUserInfo.nickname);
             newUser.setWechatAvatar(wechatUserInfo.headImgUrl);
-            
+
             // 设置基本信息（使用微信昵称作为用户名和昵称）
             // 生成唯一的用户名（微信昵称可能重复）
             String userName = "wx_" + wechatUserInfo.openId.substring(0, Math.min(20, wechatUserInfo.openId.length()));
             newUser.setUserName(userName);
             newUser.setNickName(wechatUserInfo.nickname);
-            
+
             // 微信登录不需要密码，但字段不能为空，设置一个随机密码
             newUser.setPassword(MD5Utils.md5(wechatUserInfo.openId + System.currentTimeMillis()));
-            
+
             // 设置默认值
             newUser.setLastLoginTime(new Date());
             newUser.setLearnedDays(0);
@@ -1334,25 +1335,25 @@ public class UserBo extends BaseBo<User> {
             newUser.setContinuousDakaDayCount(0);
             newUser.setMaxContinuousDakaDayCount(0);
             newUser.setEnableAllWrong(false);
-            
+
             // 设置默认等级（一般是第一个等级）
             String levelSql = "SELECT * FROM level ORDER BY id ASC LIMIT 1";
-            List<Level> levels = jdbcTemplate.query(levelSql, 
-                new EntityRowMapper<>(Level.class));
+            List<Level> levels = jdbcTemplate.query(levelSql,
+                    new EntityRowMapper<>(Level.class));
             if (!levels.isEmpty()) {
                 newUser.setLevel(levels.get(0));
             }
 
             // 保存用户
             createEntity(newUser);
-            
+
             logger.info("创建微信用户成功: openId={}, nickname={}", wechatUserInfo.openId, wechatUserInfo.nickname);
-            
+
             return newUser;
 
         } catch (IllegalAccessException | IllegalArgumentException | DataAccessException e) {
-            logger.error("查找或创建微信用户异常: openId={}, nickname={}", 
-                wechatUserInfo.openId, wechatUserInfo.nickname, e);
+            logger.error("查找或创建微信用户异常: openId={}, nickname={}",
+                    wechatUserInfo.openId, wechatUserInfo.nickname, e);
             // 重新抛出异常，让调用者知道操作失败
             throw new RuntimeException("查找或创建微信用户失败: " + e.getMessage(), e);
         }
@@ -1361,11 +1362,11 @@ public class UserBo extends BaseBo<User> {
     /**
      * 执行微信登录
      * 
-     * @param user 用户对象
-     * @param clientType 客户端类型
+     * @param user          用户对象
+     * @param clientType    客户端类型
      * @param clientVersion 客户端版本
-     * @param request HTTP请求
-     * @param response HTTP响应
+     * @param request       HTTP请求
+     * @param response      HTTP响应
      * @return 登录结果
      */
     @Transactional
@@ -1391,26 +1392,26 @@ public class UserBo extends BaseBo<User> {
      * 分页搜索用户（管理员功能）
      * 支持按用户名、昵称、邮箱模糊搜索
      *
-     * @param keyword 搜索关键词
-     * @param pageNo 页码，从1开始
-     * @param pageSize 每页大小
+     * @param keyword    搜索关键词
+     * @param pageNo     页码，从1开始
+     * @param pageSize   每页大小
      * @param filterType 筛选类型：0-全部, 1-管理员, 2-超级管理员, 3-录入员
      * @return 分页结果
      */
     public PagedResults<User> searchUsers(String keyword, int pageNo, int pageSize, Integer filterType) {
         String sql;
-        Pair<String, Object>[] parameters;
-        
+        org.apache.commons.lang3.tuple.Pair<String, Object>[] parameters;
+
         // 构建WHERE条件
         StringBuilder whereClause = new StringBuilder();
         boolean hasCondition = false;
-        
+
         if (keyword != null && !keyword.trim().isEmpty()) {
             // 有搜索关键词，模糊匹配用户名、昵称、邮箱
             whereClause.append("(user_name LIKE :keyword OR nick_name LIKE :keyword OR email LIKE :keyword)");
             hasCondition = true;
         }
-        
+
         // 添加权限筛选条件
         if (filterType != null && filterType > 0) {
             if (hasCondition) {
@@ -1426,36 +1427,36 @@ public class UserBo extends BaseBo<User> {
             }
             hasCondition = true;
         }
-        
+
         // 构建完整SQL
         if (hasCondition) {
             sql = "SELECT * FROM \"user\" WHERE " + whereClause.toString() + " ORDER BY last_login_time DESC";
         } else {
             sql = "SELECT * FROM \"user\" ORDER BY last_login_time DESC";
         }
-        
+
         // 设置参数
         if (keyword != null && !keyword.trim().isEmpty()) {
             String searchPattern = "%" + keyword.trim() + "%";
-            Pair<String, Object>[] params = new Pair[]{
-                Pair.of("keyword", searchPattern)
+            Pair<String, Object>[] params = new Pair[] {
+                    Pair.of("keyword", searchPattern)
             };
             parameters = params;
         } else {
             Pair<String, Object>[] params = new Pair[0];
             parameters = params;
         }
-        
+
         return baseDao.pagedQuery(jdbcTemplate, sql, pageNo, pageSize, parameters);
     }
 
     /**
      * 更新用户的管理员权限（管理员功能）
      *
-     * @param userId 用户ID
-     * @param isAdmin 是否为管理员
+     * @param userId       用户ID
+     * @param isAdmin      是否为管理员
      * @param isSuperAdmin 是否为超级管理员
-     * @param isInputor 是否为录入员
+     * @param isInputor    是否为录入员
      * @return 更新结果
      */
     @Transactional
@@ -1465,7 +1466,7 @@ public class UserBo extends BaseBo<User> {
             if (user == null) {
                 return Result.fail("用户不存在");
             }
-            
+
             if (isAdmin != null) {
                 user.setIsAdmin(isAdmin);
             }
@@ -1475,13 +1476,13 @@ public class UserBo extends BaseBo<User> {
             if (isInputor != null) {
                 user.setIsInputor(isInputor);
             }
-            
+
             updateEntity(user);
-            logger.info("更新用户管理员权限成功: userId={}, isAdmin={}, isSuperAdmin={}, isInputor={}", 
-                userId, isAdmin, isSuperAdmin, isInputor);
-            
+            logger.info("更新用户管理员权限成功: userId={}, isAdmin={}, isSuperAdmin={}, isInputor={}",
+                    userId, isAdmin, isSuperAdmin, isInputor);
+
             return Result.success(null);
-        } catch (Exception e) {
+        } catch (IllegalAccessException | IllegalArgumentException e) {
             logger.error("更新用户管理员权限失败", e);
             return Result.fail("更新失败: " + e.getMessage());
         }

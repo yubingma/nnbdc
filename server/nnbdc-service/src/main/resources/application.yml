@@ -78,6 +78,12 @@ sms:
     expire-minutes: 10
     send-interval-seconds: 60 
 
+# 微信开放平台配置
+wechat:
+  app:
+    id: YOUR_APP_ID
+    secret: YOUR_APP_SECRET
+
 # 日志相关配置
 logging:
   file:
