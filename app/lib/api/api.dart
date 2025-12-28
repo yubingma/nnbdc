@@ -630,6 +630,9 @@ abstract class RestClient {
   @DELETE("/admin/deleteUser.do")
   Future<Result<String>> deleteUser(@Query("userId") String userId);
 
+  @GET("/admin/getUserById.do")
+  Future<Result<UserVo>> getUserById(@Query("userId") String userId);
+
   // CDN管理相关API
   @POST("/admin/refreshCdnCache.do")
   @FormUrlEncoded()

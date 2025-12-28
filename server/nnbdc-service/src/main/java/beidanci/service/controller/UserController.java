@@ -142,4 +142,26 @@ public class UserController {
         userBo.deleteUser(user);
         return Result.success(null);
     }
+    
+    /**
+     * 获取单个用户信息（管理员功能）
+     *
+     * @param userId 用户ID
+     * @return 用户信息
+     * @throws IllegalAccessException
+     */
+    @GetMapping("/admin/getUserById.do")
+    public Result<UserVo> getUserById(@RequestParam String userId) throws IllegalAccessException {
+        User user = userBo.findById(userId);
+        if (user == null) {
+            return Result.fail("用户不存在");
+        }
+        
+        // 转换为UserVo
+        UserVo userVo = BeanUtils.makeVo(user, UserVo.class, 
+            new String[]{"invitedBy", "StudyGroupVo.creator", "StudyGroupVo.users", 
+                        "StudyGroupVo.managers", "studyGroupPosts", "userGames"});
+        
+        return Result.success(userVo);
+    }
 }
