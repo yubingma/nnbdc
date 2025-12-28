@@ -1446,13 +1446,13 @@ public class UserBo extends BaseBo<User> {
             }
             switch (filterType) {
                 case 1: // 管理员
-                    whereClause.append("isAdmin = 1");
+                    whereClause.append("is_admin = true");
                     break;
                 case 2: // 超级管理员
-                    whereClause.append("isSuperAdmin = 1");
+                    whereClause.append("is_super_admin = true");
                     break;
                 case 3: // 录入员
-                    whereClause.append("isInputor = 1");
+                    whereClause.append("is_inputor = true");
                     break;
             }
             hasCondition = true;
