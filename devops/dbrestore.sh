@@ -1,5 +1,5 @@
 #!/bin/bash
-# 使用 Docker 容器内的 psql 命令进行数据库还原
+# 使用 Docker 容器内的 psql 命令进行 PostgreSQL 数据库还原 
 # 容器名: pg
 # 备份文件路径从宿主机传入容器
 

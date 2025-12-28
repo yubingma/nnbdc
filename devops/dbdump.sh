@@ -1,5 +1,5 @@
 #!/bin/bash
-# 使用 Docker 容器内的 pg_dump 命令进行数据库备份
+# 使用 Docker 容器内的 pg_dump 命令进行 PostgreSQL 数据库备份
 # 容器名: pg
 # 备份文件输出到宿主机: /var/nnbdc/dbdump/
 

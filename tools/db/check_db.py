@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-验证后端数据库所有词书的单词顺序号是否连续
+验证后端 PostgreSQL 数据库所有词书的单词顺序号是否连续
 检查dict_word表中的seq字段是否从1开始连续编号
 检查dict表中的wordCount字段是否与dict_word表中实际单词数量一致
 检测用户日志表中的数据库版本，确保不大于用户的当前数据库版本
