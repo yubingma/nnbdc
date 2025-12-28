@@ -14,6 +14,8 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.annotation.PostConstruct;
 import javax.naming.NamingException;
@@ -22,11 +24,12 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.lang3.tuple.Pair;
-import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -65,6 +68,7 @@ import beidanci.service.po.LoginLog;
 import beidanci.service.po.StudyGroup;
 import beidanci.service.po.User;
 import beidanci.service.po.UserCowDungLog;
+import beidanci.service.po.UserDbLog;
 import beidanci.service.po.Word;
 import beidanci.service.store.WordCache;
 import beidanci.service.util.BeanUtils;
@@ -74,9 +78,6 @@ import beidanci.service.util.Util;
 import beidanci.util.Constants;
 import beidanci.util.MD5Utils;
 import beidanci.util.Utils;
-import beidanci.service.po.UserDbLog;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 @Service
 public class UserBo extends BaseBo<User> {
@@ -91,12 +92,6 @@ public class UserBo extends BaseBo<User> {
     WordCache wordCache;
 
     @Autowired
-    UserSnapshotDailyBo userSnapshotDailyBo;
-
-    @Autowired
-    UserGameBo userGameBo;
-
-    @Autowired
     UserCowDungLogBo userCowDungLogBo;
 
     @Autowired
@@ -107,9 +102,6 @@ public class UserBo extends BaseBo<User> {
 
     @Autowired
     UserStudyStepBo userStudyStepBo;
-
-    @Autowired
-    MsgBo msgBo;
 
     @Autowired
     EventBo eventBo;
@@ -130,9 +122,6 @@ public class UserBo extends BaseBo<User> {
     DictBo dictBo;
 
     @Autowired
-    WordBo wordBo;
-
-    @Autowired
     DakaBo dakaBo;
 
     @Autowired
@@ -143,9 +132,6 @@ public class UserBo extends BaseBo<User> {
 
     @Autowired
     SysParamBo sysParamBo;
-
-    @Autowired
-    BookMarkBo bookMarkBo;
 
     @Autowired
     UserOperBo userOperBo;
@@ -718,7 +704,7 @@ public class UserBo extends BaseBo<User> {
                 user.setWordsPerDay(20);
                 // 注意：genNewUser 内部已经调用了 createEntity，所以这里只需要更新 wordsPerDay
                 updateEntity(user);
-            } catch (Exception e) {
+            } catch (IllegalAccessException | IllegalArgumentException e) {
                 logger.error("自动创建用户失败", e);
                 return new Result<>(false, "创建用户失败", null);
             }
@@ -915,28 +901,14 @@ public class UserBo extends BaseBo<User> {
         long value = Long.parseLong(m.group(1));
         String unit = m.group(2).toLowerCase();
 
-        switch (unit) {
-            case "毫秒":
-            case "ms":
-                return value;
-            case "秒":
-            case "s":
-                return value * 1000L;
-            case "分钟":
-            case "分":
-            case "m":
-                return value * 60_000L;
-            case "小时":
-            case "时":
-            case "h":
-                return value * 3_600_000L;
-            case "天":
-            case "日":
-            case "d":
-                return value * 86_400_000L;
-            default:
-                return null;
-        }
+        return switch (unit) {
+            case "毫秒", "ms" -> value;
+            case "秒", "s" -> value * 1000L;
+            case "分钟", "分", "m" -> value * 60_000L;
+            case "小时", "时", "h" -> value * 3_600_000L;
+            case "天", "日", "d" -> value * 86_400_000L;
+            default -> null;
+        };
     }
 
     // =========================
@@ -1378,7 +1350,7 @@ public class UserBo extends BaseBo<User> {
             
             return newUser;
 
-        } catch (Exception e) {
+        } catch (IllegalAccessException | IllegalArgumentException | DataAccessException e) {
             logger.error("查找或创建微信用户异常: openId={}, nickname={}", 
                 wechatUserInfo.openId, wechatUserInfo.nickname, e);
             // 重新抛出异常，让调用者知道操作失败
@@ -1445,15 +1417,12 @@ public class UserBo extends BaseBo<User> {
                 whereClause.append(" AND ");
             }
             switch (filterType) {
-                case 1: // 管理员
+                case 1 -> // 管理员
                     whereClause.append("is_admin = true");
-                    break;
-                case 2: // 超级管理员
+                case 2 -> // 超级管理员
                     whereClause.append("is_super_admin = true");
-                    break;
-                case 3: // 录入员
+                case 3 -> // 录入员
                     whereClause.append("is_inputor = true");
-                    break;
             }
             hasCondition = true;
         }

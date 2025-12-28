@@ -1,5 +1,6 @@
 package beidanci.service.controller;
 
+import java.util.Date;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,7 +17,6 @@ import beidanci.service.bo.UserBo;
 import beidanci.service.po.User;
 import beidanci.service.util.BeanUtils;
 import beidanci.service.util.UserSorter;
-import java.util.Date;
 
 @RestController
 public class UserController {
@@ -157,7 +157,7 @@ public class UserController {
             return Result.fail("用户不存在");
         }
         
-        // 转换为UserVo
+        // 转换为UserVo，排除复杂关联对象，但保留订阅和强制会员相关字段
         UserVo userVo = BeanUtils.makeVo(user, UserVo.class, 
             new String[]{"invitedBy", "StudyGroupVo.creator", "StudyGroupVo.users", 
                         "StudyGroupVo.managers", "studyGroupPosts", "userGames"});

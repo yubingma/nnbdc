@@ -64,7 +64,53 @@ public class UserVo extends UuidVo {
     private Integer totalScore;
     private Double dakaRatio;
     private Boolean enableAllWrong;
-
+    
+    // 订阅相关字段（iOS平台）
+    /**
+     * iOS是否为会员
+     */
+    private Boolean isPremiumIos;
+    
+    /**
+     * iOS订阅到期时间
+     */
+    private Date subscriptionExpireDateIos;
+    
+    /**
+     * iOS订阅类型：monthly/annual
+     */
+    private String subscriptionTypeIos;
+    
+    /**
+     * iOS订阅状态：active/expired/cancelled
+     */
+    private String subscriptionStatusIos;
+    
+    /**
+     * iOS最后验证的收据数据（用于恢复购买）
+     */
+    private String lastReceiptDataIos;
+    
+    // 强制视为会员（用于纠纷处理/白名单/补偿等）
+    /**
+     * 是否强制视为会员
+     */
+    private Boolean premiumOverrideEnabled;
+    
+    /**
+     * 强制会员状态最后修改时间
+     */
+    private Date premiumOverrideUpdateTime;
+    
+    /**
+     * 强制会员状态修改原因
+     */
+    private String premiumOverrideReason;
+    
+    /**
+     * 强制会员状态延续时长（形如：10天/360秒/15分钟；null 表示永久）
+     */
+    private String premiumOverrideDuration;
 
     /**
      * ASR答对判定规则：ONE/HALF/ALL
@@ -158,6 +204,78 @@ public class UserVo extends UuidVo {
 
     public void setEnableAllWrong(Boolean enableAllWrong) {
         this.enableAllWrong = enableAllWrong;
+    }
+    
+    public Boolean getIsPremiumIos() {
+        return isPremiumIos;
+    }
+
+    public void setIsPremiumIos(Boolean isPremiumIos) {
+        this.isPremiumIos = isPremiumIos;
+    }
+
+    public Date getSubscriptionExpireDateIos() {
+        return subscriptionExpireDateIos;
+    }
+
+    public void setSubscriptionExpireDateIos(Date subscriptionExpireDateIos) {
+        this.subscriptionExpireDateIos = subscriptionExpireDateIos;
+    }
+
+    public String getSubscriptionTypeIos() {
+        return subscriptionTypeIos;
+    }
+
+    public void setSubscriptionTypeIos(String subscriptionTypeIos) {
+        this.subscriptionTypeIos = subscriptionTypeIos;
+    }
+
+    public String getSubscriptionStatusIos() {
+        return subscriptionStatusIos;
+    }
+
+    public void setSubscriptionStatusIos(String subscriptionStatusIos) {
+        this.subscriptionStatusIos = subscriptionStatusIos;
+    }
+
+    public String getLastReceiptDataIos() {
+        return lastReceiptDataIos;
+    }
+
+    public void setLastReceiptDataIos(String lastReceiptDataIos) {
+        this.lastReceiptDataIos = lastReceiptDataIos;
+    }
+
+    public Boolean getPremiumOverrideEnabled() {
+        return premiumOverrideEnabled;
+    }
+
+    public void setPremiumOverrideEnabled(Boolean premiumOverrideEnabled) {
+        this.premiumOverrideEnabled = premiumOverrideEnabled;
+    }
+
+    public Date getPremiumOverrideUpdateTime() {
+        return premiumOverrideUpdateTime;
+    }
+
+    public void setPremiumOverrideUpdateTime(Date premiumOverrideUpdateTime) {
+        this.premiumOverrideUpdateTime = premiumOverrideUpdateTime;
+    }
+
+    public String getPremiumOverrideReason() {
+        return premiumOverrideReason;
+    }
+
+    public void setPremiumOverrideReason(String premiumOverrideReason) {
+        this.premiumOverrideReason = premiumOverrideReason;
+    }
+
+    public String getPremiumOverrideDuration() {
+        return premiumOverrideDuration;
+    }
+
+    public void setPremiumOverrideDuration(String premiumOverrideDuration) {
+        this.premiumOverrideDuration = premiumOverrideDuration;
     }
 
     public Double getDakaRatio() {

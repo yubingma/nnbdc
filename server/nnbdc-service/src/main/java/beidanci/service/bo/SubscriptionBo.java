@@ -128,8 +128,8 @@ public class SubscriptionBo extends BaseBo<User> {
     private ReceiptVerificationResult verifyReceipt(String receiptData, String verifyUrl) throws IOException {
         try {
             // 构建请求体
-            String requestBody = String.format("{\"receipt-data\":\"%s\"}", receiptData);
-            RequestBody body = RequestBody.create(requestBody, JSON);
+            String requestBody = "{\"receipt-data\":\"" + receiptData + "\"}";
+            RequestBody body = RequestBody.create(JSON, requestBody);
 
             // 构建请求
             Request request = new Request.Builder()
