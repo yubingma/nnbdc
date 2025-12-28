@@ -315,6 +315,8 @@ class _UserManagementWidgetState extends State<UserManagementWidget> {
                   _buildBadge('超级管理员', Colors.purple),
                 if (user.isInputor == true)
                   _buildBadge('录入员', Colors.green),
+                if (user.premiumOverrideEnabled == true)
+                  _buildBadge('强制会员', Colors.orange),
               ],
             ),
           ],
@@ -596,6 +598,11 @@ class _EditPermissionDialogState extends State<_EditPermissionDialog> {
   late bool _isAdmin;
   late bool _isSuperAdmin;
   late bool _isInputor;
+  late bool _isPremiumOverrideEnabled;
+  String? _premiumOverrideReason;
+  String? _premiumOverrideDuration;
+  late TextEditingController _reasonController;
+  late TextEditingController _durationController;
   bool _isLoading = false;
 
   @override
@@ -604,6 +611,18 @@ class _EditPermissionDialogState extends State<_EditPermissionDialog> {
     _isAdmin = widget.user.isAdmin ?? false;
     _isSuperAdmin = widget.user.isSuperAdmin ?? false;
     _isInputor = widget.user.isInputor ?? false;
+    _isPremiumOverrideEnabled = widget.user.premiumOverrideEnabled ?? false;
+    _premiumOverrideReason = widget.user.premiumOverrideReason;
+    _premiumOverrideDuration = widget.user.premiumOverrideDuration;
+    _reasonController = TextEditingController(text: _premiumOverrideReason ?? '');
+    _durationController = TextEditingController(text: _premiumOverrideDuration ?? '');
+  }
+
+  @override
+  void dispose() {
+    _reasonController.dispose();
+    _durationController.dispose();
+    super.dispose();
   }
 
   @override
@@ -688,6 +707,53 @@ class _EditPermissionDialogState extends State<_EditPermissionDialog> {
                 });
               },
             ),
+            const Divider(),
+            SwitchListTile(
+              title: const Text(
+                '强制会员',
+                textScaler: TextScaler.linear(1.0),
+              ),
+              subtitle: const Text(
+                '强制将用户视为会员，绕过订阅验证',
+                textScaler: TextScaler.linear(1.0),
+              ),
+              value: _isPremiumOverrideEnabled,
+              onChanged: (value) {
+                setState(() {
+                  _isPremiumOverrideEnabled = value;
+                });
+              },
+            ),
+            if (_isPremiumOverrideEnabled) ...[
+              const SizedBox(height: 16),
+              TextField(
+                decoration: InputDecoration(
+                  labelText: '会员原因',
+                  hintText: '输入设置强制会员的原因',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                controller: _reasonController,
+                onChanged: (value) {
+                  _premiumOverrideReason = value;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                decoration: InputDecoration(
+                  labelText: '会员时长',
+                  hintText: '输入会员时长（如：30天，永久则留空）',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                controller: _durationController,
+                onChanged: (value) {
+                  _premiumOverrideDuration = value;
+                },
+              ),
+            ],
           ],
         ),
       ),
@@ -738,15 +804,36 @@ class _EditPermissionDialogState extends State<_EditPermissionDialog> {
       );
 
       if (result.success) {
-        if (mounted) {
-          Navigator.pop(context);
-          widget.onPermissionUpdated();
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text(
-              '权限更新成功',
-              textScaler: TextScaler.linear(1.0),
-            )),
-          );
+        // 同时更新强制会员状态
+        final premiumResult = await Api.client.updatePremiumOverride(
+          widget.user.id!,
+          _isPremiumOverrideEnabled,
+          _reasonController.text.isEmpty ? null : _reasonController.text,
+          _durationController.text.isEmpty ? null : _durationController.text,
+        );
+
+        if (premiumResult.success) {
+          if (mounted) {
+            Navigator.pop(context);
+            widget.onPermissionUpdated();
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text(
+                '权限更新成功',
+                textScaler: TextScaler.linear(1.0),
+              )),
+            );
+          }
+        } else {
+          if (mounted) {
+            // 即使强制会员状态更新失败，也要刷新用户列表，然后显示错误信息
+            widget.onPermissionUpdated();
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(
+                '强制会员状态更新失败: ${premiumResult.msg ?? "未知错误"}',
+                textScaler: const TextScaler.linear(1.0),
+              )),
+            );
+          }
         }
       } else {
         if (mounted) {

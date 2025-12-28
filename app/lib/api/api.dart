@@ -619,6 +619,14 @@ abstract class RestClient {
       @Field("isSuperAdmin") bool? isSuperAdmin,
       @Field("isInputor") bool? isInputor);
 
+  @POST("/admin/updatePremiumOverride.do")
+  @FormUrlEncoded()
+  Future<Result<String>> updatePremiumOverride(
+      @Field("userId") String userId,
+      @Field("enabled") bool? enabled,
+      @Field("reason") String? reason,
+      @Field("duration") String? duration);
+
   @DELETE("/admin/deleteUser.do")
   Future<Result<String>> deleteUser(@Query("userId") String userId);
 
