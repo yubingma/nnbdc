@@ -814,59 +814,59 @@ class _EditPermissionDialogState extends State<_EditPermissionDialog> {
         );
 
         if (premiumResult.success) {
-          if (mounted) {
-            // 管理员权限和强制会员状态都更新成功
-            // 获取更新后的用户信息
-            final updatedUserResult = await Api.client.getUserById(widget.user.id!);
-            if (updatedUserResult.success && updatedUserResult.data != null && mounted) {
-              // 使用获取到的最新用户信息更新列表
-              Navigator.pop(context);
-              widget.onPermissionUpdated();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                    content: Text(
-                  '权限更新成功',
-                  textScaler: TextScaler.linear(1.0),
-                )),
-              );
-            } else {
-              Navigator.pop(context);
-              widget.onPermissionUpdated();
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                    content: Text(
-                  '权限更新成功但获取最新信息失败: ${updatedUserResult.msg ?? "未知错误"}',
-                  textScaler: const TextScaler.linear(1.0),
-                )),
-              );
-            }
+          // 管理员权限和强制会员状态都更新成功
+          // 获取更新后的用户信息
+          final updatedUserResult = await Api.client.getUserById(widget.user.id!);
+          if (!mounted) return;
+
+          if (updatedUserResult.success && updatedUserResult.data != null) {
+            // 使用获取到的最新用户信息更新列表
+            Navigator.pop(context);
+            widget.onPermissionUpdated();
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                  content: Text(
+                '权限更新成功',
+                textScaler: TextScaler.linear(1.0),
+              )),
+            );
+          } else {
+            Navigator.pop(context);
+            widget.onPermissionUpdated();
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                  content: Text(
+                '权限更新成功但获取最新信息失败: ${updatedUserResult.msg ?? "未知错误"}',
+                textScaler: const TextScaler.linear(1.0),
+              )),
+            );
           }
         } else {
-          if (mounted) {
-            // 强制会员状态更新失败，但管理员权限已更新，仍需刷新列表
-            // 获取更新后的用户信息
-            final updatedUserResult = await Api.client.getUserById(widget.user.id!);
-            if (updatedUserResult.success && updatedUserResult.data != null && mounted) {
-              Navigator.pop(context);
-              widget.onPermissionUpdated();
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                    content: Text(
-                  '强制会员状态更新失败: ${premiumResult.msg ?? "未知错误"}',
-                  textScaler: const TextScaler.linear(1.0),
-                )),
-              );
-            } else {
-              Navigator.pop(context);
-              widget.onPermissionUpdated();
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                    content: Text(
-                  '强制会员状态更新失败且获取最新信息失败: ${premiumResult.msg ?? "未知错误"}, ${updatedUserResult.msg ?? ""}',
-                  textScaler: const TextScaler.linear(1.0),
-                )),
-              );
-            }
+          // 强制会员状态更新失败，但管理员权限已更新，仍需刷新列表
+          // 获取更新后的用户信息
+          final updatedUserResult = await Api.client.getUserById(widget.user.id!);
+          if (!mounted) return;
+
+          if (updatedUserResult.success && updatedUserResult.data != null) {
+            Navigator.pop(context);
+            widget.onPermissionUpdated();
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                  content: Text(
+                '强制会员状态更新失败: ${premiumResult.msg ?? "未知错误"}',
+                textScaler: const TextScaler.linear(1.0),
+              )),
+            );
+          } else {
+            Navigator.pop(context);
+            widget.onPermissionUpdated();
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                  content: Text(
+                '强制会员状态更新失败且获取最新信息失败: ${premiumResult.msg ?? "未知错误"}, ${updatedUserResult.msg ?? ""}',
+                textScaler: const TextScaler.linear(1.0),
+              )),
+            );
           }
         }
       } else {

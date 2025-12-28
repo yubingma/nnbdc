@@ -1400,7 +1400,6 @@ public class UserBo extends BaseBo<User> {
      */
     public PagedResults<User> searchUsers(String keyword, int pageNo, int pageSize, Integer filterType) {
         String sql;
-        org.apache.commons.lang3.tuple.Pair<String, Object>[] parameters;
 
         // 构建WHERE条件
         StringBuilder whereClause = new StringBuilder();
@@ -1435,19 +1434,13 @@ public class UserBo extends BaseBo<User> {
             sql = "SELECT * FROM \"user\" ORDER BY last_login_time DESC";
         }
 
-        // 设置参数
+        // 设置参数（baseDao.pagedQuery 支持可变参数，避免手动创建泛型数组导致的 unchecked conversion）
         if (keyword != null && !keyword.trim().isEmpty()) {
             String searchPattern = "%" + keyword.trim() + "%";
-            Pair<String, Object>[] params = new Pair[] {
-                    Pair.of("keyword", searchPattern)
-            };
-            parameters = params;
-        } else {
-            Pair<String, Object>[] params = new Pair[0];
-            parameters = params;
+            return baseDao.pagedQuery(jdbcTemplate, sql, pageNo, pageSize, Pair.of("keyword", searchPattern));
         }
 
-        return baseDao.pagedQuery(jdbcTemplate, sql, pageNo, pageSize, parameters);
+        return baseDao.pagedQuery(jdbcTemplate, sql, pageNo, pageSize);
     }
 
     /**
