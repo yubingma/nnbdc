@@ -159,7 +159,7 @@ class MyDatabase extends _$MyDatabase {
   // you should bump this number whenever you change or add a table definition. Migrations
   // are covered later in this readme.
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration {
@@ -190,6 +190,10 @@ class MyDatabase extends _$MyDatabase {
           if (from < 6) {
             await _migrateFromV5ToV6FixIosSubscriptionColumns();
           }
+          // 从版本 6 升级到版本 7：添加“强制视为会员”字段
+          if (from < 7) {
+            await _migrateFromV6ToV7AddPremiumOverrideFields(m);
+          }
         } catch (e, stackTrace) {
           // 升级失败，记录错误日志
           Global.logger.e('❌ 数据库升级失败，将删除所有表并重建: $e', error: e, stackTrace: stackTrace);
@@ -217,6 +221,16 @@ class MyDatabase extends _$MyDatabase {
         }
       },
     );
+  }
+
+  /// 从版本 6 升级到版本 7：添加“强制视为会员”字段
+  Future<void> _migrateFromV6ToV7AddPremiumOverrideFields(Migrator m) async {
+    await transaction(() async {
+      await m.addColumn(users, users.premiumOverrideEnabled);
+      await m.addColumn(users, users.premiumOverrideUpdateTime);
+      await m.addColumn(users, users.premiumOverrideReason);
+      await m.addColumn(users, users.premiumOverrideDuration);
+    });
   }
 
   /// 从版本 1 升级到版本 2 的迁移逻辑

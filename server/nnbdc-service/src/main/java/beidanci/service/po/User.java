@@ -226,6 +226,31 @@ public class User extends UuidPo {
     @Column(name = "last_receipt_data_ios", columnDefinition = "TEXT", nullable = true)
     private String lastReceiptDataIos;
 
+    /**
+     * 强制视为会员（用于纠纷处理/白名单/补偿等）
+     * 注意：该字段及其元数据仅用于“判定是否视为会员”，程序不主动根据时间自动修改 enabled。
+     */
+    @Column(name = "premium_override_enabled", nullable = true)
+    private Boolean premiumOverrideEnabled;
+
+    /**
+     * 强制会员状态最后修改时间
+     */
+    @Column(name = "premium_override_update_time", nullable = true)
+    private Date premiumOverrideUpdateTime;
+
+    /**
+     * 强制会员状态修改原因
+     */
+    @Column(name = "premium_override_reason", length = 500, nullable = true)
+    private String premiumOverrideReason;
+
+    /**
+     * 强制会员状态延续时长（形如：10天/360秒/15分钟；null 表示永久）
+     */
+    @Column(name = "premium_override_duration", length = 50, nullable = true)
+    private String premiumOverrideDuration;
+
     public Boolean getEnableAllWrong() {
         return enableAllWrong;
     }
@@ -273,6 +298,38 @@ public class User extends UuidPo {
 
     public void setLastReceiptDataIos(String lastReceiptDataIos) {
         this.lastReceiptDataIos = lastReceiptDataIos;
+    }
+
+    public Boolean getPremiumOverrideEnabled() {
+        return premiumOverrideEnabled;
+    }
+
+    public void setPremiumOverrideEnabled(Boolean premiumOverrideEnabled) {
+        this.premiumOverrideEnabled = premiumOverrideEnabled;
+    }
+
+    public Date getPremiumOverrideUpdateTime() {
+        return premiumOverrideUpdateTime;
+    }
+
+    public void setPremiumOverrideUpdateTime(Date premiumOverrideUpdateTime) {
+        this.premiumOverrideUpdateTime = premiumOverrideUpdateTime;
+    }
+
+    public String getPremiumOverrideReason() {
+        return premiumOverrideReason;
+    }
+
+    public void setPremiumOverrideReason(String premiumOverrideReason) {
+        this.premiumOverrideReason = premiumOverrideReason;
+    }
+
+    public String getPremiumOverrideDuration() {
+        return premiumOverrideDuration;
+    }
+
+    public void setPremiumOverrideDuration(String premiumOverrideDuration) {
+        this.premiumOverrideDuration = premiumOverrideDuration;
     }
 
     /**
@@ -861,6 +918,18 @@ public class User extends UuidPo {
 
         user.setAsrPassRule(dto.getAsrPassRule());
 
+        // ========== 订阅/强制会员字段（客户端同步不一定包含，允许为 null） ==========
+        user.setIsPremiumIos(dto.getIsPremiumIos() != null ? dto.getIsPremiumIos() : false);
+        user.setSubscriptionExpireDateIos(dto.getSubscriptionExpireDateIos());
+        user.setSubscriptionTypeIos(dto.getSubscriptionTypeIos());
+        user.setSubscriptionStatusIos(dto.getSubscriptionStatusIos());
+        user.setLastReceiptDataIos(dto.getLastReceiptDataIos());
+
+        user.setPremiumOverrideEnabled(dto.getPremiumOverrideEnabled());
+        user.setPremiumOverrideUpdateTime(dto.getPremiumOverrideUpdateTime());
+        user.setPremiumOverrideReason(dto.getPremiumOverrideReason());
+        user.setPremiumOverrideDuration(dto.getPremiumOverrideDuration());
+
         // 处理level字段
         Level level = new Level();
         level.setId(dto.getLevelId());
@@ -917,6 +986,19 @@ public class User extends UuidPo {
         if (this.getLevel() != null) {
             dto.setLevelId(this.getLevel().getId());
         }
+
+        // ========== 订阅/强制会员字段 ==========
+        dto.setIsPremiumIos(this.getIsPremiumIos());
+        dto.setSubscriptionExpireDateIos(this.getSubscriptionExpireDateIos());
+        dto.setSubscriptionTypeIos(this.getSubscriptionTypeIos());
+        dto.setSubscriptionStatusIos(this.getSubscriptionStatusIos());
+        dto.setLastReceiptDataIos(this.getLastReceiptDataIos());
+
+        dto.setPremiumOverrideEnabled(this.getPremiumOverrideEnabled());
+        dto.setPremiumOverrideUpdateTime(this.getPremiumOverrideUpdateTime());
+        dto.setPremiumOverrideReason(this.getPremiumOverrideReason());
+        dto.setPremiumOverrideDuration(this.getPremiumOverrideDuration());
+
         dto.setCreateTime(this.getCreateTime());
         dto.setUpdateTime(this.getUpdateTime());
         return dto;

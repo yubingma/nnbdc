@@ -226,6 +226,18 @@ class UserVo {
   /// iOS订阅状态：active/expired/cancelled
   String? subscriptionStatusIos;
 
+  /// 强制视为会员（用于纠纷处理/白名单/补偿等）
+  bool? premiumOverrideEnabled;
+
+  /// 强制会员状态最后修改时间
+  DateTime? premiumOverrideUpdateTime;
+
+  /// 强制会员状态修改原因
+  String? premiumOverrideReason;
+
+  /// 强制会员状态延续时长（形如：10天/360秒/15分钟；null 表示永久）
+  String? premiumOverrideDuration;
+
   UserVo(this.id, this.userName);
 
   UserVo.c2(this.id);
@@ -273,6 +285,12 @@ class UserVo {
     userVo.subscriptionExpireDateIos = user.subscriptionExpireDateIos;
     userVo.subscriptionTypeIos = user.subscriptionTypeIos;
     userVo.subscriptionStatusIos = user.subscriptionStatusIos;
+
+    // 强制会员字段
+    userVo.premiumOverrideEnabled = user.premiumOverrideEnabled;
+    userVo.premiumOverrideUpdateTime = user.premiumOverrideUpdateTime;
+    userVo.premiumOverrideReason = user.premiumOverrideReason;
+    userVo.premiumOverrideDuration = user.premiumOverrideDuration;
 
     userVo.password = user.password;
     userVo.lastLoginTime = user.lastLoginTime;
@@ -1223,7 +1241,12 @@ User userVo2User(UserVo userVo) {
       subscriptionExpireDateIos: userVo.subscriptionExpireDateIos,
       subscriptionTypeIos: userVo.subscriptionTypeIos,
       subscriptionStatusIos: userVo.subscriptionStatusIos,
-      lastReceiptDataIos: null); // 收据数据不从前端传输
+      lastReceiptDataIos: null, // 收据数据不从前端传输
+      // 强制会员字段（服务端可下发，客户端一般不修改）
+      premiumOverrideEnabled: userVo.premiumOverrideEnabled ?? false,
+      premiumOverrideUpdateTime: userVo.premiumOverrideUpdateTime,
+      premiumOverrideReason: userVo.premiumOverrideReason,
+      premiumOverrideDuration: userVo.premiumOverrideDuration);
 
   return user;
 }

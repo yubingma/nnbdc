@@ -6,8 +6,9 @@ import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/api/api.dart';
 import 'package:nnbdc/api/result.dart';
 import 'package:nnbdc/api/bo/user_bo.dart';
+import 'package:nnbdc/services/throttled_sync_service.dart';
 import 'package:nnbdc/util/platform_util.dart';
-import 'package:flutter/foundation.dart';
+import 'package:nnbdc/db/db.dart';
 
 /// 订阅工具类
 /// 用于处理iOS应用内购买订阅功能（仅支持iOS平台）
@@ -327,42 +328,103 @@ class SubscriptionUtil {
   /// 刷新用户信息
   static Future<void> _refreshUserInfo() async {
     try {
-      final result = await UserBo().getLoggedInUser();
-      if (result.success && result.data != null) {
-        // 用户信息已更新，可以通过Global.getLoggedInUser()获取最新信息
-        Global.logger.i('用户信息已刷新');
-      }
+      // 订阅验证后，服务端会主动更新 user 表并写入 user_db_log
+      // 这里触发一次同步以拉取最新用户信息到本地
+      await ThrottledDbSyncService().requestSync();
+      await UserBo().getLoggedInUser();
+      Global.logger.i('用户信息已刷新');
     } catch (e, stackTrace) {
       Global.logger.e('刷新用户信息失败', error: e, stackTrace: stackTrace);
     }
   }
 
-  /// 检查用户是否为会员（仅支持iOS平台）
+  /// 检查用户是否为会员（优先使用本地用户字段判定）
   static bool isPremium() {
     final user = Global.getLoggedInUser();
     if (user == null) {
       return false;
     }
 
-    // 只支持iOS平台订阅
-    if (PlatformUtils.isIOS) {
-      // 检查iOS订阅
+    return _isPremiumEffective(user);
+  }
+
+  /// 有效会员判定（包含“强制视为会员”逻辑；边界情况偏向会员）
+  static bool _isPremiumEffective(User user) {
+    final now = DateTime.now();
+
+    // 1) iOS订阅
+    try {
       if (user.isPremiumIos == true) {
-        // 检查订阅是否过期
-        if (user.subscriptionExpireDateIos != null) {
-          final now = DateTime.now();
-          final expireDate = user.subscriptionExpireDateIos!;
-          if (expireDate.isAfter(now)) {
-            return true;
-          }
-        } else {
-          // 如果没有过期时间，但isPremiumIos为true，也认为是会员
+        final expireDate = user.subscriptionExpireDateIos;
+        if (expireDate == null) {
+          return true;
+        }
+        if (expireDate.isAfter(now)) {
           return true;
         }
       }
+    } catch (_) {
+      return true;
     }
 
-    return false;
+    // 2) 强制视为会员
+    try {
+      if (user.premiumOverrideEnabled != true) {
+        return false;
+      }
+      if (user.premiumOverrideDuration == null) {
+        return true; // 永久
+      }
+      final updateTime = user.premiumOverrideUpdateTime;
+      if (updateTime == null) {
+        return true; // 元数据缺失，偏向会员
+      }
+
+      final durationMs = _parseDurationMillis(user.premiumOverrideDuration!);
+      if (durationMs == null) {
+        return true; // 无法解析，偏向会员
+      }
+      if (durationMs <= 0) {
+        return false;
+      }
+      final expireTime = updateTime.add(Duration(milliseconds: durationMs));
+      return expireTime.isAfter(now);
+    } catch (_) {
+      return true;
+    }
+  }
+
+  static int? _parseDurationMillis(String duration) {
+    final s = duration.trim();
+    if (s.isEmpty) return null;
+    final reg = RegExp(r'^(\d+)\s*(毫秒|ms|秒|s|分钟|分|m|小时|时|h|天|日|d)$', caseSensitive: false);
+    final m = reg.firstMatch(s);
+    if (m == null) return null;
+    final value = int.tryParse(m.group(1)!);
+    if (value == null) return null;
+    final unit = (m.group(2) ?? '').toLowerCase();
+    switch (unit) {
+      case '毫秒':
+      case 'ms':
+        return value;
+      case '秒':
+      case 's':
+        return value * 1000;
+      case '分钟':
+      case '分':
+      case 'm':
+        return value * 60 * 1000;
+      case '小时':
+      case '时':
+      case 'h':
+        return value * 60 * 60 * 1000;
+      case '天':
+      case '日':
+      case 'd':
+        return value * 24 * 60 * 60 * 1000;
+      default:
+        return null;
+    }
   }
 
   /// 获取订阅到期时间（仅支持iOS平台）

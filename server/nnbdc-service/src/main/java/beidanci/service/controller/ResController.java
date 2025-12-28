@@ -6,7 +6,6 @@ import java.security.MessageDigest;
 import java.text.ParseException;
 import java.util.Date;
 import java.util.List;
-import java.util.zip.GZIPOutputStream;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -38,7 +37,6 @@ import beidanci.service.bo.SentenceBo;
 import beidanci.service.bo.SynonymBo;
 import beidanci.service.bo.WordBo;
 import beidanci.util.Constants;
-import beidanci.util.CountingOutputStream;
 
 @RestController
 public class ResController {

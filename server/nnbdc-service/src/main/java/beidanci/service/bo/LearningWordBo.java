@@ -119,7 +119,7 @@ public class LearningWordBo extends BaseBo<LearningWord> {
      * @throws IllegalArgumentException
      */
     private List<LearningWord> addNewLearningWords(User user, final List<LearningWord> currentLearningWords,
-            int todayDayNumber) throws IllegalArgumentException {
+            int todayDayNumber, int wordsPerDay) throws IllegalArgumentException {
         // 计算目前所有的 learning words 的总生命值
         int currentLifeValue = 0;
         for (LearningWord word : currentLearningWords) {
@@ -127,12 +127,11 @@ public class LearningWordBo extends BaseBo<LearningWord> {
         }
 
         // 計算期望的总生命值
-        final int expectedTotalLifeValue = user.getWordsPerDay() * 29 / 5;
+        final int expectedTotalLifeValue = wordsPerDay * 29 / 5;
 
         // 计算需要添加的新单词数量（以达到期望的总生命值）
         int newWordCount = (int) Math.ceil(expectedTotalLifeValue - currentLifeValue + 0.0)
                 / LearningWord.NEW_LEARNING_WORD_LIFE_VALUE;
-        int wordsPerDay = user.getWordsPerDay();
         newWordCount = newWordCount <= wordsPerDay ? newWordCount : wordsPerDay;
 
         // 从词书取新词(不一定能取到足够的词，尽量取)
@@ -270,7 +269,8 @@ public class LearningWordBo extends BaseBo<LearningWord> {
 
         // 如果需要，添加新单词到learning words
         startTime = new Date();
-        List<LearningWord> newLearningWords = addNewLearningWords(user, allLearningWords, todayDayNumber);
+        final int wordsPerDay = userBo.getEffectiveWordsPerDay(user, now);
+        List<LearningWord> newLearningWords = addNewLearningWords(user, allLearningWords, todayDayNumber, wordsPerDay);
         allLearningWords.addAll(newLearningWords);
         endTime = new Date();
         log.info("如果需要，添加新单词到learning words，耗时:" + (endTime.getTime() - startTime.getTime()));
@@ -286,7 +286,7 @@ public class LearningWordBo extends BaseBo<LearningWord> {
                 if (!todayLearningWords.contains(word)) {
                     todayLearningWords.add(word);
                     allLearningWords.remove(word);
-                    if (todayLearningWords.size() >= user.getWordsPerDay()) {
+                    if (todayLearningWords.size() >= wordsPerDay) {
                         updateTodayLearningWords(todayLearningWords, now);
                         return todayLearningWords;
                     }
@@ -300,7 +300,7 @@ public class LearningWordBo extends BaseBo<LearningWord> {
         // (所有学习中单词的总生命值 L) = 29/5 * N(每日单词量), 所以学习中的单词总数至少有 L/5 = 29/(5*5) * N
         // > N
         startTime = new Date();
-        while (todayLearningWords.size() < user.getWordsPerDay()) {
+        while (todayLearningWords.size() < wordsPerDay) {
             LearningWord oldestWord = getOldestLearningWord(allLearningWords);
 
             // 取不到更多单词了，如果单词书中单词耗尽就会出现这样的情况
@@ -366,8 +366,9 @@ public class LearningWordBo extends BaseBo<LearningWord> {
         List<LearningWord> todayWords = getTodayLearningWordsFromDb(user, now);
 
         // 生成今日要学习的单词列表
+        final int wordsPerDay = userBo.getEffectiveWordsPerDay(user, now);
         boolean needAddNewWords = todayWords.isEmpty()
-                || (todayWords.size() < user.getWordsPerDay() && addNewWordsIfNotEnough);
+                || (todayWords.size() < wordsPerDay && addNewWordsIfNotEnough);
         if (needAddNewWords) {
             todayWords = genTodayWords(user, now, todayWords);
         }
@@ -381,7 +382,7 @@ public class LearningWordBo extends BaseBo<LearningWord> {
         }
 
         // 单词是否已经耗尽（词书中没有新词了）
-        boolean wordExhausted = (todayWords.size() < user.getWordsPerDay() && needAddNewWords);
+        boolean wordExhausted = (todayWords.size() < wordsPerDay && needAddNewWords);
 
         // 写"已开始学习"历史
         UserStudyRecordId id = new UserStudyRecordId(user.getId(), new Date());

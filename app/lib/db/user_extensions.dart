@@ -49,6 +49,12 @@ extension UserExtensions on User {
     String? subscriptionTypeIos,
     String? subscriptionStatusIos,
     String? lastReceiptDataIos,
+
+    // 强制会员字段
+    bool? premiumOverrideEnabled,
+    DateTime? premiumOverrideUpdateTime,
+    String? premiumOverrideReason,
+    String? premiumOverrideDuration,
     
   }) {
     return User(
@@ -94,6 +100,12 @@ extension UserExtensions on User {
       subscriptionTypeIos: subscriptionTypeIos ?? this.subscriptionTypeIos,
       subscriptionStatusIos: subscriptionStatusIos ?? this.subscriptionStatusIos,
       lastReceiptDataIos: lastReceiptDataIos ?? this.lastReceiptDataIos,
+
+      // 强制会员字段
+      premiumOverrideEnabled: premiumOverrideEnabled ?? this.premiumOverrideEnabled,
+      premiumOverrideUpdateTime: premiumOverrideUpdateTime ?? this.premiumOverrideUpdateTime,
+      premiumOverrideReason: premiumOverrideReason ?? this.premiumOverrideReason,
+      premiumOverrideDuration: premiumOverrideDuration ?? this.premiumOverrideDuration,
     );
   }
   
@@ -142,6 +154,12 @@ extension UserExtensions on User {
       subscriptionTypeIos: Value(subscriptionTypeIos),
       subscriptionStatusIos: Value(subscriptionStatusIos),
       lastReceiptDataIos: Value(lastReceiptDataIos),
+
+      // 强制会员字段
+      premiumOverrideEnabled: Value(premiumOverrideEnabled),
+      premiumOverrideUpdateTime: Value(premiumOverrideUpdateTime),
+      premiumOverrideReason: Value(premiumOverrideReason),
+      premiumOverrideDuration: Value(premiumOverrideDuration),
       
     );
   }
@@ -191,6 +209,12 @@ extension UserExtensions on User {
       subscriptionTypeIos: Value(subscriptionTypeIos),
       subscriptionStatusIos: Value(subscriptionStatusIos),
       lastReceiptDataIos: Value(lastReceiptDataIos),
+
+      // 强制会员字段
+      premiumOverrideEnabled: Value(premiumOverrideEnabled),
+      premiumOverrideUpdateTime: Value(premiumOverrideUpdateTime),
+      premiumOverrideReason: Value(premiumOverrideReason),
+      premiumOverrideDuration: Value(premiumOverrideDuration),
       
     );
   }
@@ -247,6 +271,12 @@ extension UserExtensions on User {
     userVo.subscriptionExpireDateIos = subscriptionExpireDateIos;
     userVo.subscriptionTypeIos = subscriptionTypeIos;
     userVo.subscriptionStatusIos = subscriptionStatusIos;
+
+    // 强制会员字段
+    userVo.premiumOverrideEnabled = premiumOverrideEnabled;
+    userVo.premiumOverrideUpdateTime = premiumOverrideUpdateTime;
+    userVo.premiumOverrideReason = premiumOverrideReason;
+    userVo.premiumOverrideDuration = premiumOverrideDuration;
     
     return userVo;
   }

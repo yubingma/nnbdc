@@ -401,6 +401,12 @@ public class SyncBo {
                     userFromClient.setSubscriptionTypeIos(user.getSubscriptionTypeIos());
                     userFromClient.setSubscriptionStatusIos(user.getSubscriptionStatusIos());
                     userFromClient.setLastReceiptDataIos(user.getLastReceiptDataIos());
+
+                    // 强制会员字段同样只允许后端维护（避免客户端覆盖）
+                    userFromClient.setPremiumOverrideEnabled(user.getPremiumOverrideEnabled());
+                    userFromClient.setPremiumOverrideUpdateTime(user.getPremiumOverrideUpdateTime());
+                    userFromClient.setPremiumOverrideReason(user.getPremiumOverrideReason());
+                    userFromClient.setPremiumOverrideDuration(user.getPremiumOverrideDuration());
                     
                     userBo.updateEntity(userFromClient);
                     logger.info("同步更新用户成功: userId={}, userName={}", userId, userFromClient.getUserName());

@@ -74,6 +74,9 @@ import beidanci.service.util.Util;
 import beidanci.util.Constants;
 import beidanci.util.MD5Utils;
 import beidanci.util.Utils;
+import beidanci.service.po.UserDbLog;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 public class UserBo extends BaseBo<User> {
@@ -158,6 +161,7 @@ public class UserBo extends BaseBo<User> {
 
     @Autowired
     private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
+
 
     @PostConstruct
     public void init() {
@@ -794,6 +798,186 @@ public class UserBo extends BaseBo<User> {
     public void saveWordsPerDay(User user, int wordsPerDay) throws IllegalAccessException {
         user.setWordsPerDay(wordsPerDay);
         updateEntity(user);
+    }
+
+    // =========================
+    // 会员判定 & 非会员限额
+    // =========================
+
+    /**
+     * 非会员每日最大学习单词数
+     */
+    public static final int NON_PREMIUM_MAX_WORDS_PER_DAY = 20;
+
+    /**
+     * 判定用户是否“有效会员”。
+     * - iOS订阅有效 => 会员
+     * - 强制会员有效(未过期/永久) => 会员
+     *
+     * 重要：遇到不确定/异常字段时，优先判定为会员（避免用户纠纷）。
+     */
+    public boolean isPremiumEffective(User user, Date now) {
+        if (user == null) {
+            return true; // 偏向会员
+        }
+        if (now == null) {
+            now = new Date();
+        }
+
+        // 1) iOS订阅
+        try {
+            if (Boolean.TRUE.equals(user.getIsPremiumIos())) {
+                Date expire = user.getSubscriptionExpireDateIos();
+                if (expire == null) {
+                    return true; // 没有过期时间也视为会员
+                }
+                if (expire.after(now)) {
+                    return true;
+                }
+            }
+        } catch (Exception ignored) {
+            return true; // 偏向会员
+        }
+
+        // 2) 强制会员
+        try {
+            if (!Boolean.TRUE.equals(user.getPremiumOverrideEnabled())) {
+                return false;
+            }
+
+            String duration = user.getPremiumOverrideDuration();
+            if (duration == null) {
+                return true; // 永久
+            }
+
+            Date updateTime = user.getPremiumOverrideUpdateTime();
+            if (updateTime == null) {
+                return true; // 元数据缺失，偏向会员
+            }
+
+            Long durationMs = parseDurationMillis(duration);
+            if (durationMs == null) {
+                return true; // 无法解析，偏向会员
+            }
+            if (durationMs <= 0) {
+                return false;
+            }
+
+            Date expireTime = new Date(updateTime.getTime() + durationMs);
+            return expireTime.after(now);
+        } catch (Exception ignored) {
+            return true; // 偏向会员
+        }
+    }
+
+    /**
+     * 获取“本次学习逻辑应该使用的 wordsPerDay”。
+     * 非会员将被限制到 20（但不会修改用户表中的真实设置值，便于未来变成会员后恢复）。
+     */
+    public int getEffectiveWordsPerDay(User user, Date now) {
+        int raw = 20;
+        try {
+            if (user != null && user.getWordsPerDay() != null) {
+                raw = user.getWordsPerDay();
+            }
+        } catch (Exception ignored) {
+            raw = 20;
+        }
+        if (raw <= 0) {
+            raw = 20;
+        }
+        if (isPremiumEffective(user, now)) {
+            return raw;
+        }
+        return Math.min(raw, NON_PREMIUM_MAX_WORDS_PER_DAY);
+    }
+
+    /**
+     * 解析时长字符串（形如：10天 / 360秒 / 15分钟 / 2小时）。
+     * 返回毫秒；解析失败返回 null。
+     */
+    private static Long parseDurationMillis(String duration) {
+        if (duration == null) {
+            return null;
+        }
+        String s = duration.trim();
+        if (s.isEmpty()) {
+            return null;
+        }
+
+        // 允许简单格式：数字 + 单位
+        Pattern p = Pattern.compile("^([0-9]+)\\s*(毫秒|ms|秒|s|分钟|分|m|小时|时|h|天|日|d)$", Pattern.CASE_INSENSITIVE);
+        Matcher m = p.matcher(s);
+        if (!m.matches()) {
+            return null;
+        }
+
+        long value = Long.parseLong(m.group(1));
+        String unit = m.group(2).toLowerCase();
+
+        switch (unit) {
+            case "毫秒":
+            case "ms":
+                return value;
+            case "秒":
+            case "s":
+                return value * 1000L;
+            case "分钟":
+            case "分":
+            case "m":
+                return value * 60_000L;
+            case "小时":
+            case "时":
+            case "h":
+                return value * 3_600_000L;
+            case "天":
+            case "日":
+            case "d":
+                return value * 86_400_000L;
+            default:
+                return null;
+        }
+    }
+
+    // =========================
+    // 服务端主动修改 user 后，推送到 user_db_log 供客户端同步
+    // =========================
+
+    /**
+     * 服务端主动更新用户信息后，将变更写入 user_db_log 并递增 user_db_version，
+     * 这样客户端下一次同步即可拿到最新用户信息（含订阅/强制会员字段）。
+     *
+     * 注意：该方法需要在事务中调用。
+     */
+    @Transactional
+    public void logUserUpdateForSync(User user) {
+        if (user == null || user.getId() == null) {
+            return;
+        }
+
+        // 确保版本记录存在
+        userDbVersionDao.ensureUserDbVersionExists(jdbcTemplate, user.getId());
+
+        // 加锁读版本号（在同一事务内）
+        int currentVersion = userDbVersionDao.getUserDbVersionWithLock(jdbcTemplate, user.getId());
+        int nextVersion = currentVersion + 1;
+
+        // 写 user_db_log（record 使用 UserDto 的 JSON，前端可直接 User.fromJson 解析）
+        UserDbLog log = new UserDbLog();
+        log.setUserId(user.getId());
+        log.setVersion(nextVersion);
+        log.setCreateTime(new Date());
+        log.setUpdateTime(new Date());
+        log.setTable("user");
+        log.setOperate("UPDATE");
+        log.setRecordId(user.getId());
+        log.setRecord(JsonUtils.toJson(user.toDto()));
+        userDbLogBo.createEntity(log);
+
+        boolean ok = userDbVersionDao.updateUserDbVersionCAS(jdbcTemplate, user.getId(), currentVersion, nextVersion);
+        if (!ok) {
+            throw new RuntimeException("更新 user_db_version 失败（可能存在并发修改），userId=" + user.getId());
+        }
     }
 
     @Transactional(readOnly = true)

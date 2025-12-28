@@ -201,6 +201,18 @@ class Users extends Table {
   /// iOS最后验证的收据数据（用于恢复购买）
   TextColumn get lastReceiptDataIos => text().nullable()();
 
+  // 强制视为会员（用于纠纷处理/白名单/补偿等）
+  BoolColumn get premiumOverrideEnabled => boolean().withDefault(const Constant(false))();
+
+  /// 强制会员状态最后修改时间
+  DateTimeColumn get premiumOverrideUpdateTime => dateTime().nullable()();
+
+  /// 强制会员状态修改原因
+  TextColumn get premiumOverrideReason => text().nullable()();
+
+  /// 强制会员状态延续时长（形如：10天/360秒/15分钟；null 表示永久）
+  TextColumn get premiumOverrideDuration => text().nullable()();
+
   // 旧字段 passIfSpeakOutOneMeaning 已移除
 
   @override

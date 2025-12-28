@@ -88,6 +88,8 @@ public class SubscriptionBo extends BaseBo<User> {
             user.setLastReceiptDataIos(receiptData);
             try {
                 userBo.updateEntity(user);
+                // 服务端主动变更用户订阅字段后，写入 user_db_log，确保客户端同步可见
+                userBo.logUserUpdateForSync(user);
             } catch (IllegalAccessException e) {
                 logger.error("更新用户订阅状态失败", e);
                 return new Result<>(false, "更新用户订阅状态失败", null);
