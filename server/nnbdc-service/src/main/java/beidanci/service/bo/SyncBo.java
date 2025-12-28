@@ -396,14 +396,14 @@ public class SyncBo {
 
                     // 订阅字段仅允许后端维护（客户端同步UserDto不包含这些字段）
                     // 如果不回填，update 时会把字段覆盖成 null/默认值，甚至触发 NOT NULL 约束
-                    userFromClient.setIsPremiumIos(user.getIsPremiumIos() != null ? user.getIsPremiumIos() : false);
+                    userFromClient.setIsPremiumIos(Boolean.TRUE.equals(user.getIsPremiumIos()));
                     userFromClient.setSubscriptionExpireDateIos(user.getSubscriptionExpireDateIos());
                     userFromClient.setSubscriptionTypeIos(user.getSubscriptionTypeIos());
                     userFromClient.setSubscriptionStatusIos(user.getSubscriptionStatusIos());
                     userFromClient.setLastReceiptDataIos(user.getLastReceiptDataIos());
 
                     // 强制会员字段同样只允许后端维护（避免客户端覆盖）
-                    userFromClient.setPremiumOverrideEnabled(user.getPremiumOverrideEnabled());
+                    userFromClient.setPremiumOverrideEnabled(Boolean.TRUE.equals(user.getPremiumOverrideEnabled()));
                     userFromClient.setPremiumOverrideUpdateTime(user.getPremiumOverrideUpdateTime());
                     userFromClient.setPremiumOverrideReason(user.getPremiumOverrideReason());
                     userFromClient.setPremiumOverrideDuration(user.getPremiumOverrideDuration());

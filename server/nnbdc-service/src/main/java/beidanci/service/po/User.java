@@ -191,9 +191,6 @@ public class User extends UuidPo {
     @Column(name = "asr_pass_rule", length = 10)
     private String asrPassRule;
 
-    /**
-     * 订阅相关字段（仅支持iOS平台）
-     */
     
     // iOS订阅字段
     /**
@@ -919,13 +916,13 @@ public class User extends UuidPo {
         user.setAsrPassRule(dto.getAsrPassRule());
 
         // ========== 订阅/强制会员字段（客户端同步不一定包含，允许为 null） ==========
-        user.setIsPremiumIos(dto.getIsPremiumIos() != null ? dto.getIsPremiumIos() : false);
+        user.setIsPremiumIos(Boolean.TRUE.equals(dto.getIsPremiumIos()));
         user.setSubscriptionExpireDateIos(dto.getSubscriptionExpireDateIos());
         user.setSubscriptionTypeIos(dto.getSubscriptionTypeIos());
         user.setSubscriptionStatusIos(dto.getSubscriptionStatusIos());
         user.setLastReceiptDataIos(dto.getLastReceiptDataIos());
 
-        user.setPremiumOverrideEnabled(dto.getPremiumOverrideEnabled());
+        user.setPremiumOverrideEnabled(Boolean.TRUE.equals(dto.getPremiumOverrideEnabled()));
         user.setPremiumOverrideUpdateTime(dto.getPremiumOverrideUpdateTime());
         user.setPremiumOverrideReason(dto.getPremiumOverrideReason());
         user.setPremiumOverrideDuration(dto.getPremiumOverrideDuration());
@@ -988,13 +985,13 @@ public class User extends UuidPo {
         }
 
         // ========== 订阅/强制会员字段 ==========
-        dto.setIsPremiumIos(this.getIsPremiumIos());
+        dto.setIsPremiumIos(Boolean.TRUE.equals(this.getIsPremiumIos()));
         dto.setSubscriptionExpireDateIos(this.getSubscriptionExpireDateIos());
         dto.setSubscriptionTypeIos(this.getSubscriptionTypeIos());
         dto.setSubscriptionStatusIos(this.getSubscriptionStatusIos());
         dto.setLastReceiptDataIos(this.getLastReceiptDataIos());
 
-        dto.setPremiumOverrideEnabled(this.getPremiumOverrideEnabled());
+        dto.setPremiumOverrideEnabled(Boolean.TRUE.equals(this.getPremiumOverrideEnabled()));
         dto.setPremiumOverrideUpdateTime(this.getPremiumOverrideUpdateTime());
         dto.setPremiumOverrideReason(this.getPremiumOverrideReason());
         dto.setPremiumOverrideDuration(this.getPremiumOverrideDuration());

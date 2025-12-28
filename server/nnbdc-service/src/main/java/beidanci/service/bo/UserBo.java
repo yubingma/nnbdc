@@ -1437,13 +1437,11 @@ public class UserBo extends BaseBo<User> {
         // 设置参数
         if (keyword != null && !keyword.trim().isEmpty()) {
             String searchPattern = "%" + keyword.trim() + "%";
-            @SuppressWarnings("unchecked")
             Pair<String, Object>[] params = new Pair[]{
                 Pair.of("keyword", searchPattern)
             };
             parameters = params;
         } else {
-            @SuppressWarnings("unchecked")
             Pair<String, Object>[] params = new Pair[0];
             parameters = params;
         }

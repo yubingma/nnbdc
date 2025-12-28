@@ -16,13 +16,9 @@ import beidanci.api.model.UserVo;
 import beidanci.service.bo.UserBo;
 import beidanci.service.po.User;
 import beidanci.service.util.BeanUtils;
-import beidanci.service.util.UserSorter;
 
 @RestController
 public class UserController {
-
-    @Autowired
-    UserSorter userSorter;
 
     @Autowired
     UserBo userBo;
