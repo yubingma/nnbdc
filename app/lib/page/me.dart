@@ -399,10 +399,13 @@ class _MePageState extends State<MePage> {
           ),
           padding: EdgeInsets.all(MediaQuery.of(context).size.width > 600 ? 20 : 16),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
+            gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [AppTheme.primaryLightColor, AppTheme.primaryDarkColor],
+              colors: [
+                LevelUtil.getTitleColor(studyProgress!.level.level ?? 1).withValues(alpha: 0.8),
+                LevelUtil.getTitleColor(studyProgress!.level.level ?? 1),
+              ],
             ),
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
@@ -477,17 +480,19 @@ class _MePageState extends State<MePage> {
               SizedBox(height: MediaQuery.of(context).size.width > 600 ? 8 : 6),
               // 等级信息
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(12),
+                  color: Colors.white.withValues(alpha: 0.25),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 1),
                 ),
                 child: Text(
                   studyProgress!.level.name!,
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: MediaQuery.of(context).size.width > 600 ? 14 : 12,
-                    fontWeight: FontWeight.w500,
+                    fontSize: MediaQuery.of(context).size.width > 600 ? 16 : 14,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.2,
                   ),
                 ),
               ),
