@@ -12,25 +12,19 @@ import org.springframework.stereotype.Service;
 import beidanci.api.model.DictDto;
 import beidanci.api.model.DictGroupDto;
 import beidanci.api.model.GroupAndDictLinkDto;
-import beidanci.api.model.LevelDto;
 import beidanci.api.model.SystemDataDto;
 import beidanci.service.po.Dict;
 import beidanci.service.po.DictGroup;
-import beidanci.service.po.Level;
 import beidanci.util.Constants;
 
 @Service
 public class SystemBo {
 
     @Autowired
-    private LevelBo levelBo;
-
-    @Autowired
     private DictGroupBo dictGroupBo;
 
     @PersistenceContext
     private EntityManager entityManager;
-
 
     @Autowired
     private DictBo dictBo;
@@ -42,26 +36,9 @@ public class SystemBo {
     public SystemDataDto getSystemData() {
         System.out.println("开始获取系统数据...");
         SystemDataDto systemData = new SystemDataDto();
-        
+
         // 使用统一的系统数据版本号
         systemData.setVersion(sysDbLogBo.getSysDbVersion());
-
-        // 获取用户等级数据
-        List<Level> levels = levelBo.getLevels();
-        List<LevelDto> levelDtos = new ArrayList<>();
-        for (Level level : levels) {
-            LevelDto levelDto = new LevelDto();
-            levelDto.setId(level.getId());
-            levelDto.setName(level.getName());
-            levelDto.setStyle(level.getStyle());
-            levelDto.setMinScore(level.getMinScore());
-            levelDto.setMaxScore(level.getMaxScore());
-            levelDto.setFigure(level.getFigure());
-            levelDto.setLevel(level.getLevel());
-            levelDtos.add(levelDto);
-        }
-        systemData.setLevels(levelDtos);
-        System.out.println("获取到用户等级数据: " + levelDtos.size() + "条");
 
         // 获取单词书分组数据
         List<DictGroup> dictGroups = dictGroupBo.getAllDictGroups();
@@ -115,10 +92,6 @@ public class SystemBo {
             }
         }
         systemData.setDicts(dictDtos);
-
-        // 打印调试信息
-        System.out.println("SystemData对象，levels: " + (systemData.getLevels() != null ? systemData.getLevels().size() : "null") +
-                         ", dicts: " + (systemData.getDicts() != null ? systemData.getDicts().size() : "null"));
 
         return systemData;
     }

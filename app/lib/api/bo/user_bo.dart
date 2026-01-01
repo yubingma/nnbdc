@@ -127,12 +127,7 @@ class UserBo {
         try {
           final userVo = UserVo.fromUser(user);
 
-          final levelInt = int.tryParse(user.levelId) ?? 1;
-          final levelVo = LevelVo(user.levelId);
-          levelVo.name = LevelUtil.getTitleName(levelInt);
-          levelVo.level = levelInt;
-          levelVo.figure = LevelUtil.getTitleIcon(levelInt);
-          userVo.level = levelVo;
+          userVo.level = LevelUtil.getLevelVoByScore(user.totalScore);
 
           final today = DateTime(AppClock.now().year, AppClock.now().month, AppClock.now().day);
           userVo.hasDakaToday = await db.dakasDao.findById(user.id, today) != null;

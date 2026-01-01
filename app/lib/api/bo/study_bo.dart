@@ -133,8 +133,7 @@ class StudyBo {
         final word = await db.wordsDao.getWordById(stageWord.wordId);
         if (word != null) {
           // 创建一个简单的UserVo对象
-          final userVo = UserVo.c2(user.id);
-          userVo.level = LevelVo(user.levelId);
+          final userVo = UserVo.fromUser(user);
 
           // 构建 WordVo 对象
           final wordVo = WordVo.c2(word.spell);
@@ -335,7 +334,8 @@ class StudyBo {
   /// 返回下一个单词的学习信息，包括单词详情、学习模式、混淆项等
   Future<Result<GetWordResult>> getNextWord(bool isAnswerCorrect, bool isWordMastered, bool shouldEnterNextStage, bool gotoNext) async {
     try {
-      Global.logger.d('开始获取下一个单词: isAnswerCorrect=$isAnswerCorrect, isWordMastered=$isWordMastered, shouldEnterNextStage=$shouldEnterNextStage, gotoNext=$gotoNext');
+      Global.logger.d(
+          '开始获取下一个单词: isAnswerCorrect=$isAnswerCorrect, isWordMastered=$isWordMastered, shouldEnterNextStage=$shouldEnterNextStage, gotoNext=$gotoNext');
       final db = MyDatabase.instance;
 
       // 获取当前登录用户
@@ -426,8 +426,7 @@ class StudyBo {
       }
 
       // 更新用户取词位置信息
-      Global.logger
-          .d("~~~~~nextWordIndex: $nextWordIndex, nextLearningMode: $nextLearningMode, todayWords.length: ${todayWords.length}");
+      Global.logger.d("~~~~~nextWordIndex: $nextWordIndex, nextLearningMode: $nextLearningMode, todayWords.length: ${todayWords.length}");
       if (nextWordIndex >= todayWords.length) {
         // 今日所有单词都学习完了
         return _buildTodayStudyFinishedResult();
@@ -443,31 +442,21 @@ class StudyBo {
 
       // 获取目标学习单词，仅返回其ID，释义交由本地通过 WordBo.getWordMeaningItems 加载
       final returnWord = todayWords[nextWordIndex];
-      final userVo = UserVo.c2(user.id)..level = LevelVo(user.levelId);
+      final userVo = UserVo.fromUser(user);
       final wordVo = WordVo.c2('')..id = returnWord.wordId; // 仅返回ID
-      final learningWordVo = LearningWordVo(
-          userVo,
-          returnWord.addTime,
-          returnWord.addDay,
-          returnWord.lifeValue,
-          returnWord.lastLearningDate,
-          returnWord.learningOrder,
-          returnWord.learnedTimes,
-          wordVo);
+      final learningWordVo = LearningWordVo(userVo, returnWord.addTime, returnWord.addDay, returnWord.lifeValue, returnWord.lastLearningDate,
+          returnWord.learningOrder, returnWord.learnedTimes, wordVo);
 
       // 使用 WordBo.getWordMeaningItems 获取目标单词释义并用于生成混淆项
       final targetMeaningItems = await WordBo().getWordMeaningItems(returnWord.wordId, returnWord.userId);
-      final targetMeaningItemVos = targetMeaningItems
-          .map((e) => MeaningItemVo(e.id, e.ciXing, e.meaning, null, null, null))
-          .toList();
+      final targetMeaningItemVos = targetMeaningItems.map((e) => MeaningItemVo(e.id, e.ciXing, e.meaning, null, null, null)).toList();
 
       // 生成两个混淆单词（其释义同样通过 WordBo.getWordMeaningItems 获取）
       final otherWords = await getTwoOtherWords(steps, nextLearningMode, targetMeaningItemVos, todayWords, returnWord, db);
 
       // 计算学习进度
       final totalWordsToday = todayWords.length;
-      final currentLearningIndex =
-          calculateLearningIndexByWordIndexAndMode(nextWordIndex, nextLearningMode, modeCount, totalWordsToday, 10);
+      final currentLearningIndex = calculateLearningIndexByWordIndexAndMode(nextWordIndex, nextLearningMode, modeCount, totalWordsToday, 10);
       final maxLearningIndex = totalWordsToday * modeCount;
       final progress = [(totalWordsToday * ((currentLearningIndex + 1.0) / (maxLearningIndex + 1))).toInt(), totalWordsToday];
 
@@ -603,7 +592,6 @@ class StudyBo {
       Global.logger.d('错词已存在，更新时间: ${wrongWord.wordId}');
     }
   }
-
 
   Future<List<WordVo>> getTwoOtherWords(List<UserStudyStep> steps, int learningMode, List<MeaningItemVo> meaningItemVos,
       List<LearningWord> todayWords, LearningWord targetWordLearningData, MyDatabase db) async {
@@ -817,8 +805,6 @@ class StudyBo {
 
     return stageBaseIndex + stageWordBaseIndex;
   }
-
-  
 
   /// 将单词标记为已掌握
   Future<void> _saveMasteredWord({

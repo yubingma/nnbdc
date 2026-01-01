@@ -14,7 +14,7 @@ part 'db.g.dart';
 @DriftDatabase(tables: [
   Users,
   LocalParams,
-  Levels,
+
   VotedSentences,
   VotedChineses,
   VotedWordImages,
@@ -66,7 +66,7 @@ part 'db.g.dart';
   MeaningItemsDao,
   SentencesDao,
   LearningWordsDao,
-  LevelsDao,
+
   DictGroupsDao,
   GroupAndDictLinksDao,
   UserStudyStepsDao,
@@ -159,7 +159,7 @@ class MyDatabase extends _$MyDatabase {
   // you should bump this number whenever you change or add a table definition. Migrations
   // are covered later in this readme.
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration {
@@ -193,6 +193,10 @@ class MyDatabase extends _$MyDatabase {
           // 从版本 6 升级到版本 7：添加“强制视为会员”字段
           if (from < 7) {
             await _migrateFromV6ToV7AddPremiumOverrideFields(m);
+          }
+          // 从版本 7 升级到版本 8：删除levels表
+          if (from < 8) {
+            await _migrateFromV7ToV8RemoveLevelsTable(m);
           }
         } catch (e, stackTrace) {
           // 升级失败，记录错误日志
@@ -230,6 +234,17 @@ class MyDatabase extends _$MyDatabase {
       await m.addColumn(users, users.premiumOverrideUpdateTime);
       await m.addColumn(users, users.premiumOverrideReason);
       await m.addColumn(users, users.premiumOverrideDuration);
+    });
+  }
+
+  /// 从版本 7 升级到版本 8：删除levels表
+  Future<void> _migrateFromV7ToV8RemoveLevelsTable(Migrator m) async {
+    await transaction(() async {
+      // 删除levels表
+      await m.deleteTable('levels');
+      
+      // 从user_db_logs中删除与levels相关的记录
+      await customStatement("DELETE FROM user_db_logs WHERE tbl_name = 'levels' OR tbl_name = 'level';");
     });
   }
 

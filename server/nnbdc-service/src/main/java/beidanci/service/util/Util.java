@@ -87,7 +87,6 @@ import beidanci.service.bo.UserBo;
 import beidanci.service.po.Dict;
 import beidanci.service.po.DictWord;
 import beidanci.service.po.LearningDict;
-import beidanci.service.po.Level;
 import beidanci.service.po.SysParam;
 import beidanci.service.po.User;
 import beidanci.service.po.Word;
@@ -301,7 +300,8 @@ public class Util {
 
     public static void saveToFile(String content, File file, String encoding) throws IOException {
 
-        try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file, false), encoding))) {
+        try (BufferedWriter writer = new BufferedWriter(
+                new OutputStreamWriter(new FileOutputStream(file, false), encoding))) {
             writer.write(content);
         }
     }
@@ -388,7 +388,6 @@ public class Util {
         }
     }
 
-
     /**
      * 判断一个字符串是一个合法的单词（或句子）
      *
@@ -420,7 +419,8 @@ public class Util {
 
             // 经原单词书的每一行复制到临时单词书，在此过程中进行规格化
             try (
-                    BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"))) {
+                    BufferedReader reader = new BufferedReader(
+                            new InputStreamReader(new FileInputStream(file), "UTF-8"))) {
                 String wordStr = reader.readLine();
                 while (wordStr != null) {
                     String uniformedStr = Utils.uniformString(wordStr);
@@ -488,8 +488,9 @@ public class Util {
 
     /**
      * 发送简单邮件（使用阿里云邮件推送服务）
+     * 
      * @param toEmail 收件人邮箱
-     * @param toName 收件人名称
+     * @param toName  收件人名称
      * @param subject 邮件主题
      * @param content 邮件内容
      */
@@ -497,19 +498,19 @@ public class Util {
         new Thread(() -> {
             try {
                 log.info(String.format("向%s发送邮件，主题：%s", toEmail, subject));
-                
+
                 ApplicationContext ctx = Global.getApplicationContext();
                 if (ctx == null) {
                     log.error("Spring ApplicationContext未初始化，无法发送邮件");
                     return;
                 }
-                
+
                 EmailUtil emailUtil = ctx.getBean(EmailUtil.class);
-                
+
                 // 将纯文本内容转换为HTML格式
                 String htmlContent = content.replace("\r\n", "<br/>").replace("\n", "<br/>");
                 String result = emailUtil.sendEmail(toEmail, toName, subject, htmlContent);
-                
+
                 if ("OK".equals(result)) {
                     log.info("邮件发送成功，收件人：{}", toEmail);
                 } else {
@@ -644,9 +645,6 @@ public class Util {
         user.setMaxContinuousDakaDayCount(0);
         user.setDakaScore(0);
         user.setGameScore(0);
-        Level level = new Level();
-        level.setId("1"); // 白丁
-        user.setLevel(level);
         user.setIsInputor(false);
         user.setEnableAllWrong(false);
         user.setAsrPassRule("ONE");
@@ -816,8 +814,6 @@ public class Util {
         return content.replaceAll("'", "’").replaceAll("\"", "”").replaceAll("&", "§").replace("script", "ｓｃｒｉｐｔ");
     }
 
-
-
     /**
      * 根据是否含有x-requested-with头来确定请求是否是AJAX请求。<br>
      * 由于/checkUser.do可能是跨域请求，而浏览器对跨域请求有特殊限制，无法为请求附加x-requested-with头，所以/checkUser.
@@ -871,8 +867,8 @@ public class Util {
         for (LearningDict dict : learningDicts) {
             Integer currentWordSeq = dict.getCurrentWordSeq();
             Integer wordCount = dict.getDict().getWordCount();
-            boolean isLearningFinished = (currentWordSeq == null ? -1 : currentWordSeq) >=
-                    (wordCount == null ? 0 : wordCount);
+            boolean isLearningFinished = (currentWordSeq == null ? -1 : currentWordSeq) >= (wordCount == null ? 0
+                    : wordCount);
             if (!isLearningFinished) {
                 allDictsFinished = false;
                 break;
@@ -987,7 +983,8 @@ public class Util {
         for (MeaningItemVo meaningItemVo : srcMeaningItems) {
             MeaningItemVo destMeaningItemVo = new MeaningItemVo();
             meaningItemVos.add(destMeaningItemVo);
-            BeanUtils.copyProperties(Objects.requireNonNull(meaningItemVo), destMeaningItemVo, "dict", "createTime", "updateTime");
+            BeanUtils.copyProperties(Objects.requireNonNull(meaningItemVo), destMeaningItemVo, "dict", "createTime",
+                    "updateTime");
             if (meaningItemVo.getDict() != null) {
                 DictVo destDict = new DictVo();
                 BeanUtils.copyProperties(Objects.requireNonNull(meaningItemVo.getDict()), destDict, "owner");
@@ -1137,7 +1134,8 @@ public class Util {
      */
     public static WordVo shrinkWordVoKeepAll(WordVo srcWordVo, final int maxSentenceCount, boolean removeSimilarWords) {
         WordVo destWordVo = new WordVo();
-        org.springframework.beans.BeanUtils.copyProperties(Objects.requireNonNull(srcWordVo), destWordVo, "meaningItems", "similarWords");
+        org.springframework.beans.BeanUtils.copyProperties(Objects.requireNonNull(srcWordVo), destWordVo,
+                "meaningItems", "similarWords");
 
         // 复制所有 meaningItems（不做词书过滤）
         if (srcWordVo.getMeaningItems() != null) {

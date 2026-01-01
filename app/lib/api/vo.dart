@@ -1,6 +1,7 @@
 import 'package:nnbdc/global.dart';
 import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
+import 'package:nnbdc/util/level_util.dart';
 
 import '../db/db.dart';
 import '../util/custom_convert.dart';
@@ -62,8 +63,7 @@ class LevelVo {
 
   LevelVo(this.id);
 
-  factory LevelVo.fromJson(Map<String, dynamic> json) =>
-      _$LevelVoFromJson(json);
+  factory LevelVo.fromJson(Map<String, dynamic> json) => _$LevelVoFromJson(json);
 
   Map<String, dynamic> toJson() => _$LevelVoToJson(this);
 }
@@ -76,8 +76,7 @@ class LearningDictVo {
 
   LearningDictVo(this.dict, this.currentWordSeq, this.isPrivileged);
 
-  factory LearningDictVo.fromJson(Map<String, dynamic> json) =>
-      _$LearningDictVoFromJson(json);
+  factory LearningDictVo.fromJson(Map<String, dynamic> json) => _$LearningDictVoFromJson(json);
 
   Map<String, dynamic> toJson() => _$LearningDictVoToJson(this);
 }
@@ -107,17 +106,7 @@ class DictVo extends Equatable {
 
   DictVo.c2(this.id, [this.wordCount]);
 
-  DictVo(
-      this.id,
-      this.name,
-      this.shortName,
-      this.owner,
-      this.isShared,
-      this.isReady,
-      this.visible,
-      this.dictWords,
-      this.wordCount,
-      this.createTime);
+  DictVo(this.id, this.name, this.shortName, this.owner, this.isShared, this.isReady, this.visible, this.dictWords, this.wordCount, this.createTime);
 
   factory DictVo.fromJson(Map<String, dynamic> json) => _$DictVoFromJson(json);
 
@@ -212,17 +201,17 @@ class UserVo {
   bool? enableAllWrong;
 
   /// 订阅相关字段（按平台区分，符合苹果和Google Play规则）
-  
+
   // iOS订阅字段
   /// iOS是否为会员
   bool? isPremiumIos;
-  
+
   /// iOS订阅到期时间
   DateTime? subscriptionExpireDateIos;
-  
+
   /// iOS订阅类型：monthly/annual
   String? subscriptionTypeIos;
-  
+
   /// iOS订阅状态：active/expired/cancelled
   String? subscriptionStatusIos;
 
@@ -279,7 +268,7 @@ class UserVo {
     userVo.totalScore = user.totalScore;
     userVo.dakaRatio = user.dakaRatio;
     userVo.enableAllWrong = user.enableAllWrong;
-    
+
     // 订阅相关字段（iOS平台）
     userVo.isPremiumIos = user.isPremiumIos;
     userVo.subscriptionExpireDateIos = user.subscriptionExpireDateIos;
@@ -294,6 +283,8 @@ class UserVo {
 
     userVo.password = user.password;
     userVo.lastLoginTime = user.lastLoginTime;
+
+    userVo.level = LevelUtil.getLevelVoByScore(user.totalScore);
 
     return userVo;
   }
@@ -326,8 +317,7 @@ class DictWordVo {
 
   DictWordVo(this.dict, this.word, this.seq);
 
-  factory DictWordVo.fromJson(Map<String, dynamic> json) =>
-      _$DictWordVoFromJson(json);
+  factory DictWordVo.fromJson(Map<String, dynamic> json) => _$DictWordVoFromJson(json);
 
   Map<String, dynamic> toJson() => _$DictWordVoToJson(this);
 }
@@ -339,8 +329,7 @@ class SynonymsItem {
 
   SynonymsItem(this.meaning, this.words);
 
-  factory SynonymsItem.fromJson(Map<String, dynamic> json) =>
-      _$SynonymsItemFromJson(json);
+  factory SynonymsItem.fromJson(Map<String, dynamic> json) => _$SynonymsItemFromJson(json);
 
   Map<String, dynamic> toJson() => _$SynonymsItemToJson(this);
 }
@@ -362,11 +351,9 @@ class SentenceVo {
 
   bool? voted;
 
-  SentenceVo(this.id, this.english, this.chinese, this.englishDigest,
-      this.theType, this.footCount, this.handCount, this.author);
+  SentenceVo(this.id, this.english, this.chinese, this.englishDigest, this.theType, this.footCount, this.handCount, this.author);
 
-  factory SentenceVo.fromJson(Map<String, dynamic> json) =>
-      _$SentenceVoFromJson(json);
+  factory SentenceVo.fromJson(Map<String, dynamic> json) => _$SentenceVoFromJson(json);
 
   Map<String, dynamic> toJson() => _$SentenceVoToJson(this);
 }
@@ -379,8 +366,7 @@ class SentenceChineseRemarkVo {
 
   SentenceChineseRemarkVo(this.id, this.creator, this.content);
 
-  factory SentenceChineseRemarkVo.fromJson(Map<String, dynamic> json) =>
-      _$SentenceChineseRemarkVoFromJson(json);
+  factory SentenceChineseRemarkVo.fromJson(Map<String, dynamic> json) => _$SentenceChineseRemarkVoFromJson(json);
 
   Map<String, dynamic> toJson() => _$SentenceChineseRemarkVoToJson(this);
 }
@@ -393,8 +379,7 @@ class CigenVo {
 
   CigenVo(this.id, this.description);
 
-  factory CigenVo.fromJson(Map<String, dynamic> json) =>
-      _$CigenVoFromJson(json);
+  factory CigenVo.fromJson(Map<String, dynamic> json) => _$CigenVoFromJson(json);
 
   Map<String, dynamic> toJson() => _$CigenVoToJson(this);
 }
@@ -407,8 +392,7 @@ class CigenWordLinkVo {
 
   CigenWordLinkVo(this.cigen, this.theExplain);
 
-  factory CigenWordLinkVo.fromJson(Map<String, dynamic> json) =>
-      _$CigenWordLinkVoFromJson(json);
+  factory CigenWordLinkVo.fromJson(Map<String, dynamic> json) => _$CigenWordLinkVoFromJson(json);
 
   Map<String, dynamic> toJson() => _$CigenWordLinkVoToJson(this);
 }
@@ -427,11 +411,9 @@ class WordShortDescChineseVo {
 
   String content;
 
-  WordShortDescChineseVo(
-      this.id, this.word, this.hand, this.foot, this.author, this.content);
+  WordShortDescChineseVo(this.id, this.word, this.hand, this.foot, this.author, this.content);
 
-  factory WordShortDescChineseVo.fromJson(Map<String, dynamic> json) =>
-      _$WordShortDescChineseVoFromJson(json);
+  factory WordShortDescChineseVo.fromJson(Map<String, dynamic> json) => _$WordShortDescChineseVoFromJson(json);
 
   Map<String, dynamic> toJson() => _$WordShortDescChineseVoToJson(this);
 }
@@ -602,14 +584,12 @@ class WordVo {
 
     // 处理词性合并逻辑
     // 1. 检查vt.和vi.是否完全相同
-    if (tempMergedItems.containsKey('vt.') &&
-        tempMergedItems.containsKey('vi.')) {
+    if (tempMergedItems.containsKey('vt.') && tempMergedItems.containsKey('vi.')) {
       String vtMeaning = tempMergedItems['vt.']!.meaning ?? '';
       String viMeaning = tempMergedItems['vi.']!.meaning ?? '';
       if (vtMeaning == viMeaning) {
         // vt.和vi.完全相同，合并为v.
-        tempMergedItems['v.'] =
-            MeaningItemVo(null, 'v.', vtMeaning, null, null, null);
+        tempMergedItems['v.'] = MeaningItemVo(null, 'v.', vtMeaning, null, null, null);
         tempMergedItems.remove('vt.');
         tempMergedItems.remove('vi.');
       }
@@ -618,12 +598,10 @@ class WordVo {
     // 2. 检查v.与vt./vi.是否相同
     if (tempMergedItems.containsKey('v.')) {
       String vMeaning = tempMergedItems['v.']!.meaning ?? '';
-      if (tempMergedItems.containsKey('vt.') &&
-          tempMergedItems['vt.']!.meaning == vMeaning) {
+      if (tempMergedItems.containsKey('vt.') && tempMergedItems['vt.']!.meaning == vMeaning) {
         tempMergedItems.remove('vt.');
       }
-      if (tempMergedItems.containsKey('vi.') &&
-          tempMergedItems['vi.']!.meaning == vMeaning) {
+      if (tempMergedItems.containsKey('vi.') && tempMergedItems['vi.']!.meaning == vMeaning) {
         tempMergedItems.remove('vi.');
       }
     }
@@ -651,7 +629,7 @@ class WordVo {
         // 将词性为空的释义分割为子项
         List<String> emptyParts = emptyItem.meaning!.split(RegExp(r'[;；，,、]'));
         bool shouldRemove = true;
-        
+
         // 检查是否所有子项都已在有词性的释义中出现
         for (String part in emptyParts) {
           String trimmed = part.trim();
@@ -661,7 +639,7 @@ class WordVo {
             break;
           }
         }
-        
+
         // 如果所有内容都重复了，移除该词性为空的释义项
         if (shouldRemove) {
           tempMergedItems.remove('');
@@ -695,10 +673,7 @@ class WordVo {
         // 处理多余的分号和逗号
         String meaning = item.meaning!;
         // 删除末尾的分号和逗号
-        while (meaning.endsWith(';') ||
-            meaning.endsWith('；') ||
-            meaning.endsWith(',') ||
-            meaning.endsWith('，')) {
+        while (meaning.endsWith(';') || meaning.endsWith('；') || meaning.endsWith(',') || meaning.endsWith('，')) {
           meaning = meaning.substring(0, meaning.length - 1);
         }
         // 删除连续的分号
@@ -732,8 +707,7 @@ class MeaningItemVo {
   List<SynonymVo>? synonyms;
   List<SentenceVo>? sentences;
 
-  MeaningItemVo(this.id, this.ciXing, this.meaning, this.dict, this.synonyms,
-      this.sentences);
+  MeaningItemVo(this.id, this.ciXing, this.meaning, this.dict, this.synonyms, this.sentences);
 
   MeaningItemVo.from(this.ciXing, this.meaning);
 
@@ -750,8 +724,7 @@ class MeaningItemVo {
     try {
       // 从本地数据库查询该释义项的所有例句
       final db = MyDatabase.instance;
-      final sentencesQuery = db.select(db.sentences)
-        ..where((s) => s.meaningItemId.equals(id!));
+      final sentencesQuery = db.select(db.sentences)..where((s) => s.meaningItemId.equals(id!));
 
       final sentenceEntries = await sentencesQuery.get();
 
@@ -761,15 +734,8 @@ class MeaningItemVo {
         final author = UserVo.c2(sentenceEntry.authorId);
 
         // 创建SentenceVo对象
-        final sentenceVo = SentenceVo(
-            sentenceEntry.id,
-            sentenceEntry.english,
-            sentenceEntry.chinese,
-            sentenceEntry.englishDigest,
-            sentenceEntry.theType.isEmpty ? 'tts' : sentenceEntry.theType,
-            sentenceEntry.handCount,
-            sentenceEntry.footCount,
-            author);
+        final sentenceVo = SentenceVo(sentenceEntry.id, sentenceEntry.english, sentenceEntry.chinese, sentenceEntry.englishDigest,
+            sentenceEntry.theType.isEmpty ? 'tts' : sentenceEntry.theType, sentenceEntry.handCount, sentenceEntry.footCount, author);
 
         result.add(sentenceVo);
       }
@@ -780,8 +746,7 @@ class MeaningItemVo {
     return result;
   }
 
-  factory MeaningItemVo.fromJson(Map<String, dynamic> json) =>
-      _$MeaningItemVoFromJson(json);
+  factory MeaningItemVo.fromJson(Map<String, dynamic> json) => _$MeaningItemVoFromJson(json);
 
   Map<String, dynamic> toJson() => _$MeaningItemVoToJson(this);
 }
@@ -798,8 +763,7 @@ class SynonymVo {
 
   SynonymVo(this.meaningItem, this.wordId, this.spell);
 
-  factory SynonymVo.fromJson(Map<String, dynamic> json) =>
-      _$SynonymVoFromJson(json);
+  factory SynonymVo.fromJson(Map<String, dynamic> json) => _$SynonymVoFromJson(json);
 
   Map<String, dynamic> toJson() => _$SynonymVoToJson(this);
 }
@@ -812,8 +776,7 @@ class VersionInfo {
 
   VersionInfo(this.verCode, this.verName);
 
-  factory VersionInfo.fromJson(Map<String, dynamic> json) =>
-      _$VersionInfoFromJson(json);
+  factory VersionInfo.fromJson(Map<String, dynamic> json) => _$VersionInfoFromJson(json);
 
   Map<String, dynamic> toJson() => _$VersionInfoToJson(this);
 }
@@ -827,8 +790,7 @@ class DictGroupVo {
 
   DictGroupVo(this.name, this.dicts);
 
-  factory DictGroupVo.fromJson(Map<String, dynamic> json) =>
-      _$DictGroupVoFromJson(json);
+  factory DictGroupVo.fromJson(Map<String, dynamic> json) => _$DictGroupVoFromJson(json);
 
   Map<String, dynamic> toJson() => _$DictGroupVoToJson(this);
 }
@@ -846,8 +808,7 @@ class UserStudyStepVo {
 
   UserStudyStepVo(this.studyStep, this.seq, this.state);
 
-  factory UserStudyStepVo.fromJson(Map<String, dynamic> json) =>
-      _$UserStudyStepVoFromJson(json);
+  factory UserStudyStepVo.fromJson(Map<String, dynamic> json) => _$UserStudyStepVoFromJson(json);
 
   Map<String, dynamic> toJson() => _$UserStudyStepVoToJson(this);
 
@@ -875,11 +836,9 @@ class LearningWordVo {
 
   WordVo word;
 
-  LearningWordVo(this.user, this.addTime, this.addDay, this.lifeValue,
-      this.lastLearningDate, this.learningOrder, this.learnedTimes, this.word);
+  LearningWordVo(this.user, this.addTime, this.addDay, this.lifeValue, this.lastLearningDate, this.learningOrder, this.learnedTimes, this.word);
 
-  factory LearningWordVo.fromJson(Map<String, dynamic> json) =>
-      _$LearningWordVoFromJson(json);
+  factory LearningWordVo.fromJson(Map<String, dynamic> json) => _$LearningWordVoFromJson(json);
 
   Map<String, dynamic> toJson() => _$LearningWordVoToJson(this);
 }
@@ -892,8 +851,7 @@ class MasteredWordVo {
 
   MasteredWordVo(this.user, this.word, this.masterAtTime);
 
-  factory MasteredWordVo.fromJson(Map<String, dynamic> json) =>
-      _$MasteredWordVoFromJson(json);
+  factory MasteredWordVo.fromJson(Map<String, dynamic> json) => _$MasteredWordVoFromJson(json);
 
   Map<String, dynamic> toJson() => _$MasteredWordVoToJson(this);
 }
@@ -911,8 +869,7 @@ class BookMarkVo {
 
   BookMarkVo(this.position, this.spell);
 
-  factory BookMarkVo.fromJson(Map<String, dynamic> json) =>
-      _$BookMarkVoFromJson(json);
+  factory BookMarkVo.fromJson(Map<String, dynamic> json) => _$BookMarkVoFromJson(json);
 
   Map<String, dynamic> toJson() => _$BookMarkVoToJson(this);
 
@@ -940,11 +897,9 @@ class GameHallVo {
 
   int userCount;
 
-  GameHallVo(this.id, this.gameType, this.hallName, this.dictGroup,
-      this.hallGroup, this.basePoint, this.displayOrder, this.userCount);
+  GameHallVo(this.id, this.gameType, this.hallName, this.dictGroup, this.hallGroup, this.basePoint, this.displayOrder, this.userCount);
 
-  factory GameHallVo.fromJson(Map<String, dynamic> json) =>
-      _$GameHallVoFromJson(json);
+  factory GameHallVo.fromJson(Map<String, dynamic> json) => _$GameHallVoFromJson(json);
 
   Map<String, dynamic> toJson() => _$GameHallVoToJson(this);
 }
@@ -963,11 +918,9 @@ class HallGroupVo {
 
   int userCount;
 
-  HallGroupVo(this.id, this.gameType, this.groupName, this.displayOrder,
-      this.gameHalls, this.userCount);
+  HallGroupVo(this.id, this.gameType, this.groupName, this.displayOrder, this.gameHalls, this.userCount);
 
-  factory HallGroupVo.fromJson(Map<String, dynamic> json) =>
-      _$HallGroupVoFromJson(json);
+  factory HallGroupVo.fromJson(Map<String, dynamic> json) => _$HallGroupVoFromJson(json);
 
   Map<String, dynamic> toJson() => _$HallGroupVoToJson(this);
 }
@@ -999,8 +952,7 @@ class UserGameVo {
 
   String game;
 
-  factory UserGameVo.fromJson(Map<String, dynamic> json) =>
-      _$UserGameVoFromJson(json);
+  factory UserGameVo.fromJson(Map<String, dynamic> json) => _$UserGameVoFromJson(json);
 
   Map<String, dynamic> toJson() => _$UserGameVoToJson(this);
 }
@@ -1013,8 +965,7 @@ class GetGameHallDataResult {
 
   GetGameHallDataResult(this.hallGroups, this.halls, this.topUserGames);
 
-  factory GetGameHallDataResult.fromJson(Map<String, dynamic> json) =>
-      _$GetGameHallDataResultFromJson(json);
+  factory GetGameHallDataResult.fromJson(Map<String, dynamic> json) => _$GetGameHallDataResultFromJson(json);
 
   Map<String, dynamic> toJson() => _$GetGameHallDataResultToJson(this);
 }
@@ -1033,11 +984,9 @@ class SearchWordResult {
 
   String? soundPath;
 
-  SearchWordResult(this.word, this.sentencesWithUGC, this.isInMySelectedDicts,
-      this.isInRawWordDict, this.soundPath);
+  SearchWordResult(this.word, this.sentencesWithUGC, this.isInMySelectedDicts, this.isInRawWordDict, this.soundPath);
 
-  factory SearchWordResult.fromJson(Map<String, dynamic> json) =>
-      _$SearchWordResultFromJson(json);
+  factory SearchWordResult.fromJson(Map<String, dynamic> json) => _$SearchWordResultFromJson(json);
 
   Map<String, dynamic> toJson() => _$SearchWordResultToJson(this);
 }
@@ -1056,11 +1005,9 @@ class UserGameInfo {
   int lostCount;
   String nickName;
 
-  UserGameInfo(this.userId, this.score, this.cowDung, this.winCount,
-      this.lostCount, this.nickName);
+  UserGameInfo(this.userId, this.score, this.cowDung, this.winCount, this.lostCount, this.nickName);
 
-  factory UserGameInfo.fromJson(Map<String, dynamic> json) =>
-      _$UserGameInfoFromJson(json);
+  factory UserGameInfo.fromJson(Map<String, dynamic> json) => _$UserGameInfoFromJson(json);
 
   Map<String, dynamic> toJson() => _$UserGameInfoToJson(this);
 }
@@ -1078,11 +1025,9 @@ class WordAdditionalInfoVo {
   /// 我是否已经为该内容投过票了
   bool votedByMe;
 
-  WordAdditionalInfoVo(this.id, this.word, this.content, this.handCount,
-      this.footCount, this.createdBy, this.createdByNickName, this.votedByMe);
+  WordAdditionalInfoVo(this.id, this.word, this.content, this.handCount, this.footCount, this.createdBy, this.createdByNickName, this.votedByMe);
 
-  factory WordAdditionalInfoVo.fromJson(Map<String, dynamic> json) =>
-      _$WordAdditionalInfoVoFromJson(json);
+  factory WordAdditionalInfoVo.fromJson(Map<String, dynamic> json) => _$WordAdditionalInfoVoFromJson(json);
 
   Map<String, dynamic> toJson() => _$WordAdditionalInfoVoToJson(this);
 }
@@ -1096,11 +1041,9 @@ class ErrorReportVo {
   String word;
   bool fixed;
 
-  ErrorReportVo(this.id, this.createdBy, this.createdByNickName, this.content,
-      this.word, this.fixed);
+  ErrorReportVo(this.id, this.createdBy, this.createdByNickName, this.content, this.word, this.fixed);
 
-  factory ErrorReportVo.fromJson(Map<String, dynamic> json) =>
-      _$ErrorReportVoFromJson(json);
+  factory ErrorReportVo.fromJson(Map<String, dynamic> json) => _$ErrorReportVoFromJson(json);
 
   Map<String, dynamic> toJson() => _$ErrorReportVoToJson(this);
 }
@@ -1115,8 +1058,7 @@ class WordImageVo {
 
   WordImageVo(this.id, this.imageFile, this.hand, this.foot, this.author);
 
-  factory WordImageVo.fromJson(Map<String, dynamic> json) =>
-      _$WordImageVoFromJson(json);
+  factory WordImageVo.fromJson(Map<String, dynamic> json) => _$WordImageVoFromJson(json);
 
   Map<String, dynamic> toJson() => _$WordImageVoToJson(this);
 }
@@ -1134,8 +1076,7 @@ class VerbTenseVo {
 
   VerbTenseVo(this.id, this.word, this.tenseType, this.tensedSpell);
 
-  factory VerbTenseVo.fromJson(Map<String, dynamic> json) =>
-      _$VerbTenseVoFromJson(json);
+  factory VerbTenseVo.fromJson(Map<String, dynamic> json) => _$VerbTenseVoFromJson(json);
 
   Map<String, dynamic> toJson() => _$VerbTenseVoToJson(this);
 }
@@ -1147,8 +1088,7 @@ class WordList {
 
   WordList(this.name, this.wordCount);
 
-  factory WordList.fromJson(Map<String, dynamic> json) =>
-      _$WordListFromJson(json);
+  factory WordList.fromJson(Map<String, dynamic> json) => _$WordListFromJson(json);
 
   Map<String, dynamic> toJson() => _$WordListToJson(this);
 }
@@ -1193,8 +1133,7 @@ class GetWordResult {
     this.wordMastered,
   );
 
-  factory GetWordResult.fromJson(Map<String, dynamic> json) =>
-      _$GetWordResultFromJson(json);
+  factory GetWordResult.fromJson(Map<String, dynamic> json) => _$GetWordResultFromJson(json);
   Map<String, dynamic> toJson() => _$GetWordResultToJson(this);
 }
 
@@ -1265,16 +1204,11 @@ class Pair<L, R> {
   ) =>
       _$PairFromJson(json, fromJsonL, fromJsonR);
 
-  Map<String, dynamic> toJson() =>
-      _$PairToJson(this, (value) => value, (value) => value);
+  Map<String, dynamic> toJson() => _$PairToJson(this, (value) => value, (value) => value);
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is Pair &&
-          runtimeType == other.runtimeType &&
-          first == other.first &&
-          second == other.second;
+      identical(this, other) || other is Pair && runtimeType == other.runtimeType && first == other.first && second == other.second;
 
   @override
   int get hashCode => first.hashCode ^ second.hashCode;
@@ -1290,10 +1224,10 @@ class Pair<L, R> {
 class MeaningMatchResult {
   /// 所有释义项子项总数量
   final int totalCount;
-  
+
   /// 匹配上的释义项子项数量
   final int matchedCount;
-  
+
   /// 本次新增匹配数量
   final int newMatchCount;
 
@@ -1331,11 +1265,7 @@ class Triple<F, S, T> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is Triple &&
-          runtimeType == other.runtimeType &&
-          first == other.first &&
-          second == other.second &&
-          third == other.third;
+      other is Triple && runtimeType == other.runtimeType && first == other.first && second == other.second && third == other.third;
 
   @override
   int get hashCode => first.hashCode ^ second.hashCode ^ third.hashCode;
@@ -1363,20 +1293,8 @@ class MsgVo {
   bool viewed;
   UserVo toUser;
 
-  MsgVo(
-      this.id,
-      this.fromUserName,
-      this.fromUserNickName,
-      this.toUserName,
-      this.toUserNickName,
-      this.content,
-      this.createTimeForDisplay,
-      this.msgType,
-      this.clientType,
-      this.fromUser,
-      this.toUser,
-      this.createTime,
-      this.viewed);
+  MsgVo(this.id, this.fromUserName, this.fromUserNickName, this.toUserName, this.toUserNickName, this.content, this.createTimeForDisplay,
+      this.msgType, this.clientType, this.fromUser, this.toUser, this.createTime, this.viewed);
 
   factory MsgVo.fromJson(Map<String, dynamic> json) => _$MsgVoFromJson(json);
 
@@ -1397,7 +1315,7 @@ class DictStatsVo {
   final int? popularityLimit;
   final DateTime createTime;
   final DateTime? updateTime;
-  
+
   // 统计信息
   final int userSelectionCount; // 被用户选择的数量
   final int totalUsers; // 总用户数
@@ -1419,8 +1337,7 @@ class DictStatsVo {
     required this.selectionRate,
   });
 
-  factory DictStatsVo.fromJson(Map<String, dynamic> json) =>
-      _$DictStatsVoFromJson(json);
+  factory DictStatsVo.fromJson(Map<String, dynamic> json) => _$DictStatsVoFromJson(json);
 
   Map<String, dynamic> toJson() => _$DictStatsVoToJson(this);
 }
@@ -1438,8 +1355,7 @@ class SystemHealthCheckResult {
     required this.errors,
   });
 
-  factory SystemHealthCheckResult.fromJson(Map<String, dynamic> json) =>
-      _$SystemHealthCheckResultFromJson(json);
+  factory SystemHealthCheckResult.fromJson(Map<String, dynamic> json) => _$SystemHealthCheckResultFromJson(json);
 
   Map<String, dynamic> toJson() => _$SystemHealthCheckResultToJson(this);
 }
@@ -1457,8 +1373,7 @@ class SystemHealthIssue {
     required this.category,
   });
 
-  factory SystemHealthIssue.fromJson(Map<String, dynamic> json) =>
-      _$SystemHealthIssueFromJson(json);
+  factory SystemHealthIssue.fromJson(Map<String, dynamic> json) => _$SystemHealthIssueFromJson(json);
 
   Map<String, dynamic> toJson() => _$SystemHealthIssueToJson(this);
 }
@@ -1476,8 +1391,7 @@ class SystemHealthFixResult {
     required this.fixed,
   });
 
-  factory SystemHealthFixResult.fromJson(Map<String, dynamic> json) =>
-      _$SystemHealthFixResultFromJson(json);
+  factory SystemHealthFixResult.fromJson(Map<String, dynamic> json) => _$SystemHealthFixResultFromJson(json);
 
   Map<String, dynamic> toJson() => _$SystemHealthFixResultToJson(this);
 }
@@ -1497,8 +1411,7 @@ class FeatureRequestVo {
 
   FeatureRequestVo.c2(this.id, this.createTime);
 
-  factory FeatureRequestVo.fromJson(Map<String, dynamic> json) =>
-      _$FeatureRequestVoFromJson(json);
+  factory FeatureRequestVo.fromJson(Map<String, dynamic> json) => _$FeatureRequestVoFromJson(json);
 
   Map<String, dynamic> toJson() => _$FeatureRequestVoToJson(this);
 }
@@ -1514,9 +1427,7 @@ class FeatureRequestReportVo {
 
   FeatureRequestReportVo(this.id, this.reporter, this.featureRequest, this.content, this.createTime);
 
-  factory FeatureRequestReportVo.fromJson(Map<String, dynamic> json) =>
-      _$FeatureRequestReportVoFromJson(json);
+  factory FeatureRequestReportVo.fromJson(Map<String, dynamic> json) => _$FeatureRequestReportVoFromJson(json);
 
   Map<String, dynamic> toJson() => _$FeatureRequestReportVoToJson(this);
 }
-

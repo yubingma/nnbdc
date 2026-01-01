@@ -10,7 +10,6 @@ public class StudyProgress {
     int userOrder;
     int rawWordCount;
     Integer cowDung;
-    LevelVo level;
     Integer masteredWordsCount;
     int learningWordsCount;
     Integer wordsPerDay;
@@ -74,14 +73,6 @@ public class StudyProgress {
 
     public void setCowDung(Integer cowDung) {
         this.cowDung = cowDung;
-    }
-
-    public LevelVo getLevel() {
-        return level;
-    }
-
-    public void setLevel(LevelVo level) {
-        this.level = level;
     }
 
     public Integer getMasteredWordsCount() {

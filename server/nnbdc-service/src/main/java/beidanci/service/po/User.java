@@ -128,8 +128,7 @@ public class User extends UuidPo {
     @Column(name = "invited_by_id")
     private User invitedBy;
 
-    @Column(name = "level_id")
-    private Level level;
+
 
     private  List<User> invitedUsers;
 
@@ -810,13 +809,7 @@ public class User extends UuidPo {
         this.managedStudyGroups = managedStudyGroups;
     }
 
-    public Level getLevel() {
-        return level;
-    }
 
-    public void setLevel(Level level) {
-        this.level = level;
-    }
 
     public Boolean getIsTodayLearningFinished() {
         return learningFinished
@@ -927,10 +920,7 @@ public class User extends UuidPo {
         user.setPremiumOverrideReason(dto.getPremiumOverrideReason());
         user.setPremiumOverrideDuration(dto.getPremiumOverrideDuration());
 
-        // 处理level字段
-        Level level = new Level();
-        level.setId(dto.getLevelId());
-        user.setLevel(level);
+
 
         if (dto.getCreateTime() != null) {
             user.setCreateTime(dto.getCreateTime());
@@ -980,9 +970,7 @@ public class User extends UuidPo {
         dto.setDakaScore(this.getDakaScore());
         dto.setEnableAllWrong(this.getEnableAllWrong());
         dto.setAsrPassRule(this.getAsrPassRule());
-        if (this.getLevel() != null) {
-            dto.setLevelId(this.getLevel().getId());
-        }
+
 
         // ========== 订阅/强制会员字段 ==========
         dto.setIsPremiumIos(Boolean.TRUE.equals(this.getIsPremiumIos()));

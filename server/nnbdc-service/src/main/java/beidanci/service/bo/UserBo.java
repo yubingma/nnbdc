@@ -41,7 +41,6 @@ import beidanci.api.model.DakaDto;
 import beidanci.api.model.DictWordDto;
 import beidanci.api.model.LearningDictDto;
 import beidanci.api.model.LearningWordDto;
-import beidanci.api.model.LevelVo;
 import beidanci.api.model.MasteredWordDto;
 import beidanci.api.model.PagedResults;
 import beidanci.api.model.UserCowDungLogDto;
@@ -63,7 +62,6 @@ import beidanci.service.po.Dict;
 import beidanci.service.po.LearningDict;
 import beidanci.service.po.LearningDictId;
 import beidanci.service.po.LearningWord;
-import beidanci.service.po.Level;
 import beidanci.service.po.LoginLog;
 import beidanci.service.po.StudyGroup;
 import beidanci.service.po.User;
@@ -105,9 +103,6 @@ public class UserBo extends BaseBo<User> {
 
     @Autowired
     EventBo eventBo;
-
-    @Autowired
-    LevelBo levelBo;
 
     @Autowired
     LearningWordBo learningWordBo;
@@ -963,35 +958,7 @@ public class UserBo extends BaseBo<User> {
         UserVo userVo = BeanUtils.makeVo(user, UserVo.class, new String[] { "invitedBy", "StudyGroupVo.creator",
                 "StudyGroupVo.users", "StudyGroupVo.managers", "StudyGroupVo.studyGroupPosts", "UserGameVo.user" });
 
-        // 计算用户等级
-        LevelVo levelVo = getUserLevelVo(user);
-        userVo.setLevel(levelVo);
-
         return userVo;
-    }
-
-    public LevelVo getUserLevelVo(User user) {
-        Level level = getUserLevel(user);
-        LevelVo levelVo = BeanUtils.makeVo(level, LevelVo.class, null);
-        return levelVo;
-    }
-
-    /**
-     * 获取用户的等级
-     *
-     * @return
-     */
-
-    public Level getUserLevel(User user) {
-
-        int userTotalScore = user.getTotalScore();
-        List<Level> levels = levelBo.getLevels();
-        for (Level level : levels) {
-            if (userTotalScore >= level.getMinScore() && userTotalScore <= level.getMaxScore()) {
-                return level;
-            }
-        }
-        return null;
     }
 
     @Transactional
@@ -1335,14 +1302,6 @@ public class UserBo extends BaseBo<User> {
             newUser.setContinuousDakaDayCount(0);
             newUser.setMaxContinuousDakaDayCount(0);
             newUser.setEnableAllWrong(false);
-
-            // 设置默认等级（一般是第一个等级）
-            String levelSql = "SELECT * FROM level ORDER BY id ASC LIMIT 1";
-            List<Level> levels = jdbcTemplate.query(levelSql,
-                    new EntityRowMapper<>(Level.class));
-            if (!levels.isEmpty()) {
-                newUser.setLevel(levels.get(0));
-            }
 
             // 保存用户
             createEntity(newUser);

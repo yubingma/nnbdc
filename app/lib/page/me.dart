@@ -207,15 +207,12 @@ class _MePageState extends State<MePage> {
       }
 
       // 从本地数据库获取用户学习进度
-      User? user = await MyDatabase.instance.usersDao.getUserById(loggedInUser!.id!);
+      final db = MyDatabase.instance;
+      User? user = await db.usersDao.getUserById(loggedInUser!.id!);
       if (user == null) {
         Global.logger.d('User not found in local database for id: ${loggedInUser!.id}');
         return;
       }
-
-      // 获取用户等级
-      var db = MyDatabase.instance;
-      var level = await (db.select(db.levels)..where((l) => l.id.equals(user.levelId))).getSingleOrNull();
 
       // 获取学习中的单词数量（只统计生命值大于0的单词）
       var learningWords = await (db.select(db.learningWords)
@@ -245,18 +242,8 @@ class _MePageState extends State<MePage> {
       var masteredWordsResult = await masteredWordsQuery.getSingle();
       var masteredWordsCount = masteredWordsResult.read(drift.countAll()) ?? 0;
 
-      // 如果查不到等级(很可能是因为系统数据库还没同步完成)，使用默认等级（不显示错误提示）
-      LevelVo levelVo;
-      if (level != null) {
-        levelVo = LevelVo(level.id)
-          ..name = LevelUtil.getTitleName(level.level)
-          ..level = level.level
-          ..figure = LevelUtil.getTitleIcon(level.level);
-      } else {
-        levelVo = LevelVo(user.levelId)
-          ..name = '默认等级'
-          ..figure = '❓';
-      }
+      // 使用LevelUtil根据总积分计算等级
+      LevelVo levelVo = LevelUtil.getLevelVoByScore(user.totalScore);
 
       if (mounted) {
         setState(() {

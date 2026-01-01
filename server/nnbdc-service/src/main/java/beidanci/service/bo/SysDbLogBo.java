@@ -1,5 +1,18 @@
 package beidanci.service.bo;
 
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import javax.annotation.PostConstruct;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import beidanci.api.model.SysDbLogDto;
 import beidanci.service.dao.BaseDao;
 import beidanci.service.dao.EntityRowMapper;
@@ -7,21 +20,6 @@ import beidanci.service.po.SysDbLog;
 import beidanci.service.po.SysDbVersion;
 import beidanci.service.util.JsonUtils;
 import beidanci.service.util.Util;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import javax.annotation.PostConstruct;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TimeZone;
-import java.util.stream.Collectors;
 
 /**
  * 系统数据日志业务类
@@ -42,10 +40,10 @@ public class SysDbLogBo extends BaseBo<SysDbLog> {
     /**
      * 记录系统数据操作日志
      * 
-     * @param operate 操作类型：INSERT/UPDATE/DELETE
-     * @param table 表名：word_image/sentence/word_shortdesc_chinese
+     * @param operate  操作类型：INSERT/UPDATE/DELETE
+     * @param table    表名：word_image/sentence/word_shortdesc_chinese
      * @param recordId 记录ID
-     * @param record 记录内容（JSON格式）
+     * @param record   记录内容（JSON格式）
      */
     public void logOperation(String operate, String table, String recordId, String record) {
         // 在同一事务中完成：1）记录日志 2）递增版本号
@@ -75,8 +73,8 @@ public class SysDbLogBo extends BaseBo<SysDbLog> {
      */
     public int getSysDbVersion() {
         String sql = "SELECT * FROM sys_db_version WHERE id = 'singleton'";
-        List<SysDbVersion> versions = namedParameterJdbcTemplate.query(sql, 
-            new EntityRowMapper<>(SysDbVersion.class));
+        List<SysDbVersion> versions = namedParameterJdbcTemplate.query(sql,
+                new EntityRowMapper<>(SysDbVersion.class));
         return versions.isEmpty() ? 0 : versions.get(0).getVersion();
     }
 
@@ -87,8 +85,8 @@ public class SysDbLogBo extends BaseBo<SysDbLog> {
      */
     private void incrementSysDbVersion(int newVersion) {
         String sql = "SELECT * FROM sys_db_version WHERE id = 'singleton'";
-        List<SysDbVersion> versions = namedParameterJdbcTemplate.query(sql, 
-            new EntityRowMapper<>(SysDbVersion.class));
+        List<SysDbVersion> versions = namedParameterJdbcTemplate.query(sql,
+                new EntityRowMapper<>(SysDbVersion.class));
 
         if (versions.isEmpty()) {
             // 首次创建版本记录
@@ -115,7 +113,7 @@ public class SysDbLogBo extends BaseBo<SysDbLog> {
      */
     public List<SysDbLogDto> getNewSysDbLogs(int fromVersion) {
         int currentVersion = getSysDbVersion();
-        
+
         // 如果客户端版本过旧（>10个版本差距），或者是首次同步（fromVersion=0），生成全量日志
         if (fromVersion == 0 || currentVersion > fromVersion + 10 || !hasVersionLogs(fromVersion)) {
             return generateFullSysDbLogs(currentVersion);
@@ -123,12 +121,12 @@ public class SysDbLogBo extends BaseBo<SysDbLog> {
             // 增量同步
             String sql = "SELECT * FROM sys_db_log WHERE version > :fromVersion ORDER BY version ASC";
             MapSqlParameterSource params = new MapSqlParameterSource("fromVersion", fromVersion);
-            List<SysDbLog> logs = namedParameterJdbcTemplate.query(sql, params, 
-                new EntityRowMapper<>(SysDbLog.class));
+            List<SysDbLog> logs = namedParameterJdbcTemplate.query(sql, params,
+                    new EntityRowMapper<>(SysDbLog.class));
             return logs.stream().map(this::toDto).collect(Collectors.toList());
         }
     }
-    
+
     /**
      * 检查是否存在指定版本的日志
      */
@@ -138,86 +136,41 @@ public class SysDbLogBo extends BaseBo<SysDbLog> {
         Long count = namedParameterJdbcTemplate.queryForObject(sql, params, Long.class);
         return count != null && count > 0;
     }
-    
+
     /**
      * 生成系统数据全量日志（动态生成）
      * 用于首次同步或版本差距过大时
      */
     private List<SysDbLogDto> generateFullSysDbLogs(int currentVersion) {
         List<SysDbLogDto> logs = new ArrayList<>();
-        
+
         // === 静态元数据 ===
-        // 1. Levels
-        logs.addAll(generateLevelLogs(currentVersion));
-        
+        // 1. Levels - 已移除，由前端LevelUtil处理
+
         // 2. DictGroups
         logs.addAll(generateDictGroupLogs(currentVersion));
-        
+
         // 3. GroupAndDictLinks
         logs.addAll(generateGroupAndDictLinkLogs(currentVersion));
-        
+
         // 4. Dicts（只包含系统词典）
         logs.addAll(generateDictLogs(currentVersion));
-        
-        // sentence/word_image/word_shortdesc_chinese的数据, 不需要全量同步, 因为数据量太大, 而且用户下载所需词书的时候, 已经包含所需的这些数据了
-        
+
+        // sentence/word_image/word_shortdesc_chinese的数据, 不需要全量同步, 因为数据量太大,
+        // 而且用户下载所需词书的时候, 已经包含所需的这些数据了
+
         return logs;
     }
-    
-    private List<SysDbLogDto> generateLevelLogs(int version) {
-        // 动态生成Level的INSERT日志
-        String sql = "SELECT id, level, name, figure, min_score, max_score, style, create_time, update_time FROM level";
-        List<Object[]> results = namedParameterJdbcTemplate.getJdbcTemplate().query(sql, (rs, rowNum) -> 
-            new Object[]{
-                rs.getString("id"),
-                rs.getObject("level"),
-                rs.getString("name"),
-                rs.getObject("figure"),
-                rs.getObject("min_score"),
-                rs.getObject("max_score"),
-                rs.getString("style"),
-                rs.getTimestamp("create_time"),
-                rs.getTimestamp("update_time")
-            });
-        
-        List<SysDbLogDto> logs = new ArrayList<>();
-        for (Object result : results) {
-            Object[] tuple = (Object[]) result;
-            SysDbLogDto log = new SysDbLogDto();
-            log.setId(Util.uuid());
-            log.setVersion(version);
-            log.setOperate("INSERT");
-            log.setTblName("level");
-            log.setRecordId((String) tuple[0]);
-            SimpleDateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-            isoFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-            Map<String, Object> record = new HashMap<>();
-            record.put("id", tuple[0]);
-            record.put("level", tuple[1]);
-            record.put("name", tuple[2]);
-            record.put("figure", tuple[3]);
-            record.put("minScore", tuple[4]);
-            record.put("maxScore", tuple[5]);
-            record.put("style", tuple[6]);
-            record.put("createTime", tuple[7] != null ? isoFormat.format(tuple[7]) : null);
-            record.put("updateTime", tuple[8] != null ? isoFormat.format(tuple[8]) : null);
-            log.setRecord(JsonUtils.toJson(record));
-            log.setCreateTime(new Date());
-            logs.add(log);
-        }
-        return logs;
-    }
-    
+
     private List<SysDbLogDto> generateDictGroupLogs(int version) {
         String sql = "SELECT id, name, parent_id, display_index FROM dict_group";
-        List<Object[]> results = namedParameterJdbcTemplate.getJdbcTemplate().query(sql, (rs, rowNum) -> 
-            new Object[]{
+        List<Object[]> results = namedParameterJdbcTemplate.getJdbcTemplate().query(sql, (rs, rowNum) -> new Object[] {
                 rs.getString("id"),
                 rs.getString("name"),
                 rs.getString("parent_id"),
                 rs.getObject("display_index")
-            });
-        
+        });
+
         List<SysDbLogDto> logs = new ArrayList<>();
         for (Object result : results) {
             Object[] tuple = (Object[]) result;
@@ -238,15 +191,14 @@ public class SysDbLogBo extends BaseBo<SysDbLog> {
         }
         return logs;
     }
-    
+
     private List<SysDbLogDto> generateGroupAndDictLinkLogs(int version) {
         String sql = "SELECT group_id, dict_id FROM group_and_dict_link";
-        List<Object[]> results = namedParameterJdbcTemplate.getJdbcTemplate().query(sql, (rs, rowNum) -> 
-            new Object[]{
+        List<Object[]> results = namedParameterJdbcTemplate.getJdbcTemplate().query(sql, (rs, rowNum) -> new Object[] {
                 rs.getString("group_id"),
                 rs.getString("dict_id")
-            });
-        
+        });
+
         List<SysDbLogDto> logs = new ArrayList<>();
         for (Object result : results) {
             Object[] tuple = (Object[]) result;
@@ -265,12 +217,11 @@ public class SysDbLogBo extends BaseBo<SysDbLog> {
         }
         return logs;
     }
-    
+
     private List<SysDbLogDto> generateDictLogs(int version) {
         // 只生成系统词典的日志
         String sql = "SELECT id, name, owner_id, is_shared, is_ready, visible, word_count, popularity_limit, create_time, update_time FROM dict WHERE owner_id='15118'";
-        List<Object[]> results = namedParameterJdbcTemplate.getJdbcTemplate().query(sql, (rs, rowNum) -> 
-            new Object[]{
+        List<Object[]> results = namedParameterJdbcTemplate.getJdbcTemplate().query(sql, (rs, rowNum) -> new Object[] {
                 rs.getString("id"),
                 rs.getString("name"),
                 rs.getString("owner_id"),
@@ -281,12 +232,12 @@ public class SysDbLogBo extends BaseBo<SysDbLog> {
                 rs.getObject("popularity_limit"),
                 rs.getTimestamp("create_time"),
                 rs.getTimestamp("update_time")
-            });
-        
+        });
+
         // 用于格式化日期为ISO-8601格式
         java.text.SimpleDateFormat isoFormat = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
         isoFormat.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
-        
+
         List<SysDbLogDto> logs = new ArrayList<>();
         for (Object result : results) {
             Object[] tuple = (Object[]) result;
@@ -296,11 +247,11 @@ public class SysDbLogBo extends BaseBo<SysDbLog> {
             log.setOperate("INSERT");
             log.setTblName("dict");
             log.setRecordId((String) tuple[0]);
-            
+
             // 格式化日期字段
             String createTimeStr = tuple[8] != null ? isoFormat.format(tuple[8]) : null;
             String updateTimeStr = tuple[9] != null ? isoFormat.format(tuple[9]) : null;
-            
+
             java.util.Map<String, Object> record = new java.util.HashMap<>();
             record.put("id", tuple[0]);
             record.put("name", tuple[1]);
@@ -318,7 +269,6 @@ public class SysDbLogBo extends BaseBo<SysDbLog> {
         }
         return logs;
     }
-    
 
     /**
      * 转换PO为DTO
@@ -347,4 +297,3 @@ public class SysDbLogBo extends BaseBo<SysDbLog> {
         return namedParameterJdbcTemplate.update(sql, params);
     }
 }
-

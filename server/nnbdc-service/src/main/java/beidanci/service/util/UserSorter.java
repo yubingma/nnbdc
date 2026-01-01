@@ -1,6 +1,5 @@
 package beidanci.service.util;
 
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -16,7 +15,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import beidanci.service.bo.UserBo;
-import beidanci.service.po.Level;
 import beidanci.service.po.User;
 import beidanci.util.Utils;
 
@@ -33,7 +31,6 @@ public class UserSorter implements InitializingBean {
 
     @Autowired
     UserBo userBo;
-
 
     private static final Logger log = LoggerFactory.getLogger(UserSorter.class);
 
@@ -82,7 +79,8 @@ public class UserSorter implements InitializingBean {
         List<UserScoreRecord> userSortRecords = new LinkedList<>(userOrders.values());
 
         // 对用户列表进行排序
-        Collections.sort(userSortRecords, (UserScoreRecord o1, UserScoreRecord o2) -> o2.getTotalScore() - o1.getTotalScore());
+        Collections.sort(userSortRecords,
+                (UserScoreRecord o1, UserScoreRecord o2) -> o2.getTotalScore() - o1.getTotalScore());
 
         // 保存排序结果到哈希表，以加快查询速度
         userOrders.clear();
@@ -135,8 +133,6 @@ public class UserSorter implements InitializingBean {
 
         String displayNickName;
 
-        Level level;
-
         public int getMaxContinuousDakaDayCount() {
             return maxContinuousDakaDayCount;
         }
@@ -188,7 +184,6 @@ public class UserSorter implements InitializingBean {
             this.dakaDayCount = user.getDakaDayCount();
             this.dakaRatio = user.getDakaRatio();
             this.displayNickName = user.getDisplayNickName();
-            this.level = userBo.getUserLevel(user);
             this.maxContinuousDakaDayCount = user.getMaxContinuousDakaDayCount();
             this.continuousDakaDayCount = user.getContinuousDakaDayCount();
             this.masteredWordCount = user.getMasteredWordsCount();
@@ -226,10 +221,6 @@ public class UserSorter implements InitializingBean {
 
         public String getDisplayNickName() {
             return displayNickName;
-        }
-
-        public Level getLevel() {
-            return level;
         }
 
         public String getUserId() {

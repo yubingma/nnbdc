@@ -8,7 +8,7 @@ import 'package:nnbdc/util/app_clock.dart';
 /// 同步系统数据库（统一的系统数据同步）
 /// 
 /// 包含：
-/// - 静态元数据：Levels、DictGroups、GroupAndDictLinks、Dicts、DictWords
+/// - 静态元数据：DictGroups、GroupAndDictLinks、Dicts、DictWords
 /// - UGC内容：Sentences、WordImages、WordShortDescChineses
 /// 
 /// 使用单例版本号，所有用户共享同一份系统数据
@@ -82,16 +82,7 @@ Future<void> _applySysDbLogs(List<SysDbLogDto> logs) async {
         Map<String, dynamic> entityJson = jsonDecode(log.record);
         
         // === 静态元数据表 ===
-        if (log.tblName == 'level') {
-          // 用户等级
-          if (log.operate == 'DELETE') {
-            await (db.delete(db.levels)..where((t) => t.id.equals(log.recordId))).go();
-          } else {
-            Level entity = Level.fromJson(entityJson);
-            await db.into(db.levels).insertOnConflictUpdate(entity);
-          }
-          
-        } else if (log.tblName == 'dict_group') {
+        if (log.tblName == 'dict_group') {
           // 词典分组
           if (log.operate == 'DELETE') {
             await (db.delete(db.dictGroups)..where((t) => t.id.equals(log.recordId))).go();

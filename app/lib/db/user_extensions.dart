@@ -1,7 +1,7 @@
 import 'package:nnbdc/db/db.dart';
 import 'package:drift/drift.dart';
 import 'package:nnbdc/api/vo.dart';
-import 'package:nnbdc/db/level_extensions.dart';
+import 'package:nnbdc/util/level_util.dart';
 
 /// User类的扩展方法
 extension UserExtensions on User {
@@ -26,7 +26,7 @@ extension UserExtensions on User {
     bool? inviteAwardTaken,
     bool? isSuperAdmin,
     bool? isAdmin,
-    bool? isInputor, 
+    bool? isInputor,
     bool? isTodayLearningStarted,
     bool? isTodayLearningFinished,
     bool? autoPlaySentence,
@@ -55,7 +55,6 @@ extension UserExtensions on User {
     DateTime? premiumOverrideUpdateTime,
     String? premiumOverrideReason,
     String? premiumOverrideDuration,
-    
   }) {
     return User(
       id: id ?? this.id,
@@ -108,7 +107,7 @@ extension UserExtensions on User {
       premiumOverrideDuration: premiumOverrideDuration ?? this.premiumOverrideDuration,
     );
   }
-  
+
   /// 创建UsersCompanion对象，用于Drift数据库更新
   UsersCompanion toCompanion() {
     return UsersCompanion(
@@ -160,10 +159,9 @@ extension UserExtensions on User {
       premiumOverrideUpdateTime: Value(premiumOverrideUpdateTime),
       premiumOverrideReason: Value(premiumOverrideReason),
       premiumOverrideDuration: Value(premiumOverrideDuration),
-      
     );
   }
-  
+
   /// 创建UsersCompanion对象，用于Drift数据库更新
   UsersCompanion toCompanionForUpdate() {
     return UsersCompanion(
@@ -215,10 +213,9 @@ extension UserExtensions on User {
       premiumOverrideUpdateTime: Value(premiumOverrideUpdateTime),
       premiumOverrideReason: Value(premiumOverrideReason),
       premiumOverrideDuration: Value(premiumOverrideDuration),
-      
     );
   }
-  
+
   /// 将User转换为UserVo
   Future<UserVo> toUserVo() async {
     final userVo = UserVo.c2(id);
@@ -249,23 +246,20 @@ extension UserExtensions on User {
     userVo.masteredWordsCount = masteredWordsCount;
     userVo.cowDung = cowDung;
     userVo.throwDiceChance = throwDiceChance;
-    
+
     // 处理invitedBy字段，这是一个UserVo类型
     // 我们不处理这个字段，因为这需要额外的数据库查询
-    
-    // 从数据库查询Level，并转换为LevelVo
-    Level? lvl = await MyDatabase.instance.levelsDao.getLevelById(levelId);
-    if (lvl != null) {
-      userVo.level = lvl.toLevelVo();
-    }
-      
+
+    // 使用LevelUtil根据总积分计算等级
+    userVo.level = LevelUtil.getLevelVoByScore(totalScore);
+
     userVo.continuousDakaDayCount = continuousDakaDayCount;
     userVo.maxContinuousDakaDayCount = maxContinuousDakaDayCount;
     userVo.lastDakaDate = lastDakaDate;
     userVo.totalScore = totalScore;
     userVo.dakaRatio = dakaRatio;
     userVo.enableAllWrong = enableAllWrong;
-    
+
     // 订阅相关字段（iOS平台）
     userVo.isPremiumIos = isPremiumIos;
     userVo.subscriptionExpireDateIos = subscriptionExpireDateIos;
@@ -277,7 +271,7 @@ extension UserExtensions on User {
     userVo.premiumOverrideUpdateTime = premiumOverrideUpdateTime;
     userVo.premiumOverrideReason = premiumOverrideReason;
     userVo.premiumOverrideDuration = premiumOverrideDuration;
-    
+
     return userVo;
   }
-} 
+}

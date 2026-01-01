@@ -49,16 +49,6 @@ class UsersDao extends DatabaseAccessor<MyDatabase> with _$UsersDaoMixin {
 
   // 添加带日志记录的更新方法
   Future<void> saveUser(User entry, bool genLog) async {
-    if (entry.levelId.startsWith('Instance')) {
-      ErrorHandler.handleError(
-        Exception('用户等级不能以instance开头'),
-        StackTrace.current,
-        userMessage: '用户等级不能以instance开头',
-        logPrefix: '用户等级验证',
-        showToast: true,
-      );
-      return;
-    }
     var user = await getUserById(entry.id);
     try {
       if (user == null) {
@@ -536,7 +526,7 @@ class DictWordsDao extends DatabaseAccessor<MyDatabase> with _$DictWordsDaoMixin
     var existing = await getById(entry.dictId, entry.wordId);
     if (existing == null) {
       DictWord entryToInsert = entry;
-      
+
       // 获取词书中单词最大的seq
       final maxSeqQuery = selectOnly(dictWords)
         ..addColumns([dictWords.seq.max()])
@@ -1102,29 +1092,6 @@ class LearningWordsDao extends DatabaseAccessor<MyDatabase> with _$LearningWords
     }
 
     await query.go();
-  }
-}
-
-@DriftAccessor(tables: [Levels])
-class LevelsDao extends DatabaseAccessor<MyDatabase> with _$LevelsDaoMixin {
-  LevelsDao(super.db);
-
-  Future<void> deleteAll() => delete(levels).go();
-
-  Future<void> saveAll(List<LevelsCompanion> entries) async {
-    await batch((batch) {
-      batch.insertAll(levels, entries, mode: InsertMode.insertOrReplace);
-    });
-  }
-
-  // 根据ID查询等级
-  Future<Level?> getLevelById(String id) {
-    return (select(levels)..where((l) => l.id.equals(id))).getSingleOrNull();
-  }
-
-  /// 根据名称查询等级
-  Future<Level?> getLevelByName(String name) {
-    return (select(levels)..where((l) => l.name.equals(name))).getSingleOrNull();
   }
 }
 
@@ -1989,8 +1956,7 @@ class LocalExceptionsDao extends DatabaseAccessor<MyDatabase> with _$LocalExcept
 
   /// 获取所有异常记录（按时间倒序）
   Future<List<LocalException>> getAllExceptions({int? limit}) async {
-    var query = select(localExceptions)
-      ..orderBy([(e) => OrderingTerm(expression: e.createTime, mode: OrderingMode.desc)]);
+    var query = select(localExceptions)..orderBy([(e) => OrderingTerm(expression: e.createTime, mode: OrderingMode.desc)]);
     if (limit != null) {
       query = query..limit(limit);
     }

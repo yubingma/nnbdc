@@ -4,7 +4,6 @@ import java.util.List;
 
 public class SystemDataDto {
     private long version;
-    private List<LevelDto> levels;
     private List<DictGroupDto> dictGroups;
     private List<GroupAndDictLinkDto> groupAndDictLinks;
     private List<DictDto> dicts;
@@ -16,14 +15,6 @@ public class SystemDataDto {
 
     public void setVersion(long version) {
         this.version = version;
-    }
-
-    public List<LevelDto> getLevels() {
-        return levels;
-    }
-
-    public void setLevels(List<LevelDto> levels) {
-        this.levels = levels;
     }
 
     public List<DictGroupDto> getDictGroups() {

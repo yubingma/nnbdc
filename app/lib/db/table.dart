@@ -64,24 +64,7 @@ class VotedWordImages extends Table {
   Set<Column>? get primaryKey => {userId, imageId};
 }
 
-class Levels extends Table {
-  TextColumn get id => text()();
 
-  IntColumn get level => integer()();
-
-  TextColumn get name => text()();
-
-  TextColumn get figure => text().nullable()();
-
-  IntColumn get minScore => integer()();
-
-  IntColumn get maxScore => integer()();
-
-  TextColumn get style => text()();
-
-  @override
-  Set<Column>? get primaryKey => {id};
-}
 
 class DictGroups extends Table {
   TextColumn get id => text()();
