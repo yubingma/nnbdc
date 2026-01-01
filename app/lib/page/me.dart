@@ -703,7 +703,7 @@ class _MePageState extends State<MePage> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    '今日单词',
+                    '每日单词',
                     style: TextStyle(
                       fontSize: MediaQuery.of(context).size.width > 600 ? 16 : 14,
                       fontWeight: FontWeight.w500,
@@ -983,8 +983,9 @@ class _MePageState extends State<MePage> {
                   _buildProgressItem(
                     '魔法泡泡',
                     studyProgress!.cowDung.toString(),
-                    Icons.pets,
+                    Icons.water_drop,
                     const Color(0xFFE67E22),
+                    rotationAngle: 3.14159, // 180度 = π 弧度
                   ),
                 ],
               ),
@@ -1947,12 +1948,20 @@ class _MePageState extends State<MePage> {
   }
 
   // 进度项组件
-  Widget _buildProgressItem(String title, String value, IconData icon, Color color) {
+  Widget _buildProgressItem(String title, String value, IconData icon, Color color, {double? rotationAngle}) {
     final isDarkModeEnabled = context.watch<DarkMode>().isDarkMode;
+
+    Widget iconWidget = Icon(icon, color: color, size: 24);
+    if (rotationAngle != null) {
+      iconWidget = Transform.rotate(
+        angle: rotationAngle,
+        child: iconWidget,
+      );
+    }
 
     return Column(
       children: [
-        Icon(icon, color: color, size: 24),
+        iconWidget,
         const SizedBox(height: 8),
         Text(
           value,
