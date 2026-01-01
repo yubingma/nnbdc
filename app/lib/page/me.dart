@@ -548,19 +548,6 @@ class _MePageState extends State<MePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                '学习设置',
-                style: TextStyle(
-                  fontSize: MediaQuery.of(context).size.width > 600 ? 18 : 16,
-                  fontWeight: FontWeight.w500,
-                  color: textColor,
-                  height: 1.2,
-                  fontFamily: 'NotoSansSC',
-                ),
-                textScaler: const TextScaler.linear(1.0),
-              ),
-              SizedBox(height: MediaQuery.of(context).size.width > 600 ? 16 : 12),
-
               // 会员入口/会员信息（放在每日单词选择框上方）
               Builder(builder: (context) {
                 final isPremium = SubscriptionUtil.isPremium();
@@ -570,8 +557,7 @@ class _MePageState extends State<MePage> {
                   // 优先显示 iOS 订阅信息
                   final type = SubscriptionUtil.getSubscriptionType();
                   final expire = SubscriptionUtil.getExpireDate();
-                  final isOverride = loggedInUser?.premiumOverrideEnabled == true &&
-                      (loggedInUser?.isPremiumIos != true);
+                  final isOverride = loggedInUser?.premiumOverrideEnabled == true && (loggedInUser?.isPremiumIos != true);
 
                   if (type != null && type.isNotEmpty) {
                     final typeText = type == 'monthly' ? '月度会员' : '年度会员';
@@ -607,9 +593,7 @@ class _MePageState extends State<MePage> {
                 if (!isPremium && PlatformUtils.isIOS) {
                   return GestureDetector(
                     onTap: () {
-                      Navigator.of(context)
-                          .push(MaterialPageRoute(builder: (context) => const SubscriptionPage()))
-                          .then((_) {
+                      Navigator.of(context).push(MaterialPageRoute(builder: (context) => const SubscriptionPage())).then((_) {
                         loadData();
                       });
                     },
@@ -640,8 +624,7 @@ class _MePageState extends State<MePage> {
                               ),
                             ],
                           ),
-                          Icon(Icons.chevron_right,
-                              color: isDarkModeEnabled ? Colors.grey[400] : const Color(0xFF7F8C8D)),
+                          Icon(Icons.chevron_right, color: isDarkModeEnabled ? Colors.grey[400] : const Color(0xFF7F8C8D)),
                         ],
                       ),
                     ),
@@ -649,7 +632,7 @@ class _MePageState extends State<MePage> {
                 }
 
                 // 会员：隐藏按钮，显示订阅信息
-                if (isPremium && premiumInfoText != null) {
+                if (isPremium && premiumInfoText != null && PlatformUtils.isIOS) {
                   return Container(
                     margin: const EdgeInsets.only(bottom: 12),
                     padding: const EdgeInsets.all(12),
@@ -757,9 +740,7 @@ class _MePageState extends State<MePage> {
                         final isPremium = SubscriptionUtil.isPremium();
                         final all = <int>[10, 20, 30, 50, 75, 100, 150, 200, 300, 400, 500];
                         final values = isPremium ? all : <int>[10, 20];
-                        return values
-                            .map((v) => DropdownMenuItem<int>(value: v, child: Text('$v')))
-                            .toList();
+                        return values.map((v) => DropdownMenuItem<int>(value: v, child: Text('$v'))).toList();
                       })(),
                       onChanged: (value) async {
                         int newValue = value as int;
@@ -1233,7 +1214,7 @@ class _MePageState extends State<MePage> {
                 onTap: () => showUnRegisterDlg(),
                 isDestructive: true,
               ),
-              
+
               // 杂项
               Builder(
                 builder: (context) {

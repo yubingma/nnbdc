@@ -14,17 +14,16 @@ import 'package:nnbdc/db/db.dart';
 /// 用于处理iOS应用内购买订阅功能（仅支持iOS平台）
 class SubscriptionUtil {
   static final InAppPurchase _iap = InAppPurchase.instance;
-  static final StreamController<List<PurchaseDetails>> _purchaseUpdatedController =
-      StreamController<List<PurchaseDetails>>.broadcast();
-  
+  static final StreamController<List<PurchaseDetails>> _purchaseUpdatedController = StreamController<List<PurchaseDetails>>.broadcast();
+
   static StreamSubscription<List<PurchaseDetails>>? _purchaseSubscription;
   static bool _isAvailable = false;
   static bool _initialized = false;
-  
+
   /// 订阅产品ID列表
   static const Set<String> _productIds = {
-    'ppdc.monthly',  // 月度订阅产品ID
-    'ppdc.yearly',   // 年度订阅产品ID
+    'ppdc.monthly', // 月度订阅产品ID
+    'ppdc.yearly', // 年度订阅产品ID
   };
 
   /// 初始化订阅服务
@@ -36,7 +35,7 @@ class SubscriptionUtil {
     try {
       // 检查是否支持应用内购买（iOS/Android）
       _isAvailable = await _iap.isAvailable();
-      
+
       if (!_isAvailable) {
         Global.logger.w('应用内购买不可用');
         _initialized = true;
@@ -74,27 +73,25 @@ class SubscriptionUtil {
 
     try {
       final ProductDetailsResponse response = await _iap.queryProductDetails(_productIds);
-      
+
       // 记录查询结果详情
       Global.logger.i('产品查询结果: 找到 ${response.productDetails.length} 个产品, '
           '未找到 ${response.notFoundIDs.length} 个产品, '
           '错误: ${response.error?.code ?? "无"}');
-      
+
       // 检查是否有未找到的产品
       if (response.notFoundIDs.isNotEmpty) {
         Global.logger.w('未找到产品: ${response.notFoundIDs}');
-        
+
         // 如果所有产品都未找到，提供详细提示
         if (response.notFoundIDs.length == _productIds.length && response.productDetails.isEmpty) {
           String missingProducts = response.notFoundIDs.join(', ');
-          ToastUtil.error(
-            '订阅产品未找到：$missingProducts\n\n'
-            '可能原因：\n'
-            '1. App Store Connect 中产品状态为"元数据丢失"\n'
-            '2. 产品未关联到 App 版本并提交审核\n'
-            '3. 需要在真实设备上测试（模拟器不支持）\n\n'
-            '请检查 App Store Connect 中的产品配置'
-          );
+          ToastUtil.error('订阅产品未找到：$missingProducts\n\n'
+              '可能原因：\n'
+              '1. App Store Connect 中产品状态为"元数据丢失"\n'
+              '2. 产品未关联到 App 版本并提交审核\n'
+              '3. 需要在真实设备上测试（模拟器不支持）\n\n'
+              '请检查 App Store Connect 中的产品配置');
         } else if (response.productDetails.isNotEmpty) {
           // 部分产品未找到，但已找到部分产品，只记录警告不弹窗
           String missingProducts = response.notFoundIDs.join(', ');
@@ -105,12 +102,12 @@ class SubscriptionUtil {
           ToastUtil.info('部分产品未找到：$missingProducts');
         }
       }
-      
+
       // 检查是否有错误
       if (response.error != null) {
         final error = response.error!;
         Global.logger.e('查询产品失败', error: error);
-        
+
         // 即使有错误，如果找到了部分产品，也返回找到的产品
         if (response.productDetails.isNotEmpty) {
           Global.logger.w('虽然有错误，但已找到 ${response.productDetails.length} 个产品，将返回这些产品');
@@ -120,7 +117,7 @@ class SubscriptionUtil {
           }
           return response.productDetails;
         }
-        
+
         // 如果没有找到任何产品，才显示错误提示
         String errorMessage = '获取订阅信息失败';
         if (error.code == 'storekit_no_response') {
@@ -147,7 +144,7 @@ class SubscriptionUtil {
           final message = error.message.isNotEmpty ? error.message : error.code;
           errorMessage = '获取订阅信息失败：$message';
         }
-        
+
         ToastUtil.error(errorMessage);
         return [];
       }
@@ -177,7 +174,7 @@ class SubscriptionUtil {
       );
 
       final bool success = await _iap.buyNonConsumable(purchaseParam: purchaseParam);
-      
+
       if (!success) {
         ToastUtil.error('购买失败，请重试');
         return false;
@@ -236,13 +233,12 @@ class SubscriptionUtil {
       return;
     }
 
-    if (purchaseDetails.status == PurchaseStatus.purchased ||
-        purchaseDetails.status == PurchaseStatus.restored) {
+    if (purchaseDetails.status == PurchaseStatus.purchased || purchaseDetails.status == PurchaseStatus.restored) {
       Global.logger.i('购买成功: ${purchaseDetails.productID}');
-      
+
       // 验证收据
       final bool verified = await _verifyReceipt(purchaseDetails);
-      
+
       if (verified) {
         ToastUtil.success('订阅成功！');
         // 刷新用户信息
@@ -270,7 +266,7 @@ class SubscriptionUtil {
     try {
       // 获取收据数据
       String receiptData = '';
-      
+
       if (Platform.isIOS) {
         // iOS使用transactionReceipt
         receiptData = purchaseDetails.verificationData.serverVerificationData;
@@ -298,12 +294,12 @@ class SubscriptionUtil {
         ToastUtil.error('订阅功能仅支持iOS平台');
         return false;
       }
-      
+
       final platform = 'ios';
 
       // 调用后端验证接口
       final userId = user.id;
-      
+
       final Result result = await Api.client.verifySubscription(
         userId,
         receiptData,
@@ -351,6 +347,11 @@ class SubscriptionUtil {
   /// 有效会员判定（包含“强制视为会员”逻辑；边界情况偏向会员）
   static bool _isPremiumEffective(User user) {
     final now = DateTime.now();
+
+    // 非ios平台, 暂时都视为会员
+    if (!Platform.isIOS) {
+      return true;
+    }
 
     // 1) iOS订阅
     try {
@@ -462,4 +463,3 @@ class SubscriptionUtil {
     _initialized = false;
   }
 }
-
