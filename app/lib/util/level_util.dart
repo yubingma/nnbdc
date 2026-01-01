@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:nnbdc/api/vo.dart';
 
-class AnimalTitle {
+class Level {
   final String name;
   final String icon;
   final String quote;
@@ -11,7 +11,7 @@ class AnimalTitle {
   final int maxScore;
   final String style;
 
-  const AnimalTitle({
+  const Level({
     required this.name,
     required this.icon,
     required this.quote,
@@ -24,8 +24,8 @@ class AnimalTitle {
 }
 
 class LevelUtil {
-  static const List<AnimalTitle> _titles = [
-    AnimalTitle(
+  static const List<Level> _levels = [
+    Level(
       name: '毛毛虫',
       icon: '🐛',
       quote: '我是一条向往天空的虫。',
@@ -35,7 +35,7 @@ class LevelUtil {
       maxScore: 0,
       style: "color:gray;",
     ),
-    AnimalTitle(
+    Level(
       name: '皮皮虾',
       icon: '🦐',
       quote: '先别想着厉害，能多蹦几下就行。',
@@ -45,7 +45,7 @@ class LevelUtil {
       maxScore: 100,
       style: "color:black;",
     ),
-    AnimalTitle(
+    Level(
       name: '仓鼠',
       icon: '🐹',
       quote: '日积月累，我要做个小胖子。',
@@ -55,7 +55,7 @@ class LevelUtil {
       maxScore: 500,
       style: "color:darkcyan;",
     ),
-    AnimalTitle(
+    Level(
       name: '章鱼',
       icon: '🐙',
       quote: '这个词有点多义？尽在掌握!',
@@ -65,7 +65,7 @@ class LevelUtil {
       maxScore: 1200,
       style: "color:blue;",
     ),
-    AnimalTitle(
+    Level(
       name: '树懒',
       icon: '🦥',
       quote: '慢一点也没关系，我本来就不是靠冲刺的。',
@@ -75,7 +75,7 @@ class LevelUtil {
       maxScore: 2500,
       style: "color:coral;",
     ),
-    AnimalTitle(
+    Level(
       name: '浣熊',
       icon: '🦝',
       quote: '也别太努力, 否则会有黑眼圈。',
@@ -85,7 +85,7 @@ class LevelUtil {
       maxScore: 5000,
       style: "color:darkgoldenrod;",
     ),
-    AnimalTitle(
+    Level(
       name: '河狸',
       icon: '🦫',
       quote: '每天修一点，突然发现我的小房子就要修好了。',
@@ -95,7 +95,7 @@ class LevelUtil {
       maxScore: 10000,
       style: "color:darkmagenta;",
     ),
-    AnimalTitle(
+    Level(
       name: '鲨鱼',
       icon: '🦈',
       quote: '一旦进入状态，我是不会轻易停下来的。',
@@ -105,7 +105,7 @@ class LevelUtil {
       maxScore: 25000,
       style: "color:midnightblue;",
     ),
-    AnimalTitle(
+    Level(
       name: '长颈鹿',
       icon: '🦒',
       quote: '为了成为看得最远的动物, 我努力了千万年。',
@@ -115,7 +115,7 @@ class LevelUtil {
       maxScore: 60000,
       style: "color:peru;",
     ),
-    AnimalTitle(
+    Level(
       name: '虎鲸',
       icon: '🐋',
       quote: '我不靠蛮力取胜。',
@@ -125,7 +125,7 @@ class LevelUtil {
       maxScore: 150000,
       style: "color:purple;",
     ),
-    AnimalTitle(
+    Level(
       name: '抹香鲸',
       icon: '🐳',
       quote: '世界很大, 我要去看看',
@@ -137,10 +137,10 @@ class LevelUtil {
     ),
   ];
 
-  static AnimalTitle getTitle(int level) {
-    if (level < 0) return _titles[0];
-    if (level >= _titles.length) return _titles.last;
-    return _titles[level];
+  static Level getTitle(int level) {
+    if (level < 0) return _levels[0];
+    if (level >= _levels.length) return _levels.last;
+    return _levels[level];
   }
 
   static String getTitleName(int level) {
@@ -159,33 +159,24 @@ class LevelUtil {
     return getTitle(level).color;
   }
 
-  static int getLevelByScore(int score) {
-    for (int i = _titles.length - 1; i >= 0; i--) {
-      if (score >= _titles[i].minScore) {
-        return _titles[i].level;
+  static Level getLevelByScore(int score) {
+    for (int i = _levels.length - 1; i >= 0; i--) {
+      if (score >= _levels[i].minScore) {
+        return _levels[i];
       }
     }
-    return 0; // 默认返回最低等级
-  }
-
-  static AnimalTitle getLevelByScoreWithDetails(int score) {
-    for (int i = _titles.length - 1; i >= 0; i--) {
-      if (score >= _titles[i].minScore) {
-        return _titles[i];
-      }
-    }
-    return _titles[0]; // 默认返回最低等级
+    return _levels[0]; // 默认返回最低等级
   }
 
   static LevelVo getLevelVoByScore(int score) {
-    AnimalTitle levelDetails = getLevelByScoreWithDetails(score);
-    LevelVo levelVo = LevelVo(levelDetails.level.toString())
-      ..level = levelDetails.level
-      ..name = levelDetails.name
-      ..figure = levelDetails.icon
-      ..minScore = levelDetails.minScore
-      ..maxScore = levelDetails.maxScore
-      ..style = levelDetails.style;
+    Level level = getLevelByScore(score);
+    LevelVo levelVo = LevelVo(level.level.toString())
+      ..level = level.level
+      ..name = level.name
+      ..figure = level.icon
+      ..minScore = level.minScore
+      ..maxScore = level.maxScore
+      ..style = level.style;
     return levelVo;
   }
 }
