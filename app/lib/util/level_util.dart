@@ -11,7 +11,7 @@ class AnimalTitle {
 
 class LevelUtil {
   static const List<AnimalTitle> _titles = [
-    AnimalTitle('水熊虫', '🐛', '别看我小，我很顽强。', Color(0xFF81C784)),
+    AnimalTitle('毛毛虫', '🐛', '我是一条向往天空的小虫虫。', Color(0xFF81C784)),
     AnimalTitle('皮皮虾', '🦐', '先别想着厉害，能多蹦几下就行。', Color(0xFFFF8A65)),
     AnimalTitle('仓鼠', '🐹', '日积月累，我要做个小胖子。', Color(0xFFFFD54F)),
     AnimalTitle('浣熊', '🦝', '也别太努力, 否则会有黑眼圈。', Color(0xFF90A4AE)),
