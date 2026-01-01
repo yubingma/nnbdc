@@ -28,7 +28,7 @@ class LevelUtil {
     AnimalTitle(
       name: '毛毛虫',
       icon: '🐛',
-      quote: '我是一条向往天空的小虫虫。',
+      quote: '我是一条向往天空的虫。',
       color: Color(0xFF81C784),
       level: 0,
       minScore: 0,
