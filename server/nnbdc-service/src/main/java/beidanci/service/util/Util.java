@@ -19,7 +19,6 @@ import java.net.HttpURLConnection;
 import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.net.URLConnection;
-import java.net.URLEncoder;
 import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
@@ -35,8 +34,8 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.Objects;
+import java.util.Random;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.UUID;
@@ -50,9 +49,6 @@ import javax.net.ssl.X509TrustManager;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpMethod;
-import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -66,7 +62,6 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.jcraft.jsch.ChannelSftp;
 
 import beidanci.api.Result;
 import beidanci.api.model.DictVo;
@@ -737,61 +732,6 @@ public class Util {
         } catch (UnsupportedEncodingException e) {
             return new String(b, offset, len);
         }
-    }
-
-    public static void uploadFile(String srcFile, String destFile) throws Exception {
-        Map<String, String> sftpDetails = new HashMap<>();
-        // 设置主机ip，端口，用户名，密码
-        sftpDetails.put(SFTPConstants.SFTP_REQ_HOST, "116.255.247.39");
-        sftpDetails.put(SFTPConstants.SFTP_REQ_USERNAME, "root");
-        sftpDetails.put(SFTPConstants.SFTP_REQ_PASSWORD, "y4v6y5");
-        sftpDetails.put(SFTPConstants.SFTP_REQ_PORT, "22000");
-
-        SFTPChannel channel = new SFTPChannel();
-        ChannelSftp chSftp = channel.getChannel(sftpDetails, 60000);
-
-        chSftp.put(srcFile, destFile, ChannelSftp.OVERWRITE);
-
-        chSftp.quit();
-        channel.closeChannel();
-    }
-
-    /**
-     * 从google下载英文句子的发音文件, 并保存在指定文件中，如果文件不存在则自动创建
-     *
-     * @param sentence
-     * @throws IOException
-     */
-    @SuppressWarnings("deprecation")
-    public static void getSoundOfSentence(String sentence, File destFile) throws IOException {
-
-        if (sentence.length() > 100) {
-            return;
-        }
-
-        HttpClient httpClient = new HttpClient();
-        String url = String.format("http://translate.google.cn/translate_tts?tl=en&q=%s", URLEncoder.encode(sentence));
-        HttpMethod method = new GetMethod(url);
-        log.info(String.format("从google下载TTS数据, url:%s", url));
-        httpClient.executeMethod(method);
-
-        if (method.getStatusCode() == 200) {
-            int bytesum = 0;
-            int byteread;
-            byte[] buffer = new byte[1204];
-            InputStream is = method.getResponseBodyAsStream();
-            try (FileOutputStream fs = new FileOutputStream(destFile)) {
-                while ((byteread = is.read(buffer)) != -1) {
-                    bytesum += byteread;
-                    fs.write(buffer, 0, byteread);
-                }
-            }
-            log.info(String.format("从google下载TTS数据[%d]bytes", bytesum));
-        } else {
-            log.info(String.format("从google下载TTS数据失败：%s, 句子长度[%s]", method.getStatusLine(), sentence.length()));
-        }
-
-        method.releaseConnection();
     }
 
     /**
