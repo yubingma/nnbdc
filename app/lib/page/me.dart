@@ -30,6 +30,9 @@ import 'package:nnbdc/page/subscription.dart';
 import 'package:nnbdc/util/subscription_util.dart';
 import 'package:nnbdc/util/platform_util.dart';
 
+import 'package:nnbdc/util/level_util.dart';
+import 'package:nnbdc/widget/floating_speech_bubble.dart';
+
 import '../global.dart';
 import '../state.dart';
 import '../theme/app_theme.dart';
@@ -245,7 +248,9 @@ class _MePageState extends State<MePage> {
       // 如果查不到等级(很可能是因为系统数据库还没同步完成)，使用默认等级（不显示错误提示）
       LevelVo levelVo;
       if (level != null) {
-        levelVo = LevelVo(level.id)..name = level.name;
+        levelVo = LevelVo(level.id)
+          ..name = LevelUtil.getTitleName(level.level)
+          ..level = level.level;
       } else {
         levelVo = LevelVo(user.levelId)..name = '默认等级';
       }
@@ -411,6 +416,13 @@ class _MePageState extends State<MePage> {
           ),
           child: Column(
             children: [
+              // 说话气泡 (带浮动动画)
+              FloatingSpeechBubble(
+                text: LevelUtil.getTitleQuote(studyProgress!.level.level ?? 1),
+                backgroundColor: Colors.white,
+                textColor: AppTheme.primaryColor,
+              ),
+              const SizedBox(height: 12),
               // 用户头像
               Container(
                 width: MediaQuery.of(context).size.width > 600 ? 80 : 60,
