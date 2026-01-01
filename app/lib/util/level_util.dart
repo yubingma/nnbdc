@@ -118,7 +118,7 @@ class LevelUtil {
     AnimalTitle(
       name: '虎鲸',
       icon: '🐋',
-      quote: '海洋的霸主，智慧与力量的化身。',
+      quote: '我不靠蛮力取胜。',
       color: Color(0xFF455A64),
       level: 9,
       minScore: 60001,
