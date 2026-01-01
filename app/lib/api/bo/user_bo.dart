@@ -131,6 +131,7 @@ class UserBo {
           final levelVo = LevelVo(user.levelId);
           levelVo.name = LevelUtil.getTitleName(levelInt);
           levelVo.level = levelInt;
+          levelVo.figure = LevelUtil.getTitleIcon(levelInt);
           userVo.level = levelVo;
 
           final today = DateTime(AppClock.now().year, AppClock.now().month, AppClock.now().day);

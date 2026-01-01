@@ -250,9 +250,12 @@ class _MePageState extends State<MePage> {
       if (level != null) {
         levelVo = LevelVo(level.id)
           ..name = LevelUtil.getTitleName(level.level)
-          ..level = level.level;
+          ..level = level.level
+          ..figure = LevelUtil.getTitleIcon(level.level);
       } else {
-        levelVo = LevelVo(user.levelId)..name = '默认等级';
+        levelVo = LevelVo(user.levelId)
+          ..name = '默认等级'
+          ..figure = '❓';
       }
 
       if (mounted) {
@@ -426,22 +429,39 @@ class _MePageState extends State<MePage> {
                 textColor: AppTheme.primaryColor,
               ),
               const SizedBox(height: 12),
-              // 用户头像
+              // 等级信息
               Container(
-                width: MediaQuery.of(context).size.width > 600 ? 80 : 60,
-                height: MediaQuery.of(context).size.width > 600 ? 80 : 60,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                 decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white.withValues(alpha: 0.2),
-                  border: Border.all(color: Colors.white, width: 3),
+                  color: Colors.white.withValues(alpha: 0.25),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 1),
                 ),
-                child: Icon(
-                  Icons.person,
-                  size: MediaQuery.of(context).size.width > 600 ? 40 : 30,
-                  color: Colors.white,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      studyProgress!.level.figure ?? '',
+                      style: TextStyle(
+                        fontSize: MediaQuery.of(context).size.width > 600 ? 20 : 18,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      studyProgress!.level.name!,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: MediaQuery.of(context).size.width > 600 ? 16 : 14,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              SizedBox(height: MediaQuery.of(context).size.width > 600 ? 12 : 8),
+              SizedBox(height: MediaQuery.of(context).size.width > 600 ? 16 : 12),
+              // 学习天数
+
               // 用户昵称
               Text(
                 Util.getNickNameOfUser(loggedInUser),
@@ -478,26 +498,7 @@ class _MePageState extends State<MePage> {
                 ),
               ],
               SizedBox(height: MediaQuery.of(context).size.width > 600 ? 8 : 6),
-              // 等级信息
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.25),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 1),
-                ),
-                child: Text(
-                  studyProgress!.level.name!,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: MediaQuery.of(context).size.width > 600 ? 16 : 14,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1.2,
-                  ),
-                ),
-              ),
-              SizedBox(height: MediaQuery.of(context).size.width > 600 ? 16 : 12),
-              // 学习天数
+
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.baseline,
@@ -2102,13 +2103,21 @@ class _MePageState extends State<MePage> {
                   backgroundColor: backgroundColor,
                   elevation: 0,
                   centerTitle: true,
-                  title: Text(
-                    '我的',
-                    style: TextStyle(
-                      color: isDarkModeEnabled ? Colors.white : Colors.black,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 2.0,
+                  title:
+                      // 用户头像
+                      Container(
+                    width: MediaQuery.of(context).size.width > 600 ? 80 : 48,
+                    height: MediaQuery.of(context).size.width > 600 ? 80 : 48,
+                    margin: EdgeInsets.fromLTRB(0, 8, 0, 0),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.blue.withValues(alpha: 0.2),
+                      border: Border.all(color: Colors.white, width: 3),
+                    ),
+                    child: Icon(
+                      Icons.person,
+                      size: MediaQuery.of(context).size.width > 600 ? 40 : 30,
+                      color: Colors.white,
                     ),
                   ),
                 ),
