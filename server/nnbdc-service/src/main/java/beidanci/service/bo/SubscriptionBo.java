@@ -234,9 +234,15 @@ public class SubscriptionBo extends BaseBo<User> {
      */
     private ReceiptVerificationResult verifyReceipt(String receiptData, String verifyUrl) throws IOException {
         try {
+            // 验证收据数据不为空
+            if (receiptData == null || receiptData.isEmpty()) {
+                logger.error("收据数据为空或null");
+                return new ReceiptVerificationResult(false, "收据数据为空", -1, null, null, null);
+            }
+            
             // 记录原始收据数据的长度和前100个字符（用于调试）
-            logger.info("原始收据数据长度: {}", receiptData != null ? receiptData.length() : 0);
-            if (receiptData != null && receiptData.length() > 0) {
+            logger.info("原始收据数据长度: {}", receiptData.length());
+            if (receiptData.length() > 0) {
                 String preview = receiptData.length() > 100 ? receiptData.substring(0, 100) : receiptData;
                 logger.info("原始收据数据前100字符: {}", preview);
             }
