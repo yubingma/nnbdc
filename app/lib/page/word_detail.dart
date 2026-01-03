@@ -540,7 +540,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                       isEditMode = value;
                                     });
                                   },
-                                  activeColor: const Color(0xFF4A90E2),
+                                  activeThumbColor: const Color(0xFF4A90E2),
                                 ),
                               ),
                             ],

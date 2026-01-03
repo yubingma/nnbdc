@@ -1270,7 +1270,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         child: Switch.adaptive(
           value: value,
           onChanged: onChanged,
-          activeColor: Global.highlight,
+          activeThumbColor: Global.highlight,
           materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
         ),
       ),
@@ -2576,7 +2576,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                   child: Switch(
                     value: _isEditMode,
                     onChanged: (_) {}, // 空回调而不是null，保持Switch启用状态
-                    activeColor: const Color(0xFF4A90E2),
+                    activeThumbColor: const Color(0xFF4A90E2),
                     inactiveThumbColor: Colors.grey[400],
                     inactiveTrackColor: Colors.grey[300],
                     activeTrackColor: const Color(0xFF4A90E2).withValues(alpha: 0.5),

@@ -1,0 +1,75 @@
+/**
+ * 统一 Gradle 仓库镜像（对所有 Build 生效，包括 Flutter SDK 的 composite build `:gradle`）。
+ *
+ * 背景：部分网络环境访问 dl.google.com 会出现 TLS/SSL 握手失败，导致依赖解析失败。
+ * 通过 init script 可以在“构建初始化阶段”强制为所有项目/设置注入镜像仓库，绕过该问题。
+ *
+ * 如需临时禁用：设置环境变量 NNBDC_DISABLE_INIT_SCRIPT=true
+ */
+
+def disableInit = (System.getenv('NNBDC_DISABLE_INIT_SCRIPT') ?: '').toLowerCase() == 'true'
+def isCI = (System.getenv('GITHUB_ACTIONS') ?: '').toLowerCase() == 'true'
+
+if (disableInit) {
+    println('[NNBDC] 已禁用 init.gradle 仓库注入（NNBDC_DISABLE_INIT_SCRIPT=true）')
+} else {
+    println('[NNBDC] init.gradle 已加载：将为所有项目/设置注入镜像仓库（可用 NNBDC_DISABLE_INIT_SCRIPT=true 禁用）')
+    def configureRepos = { repos ->
+        // 先清空，避免只剩 google() 时直接访问 dl.google.com
+        try {
+            repos.clear()
+        } catch (Throwable ignored) {
+            // 某些容器实现不支持 clear，忽略即可（后续仍会追加镜像仓库）
+        }
+
+        if (!isCI) {
+            // 本地/国内环境：镜像优先
+            repos.maven { url = uri('https://maven.aliyun.com/repository/google') }
+            repos.maven { url = uri('https://maven.aliyun.com/repository/public') }
+            repos.maven { url = uri('https://maven.aliyun.com/repository/gradle-plugin') }
+            repos.maven { url = uri('https://mirrors.cloud.tencent.com/nexus/repository/maven-public/') }
+            // Flutter 的 Maven（国内镜像）
+            repos.maven { url = uri('https://storage.flutter-io.cn') }
+        }
+
+        // JitPack（部分三方库使用）
+        repos.maven { url = uri('https://jitpack.io') }
+
+        // Flutter 官方 Maven（CI/海外环境兜底）
+        repos.maven { url = uri('https://storage.googleapis.com/download.flutter.io') }
+
+        repos.mavenCentral()
+        repos.gradlePluginPortal()
+
+        // 官方源作为兜底（若你的环境对 dl.google.com 握手必失败，可注释掉这一行）
+        repos.google()
+    }
+
+    // 尽量早：对 Settings 生效（覆盖 pluginManagement / dependencyResolutionManagement）
+    gradle.settingsEvaluated { settings ->
+        try {
+            settings.pluginManagement { pm ->
+                pm.repositories { configureRepos(delegate) }
+            }
+        } catch (Throwable ignored) {}
+
+        try {
+            settings.dependencyResolutionManagement { drm ->
+                drm.repositories { configureRepos(delegate) }
+            }
+        } catch (Throwable ignored) {}
+    }
+
+    // 对所有项目生效（包括 composite build 里的子项目）
+    gradle.allprojects { p ->
+        try {
+            p.repositories { configureRepos(delegate) }
+        } catch (Throwable ignored) {}
+        try {
+            p.buildscript.repositories { configureRepos(delegate) }
+        } catch (Throwable ignored) {}
+    }
+}
+
+
+

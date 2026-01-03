@@ -115,8 +115,15 @@ class LoadingService {
     );
 
     // 添加到Overlay
-    if (Get.overlayContext != null) {
-      Overlay.of(Get.overlayContext!).insert(_overlayEntry!);
+    if (Get.key.currentState?.overlay != null) {
+      Get.key.currentState?.overlay!.insert(_overlayEntry!);
+    } else if (Get.overlayContext != null) {
+      // 备用方案：尝试通过上下文查找
+      try {
+        Overlay.of(Get.overlayContext!)?.insert(_overlayEntry!);
+      } catch (e) {
+        debugPrint('LoadingService: Failed to insert overlay - $e');
+      }
     }
 
     // 设置自动消失
