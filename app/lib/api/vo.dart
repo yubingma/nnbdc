@@ -1156,7 +1156,6 @@ User userVo2User(UserVo userVo) {
       isTodayLearningStarted: userVo.isTodayLearningStarted!,
       learnedDays: userVo.learnedDays!,
       learningFinished: userVo.learningFinished!,
-      levelId: userVo.level!.id,
       masteredWordsCount: userVo.masteredWordsCount!,
       maxContinuousDakaDayCount: userVo.maxContinuousDakaDayCount!,
       showAnswersDirectly: userVo.showAnswersDirectly!,

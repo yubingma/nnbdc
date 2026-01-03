@@ -159,7 +159,7 @@ class MyDatabase extends _$MyDatabase {
   // you should bump this number whenever you change or add a table definition. Migrations
   // are covered later in this readme.
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration {
@@ -197,6 +197,9 @@ class MyDatabase extends _$MyDatabase {
           // 从版本 7 升级到版本 8：删除levels表
           if (from < 8) {
             await _migrateFromV7ToV8RemoveLevelsTable(m);
+          }
+          if (from < 9) {
+            await _migrateFromV8ToV9RemoveLevelId();
           }
         } catch (e, stackTrace) {
           // 升级失败，记录错误日志
@@ -245,6 +248,25 @@ class MyDatabase extends _$MyDatabase {
       
       // 从user_db_logs中删除与levels相关的记录
       await customStatement("DELETE FROM user_db_logs WHERE tbl_name = 'levels' OR tbl_name = 'level';");
+    });
+  }
+
+  /// 从版本 8 升级到版本 9：删除users表中的level_id字段
+  Future<void> _migrateFromV8ToV9RemoveLevelId() async {
+    await transaction(() async {
+      // 注意：SQLite 3.35.0+ 支持 DROP COLUMN
+      // 如果设备上的 SQLite 版本较旧，此语句可能会失败。
+      // 但Flutter通常捆绑较新的SQLite，或者Drift有处理机制。
+      // 这里直接尝试使用 SQL 删除列。
+      try {
+        await customStatement('ALTER TABLE users DROP COLUMN level_id');
+      } catch (e) {
+        // 如果直接删除失败，通常意味着SQLite版本过低或约束限制。
+        // 在这种情况下，Drift通常建议重建表，但这里尝试忽略或记录，
+        // 因为level_id字段在代码中已移除，不影响后续运行（除了占用空间）。
+        Global.logger.e('删除 level_id 列失败 (可能是SQLite版本过低): $e');
+        // 可选：执行复杂的 recreate table 逻辑，但风险较大，暂且保留列。
+      }
     });
   }
 

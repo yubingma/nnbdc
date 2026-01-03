@@ -8,6 +8,7 @@ import 'package:nnbdc/util/error_handler.dart';
 import 'package:nnbdc/util/utils.dart';
 import 'dart:async';
 import '../../services/throttled_sync_service.dart';
+import 'package:nnbdc/util/level_util.dart';
 
 class WordBo {
   static final WordBo _instance = WordBo._internal();
@@ -27,7 +28,6 @@ class WordBo {
     }
   }
 
-
   // 通用的查询通用词典释义项方法
   Future<List<MeaningItem>> _getCommonDictMeaningItems(String wordId) async {
     final db = MyDatabase.instance;
@@ -35,7 +35,7 @@ class WordBo {
       ..where((mi) => mi.wordId.equals(wordId) & mi.dictId.equals(Global.commonDictId))
       ..orderBy([(mi) => OrderingTerm(expression: mi.popularity)]);
     final commonMeaningItems = await commonQuery.get();
-    
+
     // 如果通用词典没有释义项，查询所有可用的释义项
     if (commonMeaningItems.isEmpty) {
       final anyQuery = db.select(db.meaningItems)
@@ -43,7 +43,7 @@ class WordBo {
         ..orderBy([(mi) => OrderingTerm(expression: mi.popularity)]);
       return await anyQuery.get();
     }
-    
+
     return commonMeaningItems;
   }
 
@@ -51,37 +51,28 @@ class WordBo {
   Future<void> _loadSentencesForMeaningItems(List<MeaningItemVo> meaningItemVos) async {
     final db = MyDatabase.instance;
     final selectedMeaningItemIds = meaningItemVos.map((mi) => mi.id!).toList();
-    
+
     if (selectedMeaningItemIds.isEmpty) return;
-    
-    final sentenceQuery = db.select(db.sentences)
-      ..where((s) => s.meaningItemId.isIn(selectedMeaningItemIds));
+
+    final sentenceQuery = db.select(db.sentences)..where((s) => s.meaningItemId.isIn(selectedMeaningItemIds));
     final sentences = await sentenceQuery.get();
     final sentencesMap = <String, List<Sentence>>{};
-    
+
     for (var s in sentences) {
       if (!sentencesMap.containsKey(s.meaningItemId)) {
         sentencesMap[s.meaningItemId] = [];
       }
       sentencesMap[s.meaningItemId]!.add(s);
     }
-    
+
     // 将例句分配给对应的释义项
     for (final miVo in meaningItemVos) {
       if (sentencesMap.containsKey(miVo.id)) {
         final sentenceVos = <SentenceVo>[];
         for (final s in sentencesMap[miVo.id!]!) {
           final author = UserVo.c2(s.authorId);
-          final sentenceVo = SentenceVo(
-            s.id,
-            s.english,
-            s.chinese,
-            s.englishDigest,
-            s.theType.isEmpty ? 'tts' : s.theType,
-            s.handCount,
-            s.footCount,
-            author
-          );
+          final sentenceVo =
+              SentenceVo(s.id, s.english, s.chinese, s.englishDigest, s.theType.isEmpty ? 'tts' : s.theType, s.handCount, s.footCount, author);
           sentenceVos.add(sentenceVo);
         }
         miVo.sentences = sentenceVos;
@@ -92,24 +83,22 @@ class WordBo {
   // 通用的查询例句数据并返回映射的方法（用于批量处理）
   Future<Map<String, List<Sentence>>> _loadSentencesMap(List<String> meaningItemIds) async {
     final db = MyDatabase.instance;
-    
+
     if (meaningItemIds.isEmpty) return {};
-    
-    final sentenceQuery = db.select(db.sentences)
-      ..where((s) => s.meaningItemId.isIn(meaningItemIds));
+
+    final sentenceQuery = db.select(db.sentences)..where((s) => s.meaningItemId.isIn(meaningItemIds));
     final sentences = await sentenceQuery.get();
     final sentencesMap = <String, List<Sentence>>{};
-    
+
     for (var s in sentences) {
       if (!sentencesMap.containsKey(s.meaningItemId)) {
         sentencesMap[s.meaningItemId] = [];
       }
       sentencesMap[s.meaningItemId]!.add(s);
     }
-    
+
     return sentencesMap;
   }
-
 
   // 根据单词ID和用户ID进行查词，支持词书过滤
   Future<SearchWordResult> searchWordById(String wordId, String? userId) async {
@@ -117,7 +106,7 @@ class WordBo {
     try {
       final wordQuery = db.select(db.words)..where((w) => w.id.equals(wordId));
       final localWord = await wordQuery.getSingleOrNull();
-      
+
       if (localWord == null) {
         return SearchWordResult(null, null, null, null, null);
       }
@@ -151,8 +140,8 @@ class WordBo {
             mi.meaning,
             null, // dict
             null, // synonyms
-            null  // sentences
-        );
+            null // sentences
+            );
         meaningItemVos.add(miVo);
       }
       wordVo.meaningItems = meaningItemVos;
@@ -165,13 +154,12 @@ class WordBo {
         ..where((sw) => sw.wordId.equals(localWord.id))
         ..orderBy([(sw) => OrderingTerm(expression: sw.distance)]);
       final similarWords = await similarWordsQuery.get();
-      
+
       final similarWordVos = <WordVo>[];
       for (final sw in similarWords) {
-        final similarWordQuery = db.select(db.words)
-          ..where((w) => w.id.equals(sw.similarWordId));
+        final similarWordQuery = db.select(db.words)..where((w) => w.id.equals(sw.similarWordId));
         final similarWord = await similarWordQuery.getSingleOrNull();
-        
+
         if (similarWord != null) {
           final similarWordVo = WordVo.c2(similarWord.spell)
             ..id = similarWord.id
@@ -182,7 +170,7 @@ class WordBo {
             ..britishPronounce = similarWord.britishPronounce
             ..popularity = similarWord.popularity
             ..groupInfo = similarWord.groupInfo;
-          
+
           // 为形近词查询释义项，根据用户ID决定是否进行词书过滤
           List<MeaningItem> similarMeaningItems;
           if (userId != null && userId.isNotEmpty) {
@@ -192,7 +180,7 @@ class WordBo {
             // 用户ID为空，直接查询通用词典
             similarMeaningItems = await _getCommonDictMeaningItems(similarWord.id);
           }
-          
+
           final similarMeaningItemVos = <MeaningItemVo>[];
           for (final mi in similarMeaningItems) {
             final miVo = MeaningItemVo(
@@ -201,12 +189,12 @@ class WordBo {
                 mi.meaning,
                 null, // dict
                 null, // synonyms
-                null  // sentences
-            );
+                null // sentences
+                );
             similarMeaningItemVos.add(miVo);
           }
           similarWordVo.meaningItems = similarMeaningItemVos;
-          
+
           similarWordVos.add(similarWordVo);
         }
       }
@@ -215,11 +203,9 @@ class WordBo {
       // 检查是否在用户选择的词书中
       bool isInMySelectedDicts = false;
       if (userId != null && userId.isNotEmpty) {
-        final learningDicts = await (db.select(db.learningDicts)
-              ..where((tbl) => tbl.userId.equals(userId)))
-            .get();
+        final learningDicts = await (db.select(db.learningDicts)..where((tbl) => tbl.userId.equals(userId))).get();
         final selectedDictIds = learningDicts.map((e) => e.dictId).toList();
-        
+
         if (selectedDictIds.isNotEmpty) {
           final selectedMiCount = await (db.selectOnly(db.meaningItems)
                 ..addColumns([countAll()])
@@ -329,8 +315,7 @@ class WordBo {
   }
 
   Future<SearchWordResult?> _tryBuildLocalResultBySpell(String spell, MyDatabase db) async {
-    final wordQuery = db.select(db.words)
-      ..where((w) => w.spell.equals(spell));
+    final wordQuery = db.select(db.words)..where((w) => w.spell.equals(spell));
     final localWord = await wordQuery.getSingleOrNull();
 
     if (localWord != null) {
@@ -357,24 +342,16 @@ class WordBo {
 
       final meaningItemVos = <MeaningItemVo>[];
       for (final mi in meaningItems) {
-        final miVo = MeaningItemVo(
-            mi.id,
-            mi.ciXing,
-            mi.meaning,
-            null,
-            null,
-            null);
+        final miVo = MeaningItemVo(mi.id, mi.ciXing, mi.meaning, null, null, null);
         meaningItemVos.add(miVo);
       }
       wordVo.meaningItems = meaningItemVos;
 
       bool isInMySelectedDicts = false;
       if (currentUser != null && currentUser.id != null) {
-        final learningDicts = await (db.select(db.learningDicts)
-              ..where((tbl) => tbl.userId.equals(currentUser.id!)))
-            .get();
+        final learningDicts = await (db.select(db.learningDicts)..where((tbl) => tbl.userId.equals(currentUser.id!))).get();
         final selectedDictIds = learningDicts.map((e) => e.dictId).toList();
-        
+
         if (selectedDictIds.isNotEmpty) {
           final selectedMiCount = await (db.selectOnly(db.meaningItems)
                 ..addColumns([countAll()])
@@ -422,8 +399,7 @@ class WordBo {
     if (rawWordDict == null) {
       return Result("ERROR", "用户生词本不存在", false);
     }
-    final existingDictWord =
-        await db.dictWordsDao.getById(rawWordDict.id, word.id);
+    final existingDictWord = await db.dictWordsDao.getById(rawWordDict.id, word.id);
     if (existingDictWord != null) {
       return Result("ERROR", "单词已在生词本中", false);
     }
@@ -435,18 +411,18 @@ class WordBo {
       createTime: now,
       updateTime: now,
     );
-    
+
     // 使用事务确保数据一致性
     await db.transaction(() async {
       // 1. 添加dictWord
       await db.dictWordsDao.insertEntity(dictWord, true);
-      
+
       // 2. 更新生词本的wordCount（并生成日志用于同步）
       await db.dictsDao.updateWordCount(rawWordDict.id, true);
-      
+
       Global.logger.d('单词已添加到生词本: spell=$spell, wordId=${word.id}');
     });
-    
+
     // 延迟触发同步，确保事务完全提交
     Future.delayed(Duration.zero, () {
       ThrottledDbSyncService().requestSync();
@@ -459,8 +435,7 @@ class WordBo {
     return Result("SUCCESS", "添加成功", true)..data = dictWordVo;
   }
 
-  Future<PagedResults<LearningWordVo>> getLearningWordsForAPage(
-      int fromIndex, int pageSize, String userId) async {
+  Future<PagedResults<LearningWordVo>> getLearningWordsForAPage(int fromIndex, int pageSize, String userId) async {
     final db = MyDatabase.instance;
     final user = await db.usersDao.getUserById(userId);
     if (user == null) {
@@ -468,8 +443,7 @@ class WordBo {
     }
     try {
       final query = db.select(db.learningWords)
-        ..where((tbl) =>
-            tbl.userId.equals(userId) & tbl.lifeValue.isBiggerThanValue(0))
+        ..where((tbl) => tbl.userId.equals(userId) & tbl.lifeValue.isBiggerThanValue(0))
         ..orderBy([
           (tbl) => OrderingTerm(expression: tbl.addTime),
           (tbl) => OrderingTerm(expression: tbl.lifeValue),
@@ -477,11 +451,9 @@ class WordBo {
         ])
         ..limit(pageSize, offset: fromIndex);
       final learningWords = await query.get();
-      final countQuery = db.selectOnly(db.learningWords)
-        ..addColumns([countAll()]);
+      final countQuery = db.selectOnly(db.learningWords)..addColumns([countAll()]);
       final userIdCondition = db.learningWords.userId.equals(userId);
-      final lifeValueCondition =
-          db.learningWords.lifeValue.isBiggerThanValue(0);
+      final lifeValueCondition = db.learningWords.lifeValue.isBiggerThanValue(0);
       countQuery.where(userIdCondition & lifeValueCondition);
       final countResult = await countQuery.getSingle();
       final total = countResult.read(countAll()) ?? 0;
@@ -490,7 +462,7 @@ class WordBo {
         final word = await db.wordsDao.getWordById(lw.wordId);
         if (word != null) {
           final userVo = UserVo.c2(userId);
-          userVo.level = LevelVo(user.levelId);
+          userVo.level = LevelUtil.getLevelVoByScore(user.totalScore);
           final wordVo = WordVo.c2(word.spell)
             ..id = word.id
             ..shortDesc = word.shortDesc
@@ -503,19 +475,11 @@ class WordBo {
           final meaningItems = await getWordMeaningItems(word.id, userId);
           List<MeaningItemVo> meaningItemVos = [];
           for (final mi in meaningItems) {
-            meaningItemVos.add(MeaningItemVo(
-                mi.id, mi.ciXing, mi.meaning, null, null, null));
+            meaningItemVos.add(MeaningItemVo(mi.id, mi.ciXing, mi.meaning, null, null, null));
           }
           wordVo.meaningItems = meaningItemVos;
-          final learningWordVo = LearningWordVo(
-              userVo,
-              lw.addTime,
-              lw.addDay,
-              lw.lifeValue,
-              lw.lastLearningDate,
-              lw.learningOrder,
-              lw.learnedTimes,
-              wordVo);
+          final learningWordVo =
+              LearningWordVo(userVo, lw.addTime, lw.addDay, lw.lifeValue, lw.lastLearningDate, lw.learningOrder, lw.learnedTimes, wordVo);
           learningWordVos.add(learningWordVo);
         }
       }
@@ -528,8 +492,7 @@ class WordBo {
     }
   }
 
-  Future<PagedResults<LearningWordVo>> getTodayNewWordsForAPage(
-      int fromIndex, int pageSize, String userId) async {
+  Future<PagedResults<LearningWordVo>> getTodayNewWordsForAPage(int fromIndex, int pageSize, String userId) async {
     final db = MyDatabase.instance;
     final user = await db.usersDao.getUserById(userId);
     if (user == null) {
@@ -551,10 +514,8 @@ class WordBo {
       ..addColumns([countAll()])
       ..where(db.learningWords.userId.equals(userId))
       ..where(db.learningWords.isTodayNewWord.equals(true))
-      ..where(
-          db.learningWords.lastLearningDate.isBiggerOrEqualValue(startOfDay))
-      ..where(
-          db.learningWords.lastLearningDate.isSmallerOrEqualValue(endOfDay));
+      ..where(db.learningWords.lastLearningDate.isBiggerOrEqualValue(startOfDay))
+      ..where(db.learningWords.lastLearningDate.isSmallerOrEqualValue(endOfDay));
     final countResult = await countQuery.getSingle();
     final total = countResult.read(countAll()) ?? 0;
     List<LearningWordVo> learningWordVos = [];
@@ -562,7 +523,7 @@ class WordBo {
       final word = await db.wordsDao.getWordById(lw.wordId);
       if (word != null) {
         final userVo = UserVo.c2(userId);
-        userVo.level = LevelVo(user.levelId);
+        userVo.level = LevelUtil.getLevelVoByScore(user.totalScore);
         final wordVo = WordVo.c2(word.spell)
           ..id = word.id
           ..shortDesc = word.shortDesc
@@ -575,19 +536,11 @@ class WordBo {
         final meaningItems = await getWordMeaningItems(word.id, userId);
         List<MeaningItemVo> meaningItemVos = [];
         for (final mi in meaningItems) {
-          meaningItemVos.add(MeaningItemVo(
-              mi.id, mi.ciXing, mi.meaning, null, null, null));
+          meaningItemVos.add(MeaningItemVo(mi.id, mi.ciXing, mi.meaning, null, null, null));
         }
         wordVo.meaningItems = meaningItemVos;
-        final learningWordVo = LearningWordVo(
-            userVo,
-            lw.addTime,
-            lw.addDay,
-            lw.lifeValue,
-            lw.lastLearningDate,
-            lw.learningOrder,
-            lw.learnedTimes,
-            wordVo);
+        final learningWordVo =
+            LearningWordVo(userVo, lw.addTime, lw.addDay, lw.lifeValue, lw.lastLearningDate, lw.learningOrder, lw.learnedTimes, wordVo);
         learningWordVos.add(learningWordVo);
       }
     }
@@ -596,8 +549,7 @@ class WordBo {
     return result;
   }
 
-  Future<PagedResults<LearningWordVo>> getTodayOldWordsForAPage(
-      int fromIndex, int pageSize, String userId) async {
+  Future<PagedResults<LearningWordVo>> getTodayOldWordsForAPage(int fromIndex, int pageSize, String userId) async {
     final db = MyDatabase.instance;
     final user = await db.usersDao.getUserById(userId);
     if (user == null) {
@@ -619,10 +571,8 @@ class WordBo {
       ..addColumns([countAll()])
       ..where(db.learningWords.userId.equals(userId))
       ..where(db.learningWords.isTodayNewWord.equals(false))
-      ..where(
-          db.learningWords.lastLearningDate.isBiggerOrEqualValue(startOfDay))
-      ..where(
-          db.learningWords.lastLearningDate.isSmallerOrEqualValue(endOfDay));
+      ..where(db.learningWords.lastLearningDate.isBiggerOrEqualValue(startOfDay))
+      ..where(db.learningWords.lastLearningDate.isSmallerOrEqualValue(endOfDay));
     final countResult = await countQuery.getSingle();
     final total = countResult.read(countAll()) ?? 0;
     List<LearningWordVo> learningWordVos = [];
@@ -630,7 +580,7 @@ class WordBo {
       final word = await db.wordsDao.getWordById(lw.wordId);
       if (word != null) {
         final userVo = UserVo.c2(userId);
-        userVo.level = LevelVo(user.levelId);
+        userVo.level = LevelUtil.getLevelVoByScore(user.totalScore);
         final wordVo = WordVo.c2(word.spell)
           ..id = word.id
           ..shortDesc = word.shortDesc
@@ -643,19 +593,11 @@ class WordBo {
         final meaningItems = await getWordMeaningItems(word.id, userId);
         List<MeaningItemVo> meaningItemVos = [];
         for (final mi in meaningItems) {
-          meaningItemVos.add(MeaningItemVo(
-              mi.id, mi.ciXing, mi.meaning, null, null, null));
+          meaningItemVos.add(MeaningItemVo(mi.id, mi.ciXing, mi.meaning, null, null, null));
         }
         wordVo.meaningItems = meaningItemVos;
-        final learningWordVo = LearningWordVo(
-            userVo,
-            lw.addTime,
-            lw.addDay,
-            lw.lifeValue,
-            lw.lastLearningDate,
-            lw.learningOrder,
-            lw.learnedTimes,
-            wordVo);
+        final learningWordVo =
+            LearningWordVo(userVo, lw.addTime, lw.addDay, lw.lifeValue, lw.lastLearningDate, lw.learningOrder, lw.learnedTimes, wordVo);
         learningWordVos.add(learningWordVo);
       }
     }
@@ -664,8 +606,7 @@ class WordBo {
     return result;
   }
 
-  Future<PagedResults<MasteredWordVo>> getMasteredWordsForAPage(
-      int fromIndex, int pageSize) async {
+  Future<PagedResults<MasteredWordVo>> getMasteredWordsForAPage(int fromIndex, int pageSize) async {
     try {
       final results = PagedResults<MasteredWordVo>(0);
       final db = MyDatabase.instance;
@@ -681,8 +622,7 @@ class WordBo {
       final masteredWordQuery = db.select(db.masteredWords)
         ..where((mw) => mw.userId.equals(userId))
         ..orderBy([
-          (t) =>
-              OrderingTerm(expression: t.masterAtTime, mode: OrderingMode.desc),
+          (t) => OrderingTerm(expression: t.masterAtTime, mode: OrderingMode.desc),
           (t) => OrderingTerm(expression: t.wordId, mode: OrderingMode.desc)
         ])
         ..limit(pageSize, offset: fromIndex);
@@ -716,13 +656,7 @@ class WordBo {
           List<MeaningItemVo> meaningItemVos = [];
           if (meaningItemsMap.containsKey(wordEntry.id)) {
             meaningItemVos = meaningItemsMap[wordEntry.id]!.map((mi) {
-              return MeaningItemVo(
-                  mi.id,
-                  mi.ciXing,
-                  mi.meaning,
-                  null,
-                  null,
-                  null);
+              return MeaningItemVo(mi.id, mi.ciXing, mi.meaning, null, null, null);
             }).toList();
           }
           wordVo.meaningItems = meaningItemVos;
@@ -737,8 +671,7 @@ class WordBo {
     }
   }
 
-  Future<PagedResults<DictWordVo>> getDictWordsForAPage(
-      String dictId, int fromIndex, int pageSize) async {
+  Future<PagedResults<DictWordVo>> getDictWordsForAPage(String dictId, int fromIndex, int pageSize) async {
     try {
       // 获取词典单词总数
       final results = PagedResults<DictWordVo>(0);
@@ -748,7 +681,7 @@ class WordBo {
         ..where(db.dictWords.dictId.equals(dictId));
       final count = await countQuery.getSingle();
       results.total = count.read(countAll()) ?? 0;
-      
+
       final dictWordQuery = db.select(db.dictWords)
         ..where((dw) => dw.dictId.equals(dictId))
         // 所有词书都按seq排序
@@ -762,7 +695,7 @@ class WordBo {
       final wordQuery = db.select(db.words)..where((w) => w.id.isIn(wordIds));
       final wordEntries = await wordQuery.get();
       final wordMap = {for (var word in wordEntries) word.id: word};
-      
+
       // 1) 先取本词书(dictId)的定制释义
       final dictSpecificMeaningQuery = db.select(db.meaningItems)
         ..where((mi) => mi.wordId.isIn(wordIds) & mi.dictId.equals(dictId))
@@ -774,9 +707,8 @@ class WordBo {
       }
 
       // 2) 对没有定制释义的单词，回退到通用释义，并按本词书的 popularityLimit 进行过滤
-      final wordsWithoutCustom = wordIds
-          .where((wordId) => !meaningItemsMap.containsKey(wordId) || (meaningItemsMap[wordId]?.isEmpty ?? true))
-          .toList();
+      final wordsWithoutCustom =
+          wordIds.where((wordId) => !meaningItemsMap.containsKey(wordId) || (meaningItemsMap[wordId]?.isEmpty ?? true)).toList();
       int? popularityLimit;
       final currDict = await db.dictsDao.findById(dictId);
       if (currDict != null) {
@@ -824,15 +756,7 @@ class WordBo {
                 List<SentenceVo> sentenceVos = [];
                 for (var s in sentencesMap[mi.id]!) {
                   final author = UserVo.c2(s.authorId);
-                  sentenceVos.add(SentenceVo(
-                      s.id,
-                      s.english,
-                      s.chinese,
-                      s.englishDigest,
-                      s.theType,
-                      s.footCount,
-                      s.handCount,
-                      author));
+                  sentenceVos.add(SentenceVo(s.id, s.english, s.chinese, s.englishDigest, s.theType, s.footCount, s.handCount, author));
                 }
                 meaningItemVo.sentences = sentenceVos;
               }
@@ -852,8 +776,7 @@ class WordBo {
   }
 
   Future<Result> deleteMasteredWord(String userId, String wordId) async {
-    await MyDatabase.instance.masteredWordsDao
-        .deleteMasteredWord(userId, wordId, true, true);
+    await MyDatabase.instance.masteredWordsDao.deleteMasteredWord(userId, wordId, true, true);
     final result = Result<dynamic>('200', null, true);
     return result;
   }
@@ -862,16 +785,13 @@ class WordBo {
     try {
       Global.logger.d('开始本地查询词典单词位置: dictId=$dictId, spell=$spell');
       final db = MyDatabase.instance;
-      final wordQuery = db.select(db.words)
-        ..where((tbl) => tbl.spell.equals(spell));
+      final wordQuery = db.select(db.words)..where((tbl) => tbl.spell.equals(spell));
       final word = await wordQuery.getSingleOrNull();
       if (word == null) {
         Global.logger.d('未找到拼写为 $spell 的单词');
         return Result("SUCCESS", "获取成功", true)..data = -1;
       }
-      final dictWordQuery = db.select(db.dictWords)
-        ..where(
-            (tbl) => tbl.dictId.equals(dictId) & tbl.wordId.equals(word.id));
+      final dictWordQuery = db.select(db.dictWords)..where((tbl) => tbl.dictId.equals(dictId) & tbl.wordId.equals(word.id));
       final dictWord = await dictWordQuery.getSingleOrNull();
       if (dictWord == null) {
         Global.logger.d('单词 $spell 不在词典 $dictId 中');
@@ -895,42 +815,30 @@ class WordBo {
         Global.logger.e('查询学习中单词位置失败: 用户不存在 userId=$userId');
         return Result("ERROR", "用户不存在", false);
       }
-      final wordQuery = db.select(db.words)
-        ..where((tbl) => tbl.spell.equals(spell));
+      final wordQuery = db.select(db.words)..where((tbl) => tbl.spell.equals(spell));
       final word = await wordQuery.getSingleOrNull();
       if (word == null) {
         Global.logger.d('未找到拼写为 $spell 的单词');
         return Result("SUCCESS", "获取成功", true)..data = -1;
       }
       final learningWordQuery = db.select(db.learningWords)
-        ..where((tbl) =>
-            tbl.userId.equals(userId) &
-            tbl.wordId.equals(word.id) &
-            tbl.lifeValue.isBiggerThanValue(0));
+        ..where((tbl) => tbl.userId.equals(userId) & tbl.wordId.equals(word.id) & tbl.lifeValue.isBiggerThanValue(0));
       final learningWord = await learningWordQuery.getSingleOrNull();
       if (learningWord == null) {
         Global.logger.d('用户未在学习单词 $spell');
         return Result("SUCCESS", "获取成功", true)..data = -1;
       }
-      final countQuery = db.selectOnly(db.learningWords)
-        ..addColumns([countAll()]);
+      final countQuery = db.selectOnly(db.learningWords)..addColumns([countAll()]);
       final userIdCondition = db.learningWords.userId.equals(userId);
-      final lifeValueCondition =
-          db.learningWords.lifeValue.isBiggerThanValue(0);
-      final beforeTimeCondition =
-          db.learningWords.addTime.isSmallerThanValue(learningWord.addTime);
-      final sameTimeSmallerLifeCondition = db.learningWords.addTime
-              .equals(learningWord.addTime) &
-          db.learningWords.lifeValue.isSmallerThanValue(learningWord.lifeValue);
-      final sameTimeSameLifeSmallerWordIdCondition =
-          db.learningWords.addTime.equals(learningWord.addTime) &
-              db.learningWords.lifeValue.equals(learningWord.lifeValue) &
-              db.learningWords.wordId.isSmallerThanValue(learningWord.wordId);
-      countQuery.where(userIdCondition &
-          lifeValueCondition &
-          (beforeTimeCondition |
-              sameTimeSmallerLifeCondition |
-              sameTimeSameLifeSmallerWordIdCondition));
+      final lifeValueCondition = db.learningWords.lifeValue.isBiggerThanValue(0);
+      final beforeTimeCondition = db.learningWords.addTime.isSmallerThanValue(learningWord.addTime);
+      final sameTimeSmallerLifeCondition =
+          db.learningWords.addTime.equals(learningWord.addTime) & db.learningWords.lifeValue.isSmallerThanValue(learningWord.lifeValue);
+      final sameTimeSameLifeSmallerWordIdCondition = db.learningWords.addTime.equals(learningWord.addTime) &
+          db.learningWords.lifeValue.equals(learningWord.lifeValue) &
+          db.learningWords.wordId.isSmallerThanValue(learningWord.wordId);
+      countQuery.where(
+          userIdCondition & lifeValueCondition & (beforeTimeCondition | sameTimeSmallerLifeCondition | sameTimeSameLifeSmallerWordIdCondition));
       final countResult = await countQuery.getSingle();
       int position = countResult.read(countAll()) ?? 0;
       position += 1;
@@ -943,8 +851,7 @@ class WordBo {
   }
 
   Future<Result<int>> getMasteredWordOrder(String spell, String userId) async {
-    final order = await MyDatabase.instance.masteredWordsDao
-        .getMasteredWordOrder(userId, spell);
+    final order = await MyDatabase.instance.masteredWordsDao.getMasteredWordOrder(userId, spell);
     final result = Result<int>('200', null, true);
     result.data = order;
     return result;
@@ -962,8 +869,7 @@ class WordBo {
       final now = AppClock.now();
       final startOfDay = DateTime(now.year, now.month, now.day);
       final endOfDay = DateTime(now.year, now.month, now.day, 23, 59, 59, 999);
-      final wordQuery = db.select(db.words)
-        ..where((tbl) => tbl.spell.equals(spell));
+      final wordQuery = db.select(db.words)..where((tbl) => tbl.spell.equals(spell));
       final word = await wordQuery.getSingleOrNull();
       if (word == null) {
         Global.logger.d('未找到拼写为 $spell 的单词');
@@ -980,14 +886,11 @@ class WordBo {
         Global.logger.d('单词 $spell 不在今日单词列表中');
         return Result("SUCCESS", "获取成功", true)..data = -1;
       }
-      final countQuery = db.selectOnly(db.learningWords)
-        ..addColumns([countAll()]);
+      final countQuery = db.selectOnly(db.learningWords)..addColumns([countAll()]);
       final userIdCondition = db.learningWords.userId.equals(userId);
       final dateCondition =
-          db.learningWords.lastLearningDate.isBiggerOrEqualValue(startOfDay) &
-              db.learningWords.lastLearningDate.isSmallerOrEqualValue(endOfDay);
-      final beforeOrderCondition = db.learningWords.learningOrder
-          .isSmallerThanValue(learningWord.learningOrder);
+          db.learningWords.lastLearningDate.isBiggerOrEqualValue(startOfDay) & db.learningWords.lastLearningDate.isSmallerOrEqualValue(endOfDay);
+      final beforeOrderCondition = db.learningWords.learningOrder.isSmallerThanValue(learningWord.learningOrder);
       countQuery.where(userIdCondition & dateCondition & beforeOrderCondition);
       final countResult = await countQuery.getSingle();
       int position = countResult.read(countAll()) ?? 0;
@@ -1009,16 +912,13 @@ class WordBo {
         Global.logger.e('查询错词位置失败: 用户不存在 userId=$userId');
         return Result("ERROR", "用户不存在", false);
       }
-      final wordQuery = db.select(db.words)
-        ..where((tbl) => tbl.spell.equals(spell));
+      final wordQuery = db.select(db.words)..where((tbl) => tbl.spell.equals(spell));
       final word = await wordQuery.getSingleOrNull();
       if (word == null) {
         Global.logger.d('未找到拼写为 $spell 的单词');
         return Result("SUCCESS", "获取成功", true)..data = -1;
       }
-      final wrongWordQuery = db.select(db.userWrongWords)
-        ..where(
-            (tbl) => tbl.userId.equals(userId) & tbl.wordId.equals(word.id));
+      final wrongWordQuery = db.select(db.userWrongWords)..where((tbl) => tbl.userId.equals(userId) & tbl.wordId.equals(word.id));
       final wrongWord = await wrongWordQuery.getSingleOrNull();
       if (wrongWord == null) {
         Global.logger.d('单词 $spell 不在错词列表中');
@@ -1026,9 +926,7 @@ class WordBo {
       }
       final countQuery = db.selectOnly(db.userWrongWords)
         ..addColumns([countAll()])
-        ..where(db.userWrongWords.userId.equals(userId) &
-            db.userWrongWords.createTime
-                .isSmallerOrEqualValue(wrongWord.createTime));
+        ..where(db.userWrongWords.userId.equals(userId) & db.userWrongWords.createTime.isSmallerOrEqualValue(wrongWord.createTime));
       final countResult = await countQuery.getSingle();
       final position = countResult.read(countAll()) ?? 0;
       Global.logger.d('查询错词位置成功: spell=$spell, position=$position');
@@ -1051,8 +949,7 @@ class WordBo {
       final now = AppClock.now();
       final startOfDay = DateTime(now.year, now.month, now.day);
       final endOfDay = DateTime(now.year, now.month, now.day, 23, 59, 59, 999);
-      final wordQuery = db.select(db.words)
-        ..where((tbl) => tbl.spell.equals(spell));
+      final wordQuery = db.select(db.words)..where((tbl) => tbl.spell.equals(spell));
       final word = await wordQuery.getSingleOrNull();
       if (word == null) {
         Global.logger.d('未找到拼写为 $spell 的单词');
@@ -1070,19 +967,13 @@ class WordBo {
         Global.logger.d('单词 $spell 不在今日新词列表中');
         return Result("SUCCESS", "获取成功", true)..data = -1;
       }
-      final countQuery = db.selectOnly(db.learningWords)
-        ..addColumns([countAll()]);
+      final countQuery = db.selectOnly(db.learningWords)..addColumns([countAll()]);
       final userIdCondition = db.learningWords.userId.equals(userId);
       final isNewWordCondition = db.learningWords.isTodayNewWord.equals(true);
       final dateCondition =
-          db.learningWords.lastLearningDate.isBiggerOrEqualValue(startOfDay) &
-              db.learningWords.lastLearningDate.isSmallerOrEqualValue(endOfDay);
-      final beforeOrderCondition = db.learningWords.learningOrder
-          .isSmallerThanValue(learningWord.learningOrder);
-      countQuery.where(userIdCondition &
-          isNewWordCondition &
-          dateCondition &
-          beforeOrderCondition);
+          db.learningWords.lastLearningDate.isBiggerOrEqualValue(startOfDay) & db.learningWords.lastLearningDate.isSmallerOrEqualValue(endOfDay);
+      final beforeOrderCondition = db.learningWords.learningOrder.isSmallerThanValue(learningWord.learningOrder);
+      countQuery.where(userIdCondition & isNewWordCondition & dateCondition & beforeOrderCondition);
       final countResult = await countQuery.getSingle();
       int position = countResult.read(countAll()) ?? 0;
       position += 1;
@@ -1106,8 +997,7 @@ class WordBo {
       final now = AppClock.now();
       final startOfDay = DateTime(now.year, now.month, now.day);
       final endOfDay = DateTime(now.year, now.month, now.day, 23, 59, 59, 999);
-      final wordQuery = db.select(db.words)
-        ..where((tbl) => tbl.spell.equals(spell));
+      final wordQuery = db.select(db.words)..where((tbl) => tbl.spell.equals(spell));
       final word = await wordQuery.getSingleOrNull();
       if (word == null) {
         Global.logger.d('未找到拼写为 $spell 的单词');
@@ -1125,19 +1015,13 @@ class WordBo {
         Global.logger.d('单词 $spell 不在今日旧词列表中');
         return Result("SUCCESS", "获取成功", true)..data = -1;
       }
-      final countQuery = db.selectOnly(db.learningWords)
-        ..addColumns([countAll()]);
+      final countQuery = db.selectOnly(db.learningWords)..addColumns([countAll()]);
       final userIdCondition = db.learningWords.userId.equals(userId);
       final isOldWordCondition = db.learningWords.isTodayNewWord.equals(false);
       final dateCondition =
-          db.learningWords.lastLearningDate.isBiggerOrEqualValue(startOfDay) &
-              db.learningWords.lastLearningDate.isSmallerOrEqualValue(endOfDay);
-      final beforeOrderCondition = db.learningWords.learningOrder
-          .isSmallerThanValue(learningWord.learningOrder);
-      countQuery.where(userIdCondition &
-          isOldWordCondition &
-          dateCondition &
-          beforeOrderCondition);
+          db.learningWords.lastLearningDate.isBiggerOrEqualValue(startOfDay) & db.learningWords.lastLearningDate.isSmallerOrEqualValue(endOfDay);
+      final beforeOrderCondition = db.learningWords.learningOrder.isSmallerThanValue(learningWord.learningOrder);
+      countQuery.where(userIdCondition & isOldWordCondition & dateCondition & beforeOrderCondition);
       final countResult = await countQuery.getSingle();
       int position = countResult.read(countAll()) ?? 0;
       position += 1;
@@ -1160,14 +1044,8 @@ class WordBo {
       final startOfDay = DateTime(now.year, now.month, now.day);
       final endOfDay = DateTime(now.year, now.month, now.day, 23, 59, 59, 999);
       final wrongWordsQuery = db.select(db.userWrongWords)
-        ..where((tbl) =>
-            tbl.userId.equals(userId) &
-            tbl.createTime.isBiggerOrEqualValue(startOfDay) &
-            tbl.createTime.isSmallerOrEqualValue(endOfDay))
-        ..orderBy([
-          (tbl) =>
-              OrderingTerm(expression: tbl.createTime, mode: OrderingMode.desc)
-        ]);
+        ..where((tbl) => tbl.userId.equals(userId) & tbl.createTime.isBiggerOrEqualValue(startOfDay) & tbl.createTime.isSmallerOrEqualValue(endOfDay))
+        ..orderBy([(tbl) => OrderingTerm(expression: tbl.createTime, mode: OrderingMode.desc)]);
       final wrongWords = await wrongWordsQuery.get();
       List<WordVo> wordVos = [];
       for (final wrongWord in wrongWords) {
@@ -1185,8 +1063,7 @@ class WordBo {
           final meaningItems = await getWordMeaningItems(word.id, userId);
           List<MeaningItemVo> meaningItemVos = [];
           for (final mi in meaningItems) {
-            meaningItemVos.add(MeaningItemVo(
-                mi.id, mi.ciXing, mi.meaning, null, null, null));
+            meaningItemVos.add(MeaningItemVo(mi.id, mi.ciXing, mi.meaning, null, null, null));
           }
           wordVo.meaningItems = meaningItemVos;
           wordVos.add(wordVo);
@@ -1231,17 +1108,14 @@ class WordBo {
       Global.logger.d('获取句子成功: sentenceId=$sentenceId');
       return sentenceVo;
     } catch (e, stackTrace) {
-      ErrorHandler.handleDatabaseError(e, stackTrace,
-          operation: '获取句子数据', showToast: false);
+      ErrorHandler.handleDatabaseError(e, stackTrace, operation: '获取句子数据', showToast: false);
       rethrow;
     }
   }
 
-  Future<Result<void>> removeWordFromDict(
-      String dictId, String wordId, String userId) async {
+  Future<Result<void>> removeWordFromDict(String dictId, String wordId, String userId) async {
     try {
-      Global.logger
-          .d('开始从词典删除单词: dictId=$dictId, wordId=$wordId, userId=$userId');
+      Global.logger.d('开始从词典删除单词: dictId=$dictId, wordId=$wordId, userId=$userId');
       final db = MyDatabase.instance;
       final dict = await db.dictsDao.findById(dictId);
       if (dict == null) {
@@ -1261,18 +1135,11 @@ class WordBo {
       final seqNo = dictWord.seq;
       await db.transaction(() async {
         await db.dictWordsDao.deleteEntity(dictWord, true);
-        Global.logger
-            .d('已删除词典单词: dictId=$dictId, wordId=$wordId, seqNo=$seqNo');
-        final laterWordsQuery = db.select(db.dictWords)
-          ..where((dw) =>
-              dw.dictId.equals(dictId) &
-              dw.seq.isBiggerThanValue(seqNo));
+        Global.logger.d('已删除词典单词: dictId=$dictId, wordId=$wordId, seqNo=$seqNo');
+        final laterWordsQuery = db.select(db.dictWords)..where((dw) => dw.dictId.equals(dictId) & dw.seq.isBiggerThanValue(seqNo));
         final laterWords = await laterWordsQuery.get();
         for (final laterWord in laterWords) {
-          await (db.update(db.dictWords)
-                ..where((dw) =>
-                    dw.dictId.equals(laterWord.dictId) &
-                    dw.wordId.equals(laterWord.wordId)))
+          await (db.update(db.dictWords)..where((dw) => dw.dictId.equals(laterWord.dictId) & dw.wordId.equals(laterWord.wordId)))
               .write(DictWordsCompanion(
             seq: Value(laterWord.seq - 1),
             updateTime: Value(AppClock.now()),
@@ -1280,28 +1147,23 @@ class WordBo {
         }
         // 更新词书的wordCount（并生成日志用于同步）
         await db.dictsDao.updateWordCount(dictId, true);
-        final learningDict = await (db.select(db.learningDicts)
-              ..where(
-                  (ld) => ld.userId.equals(userId) & ld.dictId.equals(dictId)))
-            .getSingleOrNull();
+        final learningDict =
+            await (db.select(db.learningDicts)..where((ld) => ld.userId.equals(userId) & ld.dictId.equals(dictId))).getSingleOrNull();
         if (learningDict != null && learningDict.currentWordSeq != null) {
           if (learningDict.currentWordSeq! > seqNo) {
-            await (db.update(db.learningDicts)
-                  ..where((ld) =>
-                      ld.userId.equals(userId) & ld.dictId.equals(dictId)))
-                .write(LearningDictsCompanion(
+            await (db.update(db.learningDicts)..where((ld) => ld.userId.equals(userId) & ld.dictId.equals(dictId))).write(LearningDictsCompanion(
               currentWordSeq: Value(learningDict.currentWordSeq! - 1),
               updateTime: Value(AppClock.now()),
             ));
           }
         }
       });
-      
+
       // 延迟触发同步，确保事务完全提交
       Future.delayed(Duration.zero, () {
         ThrottledDbSyncService().requestSync();
       });
-      
+
       Global.logger.d('从词典删除单词完成: dictId=$dictId, wordId=$wordId');
       return Result("SUCCESS", "删除成功", true);
     } catch (e, stackTrace) {
@@ -1353,29 +1215,23 @@ class WordBo {
         ..addColumns([countAll()])
         ..where(db.learningWords.userId.equals(user.id))
         ..where(db.learningWords.isTodayNewWord.equals(true))
-        ..where(
-            db.learningWords.lastLearningDate.isBiggerOrEqualValue(startOfDay))
-        ..where(
-            db.learningWords.lastLearningDate.isSmallerOrEqualValue(endOfDay));
+        ..where(db.learningWords.lastLearningDate.isBiggerOrEqualValue(startOfDay))
+        ..where(db.learningWords.lastLearningDate.isSmallerOrEqualValue(endOfDay));
       final newWordsCount = await newWordsQuery.getSingle();
       wordLists.add(WordList("今日新词", newWordsCount.read(countAll()) ?? 0));
       final oldWordsQuery = db.selectOnly(db.learningWords)
         ..addColumns([countAll()])
         ..where(db.learningWords.userId.equals(user.id))
         ..where(db.learningWords.isTodayNewWord.equals(false))
-        ..where(
-            db.learningWords.lastLearningDate.isBiggerOrEqualValue(startOfDay))
-        ..where(
-            db.learningWords.lastLearningDate.isSmallerOrEqualValue(endOfDay));
+        ..where(db.learningWords.lastLearningDate.isBiggerOrEqualValue(startOfDay))
+        ..where(db.learningWords.lastLearningDate.isSmallerOrEqualValue(endOfDay));
       final oldWordsCount = await oldWordsQuery.getSingle();
       wordLists.add(WordList("今日旧词", oldWordsCount.read(countAll()) ?? 0));
       final todayWordsQuery = db.selectOnly(db.learningWords)
         ..addColumns([countAll()])
         ..where(db.learningWords.userId.equals(user.id))
-        ..where(
-            db.learningWords.lastLearningDate.isBiggerOrEqualValue(startOfDay))
-        ..where(
-            db.learningWords.lastLearningDate.isSmallerOrEqualValue(endOfDay));
+        ..where(db.learningWords.lastLearningDate.isBiggerOrEqualValue(startOfDay))
+        ..where(db.learningWords.lastLearningDate.isSmallerOrEqualValue(endOfDay));
       final totalWordsCount = await todayWordsQuery.getSingle();
       wordLists.add(WordList("今日单词", totalWordsCount.read(countAll()) ?? 0));
       final learningWordsQuery = db.selectOnly(db.learningWords)
@@ -1427,8 +1283,7 @@ class WordBo {
     }
   }
 
-  Future<PagedResults<LearningWordVo>> getTodayWordsForAPage(
-      int fromIndex, int pageSize, String userId) async {
+  Future<PagedResults<LearningWordVo>> getTodayWordsForAPage(int fromIndex, int pageSize, String userId) async {
     final db = MyDatabase.instance;
     final user = await db.usersDao.getUserById(userId);
     if (user == null) {
@@ -1439,19 +1294,15 @@ class WordBo {
     final endOfDay = DateTime(now.year, now.month, now.day, 23, 59, 59, 999);
     final query = db.select(db.learningWords)
       ..where((tbl) =>
-          tbl.userId.equals(userId) &
-          tbl.lastLearningDate.isBiggerOrEqualValue(startOfDay) &
-          tbl.lastLearningDate.isSmallerOrEqualValue(endOfDay))
+          tbl.userId.equals(userId) & tbl.lastLearningDate.isBiggerOrEqualValue(startOfDay) & tbl.lastLearningDate.isSmallerOrEqualValue(endOfDay))
       ..orderBy([(tbl) => OrderingTerm(expression: tbl.learningOrder)])
       ..limit(pageSize, offset: fromIndex);
     final learningWords = await query.get();
     final countQuery = db.selectOnly(db.learningWords)
       ..addColumns([countAll()])
       ..where(db.learningWords.userId.equals(userId))
-      ..where(
-          db.learningWords.lastLearningDate.isBiggerOrEqualValue(startOfDay))
-      ..where(
-          db.learningWords.lastLearningDate.isSmallerOrEqualValue(endOfDay));
+      ..where(db.learningWords.lastLearningDate.isBiggerOrEqualValue(startOfDay))
+      ..where(db.learningWords.lastLearningDate.isSmallerOrEqualValue(endOfDay));
     final countResult = await countQuery.getSingle();
     final total = countResult.read(countAll()) ?? 0;
     List<LearningWordVo> learningWordVos = [];
@@ -1459,7 +1310,7 @@ class WordBo {
       final word = await db.wordsDao.getWordById(lw.wordId);
       if (word != null) {
         final userVo = UserVo.c2(userId);
-        userVo.level = LevelVo(user.levelId);
+        userVo.level = LevelUtil.getLevelVoByScore(user.totalScore);
         final wordVo = WordVo.c2(word.spell)
           ..id = word.id
           ..shortDesc = word.shortDesc
@@ -1472,19 +1323,11 @@ class WordBo {
         final meaningItems = await getWordMeaningItems(word.id, userId);
         List<MeaningItemVo> meaningItemVos = [];
         for (final mi in meaningItems) {
-          meaningItemVos.add(MeaningItemVo(
-              mi.id, mi.ciXing, mi.meaning, null, null, null));
+          meaningItemVos.add(MeaningItemVo(mi.id, mi.ciXing, mi.meaning, null, null, null));
         }
         wordVo.meaningItems = meaningItemVos;
-        final learningWordVo = LearningWordVo(
-            userVo,
-            lw.addTime,
-            lw.addDay,
-            lw.lifeValue,
-            lw.lastLearningDate,
-            lw.learningOrder,
-            lw.learnedTimes,
-            wordVo);
+        final learningWordVo =
+            LearningWordVo(userVo, lw.addTime, lw.addDay, lw.lifeValue, lw.lastLearningDate, lw.learningOrder, lw.learnedTimes, wordVo);
         learningWordVos.add(learningWordVo);
       }
     }
@@ -1493,13 +1336,10 @@ class WordBo {
     return result;
   }
 
-  Future<Result> setLearningWordAsMastered(
-      String userId, String wordId, bool deleteLearningWord) async {
+  Future<Result> setLearningWordAsMastered(String userId, String wordId, bool deleteLearningWord) async {
     try {
-      await MyDatabase.instance.masteredWordsDao
-          .setLearningWordAsMastered(userId, wordId, deleteLearningWord);
-      await MyDatabase.instance.masteredWordsDao
-          .updateUserMasteredWordCount(userId);
+      await MyDatabase.instance.masteredWordsDao.setLearningWordAsMastered(userId, wordId, deleteLearningWord);
+      await MyDatabase.instance.masteredWordsDao.updateUserMasteredWordCount(userId);
       return Result("SUCCESS", "标记单词为已掌握成功", true);
     } catch (e) {
       Global.logger.e('本地化setLearningWordAsMastered失败: $e');
@@ -1548,8 +1388,7 @@ class WordBo {
     // 检查该单词是否存在于用户的学习词书中（dictWords）
     List<String> relatedDictIds = [];
     if (selectedDictIds.isNotEmpty) {
-      final dwQuery = db.select(db.dictWords)
-        ..where((dw) => dw.wordId.equals(wordId) & dw.dictId.isIn(selectedDictIds));
+      final dwQuery = db.select(db.dictWords)..where((dw) => dw.wordId.equals(wordId) & dw.dictId.isIn(selectedDictIds));
       final dictWords = await dwQuery.get();
       relatedDictIds = dictWords.map((e) => e.dictId).toList();
     }
@@ -1590,5 +1429,3 @@ class WordBo {
     return items.map((e) => MeaningItemVo(e.id, e.ciXing, e.meaning, null, null, null)).toList();
   }
 }
-
-

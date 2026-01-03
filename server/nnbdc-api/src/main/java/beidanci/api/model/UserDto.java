@@ -37,7 +37,7 @@ public class UserDto {
     private Date lastDakaDate;
     private Integer dakaScore;
     private Boolean enableAllWrong;
-    
+
     // =========================
     // 订阅 / 会员相关字段
     // =========================
@@ -59,8 +59,7 @@ public class UserDto {
     private String premiumOverrideDuration;
 
     private String asrPassRule;
-    // 用户等级ID
-    private String levelId;
+
     // 客户端特有字段，服务端处理时会忽略
     private Boolean isTodayLearningStarted;
     private Boolean isTodayLearningFinished;
@@ -390,22 +389,12 @@ public class UserDto {
         this.premiumOverrideDuration = premiumOverrideDuration;
     }
 
-    
-
     public String getAsrPassRule() {
         return asrPassRule;
     }
 
     public void setAsrPassRule(String asrPassRule) {
         this.asrPassRule = asrPassRule;
-    }
-
-    public String getLevelId() {
-        return levelId;
-    }
-
-    public void setLevelId(String levelId) {
-        this.levelId = levelId;
     }
 
     public Boolean getIsTodayLearningStarted() {

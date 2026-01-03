@@ -16,8 +16,7 @@ class LocalParams extends Table {
 class UserStudySteps extends Table {
   TextColumn get userId => text()();
 
-  TextColumn get studyStep =>
-      text()(); 
+  TextColumn get studyStep => text()();
 
   IntColumn get seq => integer()();
 
@@ -63,8 +62,6 @@ class VotedWordImages extends Table {
   @override
   Set<Column>? get primaryKey => {userId, imageId};
 }
-
-
 
 class DictGroups extends Table {
   TextColumn get id => text()();
@@ -148,9 +145,6 @@ class Users extends Table {
 
   TextColumn get invitedById => text().nullable()();
 
-  /// 用户等级ID
-  TextColumn get levelId => text()();
-
   /// 连续打卡天数
   IntColumn get continuousDakaDayCount => integer()();
 
@@ -167,20 +161,20 @@ class Users extends Table {
   BoolColumn get enableAllWrong => boolean()();
 
   // 订阅相关字段（仅支持iOS平台）
-  
+
   // iOS订阅字段
   /// iOS是否为会员
   BoolColumn get isPremiumIos => boolean().withDefault(const Constant(false))();
-  
+
   /// iOS订阅到期时间
   DateTimeColumn get subscriptionExpireDateIos => dateTime().nullable()();
-  
+
   /// iOS订阅类型：monthly/annual
   TextColumn get subscriptionTypeIos => text().nullable()();
-  
+
   /// iOS订阅状态：active/expired/cancelled
   TextColumn get subscriptionStatusIos => text().nullable()();
-  
+
   /// iOS最后验证的收据数据（用于恢复购买）
   TextColumn get lastReceiptDataIos => text().nullable()();
 
@@ -500,9 +494,7 @@ class BookMarks extends Table {
   Set<Column>? get primaryKey => {id};
 
   @override
-  List<String> get customConstraints => [
-    'UNIQUE (user_id, book_mark_name)'
-  ];
+  List<String> get customConstraints => ['UNIQUE (user_id, book_mark_name)'];
 }
 
 class GroupAndDictLinks extends Table {
@@ -583,7 +575,7 @@ class SysDbVersion extends Table {
   DateTimeColumn get lastSyncTime => dateTime().nullable()();
   DateTimeColumn get createTime => dateTime()();
   DateTimeColumn get updateTime => dateTime().nullable()();
-  
+
   @override
   Set<Column> get primaryKey => {id};
 }
@@ -598,7 +590,7 @@ class WordShortDescChineses extends Table {
   TextColumn get author => text()();
   DateTimeColumn get createTime => dateTime()();
   DateTimeColumn get updateTime => dateTime().nullable()();
-  
+
   @override
   Set<Column> get primaryKey => {id};
 }
@@ -606,25 +598,25 @@ class WordShortDescChineses extends Table {
 /// 本地异常记录表
 class LocalExceptions extends Table {
   TextColumn get id => text()();
-  
+
   /// 异常类型（如：Exception, Error, NetworkError等）
   TextColumn get errorType => text()();
-  
+
   /// 异常消息
   TextColumn get message => text()();
-  
+
   /// 异常堆栈信息
   TextColumn get stackTrace => text().nullable()();
-  
+
   /// 错误上下文信息（如：操作类型、页面名称等）
   TextColumn get context => text().nullable()();
-  
+
   /// 用户ID（如果异常发生时用户已登录）
   TextColumn get userId => text().nullable()();
-  
+
   /// 创建时间
   DateTimeColumn get createTime => dateTime().withDefault(currentDateAndTime)();
-  
+
   @override
   Set<Column> get primaryKey => {id};
 }

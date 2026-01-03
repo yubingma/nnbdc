@@ -36,7 +36,6 @@ extension UserExtensions on User {
     int? cowDung,
     int? throwDiceChance,
     String? invitedById,
-    String? levelId,
     int? continuousDakaDayCount,
     int? maxContinuousDakaDayCount,
     DateTime? lastDakaDate,
@@ -86,7 +85,7 @@ extension UserExtensions on User {
       cowDung: cowDung ?? this.cowDung,
       throwDiceChance: throwDiceChance ?? this.throwDiceChance,
       invitedById: invitedById ?? this.invitedById,
-      levelId: levelId ?? this.levelId,
+
       continuousDakaDayCount: continuousDakaDayCount ?? this.continuousDakaDayCount,
       maxContinuousDakaDayCount: maxContinuousDakaDayCount ?? this.maxContinuousDakaDayCount,
       lastDakaDate: lastDakaDate ?? this.lastDakaDate,
@@ -140,7 +139,7 @@ extension UserExtensions on User {
       cowDung: Value(cowDung),
       throwDiceChance: Value(throwDiceChance),
       invitedById: Value(invitedById),
-      levelId: Value(levelId),
+
       continuousDakaDayCount: Value(continuousDakaDayCount),
       maxContinuousDakaDayCount: Value(maxContinuousDakaDayCount),
       lastDakaDate: Value(lastDakaDate),
@@ -194,7 +193,7 @@ extension UserExtensions on User {
       cowDung: Value(cowDung),
       throwDiceChance: Value(throwDiceChance),
       invitedById: Value(invitedById),
-      levelId: Value(levelId),
+
       continuousDakaDayCount: Value(continuousDakaDayCount),
       maxContinuousDakaDayCount: Value(maxContinuousDakaDayCount),
       lastDakaDate: Value(lastDakaDate),
