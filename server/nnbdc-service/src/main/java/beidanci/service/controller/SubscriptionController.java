@@ -34,7 +34,9 @@ public class SubscriptionController {
             @RequestParam String productId,
             @RequestParam(required = false) String transactionId,
             @RequestParam String platform) {
-        return subscriptionBo.verifySubscription(userId, receiptData, productId, transactionId, platform);
+        // 修复Base64数据中由于URL编码导致的空格问题（空格应该是+）
+        String fixedReceiptData = receiptData.replace(' ', '+');
+        return subscriptionBo.verifySubscription(userId, fixedReceiptData, productId, transactionId, platform);
     }
 
     /**

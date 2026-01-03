@@ -270,6 +270,8 @@ class SubscriptionUtil {
       if (Platform.isIOS) {
         // iOS使用transactionReceipt
         receiptData = purchaseDetails.verificationData.serverVerificationData;
+        Global.logger.i('iOS收据数据长度: ${receiptData.length}');
+        Global.logger.i('iOS收据数据前100字符: ${receiptData.length > 100 ? receiptData.substring(0, 100) : receiptData}');
       } else {
         // Android使用purchaseToken
         receiptData = purchaseDetails.verificationData.serverVerificationData;

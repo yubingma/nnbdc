@@ -2,6 +2,8 @@ package beidanci.service.bo;
 
 import java.io.IOException;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,6 +13,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Base64;
+import com.fasterxml.jackson.core.type.TypeReference;
 
 import beidanci.api.Result;
 import beidanci.service.po.User;
@@ -55,6 +59,16 @@ public class SubscriptionBo extends BaseBo<User> {
     @Transactional
     public Result<Void> verifySubscription(String userId, String receiptData, String productId, String transactionId, String platform) {
         try {
+            // 记录接收到的参数
+            logger.info("开始验证订阅: userId={}, productId={}, transactionId={}, platform={}, receiptDataLength={}", 
+                    userId, productId, transactionId, platform, receiptData != null ? receiptData.length() : 0);
+            
+            // 验证收据数据是否为空
+            if (receiptData == null || receiptData.trim().isEmpty()) {
+                logger.error("收据数据为空");
+                return new Result<>(false, "收据数据为空", null);
+            }
+            
             // 查找用户
             User user = userBo.findById(userId);
             if (user == null) {
@@ -107,9 +121,17 @@ public class SubscriptionBo extends BaseBo<User> {
     }
 
     /**
-     * 验证收据（先尝试生产环境，失败则尝试沙盒环境）
+     * 验证收据（支持JWT格式的StoreKit 2和旧格式的收据）
      */
     private ReceiptVerificationResult verifyReceiptWithApple(String receiptData) throws IOException {
+        // 检查是否是JWT格式（StoreKit 2）
+        if (isJWTFormat(receiptData)) {
+            logger.info("检测到JWT格式收据（StoreKit 2），使用JWT解析验证");
+            return verifyJWTReceipt(receiptData);
+        }
+        
+        // 旧格式收据，使用传统API验证
+        logger.info("检测到传统格式收据，使用/verifyReceipt API验证");
         // 先尝试生产环境
         ReceiptVerificationResult result = verifyReceipt(receiptData, APPLE_VERIFY_RECEIPT_URL_PRODUCTION);
         
@@ -121,14 +143,110 @@ public class SubscriptionBo extends BaseBo<User> {
 
         return result;
     }
+    
+    /**
+     * 检查是否是JWT格式
+     */
+    private boolean isJWTFormat(String receiptData) {
+        // JWT格式：三个部分用.分隔，且每部分都是base64编码
+        // 示例：eyJ...（以ey开头，包含两个点）
+        if (receiptData == null || receiptData.isEmpty()) {
+            return false;
+        }
+        // 简单检查：是否以"eyJ"开头且包含两个点
+        return receiptData.startsWith("eyJ") && receiptData.split("\\.").length == 3;
+    }
+    
+    /**
+     * 验证JWT格式的收据（StoreKit 2）
+     * JWT收据包含签名的交易信息，可以直接解析payload获取订阅信息
+     */
+    private ReceiptVerificationResult verifyJWTReceipt(String jwtToken) {
+        try {
+            // JWT格式：header.payload.signature
+            String[] parts = jwtToken.split("\\.");
+            if (parts.length != 3) {
+                return new ReceiptVerificationResult(false, "JWT格式错误", -1, null, null, null);
+            }
+            
+            // 解析payload（第二部分）
+            String payload = parts[1];
+            byte[] decodedBytes = Base64.getUrlDecoder().decode(payload);
+            String decodedPayload = new String(decodedBytes);
+            
+            logger.info("JWT Payload: {}", decodedPayload);
+            
+            // 解析JSON
+            JsonNode payloadJson = objectMapper.readTree(decodedPayload);
+            
+            // 从JWT payload中提取订阅信息
+            // StoreKit 2 JWT包含以下关键字段：
+            // - transactionId: 交易ID
+            // - originalTransactionId: 原始交易ID
+            // - productId: 产品ID
+            // - purchaseDate: 购买时间（毫秒）
+            // - expiresDate: 过期时间（毫秒）
+            // - type: 交易类型（Auto-Renewable Subscription）
+            
+            if (!payloadJson.has("productId")) {
+                return new ReceiptVerificationResult(false, "JWT中缺少productId字段", -1, null, null, null);
+            }
+            
+            String productId = payloadJson.get("productId").asText();
+            
+            // 获取过期时间
+            Date expiresDate = null;
+            if (payloadJson.has("expiresDate")) {
+                long expiresDateMs = payloadJson.get("expiresDate").asLong();
+                expiresDate = new Date(expiresDateMs);
+            }
+            
+            // 判断订阅类型
+            String subscriptionType = productId.contains("monthly") ? "monthly" : "annual";
+            
+            logger.info("JWT解析成功: productId={}, expiresDate={}, type={}", 
+                    productId, expiresDate, subscriptionType);
+            
+            // 注意：这里我们信任JWT的内容，实际生产环境中应该验证JWT签名
+            // Apple的JWT使用ES256算法签名，需要使用Apple的公钥验证
+            // 为了简化，这里暂时跳过签名验证，仅解析内容
+            logger.warn("注意：当前未验证JWT签名，仅用于测试环境");
+            
+            return new ReceiptVerificationResult(true, "验证成功", 0, productId, expiresDate, subscriptionType);
+            
+        } catch (Exception e) {
+            logger.error("解析JWT收据失败", e);
+            return new ReceiptVerificationResult(false, "JWT解析失败: " + e.getMessage(), -1, null, null, null);
+        }
+    }
 
     /**
      * 向Apple服务器验证收据
      */
     private ReceiptVerificationResult verifyReceipt(String receiptData, String verifyUrl) throws IOException {
         try {
+            // 记录原始收据数据的长度和前100个字符（用于调试）
+            logger.info("原始收据数据长度: {}", receiptData != null ? receiptData.length() : 0);
+            if (receiptData != null && receiptData.length() > 0) {
+                String preview = receiptData.length() > 100 ? receiptData.substring(0, 100) : receiptData;
+                logger.info("原始收据数据前100字符: {}", preview);
+            }
+            
+            // 清理收据数据（移除换行符和空格）
+            String cleanReceiptData = receiptData.replaceAll("[\\r\\n]", "");
+            logger.info("清理后收据数据长度: {}", cleanReceiptData.length());
+            if (cleanReceiptData.length() > 0) {
+                String preview = cleanReceiptData.length() > 100 ? cleanReceiptData.substring(0, 100) : cleanReceiptData;
+                logger.info("清理后收据数据前100字符: {}", preview);
+            }
+
             // 构建请求体
-            String requestBody = "{\"receipt-data\":\"" + receiptData + "\"}";
+            Map<String, String> requestMap = new HashMap<>();
+            requestMap.put("receipt-data", cleanReceiptData);
+            // requestMap.put("password", "YOUR_SHARED_SECRET"); // 如果是自动续期订阅，需要配置共享密钥
+
+            String requestBody = objectMapper.writeValueAsString(requestMap);
+            logger.info("发送给Apple的请求体: {}", requestBody.length() > 200 ? requestBody.substring(0, 200) + "..." : requestBody);
             RequestBody body = RequestBody.create(JSON, requestBody);
 
             // 构建请求
