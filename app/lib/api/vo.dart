@@ -1430,3 +1430,36 @@ class FeatureRequestReportVo {
 
   Map<String, dynamic> toJson() => _$FeatureRequestReportVoToJson(this);
 }
+
+/// 订阅信息Vo
+/// 用于接收服务端返回的订阅验证结果
+@JsonSerializable()
+@CustomDateTimeConverter()
+class SubscriptionVo {
+  /// iOS是否为会员
+  bool? isPremiumIos;
+
+  /// iOS订阅到期时间
+  DateTime? subscriptionExpireDateIos;
+
+  /// iOS订阅类型：monthly/annual
+  String? subscriptionTypeIos;
+
+  /// iOS订阅状态：active/expired/cancelled
+  String? subscriptionStatusIos;
+
+  /// 产品ID
+  String? productId;
+
+  SubscriptionVo({
+    this.isPremiumIos,
+    this.subscriptionExpireDateIos,
+    this.subscriptionTypeIos,
+    this.subscriptionStatusIos,
+    this.productId,
+  });
+
+  factory SubscriptionVo.fromJson(Map<String, dynamic> json) => _$SubscriptionVoFromJson(json);
+
+  Map<String, dynamic> toJson() => _$SubscriptionVoToJson(this);
+}

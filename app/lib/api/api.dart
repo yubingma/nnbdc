@@ -704,7 +704,7 @@ abstract class RestClient {
   // 订阅相关API
   @POST("/verifySubscription.do")
   @FormUrlEncoded()
-  Future<Result> verifySubscription(
+  Future<Result<SubscriptionVo>> verifySubscription(
       @Field("userId") String userId,
       @Field("receiptData") String receiptData,
       @Field("productId") String productId,

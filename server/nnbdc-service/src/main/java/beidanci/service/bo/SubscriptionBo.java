@@ -1,6 +1,7 @@
 package beidanci.service.bo;
 
 import java.io.IOException;
+import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -13,10 +14,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.util.Base64;
-import com.fasterxml.jackson.core.type.TypeReference;
 
 import beidanci.api.Result;
+import beidanci.api.model.SubscriptionVo;
 import beidanci.service.po.User;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -48,16 +48,17 @@ public class SubscriptionBo extends BaseBo<User> {
 
     /**
      * 验证订阅收据并更新用户订阅状态（仅支持iOS平台）
+     * 返回订阅信息，供客户端立即更新本地数据库
      * 
      * @param userId 用户ID
      * @param receiptData Base64编码的收据数据
      * @param productId 产品ID
      * @param transactionId 交易ID
      * @param platform 平台类型：ios（仅支持iOS）
-     * @return 验证结果
+     * @return 验证结果和订阅信息
      */
     @Transactional
-    public Result<Void> verifySubscription(String userId, String receiptData, String productId, String transactionId, String platform) {
+    public Result<SubscriptionVo> verifySubscription(String userId, String receiptData, String productId, String transactionId, String platform) {
         try {
             // 记录接收到的参数
             logger.info("开始验证订阅: userId={}, productId={}, transactionId={}, platform={}, receiptDataLength={}", 
@@ -68,7 +69,6 @@ public class SubscriptionBo extends BaseBo<User> {
                 logger.error("收据数据为空");
                 return new Result<>(false, "收据数据为空", null);
             }
-            
             // 查找用户
             User user = userBo.findById(userId);
             if (user == null) {
@@ -112,7 +112,16 @@ public class SubscriptionBo extends BaseBo<User> {
             logger.info("订阅验证成功: userId={}, productId={}, expireDate={}", 
                     userId, verificationResult.productId, verificationResult.expiresDate);
 
-            return new Result<>(true, "订阅验证成功", null);
+            // 构建订阅信息VO返回给客户端
+            SubscriptionVo subscriptionVo = new SubscriptionVo(
+                user.getIsPremiumIos(),
+                user.getSubscriptionExpireDateIos(),
+                user.getSubscriptionTypeIos(),
+                user.getSubscriptionStatusIos(),
+                verificationResult.productId
+            );
+
+            return new Result<>(true, "订阅验证成功", subscriptionVo);
 
         } catch (Exception e) {
             logger.error("验证订阅异常", e);

@@ -1,14 +1,16 @@
 import 'dart:async';
 import 'dart:io';
+
+import 'package:drift/drift.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
-import 'package:nnbdc/global.dart';
-import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/api/api.dart';
 import 'package:nnbdc/api/result.dart';
-import 'package:nnbdc/api/bo/user_bo.dart';
+import 'package:nnbdc/api/vo.dart';
+import 'package:nnbdc/db/db.dart';
+import 'package:nnbdc/global.dart';
 import 'package:nnbdc/services/throttled_sync_service.dart';
 import 'package:nnbdc/util/platform_util.dart';
-import 'package:nnbdc/db/db.dart';
+import 'package:nnbdc/util/toast_util.dart';
 
 /// 订阅工具类
 /// 用于处理iOS应用内购买订阅功能（仅支持iOS平台）
@@ -236,13 +238,15 @@ class SubscriptionUtil {
     if (purchaseDetails.status == PurchaseStatus.purchased || purchaseDetails.status == PurchaseStatus.restored) {
       Global.logger.i('购买成功: ${purchaseDetails.productID}');
 
-      // 验证收据
+      // 验证收据(后端验证)
       final bool verified = await _verifyReceipt(purchaseDetails);
 
       if (verified) {
         ToastUtil.success('订阅成功！');
         // 刷新用户信息
         await _refreshUserInfo();
+        // 发送订阅更新事件，通知页面刷新
+        _purchaseUpdatedController.add([purchaseDetails]);
       } else {
         ToastUtil.error('订阅验证失败，请联系客服');
       }
@@ -302,7 +306,7 @@ class SubscriptionUtil {
       // 调用后端验证接口
       final userId = user.id;
 
-      final Result result = await Api.client.verifySubscription(
+      final Result<SubscriptionVo> result = await Api.client.verifySubscription(
         userId,
         receiptData,
         purchaseDetails.productID,
@@ -310,8 +314,37 @@ class SubscriptionUtil {
         platform,
       );
 
-      if (result.success) {
-        Global.logger.i('收据验证成功');
+      if (result.success && result.data != null) {
+        Global.logger.i('收据验证成功，立即更新本地数据库');
+        
+        // 从返回的订阅信息中提取数据
+        final subscriptionData = result.data!;
+        final isPremiumIos = subscriptionData.isPremiumIos ?? false;
+        final subscriptionTypeIos = subscriptionData.subscriptionTypeIos;
+        final subscriptionStatusIos = subscriptionData.subscriptionStatusIos;
+        final subscriptionExpireDateIos = subscriptionData.subscriptionExpireDateIos;
+        
+        // 立即更新本地数据库（不写同步日志，因为服务端已经更新了）
+        final db = MyDatabase.instance;
+        final currentUser = await db.usersDao.getUserById(userId);
+        if (currentUser != null) {
+          final updatedUser = currentUser.copyWith(
+            isPremiumIos: isPremiumIos,
+            subscriptionExpireDateIos: Value(subscriptionExpireDateIos),
+            subscriptionTypeIos: Value(subscriptionTypeIos),
+            subscriptionStatusIos: Value(subscriptionStatusIos),
+            lastReceiptDataIos: Value(receiptData),
+          );
+          
+          // 直接更新数据库，不生成同步日志
+          await (db.update(db.users)..where((t) => t.id.equals(userId))).write(updatedUser);
+          
+          // 立即更新内存缓存
+          Global.updateUserCache(updatedUser);
+          
+          Global.logger.i('订阅状态已更新到本地数据库和缓存: isPremium=$isPremiumIos, expireDate=$subscriptionExpireDateIos');
+        }
+        
         return true;
       } else {
         Global.logger.w('收据验证失败: ${result.msg}');
@@ -323,16 +356,16 @@ class SubscriptionUtil {
     }
   }
 
-  /// 刷新用户信息
+  /// 刷新用户信息（订阅验证成功后已绋立即更新，这里仅用于触发UI刷新）
   static Future<void> _refreshUserInfo() async {
     try {
-      // 订阅验证后，服务端会主动更新 user 表并写入 user_db_log
-      // 这里触发一次同步以拉取最新用户信息到本地
-      await ThrottledDbSyncService().requestSync();
-      await UserBo().getLoggedInUser();
-      Global.logger.i('用户信息已刷新');
+      // 注：订阅验证成功后已经立即更新了本地数据库和缓存
+      // 这里不需要再次加载，仅用于确保后续同步
+      // 触发一次同步（不等待结果）
+      ThrottledDbSyncService().requestSync();
+      Global.logger.i('订阅验证成功，本地数据已更新，后台同步已触发');
     } catch (e, stackTrace) {
-      Global.logger.e('刷新用户信息失败', error: e, stackTrace: stackTrace);
+      Global.logger.e('触发同步失败', error: e, stackTrace: stackTrace);
     }
   }
 

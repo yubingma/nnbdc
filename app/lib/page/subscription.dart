@@ -77,7 +77,9 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
       final success = await SubscriptionUtil.purchase(product);
       if (success) {
         // 购买流程已启动，结果会在_subscriptionUtil中处理
-        // 这里只需要等待即可
+        // 等待一段时间后刷新用户信息
+        await Future.delayed(const Duration(seconds: 2));
+        await _refreshUserInfo();
       } else {
         ToastUtil.error('购买失败，请重试');
       }
@@ -122,9 +124,12 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
   /// 刷新用户信息
   Future<void> _refreshUserInfo() async {
     try {
+      // 重新从数据库加载用户信息
+      await Global.loadUserFromDb();
       final result = await UserBo().getLoggedInUser();
       if (result.success && mounted) {
         setState(() {});
+        Global.logger.i('订阅页面：用户信息已刷新');
       }
     } catch (e) {
       Global.logger.e('刷新用户信息失败', error: e);

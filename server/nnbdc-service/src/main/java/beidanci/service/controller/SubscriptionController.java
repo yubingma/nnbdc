@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import beidanci.api.Result;
+import beidanci.api.model.SubscriptionVo;
 import beidanci.service.bo.SubscriptionBo;
 
 /**
@@ -18,17 +19,18 @@ public class SubscriptionController {
     private SubscriptionBo subscriptionBo;
 
     /**
-     * 验证订阅收据
+     * 验证订阅收据, 并同时更新用户订阅状态(若验证成功)
+     * 返回订阅信息，供客户端立即更新本地数据库
      * 
      * @param userId 用户ID
      * @param receiptData Base64编码的收据数据
      * @param productId 产品ID
      * @param transactionId 交易ID
      * @param platform 平台类型：ios/android
-     * @return 验证结果
+     * @return 验证结果和订阅信息
      */
     @PostMapping("/verifySubscription.do")
-    public Result<Void> verifySubscription(
+    public Result<SubscriptionVo> verifySubscription(
             @RequestParam String userId,
             @RequestParam String receiptData,
             @RequestParam String productId,
