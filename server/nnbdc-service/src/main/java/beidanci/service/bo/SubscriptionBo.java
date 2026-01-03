@@ -39,6 +39,9 @@ public class SubscriptionBo extends BaseBo<User> {
     
     // 收据验证请求的Content-Type
     private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
+    
+    // Apple Shared Secret (自动续期订阅必填) - 请替换为你的实际密钥
+    private static final String APPLE_SHARED_SECRET = "171b1c58f4114b16a5d00826042addba";
 
     private final OkHttpClient httpClient = new OkHttpClient();
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -210,8 +213,17 @@ public class SubscriptionBo extends BaseBo<User> {
                 expiresDate = new Date(expiresDateMs);
             }
             
-            // 判断订阅类型
-            String subscriptionType = productId.contains("monthly") ? "monthly" : "annual";
+            // 判断订阅类型（根据productId判断）
+            String subscriptionType;
+            if (productId.contains("yearly") || productId.contains("annual") || productId.contains("year")) {
+                subscriptionType = "annual";
+            } else if (productId.contains("monthly") || productId.contains("month")) {
+                subscriptionType = "monthly";
+            } else {
+                // 默认为月订阅
+                subscriptionType = "monthly";
+                logger.warn("JWT: 无法从 productId 判断订阅类型，默认为monthly: {}", productId);
+            }
             
             logger.info("JWT解析成功: productId={}, expiresDate={}, type={}", 
                     productId, expiresDate, subscriptionType);
@@ -219,7 +231,8 @@ public class SubscriptionBo extends BaseBo<User> {
             // 注意：这里我们信任JWT的内容，实际生产环境中应该验证JWT签名
             // Apple的JWT使用ES256算法签名，需要使用Apple的公钥验证
             // 为了简化，这里暂时跳过签名验证，仅解析内容
-            logger.warn("注意：当前未验证JWT签名，仅用于测试环境");
+            // TODO:【安全风险】生产环境必须验证JWT签名，防止伪造收据！
+            logger.warn("【严重警告】当前未验证JWT签名，仅用于测试环境！生产环境请务必实现签名验证！");
             
             return new ReceiptVerificationResult(true, "验证成功", 0, productId, expiresDate, subscriptionType);
             
@@ -258,7 +271,8 @@ public class SubscriptionBo extends BaseBo<User> {
             // 构建请求体
             Map<String, String> requestMap = new HashMap<>();
             requestMap.put("receipt-data", cleanReceiptData);
-            // requestMap.put("password", "YOUR_SHARED_SECRET"); // 如果是自动续期订阅，需要配置共享密钥
+            // 共享密钥 (Shared Secret) - 自动续期订阅必须提供
+            requestMap.put("password", APPLE_SHARED_SECRET);
 
             String requestBody = objectMapper.writeValueAsString(requestMap);
             logger.info("发送给Apple的请求体: {}", requestBody.length() > 200 ? requestBody.substring(0, 200) + "..." : requestBody);
@@ -279,6 +293,10 @@ public class SubscriptionBo extends BaseBo<User> {
 
             // 解析响应
             String responseBody = response.body().string();
+            
+            // 记录完整的响应体（用于调试）
+            logger.info("Apple收据验证完整响应: {}", responseBody);
+            
             JsonNode jsonResponse = objectMapper.readTree(responseBody);
 
             int status = jsonResponse.get("status").asInt();
@@ -355,8 +373,17 @@ public class SubscriptionBo extends BaseBo<User> {
                 long expiresDateMs = subscriptionInfo.get("expires_date_ms").asLong();
                 Date expiresDate = new Date(expiresDateMs);
                 
-                // 判断订阅类型
-                String subscriptionType = productId.contains("monthly") ? "monthly" : "annual";
+                // 判断订阅类型（根据productId判断）
+                String subscriptionType;
+                if (productId.contains("yearly") || productId.contains("annual") || productId.contains("year")) {
+                    subscriptionType = "annual";
+                } else if (productId.contains("monthly") || productId.contains("month")) {
+                    subscriptionType = "monthly";
+                } else {
+                    // 默认为月订阅
+                    subscriptionType = "monthly";
+                    logger.warn("无法从 productId 判断订阅类型，默认为monthly: {}", productId);
+                }
                 
                 logger.info("最终选择的订阅: productId={}, expiresDate={}, type={}", productId, expiresDate, subscriptionType);
 
