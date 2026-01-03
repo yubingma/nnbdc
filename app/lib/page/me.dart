@@ -636,37 +636,47 @@ class _MePageState extends State<MePage> {
                   );
                 }
 
-                // 会员：隐藏按钮，显示订阅信息
+                // 会员：显示订阅信息，可点击进入订阅页面查看详情
                 if (isPremium && premiumInfoText != null && PlatformUtils.isIOS) {
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      gradient: LinearGradient(
-                        colors: [Colors.amber.shade400, Colors.orange.shade600],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.star, color: Colors.white, size: 22),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            premiumInfoText,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                              height: 1.2,
-                              fontFamily: 'NotoSansSC',
-                            ),
-                            textScaler: const TextScaler.linear(1.0),
-                          ),
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.of(context).push(MaterialPageRoute(builder: (context) => const SubscriptionPage())).then((_) {
+                        loadData();
+                      });
+                    },
+                    child: Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        gradient: LinearGradient(
+                          colors: [Colors.amber.shade400, Colors.orange.shade600],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
                         ),
-                      ],
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Icon(Icons.star, color: Colors.white, size: 22),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              premiumInfoText,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                height: 1.2,
+                                fontFamily: 'NotoSansSC',
+                              ),
+                              textScaler: const TextScaler.linear(1.0),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Icon(Icons.chevron_right, color: Colors.white.withValues(alpha: 0.8), size: 20),
+                        ],
+                      ),
                     ),
                   );
                 }

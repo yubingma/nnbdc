@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:drift/drift.dart';
+import 'package:flutter/services.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:nnbdc/api/api.dart';
 import 'package:nnbdc/api/result.dart';
@@ -183,6 +184,39 @@ class SubscriptionUtil {
       }
 
       return true;
+    } on PlatformException catch (e, stackTrace) {
+      // 捕获 PlatformException 并提供详细错误信息
+      Global.logger.e('购买异常 (PlatformException)', error: e, stackTrace: stackTrace);
+      
+      String errorMessage = '购买失败';
+      
+      // 解析常见的 StoreKit 错误
+      if (e.code == 'storekit_duplicate_product_object') {
+        errorMessage = '订阅已存在，请勿重复购买';
+      } else if (e.code == 'storekit_invalid_payment') {
+        errorMessage = '支付信息无效，请重试';
+      } else if (e.code == 'storekit_invalid_product') {
+        errorMessage = '订阅产品不可用，请联系客服';
+      } else if (e.code == 'user_cancelled') {
+        errorMessage = '您已取消购买';
+        Global.logger.i('用户取消购买');
+      } else if (e.message != null && e.message!.contains('StoreKitError')) {
+        // StoreKit 原生错误
+        errorMessage = '购买失败：${e.message}\n\n'
+            '可能原因：\n'
+            '1. 网络连接问题\n'
+            '2. Apple ID 未登录或被锁定\n'
+            '3. 设备不支持应用内购买\n'
+            '4. App Store 服务器问题\n\n'
+            '请稍后重试或检查 Apple ID 设置';
+      } else {
+        // 其他错误
+        final details = e.message ?? e.code;
+        errorMessage = '购买失败：$details';
+      }
+      
+      ToastUtil.error(errorMessage);
+      return false;
     } catch (e, stackTrace) {
       Global.logger.e('购买异常', error: e, stackTrace: stackTrace);
       ToastUtil.error('购买失败，请重试');

@@ -288,14 +288,61 @@ public class SubscriptionBo extends BaseBo<User> {
                 JsonNode receipt = jsonResponse.get("receipt");
                 JsonNode latestReceiptInfo = jsonResponse.get("latest_receipt_info");
                 
-                // 获取最新的订阅信息（如果有多个订阅，取最新的）
+                // 获取最佳订阅信息（如果有多个订阅，选择有效期最长且仍然有效的）
                 JsonNode subscriptionInfo = null;
                 if (latestReceiptInfo != null && latestReceiptInfo.isArray() && latestReceiptInfo.size() > 0) {
-                    subscriptionInfo = latestReceiptInfo.get(latestReceiptInfo.size() - 1);
+                    // 遍历所有订阅，找到有效期最长的
+                    Date latestExpiresDate = null;
+                    JsonNode bestSubscription = null;
+                    
+                    logger.info("找到 {} 个订阅记录，开始选择最佳订阅", latestReceiptInfo.size());
+                    
+                    for (int i = 0; i < latestReceiptInfo.size(); i++) {
+                        JsonNode sub = latestReceiptInfo.get(i);
+                        if (sub.has("product_id") && sub.has("expires_date_ms")) {
+                            String productId = sub.get("product_id").asText();
+                            long expiresDateMs = sub.get("expires_date_ms").asLong();
+                            Date expiresDate = new Date(expiresDateMs);
+                            
+                            logger.info("订阅[{}]: productId={}, expiresDate={}", i, productId, expiresDate);
+                            
+                            // 选择有效期最晚的订阅
+                            if (latestExpiresDate == null || expiresDate.after(latestExpiresDate)) {
+                                latestExpiresDate = expiresDate;
+                                bestSubscription = sub;
+                                logger.info("更新最佳订阅为: productId={}, expiresDate={}", productId, expiresDate);
+                            }
+                        }
+                    }
+                    
+                    subscriptionInfo = bestSubscription;
                 } else if (receipt != null && receipt.has("in_app")) {
                     JsonNode inApp = receipt.get("in_app");
                     if (inApp.isArray() && inApp.size() > 0) {
-                        subscriptionInfo = inApp.get(inApp.size() - 1);
+                        // 同样选择有效期最长的
+                        Date latestExpiresDate = null;
+                        JsonNode bestSubscription = null;
+                        
+                        logger.info("从in_app找到 {} 个订阅记录，开始选择最佳订阅", inApp.size());
+                        
+                        for (int i = 0; i < inApp.size(); i++) {
+                            JsonNode sub = inApp.get(i);
+                            if (sub.has("product_id") && sub.has("expires_date_ms")) {
+                                String productId = sub.get("product_id").asText();
+                                long expiresDateMs = sub.get("expires_date_ms").asLong();
+                                Date expiresDate = new Date(expiresDateMs);
+                                
+                                logger.info("in_app订阅[{}]: productId={}, expiresDate={}", i, productId, expiresDate);
+                                
+                                if (latestExpiresDate == null || expiresDate.after(latestExpiresDate)) {
+                                    latestExpiresDate = expiresDate;
+                                    bestSubscription = sub;
+                                    logger.info("更新最佳订阅为: productId={}, expiresDate={}", productId, expiresDate);
+                                }
+                            }
+                        }
+                        
+                        subscriptionInfo = bestSubscription;
                     }
                 }
 
@@ -310,6 +357,8 @@ public class SubscriptionBo extends BaseBo<User> {
                 
                 // 判断订阅类型
                 String subscriptionType = productId.contains("monthly") ? "monthly" : "annual";
+                
+                logger.info("最终选择的订阅: productId={}, expiresDate={}, type={}", productId, expiresDate, subscriptionType);
 
                 return new ReceiptVerificationResult(true, "验证成功", status, productId, expiresDate, subscriptionType);
 
