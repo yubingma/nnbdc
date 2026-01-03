@@ -120,7 +120,7 @@ class LoadingService {
     } else if (Get.overlayContext != null) {
       // 备用方案：尝试通过上下文查找
       try {
-        Overlay.of(Get.overlayContext!)?.insert(_overlayEntry!);
+        Overlay.of(Get.overlayContext!).insert(_overlayEntry!);
       } catch (e) {
         debugPrint('LoadingService: Failed to insert overlay - $e');
       }

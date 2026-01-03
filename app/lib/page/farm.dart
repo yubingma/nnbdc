@@ -284,8 +284,8 @@ class _PlantGrowthSceneState extends State<PlantGrowthScene> {
       // 保持底部对齐
       final double translateY = _currentViewportHeight - newScale * _currentWorldHeight;
 
-      newMatrix.translate(translateX, translateY);
-      newMatrix.scale(newScale);
+      newMatrix.translateByDouble(translateX, translateY, 0.0);
+      newMatrix.scaleByDouble(newScale, newScale, newScale);
 
       // 应用新的变换
       _applyViewMatrix(newMatrix);
