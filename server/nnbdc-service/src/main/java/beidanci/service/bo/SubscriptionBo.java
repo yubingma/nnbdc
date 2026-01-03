@@ -1,9 +1,18 @@
 package beidanci.service.bo;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
+import java.security.PublicKey;
+import java.security.Signature;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -42,6 +51,11 @@ public class SubscriptionBo extends BaseBo<User> {
     
     // Apple Shared Secret (自动续期订阅必填) - 请替换为你的实际密钥
     private static final String APPLE_SHARED_SECRET = "171b1c58f4114b16a5d00826042addba";
+
+    // Apple Root CA - G3 (Base64 encoded)
+    // 用于验证 StoreKit 2 JWS 签名
+    private static final String APPLE_ROOT_CA_G3_BASE64 = 
+        "MIICQzCCAcmgAwIBAgIILcX8iNLFS5UwCgYIKoZIzj0EAwMwZzEbMBkGA1UEAwwSQXBwbGUgUm9vdCBDQSAtIEczMSYwJAYDVQQLDB1BcHBsZSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTETMBEGA1UECgwKQXBwbGUgSW5jLjELMAkGA1UEBhMCVVMwHhcNMTQwNDMwMTgxOTA2WhcNMzkwNDMwMTgxOTA2WjBnMRswGQYDVQQDDBJBcHBsZSBSb290IENBIC0gRzMxJjAkBgNVBAsMHUFwcGxlIENlcnRpZmljYXRpb24gQXV0aG9yaXR5MRMwEQYDVQQKDApBcHBsZSBJbmMuMQswCQYDVQQGEwJVUzB2MBAGByqGSM49AgEGBSuBBAAiA2IABJjpLz1AcqTtkyJygRMc3RCV8cWjTnHcFBbZDuWmBSp3ZHtfTjjTuxxEtX/1H7YyYl3J6YRbTzBPEVoA/VhYDKX1DyxNB0cTddqXl5dvMVztK517IDvYuVTZXpmkOlEKMaNCMEAwHQYDVR0OBBYEFLuw3qFYM4iapIqZ3r6966/ayySrMA8GA1UdEwEB/wQFMAMBAf8wDgYDVR0PAQH/BAQDAgEGMAoGCCqGSM49BAMDA2gAMGUCMQCD6cHEFl4aXTQY2e3v9GwOAEZLuN+yRhHFD/3meoyhpmvOwgPUnPWTxnS4at+qIxUCMG1mihDK1A3UT82NQz60imOlM27jbdoXt2QfyFMm+YhidDkLF1vLUagM6BgD56KyKA==";
 
     private final OkHttpClient httpClient = new OkHttpClient();
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -173,8 +187,26 @@ public class SubscriptionBo extends BaseBo<User> {
      * 验证JWT格式的收据（StoreKit 2）
      * JWT收据包含签名的交易信息，可以直接解析payload获取订阅信息
      */
+    /**
+     * 验证JWT格式的收据（StoreKit 2）
+     * 完整验证流程：
+     * 1. 验证JWS签名（证书链验证 + 签名验证）
+     * 2. 解析Payload获取订阅信息
+     */
     private ReceiptVerificationResult verifyJWTReceipt(String jwtToken) {
         try {
+            // 1. 验证签名（生产环境必须）
+            try {
+                if (!verifyJWTSignature(jwtToken)) {
+                    logger.error("JWT签名验证失败");
+                    return new ReceiptVerificationResult(false, "JWT签名验证失败", -1, null, null, null);
+                }
+                logger.info("JWT签名验证通过");
+            } catch (Exception e) {
+                logger.error("JWT签名验证过程中发生异常", e);
+                return new ReceiptVerificationResult(false, "JWT签名验证异常: " + e.getMessage(), -1, null, null, null);
+            }
+
             // JWT格式：header.payload.signature
             String[] parts = jwtToken.split("\\.");
             if (parts.length != 3) {
@@ -192,14 +224,6 @@ public class SubscriptionBo extends BaseBo<User> {
             JsonNode payloadJson = objectMapper.readTree(decodedPayload);
             
             // 从JWT payload中提取订阅信息
-            // StoreKit 2 JWT包含以下关键字段：
-            // - transactionId: 交易ID
-            // - originalTransactionId: 原始交易ID
-            // - productId: 产品ID
-            // - purchaseDate: 购买时间（毫秒）
-            // - expiresDate: 过期时间（毫秒）
-            // - type: 交易类型（Auto-Renewable Subscription）
-            
             if (!payloadJson.has("productId")) {
                 return new ReceiptVerificationResult(false, "JWT中缺少productId字段", -1, null, null, null);
             }
@@ -228,18 +252,143 @@ public class SubscriptionBo extends BaseBo<User> {
             logger.info("JWT解析成功: productId={}, expiresDate={}, type={}", 
                     productId, expiresDate, subscriptionType);
             
-            // 注意：这里我们信任JWT的内容，实际生产环境中应该验证JWT签名
-            // Apple的JWT使用ES256算法签名，需要使用Apple的公钥验证
-            // 为了简化，这里暂时跳过签名验证，仅解析内容
-            // TODO:【安全风险】生产环境必须验证JWT签名，防止伪造收据！
-            logger.warn("【严重警告】当前未验证JWT签名，仅用于测试环境！生产环境请务必实现签名验证！");
-            
             return new ReceiptVerificationResult(true, "验证成功", 0, productId, expiresDate, subscriptionType);
             
         } catch (Exception e) {
             logger.error("解析JWT收据失败", e);
             return new ReceiptVerificationResult(false, "JWT解析失败: " + e.getMessage(), -1, null, null, null);
         }
+    }
+
+    /**
+     * 验证JWS签名
+     */
+    private boolean verifyJWTSignature(String jwt) throws Exception {
+        String[] parts = jwt.split("\\.");
+        if (parts.length != 3) throw new IllegalArgumentException("Invalid JWT format");
+
+        // 1. 解析Header获取x5c
+        byte[] headerBytes = Base64.getUrlDecoder().decode(parts[0]);
+        JsonNode header = objectMapper.readTree(headerBytes);
+        
+        if (!header.has("x5c")) {
+            throw new IllegalArgumentException("JWT Header缺少x5c字段");
+        }
+        
+        JsonNode x5cParams = header.get("x5c");
+        List<X509Certificate> chain = new ArrayList<>();
+        CertificateFactory cf = CertificateFactory.getInstance("X.509");
+        
+        for (JsonNode x5c : x5cParams) {
+            byte[] certBytes = Base64.getDecoder().decode(x5c.asText());
+            chain.add((X509Certificate) cf.generateCertificate(new ByteArrayInputStream(certBytes)));
+        }
+        
+        if (chain.isEmpty()) {
+            throw new IllegalArgumentException("证书链为空");
+        }
+
+        // 2. 验证证书链
+        // 加载Apple Root CA G3
+        byte[] appleRootBytes = Base64.getDecoder().decode(APPLE_ROOT_CA_G3_BASE64);
+        X509Certificate appleRoot = (X509Certificate) cf.generateCertificate(new ByteArrayInputStream(appleRootBytes));
+        
+        verifyCertificateChain(chain, appleRoot);
+        
+        // 3. 验证签名
+        // JWS内容 = header + "." + payload
+        byte[] content = (parts[0] + "." + parts[1]).getBytes(StandardCharsets.US_ASCII);
+        byte[] signature = Base64.getUrlDecoder().decode(parts[2]);
+        
+        // 获取公钥 (来自Leaf证书)
+        PublicKey publicKey = chain.get(0).getPublicKey();
+        
+        // 将Raw ECDSA签名转换为DER格式
+        byte[] derSignature = transcodeSignatureToDER(signature);
+        
+        Signature sig = Signature.getInstance("SHA256withECDSA");
+        sig.initVerify(publicKey);
+        sig.update(content);
+        
+        return sig.verify(derSignature);
+    }
+    
+    /**
+     * 验证证书链
+     */
+    private void verifyCertificateChain(List<X509Certificate> chain, X509Certificate trustedRoot) throws Exception {
+        // 1. 验证链的完整性和签名
+        for (int i = 0; i < chain.size(); i++) {
+            X509Certificate cert = chain.get(i);
+            
+            // 检查有效期
+            cert.checkValidity();
+            
+            if (i < chain.size() - 1) {
+                // 验证被下一级(Inter)签名
+                X509Certificate issuer = chain.get(i + 1);
+                cert.verify(issuer.getPublicKey());
+            } else {
+                // 最后一级(Inter或Root)必须被Trusted Root签名，或者它自己就是Trusted Root
+                // 这里的chain通常不包含Root，或者包含Root。
+                // 我们直接验证最后一个证书是否由Trusted Root签名
+                try {
+                    cert.verify(trustedRoot.getPublicKey());
+                } catch (Exception e) {
+                     // 如果最后一个证书就是Root（自签名），再试一次
+                     if (cert.equals(trustedRoot)) {
+                         return;
+                     }
+                     throw new Exception("证书链未锚定到受信任的Apple Root CA", e);
+                }
+            }
+        }
+    }
+
+    /**
+     * 将ECDSA Raw Signature (R|S) 转换为 DER格式
+     * Java Security Signature verify需要DER格式
+     */
+    private byte[] transcodeSignatureToDER(byte[] jwsSignature) throws IOException {
+        // Raw Signature is 64 bytes (R=32, S=32)
+        if (jwsSignature.length != 64) {
+            // 某些库可能有些微不同，但ES256标准是64字节
+            throw new IOException("ECDSA Signature length is not 64 bytes");
+        }
+        
+        byte[] rBytes = new byte[32];
+        byte[] sBytes = new byte[32];
+        System.arraycopy(jwsSignature, 0, rBytes, 0, 32);
+        System.arraycopy(jwsSignature, 32, sBytes, 0, 32);
+        
+        // 使用BigInteger转换，它是正数 (signum=1)
+        BigInteger r = new BigInteger(1, rBytes);
+        BigInteger s = new BigInteger(1, sBytes);
+        
+        // toByteArray() 返回 ASN.1 兼容的字节 (minimum number of bytes, with sign bit)
+        byte[] rDer = r.toByteArray();
+        byte[] sDer = s.toByteArray();
+        
+        // 构建DER序列: 0x30 | totalLen | 0x02 | rLen | r | 0x02 | sLen | s
+        int len = 2 + rDer.length + 2 + sDer.length;
+        // DER sequence total length usually < 128, so 1 byte len is fine. 
+        // Strict check: if len > 127 needed, but here max is ~70-72 bytes.
+        
+        byte[] der = new byte[2 + len];
+        int offset = 0;
+        der[offset++] = 0x30;
+        der[offset++] = (byte) len;
+        
+        der[offset++] = 0x02;
+        der[offset++] = (byte) rDer.length;
+        System.arraycopy(rDer, 0, der, offset, rDer.length);
+        offset += rDer.length;
+        
+        der[offset++] = 0x02;
+        der[offset++] = (byte) sDer.length;
+        System.arraycopy(sDer, 0, der, offset, sDer.length);
+        
+        return der;
     }
 
     /**
