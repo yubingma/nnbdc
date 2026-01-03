@@ -17,7 +17,7 @@ class SubscriptionPage extends StatefulWidget {
 class _SubscriptionPageState extends State<SubscriptionPage> {
   List<ProductDetails> _products = [];
   bool _isLoading = true;
-  bool _isPurchasing = false;
+  String? _purchasingProductId; // 记录当前正在购买的产品ID
   bool _isRestoring = false;
 
   @override
@@ -65,12 +65,12 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
 
   /// 购买订阅
   Future<void> _purchaseProduct(ProductDetails product) async {
-    if (_isPurchasing) {
+    if (_purchasingProductId != null) {
       return;
     }
 
     setState(() {
-      _isPurchasing = true;
+      _purchasingProductId = product.id;
     });
 
     try {
@@ -88,7 +88,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
       ToastUtil.error('购买失败，请重试');
     } finally {
       setState(() {
-        _isPurchasing = false;
+        _purchasingProductId = null;
       });
     }
   }
@@ -361,7 +361,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: _isPurchasing
+                onPressed: _purchasingProductId != null
                     ? null
                     : () => _purchaseProduct(product),
                 style: ElevatedButton.styleFrom(
@@ -370,7 +370,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                child: _isPurchasing
+                child: _purchasingProductId == product.id
                     ? const SizedBox(
                         width: 20,
                         height: 20,
