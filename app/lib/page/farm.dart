@@ -134,9 +134,11 @@ class _PlantGrowthSceneState extends State<PlantGrowthScene> {
     // 视口中央是 viewportWidth / 2
     // 所以 X 平移 = viewportWidth/2 - worldWidth/2
     final Matrix4 matrix = Matrix4.identity();
-    matrix.translate(
+    matrix.translateByDouble(
       viewportWidth / 2 - worldWidth / 2,
       viewportHeight - worldHeight,
+      0.0,
+      0.0,
     );
     return matrix;
   }
@@ -284,8 +286,8 @@ class _PlantGrowthSceneState extends State<PlantGrowthScene> {
       // 保持底部对齐
       final double translateY = _currentViewportHeight - newScale * _currentWorldHeight;
 
-      newMatrix.translateByDouble(translateX, translateY, 0.0);
-      newMatrix.scaleByDouble(newScale, newScale, newScale);
+      newMatrix.translateByDouble(translateX, translateY, 0.0, 0.0);
+      newMatrix.scaleByDouble(newScale, newScale, newScale, 1.0);
 
       // 应用新的变换
       _applyViewMatrix(newMatrix);
