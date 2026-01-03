@@ -8,6 +8,9 @@ import org.springframework.boot.actuate.autoconfigure.security.servlet.Managemen
 import org.springframework.boot.web.servlet.ServletComponentScan;
 import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
+import javax.annotation.PostConstruct;
+import java.util.TimeZone;
+
 
 @SpringBootApplication(exclude = {
         JpaRepositoriesAutoConfiguration.class,
@@ -18,6 +21,11 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
 @EnableSwagger2
 @ServletComponentScan(basePackages = "beidanci.*")
 public class NnbdcServiceApplication {
+    @PostConstruct
+    void started() {
+        TimeZone.setDefault(TimeZone.getTimeZone("Asia/Shanghai"));
+    }
+
     public static void main(String[] args) {
         SpringApplication.run(NnbdcServiceApplication.class, args);
     }
