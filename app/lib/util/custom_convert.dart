@@ -5,8 +5,9 @@ class CustomDateTimeConverter implements JsonConverter<DateTime, String> {
 
   @override
   DateTime fromJson(String json) {
-    // 直接解析，避免无意义的条件判断
-    return DateTime.parse(json).add(const Duration(hours: 8));
+    // Backend now returns ISO8601 with timezone (e.g. +08:00)
+    // DateTime.parse handles it correctly. No manual offset needed.
+    return DateTime.parse(json);
   }
 
   @override
