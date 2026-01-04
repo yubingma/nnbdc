@@ -69,6 +69,109 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
       return;
     }
 
+    // 检查是否已有有效订阅
+    final isPremium = SubscriptionUtil.isPremium();
+    final currentType = SubscriptionUtil.getSubscriptionType();
+    final expireDate = SubscriptionUtil.getExpireDate();
+    
+    // 判断产品类型
+    final isMonthly = product.id.contains('monthly');
+    final isAnnual = product.id.contains('yearly') || product.id.contains('annual');
+    
+    if (isPremium && expireDate != null) {
+      final formatter = DateFormat('yyyy年MM月dd日');
+      
+      // 购买相同类型订阅时，显示确认对话框
+      if ((currentType == 'annual' && isAnnual) || 
+          (currentType == 'monthly' && isMonthly)) {
+        
+        final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('确认订阅'),
+            content: Text(
+              '您已经是${isAnnual ? "年度" : "月度"}会员\n'
+              '有效期至：${formatter.format(expireDate)}\n\n'
+              '继续订阅可能不会延长有效期，而是在当前订阅到期后生效。\n\n'
+              '确定要继续吗？'
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('取消'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('继续'),
+              ),
+            ],
+          ),
+        );
+        
+        if (confirmed != true) {
+          return;
+        }
+      }
+      
+      // 从年度降级到月度时，给出友好提示
+      else if (currentType == 'annual' && isMonthly) {
+        final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('订阅提示'),
+            content: Text(
+              '您当前是年度会员（有效期至 ${formatter.format(expireDate)}）\n\n'
+              '如果订阅月度会员，将在年度订阅到期后生效。\n\n'
+              '您确定要继续吗？'
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('取消'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('继续'),
+              ),
+            ],
+          ),
+        );
+        
+        if (confirmed != true) {
+          return;
+        }
+      }
+      
+      // 从月度升级到年度时，给出鼓励性提示
+      else if (currentType == 'monthly' && isAnnual) {
+        final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('升级到年度会员'),
+            content: Text(
+              '您当前是月度会员（有效期至 ${formatter.format(expireDate)}）\n\n'
+              '升级到年度会员可享受更优惠的价格！\n\n'
+              '确定要升级吗？'
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('取消'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('升级'),
+              ),
+            ],
+          ),
+        );
+        
+        if (confirmed != true) {
+          return;
+        }
+      }
+    }
+
     setState(() {
       _purchasingProductId = product.id;
     });
@@ -283,6 +386,13 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
     final isAnnual = product.id.contains('yearly') || product.id.contains('annual');
     final isRecommended = isAnnual; // 推荐年度订阅
 
+    // 检查当前订阅状态
+    final isPremium = SubscriptionUtil.isPremium();
+    final currentType = SubscriptionUtil.getSubscriptionType();
+    final isCurrentSubscription = isPremium && 
+        ((currentType == 'annual' && isAnnual) || 
+         (currentType == 'monthly' && isMonthly));
+
     return Card(
       elevation: isRecommended ? 4 : 2,
       margin: const EdgeInsets.only(bottom: 16),
@@ -312,7 +422,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                                   fontWeight: FontWeight.bold,
                                 ),
                           ),
-                          if (isRecommended) ...[
+                          if (isRecommended) ...[ 
                             const SizedBox(width: 8),
                             Container(
                               padding: const EdgeInsets.symmetric(
@@ -357,6 +467,31 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                 ),
               ],
             ),
+            
+            // 显示当前订阅标识
+            if (isCurrentSubscription) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.green.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(color: Colors.green),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.check_circle, color: Colors.green, size: 16),
+                    SizedBox(width: 6),
+                    Text(
+                      '当前订阅',
+                      style: TextStyle(color: Colors.green, fontSize: 12, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+            
             const SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
@@ -379,7 +514,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                           valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                         ),
                       )
-                    : const Text('立即订阅'),
+                    : Text(isCurrentSubscription ? '续订' : '立即订阅'),
               ),
             ),
           ],
