@@ -418,44 +418,44 @@ class _MePageState extends State<MePage> {
               ),
               const SizedBox(height: 12),
               // 等级信息
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.25),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 1),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      studyProgress!.level.figure ?? '',
-                      style: TextStyle(
-                        fontSize: MediaQuery.of(context).size.width > 600 ? 20 : 18,
+              GestureDetector(
+                onTap: () {
+                  Get.to(() => LevelPathPage(currentLevel: studyProgress!.level.level ?? 1));
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.25),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 1),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        studyProgress!.level.figure ?? '',
+                        style: TextStyle(
+                          fontSize: MediaQuery.of(context).size.width > 600 ? 20 : 18,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      studyProgress!.level.name!,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: MediaQuery.of(context).size.width > 600 ? 16 : 14,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.2,
+                      const SizedBox(width: 8),
+                      Text(
+                        studyProgress!.level.name!,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: MediaQuery.of(context).size.width > 600 ? 16 : 14,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.2,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 6),
-                    GestureDetector(
-                      onTap: () {
-                        Get.to(() => LevelPathPage(currentLevel: studyProgress!.level.level ?? 1));
-                      },
-                      child: Icon(
+                      const SizedBox(width: 6),
+                      Icon(
                         Icons.help_outline,
                         color: Colors.white.withValues(alpha: 0.8),
                         size: 16,
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
               SizedBox(height: MediaQuery.of(context).size.width > 600 ? 16 : 12),
