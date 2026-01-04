@@ -32,6 +32,7 @@ import 'package:nnbdc/util/platform_util.dart';
 
 import 'package:nnbdc/util/level_util.dart';
 import 'package:nnbdc/widget/floating_speech_bubble.dart';
+import 'package:nnbdc/page/level_path_page.dart';
 
 import '../global.dart';
 import '../state.dart';
@@ -441,6 +442,17 @@ class _MePageState extends State<MePage> {
                         fontSize: MediaQuery.of(context).size.width > 600 ? 16 : 14,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 1.2,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    GestureDetector(
+                      onTap: () {
+                        Get.to(() => LevelPathPage(currentLevel: studyProgress!.level.level ?? 1));
+                      },
+                      child: Icon(
+                        Icons.help_outline,
+                        color: Colors.white.withValues(alpha: 0.8),
+                        size: 16,
                       ),
                     ),
                   ],

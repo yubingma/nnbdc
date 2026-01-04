@@ -24,6 +24,8 @@ class Level {
 }
 
 class LevelUtil {
+  static List<Level> get allLevels => _levels;
+
   static const List<Level> _levels = [
     Level(
       name: '毛毛虫',
