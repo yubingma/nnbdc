@@ -1,6 +1,5 @@
 package beidanci.api.model;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import java.util.Date;
 
 /**
@@ -17,7 +16,6 @@ public class SubscriptionVo extends Vo {
     /**
      * iOS订阅到期时间
      */
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX", timezone = "GMT+8")
     private Date subscriptionExpireDateIos;
     
     /**

@@ -3,7 +3,6 @@ package beidanci.api.model;
 import java.util.Date;
 import java.util.List;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public class UserVo extends UuidVo {
@@ -74,7 +73,6 @@ public class UserVo extends UuidVo {
     /**
      * iOS订阅到期时间
      */
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX", timezone = "GMT+8")
     private Date subscriptionExpireDateIos;
 
     /**
@@ -101,7 +99,6 @@ public class UserVo extends UuidVo {
     /**
      * 强制会员状态最后修改时间
      */
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX", timezone = "GMT+8")
     private Date premiumOverrideUpdateTime;
 
     /**
