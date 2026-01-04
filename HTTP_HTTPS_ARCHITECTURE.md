@@ -11,7 +11,7 @@
   - `/etc/letsencrypt/live/back.nnbdc.com/fullchain.pem`
   - `/etc/letsencrypt/live/back.nnbdc.com/privkey.pem`
 - **续期配置**：
-  - `/etc/letsencrypt/renewal/*.conf`
+  - `/etc/letsencrypt/renewal/*.conf` 
 - **续期 Hook（示例：CDN 证书同步）**：
   - `/etc/letsencrypt/renewal-hooks/deploy/aliyun-cdn.sh`
 
