@@ -43,8 +43,18 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
         return;
       }
 
-      // 获取产品列表
+      // 获取产品列表并排序（确保顺序固定：月度在前，年度在后）
       final products = await SubscriptionUtil.getProducts();
+      products.sort((a, b) {
+        // 定义顺序：monthly 优先于 yearly/annual
+        bool aIsMonthly = a.id.contains('monthly');
+        bool bIsMonthly = b.id.contains('monthly');
+        
+        if (aIsMonthly && !bIsMonthly) return 1;
+        if (!aIsMonthly && bIsMonthly) return -1;
+        return a.id.compareTo(b.id);
+      });
+
       setState(() {
         _products = products;
         _isLoading = false;
