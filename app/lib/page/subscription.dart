@@ -92,7 +92,8 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
             content: Text(
               '您已经是${isAnnual ? "年度" : "月度"}会员\n'
               '有效期至：${formatter.format(expireDate)}\n\n'
-              '继续订阅可能不会延长有效期，而是在当前订阅到期后生效。\n\n'
+              '重复订阅相同类型可能会在当前订阅到期后续订，或根据 Apple 的订阅政策处理。\n\n'
+              '建议：如需续订，请等待当前订阅快到期时再操作。\n\n'
               '确定要继续吗？'
             ),
             actions: [
@@ -113,16 +114,19 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
         }
       }
       
-      // 从年度降级到月度时，给出友好提示
+      // 从年度降级到月度时，给出明确说明
       else if (currentType == 'annual' && isMonthly) {
         final confirmed = await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
-            title: const Text('订阅提示'),
+            title: const Text('降级订阅'),
             content: Text(
               '您当前是年度会员（有效期至 ${formatter.format(expireDate)}）\n\n'
-              '如果订阅月度会员，将在年度订阅到期后生效。\n\n'
-              '您确定要继续吗？'
+              '如果订阅月度会员：\n'
+              '• 您的年度会员将继续有效至到期日\n'
+              '• 年度会员到期后，将自动切换为月度会员\n'
+              '• 不会立即生效，也不会获得退款\n\n'
+              '您确定要降级吗？'
             ),
             actions: [
               TextButton(
@@ -131,7 +135,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
               ),
               TextButton(
                 onPressed: () => Navigator.pop(context, true),
-                child: const Text('继续'),
+                child: const Text('确认降级'),
               ),
             ],
           ),
@@ -142,7 +146,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
         }
       }
       
-      // 从月度升级到年度时，给出鼓励性提示
+      // 从月度升级到年度时，强调立即生效和退款
       else if (currentType == 'monthly' && isAnnual) {
         final confirmed = await showDialog<bool>(
           context: context,
@@ -150,7 +154,10 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
             title: const Text('升级到年度会员'),
             content: Text(
               '您当前是月度会员（有效期至 ${formatter.format(expireDate)}）\n\n'
-              '升级到年度会员可享受更优惠的价格！\n\n'
+              '如果升级到年度会员：\n'
+              '• 立即生效，享受年度会员权益\n'
+              '• Apple 会自动退还月度订阅未使用部分的费用\n'
+              '• 年度会员价格更优惠！\n\n'
               '确定要升级吗？'
             ),
             actions: [
@@ -160,7 +167,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
               ),
               TextButton(
                 onPressed: () => Navigator.pop(context, true),
-                child: const Text('升级'),
+                child: const Text('立即升级'),
               ),
             ],
           ),
@@ -268,7 +275,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
       if (expireDate != null) {
         final formatter = DateFormat('yyyy年MM月dd日');
         final typeText = _getSubscriptionTypeText(subscriptionType).replaceAll('订阅', '');
-        return 'iOS $typeText会员，有效期至：${formatter.format(expireDate)}';
+        return '$typeText会员\n有效期至：${formatter.format(expireDate)}';
       } else {
         return 'iOS 会员（永久）';
       }
@@ -305,31 +312,69 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   // 当前订阅状态
-                  Card(
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: isPremium
+                          ? LinearGradient(
+                              colors: [Colors.green.shade400, Colors.green.shade600],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            )
+                          : LinearGradient(
+                              colors: [Colors.grey.shade300, Colors.grey.shade400],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: isPremium 
+                              ? Colors.green.withValues(alpha: 0.3)
+                              : Colors.grey.withValues(alpha: 0.2),
+                          blurRadius: 8,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
                     child: Padding(
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(20),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            '当前状态',
-                            style: Theme.of(context).textTheme.titleLarge,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            _getSubscriptionStatusText(),
-                            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                  color: isPremium ? Colors.green : Colors.grey,
-                                  fontWeight: FontWeight.bold,
+                          Row(
+                            children: [
+                              Icon(
+                                isPremium ? Icons.workspace_premium : Icons.person_outline,
+                                color: Colors.white,
+                                size: 32,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '会员状态',
+                                      style: TextStyle(
+                                        color: Colors.white.withValues(alpha: 0.9),
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      _getSubscriptionStatusText(),
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        height: 1.3,
+                                      ),
+                                    ),
+                                  ],
                                 ),
+                              ),
+                            ],
                           ),
-                          if (isPremium) ...[
-                            const SizedBox(height: 8),
-                            Text(
-                              '订阅类型：${_getSubscriptionTypeText(SubscriptionUtil.getSubscriptionType())}',
-                              style: Theme.of(context).textTheme.bodyMedium,
-                            ),
-                          ],
                         ],
                       ),
                     ),
@@ -396,11 +441,15 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
     return Card(
       elevation: isRecommended ? 4 : 2,
       margin: const EdgeInsets.only(bottom: 16),
+      // 当前订阅使用绿色背景
+      color: isCurrentSubscription ? Colors.green.shade50 : null,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: isRecommended
-            ? BorderSide(color: Theme.of(context).primaryColor, width: 2)
-            : BorderSide.none,
+        side: isCurrentSubscription
+            ? BorderSide(color: Colors.green, width: 2)
+            : (isRecommended
+                ? BorderSide(color: Theme.of(context).primaryColor, width: 2)
+                : BorderSide.none),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
