@@ -650,7 +650,7 @@ class _MePageState extends State<MePage> {
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(12),
                         gradient: LinearGradient(
-                          colors: [Colors.amber.shade400, Colors.orange.shade600],
+                          colors: [Colors.green.shade400, Colors.green.shade600],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),

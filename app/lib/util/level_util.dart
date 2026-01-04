@@ -48,7 +48,7 @@ class LevelUtil {
     Level(
       name: '仓鼠',
       icon: '🐹',
-      quote: '日积月累，我要做个小胖子。',
+      quote: '日积月累，我要做个知识小胖子。',
       color: Color(0xFFFFD54F),
       level: 2,
       minScore: 101,
@@ -126,7 +126,7 @@ class LevelUtil {
       style: "color:purple;",
     ),
     Level(
-      name: '抹香鲸',
+      name: '蓝鲸',
       icon: '🐳',
       quote: '世界很大, 我要去看看',
       color: Color(0xFF4DB6AC),
