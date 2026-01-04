@@ -18,7 +18,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 
 import beidanci.api.Result;
 import beidanci.api.model.DictDto;
@@ -69,6 +68,9 @@ public class ResController {
 
     @Autowired
     DictWordBo dictWordBo;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @GetMapping("/res/getSysDictResById.do")
     public void getSysDictResById(@RequestParam String dictId, HttpServletRequest request, HttpServletResponse response)
@@ -197,15 +199,10 @@ public class ResController {
             DictRes dictRes = new DictRes(dict, dictWords, words, meaningItems, similarWords, synonyms, sentences, images);
             Result<DictRes> result = Result.success(dictRes);
 
-            // 使用 chunked 模式流式写入 JSON，并统计传输大小
-            ObjectMapper mapper = new ObjectMapper();
-            mapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
-            // 配置日期序列化为 ISO-8601 字符串格式，而不是时间戳
-            mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-            mapper.setDateFormat(new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"));
+            // 使用全局 ObjectMapper（已配置正确的时区和日期格式）
 
             // 先计算原始JSON大小
-            String originalJson = mapper.writeValueAsString(result);
+            String originalJson = objectMapper.writeValueAsString(result);
             long originalSize = originalJson.getBytes("UTF-8").length;
 
             // 声明实际传输字节数变量
@@ -222,7 +219,7 @@ public class ResController {
                 // 若后续发现内存压力，可改为：写入临时文件后再按文件长度流式输出，或引入缓存复用压缩结果。
                 java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream((int) Math.min(Integer.MAX_VALUE, originalSize));
                 try (java.util.zip.GZIPOutputStream gzipOut = new java.util.zip.GZIPOutputStream(baos)) {
-                    mapper.writeValue(gzipOut, result);
+                    objectMapper.writeValue(gzipOut, result);
                     gzipOut.finish();
                 }
 
@@ -235,7 +232,7 @@ public class ResController {
                 response.setHeader("Content-Length", String.valueOf(originalSize));
                 logger.info("使用 Content-Length 模式传输");
 
-                mapper.writeValue(response.getOutputStream(), result);
+                objectMapper.writeValue(response.getOutputStream(), result);
                 actualBytes = originalSize;
             }
 
@@ -268,8 +265,7 @@ public class ResController {
             // 返回错误响应
             try {
                 Result<Object> errorResult = Result.fail(e.getMessage());
-                ObjectMapper mapper = new ObjectMapper();
-                String errorJson = mapper.writeValueAsString(errorResult);
+                String errorJson = objectMapper.writeValueAsString(errorResult);
 
                 PrintWriter writer = response.getWriter();
                 writer.write(errorJson);
