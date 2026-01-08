@@ -452,17 +452,26 @@ class LoginPageState extends State<LoginPage> {
               margin: EdgeInsets.only(
                 bottom: MediaQuery.of(context).size.width > 600 ? 10 : 5,
               ),
-              child: TextButton(
+              child: ElevatedButton(
                 onPressed: () async {
                   await Global.loginAsGuest();
                   // 游客身份进入时也尝试恢复之前的购买状态
                   SubscriptionUtil.restorePurchases(showToast: false);
                   Get.offAllNamed('/index');
                 },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryDarkColor,
+                  padding: EdgeInsets.symmetric(
+                    vertical: MediaQuery.of(context).size.width > 600 ? 8 : 6,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
                 child: Text(
                   '我是游客',
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.8),
+                    color: Colors.white,
                     fontSize: MediaQuery.of(context).size.width > 600 ? 14 : 12,
                   ),
                 ),

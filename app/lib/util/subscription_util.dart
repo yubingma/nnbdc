@@ -276,7 +276,12 @@ class SubscriptionUtil {
       final bool verified = await _verifyReceipt(purchaseDetails);
 
       if (verified) {
-        ToastUtil.success('订阅成功！');
+        // 区分是新订阅还是恢复订阅
+        if (purchaseDetails.status == PurchaseStatus.restored) {
+          ToastUtil.success('恢复订阅成功！');
+        } else {
+          ToastUtil.success('订阅成功！');
+        }
         // 刷新用户信息
         await _refreshUserInfo();
         // 发送订阅更新事件，通知页面刷新
