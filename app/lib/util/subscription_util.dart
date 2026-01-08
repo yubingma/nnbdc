@@ -22,6 +22,7 @@ class SubscriptionUtil {
   static StreamSubscription<List<PurchaseDetails>>? _purchaseSubscription;
   static bool _isAvailable = false;
   static bool _initialized = false;
+  static bool _showToasts = true; // 控制是否显示 Toast 提示
 
   /// 订阅产品ID列表
   static const Set<String> _productIds = {
@@ -163,6 +164,7 @@ class SubscriptionUtil {
 
   /// 购买订阅
   static Future<bool> purchase(ProductDetails productDetails) async {
+    _showToasts = true; // 手动购买必须显示提示
     if (!_isAvailable) {
       await init();
       if (!_isAvailable) {
@@ -235,6 +237,7 @@ class SubscriptionUtil {
     }
 
     try {
+      _showToasts = showToast;
       await _iap.restorePurchases();
       if (showToast) ToastUtil.info('正在恢复购买...');
       return true;
@@ -256,13 +259,13 @@ class SubscriptionUtil {
   static Future<void> _handlePurchase(PurchaseDetails purchaseDetails) async {
     if (purchaseDetails.status == PurchaseStatus.pending) {
       Global.logger.i('购买待处理: ${purchaseDetails.productID}');
-      ToastUtil.info('购买处理中...');
+      if (_showToasts) ToastUtil.info('购买处理中...');
       return;
     }
 
     if (purchaseDetails.status == PurchaseStatus.error) {
       Global.logger.e('购买失败: ${purchaseDetails.error}');
-      ToastUtil.error('购买失败: ${purchaseDetails.error?.message ?? "未知错误"}');
+      if (_showToasts) ToastUtil.error('购买失败: ${purchaseDetails.error?.message ?? "未知错误"}');
       if (purchaseDetails.pendingCompletePurchase) {
         await _iap.completePurchase(purchaseDetails);
       }
@@ -276,18 +279,22 @@ class SubscriptionUtil {
       final bool verified = await _verifyReceipt(purchaseDetails);
 
       if (verified) {
-        // 区分是新订阅还是恢复订阅
-        if (purchaseDetails.status == PurchaseStatus.restored) {
-          ToastUtil.success('恢复订阅成功！');
-        } else {
-          ToastUtil.success('订阅成功！');
+        if (_showToasts) {
+          // 区分是新订阅还是恢复订阅
+          if (purchaseDetails.status == PurchaseStatus.restored) {
+            ToastUtil.success('恢复订阅成功！');
+          } else {
+            ToastUtil.success('订阅成功！');
+          }
         }
         // 刷新用户信息
         await _refreshUserInfo();
         // 发送订阅更新事件，通知页面刷新
         _purchaseUpdatedController.add([purchaseDetails]);
       } else {
-        ToastUtil.error('订阅验证失败，请联系客服');
+        if (_showToasts) {
+          ToastUtil.error('订阅验证失败，请联系客服');
+        }
       }
 
       // 完成购买

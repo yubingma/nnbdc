@@ -10,6 +10,7 @@ import 'package:nnbdc/util/app_clock.dart';
 import 'package:drift/drift.dart' as drift hide Column;
 import 'package:nnbdc/theme/app_theme.dart';
 import 'package:nnbdc/util/toast_util.dart';
+import 'package:nnbdc/util/subscription_util.dart';
 import 'package:nnbdc/util/error_handler.dart';
 import '../global.dart';
 import '../util/client_type.dart';
@@ -597,6 +598,8 @@ class EmailLoginPageState extends State<EmailLoginPage> {
           final result = await UserBo().getLoggedInUser();
           if (result.success && result.data != null) {
             await Global.setLoggedInUser(result.data!);
+            // 登录成功后自动触发静默恢复购买
+            SubscriptionUtil.restorePurchases(showToast: false);
             Get.offAllNamed('/index');
           } else {
             // 如果服务器验证失败，可能需要重新验证码登录
@@ -665,6 +668,8 @@ class EmailLoginPageState extends State<EmailLoginPage> {
           _emailExistsInLocal = true;
         });
       }
+      // 登录成功后自动触发静默恢复购买
+      SubscriptionUtil.restorePurchases(showToast: false);
       Get.offAllNamed('/index');
     } else {
       ToastUtil.error(codeResult.msg ?? '登录失败');
