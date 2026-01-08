@@ -345,6 +345,7 @@ class SubscriptionUtil {
         purchaseDetails.productID,
         purchaseDetails.purchaseID ?? '',
         platform,
+        !Global.isGuest, // updateBackend: 为访客时不更新后端
       );
 
       if (result.success && result.data != null) {

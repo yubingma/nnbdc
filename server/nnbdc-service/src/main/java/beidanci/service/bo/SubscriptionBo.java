@@ -75,22 +75,28 @@ public class SubscriptionBo extends BaseBo<User> {
      * @return 验证结果和订阅信息
      */
     @Transactional
-    public Result<SubscriptionVo> verifySubscription(String userId, String receiptData, String productId, String transactionId, String platform) {
+    public Result<SubscriptionVo> verifySubscription(String userId, String receiptData, String productId, String transactionId, String platform, boolean updateBackend) {
         try {
             // 记录接收到的参数
-            logger.info("开始验证订阅: userId={}, productId={}, transactionId={}, platform={}, receiptDataLength={}", 
-                    userId, productId, transactionId, platform, receiptData != null ? receiptData.length() : 0);
+            logger.info("开始验证订阅: userId={}, productId={}, transactionId={}, platform={}, updateBackend={}, receiptDataLength={}", 
+                    userId, productId, transactionId, platform, updateBackend, receiptData != null ? receiptData.length() : 0);
             
             // 验证收据数据是否为空
             if (receiptData == null || receiptData.trim().isEmpty()) {
                 logger.error("收据数据为空");
                 return new Result<>(false, "收据数据为空", null);
             }
-            // 查找用户
-            User user = userBo.findById(userId);
-            if (user == null) {
-                logger.error("用户不存在: {}", userId);
-                return new Result<>(false, "用户不存在", null);
+
+            // 查找用户 (游客模式下 userId 为 "guest")
+            User user = null;
+            if (userId != null && !userId.equals("guest")) {
+                user = userBo.findById(userId);
+                if (user == null) {
+                    logger.error("用户不存在: {}", userId);
+                    return new Result<>(false, "用户不存在", null);
+                }
+            } else {
+                logger.info("游客模式下的收据验证: userId={}", userId);
             }
 
             // 验证平台参数（只支持iOS）
@@ -112,29 +118,36 @@ public class SubscriptionBo extends BaseBo<User> {
                 logger.warn("产品ID不匹配: 期望 {}, 实际 {}", productId, verificationResult.productId);
             }
 
-            // 更新用户订阅状态（iOS平台）
-            updateUserSubscription(user, verificationResult);
+            // 如果不是游客且需要更新后端，则更新用户订阅状态
+            if (user != null && updateBackend) {
+                // 更新用户订阅状态（iOS平台）
+                updateUserSubscription(user, verificationResult);
 
-            // 保存收据数据（用于恢复购买）
-            user.setLastReceiptDataIos(receiptData);
-            try {
-                userBo.updateEntity(user);
-                // 服务端主动变更用户订阅字段后，写入 user_db_log，确保客户端同步可见
-                userBo.logUserUpdateForSync(user);
-            } catch (IllegalAccessException e) {
-                logger.error("更新用户订阅状态失败", e);
-                return new Result<>(false, "更新用户订阅状态失败", null);
+                // 保存收据数据（用于恢复购买）
+                user.setLastReceiptDataIos(receiptData);
+                try {
+                    userBo.updateEntity(user);
+                    // 服务端主动变更用户订阅字段后，写入 user_db_log，确保客户端同步可见
+                    userBo.logUserUpdateForSync(user);
+                } catch (IllegalAccessException e) {
+                    logger.error("更新用户订阅状态失败", e);
+                    return new Result<>(false, "更新用户订阅状态失败", null);
+                }
             }
 
             logger.info("订阅验证成功: userId={}, productId={}, expireDate={}", 
                     userId, verificationResult.productId, verificationResult.expiresDate);
 
+            // 根据验证结果计算当前是否有效
+            Date now = new Date();
+            boolean isActive = verificationResult.expiresDate != null && verificationResult.expiresDate.after(now);
+
             // 构建订阅信息VO返回给客户端
             SubscriptionVo subscriptionVo = new SubscriptionVo(
-                user.getIsPremiumIos(),
-                user.getSubscriptionExpireDateIos(),
-                user.getSubscriptionTypeIos(),
-                user.getSubscriptionStatusIos(),
+                isActive,
+                verificationResult.expiresDate,
+                verificationResult.subscriptionType,
+                isActive ? "active" : "expired",
                 verificationResult.productId
             );
 

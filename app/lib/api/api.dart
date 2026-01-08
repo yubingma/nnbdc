@@ -709,7 +709,8 @@ abstract class RestClient {
       @Field("receiptData") String receiptData,
       @Field("productId") String productId,
       @Field("transactionId") String? transactionId,
-      @Field("platform") String platform);
+      @Field("platform") String platform,
+      @Field("updateBackend") bool? updateBackend);
 
   @POST("/restoreSubscription.do")
   @FormUrlEncoded()
