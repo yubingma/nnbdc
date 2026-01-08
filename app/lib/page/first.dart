@@ -14,6 +14,7 @@ import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/page/index.dart';
 import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/util/toast_util.dart';
+import 'package:nnbdc/util/subscription_util.dart';
 import 'package:nnbdc/util/error_handler.dart';
 import 'package:open_file/open_file.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -1495,6 +1496,8 @@ endlocal
       if (user != null && user.id == Global.guestId) {
          final guestVo = UserVo.fromUser(user);
          await Global.setLoggedInUser(guestVo);
+         // 游客自动登录也尝试恢复购买状态
+         SubscriptionUtil.restorePurchases(showToast: false);
          Get.offNamed("/index", arguments: IndexPageArgs(4));
          return;
       }
@@ -1507,6 +1510,9 @@ endlocal
         var result = await UserBo().getLoggedInUser();
         if (result.success && result.data != null) {
           await Global.setLoggedInUser(result.data!);
+          // 自动登录成功后，静默尝试恢复购买状态
+          SubscriptionUtil.restorePurchases(showToast: false);
+          
           // 注意：由于改为延迟连接，此处不再主动上报用户信息
           // 用户信息会在进入需要socket的页面（如me、russia）时自动上报
           // SocketIoClient.instance.tryReportUserToSocketServer();

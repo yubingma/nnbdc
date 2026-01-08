@@ -10,6 +10,7 @@ import 'package:nnbdc/util/app_clock.dart';
 import 'package:drift/drift.dart' as drift hide Column;
 import 'package:nnbdc/theme/app_theme.dart';
 import 'package:nnbdc/util/toast_util.dart';
+import 'package:nnbdc/util/subscription_util.dart';
 import 'package:nnbdc/util/error_handler.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../config.dart';
@@ -446,7 +447,7 @@ class LoginPageState extends State<LoginPage> {
               ),
             ),
 
-            // 暂不登录
+            // 作为游客体验
             Container(
               margin: EdgeInsets.only(
                 bottom: MediaQuery.of(context).size.width > 600 ? 10 : 5,
@@ -454,6 +455,8 @@ class LoginPageState extends State<LoginPage> {
               child: TextButton(
                 onPressed: () async {
                   await Global.loginAsGuest();
+                  // 游客身份进入时也尝试恢复之前的购买状态
+                  SubscriptionUtil.restorePurchases(showToast: false);
                   Get.offAllNamed('/index');
                 },
                 child: Text(
@@ -651,6 +654,8 @@ class LoginPageState extends State<LoginPage> {
           final result = await UserBo().getLoggedInUser();
           if (result.success && result.data != null) {
             await Global.setLoggedInUser(result.data!);
+            // 登录成功后自动触发静默恢复购买
+            SubscriptionUtil.restorePurchases(showToast: false);
             Get.offAllNamed('/index');
           } else {
             // 如果服务器验证失败，可能需要重新验证码登录
@@ -719,6 +724,8 @@ class LoginPageState extends State<LoginPage> {
           _emailExistsInLocal = true;
         });
       }
+      // 登录成功后自动触发静默恢复购买
+      SubscriptionUtil.restorePurchases(showToast: false);
       Get.offAllNamed('/index');
     } else {
       ToastUtil.error(codeResult.msg ?? '登录失败');

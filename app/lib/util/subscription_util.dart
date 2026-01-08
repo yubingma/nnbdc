@@ -225,22 +225,22 @@ class SubscriptionUtil {
   }
 
   /// 恢复购买
-  static Future<bool> restorePurchases() async {
+  static Future<bool> restorePurchases({bool showToast = true}) async {
     if (!_isAvailable) {
       await init();
       if (!_isAvailable) {
-        ToastUtil.error('应用内购买不可用');
+        if (showToast) ToastUtil.error('应用内购买不可用');
         return false;
       }
     }
 
     try {
       await _iap.restorePurchases();
-      ToastUtil.info('正在恢复购买...');
+      if (showToast) ToastUtil.info('正在恢复购买...');
       return true;
     } catch (e, stackTrace) {
       Global.logger.e('恢复购买异常', error: e, stackTrace: stackTrace);
-      ToastUtil.error('恢复购买失败，请重试');
+      if (showToast) ToastUtil.error('恢复购买失败，请重试');
       return false;
     }
   }
@@ -323,22 +323,21 @@ class SubscriptionUtil {
       // 获取当前用户ID
       final user = Global.getLoggedInUser();
       if (user == null) {
-        Global.logger.w('用户未登录');
-        ToastUtil.error('请先登录');
+        Global.logger.w('验证收据失败：当前未获取到用户信息');
         return false;
       }
+
+      final userId = user.id;
 
       // 只支持iOS平台
       if (!PlatformUtils.isIOS) {
         Global.logger.w('当前平台不支持订阅功能');
-        ToastUtil.error('订阅功能仅支持iOS平台');
         return false;
       }
 
       final platform = 'ios';
 
-      // 调用后端验证接口
-      final userId = user.id;
+      // 调用后端验证接口 (游客模式也会发送 userId='guest' 给后端进行收据校验)
 
       final Result<SubscriptionVo> result = await Api.client.verifySubscription(
         userId,
