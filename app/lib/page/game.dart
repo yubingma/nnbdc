@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:nnbdc/state.dart';
 
 import '../api/vo.dart';
+import '../global.dart';
 import '../theme/app_theme.dart';
 
 class GamePage extends StatefulWidget {
@@ -709,6 +710,36 @@ class _GamePageState extends State<GamePage> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    if (Global.isGuest) {
+      return Scaffold(
+        appBar: AppTheme.createGradientAppBar(title: '比赛大厅'),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.sports_esports, size: 80, color: Colors.grey[400]),
+              const SizedBox(height: 16),
+              const Text(
+                '比赛功能需要登录后使用',
+                style: TextStyle(fontSize: 18, color: Colors.grey, fontFamily: 'NotoSansSC'),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: () => Get.toNamed('/email_login'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryColor,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                ),
+                child: const Text('去登录'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
     final backgroundColor = isDarkMode ? const Color(0xFF121212) : const Color(0xFFF0F2F5);
     final textColor = isDarkMode ? Colors.white : const Color(0xFF2C3E50);

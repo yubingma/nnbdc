@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import 'game.dart'; // 如果是在同一个包的路径下，可以直接使用对应的文件名
 import 'me.dart';
 import 'nav_icon_view.dart';
+import '../global.dart';
 import '../state.dart';
 
 class IndexPageArgs {
@@ -51,10 +52,9 @@ class _IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
     /// 初始化导航图标
     _navigationViews = <NavigationIconView>[
       NavigationIconView(icon: const Icon(Icons.school), title: "学习", vsync: this),
-      // vsync 默认属性和参数
       NavigationIconView(icon: const Icon(Icons.library_books), title: "词表", vsync: this),
       NavigationIconView(icon: const Icon(Icons.search_rounded), title: "查词", vsync: this),
-      NavigationIconView(icon: const Icon(Icons.sports_esports), title: "比赛", vsync: this),
+      if (!Global.isGuest) NavigationIconView(icon: const Icon(Icons.sports_esports), title: "比赛", vsync: this),
       NavigationIconView(icon: const Icon(Icons.person_rounded), title: "我", vsync: this),
     ];
 
@@ -63,35 +63,62 @@ class _IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
       view.controller.addListener(_rebuild);
     }
 
-    /// 将我们 bottomBar 上面的按钮图标对应的页面存放起来，方便我们在点击的时候
-    _pageList = <StatefulWidget?>[null, const WordListsPage(), const SearchPage(), const GamePage(), const MePage()];
+    /// 将我们 bottomBar 上面的按钮图标对应的页面存放起来
+    _pageList = <StatefulWidget?>[
+      null, 
+      const WordListsPage(), 
+      const SearchPage(), 
+      if (!Global.isGuest) const GamePage(), 
+      const MePage()
+    ];
+
+    // 如果是游客且请求的是原本的游戏页面索引，则重定向到词表或“我”
+    if (Global.isGuest && _currentIndex == 3) {
+      _currentIndex = 4; // 默认为“我”
+    }
+
     // 初始页面处理
     if (_currentIndex == 0) {
       _currentPage = BeforeBdcPage();
     } else {
-      _currentPage = _pageList![_currentIndex];
+      // 在游客模式下，如果 _currentIndex 为 4，且 GamePage 已移除，
+      // 我们需要使用正确的实际索引。
+      // 但为了代码简单，我们直接从 _pageList 查找。
+      // 注意：如果 GamePage 被移除，_pageList[3] 就是 MePage。
+      // 所以如果 _currentIndex == 4 且是游客，我们实际需要的是 _pageList[3]。
+      int actualIndex = _currentIndex;
+      if (Global.isGuest && _currentIndex > 3) {
+        actualIndex = _currentIndex - 1;
+      }
+      _currentPage = _pageList![actualIndex];
     }
   }
 
   // 创建自定义的导航栏项
-  Widget _buildCustomNavItem(IconData icon, String label, int index) {
+  Widget _buildCustomNavItem(IconData icon, String label, int index, int actualCurrentIndex) {
     final isSelected = _currentIndex == index;
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
     final selectedColor = AppTheme.primaryColor;
     final unselectedColor = isDarkMode ? Colors.grey[400] : Colors.grey[600];
 
+    // 计算点击这个项对应的实际内部索引（用于动画和PageList访问）
+    int actualNewIndex = index;
+    if (Global.isGuest && index > 3) {
+      actualNewIndex = index - 1;
+    }
+
     return Expanded(
       child: GestureDetector(
         onTap: () {
           setState(() {
-            _navigationViews![_currentIndex].controller.reverse();
+            _navigationViews![actualCurrentIndex].controller.reverse();
             _currentIndex = index;
-            _navigationViews![_currentIndex].controller.forward();
+            _navigationViews![actualNewIndex].controller.forward();
             // 特殊处理学习页面，每次都创建新实例
             if (index == 0) {
               _currentPage = BeforeBdcPage();
             } else {
-              _currentPage = _pageList![_currentIndex];
+              _currentPage = _pageList![actualNewIndex];
             }
           });
         },
@@ -137,6 +164,11 @@ class _IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    // 处理游客模式下的索引映射
+    int actualCurrentIndex = _currentIndex;
+    if (Global.isGuest && _currentIndex > 3) {
+      actualCurrentIndex = _currentIndex - 1;
+    }
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
     final backgroundColor = isDarkMode ? const Color(0xFF1A1A1A) : Colors.white;
 
@@ -160,11 +192,11 @@ class _IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            _buildCustomNavItem(Icons.school, "学习", 0),
-            _buildCustomNavItem(Icons.library_books, "词表", 1),
-            _buildCustomNavItem(Icons.search_rounded, "查词", 2),
-            _buildCustomNavItem(Icons.sports_esports, "比赛", 3),
-            _buildCustomNavItem(Icons.person_rounded, "我", 4),
+            _buildCustomNavItem(Icons.school, "学习", 0, actualCurrentIndex),
+            _buildCustomNavItem(Icons.library_books, "词表", 1, actualCurrentIndex),
+            _buildCustomNavItem(Icons.search_rounded, "查词", 2, actualCurrentIndex),
+            if (!Global.isGuest) _buildCustomNavItem(Icons.sports_esports, "比赛", 3, actualCurrentIndex),
+            _buildCustomNavItem(Icons.person_rounded, "我", 4, actualCurrentIndex),
           ],
         ),
       ),

@@ -101,6 +101,12 @@ class SocketIoClient {
   
   /// 请求连接（带引用计数）
   void connect() async {
+    // 游客模式下禁止建立WebSocket连接
+    if (Global.isGuest) {
+      Global.logger.d('SocketIoClient: 游客模式，跳过Socket连接');
+      return;
+    }
+    
     // 检查网络连接
     bool isConnected = await _networkUtil.isConnected();
     if (!isConnected) {
@@ -196,7 +202,8 @@ class SocketIoClient {
 
   void tryReportUserToSocketServer() {
     if (_disposed || !_initialized) return;
-    if (Global.getLoggedInUser() != null && socket.connected) {
+    // 只有非游客用户才上报到服务器
+    if (!Global.isGuest && Global.getLoggedInUser() != null && socket.connected) {
       socket.emit('reportUser', Global.getLoggedInUser()!.id);
     }
   }
