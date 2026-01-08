@@ -5,7 +5,7 @@ class Config {
     "prod": {
       // 后端域名支持 HTTPS，iOS/macOS 也建议强制走 HTTPS，避免 ATS/审核问题
       "service_url": "https://back.nnbdc.com",
-      // Socket.IO 走同域 HTTPS，由 nginx 转发到 9090（namespace: /all）
+      // Socket.IO 走同域 HTTPS，由 nginx 转发到 9191（namespace: /all）
       "socketServerUrl": "https://back.nnbdc.com/all",
       // 公共资源/共享词书通过 CDN（www + /back 反代）访问
       "cdnBackUrl": "https://www.nnbdc.com/back",
@@ -18,7 +18,7 @@ class Config {
     },
     "dev": {
       "service_url": "http://192.168.43.92:5200",
-      "socketServerUrl": "http://192.168.43.92:9090/all",
+      "socketServerUrl": "http://192.168.43.92:9191/all",
       "cdnBackUrl": "http://192.168.43.92:5200",
       "sound_base_url": "http://192.168.43.92:80/sound/",
       "updateUrl": "http://192.168.43.92:80/app/ver.json",
@@ -29,7 +29,7 @@ class Config {
     },
     "dev_web": {
       "service_url": "http://localhost:5200",
-      "socketServerUrl": "http://localhost:9090/all",
+      "socketServerUrl": "http://localhost:9191/all",
       "cdnBackUrl": "http://localhost:80/back",
       "sound_base_url": "http://localhost:80/sound/",
       "updateUrl": "http://localhost:80/app/ver.json",

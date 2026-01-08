@@ -38,7 +38,7 @@ if [ "$1" = "-k" ] ; then
   exit 0
 fi
 
-/opt/nnbdc/waitPortToVanish 9090
+/opt/nnbdc/waitPortToVanish 9191
 nohup java -Djava.security.egd=file:/dev/./urandom -Xmx4096m -Xss228k -jar /opt/nnbdc/nnbdc-service.jar 1>/dev/null 2>&1 &
 
 #tail -F /var/nnbdc/log/nnbdc-service.log

@@ -9,6 +9,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:nnbdc/api/api.dart';
 import 'package:nnbdc/api/bo/user_bo.dart';
+import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/page/index.dart';
 import 'package:nnbdc/util/platform_util.dart';
@@ -1489,6 +1490,15 @@ endlocal
     
     try {
       var user = await MyDatabase.instance.usersDao.getLastLoggedInUser();
+      
+      // 检查是否为访客用户
+      if (user != null && user.id == Global.guestId) {
+         final guestVo = UserVo.fromUser(user);
+         await Global.setLoggedInUser(guestVo);
+         Get.offNamed("/index", arguments: IndexPageArgs(4));
+         return;
+      }
+
       if (user != null && user.email != null) {
         _setPreparingMessage('正在加载用户信息…');
         

@@ -94,6 +94,55 @@ class Global {
   static void updateUserCache(User user) {
     _currentUser = user;
   }
+
+  // 访客相关
+  static const String guestId = "guest";
+  static bool get isGuest => currentUserId == guestId;
+
+  // 访客登录
+  static Future<void> loginAsGuest() async {
+    final now = AppClock.now();
+    // 创建访客用户Vo
+    final guestVo = UserVo(guestId, 'guest@nnbdc.com');
+    // 设置其他属性
+    guestVo.nickName = '游客';
+    guestVo.displayNickName = '游客';
+    guestVo.email = 'guest@nnbdc.com';
+    guestVo.lastLoginTime = now;
+    guestVo.wordsPerDay = 20;
+    guestVo.totalScore = 0;
+    
+    // 初始化其他必要字段，防止 userVo2User 转换时通过 ! 强转空值导致 crash
+    guestVo.autoPlaySentence = true;
+    guestVo.autoPlayWord = true;
+    guestVo.continuousDakaDayCount = 0;
+    guestVo.cowDung = 0;
+    guestVo.dakaDayCount = 0;
+    guestVo.dakaScore = 0;
+    guestVo.enableAllWrong = false;
+    guestVo.gameScore = 0;
+    guestVo.inviteAwardTaken = false;
+    guestVo.isAdmin = false;
+    guestVo.isInputor = false;
+    guestVo.isSuperAdmin = false;
+    guestVo.isTodayLearningFinished = false;
+    guestVo.isTodayLearningStarted = false;
+    guestVo.learnedDays = 0;
+    guestVo.learningFinished = false;
+    guestVo.masteredWordsCount = 0;
+    guestVo.maxContinuousDakaDayCount = 0;
+    guestVo.showAnswersDirectly = false;
+    guestVo.throwDiceChance = 0;
+    guestVo.isPremiumIos = false;
+    guestVo.premiumOverrideEnabled = false;
+    
+    // 保存到本地数据库
+    final db = MyDatabase.instance;
+    await db.usersDao.saveUser(userVo2User(guestVo), false);
+    
+    // 设置为当前登录用户
+    await setLoggedInUser(guestVo);
+  }
 }
 
 /// 自定义的带时间戳的日志打印器

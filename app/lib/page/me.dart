@@ -106,33 +106,48 @@ class _MePageState extends State<MePage> {
     try {
       isDarkMode = await MyDatabase.instance.localParamsDao.getIsDarkMode();
 
-      var result0 = await UserBo().getLoggedInUser();
-      if (result0.success) {
+      if (Global.isGuest) {
+        // 访客模式：直接使用本地用户信息
+        final user = Global.getLoggedInUser();
+        loggedInUser = user != null ? UserVo.fromUser(user) : null;
         if (mounted) {
           setState(() {
-            loggedInUser = result0.data;
-            email.text = loggedInUser!.email ?? '';
+            email.text = '未登录';
             password.text = '';
             password2.text = '';
-            nickname.text = loggedInUser!.displayNickName!;
+            nickname.text = loggedInUser?.displayNickName ?? '游客';
           });
         }
+        // 访客不进行同步
       } else {
-        ToastUtil.error(result0.msg!);
-        return;
+        var result0 = await UserBo().getLoggedInUser();
+        if (result0.success) {
+          if (mounted) {
+            setState(() {
+              loggedInUser = result0.data;
+              email.text = loggedInUser!.email ?? '';
+              password.text = '';
+              password2.text = '';
+              nickname.text = loggedInUser!.displayNickName!;
+            });
+          }
+        } else {
+          ToastUtil.error(result0.msg!);
+          return;
+        }
+
+        // 同步数据库：检查是否有本地学习词书，决定是否等待同步完成
+        final existingLearningDicts = await MyDatabase.instance.learningDictsDao.getLearningDictsOfUser(loggedInUser!.id!);
+        if (existingLearningDicts.isNotEmpty) {
+          // 有本地词书，异步同步即可
+          ThrottledDbSyncService().requestSync();
+        } else {
+          // 没有本地词书，等待同步完成以获取用户词书数据
+          await ThrottledDbSyncService().requestSync();
+        }
       }
 
-      // 同步数据库：检查是否有本地学习词书，决定是否等待同步完成
-      final existingLearningDicts = await MyDatabase.instance.learningDictsDao.getLearningDictsOfUser(loggedInUser!.id!);
-      if (existingLearningDicts.isNotEmpty) {
-        // 有本地词书，异步同步即可
-        ThrottledDbSyncService().requestSync();
-      } else {
-        // 没有本地词书，等待同步完成以获取用户词书数据
-        await ThrottledDbSyncService().requestSync();
-      }
-
-      // 下载本地数据库不存在的词书
+      // 下载本地数据库不存在的词书（访客和登录用户逻辑一致，只是无需从服务器获取词书列表）
       try {
         // 先检查并下载通用词典
         var db = MyDatabase.instance;
@@ -269,39 +284,62 @@ class _MePageState extends State<MePage> {
         });
       }
 
-      var result2 = await UserBo().getDayStatuses(30);
-      if (result2.success) {
+      if (Global.isGuest) {
+        // 访客模式：根据本地数据库中的 daka 记录生成最近30天打卡状态
+        // 这里简单初始化为空状态，或者可以从本地数据库查询 daka 表生成
+        // 暂时只给空状态
         if (mounted) {
-          setState(() {
-            last30DaysDakaStatus = result2.data!;
-          });
+           setState(() {
+            // 初始化30天未打卡
+            last30DaysDakaStatus = List.filled(30, UserDayStatus.loggedIn.json);
+            // 还需要查询本地 daka 表来更新今天是否打卡等，这里暂略，后续可优化
+          }); 
         }
       } else {
-        ToastUtil.error(result2.msg!);
+        var result2 = await UserBo().getDayStatuses(30);
+        if (result2.success) {
+          if (mounted) {
+            setState(() {
+              last30DaysDakaStatus = result2.data!;
+            });
+          }
+        } else {
+          ToastUtil.error(result2.msg!);
+        }
       }
 
-      var result3 = await Api.client.getMsgCounts(loggedInUser!.id!);
-      if (result3.success) {
-        if (mounted) {
-          setState(() {
-            msgCount = result3.data!.first;
-            unreadMsgCount = result3.data!.second;
-          });
+      if (!Global.isGuest) {
+        var result3 = await Api.client.getMsgCounts(loggedInUser!.id!);
+        if (result3.success) {
+          if (mounted) {
+            setState(() {
+              msgCount = result3.data!.first;
+              unreadMsgCount = result3.data!.second;
+            });
+          }
+        } else {
+          ToastUtil.error(result3.msg!);
+        }
+
+        // 获取用户排名
+        var result4 = await Api.client.getUserRank(loggedInUser!.id!);
+        if (result4.success && studyProgress != null) {
+          if (mounted) {
+            setState(() {
+              studyProgress!.userOrder = result4.data;
+            });
+          }
+        } else if (!result4.success) {
+          Global.logger.w("获取用户排名失败: ${result4.msg}");
         }
       } else {
-        ToastUtil.error(result3.msg!);
-      }
-
-      // 获取用户排名
-      var result4 = await Api.client.getUserRank(loggedInUser!.id!);
-      if (result4.success && studyProgress != null) {
+        // 访客模式：初始化消息数为0
         if (mounted) {
           setState(() {
-            studyProgress!.userOrder = result4.data;
+            msgCount = 0;
+            unreadMsgCount = 0;
           });
         }
-      } else if (!result4.success) {
-        Global.logger.w("获取用户排名失败: ${result4.msg}");
       }
     } catch (e, stackTrace) {
       // 区分网络异常和其他异常，给用户更明确的提示

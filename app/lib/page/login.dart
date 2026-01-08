@@ -445,6 +445,27 @@ class LoginPageState extends State<LoginPage> {
                 ),
               ),
             ),
+
+            // 暂不登录
+            Container(
+              margin: EdgeInsets.only(
+                bottom: MediaQuery.of(context).size.width > 600 ? 10 : 5,
+              ),
+              child: TextButton(
+                onPressed: () async {
+                  await Global.loginAsGuest();
+                  Get.offAllNamed('/index');
+                },
+                child: Text(
+                  '我是游客',
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.8),
+                    fontSize: MediaQuery.of(context).size.width > 600 ? 14 : 12,
+                  ),
+                ),
+              ),
+            ),
+
             // 微信登录按钮（暂时隐藏）
             // Container(
             //   width: double.infinity,
