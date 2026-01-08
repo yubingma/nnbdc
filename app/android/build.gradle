@@ -9,6 +9,9 @@ allprojects {
             mavenCentral()
             maven { url 'https://storage.googleapis.com/download.flutter.io' }
             maven { url 'https://jitpack.io' }
+            // 添加额外的 Maven 仓库以提高依赖解析成功率
+            maven { url 'https://repo1.maven.org/maven2/' }
+            maven { url 'https://maven.google.com' }
         } else {
             // 本地/国内环境：优先使用国内镜像以提高下载速度
             maven { url 'https://maven.aliyun.com/repository/google' }
@@ -19,6 +22,9 @@ allprojects {
             maven { url 'https://storage.flutter-io.cn' }
             mavenCentral()
             google()
+            // 添加额外的 Maven 仓库以提高依赖解析成功率
+            maven { url 'https://repo1.maven.org/maven2/' }
+            maven { url 'https://maven.google.com' }
         }
     }
 }
