@@ -3,6 +3,7 @@ import 'package:drift_db_viewer/drift_db_viewer.dart';
 import 'package:email_validator/email_validator.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:nnbdc/api/api.dart';
 import 'package:nnbdc/api/bo/user_bo.dart';
 import 'package:nnbdc/api/enum.dart';
@@ -11,6 +12,7 @@ import 'package:nnbdc/db/db.dart';
 import 'package:drift/drift.dart' as drift;
 import 'package:nnbdc/util/error_handler.dart';
 import 'package:nnbdc/util/app_clock.dart';
+import 'dart:async';
 
 import 'package:nnbdc/page/word_list/learning_words.dart';
 import 'package:nnbdc/page/word_list/mastered_words.dart';
@@ -63,6 +65,7 @@ class _MePageState extends State<MePage> {
   UserVo? loggedInUser;
   final bool _isSyncing = false;
   late Function(String event, List args) _socketEventListener;
+  StreamSubscription<List<PurchaseDetails>>? _subscriptionStreamSubscription;
 
   @override
   void initState() {
@@ -81,6 +84,15 @@ class _MePageState extends State<MePage> {
     };
 
     SocketIoClient.instance.registerSocketEventListeners(_socketEventListener);
+    
+    // 监听订阅更新事件，以便及时刷新UI
+    _subscriptionStreamSubscription = SubscriptionUtil.purchaseUpdatedStream.listen((purchases) {
+      if (mounted) {
+        setState(() {
+          // 订阅状态已更新，UI会重新构建并获取最新的订阅状态
+        });
+      }
+    });
 
     // 异步执行loadData，避免阻塞UI
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -95,6 +107,9 @@ class _MePageState extends State<MePage> {
 
     // 断开socket连接
     SocketIoClient.instance.disconnect();
+    
+    // 取消订阅更新监听
+    _subscriptionStreamSubscription?.cancel();
 
     super.dispose();
   }

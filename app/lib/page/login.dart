@@ -456,7 +456,7 @@ class LoginPageState extends State<LoginPage> {
                 onPressed: () async {
                   await Global.loginAsGuest();
                   // 游客身份进入时也尝试恢复之前的购买状态
-                  SubscriptionUtil.restorePurchases(showToast: false);
+                  await SubscriptionUtil.restorePurchases(showToast: false);
                   Get.offAllNamed('/index');
                 },
                 style: ElevatedButton.styleFrom(

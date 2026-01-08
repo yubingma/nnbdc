@@ -24,6 +24,9 @@ class SubscriptionUtil {
   static bool _initialized = false;
   static bool _showToasts = true; // 控制是否显示 Toast 提示
 
+  /// 订阅更新流，用于通知UI刷新
+  static Stream<List<PurchaseDetails>> get purchaseUpdatedStream => _purchaseUpdatedController.stream;
+
   /// 订阅产品ID列表
   static const Set<String> _productIds = {
     'ppdc.monthly', // 月度订阅产品ID
@@ -402,16 +405,17 @@ class SubscriptionUtil {
     }
   }
 
-  /// 刷新用户信息（订阅验证成功后已绋立即更新，这里仅用于触发UI刷新）
+  /// 刷新用户信息（订阅验证成功后立即更新本地数据库，这里用于更新缓存和触发UI刷新）
   static Future<void> _refreshUserInfo() async {
     try {
-      // 注：订阅验证成功后已经立即更新了本地数据库和缓存
-      // 这里不需要再次加载，仅用于确保后续同步
+      // 重新从数据库加载用户信息到缓存，确保UI能获取到最新订阅状态
+      await Global.loadUserFromDb();
+      
       // 触发一次同步（不等待结果）
       ThrottledDbSyncService().requestSync();
-      Global.logger.i('订阅验证成功，本地数据已更新，后台同步已触发');
+      Global.logger.i('订阅验证成功，本地数据已更新，缓存已刷新，后台同步已触发');
     } catch (e, stackTrace) {
-      Global.logger.e('触发同步失败', error: e, stackTrace: stackTrace);
+      Global.logger.e('刷新用户信息失败', error: e, stackTrace: stackTrace);
     }
   }
 
