@@ -494,8 +494,10 @@ Future<void> syncDb() async {
     // 先同步所有系统数据（静态元数据 + UGC内容）
     await syncSysDb();
 
-    // 再同步用户数据
-    await syncUserDb(loggedInUser.id!);
+    // 再同步用户数据（游客不需要同步用户数据）
+    if (!Global.isGuest) {
+      await syncUserDb(loggedInUser.id!);
+    }
 
     stopwatch.stop();
     Global.logger.i("🎉 数据库同步完成 - 总耗时: ${stopwatch.elapsedMilliseconds}ms");
