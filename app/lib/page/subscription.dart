@@ -321,6 +321,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+
                   // 当前订阅状态
                   Container(
                     decoration: BoxDecoration(
@@ -424,6 +425,37 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                             '• 您可以在App Store的账户设置中管理订阅和关闭自动续费\n'
                             '• 恢复购买功能可以帮助您在更换设备后恢复订阅',
                             style: TextStyle(fontSize: 12, color: Colors.grey),
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              GestureDetector(
+                                onTap: () {
+                                  Navigator.pushNamed(context, '/privacy');
+                                },
+                                child: Text(
+                                  '隐私政策',
+                                  style: TextStyle(
+                                    color: Theme.of(context).primaryColor,
+                                    decoration: TextDecoration.underline,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              GestureDetector(
+                                onTap: () {
+                                  Navigator.pushNamed(context, '/protocol');
+                                },
+                                child: Text(
+                                  '使用条款',
+                                  style: TextStyle(
+                                    color: Theme.of(context).primaryColor,
+                                    decoration: TextDecoration.underline,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
@@ -550,6 +582,37 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                 ),
               ),
             ],
+            
+            const SizedBox(height: 12),
+            // 会员权益说明
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.blue[50],
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.blue[200]!),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '会员权益:',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.blue[700],
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  const Text(
+                    '• 解锁全部单词书\n'
+                    '• 每日单词上限高达500\n'
+                    '• 解锁全部学习功能\n',
+                    style: TextStyle(fontSize: 12, height: 1.4),
+                  ),
+                ],
+              ),
+            ),
             
             const SizedBox(height: 16),
             SizedBox(

@@ -675,26 +675,40 @@ class _MePageState extends State<MePage> {
                         color: isDarkModeEnabled ? const Color(0xFF2D2D2D) : Colors.white,
                         border: Border.all(color: Colors.amber.shade300.withValues(alpha: 0.8)),
                       ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Icon(Icons.star_border, color: Colors.amber.shade700, size: 22),
-                              const SizedBox(width: 10),
-                              Text(
-                                '订阅会员',
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
-                                  color: textColor,
-                                  fontFamily: 'NotoSansSC',
-                                ),
-                                textScaler: const TextScaler.linear(1.0),
+                              Row(
+                                children: [
+                                  Icon(Icons.star_border, color: Colors.amber.shade700, size: 22),
+                                  const SizedBox(width: 10),
+                                  Text(
+                                    '订阅会员',
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w600,
+                                      color: textColor,
+                                      fontFamily: 'NotoSansSC',
+                                    ),
+                                    textScaler: const TextScaler.linear(1.0),
+                                  ),
+                                ],
                               ),
+                              Icon(Icons.chevron_right, color: isDarkModeEnabled ? Colors.grey[400] : const Color(0xFF7F8C8D)),
                             ],
                           ),
-                          Icon(Icons.chevron_right, color: isDarkModeEnabled ? Colors.grey[400] : const Color(0xFF7F8C8D)),
+                          const SizedBox(height: 8),
+                          Text(
+                            '解锁全部学习功能',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: textColor,
+                              fontFamily: 'NotoSansSC',
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -759,21 +773,59 @@ class _MePageState extends State<MePage> {
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: Colors.amber.shade300),
                   ),
-                  child: Row(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(Icons.info_outline, color: Colors.amber.shade900, size: 18),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          '非会员每日最多学习 20 个单词，开通会员可解除限制。',
-                          style: TextStyle(
-                            color: Colors.amber.shade900,
-                            fontSize: 13,
-                            height: 1.2,
-                            fontFamily: 'NotoSansSC',
+                      Row(
+                        children: [
+                          Icon(Icons.info_outline, color: Colors.amber.shade900, size: 18),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              '非会员每日最多学习 20 个单词，开通会员可解除限制。',
+                              style: TextStyle(
+                                color: Colors.amber.shade900,
+                                fontSize: 13,
+                                height: 1.2,
+                                fontFamily: 'NotoSansSC',
+                              ),
+                              textScaler: const TextScaler.linear(1.0),
+                            ),
                           ),
-                          textScaler: const TextScaler.linear(1.0),
-                        ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.pushNamed(context, '/privacy');
+                            },
+                            child: Text(
+                              '隐私政策',
+                              style: TextStyle(
+                                color: Colors.amber.shade900,
+                                fontSize: 12,
+                                decoration: TextDecoration.underline,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.pushNamed(context, '/protocol');
+                            },
+                            child: Text(
+                              '使用条款',
+                              style: TextStyle(
+                                color: Colors.amber.shade900,
+                                fontSize: 12,
+                                decoration: TextDecoration.underline,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
