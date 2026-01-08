@@ -157,7 +157,7 @@ class _LevelNode extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
-              '“${level.quote}”',
+              '“${level.quotes[0]}”',
               style: TextStyle(
                 fontSize: 13,
                 fontStyle: FontStyle.italic,
