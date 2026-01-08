@@ -686,7 +686,7 @@ class _MePageState extends State<MePage> {
                                   Icon(Icons.star_border, color: Colors.amber.shade700, size: 22),
                                   const SizedBox(width: 10),
                                   Text(
-                                    '订阅会员',
+                                    '去订阅会员',
                                     style: TextStyle(
                                       fontSize: 15,
                                       fontWeight: FontWeight.w600,
@@ -699,16 +699,7 @@ class _MePageState extends State<MePage> {
                               ),
                               Icon(Icons.chevron_right, color: isDarkModeEnabled ? Colors.grey[400] : const Color(0xFF7F8C8D)),
                             ],
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            '解锁全部学习功能',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: textColor,
-                              fontFamily: 'NotoSansSC',
-                            ),
-                          ),
+                          )
                         ],
                       ),
                     ),
