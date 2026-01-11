@@ -274,7 +274,11 @@ public class SyncBo {
             case "dict_word" -> processDictWordSync(userId, recordJson, operation);
             case "mastered_word" -> processMasteredWordSync(userId, recordJson, operation);
             case "user_cow_dung_log" -> processUserCowDungLogSync(userId, recordJson, operation);
-            default -> logger.warn("不支持的表同步: {}", tableName);
+            default -> {
+                String errorMsg = String.format("不支持的表同步: %s, 记录ID: %s, 操作: %s", tableName, log.getRecordId(), operation);
+                logger.warn(errorMsg);
+                throw new IllegalArgumentException(errorMsg);
+            }
         }
     }
 
@@ -354,38 +358,38 @@ public class SyncBo {
     private void processUserSync(String userId, String recordJson, String operation)
             throws IllegalAccessException {
         if ("UPDATE".equals(operation)) {
-            try {
-                UserDto userDto = JsonUtils.makeObject(recordJson, UserDto.class);
-                User user = userBo.findById(userId);
-                if (user != null) {
-                    User userFromClient = User.fromDto(userDto);
-                    
-                    // 保护敏感字段：isAdmin、isSuperAdmin、isSysUser 只允许后端同步到前端
-                    // 将这三个字段从后端数据库的原始值恢复到 userFromClient
-                    userFromClient.setIsAdmin(user.getIsAdmin());
-                    userFromClient.setIsSuperAdmin(user.getIsSuperAdmin());
-                    userFromClient.setIsSysUser(user.getIsSysUser());
+            UserDto userDto = JsonUtils.makeObject(recordJson, UserDto.class);
+            User user = userBo.findById(userId);
+            if (user != null) {
+                User userFromClient = User.fromDto(userDto);
+                
+                // 保护敏感字段：isAdmin、isSuperAdmin、isSysUser 只允许后端同步到前端
+                // 将这三个字段从后端数据库的原始值恢复到 userFromClient
+                userFromClient.setIsAdmin(user.getIsAdmin());
+                userFromClient.setIsSuperAdmin(user.getIsSuperAdmin());
+                userFromClient.setIsSysUser(user.getIsSysUser());
 
-                    // 订阅字段仅允许后端维护（客户端同步UserDto不包含这些字段）
-                    // 如果不回填，update 时会把字段覆盖成 null/默认值，甚至触发 NOT NULL 约束
-                    userFromClient.setIsPremiumIos(Boolean.TRUE.equals(user.getIsPremiumIos()));
-                    userFromClient.setSubscriptionExpireDateIos(user.getSubscriptionExpireDateIos());
-                    userFromClient.setSubscriptionTypeIos(user.getSubscriptionTypeIos());
-                    userFromClient.setSubscriptionStatusIos(user.getSubscriptionStatusIos());
-                    userFromClient.setLastReceiptDataIos(user.getLastReceiptDataIos());
+                // 订阅字段仅允许后端维护（客户端同步UserDto不包含这些字段）
+                // 如果不回填，update 时会把字段覆盖成 null/默认值，甚至触发 NOT NULL 约束
+                userFromClient.setIsPremiumIos(Boolean.TRUE.equals(user.getIsPremiumIos()));
+                userFromClient.setSubscriptionExpireDateIos(user.getSubscriptionExpireDateIos());
+                userFromClient.setSubscriptionTypeIos(user.getSubscriptionTypeIos());
+                userFromClient.setSubscriptionStatusIos(user.getSubscriptionStatusIos());
+                userFromClient.setLastReceiptDataIos(user.getLastReceiptDataIos());
 
-                    // 强制会员字段同样只允许后端维护（避免客户端覆盖）
-                    userFromClient.setPremiumOverrideEnabled(Boolean.TRUE.equals(user.getPremiumOverrideEnabled()));
-                    userFromClient.setPremiumOverrideUpdateTime(user.getPremiumOverrideUpdateTime());
-                    userFromClient.setPremiumOverrideReason(user.getPremiumOverrideReason());
-                    userFromClient.setPremiumOverrideDuration(user.getPremiumOverrideDuration());
-                    
-                    userBo.updateEntity(userFromClient);
-                    logger.info("同步更新用户成功: userId={}, userName={}", userId, userFromClient.getUserName());
-                }
-            } catch (IllegalAccessException | IllegalArgumentException e) {
-                logger.error("同步用户数据失败：" + e.getMessage(), e);
+                // 强制会员字段同样只允许后端维护（避免客户端覆盖）
+                userFromClient.setPremiumOverrideEnabled(Boolean.TRUE.equals(user.getPremiumOverrideEnabled()));
+                userFromClient.setPremiumOverrideUpdateTime(user.getPremiumOverrideUpdateTime());
+                userFromClient.setPremiumOverrideReason(user.getPremiumOverrideReason());
+                userFromClient.setPremiumOverrideDuration(user.getPremiumOverrideDuration());
+                
+                userBo.updateEntity(userFromClient);
+                logger.info("同步更新用户成功: userId={}, userName={}", userId, userFromClient.getUserName());
             }
+        } else {
+            String errorMsg = String.format("不支持的用户表操作: %s", operation);
+            logger.error(errorMsg);
+            throw new IllegalArgumentException(errorMsg);
         }
         // 不支持INSERT和DELETE操作，用户记录应当已经存在
     }
@@ -395,57 +399,68 @@ public class SyncBo {
      */
     private void processDictSync(String userId, String recordJson, String operation)
             throws IllegalAccessException {
-        try {
-            DictDto dictDto = JsonUtils.makeObject(recordJson, DictDto.class);
+        DictDto dictDto = JsonUtils.makeObject(recordJson, DictDto.class);
+        
+        // 只允许用户同步自己的词书
+        if (!userId.equals(dictDto.getOwnerId())) {
+            String errorMsg = String.format("用户%s尝试同步不属于自己的词书: dictId=%s, ownerId=%s", 
+                userId, dictDto.getId(), dictDto.getOwnerId());
+            logger.warn(errorMsg);
+            throw new IllegalArgumentException(errorMsg);
+        }
+        
+        if ("INSERT".equals(operation) || "UPDATE".equals(operation)) {
+            Dict dict = dictBo.findById(dictDto.getId());
+            User owner = userBo.findById(dictDto.getOwnerId());
             
-            // 只允许用户同步自己的词书
-            if (!userId.equals(dictDto.getOwnerId())) {
-                logger.warn("用户{}尝试同步不属于自己的词书: dictId={}, ownerId={}", 
-                    userId, dictDto.getId(), dictDto.getOwnerId());
-                return;
+            if (owner == null) {
+                String errorMsg = String.format("词书所属用户不存在: ownerId=%s", dictDto.getOwnerId());
+                logger.error(errorMsg);
+                throw new IllegalArgumentException(errorMsg);
             }
             
-            if ("INSERT".equals(operation) || "UPDATE".equals(operation)) {
-                Dict dict = dictBo.findById(dictDto.getId());
-                User owner = userBo.findById(dictDto.getOwnerId());
+            if (dict == null) {
+                // 创建新词书
+                dict = new Dict();
+                dict.setId(dictDto.getId());
+                dict.setName(dictDto.getName());
+                dict.setOwner(owner);
+                dict.setIsShared(dictDto.getIsShared());
+                dict.setIsReady(dictDto.getIsReady());
+                dict.setVisible(dictDto.getVisible());
+                dict.setWordCount(dictDto.getWordCount());
+                dict.setPopularityLimit(dictDto.getPopularityLimit());
+                dict.setCreateTime(dictDto.getCreateTime());
+                dict.setUpdateTime(dictDto.getUpdateTime());
                 
-                if (dict == null) {
-                    // 创建新词书
-                    dict = new Dict();
-                    dict.setId(dictDto.getId());
-                    dict.setName(dictDto.getName());
-                    dict.setOwner(owner);
-                    dict.setIsShared(dictDto.getIsShared());
-                    dict.setIsReady(dictDto.getIsReady());
-                    dict.setVisible(dictDto.getVisible());
-                    dict.setWordCount(dictDto.getWordCount());
-                    dict.setPopularityLimit(dictDto.getPopularityLimit());
-                    dict.setCreateTime(dictDto.getCreateTime());
-                    dict.setUpdateTime(dictDto.getUpdateTime());
-                    
-                    dictBo.createEntity(dict);
-                    logger.debug("同步创建词书成功: dictId={}, name={}, wordCount={}", 
-                        dict.getId(), dict.getName(), dict.getWordCount());
-                } else {
-                    // 更新现有词书
-                    dict.setName(dictDto.getName());
-                    dict.setOwner(owner);
-                    dict.setIsShared(dictDto.getIsShared());
-                    dict.setIsReady(dictDto.getIsReady());
-                    dict.setVisible(dictDto.getVisible());
-                    dict.setWordCount(dictDto.getWordCount());
-                    dict.setPopularityLimit(dictDto.getPopularityLimit());
-                    dict.setUpdateTime(dictDto.getUpdateTime());
-                    
-                    dictBo.updateEntity(dict);
-                    logger.debug("同步更新词书成功: dictId={}, name={}, wordCount={}", 
-                        dict.getId(), dict.getName(), dict.getWordCount());
-                }
+                dictBo.createEntity(dict);
+                logger.debug("同步创建词书成功: dictId={}, name={}, wordCount={}", 
+                    dict.getId(), dict.getName(), dict.getWordCount());
+            } else {
+                // 更新现有词书
+                dict.setName(dictDto.getName());
+                dict.setOwner(owner);
+                dict.setIsShared(dictDto.getIsShared());
+                dict.setIsReady(dictDto.getIsReady());
+                dict.setVisible(dictDto.getVisible());
+                dict.setWordCount(dictDto.getWordCount());
+                dict.setPopularityLimit(dictDto.getPopularityLimit());
+                dict.setUpdateTime(dictDto.getUpdateTime());
+                
+                dictBo.updateEntity(dict);
+                logger.debug("同步更新词书成功: dictId={}, name={}, wordCount={}", 
+                    dict.getId(), dict.getName(), dict.getWordCount());
             }
-            // 暂不支持DELETE操作，词书通常不会被删除
-        } catch (IllegalAccessException | IllegalArgumentException e) {
-            logger.error("同步词书数据失败：" + e.getMessage(), e);
-            throw e;
+        } else if ("DELETE".equals(operation)) {
+            Dict dict = dictBo.findById(dictDto.getId());
+            if (dict != null) {
+                dictBo.deleteEntity(dict);
+                logger.debug("同步删除词书成功: dictId={}", dictDto.getId());
+            }
+        } else {
+            String errorMsg = String.format("不支持的词书表操作: %s", operation);
+            logger.error(errorMsg);
+            throw new IllegalArgumentException(errorMsg);
         }
     }
 
@@ -457,19 +472,20 @@ public class SyncBo {
         if ("BATCH_DELETE".equals(operation)) {
             bookMarkBo.batchDeleteUserRecords(userId, recordJson);
         } else {
-            try {
-                BookMarkDto bookMarkDto = JsonUtils.makeObject(recordJson, BookMarkDto.class);
-                if ("INSERT".equals(operation) || "UPDATE".equals(operation)) {
-                    bookMarkBo.saveBookMark(bookMarkDto.getBookMarkName(),
-                            bookMarkDto.getSpell(),
-                            bookMarkDto.getPosition(),
-                            bookMarkDto.getUserId());
-                } else if ("DELETE".equals(operation)) {
-                    BookMark bookMark = BookMark.fromDto(bookMarkDto);
-                    bookMarkBo.deleteEntity(bookMark);
-                }
-            } catch (IllegalAccessException | IllegalArgumentException e) {
-                logger.error("同步书签数据失败：" + e.getMessage(), e);
+            BookMarkDto bookMarkDto = JsonUtils.makeObject(recordJson, BookMarkDto.class);
+            
+            if ("INSERT".equals(operation) || "UPDATE".equals(operation)) {
+                bookMarkBo.saveBookMark(bookMarkDto.getBookMarkName(),
+                        bookMarkDto.getSpell(),
+                        bookMarkDto.getPosition(),
+                        bookMarkDto.getUserId());
+            } else if ("DELETE".equals(operation)) {
+                BookMark bookMark = BookMark.fromDto(bookMarkDto);
+                bookMarkBo.deleteEntity(bookMark);
+            } else {
+                String errorMsg = String.format("不支持的书签表操作: %s", operation);
+                logger.error(errorMsg);
+                throw new IllegalArgumentException(errorMsg);
             }
         }
     }
@@ -482,44 +498,45 @@ public class SyncBo {
         if ("BATCH_DELETE".equals(operation)) {
             userStudyStepBo.batchDeleteUserRecords(userId, recordJson);
         } else {
-            try {
-                UserStudyStepDto stepDto = JsonUtils.makeObject(recordJson, UserStudyStepDto.class);
-                UserStudyStepId id = new UserStudyStepId(userId, stepDto.getStudyStep());
-                UserStudyStep studyStep = new UserStudyStep(id);
-                studyStep.setSeq(stepDto.getSeq());
-                studyStep.setState(stepDto.getState());
+            UserStudyStepDto stepDto = JsonUtils.makeObject(recordJson, UserStudyStepDto.class);
+            UserStudyStepId id = new UserStudyStepId(userId, stepDto.getStudyStep());
+            UserStudyStep studyStep = new UserStudyStep(id);
+            studyStep.setSeq(stepDto.getSeq());
+            studyStep.setState(stepDto.getState());
 
-                if (stepDto.getCreateTime() != null) {
-                    studyStep.setCreateTime(stepDto.getCreateTime());
-                }
-                if (stepDto.getUpdateTime() != null) {
-                    studyStep.setUpdateTime(stepDto.getUpdateTime());
-                }
+            if (stepDto.getCreateTime() != null) {
+                studyStep.setCreateTime(stepDto.getCreateTime());
+            }
+            if (stepDto.getUpdateTime() != null) {
+                studyStep.setUpdateTime(stepDto.getUpdateTime());
+            }
 
-                switch (operation) {
-                    case "INSERT" -> {
-                        // 检查记录是否已存在，避免主键冲突
-                        UserStudyStep existing = userStudyStepBo.findById(id);
-                        if (existing == null) {
-                            userStudyStepBo.createEntity(studyStep);
-                        } else {
-                            logger.info("user_study_step 已存在，忽略重复 INSERT: user_id={}, study_step={}",
-                                    userId, stepDto.getStudyStep());
-                        }
+            switch (operation) {
+                case "INSERT" -> {
+                    // 检查记录是否已存在，避免主键冲突
+                    UserStudyStep existing = userStudyStepBo.findById(id);
+                    if (existing == null) {
+                        userStudyStepBo.createEntity(studyStep);
+                    } else {
+                        logger.info("user_study_step 已存在，忽略重复 INSERT: user_id={}, study_step={}",
+                                userId, stepDto.getStudyStep());
                     }
-                    case "UPDATE" -> {
-                        // 检查记录是否存在，不存在则创建
-                        UserStudyStep existingForUpdate = userStudyStepBo.findById(id);
-                        if (existingForUpdate == null) {
-                            userStudyStepBo.createEntity(studyStep);
-                        } else {
-                            userStudyStepBo.updateEntity(studyStep);
-                        }
-                    }
-                    case "DELETE" -> userStudyStepBo.deleteEntity(studyStep);
                 }
-            } catch (IllegalAccessException | IllegalArgumentException e) {
-                logger.error("同步用户学习步骤数据失败：" + e.getMessage(), e);
+                case "UPDATE" -> {
+                    // 检查记录是否存在，不存在则创建
+                    UserStudyStep existingForUpdate = userStudyStepBo.findById(id);
+                    if (existingForUpdate == null) {
+                        userStudyStepBo.createEntity(studyStep);
+                    } else {
+                        userStudyStepBo.updateEntity(studyStep);
+                    }
+                }
+                case "DELETE" -> userStudyStepBo.deleteEntity(studyStep);
+                default -> {
+                    String errorMsg = String.format("不支持的用户学习步骤表操作: %s", operation);
+                    logger.error(errorMsg);
+                    throw new IllegalArgumentException(errorMsg);
+                }
             }
         }
     }
@@ -569,22 +586,20 @@ public class SyncBo {
         if ("BATCH_DELETE".equals(operation)) {
             userOperBo.batchDeleteUserRecords(userId, recordJson);
         } else {
-            try {
-                UserOperDto operDto = JsonUtils.makeObject(recordJson, UserOperDto.class);
-                UserOper oper = userOperBo.fromDto(operDto);
-                if ("INSERT".equals(operation)) {
-                    // 检查记录是否已存在，避免主键冲突
-                    UserOper existing = userOperBo.findById(oper.getId());
-                    if (existing == null) {
-                        userOperBo.createEntity(oper);
-                    } else {
-                        logger.info("user_oper 已存在，忽略重复 INSERT: id={}", oper.getId());
-                    }
+            UserOperDto operDto = JsonUtils.makeObject(recordJson, UserOperDto.class);
+            UserOper oper = userOperBo.fromDto(operDto);
+            if ("INSERT".equals(operation)) {
+                // 检查记录是否已存在，避免主键冲突
+                UserOper existing = userOperBo.findById(oper.getId());
+                if (existing == null) {
+                    userOperBo.createEntity(oper);
                 } else {
-                    throw new IllegalArgumentException("不支持的操作：" + operation + "，用户操作历史记录不支持删除");
+                    logger.info("user_oper 已存在，忽略重复 INSERT: id={}", oper.getId());
                 }
-            } catch (IllegalArgumentException e) {
-                logger.error("同步用户操作历史数据失败：" + e.getMessage(), e);
+            } else {
+                String errorMsg = String.format("不支持的操作：%s，用户操作历史记录不支持删除", operation);
+                logger.error(errorMsg);
+                throw new IllegalArgumentException(errorMsg);
             }
         }
     }
@@ -592,28 +607,29 @@ public class SyncBo {
     /**
      * 处理错词同步
      */
-    private void processUserWrongWordSync(String userId, String recordJson, String operation) {
+    private void processUserWrongWordSync(String userId, String recordJson, String operation) throws IllegalAccessException {
         if ("BATCH_DELETE".equals(operation)) {
             wrongWordBo.batchDeleteUserRecords(userId, recordJson);
         } else {
-            try {
-                WrongWordDto wrongWordDto = JsonUtils.makeObject(recordJson, WrongWordDto.class);
-                WrongWord wrongWord = WrongWord.fromDto(wrongWordDto);
-                switch (operation) {
-                    case "INSERT" -> wrongWordBo.createIfAbsent(wrongWord);
-                    case "UPDATE" -> {
-                        // 检查记录是否存在，不存在则创建
-                        WrongWord existingForUpdate = wrongWordBo.findById(wrongWord.getId());
-                        if (existingForUpdate == null) {
-                            wrongWordBo.createEntity(wrongWord);
-                        } else {
-                            wrongWordBo.updateEntity(wrongWord);
-                        }
+            WrongWordDto wrongWordDto = JsonUtils.makeObject(recordJson, WrongWordDto.class);
+            WrongWord wrongWord = WrongWord.fromDto(wrongWordDto);
+            switch (operation) {
+                case "INSERT" -> wrongWordBo.createIfAbsent(wrongWord);
+                case "UPDATE" -> {
+                    // 检查记录是否存在，不存在则创建
+                    WrongWord existingForUpdate = wrongWordBo.findById(wrongWord.getId());
+                    if (existingForUpdate == null) {
+                        wrongWordBo.createEntity(wrongWord);
+                    } else {
+                        wrongWordBo.updateEntity(wrongWord);
                     }
-                    case "DELETE" -> wrongWordBo.deleteEntity(wrongWord);
                 }
-            } catch (IllegalArgumentException | IllegalAccessException e) {
-                logger.error("同步错词数据失败：" + e.getMessage(), e);
+                case "DELETE" -> wrongWordBo.deleteEntity(wrongWord);
+                default -> {
+                    String errorMsg = String.format("不支持的错词表操作: %s", operation);
+                    logger.error(errorMsg);
+                    throw new IllegalArgumentException(errorMsg);
+                }
             }
         }
     }
@@ -621,38 +637,39 @@ public class SyncBo {
     /**
      * 处理生词本同步
      */
-    private void processDictWordSync(String userId, String recordJson, String operation) {
+    private void processDictWordSync(String userId, String recordJson, String operation) throws IllegalAccessException {
         if ("BATCH_DELETE".equals(operation)) {
             dictWordBo.batchDeleteUserRecords(userId, recordJson);
         } else {
-            try {
-                DictWordDto dictWordDto = JsonUtils.makeObject(recordJson, DictWordDto.class);
-                DictWord dictWord = DictWord.fromDto(dictWordDto);
-                DictWord existing = dictWordBo.findById(dictWord.getId());
+            DictWordDto dictWordDto = JsonUtils.makeObject(recordJson, DictWordDto.class);
+            DictWord dictWord = DictWord.fromDto(dictWordDto);
+            DictWord existing = dictWordBo.findById(dictWord.getId());
 
-                switch (operation) {
-                    case "INSERT" -> {
-                        if (existing == null) {
-                            dictWordBo.createEntity(dictWord);
-                        } else {
-                            logger.info("dict_word 已存在，忽略重复 INSERT");
-                        }
-                    }
-                    case "UPDATE" -> {
-                        if (existing == null) {
-                            dictWordBo.createEntity(dictWord);
-                        } else {
-                            dictWordBo.updateEntity(dictWord);
-                        }
-                    }
-                    case "DELETE" -> {
-                        if (existing != null) {
-                            deleteDictWordSafely(dictWord);
-                        }
+            switch (operation) {
+                case "INSERT" -> {
+                    if (existing == null) {
+                        dictWordBo.createEntity(dictWord);
+                    } else {
+                        logger.info("dict_word 已存在，忽略重复 INSERT");
                     }
                 }
-            } catch (IllegalArgumentException | IllegalAccessException e) {
-                logger.error("同步生词数据失败：" + e.getMessage(), e);
+                case "UPDATE" -> {
+                    if (existing == null) {
+                        dictWordBo.createEntity(dictWord);
+                    } else {
+                        dictWordBo.updateEntity(dictWord);
+                    }
+                }
+                case "DELETE" -> {
+                    if (existing != null) {
+                        deleteDictWordSafely(dictWord);
+                    }
+                }
+                default -> {
+                    String errorMsg = String.format("不支持的生词表操作: %s", operation);
+                    logger.error(errorMsg);
+                    throw new IllegalArgumentException(errorMsg);
+                }
             }
         }
     }
@@ -687,57 +704,61 @@ public class SyncBo {
     /**
      * 处理已掌握单词同步
      */
-    private void processMasteredWordSync(String userId, String recordJson, String operation) {
+    private void processMasteredWordSync(String userId, String recordJson, String operation) throws IllegalAccessException {
         if ("BATCH_DELETE".equals(operation)) {
             masteredWordBo.batchDeleteUserRecords(userId, recordJson);
         } else {
-            try {
-                MasteredWordDto masteredWordDto = JsonUtils.makeObject(recordJson, MasteredWordDto.class);
-                MasteredWord masteredWord = MasteredWord.fromDto(masteredWordDto);
-                if ("INSERT".equals(operation)) {
-                    // 检查记录是否已存在，避免主键冲突
-                    MasteredWord existing = masteredWordBo.findById(masteredWord.getId());
-                    if (existing == null) {
-                        masteredWordBo.createEntity(masteredWord);
-                    } else {
-                        logger.info("mastered_word 已存在，忽略重复 INSERT: id={}", masteredWord.getId());
-                    }
-                } else if ("DELETE".equals(operation)) {
-                    masteredWordBo.deleteEntity(masteredWord);
+            MasteredWordDto masteredWordDto = JsonUtils.makeObject(recordJson, MasteredWordDto.class);
+            MasteredWord masteredWord = MasteredWord.fromDto(masteredWordDto);
+            if ("INSERT".equals(operation)) {
+                // 检查记录是否已存在，避免主键冲突
+                MasteredWord existing = masteredWordBo.findById(masteredWord.getId());
+                if (existing == null) {
+                    masteredWordBo.createEntity(masteredWord);
+                } else {
+                    logger.info("mastered_word 已存在，忽略重复 INSERT: id={}", masteredWord.getId());
                 }
-                // 注意：mastered_word通常不支持UPDATE操作
-            } catch (IllegalArgumentException e) {
-                logger.error("同步已掌握单词数据失败：" + e.getMessage(), e);
+            } else if ("DELETE".equals(operation)) {
+                masteredWordBo.deleteEntity(masteredWord);
+            } else {
+                String errorMsg = String.format("不支持的已掌握单词表操作: %s", operation);
+                logger.error(errorMsg);
+                throw new IllegalArgumentException(errorMsg);
             }
+            // 注意：mastered_word通常不支持UPDATE操作
         }
     }
 
     /**
      * 处理魔法泡泡日志同步
      */
-    private void processUserCowDungLogSync(String userId, String recordJson, String operation) {
+    private void processUserCowDungLogSync(String userId, String recordJson, String operation) throws IllegalAccessException {
         if ("BATCH_DELETE".equals(operation)) {
             userCowDungLogBo.batchDeleteUserRecords(userId, recordJson);
         } else {
-            try {
-                UserCowDungLogDto cowDungLogDto = JsonUtils.makeObject(recordJson, UserCowDungLogDto.class);
-                UserCowDungLog cowDungLog = UserCowDungLog.fromDto(cowDungLogDto);
-                User user = userBo.findById(cowDungLogDto.getUserId());
-                if (user != null) {
-                    cowDungLog.setUser(user);
-                    if ("INSERT".equals(operation)) {
-                        // 检查记录是否已存在，避免主键冲突
-                        UserCowDungLog existing = userCowDungLogBo.findById(cowDungLog.getId());
-                        if (existing == null) {
-                            userCowDungLogBo.createEntity(cowDungLog);
-                        } else {
-                            logger.info("user_cow_dung_log 已存在，忽略重复 INSERT: id={}", cowDungLog.getId());
-                        }
+            UserCowDungLogDto cowDungLogDto = JsonUtils.makeObject(recordJson, UserCowDungLogDto.class);
+            UserCowDungLog cowDungLog = UserCowDungLog.fromDto(cowDungLogDto);
+            User user = userBo.findById(cowDungLogDto.getUserId());
+            if (user != null) {
+                cowDungLog.setUser(user);
+                if ("INSERT".equals(operation)) {
+                    // 检查记录是否已存在，避免主键冲突
+                    UserCowDungLog existing = userCowDungLogBo.findById(cowDungLog.getId());
+                    if (existing == null) {
+                        userCowDungLogBo.createEntity(cowDungLog);
+                    } else {
+                        logger.info("user_cow_dung_log 已存在，忽略重复 INSERT: id={}", cowDungLog.getId());
                     }
-                    // 注意：魔法泡泡日志通常只支持INSERT操作
+                } else {
+                    String errorMsg = String.format("不支持的魔法泡泡日志表操作: %s", operation);
+                    logger.error(errorMsg);
+                    throw new IllegalArgumentException(errorMsg);
                 }
-            } catch (IllegalArgumentException e) {
-                logger.error("同步魔法泡泡日志数据失败：" + e.getMessage(), e);
+                // 注意：魔法泡泡日志通常只支持INSERT操作
+            } else {
+                String errorMsg = String.format("魔法泡泡日志关联的用户不存在: userId=%s", cowDungLogDto.getUserId());
+                logger.error(errorMsg);
+                throw new IllegalArgumentException(errorMsg);
             }
         }
     }
