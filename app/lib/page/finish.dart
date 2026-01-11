@@ -71,9 +71,9 @@ class FinishPageState extends State<FinishPage> {
         await Global.setLoggedInUser(user.data!);
 
         // 记录用户打卡操作
-        await MyDatabase.instance.userOpersDao.recordDaka(user.data!.id!, remark: "用户完成打卡，获得1积分");
+        await MyDatabase.instance.userOpersDao.recordDaka(user.data!.id!, remark: "用户完成打卡，获得10积分");
 
-        todayDakaScore = 1; // 每天固定1分
+        todayDakaScore = 10; // 每天固定10分
 
         var result = await StudyBo().throwDiceAndSave();
         if (result.success) {
@@ -87,7 +87,7 @@ class FinishPageState extends State<FinishPage> {
       // 从页面查看器进入：模拟打卡数据，但不入库
       // 生成1-5的随机魔法泡泡数（模拟掷骰子结果）
       cowDung = math.Random().nextInt(5) + 1;
-      todayDakaScore = 1; // 模拟获得1积分
+      todayDakaScore = 10; // 模拟获得10积分
       // 模拟打卡成功的结果
       dakaResult = Result("SUCCESS", "页面查看器模式（模拟打卡，数据未入库）", true);
     }
