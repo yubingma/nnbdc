@@ -27,8 +27,7 @@ extension UserExtensions on User {
     bool? isSuperAdmin,
     bool? isAdmin,
     bool? isInputor,
-    bool? isTodayLearningStarted,
-    bool? isTodayLearningFinished,
+
     bool? autoPlaySentence,
     int? wordsPerDay,
     int? dakaDayCount,
@@ -76,8 +75,7 @@ extension UserExtensions on User {
       isSuperAdmin: isSuperAdmin ?? this.isSuperAdmin,
       isAdmin: isAdmin ?? this.isAdmin,
       isInputor: isInputor ?? this.isInputor,
-      isTodayLearningStarted: isTodayLearningStarted ?? this.isTodayLearningStarted,
-      isTodayLearningFinished: isTodayLearningFinished ?? this.isTodayLearningFinished,
+
       autoPlaySentence: autoPlaySentence ?? this.autoPlaySentence,
       wordsPerDay: wordsPerDay ?? this.wordsPerDay,
       dakaDayCount: dakaDayCount ?? this.dakaDayCount,
@@ -130,8 +128,6 @@ extension UserExtensions on User {
       isSuperAdmin: Value(isSuperAdmin),
       isAdmin: Value(isAdmin),
       isInputor: Value(isInputor),
-      isTodayLearningStarted: Value(isTodayLearningStarted),
-      isTodayLearningFinished: Value(isTodayLearningFinished),
       autoPlaySentence: Value(autoPlaySentence),
       wordsPerDay: Value(wordsPerDay),
       dakaDayCount: Value(dakaDayCount),
@@ -184,8 +180,6 @@ extension UserExtensions on User {
       isSuperAdmin: Value(isSuperAdmin),
       isAdmin: Value(isAdmin),
       isInputor: Value(isInputor),
-      isTodayLearningStarted: Value(isTodayLearningStarted),
-      isTodayLearningFinished: Value(isTodayLearningFinished),
       autoPlaySentence: Value(autoPlaySentence),
       wordsPerDay: Value(wordsPerDay),
       dakaDayCount: Value(dakaDayCount),
@@ -237,8 +231,6 @@ extension UserExtensions on User {
     userVo.isSuperAdmin = isSuperAdmin;
     userVo.isAdmin = isAdmin;
     userVo.isInputor = isInputor;
-    userVo.isTodayLearningStarted = isTodayLearningStarted;
-    userVo.isTodayLearningFinished = isTodayLearningFinished;
     userVo.autoPlaySentence = autoPlaySentence;
     userVo.wordsPerDay = wordsPerDay;
     userVo.dakaDayCount = dakaDayCount;

@@ -159,7 +159,7 @@ class MyDatabase extends _$MyDatabase {
   // you should bump this number whenever you change or add a table definition. Migrations
   // are covered later in this readme.
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 10;
 
   @override
   MigrationStrategy get migration {
@@ -200,6 +200,9 @@ class MyDatabase extends _$MyDatabase {
           }
           if (from < 9) {
             await _migrateFromV8ToV9RemoveLevelId();
+          }
+          if (from < 10) {
+            await _migrateFromV9ToV10RemoveTodayLearningFields();
           }
         } catch (e, stackTrace) {
           // 升级失败，记录错误日志
@@ -266,6 +269,20 @@ class MyDatabase extends _$MyDatabase {
         // 因为level_id字段在代码中已移除，不影响后续运行（除了占用空间）。
         Global.logger.e('删除 level_id 列失败 (可能是SQLite版本过低): $e');
         // 可选：执行复杂的 recreate table 逻辑，但风险较大，暂且保留列。
+      }
+    });
+  }
+
+  /// 从版本 9 升级到版本 10：删除users表中的isTodayLearningStarted和isTodayLearningFinished字段
+  Future<void> _migrateFromV9ToV10RemoveTodayLearningFields() async {
+    await transaction(() async {
+      // 注意：SQLite 3.35.0+ 支持 DROP COLUMN
+      try {
+        await customStatement('ALTER TABLE users DROP COLUMN is_today_learning_started');
+        await customStatement('ALTER TABLE users DROP COLUMN is_today_learning_finished');
+      } catch (e) {
+        // 如果直接删除失败，记录错误但不停止迁移
+        Global.logger.e('删除 is_today_learning_started 或 is_today_learning_finished 列失败 (可能是SQLite版本过低): $e');
       }
     });
   }

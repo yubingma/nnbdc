@@ -91,10 +91,10 @@ class Users extends Table {
   IntColumn get dakaScore => integer()();
 
   /// 是否直接显示备选答案
-  BoolColumn get showAnswersDirectly => boolean()();
-
+  BoolColumn get showAnswersDirectly => boolean().nullable().withDefault(const Constant(true))();
+ 
   /// 是否自动朗读单词发音
-  BoolColumn get autoPlayWord => boolean()();
+  BoolColumn get autoPlayWord => boolean().nullable().withDefault(const Constant(true))();
 
   DateTimeColumn get lastLoginTime => dateTime().nullable()();
 
@@ -117,21 +117,17 @@ class Users extends Table {
 
   IntColumn get lastLearningMode => integer().nullable()();
 
-  BoolColumn get learningFinished => boolean()();
+  BoolColumn get learningFinished => boolean().nullable().withDefault(const Constant(false))();
 
-  BoolColumn get inviteAwardTaken => boolean()();
+  BoolColumn get inviteAwardTaken => boolean().nullable().withDefault(const Constant(false))();
 
-  BoolColumn get isSuperAdmin => boolean()();
+  BoolColumn get isSuperAdmin => boolean().nullable().withDefault(const Constant(false))();
 
-  BoolColumn get isAdmin => boolean()();
+  BoolColumn get isAdmin => boolean().nullable().withDefault(const Constant(false))();
 
-  BoolColumn get isInputor => boolean()();
+  BoolColumn get isInputor => boolean().nullable().withDefault(const Constant(false))();
 
-  BoolColumn get isTodayLearningStarted => boolean()();
-
-  BoolColumn get isTodayLearningFinished => boolean()();
-
-  BoolColumn get autoPlaySentence => boolean()();
+  BoolColumn get autoPlaySentence => boolean().nullable().withDefault(const Constant(false))();
 
   IntColumn get wordsPerDay => integer()();
 
@@ -158,13 +154,13 @@ class Users extends Table {
 
   RealColumn get dakaRatio => real().nullable()();
 
-  BoolColumn get enableAllWrong => boolean()();
+  BoolColumn get enableAllWrong => boolean().nullable().withDefault(const Constant(false))();
 
   // 订阅相关字段（仅支持iOS平台）
 
   // iOS订阅字段
   /// iOS是否为会员
-  BoolColumn get isPremiumIos => boolean().withDefault(const Constant(false))();
+  BoolColumn get isPremiumIos => boolean().nullable().withDefault(const Constant(false))();
 
   /// iOS订阅到期时间
   DateTimeColumn get subscriptionExpireDateIos => dateTime().nullable()();
@@ -179,7 +175,7 @@ class Users extends Table {
   TextColumn get lastReceiptDataIos => text().nullable()();
 
   // 强制视为会员（用于纠纷处理/白名单/补偿等）
-  BoolColumn get premiumOverrideEnabled => boolean().withDefault(const Constant(false))();
+  BoolColumn get premiumOverrideEnabled => boolean().nullable().withDefault(const Constant(false))();
 
   /// 强制会员状态最后修改时间
   DateTimeColumn get premiumOverrideUpdateTime => dateTime().nullable()();

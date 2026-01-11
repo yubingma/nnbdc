@@ -125,8 +125,7 @@ class Global {
     guestVo.isAdmin = false;
     guestVo.isInputor = false;
     guestVo.isSuperAdmin = false;
-    guestVo.isTodayLearningFinished = false;
-    guestVo.isTodayLearningStarted = false;
+
     guestVo.learnedDays = 0;
     guestVo.learningFinished = false;
     guestVo.masteredWordsCount = 0;

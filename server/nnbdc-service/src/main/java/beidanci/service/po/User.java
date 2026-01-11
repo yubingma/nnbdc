@@ -60,19 +60,19 @@ public class User extends UuidPo {
     @Column(name = "last_learning_mode")
     private Integer lastLearningMode;
     @Column(name = "learning_finished", nullable = false)
-    private Boolean learningFinished;
+    private Boolean learningFinished = false;
     @Column(name = "invite_award_taken", nullable = false)
-    private Boolean inviteAwardTaken;
+    private Boolean inviteAwardTaken = false;
     @Column(name = "is_super_admin", nullable = false)
-    private Boolean isSuperAdmin;
+    private Boolean isSuperAdmin = false;
     @Column(name = "is_admin", nullable = false)
-    private Boolean isAdmin;
+    private Boolean isAdmin = false;
     @Column(name = "is_inputor", nullable = false)
-    private Boolean isInputor;
+    private Boolean isInputor = false;
     @Column(name = "is_sys_user", nullable = false)
-    private Boolean isSysUser;
+    private Boolean isSysUser = false;
     @Column(name = "auto_play_sentence", nullable = false)
-    private Boolean autoPlaySentence;
+    private Boolean autoPlaySentence = false;
     @Column(name = "words_per_day", nullable = false)
     private Integer wordsPerDay;
     @Column(name = "daka_day_count", nullable = false)
@@ -99,12 +99,12 @@ public class User extends UuidPo {
      * 是否直接显示备选答案
      */
     @Column(name = "show_answers_directly", nullable = false)
-    private Boolean showAnswersDirectly;
+    private Boolean showAnswersDirectly = true;
     /**
      * 是否自动朗读单词发音
      */
     @Column(name = "auto_play_word", nullable = false)
-    private Boolean autoPlayWord;
+    private Boolean autoPlayWord = true;
 
     @OrderBy("dictId asc")
     private  List<LearningDict> learningDicts;
@@ -181,7 +181,7 @@ public class User extends UuidPo {
      * 是否显示[都不对]的选项（增加选择题难度）
      */
     @Column(name = "enable_all_wrong", nullable = false)
-    private Boolean enableAllWrong;
+    private Boolean enableAllWrong = false;
 
 
     /**
@@ -196,7 +196,7 @@ public class User extends UuidPo {
      * iOS是否为会员
      */
     @Column(name = "is_premium_ios", nullable = false)
-    private Boolean isPremiumIos;
+    private Boolean isPremiumIos = false;
 
     /**
      * iOS订阅到期时间
@@ -226,8 +226,8 @@ public class User extends UuidPo {
      * 强制视为会员（用于纠纷处理/白名单/补偿等）
      * 注意：该字段及其元数据仅用于“判定是否视为会员”，程序不主动根据时间自动修改 enabled。
      */
-    @Column(name = "premium_override_enabled", nullable = true)
-    private Boolean premiumOverrideEnabled;
+    @Column(name = "premium_override_enabled", nullable = false)
+    private Boolean premiumOverrideEnabled = false;
 
     /**
      * 强制会员状态最后修改时间
@@ -949,26 +949,26 @@ public class User extends UuidPo {
         dto.setLearnedDays(this.getLearnedDays());
         dto.setLastLearningPosition(this.getLastLearningPosition());
         dto.setLastLearningMode(this.getLastLearningMode());
-        dto.setLearningFinished(this.getLearningFinished());
-        dto.setInviteAwardTaken(this.getInviteAwardTaken());
-        dto.setIsSuperAdmin(this.getIsSuperAdmin());
-        dto.setIsAdmin(this.getIsAdmin());
-        dto.setIsInputor(this.getIsInputor());
-        dto.setIsSysUser(this.getIsSysUser());
-        dto.setAutoPlaySentence(this.getAutoPlaySentence());
+        dto.setLearningFinished(Boolean.TRUE.equals(this.getLearningFinished()));
+        dto.setInviteAwardTaken(Boolean.TRUE.equals(this.getInviteAwardTaken()));
+        dto.setIsSuperAdmin(Boolean.TRUE.equals(this.getIsSuperAdmin()));
+        dto.setIsAdmin(Boolean.TRUE.equals(this.getIsAdmin()));
+        dto.setIsInputor(Boolean.TRUE.equals(this.getIsInputor()));
+        dto.setIsSysUser(Boolean.TRUE.equals(this.getIsSysUser()));
+        dto.setAutoPlaySentence(Boolean.TRUE.equals(this.getAutoPlaySentence()));
         dto.setWordsPerDay(this.getWordsPerDay());
         dto.setDakaDayCount(this.getDakaDayCount());
         dto.setMasteredWordsCount(this.getMasteredWordsCount());
         dto.setCowDung(this.getCowDung());
         dto.setThrowDiceChance(this.getThrowDiceChance());
         dto.setGameScore(this.getGameScore());
-        dto.setShowAnswersDirectly(this.getShowAnswersDirectly());
-        dto.setAutoPlayWord(this.getAutoPlayWord());
+        dto.setShowAnswersDirectly(Boolean.TRUE.equals(this.getShowAnswersDirectly()));
+        dto.setAutoPlayWord(Boolean.TRUE.equals(this.getAutoPlayWord()));
         dto.setContinuousDakaDayCount(this.getContinuousDakaDayCount());
         dto.setMaxContinuousDakaDayCount(this.getMaxContinuousDakaDayCount());
         dto.setLastDakaDate(this.getLastDakaDate());
         dto.setDakaScore(this.getDakaScore());
-        dto.setEnableAllWrong(this.getEnableAllWrong());
+        dto.setEnableAllWrong(Boolean.TRUE.equals(this.getEnableAllWrong()));
         dto.setAsrPassRule(this.getAsrPassRule());
 
 

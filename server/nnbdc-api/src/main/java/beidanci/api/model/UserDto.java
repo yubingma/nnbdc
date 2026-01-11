@@ -59,12 +59,9 @@ public class UserDto {
     private String premiumOverrideDuration;
 
     private String asrPassRule;
-
-    // 客户端特有字段，服务端处理时会忽略
-    private Boolean isTodayLearningStarted;
-    private Boolean isTodayLearningFinished;
     private Date createTime;
     private Date updateTime;
+    
 
     public UserDto() {
     }
@@ -397,21 +394,6 @@ public class UserDto {
         this.asrPassRule = asrPassRule;
     }
 
-    public Boolean getIsTodayLearningStarted() {
-        return isTodayLearningStarted;
-    }
-
-    public void setIsTodayLearningStarted(Boolean isTodayLearningStarted) {
-        this.isTodayLearningStarted = isTodayLearningStarted;
-    }
-
-    public Boolean getIsTodayLearningFinished() {
-        return isTodayLearningFinished;
-    }
-
-    public void setIsTodayLearningFinished(Boolean isTodayLearningFinished) {
-        this.isTodayLearningFinished = isTodayLearningFinished;
-    }
 
     public Date getCreateTime() {
         return createTime;

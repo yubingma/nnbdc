@@ -253,8 +253,6 @@ class UserVo {
     userVo.isSuperAdmin = user.isSuperAdmin;
     userVo.isAdmin = user.isAdmin;
     userVo.isInputor = user.isInputor;
-    userVo.isTodayLearningStarted = user.isTodayLearningStarted;
-    userVo.isTodayLearningFinished = user.isTodayLearningFinished;
     userVo.autoPlaySentence = user.autoPlaySentence;
     userVo.wordsPerDay = user.wordsPerDay;
     userVo.dakaDayCount = user.dakaDayCount;
@@ -1152,8 +1150,6 @@ User userVo2User(UserVo userVo) {
       isAdmin: userVo.isAdmin!,
       isInputor: userVo.isInputor!,
       isSuperAdmin: userVo.isSuperAdmin!,
-      isTodayLearningFinished: userVo.isTodayLearningFinished!,
-      isTodayLearningStarted: userVo.isTodayLearningStarted!,
       learnedDays: userVo.learnedDays!,
       learningFinished: userVo.learningFinished!,
       masteredWordsCount: userVo.masteredWordsCount!,

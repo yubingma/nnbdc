@@ -35,6 +35,7 @@ import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/util/level_util.dart';
 import 'package:nnbdc/widget/floating_speech_bubble.dart';
 import 'package:nnbdc/page/level_path_page.dart';
+import '../util/user_learning_status.dart';
 
 import '../global.dart';
 import '../state.dart';
@@ -293,7 +294,7 @@ class _MePageState extends State<MePage> {
             user.continuousDakaDayCount,
             user.throwDiceChance,
             allDictsFinished,
-            user.isTodayLearningFinished,
+            UserLearningStatusHelper.isTodayLearningFinishedFromUser(user),
             learningDicts,
           );
         });
