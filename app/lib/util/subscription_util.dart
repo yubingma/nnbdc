@@ -378,11 +378,11 @@ class SubscriptionUtil {
         final currentUser = await db.usersDao.getUserById(userId);
         if (currentUser != null) {
           final updatedUser = currentUser.copyWith(
-            isPremiumIos: isPremiumIos,
-            subscriptionExpireDateIos: Value(subscriptionExpireDateIos),
-            subscriptionTypeIos: Value(subscriptionTypeIos),
-            subscriptionStatusIos: Value(subscriptionStatusIos),
-            lastReceiptDataIos: Value(receiptData),
+            isPremiumIos: Value<bool?>(isPremiumIos),
+            subscriptionExpireDateIos: Value<DateTime?>(subscriptionExpireDateIos),
+            subscriptionTypeIos: Value<String?>(subscriptionTypeIos),
+            subscriptionStatusIos: Value<String?>(subscriptionStatusIos),
+            lastReceiptDataIos: Value<String?>(receiptData),
           );
           
           // 直接更新数据库，不生成同步日志

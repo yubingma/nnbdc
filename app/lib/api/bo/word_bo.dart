@@ -1125,7 +1125,7 @@ class WordBo {
       if (user == null) {
         return Result("ERROR", "用户不存在", false);
       }
-      if (dict.ownerId != user.id && !user.isInputor) {
+      if (dict.ownerId != user.id && !(user.isInputor ?? false)) {
         return Result("ERROR", "你只能编辑自己的词书", false);
       }
       final dictWord = await db.dictWordsDao.getById(dictId, wordId);

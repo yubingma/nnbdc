@@ -108,7 +108,7 @@ class _AdminPageState extends State<AdminPage> {
   Future<void> _checkAdminPermission() async {
     try {
       final user = Global.getLoggedInUser();
-      if (user == null || !user.isAdmin) {
+      if (user == null || !(user.isAdmin ?? false)) {
         // 非管理员用户，显示无权限页面
         setState(() {
           _isLoading = false;

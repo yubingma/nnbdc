@@ -4,6 +4,7 @@ import 'dart:core';
 import 'dart:math';
 
 import 'package:day_night_switcher/day_night_switcher.dart';
+import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
 import 'package:nnbdc/page/index.dart';
 import 'package:flutter_animation_progress_bar/flutter_animation_progress_bar.dart';
@@ -1188,7 +1189,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       return;
     }
 
-    _showAnswerButtons = Global.getLoggedInUser()!.showAnswersDirectly;
+    _showAnswerButtons = Global.getLoggedInUser()!.showAnswersDirectly ?? false;
 
     setState(() {
       dataLoaded = true;
@@ -1220,7 +1221,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
           }
         }
 
-        if (user.enableAllWrong) {
+        if (user.enableAllWrong ?? false) {
           // 备选答案中含[都不对]
           // 随机选择一个单词索引号（1～3），从数组中删除该单词
           var rnd = Random();
@@ -1512,10 +1513,10 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                           // 保存所有设置
                           if (currentUser != null) {
                             var updatedUser = currentUser.copyWith(
-                              autoPlayWord: localAutoPlayWord,
-                              autoPlaySentence: localAutoPlaySentence,
-                              showAnswersDirectly: localShowAnswersDirectly,
-                              enableAllWrong: localEnableAllWrong,
+                              autoPlayWord: drift.Value<bool?>(localAutoPlayWord),
+                              autoPlaySentence: drift.Value<bool?>(localAutoPlaySentence),
+                              showAnswersDirectly: drift.Value<bool?>(localShowAnswersDirectly),
+                              enableAllWrong: drift.Value<bool?>(localEnableAllWrong),
                             );
                             await MyDatabase.instance.usersDao.saveUser(updatedUser, true);
                             // 更新Global中的用户缓存
@@ -2148,8 +2149,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
                             if (wordImage.author.id == Global.getLoggedInUser()!.id ||
-                                Global.getLoggedInUser()!.isAdmin ||
-                                Global.getLoggedInUser()!.isSuperAdmin)
+                                (Global.getLoggedInUser()!.isAdmin ?? false) ||
+                                (Global.getLoggedInUser()!.isSuperAdmin ?? false))
                               ElevatedButton(
                                 style: ElevatedButton.styleFrom(
                                   foregroundColor: Colors.white,
