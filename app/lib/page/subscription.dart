@@ -5,6 +5,7 @@ import 'package:nnbdc/util/subscription_util.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/api/bo/user_bo.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// 订阅页面
 class SubscriptionPage extends StatefulWidget {
@@ -416,19 +417,29 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                         children: [
                           Text(
                             '订阅说明',
-                            style: Theme.of(context).textTheme.titleMedium,
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                           const SizedBox(height: 8),
                           const Text(
-                            '• 订阅将自动续费，除非在到期前至少24小时取消\n'
-                            '• 订阅费用将在确认购买时从您的Apple ID账户中扣除\n'
-                            '• 您可以在App Store的账户设置中管理订阅和关闭自动续费\n'
-                            '• 恢复购买功能可以帮助您在更换设备后恢复订阅',
-                            style: TextStyle(fontSize: 12, color: Colors.grey),
+                            '• 订阅周期：1个月（月度订阅）或1年（年度订阅）。\n'
+                            '• 付款：用户确认购买并付款后计入iTunes账户。\n'
+                            '• 续订：苹果iTunes账户会在到期前24小时内扣费，扣费成功后订阅周期顺延一个订阅周期。\n'
+                            '• 取消续订：如需取消续订，请在当前订阅周期到期前24小时以前，手动在iTunes/Apple ID设置管理中关闭自动续订功能。\n'
+                            '• 恢复购买：如果您之前已购买过，可以点击右上角的“恢复购买”按钮。',
+                            style: TextStyle(fontSize: 12, color: Colors.grey, height: 1.5),
                           ),
                           const SizedBox(height: 12),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
+                          const Text(
+                            '购买即视为您同意以下条款：',
+                            style: TextStyle(fontSize: 12, color: Colors.grey),
+                          ),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            alignment: WrapAlignment.center,
+                            spacing: 16,
+                            runSpacing: 8,
                             children: [
                               GestureDetector(
                                 onTap: () {
@@ -439,19 +450,36 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                                   style: TextStyle(
                                     color: Theme.of(context).primaryColor,
                                     decoration: TextDecoration.underline,
+                                    fontSize: 12,
                                   ),
                                 ),
                               ),
-                              const SizedBox(width: 16),
                               GestureDetector(
                                 onTap: () {
                                   Navigator.pushNamed(context, '/protocol');
                                 },
                                 child: Text(
-                                  '使用条款',
+                                  '用户协议',
                                   style: TextStyle(
                                     color: Theme.of(context).primaryColor,
                                     decoration: TextDecoration.underline,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                              GestureDetector(
+                                onTap: () async {
+                                  final url = Uri.parse('https://www.apple.com/legal/internet-services/itunes/dev/stdeula/');
+                                  if (await canLaunchUrl(url)) {
+                                    await launchUrl(url);
+                                  }
+                                },
+                                child: Text(
+                                  '标准EULA',
+                                  style: TextStyle(
+                                    color: Theme.of(context).primaryColor,
+                                    decoration: TextDecoration.underline,
+                                    fontSize: 12,
                                   ),
                                 ),
                               ),
@@ -508,7 +536,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                       Row(
                         children: [
                           Text(
-                            isMonthly ? '月度订阅' : '年度订阅',
+                            isMonthly ? '月度订阅 (1个月)' : '年度订阅 (1年)',
                             style: Theme.of(context).textTheme.titleLarge?.copyWith(
                                   fontWeight: FontWeight.bold,
                                 ),
