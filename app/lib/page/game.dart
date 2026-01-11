@@ -251,28 +251,29 @@ class _GamePageState extends State<GamePage> with TickerProviderStateMixin {
             ),
           ),
           const SizedBox(height: 8),
-          Row(
-            children: [
-              Icon(Icons.people, size: 16, color: subtitleColor),
-              const SizedBox(width: 4),
-              Flexible(
-                child: Text(
-                  '${hall.userCount} 人在线',
-                  textScaler: TextScaler.linear(1.0),
-                  style: TextStyle(
-                    color: subtitleColor,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w400,
-                    height: 1.3,
-                    letterSpacing: 0.3,
+          if (Global.getLoggedInUser()?.isAdmin == true)
+            Row(
+              children: [
+                Icon(Icons.people, size: 16, color: subtitleColor),
+                const SizedBox(width: 4),
+                Flexible(
+                  child: Text(
+                    '${hall.userCount} 人在线',
+                    textScaler: TextScaler.linear(1.0),
+                    style: TextStyle(
+                      color: subtitleColor,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w400,
+                      height: 1.3,
+                      letterSpacing: 0.3,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-              const SizedBox(width: 8),
-              Flexible(child: _buildOnlineIndicator(hall.userCount)),
-            ],
-          ),
+                const SizedBox(width: 8),
+                Flexible(child: _buildOnlineIndicator(hall.userCount)),
+              ],
+            ),
         ],
       ),
     );
@@ -422,7 +423,8 @@ class _GamePageState extends State<GamePage> with TickerProviderStateMixin {
 
   // 构建在线人数指示器（动画版本）
   Widget _buildGroupUserCountBadge(HallGroupVo group, Color accentColor) {
-    final hasUsers = group.userCount > 0;
+    final isLoggedInUserAdmin = Global.getLoggedInUser()?.isAdmin == true;
+    final hasUsers = isLoggedInUserAdmin ? group.userCount > 0 : false;
     final badgeColor = hasUsers ? accentColor : Colors.grey;
     
     return Container(
@@ -476,7 +478,7 @@ class _GamePageState extends State<GamePage> with TickerProviderStateMixin {
           Icon(Icons.people, size: 18, color: badgeColor),
           const SizedBox(width: 6),
           Text(
-            '${group.userCount}',
+            isLoggedInUserAdmin ? '${group.userCount}' : '?',
             textScaler: TextScaler.linear(1.0),
             style: TextStyle(
               color: badgeColor,
@@ -525,7 +527,8 @@ class _GamePageState extends State<GamePage> with TickerProviderStateMixin {
               ),
             ),
           ),
-          _buildGroupUserCountBadge(group, accentColor),
+          if (Global.getLoggedInUser()?.isAdmin == true)
+            _buildGroupUserCountBadge(group, accentColor),
         ],
       ),
     );
