@@ -391,7 +391,7 @@ public class UserBo extends BaseBo<User> {
 
     public void deleteDeadUsers(int idleDays) throws IllegalAccessException {
         // 查询长期未登录的用户
-        String sql = "SELECT * FROM \"user\" WHERE is_sys_user = 0 AND last_login_time < :time";
+        String sql = "SELECT * FROM \"user\" WHERE is_sys_user = false AND last_login_time < :time";
         MapSqlParameterSource params = new MapSqlParameterSource("time",
                 Utils.localDate2Date(LocalDate.now().plusDays(-idleDays)));
         List<User> users = namedParameterJdbcTemplate.query(sql, params,
@@ -585,7 +585,7 @@ public class UserBo extends BaseBo<User> {
         // JDBC 不需要管理 Session
         String sql = "SELECT DISTINCT u.* FROM user_game ug " +
                 "INNER JOIN \"user\" u ON ug.user_id = u.id " +
-                "WHERE u.is_sys_user = 0 AND u.last_login_time < ? " +
+                "WHERE u.is_sys_user = false AND u.last_login_time < ? " +
                 "LIMIT ?";
         Date time = Utils.localDate2Date(LocalDate.now().plusDays(-idleDays));
         List<User> candidates = jdbcTemplate.query(sql,

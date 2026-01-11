@@ -237,7 +237,9 @@ public class RussiaRoom {
         beidanci.service.po.User real = null;
         try {
             real = beidanci.service.Global.getUserBo().pickRandomInactiveGamer(365, 50);
-        } catch (Exception ignored) {}
+        } catch (Exception e) {
+            log.error("选取机器人失败", e);
+        }
 
         if (real != null) {
             bot.setId(real.getId());
