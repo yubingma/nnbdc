@@ -280,28 +280,25 @@ class _GamePageState extends State<GamePage> with TickerProviderStateMixin {
 
   // 构建匹配按钮
   Widget _buildMatchButton(GameHallVo hall) {
-    final hasUsers = hall.userCount > 0;
     return InkWell(
       onTap: () => Get.toNamed('/russia', arguments: [hall, null]),
       borderRadius: BorderRadius.circular(20),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: hasUsers 
-              ? [const Color(0xFF4A90E2), const Color(0xFF357ABD)] 
-              : [Colors.grey[400]!, Colors.grey[500]!],
+          gradient: const LinearGradient(
+            colors: [Color(0xFF4A90E2), Color(0xFF357ABD)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(20),
-          boxShadow: hasUsers ? [
+          boxShadow: [
             BoxShadow(
               color: const Color(0xFF4A90E2).withValues(alpha: 0.3),
               blurRadius: 4,
               offset: const Offset(0, 2),
             ),
-          ] : null,
+          ],
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
