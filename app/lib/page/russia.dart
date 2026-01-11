@@ -1213,6 +1213,12 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
       _enterRoomTimer = null;
     });
 
+    // 监听魔法泡泡不足事件
+    socket.off('noEnoughCowDung');
+    socket.on('noEnoughCowDung', (cowDungPerGame) {
+      safeShowToast('魔法泡泡不足，无法开始游戏！\n最少需要魔法泡泡: ${cowDungPerGame ?? "未知"}');
+    });
+
     socket.off("enterWait");
     socket.on("enterWait", (data) {
       gameState = "waiting";
