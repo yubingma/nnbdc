@@ -1,6 +1,7 @@
 import 'package:nnbdc/global.dart';
 import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
+import 'package:nnbdc/util/user_helper.dart';
 import 'package:nnbdc/util/level_util.dart';
 
 import '../db/db.dart';
@@ -263,7 +264,7 @@ class UserVo {
     userVo.continuousDakaDayCount = user.continuousDakaDayCount;
     userVo.maxContinuousDakaDayCount = user.maxContinuousDakaDayCount;
     userVo.lastDakaDate = user.lastDakaDate;
-    userVo.totalScore = user.totalScore;
+    userVo.totalScore = UserHelper.calculateTotalScore(user.gameScore, user.dakaScore);
     userVo.dakaRatio = user.dakaRatio;
     userVo.enableAllWrong = user.enableAllWrong;
 
@@ -282,7 +283,7 @@ class UserVo {
     userVo.password = user.password;
     userVo.lastLoginTime = user.lastLoginTime;
 
-    userVo.level = LevelUtil.getLevelVoByScore(user.totalScore);
+    userVo.level = LevelUtil.getLevelVoByScore(UserHelper.calculateTotalScore(user.gameScore, user.dakaScore));
 
     return userVo;
   }
@@ -1156,7 +1157,6 @@ User userVo2User(UserVo userVo) {
       maxContinuousDakaDayCount: userVo.maxContinuousDakaDayCount!,
       showAnswersDirectly: userVo.showAnswersDirectly!,
       throwDiceChance: userVo.throwDiceChance!,
-      totalScore: userVo.totalScore!,
       userName: userVo.userName!,
       wordsPerDay: userVo.wordsPerDay!,
       password: userVo.password,

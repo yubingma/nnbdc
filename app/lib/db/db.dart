@@ -159,7 +159,7 @@ class MyDatabase extends _$MyDatabase {
   // you should bump this number whenever you change or add a table definition. Migrations
   // are covered later in this readme.
   @override
-  int get schemaVersion => 10;
+  int get schemaVersion => 11;
 
   @override
   MigrationStrategy get migration {
@@ -203,6 +203,9 @@ class MyDatabase extends _$MyDatabase {
           }
           if (from < 10) {
             await _migrateFromV9ToV10RemoveTodayLearningFields();
+          }
+          if (from < 11) {
+            await _migrateFromV10ToV11RemoveTotalScoreField();
           }
         } catch (e, stackTrace) {
           // 升级失败，记录错误日志
@@ -283,6 +286,20 @@ class MyDatabase extends _$MyDatabase {
       } catch (e) {
         // 如果直接删除失败，记录错误但不停止迁移
         Global.logger.e('删除 is_today_learning_started 或 is_today_learning_finished 列失败 (可能是SQLite版本过低): $e');
+      }
+    });
+  }
+
+  /// 从版本 10 升级到版本 11：删除users表中的totalScore字段
+  Future<void> _migrateFromV10ToV11RemoveTotalScoreField() async {
+    await transaction(() async {
+      // 注意：SQLite 3.35.0+ 支持 DROP COLUMN
+      try {
+        await customStatement('ALTER TABLE users DROP COLUMN total_score');
+      } catch (e) {
+        // 如果直接删除失败，记录错误但不停止迁移
+        // 这种情况通常发生在SQLite版本过低或有其他约束
+        Global.logger.e('删除 total_score 列失败 (可能是SQLite版本过低): $e');
       }
     });
   }

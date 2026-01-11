@@ -20,7 +20,7 @@ import 'package:provider/provider.dart';
 
 import '../theme/app_theme.dart';
 import 'bdc.dart';
-import '../util/user_learning_status.dart';
+import '../util/user_helper.dart';
 
 class BeforeBdcPage extends StatefulWidget {
   const BeforeBdcPage({super.key});
@@ -235,7 +235,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
                           Expanded(
                             child: GestureDetector(
                               onTap: () {
-                                toTodayWordsListPage(!UserLearningStatusHelper.isTodayLearningStarted(user!))?.then((value) => loadData());
+                                toTodayWordsListPage(!UserHelper.isTodayLearningStarted(user!))?.then((value) => loadData());
                               },
                               child: Container(
                                 height: 152, // 70 + 12 + 70 = 152 (新词高度 + 间距 + 旧词高度)
@@ -294,7 +294,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
                                 // 新词
                                 GestureDetector(
                                   onTap: () {
-                                    toTodayNewWordsListPage(!UserLearningStatusHelper.isTodayLearningStarted(user!))?.then((value) => loadData());
+                                    toTodayNewWordsListPage(!UserHelper.isTodayLearningStarted(user!))?.then((value) => loadData());
                                   },
                                   child: Container(
                                     height: 70, // 设置固定高度
@@ -354,7 +354,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
                                 // 旧词
                                 GestureDetector(
                                   onTap: () {
-                                    toTodayOldWordsListPage(!UserLearningStatusHelper.isTodayLearningStarted(user!))?.then((value) => loadData());
+                                    toTodayOldWordsListPage(!UserHelper.isTodayLearningStarted(user!))?.then((value) => loadData());
                                   },
                                   child: Container(
                                     height: 70, // 设置固定高度

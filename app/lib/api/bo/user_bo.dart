@@ -15,6 +15,8 @@ import 'package:nnbdc/util/app_clock.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:nnbdc/util/client_type.dart';
 import 'package:nnbdc/util/level_util.dart';
+import 'package:nnbdc/util/user_helper.dart';
+
 
 class UserBo {
   static final UserBo _instance = UserBo._internal();
@@ -127,7 +129,7 @@ class UserBo {
         try {
           final userVo = UserVo.fromUser(user);
 
-          userVo.level = LevelUtil.getLevelVoByScore(user.totalScore);
+          userVo.level = LevelUtil.getLevelVoByScore(UserHelper.calculateTotalScore(user.gameScore, user.dakaScore));
 
           final today = DateTime(AppClock.now().year, AppClock.now().month, AppClock.now().day);
           userVo.hasDakaToday = await db.dakasDao.findById(user.id, today) != null;

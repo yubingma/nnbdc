@@ -1,6 +1,8 @@
 import 'package:nnbdc/db/db.dart';
 import 'package:drift/drift.dart';
 import 'package:nnbdc/api/vo.dart';
+
+import 'package:nnbdc/util/user_helper.dart';
 import 'package:nnbdc/util/level_util.dart';
 
 /// User类的扩展方法
@@ -38,7 +40,7 @@ extension UserExtensions on User {
     int? continuousDakaDayCount,
     int? maxContinuousDakaDayCount,
     DateTime? lastDakaDate,
-    int? totalScore,
+
     double? dakaRatio,
     bool? enableAllWrong,
     // iOS订阅字段
@@ -87,7 +89,7 @@ extension UserExtensions on User {
       continuousDakaDayCount: continuousDakaDayCount ?? this.continuousDakaDayCount,
       maxContinuousDakaDayCount: maxContinuousDakaDayCount ?? this.maxContinuousDakaDayCount,
       lastDakaDate: lastDakaDate ?? this.lastDakaDate,
-      totalScore: totalScore ?? this.totalScore,
+
       dakaRatio: dakaRatio ?? this.dakaRatio,
       enableAllWrong: enableAllWrong ?? this.enableAllWrong,
       // iOS订阅字段
@@ -139,7 +141,6 @@ extension UserExtensions on User {
       continuousDakaDayCount: Value(continuousDakaDayCount),
       maxContinuousDakaDayCount: Value(maxContinuousDakaDayCount),
       lastDakaDate: Value(lastDakaDate),
-      totalScore: Value(totalScore),
       dakaRatio: Value(dakaRatio),
       enableAllWrong: Value(enableAllWrong),
       // iOS订阅字段
@@ -191,7 +192,6 @@ extension UserExtensions on User {
       continuousDakaDayCount: Value(continuousDakaDayCount),
       maxContinuousDakaDayCount: Value(maxContinuousDakaDayCount),
       lastDakaDate: Value(lastDakaDate),
-      totalScore: Value(totalScore),
       dakaRatio: Value(dakaRatio),
       enableAllWrong: Value(enableAllWrong),
       // iOS订阅字段
@@ -242,12 +242,12 @@ extension UserExtensions on User {
     // 我们不处理这个字段，因为这需要额外的数据库查询
 
     // 使用LevelUtil根据总积分计算等级
-    userVo.level = LevelUtil.getLevelVoByScore(totalScore);
+    userVo.level = LevelUtil.getLevelVoByScore(UserHelper.getTotalScoreFromUser(this));
 
     userVo.continuousDakaDayCount = continuousDakaDayCount;
     userVo.maxContinuousDakaDayCount = maxContinuousDakaDayCount;
     userVo.lastDakaDate = lastDakaDate;
-    userVo.totalScore = totalScore;
+
     userVo.dakaRatio = dakaRatio;
     userVo.enableAllWrong = enableAllWrong;
 

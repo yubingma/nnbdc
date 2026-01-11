@@ -13,7 +13,7 @@ import '../api/vo.dart';
 import '../global.dart';
 import '../state.dart';
 import '../theme/app_theme.dart';
-import '../util/user_learning_status.dart';
+import '../util/user_helper.dart';
 
 class WordListsPage extends StatefulWidget {
   const WordListsPage({super.key});
@@ -110,7 +110,7 @@ class _WordListsPageState extends State<WordListsPage> {
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
           onTap: () async {
-            var canDeleteTodayWords = !UserLearningStatusHelper.isTodayLearningStartedFromUser(Global.getLoggedInUser()!) || UserLearningStatusHelper.isTodayLearningFinishedFromUser(Global.getLoggedInUser()!);
+            var canDeleteTodayWords = !UserHelper.isTodayLearningStartedFromUser(Global.getLoggedInUser()!) || UserHelper.isTodayLearningFinishedFromUser(Global.getLoggedInUser()!);
             if (wordList.name == '今日错词') {
               toWrongWordsListPage();
             } else if (wordList.name == '今日新词') {

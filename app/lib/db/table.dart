@@ -150,8 +150,6 @@ class Users extends Table {
   /// 最近一次打卡的日期
   DateTimeColumn get lastDakaDate => dateTime().nullable()();
 
-  IntColumn get totalScore => integer()();
-
   RealColumn get dakaRatio => real().nullable()();
 
   BoolColumn get enableAllWrong => boolean().nullable().withDefault(const Constant(false))();

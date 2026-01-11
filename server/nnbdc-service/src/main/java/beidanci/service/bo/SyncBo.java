@@ -409,58 +409,62 @@ public class SyncBo {
             throw new IllegalArgumentException(errorMsg);
         }
         
-        if ("INSERT".equals(operation) || "UPDATE".equals(operation)) {
-            Dict dict = dictBo.findById(dictDto.getId());
-            User owner = userBo.findById(dictDto.getOwnerId());
-            
-            if (owner == null) {
-                String errorMsg = String.format("词书所属用户不存在: ownerId=%s", dictDto.getOwnerId());
-                logger.error(errorMsg);
-                throw new IllegalArgumentException(errorMsg);
-            }
-            
-            if (dict == null) {
-                // 创建新词书
-                dict = new Dict();
-                dict.setId(dictDto.getId());
-                dict.setName(dictDto.getName());
-                dict.setOwner(owner);
-                dict.setIsShared(dictDto.getIsShared());
-                dict.setIsReady(dictDto.getIsReady());
-                dict.setVisible(dictDto.getVisible());
-                dict.setWordCount(dictDto.getWordCount());
-                dict.setPopularityLimit(dictDto.getPopularityLimit());
-                dict.setCreateTime(dictDto.getCreateTime());
-                dict.setUpdateTime(dictDto.getUpdateTime());
-                
-                dictBo.createEntity(dict);
-                logger.debug("同步创建词书成功: dictId={}, name={}, wordCount={}", 
-                    dict.getId(), dict.getName(), dict.getWordCount());
-            } else {
-                // 更新现有词书
-                dict.setName(dictDto.getName());
-                dict.setOwner(owner);
-                dict.setIsShared(dictDto.getIsShared());
-                dict.setIsReady(dictDto.getIsReady());
-                dict.setVisible(dictDto.getVisible());
-                dict.setWordCount(dictDto.getWordCount());
-                dict.setPopularityLimit(dictDto.getPopularityLimit());
-                dict.setUpdateTime(dictDto.getUpdateTime());
-                
-                dictBo.updateEntity(dict);
-                logger.debug("同步更新词书成功: dictId={}, name={}, wordCount={}", 
-                    dict.getId(), dict.getName(), dict.getWordCount());
-            }
-        } else if ("DELETE".equals(operation)) {
-            Dict dict = dictBo.findById(dictDto.getId());
-            if (dict != null) {
-                dictBo.deleteEntity(dict);
-                logger.debug("同步删除词书成功: dictId={}", dictDto.getId());
-            }
-        } else {
+        if (null == operation) {
             String errorMsg = String.format("不支持的词书表操作: %s", operation);
             logger.error(errorMsg);
             throw new IllegalArgumentException(errorMsg);
+        } else switch (operation) {
+            case "INSERT", "UPDATE" -> {
+                Dict dict = dictBo.findById(dictDto.getId());
+                User owner = userBo.findById(dictDto.getOwnerId());
+                if (owner == null) {
+                    String errorMsg = String.format("词书所属用户不存在: ownerId=%s", dictDto.getOwnerId());
+                    logger.error(errorMsg);
+                    throw new IllegalArgumentException(errorMsg);
+                }       if (dict == null) {
+                    // 创建新词书
+                    dict = new Dict();
+                    dict.setId(dictDto.getId());
+                    dict.setName(dictDto.getName());
+                    dict.setOwner(owner);
+                    dict.setIsShared(dictDto.getIsShared());
+                    dict.setIsReady(dictDto.getIsReady());
+                    dict.setVisible(dictDto.getVisible());
+                    dict.setWordCount(dictDto.getWordCount());
+                    dict.setPopularityLimit(dictDto.getPopularityLimit());
+                    dict.setCreateTime(dictDto.getCreateTime());
+                    dict.setUpdateTime(dictDto.getUpdateTime());
+                    
+                    dictBo.createEntity(dict);
+                    logger.debug("同步创建词书成功: dictId={}, name={}, wordCount={}",
+                            dict.getId(), dict.getName(), dict.getWordCount());
+                } else {
+                    // 更新现有词书
+                    dict.setName(dictDto.getName());
+                    dict.setOwner(owner);
+                    dict.setIsShared(dictDto.getIsShared());
+                    dict.setIsReady(dictDto.getIsReady());
+                    dict.setVisible(dictDto.getVisible());
+                    dict.setWordCount(dictDto.getWordCount());
+                    dict.setPopularityLimit(dictDto.getPopularityLimit());
+                    dict.setUpdateTime(dictDto.getUpdateTime());
+                    
+                    dictBo.updateEntity(dict);
+                    logger.debug("同步更新词书成功: dictId={}, name={}, wordCount={}",
+                            dict.getId(), dict.getName(), dict.getWordCount());
+                }
+            }
+            case "DELETE" ->                 {
+                Dict dict = dictBo.findById(dictDto.getId());
+                if (dict != null) {
+                    dictBo.deleteEntity(dict);
+                    logger.debug("同步删除词书成功: dictId={}", dictDto.getId());
+                }                      }
+            default ->                 {
+                String errorMsg = String.format("不支持的词书表操作: %s", operation);
+                logger.error(errorMsg);
+                throw new IllegalArgumentException(errorMsg);
+                }
         }
     }
 
@@ -474,18 +478,24 @@ public class SyncBo {
         } else {
             BookMarkDto bookMarkDto = JsonUtils.makeObject(recordJson, BookMarkDto.class);
             
-            if ("INSERT".equals(operation) || "UPDATE".equals(operation)) {
-                bookMarkBo.saveBookMark(bookMarkDto.getBookMarkName(),
-                        bookMarkDto.getSpell(),
-                        bookMarkDto.getPosition(),
-                        bookMarkDto.getUserId());
-            } else if ("DELETE".equals(operation)) {
-                BookMark bookMark = BookMark.fromDto(bookMarkDto);
-                bookMarkBo.deleteEntity(bookMark);
-            } else {
+            if (null == operation) {
                 String errorMsg = String.format("不支持的书签表操作: %s", operation);
                 logger.error(errorMsg);
                 throw new IllegalArgumentException(errorMsg);
+            } else switch (operation) {
+                case "INSERT", "UPDATE" -> bookMarkBo.saveBookMark(bookMarkDto.getBookMarkName(),
+                        bookMarkDto.getSpell(),
+                        bookMarkDto.getPosition(),
+                        bookMarkDto.getUserId());
+                case "DELETE" -> {
+                    BookMark bookMark = BookMark.fromDto(bookMarkDto);
+                    bookMarkBo.deleteEntity(bookMark);
+                }
+                default -> {
+                    String errorMsg = String.format("不支持的书签表操作: %s", operation);
+                    logger.error(errorMsg);
+                    throw new IllegalArgumentException(errorMsg);
+                }
             }
         }
     }
@@ -710,22 +720,29 @@ public class SyncBo {
         } else {
             MasteredWordDto masteredWordDto = JsonUtils.makeObject(recordJson, MasteredWordDto.class);
             MasteredWord masteredWord = MasteredWord.fromDto(masteredWordDto);
-            if ("INSERT".equals(operation)) {
-                // 检查记录是否已存在，避免主键冲突
-                MasteredWord existing = masteredWordBo.findById(masteredWord.getId());
-                if (existing == null) {
-                    masteredWordBo.createEntity(masteredWord);
-                } else {
-                    logger.info("mastered_word 已存在，忽略重复 INSERT: id={}", masteredWord.getId());
-                }
-            } else if ("DELETE".equals(operation)) {
-                masteredWordBo.deleteEntity(masteredWord);
-            } else {
+            if (null == operation) {
                 String errorMsg = String.format("不支持的已掌握单词表操作: %s", operation);
                 logger.error(errorMsg);
                 throw new IllegalArgumentException(errorMsg);
+            } else switch (operation) {
+                case "INSERT" -> {
+                    // 检查记录是否已存在，避免主键冲突
+                    MasteredWord existing = masteredWordBo.findById(masteredWord.getId());
+                    if (existing == null) {
+                        masteredWordBo.createEntity(masteredWord);
+                    } else {
+                        logger.info("mastered_word 已存在，忽略重复 INSERT: id={}", masteredWord.getId());
+                    }
+                }
+                case "DELETE" -> masteredWordBo.deleteEntity(masteredWord);
+                default -> {
+                    String errorMsg = String.format("不支持的已掌握单词表操作: %s", operation);
+                    logger.error(errorMsg);
+                    throw new IllegalArgumentException(errorMsg);
+                }
             }
             // 注意：mastered_word通常不支持UPDATE操作
+            
         }
     }
 

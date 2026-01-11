@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:day_night_switcher/day_night_switcher.dart';
+import 'package:drift/drift.dart' as drift;
 import 'package:drift_db_viewer/drift_db_viewer.dart';
 import 'package:email_validator/email_validator.dart';
 import 'package:flutter/material.dart';
@@ -9,37 +12,33 @@ import 'package:nnbdc/api/bo/user_bo.dart';
 import 'package:nnbdc/api/enum.dart';
 import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/db/db.dart';
-import 'package:drift/drift.dart' as drift;
-import 'package:nnbdc/util/error_handler.dart';
-import 'package:nnbdc/util/app_clock.dart';
-import 'dart:async';
-
-import 'package:nnbdc/page/word_list/learning_words.dart';
-import 'package:nnbdc/page/word_list/mastered_words.dart';
-import 'package:nnbdc/page/word_list/dict_words.dart';
-import 'package:nnbdc/services/throttled_sync_service.dart';
-import 'package:nnbdc/socket_io.dart';
-import 'package:nnbdc/util/toast_util.dart';
-import 'package:nnbdc/util/utils.dart';
-import "package:percent_indicator/percent_indicator.dart";
-import 'package:provider/provider.dart';
-import 'package:nnbdc/widget/dict_download_dialog.dart';
+import 'package:nnbdc/page/admin/exception_log_viewer.dart';
 import 'package:nnbdc/page/admin/health_check.dart';
 import 'package:nnbdc/page/admin/page_viewer.dart';
-import 'package:nnbdc/page/admin/exception_log_viewer.dart';
 import 'package:nnbdc/page/feature_request_wall.dart';
-import 'package:nnbdc/page/subscription.dart';
-import 'package:nnbdc/util/subscription_util.dart';
-import 'package:nnbdc/util/platform_util.dart';
-
-import 'package:nnbdc/util/level_util.dart';
-import 'package:nnbdc/widget/floating_speech_bubble.dart';
 import 'package:nnbdc/page/level_path_page.dart';
-import '../util/user_learning_status.dart';
+import 'package:nnbdc/page/subscription.dart';
+import 'package:nnbdc/page/word_list/dict_words.dart';
+import 'package:nnbdc/page/word_list/learning_words.dart';
+import 'package:nnbdc/page/word_list/mastered_words.dart';
+import 'package:nnbdc/services/throttled_sync_service.dart';
+import 'package:nnbdc/socket_io.dart';
+import 'package:nnbdc/util/app_clock.dart';
+import 'package:nnbdc/util/error_handler.dart';
+import 'package:nnbdc/util/platform_util.dart';
+import 'package:nnbdc/util/subscription_util.dart';
+import 'package:nnbdc/util/toast_util.dart';
+import 'package:nnbdc/util/user_helper.dart';
+import 'package:nnbdc/util/utils.dart';
+import 'package:nnbdc/widget/dict_download_dialog.dart';
+import 'package:nnbdc/widget/floating_speech_bubble.dart';
+import "package:percent_indicator/percent_indicator.dart";
+import 'package:provider/provider.dart';
 
 import '../global.dart';
 import '../state.dart';
 import '../theme/app_theme.dart';
+import '../util/level_util.dart';
 
 class MePage extends StatefulWidget {
   const MePage({super.key});
@@ -275,7 +274,7 @@ class _MePageState extends State<MePage> {
       var masteredWordsCount = masteredWordsResult.read(drift.countAll()) ?? 0;
 
       // 使用LevelUtil根据总积分计算等级
-      LevelVo levelVo = LevelUtil.getLevelVoByScore(user.totalScore);
+      LevelVo levelVo = LevelUtil.getLevelVoByScore(UserHelper.calculateTotalScore(user.gameScore, user.dakaScore));
 
       if (mounted) {
         setState(() {
@@ -283,7 +282,7 @@ class _MePageState extends State<MePage> {
             user.learnedDays,
             user.dakaDayCount,
             user.dakaRatio ?? 0.0,
-            user.totalScore,
+            UserHelper.calculateTotalScore(user.gameScore, user.dakaScore),
             -1, // 排名信息通过API获取，初始化为-1表示未获取
             rawWordCount,
             user.cowDung,
@@ -294,7 +293,7 @@ class _MePageState extends State<MePage> {
             user.continuousDakaDayCount,
             user.throwDiceChance,
             allDictsFinished,
-            UserLearningStatusHelper.isTodayLearningFinishedFromUser(user),
+            UserHelper.isTodayLearningFinishedFromUser(user),
             learningDicts,
           );
         });

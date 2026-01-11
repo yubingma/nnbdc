@@ -1,10 +1,33 @@
+import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/util/app_clock.dart';
-import 'package:nnbdc/api/vo.dart';
 
-/// 用户学习状态帮助类
-/// 提供计算用户今日学习状态的方法
-class UserLearningStatusHelper {
+/// 用户帮助类 - 整合用户学习状态和积分相关功能
+class UserHelper {
+  // ==================== 积分相关功能 ====================
+  
+  /// 根据用户的游戏积分和打卡积分计算总积分
+  static int calculateTotalScore(int? gameScore, int? dakaScore) {
+    return (gameScore ?? 0) + (dakaScore ?? 0);
+  }
+
+  /// 从User对象获取总积分
+  static int getTotalScoreFromUser(User user) {
+    return calculateTotalScore(user.gameScore, user.dakaScore);
+  }
+
+  /// 从User对象获取游戏积分
+  static int getGameScoreFromUser(User user) {
+    return user.gameScore;
+  }
+
+  /// 从User对象获取打卡积分
+  static int getDakaScoreFromUser(User user) {
+    return user.dakaScore;
+  }
+
+  // ==================== 学习状态相关功能 ====================
+
   /// 判断用户今天是否已经开始学习 (User 版本)
   static bool isTodayLearningStartedFromUser(User user) {
     return _isTodayLearningStarted(user.lastLearningPosition, user.lastLearningDate);
