@@ -31,7 +31,7 @@ PODS:
   - in_app_purchase_storekit (0.0.1):
     - Flutter
     - FlutterMacOS
-  - open_file_ios (0.0.1):
+  - open_file_ios (1.0.3):
     - Flutter
   - OrderedSet (6.0.3)
   - package_info_plus (0.4.5):
@@ -172,7 +172,7 @@ SPEC CHECKSUMS:
   flutter_native_splash: c32d145d68aeda5502d5f543ee38c192065986cf
   fluwx: 2ef787502fccb3f3596b380509001a8ea71cbbff
   in_app_purchase_storekit: 22cca7d08eebca9babdf4d07d0baccb73325d3c8
-  open_file_ios: 5ff7526df64e4394b4fe207636b67a95e83078bb
+  open_file_ios: 46184d802ee7959203f6392abcfa0dd49fdb5be0
   OrderedSet: e539b66b644ff081c73a262d24ad552a69be3a94
   package_info_plus: af8e2ca6888548050f16fa2f1938db7b5a5df499
   path_provider_foundation: bb55f6dbba17d0dccd6737fe6f7f34fbd0376880
