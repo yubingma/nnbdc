@@ -27,6 +27,7 @@ class LoginPage extends StatefulWidget {
 class LoginPageState extends State<LoginPage> {
   final email = TextEditingController();
   final verificationCode = TextEditingController();
+  final FocusNode _verificationCodeFocusNode = FocusNode();
   bool _approved = false;
   bool _isLoading = false;
   bool _isSendingCode = false; // 是否正在发送验证码
@@ -45,6 +46,7 @@ class LoginPageState extends State<LoginPage> {
     _countdownTimer?.cancel();
     email.dispose();
     verificationCode.dispose();
+    _verificationCodeFocusNode.dispose();
     super.dispose();
   }
 
@@ -370,6 +372,7 @@ class LoginPageState extends State<LoginPage> {
                           child: TextFormField(
                             key: const Key('email_login_verification_code_field'),
                             controller: verificationCode,
+                            focusNode: _verificationCodeFocusNode,
                             keyboardType: TextInputType.number,
                             maxLength: 6,
                             style: TextStyle(
@@ -610,6 +613,8 @@ class LoginPageState extends State<LoginPage> {
       if (result.success) {
         ToastUtil.success('验证码已发送到您的邮箱');
         _startCountdown();
+        // 自动聚焦到验证码输入框
+        _verificationCodeFocusNode.requestFocus();
       } else {
         ToastUtil.error(result.msg ?? '发送验证码失败');
       }

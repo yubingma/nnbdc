@@ -135,7 +135,7 @@ class _DictDownloadDialogState extends State<DictDownloadDialog> {
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              dict.name?.replaceAll('.dict', '') ?? dict.id.replaceAll('.dict', ''),
+                              _dictNames[dict.id] ?? dict.name?.replaceAll('.dict', '') ?? dict.id.replaceAll('.dict', ''),
                               style: const TextStyle(fontSize: 12),
                             ),
                           ),

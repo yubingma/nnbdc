@@ -30,6 +30,10 @@ const double _targetWorldWidthMeters = 1000.0; // 世界总宽度（米）
 const double _soilThicknessMeters = 5.0; // 土壤层厚度（米）
 const Duration _growthTickInterval = Duration(seconds: 1);
 
+// 新增自然生长参数
+const double _growthCurveExponent = 0.7; // 生长曲线指数，使生长更自然
+const double _seasonalGrowthFactor = 0.2; // 季节性生长因子，使生长有波动
+
 double _rootProgressFor(double progress) {
   final double emergenceThreshold = _treeStageStops[2];
   if (emergenceThreshold <= 0) return 0;
@@ -108,7 +112,7 @@ class _PlantGrowthSceneState extends State<PlantGrowthScene> {
     _dayController = TextEditingController(text: '$_stopDay');
     _ensureGrowthTimer();
     _lastGrowthUpdateTime = DateTime.now();
-    _viewController = TransformationController();
+    _viewController = TransformationController(Matrix4.identity());
     _viewController.addListener(_handleViewMatrixChange);
   }
 
@@ -134,9 +138,18 @@ class _PlantGrowthSceneState extends State<PlantGrowthScene> {
     // 视口中央是 viewportWidth / 2
     // 所以 X 平移 = viewportWidth/2 - worldWidth/2
     final Matrix4 matrix = Matrix4.identity();
+    
+    // 添加安全检查，防止极端值导致矩阵错误
+    final double safeTranslateX = (viewportWidth.isFinite && worldWidth.isFinite) 
+        ? viewportWidth / 2 - worldWidth / 2 
+        : 0.0;
+    final double safeTranslateY = (viewportHeight.isFinite && worldHeight.isFinite) 
+        ? viewportHeight - worldHeight 
+        : 0.0;
+    
     matrix.translateByDouble(
-      viewportWidth / 2 - worldWidth / 2,
-      viewportHeight - worldHeight,
+      safeTranslateX,
+      safeTranslateY,
       0.0,
       0.0,
     );
@@ -152,7 +165,22 @@ class _PlantGrowthSceneState extends State<PlantGrowthScene> {
   void _applyViewMatrix(Matrix4 matrix) {
     _isAdjustingViewMatrix = true;
     try {
-      _viewController.value = Matrix4.copy(matrix);
+      // 检查矩阵是否有效且可逆，避免 InteractiveViewer 崩溃
+      final double determinant = matrix.determinant();
+      final bool isValuesFinite = matrix.storage.every((v) => v.isFinite);
+      
+      if (isValuesFinite && determinant.abs() > 1e-10) {
+        _viewController.value = Matrix4.copy(matrix);
+      } else {
+        // 如果矩阵无效，不进行更新，或者在必要时恢复到基础矩阵
+        Global.logger.w('尝试应用无效或不可逆的矩阵: determinant=$determinant, finite=$isValuesFinite');
+        // 如果当前值已经是无效的，恢复到单位矩阵
+        if (!_viewController.value.storage.every((v) => v.isFinite) || _viewController.value.determinant().abs() <= 1e-10) {
+           _viewController.value = Matrix4.identity();
+        }
+      }
+    } catch (e) {
+      Global.logger.e('应用矩阵时出错: $e');
     } finally {
       _isAdjustingViewMatrix = false;
     }
@@ -166,9 +194,25 @@ class _PlantGrowthSceneState extends State<PlantGrowthScene> {
       return;
     }
     final Matrix4 value = _viewController.value;
+    final double determinant = value.determinant();
+    
+    // 添加安全检查，防止无效的矩阵进入后续计算甚至崩溃
+    if (!determinant.isFinite || determinant.abs() < 1e-10) {
+      return; // 如果矩阵不可逆，直接返回，避免 InteractionViewer 调用 toScene 时崩溃
+    }
+    
     final double scaleY = value.getMaxScaleOnAxis();
+    
+    // 确保数值都是有限的，避免矩阵错误
+    if (!_currentViewportHeight.isFinite || !_currentWorldHeight.isFinite || !scaleY.isFinite) {
+      return; 
+    }
+    
     final double desiredTy = _currentViewportHeight - scaleY * _currentWorldHeight;
     final double currentTy = value.storage[13];
+    
+    if (!desiredTy.isFinite) return;
+
     if ((currentTy - desiredTy).abs() > 0.5) {
       final Matrix4 adjusted = Matrix4.copy(value);
       adjusted.setTranslationRaw(
@@ -204,12 +248,20 @@ class _PlantGrowthSceneState extends State<PlantGrowthScene> {
     }
     _elapsedDays += deltaDays;
 
+    // 使用更自然的生长曲线，带有季节性波动
     const double characteristicDays = 45.0;
+    double baseProgress = (_elapsedDays / characteristicDays).clamp(0.0, 1.0);
+    
+    // 添加季节性波动
+    double seasonalVariation = math.sin(_elapsedDays * 0.1) * _seasonalGrowthFactor;
+    double adjustedProgress = (baseProgress + seasonalVariation).clamp(0.0, 1.0);
+    
+    // 使用幂函数创建非线性生长曲线（初期快，后期慢）
+    final double newProgress = math.pow(adjustedProgress, _growthCurveExponent).toDouble();
+    
     if (_stopDay > 0 && _elapsedDays >= _stopDay) {
       _elapsedDays = _stopDay.toDouble();
     }
-
-    final double newProgress = (_elapsedDays / characteristicDays).clamp(0.0, 1.0);
 
     setState(() {
       _displayProgress = newProgress.clamp(0.0, 1.0);
@@ -281,15 +333,20 @@ class _PlantGrowthSceneState extends State<PlantGrowthScene> {
       // 创建新的变换矩阵
       final Matrix4 newMatrix = Matrix4.identity();
 
-      // 保持世界水平居中
-      final double translateX = _currentViewportWidth / 2 - newScale * _currentWorldWidth / 2;
-      // 保持底部对齐
-      final double translateY = _currentViewportHeight - newScale * _currentWorldHeight;
+      // 保持世界水平居中，添加安全检查
+      final double safeNewScale = newScale.isFinite ? newScale : 1.0;
+      final double translateX = _currentViewportWidth.isFinite && _currentWorldWidth.isFinite
+          ? _currentViewportWidth / 2 - safeNewScale * _currentWorldWidth / 2
+          : 0.0;
+      // 保持底部对齐，添加安全检查
+      final double translateY = _currentViewportHeight.isFinite && _currentWorldHeight.isFinite
+          ? _currentViewportHeight - safeNewScale * _currentWorldHeight
+          : 0.0;
 
       newMatrix.translateByDouble(translateX, translateY, 0.0, 0.0);
-      newMatrix.scaleByDouble(newScale, newScale, newScale, 1.0);
+      newMatrix.scaleByDouble(safeNewScale, safeNewScale, safeNewScale, 1.0);
 
-      // 应用新的变换
+      // 应用新的变换，使用安全的矩阵应用方法
       _applyViewMatrix(newMatrix);
     }
   }
@@ -449,12 +506,28 @@ class _PlantGrowthSceneState extends State<PlantGrowthScene> {
                 if (!_viewMatrixInitialized || viewportChanged) {
                   _viewMatrixInitialized = true;
                   _lastViewportSize = viewportSize;
-                  _baseViewMatrix = Matrix4.copy(desiredBaseMatrix);
-                  _applyViewMatrix(_baseViewMatrix);
+                  
+                  // 安全地设置基础视图矩阵
+                  try {
+                    _baseViewMatrix = Matrix4.copy(desiredBaseMatrix);
+                    _applyViewMatrix(_baseViewMatrix);
+                  } catch (e) {
+                    // 如果出现矩阵错误，使用单位矩阵作为安全默认值
+                    _baseViewMatrix = Matrix4.identity();
+                    _applyViewMatrix(_baseViewMatrix);
+                  }
                 } else if (!_userInteractingWithView && !_matricesTranslationClose(_baseViewMatrix, desiredBaseMatrix)) {
                   _lastViewportSize = viewportSize;
-                  _baseViewMatrix = Matrix4.copy(desiredBaseMatrix);
-                  _applyViewMatrix(_baseViewMatrix);
+                  
+                  // 安全地更新基础视图矩阵
+                  try {
+                    _baseViewMatrix = Matrix4.copy(desiredBaseMatrix);
+                    _applyViewMatrix(_baseViewMatrix);
+                  } catch (e) {
+                    // 如果出现矩阵错误，使用单位矩阵作为安全默认值
+                    _baseViewMatrix = Matrix4.identity();
+                    _applyViewMatrix(_baseViewMatrix);
+                  }
                 }
                 return Stack(
                   alignment: Alignment.center,
@@ -488,6 +561,7 @@ class _PlantGrowthSceneState extends State<PlantGrowthScene> {
                               seedPlanted: _seedPlanted,
                               branchSeed: _branchSeed,
                               treeHeightMeters: _estimateTreeHeightMeters(progress),
+                              elapsedDays: _elapsedDays,
                             ),
                           ),
                         ),
@@ -563,7 +637,10 @@ class _TreeGrowthPainter extends CustomPainter {
     required this.seedPlanted,
     required this.branchSeed,
     required this.treeHeightMeters,
+    this.elapsedDays = 0.0, // 添加时间参数
   });
+
+  final double elapsedDays; // 添加已用天数参数
 
   // 绘制云朵
   void drawCloud(Canvas canvas, Offset center, double scale, double seed) {
@@ -1358,7 +1435,11 @@ class _TreeGrowthPainter extends CustomPainter {
       // 树木持续生长，高度不再受限
       // 使用实际米数转换为像素，基于对数增长模型
       final double pixelsPerMeter = size.width / _targetWorldWidthMeters;
-      final double stemHeight = math.max(14.0, treeHeightMeters * pixelsPerMeter);
+      
+      // 添加生长不均匀性，使树木在不同阶段生长速度略有差异
+      final double growthVariation = 1.0 + math.sin(treeHeightMeters * 0.5) * 0.1; // 每隔一定高度会有生长速度变化
+      final double stemHeight = math.max(14.0, treeHeightMeters * pixelsPerMeter * growthVariation);
+      
       // 树干粗度随高度持续增长，但速度放缓
       // 移除不再使用的旧变量以清理代码
       // 移除旧的渐变树干绘制，以解决变量名称重复和视觉冲突的问题
@@ -1450,7 +1531,14 @@ class _TreeGrowthPainter extends CustomPainter {
 
       if (stageBranch > 0 && stageBranch < 0.28) {
         final double cotyledonStage = (stageBranch / 0.28).clamp(0.0, 1.0);
-        final double cotyledonGrowth = math.pow(cotyledonStage, 0.82).toDouble();
+        
+        // 使用更自然的生长曲线，早期生长快，后期变慢
+        final double cotyledonGrowth = math.pow(cotyledonStage, 0.65).toDouble();
+        
+        // 添加生长不规则性，使两片子叶略有差异
+        final double leftWingGrowth = cotyledonGrowth * (0.95 + fastNoise(mix(branchSeed, 301)) * 0.1);
+        final double rightWingGrowth = cotyledonGrowth * (0.95 + fastNoise(mix(branchSeed, 302)) * 0.1);
+        
         final Offset cotyledonAnchor = Offset(centerX, soilTop - stemHeight * (0.98 - 0.12 * cotyledonGrowth));
         final double cotyledonScale = ui.lerpDouble(0.32, 0.58, cotyledonGrowth) ?? 0.4;
         final double cotyledonSpread = ui.lerpDouble(42, 28, cotyledonGrowth) ?? 36;
@@ -1463,18 +1551,18 @@ class _TreeGrowthPainter extends CustomPainter {
         drawLeafCluster(
           origin: cotyledonAnchor + const Offset(-6, -2),
           directionDeg: -cotyledonSpread,
-          scale: cotyledonScale,
+          scale: cotyledonScale * leftWingGrowth, // 应用左翼生长差异
           growth: cotyledonGrowth.clamp(0.0, 0.9),
           seed: mix(branchSeed, 201),
-          canopyHeightPx: cotyledonCanopyHeight,
+          canopyHeightPx: cotyledonCanopyHeight * leftWingGrowth, // 应用左翼高度差异
         );
         drawLeafCluster(
           origin: cotyledonAnchor + const Offset(6, -2),
           directionDeg: cotyledonSpread,
-          scale: cotyledonScale,
+          scale: cotyledonScale * rightWingGrowth, // 应用右翼生长差异
           growth: cotyledonGrowth.clamp(0.0, 0.9),
           seed: mix(branchSeed, 202),
-          canopyHeightPx: cotyledonCanopyHeight,
+          canopyHeightPx: cotyledonCanopyHeight * rightWingGrowth, // 应用右翼高度差异
         );
       }
 
@@ -1503,13 +1591,32 @@ class _TreeGrowthPainter extends CustomPainter {
 
       // 树干粗度也随高度增加
       // 增加树干粗度随高度增加的强度
-      final double trunkThickness = (18.0 + math.pow(treeHeightMeters, 0.72) * 18.0).clamp(18.0, 360.0);
+      final double baseTrunkThickness = (18.0 + math.pow(treeHeightMeters, 0.72) * 18.0).clamp(18.0, 360.0);
+      
+      // 添加树干粗度的自然变化，底部更粗，顶部更细
+      final double trunkBottomThickness = baseTrunkThickness * (1.0 + fastNoise(mix(branchSeed, 500)) * 0.1);
+      final double trunkTopThickness = baseTrunkThickness * 0.35 * (1.0 + fastNoise(mix(branchSeed, 501)) * 0.05);
 
       final Path trunkPath = Path();
-      trunkPath.moveTo(roots.dx - trunkThickness * 0.5, roots.dy);
-      trunkPath.lineTo(roots.dx + trunkThickness * 0.5, roots.dy);
-      trunkPath.lineTo(trunkEnd.dx + trunkThickness * 0.35, trunkEnd.dy);
-      trunkPath.lineTo(trunkEnd.dx - trunkThickness * 0.35, trunkEnd.dy);
+      // 使用更自然的曲线连接树干底部和顶部
+      trunkPath.moveTo(roots.dx - trunkBottomThickness * 0.5, roots.dy);
+      trunkPath.lineTo(roots.dx + trunkBottomThickness * 0.5, roots.dy);
+      
+      // 使用二次贝塞尔曲线创建更自然的树干形状，避免可能导致矩阵错误的复杂路径
+      final double controlY = trunkEnd.dy + trunkHeight * 0.3; // 控制点在树干中下部
+      trunkPath.quadraticBezierTo(
+        roots.dx - trunkTopThickness * 0.2, // 轻微的不对称
+        controlY,
+        trunkEnd.dx + trunkTopThickness * 0.35, 
+        trunkEnd.dy,
+      );
+      trunkPath.lineTo(trunkEnd.dx - trunkTopThickness * 0.35, trunkEnd.dy);
+      trunkPath.quadraticBezierTo(
+        roots.dx + trunkTopThickness * 0.2, // 轻微的不对称
+        controlY,
+        roots.dx - trunkBottomThickness * 0.5, 
+        roots.dy,
+      );
       trunkPath.close();
 
       canvas.drawPath(trunkPath, trunkPaint);
@@ -1523,11 +1630,16 @@ class _TreeGrowthPainter extends CustomPainter {
         double thickness,
         int depth,
         int seed,
+        double elapsedTime, // 添加时间参数用于风力效果
       ) {
         if (depth <= 0) {
+          // 添加随风摆动效果
+          final double windEffect = math.sin(elapsedTime * 0.5 + start.dx * 0.01) * 5;
+          final Offset windOffset = Offset(windEffect * 0.3, 0);
+          
           drawLeafCluster(
-            origin: start,
-            directionDeg: 0,
+            origin: start + windOffset,
+            directionDeg: windEffect,
             // 将树叶大小直接与生长阶段挂钩 (0.5 -> 1.5倍)
             scale: (0.6 + stageFoliage * 1.0) * (1.0 + fastNoise(mix(seed, 99)) * 0.2),
             growth: stageFoliage,
@@ -1538,10 +1650,15 @@ class _TreeGrowthPainter extends CustomPainter {
         }
 
         final double angle = angleDeg * math.pi / 180;
+        
+        // 添加树枝摆动效果
+        final double branchFlexibility = 0.3;
+        final double windStrength = math.sin(elapsedTime * 0.3 + start.dx * 0.02) * branchFlexibility;
+        
         final Offset end = start +
             Offset(
-              math.cos(angle) * length,
-              math.sin(angle) * length,
+              math.cos(angle + windStrength * 0.1) * length,
+              math.sin(angle + windStrength * 0.1) * length,
             );
 
         final Path limbPath = Path();
@@ -1579,13 +1696,18 @@ class _TreeGrowthPainter extends CustomPainter {
               newAngle + jitter,
               thickness * 0.82, // 再次提高子分支粗度保留比例 (从 0.75 提高到 0.82)
               depth - 1,
-              mix(seed, 40 + i));
+              mix(seed, 40 + i),
+              elapsedTime); // 传递时间参数
         }
 
         if ((fastNoise(mix(seed, 50)) > 0.4)) {
+          // 侧枝也添加摆动效果
+          final double lateralWind = math.sin(elapsedTime * 0.4 + end.dx * 0.015) * 4;
+          final Offset lateralWindOffset = Offset(lateralWind * 0.2, 0);
+          
           drawLeafCluster(
-            origin: end,
-            directionDeg: 0,
+            origin: end + lateralWindOffset,
+            directionDeg: lateralWind,
             // 侧边叶团也随生长缩放
             scale: (0.4 + stageFoliage * 0.5),
             growth: stageFoliage,
@@ -1604,23 +1726,53 @@ class _TreeGrowthPainter extends CustomPainter {
         final double baseBranchLength = stemHeight * (0.35 + stageBranch * 0.1);
 
         for (int i = 0; i < mainBranches; i++) {
+          // 添加生长不均匀性，让每根树枝的生长速度略有差异
+          final double growthVariation = 0.8 + fastNoise(mix(branchSeed, 100 + i)) * 0.4;
+          final double adjustedLength = baseBranchLength * growthVariation;
           final double angle = -90.0 + (i - 1) * 45.0 + fastNoise(mix(branchSeed, i)) * 10;
+          
           drawSimpleBranch(
               trunkEnd,
-              baseBranchLength,
+              adjustedLength,
               angle,
-              trunkThickness * 0.65, // 再次提高主分支与主干的比例 (从 0.55 提高到 0.65)
+              baseTrunkThickness * 0.65, // 再次提高主分支与主干的比例 (从 0.55 提高到 0.65)
               depth,
-              mix(branchSeed, 1000 + i));
+              mix(branchSeed, 1000 + i),
+              elapsedDays); // 使用传递的时间参数
+        }
+      }
+      
+      // 添加随机落叶效果，模拟自然现象
+      if (stageFoliage > 0.3) {
+        final math.Random leafFallRandom = math.Random((elapsedDays * 1000).floor());
+        final int leafCount = (stageFoliage * 15).floor();
+        
+        for (int i = 0; i < leafCount; i++) {
+          final double randX = centerX + (leafFallRandom.nextDouble() - 0.5) * baseTrunkThickness * 3;
+          final double randY = soilTop - (leafFallRandom.nextDouble()) * stemHeight * 0.7;
+          final double leafSize = 2 + leafFallRandom.nextDouble() * 3;
+          
+          // 只绘制少量飘落的叶子，增加自然感
+          if (i % 5 == 0) { // 每5片叶子画一片
+            final double fallOffset = math.sin(elapsedDays * 2 + i) * 5; // 飘落动画
+            canvas.drawOval(
+              Rect.fromCenter(
+                center: Offset(randX + fallOffset, randY),
+                width: leafSize,
+                height: leafSize * 1.2,
+              ),
+              Paint()..color = const Color(0xFF81C784).withValues(alpha: 0.6),
+            );
+          }
         }
       }
 
       // 根部叶子装饰也随缩放
-      final double shrubSize = (trunkThickness * 1.5).clamp(15.0, 50.0);
+      final double shrubSize = (baseTrunkThickness * 1.5).clamp(15.0, 50.0);
       drawLeafCluster(
-          origin: roots + Offset(-trunkThickness * 0.8, -5), directionDeg: -45, scale: 0.5, growth: 1.0, seed: 1, canopyHeightPx: shrubSize);
+          origin: roots + Offset(-baseTrunkThickness * 0.8, -5), directionDeg: -45, scale: 0.5, growth: 1.0, seed: 1, canopyHeightPx: shrubSize);
       drawLeafCluster(
-          origin: roots + Offset(trunkThickness * 0.8, -5), directionDeg: 45, scale: 0.5, growth: 1.0, seed: 2, canopyHeightPx: shrubSize);
+          origin: roots + Offset(baseTrunkThickness * 0.8, -5), directionDeg: 45, scale: 0.5, growth: 1.0, seed: 2, canopyHeightPx: shrubSize);
     }
   }
 
