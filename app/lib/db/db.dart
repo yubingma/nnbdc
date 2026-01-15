@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/services.dart' show rootBundle, ByteData;
 import 'package:drift/drift.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
@@ -149,6 +150,61 @@ class MyDatabase extends _$MyDatabase {
     } catch (e, stackTrace) {
       Global.logger.e('❌ 数据库完整性检查失败: $e', error: e, stackTrace: stackTrace);
       // 不抛出异常，让应用继续启动
+    }
+  }
+
+  /// 🚀 初始化预置数据库
+  ///
+  /// 在 App 首次启动时，将 Assets 中的黄金母版数据库拷贝到应用数据目录。
+  /// 这可以免去用户下载通用词典的漫长等待。
+  static Future<void> initPrepopulatedDb() async {
+    try {
+      final dbPath = await getDbFilePath();
+      final File dbFile = File(dbPath);
+
+      // 只有当本地数据库不存在时（即全新安装），才进行拷贝
+      // 注意：此方法必须在 MyDatabase.instance 被初次调用前执行，否则 drift 会自动创建空文件导致此判断失效
+      if (!await dbFile.exists()) {
+        Global.logger.i('📦 检测到全新安装，正在寻找预置数据库...');
+        try {
+          // 尝试从 Assets 加载
+          // 注意：需要在 pubspec.yaml 中声明 assets/db/initial.sqlite
+          const assetKey = 'assets/db/initial.sqlite';
+          
+          try {
+             // 检查资源是否存在 (load 会抛出异常如果不存在)
+             // 我们不需要真正 catch，因为 rootBundle.load 失败就是不存在
+             final ByteData data = await rootBundle.load(assetKey);
+             
+             Global.logger.i('📦 发现预置数据库，正在部署...');
+             
+             // 确保父目录存在
+             if (!await dbFile.parent.exists()) {
+               await dbFile.parent.create(recursive: true);
+             }
+
+             // 写入文件
+             // 直接 writeAsBytes，Flutter/Dart 会处理内存，buffer 不算太大通常没问题
+             // 如果文件真的极其巨大(>500MB)，可以考虑 openWrite().add(buffer)
+             await dbFile.writeAsBytes(
+                 data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes), 
+                 flush: true
+             );
+
+             Global.logger.i('✅ 预置数据库部署成功！');
+          } catch(e) {
+             // 资源没找到，是预期的（如果你忘了放进去，或者这是 Release 包没打进去）
+             Global.logger.d('未找到预置数据库资源($assetKey)，将使用空库初始化: $e');
+          }
+        } catch (e) {
+          Global.logger.e('❌ 部署预置数据库过程出错: $e');
+          // 失败了也不要紧，Drift 会自动创建一个空的新库
+        }
+      } else {
+        Global.logger.d('本地数据库已存在，跳过预置部署。');
+      }
+    } catch (e) {
+      Global.logger.e('预置数据库检查流程异常: $e');
     }
   }
 

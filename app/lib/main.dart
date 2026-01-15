@@ -85,6 +85,10 @@ void main() async {
         return true; // 返回true表示错误已处理
       };
 
+      // 尝试部署预置数据库（黄金母版）
+      // 注意：必须在 runApp 之前调用，确保在应用 UI 初始化（可能会触发数据库访问）之前完成数据库文件的部署
+      await MyDatabase.initPrepopulatedDb();
+
       runApp(
         MultiProvider(
           providers: [

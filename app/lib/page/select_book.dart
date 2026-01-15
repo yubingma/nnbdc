@@ -526,8 +526,8 @@ class SelectBookPageState extends State<SelectBookPage> {
 
       // 过滤出需要下载的词书
       List<DictVo> dictsToDownload = [];
+      var db = MyDatabase.instance;
       for (var dictVo in selectedDictVos!) {
-        var db = MyDatabase.instance;
         Dict? existing = await db.dictsDao.findById(dictVo.id);
 
         // 检查词书是否存在，或存在但没有单词
