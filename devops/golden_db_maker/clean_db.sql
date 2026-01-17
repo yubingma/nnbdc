@@ -20,7 +20,6 @@ DELETE FROM book_marks;
 DELETE FROM dakas; -- 打卡
 DELETE FROM user_opers; -- 操作日志
 DELETE FROM voted_sentences;
-DELETE FROM voted_chineses;
 DELETE FROM voted_word_images;
 
 -- 4. 重置本地参数 (Local Settings)

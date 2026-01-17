@@ -93,8 +93,12 @@ if [ ! -d "$APP_ASSETS_DB_DIR" ]; then
 fi
 
 # 5. 移动到最终目标目录 (强制覆盖)
-echo "📦 正在部署到项目 Assets..."
-mv -f "$TEMP_TARGET_DB" "$APP_ASSETS_DB_DIR/initial.sqlite"
+echo "打包部署..."
+FINAL_DB_PATH="$APP_ASSETS_DB_DIR/initial.sqlite"
+mv -f "$TEMP_TARGET_DB" "$FINAL_DB_PATH"
 
-echo "✅ 成功！黄金母版已更新至: $APP_ASSETS_DB_DIR/initial.sqlite"
+# 6. 打印结果
+FILE_SIZE=$(ls -lh "$FINAL_DB_PATH" | awk '{print $5}')
+echo "✅ 成功！黄金母版已更新至: $FINAL_DB_PATH"
+echo "📊 文件大小: $FILE_SIZE"
 echo "👉 请确保在 app/pubspec.yaml 中已注册: - assets/db/initial.sqlite"
