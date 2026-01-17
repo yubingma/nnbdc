@@ -101,4 +101,4 @@ mv -f "$TEMP_TARGET_DB" "$FINAL_DB_PATH"
 FILE_SIZE=$(ls -lh "$FINAL_DB_PATH" | awk '{print $5}')
 echo "✅ 成功！黄金母版已更新至: $FINAL_DB_PATH"
 echo "📊 文件大小: $FILE_SIZE"
-echo "👉 请确保在 app/pubspec.yaml 中已注册: - assets/db/initial.sqlite"
+echo "👉 提醒: 请确保原始数据库来自生产环境"
