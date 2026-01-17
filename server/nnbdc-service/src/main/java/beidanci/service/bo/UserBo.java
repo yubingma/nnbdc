@@ -1072,20 +1072,28 @@ public class UserBo extends BaseBo<User> {
             return new ArrayList<>();
         }
 
-        // 2. 检查 fromVersion 对应的日志时间是否过旧（超过30天，可能已被清理）
-        boolean isTooOld = false;
-        Date firstLogTime = getFirstLogTimeAfterVersion(userId, fromVersion);
-        if (firstLogTime != null) {
+        // 判定是否需要全量同步
+        boolean needsFullSync = false;
+        if (fromVersion == 0) {
+            needsFullSync = true;
+        } else if (!hasVersionLogs(userId, fromVersion + 1)) {
+            // 连下一条日志都找不到，必然需要全量同步（可能是日志断档或被清理）
+            needsFullSync = true;
+        } else {
+            // 检查下一条日志的时间是否过旧
+            Date firstLogTime = getFirstLogTimeAfterVersion(userId, fromVersion);
             Date thirtyDaysAgo = new Date(System.currentTimeMillis() - 30L * 24 * 60 * 60 * 1000);
-            if (firstLogTime.before(thirtyDaysAgo)) {
-                isTooOld = true;
+            if (firstLogTime != null && firstLogTime.before(thirtyDaysAgo)) {
+                needsFullSync = true;
+            } else {
+                // 日志没过旧，最后才检查条数，避免无条件执行耗时查询
+                if (getIncrementalLogCount(userId, fromVersion) > 1000) {
+                    needsFullSync = true;
+                }
             }
         }
 
-        // 3. 检查增量日志条数。如果条数太多，也直接全量同步
-        long logCount = getIncrementalLogCount(userId, fromVersion);
-
-        if (fromVersion == 0 || isTooOld || logCount > 1000 || !hasVersionLogs(userId, fromVersion + 1)) { // 若客户端版本过旧，或者服务端没有指定版本的日志（老日志可能被删除了），则全量同步
+        if (needsFullSync) { 
             // 生成学习中单词全量日志
             List<LearningWordDto> learningWords = learningWordBo.getLearningWordDtosOfUser(userId);
             List<LearningDictDto> learningDicts = learningDictBo.getLearningDictDtosOfUser(userId);
