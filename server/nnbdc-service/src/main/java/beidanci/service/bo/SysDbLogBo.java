@@ -108,23 +108,53 @@ public class SysDbLogBo extends BaseBo<SysDbLog> {
     /**
      * 获取增量日志（支持全量生成）
      * 
+     * 判断逻辑（按优先级）：
+     * 1. 首次同步（fromVersion=0）：全量同步
+     * 2. 找不到对应版本的日志：全量同步（日志可能已被清理）
+     * 3. 日志时间过旧（超过30天）：全量同步（避免使用可能已清理的日志）
+     * 4. 增量日志数量过大（超过1000条）：全量同步（性能考虑）
+     * 5. 其他情况：增量同步
+     * 
      * @param fromVersion 起始版本号（不包含）
      * @return 增量日志列表，按版本号升序排列
      */
     public List<SysDbLogDto> getNewSysDbLogs(int fromVersion) {
         int currentVersion = getSysDbVersion();
 
-        // 如果客户端版本过旧（>10个版本差距），或者是首次同步（fromVersion=0），生成全量日志
-        if (fromVersion == 0 || currentVersion > fromVersion + 10 || !hasVersionLogs(fromVersion)) {
+        // 1. 首次同步
+        if (fromVersion == 0) {
             return generateFullSysDbLogs(currentVersion);
-        } else {
-            // 增量同步
-            String sql = "SELECT * FROM sys_db_log WHERE version > :fromVersion ORDER BY version ASC";
-            MapSqlParameterSource params = new MapSqlParameterSource("fromVersion", fromVersion);
-            List<SysDbLog> logs = namedParameterJdbcTemplate.query(sql, params,
-                    new EntityRowMapper<>(SysDbLog.class));
-            return logs.stream().map(this::toDto).collect(Collectors.toList());
         }
+
+        // 2. 检查是否存在对应版本的日志
+        if (!hasVersionLogs(fromVersion)) {
+            return generateFullSysDbLogs(currentVersion);
+        }
+
+        // 3. 检查 fromVersion 对应的日志时间是否过旧（超过30天，可能已被清理）
+        // 获取 fromVersion + 1 的第一条日志的创建时间
+        Date firstLogTime = getFirstLogTimeAfterVersion(fromVersion);
+        if (firstLogTime != null) {
+            Date thirtyDaysAgo = new Date(System.currentTimeMillis() - 30L * 24 * 60 * 60 * 1000);
+            if (firstLogTime.before(thirtyDaysAgo)) {
+                // 日志时间超过30天，可能已被清理，使用全量同步
+                return generateFullSysDbLogs(currentVersion);
+            }
+        }
+
+        // 4. 检查增量日志数量（如果数量过大，全量同步可能更快）
+        long incrementalLogCount = getIncrementalLogCount(fromVersion);
+        if (incrementalLogCount > 1000) {
+            // 增量日志数量超过1000条，使用全量同步
+            return generateFullSysDbLogs(currentVersion);
+        }
+
+        // 5. 增量同步
+        String sql = "SELECT * FROM sys_db_log WHERE version > :fromVersion ORDER BY version ASC";
+        MapSqlParameterSource params = new MapSqlParameterSource("fromVersion", fromVersion);
+        List<SysDbLog> logs = namedParameterJdbcTemplate.query(sql, params,
+                new EntityRowMapper<>(SysDbLog.class));
+        return logs.stream().map(this::toDto).collect(Collectors.toList());
     }
 
     /**
@@ -135,6 +165,37 @@ public class SysDbLogBo extends BaseBo<SysDbLog> {
         MapSqlParameterSource params = new MapSqlParameterSource("fromVersion", fromVersion);
         Long count = namedParameterJdbcTemplate.queryForObject(sql, params, Long.class);
         return count != null && count > 0;
+    }
+
+    /**
+     * 获取 fromVersion 之后第一条日志的创建时间
+     * 用于判断日志是否过旧，可能已被清理
+     * 
+     * @param fromVersion 起始版本号（不包含）
+     * @return 第一条日志的创建时间，如果不存在则返回 null
+     */
+    private Date getFirstLogTimeAfterVersion(int fromVersion) {
+        String sql = "SELECT create_time FROM sys_db_log WHERE version > :fromVersion ORDER BY version ASC LIMIT 1";
+        MapSqlParameterSource params = new MapSqlParameterSource("fromVersion", fromVersion);
+        try {
+            Date createTime = namedParameterJdbcTemplate.queryForObject(sql, params, Date.class);
+            return createTime;
+        } catch (org.springframework.dao.EmptyResultDataAccessException e) {
+            return null;
+        }
+    }
+
+    /**
+     * 获取增量日志数量
+     * 
+     * @param fromVersion 起始版本号（不包含）
+     * @return 增量日志数量
+     */
+    private long getIncrementalLogCount(int fromVersion) {
+        String sql = "SELECT COUNT(*) FROM sys_db_log WHERE version > :fromVersion";
+        MapSqlParameterSource params = new MapSqlParameterSource("fromVersion", fromVersion);
+        Long count = namedParameterJdbcTemplate.queryForObject(sql, params, Long.class);
+        return count != null ? count : 0L;
     }
 
     /**
