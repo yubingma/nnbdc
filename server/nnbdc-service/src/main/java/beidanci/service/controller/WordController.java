@@ -120,7 +120,7 @@ public class WordController {
     public Result<WordImageDto> uploadWordImg2(String wordId, String imgBase64String, String userId) throws Exception {
         User user = userBo.findById(userId);
         if (user == null) {
-            return Result.fail("用户未登录");
+            return Result.fail("游客不能上传配图");
         }
 
         // 图片文件上传
