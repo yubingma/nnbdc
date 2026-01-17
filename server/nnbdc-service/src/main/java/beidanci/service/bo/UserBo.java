@@ -1015,6 +1015,26 @@ public class UserBo extends BaseBo<User> {
     }
 
     /**
+     * 获取 fromVersion 之后第一条日志的创建时间
+     * 用于判断日志是否过旧，可能已被清理
+     *
+     * @param userId      用户ID
+     * @param fromVersion 起始版本号（不包含）
+     * @return 第一条日志的创建时间，如果不存在则返回 null
+     */
+    private Date getFirstLogTimeAfterVersion(String userId, int fromVersion) {
+        String sql = "SELECT create_time FROM user_db_log WHERE user_id = :userId AND version > :fromVersion ORDER BY version ASC LIMIT 1";
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        params.addValue("userId", userId);
+        params.addValue("fromVersion", fromVersion);
+        try {
+            return namedParameterJdbcTemplate.queryForObject(sql, params, Date.class);
+        } catch (org.springframework.dao.EmptyResultDataAccessException e) {
+            return null;
+        }
+    }
+
+    /**
      * 获取用户数据库日志
      *
      * @param fromVersion 从此版本开始，不包括此版本
@@ -1031,7 +1051,17 @@ public class UserBo extends BaseBo<User> {
         // 获取用户数据库版本
         int userDbVersion = userDbVersionDao.getUserDbVersion(jdbcTemplate, userId);
 
-        if (userDbVersion > fromVersion + 10 || !hasVersionLogs(userId, fromVersion)) { // 若客户端版本过旧，或者服务端没有指定版本的日志（老日志可能被删除了），则全量同步
+        // 检查 fromVersion 对应的日志时间是否过旧（超过30天，可能已被清理）
+        boolean isTooOld = false;
+        Date firstLogTime = getFirstLogTimeAfterVersion(userId, fromVersion);
+        if (firstLogTime != null) {
+            Date thirtyDaysAgo = new Date(System.currentTimeMillis() - 30L * 24 * 60 * 60 * 1000);
+            if (firstLogTime.before(thirtyDaysAgo)) {
+                isTooOld = true;
+            }
+        }
+
+        if (userDbVersion > fromVersion && (fromVersion == 0 || isTooOld || !hasVersionLogs(userId, fromVersion + 1))) { // 若客户端版本过旧，或者服务端没有指定版本的日志（老日志可能被删除了），则全量同步
             // 生成学习中单词全量日志
             List<LearningWordDto> learningWords = learningWordBo.getLearningWordDtosOfUser(userId);
             List<LearningDictDto> learningDicts = learningDictBo.getLearningDictDtosOfUser(userId);
