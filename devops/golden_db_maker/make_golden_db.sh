@@ -36,20 +36,14 @@ mkdir -p "$APP_ASSETS_DB_DIR"
 # 定义目标文件
 FINAL_DB_PATH="$APP_ASSETS_DB_DIR/initial.sqlite"
 
-# 复制并压缩数据库
-echo "🗜️  正在同步并压缩数据库 (VACUUM)..."
-# 使用临时文件处理，避免直接操作源文件（虽然 App 已退出，但养成好习惯）
-WORK_DIR=$(mktemp -d)
-TEMP_DB="$WORK_DIR/temp.sqlite"
-cp "$SOURCE_DB" "$TEMP_DB"
-sqlite3 "$TEMP_DB" "VACUUM;"
-
-# 部署
-mv -f "$TEMP_DB" "$FINAL_DB_PATH"
-rm -rf "$WORK_DIR"
+# 复制并部署数据库
+echo "� 正在同步数据库文件..."
+cp "$SOURCE_DB" "$FINAL_DB_PATH"
 
 # 打印结果
 FILE_SIZE=$(ls -lh "$FINAL_DB_PATH" | awk '{print $5}')
+SHA256=$(shasum -a 256 "$FINAL_DB_PATH" | awk '{print $1}')
 echo "✅ 成功！黄金母版已部署至: $FINAL_DB_PATH"
 echo "📊 最终大小: $FILE_SIZE"
-echo "👉 请提交更改并重新构建 App。"
+echo "🔒 SHA-256: $SHA256"
+echo "👉 请确认此校验码与 App 中显示的一致。"

@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:nnbdc/api/api.dart';
 import 'package:nnbdc/api/vo.dart';
@@ -9,6 +10,7 @@ import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/widget/dict_download_dialog.dart';
 import 'package:provider/provider.dart';
+import 'package:nnbdc/services/throttled_sync_service.dart';
 import 'package:nnbdc/state.dart';
 
 class GoldenMasterToolPage extends StatefulWidget {
@@ -27,6 +29,8 @@ class _GoldenMasterToolPageState extends State<GoldenMasterToolPage> {
   int? _dbVersion;
   String? _dbPath;
   int? _totalTables;
+  int? _nonEmptyTables;
+  String? _dbSha256;
   final Map<String, int> _tableCounts = {};
 
   @override
@@ -153,7 +157,9 @@ class _GoldenMasterToolPageState extends State<GoldenMasterToolPage> {
             const Divider(height: 24),
             _buildInfoRow('数据库版本', '$_dbVersion', textColor),
             _buildInfoRow('数据库路径', _dbPath ?? '未知', textColor),
+            _buildInfoRow('SHA-256', _dbSha256 ?? '计算中...', textColor),
             _buildInfoRow('总表数', '$_totalTables', textColor),
+            _buildInfoRow('非空表数', '$_nonEmptyTables', textColor),
             const SizedBox(height: 12),
             const Text(
               '数据统计:',
@@ -216,6 +222,9 @@ class _GoldenMasterToolPageState extends State<GoldenMasterToolPage> {
       _statusMessage = '正在初始化...';
     });
 
+    // 暂停后台同步，防止制作过程中产生同步日志或写入用户数据
+    ThrottledDbSyncService().suspend();
+
     try {
       // 1. 清空并重建本地数据库
       setState(() => _statusMessage = '正在清空并重建数据库...');
@@ -255,7 +264,11 @@ class _GoldenMasterToolPageState extends State<GoldenMasterToolPage> {
         );
       }
 
-      // 4. 获取概要信息
+      // 4. 执行 VACUUM 压缩数据库
+      setState(() => _statusMessage = '正在压缩数据库 (VACUUM)...');
+      await MyDatabase.instance.customStatement('VACUUM');
+
+      // 5. 获取概要信息
       setState(() => _statusMessage = '正在获取数据库统计信息...');
       await _getDbSummary();
 
@@ -276,6 +289,7 @@ class _GoldenMasterToolPageState extends State<GoldenMasterToolPage> {
       // 失败后恢复环境
       Api.useProdUrl = false;
       Api.resetClient();
+      ThrottledDbSyncService().resume();
     }
   }
 
@@ -284,6 +298,16 @@ class _GoldenMasterToolPageState extends State<GoldenMasterToolPage> {
     _dbVersion = db.schemaVersion;
     _dbPath = await MyDatabase.getDbFilePath();
     
+    // 计算 SHA-256
+    try {
+      final file = File(_dbPath!);
+      final bytes = await file.readAsBytes();
+      _dbSha256 = sha256.convert(bytes).toString();
+    } catch (e) {
+      Global.logger.e('计算数据库 SHA-256 失败: $e');
+      _dbSha256 = '计算失败';
+    }
+    
     // 获取所有非系统表
     final tableResults = await db.customSelect(
       "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE 'drift_%' ORDER BY name"
@@ -291,15 +315,19 @@ class _GoldenMasterToolPageState extends State<GoldenMasterToolPage> {
     
     _totalTables = tableResults.length;
     _tableCounts.clear();
+    int nonZero = 0;
     for (var row in tableResults) {
       final tableName = row.read<String>('name');
       try {
         final countResult = await db.customSelect('SELECT COUNT(*) as c FROM "$tableName"').getSingle();
-        _tableCounts[tableName] = countResult.read<int>('c');
+        final count = countResult.read<int>('c');
+        _tableCounts[tableName] = count;
+        if (count > 0) nonZero++;
       } catch (e) {
         Global.logger.w('获取表 $tableName 计数失败: $e');
         _tableCounts[tableName] = -1; // 表示获取失败
       }
     }
+    _nonEmptyTables = nonZero;
   }
 }
