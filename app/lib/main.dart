@@ -36,6 +36,7 @@ import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/util/error_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:toastification/toastification.dart';
+import 'package:nnbdc/page/admin/golden_master_tool.dart';
 
 import 'local_word_cache.dart';
 
@@ -253,6 +254,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         '/msg': (context) => const MsgPage(),
         '/search': (context) => const SearchPage(),
         '/admin': (context) => const AdminPage(),
+        '/golden_master': (context) => const GoldenMasterToolPage(),
       },
     );
   }

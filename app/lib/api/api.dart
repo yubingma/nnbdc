@@ -25,6 +25,7 @@ class Api {
   static Dio? _dio;
   static final LoadingService loadingService = LoadingService();
   static bool disableAutoLoading = false;
+  static bool useProdUrl = false;
 
 // 手动解压相关代码已移除，使用 Dio 自动解压
 
@@ -65,10 +66,20 @@ class Api {
       onRequest: (options, handler) {
         // 系统/公共词书资源走 CDN（www + /back 反代）以获得缓存加速
         // 注意：为了让 CDN 更容易缓存，强制不携带 Cookie
-        if (options.path.contains('getSysDictResById.do')) {
-          options.baseUrl = Config.cdnBackUrl;
+        if (options.path.contains('getSysDictResById.do') ||
+            options.path.contains('getUserDictResById.do')) {
+          if (options.path.contains('getSysDictResById.do')) {
+            options.baseUrl = Api.useProdUrl 
+                ? Config.profiles["prod"]["cdnBackUrl"] 
+                : Config.cdnBackUrl;
+          }
           options.headers.remove('cookie');
           options.headers.remove('Cookie');
+          
+          // 制作黄金母版时，添加时间戳参数以绕过 CDN 缓存，确保获取服务端最新资源
+          if (Api.useProdUrl) {
+            options.queryParameters['_t'] = DateTime.now().millisecondsSinceEpoch;
+          }
         }
 
         // 简化的请求日志，避免重复构建
@@ -132,9 +143,20 @@ class Api {
     // 添加网络检测拦截器（最先执行）
     dio.interceptors.add(NetworkInterceptor());
     dio.interceptors.add(CustomInterceptors());
-    final client = RestClient(dio, baseUrl: Config.serviceUrl);
+    
+    final baseUrl = Api.useProdUrl 
+        ? Config.profiles["prod"]["service_url"] 
+        : Config.serviceUrl;
+        
+    final client = RestClient(dio, baseUrl: baseUrl);
     _dio = dio;
     return client;
+  }
+
+  /// 强制重新初始化 Api 客户端（用于切换环境）
+  static void resetClient() {
+    _client = null;
+    _dio = null;
   }
 }
 

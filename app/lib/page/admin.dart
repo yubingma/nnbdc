@@ -96,6 +96,12 @@ class _AdminPageState extends State<AdminPage> {
         color: const Color(0xFFFF6B00),
         onTap: () => _navigateToAliyunResourceManagement(),
       ),
+      _buildManagementCard(
+        title: '制作黄金母版',
+        icon: Icons.auto_fix_high,
+        color: Colors.redAccent,
+        onTap: () => Navigator.pushNamed(context, '/golden_master'),
+      ),
     ];
   }
 
