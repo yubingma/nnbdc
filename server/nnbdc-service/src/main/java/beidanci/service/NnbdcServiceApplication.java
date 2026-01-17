@@ -6,6 +6,8 @@ import org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfig
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.boot.actuate.autoconfigure.security.servlet.ManagementWebSecurityAutoConfiguration;
 import org.springframework.boot.web.servlet.ServletComponentScan;
+import org.springframework.scheduling.annotation.EnableScheduling;
+
 import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
 import javax.annotation.PostConstruct;
@@ -19,6 +21,7 @@ import java.util.TimeZone;
         ManagementWebSecurityAutoConfiguration.class
 })
 @EnableSwagger2
+@EnableScheduling
 @ServletComponentScan(basePackages = "beidanci.*")
 public class NnbdcServiceApplication {
     @PostConstruct
