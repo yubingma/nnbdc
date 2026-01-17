@@ -884,6 +884,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                     MyDatabase.instance.votedSentencesDao
                         .createEntity(VotedSentence(userId: Global.getLoggedInUser()!.id, sentenceId: sentence.id, vote: 'HAND'));
                     sentence.handCount += 1;
+                    await MyDatabase.instance.sentencesDao.updateHandCount(sentence.id, sentence.handCount);
                     setState(() {});
                   } else {
                     ToastUtil.error(result.msg!);
@@ -925,6 +926,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                     MyDatabase.instance.votedSentencesDao
                         .createEntity(VotedSentence(userId: Global.getLoggedInUser()!.id, sentenceId: sentence.id, vote: 'FOOT'));
                     sentence.footCount += 1;
+                    await MyDatabase.instance.sentencesDao.updateFootCount(sentence.id, sentence.footCount);
                     setState(() {});
                   } else {
                     ToastUtil.error(result.msg!);

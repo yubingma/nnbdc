@@ -999,6 +999,14 @@ class SentencesDao extends DatabaseAccessor<MyDatabase> with _$SentencesDaoMixin
 
     Global.logger.d('✅ 例句插入完成, 总数: ${entries.length}');
   }
+
+  Future<void> updateHandCount(String sentenceId, int handCount) async {
+    await (update(sentences)..where((s) => s.id.equals(sentenceId))).write(SentencesCompanion(handCount: Value(handCount)));
+  }
+
+  Future<void> updateFootCount(String sentenceId, int footCount) async {
+    await (update(sentences)..where((s) => s.id.equals(sentenceId))).write(SentencesCompanion(footCount: Value(footCount)));
+  }
 }
 
 @DriftAccessor(tables: [LearningWords])

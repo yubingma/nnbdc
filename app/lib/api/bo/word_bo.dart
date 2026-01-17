@@ -73,7 +73,7 @@ class WordBo {
         for (final s in sentencesMap[miVo.id!]!) {
           final author = UserVo.c2(s.authorId);
           final sentenceVo =
-              SentenceVo(s.id, s.english, s.chinese, s.englishDigest, s.theType.isEmpty ? 'tts' : s.theType, s.handCount, s.footCount, author);
+              SentenceVo(s.id, s.english, s.chinese, s.englishDigest, s.theType.isEmpty ? 'tts' : s.theType, s.footCount, s.handCount, author);
           sentenceVos.add(sentenceVo);
         }
         miVo.sentences = sentenceVos;
