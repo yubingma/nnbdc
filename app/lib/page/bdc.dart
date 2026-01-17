@@ -1738,6 +1738,18 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
   /// 构建浮动的TabBar
   Widget _buildFloatingTabBar() {
+    // 确保 TabController 的长度与 tabs 数量匹配
+    // 如果 TabController 未初始化或其长度与 tabs 数量不匹配，则重新初始化
+    final currentTabsLength = _dynamicTabs.length;
+    if (_tabController == null || _tabController!.length != currentTabsLength) {
+      // 如果 TabController 还未初始化或长度不匹配，立即重新初始化
+      _reinitializeTabController();
+      // 如果重新初始化后仍然为 null（理论上不应该发生），返回空 widget
+      if (_tabController == null) {
+        return const SizedBox.shrink();
+      }
+    }
+
     return Positioned(
       bottom: 0,
       left: leftPadding,
