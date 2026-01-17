@@ -734,7 +734,7 @@ class MeaningItemVo {
 
         // 创建SentenceVo对象
         final sentenceVo = SentenceVo(sentenceEntry.id, sentenceEntry.english, sentenceEntry.chinese, sentenceEntry.englishDigest,
-            sentenceEntry.theType.isEmpty ? 'tts' : sentenceEntry.theType, sentenceEntry.handCount, sentenceEntry.footCount, author);
+            sentenceEntry.theType.isEmpty ? 'tts' : sentenceEntry.theType, sentenceEntry.footCount, sentenceEntry.handCount, author);
 
         result.add(sentenceVo);
       }
