@@ -353,7 +353,11 @@ public class SysDbLogBo extends BaseBo<SysDbLog> {
      */
     public int cleanOldLogs() {
         Date thirtyDaysAgo = new Date(System.currentTimeMillis() - 30L * 24 * 60 * 60 * 1000);
-        String sql = "DELETE FROM sys_db_log WHERE create_time < :date";
+        // 为确保版本完整性，如果一个版本中任何一条记录过期，则删除该全局版本的所有记录
+        String sql = "DELETE FROM sys_db_log " +
+                "WHERE version IN (" +
+                "  SELECT DISTINCT version FROM sys_db_log WHERE create_time < :date" +
+                ")";
         MapSqlParameterSource params = new MapSqlParameterSource("date", thirtyDaysAgo);
         return namedParameterJdbcTemplate.update(sql, params);
     }

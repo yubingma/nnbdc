@@ -158,6 +158,7 @@ public class SyncBo {
             final int lastVersion = validationResult.getVersion();
 
             // 执行数据同步
+            Date now = new Date();
             for (UserDbLogDto log : logs) {
                 String recordJson = null;
                 try {
@@ -173,8 +174,8 @@ public class SyncBo {
                     UserDbLog userDbLog = new UserDbLog();
                     userDbLog.setUserId(userId);
                     userDbLog.setVersion(lastVersion + 1);
-                    userDbLog.setCreateTime(new Date());
-                    userDbLog.setUpdateTime(new Date());
+                    userDbLog.setCreateTime(now);
+                    userDbLog.setUpdateTime(now);
                     userDbLog.setTable(log.getTblName());
                     userDbLog.setRecordId(log.getRecordId());
                     userDbLog.setOperate(log.getOperate());

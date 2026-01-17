@@ -30,7 +30,11 @@ public class UserDbLogBo extends BaseBo<UserDbLog> {
      */
     public int cleanOldLogs() {
         Date thirtyDaysAgo = new Date(System.currentTimeMillis() - 30L * 24 * 60 * 60 * 1000);
-        String sql = "DELETE FROM user_db_log WHERE create_time < :date";
+        // 为确保版本完整性，如果一个版本中任何一条记录过期，则删除该版本的所有记录
+        String sql = "DELETE FROM user_db_log " +
+                "WHERE (user_id, version) IN (" +
+                "  SELECT DISTINCT user_id, version FROM user_db_log WHERE create_time < :date" +
+                ")";
         MapSqlParameterSource params = new MapSqlParameterSource("date", thirtyDaysAgo);
         return namedParameterJdbcTemplate.update(sql, params);
     }
