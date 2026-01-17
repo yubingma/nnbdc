@@ -983,39 +983,28 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     return spans;
   }
 
-  Future<bool> sentenceChineseHasBeenVoted(var sentenceChinese) async {
-    return (await MyDatabase.instance.votedChinesesDao.getVotedChineseById(Global.getLoggedInUser()!.id, sentenceChinese.id)) != null;
-  }
 
   Future<bool> sentenceHasBeenVoted(var sentence) async {
     return (await MyDatabase.instance.votedSentencesDao.getVotedSentenceById(Global.getLoggedInUser()!.id, sentence.id)) != null;
   }
 
   Widget renderSentenceChinese(String sentenceChinese, String sentenceId) {
-    return FutureBuilder<bool>(
-        future: sentenceChineseHasBeenVoted(sentenceChinese),
-        builder: (BuildContext context, AsyncSnapshot<bool> snapshot) {
-          if (snapshot.connectionState == ConnectionState.done) {
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                    margin: const EdgeInsets.fromLTRB(0, 6, 0, 0),
-                    child: Util.makeChineseSpanText(
-                      sentenceChinese,
-                      context,
-                      style: const TextStyle(
-                        fontFamily: 'NotoSansSC',
-                        fontSize: 14,
-                        height: 1.4,
-                      ),
-                    )),
-              ],
-            );
-          } else {
-            return Container();
-          }
-        });
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+            margin: const EdgeInsets.fromLTRB(0, 6, 0, 0),
+            child: Util.makeChineseSpanText(
+              sentenceChinese,
+              context,
+              style: const TextStyle(
+                fontFamily: 'NotoSansSC',
+                fontSize: 14,
+                height: 1.4,
+              ),
+            )),
+      ],
+    );
   }
 
   addNewSentenceToCache(SentenceVo newSentence) {

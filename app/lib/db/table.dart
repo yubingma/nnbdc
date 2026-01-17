@@ -41,16 +41,6 @@ class VotedSentences extends Table {
   Set<Column>? get primaryKey => {userId, sentenceId};
 }
 
-class VotedChineses extends Table {
-  TextColumn get userId => text()();
-
-  TextColumn get chineseId => text()();
-
-  TextColumn get vote => text()(); // 'HAND'/'FOOT'
-
-  @override
-  Set<Column>? get primaryKey => {userId, chineseId};
-}
 
 class VotedWordImages extends Table {
   TextColumn get userId => text()();

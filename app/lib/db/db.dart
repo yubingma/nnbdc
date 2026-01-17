@@ -17,7 +17,6 @@ part 'db.g.dart';
   LocalParams,
 
   VotedSentences,
-  VotedChineses,
   VotedWordImages,
   LearningDicts,
   Dicts,
@@ -50,7 +49,6 @@ part 'db.g.dart';
   UsersDao,
   LocalParamsDao,
   VotedSentencesDao,
-  VotedChinesesDao,
   VotedWordImagesDao,
   LearningDictsDao,
   DictsDao,
@@ -215,7 +213,7 @@ class MyDatabase extends _$MyDatabase {
   // you should bump this number whenever you change or add a table definition. Migrations
   // are covered later in this readme.
   @override
-  int get schemaVersion => 11;
+  int get schemaVersion => 12;
 
   @override
   MigrationStrategy get migration {
@@ -262,6 +260,9 @@ class MyDatabase extends _$MyDatabase {
           }
           if (from < 11) {
             await _migrateFromV10ToV11RemoveTotalScoreField();
+          }
+          if (from < 12) {
+            await _migrateFromV11ToV12RemoveVotedChinesesTable(m);
           }
         } catch (e, stackTrace) {
           // 升级失败，记录错误日志
@@ -357,6 +358,17 @@ class MyDatabase extends _$MyDatabase {
         // 这种情况通常发生在SQLite版本过低或有其他约束
         Global.logger.e('删除 total_score 列失败 (可能是SQLite版本过低): $e');
       }
+    });
+  }
+
+  /// 从版本 11 升级到版本 12：删除voted_chineses表
+  Future<void> _migrateFromV11ToV12RemoveVotedChinesesTable(Migrator m) async {
+    await transaction(() async {
+      // 删除voted_chineses表
+      await m.deleteTable('voted_chineses');
+      
+      // 从user_db_logs中删除相关的记录（如果存在）
+      await customStatement("DELETE FROM user_db_logs WHERE tbl_name = 'voted_chineses' OR tbl_name = 'votedChineses';");
     });
   }
 

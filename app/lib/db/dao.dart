@@ -193,24 +193,6 @@ class VotedSentencesDao extends DatabaseAccessor<MyDatabase> with _$VotedSentenc
   }
 }
 
-@DriftAccessor(tables: [VotedChineses])
-class VotedChinesesDao extends DatabaseAccessor<MyDatabase> with _$VotedChinesesDaoMixin {
-  VotedChinesesDao(super.db);
-
-  Future<VotedChinese?> getVotedChineseById(String userId, String chineseId) {
-    return (select(votedChineses)..where((vs) => vs.userId.equals(userId) & vs.chineseId.equals(chineseId))).getSingleOrNull();
-  }
-
-  Future<void> createEntity(VotedChinese entry) async {
-    var votedSentence = await getVotedChineseById(entry.userId, entry.chineseId);
-    if (votedSentence == null) {
-      await into(votedChineses).insert(entry);
-    } else {
-      ToastUtil.error('不能对例句翻译重复投票');
-    }
-  }
-}
-
 @DriftAccessor(tables: [VotedWordImages])
 class VotedWordImagesDao extends DatabaseAccessor<MyDatabase> with _$VotedWordImagesDaoMixin {
   VotedWordImagesDao(super.db);
