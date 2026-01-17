@@ -1035,6 +1035,22 @@ public class UserBo extends BaseBo<User> {
     }
 
     /**
+     * 获取增量日志数量
+     *
+     * @param userId      用户ID
+     * @param fromVersion 起始版本号（不包含）
+     * @return 增量日志数量
+     */
+    private long getIncrementalLogCount(String userId, int fromVersion) {
+        String sql = "SELECT COUNT(*) FROM user_db_log WHERE user_id = :userId AND version > :fromVersion";
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        params.addValue("userId", userId);
+        params.addValue("fromVersion", fromVersion);
+        Long count = namedParameterJdbcTemplate.queryForObject(sql, params, Long.class);
+        return count != null ? count : 0L;
+    }
+
+    /**
      * 获取用户数据库日志
      *
      * @param fromVersion 从此版本开始，不包括此版本
@@ -1051,7 +1067,12 @@ public class UserBo extends BaseBo<User> {
         // 获取用户数据库版本
         int userDbVersion = userDbVersionDao.getUserDbVersion(jdbcTemplate, userId);
 
-        // 检查 fromVersion 对应的日志时间是否过旧（超过30天，可能已被清理）
+        // 1. 如果前后端版本一致，无需任何同步
+        if (userDbVersion <= fromVersion) {
+            return new ArrayList<>();
+        }
+
+        // 2. 检查 fromVersion 对应的日志时间是否过旧（超过30天，可能已被清理）
         boolean isTooOld = false;
         Date firstLogTime = getFirstLogTimeAfterVersion(userId, fromVersion);
         if (firstLogTime != null) {
@@ -1061,7 +1082,10 @@ public class UserBo extends BaseBo<User> {
             }
         }
 
-        if (userDbVersion > fromVersion && (fromVersion == 0 || isTooOld || !hasVersionLogs(userId, fromVersion + 1))) { // 若客户端版本过旧，或者服务端没有指定版本的日志（老日志可能被删除了），则全量同步
+        // 3. 检查增量日志条数。如果条数太多，也直接全量同步
+        long logCount = getIncrementalLogCount(userId, fromVersion);
+
+        if (fromVersion == 0 || isTooOld || logCount > 1000 || !hasVersionLogs(userId, fromVersion + 1)) { // 若客户端版本过旧，或者服务端没有指定版本的日志（老日志可能被删除了），则全量同步
             // 生成学习中单词全量日志
             List<LearningWordDto> learningWords = learningWordBo.getLearningWordDtosOfUser(userId);
             List<LearningDictDto> learningDicts = learningDictBo.getLearningDictDtosOfUser(userId);
