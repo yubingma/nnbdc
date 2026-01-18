@@ -33,25 +33,25 @@ fi
 
 echo "DEBUG: Checking credentials..."
 # DEBUG: Print status of variables (masking secret)
-if [ -n "$HUAWEI_PPDC_CLIENT_SECRET" ]; then echo " - HUAWEI_PPDC_CLIENT_SECRET: [FOUND]"; else echo " - HUAWEI_PPDC_CLIENT_SECRET: [NOT FOUND]"; fi
+if [ -n "$HUAWEI_API_CLIENT_SECRET" ]; then echo " - HUAWEI_API_CLIENT_SECRET: [FOUND]"; else echo " - HUAWEI_API_CLIENT_SECRET: [NOT FOUND]"; fi
+if [ -n "$HUAWEI_API_CLIENT_ID" ]; then echo " - HUAWEI_API_CLIENT_ID: $HUAWEI_API_CLIENT_ID"; else echo " - HUAWEI_API_CLIENT_ID: [NOT FOUND]"; fi
 if [ -n "$HUAWEI_PPDC_APP_ID" ]; then echo " - HUAWEI_PPDC_APP_ID: $HUAWEI_PPDC_APP_ID"; else echo " - HUAWEI_PPDC_APP_ID: [NOT FOUND]"; fi
-if [ -n "$HUAWEI_PPDC_CLIENT_ID" ]; then echo " - HUAWEI_PPDC_CLIENT_ID: $HUAWEI_PPDC_CLIENT_ID"; else echo " - HUAWEI_PPDC_CLIENT_ID: [NOT FOUND]"; fi
 
 # 1. Gather Credentials
 
 # Resolve Client Secret
-CLIENT_SECRET=${HUAWEI_PPDC_CLIENT_SECRET:-$HUAWEI_CLIENT_SECRET}
+CLIENT_SECRET=${HUAWEI_API_CLIENT_SECRET:-$HUAWEI_CLIENT_SECRET}
 
 # Resolve App ID
 APP_ID=${HUAWEI_PPDC_APP_ID:-$HUAWEI_APP_ID}
 
 # Resolve Client ID
-# Check HUAWEI_PPDC_CLIENT_ID (if user adds it later), then HUAWEI_CLIENT_ID, then default
-CLIENT_ID=${HUAWEI_PPDC_CLIENT_ID:-${HUAWEI_CLIENT_ID:-$DEFAULT_CLIENT_ID}}
+# Check HUAWEI_API_CLIENT_ID (if user adds it later), then HUAWEI_CLIENT_ID, then default
+CLIENT_ID=${HUAWEI_API_CLIENT_ID:-${HUAWEI_CLIENT_ID:-$DEFAULT_CLIENT_ID}}
 
 # Logic: If we have the SECRET (via Env) and we are using the Default Client ID, assume the user accepts the default to allow automation.
 # Only prompt if we DON'T have a secret (interactive mode) AND explicit Client ID override is missing.
-if [ -z "$CLIENT_SECRET" ] && [ "$CLIENT_ID" == "$DEFAULT_CLIENT_ID" ] && [ -z "$HUAWEI_PPDC_CLIENT_ID" ] && [ -z "$HUAWEI_CLIENT_ID" ]; then
+if [ -z "$CLIENT_SECRET" ] && [ "$CLIENT_ID" == "$DEFAULT_CLIENT_ID" ] && [ -z "$HUAWEI_API_CLIENT_ID" ] && [ -z "$HUAWEI_CLIENT_ID" ]; then
     # Only prompt if no environment variable provided at all AND we are likely in interactive mode (no secret)
     read -p "Enter Client ID [$DEFAULT_CLIENT_ID]: " INPUT_CLIENT_ID
     CLIENT_ID=${INPUT_CLIENT_ID:-$DEFAULT_CLIENT_ID}

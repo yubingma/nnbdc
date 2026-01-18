@@ -52,6 +52,9 @@ def get_access_token(client_id, client_secret):
     if response.status_code == 200:
         result = response.json()
         print("Access token obtained successfully.")
+        # Debug: Print token scope or type if available
+        if 'scope' in result:
+             print(f"Token Scope: {result['scope']}")
         return result.get("access_token")
     else:
         print(f"Failed to get access token. Status: {response.status_code}, Response: {response.text}")
@@ -61,7 +64,15 @@ def get_upload_url(access_token, app_id, client_id, suffix="apk"):
     """
     Get the upload URL for the application.
     """
+    if str(app_id) == str(client_id):
+        print("\n[WARNING] App ID and Client ID are identical. This is usually incorrect.")
+        print("[WARNING] Client ID should come from 'Users and Permissions' -> 'API Client' in AppGallery Connect.")
+        print("[WARNING] App ID comes from 'My Apps' -> 'App Information'.")
+        print("[WARNING] Proceeding anyway...\n")
+
     url = f"{PUBLISH_API_BASE}/upload-url"
+    
+    # Try 1: standard client_id header
     headers = {
         "Authorization": f"Bearer {access_token}",
         "client_id": client_id
@@ -75,6 +86,16 @@ def get_upload_url(access_token, app_id, client_id, suffix="apk"):
     session = get_session()
     response = session.get(url, params=params, headers=headers)
     
+    # Check for specific "Client token auth failed" error (205524993)
+    if response.status_code != 200:
+        err_code = response.json().get("ret", {}).get("code")
+        if err_code == 205524993:
+            print(f"Attempt 1 failed with 'client token auth failed'. Retrying with 'clientId' header...")
+            # Try 2: CamelCase clientId
+            headers["clientId"] = client_id
+            del headers["client_id"]
+            response = session.get(url, params=params, headers=headers)
+
     if response.status_code == 200:
         result = response.json()
         if result.get("ret", {}).get("code") == 0:
