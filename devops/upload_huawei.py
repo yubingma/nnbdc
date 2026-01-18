@@ -10,6 +10,28 @@ import time
 TOKEN_URL = "https://connect-api.cloud.huawei.com/api/oauth2/v1/token"
 PUBLISH_API_BASE = "https://connect-api.cloud.huawei.com/api/publish/v2"
 
+import ssl
+from requests.adapters import HTTPAdapter
+from urllib3.util.ssl_ import create_urllib3_context
+
+class CustomSSLAdapter(HTTPAdapter):
+    def init_poolmanager(self, *args, **kwargs):
+        context = create_urllib3_context()
+        # Allow weaker ciphers/legacy versions if server is old
+        context.set_ciphers('DEFAULT@SECLEVEL=1')
+        kwargs['ssl_context'] = context
+        return super(CustomSSLAdapter, self).init_poolmanager(*args, **kwargs)
+
+def get_session():
+    session = requests.Session()
+    # Mount the custom adapter to the Huawei domain
+    adapter = CustomSSLAdapter()
+    session.mount("https://connect-api.cloud.huawei.com", adapter)
+    session.headers.update({
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    })
+    return session
+
 def get_access_token(client_id, client_secret):
     """
     Obtains an access token from Huawei Cloud.
@@ -24,7 +46,8 @@ def get_access_token(client_id, client_secret):
     }
     
     print(f"Requesting access token for Client ID: {client_id}...")
-    response = requests.post(TOKEN_URL, json=data, headers=headers)
+    session = get_session()
+    response = session.post(TOKEN_URL, json=data, headers=headers)
     
     if response.status_code == 200:
         result = response.json()
@@ -48,11 +71,9 @@ def get_upload_url(access_token, app_id, client_id, suffix="apk"):
         "suffix": suffix
     }
     
-    # Updated: some docs say client_id in header, some don't. 
-    # Adding it to be safe, but primarily query params/body matter.
-    
     print(f"Getting upload URL for App ID: {app_id}...")
-    response = requests.get(url, params=params, headers=headers)
+    session = get_session()
+    response = session.get(url, params=params, headers=headers)
     
     if response.status_code == 200:
         result = response.json()
@@ -84,6 +105,10 @@ def upload_file(upload_url, auth_code, file_path):
         }
         
         # Note: Do not set Content-Type header manually for multipart, access token not needed here usually
+        # We use a standard session here, possibly don't need the custom SSL one for the upload URL 
+        # as it might change domains, but likely safe to use it or just standard requests if domain differs significantly.
+        # The upload URL is usually different. Let's start with standard requests for upload unless it fails.
+        # But to be safe, let's use a basic session.
         response = requests.post(upload_url, files=files, data=data)
         
     if response.status_code == 200:
@@ -132,7 +157,8 @@ def update_app_file_info(access_token, app_id, client_id, file_info):
         payload["fileType"] = 12
     
     print(f"Updating app file info...")
-    response = requests.put(url, json=payload, headers=headers)
+    session = get_session()
+    response = session.put(url, json=payload, headers=headers)
     
     if response.status_code == 200:
         result = response.json()
