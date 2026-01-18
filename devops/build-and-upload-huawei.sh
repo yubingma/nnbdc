@@ -19,28 +19,48 @@ echo "======================================"
 echo "   Build and Upload to Huawei AppGallery"
 echo "======================================"
 
+# Reason for restoring: Shell variables defined in the terminal (like `VAR=val`) are NOT visible
+# to scripts (child processes) unless they are `export`ed (like `export VAR=val`).
+# Loading the .env file here ensures the script can see them without requiring you to type `export` manually.
+ENV_FILE="$SCRIPT_DIR/../.env"
+if [ -f "$ENV_FILE" ]; then
+    # Use set -a to automatically export variables defined in the sourced file
+    set -a
+    source "$ENV_FILE"
+    set +a
+fi
+
+
+echo "DEBUG: Checking credentials..."
+# DEBUG: Print status of variables (masking secret)
+if [ -n "$HUAWEI_PPDC_CLIENT_SECRET" ]; then echo " - HUAWEI_PPDC_CLIENT_SECRET: [FOUND]"; else echo " - HUAWEI_PPDC_CLIENT_SECRET: [NOT FOUND]"; fi
+if [ -n "$HUAWEI_PPDC_APP_ID" ]; then echo " - HUAWEI_PPDC_APP_ID: $HUAWEI_PPDC_APP_ID"; else echo " - HUAWEI_PPDC_APP_ID: [NOT FOUND]"; fi
+if [ -n "$HUAWEI_PPDC_CLIENT_ID" ]; then echo " - HUAWEI_PPDC_CLIENT_ID: $HUAWEI_PPDC_CLIENT_ID"; else echo " - HUAWEI_PPDC_CLIENT_ID: [NOT FOUND]"; fi
+
 # 1. Gather Credentials
+
+# Resolve Client Secret
+CLIENT_SECRET=${HUAWEI_PPDC_CLIENT_SECRET:-$HUAWEI_CLIENT_SECRET}
+
+# Resolve App ID
+APP_ID=${HUAWEI_PPDC_APP_ID:-$HUAWEI_APP_ID}
 
 # Resolve Client ID
 # Check HUAWEI_PPDC_CLIENT_ID (if user adds it later), then HUAWEI_CLIENT_ID, then default
 CLIENT_ID=${HUAWEI_PPDC_CLIENT_ID:-${HUAWEI_CLIENT_ID:-$DEFAULT_CLIENT_ID}}
 
-if [ "$CLIENT_ID" == "$DEFAULT_CLIENT_ID" ] && [ -z "$HUAWEI_PPDC_CLIENT_ID" ] && [ -z "$HUAWEI_CLIENT_ID" ]; then
-    # Only prompt if no environment variable provided at all
+# Logic: If we have the SECRET (via Env) and we are using the Default Client ID, assume the user accepts the default to allow automation.
+# Only prompt if we DON'T have a secret (interactive mode) AND explicit Client ID override is missing.
+if [ -z "$CLIENT_SECRET" ] && [ "$CLIENT_ID" == "$DEFAULT_CLIENT_ID" ] && [ -z "$HUAWEI_PPDC_CLIENT_ID" ] && [ -z "$HUAWEI_CLIENT_ID" ]; then
+    # Only prompt if no environment variable provided at all AND we are likely in interactive mode (no secret)
     read -p "Enter Client ID [$DEFAULT_CLIENT_ID]: " INPUT_CLIENT_ID
     CLIENT_ID=${INPUT_CLIENT_ID:-$DEFAULT_CLIENT_ID}
 fi
-
-# Resolve Client Secret
-CLIENT_SECRET=${HUAWEI_PPDC_CLIENT_SECRET:-$HUAWEI_CLIENT_SECRET}
 
 if [ -z "$CLIENT_SECRET" ]; then
     read -sp "Enter Client Secret: " CLIENT_SECRET
     echo ""
 fi
-
-# Resolve App ID
-APP_ID=${HUAWEI_PPDC_APP_ID:-$HUAWEI_APP_ID}
 
 if [ -z "$APP_ID" ]; then
     read -p "Enter App ID: " APP_ID
