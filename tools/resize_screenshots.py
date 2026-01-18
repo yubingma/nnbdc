@@ -22,11 +22,11 @@ SHADOW_BLUR_RADIUS = 20
 SHADOW_OFFSET = (0, 15)
 SHADOW_OPACITY = 100  # 0-255
 
-# Brand Colors (matches download.html)
-# #667eea -> (102, 126, 234)
-# #764ba2 -> (118, 75, 162)
-COLOR_START = (102, 126, 234)
-COLOR_END = (118, 75, 162)
+# Brand Colors (Blue Gradient as requested)
+# Start: #00c6ff (Light Blue)
+# End: #0072ff (Deep Blue)
+COLOR_START = (0, 198, 255)
+COLOR_END = (0, 114, 255)
 
 if not os.path.exists(OUTPUT_DIR):
     os.makedirs(OUTPUT_DIR)
@@ -54,11 +54,12 @@ def add_patterns(img):
     draw = ImageDraw.Draw(img, 'RGBA')
     w, h = img.size
     
-    # Add a few large, soft white circles with low opacity
+    # Add a few large, soft white circles with higher opacity for visibility
     shapes = [
-        (( -w*0.2, -h*0.1), w*0.8, (255, 255, 255, 15)),
-        (( w*0.6, h*0.7), w*0.9, (255, 255, 255, 10)),
-        (( w*0.1, h*0.4), w*0.3, (255, 255, 255, 8)),
+        (( -w*0.2, -h*0.1), w*0.8, (255, 255, 255, 50)),
+        (( w*0.6, h*0.7), w*0.9, (255, 255, 255, 30)),
+        (( w*0.1, h*0.4), w*0.3, (255, 255, 255, 40)),
+        (( w*0.8, -h*0.2), w*0.4, (255, 255, 255, 35)),
     ]
     
     for (x, y), size, color in shapes:
