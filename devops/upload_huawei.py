@@ -146,7 +146,7 @@ def upload_file(upload_url, auth_code, file_path):
         print(f"Upload failed. Status: {response.status_code}, Response: {response.text}")
         sys.exit(1)
 
-def update_app_file_info(access_token, app_id, client_id, file_info):
+def update_app_file_info(access_token, app_id, client_id, file_info, file_name):
     """
     Updates the app file info to commit the upload.
     """
@@ -167,14 +167,14 @@ def update_app_file_info(access_token, app_id, client_id, file_info):
         "fileType": 5, # 5 for APK, 6 for RPK, 12 for AAB ??
         # Let's check file extension
         "files": [{
-            "fileName": file_info.get("fileName"),
+            "fileName": file_name,
             "fileDestUrl": file_info.get("fileDestUlr"), # Note spelling in some docs
             "size": str(file_info.get("size"))
         }]
     }
     
     # Correct fileType based on observation
-    if file_info.get("fileName", "").endswith(".aab"):
+    if file_name.endswith(".aab"):
         payload["fileType"] = 5 # Actually 5 is common for APK. AAB might be different. 
         # API Doc says: 5: APK, 6: RPK, 8: OB, 9: XAPK, 12: AAB
         payload["fileType"] = 12
@@ -220,7 +220,8 @@ if __name__ == "__main__":
     file_info = upload_file(upload_url, auth_code, args.file)
     
     # 4. Update App File Info
-    update_app_file_info(token, args.app_id, args.client_id, file_info)
+    file_name = os.path.basename(args.file)
+    update_app_file_info(token, args.app_id, args.client_id, file_info, file_name)
     
     print("\n---------------------------------------------------")
     print("Upload complete! Please check the AppGallery Console to submit for review.")
