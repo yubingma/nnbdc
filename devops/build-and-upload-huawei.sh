@@ -22,13 +22,7 @@ echo "======================================"
 # Reason for restoring: Shell variables defined in the terminal (like `VAR=val`) are NOT visible
 # to scripts (child processes) unless they are `export`ed (like `export VAR=val`).
 # Loading the .env file here ensures the script can see them without requiring you to type `export` manually.
-ENV_FILE="$SCRIPT_DIR/../.env"
-if [ -f "$ENV_FILE" ]; then
-    # Use set -a to automatically export variables defined in the sourced file
-    set -a
-    source "$ENV_FILE"
-    set +a
-fi
+
 
 
 echo "DEBUG: Checking credentials..."
@@ -71,7 +65,38 @@ if [ -z "$CLIENT_SECRET" ] || [ -z "$APP_ID" ]; then
     exit 1
 fi
 
-# 2. Build APK
+# 2. Prepare Config & Build APK
+CONFIG_FILE="$PROJECT_ROOT/lib/config.dart"
+BACKUP_CONFIG_FILE="${CONFIG_FILE}.bak"
+
+echo ""
+echo "Preparing configuration..."
+
+# 1. Backup original config
+cp "$CONFIG_FILE" "$BACKUP_CONFIG_FILE"
+
+# 2. Define cleanup function to restore config
+restore_config() {
+    if [ -f "$BACKUP_CONFIG_FILE" ]; then
+        echo ""
+        echo "Restoring original configuration..."
+        mv "$BACKUP_CONFIG_FILE" "$CONFIG_FILE"
+    fi
+}
+
+# 3. Register cleanup to run on exit or error
+trap restore_config EXIT
+
+# 4. Modify config to use 'prod'
+# Use sed to replace profileName = "..." with profileName = "prod"
+# Using a temp file for compatibility with both GNU and BSD sed
+sed 's/static String profileName = ".*";/static String profileName = "prod";/' "$CONFIG_FILE" > "${CONFIG_FILE}.tmp" && mv "${CONFIG_FILE}.tmp" "$CONFIG_FILE"
+
+echo "Configuration switched to 'prod'."
+
+echo ""
+# 5. Build
+
 echo ""
 echo "Building Flutter APK (Release)..."
 cd "$PROJECT_ROOT"
