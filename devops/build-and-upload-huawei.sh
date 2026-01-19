@@ -1,5 +1,6 @@
 #!/bin/bash
 set -e
+START_TIME=$SECONDS
 
 # Configuration
 # Default Client ID from screenshot, but allow override
@@ -122,3 +123,5 @@ echo "Uploading to Huawei AppGallery..."
     --file "$APK_PATH"
 
 echo "Done!"
+ELAPSED_TIME=$(($SECONDS - $START_TIME))
+echo "Total time: $(($ELAPSED_TIME / 60)) minutes and $(($ELAPSED_TIME % 60)) seconds."
