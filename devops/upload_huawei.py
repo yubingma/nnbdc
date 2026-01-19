@@ -134,9 +134,11 @@ def upload_file(upload_url, auth_code, file_path):
         
     if response.status_code == 200:
         result = response.json()
-        if result.get("result", {}).get("result_code") == 0:
+        result_content = result.get("result", {})
+        # Check both resultCode (standard) and UploadFileRsp.ifSuccess (sometimes used)
+        if str(result_content.get("resultCode")) == "0" or result_content.get("UploadFileRsp", {}).get("ifSuccess") == 1:
              print("File uploaded successfully.")
-             return result.get("result", {}).get("UploadFileRsp", {}).get("fileInfoList")[0]
+             return result_content.get("UploadFileRsp", {}).get("fileInfoList")[0]
         else:
              print(f"Error during upload: {result}")
              sys.exit(1)
@@ -179,7 +181,8 @@ def update_app_file_info(access_token, app_id, client_id, file_info):
     
     print(f"Updating app file info...")
     session = get_session()
-    response = session.put(url, json=payload, headers=headers)
+    # The API requires appId in the query string according to errors and docs
+    response = session.put(url, json=payload, headers=headers, params={'appId': app_id})
     
     if response.status_code == 200:
         result = response.json()
