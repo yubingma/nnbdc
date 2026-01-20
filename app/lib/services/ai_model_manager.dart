@@ -186,7 +186,10 @@ class AiModelManager {
     }
   }
 
-  Future<AiModelLocalState?> ensureModel(AiModelProfile profile) async {
+  Future<AiModelLocalState?> ensureModel(
+    AiModelProfile profile, {
+    void Function(double progress, int downloaded, int total)? onProgress,
+  }) async {
     final current = await loadLocalState();
     if (current != null && current.profile == profile && current.localPath.isNotEmpty) {
       final file = File(current.localPath);
@@ -202,7 +205,7 @@ class AiModelManager {
       return null;
     }
 
-    final localPath = await _downloadModel(meta);
+    final localPath = await _downloadModel(meta, onProgress: onProgress);
     if (localPath == null) {
       return null;
     }
@@ -220,7 +223,10 @@ class AiModelManager {
     return state;
   }
 
-  Future<String?> _downloadModel(AiModelMeta meta) async {
+  Future<String?> _downloadModel(
+    AiModelMeta meta, {
+    void Function(double progress, int downloaded, int total)? onProgress,
+  }) async {
     try {
       final dir = await _getModelRootDir();
       final filePath = p.join(dir.path, meta.fileName);
@@ -277,13 +283,22 @@ class AiModelManager {
       final sink = file.openWrite();
       var downloaded = 0;
       var lastLogTime = DateTime.now();
+      var lastCallbackTime = DateTime.now();
 
       await for (final chunk in response.stream) {
         sink.add(chunk);
         downloaded += chunk.length;
         
-        // 每秒输出一次进度
         final now = DateTime.now();
+        
+        // 每 100ms 回调一次进度（给 UI 更新）
+        if (onProgress != null && now.difference(lastCallbackTime).inMilliseconds >= 100) {
+          final progress = downloaded / meta.sizeBytes;
+          onProgress(progress, downloaded, meta.sizeBytes);
+          lastCallbackTime = now;
+        }
+        
+        // 每秒输出一次日志
         if (now.difference(lastLogTime).inSeconds >= 1) {
           final progress = (downloaded / meta.sizeBytes * 100).toStringAsFixed(1);
           final downloadedMB = (downloaded / 1024 / 1024).toStringAsFixed(1);
@@ -291,6 +306,11 @@ class AiModelManager {
           Global.logger.i('下载进度: $progress% ($downloadedMB/$totalMB MB)');
           lastLogTime = now;
         }
+      }
+
+      // 最后一次进度回调
+      if (onProgress != null) {
+        onProgress(1.0, meta.sizeBytes, meta.sizeBytes);
       }
 
       await sink.flush();

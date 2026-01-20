@@ -22,6 +22,9 @@ class _AiActivationPageState extends State<AiActivationPage> {
   bool _isActivated = false;
   String _currentStep = '';
   String? _errorMessage;
+  double _downloadProgress = 0.0; // 下载进度 0.0 - 1.0
+  int _downloadedBytes = 0;
+  int _totalBytes = 0;
 
   @override
   void initState() {
@@ -50,6 +53,9 @@ class _AiActivationPageState extends State<AiActivationPage> {
       _isLoading = true;
       _errorMessage = null;
       _currentStep = '正在准备...';
+      _downloadProgress = 0.0;
+      _downloadedBytes = 0;
+      _totalBytes = 0;
     });
 
     try {
@@ -67,16 +73,32 @@ class _AiActivationPageState extends State<AiActivationPage> {
         throw Exception('未找到适用的 AI 模型');
       }
 
-      // 2. 下载模型文件
-      setState(() => _currentStep = '正在下载 AI 模型（约 ${(meta.sizeBytes / 1024 / 1024).toStringAsFixed(0)} MB）...');
-      final state = await manager.ensureModel(AiModelProfile.desktopFull);
+      // 2. 下载模型文件（带进度回调）
+      setState(() {
+        _currentStep = '正在下载 AI 模型（约 ${(meta.sizeBytes / 1024 / 1024).toStringAsFixed(0)} MB）...';
+        _totalBytes = meta.sizeBytes;
+      });
+      
+      final state = await manager.ensureModel(
+        AiModelProfile.desktopFull,
+        onProgress: (progress, downloaded, total) {
+          setState(() {
+            _downloadProgress = progress;
+            _downloadedBytes = downloaded;
+            _totalBytes = total;
+          });
+        },
+      );
       
       if (state == null) {
         throw Exception('模型下载失败，请稍后重试');
       }
 
       // 3. 初始化 AI 运行时
-      setState(() => _currentStep = '正在初始化 AI 引擎...');
+      setState(() {
+        _currentStep = '正在初始化 AI 引擎...';
+        _downloadProgress = 0.0;
+      });
       final success = await main_app.initializeMacOsAiRuntime();
       
       if (!success) {
@@ -100,6 +122,7 @@ class _AiActivationPageState extends State<AiActivationPage> {
       setState(() {
         _errorMessage = e.toString().replaceAll('Exception: ', '');
         _currentStep = '';
+        _downloadProgress = 0.0;
       });
     } finally {
       setState(() {
@@ -275,23 +298,61 @@ class _AiActivationPageState extends State<AiActivationPage> {
                     color: cardColor,
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
-                      child: Row(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
-                            ),
+                          Row(
+                            children: [
+                              SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  _currentStep,
+                                  style: TextStyle(color: textColor, fontSize: 14),
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              _currentStep,
-                              style: TextStyle(color: textColor, fontSize: 14),
+                          // 下载进度条
+                          if (_downloadProgress > 0 && _totalBytes > 0) ...[
+                            const SizedBox(height: 12),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(4),
+                              child: LinearProgressIndicator(
+                                value: _downloadProgress,
+                                minHeight: 8,
+                                backgroundColor: isDarkMode ? Colors.grey[800] : Colors.grey[300],
+                                valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+                              ),
                             ),
-                          ),
+                            const SizedBox(height: 8),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  '${(_downloadProgress * 100).toStringAsFixed(1)}%',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: textColor.withValues(alpha: 0.6),
+                                  ),
+                                ),
+                                Text(
+                                  '${(_downloadedBytes / 1024 / 1024).toStringAsFixed(1)} MB / ${(_totalBytes / 1024 / 1024).toStringAsFixed(1)} MB',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: textColor.withValues(alpha: 0.6),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ],
                       ),
                     ),
