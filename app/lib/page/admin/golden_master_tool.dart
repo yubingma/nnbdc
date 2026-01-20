@@ -171,7 +171,7 @@ class _GoldenMasterToolPageState extends State<GoldenMasterToolPage> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(e.key, style: TextStyle(color: textColor.withOpacity(0.8))),
+                  Text(e.key, style: TextStyle(color: textColor.withValues(alpha: 0.8))),
                   Text('${e.value}', style: const TextStyle(fontWeight: FontWeight.bold)),
                 ],
               ),
@@ -188,7 +188,7 @@ class _GoldenMasterToolPageState extends State<GoldenMasterToolPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: TextStyle(color: textColor.withOpacity(0.6), fontSize: 13)),
+          Text(label, style: TextStyle(color: textColor.withValues(alpha: 0.6), fontSize: 13)),
           Text(value, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14)),
         ],
       ),

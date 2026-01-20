@@ -1,0 +1,456 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:nnbdc/services/ai_model_manager.dart';
+import 'package:nnbdc/services/ai_service.dart';
+import 'package:nnbdc/global.dart';
+import 'package:nnbdc/main.dart' as main_app;
+import 'package:nnbdc/util/platform_util.dart';
+import 'package:nnbdc/state.dart';
+import 'package:nnbdc/theme/app_theme.dart';
+
+/// AI 功能激活页面
+/// 面向最终用户的友好界面，帮助用户在本地激活 AI 功能
+class AiActivationPage extends StatefulWidget {
+  const AiActivationPage({super.key});
+
+  @override
+  State<AiActivationPage> createState() => _AiActivationPageState();
+}
+
+class _AiActivationPageState extends State<AiActivationPage> {
+  bool _isLoading = false;
+  bool _isActivated = false;
+  String _currentStep = '';
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkAiStatus();
+  }
+
+  /// 检查 AI 功能是否已激活
+  Future<void> _checkAiStatus() async {
+    final aiService = AiService();
+    setState(() {
+      _isActivated = aiService.capabilityLevel != AiCapabilityLevel.none;
+    });
+  }
+
+  /// 激活 AI 功能的主流程
+  Future<void> _activateAi() async {
+    if (!PlatformUtils.isMacOS) {
+      setState(() {
+        _errorMessage = '抱歉，AI 功能目前仅支持 macOS 平台';
+      });
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+      _currentStep = '正在准备...';
+    });
+
+    try {
+      // 1. 获取模型信息
+      setState(() => _currentStep = '正在获取模型信息...');
+      final manager = AiModelManager();
+      final metas = await manager.fetchRemoteMeta();
+      
+      if (metas.isEmpty) {
+        throw Exception('无法获取模型信息，请检查网络连接');
+      }
+      
+      final meta = metas[AiModelProfile.desktopFull];
+      if (meta == null) {
+        throw Exception('未找到适用的 AI 模型');
+      }
+
+      // 2. 下载模型文件
+      setState(() => _currentStep = '正在下载 AI 模型（约 ${(meta.sizeBytes / 1024 / 1024).toStringAsFixed(0)} MB）...');
+      final state = await manager.ensureModel(AiModelProfile.desktopFull);
+      
+      if (state == null) {
+        throw Exception('模型下载失败，请稍后重试');
+      }
+
+      // 3. 初始化 AI 运行时
+      setState(() => _currentStep = '正在初始化 AI 引擎...');
+      final success = await main_app.initializeMacOsAiRuntime();
+      
+      if (!success) {
+        throw Exception('AI 引擎初始化失败');
+      }
+
+      // 激活成功
+      setState(() {
+        _isActivated = true;
+        _currentStep = '';
+      });
+      
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => _buildSuccessDialog(),
+        );
+      }
+    } catch (e, st) {
+      Global.logger.e('AI 激活失败', error: e, stackTrace: st);
+      setState(() {
+        _errorMessage = e.toString().replaceAll('Exception: ', '');
+        _currentStep = '';
+      });
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  /// 构建激活成功对话框
+  Widget _buildSuccessDialog() {
+    final isDarkMode = Provider.of<DarkMode>(context, listen: false).isDarkMode;
+    final backgroundColor = isDarkMode ? const Color(0xFF2D2D2D) : Colors.white;
+    final textColor = isDarkMode ? Colors.white : Colors.black87;
+    
+    return AlertDialog(
+      backgroundColor: backgroundColor,
+      title: Row(
+        children: [
+          Icon(Icons.check_circle, color: Colors.green, size: 32),
+          const SizedBox(width: 12),
+          Text('激活成功', style: TextStyle(color: textColor)),
+        ],
+      ),
+      content: Text(
+        'AI 功能已成功激活！\n\n现在你可以在单词详情页面使用 AI 智能解释功能，让学习更加高效。',
+        style: TextStyle(color: textColor, height: 1.5),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('知道了'),
+        ),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDarkMode = context.watch<DarkMode>().isDarkMode;
+    final backgroundColor = isDarkMode ? const Color(0xFF121212) : const Color(0xFFF8F9FA);
+    final textColor = isDarkMode ? Colors.white : Colors.black87;
+    final cardColor = isDarkMode ? const Color(0xFF2D2D2D) : Colors.white;
+
+    return Scaffold(
+      backgroundColor: backgroundColor,
+      appBar: AppTheme.createGradientAppBar(
+        title: 'AI 智能助手',
+        leading: IconButton(
+          onPressed: () => Navigator.pop(context),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+        ),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // 功能介绍卡片
+            Card(
+              color: cardColor,
+              elevation: 2,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.psychology, color: AppTheme.primaryColor, size: 32),
+                        const SizedBox(width: 12),
+                        Text(
+                          'AI 智能解释',
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: textColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      '激活 AI 功能后，你将获得：',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: textColor,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    _buildFeatureItem(Icons.auto_awesome, '深度词义解析', '理解单词在不同语境下的细微差别', textColor, isDarkMode),
+                    _buildFeatureItem(Icons.tips_and_updates, '记忆技巧', '获得个性化的单词记忆方法', textColor, isDarkMode),
+                    _buildFeatureItem(Icons.translate, '地道用法', '学习单词的实际应用场景', textColor, isDarkMode),
+                    _buildFeatureItem(Icons.offline_bolt, '本地运行', '数据完全保存在本地，保护隐私', textColor, isDarkMode),
+                  ],
+                ),
+              ),
+            ),
+            
+            const SizedBox(height: 24),
+            
+            // 状态显示区域
+            if (_isActivated)
+              Card(
+                color: Colors.green.withValues(alpha: 0.1),
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: BorderSide(color: Colors.green.withValues(alpha: 0.3)),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.check_circle, color: Colors.green, size: 32),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'AI 功能已激活',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: textColor,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '你现在可以在单词详情页使用 AI 解释功能',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: textColor.withValues(alpha: 0.7),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            else ...[
+              // 激活按钮
+              ElevatedButton.icon(
+                onPressed: _isLoading ? null : _activateAi,
+                icon: _isLoading 
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Icon(Icons.rocket_launch),
+                label: Text(
+                  _isLoading ? '正在激活...' : '立即激活',
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryColor,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  elevation: 3,
+                ),
+              ),
+              // 进度提示
+              if (_isLoading && _currentStep.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 16.0),
+                  child: Card(
+                    color: cardColor,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Row(
+                        children: [
+                          SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              _currentStep,
+                              style: TextStyle(color: textColor, fontSize: 14),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              
+              // 错误提示
+              if (_errorMessage != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 16.0),
+                  child: Card(
+                    color: Colors.red.withValues(alpha: 0.1),
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: BorderSide(color: Colors.red.withValues(alpha: 0.3)),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(Icons.error_outline, color: Colors.red, size: 24),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '激活失败',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: textColor,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  _errorMessage!,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: textColor.withValues(alpha: 0.7),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+            
+            const SizedBox(height: 24),
+            
+            // 系统要求说明
+            Card(
+              color: cardColor,
+              elevation: 1,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.info_outline, color: textColor.withValues(alpha: 0.6), size: 20),
+                        const SizedBox(width: 8),
+                        Text(
+                          '系统要求',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: textColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    _buildRequirementItem('平台支持', 'macOS（暂不支持其他平台）', textColor, isDarkMode),
+                    _buildRequirementItem('存储空间', '约需 500 MB 可用空间', textColor, isDarkMode),
+                    _buildRequirementItem('网络要求', '首次激活需要网络连接', textColor, isDarkMode),
+                    _buildRequirementItem('使用方式', '激活后可离线使用', textColor, isDarkMode),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildFeatureItem(IconData icon, String title, String description, Color textColor, bool isDarkMode) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: AppTheme.primaryColor, size: 24),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: textColor,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  description,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: textColor.withValues(alpha: 0.7),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildRequirementItem(String label, String value, Color textColor, bool isDarkMode) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 80,
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 14,
+                color: textColor.withValues(alpha: 0.6),
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: 14,
+                color: textColor,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

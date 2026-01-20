@@ -1317,6 +1317,15 @@ class _MePageState extends State<MePage> {
                     Get.toNamed('/farm');
                   },
                 ),
+              // AI 智能助手 - 仅管理员可见
+              if (loggedInUser?.isAdmin == true)
+                _buildMenuTile(
+                  icon: Icons.psychology,
+                  title: 'AI 智能助手',
+                  onTap: () {
+                    Get.toNamed('/ai_activation');
+                  },
+                ),
               _buildMenuTile(
                 icon: Icons.rate_review,
                 title: '需求墙',
