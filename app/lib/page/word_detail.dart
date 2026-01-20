@@ -11,6 +11,7 @@ import 'package:nnbdc/util/sound.dart';
 import 'package:nnbdc/util/error_handler.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:provider/provider.dart';
+import 'package:nnbdc/services/ai_service.dart';
 
 import '../global.dart';
 import '../state.dart';
@@ -173,6 +174,28 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     setState(() {
       dataLoaded = true;
     });
+
+    _prefetchAiExplanation();
+  }
+
+  Future<void> _prefetchAiExplanation() async {
+    try {
+      final service = AiService();
+      final request = AiRequest(
+        type: AiTaskType.explainWord,
+        payload: {
+          'spell': args.word.spell,
+        },
+      );
+      final response = await service.runTask(request);
+      if (response.success) {
+        Global.logger.d('AI explainWord: ${response.text}');
+      } else {
+        Global.logger.w('AI explainWord error: ${response.errorMessage}');
+      }
+    } catch (e, st) {
+      Global.logger.e('AI explainWord exception', error: e, stackTrace: st);
+    }
   }
 
   Future<void> _playWithAnimation(Future<void> Function() playSound, String audioType) async {
