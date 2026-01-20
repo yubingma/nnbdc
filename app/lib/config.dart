@@ -14,6 +14,7 @@ class Config {
       "apkUrl": "https://www.nnbdc.com/app/nnbdc-android.apk",
       "windowsUrl": "https://www.nnbdc.com/app/nnbdc-windows.zip",
       "linuxUrl": "https://www.nnbdc.com/app/nnbdc-linux.AppImage",
+      "aiModelUrl": "https://www.nnbdc.com/ai-model/meta.json",
       "wordImageBaseUrl": 'https://www.nnbdc.com/img/word/'
     },
     "dev": {
@@ -25,6 +26,7 @@ class Config {
       "apkUrl": "http://192.168.43.92:80/app/nnbdc-android.apk",
       "windowsUrl": "http://192.168.43.92:80/app/nnbdc-windows.zip",
       "linuxUrl": "http://192.168.43.92:80/app/nnbdc-linux.AppImage",
+      "aiModelUrl": "https://www.nnbdc.com/ai-model/meta.json",
       "wordImageBaseUrl": 'http://192.168.43.92:80/img/word/'
     },
     "dev_web": {
@@ -36,17 +38,7 @@ class Config {
       "apkUrl": "http://localhost:80/app/nnbdc-android.apk",
       "windowsUrl": "http://localhost:80/app/nnbdc-windows.zip",
       "linuxUrl": "http://localhost:80/app/nnbdc-linux.AppImage",
-      "wordImageBaseUrl": 'http://localhost:80/img/word/'
-    },
-    "test": {
-      "service_url": "http://localhost:5201",
-      "socketServerUrl": "http://localhost:9091/all",
-      "cdnBackUrl": "http://localhost:80/back",
-      "sound_base_url": "http://localhost:80/sound/",
-      "updateUrl": "http://localhost:80/app/ver.json",
-      "apkUrl": "http://localhost:80/app/nnbdc-android.apk",
-      "windowsUrl": "http://localhost:80/app/nnbdc-windows.zip",
-      "linuxUrl": "http://localhost:80/app/nnbdc-linux.AppImage",
+      "aiModelUrl": "https://www.nnbdc.com/ai-model/meta.json",
       "wordImageBaseUrl": 'http://localhost:80/img/word/'
     }
   };
@@ -61,6 +53,7 @@ class Config {
   static final String apkUrl = profile["apkUrl"];
   static final String windowsUrl = profile["windowsUrl"];
   static final String linuxUrl = profile["linuxUrl"];
+  static final String aiModelUrl = profile["aiModelUrl"];
   static final String wordImageBaseUrl = profile["wordImageBaseUrl"];
 
   // Configuration for ThrottledDbSyncService

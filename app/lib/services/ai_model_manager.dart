@@ -108,18 +108,37 @@ class AiModelManager {
     return File(p.join(dir.path, 'model_state.json'));
   }
 
-  String get _metaUrl => '${Config.cdnBackUrl}/ai/model_meta.json';
+  String get _metaUrl {
+    // 生产环境：使用服务器配置的 URL
+    Global.logger.d('使用服务器模型元数据: ${Config.aiModelUrl}');
+    return Config.aiModelUrl;
+  }
 
   Future<Map<AiModelProfile, AiModelMeta>> fetchRemoteMeta() async {
     final result = <AiModelProfile, AiModelMeta>{};
     try {
-      final uri = Uri.parse(_metaUrl);
-      final resp = await http.get(uri);
-      if (resp.statusCode != 200) {
-        Global.logger.w('获取 AI 模型元数据失败，状态码: ${resp.statusCode}');
-        return result;
+      final metaUrl = _metaUrl;
+      String jsonContent;
+
+      if (metaUrl.startsWith('file://')) {
+        final filePath = metaUrl.substring(7);
+        final file = File(filePath);
+        if (!file.existsSync()) {
+          Global.logger.w('本地模型元数据文件不存在: $filePath');
+          return result;
+        }
+        jsonContent = await file.readAsString();
+      } else {
+        final uri = Uri.parse(metaUrl);
+        final resp = await http.get(uri);
+        if (resp.statusCode != 200) {
+          Global.logger.w('获取 AI 模型元数据失败，状态码: ${resp.statusCode}');
+          return result;
+        }
+        jsonContent = resp.body;
       }
-      final data = jsonDecode(resp.body);
+
+      final data = jsonDecode(jsonContent);
       if (data is Map<String, dynamic>) {
         for (final profile in AiModelProfile.values) {
           final key = profile.name;
@@ -207,6 +226,46 @@ class AiModelManager {
       final filePath = p.join(dir.path, meta.fileName);
       final file = File(filePath);
 
+      // 如果是本地文件 URL (file://...)，直接复制
+      if (meta.downloadUrl.startsWith('file://')) {
+        final sourcePathStr = meta.downloadUrl.substring(7);
+        final sourceFile = File(sourcePathStr);
+        if (!sourceFile.existsSync()) {
+          Global.logger.w('本地模型文件不存在: $sourcePathStr');
+          return null;
+        }
+        // 如果目标文件已存在且大小一致，直接返回
+        if (file.existsSync()) {
+          final existingSize = await file.length();
+          final sourceSize = await sourceFile.length();
+          if (existingSize == sourceSize) {
+            Global.logger.i('模型文件已存在且完整: $filePath');
+            return filePath;
+          }
+        }
+        // 复制文件
+        Global.logger.i('复制本地模型文件: $sourcePathStr -> $filePath');
+        await sourceFile.copy(filePath);
+        return filePath;
+      }
+
+      // 网络下载
+      // 检查文件是否已存在且大小正确
+      if (file.existsSync()) {
+        final existingSize = await file.length();
+        if (existingSize == meta.sizeBytes) {
+          Global.logger.i('模型文件已存在且大小正确，跳过下载: $filePath');
+          return filePath;
+        } else {
+          Global.logger.w('模型文件大小不匹配，重新下载。期望: ${meta.sizeBytes}, 实际: $existingSize');
+          await file.delete();
+        }
+      }
+
+      Global.logger.i('开始下载模型: ${meta.downloadUrl}');
+      Global.logger.i('目标路径: $filePath');
+      Global.logger.i('文件大小: ${(meta.sizeBytes / 1024 / 1024).toStringAsFixed(1)} MB');
+
       final uri = Uri.parse(meta.downloadUrl);
       final request = http.Request('GET', uri);
       final response = await http.Client().send(request);
@@ -216,9 +275,29 @@ class AiModelManager {
       }
 
       final sink = file.openWrite();
-      await response.stream.forEach(sink.add);
+      var downloaded = 0;
+      var lastLogTime = DateTime.now();
+
+      await for (final chunk in response.stream) {
+        sink.add(chunk);
+        downloaded += chunk.length;
+        
+        // 每秒输出一次进度
+        final now = DateTime.now();
+        if (now.difference(lastLogTime).inSeconds >= 1) {
+          final progress = (downloaded / meta.sizeBytes * 100).toStringAsFixed(1);
+          final downloadedMB = (downloaded / 1024 / 1024).toStringAsFixed(1);
+          final totalMB = (meta.sizeBytes / 1024 / 1024).toStringAsFixed(1);
+          Global.logger.i('下载进度: $progress% ($downloadedMB/$totalMB MB)');
+          lastLogTime = now;
+        }
+      }
+
       await sink.flush();
       await sink.close();
+
+      final finalSize = await file.length();
+      Global.logger.i('模型下载完成！最终大小: ${(finalSize / 1024 / 1024).toStringAsFixed(1)} MB');
 
       return filePath;
     } catch (e, st) {

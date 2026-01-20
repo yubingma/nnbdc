@@ -34,6 +34,9 @@ import 'package:nnbdc/test.dart';
 import 'package:nnbdc/theme/app_theme.dart';
 import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/util/error_handler.dart';
+import 'package:nnbdc/services/ai_service.dart';
+import 'package:nnbdc/services/ai_model_manager.dart';
+import 'package:nnbdc/services/ai_runtime_macos.dart' if (dart.library.io) 'package:nnbdc/services/ai_runtime_macos.dart';
 import 'package:provider/provider.dart';
 import 'package:toastification/toastification.dart';
 import 'package:nnbdc/page/admin/golden_master_tool.dart';
@@ -143,6 +146,39 @@ void main() async {
       );
     },
   );
+}
+
+/// 初始化 macOS AI 运行时（手动调用）
+Future<bool> initializeMacOsAiRuntime() async {
+  try {
+    Global.logger.i('开始初始化 macOS AI 运行时...');
+    
+    // 1. 确保模型已下载
+    final manager = AiModelManager();
+    final modelState = await manager.ensureModel(AiModelProfile.desktopFull);
+    
+    if (modelState == null || modelState.localPath.isEmpty) {
+      Global.logger.w('macOS AI 模型未就绪，跳过初始化');
+      return false;
+    }
+    
+    // 2. 创建并初始化 macOS AI 运行时
+    final runtime = MacOsAiRuntime(modelPath: modelState.localPath);
+    final success = await runtime.initialize();
+    
+    if (success) {
+      // 3. 注入到 AiService
+      AiService().setRuntime(runtime);
+      Global.logger.i('macOS AI 运行时初始化成功，能力等级: ${runtime.capabilityLevel}');
+      return true;
+    } else {
+      Global.logger.w('macOS AI 运行时初始化失败');
+      return false;
+    }
+  } catch (e, st) {
+    Global.logger.e('macOS AI 运行时初始化异常', error: e, stackTrace: st);
+    return false;
+  }
 }
 
 class MyApp extends StatefulWidget {
