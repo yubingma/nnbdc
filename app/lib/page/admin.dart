@@ -102,6 +102,12 @@ class _AdminPageState extends State<AdminPage> {
         color: Colors.redAccent,
         onTap: () => Navigator.pushNamed(context, '/golden_master'),
       ),
+      _buildManagementCard(
+        title: 'AI 功能管理',
+        icon: Icons.psychology,
+        color: const Color(0xFF6A1B9A),
+        onTap: () => Navigator.pushNamed(context, '/ai_activation'),
+      ),
     ];
   }
 
