@@ -72,13 +72,15 @@ class LlamaCppBridge {
             return nil
         }
         
+        // 获取 vocab
+        let vocab = llama_model_get_vocab(model)
+        
         // 1. Tokenize 输入
         guard let promptCString = prompt.cString(using: .utf8) else {
             NSLog("[LlamaCppBridge] ❌ 无法转换 prompt 为 C 字符串")
             return nil
         }
         
-        let vocab = llama_model_get_vocab(model)
         NSLog("[LlamaCppBridge] Prompt C 字符串长度: \(promptCString.count)")
         
         // 第一次调用获取需要的 token 数量
@@ -176,7 +178,7 @@ class LlamaCppBridge {
             
             // Detokenize 当前 token
             var buffer = [CChar](repeating: 0, count: 256)
-            let n = llama_token_to_piece(model, newToken, &buffer, Int32(buffer.count), 0, false)
+            let n = llama_token_to_piece(vocab, newToken, &buffer, Int32(buffer.count), 0, false)
             if n > 0 {
                 let piece = String(cString: buffer)
                 output += piece
