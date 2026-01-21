@@ -135,46 +135,58 @@ class LlamaCppBridge {
         
         NSLog("[LlamaCppBridge] 输入 tokens 解码成功")
         
-        // 4. 生成输出 tokens
+        // 4. 创建 sampler chain (temperature + repetition penalty + greedy/dist)
+        var samplerParams = llama_sampler_chain_default_params()
+        samplerParams.no_perf = false
+        
+        let sampler = llama_sampler_chain_init(samplerParams)
+        llama_sampler_chain_add(sampler, llama_sampler_init_min_p(0.05, 1))  // min-p sampling
+        llama_sampler_chain_add(sampler, llama_sampler_init_temp(Float(temperature)))  // temperature
+        llama_sampler_chain_add(sampler, llama_sampler_init_dist(UInt32(time(nil))))  // distribution sampling
+        
+        defer {
+            llama_sampler_free(sampler)
+        }
+        
+        // 5. 生成输出 tokens
         var outputTokens = [llama_token]()
         var output = ""
+        var lastTokens = [llama_token]()  // 用于检测重复
+        let repeatCheckWindow = 5  // 重复检测窗口大小
         
         for i in 0..<maxTokens {
-            // 获取 logits - 使用最后一个 token 的位置
-            let logitPos = batch.n_tokens - 1
-            guard logitPos >= 0 else {
-                NSLog("[LlamaCppBridge] ❌ logit 位置异常: \(logitPos)")
-                break
-            }
-            
-            guard let logits = llama_get_logits_ith(context, logitPos) else {
-                NSLog("[LlamaCppBridge] ❌ 无法获取 logits, 位置: \(logitPos)")
-                break
-            }
-            let nVocab = llama_vocab_n_tokens(llama_model_get_vocab(model))
-            
-            if i == 0 {
-                NSLog("[LlamaCppBridge] 开始生成，vocab 大小: \(nVocab)")
-            }
-            
-            // 简化采样：使用 greedy sampling
-            var maxLogit: Float = -Float.infinity
-            var newToken: llama_token = 0
-            for i in 0..<nVocab {
-                let logitValue = logits[Int(i)]
-                if logitValue > maxLogit {
-                    maxLogit = logitValue
-                    newToken = i
-                }
-            }
+            // 使用 llama.cpp 的 sampler 进行采样
+            let newToken = llama_sampler_sample(sampler, context, -1)
             
             // 检查是否结束
-            if newToken == llama_vocab_eos(llama_model_get_vocab(model)) {
+            let eosToken = llama_vocab_eos(llama_model_get_vocab(model))
+            if newToken == eosToken {
                 NSLog("[LlamaCppBridge] 遇到 EOS token，结束生成")
                 break
             }
             
+            // 检查是否是特殊 token（比如 <|im_end|>）
+            // Qwen 模型的 im_end token 通常是 151645
+            if newToken == 151645 || newToken == 151643 || newToken == 151644 {
+                NSLog("[LlamaCppBridge] 遇到特殊结束 token: \(newToken)，结束生成")
+                break
+            }
+            
             outputTokens.append(newToken)
+            lastTokens.append(newToken)
+            
+            // 通知 sampler 已接受此 token
+            llama_sampler_accept(sampler, newToken)
+            
+            // 检测短期重复（每 3 次检查一次）
+            if lastTokens.count >= repeatCheckWindow * 2 && i % 3 == 0 {
+                let recent = Array(lastTokens.suffix(repeatCheckWindow))
+                let before = Array(lastTokens.dropLast(repeatCheckWindow).suffix(repeatCheckWindow))
+                if recent == before {
+                    NSLog("[LlamaCppBridge] ⚠️ 检测到 \(repeatCheckWindow) token 重复序列，提前结束")
+                    break
+                }
+            }
             
             // Detokenize 当前 token
             var buffer = [CChar](repeating: 0, count: 256)

@@ -84,24 +84,10 @@ User level: $userLevel
       buffer.writeln();
     }
 
-    buffer.writeln('Please provide:');
-    buffer.writeln('1. A simple Chinese explanation (1-3 sentences) of the most common meaning');
-    buffer.writeln('2. A short memory tip in Chinese (a story or association)');
-    buffer.writeln('3. Two simple example sentences with Chinese translations');
-    buffer.writeln();
-    buffer.writeln('Format your response exactly like this:');
-    buffer.writeln();
-    buffer.writeln('[解释]');
-    buffer.writeln('(用中文解释这个词)');
-    buffer.writeln();
-    buffer.writeln('[记忆技巧]');
-    buffer.writeln('(用中文写一个记忆小故事)');
-    buffer.writeln();
-    buffer.writeln('[例句]');
-    buffer.writeln('1. (English sentence 1)');
-    buffer.writeln('   (中文翻译1)');
-    buffer.writeln('2. (English sentence 2)');
-    buffer.writeln('   (中文翻译2)');
+    buffer.writeln('Please explain this word in Chinese:');
+    buffer.writeln('1. 用中文简单解释词义 (1-2句话)');
+    buffer.writeln('2. 用中文写一个记忆小技巧');
+    buffer.writeln('3. 给2个英文例句并翻译成中文');
     buffer.writeln('<|im_end|>');
     
     buffer.write('<|im_start|>assistant\n');
