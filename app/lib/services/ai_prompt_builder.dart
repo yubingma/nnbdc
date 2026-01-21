@@ -43,41 +43,20 @@ User level: $userLevel
 
     // system: 说明角色 + 只输出三行
     buffer.writeln('<|im_start|>system');
-    buffer.writeln('你是英语教师。用户会给出一个英文单词以及参考释义，你只需用中文解释这个单词。');
-    buffer.writeln('只输出下面三行内容，不要解释格式，不要添加额外说明：');
-    buffer.writeln('【核心词义】XX');
-    buffer.writeln('【常见搭配】XX、XX');
-    buffer.writeln('【地道例句】XX（中文）');
+    buffer.writeln('你是英语教师。用户会给出一个英文词, 请你简单地讲解一下这个单词。');
     buffer.writeln('<|im_end|>');
 
     // user: 明确给出单词 + 可选音标/词性 + 本地参考释义
     buffer.writeln('<|im_start|>user');
     buffer.write('单词: $spell');
 
-    if (phonetics.trim().isNotEmpty) {
-      buffer.write('，音标: $phonetics');
-    }
-    if (partOfSpeech.trim().isNotEmpty) {
-      buffer.write('，词性: $partOfSpeech');
-    }
 
-    final meanings = payload['meanings'];
-    if (meanings is List && meanings.isNotEmpty) {
-      buffer.write('。参考释义: ');
-      for (final m in meanings) {
-        if (m is Map<String, dynamic>) {
-          final cn = (m['cn'] ?? '').toString();
-          if (cn.isNotEmpty) {
-            buffer.write('$cn；');
-          }
-        }
-      }
-    }
+    
     buffer.writeln();
     buffer.writeln('<|im_end|>');
 
     // 直接开始，不给思考空间
-    buffer.write('<|im_start|>assistant\n【核心词义】');
+    buffer.write('<|im_start|>assistant\n');
 
     return buffer.toString();
   }
