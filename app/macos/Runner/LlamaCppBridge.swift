@@ -101,7 +101,7 @@ class LlamaCppBridge {
             nil,
             0,
             true,   // add_special: true
-            false   // parse_special: false
+            true    // parse_special: true - 解析特殊 token（如 <|im_start|> 等）
         )
         
         guard nPromptTokens > 0 && nPromptTokens < 2048 else {
@@ -121,7 +121,7 @@ class LlamaCppBridge {
             &tokens,
             Int32(nPromptTokens),
             true,
-            false
+            true    // parse_special: true - 与上面保持一致
         )
         
         guard actualTokens == nPromptTokens else {
@@ -203,7 +203,7 @@ class LlamaCppBridge {
             
             // Detokenize 当前 token
             var buffer = [CChar](repeating: 0, count: 256)
-            let n = llama_token_to_piece(vocab, newToken, &buffer, Int32(buffer.count), 0, false)
+            let n = llama_token_to_piece(vocab, newToken, &buffer, Int32(buffer.count), 0, true)
             if n > 0 {
                 // 使用更安全的字符串转换
                 if let piece = String(data: Data(bytes: buffer, count: Int(n)), encoding: .utf8) {
@@ -223,18 +223,7 @@ class LlamaCppBridge {
                         }
                     }
                     
-                    // 检测模型开始"思考"的模式
-                    let thinkingPatterns = ["好的，", "首先，", "然后，", "接下来", "我需要"]
-                    for pattern in thinkingPatterns {
-                        if output.contains(pattern) && output.count > 100 {
-                            NSLog("[LlamaCppBridge] ⚠️ 检测到模型开始思考，提前终止")
-                            // 尝试找到第一个完整的答案结束位置
-                            if let lastNewline = output.lastIndex(of: "\n") {
-                                output = String(output[..<lastNewline])
-                            }
-                            return output
-                        }
-                    }
+                    // 已移除“思考模式”提前终止逻辑，以便生成更完整的自然回答
                     
                     // 检测病态重复模式（如连续多个 ``` 标记）
                     let suffix = String(output.suffix(100))

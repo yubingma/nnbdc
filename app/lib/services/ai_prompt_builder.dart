@@ -41,21 +41,38 @@ User level: $userLevel
 
     final buffer = StringBuffer();
 
-    // system: 说明角色 + 只输出三行
+    // 参考 Qwen ChatML 模板，使用自然对话风格，尽量少约束
     buffer.writeln('<|im_start|>system');
-    buffer.writeln('你是英语教师。用户会给出一个英文词, 请你简单地讲解一下这个单词。');
+    buffer.writeln('你是一名善于用简洁中文讲解英文单词含义的英语教师。');
+    buffer.writeln('面向中国学习者，解释要通俗易懂，可以适当给出常见搭配和例句，但不必固定格式。');
     buffer.writeln('<|im_end|>');
 
-    // user: 明确给出单词 + 可选音标/词性 + 本地参考释义
     buffer.writeln('<|im_start|>user');
-    buffer.write('单词: $spell');
+    buffer.write('请用中文解释英文单词 "$spell"');
 
+    if (phonetics.trim().isNotEmpty) {
+      buffer.write('，音标: $phonetics');
+    }
+    if (partOfSpeech.trim().isNotEmpty) {
+      buffer.write('，词性: $partOfSpeech');
+    }
 
-    
-    buffer.writeln();
+    final meanings = payload['meanings'];
+    if (meanings is List && meanings.isNotEmpty) {
+      buffer.write('。可以结合以下词典释义，但不要逐字照抄：');
+      for (final m in meanings) {
+        if (m is Map<String, dynamic>) {
+          final cn = (m['cn'] ?? '').toString();
+          if (cn.isNotEmpty) {
+            buffer.write('$cn；');
+          }
+        }
+      }
+    }
+    buffer.writeln('。');
     buffer.writeln('<|im_end|>');
 
-    // 直接开始，不给思考空间
+    // 不再强制固定输出格式，只作为自然对话的回答
     buffer.write('<|im_start|>assistant\n');
 
     return buffer.toString();
