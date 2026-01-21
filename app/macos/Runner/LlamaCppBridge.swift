@@ -212,12 +212,14 @@ class LlamaCppBridge {
                     // 检查字符串级别的停止词（支持中间出现）
                     for stopWord in stopWords {
                         if let range = output.range(of: stopWord, options: .backwards) {
-                            // 如果停止词在最后100个字符内，认为是有效的停止词
+                            // 如果停止词在最后一定字符内，认为是有效的停止词
                             let distanceFromEnd = output.distance(from: range.upperBound, to: output.endIndex)
-                            if distanceFromEnd < 50 {
+                            let beforeStop = output[..<range.lowerBound]
+                            // 只有当前面已经有实际内容时才触发停止，避免一上来就输出停止标记导致空结果
+                            if distanceFromEnd < 50 && !beforeStop.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                                 NSLog("[LlamaCppBridge] 检测到停止词: \(stopWord)，距离末尾: \(distanceFromEnd)")
                                 // 截断到停止词之前
-                                output = String(output[..<range.lowerBound])
+                                output = String(beforeStop)
                                 return output
                             }
                         }
