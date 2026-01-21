@@ -61,11 +61,21 @@ class LlamaCppBridge {
         
         NSLog("[LlamaCppBridge] 开始推理，prompt 长度: \(prompt.count), maxTokens: \(maxTokens)")
         
+        // 输出完整 prompt 用于调试
+        if prompt.count < 1000 {
+            NSLog("[LlamaCppBridge] 完整 Prompt:\n--- BEGIN ---\n\(prompt)\n--- END ---")
+        }
+        
         // 防御性检查
         guard maxTokens > 0 && maxTokens <= 2048 else {
             NSLog("[LlamaCppBridge] ❌ maxTokens 超出范围: \(maxTokens)")
             return nil
         }
+        
+        // 清空 KV cache，确保每次推理都是全新的状态
+        let memory = llama_get_memory(context)
+        llama_memory_seq_rm(memory, -1, -1, -1)  // seq_id=-1 表示所有序列，p0=-1, p1=-1 表示所有位置
+        NSLog("[LlamaCppBridge] KV cache 已清空")
         
         guard !prompt.isEmpty && prompt.count <= 10000 else {
             NSLog("[LlamaCppBridge] ❌ prompt 长度异常: \(prompt.count)")
@@ -154,6 +164,9 @@ class LlamaCppBridge {
         var lastTokens = [llama_token]()  // 用于检测重复
         let repeatCheckWindow = 5  // 重复检测窗口大小
         
+        // 定义停止词列表 - 包括常见的拼写错误
+        let stopWords = ["<|im_end|>", "<|im_start|>", "</im_end|>", "</assistant>", "<|end|>"]
+        
         for i in 0..<maxTokens {
             // 使用 llama.cpp 的 sampler 进行采样
             let newToken = llama_sampler_sample(sampler, context, -1)
@@ -195,6 +208,45 @@ class LlamaCppBridge {
                 // 使用更安全的字符串转换
                 if let piece = String(data: Data(bytes: buffer, count: Int(n)), encoding: .utf8) {
                     output += piece
+                    
+                    // 检查字符串级别的停止词（支持中间出现）
+                    for stopWord in stopWords {
+                        if let range = output.range(of: stopWord, options: .backwards) {
+                            // 如果停止词在最后100个字符内，认为是有效的停止词
+                            let distanceFromEnd = output.distance(from: range.upperBound, to: output.endIndex)
+                            if distanceFromEnd < 50 {
+                                NSLog("[LlamaCppBridge] 检测到停止词: \(stopWord)，距离末尾: \(distanceFromEnd)")
+                                // 截断到停止词之前
+                                output = String(output[..<range.lowerBound])
+                                return output
+                            }
+                        }
+                    }
+                    
+                    // 检测模型开始"思考"的模式
+                    let thinkingPatterns = ["好的，", "首先，", "然后，", "接下来", "我需要"]
+                    for pattern in thinkingPatterns {
+                        if output.contains(pattern) && output.count > 100 {
+                            NSLog("[LlamaCppBridge] ⚠️ 检测到模型开始思考，提前终止")
+                            // 尝试找到第一个完整的答案结束位置
+                            if let lastNewline = output.lastIndex(of: "\n") {
+                                output = String(output[..<lastNewline])
+                            }
+                            return output
+                        }
+                    }
+                    
+                    // 检测病态重复模式（如连续多个 ``` 标记）
+                    let suffix = String(output.suffix(100))
+                    let backtickCount = suffix.components(separatedBy: "```").count - 1
+                    if backtickCount >= 10 {
+                        NSLog("[LlamaCppBridge] ⚠️ 检测到病态重复模式（连续多个 ```），提前结束")
+                        // 清理掉重复的 ``` 部分
+                        if let lastValidIndex = output.range(of: "```", options: .backwards, range: output.startIndex..<output.index(output.endIndex, offsetBy: -90))?.lowerBound {
+                            output = String(output[..<lastValidIndex])
+                        }
+                        break
+                    }
                 } else {
                     NSLog("[LlamaCppBridge] ⚠️ 无法解码 token \(newToken)")
                 }

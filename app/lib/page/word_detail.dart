@@ -194,10 +194,23 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     
     try {
       final service = AiService();
+      // 为小模型提供更多上下文：把本地词典释义传给 Prompt 构建器
+      final mergedMeaningItems = args.word.getMergedMeaningItems();
+      final meaningPayload = mergedMeaningItems
+          .map((mi) => {
+                'cn': ((mi.ciXing ?? '').trim().isEmpty
+                        ? ''
+                        : '${mi.ciXing} ')
+                    + (mi.meaning ?? ''),
+              })
+          .toList();
       final request = AiRequest(
         type: AiTaskType.explainWord,
         payload: {
           'spell': args.word.spell,
+          'phonetics': args.word.mergedPronounce ?? '',
+          'partOfSpeech': mergedMeaningItems.isNotEmpty ? (mergedMeaningItems.first.ciXing ?? '') : '',
+          'meanings': meaningPayload,
         },
       );
       final response = await service.runTask(request);
@@ -207,45 +220,30 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
           setState(() {
             // 解析 AI 输出
             String rawText = response.text ?? '';
-            
-            // 提取图片标签
-            final imgrRegex = RegExp(r'<\|im_start\|imgr\|url\|([^|]+)\|imgr\|imgr\|imgr\|imgr\|imgr\|');
-            final match = imgrRegex.firstMatch(rawText);
-            
             String cleaned = rawText;
-            if (match != null) {
-              _aiImageUrl = match.group(1);
-              // 划分思考过程和实际解释
-              final parts = rawText.split(match.group(0)!);
-              if (parts.length >= 2) {
-                _aiThought = parts[0].trim();
-                cleaned = parts[1].trim();
-              } else {
-                cleaned = rawText.replaceFirst(match.group(0)!, '').trim();
-              }
-            }
             
-            // 进一步清理 AI 输出：移除特殊 token
-            cleaned = cleaned.replaceAll(RegExp(r'<\|im_start\|>[^<]*'), '');
-            cleaned = cleaned.replaceAll(RegExp(r'<\|im_end\|>'), '');
+            // 直接由程序生成图片 URL，不再依赖 AI 输出标签
+            _aiImageUrl = '${Config.wordImageBaseUrl}${args.word.spell}';
             
-            // 移除 "assistant\n" 这种多余的开头
-            if (cleaned.startsWith('assistant')) {
-              cleaned = cleaned.replaceFirst('assistant', '').trim();
-            }
+            // 进一步清理 AI 输出：移除所有特殊 token 和残留的标签
+            cleaned = cleaned.replaceAll(RegExp(r'<\|im_start\|>.*?(\n|$)'), '');
+            cleaned = cleaned.replaceAll(RegExp(r'<\|im_end\|>.*?(\n|$)'), '');
+            cleaned = cleaned.replaceAll(RegExp(r'<\|imgr\|.*?\|(?:imgr\|)+'), ''); // 移除任何残留的完整标签
+            cleaned = cleaned.replaceAll(RegExp(r'(?:imgr\|)+'), ''); // 移除孤立的重复 imgr|
+            cleaned = cleaned.replaceAll('<|imgr|', '');
             
-            // 移除 prompt 残留（system 指令）
+            // 移除 "assistant\n" 或 "assistant: " 这种多余的开头/残留
+            cleaned = cleaned.replaceAll(RegExp(r'(assistant|user|system)\s*(:|\n)', caseSensitive: false), '');
+            
+            // 移除 prompt 残留（system/user 指令内容）
+            cleaned = cleaned.replaceAll(RegExp(r'你是一个简洁的英语老师.*?解释：', dotAll: true), '');
+            cleaned = cleaned.replaceAll(RegExp(r'解释单词:.*?词汇数据:.*?\n', dotAll: true), '');
             cleaned = cleaned.replaceAll(RegExp(r'You are a helpful.*?Chinese learners\.', dotAll: true), '');
             cleaned = cleaned.replaceAll(RegExp(r'You explain words.*?Chinese\.', dotAll: true), '');
             
-            // 如果 thought 也有残留，清理一下
-            if (_aiThought != null) {
-              _aiThought = _aiThought!.replaceAll('assistant', '').trim();
-              if (_aiThought!.isEmpty) _aiThought = null;
-            }
-            
-            // 移除开头和结尾的空白
+            // 移除开头和结尾的空白及多余空行
             cleaned = cleaned.trim();
+            cleaned = cleaned.replaceAll(RegExp(r'\n{3,}'), '\n\n'); // 压缩连续空行
             
             _aiExplanation = cleaned;
             _aiLoading = false;

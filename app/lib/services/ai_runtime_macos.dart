@@ -87,13 +87,14 @@ class MacOsAiRuntime implements AiRuntime {
     try {
       // 1. 使用 AiPromptBuilder 构建完整 prompt
       final prompt = AiPromptBuilder.buildPrompt(request);
-      Global.logger.d('macOS AI 推理 prompt 长度: ${prompt.length}');
+      Global.logger.d('macOS AI 推理 prompt 长度: ${prompt.length}, 内容: $prompt');
 
       // 2. 调用原生层推理
       final result = await _channel.invokeMethod('inference', {
         'prompt': prompt,
         'maxTokens': 512,
         'temperature': 0.7,
+        'stop': ['<|im_end|>', '<|endoftext|>', '<|im_start|>'],
       });
 
       if (result is Map && result['success'] == true) {

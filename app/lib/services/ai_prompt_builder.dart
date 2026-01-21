@@ -1,4 +1,3 @@
-import 'package:nnbdc/config.dart';
 import 'package:nnbdc/services/ai_service.dart';
 
 /// 统一的 Prompt 构建器，方案 A：在 Dart 侧一次性拼好完整 prompt
@@ -37,65 +36,48 @@ User level: $userLevel
 
   static String _buildExplainWordPrompt(Map<String, dynamic> payload) {
     final spell = (payload['spell'] ?? '').toString();
-    final phonetics = (payload['phonetics'] ?? 'unknown').toString();
-    final partOfSpeech = (payload['partOfSpeech'] ?? 'unknown').toString();
+    final phonetics = (payload['phonetics'] ?? '').toString();
+    final partOfSpeech = (payload['partOfSpeech'] ?? '').toString();
 
     final buffer = StringBuffer();
-    
-    // 使用 Qwen 模型的 chat 模板格式
+
+    // system: 说明角色 + 只输出三行
     buffer.writeln('<|im_start|>system');
-    buffer.writeln('You are a helpful English vocabulary tutor for Chinese learners.');
-    buffer.writeln('You explain words clearly and concisely in Chinese.');
+    buffer.writeln('你是英语教师。用户会给出一个英文单词以及参考释义，你只需用中文解释这个单词。');
+    buffer.writeln('只输出下面三行内容，不要解释格式，不要添加额外说明：');
+    buffer.writeln('【核心词义】XX');
+    buffer.writeln('【常见搭配】XX、XX');
+    buffer.writeln('【地道例句】XX（中文）');
     buffer.writeln('<|im_end|>');
-    
+
+    // user: 明确给出单词 + 可选音标/词性 + 本地参考释义
     buffer.writeln('<|im_start|>user');
-    buffer.writeln('Please explain the English word "$spell" to me.');
-    buffer.writeln();
-    buffer.writeln('Word information:');
-    buffer.writeln('- Spell: $spell');
-    buffer.writeln('- Phonetics: $phonetics');
-    buffer.writeln('- Part of speech: $partOfSpeech');
-    buffer.writeln();
+    buffer.write('单词: $spell');
+
+    if (phonetics.trim().isNotEmpty) {
+      buffer.write('，音标: $phonetics');
+    }
+    if (partOfSpeech.trim().isNotEmpty) {
+      buffer.write('，词性: $partOfSpeech');
+    }
 
     final meanings = payload['meanings'];
     if (meanings is List && meanings.isNotEmpty) {
-      buffer.writeln('Dictionary meanings:');
+      buffer.write('。参考释义: ');
       for (final m in meanings) {
         if (m is Map<String, dynamic>) {
-          final pos = (m['pos'] ?? '').toString();
           final cn = (m['cn'] ?? '').toString();
-          final en = (m['en'] ?? '').toString();
-          buffer.writeln('- $pos: $cn (English: $en)');
+          if (cn.isNotEmpty) {
+            buffer.write('$cn；');
+          }
         }
       }
-      buffer.writeln();
     }
-
-    final examples = payload['exampleSentences'];
-    if (examples is List && examples.isNotEmpty) {
-      buffer.writeln('Example sentences from dictionary:');
-      for (final e in examples) {
-        if (e is Map<String, dynamic>) {
-          final en = (e['en'] ?? '').toString();
-          final cn = (e['cn'] ?? '').toString();
-          buffer.writeln('- $en');
-          buffer.writeln('  (中文: $cn)');
-        }
-      }
-      buffer.writeln();
-    }
-
-    buffer.writeln('Please explain this English word in Chinese:');
     buffer.writeln();
-    buffer.writeln('- 首先，请务必输出一个图片标签，格式为：<|im_start|imgr|url|${Config.wordImageBaseUrl}$spell|imgr|imgr|imgr|imgr|imgr|');
-    buffer.writeln('- 然后，简单解释词义（1-2句话）');
-    buffer.writeln('- 提供一个记忆小技巧');
-    buffer.writeln('- 给2个英文例句并翻译成中文');
-    buffer.writeln();
-    buffer.writeln('请直接输出内容，不要包含编号或标题。你的回复应以图片标签开头。');
     buffer.writeln('<|im_end|>');
-    
-    buffer.write('<|im_start|>assistant\n');
+
+    // 直接开始，不给思考空间
+    buffer.write('<|im_start|>assistant\n【核心词义】');
 
     return buffer.toString();
   }
