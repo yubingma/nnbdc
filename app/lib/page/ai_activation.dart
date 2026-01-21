@@ -34,10 +34,26 @@ class _AiActivationPageState extends State<AiActivationPage> {
 
   /// 检查 AI 功能是否已激活
   Future<void> _checkAiStatus() async {
-    final aiService = AiService();
-    setState(() {
-      _isActivated = aiService.capabilityLevel != AiCapabilityLevel.none;
-    });
+    try {
+      // 检查是否已下载模型文件
+      final manager = AiModelManager();
+      final localState = await manager.loadLocalState();
+      
+      setState(() {
+        // 如果本地有模型文件，说明已激活
+        _isActivated = localState != null && localState.localPath.isNotEmpty;
+      });
+      
+      // 如果已激活但运行时未初始化，自动初始化（仅 macOS）
+      if (_isActivated && 
+          PlatformUtils.isMacOS && 
+          AiService().capabilityLevel == AiCapabilityLevel.none) {
+        Global.logger.i('检测到模型已下载但运行时未初始化，开始自动初始化...');
+        await main_app.initializeMacOsAiRuntime();
+      }
+    } catch (e) {
+      Global.logger.e('检查 AI 状态异常', error: e);
+    }
   }
 
   /// 激活 AI 功能的主流程
@@ -59,39 +75,48 @@ class _AiActivationPageState extends State<AiActivationPage> {
     });
 
     try {
-      // 1. 获取模型信息
-      setState(() => _currentStep = '正在获取模型信息...');
       final manager = AiModelManager();
-      final metas = await manager.fetchRemoteMeta();
       
-      if (metas.isEmpty) {
-        throw Exception('无法获取模型信息，请检查网络连接');
-      }
+      // 检查是否已有模型
+      final existingState = await manager.loadLocalState();
+      bool needDownload = existingState == null || existingState.localPath.isEmpty;
       
-      final meta = metas[AiModelProfile.desktopFull];
-      if (meta == null) {
-        throw Exception('未找到适用的 AI 模型');
-      }
+      if (needDownload) {
+        // 1. 获取模型信息
+        setState(() => _currentStep = '正在获取模型信息...');
+        final metas = await manager.fetchRemoteMeta();
+        
+        if (metas.isEmpty) {
+          throw Exception('无法获取模型信息，请检查网络连接');
+        }
+        
+        final meta = metas[AiModelProfile.desktopFull];
+        if (meta == null) {
+          throw Exception('未找到适用的 AI 模型');
+        }
 
-      // 2. 下载模型文件（带进度回调）
-      setState(() {
-        _currentStep = '正在下载 AI 模型（约 ${(meta.sizeBytes / 1024 / 1024).toStringAsFixed(0)} MB）...';
-        _totalBytes = meta.sizeBytes;
-      });
-      
-      final state = await manager.ensureModel(
-        AiModelProfile.desktopFull,
-        onProgress: (progress, downloaded, total) {
-          setState(() {
-            _downloadProgress = progress;
-            _downloadedBytes = downloaded;
-            _totalBytes = total;
-          });
-        },
-      );
-      
-      if (state == null) {
-        throw Exception('模型下载失败，请稍后重试');
+        // 2. 下载模型文件（带进度回调）
+        setState(() {
+          _currentStep = '正在下载 AI 模型（约 ${(meta.sizeBytes / 1024 / 1024).toStringAsFixed(0)} MB）...';
+          _totalBytes = meta.sizeBytes;
+        });
+        
+        final state = await manager.ensureModel(
+          AiModelProfile.desktopFull,
+          onProgress: (progress, downloaded, total) {
+            setState(() {
+              _downloadProgress = progress;
+              _downloadedBytes = downloaded;
+              _totalBytes = total;
+            });
+          },
+        );
+        
+        if (state == null) {
+          throw Exception('模型下载失败，请稍后重试');
+        }
+      } else {
+        Global.logger.i('模型已存在，跳过下载步骤');
       }
 
       // 3. 初始化 AI 运行时

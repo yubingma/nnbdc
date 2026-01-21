@@ -124,6 +124,11 @@ void main() async {
 
           // 预加载当前用户数据
           await Global.loadUserFromDb();
+          
+          // 初始化 AI 运行时（仅 macOS，如果已下载模型）
+          if (PlatformUtils.isMacOS) {
+            _initializeMacOsAiRuntimeIfReady();
+          }
         } catch (e, stackTrace) {
           // 初始化过程中的错误
           // 同时将错误写入全局状态，供启动页展示（不是toast）
@@ -147,6 +152,24 @@ void main() async {
       );
     },
   );
+}
+
+/// 初始化 macOS AI 运行时（如果模型已就绪）
+void _initializeMacOsAiRuntimeIfReady() async {
+  try {
+    // 检查是否已下载模型
+    final manager = AiModelManager();
+    final localState = await manager.loadLocalState();
+    
+    if (localState != null && localState.localPath.isNotEmpty) {
+      Global.logger.i('检测到模型已下载，开始自动初始化 AI 运行时...');
+      await initializeMacOsAiRuntime();
+    } else {
+      Global.logger.d('模型尚未下载，跳过 AI 运行时初始化');
+    }
+  } catch (e, st) {
+    Global.logger.e('自动初始化 AI 运行时失败', error: e, stackTrace: st);
+  }
 }
 
 /// 初始化 macOS AI 运行时（手动调用）
