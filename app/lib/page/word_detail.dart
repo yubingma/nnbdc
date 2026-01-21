@@ -231,6 +231,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
             cleaned = cleaned.replaceAll(RegExp(r'<\|imgr\|.*?\|(?:imgr\|)+'), ''); // 移除任何残留的完整标签
             cleaned = cleaned.replaceAll(RegExp(r'(?:imgr\|)+'), ''); // 移除孤立的重复 imgr|
             cleaned = cleaned.replaceAll('<|imgr|', '');
+            // 移除思考过程块：<think>...</think>
+            cleaned = cleaned.replaceAll(RegExp(r'<think>[\s\S]*?</think>', multiLine: true), '');
             
             // 移除 "assistant\n" 或 "assistant: " 这种多余的开头/残留
             cleaned = cleaned.replaceAll(RegExp(r'(assistant|user|system)\s*(:|\n)', caseSensitive: false), '');
