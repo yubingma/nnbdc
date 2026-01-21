@@ -115,12 +115,29 @@ class AiInferenceChannel: NSObject, FlutterPlugin {
         DispatchQueue.global(qos: .userInitiated).async {
             let startTime = Date()
             
-            // 调用 llama.cpp 推理
-            guard let response = bridge.inference(
-                prompt: prompt,
-                maxTokens: maxTokens,
-                temperature: temperature
-            ) else {
+            // 调用 llama.cpp 推理 - 添加崩溃保护
+            var response: String?
+            do {
+                NSLog("[AiInferenceChannel] 调用 LlamaCppBridge.inference")
+                response = bridge.inference(
+                    prompt: prompt,
+                    maxTokens: maxTokens,
+                    temperature: temperature
+                )
+                NSLog("[AiInferenceChannel] LlamaCppBridge.inference 返回")
+            } catch {
+                NSLog("[AiInferenceChannel] ❌ 推理过程异常: \(error)")
+                DispatchQueue.main.async {
+                    result(FlutterError(
+                        code: "INFERENCE_EXCEPTION",
+                        message: "Inference crashed: \(error)",
+                        details: nil
+                    ))
+                }
+                return
+            }
+            
+            guard let response = response else {
                 DispatchQueue.main.async {
                     result(FlutterError(
                         code: "INFERENCE_FAILED",

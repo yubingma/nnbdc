@@ -31,7 +31,7 @@ class LlamaCppBridge {
         modelParams.use_mlock = false
         
         // 加载模型
-        guard let loadedModel = llama_load_model_from_file(path, modelParams) else {
+        guard let loadedModel = llama_model_load_from_file(path, modelParams) else {
             NSLog("[LlamaCppBridge] ❌ 模型加载失败")
             return false
         }
@@ -39,7 +39,7 @@ class LlamaCppBridge {
         self.model = loadedModel
         
         // 创建上下文
-        guard let createdContext = llama_new_context_with_model(loadedModel, contextParams) else {
+        guard let createdContext = llama_init_from_model(loadedModel, contextParams) else {
             NSLog("[LlamaCppBridge] ❌ 上下文创建失败")
             llama_model_free(loadedModel)
             self.model = nil
@@ -61,15 +61,59 @@ class LlamaCppBridge {
         
         NSLog("[LlamaCppBridge] 开始推理，prompt 长度: \(prompt.count), maxTokens: \(maxTokens)")
         
+        // 防御性检查
+        guard maxTokens > 0 && maxTokens <= 2048 else {
+            NSLog("[LlamaCppBridge] ❌ maxTokens 超出范围: \(maxTokens)")
+            return nil
+        }
+        
+        guard !prompt.isEmpty && prompt.count <= 10000 else {
+            NSLog("[LlamaCppBridge] ❌ prompt 长度异常: \(prompt.count)")
+            return nil
+        }
+        
         // 1. Tokenize 输入
-        let promptCString = prompt.cString(using: .utf8)!
-        let nPromptTokens = -llama_tokenize(model, promptCString, Int32(promptCString.count), nil, 0, true, false)
+        guard let promptCString = prompt.cString(using: .utf8) else {
+            NSLog("[LlamaCppBridge] ❌ 无法转换 prompt 为 C 字符串")
+            return nil
+        }
+        
+        let vocab = llama_model_get_vocab(model)
+        NSLog("[LlamaCppBridge] Prompt C 字符串长度: \(promptCString.count)")
+        
+        // 第一次调用获取需要的 token 数量
+        let nPromptTokens = -llama_tokenize(
+            vocab,
+            promptCString,
+            Int32(promptCString.count - 1),  // 不包含 null terminator
+            nil,
+            0,
+            true,   // add_special: true
+            false   // parse_special: false
+        )
+        
+        guard nPromptTokens > 0 && nPromptTokens < 2048 else {
+            NSLog("[LlamaCppBridge] ❌ Token 数量异常: \(nPromptTokens)")
+            return nil
+        }
+        
+        NSLog("[LlamaCppBridge] 预计需要 \(nPromptTokens) tokens")
         
         var tokens = [llama_token](repeating: 0, count: Int(nPromptTokens))
-        let actualTokens = llama_tokenize(model, promptCString, Int32(promptCString.count), &tokens, Int32(nPromptTokens), true, false)
+        
+        // 第二次调用实际 tokenize
+        let actualTokens = llama_tokenize(
+            vocab,
+            promptCString,
+            Int32(promptCString.count - 1),
+            &tokens,
+            Int32(nPromptTokens),
+            true,
+            false
+        )
         
         guard actualTokens == nPromptTokens else {
-            NSLog("[LlamaCppBridge] ❌ Tokenization 失败")
+            NSLog("[LlamaCppBridge] ❌ Tokenization 失败，期望: \(nPromptTokens), 实际: \(actualTokens)")
             return nil
         }
         
@@ -78,33 +122,52 @@ class LlamaCppBridge {
         // 2. 准备批处理 - 使用简化的单token batch
         var batch = llama_batch_get_one(&tokens, Int32(tokens.count))
         
+        NSLog("[LlamaCppBridge] Batch 准备完成, n_tokens: \(batch.n_tokens)")
+        
         // 3. 解码输入 tokens
-        if llama_decode(context, batch) != 0 {
-            NSLog("[LlamaCppBridge] ❌ llama_decode 失败")
+        let decodeResult = llama_decode(context, batch)
+        if decodeResult != 0 {
+            NSLog("[LlamaCppBridge] ❌ llama_decode 失败，错误码: \(decodeResult)")
             return nil
         }
+        
+        NSLog("[LlamaCppBridge] 输入 tokens 解码成功")
         
         // 4. 生成输出 tokens
         var outputTokens = [llama_token]()
         var output = ""
         
-        for _ in 0..<maxTokens {
-            // 获取 logits
-            let logits = llama_get_logits_ith(context, batch.n_tokens - 1)
+        for i in 0..<maxTokens {
+            // 获取 logits - 使用最后一个 token 的位置
+            let logitPos = batch.n_tokens - 1
+            guard logitPos >= 0 else {
+                NSLog("[LlamaCppBridge] ❌ logit 位置异常: \(logitPos)")
+                break
+            }
+            
+            guard let logits = llama_get_logits_ith(context, logitPos) else {
+                NSLog("[LlamaCppBridge] ❌ 无法获取 logits, 位置: \(logitPos)")
+                break
+            }
             let nVocab = llama_vocab_n_tokens(llama_model_get_vocab(model))
+            
+            if i == 0 {
+                NSLog("[LlamaCppBridge] 开始生成，vocab 大小: \(nVocab)")
+            }
             
             // 简化采样：使用 greedy sampling
             var maxLogit: Float = -Float.infinity
             var newToken: llama_token = 0
             for i in 0..<nVocab {
-                if logits![Int(i)] > maxLogit {
-                    maxLogit = logits![Int(i)]
+                let logitValue = logits[Int(i)]
+                if logitValue > maxLogit {
+                    maxLogit = logitValue
                     newToken = i
                 }
             }
             
             // 检查是否结束
-            if newToken == llama_token_eos(model) {
+            if newToken == llama_vocab_eos(llama_model_get_vocab(model)) {
                 NSLog("[LlamaCppBridge] 遇到 EOS token，结束生成")
                 break
             }
@@ -123,8 +186,9 @@ class LlamaCppBridge {
             var singleToken = newToken
             batch = llama_batch_get_one(&singleToken, 1)
             
-            if llama_decode(context, batch) != 0 {
-                NSLog("[LlamaCppBridge] ❌ 解码生成的 token 失败")
+            let nextDecodeResult = llama_decode(context, batch)
+            if nextDecodeResult != 0 {
+                NSLog("[LlamaCppBridge] ❌ 解码生成的 token 失败，错误码: \(nextDecodeResult), 位置: \(i)")
                 break
             }
         }
