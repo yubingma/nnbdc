@@ -6,6 +6,7 @@ class AiInferenceChannel: NSObject, FlutterPlugin {
     private var modelPath: String?
     private var isModelLoaded = false
     private var llamaBridge: LlamaCppBridge?
+    private var channel: FlutterMethodChannel?
     
     static func register(with registrar: FlutterPluginRegistrar) {
         let channel = FlutterMethodChannel(
@@ -13,6 +14,7 @@ class AiInferenceChannel: NSObject, FlutterPlugin {
             binaryMessenger: registrar.messenger
         )
         let instance = AiInferenceChannel()
+        instance.channel = channel
         registrar.addMethodCallDelegate(instance, channel: channel)
     }
     
@@ -122,7 +124,15 @@ class AiInferenceChannel: NSObject, FlutterPlugin {
                 response = bridge.inference(
                     prompt: prompt,
                     maxTokens: maxTokens,
-                    temperature: temperature
+                    temperature: temperature,
+                    onPartial: { [weak self] delta in
+                        guard let self = self, let channel = self.channel else { return }
+                        DispatchQueue.main.async {
+                            channel.invokeMethod("onPartialResult", arguments: [
+                                "text": delta
+                            ])
+                        }
+                    }
                 )
                 NSLog("[AiInferenceChannel] LlamaCppBridge.inference 返回")
             } catch {

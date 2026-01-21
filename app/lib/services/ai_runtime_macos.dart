@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:nnbdc/global.dart';
@@ -10,8 +11,33 @@ class MacOsAiRuntime implements AiRuntime {
   final String modelPath;
   AiCapabilityLevel _capability = AiCapabilityLevel.none;
   bool _isModelLoaded = false;
+  final StreamController<String> _partialController = StreamController<String>.broadcast();
 
-  MacOsAiRuntime({required this.modelPath});
+  Stream<String> get partialStream => _partialController.stream;
+
+  MacOsAiRuntime({required this.modelPath}) {
+    // 监听原生侧的增量输出回调，用于流式展示 AI 思考/回答过程
+    _channel.setMethodCallHandler((call) async {
+      if (call.method == 'onPartialResult') {
+        try {
+          final args = call.arguments;
+          String delta;
+          if (args is Map) {
+            delta = (args['text'] ?? '').toString();
+          } else {
+            delta = args?.toString() ?? '';
+          }
+          if (delta.isNotEmpty) {
+            Global.logger.d('[MacOsAiRuntime] partial: $delta');
+            _partialController.add(delta);
+          }
+        } catch (e) {
+          Global.logger.w('[MacOsAiRuntime] 处理部分结果失败: $e');
+        }
+      }
+      return null;
+    });
+  }
 
   @override
   AiCapabilityLevel get capabilityLevel => _capability;

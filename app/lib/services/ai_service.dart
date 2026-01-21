@@ -93,6 +93,8 @@ class AiService {
 
   AiRuntime _runtime = NoopAiRuntime();
 
+  AiRuntime get runtime => _runtime;
+
   AiCapabilityLevel get capabilityLevel => _runtime.capabilityLevel;
 
   /// 由平台启动代码或模型管理器在合适的时机注入具体运行时

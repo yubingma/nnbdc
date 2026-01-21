@@ -16,7 +16,6 @@ class Config {
       "linuxUrl": "https://www.nnbdc.com/app/nnbdc-linux.AppImage",
       "aiModelUrl": "https://www.nnbdc.com/ai-model/meta.json",
       "wordImageBaseUrl": 'https://www.nnbdc.com/img/word/',
-      "showAiThought": false
     },
     "dev": {
       "service_url": "http://192.168.43.92:5200",
@@ -29,7 +28,6 @@ class Config {
       "linuxUrl": "http://192.168.43.92:80/app/nnbdc-linux.AppImage",
       "aiModelUrl": "https://www.nnbdc.com/ai-model/meta.json",
       "wordImageBaseUrl": 'http://192.168.43.92:80/img/word/',
-      "showAiThought": true
     },
     "dev_web": {
       "service_url": "http://localhost:5200",
@@ -42,7 +40,6 @@ class Config {
       "linuxUrl": "http://localhost:80/app/nnbdc-linux.AppImage",
       "aiModelUrl": "https://www.nnbdc.com/ai-model/meta.json",
       "wordImageBaseUrl": 'http://localhost:80/img/word/',
-      "showAiThought": true
     }
   };
 
@@ -58,7 +55,6 @@ class Config {
   static final String linuxUrl = profile["linuxUrl"];
   static final String aiModelUrl = profile["aiModelUrl"];
   static final String wordImageBaseUrl = profile["wordImageBaseUrl"];
-  static final bool showAiThought = profile["showAiThought"] ?? false;
 
   // Configuration for ThrottledDbSyncService
   static const Duration dbSyncThrottleInterval = Duration(seconds: 60);

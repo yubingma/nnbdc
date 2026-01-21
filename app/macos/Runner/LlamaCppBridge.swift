@@ -53,7 +53,7 @@ class LlamaCppBridge {
     }
     
     /// 执行推理
-    func inference(prompt: String, maxTokens: Int, temperature: Double) -> String? {
+    func inference(prompt: String, maxTokens: Int, temperature: Double, onPartial: ((String) -> Void)? = nil) -> String? {
         guard let model = model, let context = context else {
             NSLog("[LlamaCppBridge] ❌ 模型或上下文未初始化")
             return nil
@@ -214,6 +214,9 @@ class LlamaCppBridge {
                     // 解码成功：追加到输出，并清空字节缓存
                     output += piece
                     pendingBytes.removeAll(keepingCapacity: true)
+
+                    // 将增量内容通过回调向上层推送，支持流式输出
+                    onPartial?(piece)
 
                     // 检查字符串级别的停止词（支持中间出现）
                     for stopWord in stopWords {

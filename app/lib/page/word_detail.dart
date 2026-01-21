@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -13,6 +14,7 @@ import 'package:nnbdc/util/toast_util.dart';
 import 'package:provider/provider.dart';
 import 'package:nnbdc/config.dart';
 import 'package:nnbdc/services/ai_service.dart';
+import 'package:nnbdc/services/ai_runtime_macos.dart';
 
 import '../global.dart';
 import '../state.dart';
@@ -65,6 +67,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
   String? _aiThought;
   bool _aiLoading = false;
   String? _aiError;
+  String _aiRawAccum = '';
+  StreamSubscription<String>? _aiPartialSub;
 
   // Animation controllers
   late final AnimationController _wordSoundController;
@@ -186,6 +190,35 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     _prefetchAiExplanation();
   }
 
+  String _cleanAiText(String rawText) {
+    String cleaned = rawText;
+
+    // 直接由程序生成图片 URL，不再依赖 AI 输出标签
+    _aiImageUrl = '${Config.wordImageBaseUrl}${args.word.spell}';
+
+    // 进一步清理 AI 输出：移除所有特殊 token 和残留的标签
+    cleaned = cleaned.replaceAll(RegExp(r'<\|im_start\|>.*?(\n|$)'), '');
+    cleaned = cleaned.replaceAll(RegExp(r'<\|im_end\|>.*?(\n|$)'), '');
+    cleaned = cleaned.replaceAll(RegExp(r'<\|imgr\|.*?\|(?:imgr\|)+'), ''); // 移除任何残留的完整标签
+    cleaned = cleaned.replaceAll(RegExp(r'(?:imgr\|)+'), ''); // 移除孤立的重复 imgr|
+    cleaned = cleaned.replaceAll('<|imgr|', '');
+
+    // 移除 "assistant\n" 或 "assistant: " 这种多余的开头/残留
+    cleaned = cleaned.replaceAll(RegExp(r'(assistant|user|system)\s*(:|\n)', caseSensitive: false), '');
+
+    // 移除旧 prompt 残留（system/user 指令内容）
+    cleaned = cleaned.replaceAll(RegExp(r'你是一个简洁的英语老师.*?解释：', dotAll: true), '');
+    cleaned = cleaned.replaceAll(RegExp(r'解释单词:.*?词汇数据:.*?\n', dotAll: true), '');
+    cleaned = cleaned.replaceAll(RegExp(r'You are a helpful.*?Chinese learners\.', dotAll: true), '');
+    cleaned = cleaned.replaceAll(RegExp(r'You explain words.*?Chinese\.', dotAll: true), '');
+
+    // 移除开头和结尾的空白及多余空行
+    cleaned = cleaned.trim();
+    cleaned = cleaned.replaceAll(RegExp(r'\n{3,}'), '\n\n'); // 压缩连续空行
+
+    return cleaned;
+  }
+
   Future<void> _prefetchAiExplanation() async {
     setState(() {
       _aiLoading = true;
@@ -194,6 +227,20 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     
     try {
       final service = AiService();
+      final runtime = service.runtime;
+      // 如果是 macOS 本地运行时，订阅流式部分输出，用于实时显示思考/回答过程
+      if (runtime is MacOsAiRuntime) {
+        await _aiPartialSub?.cancel();
+        _aiRawAccum = '';
+        _aiPartialSub = runtime.partialStream.listen((delta) {
+          if (!mounted) return;
+          _aiRawAccum += delta;
+          setState(() {
+            _aiExplanation = _cleanAiText(_aiRawAccum);
+          });
+        });
+      }
+
       // 为小模型提供更多上下文：把本地词典释义传给 Prompt 构建器
       final mergedMeaningItems = args.word.getMergedMeaningItems();
       final meaningPayload = mergedMeaningItems
@@ -218,36 +265,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
         Global.logger.d('AI explainWord: ${response.text}');
         if (mounted) {
           setState(() {
-            // 解析 AI 输出
-            String rawText = response.text ?? '';
-            String cleaned = rawText;
-            
-            // 直接由程序生成图片 URL，不再依赖 AI 输出标签
-            _aiImageUrl = '${Config.wordImageBaseUrl}${args.word.spell}';
-            
-            // 进一步清理 AI 输出：移除所有特殊 token 和残留的标签
-            cleaned = cleaned.replaceAll(RegExp(r'<\|im_start\|>.*?(\n|$)'), '');
-            cleaned = cleaned.replaceAll(RegExp(r'<\|im_end\|>.*?(\n|$)'), '');
-            cleaned = cleaned.replaceAll(RegExp(r'<\|imgr\|.*?\|(?:imgr\|)+'), ''); // 移除任何残留的完整标签
-            cleaned = cleaned.replaceAll(RegExp(r'(?:imgr\|)+'), ''); // 移除孤立的重复 imgr|
-            cleaned = cleaned.replaceAll('<|imgr|', '');
-            // 移除思考过程块：<think>...</think>
-            cleaned = cleaned.replaceAll(RegExp(r'<think>[\s\S]*?</think>', multiLine: true), '');
-            
-            // 移除 "assistant\n" 或 "assistant: " 这种多余的开头/残留
-            cleaned = cleaned.replaceAll(RegExp(r'(assistant|user|system)\s*(:|\n)', caseSensitive: false), '');
-            
-            // 移除 prompt 残留（system/user 指令内容）
-            cleaned = cleaned.replaceAll(RegExp(r'你是一个简洁的英语老师.*?解释：', dotAll: true), '');
-            cleaned = cleaned.replaceAll(RegExp(r'解释单词:.*?词汇数据:.*?\n', dotAll: true), '');
-            cleaned = cleaned.replaceAll(RegExp(r'You are a helpful.*?Chinese learners\.', dotAll: true), '');
-            cleaned = cleaned.replaceAll(RegExp(r'You explain words.*?Chinese\.', dotAll: true), '');
-            
-            // 移除开头和结尾的空白及多余空行
-            cleaned = cleaned.trim();
-            cleaned = cleaned.replaceAll(RegExp(r'\n{3,}'), '\n\n'); // 压缩连续空行
-            
-            _aiExplanation = cleaned;
+            final rawText = response.text ?? '';
+            _aiExplanation = _cleanAiText(rawText);
             _aiLoading = false;
           });
         }
@@ -654,16 +673,16 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                               color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
                               fontStyle: FontStyle.italic,
                             ),
-                          )
-                        else if (_aiError != null)
+                          ),
+                        if (_aiError != null)
                           Text(
                             _aiError!,
                             style: TextStyle(
                               fontSize: 13,
                               color: Colors.red[400],
                             ),
-                          )
-                        else if (_aiExplanation != null)
+                          ),
+                        if (_aiExplanation != null)
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -691,8 +710,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                   color: isDarkMode ? Colors.grey[300] : Colors.grey[800],
                                 ),
                               ),
-                              // 只有在配置开启时才显示 thought
-                              if (_aiThought != null && Config.showAiThought)
+                              if (_aiThought != null)
                                 Padding(
                                   padding: const EdgeInsets.only(top: 12),
                                   child: Text(
