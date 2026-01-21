@@ -163,6 +163,7 @@ class LlamaCppBridge {
         var output = ""
         var lastTokens = [llama_token]()  // 用于检测重复
         let repeatCheckWindow = 5  // 重复检测窗口大小
+        var pendingBytes = Data()  // 累积 token 输出的字节，用于安全 UTF-8 解码
         
         // 定义停止词列表 - 包括常见的拼写错误
         let stopWords = ["<|im_end|>", "|im_end|", "<|im_start|>", "</im_end|>", "</assistant>", "<|end|>"]
@@ -201,14 +202,19 @@ class LlamaCppBridge {
                 }
             }
             
-            // Detokenize 当前 token
+            // Detokenize 当前 token：按字节累积，确保 UTF-8 不被截断
             var buffer = [CChar](repeating: 0, count: 256)
             let n = llama_token_to_piece(vocab, newToken, &buffer, Int32(buffer.count), 0, true)
             if n > 0 {
-                // 使用更安全的字符串转换
-                if let piece = String(data: Data(bytes: buffer, count: Int(n)), encoding: .utf8) {
+                // 将本次 token 的字节追加到 pendingBytes
+                pendingBytes.append(Data(bytes: buffer, count: Int(n)))
+
+                // 尝试把累计的字节整体解码为 UTF-8
+                if let piece = String(data: pendingBytes, encoding: .utf8) {
+                    // 解码成功：追加到输出，并清空字节缓存
                     output += piece
-                    
+                    pendingBytes.removeAll(keepingCapacity: true)
+
                     // 检查字符串级别的停止词（支持中间出现）
                     for stopWord in stopWords {
                         if let range = output.range(of: stopWord, options: .backwards) {
@@ -224,9 +230,9 @@ class LlamaCppBridge {
                             }
                         }
                     }
-                    
+
                     // 已移除“思考模式”提前终止逻辑，以便生成更完整的自然回答
-                    
+
                     // 检测病态重复模式（如连续多个 ``` 标记）
                     let suffix = String(output.suffix(100))
                     let backtickCount = suffix.components(separatedBy: "```").count - 1
@@ -239,8 +245,11 @@ class LlamaCppBridge {
                         break
                     }
                 } else {
-                    NSLog("[LlamaCppBridge] ⚠️ 无法解码 token \(newToken)")
+                    // 累计字节暂时无法组成合法 UTF-8，继续等待下一个 token
+                    // 不记录为错误，避免刷屏
                 }
+            } else {
+                NSLog("[LlamaCppBridge] ⚠️ llama_token_to_piece 返回长度 \(n)，无法解码 token \(newToken)")
             }
             
             // 准备下一次解码
