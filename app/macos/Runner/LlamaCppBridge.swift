@@ -180,8 +180,12 @@ class LlamaCppBridge {
             var buffer = [CChar](repeating: 0, count: 256)
             let n = llama_token_to_piece(vocab, newToken, &buffer, Int32(buffer.count), 0, false)
             if n > 0 {
-                let piece = String(cString: buffer)
-                output += piece
+                // 使用更安全的字符串转换
+                if let piece = String(data: Data(bytes: buffer, count: Int(n)), encoding: .utf8) {
+                    output += piece
+                } else {
+                    NSLog("[LlamaCppBridge] ⚠️ 无法解码 token \(newToken)")
+                }
             }
             
             // 准备下一次解码

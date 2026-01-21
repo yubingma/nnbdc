@@ -35,75 +35,76 @@ User level: $userLevel
   }
 
   static String _buildExplainWordPrompt(Map<String, dynamic> payload) {
-    final buffer = StringBuffer();
-    buffer.write(_buildCommonHeader(payload));
-
     final spell = (payload['spell'] ?? '').toString();
     final phonetics = (payload['phonetics'] ?? 'unknown').toString();
     final partOfSpeech = (payload['partOfSpeech'] ?? 'unknown').toString();
 
-    buffer.writeln('[TASK]');
-    buffer.writeln('You need to explain an English word to a Chinese learner and help them remember it.');
+    final buffer = StringBuffer();
+    
+    // 使用 Qwen 模型的 chat 模板格式
+    buffer.writeln('<|im_start|>system');
+    buffer.writeln('You are a helpful English vocabulary tutor for Chinese learners.');
+    buffer.writeln('You explain words clearly and concisely in Chinese.');
+    buffer.writeln('<|im_end|>');
+    
+    buffer.writeln('<|im_start|>user');
+    buffer.writeln('Please explain the English word "$spell" to me.');
+    buffer.writeln();
+    buffer.writeln('Word information:');
+    buffer.writeln('- Spell: $spell');
+    buffer.writeln('- Phonetics: $phonetics');
+    buffer.writeln('- Part of speech: $partOfSpeech');
     buffer.writeln();
 
-    buffer.writeln('[WORD]');
-    buffer.writeln('Spell: $spell');
-    buffer.writeln('Phonetics: $phonetics');
-    buffer.writeln('Part of speech: $partOfSpeech');
-    buffer.writeln();
-
-    buffer.writeln('[DICTIONARY]');
     final meanings = payload['meanings'];
-    if (meanings is List) {
-      buffer.writeln('Meanings:');
+    if (meanings is List && meanings.isNotEmpty) {
+      buffer.writeln('Dictionary meanings:');
       for (final m in meanings) {
         if (m is Map<String, dynamic>) {
           final pos = (m['pos'] ?? '').toString();
           final cn = (m['cn'] ?? '').toString();
           final en = (m['en'] ?? '').toString();
-          buffer.writeln('- $pos $cn (EN: $en)');
+          buffer.writeln('- $pos: $cn (English: $en)');
         }
       }
       buffer.writeln();
     }
 
     final examples = payload['exampleSentences'];
-    if (examples is List) {
-      buffer.writeln('Example sentences:');
-      var idx = 1;
+    if (examples is List && examples.isNotEmpty) {
+      buffer.writeln('Example sentences from dictionary:');
       for (final e in examples) {
         if (e is Map<String, dynamic>) {
           final en = (e['en'] ?? '').toString();
           final cn = (e['cn'] ?? '').toString();
-          buffer.writeln('$idx. $en (CN: $cn)');
-          idx++;
+          buffer.writeln('- $en');
+          buffer.writeln('  (中文: $cn)');
         }
       }
       buffer.writeln();
     }
 
-    buffer.writeln('[REQUIREMENTS]');
-    buffer.writeln('- Use simple Chinese to explain the word meaning.');
-    buffer.writeln('- Focus on the most common everyday usage first.');
-    buffer.writeln('- Provide one short memory tip in Chinese (for example, a story or association).');
-    buffer.writeln('- Provide 2 simple English example sentences with Chinese translations.');
-    buffer.writeln('- Limit the whole answer to about 150-200 Chinese characters if possible.');
+    buffer.writeln('Please provide:');
+    buffer.writeln('1. A simple Chinese explanation (1-3 sentences) of the most common meaning');
+    buffer.writeln('2. A short memory tip in Chinese (a story or association)');
+    buffer.writeln('3. Two simple example sentences with Chinese translations');
     buffer.writeln();
-
-    buffer.writeln('[OUTPUT FORMAT]');
-    buffer.writeln('You MUST follow this exact format:');
+    buffer.writeln('Format your response exactly like this:');
     buffer.writeln();
-    buffer.writeln('[EXPLANATION]');
-    buffer.writeln('(简明中文解释，1~3句话)');
+    buffer.writeln('[解释]');
+    buffer.writeln('(用中文解释这个词)');
     buffer.writeln();
-    buffer.writeln('[MEMORY_TIP]');
-    buffer.writeln('(一个简短的联想记忆/小故事，用中文)');
+    buffer.writeln('[记忆技巧]');
+    buffer.writeln('(用中文写一个记忆小故事)');
     buffer.writeln();
-    buffer.writeln('[EXAMPLES]');
-    buffer.writeln('1. 英文例句1');
-    buffer.writeln('   中文翻译1');
-    buffer.writeln('2. 英文例句2');
-    buffer.writeln('   中文翻译2');
+    buffer.writeln('[例句]');
+    buffer.writeln('1. (English sentence 1)');
+    buffer.writeln('   (中文翻译1)');
+    buffer.writeln('2. (English sentence 2)');
+    buffer.writeln('   (中文翻译2)');
+    buffer.writeln('<|im_end|>');
+    
+    buffer.write('<|im_start|>assistant\n');
 
     return buffer.toString();
   }
