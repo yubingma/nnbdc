@@ -69,6 +69,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
   String? _aiError;
   String _aiRawAccum = '';
   StreamSubscription<String>? _aiPartialSub;
+  bool _aiThoughtExpanded = false; // 思考内容默认折叠
+  bool _aiThoughtComplete = false; // 思考内容是否生成完成
 
   // Animation controllers
   late final AnimationController _wordSoundController;
@@ -219,10 +221,46 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     return cleaned;
   }
 
+  /// 解析 AI 原始输出，分离 <think> 思考过程 和 最终答案
+  void _parseAiOutput(String raw) {
+    String? thought;
+    String? answer;
+    bool thoughtComplete = false;
+
+    final thinkStart = raw.indexOf('<think>');
+    if (thinkStart != -1) {
+      final thinkEnd = raw.indexOf('</think>', thinkStart);
+      if (thinkEnd != -1) {
+        // </think> 已生成，思考完成
+        thought = raw.substring(thinkStart + 7, thinkEnd).trim();
+        answer = raw.substring(thinkEnd + 8).trim();
+        thoughtComplete = true;
+      } else {
+        // </think> 还没生成，整段都是思考
+        thought = raw.substring(thinkStart + 7).trim();
+        answer = '';
+      }
+    } else {
+      // 没有 <think> 标签
+      answer = raw.trim();
+    }
+
+    setState(() {
+      _aiThought = thought;
+      _aiExplanation = _cleanAiText(answer ?? '');
+      _aiThoughtComplete = thoughtComplete;
+    });
+  }
+
   Future<void> _prefetchAiExplanation() async {
     setState(() {
       _aiLoading = true;
       _aiError = null;
+      _aiRawAccum = '';
+      _aiThought = null;
+      _aiExplanation = null;
+      _aiThoughtExpanded = false;
+      _aiThoughtComplete = false;
     });
     
     try {
@@ -235,9 +273,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
         _aiPartialSub = runtime.partialStream.listen((delta) {
           if (!mounted) return;
           _aiRawAccum += delta;
-          setState(() {
-            _aiExplanation = _cleanAiText(_aiRawAccum);
-          });
+          // 实时解析并更新 _aiThought 和 _aiExplanation
+          _parseAiOutput(_aiRawAccum);
         });
       }
 
@@ -261,12 +298,18 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
         },
       );
       final response = await service.runTask(request);
+      
+      // 取消订阅
+      await _aiPartialSub?.cancel();
+      _aiPartialSub = null;
+      
       if (response.success) {
         Global.logger.d('AI explainWord: ${response.text}');
         if (mounted) {
           setState(() {
             final rawText = response.text ?? '';
-            _aiExplanation = _cleanAiText(rawText);
+            // 最终再解析一次（确保完整）
+            _parseAiOutput(rawText);
             _aiLoading = false;
           });
         }
@@ -280,6 +323,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
         }
       }
     } catch (e, st) {
+      await _aiPartialSub?.cancel();
+      _aiPartialSub = null;
       Global.logger.e('AI explainWord exception', error: e, stackTrace: st);
       if (mounted) {
         setState(() {
@@ -682,7 +727,69 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                               color: Colors.red[400],
                             ),
                           ),
-                        if (_aiExplanation != null)
+                        // AI 思考过程（折叠显示，灰色）
+                        if (_aiThought != null && _aiThought!.isNotEmpty)
+                          Container(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            decoration: BoxDecoration(
+                              color: isDarkMode 
+                                  ? Colors.grey[900]!.withValues(alpha: 0.3) 
+                                  : Colors.grey[100]!.withValues(alpha: 0.8),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: isDarkMode 
+                                    ? Colors.grey[700]!.withValues(alpha: 0.5) 
+                                    : Colors.grey[300]!.withValues(alpha: 0.5),
+                                width: 0.5,
+                              ),
+                            ),
+                            child: Theme(
+                              data: Theme.of(context).copyWith(
+                                dividerColor: Colors.transparent,
+                              ),
+                              child: ExpansionTile(
+                                initiallyExpanded: _aiThoughtExpanded,
+                                onExpansionChanged: (expanded) {
+                                  setState(() {
+                                    _aiThoughtExpanded = expanded;
+                                  });
+                                },
+                                tilePadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                childrenPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                                title: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.psychology_outlined,
+                                      size: 14,
+                                      color: isDarkMode ? Colors.grey[500] : Colors.grey[600],
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      _aiThoughtComplete ? 'AI 思考过程（已完成）' : 'AI 正在思考...',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: isDarkMode ? Colors.grey[500] : Colors.grey[600],
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                children: [
+                                  Text(
+                                    _aiThought!,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      height: 1.5,
+                                      color: isDarkMode ? Colors.grey[500] : Colors.grey[600],
+                                      fontStyle: FontStyle.italic,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        // AI 最终解释
+                        if (_aiExplanation != null && _aiExplanation!.isNotEmpty)
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -710,18 +817,6 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                   color: isDarkMode ? Colors.grey[300] : Colors.grey[800],
                                 ),
                               ),
-                              if (_aiThought != null)
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 12),
-                                  child: Text(
-                                    'AI 思考过程: $_aiThought',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: isDarkMode ? Colors.grey[600] : Colors.grey[500],
-                                      fontStyle: FontStyle.italic,
-                                    ),
-                                  ),
-                                ),
                             ],
                           ),
                       ],
