@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:nnbdc/services/ai_model_manager.dart';
@@ -25,11 +26,31 @@ class _AiActivationPageState extends State<AiActivationPage> {
   double _downloadProgress = 0.0; // 下载进度 0.0 - 1.0
   int _downloadedBytes = 0;
   int _totalBytes = 0;
+  bool _isIntelMac = false; // 标记是否为 Intel Mac
 
   @override
   void initState() {
     super.initState();
+    _checkArchitecture();
     _checkAiStatus();
+  }
+  
+  /// 检查 Mac 架构
+  Future<void> _checkArchitecture() async {
+    if (!PlatformUtils.isMacOS) return;
+    
+    try {
+      final result = await Process.run('uname', ['-m']);
+      final arch = result.stdout.toString().trim();
+      setState(() {
+        _isIntelMac = arch != 'arm64';
+      });
+      if (_isIntelMac) {
+        Global.logger.i('检测到 Intel Mac，AI 功能暂不支持');
+      }
+    } catch (e) {
+      Global.logger.w('架构检测失败: $e');
+    }
   }
 
   /// 检查 AI 功能是否已激活
@@ -250,6 +271,51 @@ class _AiActivationPageState extends State<AiActivationPage> {
             
             const SizedBox(height: 24),
             
+            // Intel Mac 不支持提示
+            if (_isIntelMac)
+              Card(
+                color: Colors.orange.withValues(alpha: 0.1),
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: BorderSide(color: Colors.orange.withValues(alpha: 0.3)),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(Icons.info_outline, color: Colors.orange, size: 28),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '架构兼容性提示',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: textColor,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'AI 推理引擎目前仅支持 Apple Silicon (M1/M2/M3) Mac。\n\n检测到你的设备为 Intel Mac，暂时无法使用本地 AI 功能。',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: textColor.withValues(alpha: 0.8),
+                                height: 1.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            
             // 状态显示区域
             if (_isActivated)
               Card(
@@ -295,7 +361,7 @@ class _AiActivationPageState extends State<AiActivationPage> {
             else ...[
               // 激活按钮
               ElevatedButton.icon(
-                onPressed: _isLoading ? null : _activateAi,
+                onPressed: (_isLoading || _isIntelMac) ? null : _activateAi,
                 icon: _isLoading 
                   ? const SizedBox(
                       width: 20,
@@ -304,7 +370,9 @@ class _AiActivationPageState extends State<AiActivationPage> {
                     )
                   : const Icon(Icons.rocket_launch),
                 label: Text(
-                  _isLoading ? '正在激活...' : '立即激活',
+                  _isIntelMac 
+                    ? '设备不支持' 
+                    : (_isLoading ? '正在激活...' : '立即激活'),
                   style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 style: ElevatedButton.styleFrom(

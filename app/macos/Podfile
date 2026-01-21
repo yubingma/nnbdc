@@ -39,4 +39,50 @@ post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_macos_build_settings(target)
   end
+  
+  # 配置 llama.cpp 静态库链接
+  runner_target = installer.pods_project.targets.find { |t| t.name == 'Runner' }
+  if runner_target.nil?
+    runner_target = installer.aggregate_targets.find { |t| t.name.include?('Runner') }
+  end
+  
+  # 添加到 Runner target 的配置
+  installer.pods_project.native_targets.each do |target|
+    if target.name == 'Runner'
+      target.build_configurations.each do |config|
+        # 添加头文件搜索路径
+        config.build_settings['HEADER_SEARCH_PATHS'] ||= ['$(inherited)']
+        config.build_settings['HEADER_SEARCH_PATHS'] << '$(PROJECT_DIR)/Runner/LlamaCpp/include'
+        
+        # 添加库搜索路径
+        config.build_settings['LIBRARY_SEARCH_PATHS'] ||= ['$(inherited)']
+        config.build_settings['LIBRARY_SEARCH_PATHS'] << '$(PROJECT_DIR)/Runner/LlamaCpp'
+        
+        # 添加 Swift import paths
+        config.build_settings['SWIFT_INCLUDE_PATHS'] ||= ['$(inherited)']
+        config.build_settings['SWIFT_INCLUDE_PATHS'] << '$(PROJECT_DIR)/Runner/LlamaCpp/include'
+        
+        # 链接静态库
+        config.build_settings['OTHER_LDFLAGS'] ||= ['$(inherited)']
+        config.build_settings['OTHER_LDFLAGS'] << '-lllama'
+        config.build_settings['OTHER_LDFLAGS'] << '-lggml'
+        config.build_settings['OTHER_LDFLAGS'] << '-lggml-base'
+        config.build_settings['OTHER_LDFLAGS'] << '-lggml-cpu'
+        config.build_settings['OTHER_LDFLAGS'] << '-lggml-metal'
+        config.build_settings['OTHER_LDFLAGS'] << '-lggml-blas'
+        
+        # 添加 Bridging Header
+        config.build_settings['SWIFT_OBJC_BRIDGING_HEADER'] = '$(PROJECT_DIR)/Runner/LlamaCpp-Bridging-Header.h'
+        
+        # 添加系统框架
+        config.build_settings['OTHER_LDFLAGS'] << '-framework Accelerate'
+        config.build_settings['OTHER_LDFLAGS'] << '-framework Metal'
+        config.build_settings['OTHER_LDFLAGS'] << '-framework MetalKit'
+        
+        # 启用 C++ 支持
+        config.build_settings['CLANG_CXX_LANGUAGE_STANDARD'] = 'c++17'
+        config.build_settings['CLANG_CXX_LIBRARY'] = 'libc++'
+      end
+    end
+  end
 end

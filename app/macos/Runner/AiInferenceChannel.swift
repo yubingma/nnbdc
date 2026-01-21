@@ -5,6 +5,7 @@ class AiInferenceChannel: NSObject, FlutterPlugin {
     private static let channelName = "com.nnbdc.ai_inference"
     private var modelPath: String?
     private var isModelLoaded = false
+    private var llamaBridge: LlamaCppBridge?
     
     static func register(with registrar: FlutterPluginRegistrar) {
         let channel = FlutterMethodChannel(
@@ -52,17 +53,28 @@ class AiInferenceChannel: NSObject, FlutterPlugin {
             return
         }
         
-        // TODO: 实际加载 llama.cpp 模型
-        // 目前先占位实现
-        self.modelPath = modelPath
-        self.isModelLoaded = true
+        // 加载 llama.cpp 模型
+        let bridge = LlamaCppBridge()
+        let success = bridge.loadModel(path: modelPath)
         
-        NSLog("[AiInferenceChannel] Model loaded (placeholder): \(modelPath)")
-        result([
-            "success": true,
-            "modelPath": modelPath,
-            "message": "Model loaded successfully (placeholder implementation)"
-        ])
+        if success {
+            self.modelPath = modelPath
+            self.isModelLoaded = true
+            self.llamaBridge = bridge
+            
+            NSLog("[AiInferenceChannel] llama.cpp 模型加载成功: \(modelPath)")
+            result([
+                "success": true,
+                "modelPath": modelPath,
+                "message": "llama.cpp model loaded successfully"
+            ])
+        } else {
+            result(FlutterError(
+                code: "LOAD_FAILED",
+                message: "Failed to load llama.cpp model",
+                details: nil
+            ))
+        }
     }
     
     private func handleInference(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
@@ -85,48 +97,63 @@ class AiInferenceChannel: NSObject, FlutterPlugin {
             return
         }
         
+        guard let bridge = llamaBridge else {
+            result(FlutterError(
+                code: "BRIDGE_NOT_READY",
+                message: "llama.cpp bridge not initialized",
+                details: nil
+            ))
+            return
+        }
+        
         let maxTokens = args["maxTokens"] as? Int ?? 512
         let temperature = args["temperature"] as? Double ?? 0.7
         
-        NSLog("[AiInferenceChannel] Running inference with prompt length: \(prompt.count)")
+        NSLog("[AiInferenceChannel] 开始 llama.cpp 推理, prompt 长度: \(prompt.count)")
         
-        // TODO: 实际调用 llama.cpp 推理
-        // 目前返回占位响应
+        // 在后台线程执行推理
         DispatchQueue.global(qos: .userInitiated).async {
-            // 模拟推理延迟
-            Thread.sleep(forTimeInterval: 0.5)
+            let startTime = Date()
             
-            let mockResponse = """
-            [EXPLANATION]
-            这是一个测试响应（占位实现）。模型文件已加载，但 llama.cpp 推理引擎尚未完全集成。
+            // 调用 llama.cpp 推理
+            guard let response = bridge.inference(
+                prompt: prompt,
+                maxTokens: maxTokens,
+                temperature: temperature
+            ) else {
+                DispatchQueue.main.async {
+                    result(FlutterError(
+                        code: "INFERENCE_FAILED",
+                        message: "llama.cpp inference failed",
+                        details: nil
+                    ))
+                }
+                return
+            }
             
-            [MEMORY_TIP]
-            请等待 llama.cpp 完全集成后，将获得真实的 AI 生成内容。
+            let inferenceTime = Int(Date().timeIntervalSince(startTime) * 1000)
+            let tokenCount = response.split(separator: " ").count
             
-            [EXAMPLES]
-            1. This is a placeholder example.
-               这是一个占位示例。
-            2. Real AI responses coming soon!
-               真实的 AI 响应即将到来！
-            """
+            NSLog("[AiInferenceChannel] llama.cpp 推理完成: \(tokenCount) tokens, \(inferenceTime)ms")
             
             DispatchQueue.main.async {
                 result([
                     "success": true,
-                    "text": mockResponse,
-                    "tokensGenerated": 50,
-                    "inferenceTimeMs": 500
+                    "text": response,
+                    "tokensGenerated": tokenCount,
+                    "inferenceTimeMs": inferenceTime
                 ])
             }
         }
     }
     
     private func handleUnloadModel(result: @escaping FlutterResult) {
-        // TODO: 实际卸载模型
+        llamaBridge?.unloadModel()
+        llamaBridge = nil
         self.modelPath = nil
         self.isModelLoaded = false
         
-        NSLog("[AiInferenceChannel] Model unloaded")
+        NSLog("[AiInferenceChannel] llama.cpp 模型已卸载")
         result(["success": true])
     }
     

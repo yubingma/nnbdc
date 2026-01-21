@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/services/ai_service.dart';
@@ -14,10 +15,31 @@ class MacOsAiRuntime implements AiRuntime {
 
   @override
   AiCapabilityLevel get capabilityLevel => _capability;
+  
+  /// 检查是否为 Apple Silicon (ARM64)
+  static Future<bool> _isAppleSilicon() async {
+    try {
+      final result = await Process.run('uname', ['-m']);
+      final arch = result.stdout.toString().trim();
+      Global.logger.d('[MacOsAiRuntime] 检测到架构: $arch');
+      return arch == 'arm64';
+    } catch (e) {
+      Global.logger.w('[MacOsAiRuntime] 架构检测失败: $e');
+      return false;
+    }
+  }
 
-  /// 初始化运行时：检查能力 + 加载模型
+  /// 初始化运行时：检查架构 + 检查能力 + 加载模型
   Future<bool> initialize() async {
     try {
+      // 0. 检查架构兼容性
+      final isArm = await _isAppleSilicon();
+      if (!isArm) {
+        Global.logger.w('[MacOsAiRuntime] ⚠️ 当前设备为 Intel Mac，AI 功能暂不支持');
+        Global.logger.w('[MacOsAiRuntime] AI 推理引擎仅支持 Apple Silicon (M1/M2/M3) Mac');
+        _capability = AiCapabilityLevel.none;
+        return false;
+      }
       // 1. 检查设备能力
       final capResult = await _channel.invokeMethod('checkCapability');
       if (capResult is Map) {
