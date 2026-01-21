@@ -165,7 +165,7 @@ class LlamaCppBridge {
         let repeatCheckWindow = 5  // 重复检测窗口大小
         
         // 定义停止词列表 - 包括常见的拼写错误
-        let stopWords = ["<|im_end|>", "<|im_start|>", "</im_end|>", "</assistant>", "<|end|>"]
+        let stopWords = ["<|im_end|>", "|im_end|", "<|im_start|>", "</im_end|>", "</assistant>", "<|end|>"]
         
         for i in 0..<maxTokens {
             // 使用 llama.cpp 的 sampler 进行采样
