@@ -177,6 +177,73 @@ class _AiActivationPageState extends State<AiActivationPage> {
     }
   }
 
+  /// 反激活 AI 功能
+  Future<void> _deactivateAi() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        final isDarkMode = Provider.of<DarkMode>(context, listen: false).isDarkMode;
+        final backgroundColor = isDarkMode ? const Color(0xFF2D2D2D) : Colors.white;
+        final textColor = isDarkMode ? Colors.white : Colors.black87;
+        
+        return AlertDialog(
+          backgroundColor: backgroundColor,
+          title: Text('确认反激活', style: TextStyle(color: textColor)),
+          content: Text(
+            '这将卸载 AI 引擎并删除已下载的本地模型文件（约 500MB）。\n\n反激活后，你将无法在离线状态下使用 AI 智能解释功能。',
+            style: TextStyle(color: textColor),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('取消'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: const Text('确认反激活'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true) return;
+
+    setState(() {
+      _isLoading = true;
+      _currentStep = '正在反激活并清理模型...';
+    });
+
+    try {
+      // 1. 停止并卸载运行时
+      await main_app.deinitializeMacOsAiRuntime();
+      
+      // 2. 删除物理文件
+      await AiModelManager().clearModel();
+      
+      setState(() {
+        _isActivated = false;
+        _currentStep = '';
+      });
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('AI 功能已反激活，本地模型已清理')),
+        );
+      }
+    } catch (e, st) {
+      Global.logger.e('AI 反激活失败', error: e, stackTrace: st);
+      setState(() {
+        _errorMessage = '反激活失败: $e';
+      });
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
   /// 构建激活成功对话框
   Widget _buildSuccessDialog() {
     final isDarkMode = Provider.of<DarkMode>(context, listen: false).isDarkMode;
@@ -317,7 +384,7 @@ class _AiActivationPageState extends State<AiActivationPage> {
               ),
             
             // 状态显示区域
-            if (_isActivated)
+            if (_isActivated) ...[
               Card(
                 color: Colors.green.withValues(alpha: 0.1),
                 elevation: 0,
@@ -357,7 +424,21 @@ class _AiActivationPageState extends State<AiActivationPage> {
                     ],
                   ),
                 ),
-              )
+              ),
+              const SizedBox(height: 16),
+              // 反激活按钮
+              OutlinedButton.icon(
+                onPressed: _isLoading ? null : _deactivateAi,
+                icon: const Icon(Icons.delete_outline),
+                label: const Text('从本地彻底卸载 AI 功能'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.red,
+                  side: const BorderSide(color: Colors.red),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ]
             else ...[
               // 激活按钮
               ElevatedButton.icon(

@@ -11,6 +11,7 @@ import 'package:nnbdc/util/sound.dart';
 import 'package:nnbdc/util/error_handler.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:provider/provider.dart';
+import 'package:nnbdc/config.dart';
 import 'package:nnbdc/services/ai_service.dart';
 
 import '../global.dart';
@@ -57,6 +58,13 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
   var sentenceEnglishController = TextEditingController();
   var sentenceChineseController = TextEditingController();
   var isEditMode = false;
+  
+  // AI 解释相关
+  String? _aiExplanation;
+  String? _aiImageUrl;
+  String? _aiThought;
+  bool _aiLoading = false;
+  String? _aiError;
 
   // Animation controllers
   late final AnimationController _wordSoundController;
@@ -179,6 +187,11 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
   }
 
   Future<void> _prefetchAiExplanation() async {
+    setState(() {
+      _aiLoading = true;
+      _aiError = null;
+    });
+    
     try {
       final service = AiService();
       final request = AiRequest(
@@ -190,11 +203,71 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
       final response = await service.runTask(request);
       if (response.success) {
         Global.logger.d('AI explainWord: ${response.text}');
+        if (mounted) {
+          setState(() {
+            // 解析 AI 输出
+            String rawText = response.text ?? '';
+            
+            // 提取图片标签
+            final imgrRegex = RegExp(r'<\|im_start\|imgr\|url\|([^|]+)\|imgr\|imgr\|imgr\|imgr\|imgr\|');
+            final match = imgrRegex.firstMatch(rawText);
+            
+            String cleaned = rawText;
+            if (match != null) {
+              _aiImageUrl = match.group(1);
+              // 划分思考过程和实际解释
+              final parts = rawText.split(match.group(0)!);
+              if (parts.length >= 2) {
+                _aiThought = parts[0].trim();
+                cleaned = parts[1].trim();
+              } else {
+                cleaned = rawText.replaceFirst(match.group(0)!, '').trim();
+              }
+            }
+            
+            // 进一步清理 AI 输出：移除特殊 token
+            cleaned = cleaned.replaceAll(RegExp(r'<\|im_start\|>[^<]*'), '');
+            cleaned = cleaned.replaceAll(RegExp(r'<\|im_end\|>'), '');
+            
+            // 移除 "assistant\n" 这种多余的开头
+            if (cleaned.startsWith('assistant')) {
+              cleaned = cleaned.replaceFirst('assistant', '').trim();
+            }
+            
+            // 移除 prompt 残留（system 指令）
+            cleaned = cleaned.replaceAll(RegExp(r'You are a helpful.*?Chinese learners\.', dotAll: true), '');
+            cleaned = cleaned.replaceAll(RegExp(r'You explain words.*?Chinese\.', dotAll: true), '');
+            
+            // 如果 thought 也有残留，清理一下
+            if (_aiThought != null) {
+              _aiThought = _aiThought!.replaceAll('assistant', '').trim();
+              if (_aiThought!.isEmpty) _aiThought = null;
+            }
+            
+            // 移除开头和结尾的空白
+            cleaned = cleaned.trim();
+            
+            _aiExplanation = cleaned;
+            _aiLoading = false;
+          });
+        }
       } else {
         Global.logger.w('AI explainWord error: ${response.errorMessage}');
+        if (mounted) {
+          setState(() {
+            _aiError = response.errorMessage ?? 'AI 解释失败';
+            _aiLoading = false;
+          });
+        }
       }
     } catch (e, st) {
       Global.logger.e('AI explainWord exception', error: e, stackTrace: st);
+      if (mounted) {
+        setState(() {
+          _aiError = 'AI 解释失败: $e';
+          _aiLoading = false;
+        });
+      }
     }
   }
 
@@ -505,6 +578,138 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // AI 智能解释
+                if (_aiLoading || _aiExplanation != null || _aiError != null)
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: isDarkMode
+                            ? [
+                                const Color(0xFF2D1B69).withValues(alpha: 0.4),
+                                const Color(0xFF1E1E2D).withValues(alpha: 0.95),
+                              ]
+                            : [
+                                const Color(0xFFF0F4FF).withValues(alpha: 0.95),
+                                const Color(0xFFFAFAFA).withValues(alpha: 0.95),
+                              ],
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isDarkMode 
+                            ? Colors.purple[700]!.withValues(alpha: 0.3) 
+                            : Colors.purple[200]!.withValues(alpha: 0.5),
+                        width: 1,
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: Colors.purple[100]?.withValues(alpha: 0.3),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Icon(
+                                Icons.auto_awesome,
+                                size: 16,
+                                color: Colors.purple[400],
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'AI 智能解释',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 0.5,
+                                fontFamily: 'NotoSansSC',
+                                color: isDarkMode ? Colors.purple[300] : Colors.purple[700],
+                              ),
+                            ),
+                            const Spacer(),
+                            if (_aiLoading)
+                              SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.purple[400]!),
+                                ),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        if (_aiLoading)
+                          Text(
+                            '正在生成 AI 解释...',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                              fontStyle: FontStyle.italic,
+                            ),
+                          )
+                        else if (_aiError != null)
+                          Text(
+                            _aiError!,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.red[400],
+                            ),
+                          )
+                        else if (_aiExplanation != null)
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // 如果有图片 URL，优先展示图片（注意这里可能需要加后缀，如 .png）
+                              if (_aiImageUrl != null)
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 12),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Image.network(
+                                      _aiImageUrl!.endsWith('.png') || _aiImageUrl!.endsWith('.jpg') 
+                                          ? _aiImageUrl! 
+                                          : '$_aiImageUrl.png',
+                                      fit: BoxFit.cover,
+                                      width: double.infinity,
+                                      errorBuilder: (context, error, stackTrace) => Container(), // 图片加载失败则不显示
+                                    ),
+                                  ),
+                                ),
+                              Text(
+                                _aiExplanation!,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  height: 1.6,
+                                  color: isDarkMode ? Colors.grey[300] : Colors.grey[800],
+                                ),
+                              ),
+                              // 只有在配置开启时才显示 thought
+                              if (_aiThought != null && Config.showAiThought)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 12),
+                                  child: Text(
+                                    'AI 思考过程: $_aiThought',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: isDarkMode ? Colors.grey[600] : Colors.grey[500],
+                                      fontStyle: FontStyle.italic,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                      ],
+                    ),
+                  ),
+                
                 // 单词讲解
                 if (args.word.shortDesc != null && args.word.shortDesc!.isNotEmpty)
                   Container(

@@ -1,3 +1,4 @@
+import 'package:nnbdc/config.dart';
 import 'package:nnbdc/services/ai_service.dart';
 
 /// 统一的 Prompt 构建器，方案 A：在 Dart 侧一次性拼好完整 prompt
@@ -84,10 +85,14 @@ User level: $userLevel
       buffer.writeln();
     }
 
-    buffer.writeln('Please explain this word in Chinese:');
-    buffer.writeln('1. 用中文简单解释词义 (1-2句话)');
-    buffer.writeln('2. 用中文写一个记忆小技巧');
-    buffer.writeln('3. 给2个英文例句并翻译成中文');
+    buffer.writeln('Please explain this English word in Chinese:');
+    buffer.writeln();
+    buffer.writeln('- 首先，请务必输出一个图片标签，格式为：<|im_start|imgr|url|${Config.wordImageBaseUrl}$spell|imgr|imgr|imgr|imgr|imgr|');
+    buffer.writeln('- 然后，简单解释词义（1-2句话）');
+    buffer.writeln('- 提供一个记忆小技巧');
+    buffer.writeln('- 给2个英文例句并翻译成中文');
+    buffer.writeln();
+    buffer.writeln('请直接输出内容，不要包含编号或标题。你的回复应以图片标签开头。');
     buffer.writeln('<|im_end|>');
     
     buffer.write('<|im_start|>assistant\n');

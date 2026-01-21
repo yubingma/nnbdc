@@ -111,7 +111,7 @@ class AiModelManager {
   String get _metaUrl {
     // 生产环境：使用服务器配置的 URL
     Global.logger.d('使用服务器模型元数据: ${Config.aiModelUrl}');
-    return Config.aiModelUrl;
+    return '${Config.aiModelUrl}?t=${DateTime.now().millisecondsSinceEpoch}';
   }
 
   Future<Map<AiModelProfile, AiModelMeta>> fetchRemoteMeta() async {
@@ -183,6 +183,30 @@ class AiModelManager {
       _cachedState = state;
     } catch (e, st) {
       Global.logger.e('保存本地 AI 模型状态失败', error: e, stackTrace: st);
+    }
+  }
+
+  /// 删除本地模型文件并重置状态
+  Future<void> clearModel() async {
+    try {
+      final state = await loadLocalState();
+      if (state != null && state.localPath.isNotEmpty) {
+        final file = File(state.localPath);
+        if (file.existsSync()) {
+          await file.delete();
+          Global.logger.i('模型文件已删除: ${state.localPath}');
+        }
+      }
+      
+      final stateFile = await _getStateFile();
+      if (stateFile.existsSync()) {
+        await stateFile.delete();
+        Global.logger.i('模型状态文件已删除');
+      }
+      
+      _cachedState = null;
+    } catch (e, st) {
+      Global.logger.e('删除本地 AI 模型失败', error: e, stackTrace: st);
     }
   }
 

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
@@ -202,6 +203,37 @@ Future<bool> initializeMacOsAiRuntime() async {
   } catch (e, st) {
     Global.logger.e('macOS AI 运行时初始化异常', error: e, stackTrace: st);
     return false;
+  }
+}
+
+/// 反激活 macOS AI 运行时（手动调用）
+Future<void> deinitializeMacOsAiRuntime() async {
+  try {
+    Global.logger.i('开始反激活 macOS AI 运行时...');
+    
+    // 1. 如果当前已经是某个运行时，调用它的 dispose
+    // 这里我们直接从 AiService 获取
+    final aiService = AiService();
+    // 强制转换为 MacOsAiRuntime (如果可能)
+    // 实际上 AiService 没有直接暴露 runtime 的类型，但我们可以检查能力
+    if (aiService.capabilityLevel != AiCapabilityLevel.none) {
+      // 在这里我们可以选择性的重置 runtime
+      // 为了安全，我们先通知原生层卸载模型，如果能够访问到具体实例
+      // 这里的实现简单起见，我们直接设置一个新的 NoopRuntime
+      // 而具体的清理动作在 AiModelManager.clearModel 中也会做物理删除
+      // 但为了内存释放，最好能叫一下原生 unload
+      
+      // 注意：目前 AiService 中 _runtime 是私有的且没有暴露具体实例
+      // 我们在 main.dart 可以保存一个引用，或者直接通过 MethodChannel 发送卸载命令
+      const MethodChannel('com.nnbdc.ai_inference').invokeMethod('unloadModel');
+    }
+    
+    // 2. 重置为 NoopRuntime
+    aiService.setRuntime(NoopAiRuntime());
+    
+    Global.logger.i('macOS AI 运行时已卸载并重置');
+  } catch (e, st) {
+    Global.logger.e('macOS AI 运行时反激活异常', error: e, stackTrace: st);
   }
 }
 
