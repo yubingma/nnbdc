@@ -220,7 +220,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     return cleaned;
   }
 
-  /// 解析 AI 原始输出，分离 <think> 思考过程 和 最终答案
+  /// 解析 AI 原始输出，分离思考过程 和 最终答案
   void _parseAiOutput(String raw) {
     String? thought;
     String? answer;
@@ -579,6 +579,16 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                           const Tab(text: '详情'),
                           if (hasSimilarWords()) Tab(text: '形近词(${args.word.similarWords!.length})'),
                           if (hasSynonyms()) Tab(text: "近义词(${calcSynonymCount()})"),
+                          const Tab(
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.auto_awesome, size: 14),
+                                SizedBox(width: 4),
+                                Text('AI 解释'),
+                              ],
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -586,7 +596,12 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                       child: TabBarView(
                         physics: const BouncingScrollPhysics(),
                         dragStartBehavior: DragStartBehavior.down,
-                        children: [renderDetail(), if (hasSimilarWords()) renderSimilarWords(), if (hasSynonyms()) renderSynonyms()],
+                        children: [
+                          renderDetail(), 
+                          if (hasSimilarWords()) renderSimilarWords(), 
+                          if (hasSynonyms()) renderSynonyms(),
+                          renderAiExplanation(),
+                        ],
                       ),
                     ),
                   ],
@@ -617,6 +632,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     if (hasSynonyms()) {
       count++;
     }
+    // AI 解释 Tab 始终存在
+    count++;
     return count;
   }
 
@@ -638,6 +655,217 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     return calcSynonymCount() > 0;
   }
 
+  ListView renderAiExplanation() {
+    final isDarkMode = context.watch<DarkMode>().isDarkMode;
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+      children: [
+        // AI 智能解释
+        if (_aiLoading || _aiExplanation != null || _aiError != null)
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: isDarkMode
+                    ? [
+                        const Color(0xFF2D1B69).withValues(alpha: 0.4),
+                        const Color(0xFF1E1E2D).withValues(alpha: 0.95),
+                      ]
+                    : [
+                        const Color(0xFFF0F4FF).withValues(alpha: 0.95),
+                        const Color(0xFFFAFAFA).withValues(alpha: 0.95),
+                      ],
+              ),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isDarkMode 
+                    ? Colors.purple[700]!.withValues(alpha: 0.3) 
+                    : Colors.purple[200]!.withValues(alpha: 0.5),
+                width: 1,
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.purple[100]?.withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        Icons.auto_awesome,
+                        size: 16,
+                        color: Colors.purple[400],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'AI 智能解释',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.5,
+                        fontFamily: 'NotoSansSC',
+                        color: isDarkMode ? Colors.purple[300] : Colors.purple[700],
+                      ),
+                    ),
+                    const Spacer(),
+                    if (_aiLoading)
+                      SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.purple[400]!),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                if (_aiLoading)
+                  Text(
+                    '正在生成 AI 解释...',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                if (_aiError != null)
+                  Text(
+                    _aiError!,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.red[400],
+                    ),
+                  ),
+                // AI 思考过程（思考中才显示，完成后隐藏）
+                if (_aiThought != null && _aiThought!.isNotEmpty && !_aiThoughtComplete)
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    decoration: BoxDecoration(
+                      color: isDarkMode 
+                          ? Colors.grey[900]!.withValues(alpha: 0.3) 
+                          : Colors.grey[100]!.withValues(alpha: 0.8),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: isDarkMode 
+                            ? Colors.grey[700]!.withValues(alpha: 0.5) 
+                            : Colors.grey[300]!.withValues(alpha: 0.5),
+                        width: 0.5,
+                      ),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              SizedBox(
+                                width: 14,
+                                height: 14,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    isDarkMode ? Colors.grey[500]! : Colors.grey[600]!
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'AI 正在思考...',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: isDarkMode ? Colors.grey[500] : Colors.grey[600],
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            _aiThought!,
+                            style: TextStyle(
+                              fontSize: 12,
+                              height: 1.5,
+                              color: isDarkMode ? Colors.grey[500] : Colors.grey[600],
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                // AI 最终解释
+                if (_aiExplanation != null && _aiExplanation!.isNotEmpty)
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // 如果有图片 URL，优先展示图片（注意这里可能需要加后缀，如 .png）
+                      if (_aiImageUrl != null)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.network(
+                              _aiImageUrl!.endsWith('.png') || _aiImageUrl!.endsWith('.jpg') 
+                                  ? _aiImageUrl! 
+                                  : '$_aiImageUrl.png',
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                              errorBuilder: (context, error, stackTrace) => Container(), // 图片加载失败则不显示
+                            ),
+                          ),
+                        ),
+                      Text(
+                        _aiExplanation!,
+                        style: TextStyle(
+                          fontSize: 14,
+                          height: 1.6,
+                          color: isDarkMode ? Colors.grey[300] : Colors.grey[800],
+                        ),
+                      ),
+                    ],
+                  ),
+              ],
+            ),
+          )
+        else
+          // 没有内容时显示空状态
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.all(48),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.auto_awesome_outlined,
+                    size: 64,
+                    color: Colors.grey[400],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'AI 解释加载中...',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey[600],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
   ListView renderDetail() {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
     return ListView(
@@ -648,184 +876,6 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // AI 智能解释
-                if (_aiLoading || _aiExplanation != null || _aiError != null)
-                  Container(
-                    margin: const EdgeInsets.only(bottom: 16),
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: isDarkMode
-                            ? [
-                                const Color(0xFF2D1B69).withValues(alpha: 0.4),
-                                const Color(0xFF1E1E2D).withValues(alpha: 0.95),
-                              ]
-                            : [
-                                const Color(0xFFF0F4FF).withValues(alpha: 0.95),
-                                const Color(0xFFFAFAFA).withValues(alpha: 0.95),
-                              ],
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: isDarkMode 
-                            ? Colors.purple[700]!.withValues(alpha: 0.3) 
-                            : Colors.purple[200]!.withValues(alpha: 0.5),
-                        width: 1,
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(6),
-                              decoration: BoxDecoration(
-                                color: Colors.purple[100]?.withValues(alpha: 0.3),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Icon(
-                                Icons.auto_awesome,
-                                size: 16,
-                                color: Colors.purple[400],
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'AI 智能解释',
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                                letterSpacing: 0.5,
-                                fontFamily: 'NotoSansSC',
-                                color: isDarkMode ? Colors.purple[300] : Colors.purple[700],
-                              ),
-                            ),
-                            const Spacer(),
-                            if (_aiLoading)
-                              SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.purple[400]!),
-                                ),
-                              ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        if (_aiLoading)
-                          Text(
-                            '正在生成 AI 解释...',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                              fontStyle: FontStyle.italic,
-                            ),
-                          ),
-                        if (_aiError != null)
-                          Text(
-                            _aiError!,
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: Colors.red[400],
-                            ),
-                          ),
-                        // AI 思考过程（思考中才显示，完成后隐藏）
-                        if (_aiThought != null && _aiThought!.isNotEmpty && !_aiThoughtComplete)
-                          Container(
-                            margin: const EdgeInsets.only(bottom: 12),
-                            decoration: BoxDecoration(
-                              color: isDarkMode 
-                                  ? Colors.grey[900]!.withValues(alpha: 0.3) 
-                                  : Colors.grey[100]!.withValues(alpha: 0.8),
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: isDarkMode 
-                                    ? Colors.grey[700]!.withValues(alpha: 0.5) 
-                                    : Colors.grey[300]!.withValues(alpha: 0.5),
-                                width: 0.5,
-                              ),
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(12),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      SizedBox(
-                                        width: 14,
-                                        height: 14,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          valueColor: AlwaysStoppedAnimation<Color>(
-                                            isDarkMode ? Colors.grey[500]! : Colors.grey[600]!
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        'AI 正在思考...',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: isDarkMode ? Colors.grey[500] : Colors.grey[600],
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    _aiThought!,
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      height: 1.5,
-                                      color: isDarkMode ? Colors.grey[500] : Colors.grey[600],
-                                      fontStyle: FontStyle.italic,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        // AI 最终解释
-                        if (_aiExplanation != null && _aiExplanation!.isNotEmpty)
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // 如果有图片 URL，优先展示图片（注意这里可能需要加后缀，如 .png）
-                              if (_aiImageUrl != null)
-                                Padding(
-                                  padding: const EdgeInsets.only(bottom: 12),
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: Image.network(
-                                      _aiImageUrl!.endsWith('.png') || _aiImageUrl!.endsWith('.jpg') 
-                                          ? _aiImageUrl! 
-                                          : '$_aiImageUrl.png',
-                                      fit: BoxFit.cover,
-                                      width: double.infinity,
-                                      errorBuilder: (context, error, stackTrace) => Container(), // 图片加载失败则不显示
-                                    ),
-                                  ),
-                                ),
-                              Text(
-                                _aiExplanation!,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  height: 1.6,
-                                  color: isDarkMode ? Colors.grey[300] : Colors.grey[800],
-                                ),
-                              ),
-                            ],
-                          ),
-                      ],
-                    ),
-                  ),
-                
                 // 单词讲解
                 if (args.word.shortDesc != null && args.word.shortDesc!.isNotEmpty)
                   Container(

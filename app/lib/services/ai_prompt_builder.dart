@@ -43,33 +43,11 @@ User level: $userLevel
 
     // 参考 Qwen ChatML 模板，使用自然对话风格，尽量少约束
     buffer.writeln('<|im_start|>system');
-    buffer.writeln('你是一名善于用简洁中文讲解英文单词含义的英语教师。');
-    buffer.writeln('面向中国学习者，解释要通俗易懂，可以适当给出常见搭配和例句，但不必固定格式。');
+    buffer.writeln('你是一名不啰嗦的英语教师。');
     buffer.writeln('<|im_end|>');
 
     buffer.writeln('<|im_start|>user');
-    buffer.write('请用中文解释英文单词 "$spell"');
-
-    if (phonetics.trim().isNotEmpty) {
-      buffer.write('，音标: $phonetics');
-    }
-    if (partOfSpeech.trim().isNotEmpty) {
-      buffer.write('，词性: $partOfSpeech');
-    }
-
-    final meanings = payload['meanings'];
-    if (meanings is List && meanings.isNotEmpty) {
-      buffer.write('。可以结合以下词典释义，但不要逐字照抄：');
-      for (final m in meanings) {
-        if (m is Map<String, dynamic>) {
-          final cn = (m['cn'] ?? '').toString();
-          if (cn.isNotEmpty) {
-            buffer.write('$cn；');
-          }
-        }
-      }
-    }
-    buffer.writeln('。');
+    buffer.write('请解释英文单词 "$spell"');
     buffer.writeln('<|im_end|>');
 
     // 不再强制固定输出格式，只作为自然对话的回答
