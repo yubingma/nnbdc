@@ -36,18 +36,19 @@ User level: $userLevel
 
   static String _buildExplainWordPrompt(Map<String, dynamic> payload) {
     final spell = (payload['spell'] ?? '').toString();
-    final phonetics = (payload['phonetics'] ?? '').toString();
-    final partOfSpeech = (payload['partOfSpeech'] ?? '').toString();
 
     final buffer = StringBuffer();
 
     // 参考 Qwen ChatML 模板，使用自然对话风格，尽量少约束
     buffer.writeln('<|im_start|>system');
-    buffer.writeln('你是一名不啰嗦的英语教师。');
+    buffer.writeln('你是帮助中国学生背单词的助教, 主要用中文和学生交流, 你需要:');
+    buffer.writeln('1. 讲解简洁明了');
+    buffer.writeln('2. 关注常用释义');
+    buffer.writeln('3. 根据不同单词, 采取灵活的讲解方式, 帮助用户加深印象和扩展词汇');
     buffer.writeln('<|im_end|>');
 
     buffer.writeln('<|im_start|>user');
-    buffer.write('请解释英文单词 "$spell"');
+    buffer.write('请给我简要解释英文单词 "$spell"');
     buffer.writeln('<|im_end|>');
 
     // 不再强制固定输出格式，只作为自然对话的回答

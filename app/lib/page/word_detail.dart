@@ -655,6 +655,176 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     return calcSynonymCount() > 0;
   }
 
+  /// 将 Markdown 文本渲染为 Flutter Widget（支持基本格式）
+  Widget _buildMarkdownText(String text, bool isDarkMode) {
+    final lines = text.split('\n');
+    final widgets = <Widget>[];
+
+    for (var line in lines) {
+      if (line.trim().isEmpty) {
+        widgets.add(const SizedBox(height: 8));
+        continue;
+      }
+
+      // ### 三级标题
+      if (line.startsWith('### ')) {
+        widgets.add(
+          Padding(
+            padding: const EdgeInsets.only(top: 12, bottom: 6),
+            child: Text(
+              line.substring(4),
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: isDarkMode ? Colors.grey[200] : Colors.grey[900],
+              ),
+            ),
+          ),
+        );
+        continue;
+      }
+
+      // ## 二级标题
+      if (line.startsWith('## ')) {
+        widgets.add(
+          Padding(
+            padding: const EdgeInsets.only(top: 14, bottom: 8),
+            child: Text(
+              line.substring(3),
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w700,
+                color: isDarkMode ? Colors.grey[100] : Colors.grey[900],
+              ),
+            ),
+          ),
+        );
+        continue;
+      }
+
+      // # 一级标题
+      if (line.startsWith('# ')) {
+        widgets.add(
+          Padding(
+            padding: const EdgeInsets.only(top: 16, bottom: 10),
+            child: Text(
+              line.substring(2),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: isDarkMode ? Colors.grey[100] : Colors.black,
+              ),
+            ),
+          ),
+        );
+        continue;
+      }
+
+      // - 列表项
+      if (line.trim().startsWith('- ')) {
+        final content = line.trim().substring(2);
+        widgets.add(
+          Padding(
+            padding: const EdgeInsets.only(left: 8, bottom: 4),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '• ',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: isDarkMode ? Colors.grey[400] : Colors.grey[700],
+                  ),
+                ),
+                Expanded(
+                  child: _buildInlineMarkdown(content, isDarkMode),
+                ),
+              ],
+            ),
+          ),
+        );
+        continue;
+      }
+
+      // 普通段落
+      widgets.add(
+        Padding(
+          padding: const EdgeInsets.only(bottom: 4),
+          child: _buildInlineMarkdown(line, isDarkMode),
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: widgets,
+    );
+  }
+
+  /// 处理行内 Markdown 格式（**粗体**、*斜体*）
+  Widget _buildInlineMarkdown(String text, bool isDarkMode) {
+    final spans = <InlineSpan>[];
+    final regex = RegExp(r'\*\*(.+?)\*\*|\*(.+?)\*|`(.+?)`');
+    var lastEnd = 0;
+
+    for (final match in regex.allMatches(text)) {
+      // 添加匹配前的普通文本
+      if (match.start > lastEnd) {
+        spans.add(TextSpan(text: text.substring(lastEnd, match.start)));
+      }
+
+      // **粗体**
+      if (match.group(1) != null) {
+        spans.add(
+          TextSpan(
+            text: match.group(1),
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+        );
+      }
+      // *斜体*
+      else if (match.group(2) != null) {
+        spans.add(
+          TextSpan(
+            text: match.group(2),
+            style: const TextStyle(fontStyle: FontStyle.italic),
+          ),
+        );
+      }
+      // `代码`
+      else if (match.group(3) != null) {
+        spans.add(
+          TextSpan(
+            text: match.group(3),
+            style: TextStyle(
+              fontFamily: 'monospace',
+              backgroundColor: isDarkMode 
+                  ? Colors.grey[800]?.withValues(alpha: 0.5) 
+                  : Colors.grey[200]?.withValues(alpha: 0.8),
+              color: isDarkMode ? Colors.purple[300] : Colors.purple[700],
+            ),
+          ),
+        );
+      }
+
+      lastEnd = match.end;
+    }
+
+    // 添加剩余的普通文本
+    if (lastEnd < text.length) {
+      spans.add(TextSpan(text: text.substring(lastEnd)));
+    }
+
+    return Text.rich(
+      TextSpan(children: spans),
+      style: TextStyle(
+        fontSize: 14,
+        height: 1.6,
+        color: isDarkMode ? Colors.grey[300] : Colors.grey[800],
+      ),
+    );
+  }
+
   ListView renderAiExplanation() {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
     return ListView(
@@ -823,14 +993,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                             ),
                           ),
                         ),
-                      Text(
-                        _aiExplanation!,
-                        style: TextStyle(
-                          fontSize: 14,
-                          height: 1.6,
-                          color: isDarkMode ? Colors.grey[300] : Colors.grey[800],
-                        ),
-                      ),
+                      // 使用 Markdown 渲染
+                      _buildMarkdownText(_aiExplanation!, isDarkMode),
                     ],
                   ),
               ],
