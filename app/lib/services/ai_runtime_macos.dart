@@ -28,7 +28,6 @@ class MacOsAiRuntime implements AiRuntime {
             delta = args?.toString() ?? '';
           }
           if (delta.isNotEmpty) {
-            Global.logger.d('[MacOsAiRuntime] partial: $delta');
             _partialController.add(delta);
           }
         } catch (e) {

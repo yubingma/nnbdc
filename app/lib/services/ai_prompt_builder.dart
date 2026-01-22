@@ -45,7 +45,6 @@ User level: $userLevel
     buffer.writeln('<|im_start|>system');
     buffer.writeln('你是一名善于用简洁中文讲解英文单词含义的英语教师。');
     buffer.writeln('面向中国学习者，解释要通俗易懂，可以适当给出常见搭配和例句，但不必固定格式。');
-    buffer.writeln('不要输出你的思考过程，不要使用 <think> 或类似标签，只输出给用户看的最终解释。');
     buffer.writeln('<|im_end|>');
 
     buffer.writeln('<|im_start|>user');

@@ -69,7 +69,6 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
   String? _aiError;
   String _aiRawAccum = '';
   StreamSubscription<String>? _aiPartialSub;
-  bool _aiThoughtExpanded = false; // 思考内容默认折叠
   bool _aiThoughtComplete = false; // 思考内容是否生成完成
 
   // Animation controllers
@@ -249,15 +248,6 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
       _aiThought = thought;
       _aiExplanation = _cleanAiText(answer ?? '');
       _aiThoughtComplete = thoughtComplete;
-      
-      // 如果思考内容存在且还在生成中，自动展开让用户看到流式更新
-      if (thought != null && thought.isNotEmpty && !thoughtComplete) {
-        _aiThoughtExpanded = true;
-      }
-      // 思考完成后自动折叠
-      if (thoughtComplete) {
-        _aiThoughtExpanded = false;
-      }
     });
   }
 
@@ -268,7 +258,6 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
       _aiRawAccum = '';
       _aiThought = null;
       _aiExplanation = null;
-      _aiThoughtExpanded = false;
       _aiThoughtComplete = false;
     });
     
@@ -324,7 +313,6 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
             // 强制标记思考完成，避免永远卡在"正在思考"状态
             if (_aiThought != null && _aiThought!.isNotEmpty && !_aiThoughtComplete) {
               _aiThoughtComplete = true;
-              _aiThoughtExpanded = false; // 折叠起来
               Global.logger.w('思考内容被 maxTokens 截断，强制标记为完成');
             }
             
@@ -745,8 +733,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                               color: Colors.red[400],
                             ),
                           ),
-                        // AI 思考过程（折叠显示，灰色）
-                        if (_aiThought != null && _aiThought!.isNotEmpty)
+                        // AI 思考过程（思考中才显示，完成后隐藏）
+                        if (_aiThought != null && _aiThought!.isNotEmpty && !_aiThoughtComplete)
                           Container(
                             margin: const EdgeInsets.only(bottom: 12),
                             decoration: BoxDecoration(
@@ -761,39 +749,35 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                 width: 0.5,
                               ),
                             ),
-                            child: Theme(
-                              data: Theme.of(context).copyWith(
-                                dividerColor: Colors.transparent,
-                              ),
-                              child: ExpansionTile(
-                                key: ValueKey('thought_${_aiThoughtComplete}_${_aiThoughtExpanded}'),
-                                initiallyExpanded: _aiThoughtExpanded,
-                                onExpansionChanged: (expanded) {
-                                  setState(() {
-                                    _aiThoughtExpanded = expanded;
-                                  });
-                                },
-                                tilePadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                                childrenPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-                                title: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.psychology_outlined,
-                                      size: 14,
-                                      color: isDarkMode ? Colors.grey[500] : Colors.grey[600],
-                                    ),
-                                    const SizedBox(width: 6),
-                                    Text(
-                                      _aiThoughtComplete ? 'AI 思考过程（已完成）' : 'AI 正在思考...',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: isDarkMode ? Colors.grey[500] : Colors.grey[600],
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(12),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
+                                  Row(
+                                    children: [
+                                      SizedBox(
+                                        width: 14,
+                                        height: 14,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          valueColor: AlwaysStoppedAnimation<Color>(
+                                            isDarkMode ? Colors.grey[500]! : Colors.grey[600]!
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        'AI 正在思考...',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: isDarkMode ? Colors.grey[500] : Colors.grey[600],
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
                                   Text(
                                     _aiThought!,
                                     style: TextStyle(
