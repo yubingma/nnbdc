@@ -255,7 +255,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
         _aiThoughtExpanded = true;
       }
       // 思考完成后自动折叠
-      if (thoughtComplete && _aiThoughtExpanded) {
+      if (thoughtComplete) {
         _aiThoughtExpanded = false;
       }
     });
@@ -766,6 +766,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                 dividerColor: Colors.transparent,
                               ),
                               child: ExpansionTile(
+                                key: ValueKey('thought_${_aiThoughtComplete}_${_aiThoughtExpanded}'),
                                 initiallyExpanded: _aiThoughtExpanded,
                                 onExpansionChanged: (expanded) {
                                   setState(() {
