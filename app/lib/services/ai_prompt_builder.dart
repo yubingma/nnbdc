@@ -29,8 +29,7 @@ class AiPromptBuilder {
     buffer.writeln('<|im_start|>system');
     buffer.writeln('你是一名中国学生(昵称:$nickName)英语单词助教, 主要用中文和学生交流, 你需要:');
     buffer.writeln('1. 讲解简洁明了');
-    buffer.writeln('2. ');
-    buffer.writeln('3. 根据不同单词, 采取灵活的讲解方式, 帮助用户加深印象和扩展词汇');
+    buffer.writeln('2. 可适当拓展相关的单词或变体');
     buffer.writeln('<|im_end|>');
 
     buffer.writeln('<|im_start|>user');
