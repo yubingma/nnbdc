@@ -249,6 +249,15 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
       _aiThought = thought;
       _aiExplanation = _cleanAiText(answer ?? '');
       _aiThoughtComplete = thoughtComplete;
+      
+      // 如果思考内容存在且还在生成中，自动展开让用户看到流式更新
+      if (thought != null && thought.isNotEmpty && !thoughtComplete) {
+        _aiThoughtExpanded = true;
+      }
+      // 思考完成后自动折叠
+      if (thoughtComplete && _aiThoughtExpanded) {
+        _aiThoughtExpanded = false;
+      }
     });
   }
 
@@ -310,6 +319,15 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
             final rawText = response.text ?? '';
             // 最终再解析一次（确保完整）
             _parseAiOutput(rawText);
+            
+            // 如果推理结束时思考内容还存在但 </think> 没生成（被 maxTokens 截断）
+            // 强制标记思考完成，避免永远卡在"正在思考"状态
+            if (_aiThought != null && _aiThought!.isNotEmpty && !_aiThoughtComplete) {
+              _aiThoughtComplete = true;
+              _aiThoughtExpanded = false; // 折叠起来
+              Global.logger.w('思考内容被 maxTokens 截断，强制标记为完成');
+            }
+            
             _aiLoading = false;
           });
         }

@@ -116,10 +116,10 @@ class MacOsAiRuntime implements AiRuntime {
       Global.logger.d('macOS AI 推理 prompt 长度: ${prompt.length}');
 
       // 2. 调用原生层推理
-      // 单词解释场景下，256 个输出 token 基本足够，避免长时间自言自语
+      // 512 个输出 token 基本足够，避免长时间自言自语
       final result = await _channel.invokeMethod('inference', {
         'prompt': prompt,
-        'maxTokens': 256,
+        'maxTokens': 512,
         'temperature': 0.7,
         'stop': ['<|im_end|>', '<|endoftext|>', '<|im_start|>'],
       });
