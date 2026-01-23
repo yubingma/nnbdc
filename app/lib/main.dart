@@ -38,7 +38,7 @@ import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/util/error_handler.dart';
 import 'package:nnbdc/services/ai_service.dart';
 import 'package:nnbdc/services/ai_model_manager.dart';
-import 'package:nnbdc/services/ai_runtime_macos.dart' if (dart.library.io) 'package:nnbdc/services/ai_runtime_macos.dart';
+import 'package:nnbdc/services/ai_runtime_apple.dart';
 import 'package:provider/provider.dart';
 import 'package:toastification/toastification.dart';
 import 'package:nnbdc/page/admin/golden_master_tool.dart';
@@ -126,9 +126,9 @@ void main() async {
           // 预加载当前用户数据
           await Global.loadUserFromDb();
           
-          // 初始化 AI 运行时（仅 macOS，如果已下载模型）
-          if (PlatformUtils.isMacOS) {
-            _initializeMacOsAiRuntimeIfReady();
+          // 初始化 AI 运行时（Apple 平台，如果已下载模型）
+          if (PlatformUtils.isMacOS || PlatformUtils.isIOS) {
+            _initializeAppleAiRuntimeIfReady();
           }
         } catch (e, stackTrace) {
           // 初始化过程中的错误
@@ -155,8 +155,8 @@ void main() async {
   );
 }
 
-/// 初始化 macOS AI 运行时（如果模型已就绪）
-void _initializeMacOsAiRuntimeIfReady() async {
+/// 初始化 Apple AI 运行时（如果模型已就绪）
+void _initializeAppleAiRuntimeIfReady() async {
   try {
     // 检查是否已下载模型
     final manager = AiModelManager();
@@ -164,7 +164,7 @@ void _initializeMacOsAiRuntimeIfReady() async {
     
     if (localState != null && localState.localPath.isNotEmpty) {
       Global.logger.i('检测到模型已下载，开始自动初始化 AI 运行时...');
-      await initializeMacOsAiRuntime();
+      await initializeAppleAiRuntime();
     } else {
       Global.logger.d('模型尚未下载，跳过 AI 运行时初始化');
     }
@@ -173,67 +173,72 @@ void _initializeMacOsAiRuntimeIfReady() async {
   }
 }
 
-/// 初始化 macOS AI 运行时（手动调用）
-Future<bool> initializeMacOsAiRuntime() async {
+/// 初始化 Apple AI 运行时（手动调用）
+Future<bool> initializeAppleAiRuntime() async {
   try {
-    Global.logger.i('开始初始化 macOS AI 运行时...');
+    Global.logger.i('开始初始化 Apple AI 运行时...');
     
-    // 1. 确保模型已下载
+    // 1. 预检查设备能力，决定下载哪个级别的模型
+    const channel = MethodChannel('com.nnbdc.ai_inference');
+    final capResult = await channel.invokeMethod('checkCapability');
+    AiModelProfile preferredProfile = AiModelProfile.desktopFull;
+    
+    if (capResult is Map) {
+      final capStr = capResult['capability'] as String?;
+      if (capStr == 'light') {
+        preferredProfile = AiModelProfile.mobileLite;
+        Global.logger.i('检测到设备内存较小，优先选用移动端轻量级模型 (mobileLite)');
+      } else if (capStr == 'none') {
+        Global.logger.w('设备能力报告为不足，可能会尝试加载 mobileLite 但风险较高');
+        preferredProfile = AiModelProfile.mobileLite;
+      }
+    }
+
+    // 2. 确保模型已下载
     final manager = AiModelManager();
-    final modelState = await manager.ensureModel(AiModelProfile.desktopFull);
+    final modelState = await manager.ensureModel(preferredProfile);
     
     if (modelState == null || modelState.localPath.isEmpty) {
-      Global.logger.w('macOS AI 模型未就绪，跳过初始化');
+      Global.logger.w('Apple AI 模型 [${preferredProfile.name}] 未就绪，跳过初始化');
       return false;
     }
     
-    // 2. 创建并初始化 macOS AI 运行时
-    final runtime = MacOsAiRuntime(modelPath: modelState.localPath);
+    // 3. 创建并初始化 Apple AI 运行时
+    final runtime = AppleAiRuntime(modelPath: modelState.localPath);
     final success = await runtime.initialize();
     
     if (success) {
-      // 3. 注入到 AiService
+      // 4. 注入到 AiService
       AiService().setRuntime(runtime);
-      Global.logger.i('macOS AI 运行时初始化成功，能力等级: ${runtime.capabilityLevel}');
+      Global.logger.i('Apple AI 运行时初始化成功，能力等级: ${runtime.capabilityLevel}');
       return true;
     } else {
-      Global.logger.w('macOS AI 运行时初始化失败');
+      Global.logger.w('Apple AI 运行时初始化失败');
       return false;
     }
   } catch (e, st) {
-    Global.logger.e('macOS AI 运行时初始化异常', error: e, stackTrace: st);
+    Global.logger.e('Apple AI 运行时初始化异常', error: e, stackTrace: st);
     return false;
   }
 }
 
-/// 反激活 macOS AI 运行时（手动调用）
-Future<void> deinitializeMacOsAiRuntime() async {
+/// 反激活 Apple AI 运行时（手动调用）
+Future<void> deinitializeAppleAiRuntime() async {
   try {
-    Global.logger.i('开始反激活 macOS AI 运行时...');
+    Global.logger.i('开始反激活 Apple AI 运行时...');
     
     // 1. 如果当前已经是某个运行时，调用它的 dispose
-    // 这里我们直接从 AiService 获取
     final aiService = AiService();
-    // 强制转换为 MacOsAiRuntime (如果可能)
-    // 实际上 AiService 没有直接暴露 runtime 的类型，但我们可以检查能力
     if (aiService.capabilityLevel != AiCapabilityLevel.none) {
-      // 在这里我们可以选择性的重置 runtime
-      // 为了安全，我们先通知原生层卸载模型，如果能够访问到具体实例
-      // 这里的实现简单起见，我们直接设置一个新的 NoopRuntime
-      // 而具体的清理动作在 AiModelManager.clearModel 中也会做物理删除
-      // 但为了内存释放，最好能叫一下原生 unload
-      
-      // 注意：目前 AiService 中 _runtime 是私有的且没有暴露具体实例
-      // 我们在 main.dart 可以保存一个引用，或者直接通过 MethodChannel 发送卸载命令
       const MethodChannel('com.nnbdc.ai_inference').invokeMethod('unloadModel');
     }
     
     // 2. 重置为 NoopRuntime
     aiService.setRuntime(NoopAiRuntime());
     
-    Global.logger.i('macOS AI 运行时已卸载并重置');
+    Global.logger.i('Apple AI 运行时已卸载并重置');
   } catch (e, st) {
-    Global.logger.e('macOS AI 运行时反激活异常', error: e, stackTrace: st);
+    Global.logger.e('Apple AI 运行时反激活异常', error: e, stackTrace: st);
   }
 }
 

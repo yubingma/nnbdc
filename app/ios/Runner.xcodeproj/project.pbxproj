@@ -8,10 +8,18 @@
 
 /* Begin PBXBuildFile section */
 		1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */ = {isa = PBXBuildFile; fileRef = 1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */; };
+		1E583D67A28C3630B17683DB /* libggml-metal.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A713B8ED006D1760F8AACF08 /* libggml-metal.a */; };
+		238531303868AE1413A357F0 /* libggml-cpu.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 58BC140F57A731AD87B4CA3C /* libggml-cpu.a */; };
 		331C808B294A63AB00263BE5 /* RunnerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 331C807B294A618700263BE5 /* RunnerTests.swift */; };
+		3A611EBA09E16A48BA4A1DCF /* libggml-blas.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 39658FF0D787764D18A00EB9 /* libggml-blas.a */; };
 		3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */ = {isa = PBXBuildFile; fileRef = 3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */; };
+		46DBF7FB1AB0B171BAA97CE1 /* libggml.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C9DABC75FEBA4A8EE073D5EF /* libggml.a */; };
+		4DFDB913C756079C1309FF7C /* libggml-base.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E11ACCA78C6BAFCCAFC253EB /* libggml-base.a */; };
 		4EF092EDF6625AAB4964CB2F /* Pods_Runner.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DCF7F8B2C08BFB594D2930DB /* Pods_Runner.framework */; };
 		74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74858FAE1ED2DC5600515810 /* AppDelegate.swift */; };
+		7616A5990A317460584566A4 /* libllama.a in Frameworks */ = {isa = PBXBuildFile; fileRef = FF64F86DEE2CF5464E598FB0 /* libllama.a */; };
+		7E406E9F368B82D7FB311147 /* AiInferenceChannel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DFE9E7C229D54E3590BDC09 /* AiInferenceChannel.swift */; };
+		95D4A40BFA3F636605C69555 /* LlamaCppBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B7D8873488EBC4B5253D079 /* LlamaCppBridge.swift */; };
 		97C146FC1CF9000F007C117D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FA1CF9000F007C117D /* Main.storyboard */; };
 		97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FD1CF9000F007C117D /* Assets.xcassets */; };
 		97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */; };
@@ -41,11 +49,14 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		0B7D8873488EBC4B5253D079 /* LlamaCppBridge.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LlamaCppBridge.swift; sourceTree = "<group>"; };
 		1498D2321E8E86230040F4C2 /* GeneratedPluginRegistrant.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GeneratedPluginRegistrant.h; sourceTree = "<group>"; };
 		1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GeneratedPluginRegistrant.m; sourceTree = "<group>"; };
 		331C807B294A618700263BE5 /* RunnerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunnerTests.swift; sourceTree = "<group>"; };
 		331C8081294A63A400263BE5 /* RunnerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RunnerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		39658FF0D787764D18A00EB9 /* libggml-blas.a */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = archive.ar; path = "libggml-blas.a"; sourceTree = "<group>"; };
 		3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = AppFrameworkInfo.plist; path = Flutter/AppFrameworkInfo.plist; sourceTree = "<group>"; };
+		58BC140F57A731AD87B4CA3C /* libggml-cpu.a */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = archive.ar; path = "libggml-cpu.a"; sourceTree = "<group>"; };
 		665331931900004934729246 /* Pods-Runner.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.release.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.release.xcconfig"; sourceTree = "<group>"; };
 		74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Runner-Bridging-Header.h"; sourceTree = "<group>"; };
 		74858FAE1ED2DC5600515810 /* AppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -57,9 +68,14 @@
 		97C146FD1CF9000F007C117D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		97C147001CF9000F007C117D /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		97C147021CF9000F007C117D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		9DFE9E7C229D54E3590BDC09 /* AiInferenceChannel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AiInferenceChannel.swift; sourceTree = "<group>"; };
+		A713B8ED006D1760F8AACF08 /* libggml-metal.a */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = archive.ar; path = "libggml-metal.a"; sourceTree = "<group>"; };
 		BB105D8C998E2A412D8F8930 /* Pods-Runner.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.profile.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.profile.xcconfig"; sourceTree = "<group>"; };
+		C9DABC75FEBA4A8EE073D5EF /* libggml.a */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = archive.ar; path = libggml.a; sourceTree = "<group>"; };
 		DCF7F8B2C08BFB594D2930DB /* Pods_Runner.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Runner.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		E11ACCA78C6BAFCCAFC253EB /* libggml-base.a */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = archive.ar; path = "libggml-base.a"; sourceTree = "<group>"; };
 		E4FEB6EA97D2AA13C0E23BEE /* Pods-Runner.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.debug.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.debug.xcconfig"; sourceTree = "<group>"; };
+		FF64F86DEE2CF5464E598FB0 /* libllama.a */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = archive.ar; path = libllama.a; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -68,6 +84,12 @@
 			buildActionMask = 2147483647;
 			files = (
 				4EF092EDF6625AAB4964CB2F /* Pods_Runner.framework in Frameworks */,
+				7616A5990A317460584566A4 /* libllama.a in Frameworks */,
+				46DBF7FB1AB0B171BAA97CE1 /* libggml.a in Frameworks */,
+				4DFDB913C756079C1309FF7C /* libggml-base.a in Frameworks */,
+				238531303868AE1413A357F0 /* libggml-cpu.a in Frameworks */,
+				1E583D67A28C3630B17683DB /* libggml-metal.a in Frameworks */,
+				3A611EBA09E16A48BA4A1DCF /* libggml-blas.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -133,6 +155,9 @@
 				1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */,
 				74858FAE1ED2DC5600515810 /* AppDelegate.swift */,
 				74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */,
+				9DFE9E7C229D54E3590BDC09 /* AiInferenceChannel.swift */,
+				0B7D8873488EBC4B5253D079 /* LlamaCppBridge.swift */,
+				BC8160B6E4E5D06E156ED368 /* LlamaCpp */,
 			);
 			path = Runner;
 			sourceTree = "<group>";
@@ -145,6 +170,20 @@
 				BB105D8C998E2A412D8F8930 /* Pods-Runner.profile.xcconfig */,
 			);
 			path = Pods;
+			sourceTree = "<group>";
+		};
+		BC8160B6E4E5D06E156ED368 /* LlamaCpp */ = {
+			isa = PBXGroup;
+			children = (
+				FF64F86DEE2CF5464E598FB0 /* libllama.a */,
+				C9DABC75FEBA4A8EE073D5EF /* libggml.a */,
+				E11ACCA78C6BAFCCAFC253EB /* libggml-base.a */,
+				58BC140F57A731AD87B4CA3C /* libggml-cpu.a */,
+				A713B8ED006D1760F8AACF08 /* libggml-metal.a */,
+				39658FF0D787764D18A00EB9 /* libggml-blas.a */,
+			);
+			name = LlamaCpp;
+			path = LlamaCpp;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -355,6 +394,8 @@
 			files = (
 				74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */,
 				1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */,
+				7E406E9F368B82D7FB311147 /* AiInferenceChannel.swift in Sources */,
+				95D4A40BFA3F636605C69555 /* LlamaCppBridge.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -445,10 +486,16 @@
 			baseConfigurationReference = 7AFA3C8E1D35360C0083082E /* Release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
+				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
 				DEVELOPMENT_TEAM = FYU9ZT6D7N;
 				ENABLE_BITCODE = NO;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Runner/LlamaCpp/include",
+				);
 				INFOPLIST_FILE = Runner/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "泡泡单词";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
@@ -456,7 +503,23 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Runner/LlamaCpp",
+				);
 				MARKETING_VERSION = "$(FLUTTER_BUILD_NAME)";
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-lllama",
+					"-lggml",
+					"-lggml-base",
+					"-lggml-cpu",
+					"-lggml-metal",
+					"-lggml-blas",
+					"-framework Accelerate",
+					"-framework Metal",
+					"-framework MetalKit",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.nn.nnbdc.nnbdc;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
@@ -628,10 +691,16 @@
 			baseConfigurationReference = 9740EEB21CF90195004384FC /* Debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
+				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
 				DEVELOPMENT_TEAM = FYU9ZT6D7N;
 				ENABLE_BITCODE = NO;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Runner/LlamaCpp/include",
+				);
 				INFOPLIST_FILE = Runner/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "泡泡单词";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
@@ -639,7 +708,23 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Runner/LlamaCpp",
+				);
 				MARKETING_VERSION = "$(FLUTTER_BUILD_NAME)";
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-lllama",
+					"-lggml",
+					"-lggml-base",
+					"-lggml-cpu",
+					"-lggml-metal",
+					"-lggml-blas",
+					"-framework Accelerate",
+					"-framework Metal",
+					"-framework MetalKit",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.nn.nnbdc.nnbdc;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
@@ -654,10 +739,16 @@
 			baseConfigurationReference = 7AFA3C8E1D35360C0083082E /* Release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
+				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
 				DEVELOPMENT_TEAM = FYU9ZT6D7N;
 				ENABLE_BITCODE = NO;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Runner/LlamaCpp/include",
+				);
 				INFOPLIST_FILE = Runner/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "泡泡单词";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
@@ -665,7 +756,23 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Runner/LlamaCpp",
+				);
 				MARKETING_VERSION = "$(FLUTTER_BUILD_NAME)";
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-lllama",
+					"-lggml",
+					"-lggml-base",
+					"-lggml-cpu",
+					"-lggml-metal",
+					"-lggml-blas",
+					"-framework Accelerate",
+					"-framework Metal",
+					"-framework MetalKit",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.nn.nnbdc.nnbdc;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";

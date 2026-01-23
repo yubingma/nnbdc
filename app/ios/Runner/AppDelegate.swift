@@ -89,6 +89,11 @@ import AVFAudio
         setupTts()
         
         GeneratedPluginRegistrant.register(with: self)
+        
+        // Register AI inference channel
+        if let registrar = self.registrar(forPlugin: "AiInferenceChannel") {
+            AiInferenceChannel.register(with: registrar)
+        }
         return super.application(application, didFinishLaunchingWithOptions: launchOptions)
     }
     

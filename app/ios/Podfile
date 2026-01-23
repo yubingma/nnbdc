@@ -57,5 +57,7 @@ post_install do |installer|
         config.build_settings['HEADER_SEARCH_PATHS'] << '${PODS_ROOT}/WechatOpenSDK-XCFramework/WechatOpenSDK.xcframework/ios-arm64_x86_64-simulator/WechatOpenSDK.framework/Headers'
       end
     end
+    
+    # 配置 llama.cpp 静态库链接
   end
 end

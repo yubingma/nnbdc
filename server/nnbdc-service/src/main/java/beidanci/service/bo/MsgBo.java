@@ -292,7 +292,7 @@ public class MsgBo extends BaseBo<Msg> {
      * @param msgIds
      */
     public void setMsgsAsViewed(List<String> msgIds, String userId, UserBo userBo) {
-        String sql = "UPDATE msg SET viewed = 1 WHERE id IN (:ids) AND (to_user_id = :userId OR from_user_id = :userId)";
+        String sql = "UPDATE msg SET viewed = true WHERE id IN (:ids) AND (to_user_id = :userId OR from_user_id = :userId)";
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("ids", msgIds);
         params.addValue("userId", userId);

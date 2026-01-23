@@ -14,7 +14,7 @@ import 'package:nnbdc/util/toast_util.dart';
 import 'package:provider/provider.dart';
 import 'package:nnbdc/config.dart';
 import 'package:nnbdc/services/ai_service.dart';
-import 'package:nnbdc/services/ai_runtime_macos.dart';
+import 'package:nnbdc/services/ai_runtime_apple.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 
 import '../global.dart';
@@ -349,7 +349,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
 
     try {
       final runtime = AiService().runtime;
-      if (runtime is MacOsAiRuntime) {
+      if (runtime is AppleAiRuntime) {
         await _aiPartialSub?.cancel();
         _aiPartialSub = runtime.partialStream.listen((delta) {
           if (!mounted) return;
@@ -414,7 +414,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     try {
       final service = AiService();
       final runtime = service.runtime;
-      if (runtime is MacOsAiRuntime) {
+      if (runtime is AppleAiRuntime) {
         await _aiPartialSub?.cancel();
         _aiPartialSub = runtime.partialStream.listen((delta) {
           if (!mounted) return;
