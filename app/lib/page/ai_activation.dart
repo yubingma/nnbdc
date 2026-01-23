@@ -303,7 +303,7 @@ class _AiActivationPageState extends State<AiActivationPage> {
     return Scaffold(
       backgroundColor: backgroundColor,
       appBar: AppTheme.createGradientAppBar(
-        title: 'AI 智能助手',
+        title: 'AI 助教',
         leading: IconButton(
           onPressed: () => Navigator.pop(context),
           icon: const Icon(Icons.arrow_back, color: Colors.white),

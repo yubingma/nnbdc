@@ -46,8 +46,14 @@ class ChatMessage {
   final MessageRole role;
   String content;
   String? thought;
+  bool isThoughtExpanded;
 
-  ChatMessage({required this.role, required this.content, this.thought});
+  ChatMessage({
+    required this.role,
+    required this.content,
+    this.thought,
+    this.isThoughtExpanded = false,
+  });
 }
 
 class WordDetailPage extends StatefulWidget {
@@ -690,7 +696,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                               children: [
                                 Icon(Icons.auto_awesome, size: 14),
                                 SizedBox(width: 4),
-                                Text('AI 解释'),
+                                Text('AI 助教'),
                               ],
                             ),
                           ),
@@ -869,7 +875,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                 Icon(Icons.person, size: 14, color: Colors.teal[400]),
               const SizedBox(width: 4),
               Text(
-                isAssistant ? 'AI 助手' : '你',
+                isAssistant ? 'AI 助教' : '你',
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
@@ -880,9 +886,9 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
           ),
           const SizedBox(height: 4),
           
-          // 思考过程 (仅助手且有内容时显示)
+          // 思考过程 (仅助教且有内容时显示)
           if (isAssistant && msg.thought != null && msg.thought!.isNotEmpty)
-            _buildThoughtWidget(msg.thought!, isDarkMode),
+            _buildThoughtWidget(msg, isDarkMode),
 
           // 消息正文
           Container(
@@ -950,11 +956,16 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     );
   }
 
-  Widget _buildThoughtWidget(String thought, bool isDarkMode) {
-    final showLoading = !_aiThoughtComplete && _aiLoading && _chatMessages.last.thought == thought;
+  Widget _buildThoughtWidget(ChatMessage msg, bool isDarkMode) {
+    final thought = msg.thought!;
+    final isCurrentMsg = _chatMessages.isNotEmpty && _chatMessages.last == msg;
+    final isThinking = isCurrentMsg && _aiLoading && !_aiThoughtComplete;
+    
+    // 如果正在思考，则强制展开；否则遵循用户的折叠状态
+    final isExpanded = isThinking || msg.isThoughtExpanded;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: isDarkMode ? Colors.black.withValues(alpha: 0.2) : Colors.grey[100],
         borderRadius: BorderRadius.circular(8),
@@ -963,33 +974,55 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              if (showLoading)
-                const SizedBox(
-                  width: 10,
-                  height: 10,
-                  child: CircularProgressIndicator(strokeWidth: 1.5),
-                )
-              else
-                Icon(Icons.lightbulb_outline, size: 12, color: Colors.grey[500]),
-              const SizedBox(width: 6),
-              Text(
-                showLoading ? '正在思考中...' : '已完成思考',
-                style: TextStyle(fontSize: 10, color: Colors.grey[500], fontWeight: FontWeight.bold),
+          InkWell(
+            onTap: isThinking ? null : () {
+              setState(() {
+                msg.isThoughtExpanded = !msg.isThoughtExpanded;
+              });
+            },
+            borderRadius: BorderRadius.circular(8),
+            child: Padding(
+              padding: const EdgeInsets.all(10),
+              child: Row(
+                children: [
+                  if (isThinking)
+                    const SizedBox(
+                      width: 10,
+                      height: 10,
+                      child: CircularProgressIndicator(strokeWidth: 1.5),
+                    )
+                  else
+                    Icon(Icons.lightbulb_outline, size: 12, color: Colors.grey[500]),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      isThinking ? '正在思考中...' : 'AI 的思考过程',
+                      style: TextStyle(fontSize: 10, color: Colors.grey[500], fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  if (!isThinking)
+                    Icon(
+                      isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                      size: 14,
+                      color: Colors.grey[500],
+                    ),
+                ],
               ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          SelectableText(
-            thought,
-            style: TextStyle(
-              fontSize: 11,
-              height: 1.4,
-              color: isDarkMode ? Colors.grey[500] : Colors.grey[600],
-              fontStyle: FontStyle.italic,
             ),
           ),
+          if (isExpanded)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
+              child: SelectableText(
+                thought,
+                style: TextStyle(
+                  fontSize: 11,
+                  height: 1.4,
+                  color: isDarkMode ? Colors.grey[500] : Colors.grey[600],
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ),
         ],
       ),
     );
