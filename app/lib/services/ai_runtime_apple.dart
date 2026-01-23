@@ -83,8 +83,8 @@ class AppleAiRuntime implements AiRuntime {
       }
 
       if (_capability == AiCapabilityLevel.none) {
-        Global.logger.w('设备能力不足，无法运行本地 AI 模型');
-        return false;
+        Global.logger.w('[AppleAiRuntime] ⚠️ 设备能力报告不足，但将尝试继续初始化...');
+        // 允许继续尝试加载模型，即使能力检测为 none
       }
 
       // 2. 加载模型

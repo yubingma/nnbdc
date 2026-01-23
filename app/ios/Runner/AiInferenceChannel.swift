@@ -193,9 +193,9 @@ class AiInferenceChannel: NSObject, FlutterPlugin {
         
         // iOS 设备内存相对较小，门槛适当降低
         let capability: String
-        if memoryGB >= 12 {
+        if memoryGB >= 7.5 {
             capability = "full"
-        } else if memoryGB >= 3.5 {
+        } else if memoryGB >= 2.5 {
             capability = "light"
         } else {
             capability = "none"
