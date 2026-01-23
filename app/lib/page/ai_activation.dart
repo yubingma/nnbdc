@@ -27,12 +27,33 @@ class _AiActivationPageState extends State<AiActivationPage> {
   int _downloadedBytes = 0;
   int _totalBytes = 0;
   bool _isIntelMac = false; // 标记是否为 Intel Mac
+  String _modelSizeText = '500 MB'; // 默认模型大小文本，将被动态更新
 
   @override
   void initState() {
     super.initState();
     _checkArchitecture();
     _checkAiStatus();
+    _loadModelSize();
+  }
+  
+  /// 加载模型大小信息
+  Future<void> _loadModelSize() async {
+    try {
+      final manager = AiModelManager();
+      final metas = await manager.fetchRemoteMeta();
+      
+      final meta = metas[AiModelProfile.desktopFull];
+      if (meta != null) {
+        final sizeMB = (meta.sizeBytes / 1024 / 1024).toStringAsFixed(0);
+        setState(() {
+          _modelSizeText = '$sizeMB MB';
+        });
+      }
+    } catch (e) {
+      Global.logger.e('获取模型大小失败', error: e);
+      // 保持默认值
+    }
   }
   
   /// 检查 Mac 架构
@@ -190,7 +211,7 @@ class _AiActivationPageState extends State<AiActivationPage> {
           backgroundColor: backgroundColor,
           title: Text('确认反激活', style: TextStyle(color: textColor)),
           content: Text(
-            '这将卸载 AI 引擎并删除已下载的本地模型文件（约 500MB）。\n\n反激活后，你将无法在离线状态下使用 AI 智能解释功能。',
+            '这将卸载 AI 引擎并删除已下载的本地模型文件（约 ${_modelSizeText.replaceAll(' ', '')}）。\n\n反激活后，你将无法在离线状态下使用 AI 智能解释功能。',
             style: TextStyle(color: textColor),
           ),
           actions: [
@@ -609,7 +630,7 @@ class _AiActivationPageState extends State<AiActivationPage> {
                     ),
                     const SizedBox(height: 12),
                     _buildRequirementItem('平台支持', 'macOS（暂不支持其他平台）', textColor, isDarkMode),
-                    _buildRequirementItem('存储空间', '约需 500 MB 可用空间', textColor, isDarkMode),
+                    _buildRequirementItem('存储空间', '约需 $_modelSizeText 可用空间', textColor, isDarkMode),
                     _buildRequirementItem('网络要求', '下载AI模型需要网络连接', textColor, isDarkMode),
                     _buildRequirementItem('使用方式', 'AI模型下载后可离线使用', textColor, isDarkMode),
                   ],
