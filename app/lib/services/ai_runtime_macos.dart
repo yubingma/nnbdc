@@ -117,7 +117,7 @@ class MacOsAiRuntime implements AiRuntime {
       // 2. 调用原生层推理
       final result = await _channel.invokeMethod('inference', {
         'prompt': prompt,
-        'maxTokens': 4096,
+        'maxTokens': 2048,
         'temperature': 0.7,
         'stop': ['<|im_end|>', '<|endoftext|>', '<|im_start|>'],
       });

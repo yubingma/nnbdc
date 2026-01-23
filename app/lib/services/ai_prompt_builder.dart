@@ -20,44 +20,21 @@ class AiPromptBuilder {
 
   static String _buildExplainWordPrompt(Map<String, dynamic> payload) {
     final spell = (payload['spell'] ?? '').toString();
-    final meanings = payload['meanings'] as List?;
-    final sentences = payload['sentences'] as List?;
-    final user = Global.getLoggedInUser();
-    final nickName = user?.nickName ?? '同学';
 
     final buffer = StringBuffer();
 
     // 参考 Qwen ChatML 模板，使用自然对话风格
     buffer.writeln('<|im_start|>system');
-    buffer.writeln('你是一名中国学生(昵称:$nickName)英语单词助教, 主要用中文和学生交流。');
+    buffer.writeln('你是一名英语单词助教, 主要用中文和学生交流。');
     buffer.writeln('你的任务是针对学生正在学习的单词，提供其：');
-    buffer.writeln('1. 同义词 (Synonyms) 及细微辨析');
-    buffer.writeln('2. 近义词 (Near-synonyms)');
-    buffer.writeln('3. 易混淆词 (Confusing words)');
-    buffer.writeln('讲解要生动有趣，并指出它们在用法上的主要区别或记忆技巧。');
+    buffer.writeln('1. 易混淆词 (Confusing words)');
+    buffer.writeln('不需要给学生出题。');
     buffer.writeln('<|im_end|>');
 
     buffer.writeln('<|im_start|>user');
-    buffer.write('我正在学习单词 "$spell", ');
+    buffer.write('请帮助我学习单词: "$spell", 尽可能不啰嗦 ');
 
-    // 提供上下文
-    if (meanings != null && meanings.isNotEmpty) {
-      buffer.write('该单词在词典中的释义有: ');
-      for (var m in meanings) {
-        buffer.write('${m['cn']} ');
-      }
-      buffer.write('。');
-    }
 
-    if (sentences != null && sentences.isNotEmpty) {
-      buffer.write('参考例句有: ');
-      for (var s in sentences) {
-        buffer.write('${s['en']} (${s['cn']}); ');
-      }
-      buffer.write('。');
-    }
-
-    buffer.write('请为我提供该单词的同义词、近义词以及易混淆词的讲解。');
     buffer.writeln('');
 
     buffer.write('<|im_start|>assistant\n');

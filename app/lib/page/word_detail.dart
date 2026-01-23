@@ -110,6 +110,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     for (var controller in _sentenceSoundControllers.values) {
       controller.dispose();
     }
+    _chatInputController.dispose();
+    _chatScrollController.dispose();
 
     // 标记 AudioPlayer 为已释放
     _audioPlayerDisposed = true;
@@ -268,7 +270,19 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     _scrollToBottom();
   }
 
-  void _scrollToBottom() {
+  void _scrollToBottom({bool force = false}) {
+    if (_chatScrollController.hasClients) {
+      // 检查当前是否在底部（允许 50 像素误差）。
+      // 注意：由于 addPostFrameCallback 还没运行，此时的 maxScrollExtent 还是旧内容的。
+      // 因此 isAtBottom 表示：在加入新内容之前，用户是否已经处于当时的底部。
+      final isAtBottom = _chatScrollController.offset >= _chatScrollController.position.maxScrollExtent - 50;
+      
+      // 如果用户不再底部，且不是强制滚动（如发送新消息），则不执行自动滚动，让用户停留在当前位置
+      if (!isAtBottom && !force) {
+        return;
+      }
+    }
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_chatScrollController.hasClients) {
         _chatScrollController.animateTo(
@@ -292,7 +306,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
       _aiThoughtComplete = false;
     });
     _chatInputController.clear();
-    _scrollToBottom();
+    _scrollToBottom(force: true);
 
     try {
       final service = AiService();
