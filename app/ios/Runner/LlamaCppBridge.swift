@@ -10,11 +10,11 @@ class LlamaCppBridge {
     init() {
         // 初始化上下文参数
         contextParams = llama_context_default_params()
-        contextParams.n_ctx = 8192  // 增大上下文长度，支持长文本和多轮对话
-        contextParams.n_batch = 4096  // 增大 batch size，必须 >= maxTokens
-        contextParams.n_ubatch = 1024 // 物理 batch size
-        contextParams.n_threads = 4  // 线程数
-        contextParams.n_threads_batch = 8 // 批处理使用更多线程
+        contextParams.n_ctx = 2048  // 降低上下文长度以节省内存，防止 iOS OOM
+        contextParams.n_batch = 512   // 降低 batch size
+        contextParams.n_ubatch = 128  // 降低 ubatch size
+        contextParams.n_threads = 4   // 线程数
+        contextParams.n_threads_batch = 4 // 批处理线程数
         contextParams.offload_kqv = true // 尽量卸载 KQV 到 GPU
     }
     
