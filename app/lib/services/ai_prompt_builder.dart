@@ -1,5 +1,4 @@
 import 'package:nnbdc/services/ai_service.dart';
-import 'package:nnbdc/global.dart';
 
 /// 统一的 Prompt 构建器，方案 A：在 Dart 侧一次性拼好完整 prompt
 class AiPromptBuilder {
@@ -27,9 +26,9 @@ class AiPromptBuilder {
     buffer.writeln('<|im_start|>system');
     buffer.writeln('你是一名英语单词助教, 主要用中文和学生交流, 尽量不啰嗦。');
     buffer.writeln('你的任务是针对学生正在学习的单词，通过一些手段帮助他记忆, 比如：');
-    buffer.writeln('1. 易混淆词扩展 (Confusing words)');
-    buffer.writeln('2. 词根分析');
-    
+    buffer.writeln('1. 近义词/反义词拓展');
+    buffer.writeln('2. 词根分析和同根词拓展');
+
     buffer.writeln('不需要给学生出题。');
     buffer.writeln('<|im_end|>');
 
