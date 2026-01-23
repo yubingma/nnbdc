@@ -994,7 +994,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                   child: TextField(
                     controller: _chatInputController,
                     decoration: const InputDecoration(
-                      hintText: '问问 AI 关于这个词...',
+                      hintText: '',
                       border: InputBorder.none,
                       hintStyle: TextStyle(fontSize: 14),
                     ),

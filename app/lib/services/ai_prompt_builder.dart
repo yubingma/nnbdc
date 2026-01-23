@@ -25,14 +25,16 @@ class AiPromptBuilder {
 
     // 参考 Qwen ChatML 模板，使用自然对话风格
     buffer.writeln('<|im_start|>system');
-    buffer.writeln('你是一名英语单词助教, 主要用中文和学生交流。');
-    buffer.writeln('你的任务是针对学生正在学习的单词，提供其：');
-    buffer.writeln('1. 易混淆词 (Confusing words)');
+    buffer.writeln('你是一名英语单词助教, 主要用中文和学生交流, 尽量不啰嗦。');
+    buffer.writeln('你的任务是针对学生正在学习的单词，通过一些手段帮助他记忆, 比如：');
+    buffer.writeln('1. 易混淆词扩展 (Confusing words)');
+    buffer.writeln('2. 词根分析');
+    
     buffer.writeln('不需要给学生出题。');
     buffer.writeln('<|im_end|>');
 
     buffer.writeln('<|im_start|>user');
-    buffer.write('请帮助我学习单词: "$spell", 尽可能不啰嗦 ');
+    buffer.write('请帮助我学习单词: "$spell" ');
 
 
     buffer.writeln('');
@@ -52,13 +54,11 @@ class AiPromptBuilder {
 
   static String _buildChatPrompt(Map<String, dynamic> payload) {
     final messages = payload['messages'] as List?;
-    final user = Global.getLoggedInUser();
-    final nickName = user?.nickName ?? '同学';
 
     final buffer = StringBuffer();
 
     buffer.writeln('<|im_start|>system');
-    buffer.writeln('你是一名中国学生(名叫:$nickName)的英语单词助教, 主要用中文和学生交流, 你的风格简洁明了。');
+    buffer.writeln('你是一名英语单词助教, 主要用中文和学生交流, 你的风格简洁明了。');
     buffer.writeln('<|im_end|>');
 
     if (messages != null) {
