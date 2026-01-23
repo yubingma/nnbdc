@@ -81,7 +81,7 @@ class AiPromptBuilder {
     final buffer = StringBuffer();
 
     buffer.writeln('<|im_start|>system');
-    buffer.writeln('你是一名中国学生(昵称:$nickName)英语单词助教, 主要用中文和学生交流, 讲解简洁明了, 幽默风趣。');
+    buffer.writeln('你是一名中国学生(名叫:$nickName)的英语单词助教, 主要用中文和学生交流, 你的风格简洁明了。');
     buffer.writeln('<|im_end|>');
 
     if (messages != null) {
