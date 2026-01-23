@@ -327,15 +327,23 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
         });
       }
 
-      // 构建历史消息 payload
-      final historyPayload = _chatMessages
-          .where((m) => m.content.isNotEmpty || m.thought != null)
-          .take(_chatMessages.length - 1) // 不包含当前正在生成的这一条
+      // 构建历史消息 payload (最多保留最近 10 条，防止超上下文)
+      // allValidMessages 已经通过 where 过滤掉了当前正在生成的空 Assistant 消息
+      // 所以它的最后一个元素就是用户刚刚发送的消息。
+      final allValidMessages = _chatMessages
+          .where((m) => m.content.isNotEmpty || (m.thought != null && m.thought!.isNotEmpty))
+          .toList();
+      
+      var historyPayload = allValidMessages
           .map((m) => {
                 'role': m.role == MessageRole.user ? 'user' : 'assistant',
                 'content': m.content,
               })
           .toList();
+      
+      if (historyPayload.length > 10) {
+        historyPayload = historyPayload.sublist(historyPayload.length - 10);
+      }
 
       final response = await service.runTask(AiRequest(
         type: AiTaskType.chat,

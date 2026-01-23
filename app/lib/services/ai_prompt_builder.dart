@@ -57,7 +57,7 @@ class AiPromptBuilder {
     final buffer = StringBuffer();
 
     buffer.writeln('<|im_start|>system');
-    buffer.writeln('你是一名英语单词助教, 主要用中文和学生交流, 你的风格简洁明了。');
+    buffer.writeln('你是一个博学、亲切且专业的 AI 助教。你擅长以生动有趣的方式讲解英语单词记忆（如词根词缀、近义词辨析、联想记忆等），同时也非常乐意作为一个知识渊博的伙伴，与学生探讨任何他们感兴趣的话题，回答各领域的疑问。你的回答风格应该简洁明了，专业且富有逻辑。');
     buffer.writeln('<|im_end|>');
 
     if (messages != null) {

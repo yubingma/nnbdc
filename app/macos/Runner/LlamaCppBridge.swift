@@ -11,8 +11,8 @@ class LlamaCppBridge {
     init() {
         // 初始化上下文参数
         contextParams = llama_context_default_params()
-        contextParams.n_ctx = 4096  // 增大上下文长度
-        contextParams.n_batch = 2048  // 增大 batch size，必须 >= maxTokens
+        contextParams.n_ctx = 8192  // 增大上下文长度，支持长文本和多轮对话
+        contextParams.n_batch = 4096  // 增大 batch size，必须 >= maxTokens
         contextParams.n_ubatch = 1024 // 物理 batch size
         contextParams.n_threads = 4  // 线程数
         contextParams.n_threads_batch = 8 // 批处理使用更多线程
@@ -133,9 +133,9 @@ class LlamaCppBridge {
         
         NSLog("[LlamaCppBridge] Tokenized: \(nPromptTokens) tokens")
         
-        // 2. 准备批处理 - 确保不超过 n_batch
+        // 2. 准备批处理 - 确保不超过 n_batch (或在后面实现更高级的分批解码)
         guard nPromptTokens <= contextParams.n_batch else {
-            NSLog("[LlamaCppBridge] ❌ Prompt tokens (\(nPromptTokens)) 超过 n_batch (\(contextParams.n_batch))")
+            NSLog("[LlamaCppBridge] ❌ Prompt tokens (\(nPromptTokens)) 超过 n_batch (\(contextParams.n_batch))。当前对话太长，请尝试刷新或开始新会话。")
             return nil
         }
         
