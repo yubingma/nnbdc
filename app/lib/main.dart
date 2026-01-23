@@ -126,8 +126,8 @@ void main() async {
           // 预加载当前用户数据
           await Global.loadUserFromDb();
           
-          // 初始化 AI 运行时（Apple 平台，如果已下载模型）
-          if (PlatformUtils.isMacOS || PlatformUtils.isIOS) {
+          // 初始化 AI 运行时（Apple 平台，如果已下载模型且用户是管理员）
+          if ((PlatformUtils.isMacOS || PlatformUtils.isIOS) && Global.getLoggedInUser()?.isAdmin == true) {
             _initializeAppleAiRuntimeIfReady();
           }
         } catch (e, stackTrace) {

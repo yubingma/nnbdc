@@ -332,6 +332,33 @@ class _AiActivationPageState extends State<AiActivationPage> {
     final textColor = isDarkMode ? Colors.white : Colors.black87;
     final cardColor = isDarkMode ? const Color(0xFF2D2D2D) : Colors.white;
 
+    if (Global.getLoggedInUser()?.isAdmin != true) {
+      return Scaffold(
+        backgroundColor: backgroundColor,
+        appBar: AppTheme.createGradientAppBar(
+          title: 'AI 助教',
+          leading: IconButton(
+            onPressed: () => Navigator.pop(context),
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+          ),
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.lock_outline, size: 64, color: Colors.grey),
+              const SizedBox(height: 16),
+              Text('目前 AI 功能仅对管理员开放',
+                  style: TextStyle(color: textColor, fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              Text('如有疑问请联系管理员',
+                  style: TextStyle(color: textColor.withValues(alpha: 0.6), fontSize: 14)),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: backgroundColor,
       appBar: AppTheme.createGradientAppBar(

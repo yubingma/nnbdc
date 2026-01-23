@@ -88,6 +88,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
   String _aiRawAccum = '';
   StreamSubscription<String>? _aiPartialSub;
   bool _aiThoughtComplete = false; // 思考内容是否生成完成
+  bool _isAdmin = false;
 
   // Animation controllers
   late final AnimationController _wordSoundController;
@@ -204,11 +205,16 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     // 使用传入的参数判断本次是否回答错误
     isWrongWord = args.isThisAnswerWrong;
 
+    // 检查是否为管理员
+    _isAdmin = Global.getLoggedInUser()?.isAdmin == true;
+
     setState(() {
       dataLoaded = true;
     });
 
-    _prefetchAiExplanation();
+    if (_isAdmin) {
+      _prefetchAiExplanation();
+    }
   }
 
   String _cleanAiText(String rawText) {
@@ -401,6 +407,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
   }
 
   Future<void> _prefetchAiExplanation() async {
+    if (!_isAdmin) return;
     setState(() {
       _aiLoading = true;
       _aiError = null;
@@ -726,16 +733,17 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                           const Tab(text: '详情'),
                           if (hasSimilarWords()) Tab(text: '形近词(${args.word.similarWords!.length})'),
                           if (hasSynonyms()) Tab(text: "近义词(${calcSynonymCount()})"),
-                          const Tab(
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.auto_awesome, size: 14),
-                                SizedBox(width: 4),
-                                Text('AI 助教'),
-                              ],
+                          if (_isAdmin)
+                            const Tab(
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.auto_awesome, size: 14),
+                                  SizedBox(width: 4),
+                                  Text('AI 助教'),
+                                ],
+                              ),
                             ),
-                          ),
                         ],
                       ),
                     ),
@@ -747,7 +755,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                           renderDetail(), 
                           if (hasSimilarWords()) renderSimilarWords(), 
                           if (hasSynonyms()) renderSynonyms(),
-                          renderAiExplanation(),
+                          if (_isAdmin) renderAiExplanation(),
                         ],
                       ),
                     ),
@@ -779,8 +787,10 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     if (hasSynonyms()) {
       count++;
     }
-    // AI 解释 Tab 始终存在
-    count++;
+    // AI 解释 Tab 仅管理员可见
+    if (_isAdmin) {
+      count++;
+    }
     return count;
   }
 
