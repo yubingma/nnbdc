@@ -315,9 +315,40 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     _chatInputController.clear();
     _scrollToBottom(force: true);
 
-    try {
+    // 尝试执行推理，带自动减负重试机制
+    Future<AiResponse> runWithAutoRetry(List<Map<String, String>> fullHistory) async {
       final service = AiService();
-      final runtime = service.runtime;
+      // 策略 1: 尝试 10 条历史
+      var response = await service.runTask(AiRequest(
+        type: AiTaskType.chat,
+        payload: {'messages': fullHistory},
+      ));
+      
+      if (response.success) return response;
+
+      // 策略 2: 如果失败且历史较多，减负到 4 条尝试（丢弃更远的记忆）
+      if (fullHistory.length > 4) {
+        Global.logger.w('AI 推理初次尝试失败，尝试减少上下文至 4 条...');
+        final reducedHistory = fullHistory.sublist(fullHistory.length - 4);
+        response = await service.runTask(AiRequest(
+          type: AiTaskType.chat,
+          payload: {'messages': reducedHistory},
+        ));
+        if (response.success) return response;
+      }
+
+      // 策略 3: 如果依然失败，仅保留当前问题
+      Global.logger.w('AI 推理减负重试失败，尝试仅发送当前问题...');
+      response = await service.runTask(AiRequest(
+        type: AiTaskType.chat,
+        payload: {'messages': [fullHistory.last]},
+      ));
+      
+      return response;
+    }
+
+    try {
+      final runtime = AiService().runtime;
       if (runtime is MacOsAiRuntime) {
         await _aiPartialSub?.cancel();
         _aiPartialSub = runtime.partialStream.listen((delta) {
@@ -327,9 +358,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
         });
       }
 
-      // 构建历史消息 payload (最多保留最近 10 条，防止超上下文)
-      // allValidMessages 已经通过 where 过滤掉了当前正在生成的空 Assistant 消息
-      // 所以它的最后一个元素就是用户刚刚发送的消息。
+      // 准备完整的待选历史 (最多 10 条)
       final allValidMessages = _chatMessages
           .where((m) => m.content.isNotEmpty || (m.thought != null && m.thought!.isNotEmpty))
           .toList();
@@ -345,10 +374,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
         historyPayload = historyPayload.sublist(historyPayload.length - 10);
       }
 
-      final response = await service.runTask(AiRequest(
-        type: AiTaskType.chat,
-        payload: {'messages': historyPayload},
-      ));
+      // 执行带重试的任务
+      final response = await runWithAutoRetry(historyPayload);
 
       await _aiPartialSub?.cancel();
       _aiPartialSub = null;
@@ -360,13 +387,14 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
         });
       } else {
         setState(() {
-          _aiError = response.errorMessage;
+          _aiError = 'AI 助教刚才开小差了，请再试一次。';
           _aiLoading = false;
         });
       }
-    } catch (e) {
+    } catch (e, st) {
+      Global.logger.e('Chat error', error: e, stackTrace: st);
       setState(() {
-        _aiError = e.toString();
+        _aiError = 'AI 助教遇到了一点小意外 (推理服务暂不可用)';
         _aiLoading = false;
       });
     }
