@@ -11,10 +11,12 @@ class LlamaCppBridge {
     init() {
         // 初始化上下文参数
         contextParams = llama_context_default_params()
-        contextParams.n_ctx = 2048  // 上下文长度
-        contextParams.n_batch = 512  // batch size
+        contextParams.n_ctx = 4096  // 增大上下文长度
+        contextParams.n_batch = 2048  // 增大 batch size，必须 >= maxTokens
+        contextParams.n_ubatch = 1024 // 物理 batch size
         contextParams.n_threads = 4  // 线程数
-        contextParams.n_threads_batch = 4
+        contextParams.n_threads_batch = 8 // 批处理使用更多线程
+        contextParams.offload_kqv = true // 尽量卸载 KQV 到 GPU
     }
     
     /// 加载模型
@@ -26,7 +28,7 @@ class LlamaCppBridge {
         
         // 设置模型参数
         var modelParams = llama_model_default_params()
-        modelParams.n_gpu_layers = 0  // Metal 加速（macOS）
+        modelParams.n_gpu_layers = 100 // 尝试启用 Metal 自动选择层数
         modelParams.use_mmap = true
         modelParams.use_mlock = false
         
@@ -74,10 +76,10 @@ class LlamaCppBridge {
         
         // 清空 KV cache，确保每次推理都是全新的状态
         let memory = llama_get_memory(context)
-        llama_memory_seq_rm(memory, -1, -1, -1)  // seq_id=-1 表示所有序列，p0=-1, p1=-1 表示所有位置
+        llama_memory_clear(memory, true)
         NSLog("[LlamaCppBridge] KV cache 已清空")
         
-        guard !prompt.isEmpty && prompt.count <= 10000 else {
+        guard !prompt.isEmpty && prompt.count <= 20000 else {
             NSLog("[LlamaCppBridge] ❌ prompt 长度异常: \(prompt.count)")
             return nil
         }
@@ -104,8 +106,8 @@ class LlamaCppBridge {
             true    // parse_special: true - 解析特殊 token（如 <|im_start|> 等）
         )
         
-        guard nPromptTokens > 0 && nPromptTokens < 2048 else {
-            NSLog("[LlamaCppBridge] ❌ Token 数量异常: \(nPromptTokens)")
+        guard nPromptTokens > 0 && nPromptTokens < Int32(contextParams.n_ctx) else {
+            NSLog("[LlamaCppBridge] ❌ Token 数量异常或超过上下文限制: \(nPromptTokens)")
             return nil
         }
         
@@ -131,8 +133,13 @@ class LlamaCppBridge {
         
         NSLog("[LlamaCppBridge] Tokenized: \(nPromptTokens) tokens")
         
-        // 2. 准备批处理 - 使用简化的单token batch
-        var batch = llama_batch_get_one(&tokens, Int32(tokens.count))
+        // 2. 准备批处理 - 确保不超过 n_batch
+        guard nPromptTokens <= contextParams.n_batch else {
+            NSLog("[LlamaCppBridge] ❌ Prompt tokens (\(nPromptTokens)) 超过 n_batch (\(contextParams.n_batch))")
+            return nil
+        }
+        
+        var batch = llama_batch_get_one(&tokens, nPromptTokens)
         
         NSLog("[LlamaCppBridge] Batch 准备完成, n_tokens: \(batch.n_tokens)")
         

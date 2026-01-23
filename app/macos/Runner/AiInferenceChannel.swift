@@ -7,6 +7,7 @@ class AiInferenceChannel: NSObject, FlutterPlugin {
     private var isModelLoaded = false
     private var llamaBridge: LlamaCppBridge?
     private var channel: FlutterMethodChannel?
+    private let inferenceQueue = DispatchQueue(label: "com.nnbdc.ai_inference_queue", qos: .userInitiated)
     
     static func register(with registrar: FlutterPluginRegistrar) {
         let channel = FlutterMethodChannel(
@@ -113,8 +114,8 @@ class AiInferenceChannel: NSObject, FlutterPlugin {
         
         NSLog("[AiInferenceChannel] 开始 llama.cpp 推理, prompt 长度: \(prompt.count)")
         
-        // 在后台线程执行推理
-        DispatchQueue.global(qos: .userInitiated).async {
+        // 在后台串行队列执行推理，确保线程安全
+        inferenceQueue.async {
             let startTime = Date()
             
             // 调用 llama.cpp 推理 - 添加崩溃保护

@@ -39,6 +39,16 @@ class WordDetailPageArgs {
   }
 }
 
+enum MessageRole { user, assistant }
+
+class ChatMessage {
+  final MessageRole role;
+  String content;
+  String? thought;
+
+  ChatMessage({required this.role, required this.content, this.thought});
+}
+
 class WordDetailPage extends StatefulWidget {
   const WordDetailPage({super.key});
 
@@ -61,10 +71,11 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
   var sentenceChineseController = TextEditingController();
   var isEditMode = false;
   
-  // AI 解释相关
-  String? _aiExplanation;
+  // AI 解释相关 (已升级为 AI 对话)
+  final List<ChatMessage> _chatMessages = [];
+  final TextEditingController _chatInputController = TextEditingController();
+  final ScrollController _chatScrollController = ScrollController();
   String? _aiImageUrl;
-  String? _aiThought;
   bool _aiLoading = false;
   String? _aiError;
   String _aiRawAccum = '';
@@ -245,10 +256,91 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     }
 
     setState(() {
-      _aiThought = thought;
-      _aiExplanation = _cleanAiText(answer ?? '');
+      // 在对话模式下，我们将最新的输出动态更新到最后一条 assistant 消息中
+      if (_chatMessages.isNotEmpty && _chatMessages.last.role == MessageRole.assistant) {
+        _chatMessages.last.content = _cleanAiText(answer ?? '');
+        _chatMessages.last.thought = thought;
+      }
       _aiThoughtComplete = thoughtComplete;
     });
+    
+    // 自动滚动到底部
+    _scrollToBottom();
+  }
+
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_chatScrollController.hasClients) {
+        _chatScrollController.animateTo(
+          _chatScrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    });
+  }
+
+  Future<void> _sendChatMessage(String userText) async {
+    if (userText.trim().isEmpty || _aiLoading) return;
+
+    setState(() {
+      _chatMessages.add(ChatMessage(role: MessageRole.user, content: userText));
+      _chatMessages.add(ChatMessage(role: MessageRole.assistant, content: '', thought: ''));
+      _aiLoading = true;
+      _aiError = null;
+      _aiRawAccum = '';
+      _aiThoughtComplete = false;
+    });
+    _chatInputController.clear();
+    _scrollToBottom();
+
+    try {
+      final service = AiService();
+      final runtime = service.runtime;
+      if (runtime is MacOsAiRuntime) {
+        await _aiPartialSub?.cancel();
+        _aiPartialSub = runtime.partialStream.listen((delta) {
+          if (!mounted) return;
+          _aiRawAccum += delta;
+          _parseAiOutput(_aiRawAccum);
+        });
+      }
+
+      // 构建历史消息 payload
+      final historyPayload = _chatMessages
+          .where((m) => m.content.isNotEmpty || m.thought != null)
+          .take(_chatMessages.length - 1) // 不包含当前正在生成的这一条
+          .map((m) => {
+                'role': m.role == MessageRole.user ? 'user' : 'assistant',
+                'content': m.content,
+              })
+          .toList();
+
+      final response = await service.runTask(AiRequest(
+        type: AiTaskType.chat,
+        payload: {'messages': historyPayload},
+      ));
+
+      await _aiPartialSub?.cancel();
+      _aiPartialSub = null;
+
+      if (response.success) {
+        setState(() {
+          _aiLoading = false;
+          _parseAiOutput(response.text ?? '');
+        });
+      } else {
+        setState(() {
+          _aiError = response.errorMessage;
+          _aiLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _aiError = e.toString();
+        _aiLoading = false;
+      });
+    }
   }
 
   Future<void> _prefetchAiExplanation() async {
@@ -256,27 +348,25 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
       _aiLoading = true;
       _aiError = null;
       _aiRawAccum = '';
-      _aiThought = null;
-      _aiExplanation = null;
+      _chatMessages.clear();
+      // 初始化第一条 assistant 消息用于流式接收
+      _chatMessages.add(ChatMessage(role: MessageRole.assistant, content: '', thought: ''));
       _aiThoughtComplete = false;
     });
     
     try {
       final service = AiService();
       final runtime = service.runtime;
-      // 如果是 macOS 本地运行时，订阅流式部分输出，用于实时显示思考/回答过程
       if (runtime is MacOsAiRuntime) {
         await _aiPartialSub?.cancel();
-        _aiRawAccum = '';
         _aiPartialSub = runtime.partialStream.listen((delta) {
           if (!mounted) return;
           _aiRawAccum += delta;
-          // 实时解析并更新 _aiThought 和 _aiExplanation
           _parseAiOutput(_aiRawAccum);
         });
       }
 
-      // 为小模型提供更多上下文：把本地词典释义传给 Prompt 构建器
+      // 为小模型提供更多上下文：把本地词典释义和例句传给 Prompt 构建器
       final mergedMeaningItems = args.word.getMergedMeaningItems();
       final meaningPayload = mergedMeaningItems
           .map((mi) => {
@@ -286,6 +376,14 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                     + (mi.meaning ?? ''),
               })
           .toList();
+
+      // 获取至少3个例句作为上下文
+      final allSentences = await args.word.getSentences();
+      final sentencePayload = allSentences.take(3).map((s) => {
+        'en': s.english,
+        'cn': s.chinese,
+      }).toList();
+
       final request = AiRequest(
         type: AiTaskType.explainWord,
         payload: {
@@ -293,34 +391,26 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
           'phonetics': args.word.mergedPronounce ?? '',
           'partOfSpeech': mergedMeaningItems.isNotEmpty ? (mergedMeaningItems.first.ciXing ?? '') : '',
           'meanings': meaningPayload,
+          'sentences': sentencePayload,
+          'shortDesc': args.word.shortDesc,
         },
       );
       final response = await service.runTask(request);
       
-      // 取消订阅
       await _aiPartialSub?.cancel();
       _aiPartialSub = null;
       
       if (response.success) {
-        Global.logger.d('AI explainWord: ${response.text}');
         if (mounted) {
           setState(() {
-            final rawText = response.text ?? '';
-            // 最终再解析一次（确保完整）
-            _parseAiOutput(rawText);
-            
-            // 如果推理结束时思考内容还存在但 </think> 没生成（被 maxTokens 截断）
-            // 强制标记思考完成，避免永远卡在"正在思考"状态
-            if (_aiThought != null && _aiThought!.isNotEmpty && !_aiThoughtComplete) {
+            _parseAiOutput(response.text ?? '');
+            if (_chatMessages.last.thought != null && _chatMessages.last.thought!.isNotEmpty && !_aiThoughtComplete) {
               _aiThoughtComplete = true;
-              Global.logger.w('思考内容被 maxTokens 截断，强制标记为完成');
             }
-            
             _aiLoading = false;
           });
         }
       } else {
-        Global.logger.w('AI explainWord error: ${response.errorMessage}');
         if (mounted) {
           setState(() {
             _aiError = response.errorMessage ?? 'AI 解释失败';
@@ -825,208 +915,217 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     );
   }
 
-  ListView renderAiExplanation() {
+  Widget renderAiExplanation() {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+    return Column(
       children: [
-        // AI 智能解释
-        if (_aiLoading || _aiExplanation != null || _aiError != null)
-          Container(
+        // 对话记录列表
+        Expanded(
+          child: ListView.builder(
+            controller: _chatScrollController,
             padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: isDarkMode
-                    ? [
-                        const Color(0xFF2D1B69).withValues(alpha: 0.4),
-                        const Color(0xFF1E1E2D).withValues(alpha: 0.95),
-                      ]
-                    : [
-                        const Color(0xFFF0F4FF).withValues(alpha: 0.95),
-                        const Color(0xFFFAFAFA).withValues(alpha: 0.95),
-                      ],
+            itemCount: _chatMessages.length,
+            itemBuilder: (context, index) {
+              final msg = _chatMessages[index];
+              return _buildChatMessageWidget(msg, isDarkMode);
+            },
+          ),
+        ),
+        
+        // 错误提示
+        if (_aiError != null)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            color: Colors.red[400]?.withValues(alpha: 0.1),
+            child: Row(
+              children: [
+                Icon(Icons.error_outline, size: 16, color: Colors.red[400]),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    _aiError!,
+                    style: TextStyle(fontSize: 12, color: Colors.red[400]),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.refresh, size: 16),
+                  onPressed: () => _prefetchAiExplanation(),
+                )
+              ],
+            ),
+          ),
+
+        // 输入框区域
+        Container(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          decoration: BoxDecoration(
+            color: isDarkMode ? const Color(0xFF16213E) : Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                offset: const Offset(0, -2),
+                blurRadius: 10,
               ),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: isDarkMode 
-                    ? Colors.purple[700]!.withValues(alpha: 0.3) 
-                    : Colors.purple[200]!.withValues(alpha: 0.5),
-                width: 1,
+            ],
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: isDarkMode ? const Color(0xFF2A2A3E) : Colors.grey[100],
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  child: TextField(
+                    controller: _chatInputController,
+                    decoration: const InputDecoration(
+                      hintText: '问问 AI 关于这个词...',
+                      border: InputBorder.none,
+                      hintStyle: TextStyle(fontSize: 14),
+                    ),
+                    onSubmitted: (val) => _sendChatMessage(val),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              _aiLoading 
+                ? const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : IconButton(
+                    icon: Icon(Icons.send, color: AppTheme.primaryColor),
+                    onPressed: () => _sendChatMessage(_chatInputController.text),
+                  ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildChatMessageWidget(ChatMessage msg, bool isDarkMode) {
+    final isAssistant = msg.role == MessageRole.assistant;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: isAssistant ? CrossAxisAlignment.start : CrossAxisAlignment.end,
+        children: [
+          // 角色标识
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (isAssistant)
+                Icon(Icons.auto_awesome, size: 14, color: Colors.purple[400])
+              else
+                Icon(Icons.person, size: 14, color: Colors.teal[400]),
+              const SizedBox(width: 4),
+              Text(
+                isAssistant ? 'AI 助手' : '你',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: isAssistant ? Colors.purple[400] : Colors.teal[400],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          
+          // 思考过程 (仅助手且有内容时显示)
+          if (isAssistant && msg.thought != null && msg.thought!.isNotEmpty)
+            _buildThoughtWidget(msg.thought!, isDarkMode),
+
+          // 消息正文
+          Container(
+            padding: const EdgeInsets.all(12),
+            constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.8),
+            decoration: BoxDecoration(
+              color: isAssistant
+                  ? (isDarkMode ? const Color(0xFF2A2A3E) : const Color(0xFFF0F4FF))
+                  : (isDarkMode ? const Color(0xFF3F3F5A) : AppTheme.primaryColor),
+              borderRadius: BorderRadius.only(
+                topLeft: const Radius.circular(12),
+                topRight: const Radius.circular(12),
+                bottomLeft: Radius.circular(isAssistant ? 0 : 12),
+                bottomRight: Radius.circular(isAssistant ? 12 : 0),
               ),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: Colors.purple[100]?.withValues(alpha: 0.3),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Icon(
-                        Icons.auto_awesome,
-                        size: 16,
-                        color: Colors.purple[400],
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'AI 智能解释',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 0.5,
-                        fontFamily: 'NotoSansSC',
-                        color: isDarkMode ? Colors.purple[300] : Colors.purple[700],
-                      ),
-                    ),
-                    const Spacer(),
-                    if (_aiLoading)
-                      SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.purple[400]!),
-                        ),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                if (_aiLoading)
-                  Text(
-                    '正在生成 AI 解释...',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                      fontStyle: FontStyle.italic,
-                    ),
-                  ),
-                if (_aiError != null)
-                  Text(
-                    _aiError!,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.red[400],
-                    ),
-                  ),
-                // AI 思考过程（思考中才显示，完成后隐藏）
-                if (_aiThought != null && _aiThought!.isNotEmpty && !_aiThoughtComplete)
-                  Container(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    decoration: BoxDecoration(
-                      color: isDarkMode 
-                          ? Colors.grey[900]!.withValues(alpha: 0.3) 
-                          : Colors.grey[100]!.withValues(alpha: 0.8),
+                if (isAssistant && _chatMessages.indexOf(msg) == 0 && _aiImageUrl != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: ClipRRect(
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: isDarkMode 
-                            ? Colors.grey[700]!.withValues(alpha: 0.5) 
-                            : Colors.grey[300]!.withValues(alpha: 0.5),
-                        width: 0.5,
-                      ),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              SizedBox(
-                                width: 14,
-                                height: 14,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    isDarkMode ? Colors.grey[500]! : Colors.grey[600]!
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                'AI 正在思考...',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: isDarkMode ? Colors.grey[500] : Colors.grey[600],
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            _aiThought!,
-                            style: TextStyle(
-                              fontSize: 12,
-                              height: 1.5,
-                              color: isDarkMode ? Colors.grey[500] : Colors.grey[600],
-                              fontStyle: FontStyle.italic,
-                            ),
-                          ),
-                        ],
+                      child: Image.network(
+                        _aiImageUrl!.endsWith('.png') ? _aiImageUrl! : '$_aiImageUrl.png',
+                        errorBuilder: (c, e, s) => Container(),
                       ),
                     ),
                   ),
-                // AI 最终解释
-                if (_aiExplanation != null && _aiExplanation!.isNotEmpty)
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // 如果有图片 URL，优先展示图片（注意这里可能需要加后缀，如 .png）
-                      if (_aiImageUrl != null)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.network(
-                              _aiImageUrl!.endsWith('.png') || _aiImageUrl!.endsWith('.jpg') 
-                                  ? _aiImageUrl! 
-                                  : '$_aiImageUrl.png',
-                              fit: BoxFit.cover,
-                              width: double.infinity,
-                              errorBuilder: (context, error, stackTrace) => Container(), // 图片加载失败则不显示
-                            ),
-                          ),
-                        ),
-                      // 使用 Markdown 渲染
-                      _buildMarkdownText(_aiExplanation!, isDarkMode),
-                    ],
+                if (msg.content.isEmpty && isAssistant && _aiLoading && _chatMessages.lastIndexOf(msg) == _chatMessages.length - 1)
+                  const Text('...', style: TextStyle(fontStyle: FontStyle.italic))
+                else if (isAssistant)
+                  _buildMarkdownText(msg.content, isDarkMode)
+                else
+                  Text(
+                    msg.content,
+                    style: const TextStyle(color: Colors.white, fontSize: 14),
                   ),
               ],
             ),
-          )
-        else
-          // 没有内容时显示空状态
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.all(48),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.auto_awesome_outlined,
-                    size: 64,
-                    color: Colors.grey[400],
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'AI 解释加载中...',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey[600],
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildThoughtWidget(String thought, bool isDarkMode) {
+    final showLoading = !_aiThoughtComplete && _aiLoading && _chatMessages.last.thought == thought;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: isDarkMode ? Colors.black.withValues(alpha: 0.2) : Colors.grey[100],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: isDarkMode ? Colors.grey[800]! : Colors.grey[300]!, width: 0.5),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              if (showLoading)
+                const SizedBox(
+                  width: 10,
+                  height: 10,
+                  child: CircularProgressIndicator(strokeWidth: 1.5),
+                )
+              else
+                Icon(Icons.lightbulb_outline, size: 12, color: Colors.grey[500]),
+              const SizedBox(width: 6),
+              Text(
+                showLoading ? '正在思考中...' : '已完成思考',
+                style: TextStyle(fontSize: 10, color: Colors.grey[500], fontWeight: FontWeight.bold),
               ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            thought,
+            style: TextStyle(
+              fontSize: 11,
+              height: 1.4,
+              color: isDarkMode ? Colors.grey[500] : Colors.grey[600],
+              fontStyle: FontStyle.italic,
             ),
           ),
-      ],
+        ],
+      ),
     );
   }
 
