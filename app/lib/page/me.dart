@@ -151,6 +151,9 @@ class _MePageState extends State<MePage> {
           return;
         }
 
+        // 检查并强制执行会员限制（非会员每日单词限额 20）
+        await SubscriptionUtil.checkAndEnforceMemberLimits();
+
         // 同步数据库：检查是否有本地学习词书，决定是否等待同步完成
         final existingLearningDicts = await MyDatabase.instance.learningDictsDao.getLearningDictsOfUser(loggedInUser!.id!);
         if (existingLearningDicts.isNotEmpty) {

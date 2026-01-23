@@ -429,6 +429,30 @@ class SubscriptionUtil {
     return _isPremiumEffective(user);
   }
 
+  /// 检查并强制执行会员限制（例如：非会员每日单词限额为 20）
+  static Future<void> checkAndEnforceMemberLimits() async {
+    final user = Global.getLoggedInUser();
+    if (user == null || Global.isGuest) {
+      return;
+    }
+
+    if (!isPremium()) {
+      if (user.wordsPerDay > 20) {
+        Global.logger.i('用户非会员，强制执行每日单词限额 20（原设为 ${user.wordsPerDay}）');
+        
+        // 更新本地数据库
+        await MyDatabase.instance.usersDao.updateWordsPerDay(user.id, 20);
+        
+        // 更新内存缓存
+        final updatedUser = user.copyWith(wordsPerDay: 20);
+        Global.updateUserCache(updatedUser);
+        
+        // 触发同步到云端
+        ThrottledDbSyncService().requestSync();
+      }
+    }
+  }
+
   /// 有效会员判定（包含“强制视为会员”逻辑；边界情况偏向会员）
   static bool _isPremiumEffective(User user) {
     final now = DateTime.now();

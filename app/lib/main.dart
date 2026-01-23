@@ -42,6 +42,7 @@ import 'package:nnbdc/services/ai_runtime_apple.dart';
 import 'package:provider/provider.dart';
 import 'package:toastification/toastification.dart';
 import 'package:nnbdc/page/admin/golden_master_tool.dart';
+import 'package:nnbdc/util/subscription_util.dart';
 
 import 'local_word_cache.dart';
 
@@ -125,6 +126,9 @@ void main() async {
 
           // 预加载当前用户数据
           await Global.loadUserFromDb();
+          
+          // 检查并强制执行会员限制（非会员每日单词限额 20）
+          await SubscriptionUtil.checkAndEnforceMemberLimits();
           
           // 初始化 AI 运行时（Apple 平台，如果已下载模型且用户是管理员）
           if ((PlatformUtils.isMacOS || PlatformUtils.isIOS) && Global.getLoggedInUser()?.isAdmin == true) {
