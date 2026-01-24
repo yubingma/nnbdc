@@ -39,7 +39,7 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
     // Audio Recording
     private var audioRecord: AudioRecord? = null
     private var recordingThread: Thread? = null
-    private val audioSource = MediaRecorder.AudioSource.MIC
+    private val audioSource = MediaRecorder.AudioSource.VOICE_RECOGNITION
     private val sampleRateInHz = 16000
     private val channelConfig = AudioFormat.CHANNEL_IN_MONO
     private val audioFormat = AudioFormat.ENCODING_PCM_16BIT
@@ -231,9 +231,9 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                 .setEndpointConfig(endpointConfig)
                 .setEnableEndpoint(true)
                 .setDecodingMethod("modified_beam_search")
-                .setMaxActivePaths(16) // 进一步增加候选路径
-                .setHotwordsScore(40.0f) // 大幅提升热词权重，使其表现得像有强制词典一样
-                .setBlankPenalty(1.2f) // 稍微加大空白惩罚
+                .setMaxActivePaths(12) 
+                .setHotwordsScore(30.0f) 
+                .setBlankPenalty(1.0f) // 恢复空白惩罚，有助于消除“整整”这种重复识别
                 .build()
             
             // 验证配置路径
