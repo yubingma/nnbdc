@@ -35,12 +35,14 @@ class PhonemeUtil {
   }
 
   /// 返回两个单词的音素相似度(0-100)
-  /// 如果单词不在词典中，则退而求其次，计算字符级别的加权相似度
+  /// 核心改进：利用 cmudict.dict 对“垃圾结果”进行音素骨架提取与对比
   static Future<int> similarity(String a, String b) async {
     if (a.isEmpty || b.isEmpty) return 0;
+    
     final aVars = await lookup(a);
     final bVars = await lookup(b);
 
+    // 情况 A：两个词都在字典里，进行精准音素对比
     if (aVars.isNotEmpty && bVars.isNotEmpty) {
       int best = 0;
       for (final ap in aVars) {
@@ -52,13 +54,79 @@ class PhonemeUtil {
       return best;
     }
 
-    // 补丁：如果其中一个不在词典中（比如识别出了乱码 suece），则使用字符编辑距离作为兜底
+    // 情况 B：至少一个词不在字典里（比如 ASR 吐出了乱码 suece）
+    // 逻辑：估算“垃圾词”的拟真音素，并与“目标词”的弱化音素进行骨架对比
+    final List<List<String>> targetPhons = aVars.isNotEmpty ? aVars : bVars;
+    final String garbageWord = aVars.isNotEmpty ? b : a;
+
+    if (targetPhons.isNotEmpty) {
+      final garbagePseudo = _convertToPseudoPhonemes(garbageWord);
+      int best = 0;
+      for (final tp in targetPhons) {
+        final weakTP = _weakenPhonemes(tp);
+        final s = _phonemeSimilarity(weakTP, garbagePseudo);
+        if (s > best) best = s;
+      }
+      return best;
+    }
+
+    // 情况 C：两个都不在字典里，退化到字符编辑距离
     final dist = EditDistance.forStrings(a.toLowerCase(), b.toLowerCase());
     final maxLen = a.length > b.length ? a.length : b.length;
     if (maxLen == 0) return 0;
-    
-    // 字符相似度计算，稍微严一点，避免乱入
     return ((maxLen - dist) * 100.0 / maxLen).clamp(0.0, 100.0).round();
+  }
+
+  /// 内部方法：将真实音素序列（如 [S, W, IH]）弱化处理（合并母音），以便与垃圾词对比
+  static List<String> _weakenPhonemes(List<String> phons) {
+    const vowels = {"AA", "AE", "AH", "AO", "AW", "AY", "EH", "ER", "EY", "IH", "IY", "OW", "OY", "UH", "UW"};
+    return phons.map((p) => vowels.contains(p) ? "V" : p).toList();
+  }
+
+  /// 内部方法：将普通乱码文本转换为伪音素序列（骨架提取）
+  static List<String> _convertToPseudoPhonemes(String word) {
+    String w = word.toLowerCase().trim();
+    if (w.isEmpty) return [];
+
+    // 1. 常见辅音组合简化映射
+    w = w.replaceAll('ph', 'f');
+    w = w.replaceAll('sh', 'S'); // 临时占位
+    w = w.replaceAll('ch', 'C');
+    w = w.replaceAll('th', 'T');
+    w = w.replaceAll('ck', 'k');
+    w = w.replaceAll('ng', 'G');
+    w = w.replaceAll('qu', 'kw');
+    w = w.replaceAll(RegExp(r'ce|ci|cy'), 's');
+    
+    // 2. 转换为标准音素集映射
+    final List<String> res = [];
+    for (int i = 0; i < w.length; i++) {
+      final char = w[i];
+      if ("aeiouy".contains(char)) {
+        res.add("V"); // 统一标识为母音
+      } else if (char == 'S') {
+        res.add("SH");
+      } else if (char == 'C') {
+        res.add("CH");
+      } else if (char == 'T') {
+        res.add("TH");
+      } else if (char == 'G') {
+        res.add("NG");
+      } else if (RegExp(r'[a-z]').hasMatch(char)) {
+        res.add(char.toUpperCase());
+      }
+    }
+    
+    // 3. 去重坍缩（防止叠音干扰）
+    List<String> collapsed = [];
+    if (res.isNotEmpty) {
+      collapsed.add(res[0]);
+      for (var i = 1; i < res.length; i++) {
+        if (res[i] == res[i-1]) continue;
+        collapsed.add(res[i]);
+      }
+    }
+    return collapsed;
   }
 
   /// 在候选集中按音素相似度选最佳项，返回原候选串
@@ -75,6 +143,7 @@ class PhonemeUtil {
     }
     return best;
   }
+// ... 剩下的解析代码保持不变
 
   // ---------- 内部实现 ----------
 

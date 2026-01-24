@@ -132,36 +132,36 @@ class AsrUtil {
   static String preprocessEnglish(String result, String targetWord) {
     if (result.isEmpty) return result;
 
-    // 转换为小写进行匹配
     String lowerResult = result.toLowerCase().trim();
     String lowerTarget = targetWord.toLowerCase().trim();
 
-    // 首先检查完全匹配
+    // 1. 完全匹配
     if (lowerResult == lowerTarget) {
+      Global.logger.d('===== ASR MATCH [EXACT]: "$lowerResult" == "$lowerTarget"');
       return lowerTarget;
     }
 
-    // 检查特殊映射表（仅用于特殊情况）
+    // 2. 特殊映射表
     if (_englishPronunciationMap.containsKey(lowerResult)) {
       String corrected = _englishPronunciationMap[lowerResult]!;
       if (corrected == lowerTarget) {
+        Global.logger.d('===== ASR MATCH [MAP_RESCUE]: "$lowerResult" -> "$lowerTarget"');
         return lowerTarget;
       }
     }
 
-    // 使用编辑距离算法判断相似性
+    // 3. 编辑距离匹配
     int distance = EditDistance.forStrings(lowerResult, lowerTarget);
     int maxLength = [lowerResult.length, lowerTarget.length].reduce((a, b) => a > b ? a : b);
 
-    // 对于短单词，即便编辑距离稍大也尝试匹配（放宽到 50% 容错）
     if (maxLength > 0 && distance <= (maxLength * 0.5).ceil()) {
-      Global.logger.d('===== ASR: Edit distance match: "$lowerResult" -> "$lowerTarget" (dist: $distance)');
+      Global.logger.d('===== ASR MATCH [EDIT_DIST]: "$lowerResult" -> "$lowerTarget" (dist: $distance, max: $maxLength)');
       return lowerTarget;
     }
 
-    // 检查是否有显著的重叠部分（对于复合词很有用）
+    // 4. 重叠度匹配
     if (_hasSignificantOverlap(lowerResult, lowerTarget)) {
-      Global.logger.d('===== ASR: Overlap match: "$lowerResult" -> "$lowerTarget"');
+      Global.logger.d('===== ASR MATCH [OVERLAP]: "$lowerResult" -> "$lowerTarget"');
       return lowerTarget;
     }
 
@@ -170,7 +170,7 @@ class AsrUtil {
 
   /// 基于音素相似度的改进版：从多个候选中选择最优（异步）
   /// @param candidates 候选列表, 来自于ASR识别结果
-  /// @param targetWord 目标单词(也就是正确的单词, 或者说目前正在学习的单词)
+  /// @param targetWord 目标单词
   /// @return 最优候选
   static Future<String> selectBestCandidateWithPhoneme(
     List<String> candidates,
@@ -181,10 +181,13 @@ class AsrUtil {
 
     // 完全匹配优先
     for (final c in candidates) {
-      if (c.toLowerCase().trim() == lowerTarget) return targetWord;
+      if (c.toLowerCase().trim() == lowerTarget) {
+        Global.logger.d('===== ASR MATCH [NBEST_EXACT]: "$c" == "$lowerTarget"');
+        return targetWord;
+      }
     }
 
-    // 先用现有算法选一遍
+    // 先用现有算法选一遍作为基准
     final baseline = selectBestCandidate(candidates, targetWord);
 
     // 尝试音素相似度
@@ -198,8 +201,12 @@ class AsrUtil {
       }
     }
 
-    // 阈值：音素相似度 ≥ 70 则视为目标词
-    if (bestScore >= 70) return targetWord;
+    // 判定：音素相似度 ≥ 70 则视为目标词
+    if (bestScore >= 70) {
+      Global.logger.d('===== ASR MATCH [PHONETIC]: "$best" -> "$lowerTarget" (score: $bestScore)');
+      return targetWord;
+    }
+
     return best;
   }
 
