@@ -268,6 +268,7 @@ class ChineseAsrInputWidget extends StatefulWidget {
   final AsrState asrState;
   final Function(AsrLanguage) onStartAsr;
   final bool isKeyboardVisible;
+  final FocusNode focusNode;
 
   const ChineseAsrInputWidget({
     super.key,
@@ -275,6 +276,7 @@ class ChineseAsrInputWidget extends StatefulWidget {
     required this.asrState,
     required this.onStartAsr,
     required this.isKeyboardVisible,
+    required this.focusNode,
   });
 
   @override
@@ -290,6 +292,7 @@ class _ChineseAsrInputWidgetState extends State<ChineseAsrInputWidget> {
         TextField(
           textAlign: TextAlign.center,
           controller: widget.controller,
+          focusNode: widget.focusNode,
           keyboardType: TextInputType.text,
           decoration: InputDecoration(
             hintText: widget.asrState == AsrState.started
@@ -311,6 +314,7 @@ class EnglishAsrInputWidget extends StatefulWidget {
   final AsrState asrState;
   final Function(AsrLanguage) onStartAsr;
   final bool isKeyboardVisible;
+  final FocusNode focusNode;
 
   const EnglishAsrInputWidget({
     super.key,
@@ -318,6 +322,7 @@ class EnglishAsrInputWidget extends StatefulWidget {
     required this.asrState,
     required this.onStartAsr,
     required this.isKeyboardVisible,
+    required this.focusNode,
   });
 
   @override
@@ -333,6 +338,7 @@ class _EnglishAsrInputWidgetState extends State<EnglishAsrInputWidget> {
         TextField(
           textAlign: TextAlign.center,
           controller: widget.controller,
+          focusNode: widget.focusNode,
           keyboardType: TextInputType.text,
           decoration: InputDecoration(
             hintText: widget.asrState == AsrState.started
@@ -368,6 +374,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
   /// 释义输入框
   final TextEditingController _meaningController = TextEditingController();
+
+  /// 释义输入框焦点控制
+  final FocusNode _meaningFocusNode = FocusNode();
 
   final AudioPlayer _audioPlayer = AudioPlayer();
 
@@ -714,6 +723,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     asr.stopAsr();
     _keyboardSubscription.cancel();
     _tabController?.dispose();
+    _meaningFocusNode.dispose();
     _soundController.dispose();
     _wordSoundController.dispose();
     _sentenceSoundController.dispose();
@@ -806,8 +816,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     if (_meaningController.text.isEmpty) {
       return;
     }
-    if (asr.state != AsrState.started) {
-      Global.logger.w('收到语音识别结果(${_meaningController.text})，但ASR未启动，跳过处理');
+    // 如果 ASR 未启动，且键盘也未弹出，且没有焦点，说明可能是 ASR 停止后的残留结果，跳过处理并清空
+    if (asr.state != AsrState.started && !_isKeyboardVisible && !_meaningFocusNode.hasFocus) {
+      Global.logger.w('收到归属于旧会话的语音识别结果(${_meaningController.text})，但ASR未启动且无输入焦点，跳过处理');
       if (mounted) {
         _meaningController.text = '';
       }
@@ -2999,12 +3010,14 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                   asrState: asr.state,
                   onStartAsr: (language) => asr.startAsr(language),
                   isKeyboardVisible: _isKeyboardVisible,
+                  focusNode: _meaningFocusNode,
                 )
               : EnglishAsrInputWidget(
                   controller: _meaningController,
                   asrState: asr.state,
                   onStartAsr: (language) => asr.startAsr(language),
                   isKeyboardVisible: _isKeyboardVisible,
+                  focusNode: _meaningFocusNode,
                 ),
         ],
       ),
