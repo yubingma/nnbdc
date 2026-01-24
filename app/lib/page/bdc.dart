@@ -621,11 +621,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       vsync: this,
     );
 
-    // Listen to player state changes.
-    _audioPlayer.onPlayerStateChanged.listen((state) {
-      Global.logger.d('Player state changed: $state');
-    });
-
     _meaningController.addListener(() {
       checkAsrResult();
     });

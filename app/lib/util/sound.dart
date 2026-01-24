@@ -88,7 +88,6 @@ class SoundUtil {
       }
 
       if (PlatformUtils.isWeb) {
-        Global.logger.d('Web audio play url: $soundUrl');
         await player.play(UrlSource(soundUrl));
       } else {
         var file = await DefaultCacheManager().getSingleFile(soundUrl);
@@ -153,7 +152,6 @@ class SoundUtil {
       // 使用独立播放器，不需要停止其他播放
 
       if (PlatformUtils.isWeb) {
-        Global.logger.d('Web audio play url: $soundUrl');
         await player.play(UrlSource(soundUrl));
       } else {
         var file = await DefaultCacheManager().getSingleFile(soundUrl);
