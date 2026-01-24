@@ -375,6 +375,15 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                         val isEndpoint = m.isEndpoint(s)
                         val result = m.getResult(s)
                         val text = result.text.trim().lowercase() // 转小写
+                        
+                        // 【关键修复】：如果检测到端点（静音切断），必须重置流状态
+                        // 否则旧的特征残余会导致后续识别出现“叠词”（如 限限）或无法开启新词识别
+                        if (isEndpoint) {
+                            m.reset(s)
+                            lastSentResult = "" // 端点后重置去重，确保新的一句话能发出
+                            Log.i(TAG, "ASR Endpoint detected: Stream reset.")
+                        }
+                        
                         val tokens = result.tokens
                         
                         // 周期性音量打印

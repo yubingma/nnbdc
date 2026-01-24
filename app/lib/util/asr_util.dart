@@ -150,11 +150,12 @@ class AsrUtil {
       }
     }
 
-    // 3. 编辑距离匹配
+    // 3. 编辑距离匹配 (收紧阈值，配合 66M 模型)
     int distance = EditDistance.forStrings(lowerResult, lowerTarget);
     int maxLength = [lowerResult.length, lowerTarget.length].reduce((a, b) => a > b ? a : b);
 
-    if (maxLength > 0 && distance <= (maxLength * 0.5).ceil()) {
+    // 将容错率从 50% 收紧到 30% (向下取整)，确保匹配更精准
+    if (maxLength > 0 && distance <= (maxLength * 0.3).floor()) {
       Global.logger.d('===== ASR MATCH [EDIT_DIST]: "$lowerResult" -> "$lowerTarget" (dist: $distance, max: $maxLength)');
       return lowerTarget;
     }
