@@ -62,11 +62,18 @@ class PhonemeUtil {
     if (targetPhons.isNotEmpty) {
       final garbagePseudo = _convertToPseudoPhonemes(garbageWord);
       int best = 0;
+      List<String> bestRef = [];
       for (final tp in targetPhons) {
         final weakTP = _weakenPhonemes(tp);
         final s = _phonemeSimilarity(weakTP, garbagePseudo);
-        if (s > best) best = s;
+        if (s > best) {
+          best = s;
+          bestRef = weakTP;
+        }
       }
+      
+      // 记录骨架对比日志，方便排查由于拼写导致的“听感一致”
+      Global.logger.d('===== Phonetic compare: "$garbageWord"[$garbagePseudo] vs target[$bestRef] score: $best');
       return best;
     }
 
@@ -80,7 +87,8 @@ class PhonemeUtil {
   /// 内部方法：将真实音素序列（如 [S, W, IH]）弱化处理（合并母音），以便与垃圾词对比
   static List<String> _weakenPhonemes(List<String> phons) {
     const vowels = {"AA", "AE", "AH", "AO", "AW", "AY", "EH", "ER", "EY", "IH", "IY", "OW", "OY", "UH", "UW"};
-    return phons.map((p) => vowels.contains(p) ? "V" : p).toList();
+    // 使用 @ 作为元音占位符，避免与辅音字母 V (v) 冲突
+    return phons.map((p) => vowels.contains(p.replaceAll(RegExp(r'\d+'), '')) ? "@" : p.replaceAll(RegExp(r'\d+'), '')).toList();
   }
 
   /// 内部方法：将普通乱码文本转换为伪音素序列（骨架提取）
@@ -103,7 +111,7 @@ class PhonemeUtil {
     for (int i = 0; i < w.length; i++) {
       final char = w[i];
       if ("aeiouy".contains(char)) {
-        res.add("V"); // 统一标识为母音
+        res.add("@"); // 统一标识为母音 (@ 不会与任何辅音字母冲突)
       } else if (char == 'S') {
         res.add("SH");
       } else if (char == 'C') {
@@ -117,7 +125,7 @@ class PhonemeUtil {
       }
     }
     
-    // 3. 去重坍缩（防止叠音干扰）
+    // 3. 去重坍缩（防止叠音干扰，如 ttt -> T）
     List<String> collapsed = [];
     if (res.isNotEmpty) {
       collapsed.add(res[0]);
@@ -177,14 +185,70 @@ class PhonemeUtil {
     }
   }
 
-  /// 将两个音素序列的 Levenshtein 距离映射为 0-100 相似度
+  /// 将两个音素序列的距离映射为 0-100 相似度
   static int _phonemeSimilarity(List<String> a, List<String> b) {
     if (a.isEmpty || b.isEmpty) return 0;
-    final dist = EditDistance.forLists(a, b);
+    
+    // 使用加权编辑距离，考虑常见的识别混淆
+    final dist = _weightedPhonemeDistance(a, b);
     final maxLen = a.length > b.length ? a.length : b.length;
     final score = ((maxLen - dist) * 100.0 / maxLen).clamp(0.0, 100.0).round();
     return score;
-    
+  }
+
+  /// 针对英语音素特性的加权编辑距离
+  static double _weightedPhonemeDistance(List<String> a, List<String> b) {
+    final n = a.length;
+    final m = b.length;
+    if (n == 0) return m.toDouble();
+    if (m == 0) return n.toDouble();
+
+    final dp = List.generate(n + 1, (_) => List<double>.filled(m + 1, 0.0));
+    for (var i = 0; i <= n; i++) {
+      dp[i][0] = i.toDouble();
+    }
+    for (var j = 0; j <= m; j++) {
+      dp[0][j] = j.toDouble();
+    }
+
+    for (var i = 1; i <= n; i++) {
+      for (var j = 1; j <= m; j++) {
+        // 计算替换代价
+        final cost = _phonemeMatchCost(a[i - 1], b[j - 1]);
+        
+        final del = dp[i - 1][j] + 1.0;
+        final ins = dp[i][j - 1] + 1.0;
+        final sub = dp[i - 1][j - 1] + cost;
+        
+        dp[i][j] = del < ins ? (del < sub ? del : sub) : (ins < sub ? ins : sub);
+      }
+    }
+    return dp[n][m];
+  }
+
+  /// 定义音素之间的匹配代价
+  static double _phonemeMatchCost(String p1, String p2) {
+    if (p1 == p2) return 0.0;
+
+    // ASR 模型易混淆组（代价设为 0.2，表示 80% 相似度）
+    // 主要是处理 V-L, L-R, B-P, F-V 等经典偏差
+    const confusionGroups = [
+      {"V", "L"}, // 解决用户反馈的预算/视频识别偏差
+      {"V", "B"}, 
+      {"V", "F"},
+      {"L", "R"}, 
+      {"B", "P"},
+      {"D", "T"},
+      {"G", "K"},
+      {"S", "@"}, // 某些情况下元音和擦音混淆
+      {"M", "N"},
+    ];
+
+    for (final group in confusionGroups) {
+      if (group.contains(p1) && group.contains(p2)) return 0.2;
+    }
+
+    return 1.0; // 完全不相关的音素，替换代价为 1
   }
   
 }
