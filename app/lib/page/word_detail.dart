@@ -16,6 +16,7 @@ import 'package:nnbdc/config.dart';
 import 'package:nnbdc/services/ai_service.dart';
 import 'package:nnbdc/services/ai_runtime_apple.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:http/http.dart' as http;
 
 import '../global.dart';
 import '../state.dart';
@@ -220,8 +221,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
   String _cleanAiText(String rawText) {
     String cleaned = rawText;
 
-    // 直接由程序生成图片 URL，不再依赖 AI 输出标签
-    _aiImageUrl = '${Config.wordImageBaseUrl}${args.word.spell}';
+    // 异步验证并设置图片 URL
+    _validateAndSetImageUrl();
 
     // 进一步清理 AI 输出：移除所有特殊 token 和残留的标签
     cleaned = cleaned.replaceAll(RegExp(r'<\|im_start\|>.*?(\n|$)'), '');
@@ -244,6 +245,47 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     cleaned = cleaned.replaceAll(RegExp(r'\n{3,}'), '\n\n'); // 压缩连续空行
 
     return cleaned;
+  }
+
+  /// 验证并设置图片 URL
+  /// 只有当图片确实存在时才设置 _aiImageUrl，避免加载不存在的图片导致 Android ImageDecoder 错误
+  Future<void> _validateAndSetImageUrl() async {
+    try {
+      final imageUrl = '${Config.wordImageBaseUrl}${args.word.spell}';
+      
+      // 简化策略：直接设置 URL，但添加一个快速的 HEAD 请求验证
+      // 这样可以在图片不存在时避免 ImageDecoder 错误
+      final urlToCheck = '$imageUrl.png';
+      
+      try {
+        final response = await http.head(Uri.parse(urlToCheck)).timeout(
+          const Duration(seconds: 2),
+        );
+        
+        // 只有当响应成功且是图片类型时才设置 URL
+        if (response.statusCode == 200) {
+          final contentType = response.headers['content-type'] ?? '';
+          if (contentType.startsWith('image/')) {
+            if (mounted) {
+              setState(() {
+                _aiImageUrl = imageUrl;
+              });
+            }
+            Global.logger.d('图片验证成功: $urlToCheck');
+            return;
+          } else {
+            Global.logger.d('URL 返回非图片内容: $urlToCheck (Content-Type: $contentType)');
+          }
+        } else {
+          Global.logger.d('图片不存在: $urlToCheck (状态码: ${response.statusCode})');
+        }
+      } catch (e) {
+        // 网络请求失败，不设置图片 URL
+        Global.logger.d('无法验证图片: $urlToCheck, 错误: $e');
+      }
+    } catch (e) {
+      Global.logger.d('验证图片 URL 失败: $e');
+    }
   }
 
   /// 解析 AI 原始输出，分离思考过程 和 最终答案
@@ -961,7 +1003,29 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                       borderRadius: BorderRadius.circular(8),
                       child: Image.network(
                         _aiImageUrl!.endsWith('.png') ? _aiImageUrl! : '$_aiImageUrl.png',
-                        errorBuilder: (c, e, s) => Container(),
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Center(
+                            child: SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                value: loadingProgress.expectedTotalBytes != null
+                                    ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                                    : null,
+                                strokeWidth: 2,
+                              ),
+                            ),
+                          );
+                        },
+                        errorBuilder: (c, e, s) {
+                          // 静默处理图像加载错误，避免在日志中显示
+                          Global.logger.d('AI图像加载失败: $_aiImageUrl, 错误: $e');
+                          return Container();
+                        },
+                        // 添加缓存控制以避免重复加载失败的图像
+                        cacheWidth: 800,
+                        cacheHeight: 600,
                       ),
                     ),
                   ),

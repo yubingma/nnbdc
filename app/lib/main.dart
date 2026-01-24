@@ -57,10 +57,16 @@ void main() async {
       FlutterError.onError = (FlutterErrorDetails details) {
         // 检查是否为图像相关的错误（非致命错误，不需要在控制台显示）
         final exceptionString = details.exceptionAsString();
+        final stackString = details.stack?.toString() ?? '';
         final isImageError = exceptionString.contains('Invalid image data') ||
             exceptionString.contains('Exception: Invalid image data') ||
-            (details.stack?.toString().contains('MemoryImage') ?? false) ||
-            (details.stack?.toString().contains('image_provider.dart') ?? false);
+            exceptionString.contains('Failed to decode image') ||
+            exceptionString.contains('ImageDecoder') ||
+            exceptionString.contains('DecodeException') ||
+            stackString.contains('MemoryImage') ||
+            stackString.contains('image_provider.dart') ||
+            stackString.contains('ImageDecoder') ||
+            stackString.contains('decodeImage');
         
         if (isImageError) {
           // 图像错误只记录到日志，不输出到控制台（避免干扰）

@@ -19,7 +19,7 @@ jobs:
       matrix:
         platform: [android, windows, macos, linux]
     runs-on: ${{ matrix.platform == 'windows' && 'windows-latest' ||
-      matrix.platform == 'macos' && 'macos-latest' ||
+      matrix.platform == 'macos' && 'macos-15' ||
       'ubuntu-latest' }}
     env:
       # Android 构建所需的环境变量

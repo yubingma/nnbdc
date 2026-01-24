@@ -1,26 +1,25 @@
 package com.nn.nnbdc
 
 import android.Manifest
+import android.app.Activity
 import android.content.pm.PackageManager
 import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
 import android.os.Bundle
-import android.text.method.ScrollingMovementMethod
 import android.util.Log
-import android.widget.Button
-import android.widget.TextView
-import kotlin.concurrent.thread
-
-import android.app.Activity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodChannel
-import com.k2fsa.sherpa.ncnn.*
+import kotlin.concurrent.thread
 import kotlin.math.sqrt
 import org.json.JSONObject
+import org.json.JSONArray
 
-private const val TAG = "sherpa-ncnn"
+// Sherpa-ONNX imports
+import com.k2fsa.sherpa.onnx.*
+
+private const val TAG = "sherpa-onnx"
 
 class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
     private var eventChannel: EventChannel? = null
@@ -28,40 +27,43 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
     private var meterChannel: EventChannel? = null
     private var meterEvents: EventChannel.EventSink? = null
 
-    // If there is a GPU and useGPU is true, we will use GPU
-    // If there is no GPU and useGPU is true, we won't use GPU
-    private val useGPU: Boolean = true
-
-    private lateinit var model: SherpaNcnn
+    // Sherpa Onnx Recognizer
+    private var model: OnlineRecognizer? = null
+    private var stream: OnlineStream? = null
+    // 当前模型语言类型: "zh" or "en"
+    private var currentModelType: String = ""
+    
+    // 上一次发送的识别结果，用于去重
+    private var lastSentResult: String = ""
+    
+    // Audio Recording
     private var audioRecord: AudioRecord? = null
     private var recordingThread: Thread? = null
-
     private val audioSource = MediaRecorder.AudioSource.MIC
     private val sampleRateInHz = 16000
     private val channelConfig = AudioFormat.CHANNEL_IN_MONO
-
-    // Note: We don't use AudioFormat.ENCODING_PCM_FLOAT
-    // since the AudioRecord.read(float[]) needs API level >= 23
-    // but we are targeting API level >= 21
     private val audioFormat = AudioFormat.ENCODING_PCM_16BIT
-    private var idx: Int = 0
-    private var lastText: String = ""
-    private var currentLocale: String = "zh-CN" // 默认中文，用于识别单词释义
-
+    
     @Volatile
     private var isRecording: Boolean = false
+    @Volatile
+    var isAsrStopped = true
+
+    // 统计处理音频块的计数，用于限制日志频率
+    private var audioBlockCount = 0
+
+    // State
+    private var currentLocale: String = "zh-CN"
 
     fun initChannel(flutterEngine: FlutterEngine) {
         eventChannel = EventChannel(flutterEngine.dartExecutor.binaryMessenger, "nnbdc/asr_events")
         eventChannel!!.setStreamHandler(this)
 
-        // 音量电平事件通道（用于 Flutter 端绘制波形）
         meterChannel = EventChannel(flutterEngine.dartExecutor.binaryMessenger, "nnbdc/asr_meter")
         meterChannel!!.setStreamHandler(object : EventChannel.StreamHandler {
             override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
                 meterEvents = events
             }
-
             override fun onCancel(arguments: Any?) {
                 meterEvents = null
             }
@@ -70,98 +72,253 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
         MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
             "nnbdc/asr_commands"
-        ).setMethodCallHandler {
-            // Note: this method is invoked on the main thread.
-                call, result ->
-            Log.i(TAG, call.method)
+        ).setMethodCallHandler { call, result ->
             when (call.method) {
                 "setLanguage" -> {
                     val locale = call.argument<String>("locale") ?: "zh-CN"
                     setLanguage(locale)
                     result.success(null)
                 }
-
                 "startMicrophone" -> {
                     startMicrophone()
                     result.success(null)
                 }
-
                 "startAsr" -> {
                     startAsr()
                     result.success(null)
                 }
-
                 "stopAsr" -> {
                     stopAsr()
                     result.success(null)
                 }
-
                 "reset" -> {
-                    model.reset()
+                    stream?.let { model?.reset(it) }
                     result.success(null)
                 }
-
-                else -> {
-                    result.notImplemented()
-                }
+                else -> result.notImplemented()
             }
         }
     }
 
-    private fun setLanguage(locale: String) {
-        currentLocale = locale
-        Log.i(TAG, "Language set to: $locale")
-        
-        // 当前sherpa模型支持中文识别，用于识别单词释义
-        if (locale.startsWith("en")) {
-            Log.i(TAG, "English recognition requested, but model is configured for Chinese")
-        }
-        
-        // 如果正在录音，重新启动以应用新语言设置
-        if (isRecording && !isAsrStopped) {
-            // 重置模型以清除之前的状态
-            model.reset()
-        }
-    }
-
-    // 初始化sherpa（语音识别）- 当前模型配置为中文识别
+    // 可以在 MainActivity onCreate 中调用初始化默认模型
     fun initModel() {
-        val featConfig = getFeatureExtractorConfig(
-            sampleRate = 16000.0f,
-            featureDim = 80
-        )
-        //Please change the argument "type" if you use a different model
-        val modelConfig = getModelConfig(type = 5, useGPU = useGPU)!!
-        val decoderConfig = getDecoderConfig(method = "greedy_search", numActivePaths = 4)
-
-        val config = RecognizerConfig(
-            featConfig = featConfig,
-            modelConfig = modelConfig,
-            decoderConfig = decoderConfig,
-            enableEndpoint = true,
-            rule1MinTrailingSilence = 2.0f,
-            rule2MinTrailingSilence = 0.8f,
-            rule3MinUtteranceLength = 20.0f,
-        )
-
-        model = SherpaNcnn(
-            assetManager = activity.getApplication().assets,
-            config = config,
-        )
+        // 默认初始化中文
+        loadModel("zh")
     }
 
+    private fun setLanguage(locale: String) {
+        val newType = if (locale.startsWith("en")) "en" else "zh"
 
-    private fun processSamples() {
-        Log.i(TAG, "processing samples")
+        if (newType == currentModelType && model != null) {
+            currentLocale = locale
+            Log.i(TAG, "Model already loaded for $newType")
+            return
+        }
 
-        val interval = 0.1 // i.e., 100 ms
-        val bufferSize = (interval * sampleRateInHz).toInt() // in samples
-        val buffer = ShortArray(bufferSize)
+        Log.i(TAG, "Switching model from '$currentModelType' to '$newType' (locale: $locale)")
+        
+        // 如果正在录音，需要重启录音线程以确保模型切换不用锁
+        val wasRecording = isRecording && !isAsrStopped
+        if (wasRecording) {
+            stopAsr()
+        }
+
+        try {
+            loadModel(newType)
+            currentLocale = locale
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to switch model to $newType", e)
+            // 尝试回退到中文
+            if (model == null) loadModel("zh")
+        }
+
+        if (wasRecording) {
+            startMicrophone()
+        }
+    }
+
+    private fun loadModel(type: String) {
+        // 释放旧模型和流
+        stream?.release()
+        stream = null
+        model?.release()
+        model = null
+        
+        val modelDir: String
+        // 定义资源路径 (相对于 assets)
+        if (type == "en") {
+            // Sherpa-onnx Streaming Zipformer English 20M 2023-02-17
+            modelDir = "sherpa-onnx-streaming-zipformer-en-20M-2023-02-17"
+        } else {
+            // Sherpa-onnx Streaming Zipformer Chinese 14M 2023-02-23
+            modelDir = "sherpa-onnx-streaming-zipformer-zh-14M-2023-02-23"
+        }
+
+        Log.i(TAG, "Loading model from assets: $modelDir")
+
+        try {
+            // 1. 将模型文件从 Assets 复制到 Cache 目录
+            val cacheDir = activity.cacheDir.absolutePath
+            val destDir = "$cacheDir/$modelDir"
+            val tokensPath = copyAsset(modelDir, "tokens.txt", destDir)
+            val encoderPath = copyAsset(modelDir, "encoder-epoch-99-avg-1.int8.onnx", destDir)
+            val decoderPath = copyAsset(modelDir, "decoder-epoch-99-avg-1.int8.onnx", destDir)
+            val joinerPath = copyAsset(modelDir, "joiner-epoch-99-avg-1.int8.onnx", destDir)
+
+            // 2. 配置模型 (使用 Builder 模式)
+            val transducerConfig = OnlineTransducerModelConfig.builder()
+                .setEncoder(encoderPath)
+                .setDecoder(decoderPath)
+                .setJoiner(joinerPath)
+                .build()
+            
+            val modelConfig = OnlineModelConfig.builder()
+                .setTransducer(transducerConfig)
+                .setTokens(tokensPath)
+                .setNumThreads(2)
+                .setDebug(true)
+                .setModelType("zipformer")
+                .build()
+            
+            val featConfig = FeatureConfig.builder()
+                .setSampleRate(16000)
+                .setFeatureDim(80)
+                .build()
+
+            // 英文模型：使用最宽松的端点检测，防止误杀
+            val (rule1Silence, rule2Silence, rule3Length) = if (type == "en") {
+                Triple(10.0f, 5.0f, 60.0f)  // 英文：给足 10 秒静音余地
+            } else {
+                Triple(2.4f, 0.8f, 20.0f)  // 中文
+            }
+
+            val rule1 = EndpointRule.builder()
+                .setMustContainNonSilence(false)
+                .setMinTrailingSilence(rule1Silence)
+                .setMinUtteranceLength(0f)
+                .build()
+            
+            val rule2 = EndpointRule.builder()
+                .setMustContainNonSilence(true)
+                .setMinTrailingSilence(rule2Silence)
+                .setMinUtteranceLength(0f)
+                .build()
+            
+            val rule3 = EndpointRule.builder()
+                .setMustContainNonSilence(false)
+                .setMinTrailingSilence(0f)
+                .setMinUtteranceLength(rule3Length)
+                .build()
+
+            val endpointConfig = EndpointConfig.builder()
+                .setRule1(rule1)
+                .setRule2(rule2)
+                .setRul3(rule3)
+                .build()
+
+            val config = OnlineRecognizerConfig.builder()
+                .setFeatureConfig(featConfig)
+                .setOnlineModelConfig(modelConfig)
+                .setEndpointConfig(endpointConfig)
+                .setEnableEndpoint(true)
+                .setDecodingMethod("modified_beam_search")
+                .setMaxActivePaths(4)
+                .build()
+            
+            // 验证配置路径
+            Log.i(TAG, "Model config paths:")
+            Log.i(TAG, "  Tokens: $tokensPath")
+            Log.i(TAG, "  Encoder: $encoderPath")
+            Log.i(TAG, "  Decoder: $decoderPath")
+            Log.i(TAG, "  Joiner: $joinerPath")
+
+            // 3. 创建识别器 (使用通用 Java API，无 AssetManager)
+            model = OnlineRecognizer(config)
+            
+            currentModelType = type
+            Log.i(TAG, "Sherpa-ONNX model loaded successfully: $type")
+            
+        } catch (e: Exception) {
+            Log.e(TAG, "Error loading model: ${e.message}")
+            throw e
+        }
+    }
+
+    private fun copyAsset(assetDir: String, fileName: String, destDir: String): String {
+        val destFile = java.io.File(destDir, fileName)
+        if (destFile.exists()) {
+            Log.d(TAG, "File already exists: ${destFile.absolutePath} (${destFile.length()} bytes)")
+            return destFile.absolutePath
+        }
+        
+        // Ensure parent dir exists
+        destFile.parentFile?.mkdirs()
+        
+        Log.i(TAG, "Copying asset: $assetDir/$fileName -> ${destFile.absolutePath}")
+        
+        activity.assets.open("$assetDir/$fileName").use { inputStream ->
+            java.io.FileOutputStream(destFile).use { outputStream ->
+                val bytes = inputStream.copyTo(outputStream)
+                Log.i(TAG, "Copied $bytes bytes to ${destFile.name}")
+            }
+        }
+        
+        if (!destFile.exists()) {
+            throw RuntimeException("Failed to copy file: ${destFile.absolutePath}")
+        }
+        
+        Log.d(TAG, "Copy complete: ${destFile.absolutePath} (${destFile.length()} bytes)")
+        return destFile.absolutePath
+    }
+
+    private fun startMicrophone() {
+        if (isRecording) {
+            stopAsr()
+        }
+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+            if (activity.checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                Log.e(TAG, "No RECORD_AUDIO permission")
+                return
+            }
+        }
+
+        val minBufferSize = AudioRecord.getMinBufferSize(sampleRateInHz, channelConfig, audioFormat)
+        audioRecord = AudioRecord(
+            audioSource,
+            sampleRateInHz,
+            channelConfig,
+            audioFormat,
+            minBufferSize * 2
+        )
+        
+        audioRecord?.startRecording()
+        isRecording = true
+        isAsrStopped = false
+        
+        // 创建新的识别流
+        stream = model?.createStream()
+        
+        // 重置去重标记
+        lastSentResult = ""
+        
+        recordingThread = thread(true) {
+            processSamples(minBufferSize)
+        }
+        Log.i(TAG, "Started recording")
+    }
+
+    private fun processSamples(bufferSize: Int) {
+        // 读取缓冲区大小略大于0.1s数据
+        val readSize = maxOf(bufferSize, 1600 * 2) // 3200 bytes for 0.1s 16bit
+        val buffer = ShortArray(readSize) 
+        
+        Log.i(TAG, "Processing samples loop started")
 
         while (isRecording) {
-            val ret = audioRecord?.read(buffer, 0, buffer.size)
-            if (ret != null && ret > 0) {
-                // 计算当前缓冲区的 RMS 音量并归一化到 0..1
+            val ret = audioRecord?.read(buffer, 0, buffer.size) ?: 0
+            if (ret > 0) {
+                // 1. 计算电平
                 var sumSquares = 0.0
                 for (i in 0 until ret) {
                     val s = buffer[i].toDouble()
@@ -169,123 +326,103 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                 }
                 val rms = sqrt(sumSquares / ret)
                 val norm = (rms / 32768.0).coerceIn(0.0, 1.0)
-                // 发送到 Flutter 端的 asr_meter 通道（总是发送电平信息）
+                
                 activity.runOnUiThread {
-                    meterEvents?.success(norm)
+                     meterEvents?.success(norm)
                 }
 
-                // 只有在未停止时才进行语音识别
-                if (!isAsrStopped) {
-                    val samples = FloatArray(ret) { buffer[it] / 32768.0f }
-                    model.acceptSamples(samples)
-                    while (model.isReady()) {
-                        model.decode()
+                // 2. 识别
+                val s = stream
+                val m = model
+                if (!isAsrStopped && m != null && s != null) {
+                    // 提升增益至 8 倍，确保“听得见”
+                    val gain = 8.0f
+                    val samples = FloatArray(ret) { 
+                        (buffer[it] / 32768.0f * gain).coerceIn(-1.0f, 1.0f) 
                     }
-                    val isEndpoint = model.isEndpoint()
-                    val text = model.text
+                    
+                    try {
+                        s.acceptWaveform(samples, sampleRateInHz)
+                        
+                        var decodeCount = 0
+                        while (m.isReady(s)) {
+                            m.decode(s)
+                            decodeCount++
+                        }
+                        
+                        val isEndpoint = m.isEndpoint(s)
+                        val result = m.getResult(s)
+                        val text = result.text.trim().uppercase() // 转大写增强对比度
+                        val tokens = result.tokens
+                        
+                        // 周期性音量打印
+                        audioBlockCount++
+                        if (audioBlockCount % 20 == 0) {
+                            Log.v(TAG, "ASR Monitor: lvl=${String.format("%.4f", norm)}, gain=8x, tokens=${tokens?.size ?: 0}")
+                        }
 
-                    if (text.isNotBlank()) {
-                        activity.runOnUiThread {
-                            // 创建统一的JSON格式候选结果
-                            try {
-                                val resultData = JSONObject().apply {
-                                    put("best", text)
-                                    // sherpa模型当前只提供一个结果，所以候选结果数组只包含这一个结果
-                                    put("candidates", org.json.JSONArray().apply {
-                                        put(text)
-                                    })
+                        // 无条件发送记录
+                        if (tokens != null && tokens.isNotEmpty()) {
+                            Log.d(TAG, "Raw recognition: '$text' (toks=${tokens.size}, endpoint=$isEndpoint)")
+                        }
+
+                        // 发送逻辑：过滤单字母和空白
+                        val shouldSend = text.isNotBlank() && 
+                                        text.length > 1 && 
+                                        text != lastSentResult
+
+                        if (shouldSend) {
+                            lastSentResult = text
+                            Log.i(TAG, ">>> SUCCESS! Sending text: '$text'")
+                            activity.runOnUiThread {
+                                try {
+                                    val resultData = JSONObject().apply {
+                                        put("best", text)
+                                        put("candidates", JSONArray().apply { put(text) })
+                                    }
+                                    events?.success(resultData.toString())
+                                } catch (e: Exception) {
+                                    events?.success(text)
                                 }
-                                val jsonString = resultData.toString()
-                                events?.success(jsonString)
-                                Log.i(TAG, "===== ANDROID: Sending result with candidates to Flutter: '$text' candidates: [$text]")
-                            } catch (e: Exception) {
-                                // 如果JSON创建失败，回退到发送单个结果
-                                Log.e(TAG, "Failed to create JSON result, sending single result: ${e.message}")
-                                events?.success(text)
                             }
                         }
-                        Log.i(TAG, "===== ANDROID: " + text)
-                    }
 
-                    if (isEndpoint) {
-                        model.reset()
+                        // 核心补丁：只有识别到了有效文本且触发了静音，才重置
+                        if (isEndpoint && text.isNotBlank()) {
+                            Log.d(TAG, "Recognition finished. Resetting stream.")
+                            m.reset(s)
+                            lastSentResult = ""
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "ASR Process Error: ${e.message}", e)
                     }
                 }
             }
         }
     }
 
-    private fun initMicrophone(): Boolean {
-
-        val numBytes = AudioRecord.getMinBufferSize(sampleRateInHz, channelConfig, audioFormat)
-        Log.i(
-            TAG,
-            "buffer size in milliseconds: ${numBytes * 1000.0f / sampleRateInHz}"
-        )
-
-        audioRecord = AudioRecord(
-            audioSource,
-            sampleRateInHz,
-            channelConfig,
-            audioFormat,
-            numBytes * 2 // a sample has two bytes as we are using 16-bit PCM
-        )
-        return true
-    }
-
-
-    private fun startMicrophone() {
-        // 如果已经在录音，先停止旧的
-        if (isRecording || audioRecord != null) {
-            Log.w(TAG, "Microphone already running, stopping old instance first")
-            stopAsr()
-        }
-        
-        val ret = initMicrophone()
-        if (!ret) {
-            Log.e(TAG, "Failed to initialize microphone")
-            return
-        }
-        Log.i(TAG, "state: ${audioRecord?.state}")
-        audioRecord!!.startRecording()
-        isRecording = true
-        isAsrStopped = false  // 必须在启动线程之前设置
-        lastText = ""
-        idx = 0
-
-        recordingThread = thread(true) {
-            model.reset(true)
-
-            processSamples()
-        }
-        Log.i(TAG, "Started recording")
-    }
-
     private fun startAsr() {
         isAsrStopped = false
     }
-
-    var isAsrStopped = true
 
     private fun stopAsr() {
         Log.i(TAG, "Stopping ASR...")
         isRecording = false
         isAsrStopped = true
         
-        // 等待录音线程结束
-        recordingThread?.join(1000)
-        recordingThread = null
-        
-        // 停止并释放音频资源
         try {
+            recordingThread?.join(1000)
+            recordingThread = null
+            
             audioRecord?.stop()
             audioRecord?.release()
+            audioRecord = null
+            
+            stream?.release()
+            stream = null
         } catch (e: Exception) {
-            Log.e(TAG, "Error stopping AudioRecord: ${e.message}")
+            Log.e(TAG, "Error checking/stopping audio: ${e.message}")
         }
-        audioRecord = null
-        
-        Log.i(TAG, "ASR stopped successfully")
     }
 
     override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
@@ -294,5 +431,12 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
 
     override fun onCancel(arguments: Any?) {
         this.events = null
+    }
+
+    // 释放资源，如onDestroy时调用
+    fun release() {
+        stopAsr()
+        model?.release()
+        model = null
     }
 }

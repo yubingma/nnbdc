@@ -11,7 +11,6 @@ import 'package:flutter_animation_progress_bar/flutter_animation_progress_bar.da
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
-import 'package:image_network/image_network.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:nnbdc/api/api.dart';
 import 'package:nnbdc/api/bo/study_bo.dart';
@@ -116,23 +115,37 @@ class _WordImagesWidgetState extends State<WordImagesWidget> {
                     width: imageWidth,
                     child: IgnorePointer(
                       ignoring: true,
-                      child: ImageNetwork(
-                        image: '${Config.wordImageBaseUrl}${image.imageFile}',
+                      child: Image.network(
+                        '${Config.wordImageBaseUrl}${image.imageFile}',
                         width: imageWidth,
                         height: PlatformUtils.isWeb ? 120 : 60,
-                        duration: 1500,
-                        curve: Curves.easeIn,
-                        onPointer: true,
-                        debugPrint: true, // 启用调试打印
-                        onLoading: const LinearProgressIndicator(
-                          color: Colors.indigoAccent,
-                        ),
-                        onError: const Icon(
-                          Icons.error,
-                          color: Colors.red,
-                        ),
-                        fitAndroidIos: BoxFit.contain,
-                        fitWeb: BoxFitWeb.cover,
+                        fit: BoxFit.contain,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Center(
+                            child: SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                value: loadingProgress.expectedTotalBytes != null
+                                    ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                                    : null,
+                                strokeWidth: 2,
+                                color: Colors.indigoAccent,
+                              ),
+                            ),
+                          );
+                        },
+                        errorBuilder: (context, error, stackTrace) {
+                          // 图片加载失败，显示错误图标，不尝试解码
+                          return const Center(
+                            child: Icon(
+                              Icons.broken_image,
+                              color: Colors.red,
+                              size: 24,
+                            ),
+                          );
+                        },
                       ),
                     ),
                   ),
@@ -181,20 +194,22 @@ void _showImagePreviewWithContext(BuildContext context, WordImageVo image, {Void
                       ),
                     ),
                     // 大图
-                    ImageNetwork(
-                      image: '${Config.wordImageBaseUrl}${image.imageFile}',
+                    Image.network(
+                      '${Config.wordImageBaseUrl}${image.imageFile}',
                       width: PlatformUtils.isWeb ? 720.0 : double.infinity,
                       height: PlatformUtils.isWeb ? 480.0 : 360.0,
-                      duration: 800,
-                      curve: Curves.easeInOut,
-                      onPointer: true,
-                      debugPrint: false,
-                      onLoading: const Center(
-                        child: CircularProgressIndicator(color: Colors.white),
-                      ),
-                      onError: const Icon(Icons.error, color: Colors.red),
-                      fitAndroidIos: BoxFit.contain,
-                      fitWeb: BoxFitWeb.contain,
+                      fit: BoxFit.contain,
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return const Center(
+                          child: CircularProgressIndicator(color: Colors.white),
+                        );
+                      },
+                      errorBuilder: (context, error, stackTrace) {
+                        return const Center(
+                          child: Icon(Icons.broken_image, color: Colors.red, size: 48),
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -2050,19 +2065,29 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                         children: [
                           Container(
                             margin: const EdgeInsets.fromLTRB(0, 8, 0, 0),
-                            child: ImageNetwork(
-                                image: '${Config.wordImageBaseUrl}${wordImage.imageFile}',
+                            child: Image.network(
+                                '${Config.wordImageBaseUrl}${wordImage.imageFile}',
                                 width: PlatformUtils.isWeb ? 400 : 200,
                                 height: PlatformUtils.isWeb ? 300 : 150,
-                                onLoading: const CircularProgressIndicator(
-                                  color: Colors.indigoAccent,
-                                ),
-                                onError: const Icon(
-                                  Icons.error,
-                                  color: Colors.red,
-                                ),
-                                fitAndroidIos: BoxFit.contain,
-                                fitWeb: BoxFitWeb.cover),
+                                fit: BoxFit.contain,
+                                loadingBuilder: (context, child, loadingProgress) {
+                                  if (loadingProgress == null) return child;
+                                  return const Center(
+                                    child: CircularProgressIndicator(
+                                      color: Colors.indigoAccent,
+                                      strokeWidth: 2,
+                                    ),
+                                  );
+                                },
+                                errorBuilder: (context, error, stackTrace) {
+                                  return const Center(
+                                    child: Icon(
+                                      Icons.broken_image,
+                                      color: Colors.red,
+                                      size: 32,
+                                    ),
+                                  );
+                                }),
                           ),
                         ],
                       ),

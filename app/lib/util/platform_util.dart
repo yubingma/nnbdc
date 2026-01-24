@@ -53,10 +53,9 @@ class PlatformUtils {
   }
 
   /// 判断当前平台是否支持英文ASR
-  /// 目前只有iOS平台完全支持英文语音识别
-  /// Android平台的英文ASR识别效果不佳，暂不支持
+  /// iOS 和 Android (Sherpa-ONNX) 都支持英文语音识别
   static bool isEnglishAsrSupported() {
-    return isIOS;
+    return isIOS || isAndroid;
   }
 
   /// 判断当前平台是否支持TTS（文本转语音）
