@@ -153,13 +153,15 @@ class AsrUtil {
     int distance = EditDistance.forStrings(lowerResult, lowerTarget);
     int maxLength = [lowerResult.length, lowerTarget.length].reduce((a, b) => a > b ? a : b);
 
-    // 如果编辑距离很小（相对于单词长度），认为是匹配的
-    if (maxLength > 0 && distance <= maxLength ~/ 3) {
+    // 对于短单词，即便编辑距离稍大也尝试匹配（放宽到 50% 容错）
+    if (maxLength > 0 && distance <= (maxLength * 0.5).ceil()) {
+      Global.logger.d('===== ASR: Edit distance match: "$lowerResult" -> "$lowerTarget" (dist: $distance)');
       return lowerTarget;
     }
 
     // 检查是否有显著的重叠部分（对于复合词很有用）
     if (_hasSignificantOverlap(lowerResult, lowerTarget)) {
+      Global.logger.d('===== ASR: Overlap match: "$lowerResult" -> "$lowerTarget"');
       return lowerTarget;
     }
 

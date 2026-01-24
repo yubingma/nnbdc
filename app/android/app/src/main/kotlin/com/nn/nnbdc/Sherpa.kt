@@ -82,8 +82,9 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                 }
                 "setContextualStrings" -> {
                     val phrases = call.argument<List<String>>("phrases") ?: emptyList()
-                    pendingHotwords = phrases.joinToString(" ")
-                    Log.i(TAG, "Hotwords prepared: $pendingHotwords")
+                    // 转换为大写以匹配 tokens.txt 中的 BPE 编码
+                    pendingHotwords = phrases.joinToString(" ") { it.uppercase() }
+                    Log.i(TAG, "Hotwords prepared (Uppercased): $pendingHotwords")
                     result.success(null)
                 }
                 "startMicrophone" -> {
@@ -230,9 +231,9 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                 .setEndpointConfig(endpointConfig)
                 .setEnableEndpoint(true)
                 .setDecodingMethod("modified_beam_search")
-                .setMaxActivePaths(12) // 增加候选路径，提高识别精度
-                .setHotwordsScore(15.0f) // 强力倾向性
-                .setBlankPenalty(1.0f) // 增加空白惩罚，减少乱码输出
+                .setMaxActivePaths(16) // 进一步增加候选路径
+                .setHotwordsScore(40.0f) // 大幅提升热词权重，使其表现得像有强制词典一样
+                .setBlankPenalty(1.2f) // 稍微加大空白惩罚
                 .build()
             
             // 验证配置路径
