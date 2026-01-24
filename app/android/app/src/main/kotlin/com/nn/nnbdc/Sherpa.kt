@@ -175,7 +175,7 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
             val modelConfig = OnlineModelConfig.builder()
                 .setTransducer(transducerConfig)
                 .setTokens(tokensPath)
-                .setNumThreads(2)
+                .setNumThreads(2) // 增加线程以支持更复杂的搜索
                 .setDebug(true)
                 .setModelType("zipformer")
                 .build()
@@ -185,11 +185,11 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                 .setFeatureDim(80)
                 .build()
 
-            // 英文模型：使用最宽松的端点检测，防止误杀
+            // 英文模型：检测到静音后 2 秒重置
             val (rule1Silence, rule2Silence, rule3Length) = if (type == "en") {
-                Triple(10.0f, 5.0f, 60.0f)  // 英文：给足 10 秒静音余地
+                Triple(2.4f, 1.2f, 30.0f)
             } else {
-                Triple(2.4f, 0.8f, 20.0f)  // 中文
+                Triple(2.4f, 0.8f, 20.0f)
             }
 
             val rule1 = EndpointRule.builder()
@@ -221,10 +221,14 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                 .setOnlineModelConfig(modelConfig)
                 .setEndpointConfig(endpointConfig)
                 .setEnableEndpoint(true)
+                // 【核心改进】：使用 modified_beam_search 配合极高热词权重
+                // 这能让模型即便在声音不准时也“强行”往正确单词上靠
                 .setDecodingMethod("modified_beam_search")
-                .setMaxActivePaths(4)
+                .setMaxActivePaths(6) 
+                .setHotwordsScore(15.0f) // 强力加权，实现“模型层模糊匹配”
                 .build()
             
+            Log.i(TAG, "ASR Extreme Biasing Configed: score=15.0")
             // 验证配置路径
             Log.i(TAG, "Model config paths:")
             Log.i(TAG, "  Tokens: $tokensPath")
@@ -335,8 +339,8 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                 val s = stream
                 val m = model
                 if (!isAsrStopped && m != null && s != null) {
-                    // 提升增益至 8 倍，确保“听得见”
-                    val gain = 8.0f
+                    // 设定适中的增益 (2.5)，配合模型层的强力 Bias
+                    val gain = 2.5f
                     val samples = FloatArray(ret) { 
                         (buffer[it] / 32768.0f * gain).coerceIn(-1.0f, 1.0f) 
                     }
@@ -352,7 +356,7 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                         
                         val isEndpoint = m.isEndpoint(s)
                         val result = m.getResult(s)
-                        val text = result.text.trim().uppercase() // 转大写增强对比度
+                        val text = result.text.trim().lowercase() // 转小写
                         val tokens = result.tokens
                         
                         // 周期性音量打印
