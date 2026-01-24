@@ -146,27 +146,30 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
         }
     }
 
+    // 运行时语言配置（由 init 阶段根据语言决定，实现物理隔离）
+    private var activeGain: Float = 2.0f
+
     private fun loadModel(type: String) {
-        // 释放旧模型和流
+        // 释放旧资源
         stream?.release()
         stream = null
         model?.release()
         model = null
         
-        val modelDir: String
-        // 定义资源路径 (相对于 assets)
         if (type == "en") {
-            // Sherpa-onnx Streaming Zipformer English 20M 2023-02-17
-            modelDir = "sherpa-onnx-streaming-zipformer-en-20M-2023-02-17"
+            setupEnglishModel()
         } else {
-            // Sherpa-onnx Streaming Zipformer Chinese 14M 2023-02-23
-            modelDir = "sherpa-onnx-streaming-zipformer-zh-14M-2023-02-23"
+            setupChineseModel()
         }
+        
+        currentModelType = type
+    }
 
-        Log.i(TAG, "Loading model from assets: $modelDir")
+    private fun setupEnglishModel() {
+        val modelDir = "sherpa-onnx-streaming-zipformer-en-20M-2023-02-17"
+        Log.i(TAG, "Isolating Recipe: Loading ENGLISH model")
 
         try {
-            // 1. 将模型文件从 Assets 复制到 Cache 目录
             val cacheDir = activity.cacheDir.absolutePath
             val destDir = "$cacheDir/$modelDir"
             val tokensPath = copyAsset(modelDir, "tokens.txt", destDir)
@@ -174,55 +177,22 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
             val decoderPath = copyAsset(modelDir, "decoder-epoch-99-avg-1.int8.onnx", destDir)
             val joinerPath = copyAsset(modelDir, "joiner-epoch-99-avg-1.int8.onnx", destDir)
 
-            // 2. 配置模型 (使用 Builder 模式)
-            val transducerConfig = OnlineTransducerModelConfig.builder()
-                .setEncoder(encoderPath)
-                .setDecoder(decoderPath)
-                .setJoiner(joinerPath)
-                .build()
-            
             val modelConfig = OnlineModelConfig.builder()
-                .setTransducer(transducerConfig)
+                .setTransducer(OnlineTransducerModelConfig.builder()
+                    .setEncoder(encoderPath).setDecoder(decoderPath).setJoiner(joinerPath).build())
                 .setTokens(tokensPath)
-                .setNumThreads(4) // 增加线程以支持更复杂的搜索
+                .setNumThreads(4)
                 .setDebug(true)
                 .setModelType("zipformer")
                 .build()
-            
-            val featConfig = FeatureConfig.builder()
-                .setSampleRate(16000)
-                .setFeatureDim(80)
-                .build()
 
-            // 英文模型：检测到静音后 2 秒重置
-            val (rule1Silence, rule2Silence, rule3Length) = if (type == "en") {
-                Triple(2.4f, 1.2f, 30.0f)
-            } else {
-                Triple(2.4f, 0.8f, 20.0f)
-            }
+            val featConfig = FeatureConfig.builder().setSampleRate(16000).setFeatureDim(80).build()
 
-            val rule1 = EndpointRule.builder()
-                .setMustContainNonSilence(false)
-                .setMinTrailingSilence(rule1Silence)
-                .setMinUtteranceLength(0f)
-                .build()
-            
-            val rule2 = EndpointRule.builder()
-                .setMustContainNonSilence(true)
-                .setMinTrailingSilence(rule2Silence)
-                .setMinUtteranceLength(0f)
-                .build()
-            
-            val rule3 = EndpointRule.builder()
-                .setMustContainNonSilence(false)
-                .setMinTrailingSilence(0f)
-                .setMinUtteranceLength(rule3Length)
-                .build()
-
+            // 英文识别配方：放宽末端静音检测，给犹豫的发音留时间
             val endpointConfig = EndpointConfig.builder()
-                .setRule1(rule1)
-                .setRule2(rule2)
-                .setRul3(rule3)
+                .setRule1(EndpointRule.builder().setMustContainNonSilence(false).setMinTrailingSilence(2.4f).build())
+                .setRule2(EndpointRule.builder().setMustContainNonSilence(true).setMinTrailingSilence(1.2f).build())
+                .setRul3(EndpointRule.builder().setMustContainNonSilence(false).setMinTrailingSilence(0f).setMinUtteranceLength(30f).build())
                 .build()
 
             val config = OnlineRecognizerConfig.builder()
@@ -231,24 +201,66 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                 .setEndpointConfig(endpointConfig)
                 .setEnableEndpoint(true)
                 .setDecodingMethod("modified_beam_search")
-                .setMaxActivePaths(12) 
-                .setHotwordsScore(30.0f) 
-                .setBlankPenalty(1.0f) // 恢复空白惩罚，有助于消除“整整”这种重复识别
+                .setMaxActivePaths(16) // 英文需要更宽的搜索带
+                .setHotwordsScore(40.0f) // 强力引导
+                .setBlankPenalty(0.0f) // 英文严禁压制音节
                 .build()
-            
-            // 验证配置路径
-            Log.i(TAG, "Model config paths:")
-            Log.i(TAG, "  Tokens: $tokensPath")
-            Log.i(TAG, "  Hotwords Score: 15.0")
 
-            // 3. 创建识别器 (使用通用 Java API，无 AssetManager)
             model = OnlineRecognizer(config)
-            
-            currentModelType = type
-            Log.i(TAG, "Sherpa-ONNX model loaded successfully: $type")
-            
+            activeGain = 2.5f // 英文稍微调高增益，捕捉轻微尾音
+            Log.i(TAG, "English isolated recipe loaded. Gain: $activeGain")
         } catch (e: Exception) {
-            Log.e(TAG, "Error loading model: ${e.message}")
+            Log.e(TAG, "English model load failed", e)
+            throw e
+        }
+    }
+
+    private fun setupChineseModel() {
+        val modelDir = "sherpa-onnx-streaming-zipformer-zh-14M-2023-02-23"
+        Log.i(TAG, "Isolating Recipe: Loading CHINESE model")
+
+        try {
+            val cacheDir = activity.cacheDir.absolutePath
+            val destDir = "$cacheDir/$modelDir"
+            val tokensPath = copyAsset(modelDir, "tokens.txt", destDir)
+            val encoderPath = copyAsset(modelDir, "encoder-epoch-99-avg-1.int8.onnx", destDir)
+            val decoderPath = copyAsset(modelDir, "decoder-epoch-99-avg-1.int8.onnx", destDir)
+            val joinerPath = copyAsset(modelDir, "joiner-epoch-99-avg-1.int8.onnx", destDir)
+
+            val modelConfig = OnlineModelConfig.builder()
+                .setTransducer(OnlineTransducerModelConfig.builder()
+                    .setEncoder(encoderPath).setDecoder(decoderPath).setJoiner(joinerPath).build())
+                .setTokens(tokensPath)
+                .setNumThreads(4)
+                .setDebug(true)
+                .setModelType("zipformer")
+                .build()
+
+            val featConfig = FeatureConfig.builder().setSampleRate(16000).setFeatureDim(80).build()
+
+            // 中文识别配方：更紧凑的断句逻辑
+            val endpointConfig = EndpointConfig.builder()
+                .setRule1(EndpointRule.builder().setMustContainNonSilence(false).setMinTrailingSilence(2.4f).build())
+                .setRule2(EndpointRule.builder().setMustContainNonSilence(true).setMinTrailingSilence(0.8f).build())
+                .setRul3(EndpointRule.builder().setMustContainNonSilence(false).setMinTrailingSilence(0f).setMinUtteranceLength(20f).build())
+                .build()
+
+            val config = OnlineRecognizerConfig.builder()
+                .setFeatureConfig(featConfig)
+                .setOnlineModelConfig(modelConfig)
+                .setEndpointConfig(endpointConfig)
+                .setEnableEndpoint(true)
+                .setDecodingMethod("modified_beam_search")
+                .setMaxActivePaths(12)
+                .setHotwordsScore(30.0f)
+                .setBlankPenalty(1.0f) // 中文需要压制重复帧
+                .build()
+
+            model = OnlineRecognizer(config)
+            activeGain = 2.0f // 中文增益适中，防止叠字
+            Log.i(TAG, "Chinese isolated recipe loaded. Gain: $activeGain")
+        } catch (e: Exception) {
+            Log.e(TAG, "Chinese model load failed", e)
             throw e
         }
     }
@@ -345,8 +357,8 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                 val s = stream
                 val m = model
                 if (!isAsrStopped && m != null && s != null) {
-                    // 设定适中的增益 (2.0)，配合模型层的强力 Bias
-                    val gain = 2.0f
+                    // 使用当前配方定义的动态增益
+                    val gain = activeGain
                     val samples = FloatArray(ret) { 
                         (buffer[it] / 32768.0f * gain).coerceIn(-1.0f, 1.0f) 
                     }
