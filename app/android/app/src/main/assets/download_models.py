@@ -37,15 +37,15 @@ download_file(f"{zh_base_url}/encoder-epoch-99-avg-1.int8.onnx", os.path.join(zh
 download_file(f"{zh_base_url}/decoder-epoch-99-avg-1.int8.onnx", os.path.join(zh_dir, "decoder-epoch-99-avg-1.int8.onnx"))
 download_file(f"{zh_base_url}/joiner-epoch-99-avg-1.int8.onnx", os.path.join(zh_dir, "joiner-epoch-99-avg-1.int8.onnx"))
 
-# 2. English Model
+# 2. English Model (Upgraded to 66M version)
 en_name = "sherpa-onnx-streaming-zipformer-en-2023-06-26"
 en_dir = os.path.join(assets_dir, en_name)
 os.makedirs(en_dir, exist_ok=True)
 
 en_base_url = f"https://huggingface.co/csukuangfj/{en_name}/resolve/main"
 download_file(f"{en_base_url}/tokens.txt", os.path.join(en_dir, "tokens.txt"))
-download_file(f"{en_base_url}/encoder-epoch-99-avg-1.int8.onnx", os.path.join(en_dir, "encoder-epoch-99-avg-1.int8.onnx"))
-download_file(f"{en_base_url}/decoder-epoch-99-avg-1.int8.onnx", os.path.join(en_dir, "decoder-epoch-99-avg-1.int8.onnx"))
-download_file(f"{en_base_url}/joiner-epoch-99-avg-1.int8.onnx", os.path.join(en_dir, "joiner-epoch-99-avg-1.int8.onnx"))
+download_file(f"{en_base_url}/encoder-epoch-99-avg-1-chunk-16-left-128.int8.onnx", os.path.join(en_dir, "encoder-epoch-99-avg-1.int8.onnx"))
+download_file(f"{en_base_url}/decoder-epoch-99-avg-1-chunk-16-left-128.int8.onnx", os.path.join(en_dir, "decoder-epoch-99-avg-1.int8.onnx"))
+download_file(f"{en_base_url}/joiner-epoch-99-avg-1-chunk-16-left-128.int8.onnx", os.path.join(en_dir, "joiner-epoch-99-avg-1.int8.onnx"))
 
 print("\nAll downloads finished.")

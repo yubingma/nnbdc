@@ -166,8 +166,8 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
     }
 
     private fun setupEnglishModel() {
-        val modelDir = "sherpa-onnx-streaming-zipformer-en-20M-2023-02-17"
-        Log.i(TAG, "Isolating Recipe: Loading ENGLISH model")
+        val modelDir = "sherpa-onnx-streaming-zipformer-en-2023-06-26"
+        Log.i(TAG, "Isolating Recipe: Loading ENGLISH model (Upgraded 66M)")
 
         try {
             val cacheDir = activity.cacheDir.absolutePath
@@ -183,7 +183,7 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                 .setTokens(tokensPath)
                 .setNumThreads(4)
                 .setDebug(true)
-                .setModelType("zipformer")
+                .setModelType("zipformer2") // 重要：66M 升级版使用的是 zipformer2 架构
                 .build()
 
             val featConfig = FeatureConfig.builder().setSampleRate(16000).setFeatureDim(80).build()
@@ -201,9 +201,9 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                 .setEndpointConfig(endpointConfig)
                 .setEnableEndpoint(true)
                 .setDecodingMethod("modified_beam_search")
-                .setMaxActivePaths(16) // 英文需要更宽的搜索带
-                .setHotwordsScore(40.0f) // 强力引导
-                .setBlankPenalty(0.0f) // 英文严禁压制音节
+                .setMaxActivePaths(4) // 针对 20M 小模型，收窄搜索范围反而更稳定，防止“脑补”离谱词汇
+                .setHotwordsScore(30.0f) // 适度引导
+                .setBlankPenalty(0.5f) // 增加轻微惩罚，减少乱码和幻觉
                 .build()
 
             model = OnlineRecognizer(config)

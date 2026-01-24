@@ -67,6 +67,7 @@ post_install do |installer|
         
         # 链接静态库
         config.build_settings['OTHER_LDFLAGS'] ||= ['$(inherited)']
+        config.build_settings['OTHER_LDFLAGS'] << '-lc++'
         config.build_settings['OTHER_LDFLAGS'] << '-lllama'
         config.build_settings['OTHER_LDFLAGS'] << '-lggml'
         config.build_settings['OTHER_LDFLAGS'] << '-lggml-base'
@@ -82,6 +83,9 @@ post_install do |installer|
         config.build_settings['OTHER_LDFLAGS'] << '-framework Metal'
         config.build_settings['OTHER_LDFLAGS'] << '-framework MetalKit'
         
+        # 强制架构为 arm64
+        config.build_settings['ARCHS'] = 'arm64'
+
         # 启用 C++ 支持
         config.build_settings['CLANG_CXX_LANGUAGE_STANDARD'] = 'c++17'
         config.build_settings['CLANG_CXX_LIBRARY'] = 'libc++'
