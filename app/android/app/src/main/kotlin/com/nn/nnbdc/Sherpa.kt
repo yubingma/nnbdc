@@ -183,7 +183,7 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
             val modelConfig = OnlineModelConfig.builder()
                 .setTransducer(transducerConfig)
                 .setTokens(tokensPath)
-                .setNumThreads(2) // 增加线程以支持更复杂的搜索
+                .setNumThreads(4) // 增加线程以支持更复杂的搜索
                 .setDebug(true)
                 .setModelType("zipformer")
                 .build()
@@ -230,8 +230,9 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                 .setEndpointConfig(endpointConfig)
                 .setEnableEndpoint(true)
                 .setDecodingMethod("modified_beam_search")
-                .setMaxActivePaths(4)
+                .setMaxActivePaths(12) // 增加候选路径，提高识别精度
                 .setHotwordsScore(15.0f) // 强力倾向性
+                .setBlankPenalty(1.0f) // 增加空白惩罚，减少乱码输出
                 .build()
             
             // 验证配置路径
@@ -343,8 +344,8 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                 val s = stream
                 val m = model
                 if (!isAsrStopped && m != null && s != null) {
-                    // 设定适中的增益 (2.5)，配合模型层的强力 Bias
-                    val gain = 2.5f
+                    // 设定适中的增益 (2.0)，配合模型层的强力 Bias
+                    val gain = 2.0f
                     val samples = FloatArray(ret) { 
                         (buffer[it] / 32768.0f * gain).coerceIn(-1.0f, 1.0f) 
                     }

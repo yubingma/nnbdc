@@ -20,7 +20,8 @@ class AsrUtil {
   /// 大部分情况会通过编辑距离算法自动处理
   static const Map<String, String> _englishPronunciationMap = {
     // 可以在这里添加一些特殊的映射，但大部分情况不需要
-
+    'suece': 'swiss',
+    'swis': 'swiss',
     'mail': 'male',
   };
 

@@ -35,20 +35,30 @@ class PhonemeUtil {
   }
 
   /// 返回两个单词的音素相似度(0-100)
+  /// 如果单词不在词典中，则退而求其次，计算字符级别的加权相似度
   static Future<int> similarity(String a, String b) async {
     if (a.isEmpty || b.isEmpty) return 0;
     final aVars = await lookup(a);
     final bVars = await lookup(b);
-    if (aVars.isEmpty || bVars.isEmpty) return 0;
 
-    int best = 0;
-    for (final ap in aVars) {
-      for (final bp in bVars) {
-        final s = _phonemeSimilarity(ap, bp);
-        if (s > best) best = s;
+    if (aVars.isNotEmpty && bVars.isNotEmpty) {
+      int best = 0;
+      for (final ap in aVars) {
+        for (final bp in bVars) {
+          final s = _phonemeSimilarity(ap, bp);
+          if (s > best) best = s;
+        }
       }
+      return best;
     }
-    return best;
+
+    // 补丁：如果其中一个不在词典中（比如识别出了乱码 suece），则使用字符编辑距离作为兜底
+    final dist = EditDistance.forStrings(a.toLowerCase(), b.toLowerCase());
+    final maxLen = a.length > b.length ? a.length : b.length;
+    if (maxLen == 0) return 0;
+    
+    // 字符相似度计算，稍微严一点，避免乱入
+    return ((maxLen - dist) * 100.0 / maxLen).clamp(0.0, 100.0).round();
   }
 
   /// 在候选集中按音素相似度选最佳项，返回原候选串
