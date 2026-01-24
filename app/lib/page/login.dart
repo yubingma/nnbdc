@@ -36,7 +36,7 @@ class LoginPageState extends State<LoginPage> {
   bool? _emailExistsInLocal; // 本地是否存在该邮箱，null表示未检查
   bool _isCheckingLocal = false; // 是否正在检查本地
   List<String> _localEmails = []; // 本地保存的邮箱列表
-  
+
   // 双击检测相关
   DateTime? _lastTapTime;
   static const Duration _doubleTapTimeout = Duration(milliseconds: 300);
@@ -59,7 +59,7 @@ class LoginPageState extends State<LoginPage> {
         _approved = true;
       });
     }
-    
+
     // 加载本地所有用户的邮箱
     _loadLocalEmails();
   }
@@ -74,7 +74,7 @@ class LoginPageState extends State<LoginPage> {
           .map((user) => user.email!)
           .toSet() // 去重
           .toList();
-      
+
       setState(() {
         _localEmails = emails;
       });
@@ -177,7 +177,7 @@ class LoginPageState extends State<LoginPage> {
     try {
       final db = MyDatabase.instance;
       final user = await db.usersDao.getUserByEmail(trimmedEmailAfterDelay);
-      
+
       setState(() {
         _emailExistsInLocal = user != null;
         if (user != null) {
@@ -255,8 +255,7 @@ class LoginPageState extends State<LoginPage> {
                 onTap: () {
                   Global.logger.d('Logo area tapped');
                   final now = DateTime.now();
-                  if (_lastTapTime != null && 
-                      now.difference(_lastTapTime!) < _doubleTapTimeout) {
+                  if (_lastTapTime != null && now.difference(_lastTapTime!) < _doubleTapTimeout) {
                     // 检测到双击
                     Global.logger.d('Logo double tapped detected!');
                     _lastTapTime = null;
@@ -341,7 +340,7 @@ class LoginPageState extends State<LoginPage> {
                       labelStyle: const TextStyle(color: Colors.grey),
                       border: const OutlineInputBorder(),
                       prefixIcon: const Icon(Icons.email, color: Colors.grey),
-                      suffixIcon: _isCheckingLocal 
+                      suffixIcon: _isCheckingLocal
                           ? const SizedBox(
                               width: 20,
                               height: 20,
@@ -404,9 +403,7 @@ class LoginPageState extends State<LoginPage> {
                               ),
                             ),
                             child: Text(
-                              _isSendingCode 
-                                  ? '发送中...'
-                                  : (_countdown > 0 ? '$_countdown秒' : '发送验证码'),
+                              _isSendingCode ? '发送中...' : (_countdown > 0 ? '$_countdown秒' : '发送验证码'),
                               style: TextStyle(
                                 fontSize: MediaQuery.of(context).size.width > 600 ? 12 : 10,
                                 color: Colors.white,
@@ -439,9 +436,7 @@ class LoginPageState extends State<LoginPage> {
                   ),
                 ),
                 child: Text(
-                  _isLoading 
-                      ? '登录中…' 
-                      : '登录',
+                  _isLoading ? '登录中…' : '登录',
                   style: TextStyle(
                     fontSize: MediaQuery.of(context).size.width > 600 ? 18 : 14,
                     color: Colors.white,
@@ -466,6 +461,7 @@ class LoginPageState extends State<LoginPage> {
                   backgroundColor: AppTheme.primaryDarkColor,
                   padding: EdgeInsets.symmetric(
                     vertical: MediaQuery.of(context).size.width > 600 ? 8 : 6,
+                    horizontal: MediaQuery.of(context).size.width > 600 ? 32 : 24,
                   ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),
@@ -590,7 +586,6 @@ class LoginPageState extends State<LoginPage> {
     Navigator.pushNamed(context, "/protocol");
   }
 
-
   // 发送验证码
   Future<void> sendVerificationCode() async {
     final trimmedEmail = email.text.trim();
@@ -657,13 +652,13 @@ class LoginPageState extends State<LoginPage> {
       if (_emailExistsInLocal == true) {
         final db = MyDatabase.instance;
         final user = await db.usersDao.getUserByEmail(trimmedEmail);
-        
+
         if (user != null) {
           // 更新最后登录时间
           final now = AppClock.now();
           await db.usersDao.saveUser(user.copyWith(lastLoginTime: drift.Value(now)), true);
           Global.currentUserId = user.id;
-          
+
           // 从服务器获取最新的用户信息
           final result = await UserBo().getLoggedInUser();
           if (result.success && result.data != null) {
@@ -725,14 +720,14 @@ class LoginPageState extends State<LoginPage> {
       if (codeResult.data != null) {
         final userVo = UserVo.fromJson(codeResult.data as Map<String, dynamic>);
         userVo.lastLoginTime = AppClock.now();
-        
+
         // 保存到本地数据库（保证第一次验证码登录成功后保存到本地）
         final db = MyDatabase.instance;
         await db.usersDao.saveUser(userVo2User(userVo), false);
-        
+
         // 设置全局用户
         await Global.setLoggedInUser(userVo);
-        
+
         // 更新本地检查状态
         setState(() {
           _emailExistsInLocal = true;
@@ -755,7 +750,7 @@ class LoginPageState extends State<LoginPage> {
   //
   //   // 注意：微信登录需要先配置微信开放平台
   //   // 详见项目根目录的 WECHAT_LOGIN_SETUP.md 文档
-  //   
+  //
   //   setState(() {
   //     _isLoading = true;
   //   });
@@ -763,7 +758,7 @@ class LoginPageState extends State<LoginPage> {
   //   try {
   //     // 1. 发起微信授权（需要先配置WechatUtil中的AppID）
   //     // bool success = await WechatUtil.login();
-  //     // 
+  //     //
   //     // if (!success) {
   //     //   setState(() {
   //     //     _isLoading = false;
@@ -796,7 +791,7 @@ class LoginPageState extends State<LoginPage> {
   //     //       ToastUtil.error('微信授权失败');
   //     //     }
   //     //   }
-  //     //   
+  //     //
   //     //   setState(() {
   //     //     _isLoading = false;
   //     //   });
@@ -824,7 +819,7 @@ class LoginPageState extends State<LoginPage> {
       String version = packageInfo.version;
       String buildNumber = packageInfo.buildNumber;
       String profile = Config.profileName;
-      
+
       // 获取数据库版本号
       int dbVersion = MyDatabase.instance.schemaVersion;
 

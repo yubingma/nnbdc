@@ -53,7 +53,7 @@ class EmailLoginPageState extends State<EmailLoginPage> {
         _approved = true;
       });
     }
-    
+
     // 加载本地所有用户的邮箱
     _loadLocalEmails();
   }
@@ -68,7 +68,7 @@ class EmailLoginPageState extends State<EmailLoginPage> {
           .map((user) => user.email!)
           .toSet() // 去重
           .toList();
-      
+
       setState(() {
         _localEmails = emails;
       });
@@ -171,7 +171,7 @@ class EmailLoginPageState extends State<EmailLoginPage> {
     try {
       final db = MyDatabase.instance;
       final user = await db.usersDao.getUserByEmail(trimmedEmailAfterDelay);
-      
+
       setState(() {
         _emailExistsInLocal = user != null;
         if (user != null) {
@@ -399,9 +399,7 @@ class EmailLoginPageState extends State<EmailLoginPage> {
                               ),
                             ),
                             child: Text(
-                              _isSendingCode 
-                                  ? '发送中...'
-                                  : (_countdown > 0 ? '$_countdown秒' : '发送验证码'),
+                              _isSendingCode ? '发送中...' : (_countdown > 0 ? '$_countdown秒' : '发送验证码'),
                               style: TextStyle(
                                 fontSize: MediaQuery.of(context).size.width > 600 ? 12 : 10,
                                 color: Colors.white,
@@ -434,9 +432,7 @@ class EmailLoginPageState extends State<EmailLoginPage> {
                   ),
                 ),
                 child: Text(
-                  _isLoading 
-                      ? '登录中…' 
-                      : '登录',
+                  _isLoading ? '登录中…' : '登录',
                   style: TextStyle(
                     fontSize: MediaQuery.of(context).size.width > 600 ? 18 : 14,
                     color: Colors.white,
@@ -460,6 +456,7 @@ class EmailLoginPageState extends State<EmailLoginPage> {
                   backgroundColor: AppTheme.primaryDarkColor,
                   padding: EdgeInsets.symmetric(
                     vertical: MediaQuery.of(context).size.width > 600 ? 8 : 6,
+                    horizontal: MediaQuery.of(context).size.width > 600 ? 32 : 24,
                   ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),
@@ -555,7 +552,6 @@ class EmailLoginPageState extends State<EmailLoginPage> {
     Navigator.pushNamed(context, "/protocol");
   }
 
-
   // 发送验证码
   Future<void> sendVerificationCode() async {
     final trimmedEmail = email.text.trim();
@@ -622,13 +618,13 @@ class EmailLoginPageState extends State<EmailLoginPage> {
       if (_emailExistsInLocal == true) {
         final db = MyDatabase.instance;
         final user = await db.usersDao.getUserByEmail(trimmedEmail);
-        
+
         if (user != null) {
           // 更新最后登录时间
           final now = AppClock.now();
           await db.usersDao.saveUser(user.copyWith(lastLoginTime: drift.Value(now)), true);
           Global.currentUserId = user.id;
-          
+
           // 从服务器获取最新的用户信息
           final result = await UserBo().getLoggedInUser();
           if (result.success && result.data != null) {
@@ -690,14 +686,14 @@ class EmailLoginPageState extends State<EmailLoginPage> {
       if (codeResult.data != null) {
         final userVo = UserVo.fromJson(codeResult.data as Map<String, dynamic>);
         userVo.lastLoginTime = AppClock.now();
-        
+
         // 保存到本地数据库（保证第一次验证码登录成功后保存到本地）
         final db = MyDatabase.instance;
         await db.usersDao.saveUser(userVo2User(userVo), false);
-        
+
         // 设置全局用户
         await Global.setLoggedInUser(userVo);
-        
+
         // 更新本地检查状态
         setState(() {
           _emailExistsInLocal = true;
