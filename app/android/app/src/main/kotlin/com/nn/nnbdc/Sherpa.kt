@@ -54,6 +54,7 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
 
     // State
     private var currentLocale: String = "zh-CN"
+    private var pendingHotwords: String = ""
 
     fun initChannel(flutterEngine: FlutterEngine) {
         eventChannel = EventChannel(flutterEngine.dartExecutor.binaryMessenger, "nnbdc/asr_events")
@@ -79,6 +80,12 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                     setLanguage(locale)
                     result.success(null)
                 }
+                "setContextualStrings" -> {
+                    val phrases = call.argument<List<String>>("phrases") ?: emptyList()
+                    pendingHotwords = phrases.joinToString(" ")
+                    Log.i(TAG, "Hotwords prepared: $pendingHotwords")
+                    result.success(null)
+                }
                 "startMicrophone" -> {
                     startMicrophone()
                     result.success(null)
@@ -93,6 +100,7 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                 }
                 "reset" -> {
                     stream?.let { model?.reset(it) }
+                    lastSentResult = ""
                     result.success(null)
                 }
                 else -> result.notImplemented()
@@ -221,20 +229,15 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                 .setOnlineModelConfig(modelConfig)
                 .setEndpointConfig(endpointConfig)
                 .setEnableEndpoint(true)
-                // 【核心改进】：使用 modified_beam_search 配合极高热词权重
-                // 这能让模型即便在声音不准时也“强行”往正确单词上靠
                 .setDecodingMethod("modified_beam_search")
-                .setMaxActivePaths(6) 
-                .setHotwordsScore(15.0f) // 强力加权，实现“模型层模糊匹配”
+                .setMaxActivePaths(4)
+                .setHotwordsScore(15.0f) // 强力倾向性
                 .build()
             
-            Log.i(TAG, "ASR Extreme Biasing Configed: score=15.0")
             // 验证配置路径
             Log.i(TAG, "Model config paths:")
             Log.i(TAG, "  Tokens: $tokensPath")
-            Log.i(TAG, "  Encoder: $encoderPath")
-            Log.i(TAG, "  Decoder: $decoderPath")
-            Log.i(TAG, "  Joiner: $joinerPath")
+            Log.i(TAG, "  Hotwords Score: 15.0")
 
             // 3. 创建识别器 (使用通用 Java API，无 AssetManager)
             model = OnlineRecognizer(config)
@@ -300,8 +303,9 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
         isRecording = true
         isAsrStopped = false
         
-        // 创建新的识别流
-        stream = model?.createStream()
+        // 【关键改进】：使用传进来的热词创建流
+        Log.i(TAG, "Creating stream with hotwords: '$pendingHotwords'")
+        stream = model?.createStreamWithHotwords(pendingHotwords)
         
         // 重置去重标记
         lastSentResult = ""
@@ -370,10 +374,8 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                             Log.d(TAG, "Raw recognition: '$text' (toks=${tokens.size}, endpoint=$isEndpoint)")
                         }
 
-                        // 发送逻辑：过滤单字母和空白
-                        val shouldSend = text.isNotBlank() && 
-                                        text.length > 1 && 
-                                        text != lastSentResult
+                        // 发送逻辑：如实显示识别到的文字（不再过滤单字符），保留去重
+                        val shouldSend = text.isNotBlank() && text != lastSentResult
 
                         if (shouldSend) {
                             lastSentResult = text

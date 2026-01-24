@@ -31,7 +31,11 @@ public class OnlineRecognizer {
     }
 
     public OnlineStream createStream() {
-        long p = createStream(ptr, "");
+        return createStreamWithHotwords("");
+    }
+
+    public OnlineStream createStreamWithHotwords(String hotwords) {
+        long p = createStream(ptr, hotwords);
         return new OnlineStream(p);
     }
 

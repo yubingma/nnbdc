@@ -770,8 +770,10 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
         if (_studyStep == StudyStep.ch2En.json && _word != null) {
           // 中→英模式：结合拼写相似度和音素相似度的智能选择
-          processedResult = await AsrUtil.selectBestCandidateWithPhoneme(candidateStrings, _word!.spell);
-          Global.logger.d('===== ASR: Selected result: "$processedResult" (目标单词: ${_word!.spell})');
+          String selected = await AsrUtil.selectBestCandidateWithPhoneme(candidateStrings, _word!.spell);
+          // 进一步进行英文预处理（如去除前缀噪音、模糊匹配等）
+          processedResult = AsrUtil.preprocessEnglish(selected, _word!.spell);
+          Global.logger.d('===== ASR: Selected & Preprocessed: "$processedResult" (原始选择: "$selected", 目标: ${_word!.spell})');
         } else {
           // 其他模式：直接使用最佳候选结果，然后进行相应预处理
           processedResult = bestCandidate;
