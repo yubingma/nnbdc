@@ -753,16 +753,28 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver 
         }
       }
 
-      // 离开当前单词，跳转到下一个（如果回答正确，且当前没有其他进行中的asr任务）
-      if (canLeaveCurrWord && runningAsrTaskCount == 1) {
+      // 离开当前单词，跳转到下一个（如果回答正确）
+      // 背英文模式：立即跳转 (修复快速连续识别导致的不跳转bug)
+      // 其他模式（背中文）：等待所有并发任务完成（runningAsrTaskCount == 1），以便用户一次性说出多个意思时能全部匹配
+      if (canLeaveCurrWord && (studyMode == WordListStudyMode.speakEnglish || runningAsrTaskCount == 1)) {
+        // 立即重置标志位，防止重复跳转 (防抖)
+        canLeaveCurrWord = false;
+
         if (studyMode == WordListStudyMode.speakEnglish) {
           // 背英文模式：标记当前单词已答对
-          words[currWordIndex].answeredAllMeanings = true;
+          // 防止数组越界
+          if (currWordIndex >= 0 && currWordIndex < words.length) {
+            words[currWordIndex].answeredAllMeanings = true;
+          }
         }
 
         // 提示音已播放完成，可以安全地停止 ASR
-        asr.stopAsr();
-        asr.reset(); // 清除缓冲区
+        try {
+          asr.stopAsr();
+          asr.reset(); // 清除缓冲区
+        } catch (e) {
+          Global.logger.d("停止ASR失败: $e");
+        }
 
         // 跳过全部释义已经答对的单词
         var nextWordIndex = currWordIndex + 1;
@@ -791,10 +803,12 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver 
           handlingAsrChinese = "";
           // 确保先设置热词
           _setAsrContextualPhrases();
-          asr.startAsr(decideAsrLanguage());
+          try {
+            asr.startAsr(decideAsrLanguage());
+          } catch (e) {
+            Global.logger.e("启动ASR失败: $e");
+          }
         });
-
-        canLeaveCurrWord = false;
       }
     } finally {
       runningAsrTaskCount--;
@@ -1220,6 +1234,7 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver 
       word.asrMatchedMeaningItemParts = [];
       word.answeredAllMeanings = false;
       word.speakEnglishPassed = false;
+      word.pronunciationScore = null;
     }
   }
 
