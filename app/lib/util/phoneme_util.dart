@@ -38,19 +38,31 @@ class PhonemeUtil {
   /// 核心改进：利用 cmudict.dict 对“垃圾结果”进行音素骨架提取与对比
   static Future<int> similarity(String a, String b) async {
     if (a.isEmpty || b.isEmpty) return 0;
-    
+
     final aVars = await lookup(a);
     final bVars = await lookup(b);
 
-    // 情况 A：两个词都在字典里，进行精准音素对比
+    // 情况 A：两个词都在字典里，也使用模糊骨架对比（提高容错率）
     if (aVars.isNotEmpty && bVars.isNotEmpty) {
       int best = 0;
+      List<String> bestAWeakened = [];
+      List<String> bestBWeakened = [];
+
       for (final ap in aVars) {
         for (final bp in bVars) {
-          final s = _phonemeSimilarity(ap, bp);
-          if (s > best) best = s;
+          final weakAP = _weakenPhonemes(ap);
+          final weakBP = _weakenPhonemes(bp);
+          final s = _phonemeSimilarity(weakAP, weakBP);
+          if (s > best) {
+            best = s;
+            bestAWeakened = weakAP;
+            bestBWeakened = weakBP;
+          }
         }
       }
+
+      // 记录骨架对比日志
+      Global.logger.d('===== Phonetic compare: "$a"[$bestAWeakened] vs "$b"[$bestBWeakened] score: $best');
       return best;
     }
 
@@ -71,7 +83,7 @@ class PhonemeUtil {
           bestRef = weakTP;
         }
       }
-      
+
       // 记录骨架对比日志，方便排查由于拼写导致的“听感一致”
       Global.logger.d('===== Phonetic compare: "$garbageWord"[$garbagePseudo] vs target[$bestRef] score: $best');
       return best;
@@ -81,7 +93,11 @@ class PhonemeUtil {
     final dist = EditDistance.forStrings(a.toLowerCase(), b.toLowerCase());
     final maxLen = a.length > b.length ? a.length : b.length;
     if (maxLen == 0) return 0;
-    return ((maxLen - dist) * 100.0 / maxLen).clamp(0.0, 100.0).round();
+    final score = ((maxLen - dist) * 100.0 / maxLen).clamp(0.0, 100.0).round();
+
+    // 记录字符编辑距离日志
+    Global.logger.d('===== Phonetic compare (fallback): "$a" vs "$b" edit-distance score: $score');
+    return score;
   }
 
   /// 内部方法：将真实音素序列（如 [S, W, IH]）弱化处理（合并母音），以便与垃圾词对比
@@ -105,7 +121,7 @@ class PhonemeUtil {
     w = w.replaceAll('ng', 'G');
     w = w.replaceAll('qu', 'kw');
     w = w.replaceAll(RegExp(r'ce|ci|cy'), 's');
-    
+
     // 2. 转换为标准音素集映射
     final List<String> res = [];
     for (int i = 0; i < w.length; i++) {
@@ -124,13 +140,13 @@ class PhonemeUtil {
         res.add(char.toUpperCase());
       }
     }
-    
+
     // 3. 去重坍缩（防止叠音干扰，如 ttt -> T）
     List<String> collapsed = [];
     if (res.isNotEmpty) {
       collapsed.add(res[0]);
       for (var i = 1; i < res.length; i++) {
-        if (res[i] == res[i-1]) continue;
+        if (res[i] == res[i - 1]) continue;
         collapsed.add(res[i]);
       }
     }
@@ -175,10 +191,7 @@ class PhonemeUtil {
       }
       final word = head.toLowerCase();
       // 注意：CMU 音素里元音带 0/1/2 重音数字，这里去掉数字以做宽松匹配
-      final phonemes = parts
-          .sublist(1)
-          .map((p) => p.replaceAll(RegExp(r"\d+"), ''))
-          .toList();
+      final phonemes = parts.sublist(1).map((p) => p.replaceAll(RegExp(r"\d+"), '')).toList();
 
       final variants = _wordToPhonemeVariants.putIfAbsent(word, () => <List<String>>[]);
       variants.add(phonemes);
@@ -188,7 +201,7 @@ class PhonemeUtil {
   /// 将两个音素序列的距离映射为 0-100 相似度
   static int _phonemeSimilarity(List<String> a, List<String> b) {
     if (a.isEmpty || b.isEmpty) return 0;
-    
+
     // 使用加权编辑距离，考虑常见的识别混淆
     final dist = _weightedPhonemeDistance(a, b);
     final maxLen = a.length > b.length ? a.length : b.length;
@@ -215,11 +228,11 @@ class PhonemeUtil {
       for (var j = 1; j <= m; j++) {
         // 计算替换代价
         final cost = _phonemeMatchCost(a[i - 1], b[j - 1]);
-        
+
         final del = dp[i - 1][j] + 1.0;
         final ins = dp[i][j - 1] + 1.0;
         final sub = dp[i - 1][j - 1] + cost;
-        
+
         dp[i][j] = del < ins ? (del < sub ? del : sub) : (ins < sub ? ins : sub);
       }
     }
@@ -234,9 +247,9 @@ class PhonemeUtil {
     // 主要是处理 V-L, L-R, B-P, F-V 等经典偏差
     const confusionGroups = [
       {"V", "L"}, // 解决用户反馈的预算/视频识别偏差
-      {"V", "B"}, 
+      {"V", "B"},
       {"V", "F"},
-      {"L", "R"}, 
+      {"L", "R"},
       {"B", "P"},
       {"D", "T"},
       {"G", "K"},
@@ -250,7 +263,4 @@ class PhonemeUtil {
 
     return 1.0; // 完全不相关的音素，替换代价为 1
   }
-  
 }
-
-
