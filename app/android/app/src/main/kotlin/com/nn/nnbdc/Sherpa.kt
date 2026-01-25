@@ -251,9 +251,9 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                 .setEndpointConfig(endpointConfig)
                 .setEnableEndpoint(true)
                 .setDecodingMethod("modified_beam_search")
-                .setMaxActivePaths(12)
-                .setHotwordsScore(30.0f)
-                .setBlankPenalty(0.5f) // 降低惩罚以减少过度强制输出导致的叠词（如爆发->爆爆）
+                .setMaxActivePaths(4) // 收窄搜索范围至4 (同英文)，防止"脑补"离谱叠词 (原12)
+                .setHotwordsScore(50.0f) // 提高热词权重 (原30.0)
+                .setBlankPenalty(1.2f) // 提高惩罚以抑制非法重复 (原0.5)
                 .build()
 
             model = OnlineRecognizer(config)
