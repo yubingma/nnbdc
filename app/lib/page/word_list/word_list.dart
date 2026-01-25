@@ -91,7 +91,7 @@ class WordListPage extends StatefulWidget {
   }
 }
 
-class WordListPageState extends State<WordListPage> with WidgetsBindingObserver {
+class WordListPageState extends State<WordListPage> with WidgetsBindingObserver, SingleTickerProviderStateMixin {
   static const double leftPadding = 12;
   static const double rightPadding = 16;
   static const double delBtnSize = 24;
@@ -148,6 +148,11 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver 
   double _lastMeterLevel = 0.0;
   DateTime? _lastMeterAt;
   bool _meterTickFlip = false;
+
+  // ASR加载状态与动画控制器
+  bool _isAsrLoading = false;
+  late AnimationController _loadingController;
+  AsrLanguage? _lastAsrLanguage;
 
   /// "请勿查询"标志，当此标志为true时，如果本来有查询动作（比如滚动到顶部或底部），该动作也不再执行
   bool doNotQueryPlease = false;
@@ -473,6 +478,11 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver 
   @override
   void initState() {
     super.initState();
+    // 初始化大脑加载动画控制器（脉冲效果）
+    _loadingController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    );
     WidgetsBinding.instance.addObserver(this);
 
     doInit();
@@ -804,7 +814,7 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver 
           // 确保先设置热词
           _setAsrContextualPhrases();
           try {
-            asr.startAsr(decideAsrLanguage());
+            _startAsrWithLoading(decideAsrLanguage());
           } catch (e) {
             Global.logger.e("启动ASR失败: $e");
           }
@@ -892,6 +902,7 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver 
     _audioPlayerDisposed = true; // 标记为已释放
     _unsubscribeMeter();
     _meterLevelNotifier.dispose();
+    _loadingController.dispose();
 
     // 延迟释放 AudioPlayer，确保所有操作完成
     Future.delayed(const Duration(milliseconds: 100), () {
@@ -932,7 +943,7 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver 
           // 重新初始化事件监听，确保事件订阅有效（类似bdc.dart中的处理）
           asr.initAsr(onAsrResult);
           // 然后启动ASR
-          asr.startAsr(decideAsrLanguage());
+          _startAsrWithLoading(decideAsrLanguage());
           _subscribeMeterIfNeeded();
         } catch (e, stackTrace) {
           Global.logger.e('恢复ASR失败', error: e, stackTrace: stackTrace);
@@ -1014,77 +1025,150 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver 
   }
 
   Widget renderPage() {
-    return NotificationListener<ScrollUpdateNotification>(
-        onNotification: (ScrollUpdateNotification notification) {
-          // 如果设置了"请勿查询"标志，直接返回
-          if (doNotQueryPlease) {
-            return false;
-          }
+    return Stack(
+      children: [
+        NotificationListener<ScrollUpdateNotification>(
+          onNotification: (ScrollUpdateNotification notification) {
+            // 如果设置了"请勿查询"标志，直接返回
+            if (doNotQueryPlease) {
+              return false;
+            }
 
-          // 如果正在查询或者查询时间间隔未到，跳过本次处理
-          if (isQuerying || (lastQueryTime != null && AppClock.now().difference(lastQueryTime!).inMilliseconds < minQueryInterval)) {
-            return false;
-          }
+            // 如果正在查询或者查询时间间隔未到，跳过本次处理
+            if (isQuerying || (lastQueryTime != null && AppClock.now().difference(lastQueryTime!).inMilliseconds < minQueryInterval)) {
+              return false;
+            }
 
-          // 向下滚动 - 滑动到最下方单词时，加载下一页单词
-          if (notification.scrollDelta != null && notification.scrollDelta! > 0) {
-            // 检查是否滚动到最下方单词
-            if (notification.metrics.extentAfter < 100) {
-              Global.logger.d('向下滚动触发: extentAfter=${notification.metrics.extentAfter}, baseIndex=$baseIndex, words.length=${words.length}');
-              // 使用Future.microtask减少UI阻塞
-              Future.microtask(() {
-                doQuery(false, baseIndex! + words.length, _pageSize, false);
+            // 向下滚动 - 滑动到最下方单词时，加载下一页单词
+            if (notification.scrollDelta != null && notification.scrollDelta! > 0) {
+              // 检查是否滚动到最下方单词
+              if (notification.metrics.extentAfter < 100) {
+                Global.logger.d('向下滚动触发: extentAfter=${notification.metrics.extentAfter}, baseIndex=$baseIndex, words.length=${words.length}');
+                // 使用Future.microtask减少UI阻塞
+                Future.microtask(() {
+                  doQuery(false, baseIndex! + words.length, _pageSize, false);
+                });
+              }
+            }
+            // 向上滚动 - 滑动到最上方单词时，加载上一页单词
+            else if (notification.scrollDelta != null && notification.scrollDelta! < 0) {
+              // 检查是否滚动到最上方单词，且还有更多内容可以加载
+              if (notification.metrics.extentBefore < 100 && baseIndex! > 0) {
+                Global.logger.d('向上滚动触发: extentBefore=${notification.metrics.extentBefore}, baseIndex=$baseIndex, words.length=${words.length}');
+                // 使用Future.microtask减少UI阻塞
+                Future.microtask(() {
+                  Global.logger.d('开始向上查询: fromIndex=${baseIndex! - _pageSize}, pageSize=$_pageSize');
+                  doQuery(false, baseIndex! - _pageSize, _pageSize, false);
+                });
+              } else if (notification.metrics.extentBefore < 100 && baseIndex! <= 0) {
+                Global.logger.d('向上滚动检测: 已到最顶部，无法继续向上加载 extentBefore=${notification.metrics.extentBefore}, baseIndex=$baseIndex');
+              }
+            }
+
+            // 控制"回到顶部"按钮的显示与隐藏
+            if (notification.metrics.extentBefore /*视口上方未展示的内容长度*/ < 500 && showToTopBtn) {
+              setState(() {
+                showToTopBtn = false;
+              });
+            } else if (notification.metrics.extentBefore /*视口上方未展示的内容长度*/ > 500 && !showToTopBtn) {
+              setState(() {
+                showToTopBtn = true;
               });
             }
-          }
-          // 向上滚动 - 滑动到最上方单词时，加载上一页单词
-          else if (notification.scrollDelta != null && notification.scrollDelta! < 0) {
-            // 检查是否滚动到最上方单词，且还有更多内容可以加载
-            if (notification.metrics.extentBefore < 100 && baseIndex! > 0) {
-              Global.logger.d('向上滚动触发: extentBefore=${notification.metrics.extentBefore}, baseIndex=$baseIndex, words.length=${words.length}');
-              // 使用Future.microtask减少UI阻塞
-              Future.microtask(() {
-                Global.logger.d('开始向上查询: fromIndex=${baseIndex! - _pageSize}, pageSize=$_pageSize');
-                doQuery(false, baseIndex! - _pageSize, _pageSize, false);
-              });
-            } else if (notification.metrics.extentBefore < 100 && baseIndex! <= 0) {
-              Global.logger.d('向上滚动检测: 已到最顶部，无法继续向上加载 extentBefore=${notification.metrics.extentBefore}, baseIndex=$baseIndex');
-            }
-          }
 
-          // 控制"回到顶部"按钮的显示与隐藏
-          if (notification.metrics.extentBefore /*视口上方未展示的内容长度*/ < 500 && showToTopBtn) {
-            setState(() {
-              showToTopBtn = false;
-            });
-          } else if (notification.metrics.extentBefore /*视口上方未展示的内容长度*/ > 500 && !showToTopBtn) {
-            setState(() {
-              showToTopBtn = true;
-            });
-          }
-
-          return false;
-        },
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Expanded(
-              child: ScrollablePositionedList.builder(
-                itemCount: words.length,
-                itemBuilder: (context, index) => renderWord(index),
-                itemScrollController: itemScrollController,
-                itemPositionsListener: itemPositionsListener,
-                padding: EdgeInsets.zero,
+            return false;
+          },
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Expanded(
+                child: ScrollablePositionedList.builder(
+                  itemCount: words.length,
+                  itemBuilder: (context, index) => renderWord(index),
+                  itemScrollController: itemScrollController,
+                  itemPositionsListener: itemPositionsListener,
+                  padding: EdgeInsets.zero,
+                ),
+              ),
+              // 底部的按钮，固定在页面底部
+              if (args.injectedBtn != null)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16.0, 4.0, 16.0, 0.0),
+                  child: args.injectedBtn,
+                ),
+            ],
+          ),
+        ),
+        // ASR 加载中的大脑动画覆盖层
+        if (_isAsrLoading)
+          Positioned.fill(
+            child: Container(
+              color: Colors.black12, // 轻微背景遮罩
+              child: Center(
+                child: AnimatedBuilder(
+                  animation: _loadingController,
+                  builder: (context, child) {
+                    return Transform.scale(
+                      scale: 1.0 + 0.2 * Curves.easeInOut.transform(_loadingController.value),
+                      child: child,
+                    );
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.9),
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.2),
+                          blurRadius: 10,
+                          spreadRadius: 2,
+                        )
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.psychology, // 大脑图标
+                      size: 48,
+                      color: Color(0xFF0097A7),
+                    ),
+                  ),
+                ),
               ),
             ),
-            // 底部的按钮，固定在页面底部
-            if (args.injectedBtn != null)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16.0, 4.0, 16.0, 0.0),
-                child: args.injectedBtn,
-              ),
-          ],
-        ));
+          ),
+      ],
+    );
+  }
+
+  /// 带加载动画的 ASR 启动封装
+  Future<void> _startAsrWithLoading(AsrLanguage language) async {
+    if (!mounted) return;
+    // 如果已经在加载或是启动状态，不再重复显示动画（避免闪烁）
+    if (_isAsrLoading) return;
+
+    // 只有在语言发生变化（或者第一次启动）时才显示加载动画
+    // 因为这通常意味着需要加载不同的声学模型，耗时较长
+    // 而同一个语言下的单词切换（热词更新）通常很快，不需要显示动画干扰用户
+    bool shouldShowAnimation = _lastAsrLanguage != language;
+    _lastAsrLanguage = language;
+
+    if (shouldShowAnimation) {
+      setState(() {
+        _isAsrLoading = true;
+      });
+      _loadingController.repeat(reverse: true);
+    }
+
+    try {
+      await asr.startAsr(language);
+    } finally {
+      if (shouldShowAnimation && mounted) {
+        _loadingController.stop();
+        setState(() {
+          _isAsrLoading = false;
+        });
+      }
+    }
   }
 
   onWordPressed(WordWrapper word, int index, bool playSound, Function? soundFinishListener) async {
@@ -1164,7 +1248,7 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver 
     // 在语音模式下，播放完成后启动语音识别
     if (studyMode == WordListStudyMode.speakChinese || studyMode == WordListStudyMode.speakEnglish) {
       _setAsrContextualPhrases();
-      asr.startAsr(decideAsrLanguage());
+      _startAsrWithLoading(decideAsrLanguage());
       _subscribeMeterIfNeeded();
     }
   }
@@ -1674,13 +1758,24 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver 
                                                   : Colors.orange.withValues(alpha: 0.1),
                                               borderRadius: BorderRadius.circular(10),
                                             ),
-                                            child: Text(
-                                              '发音: ${word.pronunciationScore}',
-                                              style: TextStyle(
-                                                fontSize: 11,
-                                                fontWeight: FontWeight.bold,
-                                                color: word.pronunciationScore! >= 60 ? Colors.green : Colors.orange,
-                                              ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Icon(
+                                                  Icons.record_voice_over,
+                                                  size: 14,
+                                                  color: word.pronunciationScore! >= 60 ? Colors.green : Colors.orange,
+                                                ),
+                                                const SizedBox(width: 4),
+                                                Text(
+                                                  '发音: ${word.pronunciationScore}',
+                                                  style: TextStyle(
+                                                    fontSize: 11,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: word.pronunciationScore! >= 60 ? Colors.green : Colors.orange,
+                                                  ),
+                                                ),
+                                              ],
                                             ),
                                           ),
                                         ),
@@ -2288,7 +2383,7 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver 
                                 handlingAsrChinese = "";
                                 studyMode = WordListStudyMode.speakChinese;
                               });
-                              asr.startAsr(decideAsrLanguage());
+                              _startAsrWithLoading(decideAsrLanguage());
                               _subscribeMeterIfNeeded();
                               break;
                             case menuSpeakEnglish:
@@ -2303,7 +2398,7 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver 
                                 studyMode = WordListStudyMode.speakEnglish;
                               });
                               // 用英文识别重启ASR，并订阅电平
-                              asr.startAsr(decideAsrLanguage());
+                              _startAsrWithLoading(decideAsrLanguage());
                               _subscribeMeterIfNeeded();
                               break;
                             case menuWalkman:
