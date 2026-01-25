@@ -30,6 +30,9 @@ class WordWrapper {
   /// 是否在“背英文”模式下已经答对（用于揭示英文拼写）
   bool speakEnglishPassed = false;
 
+  /// 发音评分（背英文模式）
+  int? pronunciationScore;
+
   WordWrapper(this.word, this.tag);
 
   @override

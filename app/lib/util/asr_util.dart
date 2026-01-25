@@ -178,27 +178,16 @@ class AsrUtil {
     return lowerResult;
   }
 
-  /// 计算综合相似度 (拼写 + 音素)
+  /// 计算综合相似度 (仅基于发音)
   static Future<int> calculateOverallSimilarity(String input, String target) async {
-    // 1. 拼写相似度 (0-100)
-    int spellingScore = _calculateSimilarityScore(input, target);
-
-    // 2. 音素相似度
-    // 注意：PhonemeUtil.similarity 返回的是 0-100 的整数? 假设是这样
-    // 如果 PhonemeUtil 还没准备好，这里可能需要防御性编程
-    int phonemeScore = 0;
     try {
-      phonemeScore = await PhonemeUtil.similarity(input, target);
+      // 用户要求独立的计算方式，只考虑发音相似度
+      return await PhonemeUtil.similarity(input, target);
     } catch (e) {
       Global.logger.d('计算音素相似度失败: $e');
+      // 降级使用拼写相似度
+      return _calculateSimilarityScore(input, target);
     }
-
-    // 3. 综合评分策略
-    // 如果拼写非常接近，直接用拼写分
-    if (spellingScore > 80) return spellingScore;
-
-    // 否则取两者最大值
-    return [spellingScore, phonemeScore].reduce((curr, next) => curr > next ? curr : next);
   }
 
   /// 基于音素相似度的改进版：从多个候选中选择最优（异步）

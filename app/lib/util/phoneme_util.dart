@@ -86,7 +86,10 @@ class PhonemeUtil {
 
       // 记录骨架对比日志，方便排查由于拼写导致的“听感一致”
       Global.logger.d('===== Phonetic compare: "$garbageWord"[$garbagePseudo] vs target[$bestRef] score: $best');
-      return best;
+
+      // 降级策略：非字典词的拟真音素对比存在不确定性，上限扣除 5 分
+      // 避免 "nylon" vs "naylan" 这种骨架一致但元音/拼写错误的词拿到 100 分
+      return best > 95 ? 95 : best;
     }
 
     // 情况 C：两个都不在字典里，退化到字符编辑距离
