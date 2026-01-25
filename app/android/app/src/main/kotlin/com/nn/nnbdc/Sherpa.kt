@@ -253,11 +253,11 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                 .setDecodingMethod("modified_beam_search")
                 .setMaxActivePaths(12)
                 .setHotwordsScore(30.0f)
-                .setBlankPenalty(1.0f) // 中文需要压制重复帧
+                .setBlankPenalty(0.5f) // 降低惩罚以减少过度强制输出导致的叠词（如爆发->爆爆）
                 .build()
 
             model = OnlineRecognizer(config)
-            activeGain = 2.4f // 提高增益以捕捉轻声（如尾音“的”），防止漏识别
+            activeGain = 2.0f // 2.4f可能导致爆音削波，微调回2.0f
             Log.i(TAG, "Chinese isolated recipe loaded. Gain: $activeGain")
         } catch (e: Exception) {
             Log.e(TAG, "Chinese model load failed", e)
