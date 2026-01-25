@@ -1,4 +1,5 @@
 import 'package:nnbdc/api/vo.dart';
+import 'package:nnbdc/constants.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/util/phoneme_util.dart';
@@ -124,7 +125,7 @@ class AsrUtil {
     return chineseOnly.isEmpty ? lowerResult : chineseOnly;
   }
 
-  /// 预处理英文语音识别结果, 提高得到正确结果的概率
+  /// 预处理英文语音识别结果, 使识别结果尽量往目标单词靠拢
   /// 主要处理发音相似的英文单词替换
   /// @param result 语音识别结果
   /// @param targetWord 目标单词
@@ -154,8 +155,8 @@ class AsrUtil {
     int distance = EditDistance.forStrings(lowerResult, lowerTarget);
     int maxLength = [lowerResult.length, lowerTarget.length].reduce((a, b) => a > b ? a : b);
 
-    // 将容错率从 50% 收紧到 30% (向下取整)，确保匹配更精准
-    if (maxLength > 0 && distance <= (maxLength * 0.3).floor()) {
+    // 编辑距离容错匹配
+    if (maxLength > 0 && distance <= (maxLength * Constants.editDistanceTolerance).floor()) {
       Global.logger.d('===== ASR MATCH [EDIT_DIST]: "$lowerResult" -> "$lowerTarget" (dist: $distance, max: $maxLength)');
       return lowerTarget;
     }
@@ -202,8 +203,8 @@ class AsrUtil {
       }
     }
 
-    // 判定：音素相似度 ≥ 70 则视为目标词
-    if (bestScore >= 70) {
+    // 判定：音素相似度 ≥ 阈值则视为目标词
+    if (bestScore >= Constants.phonemeMatchThreshold) {
       Global.logger.d('===== ASR MATCH [PHONETIC]: "$best" -> "$lowerTarget" (score: $bestScore)');
       return targetWord;
     }
@@ -236,16 +237,15 @@ class AsrUtil {
       }
     }
 
-    // 如果最佳候选的相似度足够高，返回目标单词
-    if (bestScore >= 70) {
-      // 70%相似度阈值
+    // 如果最佳候选的拼写相似度足够高，返回目标单词
+    if (bestScore >= Constants.spellingMatchThreshold) {
       return targetWord;
     }
 
     return bestCandidate;
   }
 
-  /// 计算相似度分数（0-100）
+  /// 计算拼写相似度分数（0-100）
   static int _calculateSimilarityScore(String candidate, String target) {
     String lowerCandidate = candidate.toLowerCase().trim();
     String lowerTarget = target.toLowerCase().trim();
@@ -267,8 +267,8 @@ class AsrUtil {
     // 重叠相似度
     int overlapSimilarity = _calculateOverlapSimilarity(lowerCandidate, lowerTarget);
 
-    // 综合相似度（编辑距离权重70%，重叠权重30%）
-    int finalScore = (editSimilarity * 0.7 + overlapSimilarity * 0.3).round();
+    // 综合拼写相似度（使用配置的权重）
+    int finalScore = (editSimilarity * Constants.spellingEditDistanceWeight + overlapSimilarity * Constants.spellingOverlapWeight).round();
 
     return finalScore.clamp(0, 100);
   }
