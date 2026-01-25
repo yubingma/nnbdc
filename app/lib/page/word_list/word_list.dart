@@ -794,10 +794,17 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver 
         try {
           final curr = getBookMarkUiPosition();
           if (curr >= 0 && curr < words.length) {
-            // 使用util函数提取上下文短语
-            List<String> allowPhrases = AsrUtil.extractContextualPhrases(
-              words[curr].word.getMergedMeaningItems(),
-            );
+            // 根据模式提取上下文短语
+            List<String> allowPhrases;
+            if (studyMode == WordListStudyMode.speakEnglish) {
+              // 背英文模式：热词为英文拼写
+              allowPhrases = [words[curr].word.spell];
+            } else {
+              // 背中文模式：热词为中文释义
+              allowPhrases = AsrUtil.extractContextualPhrases(
+                words[curr].word.getMergedMeaningItems(),
+              );
+            }
             if (allowPhrases.isNotEmpty) {
               AsrUtil.setContextualStrings(
                 allowPhrases,
@@ -1085,8 +1092,9 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver 
       }
     }
 
-    // 在背中文模式下，手动切换单词时也清空语音识别缓存
-    if (studyMode == WordListStudyMode.speakChinese) {
+    // 在背中文或背英文模式下，手动切换单词时也清空语音识别缓存
+    // 强制停止ASR将导致状态变化，从而触发 listener 更新 context strings (热词)
+    if (studyMode == WordListStudyMode.speakChinese || studyMode == WordListStudyMode.speakEnglish) {
       asr.stopAsr();
       asr.reset(); // 清除缓冲区
     }
