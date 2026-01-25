@@ -1,4 +1,3 @@
-import 'package:nnbdc/constants.dart';
 import 'package:nnbdc/global.dart';
 import 'package:lpinyin/lpinyin.dart';
 import 'package:nnbdc/util/utils.dart';

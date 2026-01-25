@@ -315,6 +315,7 @@ class EnglishAsrInputWidget extends StatefulWidget {
   final Function(AsrLanguage) onStartAsr;
   final bool isKeyboardVisible;
   final FocusNode focusNode;
+  final int? score; // 新增：评分
 
   const EnglishAsrInputWidget({
     super.key,
@@ -323,6 +324,7 @@ class EnglishAsrInputWidget extends StatefulWidget {
     required this.onStartAsr,
     required this.isKeyboardVisible,
     required this.focusNode,
+    this.score,
   });
 
   @override
@@ -350,6 +352,29 @@ class _EnglishAsrInputWidgetState extends State<EnglishAsrInputWidget> {
           style: const TextStyle(fontSize: 12, color: Colors.grey),
           onChanged: (value) {},
         ),
+        if (widget.score != null && widget.score! > 0)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: widget.score! >= 60 ? Colors.green.withValues(alpha: 0.1) : Colors.orange.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: widget.score! >= 60 ? Colors.green.withValues(alpha: 0.5) : Colors.orange.withValues(alpha: 0.5),
+                  width: 1,
+                ),
+              ),
+              child: Text(
+                '发音评分: ${widget.score}',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: widget.score! >= 60 ? Colors.green : Colors.orange,
+                ),
+              ),
+            ),
+          ),
       ],
     );
   }
@@ -443,6 +468,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   late AnimationController _soundController;
   late AnimationController _wordSoundController;
   late AnimationController _sentenceSoundController;
+  // 当前发音评分
+  int? _currentScore;
+
   final Map<String, bool> _playingStates = {
     'word': false, // 单词发音
     'sentence': false, // 例句发音
@@ -765,13 +793,21 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
         if (_studyStep == StudyStep.ch2En.json && _word != null) {
           // 中→英模式：结合拼写相似度和音素相似度的智能选择
-          String selected = await AsrUtil.selectBestCandidateWithPhoneme(candidateStrings, _word!.spell);
+          final result = await AsrUtil.selectBestCandidateWithPhonemeAndScore(candidateStrings, _word!.spell);
+
+          // 记录评分
+          _currentScore = result.score;
+
           // 进一步进行英文预处理（如去除前缀噪音、模糊匹配等）
-          processedResult = AsrUtil.preprocessEnglish(selected, _word!.spell);
-          Global.logger.d('===== ASR: Selected & Preprocessed: "$processedResult" (原始选择: "$selected", 目标: ${_word!.spell})');
+          processedResult = AsrUtil.preprocessEnglish(result.text, _word!.spell);
+          Global.logger
+              .d('===== ASR: Selected & Preprocessed: "$processedResult" (原始选择: "${result.text}", 目标: ${_word!.spell}, 分数: ${result.score})');
         } else {
           // 其他模式：直接使用最佳候选结果，然后进行相应预处理
           processedResult = bestCandidate;
+          // 清空评分
+          _currentScore = null;
+
           if (_studyStep == StudyStep.en2Ch.json) {
             // 英→中模式：使用中文预处理
             processedResult = AsrUtil.preprocess(processedResult);
@@ -785,9 +821,11 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         if (_studyStep == StudyStep.ch2En.json && _word != null) {
           // 中→英模式：英文预处理（单个结果场景下也尝试音素匹配）
           final pre = AsrUtil.preprocessEnglish(event, _word!.spell);
-          final best = await AsrUtil.selectBestCandidateWithPhoneme([pre], _word!.spell);
-          processedResult = best;
-          Global.logger.d('===== ASR: Single result processed: "$event" -> "$processedResult" (target: ${_word!.spell})');
+          // 也获取分数
+          final result = await AsrUtil.selectBestCandidateWithPhonemeAndScore([pre], _word!.spell);
+          processedResult = result.text;
+          _currentScore = result.score;
+          Global.logger.d('===== ASR: Single result processed: "$event" -> "$processedResult" (target: ${_word!.spell}, score: $_currentScore)');
         } else {
           // 其他模式：中文预处理
           processedResult = AsrUtil.preprocess(event);
@@ -811,6 +849,11 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
   checkAsrResult() async {
     if (_meaningController.text.isEmpty) {
+      if (_currentScore != null) {
+        setState(() {
+          _currentScore = null;
+        });
+      }
       return;
     }
     // 如果 ASR 未启动，且键盘也未弹出，且没有焦点，说明可能是 ASR 停止后的残留结果，跳过处理并清空
@@ -818,6 +861,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       Global.logger.w('收到归属于旧会话的语音识别结果(${_meaningController.text})，但ASR未启动且无输入焦点，跳过处理');
       if (mounted) {
         _meaningController.text = '';
+        setState(() {
+          _currentScore = null;
+        });
       }
       return;
     }
@@ -2073,29 +2119,26 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                         children: [
                           Container(
                             margin: const EdgeInsets.fromLTRB(0, 8, 0, 0),
-                            child: Image.network(
-                                '${Config.wordImageBaseUrl}${wordImage.imageFile}',
+                            child: Image.network('${Config.wordImageBaseUrl}${wordImage.imageFile}',
                                 width: PlatformUtils.isWeb ? 400 : 200,
                                 height: PlatformUtils.isWeb ? 300 : 150,
-                                fit: BoxFit.contain,
-                                loadingBuilder: (context, child, loadingProgress) {
-                                  if (loadingProgress == null) return child;
-                                  return const Center(
-                                    child: CircularProgressIndicator(
-                                      color: Colors.indigoAccent,
-                                      strokeWidth: 2,
-                                    ),
-                                  );
-                                },
-                                errorBuilder: (context, error, stackTrace) {
-                                  return const Center(
-                                    child: Icon(
-                                      Icons.broken_image,
-                                      color: Colors.red,
-                                      size: 32,
-                                    ),
-                                  );
-                                }),
+                                fit: BoxFit.contain, loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) return child;
+                              return const Center(
+                                child: CircularProgressIndicator(
+                                  color: Colors.indigoAccent,
+                                  strokeWidth: 2,
+                                ),
+                              );
+                            }, errorBuilder: (context, error, stackTrace) {
+                              return const Center(
+                                child: Icon(
+                                  Icons.broken_image,
+                                  color: Colors.red,
+                                  size: 32,
+                                ),
+                              );
+                            }),
                           ),
                         ],
                       ),
@@ -3015,6 +3058,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                   onStartAsr: (language) => asr.startAsr(language),
                   isKeyboardVisible: _isKeyboardVisible,
                   focusNode: _meaningFocusNode,
+                  score: _currentScore,
                 ),
         ],
       ),

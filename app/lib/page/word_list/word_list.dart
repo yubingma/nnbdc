@@ -143,6 +143,9 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver 
   StreamSubscription<double>? _meterSub;
   static const int _waveCapacity = 16; // 更短窗口，提升实时感（~0.35s）
   final List<double> _waveLevels = <double>[];
+  // 当前发音评分
+  int? _currentScore;
+
   Timer? _meterTimer;
   double _lastMeterLevel = 0.0;
   DateTime? _lastMeterAt;
@@ -608,20 +611,23 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver 
           List<String> candidateStrings = candidates.map((e) => e.toString()).toList();
 
           // 结合拼写相似度和音素相似度的智能选择 (Async)
-          String selected = await AsrUtil.selectBestCandidateWithPhoneme(candidateStrings, target);
+          final result = await AsrUtil.selectBestCandidateWithPhonemeAndScore(candidateStrings, target);
+          // 记录评分
+          _currentScore = result.score;
           // 进一步进行英文预处理
-          processedEvent = AsrUtil.preprocessEnglish(selected, target);
-          Global.logger
-              .d('===== ASR (Phoneme): Selected & Preprocessed: "$processedEvent" (candidates: ${candidateStrings.length}, target: $target)');
+          processedEvent = AsrUtil.preprocessEnglish(result.text, target);
+          Global.logger.d(
+              '===== ASR (Phoneme): Selected & Preprocessed: "$processedEvent" (candidates: ${candidateStrings.length}, target: $target, score: $_currentScore)');
         } else {
           // 单个结果处理
           // 即使是单结果，也尝试与目标词进行音素匹配 check
           // 先做一次预处理
           final pre = AsrUtil.preprocessEnglish(event, target);
           // 再通过音素匹配确认（把预处理结果作为唯一候选传进去）
-          final best = await AsrUtil.selectBestCandidateWithPhoneme([pre], target);
-          processedEvent = best;
-          Global.logger.d('===== ASR (Phoneme): Single result: "$event" -> "$processedEvent" (target: $target)');
+          final result = await AsrUtil.selectBestCandidateWithPhonemeAndScore([pre], target);
+          processedEvent = result.text;
+          _currentScore = result.score;
+          Global.logger.d('===== ASR (Phoneme): Single result: "$event" -> "$processedEvent" (target: $target, score: $_currentScore)');
         }
 
         // 最后确保做一次标准英文预处理（通常上面的步骤已经覆盖，但为了保险再做一次）
@@ -653,6 +659,7 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver 
       } else {
         // 背中文等模式：进行中文预处理
         asrResult = AsrUtil.preprocess(processedEvent);
+        _currentScore = null; // 非英文模式清除评分
       }
 
       Global.logger.d("--- 语音识别最终结果: $asrResult");
@@ -779,6 +786,7 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver 
         jumpToNextWord(nextWordIndex - 1, true, () {
           // 新单词：清空识别展示，避免显示上一个单词的结果
           asrResult = "";
+          _currentScore = null;
           handlingAsrChinese = "";
           // 确保先设置热词
           _setAsrContextualPhrases();
@@ -1102,6 +1110,7 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver 
           word.speakEnglishPassed = false;
           // 清空上一次的识别展示文本
           asrResult = "";
+          _currentScore = null;
           handlingAsrChinese = "";
         }
       }
@@ -1615,6 +1624,26 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver 
                                           ),
                                         ),
                                       ),
+                                      if (isBookmarked && _currentScore != null && _currentScore! > 0)
+                                        Padding(
+                                          padding: const EdgeInsets.only(top: 6),
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                            decoration: BoxDecoration(
+                                              color:
+                                                  _currentScore! >= 60 ? Colors.green.withValues(alpha: 0.1) : Colors.orange.withValues(alpha: 0.1),
+                                              borderRadius: BorderRadius.circular(10),
+                                            ),
+                                            child: Text(
+                                              '发音: $_currentScore',
+                                              style: TextStyle(
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.bold,
+                                                color: _currentScore! >= 60 ? Colors.green : Colors.orange,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
                                     ] else ...[
                                       // 显示英文拼写与音标
                                       LayoutBuilder(
@@ -1866,6 +1895,7 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver 
       // 在背英文模式下，清除提示时也清空识别结果，以便显示默认提示文字
       if (studyMode == WordListStudyMode.speakEnglish) {
         asrResult = "";
+        _currentScore = null;
       }
     });
   }

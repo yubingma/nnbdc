@@ -5,6 +5,14 @@ import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/util/phoneme_util.dart';
 import 'package:nnbdc/util/edit_distance.dart';
 
+/// ASR 候选结果及其匹配分数
+class AsrCandidateResult {
+  final String text;
+  final int score;
+
+  AsrCandidateResult(this.text, this.score);
+}
+
 /// 语音识别结果预处理工具类
 /// 主要用于处理发音相似的中英文替换问题
 class AsrUtil {
@@ -170,46 +178,78 @@ class AsrUtil {
     return lowerResult;
   }
 
+  /// 计算综合相似度 (拼写 + 音素)
+  static Future<int> calculateOverallSimilarity(String input, String target) async {
+    // 1. 拼写相似度 (0-100)
+    int spellingScore = _calculateSimilarityScore(input, target);
+
+    // 2. 音素相似度
+    // 注意：PhonemeUtil.similarity 返回的是 0-100 的整数? 假设是这样
+    // 如果 PhonemeUtil 还没准备好，这里可能需要防御性编程
+    int phonemeScore = 0;
+    try {
+      phonemeScore = await PhonemeUtil.similarity(input, target);
+    } catch (e) {
+      Global.logger.d('计算音素相似度失败: $e');
+    }
+
+    // 3. 综合评分策略
+    // 如果拼写非常接近，直接用拼写分
+    if (spellingScore > 80) return spellingScore;
+
+    // 否则取两者最大值
+    return [spellingScore, phonemeScore].reduce((curr, next) => curr > next ? curr : next);
+  }
+
   /// 基于音素相似度的改进版：从多个候选中选择最优（异步）
   /// @param candidates 候选列表, 来自于ASR识别结果
   /// @param targetWord 目标单词
-  /// @return 最优候选
-  static Future<String> selectBestCandidateWithPhoneme(
+  /// @return 最优候选及其分数
+  static Future<AsrCandidateResult> selectBestCandidateWithPhonemeAndScore(
     List<String> candidates,
     String targetWord,
   ) async {
-    if (candidates.isEmpty) return '';
+    if (candidates.isEmpty) return AsrCandidateResult('', 0);
     final lowerTarget = targetWord.toLowerCase().trim();
 
     // 完全匹配优先
     for (final c in candidates) {
       if (c.toLowerCase().trim() == lowerTarget) {
         Global.logger.d('===== ASR MATCH [NBEST_EXACT]: "$c" == "$lowerTarget"');
-        return targetWord;
+        return AsrCandidateResult(targetWord, 100);
       }
     }
 
-    // 先用现有算法选一遍作为基准
+    // 先用现有算法选一遍作为基准 (拼写最佳)
     final baseline = selectBestCandidate(candidates, targetWord);
-
-    // 尝试音素相似度
+    int bestScore = await calculateOverallSimilarity(baseline, lowerTarget);
     String best = baseline;
-    int bestScore = await PhonemeUtil.similarity(baseline, lowerTarget);
+
+    // 遍历所有候选，寻找综合分最高的
     for (final c in candidates) {
-      final s = await PhonemeUtil.similarity(c, lowerTarget);
+      final s = await calculateOverallSimilarity(c, lowerTarget);
       if (s > bestScore) {
         bestScore = s;
         best = c;
       }
     }
 
-    // 判定：音素相似度 ≥ 阈值则视为目标词
+    // 判定：综合相似度 ≥ 阈值则视为目标词
     if (bestScore >= Constants.phonemeMatchThreshold) {
-      Global.logger.d('===== ASR MATCH [PHONETIC]: "$best" -> "$lowerTarget" (score: $bestScore)');
-      return targetWord;
+      Global.logger.d('===== ASR MATCH [PHONETIC/HYBRID]: "$best" -> "$lowerTarget" (score: $bestScore)');
+      return AsrCandidateResult(targetWord, bestScore);
     }
 
-    return best;
+    return AsrCandidateResult(best, bestScore);
+  }
+
+  // 保留旧方法以兼容（如果还有其他地方调用且不需要分数），或者直接让它调用新方法
+  static Future<String> selectBestCandidateWithPhoneme(
+    List<String> candidates,
+    String targetWord,
+  ) async {
+    final result = await selectBestCandidateWithPhonemeAndScore(candidates, targetWord);
+    return result.text;
   }
 
   /// 根据拼写相似度选择最匹配的候选
