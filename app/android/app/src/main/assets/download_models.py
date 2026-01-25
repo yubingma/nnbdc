@@ -24,7 +24,7 @@ def download_file(url, dest_path):
     except Exception as e:
         print(f"  - Error downloading {url}: {e}")
 
-assets_dir = "/Volumes/ssd/nnbdc/app/android/app/src/main/assets"
+assets_dir = os.path.join(os.environ['PPDC_SRC_DIR'], 'app/android/app/src/main/assets')
 
 # 1. Chinese Model
 zh_name = "sherpa-onnx-streaming-zipformer-zh-14M-2023-02-23"

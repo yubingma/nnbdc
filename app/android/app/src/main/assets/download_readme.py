@@ -19,7 +19,7 @@ def download_file(url, dest_path):
 
 # Try to download README.md to check filenames
 en_name = "sherpa-onnx-streaming-zipformer-en-2023-06-26"
-assets_dir = "/Volumes/ssd/nnbdc/app/android/app/src/main/assets"
+assets_dir = os.path.join(os.environ['PPDC_SRC_DIR'], 'app/android/app/src/main/assets')
 en_dir = os.path.join(assets_dir, en_name)
 en_base_url = f"https://huggingface.co/csukuangfj/{en_name}/resolve/main"
 

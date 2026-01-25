@@ -2,8 +2,8 @@ import os
 import random
 from PIL import Image, ImageDraw, ImageFilter, ImageOps
 
-INPUT_DIR = '/Volumes/ssd/nnbdc/devops/应用上架资源/ios'
-OUTPUT_DIR = '/Volumes/ssd/nnbdc/devops/应用上架资源/huawei'
+INPUT_DIR = os.path.join(os.environ['PPDC_SRC_DIR'], 'devops/应用上架资源/ios')
+OUTPUT_DIR = os.path.join(os.environ['PPDC_SRC_DIR'], 'devops/应用上架资源/huawei')
 TARGET_SIZE = (450, 800)
 
 # Design Constants

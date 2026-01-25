@@ -22,7 +22,7 @@ try:
         
     print(f"Found {len(data)} files.")
     
-    dest_dir = "/Volumes/ssd/nnbdc/app/android/app/src/main/java/com/k2fsa/sherpa/onnx"
+    dest_dir = os.path.join(os.environ['PPDC_SRC_DIR'], 'app/android/app/src/main/java/com/k2fsa/sherpa/onnx')
     os.makedirs(dest_dir, exist_ok=True)
     
     for item in data:

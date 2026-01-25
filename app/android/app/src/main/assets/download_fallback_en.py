@@ -24,7 +24,7 @@ def download_file(url, dest_path):
 
 # Fallback English Model: 20M-2023-02-17
 en_name = "sherpa-onnx-streaming-zipformer-en-20M-2023-02-17"
-assets_dir = "/Volumes/ssd/nnbdc/app/android/app/src/main/assets"
+assets_dir = os.path.join(os.environ['PPDC_SRC_DIR'], 'app/android/app/src/main/assets')
 en_dir = os.path.join(assets_dir, en_name)
 os.makedirs(en_dir, exist_ok=True)
 en_base_url = f"https://huggingface.co/csukuangfj/{en_name}/resolve/main"
