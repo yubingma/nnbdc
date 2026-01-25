@@ -150,7 +150,8 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
   bool _meterTickFlip = false;
 
   // ASR加载状态与动画控制器
-  bool _isAsrLoading = false;
+  bool _isAsrLoading = false; // 控制UI显示（大脑动画）
+  bool _isAsrProcessing = false; // 逻辑锁，防止重复启动（无论是否显示动画）
   late AnimationController _loadingController;
   AsrLanguage? _lastAsrLanguage;
 
@@ -688,6 +689,9 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
   /// 当前并行的asr任务数量（由于协程，并发是可能的）
   int runningAsrTaskCount = 0;
 
+  /// 防止自动跳转的标志（用于解决中文模式下的竞态条件）
+  bool _preventAutoAdvance = false;
+
   /// 检查语音识别结果是否匹配单词的意思
   checkAsrResult(String asrResult) async {
     if (asr.state != AsrState.started) {
@@ -756,22 +760,31 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
         if (result.newMatchCount > 0) {
           if (answeredAllMeanings || !mustAnswerAll) {
             canLeaveCurrWord = true;
+            _preventAutoAdvance = false; // 重置防跳转标志
+            Global.logger.d(
+                '背中文模式：设置canLeaveCurrWord=true, 重置_preventAutoAdvance=false, answeredAllMeanings=$answeredAllMeanings, mustAnswerAll=$mustAnswerAll');
           }
 
           // 播放提示音，等待播放完成后再跳转，避免与下一个单词发音重叠
           // 注意：这里的 await 会阻塞当前 finally 块的执行，从而保持 runningAsrTaskCount 不减少
           // 这正是用户想要的：在播放声音期间，如果有新的识别结果进来（用户快速说下一个意思），
           // runningAsrTaskCount 会增加，从而阻止当前任务触发跳转，等待所有意思都说完。
+          Global.logger.d('背中文模式：开始播放提示音，当前runningAsrTaskCount=$runningAsrTaskCount');
           await SoundUtil.playAssetSound('correct.mp3', mustAnswerAll ? 2.0 : 1.5, 0.2);
+          Global.logger.d('背中文模式：提示音播放完成，当前runningAsrTaskCount=$runningAsrTaskCount');
         }
       }
 
       // 离开当前单词，跳转到下一个（如果回答正确）
       // 背英文模式：立即跳转 (因为是一对一拼写，不需要等待)
       // 其他模式（背中文）：等待所有并发任务完成（runningAsrTaskCount == 1），以便用户一次性说出多个意思时能全部匹配
-      if (canLeaveCurrWord && (studyMode == WordListStudyMode.speakEnglish || runningAsrTaskCount == 1)) {
+      Global.logger.d(
+          '背中文模式检查跳转条件：canLeaveCurrWord=$canLeaveCurrWord, _preventAutoAdvance=$_preventAutoAdvance, studyMode=$studyMode, runningAsrTaskCount=$runningAsrTaskCount');
+      if (canLeaveCurrWord && !_preventAutoAdvance && (studyMode == WordListStudyMode.speakEnglish || runningAsrTaskCount == 1)) {
+        Global.logger.d('背中文模式：满足跳转条件，开始执行跳转');
         // 立即重置标志位，防止重复跳转 (防抖)
         canLeaveCurrWord = false;
+        _preventAutoAdvance = true; // 设置防跳转标志，防止重复触发
 
         if (studyMode == WordListStudyMode.speakEnglish) {
           // 背英文模式：标记当前单词已答对
@@ -814,6 +827,8 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
           // 新单词：清空识别展示，避免显示上一个单词的结果
           asrResult = "";
           handlingAsrChinese = "";
+          // 重置防跳转标志，为新单词做准备
+          _preventAutoAdvance = false;
           // 确保先设置热词
           _setAsrContextualPhrases();
           try {
@@ -825,6 +840,26 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
       }
     } finally {
       runningAsrTaskCount--;
+      Global.logger.d('背中文模式：ASR任务完成，runningAsrTaskCount减至$runningAsrTaskCount');
+
+      // 检查是否出现"卡住"状态：canLeaveCurrWord=true但长时间未跳转
+      if (studyMode == WordListStudyMode.speakChinese && canLeaveCurrWord && !_preventAutoAdvance && runningAsrTaskCount == 0) {
+        // 延迟检查，确保不是因为正常延迟而误判
+        Future.delayed(const Duration(seconds: 2), () {
+          if (mounted && studyMode == WordListStudyMode.speakChinese && canLeaveCurrWord && !_preventAutoAdvance && runningAsrTaskCount == 0) {
+            Global.logger.w('背中文模式：检测到卡住状态，强制重置并尝试跳转');
+            // 强制重置状态
+            canLeaveCurrWord = false;
+            _preventAutoAdvance = false;
+            asrResult = "";
+            handlingAsrChinese = "";
+
+            // 重新启动ASR以恢复响应
+            _setAsrContextualPhrases();
+            _startAsrWithLoading(decideAsrLanguage());
+          }
+        });
+      }
     }
   }
 
@@ -940,22 +975,40 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
   /// 恢复ASR（如果当前在语音模式下且ASR未启动）
   void _restoreAsrIfNeeded() {
     // 如果正在加载ASR，则不需要恢复（避免与 _startAsrWithLoading 冲突导致死循环）
-    if (_isAsrLoading) return;
+    if (_isAsrProcessing) return;
 
     if (studyMode == WordListStudyMode.speakChinese || studyMode == WordListStudyMode.speakEnglish) {
       if (asr.state != AsrState.started && asr.state != AsrState.stopping) {
         Global.logger.d('检测到ASR未启动（当前状态: ${asr.state}），尝试恢复ASR，模式: $studyMode');
         try {
-          // 重新初始化事件监听，确保事件订阅有效（类似bdc.dart中的处理）
-          asr.initAsr(onAsrResult);
-          // 然后启动ASR
-          _startAsrWithLoading(decideAsrLanguage());
-          _subscribeMeterIfNeeded();
+          // 如果ASR卡在initialized状态，先强制停止以清除内部状态
+          if (asr.state == AsrState.initialized) {
+            Global.logger.d('ASR卡在initialized状态，强制停止后重新启动');
+            asr.stopAsr();
+            asr.reset();
+            // 短暂延迟确保清理完成
+            Future.delayed(const Duration(milliseconds: 100), () {
+              if (mounted) {
+                _initializeAndStartAsr();
+              }
+            });
+          } else {
+            _initializeAndStartAsr();
+          }
         } catch (e, stackTrace) {
           Global.logger.e('恢复ASR失败', error: e, stackTrace: stackTrace);
         }
       }
     }
+  }
+
+  /// 初始化并启动ASR的通用方法
+  void _initializeAndStartAsr() {
+    // 重新初始化事件监听，确保事件订阅有效（类似bdc.dart中的处理）
+    asr.initAsr(onAsrResult);
+    // 然后启动ASR
+    _startAsrWithLoading(decideAsrLanguage());
+    _subscribeMeterIfNeeded();
   }
 
   jumpToBookMark() {
@@ -1149,8 +1202,10 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
   /// 带加载动画的 ASR 启动封装
   Future<void> _startAsrWithLoading(AsrLanguage language) async {
     if (!mounted) return;
-    // 如果已经在加载或是启动状态，不再重复显示动画（避免闪烁）
-    if (_isAsrLoading) return;
+    // 如果已经在处理中（无论是否显示动画），都不再重复启动
+    if (_isAsrProcessing) return;
+
+    _isAsrProcessing = true;
 
     // 只有在语言发生变化（或者第一次启动）时才显示加载动画
     // 因为这通常意味着需要加载不同的声学模型，耗时较长
@@ -1168,6 +1223,7 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
     try {
       await asr.startAsr(language);
     } finally {
+      _isAsrProcessing = false;
       if (shouldShowAnimation && mounted) {
         _loadingController.stop();
         setState(() {
@@ -2157,6 +2213,14 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
               asr.stopAsr();
               _unsubscribeMeter();
             }
+          } else if (studyMode == WordListStudyMode.speakChinese) {
+            // 背中文模式：重置相关状态
+            asrResult = "";
+            handlingAsrChinese = "";
+            // 重置自动跳转相关标志，解决"卡住"问题
+            canLeaveCurrWord = false;
+            _preventAutoAdvance = false;
+            Global.logger.d('背中文模式：手动切换单词，重置自动跳转状态');
           }
         }
       });
