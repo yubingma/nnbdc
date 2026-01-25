@@ -939,6 +939,9 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
 
   /// 恢复ASR（如果当前在语音模式下且ASR未启动）
   void _restoreAsrIfNeeded() {
+    // 如果正在加载ASR，则不需要恢复（避免与 _startAsrWithLoading 冲突导致死循环）
+    if (_isAsrLoading) return;
+
     if (studyMode == WordListStudyMode.speakChinese || studyMode == WordListStudyMode.speakEnglish) {
       if (asr.state != AsrState.started && asr.state != AsrState.stopping) {
         Global.logger.d('检测到ASR未启动（当前状态: ${asr.state}），尝试恢复ASR，模式: $studyMode');
