@@ -759,12 +759,15 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
           }
 
           // 播放提示音，等待播放完成后再跳转，避免与下一个单词发音重叠
+          // 注意：这里的 await 会阻塞当前 finally 块的执行，从而保持 runningAsrTaskCount 不减少
+          // 这正是用户想要的：在播放声音期间，如果有新的识别结果进来（用户快速说下一个意思），
+          // runningAsrTaskCount 会增加，从而阻止当前任务触发跳转，等待所有意思都说完。
           await SoundUtil.playAssetSound('correct.mp3', mustAnswerAll ? 2.0 : 1.5, 0.2);
         }
       }
 
       // 离开当前单词，跳转到下一个（如果回答正确）
-      // 背英文模式：立即跳转 (修复快速连续识别导致的不跳转bug)
+      // 背英文模式：立即跳转 (因为是一对一拼写，不需要等待)
       // 其他模式（背中文）：等待所有并发任务完成（runningAsrTaskCount == 1），以便用户一次性说出多个意思时能全部匹配
       if (canLeaveCurrWord && (studyMode == WordListStudyMode.speakEnglish || runningAsrTaskCount == 1)) {
         // 立即重置标志位，防止重复跳转 (防抖)
