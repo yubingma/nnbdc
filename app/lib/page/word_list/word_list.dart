@@ -582,72 +582,88 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver 
   /// 正在进行匹配的asr输入，防止重复处理，影响性能
   var handlingAsrChinese = "";
 
-  onAsrResult(event) {
-    if (mounted) {
-      setState(() {
-        // 统一处理JSON格式的候选结果
-        String processedEvent;
-        try {
-          // 尝试解析JSON格式的候选结果
-          Map<String, dynamic>? resultData;
-          try {
-            resultData = jsonDecode(event);
-          } catch (e) {
-            // 如果不是JSON格式，当作单个结果处理
-            resultData = null;
-          }
+  onAsrResult(event) async {
+    if (!mounted) return;
 
-          if (resultData != null && resultData.containsKey('candidates')) {
-            // 处理多个候选结果，使用最佳候选结果
-            List<dynamic> candidates = resultData['candidates'];
-            List<String> candidateStrings = candidates.map((e) => e.toString()).toList();
-            String bestCandidate = resultData['best'] ?? candidateStrings.first;
+    // 解析逻辑移出 setState
+    String processedEvent = "";
+    try {
+      // 尝试解析JSON格式的候选结果
+      Map<String, dynamic>? resultData;
+      try {
+        resultData = jsonDecode(event);
+      } catch (e) {
+        // 如果不是JSON格式，当作单个结果处理
+        resultData = null;
+      }
 
-            Global.logger.d("--- 语音识别候选结果: $candidateStrings");
-            Global.logger.d("--- 最佳候选结果: $bestCandidate");
-            if (studyMode == WordListStudyMode.speakEnglish) {
-              // 背英文：选择最接近目标拼写的候选
-              final curr = getBookMarkUiPosition();
-              final target = (curr >= 0 && curr < words.length) ? words[curr].word.spell : '';
-              processedEvent = AsrUtil.selectBestCandidate(candidateStrings, target);
-              Global.logger.d('--- 背英文选择候选: "$processedEvent" (target: $target)');
-            } else {
-              processedEvent = bestCandidate;
-            }
-          } else {
-            // 单个结果处理
-            if (studyMode == WordListStudyMode.speakEnglish) {
-              final curr = getBookMarkUiPosition();
-              final target = (curr >= 0 && curr < words.length) ? words[curr].word.spell : '';
-              processedEvent = AsrUtil.preprocessEnglish(event, target);
-            } else {
-              processedEvent = event;
-            }
-          }
-        } catch (e) {
-          Global.logger.e("--- 语音识别结果处理错误: $e");
-          processedEvent = event;
-        }
+      if (studyMode == WordListStudyMode.speakEnglish) {
+        // ===== 背英文模式：启用音素模糊匹配 =====
+        final curr = getBookMarkUiPosition();
+        final target = (curr >= 0 && curr < words.length) ? words[curr].word.spell : '';
 
-        // 模式化预处理：背英文用英文预处理；其他用中文预处理
-        if (studyMode == WordListStudyMode.speakEnglish) {
-          // 这里再次做一次英文预处理，确保一致
-          final curr = getBookMarkUiPosition();
-          final target = (curr >= 0 && curr < words.length) ? words[curr].word.spell : '';
-          asrResult = AsrUtil.preprocessEnglish(processedEvent, target);
+        if (resultData != null && resultData.containsKey('candidates')) {
+          // 处理多个候选结果
+          List<dynamic> candidates = resultData['candidates'];
+          List<String> candidateStrings = candidates.map((e) => e.toString()).toList();
+
+          // 结合拼写相似度和音素相似度的智能选择 (Async)
+          String selected = await AsrUtil.selectBestCandidateWithPhoneme(candidateStrings, target);
+          // 进一步进行英文预处理
+          processedEvent = AsrUtil.preprocessEnglish(selected, target);
+          Global.logger
+              .d('===== ASR (Phoneme): Selected & Preprocessed: "$processedEvent" (candidates: ${candidateStrings.length}, target: $target)');
         } else {
-          asrResult = AsrUtil.preprocess(processedEvent);
+          // 单个结果处理
+          // 即使是单结果，也尝试与目标词进行音素匹配 check
+          // 先做一次预处理
+          final pre = AsrUtil.preprocessEnglish(event, target);
+          // 再通过音素匹配确认（把预处理结果作为唯一候选传进去）
+          final best = await AsrUtil.selectBestCandidateWithPhoneme([pre], target);
+          processedEvent = best;
+          Global.logger.d('===== ASR (Phoneme): Single result: "$event" -> "$processedEvent" (target: $target)');
         }
-        Global.logger.d("--- 语音识别结果: $asrResult");
-        if (asrResult.isNotEmpty) {
-          if (asrResult != handlingAsrChinese) {
-            handlingAsrChinese = asrResult;
-            Global.logger.d(asrResult);
-            checkAsrResult(asrResult);
-          }
+
+        // 最后确保做一次标准英文预处理（通常上面的步骤已经覆盖，但为了保险再做一次）
+        processedEvent = AsrUtil.preprocessEnglish(processedEvent, target);
+      } else {
+        // ===== 其他模式 (背中文等) =====
+        String bestCandidate;
+        if (resultData != null && resultData.containsKey('candidates')) {
+          List<dynamic> candidates = resultData['candidates'];
+          List<String> candidateStrings = candidates.map((e) => e.toString()).toList();
+          bestCandidate = resultData['best'] ?? candidateStrings.first;
+        } else {
+          bestCandidate = event;
         }
-      });
+        processedEvent = bestCandidate;
+      }
+    } catch (e) {
+      Global.logger.e("--- 语音识别结果处理错误: $e");
+      processedEvent = event;
     }
+
+    if (!mounted) return;
+
+    setState(() {
+      // 最终赋值逻辑
+      if (studyMode == WordListStudyMode.speakEnglish) {
+        // 结果已经是处理过的了
+        asrResult = processedEvent;
+      } else {
+        // 背中文等模式：进行中文预处理
+        asrResult = AsrUtil.preprocess(processedEvent);
+      }
+
+      Global.logger.d("--- 语音识别最终结果: $asrResult");
+
+      if (asrResult.isNotEmpty) {
+        if (asrResult != handlingAsrChinese) {
+          handlingAsrChinese = asrResult;
+          checkAsrResult(asrResult);
+        }
+      }
+    });
   }
 
   /// 当前并行的asr任务数量（由于协程，并发是可能的）
@@ -764,6 +780,8 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver 
           // 新单词：清空识别展示，避免显示上一个单词的结果
           asrResult = "";
           handlingAsrChinese = "";
+          // 确保先设置热词
+          _setAsrContextualPhrases();
           asr.startAsr(decideAsrLanguage());
         });
 
@@ -781,6 +799,39 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver 
     return AsrLanguage.chinese;
   }
 
+  /// 设置ASR上下文短语（热词机制）
+  /// 必须在 startAsr 之前调用，否则只能等到下一次 startAsr 生效
+  void _setAsrContextualPhrases() {
+    try {
+      final curr = getBookMarkUiPosition();
+      if (curr >= 0 && curr < words.length) {
+        // 根据模式提取上下文短语
+        List<String> allowPhrases;
+        if (studyMode == WordListStudyMode.speakEnglish) {
+          // 背英文模式：热词为英文拼写
+          allowPhrases = [words[curr].word.spell];
+        } else {
+          // 背中文模式：热词为中文释义
+          allowPhrases = AsrUtil.extractContextualPhrases(
+            words[curr].word.getMergedMeaningItems(),
+          );
+        }
+
+        if (allowPhrases.isNotEmpty) {
+          // 注意：setContextualStrings 只是把热词存到 Native 的 pendingHotwords
+          // 真正生效是在 asr.startAsr() -> Native startMicrophone -> createStreamWithHotwords 时
+          AsrUtil.setContextualStrings(
+            allowPhrases,
+            asr.asrMethodChannel,
+            asr.permissionGranted,
+          );
+        }
+      }
+    } catch (e, stackTrace) {
+      Global.logger.w('设置ASR上下文短语失败', error: e, stackTrace: stackTrace);
+    }
+  }
+
   doInit() {
     asr = Asr();
     asr.initAsr(onAsrResult);
@@ -790,33 +841,7 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver 
       if (state == AsrState.started) {
         // 恢复识别后，确保重新订阅电平流
         _subscribeMeterIfNeeded();
-        // 向 iOS 端下发上下文短语（当前单词允许的释义子项）
-        try {
-          final curr = getBookMarkUiPosition();
-          if (curr >= 0 && curr < words.length) {
-            // 根据模式提取上下文短语
-            List<String> allowPhrases;
-            if (studyMode == WordListStudyMode.speakEnglish) {
-              // 背英文模式：热词为英文拼写
-              allowPhrases = [words[curr].word.spell];
-            } else {
-              // 背中文模式：热词为中文释义
-              allowPhrases = AsrUtil.extractContextualPhrases(
-                words[curr].word.getMergedMeaningItems(),
-              );
-            }
-            if (allowPhrases.isNotEmpty) {
-              AsrUtil.setContextualStrings(
-                allowPhrases,
-                asr.asrMethodChannel,
-                asr.permissionGranted,
-              );
-            }
-          }
-        } catch (e, stackTrace) {
-          // 设置ASR上下文失败不影响主流程，但需要记录
-          Global.logger.w('设置ASR上下文短语失败', error: e, stackTrace: stackTrace);
-        }
+        // 上下文短语已在启动前通过 _setAsrContextualPhrases 设置，此处不再重复设置
       } else if (state == AsrState.stopped) {
         _unsubscribeMeter();
       }
@@ -1111,6 +1136,7 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver 
 
     // 在语音模式下，播放完成后启动语音识别
     if (studyMode == WordListStudyMode.speakChinese || studyMode == WordListStudyMode.speakEnglish) {
+      _setAsrContextualPhrases();
       asr.startAsr(decideAsrLanguage());
       _subscribeMeterIfNeeded();
     }
