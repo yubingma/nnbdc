@@ -1,3 +1,4 @@
+import 'package:nnbdc/constants.dart';
 import 'package:nnbdc/global.dart';
 import 'package:lpinyin/lpinyin.dart';
 import 'package:nnbdc/util/utils.dart';
@@ -364,36 +365,5 @@ bool fuzzyChineseContains(String chinese1, String chinese2) {
     meaningItemPartPinyin += chineseToPinyin(unit);
   }
 
-  final byPinyin = fuzzyContains(pinyin, meaningItemPartPinyin);
-
-  if (byPinyin) return true;
-
-  // Fallback：中文字符级容错（允许少量缺字/多字，如“标出率”≈“标出格律”）
-  final c1 = chinese1.toLowerCase().replaceAll(RegExp(r"[^\u4e00-\u9fa5]"), "");
-  double bestLcsRatio = 0.0;
-  for (var unit in meaningUnits) {
-    final u = unit.replaceAll(RegExp(r"[^\u4e00-\u9fa5]"), "");
-    if (u.isEmpty || c1.isEmpty) continue;
-    final lcsLen = _lcsLength(c1, u);
-    final ratio = lcsLen / u.length;
-    if (ratio > bestLcsRatio) bestLcsRatio = ratio;
-  }
-  return bestLcsRatio >= 0.75; // 允许少量缺失/替换
-}
-
-/// 计算两个字符串的最长公共子序列长度（中文短串，性能足够）
-int _lcsLength(String a, String b) {
-  final n = a.length, m = b.length;
-  if (n == 0 || m == 0) return 0;
-  final dp = List.generate(n + 1, (_) => List<int>.filled(m + 1, 0));
-  for (int i = 1; i <= n; i++) {
-    for (int j = 1; j <= m; j++) {
-      if (a[i - 1] == b[j - 1]) {
-        dp[i][j] = dp[i - 1][j - 1] + 1;
-      } else {
-        dp[i][j] = dp[i - 1][j] > dp[i][j - 1] ? dp[i - 1][j] : dp[i][j - 1];
-      }
-    }
-  }
-  return dp[n][m];
+  return fuzzyContains(pinyin, meaningItemPartPinyin);
 }

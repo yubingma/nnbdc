@@ -241,7 +241,7 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
             // 中文识别配方：更紧凑的断句逻辑
             val endpointConfig = EndpointConfig.builder()
                 .setRule1(EndpointRule.builder().setMustContainNonSilence(false).setMinTrailingSilence(2.4f).build())
-                .setRule2(EndpointRule.builder().setMustContainNonSilence(true).setMinTrailingSilence(0.8f).build())
+                .setRule2(EndpointRule.builder().setMustContainNonSilence(true).setMinTrailingSilence(1.2f).build())
                 .setRul3(EndpointRule.builder().setMustContainNonSilence(false).setMinTrailingSilence(0f).setMinUtteranceLength(20f).build())
                 .build()
 
@@ -257,7 +257,7 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                 .build()
 
             model = OnlineRecognizer(config)
-            activeGain = 2.0f // 中文增益适中，防止叠字
+            activeGain = 2.4f // 提高增益以捕捉轻声（如尾音“的”），防止漏识别
             Log.i(TAG, "Chinese isolated recipe loaded. Gain: $activeGain")
         } catch (e: Exception) {
             Log.e(TAG, "Chinese model load failed", e)
