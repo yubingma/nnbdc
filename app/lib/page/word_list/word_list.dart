@@ -149,10 +149,10 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
   DateTime? _lastMeterAt;
   bool _meterTickFlip = false;
 
-  // ASR加载状态与动画控制器
-  bool _isAsrLoading = false; // 控制UI显示（大脑动画）
+  // ASR模型加载状态与动画控制器
+  bool _isAsrModelLoading = false; // 控制UI显示（大脑动画）
   bool _isAsrProcessing = false; // 逻辑锁，防止重复启动（无论是否显示动画）
-  late AnimationController _loadingController;
+  late AnimationController _asrModelLoadingController;
   AsrLanguage? _lastAsrLanguage;
 
   /// "请勿查询"标志，当此标志为true时，如果本来有查询动作（比如滚动到顶部或底部），该动作也不再执行
@@ -448,6 +448,7 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
     return max ?? -1;
   }
 
+  /// 订阅音量计数据
   void _subscribeMeterIfNeeded() {
     _meterSub ??= asr.meterStream().listen((level) {
       _lastMeterLevel = level.clamp(0.0, 1.0);
@@ -483,7 +484,7 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
   void initState() {
     super.initState();
     // 初始化大脑加载动画控制器（脉冲效果）
-    _loadingController = AnimationController(
+    _asrModelLoadingController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1000),
     );
@@ -955,7 +956,7 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
     _audioPlayerDisposed = true; // 标记为已释放
     _unsubscribeMeter();
     _meterLevelNotifier.dispose();
-    _loadingController.dispose();
+    _asrModelLoadingController.dispose();
 
     // 释放所有 WordWrapper 中的资源，防止内存泄漏
     for (var word in words) {
@@ -1200,16 +1201,16 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
           ),
         ),
         // ASR 加载中的大脑动画覆盖层
-        if (_isAsrLoading)
+        if (_isAsrModelLoading)
           Positioned.fill(
             child: Container(
               color: Colors.black12, // 轻微背景遮罩
               child: Center(
                 child: AnimatedBuilder(
-                  animation: _loadingController,
+                  animation: _asrModelLoadingController,
                   builder: (context, child) {
                     return Transform.scale(
-                      scale: 1.0 + 0.2 * Curves.easeInOut.transform(_loadingController.value),
+                      scale: 1.0 + 0.2 * Curves.easeInOut.transform(_asrModelLoadingController.value),
                       child: child,
                     );
                   },
@@ -1280,25 +1281,27 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
 
     if (shouldShowAnimation) {
       setState(() {
-        _isAsrLoading = true;
+        _isAsrModelLoading = true;
       });
-      _loadingController.repeat(reverse: true);
+      _asrModelLoadingController.repeat(reverse: true);
     }
 
     try {
-      Global.logger.d('🚀 开始启动ASR，语言: ${language.locale}');
+      Global.logger.d('----开始启动ASR，语言: ${language.locale}');
       await asr.startAsr(language);
-      Global.logger.d('✅ ASR启动成功，开始播放提示音');
+      Global.logger.d('----ASR启动成功，开始播放提示音');
       
+      // 播放提示音, 提醒用户可以开始说话
+      Global.logger.d('----播放ASR启动提示音');
       SoundUtil.playAsrReadyHintSound();  
     } catch (e, stackTrace) {
       Global.logger.e('❌ ASR启动失败', error: e, stackTrace: stackTrace);
     } finally {
       _isAsrProcessing = false;
       if (shouldShowAnimation && mounted) {
-        _loadingController.stop();
+        _asrModelLoadingController.stop();
         setState(() {
-          _isAsrLoading = false;
+          _isAsrModelLoading = false;
         });
       }
     }
