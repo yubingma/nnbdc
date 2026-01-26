@@ -396,13 +396,7 @@ class Asr {
 
       if (permissionGranted) {
         try {
-          // 先播放启动提示音，让用户知道可以开始说话了
-          // 等待播放完成，防止麦克风录入提示音导致误识别（如把叮识别为"do"）
-          await SoundUtil.playAssetSound('asr_ready_hint.mp3', 1.3, 1.0).catchError((e) {
-            Global.logger.i('播放ASR启动提示音失败: $e');
-          });
-
-          // 先设置识别语言，再启动麦克风
+          // 先设置识别语言（加载模型）
           Global.logger.i('===== ASR: Updating language first...');
           await _updateLanguage(language);
 
@@ -414,6 +408,8 @@ class Asr {
 
           setState(AsrState.started);
           Global.logger.i('===== ASR: ASR started successfully');
+
+          // 注意：提示音应该由调用方在设置完热词后播放，这里不再播放
         } on PlatformException catch (e) {
           Global.logger.e('===== ASR: Exception during start: code=${e.code}, message=${e.message}');
           // iOS 上有时会在识别已经启动或短暂异常时抛出错误，但实际仍然可以正常识别

@@ -91,7 +91,7 @@ class WordListPage extends StatefulWidget {
   }
 }
 
-class WordListPageState extends State<WordListPage> with WidgetsBindingObserver, SingleTickerProviderStateMixin {
+class WordListPageState extends State<WordListPage> with WidgetsBindingObserver, SingleTickerProviderStateMixin, AutomaticKeepAliveClientMixin {
   static const double leftPadding = 12;
   static const double rightPadding = 16;
   static const double delBtnSize = 24;
@@ -160,6 +160,9 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
 
   /// 是否显示新手引导
   bool showGuide = false;
+
+  @override
+  bool get wantKeepAlive => true; // 保持状态，避免页面重建
 
   /// ASR恢复检查定时器（用于定期检查并恢复ASR状态）
   Timer? _asrRestoreTimer;
@@ -487,7 +490,12 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
     WidgetsBinding.instance.addObserver(this);
 
     doInit();
-    loadData();
+    // 延迟加载数据，避免初始化时阻塞 UI
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        loadData();
+      }
+    });
     _checkAndShowGuide();
 
     // 启动ASR恢复检查定时器（每1.5秒检查一次，如果当前在语音模式下但ASR未启动，则启动它）
@@ -936,25 +944,41 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
     WidgetsBinding.instance.removeObserver(this);
     _asrRestoreTimer?.cancel();
     _asrRestoreTimer = null;
-    asr.stopAsr();
+    
+    // 停止 ASR
+    try {
+      asr.stopAsr();
+    } catch (e) {
+      Global.logger.d("dispose: 停止 ASR 失败: $e");
+    }
+    
     _audioPlayerDisposed = true; // 标记为已释放
     _unsubscribeMeter();
     _meterLevelNotifier.dispose();
     _loadingController.dispose();
+
+    // 释放所有 WordWrapper 中的资源，防止内存泄漏
+    for (var word in words) {
+      try {
+        word.focusNode.dispose();
+        word.spellController.dispose();
+      } catch (e) {
+        Global.logger.d("dispose: 释放 WordWrapper 资源失败: $e");
+      }
+    }
+    
+    // 清空单词列表，帮助 GC
+    words.clear();
 
     // 延迟释放 AudioPlayer，确保所有操作完成
     Future.delayed(const Duration(milliseconds: 100), () {
       try {
         audioPlayer.dispose();
       } catch (e) {
-        // 忽略释放时的错误
         Global.logger.d("释放 AudioPlayer 时出错: $e");
       }
     });
 
-    for (var word in words) {
-      word.focusNode.dispose();
-    }
     super.dispose();
   }
 
@@ -1006,7 +1030,9 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
   void _initializeAndStartAsr() {
     // 重新初始化事件监听，确保事件订阅有效（类似bdc.dart中的处理）
     asr.initAsr(onAsrResult);
-    // 然后启动ASR
+    // 设置热词（必须在startAsr之前）
+    _setAsrContextualPhrases();
+    // 然后启动ASR（内部会加载模型、启动麦克风、设置热词、播放提示音）
     _startAsrWithLoading(decideAsrLanguage());
     _subscribeMeterIfNeeded();
   }
@@ -1126,12 +1152,21 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
 
             // 控制"回到顶部"按钮的显示与隐藏
             if (notification.metrics.extentBefore /*视口上方未展示的内容长度*/ < 500 && showToTopBtn) {
-              setState(() {
-                showToTopBtn = false;
+              // 使用 microtask 减少 UI 阻塞
+              Future.microtask(() {
+                if (mounted) {
+                  setState(() {
+                    showToTopBtn = false;
+                  });
+                }
               });
             } else if (notification.metrics.extentBefore /*视口上方未展示的内容长度*/ > 500 && !showToTopBtn) {
-              setState(() {
-                showToTopBtn = true;
+              Future.microtask(() {
+                if (mounted) {
+                  setState(() {
+                    showToTopBtn = true;
+                  });
+                }
               });
             }
 
@@ -1143,7 +1178,13 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
               Expanded(
                 child: ScrollablePositionedList.builder(
                   itemCount: words.length,
-                  itemBuilder: (context, index) => renderWord(index),
+                  itemBuilder: (context, index) {
+                    // 为每个 item 添加 key，提高重用性
+                    return RepaintBoundary(
+                      key: ValueKey('word_${words[index].word.id}'),
+                      child: renderWord(index),
+                    );
+                  },
                   itemScrollController: itemScrollController,
                   itemPositionsListener: itemPositionsListener,
                   padding: EdgeInsets.zero,
@@ -1236,6 +1277,14 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
 
     try {
       await asr.startAsr(language);
+      
+      // ASR启动成功后，播放提示音通知用户可以开始说话
+      // 等待提示音播放完成，防止麦克风录入提示音导致误识别
+      await SoundUtil.playAssetSound('asr_ready_hint.mp3', 1.3, 1.0)
+          .timeout(const Duration(seconds: 2))
+          .catchError((e) {
+        Global.logger.i('播放ASR启动提示音失败或超时: $e');
+      });
     } finally {
       _isAsrProcessing = false;
       if (shouldShowAnimation && mounted) {
@@ -2197,6 +2246,7 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // 必须调用，因为使用了 AutomaticKeepAliveClientMixin
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
 
     // 在页面build时，检查页面是否可见，如果可见且在语音模式下，确保ASR已启动
