@@ -1290,14 +1290,7 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
       await asr.startAsr(language);
       Global.logger.d('✅ ASR启动成功，开始播放提示音');
       
-      // ASR启动成功后，播放提示音通知用户可以开始说话
-      // 等待提示音播放完成，防止麦克风录入提示音导致误识别
-      await SoundUtil.playAssetSound('asr_ready_hint.mp3', 1.3, 1.0)
-          .timeout(const Duration(seconds: 2))
-          .catchError((e) {
-        Global.logger.i('播放ASR启动提示音失败或超时: $e');
-      });
-      Global.logger.d('🔔 提示音播放完成，用户可以开始说话');
+      SoundUtil.playAsrReadyHintSound();  
     } catch (e, stackTrace) {
       Global.logger.e('❌ ASR启动失败', error: e, stackTrace: stackTrace);
     } finally {

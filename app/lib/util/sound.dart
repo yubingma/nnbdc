@@ -377,4 +377,14 @@ class SoundUtil {
       _webUnlockInProgress = false;
     }
   }
+
+  /// 播放ASR启动提示音
+  static Future<void> playAsrReadyHintSound() async {
+      await SoundUtil.playAssetSound('asr_ready_hint.mp3', 1.3, 1.0)
+          .timeout(const Duration(seconds: 2))
+          .catchError((e) {
+        Global.logger.i('播放ASR启动提示音失败或超时: $e');
+      });
+      Global.logger.d('🔔 提示音播放完成，用户可以开始说话');
+  }
 }
