@@ -54,7 +54,7 @@ class Asr {
 
   AsrState get state => _state;
   setState(AsrState newState) {
-    Global.logger.i('===== ASR: State change: $_state => $newState');
+    Global.logger.i('ASR: State change: $_state => $newState');
     if (_state != newState) {
       _state = newState;
       if (!_disposed) {
@@ -74,10 +74,10 @@ class Asr {
   }
 
   void dispose() {
-    Global.logger.d('===== ASR: dispose() 被调用，取消事件订阅');
+    Global.logger.d('ASR: dispose() 被调用，取消事件订阅');
     // 如果正在初始化，等待初始化完成
     if (_isInitializing) {
-      Global.logger.w('===== ASR: 警告：在初始化过程中调用 dispose()，等待初始化完成');
+      Global.logger.w('ASR: 警告：在初始化过程中调用 dispose()，等待初始化完成');
       // 等待初始化完成（最多等待1秒）
       int waitCount = 0;
       while (_isInitializing && waitCount < 20) {
@@ -89,7 +89,7 @@ class Asr {
     _stateListeners.clear();
     _subscriptionProtected = false; // 清除保护标记
     if (_subscriptionProtected) {
-      Global.logger.w('===== ASR: 警告：在订阅保护期内调用 dispose()');
+      Global.logger.w('ASR: 警告：在订阅保护期内调用 dispose()');
     }
     _eventSubscription?.cancel();
     _eventSubscription = null;
@@ -102,11 +102,11 @@ class Asr {
     }
 
     try {
-      Global.logger.i('===== ASR: 设置语言为: ${language.locale}');
+      Global.logger.i('ASR: 设置语言为: ${language.locale}');
       await asrMethodChannel.invokeMethod('setLanguage', {'locale': language.locale});
-      Global.logger.i('===== ASR: 语言设置成功');
+      Global.logger.i('ASR: 语言设置成功');
     } on PlatformException catch (e) {
-      Global.logger.i('===== ASR: 设置语言失败: ${e.message}');
+      Global.logger.i('ASR: 设置语言失败: ${e.message}');
     }
   }
 
@@ -154,11 +154,11 @@ class Asr {
 
   /// 处理权限被拒绝的情况，引导用户去设置
   Future<bool> _handlePermissionDenied() async {
-    Global.logger.i('===== ASR: Permission denied, showing settings dialog...');
+    Global.logger.i('ASR: Permission denied, showing settings dialog...');
     // 直接显示设置对话框，因为系统不会再次弹出权限请求
     bool shouldRequest = await _showPermissionDialog();
     if (!shouldRequest) {
-      Global.logger.i('===== ASR: 用户取消权限请求');
+      Global.logger.i('ASR: 用户取消权限请求');
       return false;
     }
     // 用户选择去设置后，延迟检查权限状态
@@ -166,10 +166,10 @@ class Asr {
     bool finalCheck = await _checkPermissions();
     if (finalCheck) {
       permissionGranted = true;
-      Global.logger.i('===== ASR: 权限最终获取成功');
+      Global.logger.i('ASR: 权限最终获取成功');
       return true;
     } else {
-      Global.logger.i('===== ASR: 在等待时间内, 未能获取到授权');
+      Global.logger.i('ASR: 在等待时间内, 未能获取到授权');
       return false;
     }
   }
@@ -186,14 +186,14 @@ class Asr {
         // 处理权限被拒绝的情况
         bool success = await _handlePermissionDenied();
         if (success) {
-          Global.logger.i('===== ASR: 权限最终获取成功');
+          Global.logger.i('ASR: 权限最终获取成功');
         }
         return;
       }
     }
 
     permissionGranted = true;
-    Global.logger.i('===== ASR: 麦克风和语音识别权限获取成功');
+    Global.logger.i('ASR: 麦克风和语音识别权限获取成功');
   }
 
   /// 打开系统权限设置页面
@@ -264,7 +264,7 @@ class Asr {
   /// 初始化语音识别事件监听
   Future<void> initAsr(void Function(dynamic asrResult)? asrListener) async {
     if (_isInitializing) {
-      Global.logger.w('===== ASR: initAsr 正在执行中，等待完成...');
+      Global.logger.w('ASR: initAsr 正在执行中，等待完成...');
       return;
     }
     _isInitializing = true;
@@ -275,7 +275,7 @@ class Asr {
     }
 
     if (asrListener == null) {
-      Global.logger.w('===== ASR: initAsr 被调用，但 asrListener 为 null，跳过初始化');
+      Global.logger.w('ASR: initAsr 被调用，但 asrListener 为 null，跳过初始化');
       _isInitializing = false;
       return;
     }
@@ -283,7 +283,7 @@ class Asr {
     try {
       // 先设置事件监听器，避免权限检查失败时无法接收结果
       // 如果之前已经有订阅，先取消，保证始终只有一个有效监听器
-      Global.logger.i('===== ASR: 重新初始化事件监听，取消旧订阅');
+      Global.logger.i('ASR: 重新初始化事件监听，取消旧订阅');
       final oldSubscription = _eventSubscription;
       _eventSubscription = null;
       _subscriptionProtected = false; // 清除旧的保护标记
@@ -309,24 +309,24 @@ class Asr {
             try {
               savedListener(event);
             } catch (e, stackTrace) {
-              Global.logger.e('===== ASR: 执行监听器回调时出错: $e', stackTrace: stackTrace);
+              Global.logger.e('ASR: 执行监听器回调时出错: $e', stackTrace: stackTrace);
             }
           },
           onError: (error) {
-            Global.logger.e('===== ASR: 事件通道错误: $error (subscriptionId=$subscriptionId)');
+            Global.logger.e('ASR: 事件通道错误: $error (subscriptionId=$subscriptionId)');
           },
           onDone: () {
-            Global.logger.w('===== ASR: 事件流已关闭 (onDone, subscriptionId=$subscriptionId)');
+            Global.logger.w('ASR: 事件流已关闭 (onDone, subscriptionId=$subscriptionId)');
             // 如果当前订阅被关闭，清空引用
             if (_eventSubscription != null && _eventSubscription.hashCode == subscriptionId) {
-              Global.logger.w('===== ASR: 清空事件订阅引用 (subscriptionId=$subscriptionId)');
+              Global.logger.w('ASR: 清空事件订阅引用 (subscriptionId=$subscriptionId)');
               _eventSubscription = null;
             }
           },
           cancelOnError: false,
         );
         Global.logger.i(
-            '===== ASR: 事件监听已重新绑定，监听器状态: ${_currentAsrListener != null ? "有效" : "无效"}，订阅状态: ${_eventSubscription != null ? "已创建" : "未创建"}，订阅ID: $subscriptionId');
+            'ASR: 事件监听已重新绑定，监听器状态: ${_currentAsrListener != null ? "有效" : "无效"}，订阅状态: ${_eventSubscription != null ? "已创建" : "未创建"}，订阅ID: $subscriptionId');
 
         // 验证订阅是否真正建立（通过检查订阅状态）
         if (_eventSubscription != null) {
@@ -341,14 +341,14 @@ class Asr {
           // 取消保护标记
           _subscriptionProtected = false;
         } else {
-          Global.logger.e('===== ASR: 警告：事件订阅创建失败，_eventSubscription 为 null');
+          Global.logger.e('ASR: 警告：事件订阅创建失败，_eventSubscription 为 null');
           // 如果订阅创建失败，也设置 initialized（或者保持当前状态）
           if (_state != AsrState.started) {
             setState(AsrState.initialized);
           }
         }
       } catch (e, stackTrace) {
-        Global.logger.e('===== ASR: 创建事件订阅时出错: $e', stackTrace: stackTrace);
+        Global.logger.e('ASR: 创建事件订阅时出错: $e', stackTrace: stackTrace);
         _currentAsrListener = null;
         rethrow;
       }
@@ -366,28 +366,28 @@ class Asr {
 
     // 如果已经在启动流程中，等待之前的启动完成（最多等待2秒）
     if (_isStarting) {
-      Global.logger.i('===== ASR: startAsr called while another start is in progress, waiting...');
+      Global.logger.i('ASR: startAsr called while another start is in progress, waiting...');
       int waitCount = 0;
       while (_isStarting && waitCount < 20) {
         await Future.delayed(const Duration(milliseconds: 100));
         waitCount++;
       }
       if (_isStarting) {
-        Global.logger.w('===== ASR: Previous start is still in progress after waiting, skipping this start');
+        Global.logger.w('ASR: Previous start is still in progress after waiting, skipping this start');
         return;
       }
       // 如果之前的启动已经完成，检查当前状态
       if (state == AsrState.started) {
-        Global.logger.i('===== ASR: Previous start completed, ASR is already started');
+        Global.logger.i('ASR: Previous start completed, ASR is already started');
         return;
       }
     }
 
     if (state == AsrState.started) {
-      Global.logger.w('===== ASR: ASR is already started');
+      Global.logger.w('ASR: ASR is already started');
       return;
     }
-    Global.logger.i('===== ASR: Starting ASR...');
+    Global.logger.i('ASR: Starting ASR...');
 
     _isStarting = true;
     try {
@@ -396,21 +396,21 @@ class Asr {
       if (permissionGranted) {
         try {
           // 先设置识别语言（加载模型）
-          Global.logger.i('===== ASR: Updating language first...');
+          Global.logger.i('ASR: Updating language first...');
           await _updateLanguage(language);
 
-          Global.logger.i('===== ASR: Starting microphone...');
+          Global.logger.i('ASR: Starting microphone...');
           await asrMethodChannel.invokeMethod('startMicrophone');
 
-          Global.logger.i('===== ASR: Starting ASR...');
+          Global.logger.i('ASR: Starting ASR...');
           await asrMethodChannel.invokeMethod('startAsr');
 
           setState(AsrState.started);
-          Global.logger.i('===== ASR: ASR started successfully');
+          Global.logger.i('ASR: ASR started successfully');
 
           // 注意：提示音应该由调用方在设置完热词后播放，这里不再播放
         } on PlatformException catch (e) {
-          Global.logger.e('===== ASR: Exception during start: code=${e.code}, message=${e.message}');
+          Global.logger.e('ASR: Exception during start: code=${e.code}, message=${e.message}');
           // iOS 上有时会在识别已经启动或短暂异常时抛出错误，但实际仍然可以正常识别
           // 为避免误导用户，仅在明确是权限问题时提示错误，其它情况只做轻量提示或记录日志
           if (e.code == 'PERMISSION_DENIED') {
@@ -424,7 +424,7 @@ class Asr {
               // 这样"请等待播音结束"才能自动切换到"请说出或输入释义"
               if (Platform.isIOS) {
                 setState(AsrState.started);
-                Global.logger.i('===== ASR: iOS 异常但已设置状态为 started，ASR 应该可以正常使用');
+                Global.logger.i('ASR: iOS 异常但已设置状态为 started，ASR 应该可以正常使用');
               }
               ToastUtil.info("语音识别已在运行，可直接说出答案");
             }
@@ -447,14 +447,14 @@ class Asr {
 
     // 如果正在启动流程中，等待启动完成后再停止（最多等待2秒）
     if (_isStarting) {
-      Global.logger.i('===== ASR: stopAsr called while starting, waiting for start to complete...');
+      Global.logger.i('ASR: stopAsr called while starting, waiting for start to complete...');
       int waitCount = 0;
       while (_isStarting && waitCount < 20) {
         await Future.delayed(const Duration(milliseconds: 100));
         waitCount++;
       }
       if (_isStarting) {
-        Global.logger.w('===== ASR: Start is still in progress after waiting, forcing stop');
+        Global.logger.w('ASR: Start is still in progress after waiting, forcing stop');
         // 强制重置 _isStarting，避免卡死
         _isStarting = false;
       }
@@ -462,13 +462,13 @@ class Asr {
 
     if (permissionGranted) {
       try {
-        Global.logger.i('===== ASR: Stopping ASR...');
+        Global.logger.i('ASR: Stopping ASR...');
         setState(AsrState.stopping);
         await asrMethodChannel.invokeMethod('stopAsr');
         setState(AsrState.stopped);
-        Global.logger.i('===== ASR: ASR stopped successfully');
+        Global.logger.i('ASR: ASR stopped successfully');
       } on PlatformException catch (e) {
-        Global.logger.i('===== ASR: Exception during stop: ${e.message}');
+        Global.logger.i('ASR: Exception during stop: ${e.message}');
         ToastUtil.error("ASR异常: '${e.message}'.");
       }
     }

@@ -146,7 +146,7 @@ class AsrUtil {
 
     // 1. 完全匹配
     if (lowerResult == lowerTarget) {
-      Global.logger.d('===== ASR MATCH [EXACT]: "$lowerResult" == "$lowerTarget"');
+      Global.logger.d('ASR MATCH [EXACT]: "$lowerResult" == "$lowerTarget"');
       return lowerTarget;
     }
 
@@ -154,7 +154,7 @@ class AsrUtil {
     if (_englishPronunciationMap.containsKey(lowerResult)) {
       String corrected = _englishPronunciationMap[lowerResult]!;
       if (corrected == lowerTarget) {
-        Global.logger.d('===== ASR MATCH [MAP_RESCUE]: "$lowerResult" -> "$lowerTarget"');
+        Global.logger.d('ASR MATCH [MAP_RESCUE]: "$lowerResult" -> "$lowerTarget"');
         return lowerTarget;
       }
     }
@@ -165,13 +165,13 @@ class AsrUtil {
 
     // 编辑距离容错匹配
     if (maxLength > 0 && distance <= (maxLength * Constants.editDistanceTolerance).floor()) {
-      Global.logger.d('===== ASR MATCH [EDIT_DIST]: "$lowerResult" -> "$lowerTarget" (dist: $distance, max: $maxLength)');
+      Global.logger.d('ASR MATCH [EDIT_DIST]: "$lowerResult" -> "$lowerTarget" (dist: $distance, max: $maxLength)');
       return lowerTarget;
     }
 
     // 4. 重叠度匹配
     if (_hasSignificantOverlap(lowerResult, lowerTarget)) {
-      Global.logger.d('===== ASR MATCH [OVERLAP]: "$lowerResult" -> "$lowerTarget"');
+      Global.logger.d('ASR MATCH [OVERLAP]: "$lowerResult" -> "$lowerTarget"');
       return lowerTarget;
     }
 
@@ -204,7 +204,7 @@ class AsrUtil {
     // 完全匹配优先
     for (final c in candidates) {
       if (c.toLowerCase().trim() == lowerTarget) {
-        Global.logger.d('===== ASR MATCH [NBEST_EXACT]: "$c" == "$lowerTarget"');
+        Global.logger.d('ASR MATCH [NBEST_EXACT]: "$c" == "$lowerTarget"');
         return AsrCandidateResult(targetWord, 100);
       }
     }
@@ -225,7 +225,7 @@ class AsrUtil {
 
     // 判定：综合相似度 ≥ 阈值则视为目标词
     if (bestScore >= Constants.phonemeMatchThreshold) {
-      Global.logger.d('===== ASR MATCH [PHONETIC/HYBRID]: "$best" -> "$lowerTarget" (score: $bestScore)');
+      Global.logger.d('ASR MATCH [PHONETIC/HYBRID]: "$best" -> "$lowerTarget" (score: $bestScore)');
       return AsrCandidateResult(targetWord, bestScore);
     }
 
@@ -397,7 +397,7 @@ class AsrUtil {
       await asrMethodChannel.invokeMethod('setContextualStrings', {
         'phrases': phrases,
       });
-      Global.logger.d('===== ASR: 设置上下文短语成功，共${phrases.length}个短语');
+      Global.logger.d('ASR: 设置上下文短语成功，共${phrases.length}个短语');
     } catch (e) {
       Global.logger.d('ASR setContextualStrings error: $e');
     }

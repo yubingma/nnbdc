@@ -610,26 +610,26 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     if (_isInSpeakTab) {
       // 当前在"说"tab，如果ASR已经启动且状态正确，不需要再次启动
       if (asr.state == AsrState.started && !_isKeyboardVisible) {
-        Global.logger.d('===== BDC: 当前在"说"tab，ASR已启动，跳过重复启动');
+        Global.logger.d('BDC: 当前在"说"tab，ASR已启动，跳过重复启动');
         return;
       }
       // 当前在"说"tab，启动ASR
-      Global.logger.d('===== BDC: 当前在"说"tab，启动ASR (studyStep=$_studyStep)');
+      Global.logger.d('BDC: 当前在"说"tab，启动ASR (studyStep=$_studyStep)');
       if (!_isKeyboardVisible) {
         // 设置上下文短语
         _setAsrContextualPhrases();
         final language = decideAsrLanguage();
-        Global.logger.d('===== BDC: 准备启动ASR，语言=${language.locale}');
+        Global.logger.d('BDC: 准备启动ASR，语言=${language.locale}');
         asr.startAsr(language);
       }
     } else {
       // 当前在"选"tab，如果ASR已经停止，不需要再次停止
       if (asr.state == AsrState.stopped || asr.state == AsrState.initialized) {
-        Global.logger.d('===== BDC: 当前在"选"tab，ASR已停止，跳过重复停止');
+        Global.logger.d('BDC: 当前在"选"tab，ASR已停止，跳过重复停止');
         return;
       }
       // 当前在"选"tab，停止ASR
-      Global.logger.d('===== BDC: 当前在"选"tab，停止ASR');
+      Global.logger.d('BDC: 当前在"选"tab，停止ASR');
       asr.stopAsr();
     }
   }
@@ -699,12 +699,12 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
   AsrLanguage decideAsrLanguage() {
     Global.logger
-        .d('===== BDC: decideAsrLanguage() - studyStep=$_studyStep, meaning.json=${StudyStep.ch2En.json}, word.json=${StudyStep.en2Ch.json}');
+        .d('BDC: decideAsrLanguage() - studyStep=$_studyStep, meaning.json=${StudyStep.ch2En.json}, word.json=${StudyStep.en2Ch.json}');
     if (_studyStep == StudyStep.ch2En.json) {
-      Global.logger.d('===== BDC: 决定使用英文ASR (中→英模式)');
+      Global.logger.d('BDC: 决定使用英文ASR (中→英模式)');
       return AsrLanguage.english;
     }
-    Global.logger.d('===== BDC: 决定使用中文ASR (英→中模式)');
+    Global.logger.d('BDC: 决定使用中文ASR (英→中模式)');
     return AsrLanguage.chinese;
   }
 
@@ -788,8 +788,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         List<String> candidateStrings = candidates.map((e) => e.toString()).toList();
         String bestCandidate = resultData['best'] ?? candidateStrings.first;
 
-        Global.logger.d('===== ASR: Multiple candidates received: $candidateStrings');
-        Global.logger.d('===== ASR: Best candidate: $bestCandidate');
+        Global.logger.d('ASR: Multiple candidates received: $candidateStrings');
+        Global.logger.d('ASR: Best candidate: $bestCandidate');
 
         if (_studyStep == StudyStep.ch2En.json && _word != null) {
           // 中→英模式：结合拼写相似度和音素相似度的智能选择
@@ -801,7 +801,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
           // 进一步进行英文预处理（如去除前缀噪音、模糊匹配等）
           processedResult = AsrUtil.preprocessEnglish(result.text, _word!.spell);
           Global.logger
-              .d('===== ASR: Selected & Preprocessed: "$processedResult" (原始选择: "${result.text}", 目标: ${_word!.spell}, 分数: ${result.score})');
+              .d('ASR: Selected & Preprocessed: "$processedResult" (原始选择: "${result.text}", 目标: ${_word!.spell}, 分数: ${result.score})');
         } else {
           // 其他模式：直接使用最佳候选结果，然后进行相应预处理
           processedResult = bestCandidate;
@@ -811,9 +811,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
           if (_studyStep == StudyStep.en2Ch.json) {
             // 英→中模式：使用中文预处理
             processedResult = AsrUtil.preprocess(processedResult);
-            Global.logger.d('===== ASR: Chinese processed result: $processedResult');
+            Global.logger.d('ASR: Chinese processed result: $processedResult');
           } else {
-            Global.logger.d('===== ASR: Using best candidate: $processedResult');
+            Global.logger.d('ASR: Using best candidate: $processedResult');
           }
         }
       } else {
@@ -825,15 +825,15 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
           final result = await AsrUtil.selectBestCandidateWithPhonemeAndScore([pre], _word!.spell);
           processedResult = result.text;
           _currentScore = result.score;
-          Global.logger.d('===== ASR: Single result processed: "$event" -> "$processedResult" (target: ${_word!.spell}, score: $_currentScore)');
+          Global.logger.d('ASR: Single result processed: "$event" -> "$processedResult" (target: ${_word!.spell}, score: $_currentScore)');
         } else {
           // 其他模式：中文预处理
           processedResult = AsrUtil.preprocess(event);
-          Global.logger.d('===== ASR: Chinese processed result: $processedResult');
+          Global.logger.d('ASR: Chinese processed result: $processedResult');
         }
       }
     } catch (e) {
-      Global.logger.e('===== ASR: Error processing result: $e');
+      Global.logger.e('ASR: Error processing result: $e');
       // 出错时使用原始结果进行基本预处理
       if (_studyStep == StudyStep.ch2En.json && _word != null) {
         processedResult = AsrUtil.preprocessEnglish(event, _word!.spell);
@@ -1083,14 +1083,14 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       if (!PlatformUtils.isWeb && _isInSpeakTab && !_isKeyboardVisible) {
         // 检查 studyStep 和 word 是否还是原来的值
         if (savedStudyStep == _studyStep && savedWordId == _word?.id) {
-          Global.logger.d('===== BDC: playWordAndFirstSentence 播放完成，准备启动ASR (studyStep=$_studyStep, wordId=${_word?.id})');
+          Global.logger.d('BDC: playWordAndFirstSentence 播放完成，准备启动ASR (studyStep=$_studyStep, wordId=${_word?.id})');
           _handleTabChangeForAsr();
         } else {
           Global.logger.d(
-              '===== BDC: playWordAndFirstSentence 播放完成，但单词已改变，跳过ASR启动 (savedStudyStep=$savedStudyStep => studyStep=$_studyStep, savedWordId=$savedWordId => wordId=${_word?.id})');
+              'BDC: playWordAndFirstSentence 播放完成，但单词已改变，跳过ASR启动 (savedStudyStep=$savedStudyStep => studyStep=$_studyStep, savedWordId=$savedWordId => wordId=${_word?.id})');
         }
       } else {
-        Global.logger.d('===== BDC: playWordAndFirstSentence 播放完成，但跳过ASR启动 (isInSpeakTab=$_isInSpeakTab, isKeyboardVisible=$_isKeyboardVisible)');
+        Global.logger.d('BDC: playWordAndFirstSentence 播放完成，但跳过ASR启动 (isInSpeakTab=$_isInSpeakTab, isKeyboardVisible=$_isKeyboardVisible)');
       }
     }
   }
@@ -1166,7 +1166,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       // 当学习模式发生切换，或这是本次会话首次设置学习模式时，或从阶段复习返回时，
       // 先确保ASR完全停止，然后重新初始化 ASR 事件监听，确保事件订阅始终绑定到当前 BdcPage
       if (oldStudyStep == null || oldStudyStep != _studyStep || isFromStageReview) {
-        Global.logger.i('===== BDC: 学习模式更新: $oldStudyStep => $_studyStep，从阶段复习返回: $isFromStageReview，先停止ASR，然后重新初始化ASR监听');
+        Global.logger.i('BDC: 学习模式更新: $oldStudyStep => $_studyStep，从阶段复习返回: $isFromStageReview，先停止ASR，然后重新初始化ASR监听');
         // 先停止ASR，确保没有正在执行的启动流程
         await asr.stopAsr();
         await asr.reset();
@@ -2444,7 +2444,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
         // 播音结束后，如果当前在"说"tab且键盘未弹出，则统一交给 _handleTabChangeForAsr 控制ASR启动
         if (_isInSpeakTab && !_isKeyboardVisible) {
-          Global.logger.d('===== BDC: 播音结束，准备根据当前状态决定是否启动ASR ($audioType)');
+          Global.logger.d('BDC: 播音结束，准备根据当前状态决定是否启动ASR ($audioType)');
           _handleTabChangeForAsr();
         }
       }

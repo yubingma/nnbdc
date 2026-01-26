@@ -637,7 +637,7 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
           // 进一步进行英文预处理
           processedEvent = AsrUtil.preprocessEnglish(result.text, target);
           Global.logger.d(
-              '===== ASR (Phoneme): Selected & Preprocessed: "$processedEvent" (candidates: ${candidateStrings.length}, target: $target, score: ${result.score})');
+              'ASR (Phoneme): Selected & Preprocessed: "$processedEvent" (candidates: ${candidateStrings.length}, target: $target, score: ${result.score})');
         } else {
           // 单个结果处理
           // 即使是单结果，也尝试与目标词进行音素匹配 check
@@ -649,7 +649,7 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
           if (curr >= 0 && curr < words.length) {
             words[curr].pronunciationScore = result.score;
           }
-          Global.logger.d('===== ASR (Phoneme): Single result: "$event" -> "$processedEvent" (target: $target, score: ${result.score})');
+          Global.logger.d('ASR (Phoneme): Single result: "$event" -> "$processedEvent" (target: $target, score: ${result.score})');
         }
 
         // 最后确保做一次标准英文预处理（通常上面的步骤已经覆盖，但为了保险再做一次）
@@ -667,7 +667,7 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
         processedEvent = bestCandidate;
       }
     } catch (e) {
-      Global.logger.e("--- 语音识别结果处理错误: $e");
+      Global.logger.e("语音识别结果处理错误: $e");
       processedEvent = event;
     }
 
@@ -684,7 +684,7 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
         // 非英文模式下，不需要记录评分，或者可以在这里清除
       }
 
-      Global.logger.d("--- 语音识别最终结果: $asrResult");
+      Global.logger.d("语音识别最终结果: $asrResult");
 
       if (asrResult.isNotEmpty) {
         if (asrResult != handlingAsrChinese) {
@@ -1287,12 +1287,12 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
     }
 
     try {
-      Global.logger.d('----开始启动ASR，语言: ${language.locale}');
+      Global.logger.d('开始启动ASR，语言: ${language.locale}');
       await asr.startAsr(language);
-      Global.logger.d('----ASR启动成功，开始播放提示音');
+      Global.logger.d('ASR启动成功，开始播放提示音');
       
       // 播放提示音, 提醒用户可以开始说话
-      Global.logger.d('----播放ASR启动提示音');
+      Global.logger.d('播放ASR启动提示音');
       SoundUtil.playAsrReadyHintSound();  
     } catch (e, stackTrace) {
       Global.logger.e('❌ ASR启动失败', error: e, stackTrace: stackTrace);
@@ -1374,11 +1374,11 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
     // 播放单词发音（背英文模式开始时不播放，避免泄露答案）
     final bool shouldPlaySound = playSound && studyMode != WordListStudyMode.speakEnglish;
     if (shouldPlaySound) {
-      debugPrint('----播放单词发音: ${word.word.spell}');
+      debugPrint('播放单词发音: ${word.word.spell}');
       final stopwatch = Stopwatch()..start();
       await SoundUtil.playPronounceSound2(word.word, audioPlayer);
       stopwatch.stop();
-      debugPrint('----单词发音播放完成: ${word.word.spell}, 耗时 ${stopwatch.elapsedMilliseconds}');
+      debugPrint('单词发音播放完成: ${word.word.spell}, 耗时 ${stopwatch.elapsedMilliseconds}');
       soundFinishListener?.call();
     } else {
       // 未播放发音时（如背英文模式），也要触发回调以继续流程（启动ASR等）

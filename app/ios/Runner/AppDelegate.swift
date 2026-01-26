@@ -80,7 +80,7 @@ import AVFAudio
             binaryMessenger: controller.binaryMessenger
         )
         ttsEventChannel.setStreamHandler(self)
-        print("===== IOS: TTS EventChannel 设置完成: nnbdc/tts_events")
+        print("IOS: TTS EventChannel 设置完成: nnbdc/tts_events")
         
         // 初始化语音识别器
         setupSpeechRecognizer()
@@ -100,27 +100,27 @@ import AVFAudio
     // MARK: - ASR Setup
     
     private func setupSpeechRecognizer() {
-        print("===== IOS: Setting up speech recognizer for locale: \(currentLocale)")
+        print("IOS: Setting up speech recognizer for locale: \(currentLocale)")
         guard let recognizer = SFSpeechRecognizer(locale: Locale(identifier: currentLocale)) else {
-            print("===== ERROR: IOS: Speech recognizer not available for \(currentLocale)")
+            print("ERROR: IOS: Speech recognizer not available for \(currentLocale)")
             return
         }
         
         // 检查识别器是否可用
         guard recognizer.isAvailable else {
-            print("===== ERROR: IOS: Speech recognizer not available for \(currentLocale)")
+            print("ERROR: IOS: Speech recognizer not available for \(currentLocale)")
             return
         }
         
         speechRecognizer = recognizer
         if currentLocale.lowercased().contains("zh") {
             speechRecognizer?.defaultTaskHint = .dictation // 中文短语更依赖语言模型
-            print("===== IOS: Speech recognizer configured for Chinese (dictation mode)")
+            print("IOS: Speech recognizer configured for Chinese (dictation mode)")
         } else {
             speechRecognizer?.defaultTaskHint = .dictation
-            print("===== IOS: Speech recognizer configured for English (dictation mode)")
+            print("IOS: Speech recognizer configured for English (dictation mode)")
         }
-        print("===== IOS: Speech recognizer setup completed for: \(currentLocale), available: \(recognizer.isAvailable)")
+        print("IOS: Speech recognizer setup completed for: \(currentLocale), available: \(recognizer.isAvailable)")
     }
     
     // MARK: - Method Call Handler
@@ -179,13 +179,13 @@ import AVFAudio
 
     private func setContextualStrings(phrases: [String]) {
         contextualPhrases = phrases
-        print("===== IOS: Contextual phrases updated: count=\(phrases.count)")
+        print("IOS: Contextual phrases updated: count=\(phrases.count)")
     }
     
     // MARK: - ASR Methods
     
     private func setLanguage(locale: String, result: @escaping FlutterResult) {
-        print("===== IOS: Setting ASR language to: \(locale)")
+        print("IOS: Setting ASR language to: \(locale)")
         currentLocale = locale
         
         // 重新初始化语音识别器
@@ -193,7 +193,7 @@ import AVFAudio
         
         // 如果正在识别，需要完全停止并重新开始
         if !isAsrStopped && isRecording {
-            print("===== IOS: Completely restarting ASR with new language: \(locale)")
+            print("IOS: Completely restarting ASR with new language: \(locale)")
             // 完全停止ASR
             stopSpeechRecognition()
             teardownAudioEngine()
@@ -204,7 +204,7 @@ import AVFAudio
             }
         }
         
-        print("===== IOS: ASR language set successfully to: \(locale)")
+        print("IOS: ASR language set successfully to: \(locale)")
         result(nil)
     }
     
@@ -215,8 +215,8 @@ import AVFAudio
         let speechGranted = speechAuthStatus == .authorized
         let microphoneGranted = microphoneAuthStatus == .granted
         
-        print("===== IOS: Permission check - Speech: \(speechAuthStatus.rawValue), Microphone: \(microphoneAuthStatus.rawValue)")
-        print("===== IOS: Permissions granted - Speech: \(speechGranted), Microphone: \(microphoneGranted)")
+        print("IOS: Permission check - Speech: \(speechAuthStatus.rawValue), Microphone: \(microphoneAuthStatus.rawValue)")
+        print("IOS: Permissions granted - Speech: \(speechGranted), Microphone: \(microphoneGranted)")
         
         result(speechGranted && microphoneGranted)
     }
@@ -244,19 +244,19 @@ import AVFAudio
     
     private func startMicrophone(result: @escaping FlutterResult) {
         guard !isRecording else {
-            print("===== IOS: Already recording, skipping startMicrophone")
+            print("IOS: Already recording, skipping startMicrophone")
             result(nil)
             return
         }
         
-        print("===== IOS: Starting microphone...")
+        print("IOS: Starting microphone...")
         
         // 检查权限状态
         let speechAuthStatus = SFSpeechRecognizer.authorizationStatus()
         let microphoneAuthStatus = AVAudioSession.sharedInstance().recordPermission
         
         guard speechAuthStatus == .authorized && microphoneAuthStatus == .granted else {
-            print("===== IOS: Permission denied - Speech: \(speechAuthStatus.rawValue), Microphone: \(microphoneAuthStatus.rawValue)")
+            print("IOS: Permission denied - Speech: \(speechAuthStatus.rawValue), Microphone: \(microphoneAuthStatus.rawValue)")
             result(FlutterError(
                 code: "PERMISSION_DENIED",
                 message: "需要麦克风和语音识别权限",
@@ -265,16 +265,16 @@ import AVFAudio
             return
         }
         
-        print("===== IOS: Permissions granted, setting up audio session...")
+        print("IOS: Permissions granted, setting up audio session...")
         setupAudioSession()
         isRecording = true
-        print("===== IOS: Microphone started successfully")
+        print("IOS: Microphone started successfully")
         result(nil)
     }
     
     private func startAsr(result: @escaping FlutterResult) {
         guard isRecording else {
-            print("===== IOS: Microphone not started, cannot begin ASR")
+            print("IOS: Microphone not started, cannot begin ASR")
             result(FlutterError(
                 code: "NOT_RECORDING",
                 message: "Microphone not started",
@@ -283,40 +283,40 @@ import AVFAudio
             return
         }
         
-        print("===== IOS: Beginning ASR (was paused: \(isAsrStopped))...")
+        print("IOS: Beginning ASR (was paused: \(isAsrStopped))...")
         isAsrStopped = false
         
         startSpeechRecognition()
-        print("===== IOS: ASR started successfully")
+        print("IOS: ASR started successfully")
         result(nil)
     }
     
     private func stopAsr(result: @escaping FlutterResult) {
-        print("===== IOS: Stopping ASR...")
+        print("IOS: Stopping ASR...")
         stopSpeechRecognition()
         teardownAudioEngine()
         isRecording = false
         isAsrStopped = true
-        print("===== IOS: ASR stopped successfully")
+        print("IOS: ASR stopped successfully")
         result(nil)
     }
     
     private func reset(result: @escaping FlutterResult) {
-        print("===== IOS: Resetting ASR state...")
+        print("IOS: Resetting ASR state...")
         
         // 暂停 ASR 状态
         isAsrStopped = true
         
         // 清理识别任务
         if recognitionTask != nil {
-            print("===== IOS: Cancelling recognition task during reset")
+            print("IOS: Cancelling recognition task during reset")
             recognitionTask?.cancel()
             recognitionTask = nil
         }
         
         // 清理识别请求
         if recognitionRequest != nil {
-            print("===== IOS: Ending recognition request during reset")
+            print("IOS: Ending recognition request during reset")
             recognitionRequest?.endAudio()
             recognitionRequest = nil
         }
@@ -326,7 +326,7 @@ import AVFAudio
         partialResultTimer?.invalidate()
         partialResultTimer = nil
         
-        print("===== IOS: ASR reset completed")
+        print("IOS: ASR reset completed")
         result(nil)
     }
     
@@ -341,7 +341,7 @@ import AVFAudio
                 options: [.defaultToSpeaker, .mixWithOthers, .allowBluetooth]
             )
             try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
-            print("===== IOS: Audio session configured - Sample rate: \(audioSession.sampleRate), Channels: \(audioSession.inputNumberOfChannels)")
+            print("IOS: Audio session configured - Sample rate: \(audioSession.sampleRate), Channels: \(audioSession.inputNumberOfChannels)")
         } catch {
             print("Failed to setup audio session: \(error)")
         }
@@ -349,11 +349,11 @@ import AVFAudio
     
     private func initializeAudioEngine() {
         guard !isAudioEngineInitialized else {
-            print("===== IOS: Audio engine already initialized")
+            print("IOS: Audio engine already initialized")
             return
         }
         
-        print("===== IOS: Initializing audio engine...")
+        print("IOS: Initializing audio engine...")
         
         // 确保音频会话已正确配置
         setupAudioSession()
@@ -365,20 +365,20 @@ import AVFAudio
             return
         }
         
-        print("===== IOS: Audio session - Sample rate: \(audioSession.sampleRate), Input channels: \(audioSession.inputNumberOfChannels)")
+        print("IOS: Audio session - Sample rate: \(audioSession.sampleRate), Input channels: \(audioSession.inputNumberOfChannels)")
         
         // 配置音频引擎
         let inputNode = audioEngine.inputNode
-        print("===== IOS: Input node created")
+        print("IOS: Input node created")
         
         // 准备音频引擎
         audioEngine.prepare()
-        print("===== IOS: Audio engine prepared")
+        print("IOS: Audio engine prepared")
         
         // 启动音频引擎
         do {
             try audioEngine.start()
-            print("===== IOS: Audio engine started successfully")
+            print("IOS: Audio engine started successfully")
         } catch {
             print("Audio engine couldn't start: \(error)")
             return
@@ -386,14 +386,14 @@ import AVFAudio
         
         // 获取硬件格式
         let hardwareFormat = inputNode.outputFormat(forBus: 0)
-        print("===== IOS: Hardware format retrieved")
-        print("===== IOS: Hardware format details - Sample rate: \(hardwareFormat.sampleRate), Channels: \(hardwareFormat.channelCount)")
+        print("IOS: Hardware format retrieved")
+        print("IOS: Hardware format details - Sample rate: \(hardwareFormat.sampleRate), Channels: \(hardwareFormat.channelCount)")
         
         // 使用已知有效的格式
         let format: AVAudioFormat
         if hardwareFormat.sampleRate > 0 && hardwareFormat.channelCount > 0 {
             format = hardwareFormat
-            print("===== IOS: Using hardware format")
+            print("IOS: Using hardware format")
         } else {
             // 使用音频会话的格式
             let sessionFormat = AVAudioFormat(
@@ -402,15 +402,15 @@ import AVFAudio
             )
             if let sessionFormat = sessionFormat {
                 format = sessionFormat
-                print("===== IOS: Using session format - Sample rate: \(format.sampleRate), Channels: \(format.channelCount)")
+                print("IOS: Using session format - Sample rate: \(format.sampleRate), Channels: \(format.channelCount)")
             } else {
                 // 最后备选：使用标准格式
                 guard let standardFormat = AVAudioFormat(standardFormatWithSampleRate: 48000, channels: 1) else {
-                    print("===== IOS: Failed to create any valid format")
+                    print("IOS: Failed to create any valid format")
                     return
                 }
                 format = standardFormat
-                print("===== IOS: Using fallback format - Sample rate: \(format.sampleRate), Channels: \(format.channelCount)")
+                print("IOS: Using fallback format - Sample rate: \(format.sampleRate), Channels: \(format.channelCount)")
             }
         }
         
@@ -419,28 +419,28 @@ import AVFAudio
         if format.channelCount > 1 {
             // 如果是立体声，转换为单声道
             guard let monoFormat = AVAudioFormat(standardFormatWithSampleRate: format.sampleRate, channels: 1) else {
-                print("===== IOS: Failed to create mono format")
+                print("IOS: Failed to create mono format")
                 return
             }
             finalFormat = monoFormat
-            print("===== IOS: Converting to mono format - Sample rate: \(finalFormat.sampleRate), Channels: \(finalFormat.channelCount)")
+            print("IOS: Converting to mono format - Sample rate: \(finalFormat.sampleRate), Channels: \(finalFormat.channelCount)")
         } else {
             finalFormat = format
-            print("===== IOS: Using original format - Sample rate: \(finalFormat.sampleRate), Channels: \(finalFormat.channelCount)")
+            print("IOS: Using original format - Sample rate: \(finalFormat.sampleRate), Channels: \(finalFormat.channelCount)")
         }
         
         // 安装 tap
         do {
             inputNode.installTap(onBus: 0, bufferSize: 512, format: finalFormat) { [weak self] (buffer, when) in
                 guard let self = self else { 
-                    print("===== IOS: Tap callback: self is nil")
+                    print("IOS: Tap callback: self is nil")
                     return 
                 }
                 
                 if self.isAsrStopped {
                     self.pausedLogCounter += 1
                     if self.pausedLogCounter % 200 == 0 {
-                        print("===== IOS: Tap callback: ASR is paused, skipping buffer #\(self.pausedLogCounter)")
+                        print("IOS: Tap callback: ASR is paused, skipping buffer #\(self.pausedLogCounter)")
                     }
                     return
                 }
@@ -449,7 +449,7 @@ import AVFAudio
                     // Only log occasionally to reduce noise
                     self.skippedBufferCount += 1
                     if self.skippedBufferCount % 50 == 0 {
-                        print("===== IOS: Tap callback: recognitionRequest is nil, skipped \(self.skippedBufferCount) buffers")
+                        print("IOS: Tap callback: recognitionRequest is nil, skipped \(self.skippedBufferCount) buffers")
                     }
                     return
                 }
@@ -466,29 +466,29 @@ import AVFAudio
                     }
                 }
             }
-            print("===== IOS: Audio tap installed successfully")
+            print("IOS: Audio tap installed successfully")
         } catch {
-            print("===== IOS: Failed to install tap: \(error)")
+            print("IOS: Failed to install tap: \(error)")
             return
         }
         
         isAudioEngineInitialized = true
-        print("===== IOS: Audio engine initialization completed")
+        print("IOS: Audio engine initialization completed")
     }
     
     private func resetAudioEngineAndTap() {
         let inputNode = audioEngine.inputNode
         // Remove any existing tap
         inputNode.removeTap(onBus: 0)
-        print("===== IOS: Removed existing audio tap")
+        print("IOS: Removed existing audio tap")
         // Stop the audio engine if running
         if audioEngine.isRunning {
             audioEngine.stop()
-            print("===== IOS: Stopped audio engine")
+            print("IOS: Stopped audio engine")
         }
         // Reset the audio engine
         audioEngine.reset()
-        print("===== IOS: Reset audio engine")
+        print("IOS: Reset audio engine")
         // Reinstall the tap with the correct format
         installTap()
     }
@@ -502,7 +502,7 @@ import AVFAudio
         let format: AVAudioFormat
         if hardwareFormat.sampleRate > 0 && hardwareFormat.channelCount > 0 {
             format = hardwareFormat
-            print("===== IOS: Using hardware format for tap")
+            print("IOS: Using hardware format for tap")
         } else {
             let sessionFormat = AVAudioFormat(
                 standardFormatWithSampleRate: audioSession.sampleRate,
@@ -510,28 +510,28 @@ import AVFAudio
             )
             if let sessionFormat = sessionFormat {
                 format = sessionFormat
-                print("===== IOS: Using session format for tap - Sample rate: \(format.sampleRate), Channels: \(format.channelCount)")
+                print("IOS: Using session format for tap - Sample rate: \(format.sampleRate), Channels: \(format.channelCount)")
             } else {
                 guard let standardFormat = AVAudioFormat(standardFormatWithSampleRate: 48000, channels: 1) else {
-                    print("===== IOS: Failed to create any valid format for tap")
+                    print("IOS: Failed to create any valid format for tap")
                     return
                 }
                 format = standardFormat
-                print("===== IOS: Using fallback format for tap - Sample rate: \(format.sampleRate), Channels: \(format.channelCount)")
+                print("IOS: Using fallback format for tap - Sample rate: \(format.sampleRate), Channels: \(format.channelCount)")
             }
         }
         // 确保格式兼容性 - 使用单声道，标准采样率
         let finalFormat: AVAudioFormat
         if format.channelCount > 1 {
             guard let monoFormat = AVAudioFormat(standardFormatWithSampleRate: format.sampleRate, channels: 1) else {
-                print("===== IOS: Failed to create mono format for tap")
+                print("IOS: Failed to create mono format for tap")
                 return
             }
             finalFormat = monoFormat
-            print("===== IOS: Converting to mono format for tap - Sample rate: \(finalFormat.sampleRate), Channels: \(finalFormat.channelCount)")
+            print("IOS: Converting to mono format for tap - Sample rate: \(finalFormat.sampleRate), Channels: \(finalFormat.channelCount)")
         } else {
             finalFormat = format
-            print("===== IOS: Using original format for tap - Sample rate: \(finalFormat.sampleRate), Channels: \(finalFormat.channelCount)")
+            print("IOS: Using original format for tap - Sample rate: \(finalFormat.sampleRate), Channels: \(finalFormat.channelCount)")
         }
         // 安装 tap
         do {
@@ -543,13 +543,13 @@ import AVFAudio
                 if self.isAsrStopped {
                     self.pausedLogCounter += 1
                     if self.pausedLogCounter % 200 == 0 {
-                        print("===== IOS: Tap callback: ASR is paused, skipping buffer #\(self.pausedLogCounter)")
+                        print("IOS: Tap callback: ASR is paused, skipping buffer #\(self.pausedLogCounter)")
                     }
                     return
                 }
                 
                 if self.recognitionRequest == nil {
-                    print("===== IOS: Tap callback: recognitionRequest is nil, skipping buffer #\(bufferCount)")
+                    print("IOS: Tap callback: recognitionRequest is nil, skipping buffer #\(bufferCount)")
                     return
                 }
                 
@@ -563,22 +563,22 @@ import AVFAudio
                     }
                 }
             }
-            print("===== IOS: Audio tap installed successfully")
+            print("IOS: Audio tap installed successfully")
         } catch {
-            print("===== IOS: Failed to install tap: \(error)")
+            print("IOS: Failed to install tap: \(error)")
         }
     }
     
     private func startSpeechRecognition() {
-        print("===== IOS: Starting speech recognition, isAsrStopped: \(isAsrStopped)")
+        print("IOS: Starting speech recognition, isAsrStopped: \(isAsrStopped)")
         
         // 重置音频引擎和 tap
-        print("===== IOS: Resetting audio engine and tap")
+        print("IOS: Resetting audio engine and tap")
         resetAudioEngineAndTap()
         // 启动音频引擎
         do {
             try audioEngine.start()
-            print("===== IOS: Audio engine started successfully")
+            print("IOS: Audio engine started successfully")
         } catch {
             print("Audio engine couldn't start: \(error)")
             return
@@ -593,16 +593,16 @@ import AVFAudio
             print("Speech recognizer not available for \(currentLocale)")
             return
         }
-        print("===== IOS: Speech recognizer created successfully for \(currentLocale)")
+        print("IOS: Speech recognizer created successfully for \(currentLocale)")
         self.speechRecognizer = speechRecognizer
         
         // 根据语言设置任务提示
         if currentLocale.lowercased().contains("zh") {
             speechRecognizer.defaultTaskHint = .dictation
-            print("===== IOS: Speech recognizer configured for Chinese (dictation mode)")
+            print("IOS: Speech recognizer configured for Chinese (dictation mode)")
         } else {
             speechRecognizer.defaultTaskHint = .search
-            print("===== IOS: Speech recognizer configured for English (search mode)")
+            print("IOS: Speech recognizer configured for English (search mode)")
         }
         
         // 先创建新的识别请求
@@ -617,25 +617,25 @@ import AVFAudio
         }
         if currentLocale.lowercased().contains("zh") {
             recognitionRequest.taskHint = .dictation
-            print("===== IOS: Recognition request configured for Chinese (dictation mode)")
+            print("IOS: Recognition request configured for Chinese (dictation mode)")
         } else {
             recognitionRequest.taskHint = .search
-            print("===== IOS: Recognition request configured for English (search mode)")
+            print("IOS: Recognition request configured for English (search mode)")
         }
         if #available(iOS 13.0, *) {
             recognitionRequest.requiresOnDeviceRecognition = true
         }
-        print("===== IOS: Recognition request created successfully")
+        print("IOS: Recognition request created successfully")
         
         // 检查音频引擎状态
         let audioSession = AVAudioSession.sharedInstance()
-        print("===== IOS: Audio session state - Sample rate: \(audioSession.sampleRate), Input channels: \(audioSession.inputNumberOfChannels), isRunning: \(audioEngine.isRunning)")
+        print("IOS: Audio session state - Sample rate: \(audioSession.sampleRate), Input channels: \(audioSession.inputNumberOfChannels), isRunning: \(audioEngine.isRunning)")
         
         // 创建新的识别任务
-        print("===== IOS: Creating new recognition task...")
+        print("IOS: Creating new recognition task...")
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            print("===== IOS: Creating recognition task after delay (0.1s)...")
+            print("IOS: Creating recognition task after delay (0.1s)...")
             self.recognitionTask = speechRecognizer.recognitionTask(with: recognitionRequest) { [weak self] result, error in
                 guard let self = self else { return }
                 var isFinal = false
@@ -645,11 +645,11 @@ import AVFAudio
                     let nsError = error as NSError
                     if nsError.domain == "kAFAssistantErrorDomain" && nsError.code == 1110 {
                         // "No speech detected" 不是错误，只是正常状态
-                        print("===== IOS: No speech detected (normal state)")
+                        print("IOS: No speech detected (normal state)")
                         // 不设置 shouldRestart，让识别任务继续运行
                     } else {
                         // 其他错误才需要重启
-                        print("===== IOS: Speech recognition error: \(error)")
+                        print("IOS: Speech recognition error: \(error)")
                         shouldRestart = true
                     }
                 }
@@ -658,13 +658,13 @@ import AVFAudio
                     let bestString = result.bestTranscription.formattedString
                     let selectedString = self.selectTranscription(using: result)
                     isFinal = result.isFinal
-                    print("===== IOS: Speech recognition result: best='\(bestString)' selected='\(selectedString)' (isFinal: \(isFinal))")
-                    print("===== Current locale: \(self.currentLocale)")
+                    print("IOS: Speech recognition result: best='\(bestString)' selected='\(selectedString)' (isFinal: \(isFinal))")
+                    print("Current locale: \(self.currentLocale)")
                     
                     // 打印 N-best 候选
                     var idx = 0
                     for t in result.transcriptions {
-                        print("===== IOS: NBest[\(idx)]: '\(t.formattedString)' score=NA")
+                        print("IOS: NBest[\(idx)]: '\(t.formattedString)' score=NA")
                         idx += 1
                     }
                     
@@ -676,7 +676,7 @@ import AVFAudio
                             DispatchQueue.main.async {
                                 // 创建候选结果数组
                                 let candidates = result.transcriptions.map { $0.formattedString }
-                                print("===== IOS: Sending partial result with candidates to Flutter: '\(selectedString)' candidates: \(candidates)")
+                                print("IOS: Sending partial result with candidates to Flutter: '\(selectedString)' candidates: \(candidates)")
                                 
                                 // 发送JSON格式的候选结果
                                 let resultData: [String: Any] = [
@@ -696,7 +696,7 @@ import AVFAudio
                                         ]
                                         if let fallbackJson = try? JSONSerialization.data(withJSONObject: fallbackData),
                                            let fallbackString = String(data: fallbackJson, encoding: .utf8) {
-                                            print("===== IOS: JSON serialization failed for partial result, sending fallback JSON")
+                                            print("IOS: JSON serialization failed for partial result, sending fallback JSON")
                                             self.eventSink?(fallbackString)
                                         } else {
                                             // 最后回退到单个结果
@@ -711,7 +711,7 @@ import AVFAudio
                                     ]
                                     if let fallbackJson = try? JSONSerialization.data(withJSONObject: fallbackData),
                                        let fallbackString = String(data: fallbackJson, encoding: .utf8) {
-                                        print("===== IOS: Failed to serialize partial candidates, sending fallback JSON: \(error)")
+                                        print("IOS: Failed to serialize partial candidates, sending fallback JSON: \(error)")
                                         self.eventSink?(fallbackString)
                                     } else {
                                         // 最后回退到单个结果
@@ -725,7 +725,7 @@ import AVFAudio
                             DispatchQueue.main.async {
                                 // 创建候选结果数组
                                 let candidates = result.transcriptions.map { $0.formattedString }
-                                print("===== IOS: Sending final result with candidates to Flutter: '\(selectedString)' candidates: \(candidates)")
+                                print("IOS: Sending final result with candidates to Flutter: '\(selectedString)' candidates: \(candidates)")
                                 
                                 // 发送JSON格式的候选结果
                                 let resultData: [String: Any] = [
@@ -745,7 +745,7 @@ import AVFAudio
                                         ]
                                         if let fallbackJson = try? JSONSerialization.data(withJSONObject: fallbackData),
                                            let fallbackString = String(data: fallbackJson, encoding: .utf8) {
-                                            print("===== IOS: JSON serialization failed for final result, sending fallback JSON")
+                                            print("IOS: JSON serialization failed for final result, sending fallback JSON")
                                             self.eventSink?(fallbackString)
                                         } else {
                                             // 最后回退到单个结果
@@ -760,7 +760,7 @@ import AVFAudio
                                     ]
                                     if let fallbackJson = try? JSONSerialization.data(withJSONObject: fallbackData),
                                        let fallbackString = String(data: fallbackJson, encoding: .utf8) {
-                                        print("===== IOS: Failed to serialize final candidates, sending fallback JSON: \(error)")
+                                        print("IOS: Failed to serialize final candidates, sending fallback JSON: \(error)")
                                         self.eventSink?(fallbackString)
                                     } else {
                                         // 最后回退到单个结果
@@ -778,27 +778,27 @@ import AVFAudio
                         shouldRestart = true
                     }
                 } else {
-                    print("===== IOS: No speech recognition result")
+                    print("IOS: No speech recognition result")
                 }
                 
                 if shouldRestart || isFinal {
-                    print("===== IOS: Speech recognition task ending - shouldRestart: \(shouldRestart), isFinal: \(isFinal)")
+                    print("IOS: Speech recognition task ending - shouldRestart: \(shouldRestart), isFinal: \(isFinal)")
                     self.recognitionRequest = nil
                     self.recognitionTask = nil
                     self.lastMeterSentAt = 0
                     if !self.isAsrStopped && shouldRestart {
-                        print("===== IOS: ASR not paused and should restart, creating new recognition task")
+                        print("IOS: ASR not paused and should restart, creating new recognition task")
                         DispatchQueue.main.async {
                             self.startSpeechRecognition()
                         }
                     } else {
-                        print("===== IOS: ASR is paused or no restart needed, not creating new task")
+                        print("IOS: ASR is paused or no restart needed, not creating new task")
                     }
                 }
             }
-            print("===== IOS: Speech recognition task started successfully")
+            print("IOS: Speech recognition task started successfully")
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                print("===== IOS: Recognition task established, ready for audio")
+                print("IOS: Recognition task established, ready for audio")
             }
         }
     }
@@ -835,7 +835,7 @@ import AVFAudio
         for t in result.transcriptions {
             let s = t.formattedString
             if lowerPhrases.contains(s.lowercased()) {
-                print("===== IOS: Selected exact match: '\(s)'")
+                print("IOS: Selected exact match: '\(s)'")
                 return s
             }
         }
@@ -846,7 +846,7 @@ import AVFAudio
             let l = s.lowercased()
             for p in lowerPhrases {
                 if l.contains(p) {
-                    print("===== IOS: Selected partial match: '\(s)' contains '\(p)'")
+                    print("IOS: Selected partial match: '\(s)' contains '\(p)'")
                     return s
                 }
             }
@@ -880,7 +880,7 @@ import AVFAudio
         audioEngine.reset()
         isAudioEngineInitialized = false
         pausedLogCounter = 0
-        print("===== IOS: Audio engine torn down")
+        print("IOS: Audio engine torn down")
     }
 }
 
@@ -888,38 +888,38 @@ import AVFAudio
 
 extension AppDelegate: FlutterStreamHandler {
     func onListen(withArguments arguments: Any?, eventSink events: @escaping FlutterEventSink) -> FlutterError? {
-        print("===== IOS: EventChannel onListen: arguments=\(arguments ?? "nil")")
+        print("IOS: EventChannel onListen: arguments=\(arguments ?? "nil")")
         
         // 检查是哪个 EventChannel
         if let channelName = arguments as? String, channelName == "nnbdc/tts_events" {
-            print("===== IOS: Setting up TTS EventChannel")
+            print("IOS: Setting up TTS EventChannel")
             self.ttsEventSink = events
             // 发送初始化状态
             let event: [String: Any] = ["type": "initStatus", "data": 0]
-            print("===== IOS: TTS sending init event: \(event)")
+            print("IOS: TTS sending init event: \(event)")
             events(event)
         } else if let channelName = arguments as? String, channelName == "nnbdc/asr_meter" {
-            print("===== IOS: Setting up ASR Meter EventChannel")
+            print("IOS: Setting up ASR Meter EventChannel")
             self.meterEventSink = events
         } else {
-            print("===== IOS: Setting up ASR EventChannel")
+            print("IOS: Setting up ASR EventChannel")
             self.eventSink = events
         }
         return nil
     }
     
     func onCancel(withArguments arguments: Any?) -> FlutterError? {
-        print("===== IOS: EventChannel onCancel: arguments=\(arguments ?? "nil")")
+        print("IOS: EventChannel onCancel: arguments=\(arguments ?? "nil")")
         
         // 检查是哪个 EventChannel
         if let channelName = arguments as? String, channelName == "nnbdc/tts_events" {
-            print("===== IOS: Cancelling TTS EventChannel")
+            print("IOS: Cancelling TTS EventChannel")
             self.ttsEventSink = nil
         } else if let channelName = arguments as? String, channelName == "nnbdc/asr_meter" {
-            print("===== IOS: Cancelling ASR Meter EventChannel")
+            print("IOS: Cancelling ASR Meter EventChannel")
             self.meterEventSink = nil
         } else {
-            print("===== IOS: Cancelling ASR EventChannel")
+            print("IOS: Cancelling ASR EventChannel")
             self.eventSink = nil
         }
         return nil
@@ -958,7 +958,7 @@ extension AppDelegate {
     }
     
     private func speak(text: String, utteranceId: String, language: String) {
-        print("===== IOS: TTS speak: text='\(text)', utteranceId='\(utteranceId)', language='\(language)'")
+        print("IOS: TTS speak: text='\(text)', utteranceId='\(utteranceId)', language='\(language)'")
         
         let utterance = AVSpeechUtterance(string: text)
         utterance.voice = AVSpeechSynthesisVoice(language: language)
@@ -968,14 +968,14 @@ extension AppDelegate {
         utterance.postUtteranceDelay = 0.0
         utterance.preUtteranceDelay = 0.0
         
-        print("===== IOS: TTS utterance created: voice=\(utterance.voice?.language ?? "unknown")")
+        print("IOS: TTS utterance created: voice=\(utterance.voice?.language ?? "unknown")")
         currentUtteranceId = utteranceId
-        print("===== IOS: TTS starting synthesis for utteranceId: \(utteranceId)")
+        print("IOS: TTS starting synthesis for utteranceId: \(utteranceId)")
         synthesizer.speak(utterance)
     }
     
     private func stopTts() {
-        print("===== IOS: TTS stop requested")
+        print("IOS: TTS stop requested")
         synthesizer.stopSpeaking(at: .immediate)
     }
 }
@@ -984,36 +984,36 @@ extension AppDelegate {
 
 extension AppDelegate: AVSpeechSynthesizerDelegate {
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
-        print("===== IOS: TTS didFinish: utteranceId=\(currentUtteranceId ?? "nil")")
+        print("IOS: TTS didFinish: utteranceId=\(currentUtteranceId ?? "nil")")
         if let utteranceId = currentUtteranceId {
             let event: [String: Any] = ["type": "ttsCompleted", "data": utteranceId]
-            print("===== IOS: TTS sending completion event: \(event)")
-            print("===== IOS: TTS ttsEventSink is nil: \(ttsEventSink == nil)")
+            print("IOS: TTS sending completion event: \(event)")
+            print("IOS: TTS ttsEventSink is nil: \(ttsEventSink == nil)")
             ttsEventSink?(event)
             currentUtteranceId = nil
         } else {
-            print("===== IOS: TTS didFinish but no utteranceId found")
+            print("IOS: TTS didFinish but no utteranceId found")
         }
     }
     
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
-        print("===== IOS: TTS didCancel: utteranceId=\(currentUtteranceId ?? "nil")")
+        print("IOS: TTS didCancel: utteranceId=\(currentUtteranceId ?? "nil")")
         if let utteranceId = currentUtteranceId {
             let event: [String: Any] = ["type": "ttsCompleted", "data": utteranceId]
-            print("===== IOS: TTS sending cancellation event: \(event)")
-            print("===== IOS: TTS ttsEventSink is nil: \(ttsEventSink == nil)")
+            print("IOS: TTS sending cancellation event: \(event)")
+            print("IOS: TTS ttsEventSink is nil: \(ttsEventSink == nil)")
             ttsEventSink?(event)
             currentUtteranceId = nil
         } else {
-            print("===== IOS: TTS didCancel but no utteranceId found")
+            print("IOS: TTS didCancel but no utteranceId found")
         }
     }
     
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didStart utterance: AVSpeechUtterance) {
-        print("===== IOS: TTS didStart: utteranceId=\(currentUtteranceId ?? "nil")")
+        print("IOS: TTS didStart: utteranceId=\(currentUtteranceId ?? "nil")")
     }
     
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, willSpeakRangeOfSpeechString characterRange: NSRange, utterance: AVSpeechUtterance) {
-        print("===== IOS: TTS willSpeakRange: \(characterRange), utteranceId=\(currentUtteranceId ?? "nil")")
+        print("IOS: TTS willSpeakRange: \(characterRange), utteranceId=\(currentUtteranceId ?? "nil")")
     }
 }
