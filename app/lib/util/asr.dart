@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/util/toast_util.dart';
-import 'package:nnbdc/util/sound.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';

@@ -840,7 +840,7 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
           // 确保先设置热词
           _setAsrContextualPhrases();
           try {
-            _startAsrWithLoading(decideAsrLanguage());
+            _startAsr(decideAsrLanguage());
           } catch (e) {
             Global.logger.e("启动ASR失败: $e");
           }
@@ -864,7 +864,7 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
 
             // 重新启动ASR以恢复响应
             _setAsrContextualPhrases();
-            _startAsrWithLoading(decideAsrLanguage());
+            _startAsr(decideAsrLanguage());
           }
         });
       }
@@ -1033,7 +1033,7 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
     // 设置热词（必须在startAsr之前）
     _setAsrContextualPhrases();
     // 然后启动ASR（内部会加载模型、启动麦克风、设置热词、播放提示音）
-    _startAsrWithLoading(decideAsrLanguage());
+    _startAsr(decideAsrLanguage());
     _subscribeMeterIfNeeded();
   }
 
@@ -1255,10 +1255,20 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
   }
 
   /// 带加载动画的 ASR 启动封装
-  Future<void> _startAsrWithLoading(AsrLanguage language) async {
+  Future<void> _startAsr(AsrLanguage language) async {
     if (!mounted) return;
+    
     // 如果已经在处理中（无论是否显示动画），都不再重复启动
-    if (_isAsrProcessing) return;
+    if (_isAsrProcessing) {
+      Global.logger.d('⚠️ ASR正在启动中，忽略本次调用');
+      return;
+    }
+    
+    // 如果ASR已经在运行，也不需要重复启动
+    if (asr.state == AsrState.started) {
+      Global.logger.d('✅ ASR已经在运行中，无需重复启动');
+      return;
+    }
 
     _isAsrProcessing = true;
 
@@ -1276,7 +1286,9 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
     }
 
     try {
+      Global.logger.d('🚀 开始启动ASR，语言: ${language.locale}');
       await asr.startAsr(language);
+      Global.logger.d('✅ ASR启动成功，开始播放提示音');
       
       // ASR启动成功后，播放提示音通知用户可以开始说话
       // 等待提示音播放完成，防止麦克风录入提示音导致误识别
@@ -1285,6 +1297,9 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
           .catchError((e) {
         Global.logger.i('播放ASR启动提示音失败或超时: $e');
       });
+      Global.logger.d('🔔 提示音播放完成，用户可以开始说话');
+    } catch (e, stackTrace) {
+      Global.logger.e('❌ ASR启动失败', error: e, stackTrace: stackTrace);
     } finally {
       _isAsrProcessing = false;
       if (shouldShowAnimation && mounted) {
@@ -1373,7 +1388,7 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
     // 在语音模式下，播放完成后启动语音识别
     if (studyMode == WordListStudyMode.speakChinese || studyMode == WordListStudyMode.speakEnglish) {
       _setAsrContextualPhrases();
-      _startAsrWithLoading(decideAsrLanguage());
+      _startAsr(decideAsrLanguage());
       _subscribeMeterIfNeeded();
     }
   }
@@ -2517,7 +2532,7 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
                                 handlingAsrChinese = "";
                                 studyMode = WordListStudyMode.speakChinese;
                               });
-                              _startAsrWithLoading(decideAsrLanguage());
+                              _startAsr(decideAsrLanguage());
                               _subscribeMeterIfNeeded();
                               break;
                             case menuSpeakEnglish:
@@ -2532,7 +2547,7 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
                                 studyMode = WordListStudyMode.speakEnglish;
                               });
                               // 用英文识别重启ASR，并订阅电平
-                              _startAsrWithLoading(decideAsrLanguage());
+                              _startAsr(decideAsrLanguage());
                               _subscribeMeterIfNeeded();
                               break;
                             case menuWalkman:
