@@ -164,9 +164,6 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
   @override
   bool get wantKeepAlive => true; // 保持状态，避免页面重建
 
-  /// ASR恢复检查定时器（用于定期检查并恢复ASR状态）
-  Timer? _asrRestoreTimer;
-
   /// 用于获取右上角菜单按钮的坐标
   final GlobalKey _menuKey = GlobalKey();
   OverlayEntry? _guideOverlay;
@@ -498,35 +495,6 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
       }
     });
     _checkAndShowGuide();
-
-    // 启动ASR恢复检查定时器（每1.5秒检查一次，如果当前在语音模式下但ASR未启动，则启动它）
-    _asrRestoreTimer = Timer.periodic(const Duration(milliseconds: 1500), (timer) {
-      if (!mounted) {
-        timer.cancel();
-        return;
-      }
-
-      // 检查页面是否可见（通过GetX的路由检查）
-      final isPageVisible = Get.currentRoute == '/word_list';
-
-      // 只在页面可见且语音模式下检查（但要避免在播放音频时恢复ASR，防止干扰播放）
-      if (isPageVisible && (studyMode == WordListStudyMode.speakChinese || studyMode == WordListStudyMode.speakEnglish)) {
-        // 检查音频播放器是否正在播放，如果正在播放则跳过ASR恢复，避免干扰
-        final isPlaying = audioPlayer.state == PlayerState.playing;
-        if (!isPlaying) {
-          _restoreAsrIfNeeded('asrRestoreTimer');
-        }
-      } else if (!isPageVisible) {
-        // 页面不可见时，如果在语音模式下且ASR正在运行，停止它
-        if (studyMode == WordListStudyMode.speakChinese || studyMode == WordListStudyMode.speakEnglish) {
-          if (asr.state == AsrState.started) {
-            Global.logger.d('页面不可见（当前路由: ${Get.currentRoute}），停止ASR');
-            asr.stopAsr();
-            _unsubscribeMeter();
-          }
-        }
-      }
-    });
   }
 
   /// 检查并显示新手引导
@@ -850,25 +818,6 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
     } finally {
       runningAsrTaskCount--;
       Global.logger.d('背中文模式：ASR任务完成，runningAsrTaskCount减至$runningAsrTaskCount');
-
-      // 检查是否出现"卡住"状态：canLeaveCurrWord=true但长时间未跳转
-      if (studyMode == WordListStudyMode.speakChinese && canLeaveCurrWord && !_preventAutoAdvance && runningAsrTaskCount == 0) {
-        // 延迟检查，确保不是因为正常延迟而误判
-        Future.delayed(const Duration(seconds: 2), () {
-          if (mounted && studyMode == WordListStudyMode.speakChinese && canLeaveCurrWord && !_preventAutoAdvance && runningAsrTaskCount == 0) {
-            Global.logger.w('背中文模式：检测到卡住状态，强制重置并尝试跳转');
-            // 强制重置状态
-            canLeaveCurrWord = false;
-            _preventAutoAdvance = false;
-            asrResult = "";
-            handlingAsrChinese = "";
-
-            // 重新启动ASR以恢复响应
-            _setAsrContextualPhrases();
-            _startAsr(decideAsrLanguage());
-          }
-        });
-      }
     }
   }
 
@@ -943,16 +892,14 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _asrRestoreTimer?.cancel();
-    _asrRestoreTimer = null;
-    
+
     // 停止 ASR
     try {
       asr.stopAsr();
     } catch (e) {
       Global.logger.d("dispose: 停止 ASR 失败: $e");
     }
-    
+
     _audioPlayerDisposed = true; // 标记为已释放
     _unsubscribeMeter();
     _meterLevelNotifier.dispose();
@@ -967,7 +914,7 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
         Global.logger.d("dispose: 释放 WordWrapper 资源失败: $e");
       }
     }
-    
+
     // 清空单词列表，帮助 GC
     words.clear();
 
@@ -1258,13 +1205,13 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
   /// 带加载动画的 ASR 启动封装
   Future<void> _startAsr(AsrLanguage language) async {
     if (!mounted) return;
-    
+
     // 如果已经在处理中（无论是否显示动画），都不再重复启动
     if (_isAsrProcessing) {
       Global.logger.d('⚠️ ASR正在启动中，忽略本次调用');
       return;
     }
-    
+
     // 如果ASR已经在运行，也不需要重复启动
     if (asr.state == AsrState.started) {
       Global.logger.d('✅ ASR已经在运行中，无需重复启动');
@@ -1290,10 +1237,10 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
       Global.logger.d('开始启动ASR，语言: ${language.locale}');
       await asr.startAsr(language);
       Global.logger.d('ASR启动成功，开始播放提示音');
-      
+
       // 播放提示音, 提醒用户可以开始说话
       Global.logger.d('播放ASR启动提示音');
-      SoundUtil.playAsrReadyHintSound();  
+      SoundUtil.playAsrReadyHintSound();
     } catch (e, stackTrace) {
       Global.logger.e('❌ ASR启动失败', error: e, stackTrace: stackTrace);
     } finally {
@@ -2274,15 +2221,10 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
         final isPageVisible = Get.currentRoute == '/word_list';
 
         if (isPageVisible) {
-          // 页面可见：如果在语音模式下，确保ASR已启动
-          if (studyMode == WordListStudyMode.speakChinese || studyMode == WordListStudyMode.speakEnglish) {
-            _restoreAsrIfNeeded('build');
-          } else {
-            // 非语音模式：如果ASR正在运行，停止它
-            if (asr.state == AsrState.started) {
-              asr.stopAsr();
-              _unsubscribeMeter();
-            }
+          // 非语音模式：如果ASR正在运行，停止它
+          if ([WordListStudyMode.speakChinese, WordListStudyMode.speakEnglish].contains(studyMode) && asr.state == AsrState.started) {
+            asr.stopAsr();
+            _unsubscribeMeter();
           }
         } else {
           // 页面不可见：如果在语音模式下，停止ASR
