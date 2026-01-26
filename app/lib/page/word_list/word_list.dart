@@ -227,7 +227,7 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
     if (studyMode == WordListStudyMode.speakChinese || studyMode == WordListStudyMode.speakEnglish) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          _restoreAsrIfNeeded();
+          _restoreAsrIfNeeded('loadData');
         }
       });
     }
@@ -514,7 +514,7 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
         // 检查音频播放器是否正在播放，如果正在播放则跳过ASR恢复，避免干扰
         final isPlaying = audioPlayer.state == PlayerState.playing;
         if (!isPlaying) {
-          _restoreAsrIfNeeded();
+          _restoreAsrIfNeeded('asrRestoreTimer');
         }
       } else if (!isPageVisible) {
         // 页面不可见时，如果在语音模式下且ASR正在运行，停止它
@@ -990,7 +990,7 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
 
     if (state == AppLifecycleState.resumed) {
       // 应用恢复时，如果在语音模式下且ASR未启动，则启动ASR
-      _restoreAsrIfNeeded();
+      _restoreAsrIfNeeded('didChangeAppLifecycleState');
     } else if (state == AppLifecycleState.paused) {
       // 应用进入后台时，停止ASR以节省资源
       asr.stopAsr();
@@ -998,13 +998,13 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
   }
 
   /// 恢复ASR（如果当前在语音模式下且ASR未启动）
-  void _restoreAsrIfNeeded() {
+  void _restoreAsrIfNeeded(String caller) {
     // 如果正在加载ASR，则不需要恢复（避免与 _startAsrWithLoading 冲突导致死循环）
     if (_isAsrProcessing) return;
 
     if (studyMode == WordListStudyMode.speakChinese || studyMode == WordListStudyMode.speakEnglish) {
       if (asr.state != AsrState.started && asr.state != AsrState.stopping) {
-        Global.logger.d('检测到ASR未启动（当前状态: ${asr.state}），尝试恢复ASR，模式: $studyMode');
+        Global.logger.d('^^^^^$caller: 检测到ASR未启动（当前状态: ${asr.state}），尝试恢复ASR，模式: $studyMode');
         try {
           // 如果ASR卡在initialized状态，先强制停止以清除内部状态
           if (asr.state == AsrState.initialized) {
@@ -2276,7 +2276,7 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
         if (isPageVisible) {
           // 页面可见：如果在语音模式下，确保ASR已启动
           if (studyMode == WordListStudyMode.speakChinese || studyMode == WordListStudyMode.speakEnglish) {
-            _restoreAsrIfNeeded();
+            _restoreAsrIfNeeded('build');
           } else {
             // 非语音模式：如果ASR正在运行，停止它
             if (asr.state == AsrState.started) {
