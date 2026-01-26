@@ -1378,7 +1378,11 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
     // 播放单词发音（背英文模式开始时不播放，避免泄露答案）
     final bool shouldPlaySound = playSound && studyMode != WordListStudyMode.speakEnglish;
     if (shouldPlaySound) {
+      debugPrint('----播放单词发音: ${word.word.spell}');
+      final stopwatch = Stopwatch()..start();
       await SoundUtil.playPronounceSound2(word.word, audioPlayer);
+      stopwatch.stop();
+      debugPrint('----单词发音播放完成: ${word.word.spell}, 耗时 ${stopwatch.elapsedMilliseconds}');
       soundFinishListener?.call();
     } else {
       // 未播放发音时（如背英文模式），也要触发回调以继续流程（启动ASR等）
