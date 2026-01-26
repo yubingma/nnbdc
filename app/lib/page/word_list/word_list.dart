@@ -1409,19 +1409,9 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
     }
   }
 
-  Container renderWord(final int i) {
-    var word = words[i];
-    final isDarkMode = context.read<DarkMode>().isDarkMode;
-    final isBookmarked = getBookMarkUiPosition() == i;
-
-    /// 一个单词
-    var row = Container(
-      margin: EdgeInsets.only(
-        left: 4,
-        right: 4,
-        top: 4,
-        bottom: i == words.length - 1 ? 0 : 4, // 最后一个单词不设底部间距
-      ),
+  Widget _buildWordDecoration({required Widget child, required bool isBookmarked, required bool isDarkMode}) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
       decoration: BoxDecoration(
         gradient: isBookmarked
             ? LinearGradient(
@@ -1456,206 +1446,215 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
           ),
         ],
       ),
-      child: Row(
-        children: [
-          /// 单词内容
-          Expanded(
-            child: InkWell(
-              focusColor: Colors.transparent,
-              onTap: () async {
-                if (studyMode == WordListStudyMode.dictation) {
-                  final curr = getBookMarkUiPosition();
-                  // 点击引发跳转：播放离开的那个单词发音
-                  if (curr >= 0 && curr != i && curr < words.length) {
-                    try {
-                      await SoundUtil.playPronounceSound2(words[curr].word, audioPlayer);
-                    } catch (e, stackTrace) {
-                      // 音频播放失败不影响主流程，但需要记录
-                      Global.logger.w('播放单词发音失败', error: e, stackTrace: stackTrace);
+      child: child,
+    );
+  }
+
+  Widget renderWord(final int i) {
+    var word = words[i];
+    final isDarkMode = context.read<DarkMode>().isDarkMode;
+    final isBookmarked = getBookMarkUiPosition() == i;
+
+    /// 一个单词
+    var row = _buildWordDecoration(
+      isBookmarked: isBookmarked,
+      isDarkMode: isDarkMode,
+      child: Container(
+        margin: EdgeInsets.only(
+          bottom: i == words.length - 1 ? 0 : 4, // 最后一个单词不设底部间距
+        ),
+        decoration: BoxDecoration(
+          gradient: isBookmarked
+              ? LinearGradient(
+                  colors: [
+                    const Color(0xFF0097A7).withValues(alpha: 0.08),
+                    const Color(0xFF00ACC1).withValues(alpha: 0.08),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                )
+              : null,
+          color: isBookmarked
+              ? null
+              : isDarkMode
+                  ? const Color(0xFF1E1E1E).withValues(alpha: 0.6)
+                  : Colors.white.withValues(alpha: 0.8),
+          borderRadius: BorderRadius.circular(12),
+          border: isBookmarked
+              ? Border.all(
+                  width: 2,
+                  color: const Color(0xFF0097A7).withValues(alpha: 0.3),
+                )
+              : Border.all(
+                  width: 1,
+                  color: isDarkMode ? const Color(0xFF333333) : const Color(0xFFE0E0E0),
+                ),
+          boxShadow: [
+            BoxShadow(
+              color: isBookmarked ? const Color(0xFF0097A7).withValues(alpha: 0.2) : (isDarkMode ? Colors.black : Colors.grey).withValues(alpha: 0.1),
+              blurRadius: isBookmarked ? 8 : 4,
+              offset: Offset(0, isBookmarked ? 4 : 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            /// 单词内容
+            Expanded(
+              child: InkWell(
+                focusColor: Colors.transparent,
+                onTap: () async {
+                  if (studyMode == WordListStudyMode.dictation) {
+                    final curr = getBookMarkUiPosition();
+                    // 点击引发跳转：播放离开的那个单词发音
+                    if (curr >= 0 && curr != i && curr < words.length) {
+                      try {
+                        await SoundUtil.playPronounceSound2(words[curr].word, audioPlayer);
+                      } catch (e, stackTrace) {
+                        // 音频播放失败不影响主流程，但需要记录
+                        Global.logger.w('播放单词发音失败', error: e, stackTrace: stackTrace);
+                      }
+                      onWordPressed(word, i, false, null);
+                    } else {
+                      // 未引发跳转：播放当前单词
+                      onWordPressed(word, i, true, null);
                     }
-                    onWordPressed(word, i, false, null);
                   } else {
-                    // 未引发跳转：播放当前单词
                     onWordPressed(word, i, true, null);
                   }
-                } else {
-                  onWordPressed(word, i, true, null);
-                }
-              },
-              onLongPress: () async {
-                if (studyMode == WordListStudyMode.speakChinese || studyMode == WordListStudyMode.speakEnglish) {
-                  var currentUser = Global.getLoggedInUser();
-                  if (currentUser != null) {
-                    // 旧字段已废弃：不再切换，直接刷新
-                    setState(() {
-                      onWordPressed(word, i, true, null);
-                    });
+                },
+                onLongPress: () async {
+                  if (studyMode == WordListStudyMode.speakChinese || studyMode == WordListStudyMode.speakEnglish) {
+                    var currentUser = Global.getLoggedInUser();
+                    if (currentUser != null) {
+                      // 旧字段已废弃：不再切换，直接刷新
+                      setState(() {
+                        onWordPressed(word, i, true, null);
+                      });
+                    }
                   }
-                }
-              },
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    /// 序号和进度条区域
-                    Column(
-                      children: [
-                        /// 单词序号
-                        Container(
-                          width: 32,
-                          height: 32,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: isBookmarked
-                                  ? [const Color(0xFF0097A7), const Color(0xFF00ACC1)]
-                                  : [const Color(0xFF9CA3AF), const Color(0xFF6B7280)],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(8),
-                            boxShadow: [
-                              BoxShadow(
-                                color: (isBookmarked ? const Color(0xFF0097A7) : Colors.grey).withValues(alpha: 0.3),
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: Center(
-                            child: Text(
-                              '${(baseIndex! + i + 1) > 0 ? (baseIndex! + i + 1) : 1}',
-                              textScaler: TextScaler.linear(1.0),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500,
-                                height: 1.3,
-                                letterSpacing: 0.2,
-                              ),
-                            ),
-                          ),
-                        ),
-
-                        /// 掌握度进度条（横条）
-                        if (args.showWordProgress)
+                },
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      /// 序号和进度条区域
+                      Column(
+                        children: [
+                          /// 单词序号
                           Container(
                             width: 32,
-                            height: 4,
-                            margin: const EdgeInsets.only(top: 4),
-                            child: FAProgressBar(
-                              borderRadius: const BorderRadius.all(Radius.circular(2)),
-                              currentValue: args.wordProgressProvider.getWordProgress(word.tag),
-                              maxValue: args.wordProgressProvider.getWordProgressMax(word.tag),
-                              displayText: '',
-                              direction: Axis.horizontal,
-                              displayTextStyle: const TextStyle(color: Color(0x00000000)),
-                              backgroundColor: isDarkMode ? const Color(0xFF404040) : const Color(0xFFE5E7EB),
-                              progressColor: progressColor(word),
-                              animatedDuration: const Duration(milliseconds: 200),
+                            height: 32,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: isBookmarked
+                                    ? [const Color(0xFF0097A7), const Color(0xFF00ACC1)]
+                                    : [const Color(0xFF9CA3AF), const Color(0xFF6B7280)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(8),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: (isBookmarked ? const Color(0xFF0097A7) : Colors.grey).withValues(alpha: 0.3),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
                             ),
-                          ),
-                        // 紧凑波形或评分：放在掌握度条正下方
-                        if (studyMode == WordListStudyMode.speakChinese || studyMode == WordListStudyMode.speakEnglish)
-                          if (isBookmarked)
-                            // 当前单词显示波形
-                            Container(
-                              width: 32,
-                              height: 12,
-                              margin: const EdgeInsets.only(top: 3),
-                              child: _audioLevelBar(),
-                            )
-                          else if (word.pronunciationScore != null && word.pronunciationScore! > 0)
-                            // 已过单词显示评分
-                            Container(
-                              width: 32,
-                              height: 12,
-                              margin: const EdgeInsets.only(top: 3),
-                              alignment: Alignment.center,
+                            child: Center(
                               child: Text(
-                                '${word.pronunciationScore}',
-                                textScaler: TextScaler.linear(1.0), // 防止系统字体缩放导致溢出
-                                style: TextStyle(
-                                  fontSize: 9,
-                                  height: 1.1, // 紧凑行高
-                                  fontWeight: FontWeight.w900, // 更粗一点补偿变小
-                                  fontFamily: 'RobotoCondensed', // 尝试用窄体字如果可用，或者默认
-                                  color: word.pronunciationScore! >= 60 ? Colors.green : Colors.orange,
+                                '${(baseIndex! + i + 1) > 0 ? (baseIndex! + i + 1) : 1}',
+                                textScaler: TextScaler.linear(1.0),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                  height: 1.3,
+                                  letterSpacing: 0.2,
                                 ),
                               ),
                             ),
-                      ],
-                    ),
-                    const SizedBox(width: 12),
+                          ),
 
-                    /// 单词内容
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          /// 单词英文（背英文模式统一在释义下方展示，这里不显示）
-                          (studyMode == WordListStudyMode.dictation || studyMode == WordListStudyMode.speakEnglish)
-                              ? Container()
-                              : LayoutBuilder(
-                                  builder: (context, constraints) {
-                                    // 估算单词和音标所需的宽度
-                                    final spellWidth = word.word.spell.length * 11.0; // 估算单词宽度
-                                    final pronounceWidth = word.word.mergedPronounce.isNotEmpty
-                                        ? (word.word.mergedPronounce.length * 7.0 + 24.0) // 估算音标宽度（包括容器padding）
-                                        : 0.0;
-                                    final totalWidth = spellWidth + pronounceWidth + 16.0; // 包括间距
+                          /// 掌握度进度条（横条）
+                          if (args.showWordProgress)
+                            Container(
+                              width: 32,
+                              height: 4,
+                              margin: const EdgeInsets.only(top: 4),
+                              child: FAProgressBar(
+                                borderRadius: const BorderRadius.all(Radius.circular(2)),
+                                currentValue: args.wordProgressProvider.getWordProgress(word.tag),
+                                maxValue: args.wordProgressProvider.getWordProgressMax(word.tag),
+                                displayText: '',
+                                direction: Axis.horizontal,
+                                displayTextStyle: const TextStyle(color: Color(0x00000000)),
+                                backgroundColor: isDarkMode ? const Color(0xFF404040) : const Color(0xFFE5E7EB),
+                                progressColor: progressColor(word),
+                                animatedDuration: const Duration(milliseconds: 200),
+                              ),
+                            ),
+                          // 紧凑波形或评分：放在掌握度条正下方
+                          if (studyMode == WordListStudyMode.speakChinese || studyMode == WordListStudyMode.speakEnglish)
+                            if (isBookmarked)
+                              // 当前单词显示波形
+                              Container(
+                                width: 32,
+                                height: 12,
+                                margin: const EdgeInsets.only(top: 3),
+                                child: _audioLevelBar(),
+                              )
+                            else if (word.pronunciationScore != null && word.pronunciationScore! > 0)
+                              // 已过单词显示评分
+                              Container(
+                                width: 32,
+                                height: 12,
+                                margin: const EdgeInsets.only(top: 3),
+                                alignment: Alignment.center,
+                                child: Text(
+                                  '${word.pronunciationScore}',
+                                  textScaler: TextScaler.linear(1.0), // 防止系统字体缩放导致溢出
+                                  style: TextStyle(
+                                    fontSize: 9,
+                                    height: 1.1, // 紧凑行高
+                                    fontWeight: FontWeight.w900, // 更粗一点补偿变小
+                                    fontFamily: 'RobotoCondensed', // 尝试用窄体字如果可用，或者默认
+                                    color: word.pronunciationScore! >= 60 ? Colors.green : Colors.orange,
+                                  ),
+                                ),
+                              ),
+                        ],
+                      ),
+                      const SizedBox(width: 12),
 
-                                    // 如果总宽度超过可用宽度，或者音标很长，则换行显示
-                                    final shouldWrap = totalWidth > constraints.maxWidth || word.word.mergedPronounce.length > 25;
+                      /// 单词内容
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            /// 单词英文（背英文模式统一在释义下方展示，这里不显示）
+                            (studyMode == WordListStudyMode.dictation || studyMode == WordListStudyMode.speakEnglish)
+                                ? Container()
+                                : LayoutBuilder(
+                                    builder: (context, constraints) {
+                                      // 估算单词和音标所需的宽度
+                                      final spellWidth = word.word.spell.length * 11.0; // 估算单词宽度
+                                      final pronounceWidth = word.word.mergedPronounce.isNotEmpty
+                                          ? (word.word.mergedPronounce.length * 7.0 + 24.0) // 估算音标宽度（包括容器padding）
+                                          : 0.0;
+                                      final totalWidth = spellWidth + pronounceWidth + 16.0; // 包括间距
 
-                                    if (shouldWrap && word.word.mergedPronounce.isNotEmpty) {
-                                      // 换行显示：单词一行，音标一行
-                                      return Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          // 单词行
-                                          Text(
-                                            word.word.spell,
-                                            textScaler: TextScaler.linear(1.0),
-                                            style: TextStyle(
-                                              color: isBookmarked ? const Color(0xFF0097A7) : (isDarkMode ? Colors.white : const Color(0xFF1F2937)),
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.w500,
-                                              height: 1.3,
-                                              letterSpacing: 0.3,
-                                            ),
-                                          ),
-                                          // 音标行
-                                          Padding(
-                                            padding: const EdgeInsets.only(top: 4),
-                                            child: Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                              decoration: BoxDecoration(
-                                                color: (isDarkMode ? Colors.grey[700] : Colors.grey[200])?.withValues(alpha: 0.7),
-                                                borderRadius: BorderRadius.circular(6),
-                                              ),
-                                              child: Text(
-                                                '[${word.word.mergedPronounce}]',
-                                                textScaler: TextScaler.linear(1.0),
-                                                style: TextStyle(
-                                                  color: isDarkMode ? Colors.grey[300] : Colors.grey[600],
-                                                  fontSize: 12,
-                                                  fontFamily: 'NotoSans',
-                                                  fontWeight: FontWeight.w500,
-                                                  height: 1.3,
-                                                ),
-                                                overflow: TextOverflow.ellipsis,
-                                                maxLines: 1,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      );
-                                    } else {
-                                      // 同行显示：单词和音标在一行
-                                      return Row(
-                                        children: [
-                                          Flexible(
-                                            child: Text(
+                                      // 如果总宽度超过可用宽度，或者音标很长，则换行显示
+                                      final shouldWrap = totalWidth > constraints.maxWidth || word.word.mergedPronounce.length > 25;
+
+                                      if (shouldWrap && word.word.mergedPronounce.isNotEmpty) {
+                                        // 换行显示：单词一行，音标一行
+                                        return Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            // 单词行
+                                            Text(
                                               word.word.spell,
                                               textScaler: TextScaler.linear(1.0),
                                               style: TextStyle(
@@ -1666,10 +1665,9 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
                                                 letterSpacing: 0.3,
                                               ),
                                             ),
-                                          ),
-                                          if (word.word.mergedPronounce.isNotEmpty) ...[
-                                            const SizedBox(width: 8),
-                                            Flexible(
+                                            // 音标行
+                                            Padding(
+                                              padding: const EdgeInsets.only(top: 4),
                                               child: Container(
                                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                                 decoration: BoxDecoration(
@@ -1692,247 +1690,249 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
                                               ),
                                             ),
                                           ],
-                                        ],
-                                      );
-                                    }
-                                  },
-                                ),
+                                        );
+                                      } else {
+                                        // 同行显示：单词和音标在一行
+                                        return Row(
+                                          children: [
+                                            Flexible(
+                                              child: Text(
+                                                word.word.spell,
+                                                textScaler: TextScaler.linear(1.0),
+                                                style: TextStyle(
+                                                  color:
+                                                      isBookmarked ? const Color(0xFF0097A7) : (isDarkMode ? Colors.white : const Color(0xFF1F2937)),
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.w500,
+                                                  height: 1.3,
+                                                  letterSpacing: 0.3,
+                                                ),
+                                              ),
+                                            ),
+                                            if (word.word.mergedPronounce.isNotEmpty) ...[
+                                              const SizedBox(width: 8),
+                                              Flexible(
+                                                child: Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                  decoration: BoxDecoration(
+                                                    color: (isDarkMode ? Colors.grey[700] : Colors.grey[200])?.withValues(alpha: 0.7),
+                                                    borderRadius: BorderRadius.circular(6),
+                                                  ),
+                                                  child: Text(
+                                                    '[${word.word.mergedPronounce}]',
+                                                    textScaler: TextScaler.linear(1.0),
+                                                    style: TextStyle(
+                                                      color: isDarkMode ? Colors.grey[300] : Colors.grey[600],
+                                                      fontSize: 12,
+                                                      fontFamily: 'NotoSans',
+                                                      fontWeight: FontWeight.w500,
+                                                      height: 1.3,
+                                                    ),
+                                                    overflow: TextOverflow.ellipsis,
+                                                    maxLines: 1,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ],
+                                        );
+                                      }
+                                    },
+                                  ),
 
-                          /// 单词释义
-                          if (studyMode == WordListStudyMode.list ||
-                              studyMode == WordListStudyMode.dictation ||
-                              studyMode == WordListStudyMode.speakEnglish)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 8),
-                              child: Text(
-                                word.word.getMeaningStr(),
-                                textScaler: TextScaler.linear(1.0),
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w400,
-                                  color: isDarkMode ? Colors.grey[300] : Colors.grey[700],
-                                  height: 1.5,
-                                  letterSpacing: 0.3,
+                            /// 单词释义
+                            if (studyMode == WordListStudyMode.list ||
+                                studyMode == WordListStudyMode.dictation ||
+                                studyMode == WordListStudyMode.speakEnglish)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 8),
+                                child: Text(
+                                  word.word.getMeaningStr(),
+                                  textScaler: TextScaler.linear(1.0),
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w400,
+                                    color: isDarkMode ? Colors.grey[300] : Colors.grey[700],
+                                    height: 1.5,
+                                    letterSpacing: 0.3,
+                                  ),
                                 ),
                               ),
-                            ),
 
-                          /// 给点提示
-                          studyMode == WordListStudyMode.dictation && getBookMarkUiPosition() == i
-                              ? Padding(
-                                  padding: const EdgeInsets.fromLTRB(0, 4, 0, 0),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            /// 给点提示
+                            studyMode == WordListStudyMode.dictation && getBookMarkUiPosition() == i
+                                ? Padding(
+                                    padding: const EdgeInsets.fromLTRB(0, 4, 0, 0),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(word.word.spell.substring(0, word.hintLetterCount)),
+                                      ],
+                                    ),
+                                  )
+                                : Container(),
+
+                            // 移除在内容区域的大波形展示（改为紧凑放置在掌握度条下方）
+
+                            /// 单词拼写输入框
+                            studyMode == WordListStudyMode.dictation
+                                ? AnimatedBuilder(
+                                    animation: word.focusNode,
+                                    builder: (context, child) {
+                                      final hasFocus = word.focusNode.hasFocus;
+                                      final fontSize = hasFocus ? 22.0 : 16.0;
+                                      return TextField(
+                                        controller: word.spellController,
+                                        focusNode: word.focusNode,
+                                        keyboardType: TextInputType.visiblePassword,
+                                        decoration: InputDecoration(
+                                          isCollapsed: true,
+                                          border: const UnderlineInputBorder(
+                                            borderSide: BorderSide(color: Colors.grey),
+                                          ),
+                                          enabledBorder: const UnderlineInputBorder(
+                                            borderSide: BorderSide(color: Colors.grey),
+                                          ),
+                                          focusedBorder: const UnderlineInputBorder(
+                                            borderSide: BorderSide(color: Color(0xFF0097A7)),
+                                          ),
+                                          contentPadding: EdgeInsets.zero,
+                                        ),
+                                        onTap: () {
+                                          onWordPressed(word, i, false, null);
+                                        },
+                                        onChanged: (value) async {
+                                          // 先刷新UI，使颜色立即变绿
+                                          setState(() {});
+                                          // 如果拼写正确：先让UI变绿，再执行后续动作（播放离开单词发音+跳转）
+                                          if (Util.equalsIgnoreCase(word.word.spell, value)) {
+                                            WidgetsBinding.instance.addPostFrameCallback((_) async {
+                                              try {
+                                                await SoundUtil.playPronounceSound2(word.word, audioPlayer);
+                                              } catch (e, stackTrace) {
+                                                // 音频播放失败不影响主流程，但需要记录
+                                                Global.logger.w('播放单词发音失败', error: e, stackTrace: stackTrace);
+                                              }
+                                              jumpToNextWord(i, false, () {});
+                                            });
+                                          }
+                                        },
+                                        style: TextStyle(
+                                            fontSize: fontSize,
+                                            color: Util.equalsIgnoreCase(word.word.spell, word.spellController.text)
+                                                ? word.isAnswerProvidedBySystem
+                                                    ? Colors.blue
+                                                    : Colors.green
+                                                : Colors.red),
+                                      );
+                                    },
+                                  )
+                                : Container(),
+
+                            /// 默写中文输入区
+                            studyMode == WordListStudyMode.speakChinese
+                                ? Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: renderAsrMeaningItems(word),
+                                  )
+                                : Container(),
+
+                            /// 背英文输入区（释义下方：未通过仅一条下划线；通过后显示英文与音标）
+                            studyMode == WordListStudyMode.speakEnglish
+                                ? Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Text(word.word.spell.substring(0, word.hintLetterCount)),
-                                    ],
-                                  ),
-                                )
-                              : Container(),
-
-                          // 移除在内容区域的大波形展示（改为紧凑放置在掌握度条下方）
-
-                          /// 单词拼写输入框
-                          studyMode == WordListStudyMode.dictation
-                              ? AnimatedBuilder(
-                                  animation: word.focusNode,
-                                  builder: (context, child) {
-                                    final hasFocus = word.focusNode.hasFocus;
-                                    final fontSize = hasFocus ? 22.0 : 16.0;
-                                    return TextField(
-                                      controller: word.spellController,
-                                      focusNode: word.focusNode,
-                                      keyboardType: TextInputType.visiblePassword,
-                                      decoration: InputDecoration(
-                                        isCollapsed: true,
-                                        border: const UnderlineInputBorder(
-                                          borderSide: BorderSide(color: Colors.grey),
-                                        ),
-                                        enabledBorder: const UnderlineInputBorder(
-                                          borderSide: BorderSide(color: Colors.grey),
-                                        ),
-                                        focusedBorder: const UnderlineInputBorder(
-                                          borderSide: BorderSide(color: Color(0xFF0097A7)),
-                                        ),
-                                        contentPadding: EdgeInsets.zero,
-                                      ),
-                                      onTap: () {
-                                        onWordPressed(word, i, false, null);
-                                      },
-                                      onChanged: (value) async {
-                                        // 先刷新UI，使颜色立即变绿
-                                        setState(() {});
-                                        // 如果拼写正确：先让UI变绿，再执行后续动作（播放离开单词发音+跳转）
-                                        if (Util.equalsIgnoreCase(word.word.spell, value)) {
-                                          WidgetsBinding.instance.addPostFrameCallback((_) async {
-                                            try {
-                                              await SoundUtil.playPronounceSound2(word.word, audioPlayer);
-                                            } catch (e, stackTrace) {
-                                              // 音频播放失败不影响主流程，但需要记录
-                                              Global.logger.w('播放单词发音失败', error: e, stackTrace: stackTrace);
-                                            }
-                                            jumpToNextWord(i, false, () {});
-                                          });
-                                        }
-                                      },
-                                      style: TextStyle(
-                                          fontSize: fontSize,
-                                          color: Util.equalsIgnoreCase(word.word.spell, word.spellController.text)
-                                              ? word.isAnswerProvidedBySystem
-                                                  ? Colors.blue
-                                                  : Colors.green
-                                              : Colors.red),
-                                    );
-                                  },
-                                )
-                              : Container(),
-
-                          /// 默写中文输入区
-                          studyMode == WordListStudyMode.speakChinese
-                              ? Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: renderAsrMeaningItems(word),
-                                )
-                              : Container(),
-
-                          /// 背英文输入区（释义下方：未通过仅一条下划线；通过后显示英文与音标）
-                          studyMode == WordListStudyMode.speakEnglish
-                              ? Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const SizedBox(height: 8),
-                                    if (!word.speakEnglishPassed) ...[
-                                      // 下划线：只有当前单词显示提示，其他只显示下划线
-                                      Padding(
-                                        padding: const EdgeInsets.only(top: 2),
-                                        child: Container(
-                                          constraints: const BoxConstraints(minWidth: 120),
-                                          padding: const EdgeInsets.only(bottom: 2),
-                                          decoration: BoxDecoration(
-                                            border: Border(
-                                              bottom: BorderSide(
-                                                color: isDarkMode ? Colors.white38 : (Colors.grey[500] ?? Colors.grey),
-                                                width: 1.0,
+                                      const SizedBox(height: 8),
+                                      if (!word.speakEnglishPassed) ...[
+                                        // 下划线：只有当前单词显示提示，其他只显示下划线
+                                        Padding(
+                                          padding: const EdgeInsets.only(top: 2),
+                                          child: Container(
+                                            constraints: const BoxConstraints(minWidth: 120),
+                                            padding: const EdgeInsets.only(bottom: 2),
+                                            decoration: BoxDecoration(
+                                              border: Border(
+                                                bottom: BorderSide(
+                                                  color: isDarkMode ? Colors.white38 : (Colors.grey[500] ?? Colors.grey),
+                                                  width: 1.0,
+                                                ),
+                                              ),
+                                            ),
+                                            child: Text(
+                                              // 只有当前单词才显示提示文字或识别结果
+                                              // 提示文字优先于识别结果显示
+                                              isBookmarked
+                                                  ? (word.hintLetterCount > 0
+                                                      ? word.word.spell.substring(0, word.hintLetterCount)
+                                                      : ((asrResult is String && (asrResult as String).isNotEmpty)
+                                                          ? (asrResult as String)
+                                                          : '请说出单词发音'))
+                                                  : '', // 非当前单词只显示下划线，不显示文字
+                                              textScaler: TextScaler.linear(1.0),
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                color: isDarkMode ? Colors.white54 : Colors.grey[600],
+                                                height: 1.2,
+                                                letterSpacing: 0.5,
                                               ),
                                             ),
                                           ),
-                                          child: Text(
-                                            // 只有当前单词才显示提示文字或识别结果
-                                            // 提示文字优先于识别结果显示
-                                            isBookmarked
-                                                ? (word.hintLetterCount > 0
-                                                    ? word.word.spell.substring(0, word.hintLetterCount)
-                                                    : ((asrResult is String && (asrResult as String).isNotEmpty) ? (asrResult as String) : '请说出单词发音'))
-                                                : '', // 非当前单词只显示下划线，不显示文字
-                                            textScaler: TextScaler.linear(1.0),
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              color: isDarkMode ? Colors.white54 : Colors.grey[600],
-                                              height: 1.2,
-                                              letterSpacing: 0.5,
-                                            ),
-                                          ),
                                         ),
-                                      ),
-                                      if (isBookmarked && word.pronunciationScore != null && word.pronunciationScore! > 0)
-                                        Padding(
-                                          padding: const EdgeInsets.only(top: 6),
-                                          child: Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                            decoration: BoxDecoration(
-                                              color: word.pronunciationScore! >= 60
-                                                  ? Colors.green.withValues(alpha: 0.1)
-                                                  : Colors.orange.withValues(alpha: 0.1),
-                                              borderRadius: BorderRadius.circular(10),
-                                            ),
-                                            child: Row(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                Icon(
-                                                  Icons.record_voice_over,
-                                                  size: 14,
-                                                  color: word.pronunciationScore! >= 60 ? Colors.green : Colors.orange,
-                                                ),
-                                                const SizedBox(width: 4),
-                                                Text(
-                                                  '发音: ${word.pronunciationScore}',
-                                                  style: TextStyle(
-                                                    fontSize: 11,
-                                                    fontWeight: FontWeight.bold,
+                                        if (isBookmarked && word.pronunciationScore != null && word.pronunciationScore! > 0)
+                                          Padding(
+                                            padding: const EdgeInsets.only(top: 6),
+                                            child: Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                              decoration: BoxDecoration(
+                                                color: word.pronunciationScore! >= 60
+                                                    ? Colors.green.withValues(alpha: 0.1)
+                                                    : Colors.orange.withValues(alpha: 0.1),
+                                                borderRadius: BorderRadius.circular(10),
+                                              ),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Icon(
+                                                    Icons.record_voice_over,
+                                                    size: 14,
                                                     color: word.pronunciationScore! >= 60 ? Colors.green : Colors.orange,
                                                   ),
-                                                ),
-                                              ],
+                                                  const SizedBox(width: 4),
+                                                  Text(
+                                                    '发音: ${word.pronunciationScore}',
+                                                    style: TextStyle(
+                                                      fontSize: 11,
+                                                      fontWeight: FontWeight.bold,
+                                                      color: word.pronunciationScore! >= 60 ? Colors.green : Colors.orange,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
                                             ),
                                           ),
-                                        ),
-                                    ] else ...[
-                                      // 显示英文拼写与音标
-                                      LayoutBuilder(
-                                        builder: (context, constraints) {
-                                          // 估算单词和音标所需的宽度
-                                          final spellWidth = word.word.spell.length * 11.0; // 估算单词宽度
-                                          final pronounceWidth = word.word.mergedPronounce.isNotEmpty
-                                              ? (word.word.mergedPronounce.length * 7.0 + 24.0) // 估算音标宽度（包括容器padding）
-                                              : 0.0;
-                                          final totalWidth = spellWidth + pronounceWidth + 8.0; // 包括间距
+                                      ] else ...[
+                                        // 显示英文拼写与音标
+                                        LayoutBuilder(
+                                          builder: (context, constraints) {
+                                            // 估算单词和音标所需的宽度
+                                            final spellWidth = word.word.spell.length * 11.0; // 估算单词宽度
+                                            final pronounceWidth = word.word.mergedPronounce.isNotEmpty
+                                                ? (word.word.mergedPronounce.length * 7.0 + 24.0) // 估算音标宽度（包括容器padding）
+                                                : 0.0;
+                                            final totalWidth = spellWidth + pronounceWidth + 8.0; // 包括间距
 
-                                          // 如果总宽度超过可用宽度，或者音标很长，则换行显示
-                                          final shouldWrap = totalWidth > constraints.maxWidth ||
-                                              (word.word.mergedPronounce.isNotEmpty && word.word.mergedPronounce.length > 25);
+                                            // 如果总宽度超过可用宽度，或者音标很长，则换行显示
+                                            final shouldWrap = totalWidth > constraints.maxWidth ||
+                                                (word.word.mergedPronounce.isNotEmpty && word.word.mergedPronounce.length > 25);
 
-                                          if (shouldWrap && word.word.mergedPronounce.isNotEmpty) {
-                                            // 换行显示：单词一行，音标一行
-                                            return Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                // 单词行
-                                                Text(
-                                                  word.word.spell,
-                                                  textScaler: TextScaler.linear(1.0),
-                                                  style: TextStyle(
-                                                    color: isBookmarked
-                                                        ? const Color(0xFF0097A7)
-                                                        : (isDarkMode ? Colors.white : const Color(0xFF1F2937)),
-                                                    fontSize: 18,
-                                                    fontWeight: FontWeight.w600,
-                                                    letterSpacing: 0.6,
-                                                  ),
-                                                ),
-                                                // 音标行
-                                                Padding(
-                                                  padding: const EdgeInsets.only(top: 4),
-                                                  child: Container(
-                                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                                    decoration: BoxDecoration(
-                                                      color: (isDarkMode ? Colors.grey[700] : Colors.grey[200])?.withValues(alpha: 0.7),
-                                                      borderRadius: BorderRadius.circular(6),
-                                                    ),
-                                                    child: Text(
-                                                      '[${word.word.mergedPronounce}]',
-                                                      textScaler: TextScaler.linear(1.0),
-                                                      style: TextStyle(
-                                                        color: isDarkMode ? Colors.grey[300] : Colors.grey[600],
-                                                        fontSize: 12,
-                                                        fontFamily: 'NotoSans',
-                                                        fontWeight: FontWeight.w500,
-                                                        height: 1.3,
-                                                      ),
-                                                      overflow: TextOverflow.ellipsis,
-                                                      maxLines: 1,
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
-                                            );
-                                          } else {
-                                            // 同行显示：单词和音标在一行
-                                            return Row(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                Flexible(
-                                                  child: Text(
+                                            if (shouldWrap && word.word.mergedPronounce.isNotEmpty) {
+                                              // 换行显示：单词一行，音标一行
+                                              return Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  // 单词行
+                                                  Text(
                                                     word.word.spell,
                                                     textScaler: TextScaler.linear(1.0),
                                                     style: TextStyle(
@@ -1943,13 +1943,10 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
                                                       fontWeight: FontWeight.w600,
                                                       letterSpacing: 0.6,
                                                     ),
-                                                    overflow: TextOverflow.ellipsis,
-                                                    maxLines: 1,
                                                   ),
-                                                ),
-                                                if (word.word.mergedPronounce.isNotEmpty) ...[
-                                                  const SizedBox(width: 8),
-                                                  Flexible(
+                                                  // 音标行
+                                                  Padding(
+                                                    padding: const EdgeInsets.only(top: 4),
                                                     child: Container(
                                                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                                       decoration: BoxDecoration(
@@ -1972,111 +1969,159 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
                                                     ),
                                                   ),
                                                 ],
-                                              ],
-                                            );
-                                          }
-                                        },
-                                      ),
+                                              );
+                                            } else {
+                                              // 同行显示：单词和音标在一行
+                                              return Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Flexible(
+                                                    child: Text(
+                                                      word.word.spell,
+                                                      textScaler: TextScaler.linear(1.0),
+                                                      style: TextStyle(
+                                                        color: isBookmarked
+                                                            ? const Color(0xFF0097A7)
+                                                            : (isDarkMode ? Colors.white : const Color(0xFF1F2937)),
+                                                        fontSize: 18,
+                                                        fontWeight: FontWeight.w600,
+                                                        letterSpacing: 0.6,
+                                                      ),
+                                                      overflow: TextOverflow.ellipsis,
+                                                      maxLines: 1,
+                                                    ),
+                                                  ),
+                                                  if (word.word.mergedPronounce.isNotEmpty) ...[
+                                                    const SizedBox(width: 8),
+                                                    Flexible(
+                                                      child: Container(
+                                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                        decoration: BoxDecoration(
+                                                          color: (isDarkMode ? Colors.grey[700] : Colors.grey[200])?.withValues(alpha: 0.7),
+                                                          borderRadius: BorderRadius.circular(6),
+                                                        ),
+                                                        child: Text(
+                                                          '[${word.word.mergedPronounce}]',
+                                                          textScaler: TextScaler.linear(1.0),
+                                                          style: TextStyle(
+                                                            color: isDarkMode ? Colors.grey[300] : Colors.grey[600],
+                                                            fontSize: 12,
+                                                            fontFamily: 'NotoSans',
+                                                            fontWeight: FontWeight.w500,
+                                                            height: 1.3,
+                                                          ),
+                                                          overflow: TextOverflow.ellipsis,
+                                                          maxLines: 1,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ],
+                                              );
+                                            }
+                                          },
+                                        ),
+                                      ],
                                     ],
-                                  ],
-                                )
-                              : Container(),
-                        ],
+                                  )
+                                : Container(),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
 
-          /// 按钮区
-          if (args.showDelBtn ||
-              ((studyMode == WordListStudyMode.dictation ||
-                      studyMode == WordListStudyMode.speakChinese ||
-                      studyMode == WordListStudyMode.speakEnglish) &&
-                  isBookmarked))
-            Container(
-              constraints: const BoxConstraints(maxWidth: 60),
-              padding: const EdgeInsets.only(left: 4),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // 给点提示
-                  if ((studyMode == WordListStudyMode.dictation ||
-                          studyMode == WordListStudyMode.speakChinese ||
-                          studyMode == WordListStudyMode.speakEnglish) &&
-                      isBookmarked)
-                    Container(
-                      margin: const EdgeInsets.only(bottom: 6),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFA726).withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: const Color(0xFFFFA726).withValues(alpha: 0.3),
-                          width: 1,
-                        ),
-                      ),
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
+            /// 按钮区
+            if (args.showDelBtn ||
+                ((studyMode == WordListStudyMode.dictation ||
+                        studyMode == WordListStudyMode.speakChinese ||
+                        studyMode == WordListStudyMode.speakEnglish) &&
+                    isBookmarked))
+              Container(
+                constraints: const BoxConstraints(maxWidth: 60),
+                padding: const EdgeInsets.only(left: 4),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // 给点提示
+                    if ((studyMode == WordListStudyMode.dictation ||
+                            studyMode == WordListStudyMode.speakChinese ||
+                            studyMode == WordListStudyMode.speakEnglish) &&
+                        isBookmarked)
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFA726).withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
-                          onTap: () {
-                            giveALittleHint(word);
-                          },
-                          child: const Padding(
-                            padding: EdgeInsets.all(8),
-                            child: Icon(
-                              Icons.lightbulb,
-                              size: 22,
-                              color: Color(0xFFFFA726),
+                          border: Border.all(
+                            color: const Color(0xFFFFA726).withValues(alpha: 0.3),
+                            width: 1,
+                          ),
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(8),
+                            onTap: () {
+                              giveALittleHint(word);
+                            },
+                            child: const Padding(
+                              padding: EdgeInsets.all(8),
+                              child: Icon(
+                                Icons.lightbulb,
+                                size: 22,
+                                color: Color(0xFFFFA726),
+                              ),
                             ),
                           ),
                         ),
                       ),
-                    ),
 
-                  // 清除提示
-                  if ((studyMode == WordListStudyMode.dictation ||
-                          studyMode == WordListStudyMode.speakChinese ||
-                          studyMode == WordListStudyMode.speakEnglish) &&
-                      isBookmarked)
-                    Container(
-                      margin: const EdgeInsets.only(bottom: 6),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF9E9E9E).withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: const Color(0xFF9E9E9E).withValues(alpha: 0.3),
-                          width: 1,
-                        ),
-                      ),
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
+                    // 清除提示
+                    if ((studyMode == WordListStudyMode.dictation ||
+                            studyMode == WordListStudyMode.speakChinese ||
+                            studyMode == WordListStudyMode.speakEnglish) &&
+                        isBookmarked)
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF9E9E9E).withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
-                          onTap: () {
-                            clearHint(word);
-                          },
-                          child: const Padding(
-                            padding: EdgeInsets.all(8),
-                            child: Icon(
-                              Icons.lightbulb_outline,
-                              size: 22,
-                              color: Color(0xFF9E9E9E),
+                          border: Border.all(
+                            color: const Color(0xFF9E9E9E).withValues(alpha: 0.3),
+                            width: 1,
+                          ),
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(8),
+                            onTap: () {
+                              clearHint(word);
+                            },
+                            child: const Padding(
+                              padding: EdgeInsets.all(8),
+                              child: Icon(
+                                Icons.lightbulb_outline,
+                                size: 22,
+                                color: Color(0xFF9E9E9E),
+                              ),
                             ),
                           ),
                         ),
                       ),
-                    ),
 
-                  // 删除按钮
-                  if (args.showDelBtn) _buildActionButton(word, i),
-                ],
+                    // 删除按钮
+                    if (args.showDelBtn) _buildActionButton(word, i),
+                  ],
+                ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
     return row;
