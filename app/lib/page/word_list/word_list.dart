@@ -13,6 +13,7 @@ import 'package:nnbdc/util/utils.dart';
 import 'package:nnbdc/util/error_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
+import 'package:uuid/uuid.dart';
 import 'dart:async';
 import 'dart:convert';
 
@@ -666,8 +667,15 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
   /// 当前并行的asr任务数量（由于协程，并发是可能的）
   int runningAsrTaskCount = 0;
 
-  /// 防止自动跳转的标志（用于解决中文模式下的竞态条件）
-  bool _preventAutoAdvance = false;
+  _incRunningAsrTaskCount() {
+    runningAsrTaskCount++;
+    Global.logger.d('^^^^^runningAsrTaskCount增加至$runningAsrTaskCount');
+  }
+
+  _decRunningAsrTaskCount() {
+    runningAsrTaskCount--;
+    Global.logger.d('^^^^^runningAsrTaskCount减少至$runningAsrTaskCount');
+  }
 
   /// 检查语音识别结果是否匹配单词的意思
   checkAsrResult(String asrResult) async {
@@ -680,7 +688,7 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
       return;
     }
 
-    runningAsrTaskCount++;
+    _incRunningAsrTaskCount();
     try {
       if (studyMode == WordListStudyMode.speakEnglish) {
         // 背英文模式：检查英文拼写
@@ -691,6 +699,7 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
 
         if (inputText == correctSpell) {
           canLeaveCurrWord = true;
+          words[currWordIndex].answeredAllMeanings = true;
           // 标记通过以揭示英文
           words[currWordIndex].speakEnglishPassed = true;
           // 播放提示音，等待播放完成后再播放单词发音，避免重叠
@@ -737,39 +746,25 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
         if (result.newMatchCount > 0) {
           if (answeredAllMeanings || !mustAnswerAll) {
             canLeaveCurrWord = true;
-            _preventAutoAdvance = false; // 重置防跳转标志
-            Global.logger.d(
-                '背中文模式：设置canLeaveCurrWord=true, 重置_preventAutoAdvance=false, answeredAllMeanings=$answeredAllMeanings, mustAnswerAll=$mustAnswerAll');
           }
 
           // 播放提示音，等待播放完成后再跳转，避免与下一个单词发音重叠
           // 注意：这里的 await 会阻塞当前 finally 块的执行，从而保持 runningAsrTaskCount 不减少
           // 这正是用户想要的：在播放声音期间，如果有新的识别结果进来（用户快速说下一个意思），
           // runningAsrTaskCount 会增加，从而阻止当前任务触发跳转，等待所有意思都说完。
-          Global.logger.d('背中文模式：开始播放提示音，当前runningAsrTaskCount=$runningAsrTaskCount');
+          var uuid = Uuid().v4();
+          Global.logger.d('^^^^^背中文模式：开始播放正确提示音，当前runningAsrTaskCount=$runningAsrTaskCount, uuid=$uuid');
           await SoundUtil.playAssetSound('correct.mp3', mustAnswerAll ? 2.0 : 1.5, 0.2);
-          Global.logger.d('背中文模式：提示音播放完成，当前runningAsrTaskCount=$runningAsrTaskCount');
+          Global.logger.d('^^^^^背中文模式：正确提示音播放完成，当前runningAsrTaskCount=$runningAsrTaskCount, uuid=$uuid');
         }
       }
 
       // 离开当前单词，跳转到下一个（如果回答正确）
       // 背英文模式：立即跳转 (因为是一对一拼写，不需要等待)
       // 其他模式（背中文）：等待所有并发任务完成（runningAsrTaskCount == 1），以便用户一次性说出多个意思时能全部匹配
-      Global.logger.d(
-          '背中文模式检查跳转条件：canLeaveCurrWord=$canLeaveCurrWord, _preventAutoAdvance=$_preventAutoAdvance, studyMode=$studyMode, runningAsrTaskCount=$runningAsrTaskCount');
-      if (canLeaveCurrWord && !_preventAutoAdvance && (studyMode == WordListStudyMode.speakEnglish || runningAsrTaskCount == 1)) {
-        Global.logger.d('背中文模式：满足跳转条件，开始执行跳转');
+      if (canLeaveCurrWord && (studyMode == WordListStudyMode.speakEnglish || runningAsrTaskCount == 1)) {
         // 立即重置标志位，防止重复跳转 (防抖)
         canLeaveCurrWord = false;
-        _preventAutoAdvance = true; // 设置防跳转标志，防止重复触发
-
-        if (studyMode == WordListStudyMode.speakEnglish) {
-          // 背英文模式：标记当前单词已答对
-          // 防止数组越界
-          if (currWordIndex >= 0 && currWordIndex < words.length) {
-            words[currWordIndex].answeredAllMeanings = true;
-          }
-        }
 
         // 提示音已播放完成，可以安全地停止 ASR
         try {
@@ -800,12 +795,12 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
           }
         }
 
+        debugPrint('跳转到下一个单词：$nextWordIndex');
         jumpToNextWord(nextWordIndex - 1, true, () {
+          debugPrint('已切换到下一个单词：$nextWordIndex');
           // 新单词：清空识别展示，避免显示上一个单词的结果
           asrResult = "";
           handlingAsrChinese = "";
-          // 重置防跳转标志，为新单词做准备
-          _preventAutoAdvance = false;
           // 确保先设置热词
           _setAsrContextualPhrases();
           try {
@@ -815,9 +810,10 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
           }
         });
       }
+    } catch (e) {
+      Global.logger.e("检查语音识别结果时出错: $e");
     } finally {
-      runningAsrTaskCount--;
-      Global.logger.d('背中文模式：ASR任务完成，runningAsrTaskCount减至$runningAsrTaskCount');
+      _decRunningAsrTaskCount();
     }
   }
 
@@ -2239,7 +2235,7 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
 
         if (isPageVisible) {
           // 非语音模式：如果ASR正在运行，停止它
-          if ([WordListStudyMode.speakChinese, WordListStudyMode.speakEnglish].contains(studyMode) && asr.state == AsrState.started) {
+          if (![WordListStudyMode.speakChinese, WordListStudyMode.speakEnglish].contains(studyMode) && asr.state == AsrState.started) {
             asr.stopAsr();
             _unsubscribeMeter();
           }
@@ -2255,9 +2251,6 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
             // 背中文模式：重置相关状态
             asrResult = "";
             handlingAsrChinese = "";
-            // 重置自动跳转相关标志，解决"卡住"问题
-            canLeaveCurrWord = false;
-            _preventAutoAdvance = false;
             Global.logger.d('背中文模式：手动切换单词，重置自动跳转状态');
           }
         }
