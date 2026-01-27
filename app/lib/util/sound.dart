@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:nnbdc/util/platform_util.dart';
@@ -58,7 +59,6 @@ class SoundUtil {
   }
 
   static Future<void> playSoundByUrl(String soundUrl, AudioPlayer player, bool disposeWhenFinish) async {
-
     try {
       // player 为 AudioPlayerFactory.create() 产物（真实或 Mock），无需判空
       if (PlatformUtils.isWeb) {
@@ -117,7 +117,7 @@ class SoundUtil {
   /// 并发播放 URL 音频（使用独立播放器，不等待播放完成，立即返回，支持多个音频同时播放）
   static void playSoundByUrlConcurrent(String soundUrl) {
     var player = AudioPlayer();
-    
+
     // 在后台异步处理播放和释放，不阻塞调用者
     _playSoundByUrlInBackground(player, soundUrl).catchError((error, stackTrace) {
       ErrorHandler.handleAudioError(error, stackTrace, audioType: 'url:$soundUrl');
@@ -176,8 +176,7 @@ class SoundUtil {
     }
   }
 
-  static Future<void> playAssetSound(String soundFileName, double speed, double volume) async {
-
+  static Future<void> playAssetSound(String soundFileName, double speed, double volume, int timeoutInMilliSeconds, int sleepAfterPlayInMilliSeconds) async {
     var player = AudioPlayer();
     try {
       // 在 iOS 上设置 AudioContext 以支持混音
@@ -191,11 +190,11 @@ class SoundUtil {
               AVAudioSessionOptions.allowBluetooth,
             },
           ),
-        ));
+        )).timeout(const Duration(milliseconds: 100));
       }
 
-      await player.setPlaybackRate(speed);
-      await player.setVolume(volume);
+      await player.setPlaybackRate(speed).timeout(const Duration(milliseconds: 100));
+      await player.setVolume(volume).timeout(const Duration(milliseconds: 100));
 
       // 添加播放状态监听
       player.onPlayerStateChanged.listen((state) {
@@ -203,15 +202,18 @@ class SoundUtil {
       });
 
       // 修复路径问题：audioplayers 会自动添加 assets/ 前缀，所以只需要 audio/ 路径
-      await player.play(AssetSource('audio/$soundFileName'));
+      await player.play(AssetSource('audio/$soundFileName')).timeout(const Duration(milliseconds: 1000));
 
       // 等待播放完成，避免立即释放播放器
-      await player.onPlayerComplete.first;
+      await player.onPlayerComplete.first.timeout(Duration(milliseconds: timeoutInMilliSeconds));
 
-      // 添加一个小延迟确保声音完全播放
-      await Future.delayed(Duration(milliseconds: 100));
-    } on Exception catch (e, stackTrace) {
+      // 睡眠指定时间
+      await Future.delayed(Duration(milliseconds: sleepAfterPlayInMilliSeconds));
+
+    } on TimeoutException catch (e, stackTrace) {
       ErrorHandler.handleError(e, stackTrace, logPrefix: '播放音效出错', showToast: false);
+    } catch (e, st) {
+      ErrorHandler.handleError(e, st, logPrefix: '播放音效出错', showToast: false);
     } finally {
       player.dispose();
     }
@@ -222,7 +224,7 @@ class SoundUtil {
   /// 返回 Future，可用于跟踪播放状态
   static Future<void> playAssetSoundConcurrent(String soundFileName, double speed, double volume) {
     var player = AudioPlayer();
-    
+
     // 在后台异步处理播放和释放，不阻塞调用者
     return _playAssetSoundInBackground(player, soundFileName, speed, volume).catchError((error, stackTrace) {
       ErrorHandler.handleError(error, stackTrace, logPrefix: '并发播放音效出错', showToast: false);
@@ -241,7 +243,7 @@ class SoundUtil {
       // Android 上也不设置 AudioContext，与 playAssetSound 保持一致，确保能正常播放
       // 虽然理论上 Android 在录音时需要 AudioContext 才能在录音时播放音效，
       // 但实际测试发现设置 AudioContext 会导致音频无法播放，而不设置反而能正常工作
-      
+
       await player.setPlaybackRate(speed);
       await player.setVolume(volume);
 
@@ -289,7 +291,6 @@ class SoundUtil {
 
   /// 播放音效（限定最大奖励时长），用于跳过音效结尾的静音段
   static Future<void> playAssetSoundCut(String soundFileName, double speed, double volume, Duration maxPlay) async {
-
     var player = AudioPlayer();
     try {
       if (PlatformUtils.isIOS) {
@@ -380,11 +381,9 @@ class SoundUtil {
 
   /// 播放ASR启动提示音
   static Future<void> playAsrReadyHintSound() async {
-      await SoundUtil.playAssetSound('asr_ready_hint.mp3', 1.3, 1.0)
-          .timeout(const Duration(seconds: 2))
-          .catchError((e) {
-        Global.logger.i('播放ASR启动提示音失败或超时: $e');
-      });
-      Global.logger.d('🔔 提示音播放完成，用户可以开始说话');
+    await SoundUtil.playAssetSound('asr_ready_hint.mp3', 1.3, 1.0, 2000, 0).catchError((e) {
+      Global.logger.i('播放ASR启动提示音失败或超时: $e');
+    });
+    Global.logger.d('🔔 提示音播放完成，用户可以开始说话');
   }
 }

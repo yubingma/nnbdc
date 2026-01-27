@@ -1109,7 +1109,7 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
       player.scoreAdjust = 0;
       player.cowdungAdjust = 0;
       player.started = false;
-      SoundUtil.playAssetSound('door.mp3', 2.5, 0.5);
+      SoundUtil.playAssetSound('door.mp3', 2.5, 0.5, 2000, 0);
       appendMsg(0, '牛牛', '$nickName进来了');
     });
 
@@ -1125,7 +1125,7 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
       player.scoreAdjust = 0;
       player.cowdungAdjust = 0;
       player.started = false;
-      SoundUtil.playAssetSound('door.mp3', 2.5, 0.5);
+      SoundUtil.playAssetSound('door.mp3', 2.5, 0.5, 2000, 0);
       appendMsg(0, '牛牛', '$nickName离开了');
     });
 
@@ -1175,14 +1175,14 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
           gameResultHint2.textRenderer = textRenderOfGameResultHint(false);
           appendMsg(0, '牛牛', '失败了，别灰心，继续努力！');
         }
-        SoundUtil.playAssetSound('failed.mp3', 1, 1);
+        SoundUtil.playAssetSound('failed.mp3', 1, 1, 2000, 0);
       } else {
         gameResultHint1.text = '胜利啦！';
         gameResultHint2.text = '回答错误的单词，已被自动加入到生词本';
         gameResultHint1.textRenderer = textRenderOfGameResultHint(true);
         gameResultHint2.textRenderer = textRenderOfGameResultHint(true);
         appendMsg(0, '牛牛', '胜利啦！');
-        SoundUtil.playAssetSound('victory.mp3', 1, 1);
+        SoundUtil.playAssetSound('victory.mp3', 1, 1, 2000, 0);
       }
     });
 
@@ -1198,7 +1198,7 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
         appendMsg(0, "牛牛", "恭喜！连续答对5次，获得道具【$propsName】");
 
         // 播放道具获得音效（A方音效音量）
-        SoundUtil.playAssetSound('magic.mp3', 1.0, 1.0);
+        SoundUtil.playAssetSound('magic.mp3', 1.0, 1.0, 2000, 0);
       }
     });
 
@@ -1636,7 +1636,7 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
       }
 
       // 播放断连音效
-      SoundUtil.playAssetSound('failed.mp3', 1.0, 1.0);
+      SoundUtil.playAssetSound('failed.mp3', 1.0, 1.0, 2000, 0);
 
       // 显示离开按钮
       if (exitBtn.parent == null) {

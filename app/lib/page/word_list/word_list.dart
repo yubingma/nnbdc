@@ -702,8 +702,8 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
           words[currWordIndex].answeredAllMeanings = true;
           // 标记通过以揭示英文
           words[currWordIndex].speakEnglishPassed = true;
-          // 播放提示音，等待播放完成后再播放单词发音，避免重叠
-          await SoundUtil.playAssetSound('correct.mp3', 1.5, 0.2);
+          // 播放正确提示音，等待播放完成后再播放单词发音，避免重叠
+          await SoundUtil.playAssetSound('correct.mp3', 1.5, 0.2, 2000, 0);
           // 识别正确后，先关闭语音识别，避免录到系统发音
           // 先停止ASR（但使用超时，避免长时间等待）
           try {
@@ -752,10 +752,8 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
           // 注意：这里的 await 会阻塞当前 finally 块的执行，从而保持 runningAsrTaskCount 不减少
           // 这正是用户想要的：在播放声音期间，如果有新的识别结果进来（用户快速说下一个意思），
           // runningAsrTaskCount 会增加，从而阻止当前任务触发跳转，等待所有意思都说完。
-          var uuid = Uuid().v4();
-          Global.logger.d('^^^^^背中文模式：开始播放正确提示音，当前runningAsrTaskCount=$runningAsrTaskCount, uuid=$uuid');
-          await SoundUtil.playAssetSound('correct.mp3', mustAnswerAll ? 2.0 : 1.5, 0.2);
-          Global.logger.d('^^^^^背中文模式：正确提示音播放完成，当前runningAsrTaskCount=$runningAsrTaskCount, uuid=$uuid');
+          int sleepAfterPlay = answeredAllMeanings ? 0 : 0; // 稍微等一会, 给用户说其他释义的机会, 提升爽快感
+          await SoundUtil.playAssetSound('correct.mp3', mustAnswerAll ? 2.0 : 1.5, 0.2, 2000, sleepAfterPlay );
         }
       }
 
