@@ -5,6 +5,8 @@
 -keep class io.flutter.view.**  { *; }
 -keep class io.flutter.**  { *; }
 -keep class io.flutter.plugins.**  { *; }
+# 保留 Sherpa ONNX 库不被混淆，否则 JNI 调用会失败 (fid == null)
+-keep class com.k2fsa.sherpa.onnx.** { *; }
 -keep class com.k2fsa.sherpa.ncnn.** { *; }
 
 
@@ -30,4 +32,3 @@
 -dontwarn org.openjsse.javax.net.ssl.SSLParameters
 -dontwarn org.openjsse.javax.net.ssl.SSLSocket
 -dontwarn org.openjsse.net.ssl.OpenJSSE
-
