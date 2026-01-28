@@ -13,7 +13,6 @@ import 'package:nnbdc/util/utils.dart';
 import 'package:nnbdc/util/error_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
-import 'package:uuid/uuid.dart';
 import 'dart:async';
 import 'dart:convert';
 
@@ -753,7 +752,7 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
           // 这正是用户想要的：在播放声音期间，如果有新的识别结果进来（用户快速说下一个意思），
           // runningAsrTaskCount 会增加，从而阻止当前任务触发跳转，等待所有意思都说完。
           int sleepAfterPlay = answeredAllMeanings ? 0 : 500; // 稍微等一会, 给用户说其他释义的机会, 提升爽快感
-          await SoundUtil.playAssetSound('correct.mp3', mustAnswerAll ? 2.0 : 1.5, 0.2, 2000, sleepAfterPlay );
+          await SoundUtil.playAssetSound('correct.mp3', mustAnswerAll ? 2.0 : 1.5, 0.2, 2000, sleepAfterPlay);
         }
       }
 
