@@ -652,7 +652,7 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
         // 非英文模式下，不需要记录评分，或者可以在这里清除
       }
 
-      Global.logger.d("语音识别最终结果: $asrResult");
+      Global.logger.d("^^^^^语音识别最终结果: $asrResult");
 
       if (asrResult.isNotEmpty) {
         if (asrResult != handlingAsrChinese) {
@@ -668,12 +668,12 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
 
   _incRunningAsrTaskCount() {
     runningAsrTaskCount++;
-    Global.logger.d('^^^^^runningAsrTaskCount增加至$runningAsrTaskCount');
+    Global.logger.d('runningAsrTaskCount增加至$runningAsrTaskCount');
   }
 
   _decRunningAsrTaskCount() {
     runningAsrTaskCount--;
-    Global.logger.d('^^^^^runningAsrTaskCount减少至$runningAsrTaskCount');
+    Global.logger.d('runningAsrTaskCount减少至$runningAsrTaskCount');
   }
 
   /// 检查语音识别结果是否匹配单词的意思
@@ -944,7 +944,7 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
 
     if (studyMode == WordListStudyMode.speakChinese || studyMode == WordListStudyMode.speakEnglish) {
       if (asr.state != AsrState.started && asr.state != AsrState.stopping) {
-        Global.logger.d('^^^^^$caller: 检测到ASR未启动（当前状态: ${asr.state}），尝试恢复ASR，模式: $studyMode');
+        Global.logger.d('$caller: 检测到ASR未启动（当前状态: ${asr.state}），尝试恢复ASR，模式: $studyMode');
         try {
           // 如果ASR卡在initialized状态，先强制停止以清除内部状态
           if (asr.state == AsrState.initialized) {
