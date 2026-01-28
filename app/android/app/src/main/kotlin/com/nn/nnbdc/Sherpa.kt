@@ -84,7 +84,7 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                     val phrases = call.argument<List<String>>("phrases") ?: emptyList()
                     // 转换为大写以匹配 tokens.txt 中的 BPE 编码
                     pendingHotwords = phrases.joinToString(" ") { it.uppercase() }
-                    Log.i(TAG, "Hotwords prepared (Uppercased): $pendingHotwords")
+                    Log.i(TAG, "Hotwords prepared (Space-separated/Uppercased): $pendingHotwords")
                     result.success(null)
                 }
                 "startMicrophone" -> {
@@ -252,7 +252,7 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                 .setEnableEndpoint(true)
                 .setDecodingMethod("modified_beam_search")
                 .setMaxActivePaths(4) // 收窄搜索范围至4 (同英文)，防止"脑补"离谱叠词 (原12)
-                .setHotwordsScore(50.0f) // 提高热词权重 (原30.0)
+                .setHotwordsScore(50.0f) // 提高热词权重
                 .setBlankPenalty(1.2f) // 提高惩罚以抑制非法重复 (原0.5)
                 .build()
 
