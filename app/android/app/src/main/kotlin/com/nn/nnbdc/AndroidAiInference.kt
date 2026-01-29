@@ -21,6 +21,28 @@ class AndroidAiInference(private val context: Context) {
     // 协程作用域
     private val aiScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
+    // Native methods from ai-chat (llama.cpp)
+    private external fun init(nativeLibDir: String)
+    private external fun load(modelPath: String): Int
+    private external fun prepare(): Int
+    private external fun systemInfo(): String
+    private external fun processSystemPrompt(prompt: String): Int
+    private external fun processUserPrompt(prompt: String, nPredict: Int): Int
+    private external fun generateNextToken(): String?
+    private external fun unload()
+    private external fun shutdown()
+
+    init {
+        try {
+            System.loadLibrary("ai-chat")
+            val nativeLibDir = context.applicationInfo.nativeLibraryDir
+            init(nativeLibDir)
+            Log.i(TAG, "Native library 'ai-chat' loaded and initialized. System info: ${systemInfo()}")
+        } catch (e: UnsatisfiedLinkError) {
+            Log.e(TAG, "Failed to load native library 'ai-chat'", e)
+        }
+    }
+
     fun initChannel(flutterEngine: FlutterEngine) {
         methodChannel = MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
@@ -104,14 +126,29 @@ class AndroidAiInference(private val context: Context) {
                     return@launch
                 }
 
-                // 这里应该实现实际的模型加载逻辑
-                // 由于Android上LLM推理比较复杂，这里先模拟成功
-                delay(1000) // 模拟加载时间
+                // 实际调用 native 加载
+                val loadResult = load(modelPath)
+                if (loadResult != 0) {
+                    Log.e(TAG, "Native load failed with code: $loadResult")
+                    withContext(Dispatchers.Main) {
+                        result.success(mapOf("success" to false, "error" to "Native load failed: $loadResult"))
+                    }
+                    return@launch
+                }
+
+                val prepareResult = prepare()
+                if (prepareResult != 0) {
+                    Log.e(TAG, "Native prepare failed with code: $prepareResult")
+                    withContext(Dispatchers.Main) {
+                        result.success(mapOf("success" to false, "error" to "Native prepare failed: $prepareResult"))
+                    }
+                    return@launch
+                }
                 
                 this@AndroidAiInference.modelPath = modelPath
                 isModelLoaded = true
                 
-                Log.i(TAG, "Model loaded successfully")
+                Log.i(TAG, "Model loaded successfully via llama.cpp")
                 withContext(Dispatchers.Main) {
                     result.success(mapOf("success" to true))
                 }
@@ -138,35 +175,43 @@ class AndroidAiInference(private val context: Context) {
 
         aiScope.launch {
             try {
-                Log.d(TAG, "Running inference with prompt length: ${prompt.length}")
-                
-                // 这里应该实现实际的推理逻辑
-                // 由于Android上LLM推理比较复杂，这里先返回模拟结果
-                delay(2000) // 模拟推理时间
-                
-                val simulatedResponse = """
-                    这是AI助教的回答示例：
-                    
-                    关于您询问的单词，我可以为您提供详细的解释：
-                    
-                    1. 词根词缀分析
-                    2. 近义词和反义词
-                    3. 实际使用场景
-                    
-                    希望这对您的学习有所帮助！
-                """.trimIndent()
+                Log.d(TAG, "Running real inference with prompt length: ${prompt.length}")
                 
                 val startTime = System.currentTimeMillis()
-                // 模拟token生成
-                val tokensGenerated = simulatedResponse.length / 4 // 粗略估算
-                val inferenceTimeMs = System.currentTimeMillis() - startTime
                 
+                // 这里我们简化处理：如果 prompt 很大，可能包含 system prompt
+                // 但为了兼容现有的 AiPromptBuilder (它已经拼好了 ChatML)，
+                // 我们直接将整个 prompt 作为 UserPrompt 发送给原生层。
+                // 如果原生层支持 ChatML 或者模型本身能处理，这是最稳妥的。
+                // 理想做法是解析 prompt 提取 System/User，但目前先保证跑通。
+                val processResult = processUserPrompt(prompt, maxTokens)
+                if (processResult != 0) {
+                    throw Exception("Native processUserPrompt failed: $processResult")
+                }
+
+                val fullResponse = StringBuilder()
+                var tokensGenerated = 0
+
+                while (true) {
+                    val token = generateNextToken() ?: break
+                    if (token.isNotEmpty()) {
+                        fullResponse.append(token)
+                        tokensGenerated++
+                        
+                        // 发送增量结果回 Flutter 侧以支持流式显示
+                        withContext(Dispatchers.Main) {
+                            methodChannel?.invokeMethod("onPartialResult", token)
+                        }
+                    }
+                }
+
+                val inferenceTimeMs = System.currentTimeMillis() - startTime
                 Log.i(TAG, "Inference completed: $tokensGenerated tokens, ${inferenceTimeMs}ms")
                 
                 withContext(Dispatchers.Main) {
                     result.success(mapOf(
                         "success" to true,
-                        "text" to simulatedResponse,
+                        "text" to fullResponse.toString(),
                         "tokensGenerated" to tokensGenerated,
                         "inferenceTimeMs" to inferenceTimeMs.toInt()
                     ))
@@ -183,6 +228,9 @@ class AndroidAiInference(private val context: Context) {
     private fun unloadModel(result: MethodChannel.Result) {
         try {
             Log.i(TAG, "Unloading model")
+            if (isModelLoaded) {
+                unload()
+            }
             isModelLoaded = false
             modelPath = null
             result.success(null)
@@ -193,6 +241,10 @@ class AndroidAiInference(private val context: Context) {
     }
 
     fun cleanup() {
+        if (isModelLoaded) {
+            unload()
+            shutdown()
+        }
         aiScope.cancel()
         isModelLoaded = false
         modelPath = null

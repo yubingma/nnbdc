@@ -11,6 +11,7 @@ import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/page/admin.dart';
 import 'package:nnbdc/page/ai_activation.dart';
+import 'package:nnbdc/page/ai_diagnostic.dart';
 import 'package:nnbdc/page/bdc.dart';
 import 'package:nnbdc/page/before_bdc.dart';
 import 'package:nnbdc/page/farm.dart';
@@ -419,6 +420,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         '/search': (context) => const SearchPage(),
         '/admin': (context) => const AdminPage(),
         '/ai_activation': (context) => const AiActivationPage(),
+        '/ai_diagnostic': (context) => const AiDiagnosticPage(),
         '/golden_master': (context) => const GoldenMasterToolPage(),
       },
     );

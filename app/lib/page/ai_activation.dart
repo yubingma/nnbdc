@@ -42,9 +42,7 @@ class _AiActivationPageState extends State<AiActivationPage> {
 
   /// 获取推荐的模型 profile
   AiModelProfile _getRecommendedProfile() {
-    return _detectedCapability == 'full'
-        ? AiModelProfile.desktopFull
-        : AiModelProfile.mobileLite;
+    return _detectedCapability == 'full' ? AiModelProfile.desktopFull : AiModelProfile.mobileLite;
   }
 
   /// 加载模型大小信息
@@ -111,9 +109,7 @@ class _AiActivationPageState extends State<AiActivationPage> {
       }
 
       // 如果已激活但运行时未初始化，自动初始化
-      if (_isActivated &&
-          (PlatformUtils.isMacOS || PlatformUtils.isIOS) &&
-          AiService().capabilityLevel == AiCapabilityLevel.none) {
+      if (_isActivated && (PlatformUtils.isMacOS || PlatformUtils.isIOS) && AiService().capabilityLevel == AiCapabilityLevel.none) {
         Global.logger.i('检测到模型已下载但运行时未初始化，开始自动初始化...');
         await main_app.initializeAppleAiRuntime();
         // 初始化后再更新一次状态
@@ -127,7 +123,7 @@ class _AiActivationPageState extends State<AiActivationPage> {
   /// 激活 AI 功能的主流程
   Future<void> _activateAi() async {
     bool isSupportedPlatform = PlatformUtils.isMacOS || PlatformUtils.isIOS || PlatformUtils.isAndroid;
-    
+
     if (!isSupportedPlatform) {
       setState(() {
         _errorMessage = '抱歉，AI 功能目前仅支持 macOS、iOS 和 Android 平台';
@@ -149,8 +145,7 @@ class _AiActivationPageState extends State<AiActivationPage> {
 
       // 检查是否已有模型
       final existingState = await manager.loadLocalState();
-      bool needDownload =
-          existingState == null || existingState.localPath.isEmpty;
+      bool needDownload = existingState == null || existingState.localPath.isEmpty;
 
       if (needDownload) {
         // 1. 获取模型信息
@@ -169,8 +164,7 @@ class _AiActivationPageState extends State<AiActivationPage> {
 
         // 2. 下载模型文件（带进度回调）
         setState(() {
-          _currentStep =
-              '正在下载 AI 模型（约 ${(meta.sizeBytes / 1024 / 1024).toStringAsFixed(0)} MB）...';
+          _currentStep = '正在下载 AI 模型（约 ${(meta.sizeBytes / 1024 / 1024).toStringAsFixed(0)} MB）...';
           _totalBytes = meta.sizeBytes;
         });
 
@@ -197,7 +191,7 @@ class _AiActivationPageState extends State<AiActivationPage> {
         _currentStep = '正在初始化 AI 引擎...';
         _downloadProgress = 0.0;
       });
-      
+
       bool success = false;
       if (PlatformUtils.isAndroid) {
         success = await main_app.initializeAndroidAiRuntime();
@@ -235,15 +229,194 @@ class _AiActivationPageState extends State<AiActivationPage> {
     }
   }
 
-  /// 反激活 AI 功能
+  /// 修复AI运行时问题
+  Future<void> _fixAiRuntime() async {
+    setState(() {
+      _isLoading = true;
+      _currentStep = '正在诊断和修复AI运行时...';
+      _errorMessage = null;
+    });
+
+    try {
+      // 1. 检查当前状态
+      final aiService = AiService();
+      final currentCapability = aiService.capabilityLevel;
+      Global.logger.i('当前AI能力等级: $currentCapability');
+
+      // 2. 检查模型状态
+      final modelManager = AiModelManager();
+      final localState = await modelManager.loadLocalState();
+
+      if (localState == null) {
+        setState(() {
+          _errorMessage = '未找到本地模型，请重新激活AI功能';
+          _isLoading = false;
+          _currentStep = '';
+        });
+
+        // 显示错误提示
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('❌ 未找到本地模型，请重新激活AI功能'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
+      Global.logger.i('发现本地模型: ${localState.profile.name}, 路径: ${localState.localPath}');
+
+      // 3. 检查文件是否存在
+      final file = File(localState.localPath);
+      final fileExists = await file.exists();
+      if (!fileExists) {
+        setState(() {
+          _errorMessage = '模型文件不存在，请重新下载模型';
+          _isLoading = false;
+          _currentStep = '';
+        });
+
+        // 显示错误提示
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('❌ 模型文件不存在，请重新下载模型'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
+      // 4. 如果当前是Noop运行时但模型存在，尝试重新初始化
+      if (currentCapability == AiCapabilityLevel.none && localState.localPath.isNotEmpty) {
+        Global.logger.i('检测到模型存在但运行时未初始化，开始重新初始化...');
+        setState(() {
+          _currentStep = '检测到模型存在但运行时未初始化，正在重新初始化...';
+        });
+
+        bool success = false;
+        if (PlatformUtils.isAndroid) {
+          success = await main_app.initializeAndroidAiRuntime();
+        } else if (PlatformUtils.isIOS || PlatformUtils.isMacOS) {
+          success = await main_app.initializeAppleAiRuntime();
+        }
+
+        if (success) {
+          Global.logger.i('AI运行时重新初始化成功！');
+          setState(() {
+            _isActivated = true;
+            _currentStep = '✅ 修复成功！AI功能已恢复正常';
+            _isLoading = false;
+          });
+
+          // 显示成功提示
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('✅ AI运行时修复成功！功能已恢复正常'),
+                backgroundColor: Colors.green,
+              ),
+            );
+
+            await Future.delayed(const Duration(seconds: 2));
+            _checkAiStatus(); // 刷新状态
+          }
+          return;
+        } else {
+          setState(() {
+            _errorMessage = 'AI运行时初始化失败，请尝试重新激活';
+            _isLoading = false;
+            _currentStep = '';
+          });
+
+          // 显示失败提示
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('❌ AI运行时初始化失败，请尝试重新激活'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+          return;
+        }
+      } else {
+        // 即使状态正常也强制重新初始化一次
+        Global.logger.i('正在进行强制重新初始化以确保稳定性...');
+        setState(() {
+          _currentStep = '正在进行强制重新初始化以确保稳定性...';
+        });
+
+        bool success = false;
+        if (PlatformUtils.isAndroid) {
+          success = await main_app.initializeAndroidAiRuntime();
+        } else if (PlatformUtils.isIOS || PlatformUtils.isMacOS) {
+          success = await main_app.initializeAppleAiRuntime();
+        }
+
+        if (success) {
+          setState(() {
+            _currentStep = '✅ 系统检查完成，AI功能运行正常';
+            _isLoading = false;
+          });
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('✅ 系统检查完成，AI功能运行正常'),
+                backgroundColor: Colors.green,
+              ),
+            );
+
+            await Future.delayed(const Duration(seconds: 2));
+            _checkAiStatus();
+          }
+        } else {
+          setState(() {
+            _errorMessage = '系统检查发现问题，请重新激活AI功能';
+            _isLoading = false;
+            _currentStep = '';
+          });
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('⚠️ 系统检查发现问题，请重新激活AI功能'),
+                backgroundColor: Colors.orange,
+              ),
+            );
+          }
+        }
+      }
+    } catch (e, st) {
+      Global.logger.e('修复AI运行时问题时发生异常', error: e, stackTrace: st);
+      setState(() {
+        _errorMessage = '修复过程出现异常: $e';
+        _isLoading = false;
+        _currentStep = '';
+      });
+
+      // 显示异常提示
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('❌ 修复过程出现异常: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   Future<void> _deactivateAi() async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) {
-        final isDarkMode =
-            Provider.of<DarkMode>(context, listen: false).isDarkMode;
-        final backgroundColor =
-            isDarkMode ? const Color(0xFF2D2D2D) : Colors.white;
+        final isDarkMode = Provider.of<DarkMode>(context, listen: false).isDarkMode;
+        final backgroundColor = isDarkMode ? const Color(0xFF2D2D2D) : Colors.white;
         final textColor = isDarkMode ? Colors.white : Colors.black87;
 
         return AlertDialog(
@@ -335,8 +508,7 @@ class _AiActivationPageState extends State<AiActivationPage> {
   @override
   Widget build(BuildContext context) {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    final backgroundColor =
-        isDarkMode ? const Color(0xFF121212) : const Color(0xFFF8F9FA);
+    final backgroundColor = isDarkMode ? const Color(0xFF121212) : const Color(0xFFF8F9FA);
     final textColor = isDarkMode ? Colors.white : Colors.black87;
     final cardColor = isDarkMode ? const Color(0xFF2D2D2D) : Colors.white;
 
@@ -356,11 +528,9 @@ class _AiActivationPageState extends State<AiActivationPage> {
             children: [
               const Icon(Icons.lock_outline, size: 64, color: Colors.grey),
               const SizedBox(height: 16),
-              Text('目前 AI 功能仅对管理员开放',
-                  style: TextStyle(color: textColor, fontSize: 18, fontWeight: FontWeight.bold)),
+              Text('目前 AI 功能仅对管理员开放', style: TextStyle(color: textColor, fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
-              Text('如有疑问请联系管理员',
-                  style: TextStyle(color: textColor.withValues(alpha: 0.6), fontSize: 14)),
+              Text('如有疑问请联系管理员', style: TextStyle(color: textColor.withValues(alpha: 0.6), fontSize: 14)),
             ],
           ),
         ),
@@ -385,8 +555,7 @@ class _AiActivationPageState extends State<AiActivationPage> {
             Card(
               color: cardColor,
               elevation: 2,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               child: Padding(
                 padding: const EdgeInsets.all(20.0),
                 child: Column(
@@ -394,8 +563,7 @@ class _AiActivationPageState extends State<AiActivationPage> {
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.psychology,
-                            color: AppTheme.primaryColor, size: 32),
+                        Icon(Icons.psychology, color: AppTheme.primaryColor, size: 32),
                         const SizedBox(width: 12),
                         Text(
                           'AI 智能解释',
@@ -417,14 +585,10 @@ class _AiActivationPageState extends State<AiActivationPage> {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    _buildFeatureItem(Icons.psychology, '智能单词解释',
-                        '基于词根词缀、近义词反义词进行深度解析', textColor, isDarkMode),
-                    _buildFeatureItem(Icons.chat, 'AI对话助教',
-                        '支持多轮对话，解答学习疑问，提供个性化指导', textColor, isDarkMode),
-                    _buildFeatureItem(Icons.school, '学习陪伴',
-                        '智能鼓励与提醒，营造轻松愉快的学习氛围', textColor, isDarkMode),
-                    _buildFeatureItem(Icons.security, '隐私保护',
-                        '完全本地运行，数据不上网，保护个人学习隐私', textColor, isDarkMode),
+                    _buildFeatureItem(Icons.psychology, '智能单词解释', '基于词根词缀、近义词反义词进行深度解析', textColor, isDarkMode),
+                    _buildFeatureItem(Icons.chat, 'AI对话助教', '支持多轮对话，解答学习疑问，提供个性化指导', textColor, isDarkMode),
+                    _buildFeatureItem(Icons.school, '学习陪伴', '智能鼓励与提醒，营造轻松愉快的学习氛围', textColor, isDarkMode),
+                    _buildFeatureItem(Icons.security, '隐私保护', '完全本地运行，数据不上网，保护个人学习隐私', textColor, isDarkMode),
                   ],
                 ),
               ),
@@ -490,8 +654,7 @@ class _AiActivationPageState extends State<AiActivationPage> {
                   padding: const EdgeInsets.all(16.0),
                   child: Row(
                     children: [
-                      const Icon(Icons.check_circle,
-                          color: Colors.green, size: 32),
+                      const Icon(Icons.check_circle, color: Colors.green, size: 32),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(
@@ -521,6 +684,21 @@ class _AiActivationPageState extends State<AiActivationPage> {
                 ),
               ),
               const SizedBox(height: 16),
+              // 修复按钮
+              if (AiService().capabilityLevel == AiCapabilityLevel.none) ...[
+                OutlinedButton.icon(
+                  onPressed: _isLoading ? null : _fixAiRuntime,
+                  icon: const Icon(Icons.build_outlined),
+                  label: const Text('修复AI运行时问题'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppTheme.primaryColor,
+                    side: BorderSide(color: AppTheme.primaryColor),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
               // 反激活按钮
               OutlinedButton.icon(
                 onPressed: _isLoading ? null : _deactivateAi,
@@ -530,8 +708,7 @@ class _AiActivationPageState extends State<AiActivationPage> {
                   foregroundColor: Colors.red,
                   side: const BorderSide(color: Colors.red),
                   padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
               ),
             ] else ...[
@@ -542,21 +719,18 @@ class _AiActivationPageState extends State<AiActivationPage> {
                     ? const SizedBox(
                         width: 20,
                         height: 20,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2, color: Colors.white),
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                       )
                     : const Icon(Icons.rocket_launch),
                 label: Text(
                   _isIntelMac ? '设备不支持' : (_isLoading ? '正在激活...' : '立即激活'),
-                  style: const TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.bold),
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.primaryColor,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   elevation: 3,
                 ),
               ),
@@ -578,16 +752,14 @@ class _AiActivationPageState extends State<AiActivationPage> {
                                 height: 20,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                      AppTheme.primaryColor),
+                                  valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
                                 ),
                               ),
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Text(
                                   _currentStep,
-                                  style:
-                                      TextStyle(color: textColor, fontSize: 14),
+                                  style: TextStyle(color: textColor, fontSize: 14),
                                 ),
                               ),
                             ],
@@ -600,11 +772,8 @@ class _AiActivationPageState extends State<AiActivationPage> {
                               child: LinearProgressIndicator(
                                 value: _downloadProgress,
                                 minHeight: 8,
-                                backgroundColor: isDarkMode
-                                    ? Colors.grey[800]
-                                    : Colors.grey[300],
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                    AppTheme.primaryColor),
+                                backgroundColor: isDarkMode ? Colors.grey[800] : Colors.grey[300],
+                                valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
                               ),
                             ),
                             const SizedBox(height: 8),
@@ -643,16 +812,14 @@ class _AiActivationPageState extends State<AiActivationPage> {
                     elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
-                      side:
-                          BorderSide(color: Colors.red.withValues(alpha: 0.3)),
+                      side: BorderSide(color: Colors.red.withValues(alpha: 0.3)),
                     ),
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Icon(Icons.error_outline,
-                              color: Colors.red, size: 24),
+                          const Icon(Icons.error_outline, color: Colors.red, size: 24),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Column(
@@ -690,8 +857,7 @@ class _AiActivationPageState extends State<AiActivationPage> {
             Card(
               color: cardColor,
               elevation: 1,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
@@ -699,8 +865,7 @@ class _AiActivationPageState extends State<AiActivationPage> {
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.info_outline,
-                            color: textColor.withValues(alpha: 0.6), size: 20),
+                        Icon(Icons.info_outline, color: textColor.withValues(alpha: 0.6), size: 20),
                         const SizedBox(width: 8),
                         Text(
                           '系统要求',
@@ -713,29 +878,14 @@ class _AiActivationPageState extends State<AiActivationPage> {
                       ],
                     ),
                     const SizedBox(height: 12),
-                    _buildRequirementItem('平台支持', 'macOS (Apple Silicon) / iOS / Android',
-                        textColor, isDarkMode),
+                    _buildRequirementItem('平台支持', 'macOS (Apple Silicon) / iOS / Android', textColor, isDarkMode),
                     _buildRequirementItem(
-                        '检测能力',
-                        '$_detectedCapability (内存: ${_deviceMemoryGB?.toStringAsFixed(1) ?? "未知"} GB)',
-                        textColor,
-                        isDarkMode),
-                    _buildRequirementItem(
-                        '推荐模型',
-                        _detectedCapability == 'full'
-                            ? 'desktopFull'
-                            : 'mobileLite',
-                        textColor,
-                        isDarkMode),
-                    if (_isActivated)
-                      _buildRequirementItem(
-                          '当前模型', _detectedProfile, textColor, isDarkMode),
-                    _buildRequirementItem('存储空间', '约需 $_modelSizeText 可用空间',
-                        textColor, isDarkMode),
-                    _buildRequirementItem(
-                        '网络要求', '下载AI模型需要网络连接', textColor, isDarkMode),
-                    _buildRequirementItem(
-                        '使用方式', 'AI模型下载后可离线使用', textColor, isDarkMode),
+                        '检测能力', '$_detectedCapability (内存: ${_deviceMemoryGB?.toStringAsFixed(1) ?? "未知"} GB)', textColor, isDarkMode),
+                    _buildRequirementItem('推荐模型', _detectedCapability == 'full' ? 'desktopFull' : 'mobileLite', textColor, isDarkMode),
+                    if (_isActivated) _buildRequirementItem('当前模型', _detectedProfile, textColor, isDarkMode),
+                    _buildRequirementItem('存储空间', '约需 $_modelSizeText 可用空间', textColor, isDarkMode),
+                    _buildRequirementItem('网络要求', '下载AI模型需要网络连接', textColor, isDarkMode),
+                    _buildRequirementItem('使用方式', 'AI模型下载后可离线使用', textColor, isDarkMode),
                   ],
                 ),
               ),
@@ -746,8 +896,7 @@ class _AiActivationPageState extends State<AiActivationPage> {
     );
   }
 
-  Widget _buildFeatureItem(IconData icon, String title, String description,
-      Color textColor, bool isDarkMode) {
+  Widget _buildFeatureItem(IconData icon, String title, String description, Color textColor, bool isDarkMode) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12.0),
       child: Row(
@@ -783,8 +932,7 @@ class _AiActivationPageState extends State<AiActivationPage> {
     );
   }
 
-  Widget _buildRequirementItem(
-      String label, String value, Color textColor, bool isDarkMode) {
+  Widget _buildRequirementItem(String label, String value, Color textColor, bool isDarkMode) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0),
       child: Row(

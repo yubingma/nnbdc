@@ -118,6 +118,7 @@ class AndroidAiRuntime implements AiRuntime {
       // 1. 使用 AiPromptBuilder 构建完整 prompt
       final prompt = AiPromptBuilder.buildPrompt(request);
       Global.logger.d('Android AI 推理 prompt 长度: ${prompt.length}');
+      Global.logger.d('Android AI 推理请求类型: ${request.type}');
 
       // 2. 调用原生层推理
       final result = await _channel.invokeMethod('inference', {
@@ -133,9 +134,18 @@ class AndroidAiRuntime implements AiRuntime {
         final inferenceTimeMs = result['inferenceTimeMs'] as int? ?? 0;
         
         Global.logger.i('Android AI 推理完成: $tokensGenerated tokens, ${inferenceTimeMs}ms');
+        Global.logger.d('Android AI 响应长度: ${text.length}');
+        
+        // 验证响应内容不是模板内容
+        if (text.contains("这是AI助教的回答示例") || text.trim().isEmpty) {
+          Global.logger.w('Android AI 返回了模板内容，可能需要进一步优化');
+        }
+        
         return AiResponse.ok(text);
       } else {
-        return AiResponse.error('推理失败');
+        final errorMsg = result is Map ? result['error'] as String? : '未知错误';
+        Global.logger.e('Android AI 推理失败: $errorMsg');
+        return AiResponse.error('推理失败: $errorMsg');
       }
     } catch (e, st) {
       Global.logger.e('Android AI 推理异常', error: e, stackTrace: st);
