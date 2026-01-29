@@ -39,6 +39,7 @@ import 'package:nnbdc/util/error_handler.dart';
 import 'package:nnbdc/services/ai_service.dart';
 import 'package:nnbdc/services/ai_model_manager.dart';
 import 'package:nnbdc/services/ai_runtime_apple.dart';
+import 'package:nnbdc/services/ai_runtime_android.dart';
 import 'package:provider/provider.dart';
 import 'package:toastification/toastification.dart';
 import 'package:nnbdc/page/admin/golden_master_tool.dart';
@@ -174,12 +175,68 @@ void _initializeAppleAiRuntimeIfReady() async {
     
     if (localState != null && localState.localPath.isNotEmpty) {
       Global.logger.i('检测到模型已下载，开始自动初始化 AI 运行时...');
-      await initializeAppleAiRuntime();
+      if (PlatformUtils.isAndroid) {
+        await initializeAndroidAiRuntime();
+      } else if (PlatformUtils.isIOS || PlatformUtils.isMacOS) {
+        await initializeAppleAiRuntime();
+      }
     } else {
       Global.logger.d('模型尚未下载，跳过 AI 运行时初始化');
     }
   } catch (e, st) {
     Global.logger.e('自动初始化 AI 运行时失败', error: e, stackTrace: st);
+  }
+}
+
+/// 初始化 Android AI 运行时（手动调用）
+Future<bool> initializeAndroidAiRuntime() async {
+  try {
+    Global.logger.i('开始初始化 Android AI 运行时...');
+    
+    // 1. 预检查设备能力，决定下载哪个级别的模型
+    const channel = MethodChannel('com.nnbdc.ai_inference');
+    final capResult = await channel.invokeMethod('checkCapability');
+    AiModelProfile preferredProfile = AiModelProfile.mobileLite;
+    
+    if (capResult is Map) {
+      final capStr = capResult['capability'] as String?;
+      if (capStr == 'full') {
+        preferredProfile = AiModelProfile.desktopFull;
+        Global.logger.i('检测到设备内存充足，选用桌面级模型 (desktopFull)');
+      } else if (capStr == 'light') {
+        preferredProfile = AiModelProfile.mobileLite;
+        Global.logger.i('检测到设备内存适中，选用移动端轻量级模型 (mobileLite)');
+      } else {
+        Global.logger.w('设备能力报告为不足，将尝试加载 mobileLite 模型');
+        preferredProfile = AiModelProfile.mobileLite;
+      }
+    }
+
+    // 2. 确保模型已下载
+    final manager = AiModelManager();
+    final modelState = await manager.ensureModel(preferredProfile);
+    
+    if (modelState == null || modelState.localPath.isEmpty) {
+      Global.logger.w('Android AI 模型 [${preferredProfile.name}] 未就绪，跳过初始化');
+      return false;
+    }
+    
+    // 3. 创建并初始化 Android AI 运行时
+    final runtime = AndroidAiRuntime(modelPath: modelState.localPath);
+    final success = await runtime.initialize();
+    
+    if (success) {
+      // 4. 注入到 AiService
+      AiService().setRuntime(runtime);
+      Global.logger.i('Android AI 运行时初始化成功，能力等级: ${runtime.capabilityLevel}');
+      return true;
+    } else {
+      Global.logger.w('Android AI 运行时初始化失败');
+      return false;
+    }
+  } catch (e, st) {
+    Global.logger.e('Android AI 运行时初始化异常', error: e, stackTrace: st);
+    return false;
   }
 }
 
@@ -232,10 +289,10 @@ Future<bool> initializeAppleAiRuntime() async {
   }
 }
 
-/// 反激活 Apple AI 运行时（手动调用）
+/// 反激活 AI 运行时（手动调用）
 Future<void> deinitializeAppleAiRuntime() async {
   try {
-    Global.logger.i('开始反激活 Apple AI 运行时...');
+    Global.logger.i('开始反激活 AI 运行时...');
     
     // 1. 如果当前已经是某个运行时，调用它的 dispose
     final aiService = AiService();
@@ -246,9 +303,9 @@ Future<void> deinitializeAppleAiRuntime() async {
     // 2. 重置为 NoopRuntime
     aiService.setRuntime(NoopAiRuntime());
     
-    Global.logger.i('Apple AI 运行时已卸载并重置');
+    Global.logger.i('AI 运行时已卸载并重置');
   } catch (e, st) {
-    Global.logger.e('Apple AI 运行时反激活异常', error: e, stackTrace: st);
+    Global.logger.e('AI 运行时反激活异常', error: e, stackTrace: st);
   }
 }
 

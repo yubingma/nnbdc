@@ -9,6 +9,8 @@ class MainActivity : FlutterActivity() {
     private var asr: Sherpa = Sherpa(this)
 
     private var tts: Tts = Tts(this)
+    
+    private var aiInference: AndroidAiInference = AndroidAiInference(this)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -20,10 +22,12 @@ class MainActivity : FlutterActivity() {
 
         asr.initChannel(flutterEngine)
         tts.initChannel(flutterEngine)
+        aiInference.initChannel(flutterEngine)
     }
 
     override fun onDestroy() {
         super.onDestroy()
         tts.shutdown()
+        aiInference.cleanup()
     }
 }

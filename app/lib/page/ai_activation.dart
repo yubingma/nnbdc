@@ -126,9 +126,11 @@ class _AiActivationPageState extends State<AiActivationPage> {
 
   /// 激活 AI 功能的主流程
   Future<void> _activateAi() async {
-    if (!PlatformUtils.isMacOS && !PlatformUtils.isIOS) {
+    bool isSupportedPlatform = PlatformUtils.isMacOS || PlatformUtils.isIOS || PlatformUtils.isAndroid;
+    
+    if (!isSupportedPlatform) {
       setState(() {
-        _errorMessage = '抱歉，AI 功能目前仅支持 macOS 和 iOS 平台';
+        _errorMessage = '抱歉，AI 功能目前仅支持 macOS、iOS 和 Android 平台';
       });
       return;
     }
@@ -195,7 +197,13 @@ class _AiActivationPageState extends State<AiActivationPage> {
         _currentStep = '正在初始化 AI 引擎...';
         _downloadProgress = 0.0;
       });
-      final success = await main_app.initializeAppleAiRuntime();
+      
+      bool success = false;
+      if (PlatformUtils.isAndroid) {
+        success = await main_app.initializeAndroidAiRuntime();
+      } else if (PlatformUtils.isMacOS || PlatformUtils.isIOS) {
+        success = await main_app.initializeAppleAiRuntime();
+      }
 
       if (!success) {
         throw Exception('AI 引擎初始化失败');
@@ -705,7 +713,7 @@ class _AiActivationPageState extends State<AiActivationPage> {
                       ],
                     ),
                     const SizedBox(height: 12),
-                    _buildRequirementItem('平台支持', 'macOS (Apple Silicon) / iOS',
+                    _buildRequirementItem('平台支持', 'macOS (Apple Silicon) / iOS / Android',
                         textColor, isDarkMode),
                     _buildRequirementItem(
                         '检测能力',
