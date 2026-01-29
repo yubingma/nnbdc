@@ -6,19 +6,27 @@ import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 
 class MainActivity : FlutterActivity() {
-    private var asr: Sherpa = Sherpa(this)
-
-    private var tts: Tts = Tts(this)
-    
-    private var aiInference: AndroidAiInference = AndroidAiInference(this)
+    private lateinit var asr: Sherpa
+    private lateinit var tts: Tts
+    private lateinit var aiInference: AndroidAiInference
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        asr = Sherpa(this)
+        tts = Tts(this)
+        aiInference = AndroidAiInference(this)
+        
         asr.initModel()
     }
 
     override fun configureFlutterEngine(@NonNull flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+
+        // Ensure components are initialized before use
+        if (!::asr.isInitialized) asr = Sherpa(this)
+        if (!::tts.isInitialized) tts = Tts(this)
+        if (!::aiInference.isInitialized) aiInference = AndroidAiInference(this)
 
         asr.initChannel(flutterEngine)
         tts.initChannel(flutterEngine)
@@ -27,7 +35,7 @@ class MainActivity : FlutterActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        tts.shutdown()
-        aiInference.cleanup()
+        if (::tts.isInitialized) tts.shutdown()
+        if (::aiInference.isInitialized) aiInference.cleanup()
     }
 }
