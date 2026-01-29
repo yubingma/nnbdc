@@ -8,6 +8,17 @@ set(CMAKE_C_STANDARD_REQUIRED true)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED true)
 
+# --------------------------------------------------------------------------
+# ABI Check and Dummy Target for unsupported ABIs
+# --------------------------------------------------------------------------
+if(DEFINED ANDROID_ABI AND NOT ANDROID_ABI STREQUAL "arm64-v8a" AND NOT ANDROID_ABI STREQUAL "x86_64")
+    message(STATUS "Unsupported ABI ${ANDROID_ABI} for llama.cpp. Creating dummy library.")
+    add_library(${CMAKE_PROJECT_NAME} SHARED ai_chat.cpp)
+    target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE DUMMY_BUILD)
+    target_link_libraries(${CMAKE_PROJECT_NAME} log)
+    return()
+endif()
+
 set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}"   CACHE STRING "" FORCE)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}" CACHE STRING "" FORCE)
 

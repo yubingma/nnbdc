@@ -1,5 +1,20 @@
 #include <android/log.h>
 #include <jni.h>
+
+#ifdef DUMMY_BUILD
+extern "C" {
+JNIEXPORT void JNICALL Java_com_nn_nnbdc_AndroidAiInference_init(JNIEnv *, jobject, jstring) {}
+JNIEXPORT jint JNICALL Java_com_nn_nnbdc_AndroidAiInference_load(JNIEnv *, jobject, jstring) { return 1; }
+JNIEXPORT jint JNICALL Java_com_nn_nnbdc_AndroidAiInference_prepare(JNIEnv *, jobject) { return 1; }
+JNIEXPORT jstring JNICALL Java_com_nn_nnbdc_AndroidAiInference_systemInfo(JNIEnv *env, jobject) { return env->NewStringUTF("dummy"); }
+JNIEXPORT jstring JNICALL Java_com_nn_nnbdc_AndroidAiInference_benchModel(JNIEnv *env, jobject, jint, jint, jint, jint) { return env->NewStringUTF("dummy"); }
+JNIEXPORT jint JNICALL Java_com_nn_nnbdc_AndroidAiInference_processSystemPrompt(JNIEnv *, jobject, jstring) { return 1; }
+JNIEXPORT jint JNICALL Java_com_nn_nnbdc_AndroidAiInference_processUserPrompt(JNIEnv *, jobject, jstring, jint) { return 1; }
+JNIEXPORT jstring JNICALL Java_com_nn_nnbdc_AndroidAiInference_generateNextToken(JNIEnv *, jobject) { return nullptr; }
+JNIEXPORT void JNICALL Java_com_nn_nnbdc_AndroidAiInference_unload(JNIEnv *, jobject) {}
+JNIEXPORT void JNICALL Java_com_nn_nnbdc_AndroidAiInference_shutdown(JNIEnv *, jobject) {}
+}
+#else
 #include <iomanip>
 #include <cmath>
 #include <string>
@@ -563,3 +578,4 @@ JNIEXPORT void JNICALL
 Java_com_nn_nnbdc_AndroidAiInference_shutdown(JNIEnv *, jobject /*unused*/) {
     llama_backend_free();
 }
+#endif
