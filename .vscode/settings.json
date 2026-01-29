@@ -10,5 +10,6 @@
         "editor.rulers": [
             150
         ],
-    }
+    },
+    "cmake.sourceDirectory": "/Volumes/ssd/ppdc/tools/llama.cpp/ggml"
 }
