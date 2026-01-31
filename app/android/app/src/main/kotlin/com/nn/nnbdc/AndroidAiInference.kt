@@ -28,7 +28,9 @@ class AndroidAiInference(private val context: Context) {
     private external fun systemInfo(): String
     private external fun processSystemPrompt(prompt: String): Int
     private external fun processUserPrompt(prompt: String, nPredict: Int): Int
+    private external fun processRawPrompt(prompt: String, nPredict: Int): Int
     private external fun generateNextToken(): String?
+    private external fun runCpuBenchmark(): Double
     private external fun unload()
     private external fun shutdown()
 
@@ -77,6 +79,10 @@ class AndroidAiInference(private val context: Context) {
                 "unloadModel" -> {
                     unloadModel(result)
                 }
+                "runCpuBenchmark" -> {
+                    val score = runCpuBenchmark()
+                    result.success(score)
+                }
                 else -> result.notImplemented()
             }
         }
@@ -84,25 +90,58 @@ class AndroidAiInference(private val context: Context) {
 
     private fun checkCapability(result: MethodChannel.Result) {
         try {
-            // 检查设备内存
+            // 1. 检查设备内存
             val memoryInfo = android.app.ActivityManager.MemoryInfo()
             val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as android.app.ActivityManager
             activityManager.getMemoryInfo(memoryInfo)
             
             deviceMemoryGB = memoryInfo.totalMem.toDouble() / (1024 * 1024 * 1024)
             
-            // 根据内存大小判断能力等级
+            // 2. 检查 CPU 特性 (通过 llama.cpp 的 systemInfo)
+            val sysInfo = try { systemInfo() } catch (e: Exception) { "" }
+            val hasDotProd = sysInfo.contains("DOTPROD = 1") || sysInfo.contains("ARM_FMA = 1") // ARM_FMA 也是一个性能指标
+            val hasNeon = sysInfo.contains("NEON = 1")
+            
+            // 3. 检查 CPU 核心数
+            val cpuCores = Runtime.getRuntime().availableProcessors()
+            
+            // 4. 获取硬件 ID (用于识别老旧芯片)
+            val hardware = android.os.Build.HARDWARE.lowercase()
+            val isOldChip = hardware.contains("hi3670") || // Kirin 970
+                           hardware.contains("hi3660") || // Kirin 960
+                           hardware.contains("sdm6") ||    // Snapdragon 6xx
+                           hardware.contains("msm8998")    // Snapdragon 835
+            
+            // 5. 综合评定能力等级
             capabilityLevel = when {
-                deviceMemoryGB >= 6.0 -> "full"
-                deviceMemoryGB >= 3.0 -> "light"
-                else -> "none"
+                // 如果内存很大且具备现代指令集，或者是高性能核心
+                deviceMemoryGB >= 10.0 && hasDotProd && !isOldChip -> "full"
+                
+                // 如果内存足够且有基础 SIMD 支持
+                deviceMemoryGB >= 4.0 && hasNeon && !isOldChip -> "light"
+                
+                // 内存极小，或者已知的老旧芯片（如麒麟 970）
+                deviceMemoryGB < 4.0 || isOldChip -> "light" // 即使是老芯片，也允许尝试 light
+                
+                else -> "light"
             }
             
-            Log.i(TAG, "Device capability: $capabilityLevel, Memory: ${String.format("%.1f", deviceMemoryGB)} GB")
+            // 特殊逻辑：如果是老旧芯片且内存小于 8G，强制建议 light
+            if (isOldChip && deviceMemoryGB < 8.0) {
+                capabilityLevel = "light"
+            }
+
+            Log.i(TAG, "Device capability info: Memory=${String.format("%.1f", deviceMemoryGB)}GB, cores=$cpuCores, hardware=$hardware, DotProd=$hasDotProd, Neon=$hasNeon")
+            Log.i(TAG, "Final recommendation: $capabilityLevel")
             
             result.success(mapOf(
                 "capability" to capabilityLevel,
                 "memoryGB" to deviceMemoryGB,
+                "cores" to cpuCores,
+                "hardware" to hardware,
+                "hasDotProd" to hasDotProd,
+                "hasNeon" to hasNeon,
+                "systemInfo" to sysInfo,
                 "platform" to "Android"
             ))
         } catch (e: Exception) {
@@ -179,12 +218,9 @@ class AndroidAiInference(private val context: Context) {
                 
                 val startTime = System.currentTimeMillis()
                 
-                // 这里我们简化处理：如果 prompt 很大，可能包含 system prompt
-                // 但为了兼容现有的 AiPromptBuilder (它已经拼好了 ChatML)，
-                // 我们直接将整个 prompt 作为 UserPrompt 发送给原生层。
-                // 如果原生层支持 ChatML 或者模型本身能处理，这是最稳妥的。
-                // 理想做法是解析 prompt 提取 System/User，但目前先保证跑通。
-                val processResult = processUserPrompt(prompt, maxTokens)
+                // 使用 processRawPrompt 直接处理完整的格式化 prompt (包含 system/user 标签)
+                // 这样可以避免双重模板问题，并且原生层会强制重置 Context，防止 KV cache 冲突
+                val processResult = processRawPrompt(prompt, maxTokens)
                 if (processResult != 0) {
                     throw Exception("Native processUserPrompt failed: $processResult")
                 }

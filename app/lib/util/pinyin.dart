@@ -1,4 +1,3 @@
-import 'package:nnbdc/global.dart';
 import 'package:lpinyin/lpinyin.dart';
 import 'package:nnbdc/util/utils.dart';
 
@@ -353,7 +352,6 @@ bool fuzzyPinyinContains(String pinyin1, String pinyin2) {
 /// 判断汉字字符串chinese1是否大致包含（发音大致相似）汉字字符串chinese2
 /// 注：chinese2内容可能含有逗号，此时，chinese2被视为含有n个子串，只要chinese1包含其中一个子串，就认为chinese1包含chinese2
 bool fuzzyChineseContains(String chinese1, String chinese2) {
-  Global.logger.d('===== fuzzyChineseContains: $chinese1 - $chinese2');
   var pinyin = chineseToPinyin2(chinese1.replaceAll("  ", " "), true);
 
   var meaning = chinese2;

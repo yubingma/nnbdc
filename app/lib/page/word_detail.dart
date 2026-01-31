@@ -14,7 +14,7 @@ import 'package:nnbdc/util/toast_util.dart';
 import 'package:provider/provider.dart';
 import 'package:nnbdc/config.dart';
 import 'package:nnbdc/services/ai_service.dart';
-import 'package:nnbdc/services/ai_runtime_apple.dart';
+
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:http/http.dart' as http;
 
@@ -78,7 +78,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
   var sentenceEnglishController = TextEditingController();
   var sentenceChineseController = TextEditingController();
   var isEditMode = false;
-  
+
   // AI 解释相关 (已升级为 AI 对话)
   final List<ChatMessage> _chatMessages = [];
   final TextEditingController _chatInputController = TextEditingController();
@@ -252,16 +252,16 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
   Future<void> _validateAndSetImageUrl() async {
     try {
       final imageUrl = '${Config.wordImageBaseUrl}${args.word.spell}';
-      
+
       // 简化策略：直接设置 URL，但添加一个快速的 HEAD 请求验证
       // 这样可以在图片不存在时避免 ImageDecoder 错误
       final urlToCheck = '$imageUrl.png';
-      
+
       try {
         final response = await http.head(Uri.parse(urlToCheck)).timeout(
-          const Duration(seconds: 2),
-        );
-        
+              const Duration(seconds: 2),
+            );
+
         // 只有当响应成功且是图片类型时才设置 URL
         if (response.statusCode == 200) {
           final contentType = response.headers['content-type'] ?? '';
@@ -320,7 +320,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
       }
       _aiThoughtComplete = thoughtComplete;
     });
-    
+
     // 自动滚动到底部
     _scrollToBottom();
   }
@@ -331,7 +331,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
       // 注意：由于 addPostFrameCallback 还没运行，此时的 maxScrollExtent 还是旧内容的。
       // 因此 isAtBottom 表示：在加入新内容之前，用户是否已经处于当时的底部。
       final isAtBottom = _chatScrollController.offset >= _chatScrollController.position.maxScrollExtent - 50;
-      
+
       // 如果用户不再底部，且不是强制滚动（如发送新消息），则不执行自动滚动，让用户停留在当前位置
       if (!isAtBottom && !force) {
         return;
@@ -371,7 +371,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
         type: AiTaskType.chat,
         payload: {'messages': fullHistory},
       ));
-      
+
       if (response.success) return response;
 
       // 策略 2: 如果失败且历史较多，减负到 4 条尝试（丢弃更远的记忆）
@@ -389,35 +389,34 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
       Global.logger.w('AI 推理减负重试失败，尝试仅发送当前问题...');
       response = await service.runTask(AiRequest(
         type: AiTaskType.chat,
-        payload: {'messages': [fullHistory.last]},
+        payload: {
+          'messages': [fullHistory.last]
+        },
       ));
-      
+
       return response;
     }
 
     try {
       final runtime = AiService().runtime;
-      if (runtime is AppleAiRuntime) {
-        await _aiPartialSub?.cancel();
-        _aiPartialSub = runtime.partialStream.listen((delta) {
-          if (!mounted) return;
-          _aiRawAccum += delta;
-          _parseAiOutput(_aiRawAccum);
-        });
-      }
+      // 统一监听所有平台的增量流 (Android/iOS/macOS)
+      await _aiPartialSub?.cancel();
+      _aiPartialSub = runtime.partialStream.listen((delta) {
+        if (!mounted) return;
+        _aiRawAccum += delta;
+        _parseAiOutput(_aiRawAccum);
+      });
 
       // 准备完整的待选历史 (最多 10 条)
-      final allValidMessages = _chatMessages
-          .where((m) => m.content.isNotEmpty || (m.thought != null && m.thought!.isNotEmpty))
-          .toList();
-      
+      final allValidMessages = _chatMessages.where((m) => m.content.isNotEmpty || (m.thought != null && m.thought!.isNotEmpty)).toList();
+
       var historyPayload = allValidMessages
           .map((m) => {
                 'role': m.role == MessageRole.user ? 'user' : 'assistant',
                 'content': m.content,
               })
           .toList();
-      
+
       if (historyPayload.length > 10) {
         historyPayload = historyPayload.sublist(historyPayload.length - 10);
       }
@@ -459,36 +458,36 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
       _chatMessages.add(ChatMessage(role: MessageRole.assistant, content: '', thought: ''));
       _aiThoughtComplete = false;
     });
-    
+
     try {
       final service = AiService();
       final runtime = service.runtime;
-      if (runtime is AppleAiRuntime) {
-        await _aiPartialSub?.cancel();
-        _aiPartialSub = runtime.partialStream.listen((delta) {
-          if (!mounted) return;
-          _aiRawAccum += delta;
-          _parseAiOutput(_aiRawAccum);
-        });
-      }
+
+      // 统一监听流式输出
+      await _aiPartialSub?.cancel();
+      _aiPartialSub = runtime.partialStream.listen((delta) {
+        if (!mounted) return;
+        _aiRawAccum += delta;
+        _parseAiOutput(_aiRawAccum);
+      });
 
       // 为小模型提供更多上下文：把本地词典释义和例句传给 Prompt 构建器
       final mergedMeaningItems = args.word.getMergedMeaningItems();
       final meaningPayload = mergedMeaningItems
           .map((mi) => {
-                'cn': ((mi.ciXing ?? '').trim().isEmpty
-                        ? ''
-                        : '${mi.ciXing} ')
-                    + (mi.meaning ?? ''),
+                'cn': ((mi.ciXing ?? '').trim().isEmpty ? '' : '${mi.ciXing} ') + (mi.meaning ?? ''),
               })
           .toList();
 
       // 获取至少3个例句作为上下文
       final allSentences = await args.word.getSentences();
-      final sentencePayload = allSentences.take(3).map((s) => {
-        'en': s.english,
-        'cn': s.chinese,
-      }).toList();
+      final sentencePayload = allSentences
+          .take(3)
+          .map((s) => {
+                'en': s.english,
+                'cn': s.chinese,
+              })
+          .toList();
 
       final request = AiRequest(
         type: AiTaskType.explainWord,
@@ -502,10 +501,10 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
         },
       );
       final response = await service.runTask(request);
-      
+
       await _aiPartialSub?.cancel();
       _aiPartialSub = null;
-      
+
       if (response.success) {
         if (mounted) {
           setState(() {
@@ -794,8 +793,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                         physics: const BouncingScrollPhysics(),
                         dragStartBehavior: DragStartBehavior.down,
                         children: [
-                          renderDetail(), 
-                          if (hasSimilarWords()) renderSimilarWords(), 
+                          renderDetail(),
+                          if (hasSimilarWords()) renderSimilarWords(),
                           if (hasSynonyms()) renderSynonyms(),
                           if (_isAdmin) renderAiExplanation(),
                         ],
@@ -854,7 +853,6 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     return calcSynonymCount() > 0;
   }
 
-
   Widget renderAiExplanation() {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
     return Column(
@@ -871,7 +869,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
             },
           ),
         ),
-        
+
         // 错误提示
         if (_aiError != null)
           Container(
@@ -929,16 +927,16 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                 ),
               ),
               const SizedBox(width: 8),
-              _aiLoading 
-                ? const SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : IconButton(
-                    icon: Icon(Icons.send, color: AppTheme.primaryColor),
-                    onPressed: () => _sendChatMessage(_chatInputController.text),
-                  ),
+              _aiLoading
+                  ? const SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : IconButton(
+                      icon: Icon(Icons.send, color: AppTheme.primaryColor),
+                      onPressed: () => _sendChatMessage(_chatInputController.text),
+                    ),
             ],
           ),
         ),
@@ -973,10 +971,9 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
             ],
           ),
           const SizedBox(height: 4),
-          
+
           // 思考过程 (仅助教且有内容时显示)
-          if (isAssistant && msg.thought != null && msg.thought!.isNotEmpty)
-            _buildThoughtWidget(msg, isDarkMode),
+          if (isAssistant && msg.thought != null && msg.thought!.isNotEmpty) _buildThoughtWidget(msg, isDarkMode),
 
           // 消息正文
           Container(
@@ -1070,7 +1067,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     final thought = msg.thought!;
     final isCurrentMsg = _chatMessages.isNotEmpty && _chatMessages.last == msg;
     final isThinking = isCurrentMsg && _aiLoading && !_aiThoughtComplete;
-    
+
     // 如果正在思考，则强制展开；否则遵循用户的折叠状态
     final isExpanded = isThinking || msg.isThoughtExpanded;
 
@@ -1085,11 +1082,13 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           InkWell(
-            onTap: isThinking ? null : () {
-              setState(() {
-                msg.isThoughtExpanded = !msg.isThoughtExpanded;
-              });
-            },
+            onTap: isThinking
+                ? null
+                : () {
+                    setState(() {
+                      msg.isThoughtExpanded = !msg.isThoughtExpanded;
+                    });
+                  },
             borderRadius: BorderRadius.circular(8),
             child: Padding(
               padding: const EdgeInsets.all(10),
@@ -1650,7 +1649,6 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
 
     return spans;
   }
-
 
   Future<bool> sentenceHasBeenVoted(var sentence) async {
     return (await MyDatabase.instance.votedSentencesDao.getVotedSentenceById(Global.getLoggedInUser()!.id, sentence.id)) != null;

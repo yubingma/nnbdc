@@ -7,12 +7,13 @@ import 'package:nnbdc/util/platform_util.dart';
 
 class AndroidAiRuntime implements AiRuntime {
   static const MethodChannel _channel = MethodChannel('com.nnbdc.ai_inference');
-  
+
   final String modelPath;
   AiCapabilityLevel _capability = AiCapabilityLevel.none;
   bool _isModelLoaded = false;
   final StreamController<String> _partialController = StreamController<String>.broadcast();
 
+  @override
   Stream<String> get partialStream => _partialController.stream;
 
   AndroidAiRuntime({required this.modelPath}) {
@@ -40,11 +41,11 @@ class AndroidAiRuntime implements AiRuntime {
 
   @override
   AiCapabilityLevel get capabilityLevel => _capability;
-  
+
   /// 检查是否支持 AI (Android)
   static Future<bool> isSupported() async {
     if (!PlatformUtils.isAndroid) return false;
-    
+
     try {
       // 检查Android设备是否支持AI推理（例如是否有足够的RAM等）
       final result = await _channel.invokeMethod('checkCapability');
@@ -132,15 +133,15 @@ class AndroidAiRuntime implements AiRuntime {
         final text = result['text'] as String? ?? '';
         final tokensGenerated = result['tokensGenerated'] as int? ?? 0;
         final inferenceTimeMs = result['inferenceTimeMs'] as int? ?? 0;
-        
+
         Global.logger.i('Android AI 推理完成: $tokensGenerated tokens, ${inferenceTimeMs}ms');
         Global.logger.d('Android AI 响应长度: ${text.length}');
-        
+
         // 验证响应内容不是模板内容
         if (text.contains("这是AI助教的回答示例") || text.trim().isEmpty) {
           Global.logger.w('Android AI 返回了模板内容，可能需要进一步优化');
         }
-        
+
         return AiResponse.ok(text);
       } else {
         final errorMsg = result is Map ? result['error'] as String? : '未知错误';

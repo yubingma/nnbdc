@@ -52,12 +52,17 @@ abstract class AiRuntime {
   AiCapabilityLevel get capabilityLevel;
 
   Future<AiResponse> runTask(AiRequest request);
+
+  Stream<String> get partialStream;
 }
 
 /// 默认的占位实现，在未配置本地模型时使用
 class NoopAiRuntime implements AiRuntime {
   @override
   AiCapabilityLevel get capabilityLevel => AiCapabilityLevel.none;
+
+  @override
+  Stream<String> get partialStream => const Stream.empty();
 
   @override
   Future<AiResponse> runTask(AiRequest request) async {
@@ -76,8 +81,7 @@ class NoopAiRuntime implements AiRuntime {
       platformLabel = '当前平台';
     }
 
-    final fallbackText =
-        '当前设备上的本地 AI 模型尚未启用或尚未下载，本功能暂时以普通模式运行（$platformLabel）。';
+    final fallbackText = '当前设备上的本地 AI 模型尚未启用或尚未下载，本功能暂时以普通模式运行（$platformLabel）。';
 
     return AiResponse.ok(fallbackText);
   }

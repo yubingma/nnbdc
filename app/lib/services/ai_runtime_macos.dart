@@ -7,12 +7,13 @@ import 'package:nnbdc/services/ai_prompt_builder.dart';
 
 class MacOsAiRuntime implements AiRuntime {
   static const MethodChannel _channel = MethodChannel('com.nnbdc.ai_inference');
-  
+
   final String modelPath;
   AiCapabilityLevel _capability = AiCapabilityLevel.none;
   bool _isModelLoaded = false;
   final StreamController<String> _partialController = StreamController<String>.broadcast();
 
+  @override
   Stream<String> get partialStream => _partialController.stream;
 
   MacOsAiRuntime({required this.modelPath}) {
@@ -40,7 +41,7 @@ class MacOsAiRuntime implements AiRuntime {
 
   @override
   AiCapabilityLevel get capabilityLevel => _capability;
-  
+
   /// 检查是否为 Apple Silicon (ARM64)
   static Future<bool> _isAppleSilicon() async {
     try {
@@ -126,7 +127,7 @@ class MacOsAiRuntime implements AiRuntime {
         final text = result['text'] as String? ?? '';
         final tokensGenerated = result['tokensGenerated'] as int? ?? 0;
         final inferenceTimeMs = result['inferenceTimeMs'] as int? ?? 0;
-        
+
         Global.logger.i('macOS AI 推理完成: $tokensGenerated tokens, ${inferenceTimeMs}ms');
         return AiResponse.ok(text);
       } else {

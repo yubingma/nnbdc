@@ -30,7 +30,7 @@ class _AiDiagnosticPageState extends State<AiDiagnosticPage> {
 
   Future<void> _runDiagnostics() async {
     if (_isChecking) return;
-    
+
     setState(() {
       _isChecking = true;
       _diagnosticResult = '正在诊断...\n';
@@ -39,17 +39,22 @@ class _AiDiagnosticPageState extends State<AiDiagnosticPage> {
 
     try {
       final buffer = StringBuffer();
-      
+
       // 1. 检查平台支持
       buffer.writeln('=== 平台支持检查 ===');
       String platformName = 'Unknown';
       if (PlatformUtils.isAndroid) {
         platformName = 'Android';
-      } else if (PlatformUtils.isIOS) platformName = 'iOS';
-      else if (PlatformUtils.isMacOS) platformName = 'macOS';
-      else if (PlatformUtils.isWindows) platformName = 'Windows';
-      else if (PlatformUtils.isWeb) platformName = 'Web';
-      
+      } else if (PlatformUtils.isIOS) {
+        platformName = 'iOS';
+      } else if (PlatformUtils.isMacOS) {
+        platformName = 'macOS';
+      } else if (PlatformUtils.isWindows) {
+        platformName = 'Windows';
+      } else if (PlatformUtils.isWeb) {
+        platformName = 'Web';
+      }
+
       buffer.writeln('当前平台: $platformName');
       buffer.writeln('是否Android: ${PlatformUtils.isAndroid}');
       buffer.writeln('是否iOS: ${PlatformUtils.isIOS}');
@@ -68,19 +73,19 @@ class _AiDiagnosticPageState extends State<AiDiagnosticPage> {
       buffer.writeln('=== 模型状态检查 ===');
       final modelManager = AiModelManager();
       final localState = await modelManager.loadLocalState();
-      
+
       if (localState != null) {
         buffer.writeln('✓ 模型状态文件存在');
         buffer.writeln('  Profile: ${localState.profile.name}');
         buffer.writeln('  版本: ${localState.version}');
         buffer.writeln('  本地路径: ${localState.localPath}');
         buffer.writeln('  大小: ${(localState.sizeBytes / 1024 / 1024).toStringAsFixed(1)} MB');
-        
+
         // 检查文件是否存在
         final file = File(localState.localPath);
         final fileExists = await file.exists();
         buffer.writeln('  文件存在: ${fileExists ? "✓" : "✗"}');
-        
+
         _statusInfo['modelState'] = {
           'exists': true,
           'profile': localState.profile.name,
@@ -99,12 +104,12 @@ class _AiDiagnosticPageState extends State<AiDiagnosticPage> {
         buffer.writeln('=== Android平台检查 ===');
         try {
           final channel = const MethodChannel('com.nnbdc.ai_inference');
-          
+
           // 检查能力
           final capResult = await channel.invokeMethod('checkCapability');
           buffer.writeln('设备能力检查结果: $capResult');
           _statusInfo['androidCapability'] = capResult;
-          
+
           // 如果模型存在，尝试检查加载状态
           if (localState != null && localState.localPath.isNotEmpty) {
             try {
@@ -219,9 +224,7 @@ class _AiDiagnosticPageState extends State<AiDiagnosticPage> {
                 ),
               ),
             ),
-            
             const SizedBox(height: 16),
-            
             Card(
               color: cardColor,
               elevation: 2,
@@ -242,8 +245,7 @@ class _AiDiagnosticPageState extends State<AiDiagnosticPage> {
                             color: textColor,
                           ),
                         ),
-                        if (_isChecking)
-                          const CircularProgressIndicator(strokeWidth: 2),
+                        if (_isChecking) const CircularProgressIndicator(strokeWidth: 2),
                       ],
                     ),
                     const SizedBox(height: 12),
@@ -268,9 +270,7 @@ class _AiDiagnosticPageState extends State<AiDiagnosticPage> {
                 ),
               ),
             ),
-            
             const SizedBox(height: 16),
-            
             ElevatedButton.icon(
               onPressed: _isChecking ? null : _runDiagnostics,
               icon: const Icon(Icons.refresh),
@@ -282,9 +282,7 @@ class _AiDiagnosticPageState extends State<AiDiagnosticPage> {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
             ),
-            
             const SizedBox(height: 16),
-            
             if (_statusInfo.isNotEmpty) ...[
               Card(
                 color: cardColor,

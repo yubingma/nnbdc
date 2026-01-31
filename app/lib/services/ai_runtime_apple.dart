@@ -8,12 +8,13 @@ import 'package:nnbdc/util/platform_util.dart';
 
 class AppleAiRuntime implements AiRuntime {
   static const MethodChannel _channel = MethodChannel('com.nnbdc.ai_inference');
-  
+
   final String modelPath;
   AiCapabilityLevel _capability = AiCapabilityLevel.none;
   bool _isModelLoaded = false;
   final StreamController<String> _partialController = StreamController<String>.broadcast();
 
+  @override
   Stream<String> get partialStream => _partialController.stream;
 
   AppleAiRuntime({required this.modelPath}) {
@@ -41,7 +42,7 @@ class AppleAiRuntime implements AiRuntime {
 
   @override
   AiCapabilityLevel get capabilityLevel => _capability;
-  
+
   /// 检查是否支持 AI (macOS Apple Silicon 或 iOS)
   static Future<bool> isSupported() async {
     if (PlatformUtils.isIOS) return true;
@@ -129,7 +130,7 @@ class AppleAiRuntime implements AiRuntime {
         final text = result['text'] as String? ?? '';
         final tokensGenerated = result['tokensGenerated'] as int? ?? 0;
         final inferenceTimeMs = result['inferenceTimeMs'] as int? ?? 0;
-        
+
         Global.logger.i('Apple AI 推理完成: $tokensGenerated tokens, ${inferenceTimeMs}ms');
         return AiResponse.ok(text);
       } else {

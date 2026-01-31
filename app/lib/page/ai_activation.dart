@@ -32,6 +32,14 @@ class _AiActivationPageState extends State<AiActivationPage> {
   String _detectedCapability = '未知';
   String _detectedProfile = '未知';
   double? _deviceMemoryGB;
+  int? _cpuCores;
+  String? _hardware;
+  bool? _hasDotProd;
+  double? _hardwareScore;
+  bool _isBenchmarking = false;
+  double? _fullSizeMB;
+  double? _liteSizeMB;
+  AiModelProfile? _manualProfile; // 用户手动选择的 Profile
 
   @override
   void initState() {
@@ -42,6 +50,13 @@ class _AiActivationPageState extends State<AiActivationPage> {
 
   /// 获取推荐的模型 profile
   AiModelProfile _getRecommendedProfile() {
+    if (_manualProfile != null) return _manualProfile!;
+
+    // 如果有硬件分值，优先参考分值
+    if (_hardwareScore != null) {
+      return _hardwareScore! > 30.0 ? AiModelProfile.desktopFull : AiModelProfile.mobileLite;
+    }
+
     return _detectedCapability == 'full' ? AiModelProfile.desktopFull : AiModelProfile.mobileLite;
   }
 
@@ -51,17 +66,26 @@ class _AiActivationPageState extends State<AiActivationPage> {
       final manager = AiModelManager();
       final metas = await manager.fetchRemoteMeta();
 
+      final fullMeta = metas[AiModelProfile.desktopFull];
+      final liteMeta = metas[AiModelProfile.mobileLite];
+
+      if (fullMeta != null) {
+        _fullSizeMB = fullMeta.sizeBytes / 1024 / 1024;
+      }
+      if (liteMeta != null) {
+        _liteSizeMB = liteMeta.sizeBytes / 1024 / 1024;
+      }
+
       final profile = _getRecommendedProfile();
-      final meta = metas[profile];
-      if (meta != null) {
-        final sizeMB = (meta.sizeBytes / 1024 / 1024).toStringAsFixed(0);
+      final currentMeta = metas[profile];
+      if (currentMeta != null) {
+        final sizeMB = (currentMeta.sizeBytes / 1024 / 1024).toStringAsFixed(0);
         setState(() {
           _modelSizeText = '$sizeMB MB';
         });
       }
     } catch (e) {
       Global.logger.e('获取模型大小失败', error: e);
-      // 保持默认值
     }
   }
 
@@ -102,6 +126,9 @@ class _AiActivationPageState extends State<AiActivationPage> {
         setState(() {
           _detectedCapability = capResult['capability'] ?? '未知';
           _deviceMemoryGB = capResult['memoryGB'];
+          _cpuCores = capResult['cores'];
+          _hardware = capResult['hardware'];
+          _hasDotProd = capResult['hasDotProd'];
           _detectedProfile = localState?.profile.name ?? '尚未选择';
         });
         // 检测到能力后，加载对应模型的大小
@@ -109,14 +136,45 @@ class _AiActivationPageState extends State<AiActivationPage> {
       }
 
       // 如果已激活但运行时未初始化，自动初始化
-      if (_isActivated && (PlatformUtils.isMacOS || PlatformUtils.isIOS) && AiService().capabilityLevel == AiCapabilityLevel.none) {
-        Global.logger.i('检测到模型已下载但运行时未初始化，开始自动初始化...');
-        await main_app.initializeAppleAiRuntime();
-        // 初始化后再更新一次状态
-        _checkAiStatus();
+      if (_isActivated && AiService().capabilityLevel == AiCapabilityLevel.none) {
+        if (PlatformUtils.isMacOS || PlatformUtils.isIOS) {
+          Global.logger.i('检测到模型已下载但运行时未初始化，开始自动初始化 (Apple/iOS)...');
+          await main_app.initializeAppleAiRuntime();
+          _checkAiStatus();
+        } else if (PlatformUtils.isAndroid) {
+          Global.logger.i('检测到模型已下载但运行时未初始化，开始自动初始化 (Android)...');
+          await main_app.initializeAndroidAiRuntime();
+          _checkAiStatus();
+        }
       }
     } catch (e) {
       Global.logger.e('检查 AI 状态异常', error: e);
+    }
+  }
+
+  /// 运行评估负载获取硬件分数
+  Future<void> _runBenchmark() async {
+    setState(() {
+      _isBenchmarking = true;
+      _errorMessage = null;
+    });
+
+    try {
+      const channel = MethodChannel('com.nnbdc.ai_inference');
+      final double result = await channel.invokeMethod('runCpuBenchmark');
+      setState(() {
+        _hardwareScore = result;
+      });
+      Global.logger.i('硬件评估完成，得分: ${result.toStringAsFixed(1)} GFLOPS');
+    } catch (e) {
+      Global.logger.e('运行硬件评估失败', error: e);
+      setState(() {
+        _errorMessage = '评估负载运行失败: $e';
+      });
+    } finally {
+      setState(() {
+        _isBenchmarking = false;
+      });
     }
   }
 
@@ -734,6 +792,63 @@ class _AiActivationPageState extends State<AiActivationPage> {
                   elevation: 3,
                 ),
               ),
+
+              const SizedBox(height: 16),
+
+              // 模型版本选择
+              if (!_isLoading)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '选择模型版本',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: textColor,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    SegmentedButton<AiModelProfile>(
+                      segments: const [
+                        ButtonSegment<AiModelProfile>(
+                          value: AiModelProfile.mobileLite,
+                          label: Text('基础版 (推荐)'),
+                          icon: Icon(Icons.bolt),
+                        ),
+                        ButtonSegment<AiModelProfile>(
+                          value: AiModelProfile.desktopFull,
+                          label: Text('高级版 (需强劲配置)'),
+                          icon: Icon(Icons.auto_awesome),
+                        ),
+                      ],
+                      selected: {_getRecommendedProfile()},
+                      onSelectionChanged: (Set<AiModelProfile> newSelection) {
+                        setState(() {
+                          _manualProfile = newSelection.first;
+                        });
+                        _loadModelSize();
+                      },
+                      style: SegmentedButton.styleFrom(
+                        selectedBackgroundColor: AppTheme.primaryColor,
+                        selectedForegroundColor: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      _getRecommendedProfile() == AiModelProfile.mobileLite
+                          ? '基础版模型体积较小（约 ${_liteSizeMB?.toStringAsFixed(0) ?? "500"} MB），推理速度快，适合大多数手机。'
+                          : '高级版模型体积较大（约 ${_fullSizeMB?.toStringAsFixed(1) ?? "1.5GB"} GB），推理质量更好，但对设备内存和CPU有极高要求。'
+                              '\n\n当前检测：内存 ${_deviceMemoryGB?.toStringAsFixed(1) ?? "未知"} GB'
+                              '${_hardwareScore != null ? "，实测性能 ${_hardwareScore!.toStringAsFixed(1)} GFLOPS" : ""}。'
+                              '${(_deviceMemoryGB != null && _deviceMemoryGB! < 8.0) || (_hardwareScore != null && _hardwareScore! < 30.0) ? "\n\n⚠️ 你的设备性能可能不足以流畅运行高级版模型，建议选择基础版。" : ""}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: textColor.withValues(alpha: 0.6),
+                      ),
+                    ),
+                  ],
+                ),
               // 进度提示
               if (_isLoading && _currentStep.isNotEmpty)
                 Padding(
@@ -881,7 +996,21 @@ class _AiActivationPageState extends State<AiActivationPage> {
                     _buildRequirementItem('平台支持', 'macOS (Apple Silicon) / iOS / Android', textColor, isDarkMode),
                     _buildRequirementItem(
                         '检测能力', '$_detectedCapability (内存: ${_deviceMemoryGB?.toStringAsFixed(1) ?? "未知"} GB)', textColor, isDarkMode),
-                    _buildRequirementItem('推荐模型', _detectedCapability == 'full' ? 'desktopFull' : 'mobileLite', textColor, isDarkMode),
+                    _buildRequirementItem('硬件参数', '${_hardware?.toUpperCase() ?? "未知"} / ${_cpuCores ?? "?"} 核 CPU', textColor, isDarkMode),
+                    _buildRequirementItem('加速指令', (_hasDotProd == true ? '支持 DotProd (极速)' : '不支持 DotProd (基础)'), textColor, isDarkMode),
+                    _buildRequirementItem(
+                        '实测性能', _hardwareScore != null ? '${_hardwareScore!.toStringAsFixed(1)} GFLOPS' : '尚未评估', textColor, isDarkMode,
+                        suffix: _isBenchmarking
+                            ? const Padding(
+                                padding: EdgeInsets.only(left: 8.0),
+                                child: SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2)),
+                              )
+                            : InkWell(
+                                onTap: _runBenchmark,
+                                child: Text(' [点击测试]', style: TextStyle(color: AppTheme.primaryColor, fontSize: 12, fontWeight: FontWeight.bold)),
+                              )),
+                    _buildRequirementItem(
+                        '选择模型', _getRecommendedProfile().name + (_manualProfile != null ? ' (手动指定)' : ' (系统推荐)'), textColor, isDarkMode),
                     if (_isActivated) _buildRequirementItem('当前模型', _detectedProfile, textColor, isDarkMode),
                     _buildRequirementItem('存储空间', '约需 $_modelSizeText 可用空间', textColor, isDarkMode),
                     _buildRequirementItem('网络要求', '下载AI模型需要网络连接', textColor, isDarkMode),
@@ -932,7 +1061,7 @@ class _AiActivationPageState extends State<AiActivationPage> {
     );
   }
 
-  Widget _buildRequirementItem(String label, String value, Color textColor, bool isDarkMode) {
+  Widget _buildRequirementItem(String label, String value, Color textColor, bool isDarkMode, {Widget? suffix}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0),
       child: Row(
@@ -949,13 +1078,18 @@ class _AiActivationPageState extends State<AiActivationPage> {
             ),
           ),
           Expanded(
-            child: Text(
-              value,
-              style: TextStyle(
-                fontSize: 14,
-                color: textColor,
-                fontWeight: FontWeight.w500,
-              ),
+            child: Row(
+              children: [
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: textColor,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                if (suffix != null) suffix,
+              ],
             ),
           ),
         ],

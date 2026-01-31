@@ -6,11 +6,9 @@ extern "C" {
 JNIEXPORT void JNICALL Java_com_nn_nnbdc_AndroidAiInference_init(JNIEnv *, jobject, jstring) {}
 JNIEXPORT jint JNICALL Java_com_nn_nnbdc_AndroidAiInference_load(JNIEnv *, jobject, jstring) { return 1; }
 JNIEXPORT jint JNICALL Java_com_nn_nnbdc_AndroidAiInference_prepare(JNIEnv *, jobject) { return 1; }
+JNIEXPORT jint JNICALL Java_com_nn_nnbdc_AndroidAiInference_processRawPrompt(JNIEnv *, jobject, jstring, jint) { return 1; }
 JNIEXPORT jstring JNICALL Java_com_nn_nnbdc_AndroidAiInference_systemInfo(JNIEnv *env, jobject) { return env->NewStringUTF("dummy"); }
-JNIEXPORT jstring JNICALL Java_com_nn_nnbdc_AndroidAiInference_benchModel(JNIEnv *env, jobject, jint, jint, jint, jint) { return env->NewStringUTF("dummy"); }
-JNIEXPORT jint JNICALL Java_com_nn_nnbdc_AndroidAiInference_processSystemPrompt(JNIEnv *, jobject, jstring) { return 1; }
-JNIEXPORT jint JNICALL Java_com_nn_nnbdc_AndroidAiInference_processUserPrompt(JNIEnv *, jobject, jstring, jint) { return 1; }
-JNIEXPORT jstring JNICALL Java_com_nn_nnbdc_AndroidAiInference_generateNextToken(JNIEnv *, jobject) { return nullptr; }
+JNIEXPORT jdouble JNICALL Java_com_nn_nnbdc_AndroidAiInference_runCpuBenchmark(JNIEnv *, jobject) { return 0.0; }
 JNIEXPORT void JNICALL Java_com_nn_nnbdc_AndroidAiInference_unload(JNIEnv *, jobject) {}
 JNIEXPORT void JNICALL Java_com_nn_nnbdc_AndroidAiInference_shutdown(JNIEnv *, jobject) {}
 }
@@ -261,6 +259,38 @@ Java_com_nn_nnbdc_AndroidAiInference_benchModel(JNIEnv *env, jobject /*unused*/,
     return env->NewStringUTF(result.str().c_str());
 }
 
+extern "C"
+JNIEXPORT jdouble JNICALL
+Java_com_nn_nnbdc_AndroidAiInference_runCpuBenchmark(JNIEnv *env, jobject /*unused*/) {
+    const int N = 512; // 512^3 * 2 = 268M ops
+    float* A = new float[N*N];
+    float* B = new float[N*N];
+    float* C = new float[N*N];
+    
+    for(int i=0; i<N*N; i++) { A[i] = 0.1f; B[i] = 0.2f; C[i] = 0.0f; }
+
+    auto start = ggml_time_us();
+    // Standard GEMM (compiler will likely optimize this with NEON)
+    for (int i = 0; i < N; i++) {
+        for (int k = 0; k < N; k++) {
+            float a = A[i * N + k];
+            for (int j = 0; j < N; j++) {
+                C[i * N + j] += a * B[k * N + j];
+            }
+        }
+    }
+    auto end = ggml_time_us();
+
+    delete[] A; delete[] B; delete[] C;
+
+    double duration_s = (double)(end - start) / 1000000.0;
+    if (duration_s <= 0.0001) return 0.0;
+    
+    // GFLOPS = (2 * N^3) / duration / 1e9
+    double gflops = (2.0 * N * N * N) / duration_s / 1e9;
+    return (jdouble)gflops;
+}
+
 
 /**
  * Completion loop's long-term states:
@@ -461,6 +491,55 @@ Java_com_nn_nnbdc_AndroidAiInference_processUserPrompt(
     // Update position
     current_position += user_prompt_size;
     stop_generation_position = current_position + user_prompt_size + n_predict;
+    return 0;
+}
+
+extern "C"
+JNIEXPORT jint JNICALL
+Java_com_nn_nnbdc_AndroidAiInference_processRawPrompt(
+        JNIEnv *env,
+        jobject /*unused*/,
+        jstring jprompt,
+        jint n_predict
+) {
+    // FORCE RESET: Treat this as a fresh, standalone generation.
+    // This prevents KV cache inconsistency errors when sending full prompts repeatedly.
+    reset_long_term_states();
+    reset_short_term_states();
+
+    // Obtain prompt
+    const auto *prompt = env->GetStringUTFChars(jprompt, nullptr);
+    LOGd("%s: Raw prompt received: \n%s", __func__, prompt);
+    std::string formatted_prompt(prompt);
+    env->ReleaseStringUTFChars(jprompt, prompt);
+
+    // Tokenize RAW (no chat template application, but PARSE special tokens)
+    // add_special=true (usually adds BOS if needed by model), parse_special=true (critical for ChatML tags)
+    auto tokens = common_tokenize(g_context, formatted_prompt, true, true);
+    for (auto id: tokens) {
+        LOGv("token: `%s`\t -> `%d`", common_token_to_piece(g_context, id).c_str(), id);
+    }
+
+    // Ensure prompt doesn't exceed context
+    const int prompt_size = (int) tokens.size();
+    const int max_batch_size = DEFAULT_CONTEXT_SIZE - OVERFLOW_HEADROOM;
+    if (prompt_size > max_batch_size) {
+        const int skipped_tokens = prompt_size - max_batch_size;
+        // Truncate from beginning (naively)
+        tokens.erase(tokens.begin(), tokens.begin() + skipped_tokens);
+        LOGw("%s: Raw prompt too long! Skipped %d tokens!", __func__, skipped_tokens);
+    }
+
+    // Decode tokens
+    // We start at current_position = 0 (because we reset states)
+    if (decode_tokens_in_batches(g_context, g_batch, tokens, current_position, true)) {
+        LOGe("%s: llama_decode() failed!", __func__);
+        return 2;
+    }
+
+    // Update position
+    current_position += (int)tokens.size();
+    stop_generation_position = current_position + n_predict;
     return 0;
 }
 
