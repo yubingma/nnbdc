@@ -5,13 +5,12 @@ import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/util/error_handler.dart';
-import 'package:nnbdc/util/utils.dart';
 import 'dart:async';
 import '../../services/throttled_sync_service.dart';
 import 'package:nnbdc/util/user_helper.dart';
 import 'package:nnbdc/util/level_util.dart';
 import 'dart:convert';
-import 'package:uuid/uuid.dart';
+import 'package:nnbdc/util/utils.dart';
 import 'package:nnbdc/util/db_log_util.dart';
 
 class WordBo {
@@ -839,7 +838,7 @@ class WordBo {
         return Result("ERROR", "已存在同名词典", false);
       }
 
-      final id = Uuid().v4();
+      final id = Util.uuid();
       final now = AppClock.now();
       final dict = Dict(
         id: id,
@@ -926,7 +925,7 @@ class WordBo {
         }
 
         // 插入新释义
-        final newId = Uuid().v4();
+        final newId = Util.uuid();
         await db.into(db.meaningItems).insert(MeaningItemsCompanion.insert(
               id: newId,
               wordId: wordId,

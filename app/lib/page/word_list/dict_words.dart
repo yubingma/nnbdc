@@ -7,7 +7,7 @@ import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/page/word_list/word_list.dart';
 import 'package:nnbdc/services/throttled_sync_service.dart';
 import 'package:nnbdc/util/toast_util.dart';
-import 'package:uuid/uuid.dart';
+import 'package:nnbdc/util/utils.dart';
 import 'package:nnbdc/util/db_log_util.dart';
 import 'dart:convert';
 
@@ -181,7 +181,7 @@ class DictWordsBookMarkProvider implements BookMarkProvider {
         return false;
       }
 
-      final uuid = Uuid().v4();
+      final uuid = Util.uuid();
 
       // 查询是否已存在相同userId和name的书签
       final existingQuery = _db.select(_db.bookMarks)..where((b) => b.userId.equals(userId) & b.bookMarkName.equals(bookMarkName));

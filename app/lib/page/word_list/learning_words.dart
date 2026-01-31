@@ -7,8 +7,8 @@ import 'package:nnbdc/services/throttled_sync_service.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/page/word_list/word_list.dart';
 import 'package:nnbdc/util/toast_util.dart';
-import 'package:uuid/uuid.dart';
 import 'package:drift/drift.dart' as drift;
+import 'package:nnbdc/util/utils.dart';
 
 import '../../util/word_util.dart';
 import '../../util/app_clock.dart';
@@ -63,6 +63,7 @@ class LearningWordsProgressProvider implements WordProgressProvider {
 
 class LearningWordsBookMarkProvider implements BookMarkProvider {
   static const String bookMarkName = 'learning_words_list';
+
   /// 注意：不要缓存 `MyDatabase.instance`。
   /// 数据库在 `wipeAllTables()` / `closeDatabase()` 后会重建实例，
   /// 若缓存旧实例会导致 "Can't re-open a database after closing it"。
@@ -122,7 +123,7 @@ class LearningWordsBookMarkProvider implements BookMarkProvider {
         return false;
       }
 
-      final uuid = Uuid().v4();
+      final uuid = Util.uuid();
 
       // 查询是否已存在相同userId和name的书签
       final existingQuery = _db.select(_db.bookMarks)..where((b) => b.userId.equals(userId) & b.bookMarkName.equals(bookMarkName));
