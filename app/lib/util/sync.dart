@@ -74,8 +74,16 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
     }
 
     // 对同步日志进行排序,确保有外键依赖的表在父表之后同步
-    // 这样可以避免外键约束违反错误
+    // 首先按创建时间排序,保持操作的时间顺序
+    // 当创建时间相同时,按表优先级排序,确保父表在子表之前
     localToBackend.sort((a, b) {
+      // 首先比较创建时间
+      int timeCompare = a.createTime.compareTo(b.createTime);
+      if (timeCompare != 0) {
+        return timeCompare;
+      }
+
+      // 创建时间相同时,按表优先级排序
       // 定义表的优先级(数字越小优先级越高,越先同步)
       int getPriority(String tableName) {
         switch (tableName) {
@@ -111,12 +119,7 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
       int priorityA = getPriority(a.tblName);
       int priorityB = getPriority(b.tblName);
 
-      if (priorityA != priorityB) {
-        return priorityA.compareTo(priorityB);
-      }
-
-      // 同优先级的按创建时间排序
-      return a.createTime.compareTo(b.createTime);
+      return priorityA.compareTo(priorityB);
     });
 
     List<UserDbLog> backendToLocal = [];
