@@ -621,9 +621,8 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                   ),
                   const SizedBox(height: 6),
                   const Text(
-                    '• 解锁全部单词书\n'
-                    '• 每日单词上限高达500\n'
-                    '• 解锁全部学习功能\n',
+                    '• 解除每日20的单词上限, 上限提升至500\n'
+                    '• 可自定单词书\n',
                     style: TextStyle(fontSize: 12, height: 1.4),
                   ),
                 ],
