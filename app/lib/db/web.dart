@@ -76,7 +76,8 @@ DatabaseConnection connectOnWeb() {
     } catch (e, st) {
       Global.logger.e('IndexedDB WebDatabase fallback failed', error: e, stackTrace: st);
       // Surface descriptive error to the caller
-      throw Exception('Web database initialization failed. In private mode or restricted browsers, IndexedDB/localStorage may be unavailable. Please try a different browser or disable private mode. Original error: ${lastError?.toString() ?? e.toString()}');
+      throw Exception(
+          'Web database initialization failed. In private mode or restricted browsers, IndexedDB/localStorage may be unavailable. Please try a different browser or disable private mode. Original error: ${lastError?.toString() ?? e.toString()}');
     }
   }));
 }

@@ -197,13 +197,13 @@ class AiModelManager {
           Global.logger.i('模型文件已删除: ${state.localPath}');
         }
       }
-      
+
       final stateFile = await _getStateFile();
       if (stateFile.existsSync()) {
         await stateFile.delete();
         Global.logger.i('模型状态文件已删除');
       }
-      
+
       _cachedState = null;
     } catch (e, st) {
       Global.logger.e('删除本地 AI 模型失败', error: e, stackTrace: st);
@@ -312,16 +312,16 @@ class AiModelManager {
       await for (final chunk in response.stream) {
         sink.add(chunk);
         downloaded += chunk.length;
-        
+
         final now = DateTime.now();
-        
+
         // 每 100ms 回调一次进度（给 UI 更新）
         if (onProgress != null && now.difference(lastCallbackTime).inMilliseconds >= 100) {
           final progress = downloaded / meta.sizeBytes;
           onProgress(progress, downloaded, meta.sizeBytes);
           lastCallbackTime = now;
         }
-        
+
         // 每秒输出一次日志
         if (now.difference(lastLogTime).inSeconds >= 1) {
           final progress = (downloaded / meta.sizeBytes * 100).toStringAsFixed(1);

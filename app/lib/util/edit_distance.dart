@@ -37,5 +37,3 @@ class EditDistance {
     return dp[n][m];
   }
 }
-
-

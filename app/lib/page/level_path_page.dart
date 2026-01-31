@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:nnbdc/util/level_util.dart';
 
-
 class LevelPathPage extends StatelessWidget {
   final int currentLevel;
 
@@ -33,7 +32,7 @@ class LevelPathPage extends StatelessWidget {
               final level = levels[index];
               final isReached = level.level <= currentLevel;
               final isCurrent = level.level == currentLevel;
-              
+
               // 左右交替布局
               final isLeft = index % 2 == 0;
 
@@ -185,25 +184,29 @@ class PathPainter extends CustomPainter {
     final path = Path();
     double y = 80; // 起始高度偏移
     const double stepY = 135; // 节点垂直间距 ( Padding(10)+Row(node_height)+Padding(10) )
-    
+
     path.moveTo(size.width * 0.5, 0);
     path.lineTo(size.width * 0.5, y);
 
     for (int i = 0; i < LevelUtil.allLevels.length; i++) {
       final isLeft = i % 2 == 0;
       final nextY = y + stepY;
-      
+
       if (isLeft) {
         // 当前在左，下一个在右（或者第一个就在左）
         path.quadraticBezierTo(
-          size.width * 0.2, y + stepY * 0.5,
-          size.width * 0.5, nextY,
+          size.width * 0.2,
+          y + stepY * 0.5,
+          size.width * 0.5,
+          nextY,
         );
       } else {
         // 当前在右，下一个在左
         path.quadraticBezierTo(
-          size.width * 0.8, y + stepY * 0.5,
-          size.width * 0.5, nextY,
+          size.width * 0.8,
+          y + stepY * 0.5,
+          size.width * 0.5,
+          nextY,
         );
       }
       y = nextY;

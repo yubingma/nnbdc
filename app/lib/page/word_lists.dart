@@ -110,7 +110,8 @@ class _WordListsPageState extends State<WordListsPage> {
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
           onTap: () async {
-            var canDeleteTodayWords = !UserHelper.isTodayLearningStartedFromUser(Global.getLoggedInUser()!) || UserHelper.isTodayLearningFinishedFromUser(Global.getLoggedInUser()!);
+            var canDeleteTodayWords = !UserHelper.isTodayLearningStartedFromUser(Global.getLoggedInUser()!) ||
+                UserHelper.isTodayLearningFinishedFromUser(Global.getLoggedInUser()!);
             if (wordList.name == '今日错词') {
               toWrongWordsListPage();
             } else if (wordList.name == '今日新词') {

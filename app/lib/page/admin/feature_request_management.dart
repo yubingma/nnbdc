@@ -32,7 +32,7 @@ class _FeatureRequestManagementWidgetState extends State<FeatureRequestManagemen
       final requests = await LoadingUtils.withoutApiLoading(() async {
         return await Api.client.getAllFeatureRequests();
       });
-      
+
       setState(() {
         _requests = requests;
         _isLoading = false;
@@ -132,7 +132,7 @@ class _FeatureRequestManagementWidgetState extends State<FeatureRequestManagemen
     BuildContext dialogContext,
   ) {
     final isSelected = FeatureRequestStatusExt.fromString(request.status ?? 'VOTING') == status;
-    
+
     return ListTile(
       leading: Icon(
         _getStatusIcon(status),
@@ -252,9 +252,7 @@ class _FeatureRequestManagementWidgetState extends State<FeatureRequestManagemen
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: isDarkMode 
-                ? Colors.black.withValues(alpha: 0.3) 
-                : Colors.grey.withValues(alpha: 0.15),
+            color: isDarkMode ? Colors.black.withValues(alpha: 0.3) : Colors.grey.withValues(alpha: 0.15),
             spreadRadius: 0,
             blurRadius: 8,
             offset: const Offset(0, 4),
@@ -380,4 +378,3 @@ class _FeatureRequestManagementWidgetState extends State<FeatureRequestManagemen
     return nickName[0].toUpperCase();
   }
 }
-

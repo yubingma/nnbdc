@@ -111,7 +111,7 @@ class Global {
     guestVo.lastLoginTime = now;
     guestVo.wordsPerDay = 20;
     guestVo.totalScore = 0;
-    
+
     // 初始化其他必要字段，防止 userVo2User 转换时通过 ! 强转空值导致 crash
     guestVo.autoPlaySentence = true;
     guestVo.autoPlayWord = true;
@@ -134,11 +134,11 @@ class Global {
     guestVo.throwDiceChance = 0;
     guestVo.isPremiumIos = false;
     guestVo.premiumOverrideEnabled = false;
-    
+
     // 保存到本地数据库
     final db = MyDatabase.instance;
     await db.usersDao.saveUser(userVo2User(guestVo), false);
-    
+
     // 设置为当前登录用户
     await setLoggedInUser(guestVo);
   }

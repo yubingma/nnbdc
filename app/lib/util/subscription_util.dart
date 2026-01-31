@@ -192,9 +192,9 @@ class SubscriptionUtil {
     } on PlatformException catch (e, stackTrace) {
       // 捕获 PlatformException 并提供详细错误信息
       Global.logger.e('购买异常 (PlatformException)', error: e, stackTrace: stackTrace);
-      
+
       String errorMessage = '购买失败';
-      
+
       // 解析常见的 StoreKit 错误
       if (e.code == 'storekit_duplicate_product_object') {
         errorMessage = '订阅已存在，请勿重复购买';
@@ -219,7 +219,7 @@ class SubscriptionUtil {
         final details = e.message ?? e.code;
         errorMessage = '购买失败：$details';
       }
-      
+
       ToastUtil.error(errorMessage);
       return false;
     } catch (e, stackTrace) {
@@ -365,14 +365,14 @@ class SubscriptionUtil {
 
       if (result.success && result.data != null) {
         Global.logger.i('收据验证成功，立即更新本地数据库');
-        
+
         // 从返回的订阅信息中提取数据
         final subscriptionData = result.data!;
         final isPremiumIos = subscriptionData.isPremiumIos ?? false;
         final subscriptionTypeIos = subscriptionData.subscriptionTypeIos;
         final subscriptionStatusIos = subscriptionData.subscriptionStatusIos;
         final subscriptionExpireDateIos = subscriptionData.subscriptionExpireDateIos;
-        
+
         // 立即更新本地数据库（不写同步日志，因为服务端已经更新了）
         final db = MyDatabase.instance;
         final currentUser = await db.usersDao.getUserById(userId);
@@ -384,16 +384,16 @@ class SubscriptionUtil {
             subscriptionStatusIos: Value<String?>(subscriptionStatusIos),
             lastReceiptDataIos: Value<String?>(receiptData),
           );
-          
+
           // 直接更新数据库，不生成同步日志
           await (db.update(db.users)..where((t) => t.id.equals(userId))).write(updatedUser);
-          
+
           // 立即更新内存缓存
           Global.updateUserCache(updatedUser);
-          
+
           Global.logger.i('订阅状态已更新到本地数据库和缓存: isPremium=$isPremiumIos, expireDate=$subscriptionExpireDateIos');
         }
-        
+
         return true;
       } else {
         Global.logger.w('收据验证失败: ${result.msg}');
@@ -410,7 +410,7 @@ class SubscriptionUtil {
     try {
       // 重新从数据库加载用户信息到缓存，确保UI能获取到最新订阅状态
       await Global.loadUserFromDb();
-      
+
       // 触发一次同步（不等待结果）
       ThrottledDbSyncService().requestSync();
       Global.logger.i('订阅验证成功，本地数据已更新，缓存已刷新，后台同步已触发');
@@ -439,14 +439,14 @@ class SubscriptionUtil {
     if (!isPremium()) {
       if (user.wordsPerDay > 20) {
         Global.logger.i('用户非会员，强制执行每日单词限额 20（原设为 ${user.wordsPerDay}）');
-        
+
         // 更新本地数据库
         await MyDatabase.instance.usersDao.updateWordsPerDay(user.id, 20);
-        
+
         // 更新内存缓存
         final updatedUser = user.copyWith(wordsPerDay: 20);
         Global.updateUserCache(updatedUser);
-        
+
         // 触发同步到云端
         ThrottledDbSyncService().requestSync();
       }

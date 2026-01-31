@@ -192,7 +192,7 @@ Future<void> _runImport({
               spell: w.spell,
               createTime: w.createTime,
               updateTime: w.updateTime));
-          
+
           // 每处理100个单词，yield一次，避免阻塞
           if (i % 100 == 0) {
             await Future<void>.delayed(Duration.zero);
@@ -208,13 +208,8 @@ Future<void> _runImport({
         final List<DictWord> dictWords = <DictWord>[];
         for (int i = 0; i < srcDictWords.length; i++) {
           final dw = srcDictWords[i];
-          dictWords.add(DictWord(
-              dictId: dw.dictId.toString(),
-              wordId: dw.wordId,
-              seq: dw.seq,
-              createTime: dw.createTime,
-              updateTime: dw.updateTime));
-                
+          dictWords.add(DictWord(dictId: dw.dictId.toString(), wordId: dw.wordId, seq: dw.seq, createTime: dw.createTime, updateTime: dw.updateTime));
+
           // 每处理100个词书-单词关系，yield一次，避免阻塞
           if (i % 100 == 0) {
             await Future<void>.delayed(Duration.zero);
@@ -239,7 +234,7 @@ Future<void> _runImport({
               popularity: m.popularity,
               createTime: m.createTime,
               updateTime: m.updateTime));
-          
+
           // 每处理100个释义，yield一次，避免阻塞
           if (i % 100 == 0) {
             await Future<void>.delayed(Duration.zero);
@@ -264,7 +259,7 @@ Future<void> _runImport({
               wordId: im.wordId,
               createTime: im.createTime,
               updateTime: im.updateTime));
-          
+
           // 每处理100个单词图片，yield一次，避免阻塞
           if (i % 100 == 0) {
             await Future<void>.delayed(Duration.zero);
@@ -280,12 +275,9 @@ Future<void> _runImport({
         final List<SimilarWord> similarWords = <SimilarWord>[];
         for (int i = 0; i < srcSimilarWords.length; i++) {
           final sw = srcSimilarWords[i];
-          similarWords.add(SimilarWord(
-              wordId: sw.wordId,
-              similarWordId: sw.similarWordId,
-              similarWordSpell: sw.similarWordSpell,
-              distance: sw.distance));
-          
+          similarWords
+              .add(SimilarWord(wordId: sw.wordId, similarWordId: sw.similarWordId, similarWordSpell: sw.similarWordSpell, distance: sw.distance));
+
           // 每处理100个形近词，yield一次，避免阻塞
           if (i % 100 == 0) {
             await Future<void>.delayed(Duration.zero);
@@ -301,13 +293,8 @@ Future<void> _runImport({
         final List<Synonym> synonyms = <Synonym>[];
         for (int i = 0; i < srcSynonyms.length; i++) {
           final s = srcSynonyms[i];
-          synonyms.add(Synonym(
-              meaningItemId: s.meaningItemId,
-              wordId: s.wordId,
-              spell: s.spell,
-              createTime: s.createTime,
-              updateTime: s.updateTime));
-          
+          synonyms.add(Synonym(meaningItemId: s.meaningItemId, wordId: s.wordId, spell: s.spell, createTime: s.createTime, updateTime: s.updateTime));
+
           // 每处理100个同义词，yield一次，避免阻塞
           if (i % 100 == 0) {
             await Future<void>.delayed(Duration.zero);
@@ -336,7 +323,7 @@ Future<void> _runImport({
               wordMeaning: s.wordMeaning,
               createTime: s.createTime,
               updateTime: s.updateTime));
-          
+
           // 每处理100个例句，yield一次，避免阻塞
           if (i % 100 == 0) {
             await Future<void>.delayed(Duration.zero);
@@ -359,5 +346,3 @@ Future<void> _runImport({
     } catch (_) {}
   }
 }
-
-

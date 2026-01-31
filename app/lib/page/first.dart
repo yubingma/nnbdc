@@ -59,7 +59,7 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
 
   /// 自动登录阶段错误（显示在启动页文案下方，不使用toast）
   String? _autoLoginError;
-  
+
   // 版本信息
   String? _buildNumber;
   String? _versionName;
@@ -75,12 +75,12 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
       setState(() {
         _preparingMessage = '正在检查更新…';
       });
-      
+
       // 获取程序版本信息
       PackageInfo packageInfo = await PackageInfo.fromPlatform();
       int buildNumber = int.parse(packageInfo.buildNumber);
       Global.version = packageInfo.version;
-      
+
       // 保存版本代码用于显示
       if (mounted) {
         setState(() {
@@ -99,15 +99,15 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
           updateService = UpdateService();
           Get.put(updateService);
         }
-        
+
         // 调用启动时检查方法
         final versionInfo = await updateService.checkForUpdateOnStartup(buildNumber);
-        
+
         if (versionInfo != null) {
           // 发现新版本
           int verCode = versionInfo['verCode'] as int;
           var changes = versionInfo['changes'] as List<String>;
-          
+
           setState(() {
             newVersionFound = true;
             newVerCode = verCode; // 保存版本号，用于下载时添加版本参数和显示
@@ -205,8 +205,7 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
             Text('更新内容：', style: TextStyle(fontWeight: FontWeight.bold)),
             for (String change in changes) Text('• $change'),
             SizedBox(height: 8),
-            Text('\n将自动完成安装，无需手动操作。是否升级？', 
-                 style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+            Text('\n将自动完成安装，无需手动操作。是否升级？', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
           ],
         ),
         textOK: const Text('是'),
@@ -235,8 +234,7 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
             Text('更新内容：', style: TextStyle(fontWeight: FontWeight.bold)),
             for (String change in changes) Text('• $change'),
             SizedBox(height: 8),
-            Text('\n将自动下载并替换应用文件，无需手动操作。是否升级？', 
-                 style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+            Text('\n将自动下载并替换应用文件，无需手动操作。是否升级？', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
           ],
         ),
         textOK: const Text('是'),
@@ -339,7 +337,7 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
       setState(() {
         installingMessage = '正在请求安装权限...';
       });
-      
+
       if (!await Permission.requestInstallPackages.request().isGranted) {
         setState(() {
           installing = false;
@@ -502,10 +500,10 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
           return;
         }
       }
-      
+
       // 更新 savePath 为实际的安装程序路径
       savePath = installerPath;
-      
+
       if (silent) {
         // 静默安装模式
         await _silentInstallWindowsApp();
@@ -550,41 +548,33 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
       // 获取临时目录
       Directory tempDir = await getApplicationDocumentsDirectory();
       String extractDir = '${tempDir.path}/nnbdc_update_temp';
-      
+
       // 创建解压目录
       Directory extractDirectory = Directory(extractDir);
       if (await extractDirectory.exists()) {
         await extractDirectory.delete(recursive: true);
       }
       await extractDirectory.create(recursive: true);
-      
+
       Global.logger.d('解压目录: $extractDir');
-      
+
       // 使用 PowerShell 解压 zip 文件
       ProcessResult result = await Process.run(
         'powershell',
-        [
-          '-Command',
-          'Expand-Archive',
-          '-Path',
-          zipPath,
-          '-DestinationPath',
-          extractDir,
-          '-Force'
-        ],
+        ['-Command', 'Expand-Archive', '-Path', zipPath, '-DestinationPath', extractDir, '-Force'],
         runInShell: true,
       );
-      
+
       if (result.exitCode != 0) {
         Global.logger.e('解压失败，退出码: ${result.exitCode}');
         Global.logger.e('错误信息: ${result.stderr}');
         return '';
       }
-      
+
       // 查找解压后的 exe 文件
       Directory dir = Directory(extractDir);
       List<FileSystemEntity> files = await dir.list(recursive: true).toList();
-      
+
       for (FileSystemEntity file in files) {
         if (file is File && file.path.toLowerCase().endsWith('.exe')) {
           String exePath = file.path;
@@ -592,7 +582,7 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
           return exePath;
         }
       }
-      
+
       Global.logger.e('解压后未找到 exe 文件');
       return '';
     } catch (e, stackTrace) {
@@ -607,20 +597,20 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
       setState(() {
         installingMessage = '正在准备安装...';
       });
-      
+
       Global.logger.d('开始静默安装 Windows 应用: $savePath');
-      
+
       // 获取当前进程 ID 和可执行文件路径
       int currentPid = pid;
       String currentExe = Platform.resolvedExecutable;
       String exeName = currentExe.split('\\').last;
-      
+
       Global.logger.d('当前进程 PID: $currentPid, 可执行文件: $exeName');
-      
+
       // 获取当前安装目录（如果已安装）
       String? installDir = await _getCurrentInstallDir();
       Global.logger.d('检测到的安装目录: $installDir');
-      
+
       // 创建批处理脚本来处理安装流程
       String batchScriptPath = await _createWindowsUpdateBatchScript(
         installerPath: savePath,
@@ -629,24 +619,24 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
         installDir: installDir,
         currentExePath: currentExe,
       );
-      
+
       if (batchScriptPath.isEmpty) {
         throw Exception('创建更新脚本失败');
       }
-      
+
       Global.logger.d('更新脚本已创建: $batchScriptPath');
-      
+
       setState(() {
         installingMessage = '正在启动安装程序，应用即将退出...';
       });
-      
+
       ToastUtil.success("正在安装新版本，应用即将退出...");
-      
+
       // 使用 cmd /c start 在新窗口中启动批处理脚本
       // 这样可以确保脚本独立运行，即使应用退出也能继续执行
       // 使用 start "" 可以指定窗口标题为空，避免显示不必要的窗口标题
       Global.logger.d('启动批处理脚本: $batchScriptPath');
-      
+
       try {
         final process = await Process.start(
           'cmd',
@@ -664,15 +654,14 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
         Global.logger.e('启动批处理脚本失败', error: e, stackTrace: stackTrace);
         throw Exception('启动更新脚本失败: $e');
       }
-      
+
       // 等待足够的时间确保脚本已启动并开始等待进程
       // 给脚本时间检测到当前进程
       await Future.delayed(Duration(milliseconds: 1500));
-      
+
       // 强制退出应用，让批处理脚本接管安装流程
       // 使用 exit(0) 确保应用立即退出
       exit(0);
-      
     } catch (e, stackTrace) {
       setState(() {
         installing = false;
@@ -702,12 +691,12 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
       if (!await scriptDirectory.exists()) {
         await scriptDirectory.create(recursive: true);
       }
-      
+
       String scriptPath = '$scriptDir/update_installer.bat';
-      
+
       // 转义路径中的特殊字符，使用延迟变量展开发
       String escapedInstallerPath = installerPath.replaceAll('"', '""');
-      
+
       // 构建安装命令参数
       // 注意：NSIS 的 /D 参数必须是最后一个参数，且路径不需要引号
       String installArgs = '/S'; // 静默安装
@@ -720,7 +709,7 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
       // 批处理脚本中需要将引号转义（使用 "" 表示一个引号）
       String batchInstallArgs = installArgs.replaceAll('"', '""');
       String batchInstallDirArg = installDirArg.replaceAll('"', '""');
-      
+
       // 根据安装目录确定可执行文件路径
       // 如果有安装目录，使用该目录下的 nnbdc.exe；否则使用默认路径
       String primaryExePath;
@@ -731,19 +720,19 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
         primaryExePath = await _resolveWindowsInstallPath();
         Global.logger.d('使用默认安装路径: $primaryExePath');
       }
-      
+
       const chineseStartMenuPath = r'C:\ProgramData\Microsoft\Windows\Start Menu\Programs\泡泡单词\泡泡单词.lnk';
-      
+
       // 创建日志文件路径（用于调试）
       String logFilePath = '$scriptDir/update_installer.log';
       String escapedLogPath = logFilePath.replaceAll('"', '""');
-      
+
       // 转义批处理脚本中需要的路径（避免特殊字符问题）
       // 在批处理脚本中使用变量而不是直接插值
       String escapedPrimaryPath = primaryExePath.replaceAll('\\', '\\\\').replaceAll('"', '""');
       String escapedCurrentExePath = currentExePath.replaceAll('\\', '\\\\').replaceAll('"', '""');
       String escapedChineseLink = chineseStartMenuPath.replaceAll('\\', '\\\\').replaceAll('"', '""');
-      
+
       // 创建批处理脚本内容
       // 使用变量存储路径，避免字符串插值导致的编码问题
       String batchContent = '''
@@ -911,16 +900,15 @@ if !ERRORLEVEL! EQU 0 (
 
 endlocal
 ''';
-      
+
       // 写入批处理脚本文件（UTF-8 无 BOM，避免命令前出现不可识别字符）
       // Windows 批处理脚本需要 CRLF 换行符，否则可能被当成单行导致“不是内部或外部命令”
       final batchContentWithCrlf = batchContent.replaceAll('\n', '\r\n');
       File scriptFile = File(scriptPath);
       await scriptFile.writeAsString(batchContentWithCrlf, encoding: utf8);
-      
+
       Global.logger.d('批处理脚本已创建: $scriptPath');
       return scriptPath;
-      
     } catch (e, stackTrace) {
       Global.logger.e('创建更新脚本失败', error: e, stackTrace: stackTrace);
       return '';
@@ -933,12 +921,12 @@ endlocal
       // 从当前可执行文件路径提取安装目录
       String currentExe = Platform.resolvedExecutable;
       Global.logger.d('当前可执行文件路径: $currentExe');
-      
+
       // 获取可执行文件的父目录（即安装目录）
       // 例如: C:\Program Files\nn\nnbdc.exe -> C:\Program Files\nn
       String installDir = currentExe.substring(0, currentExe.lastIndexOf('\\'));
       Global.logger.d('提取的安装目录: $installDir');
-      
+
       // 验证目录是否存在
       if (await Directory(installDir).exists()) {
         return installDir;
@@ -964,19 +952,18 @@ endlocal
     }
   }
 
-
   /// 安装 Linux AppImage
   Future<void> installLinuxApp() async {
     try {
       setState(() {
         installingMessage = '正在查找安装位置...';
       });
-      
+
       Global.logger.d('开始安装 Linux AppImage: $savePath');
-      
+
       // 获取当前运行的 AppImage 路径
       String? currentAppImagePath = await _getCurrentLinuxAppImagePath();
-      
+
       if (currentAppImagePath == null || currentAppImagePath.isEmpty) {
         Global.logger.w('无法获取当前 AppImage 路径，尝试使用默认路径');
         // 尝试使用常见的 AppImage 位置
@@ -990,7 +977,7 @@ endlocal
             '/opt/nnbdc/nnbdc-linux.AppImage',
             '/usr/local/bin/nnbdc-linux.AppImage',
           ];
-          
+
           for (String path in possiblePaths) {
             File file = File(path);
             if (await file.exists()) {
@@ -1001,7 +988,7 @@ endlocal
           }
         }
       }
-      
+
       if (currentAppImagePath == null || currentAppImagePath.isEmpty) {
         // 如果找不到当前文件，将新文件保存到用户目录
         String homeDir = Platform.environment['HOME'] ?? '';
@@ -1015,9 +1002,9 @@ endlocal
           throw Exception('无法确定 AppImage 安装路径');
         }
       }
-      
+
       Global.logger.d('目标 AppImage 路径: $currentAppImagePath');
-      
+
       // 备份旧文件（如果存在）
       File targetFile = File(currentAppImagePath);
       if (await targetFile.exists()) {
@@ -1028,7 +1015,7 @@ endlocal
         Global.logger.d('备份旧文件到: $backupPath');
         await targetFile.copy(backupPath);
       }
-      
+
       // 复制新文件到目标位置
       setState(() {
         installingMessage = '正在安装新版本...';
@@ -1036,7 +1023,7 @@ endlocal
       File newFile = File(savePath);
       Global.logger.d('复制新文件从 $savePath 到 $currentAppImagePath');
       await newFile.copy(currentAppImagePath);
-      
+
       // 设置执行权限
       setState(() {
         installingMessage = '正在设置权限...';
@@ -1046,25 +1033,25 @@ endlocal
         ['+x', currentAppImagePath],
         runInShell: false,
       );
-      
+
       if (chmodResult.exitCode != 0) {
         Global.logger.w('设置执行权限失败: ${chmodResult.stderr}');
       } else {
         Global.logger.d('设置执行权限成功');
       }
-      
+
       // 删除备份文件（如果升级成功）
       File backupFile = File('$currentAppImagePath.backup');
       if (await backupFile.exists()) {
         await backupFile.delete();
       }
-      
+
       Global.logger.d('Linux AppImage 升级成功');
       setState(() {
         installingMessage = '安装成功，正在重启应用...';
       });
       ToastUtil.success("新版本安装成功，正在重启应用...");
-      
+
       // 延迟后启动新版本并退出当前版本
       Future.delayed(Duration(seconds: 2), () async {
         await _launchLinuxNewVersion(currentAppImagePath!);
@@ -1077,7 +1064,7 @@ endlocal
       });
       Global.logger.e('安装 Linux AppImage 失败', error: e, stackTrace: stackTrace);
       ToastUtil.error('安装失败: $e');
-      
+
       // 尝试恢复备份
       try {
         String? currentAppImagePath = await _getCurrentLinuxAppImagePath();
@@ -1096,7 +1083,7 @@ endlocal
       } catch (restoreError) {
         Global.logger.e('恢复备份失败: $restoreError');
       }
-      
+
       tryAutoLogin();
     }
   }
@@ -1110,7 +1097,7 @@ endlocal
         ['-f', '/proc/self/exe'],
         runInShell: false,
       );
-      
+
       if (result.exitCode == 0) {
         String path = result.stdout.toString().trim();
         Global.logger.d('当前 AppImage 路径: $path');
@@ -1119,7 +1106,7 @@ endlocal
     } catch (e) {
       Global.logger.w('获取当前 AppImage 路径失败: $e');
     }
-    
+
     // 备用方法：通过 Platform.resolvedExecutable
     try {
       String executable = Platform.resolvedExecutable;
@@ -1130,7 +1117,7 @@ endlocal
     } catch (e) {
       Global.logger.w('通过 Platform.resolvedExecutable 获取路径失败: $e');
     }
-    
+
     return null;
   }
 
@@ -1138,7 +1125,7 @@ endlocal
   Future<void> _launchLinuxNewVersion(String appImagePath) async {
     try {
       Global.logger.d('启动新版本 Linux AppImage: $appImagePath');
-      
+
       // 检查文件是否存在
       File exeFile = File(appImagePath);
       if (await exeFile.exists()) {
@@ -1162,7 +1149,7 @@ endlocal
     try {
       // 默认安装路径
       String defaultPath = r'C:\Program Files\泡泡单词\nnbdc.exe';
-      
+
       // 检查文件是否存在
       File exeFile = File(defaultPath);
       if (await exeFile.exists()) {
@@ -1222,7 +1209,7 @@ endlocal
 
   @override
   void dispose() {
-    // 恢复 API 自动 loading 提示 
+    // 恢复 API 自动 loading 提示
     Api.setLoadingDisabled(false);
     _splashController.dispose();
     super.dispose();
@@ -1257,10 +1244,10 @@ endlocal
                       child: CircularPercentIndicator(
                         radius: 60.0,
                         lineWidth: 5.0,
-                        percent: downloading 
+                        percent: downloading
                             ? (downloadedBytes ?? 0) / (totalBytes ?? 1024)
-                            : installing 
-                                ? 1.0 
+                            : installing
+                                ? 1.0
                                 : 1.0,
                         center: downloading
                             ? Text(
@@ -1293,7 +1280,11 @@ endlocal
                                     textAlign: TextAlign.center,
                                     style: TextStyle(fontSize: 14),
                                   ),
-                        progressColor: downloading ? Colors.green : installing ? Colors.blue : Colors.green,
+                        progressColor: downloading
+                            ? Colors.green
+                            : installing
+                                ? Colors.blue
+                                : Colors.green,
                       ),
                     ),
                     if (installing && installingMessage != null)
@@ -1309,178 +1300,178 @@ endlocal
 
               /// 正常闪屏界面
               : LayoutBuilder(
-                      builder: (context, constraints) {
-                        // 动态特效闪屏
-                        final double w = constraints.maxWidth;
-                        final double h = constraints.maxHeight;
-                        final double scale = 1.0 + 0.04 * math.sin(_splashController.value * 2 * math.pi);
-                        final String shownText = _splashText;
+                  builder: (context, constraints) {
+                    // 动态特效闪屏
+                    final double w = constraints.maxWidth;
+                    final double h = constraints.maxHeight;
+                    final double scale = 1.0 + 0.04 * math.sin(_splashController.value * 2 * math.pi);
+                    final String shownText = _splashText;
 
-                        return Container(
-                          width: w,
-                          height: h,
-                          decoration: const BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [Color(0xFF4A90E2), Color(0xFF357ABD), Color(0xFF2E5F8A)],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                          ),
-                          child: Stack(
-                            fit: StackFit.expand,
-                            children: [
-                              // 泡泡层
-                              CustomPaint(painter: _BubblesPainter(_bubbles)),
-                              // 居中LOGO与文字
-                              Align(
-                                alignment: const Alignment(0, -0.45),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Transform.scale(
-                                      scale: scale,
-                                      child: Image.asset(
-                                        "assets/images/logo.png",
-                                        width: 96,
-                                        height: 96,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 16),
-                                    Text(
-                                      shownText,
-                                      textScaler: const TextScaler.linear(1.0),
-                                      style: TextStyle(
-                                        color: Colors.white.withValues(alpha: 0.95),
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.w400,
-                                        letterSpacing: 4,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 24),
-                                    // 版本号显示
-                                    Text(
-                                      '版本 ${_versionName ?? Global.version}${_buildNumber != null ? '($_buildNumber)' : ''} (${Config.profileName})',
-                                      textScaler: const TextScaler.linear(1.0),
-                                      style: TextStyle(
-                                        color: Colors.white.withValues(alpha: 0.7),
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w300,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 16),
-                                    // 进度/错误提示：发生异常时，用错误图标替换转圈，并在下方展示错误与按钮（非toast）
-                                    ValueListenableBuilder<String?>(
-                                      valueListenable: Global.startupError,
-                                      builder: (context, startupError, _) {
-                                        final err = startupError ?? _autoLoginError;
-                                        final hasError = err != null && err.isNotEmpty;
+                    return Container(
+                      width: w,
+                      height: h,
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Color(0xFF4A90E2), Color(0xFF357ABD), Color(0xFF2E5F8A)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                      ),
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          // 泡泡层
+                          CustomPaint(painter: _BubblesPainter(_bubbles)),
+                          // 居中LOGO与文字
+                          Align(
+                            alignment: const Alignment(0, -0.45),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Transform.scale(
+                                  scale: scale,
+                                  child: Image.asset(
+                                    "assets/images/logo.png",
+                                    width: 96,
+                                    height: 96,
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  shownText,
+                                  textScaler: const TextScaler.linear(1.0),
+                                  style: TextStyle(
+                                    color: Colors.white.withValues(alpha: 0.95),
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w400,
+                                    letterSpacing: 4,
+                                  ),
+                                ),
+                                const SizedBox(height: 24),
+                                // 版本号显示
+                                Text(
+                                  '版本 ${_versionName ?? Global.version}${_buildNumber != null ? '($_buildNumber)' : ''} (${Config.profileName})',
+                                  textScaler: const TextScaler.linear(1.0),
+                                  style: TextStyle(
+                                    color: Colors.white.withValues(alpha: 0.7),
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w300,
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                // 进度/错误提示：发生异常时，用错误图标替换转圈，并在下方展示错误与按钮（非toast）
+                                ValueListenableBuilder<String?>(
+                                  valueListenable: Global.startupError,
+                                  builder: (context, startupError, _) {
+                                    final err = startupError ?? _autoLoginError;
+                                    final hasError = err != null && err.isNotEmpty;
 
-                                        return Column(
+                                    return Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        // 轻量的进度提示（异常时用错误图标替换转圈）
+                                        Row(
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
-                                            // 轻量的进度提示（异常时用错误图标替换转圈）
-                                            Row(
+                                            SizedBox(
+                                              width: 16,
+                                              height: 16,
+                                              child: hasError
+                                                  ? Icon(
+                                                      Icons.error_outline,
+                                                      size: 18,
+                                                      color: Colors.red.shade100,
+                                                    )
+                                                  : const CircularProgressIndicator(
+                                                      strokeWidth: 2,
+                                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                                    ),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Text(
+                                              _preparingMessage,
+                                              textScaler: const TextScaler.linear(1.0),
+                                              style: TextStyle(
+                                                color: Colors.white.withValues(alpha: 0.9),
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w300,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        if (hasError)
+                                          Padding(
+                                            padding: const EdgeInsets.only(top: 10),
+                                            child: Column(
                                               mainAxisSize: MainAxisSize.min,
                                               children: [
-                                                SizedBox(
-                                                  width: 16,
-                                                  height: 16,
-                                                  child: hasError
-                                                      ? Icon(
-                                                          Icons.error_outline,
-                                                          size: 18,
-                                                          color: Colors.red.shade100,
-                                                        )
-                                                      : const CircularProgressIndicator(
-                                                          strokeWidth: 2,
-                                                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                                        ),
-                                                ),
-                                                const SizedBox(width: 8),
                                                 Text(
-                                                  _preparingMessage,
+                                                  err,
+                                                  textAlign: TextAlign.center,
                                                   textScaler: const TextScaler.linear(1.0),
                                                   style: TextStyle(
-                                                    color: Colors.white.withValues(alpha: 0.9),
-                                                    fontSize: 14,
-                                                    fontWeight: FontWeight.w300,
+                                                    color: Colors.red.shade100,
+                                                    fontSize: 12,
+                                                    fontWeight: FontWeight.w400,
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 10),
+                                                ElevatedButton.icon(
+                                                  onPressed: _retryStartup,
+                                                  icon: const Icon(Icons.refresh, size: 18),
+                                                  label: const Text(
+                                                    '清空本地数据并重试',
+                                                    textScaler: TextScaler.linear(1.0),
+                                                  ),
+                                                  style: ElevatedButton.styleFrom(
+                                                    backgroundColor: Colors.white.withValues(alpha: 0.92),
+                                                    foregroundColor: const Color(0xFF2E5F8A),
+                                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                                    shape: RoundedRectangleBorder(
+                                                      borderRadius: BorderRadius.circular(20),
+                                                    ),
                                                   ),
                                                 ),
                                               ],
                                             ),
-                                            if (hasError)
-                                              Padding(
-                                                padding: const EdgeInsets.only(top: 10),
-                                                child: Column(
-                                                  mainAxisSize: MainAxisSize.min,
-                                                  children: [
-                                                    Text(
-                                                      err,
-                                                      textAlign: TextAlign.center,
-                                                      textScaler: const TextScaler.linear(1.0),
-                                                      style: TextStyle(
-                                                        color: Colors.red.shade100,
-                                                        fontSize: 12,
-                                                        fontWeight: FontWeight.w400,
-                                                      ),
-                                                    ),
-                                                    const SizedBox(height: 10),
-                                                    ElevatedButton.icon(
-                                                      onPressed: _retryStartup,
-                                                      icon: const Icon(Icons.refresh, size: 18),
-                                                      label: const Text(
-                                                        '清空本地数据并重试',
-                                                        textScaler: TextScaler.linear(1.0),
-                                                      ),
-                                                      style: ElevatedButton.styleFrom(
-                                                        backgroundColor: Colors.white.withValues(alpha: 0.92),
-                                                        foregroundColor: const Color(0xFF2E5F8A),
-                                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                                                        shape: RoundedRectangleBorder(
-                                                          borderRadius: BorderRadius.circular(20),
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                          ],
-                                        );
-                                      },
-                                    ),
-                                  ],
+                                          ),
+                                      ],
+                                    );
+                                  },
                                 ),
-                              ),
-                              // 底部提示（仅对桌面平台显示）
-                              // 仅在“确实进入升级流程/发现新版本/正在下载安装”时展示，避免登录阶段误导用户
-                              if ((PlatformUtils.isWindows || PlatformUtils.isLinux || PlatformUtils.isMacOS) &&
-                                  ((newVersionFound && !newVersionIgnored) || downloading || installing || downloadSuccess))
-                                Align(
-                                  alignment: const Alignment(0, 0.85),
-                                  child: GestureDetector(
-                                    onTap: () async {
-                                      final uri = Uri.parse('http://www.nnbdc.com/download.html');
-                                      if (await canLaunchUrl(uri)) {
-                                        await launchUrl(uri, mode: LaunchMode.externalApplication);
-                                      }
-                                    },
-                                    child: Text(
-                                      '如果升级失败，请到 www.nnbdc.com 重新下载',
-                                      textScaler: const TextScaler.linear(1.0),
-                                      style: TextStyle(
-                                        color: Colors.white.withValues(alpha: 0.6),
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w300,
-                                        decoration: TextDecoration.underline,
-                                      ),
-                                    ),
+                              ],
+                            ),
+                          ),
+                          // 底部提示（仅对桌面平台显示）
+                          // 仅在“确实进入升级流程/发现新版本/正在下载安装”时展示，避免登录阶段误导用户
+                          if ((PlatformUtils.isWindows || PlatformUtils.isLinux || PlatformUtils.isMacOS) &&
+                              ((newVersionFound && !newVersionIgnored) || downloading || installing || downloadSuccess))
+                            Align(
+                              alignment: const Alignment(0, 0.85),
+                              child: GestureDetector(
+                                onTap: () async {
+                                  final uri = Uri.parse('http://www.nnbdc.com/download.html');
+                                  if (await canLaunchUrl(uri)) {
+                                    await launchUrl(uri, mode: LaunchMode.externalApplication);
+                                  }
+                                },
+                                child: Text(
+                                  '如果升级失败，请到 www.nnbdc.com 重新下载',
+                                  textScaler: const TextScaler.linear(1.0),
+                                  style: TextStyle(
+                                    color: Colors.white.withValues(alpha: 0.6),
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w300,
+                                    decoration: TextDecoration.underline,
                                   ),
                                 ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
         ));
   }
 
@@ -1488,23 +1479,23 @@ endlocal
     // 这里是“登录阶段”，不要显示“同步/升级”相关文案，避免误导
     _setPreparingMessage('正在自动登录…');
     _setAutoLoginError(null);
-    
+
     try {
       var user = await MyDatabase.instance.usersDao.getLastLoggedInUser();
-      
+
       // 检查是否为访客用户
       if (user != null && user.id == Global.guestId) {
-         final guestVo = UserVo.fromUser(user);
-         await Global.setLoggedInUser(guestVo);
-         // 游客自动登录也尝试恢复购买状态
-         SubscriptionUtil.restorePurchases(showToast: false);
-         Get.offNamed("/index", arguments: IndexPageArgs(4));
-         return;
+        final guestVo = UserVo.fromUser(user);
+        await Global.setLoggedInUser(guestVo);
+        // 游客自动登录也尝试恢复购买状态
+        SubscriptionUtil.restorePurchases(showToast: false);
+        Get.offNamed("/index", arguments: IndexPageArgs(4));
+        return;
       }
 
       if (user != null && user.email != null) {
         _setPreparingMessage('正在加载用户信息…');
-        
+
         // CS架构下，本地有用户信息就可以直接登录，不需要密码验证
         // 直接获取用户信息并登录
         var result = await UserBo().getLoggedInUser();
@@ -1512,7 +1503,7 @@ endlocal
           await Global.setLoggedInUser(result.data!);
           // 自动登录成功后，静默尝试恢复购买状态
           SubscriptionUtil.restorePurchases(showToast: false);
-          
+
           // 注意：由于改为延迟连接，此处不再主动上报用户信息
           // 用户信息会在进入需要socket的页面（如me、russia）时自动上报
           // SocketIoClient.instance.tryReportUserToSocketServer();

@@ -17,7 +17,6 @@ import 'package:nnbdc/util/client_type.dart';
 import 'package:nnbdc/util/level_util.dart';
 import 'package:nnbdc/util/user_helper.dart';
 
-
 class UserBo {
   static final UserBo _instance = UserBo._internal();
   factory UserBo() => _instance;

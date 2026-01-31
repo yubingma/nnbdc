@@ -64,13 +64,7 @@ class _IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
     }
 
     /// 将我们 bottomBar 上面的按钮图标对应的页面存放起来
-    _pageList = <StatefulWidget?>[
-      null, 
-      const WordListsPage(), 
-      const SearchPage(), 
-      if (!Global.isGuest) const GamePage(), 
-      const MePage()
-    ];
+    _pageList = <StatefulWidget?>[null, const WordListsPage(), const SearchPage(), if (!Global.isGuest) const GamePage(), const MePage()];
 
     // 如果是游客且请求的是原本的游戏页面索引，则重定向到词表或“我”
     if (Global.isGuest && _currentIndex == 3) {

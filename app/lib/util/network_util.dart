@@ -18,7 +18,7 @@ class NetworkUtil {
     try {
       // 检查网络连接类型
       List<ConnectivityResult> connectivityResults = await _connectivity.checkConnectivity();
-      
+
       // 如果没有网络连接
       if (connectivityResults.isEmpty || connectivityResults.contains(ConnectivityResult.none)) {
         Global.logger.d('🌐 网络连接检测：无网络连接，静默跳过网络操作');
@@ -44,9 +44,8 @@ class NetworkUtil {
   Future<bool> _hasInternetAccess() async {
     try {
       // 尝试连接到一个可靠的服务器
-      final result = await InternetAddress.lookup('www.baidu.com')
-          .timeout(Duration(seconds: 5));
-      
+      final result = await InternetAddress.lookup('www.baidu.com').timeout(Duration(seconds: 5));
+
       if (result.isNotEmpty && result[0].rawAddress.isNotEmpty) {
         return true;
       }
@@ -56,9 +55,8 @@ class NetworkUtil {
 
     // 如果百度连接失败，尝试连接谷歌DNS
     try {
-      final result = await InternetAddress.lookup('8.8.8.8')
-          .timeout(Duration(seconds: 3));
-      
+      final result = await InternetAddress.lookup('8.8.8.8').timeout(Duration(seconds: 3));
+
       if (result.isNotEmpty && result[0].rawAddress.isNotEmpty) {
         return true;
       }
@@ -91,31 +89,31 @@ class NetworkUtil {
   Future<String> getConnectionType() async {
     try {
       List<ConnectivityResult> results = await _connectivity.checkConnectivity();
-      
+
       if (results.isEmpty || results.contains(ConnectivityResult.none)) {
         return '无网络';
       }
-      
+
       if (results.contains(ConnectivityResult.wifi)) {
         return 'WiFi';
       }
-      
+
       if (results.contains(ConnectivityResult.mobile)) {
         return '移动网络';
       }
-      
+
       if (results.contains(ConnectivityResult.ethernet)) {
         return '以太网';
       }
-      
+
       if (results.contains(ConnectivityResult.bluetooth)) {
         return '蓝牙';
       }
-      
+
       if (results.contains(ConnectivityResult.vpn)) {
         return 'VPN';
       }
-      
+
       return '其他';
     } catch (e) {
       Global.logger.e('🌐 获取网络连接类型失败: $e');

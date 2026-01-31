@@ -172,13 +172,15 @@ class _GamePageState extends State<GamePage> with TickerProviderStateMixin {
                 decoration: BoxDecoration(
                   color: status.color,
                   shape: BoxShape.circle,
-                  boxShadow: hasUsers ? [
-                    BoxShadow(
-                      color: status.color.withValues(alpha: 0.6),
-                      blurRadius: 2,
-                      spreadRadius: 0.5,
-                    ),
-                  ] : null,
+                  boxShadow: hasUsers
+                      ? [
+                          BoxShadow(
+                            color: status.color.withValues(alpha: 0.6),
+                            blurRadius: 2,
+                            spreadRadius: 0.5,
+                          ),
+                        ]
+                      : null,
                 ),
               ),
             );
@@ -334,7 +336,11 @@ class _GamePageState extends State<GamePage> with TickerProviderStateMixin {
             _buildSmallActionButton(
               label: '开房间',
               icon: Icons.meeting_room_outlined,
-              onTap: () => Get.toNamed('/russia', arguments: [hall, null, {'mode': 'createPrivate'}]),
+              onTap: () => Get.toNamed('/russia', arguments: [
+                hall,
+                null,
+                {'mode': 'createPrivate'}
+              ]),
               enabled: true,
             ),
             const SizedBox(width: 8),
@@ -344,7 +350,11 @@ class _GamePageState extends State<GamePage> with TickerProviderStateMixin {
               onTap: () async {
                 final roomId = await _promptRoomId(context);
                 if (roomId != null) {
-                  Get.toNamed('/russia', arguments: [hall, null, {'joinRoomId': roomId}]);
+                  Get.toNamed('/russia', arguments: [
+                    hall,
+                    null,
+                    {'joinRoomId': roomId}
+                  ]);
                 }
               },
               enabled: true,
@@ -372,9 +382,7 @@ class _GamePageState extends State<GamePage> with TickerProviderStateMixin {
         ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: hall.userCount > 0 
-            ? AppTheme.primaryColor.withValues(alpha: 0.3) 
-            : (isDarkMode ? Colors.grey[700]! : Colors.grey[200]!),
+          color: hall.userCount > 0 ? AppTheme.primaryColor.withValues(alpha: 0.3) : (isDarkMode ? Colors.grey[700]! : Colors.grey[200]!),
           width: 1.5,
         ),
         boxShadow: [
@@ -426,27 +434,29 @@ class _GamePageState extends State<GamePage> with TickerProviderStateMixin {
     final isLoggedInUserAdmin = Global.getLoggedInUser()?.isAdmin == true;
     final hasUsers = isLoggedInUserAdmin ? group.userCount > 0 : false;
     final badgeColor = hasUsers ? accentColor : Colors.grey;
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: hasUsers
-            ? [accentColor.withValues(alpha: 0.15), accentColor.withValues(alpha: 0.08)]
-            : [Colors.grey.withValues(alpha: 0.1), Colors.grey.withValues(alpha: 0.05)],
+              ? [accentColor.withValues(alpha: 0.15), accentColor.withValues(alpha: 0.08)]
+              : [Colors.grey.withValues(alpha: 0.1), Colors.grey.withValues(alpha: 0.05)],
         ),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: hasUsers ? accentColor.withValues(alpha: 0.4) : Colors.grey.withValues(alpha: 0.3),
           width: 1.5,
         ),
-        boxShadow: hasUsers ? [
-          BoxShadow(
-            color: accentColor.withValues(alpha: 0.2),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ] : null,
+        boxShadow: hasUsers
+            ? [
+                BoxShadow(
+                  color: accentColor.withValues(alpha: 0.2),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ]
+            : null,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -462,13 +472,15 @@ class _GamePageState extends State<GamePage> with TickerProviderStateMixin {
                   decoration: BoxDecoration(
                     color: badgeColor,
                     shape: BoxShape.circle,
-                    boxShadow: hasUsers ? [
-                      BoxShadow(
-                        color: accentColor.withValues(alpha: 0.6),
-                        blurRadius: 3,
-                        spreadRadius: 1,
-                      ),
-                    ] : null,
+                    boxShadow: hasUsers
+                        ? [
+                            BoxShadow(
+                              color: accentColor.withValues(alpha: 0.6),
+                              blurRadius: 3,
+                              spreadRadius: 1,
+                            ),
+                          ]
+                        : null,
                   ),
                 ),
               );
@@ -527,8 +539,7 @@ class _GamePageState extends State<GamePage> with TickerProviderStateMixin {
               ),
             ),
           ),
-          if (Global.getLoggedInUser()?.isAdmin == true)
-            _buildGroupUserCountBadge(group, accentColor),
+          if (Global.getLoggedInUser()?.isAdmin == true) _buildGroupUserCountBadge(group, accentColor),
         ],
       ),
     );

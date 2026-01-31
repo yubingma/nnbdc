@@ -49,7 +49,7 @@ class _FeatureRequestWallPageState extends State<FeatureRequestWallPage> with Si
       final requests = await LoadingUtils.withoutApiLoading(() async {
         return await Api.client.getAllFeatureRequests();
       });
-      
+
       setState(() {
         _requests = requests;
         _isLoading = false;
@@ -240,7 +240,7 @@ class _FeatureRequestWallPageState extends State<FeatureRequestWallPage> with Si
                             ToastUtil.info('请填写举报原因');
                             return;
                           }
-                          
+
                           final user = Global.getLoggedInUser();
                           if (user == null) {
                             ToastUtil.info('请先登录');
@@ -462,7 +462,7 @@ class _FeatureRequestWallPageState extends State<FeatureRequestWallPage> with Si
                             ToastUtil.info('请填写完整信息');
                             return;
                           }
-                          
+
                           final user = Global.getLoggedInUser();
                           if (user == null) {
                             ToastUtil.info('请先登录');
@@ -475,7 +475,7 @@ class _FeatureRequestWallPageState extends State<FeatureRequestWallPage> with Si
                             if (result.success && result.data != null) {
                               ToastUtil.success('提交成功');
                               Navigator.pop(dialogContext);
-                              _loadRequests(); 
+                              _loadRequests();
                             } else {
                               ToastUtil.error(result.msg ?? '提交失败');
                             }
@@ -639,9 +639,7 @@ class _FeatureRequestWallPageState extends State<FeatureRequestWallPage> with Si
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: isDarkMode 
-                ? Colors.black.withValues(alpha: 0.3) 
-                : Colors.grey.withValues(alpha: 0.15),
+            color: isDarkMode ? Colors.black.withValues(alpha: 0.3) : Colors.grey.withValues(alpha: 0.15),
             spreadRadius: 0,
             blurRadius: 8,
             offset: const Offset(0, 4),
@@ -779,4 +777,3 @@ class _FeatureRequestWallPageState extends State<FeatureRequestWallPage> with Si
     return nickName[0].toUpperCase();
   }
 }
-

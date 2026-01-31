@@ -418,9 +418,7 @@ class SelectBookPageState extends State<SelectBookPage> {
       }
       final isUserDict = currUserId != null && ownerId == currUserId;
 
-      final result = isUserDict
-          ? await Api.client.getUserDictResById(dictId)
-          : await Api.client.getSysDictResById(dictId);
+      final result = isUserDict ? await Api.client.getUserDictResById(dictId) : await Api.client.getSysDictResById(dictId);
 
       stopwatch.stop();
       Global.logger.d('📥 API调用完成: ${stopwatch.elapsedMilliseconds}ms');
@@ -580,7 +578,7 @@ class SelectBookPageState extends State<SelectBookPage> {
     try {
       // 获取词书资源
       final dictId = dict.id;
-      
+
       // 判断是用户词书还是系统词书，以确定API路径
       final currUserId = Global.getLoggedInUser()?.id ?? Global.currentUserId;
       String? ownerId = dict.owner?.id;
@@ -596,7 +594,7 @@ class SelectBookPageState extends State<SelectBookPage> {
       if (!kIsWeb) {
         unawaited(DictImportWorker.instance.ensureStarted());
       }
-      
+
       // 监听下载进度，将下载进度映射到0-20%的范围
       Function(int, int)? downloadProgressListener;
       if (onProgress != null) {
@@ -624,7 +622,7 @@ class SelectBookPageState extends State<SelectBookPage> {
         };
         DownloadProgressManager.addListener(resourceId, downloadProgressListener);
       }
-      
+
       try {
         // Web 端先不处理（Web 无 isolate/插件限制较多），继续走现有逻辑
         if (kIsWeb) {
@@ -829,18 +827,18 @@ class SelectBookPageState extends State<SelectBookPage> {
       if (dictRes.dict != null) {
         operations.add({
           'operation': () => MyDatabase.instance.dictsDao.saveEntity(
-                  Dict(
-                      id: dictRes.dict!.id,
-                      isReady: dictRes.dict!.isReady,
-                      isShared: dictRes.dict!.isShared,
-                      ownerId: dictRes.dict!.ownerId,
-                      name: dictRes.dict!.name,
-                      wordCount: dictRes.dict!.wordCount,
-                      visible: dictRes.dict!.visible,
-                      popularityLimit: dictRes.dict!.popularityLimit,
-                      createTime: dictRes.dict!.createTime,
-                      updateTime: dictRes.dict!.updateTime),
-                  false),
+              Dict(
+                  id: dictRes.dict!.id,
+                  isReady: dictRes.dict!.isReady,
+                  isShared: dictRes.dict!.isShared,
+                  ownerId: dictRes.dict!.ownerId,
+                  name: dictRes.dict!.name,
+                  wordCount: dictRes.dict!.wordCount,
+                  visible: dictRes.dict!.visible,
+                  popularityLimit: dictRes.dict!.popularityLimit,
+                  createTime: dictRes.dict!.createTime,
+                  updateTime: dictRes.dict!.updateTime),
+              false),
           'count': resourceCounts['词书信息']!,
           'name': '词书信息'
         });

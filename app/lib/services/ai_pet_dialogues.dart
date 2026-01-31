@@ -1,10 +1,9 @@
 /// 小宠物对话文案库
-/// 
+///
 /// 包含小宠物在不同学习场景下的对话文案，用于AI生成内容的参考
 class AiPetDialogues {
-  
   // ==================== 单词学习相关 ====================
-  
+
   /// 回答错误时的鼓励语
   static const List<String> answerWrongEncouragement = [
     "这个词有点调皮呢，我们再抓住它一次吧～",
@@ -16,7 +15,7 @@ class AiPetDialogues {
     "没事没事，我小时候也经常记错这种词，多练几次就好啦～",
     "这个词可能在和你捉迷藏呢，我们再找找它的规律～",
   ];
-  
+
   /// 回答正确时的表扬语
   static const List<String> answerCorrectPraise = [
     "太棒啦！你成功驯服了这个单词～",
@@ -29,7 +28,7 @@ class AiPetDialogues {
     "正确！你今天的状态真不错～",
     "棒棒哒！继续保持这个节奏～",
   ];
-  
+
   /// 连续答对时的额外表扬
   static const List<String> consecutiveCorrectBonus = [
     "哇！已经连对{count}个了，你今天火力全开啊！",
@@ -38,7 +37,7 @@ class AiPetDialogues {
     "我的天！{count}个全对，你这是开挂了吗？",
     "连胜{count}场！你已经进入无敌模式了～",
   ];
-  
+
   /// 首次学习单词时的引导语
   static const List<String> firstTimeLearning = [
     "来，让我们认识一个新朋友～",
@@ -47,7 +46,7 @@ class AiPetDialogues {
     "这是个有趣的词，让我们一起来了解它吧～",
     "新词来啦！我们慢慢熟悉它～",
   ];
-  
+
   /// 复习旧单词时的提醒语
   static const List<String> reviewingWords = [
     "这个老朋友又来串门了，还记得它吗？",
@@ -56,9 +55,9 @@ class AiPetDialogues {
     "这个词我们之前见过呢，还记得它的样子吗？",
     "回顾一下～这个词你还记得多少呢？",
   ];
-  
+
   // ==================== 学习进度相关 ====================
-  
+
   /// 开始学习时的欢迎语
   static const List<String> sessionStart = [
     "新的一天，新的开始！准备好了吗？",
@@ -67,7 +66,7 @@ class AiPetDialogues {
     "又到学习时间啦，我们一起努力吧！",
     "开始新的学习之旅～我会一直陪着你的！",
   ];
-  
+
   /// 学习进度达标时的祝贺语
   static const List<String> goalAchieved = [
     "太棒了！今天的学习目标达成～",
@@ -76,7 +75,7 @@ class AiPetDialogues {
     "目标达成！给自己点个赞吧～",
     "任务完成！你今天的表现太赞了～",
   ];
-  
+
   /// 学习时长提醒
   static const List<String> studyDurationReminder = [
     "已经学习{minutes}分钟啦，记得休息一下眼睛哦～",
@@ -84,7 +83,7 @@ class AiPetDialogues {
     "学习{minutes}分钟了呢，适当休息会学得更好哦～",
     "时间过得好快呀，已经{minutes}分钟了，别忘了放松一下～",
   ];
-  
+
   /// 连续学习天数庆祝
   static const List<String> streakCelebration = [
     "哇！已经连续打卡{days}天了，你的毅力真让我佩服～",
@@ -92,9 +91,9 @@ class AiPetDialogues {
     "{days}天连续打卡达成！你简直是学习小超人～",
     "天啊！{days}天从不间断，这份坚持太难得了～",
   ];
-  
+
   // ==================== 互动陪伴相关 ====================
-  
+
   /// 闲聊时的暖心话语
   static const List<String> casualChat = [
     "学累了的话，我们聊聊天吧～",
@@ -103,7 +102,7 @@ class AiPetDialogues {
     "记得劳逸结合哦，我可不想你太累啦～",
     "话说，你最喜欢哪类单词呢？",
   ];
-  
+
   /// 用户长时间未学习时的唤醒语
   static const List<String> comebackReminder = [
     "好久不见啦！我还挺想你的呢～",
@@ -112,7 +111,7 @@ class AiPetDialogues {
     "终于等到你！我们继续上次的学习吧～",
     "哈喽～好久没见，今天要不要一起学习呀？",
   ];
-  
+
   /// 夜深时的提醒语
   static const List<String> lateNightReminder = [
     "夜深了呢，早点休息对记忆力更好哦～",
@@ -120,7 +119,7 @@ class AiPetDialogues {
     "注意休息呀，养好精神才能记得更牢～",
     "时间不早了呢，我们明天再继续吧～",
   ];
-  
+
   /// 早晨学习时的问候语
   static const List<String> morningGreeting = [
     "早安～晨读的效果是最好的哦！",
@@ -128,9 +127,9 @@ class AiPetDialogues {
     "清晨的头脑最清醒，学习效率加倍！",
     "早起的鸟儿有虫吃，早起的你单词记得牢～",
   ];
-  
+
   // ==================== 学习策略建议 ====================
-  
+
   /// 记忆方法建议
   static const List<String> memoryTips = [
     "试试把这个词和你熟悉的事物联系起来记～",
@@ -139,7 +138,7 @@ class AiPetDialogues {
     "重复是记忆之母，多看几遍印象会更深～",
     "把难记的词记在小本本上，没事就翻翻～",
   ];
-  
+
   /// 遇到难词时的安慰语
   static const List<String> difficultWordComfort = [
     "这个词确实有点难，慢慢来，别着急～",
@@ -147,7 +146,7 @@ class AiPetDialogues {
     "没关系，难的词往往最有价值，值得花时间～",
     "这种词多看几次就熟悉了，我陪你一起攻克它～",
   ];
-  
+
   /// 学习效率表扬
   static const List<String> efficiencyPraise = [
     "哇，你今天的学习效率真高！",
@@ -155,9 +154,9 @@ class AiPetDialogues {
     "你的学习节奏掌握得真好～",
     "保持这个状态，进步会很明显的～",
   ];
-  
+
   // ==================== 情感支持相关 ====================
-  
+
   /// 失落时的鼓励语
   static const List<String> emotionalSupport = [
     "每个人都有记不住的时候，不要太苛求自己哦～",
@@ -166,7 +165,7 @@ class AiPetDialogues {
     "相信自己，你一定可以的！我看好你～",
     "慢慢来，每一次尝试都是在进步～",
   ];
-  
+
   /// 庆祝小成就
   static const List<String> smallVictoryCelebration = [
     "虽然是小进步，但积累起来就是大飞跃～",
@@ -174,7 +173,7 @@ class AiPetDialogues {
     "看！你又掌握了一个新单词，棒棒的～",
     "这些小小的进步，都在为你的目标铺路～",
   ];
-  
+
   /// 放松时刻的话语
   static const List<String> relaxationMoment = [
     "学习之余也要记得放松哦，我们聊点别的吧～",
@@ -182,15 +181,15 @@ class AiPetDialogues {
     "深呼吸～放松一下，然后我们继续～",
     "休息是为了走更远的路，不要硬撑哦～",
   ];
-  
+
   // ==================== 工具方法 ====================
-  
+
   /// 随机获取指定类型的对话
   static String getRandomDialogue(List<String> dialogues) {
     if (dialogues.isEmpty) return "";
     return dialogues[DateTime.now().millisecondsSinceEpoch % dialogues.length];
   }
-  
+
   /// 获取带参数的对话（替换占位符）
   static String getDialogueWithParams(List<String> dialogues, Map<String, dynamic> params) {
     String dialogue = getRandomDialogue(dialogues);
@@ -199,11 +198,11 @@ class AiPetDialogues {
     });
     return dialogue;
   }
-  
+
   /// 根据场景获取对话
   static String getDialogueByScene(String scene, {Map<String, dynamic>? params}) {
     List<String> dialogues;
-    
+
     switch (scene) {
       case 'answer_wrong':
         dialogues = answerWrongEncouragement;
@@ -265,14 +264,14 @@ class AiPetDialogues {
       default:
         return "";
     }
-    
+
     if (params != null && params.isNotEmpty) {
       return getDialogueWithParams(dialogues, params);
     }
-    
+
     return getRandomDialogue(dialogues);
   }
-  
+
   /// 获取所有场景类型
   static List<String> getAllScenes() {
     return [

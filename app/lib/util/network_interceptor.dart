@@ -13,14 +13,14 @@ class NetworkInterceptor extends Interceptor {
     bool isConnected = await _networkUtil.isConnected();
     if (!isConnected) {
       Global.logger.d('🌐 网络连接不可用，静默阻止API请求: ${options.path}');
-      
+
       // 返回网络错误，但不显示给用户
       final error = DioException(
         requestOptions: options,
         type: DioExceptionType.connectionError,
         message: '网络连接不可用',
       );
-      
+
       handler.reject(error);
       return;
     }

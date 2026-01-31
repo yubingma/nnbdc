@@ -55,11 +55,7 @@ class MsgPageState extends State<MsgPage> {
 
     try {
       final clientType = getClientType();
-      final result = await Api.client.sendAdvice(
-        _messageController.text.trim(), 
-        clientType.name,
-        Global.getLoggedInUser()!.id
-      );
+      final result = await Api.client.sendAdvice(_messageController.text.trim(), clientType.name, Global.getLoggedInUser()!.id);
       if (result.success) {
         _messageController.clear();
         ToastUtil.info("发送成功");

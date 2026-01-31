@@ -6,22 +6,22 @@ import 'package:nnbdc/global.dart';
 import 'package:nnbdc/util/app_clock.dart';
 
 /// 同步系统数据库（统一的系统数据同步）
-/// 
+///
 /// 包含：
 /// - 静态元数据：DictGroups、GroupAndDictLinks、Dicts、DictWords
 /// - UGC内容：Sentences、WordImages、WordShortDescChineses
-/// 
+///
 /// 使用单例版本号，所有用户共享同一份系统数据
 Future<void> syncSysDb() async {
   final stopwatch = Stopwatch()..start();
-  
+
   try {
     final db = MyDatabase.instance;
-    
+
     // 1. 获取本地UGC版本（设备级别）
     SysDbVersionData? localSysVersion = await db.sysDbVersionDao.getVersion();
     int localVersion = localSysVersion?.version ?? 0;
-    
+
     // 2. 获取服务端全局版本
     var remoteVersionResult = await Api.client.getSysDbVersion();
     if (!remoteVersionResult.success) {
@@ -29,13 +29,13 @@ Future<void> syncSysDb() async {
       return;
     }
     int remoteVersion = remoteVersionResult.data!;
-    
+
     // 3. 版本一致，无需同步
     if (localVersion == remoteVersion) {
       Global.logger.i("✅ 系统数据已是最新 - 版本: $localVersion");
       return;
     }
-    
+
     // 4. 拉取增量日志
     Global.logger.i("📥 开始拉取系统数据增量 - 本地: $localVersion, 远程: $remoteVersion");
     var logsResult = await Api.client.getNewSysDbLogs(localVersion);
@@ -43,13 +43,13 @@ Future<void> syncSysDb() async {
       Global.logger.e("❌ 获取系统数据日志失败: ${logsResult.msg}");
       return;
     }
-    
+
     List<SysDbLogDto> remoteLogs = logsResult.data!;
     Global.logger.i("📦 收到 ${remoteLogs.length} 条系统数据变更");
-    
+
     // 5. 应用日志到本地数据库
     await _applySysDbLogs(remoteLogs);
-    
+
     // 6. 更新本地版本
     await db.sysDbVersionDao.saveVersion(
       SysDbVersionData(
@@ -60,27 +60,25 @@ Future<void> syncSysDb() async {
         updateTime: AppClock.now(),
       ),
     );
-    
+
     stopwatch.stop();
     Global.logger.i("✅ 系统数据同步完成 - 耗时: ${stopwatch.elapsedMilliseconds}ms, "
         "变更数: ${remoteLogs.length}, 版本: $localVersion → $remoteVersion");
-        
   } catch (e, stackTrace) {
     stopwatch.stop();
-    Global.logger.e("❌ 系统数据同步失败: $e - 耗时: ${stopwatch.elapsedMilliseconds}ms", 
-        error: e, stackTrace: stackTrace);
+    Global.logger.e("❌ 系统数据同步失败: $e - 耗时: ${stopwatch.elapsedMilliseconds}ms", error: e, stackTrace: stackTrace);
   }
 }
 
 /// 应用系统数据日志到本地数据库
 Future<void> _applySysDbLogs(List<SysDbLogDto> logs) async {
   final db = MyDatabase.instance;
-  
+
   await db.transaction(() async {
     for (var log in logs) {
       try {
         Map<String, dynamic> entityJson = jsonDecode(log.record);
-        
+
         // === 静态元数据表 ===
         if (log.tblName == 'dict_group') {
           // 词典分组
@@ -90,21 +88,20 @@ Future<void> _applySysDbLogs(List<SysDbLogDto> logs) async {
             DictGroup entity = DictGroup.fromJson(entityJson);
             await db.into(db.dictGroups).insertOnConflictUpdate(entity);
           }
-          
         } else if (log.tblName == 'group_and_dict_link') {
           // 分组与词典关联
           if (log.operate == 'DELETE') {
             var parts = log.recordId.split('-');
             if (parts.length == 2) {
               await (db.delete(db.groupAndDictLinks)
-                ..where((t) => t.groupId.equals(parts[0]))
-                ..where((t) => t.dictId.equals(parts[1]))).go();
+                    ..where((t) => t.groupId.equals(parts[0]))
+                    ..where((t) => t.dictId.equals(parts[1])))
+                  .go();
             }
           } else {
             GroupAndDictLink entity = GroupAndDictLink.fromJson(entityJson);
             await db.into(db.groupAndDictLinks).insertOnConflictUpdate(entity);
           }
-          
         } else if (log.tblName == 'dict') {
           // 词典
           if (log.operate == 'DELETE') {
@@ -113,7 +110,6 @@ Future<void> _applySysDbLogs(List<SysDbLogDto> logs) async {
             Dict entity = Dict.fromJson(entityJson);
             await db.dictsDao.saveEntity(entity, false);
           }
-          
         } else if (log.tblName == 'dict_word') {
           // 词典单词关联（系统词典的单词变更）
           if (log.operate == 'DELETE') {
@@ -130,8 +126,8 @@ Future<void> _applySysDbLogs(List<SysDbLogDto> logs) async {
             DictWord entity = DictWord.fromJson(entityJson);
             await db.dictWordsDao.insertEntity(entity, false);
           }
-          
-        // === UGC内容表 ===
+
+          // === UGC内容表 ===
         } else if (log.tblName == 'sentence') {
           // 例句
           if (log.operate == 'DELETE') {
@@ -140,7 +136,6 @@ Future<void> _applySysDbLogs(List<SysDbLogDto> logs) async {
             Sentence entity = Sentence.fromJson(entityJson);
             await db.sentencesDao.insertEntity(entity);
           }
-          
         } else if (log.tblName == 'word_image') {
           // 单词配图
           if (log.operate == 'DELETE') {
@@ -149,7 +144,6 @@ Future<void> _applySysDbLogs(List<SysDbLogDto> logs) async {
             WordImage entity = WordImage.fromJson(entityJson);
             await db.wordImagesDao.insertEntity(entity);
           }
-          
         } else if (log.tblName == 'word_shortdesc_chinese') {
           // 短描述中文翻译
           if (log.operate == 'DELETE') {
@@ -158,17 +152,13 @@ Future<void> _applySysDbLogs(List<SysDbLogDto> logs) async {
             WordShortDescChinese entity = WordShortDescChinese.fromJson(entityJson);
             await db.wordShortDescChinesesDao.insertEntity(entity);
           }
-          
         } else {
           Global.logger.w('未知的系统数据表: ${log.tblName}');
         }
-        
       } catch (e, stackTrace) {
-        Global.logger.e('应用系统数据日志失败 - 表: ${log.tblName}, ID: ${log.recordId}', 
-            error: e, stackTrace: stackTrace);
+        Global.logger.e('应用系统数据日志失败 - 表: ${log.tblName}, ID: ${log.recordId}', error: e, stackTrace: stackTrace);
         // 继续处理下一条日志，不中断整个同步
       }
     }
   });
 }
-

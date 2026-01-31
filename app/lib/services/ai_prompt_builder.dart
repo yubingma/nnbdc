@@ -16,7 +16,6 @@ class AiPromptBuilder {
     }
   }
 
-
   static String _buildExplainWordPrompt(Map<String, dynamic> payload) {
     final spell = (payload['spell'] ?? '').toString();
 
@@ -34,7 +33,6 @@ class AiPromptBuilder {
 
     buffer.writeln('<|im_start|>user');
     buffer.write('请帮助我学习单词: "$spell" ');
-
 
     buffer.writeln('');
 

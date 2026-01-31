@@ -84,7 +84,7 @@ class _MePageState extends State<MePage> {
     };
 
     SocketIoClient.instance.registerSocketEventListeners(_socketEventListener);
-    
+
     // 监听订阅更新事件，以便及时刷新UI
     _subscriptionStreamSubscription = SubscriptionUtil.purchaseUpdatedStream.listen((purchases) {
       if (mounted) {
@@ -107,7 +107,7 @@ class _MePageState extends State<MePage> {
 
     // 断开socket连接
     SocketIoClient.instance.disconnect();
-    
+
     // 取消订阅更新监听
     _subscriptionStreamSubscription?.cancel();
 
@@ -307,11 +307,11 @@ class _MePageState extends State<MePage> {
         // 这里简单初始化为空状态，或者可以从本地数据库查询 daka 表生成
         // 暂时只给空状态
         if (mounted) {
-           setState(() {
+          setState(() {
             // 初始化30天未打卡
             last30DaysDakaStatus = List.filled(30, UserDayStatus.loggedIn.json);
             // 还需要查询本地 daka 表来更新今天是否打卡等，这里暂略，后续可优化
-          }); 
+          });
         }
       } else {
         var result2 = await UserBo().getDayStatuses(30);

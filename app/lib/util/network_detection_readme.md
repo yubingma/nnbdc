@@ -110,6 +110,7 @@ flutter test test/network_util_test.dart
 ```
 
 测试覆盖：
+
 - 网络连接检测
 - 连接类型获取
 - 状态变化监听

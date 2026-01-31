@@ -206,7 +206,8 @@ class _CdnManagementPageState extends State<CdnManagementPage> with SingleTicker
                       _buildUrlEditor(
                         controller: _fileUrlsController,
                         type: '文件',
-                        hintText: '请输入需要刷新的文件URL，多个URL请换行分隔\n\n示例:\nhttp://www.nnbdc.com/img/word/test.jpg\nhttp://www.nnbdc.com/img/word/example.png',
+                        hintText:
+                            '请输入需要刷新的文件URL，多个URL请换行分隔\n\n示例:\nhttp://www.nnbdc.com/img/word/test.jpg\nhttp://www.nnbdc.com/img/word/example.png',
                         isDarkMode: isDarkMode,
                       ),
                       _buildUrlEditor(
@@ -371,5 +372,3 @@ class _CdnManagementPageState extends State<CdnManagementPage> with SingleTicker
     );
   }
 }
-
-

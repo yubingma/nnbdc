@@ -49,7 +49,7 @@ class ErrorHandler {
       final db = MyDatabase.instance;
       final userId = Global.getLoggedInUser()?.id;
       final now = AppClock.now();
-      
+
       final exception = LocalException(
         id: Util.uuid(),
         errorType: error.runtimeType.toString(),
@@ -59,7 +59,7 @@ class ErrorHandler {
         userId: userId,
         createTime: now,
       );
-      
+
       await db.localExceptionsDao.insertException(exception);
     } catch (e) {
       // 记录异常到数据库失败时，只记录到日志，不抛出异常，避免循环
@@ -77,7 +77,7 @@ class ErrorHandler {
   }) {
     // 记录统计
     _recordErrorStats(logPrefix ?? 'general');
-    
+
     final logMessage = logPrefix != null ? '$logPrefix: $error' : '$error';
 
     // 使用 Global.logger 的原生功能，它会自动处理异常栈的深度
@@ -103,7 +103,7 @@ class ErrorHandler {
     // 记录统计
     _databaseErrorCount++;
     _recordErrorStats('database_${operation ?? "unknown"}');
-    
+
     // 检测是否是表不存在的错误，如果是则自动重建数据库
     if (_isTableNotFoundError(error)) {
       Global.logger.w('⚠️ 检测到表不存在错误，自动重建数据库...');
@@ -118,7 +118,7 @@ class ErrorHandler {
         // 如果重建失败，继续正常的错误处理流程
       }
     }
-    
+
     // 增强日志输出，确保能看到错误信息
     final errorMessage = '数据库操作失败: ${operation ?? "未知操作"}';
 
@@ -142,8 +142,7 @@ class ErrorHandler {
 
   /// 判断是否是表不存在的错误
   static bool _isTableNotFoundError(Object error) {
-    return error.runtimeType.toString().contains('SqliteException') && 
-           error.toString().contains('no such table');
+    return error.runtimeType.toString().contains('SqliteException') && error.toString().contains('no such table');
   }
 
   static bool _isForeignKeyConstraintError(Object error) {
@@ -245,10 +244,10 @@ class ErrorHandler {
   }) {
     // 记录统计
     _networkErrorCount++;
-    
+
     final logPrefix = api != null ? '网络请求失败($api)' : '网络请求失败';
     final userMessage = getNetworkErrorMessage(error);
-    
+
     handleError(
       error,
       stackTrace,

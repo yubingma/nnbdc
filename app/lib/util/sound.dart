@@ -175,21 +175,24 @@ class SoundUtil {
     }
   }
 
-  static Future<void> playAssetSound(String soundFileName, double speed, double volume, int timeoutInMilliSeconds, int sleepAfterPlayInMilliSeconds) async {
+  static Future<void> playAssetSound(
+      String soundFileName, double speed, double volume, int timeoutInMilliSeconds, int sleepAfterPlayInMilliSeconds) async {
     var player = AudioPlayer();
     try {
       // 在 iOS 上设置 AudioContext 以支持混音
       if (PlatformUtils.isIOS) {
-        await player.setAudioContext(AudioContext(
-          iOS: AudioContextIOS(
-            category: AVAudioSessionCategory.playAndRecord,
-            options: {
-              AVAudioSessionOptions.defaultToSpeaker,
-              AVAudioSessionOptions.mixWithOthers,
-              AVAudioSessionOptions.allowBluetooth,
-            },
-          ),
-        )).timeout(const Duration(milliseconds: 100));
+        await player
+            .setAudioContext(AudioContext(
+              iOS: AudioContextIOS(
+                category: AVAudioSessionCategory.playAndRecord,
+                options: {
+                  AVAudioSessionOptions.defaultToSpeaker,
+                  AVAudioSessionOptions.mixWithOthers,
+                  AVAudioSessionOptions.allowBluetooth,
+                },
+              ),
+            ))
+            .timeout(const Duration(milliseconds: 100));
       }
 
       await player.setPlaybackRate(speed).timeout(const Duration(milliseconds: 100));
@@ -208,7 +211,6 @@ class SoundUtil {
 
       // 睡眠指定时间
       await Future.delayed(Duration(milliseconds: sleepAfterPlayInMilliSeconds));
-
     } on TimeoutException catch (e, stackTrace) {
       ErrorHandler.handleError(e, stackTrace, logPrefix: '播放音效出错', showToast: false);
     } catch (e, st) {

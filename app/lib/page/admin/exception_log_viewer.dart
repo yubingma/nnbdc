@@ -120,10 +120,8 @@ class _ExceptionLogViewerPageState extends State<ExceptionLogViewerPage> {
                       _buildDetailItem('ID', exception.id),
                       _buildDetailItem('异常类型', exception.errorType),
                       _buildDetailItem('时间', _formatDateTime(exception.createTime)),
-                      if (exception.userId != null)
-                        _buildDetailItem('用户ID', exception.userId!),
-                      if (exception.context != null)
-                        _buildDetailItem('上下文', exception.context!),
+                      if (exception.userId != null) _buildDetailItem('用户ID', exception.userId!),
+                      if (exception.context != null) _buildDetailItem('上下文', exception.context!),
                       const SizedBox(height: 16),
                       const Text(
                         '异常消息',
@@ -338,9 +336,7 @@ class _ExceptionLogViewerPageState extends State<ExceptionLogViewerPage> {
                                 children: [
                                   const SizedBox(height: 4),
                                   Text(
-                                    exception.message.length > 100
-                                        ? '${exception.message.substring(0, 100)}...'
-                                        : exception.message,
+                                    exception.message.length > 100 ? '${exception.message.substring(0, 100)}...' : exception.message,
                                     style: TextStyle(
                                       color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
                                       fontSize: 12,
@@ -386,4 +382,3 @@ class _ExceptionLogViewerPageState extends State<ExceptionLogViewerPage> {
     );
   }
 }
-

@@ -214,7 +214,7 @@ class BottomJet extends PositionComponent {
       rect.width - 2,
       fixedHighlightHeight,
     );
-    
+
     Paint highlightPaint = Paint()
       ..shader = LinearGradient(
         colors: [
@@ -1242,20 +1242,20 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
     socket.on("scoreAdjust", (data) async {
       int scoreAdjust = data[0];
       int cowDungAdjust = data[1];
-      
+
       playerA.scoreAdjust = scoreAdjust;
       playerA.cowdungAdjust = cowDungAdjust;
-      
+
       // 更新本地数据库（前端优先架构）
       try {
         final db = MyDatabase.instance;
         final user = await db.usersDao.getLastLoggedInUser();
-        
+
         if (user != null) {
           // 更新用户的游戏积分和魔法泡泡
           final newGameScore = user.gameScore + scoreAdjust;
           final newCowDung = user.cowDung + cowDungAdjust;
-          
+
           await db.usersDao.saveUser(
             user.copyWith(
               gameScore: newGameScore,
@@ -1263,7 +1263,7 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
             ),
             true,
           );
-          
+
           // 记录魔法泡泡变更日志
           if (cowDungAdjust != 0) {
             final log = UserCowDungLog(
@@ -1276,11 +1276,12 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
             );
             await db.userCowDungLogsDao.insertEntity(log, true);
           }
-          
+
           // 触发数据库同步
           ThrottledDbSyncService().requestSync();
-          
-          Global.logger.d('游戏积分和魔法泡泡已更新：积分${scoreAdjust > 0 ? "+$scoreAdjust" : scoreAdjust}, 魔法泡泡${cowDungAdjust > 0 ? "+$cowDungAdjust" : cowDungAdjust}');
+
+          Global.logger
+              .d('游戏积分和魔法泡泡已更新：积分${scoreAdjust > 0 ? "+$scoreAdjust" : scoreAdjust}, 魔法泡泡${cowDungAdjust > 0 ? "+$cowDungAdjust" : cowDungAdjust}');
         }
       } catch (e, stackTrace) {
         Global.logger.e('更新游戏积分和魔法泡泡失败: $e', stackTrace: stackTrace);
@@ -1402,7 +1403,7 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
       Global.logger.w('页面已销毁，跳过发送命令 - cmd: $cmd, args: $args');
       return;
     }
-    
+
     var socket = SocketIoClient.instance.socket;
 
     // 检查 socket 连接状态

@@ -17,7 +17,6 @@ import 'package:nnbdc/util/network_util.dart';
 
 export 'package:nnbdc/util/sys_db_sync.dart' show syncSysDb;
 
-
 // 同步用户的本地数据库和后端数据库
 Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backendChanges, int backendDbVersion, String userId) async {
   final stopwatch = Stopwatch()..start();
@@ -467,7 +466,6 @@ Future<void> syncUserDb(String userId) async {
     rethrow;
   }
 }
-
 
 // 同步当前登录用户的用户数据库和系统数据库
 Future<void> syncDb() async {

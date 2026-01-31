@@ -129,7 +129,7 @@ class _AdminPageState extends State<AdminPage> {
     } catch (e) {
       // 获取用户信息失败
     }
-    
+
     setState(() {
       _isLoading = false;
     });
@@ -428,9 +428,7 @@ class _AdminPageState extends State<AdminPage> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Scaffold(
-        backgroundColor: context.watch<DarkMode>().isDarkMode 
-            ? const Color(0xFF121212) 
-            : const Color(0xFFF8F9FA),
+        backgroundColor: context.watch<DarkMode>().isDarkMode ? const Color(0xFF121212) : const Color(0xFFF8F9FA),
         body: const Center(
           child: CircularProgressIndicator(),
         ),

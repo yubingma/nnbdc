@@ -23,28 +23,27 @@ class DataIntegrityChecker {
   /// 执行完整的数据完整性检查
   Future<IntegrityCheckResult> performFullCheck() async {
     final result = IntegrityCheckResult();
-    
+
     try {
       // 1. 检查词典单词序号连续性
       await _checkDictWordSequences(result);
-      
+
       // 2. 检查词典单词数量一致性
       await _checkDictWordCounts(result);
-      
+
       // 3. 检查学习进度合理性
       await _checkLearningProgress(result);
-      
+
       // 4. 检查用户数据库版本一致性
       await _checkAllUserDbVersions(result);
-      
+
       // 5. 检查通用词典完整性
       await _checkCommonDictIntegrity(result);
-      
     } catch (e, stackTrace) {
       Global.logger.e('完整性检查过程中出现错误', error: e, stackTrace: stackTrace);
       result.addError('完整性检查过程中出现错误: $e');
     }
-    
+
     return result;
   }
 
@@ -53,12 +52,12 @@ class DataIntegrityChecker {
   Future<IntegrityCheckResult> performUserCheck(String userId, {ProgressCallback? onProgress}) async {
     final result = IntegrityCheckResult();
     final stopwatch = Stopwatch()..start();
-    
+
     try {
       onProgress?.call(0, '开始健康检查...');
       await Future.delayed(const Duration(milliseconds: 200)); // 给UI一点时间显示
       Global.logger.d('开始健康检查...');
-      
+
       // 1. 检查用户词典单词序号连续性
       onProgress?.call(1, '检查词典单词序号连续性...');
       await Future.delayed(const Duration(milliseconds: 100)); // 给UI一点时间显示
@@ -68,7 +67,7 @@ class DataIntegrityChecker {
       Global.logger.d('✓ 检查序号连续性: ${timer1.elapsedMilliseconds}ms');
       onProgress?.call(1, '检查词典单词序号连续性...', result: result);
       await Future.delayed(const Duration(milliseconds: 200)); // 给UI时间显示结果
-      
+
       // 2. 检查用户词典单词数量一致性
       onProgress?.call(2, '检查词典单词数量一致性...');
       await Future.delayed(const Duration(milliseconds: 100)); // 给UI一点时间显示
@@ -78,7 +77,7 @@ class DataIntegrityChecker {
       Global.logger.d('✓ 检查单词数量一致性: ${timer2.elapsedMilliseconds}ms');
       onProgress?.call(2, '检查词典单词数量一致性...', result: result);
       await Future.delayed(const Duration(milliseconds: 200)); // 给UI时间显示结果
-      
+
       // 3. 检查用户学习进度合理性
       onProgress?.call(3, '检查学习进度合理性...');
       await Future.delayed(const Duration(milliseconds: 100)); // 给UI一点时间显示
@@ -88,7 +87,7 @@ class DataIntegrityChecker {
       Global.logger.d('✓ 检查学习进度合理性: ${timer3.elapsedMilliseconds}ms');
       onProgress?.call(3, '检查学习进度合理性...', result: result);
       await Future.delayed(const Duration(milliseconds: 200)); // 给UI时间显示结果
-      
+
       // 4. 检查用户学习步骤完整性
       onProgress?.call(4, '检查学习步骤完整性...');
       await Future.delayed(const Duration(milliseconds: 100)); // 给UI一点时间显示
@@ -98,7 +97,7 @@ class DataIntegrityChecker {
       Global.logger.d('✓ 检查学习步骤完整性: ${timer4.elapsedMilliseconds}ms');
       onProgress?.call(4, '检查学习步骤完整性...', result: result);
       await Future.delayed(const Duration(milliseconds: 200)); // 给UI时间显示结果
-      
+
       // 5. 检查用户数据库版本一致性
       onProgress?.call(5, '检查数据库版本一致性...');
       await Future.delayed(const Duration(milliseconds: 100)); // 给UI一点时间显示
@@ -108,7 +107,7 @@ class DataIntegrityChecker {
       Global.logger.d('✓ 检查数据库版本一致性: ${timer5.elapsedMilliseconds}ms');
       onProgress?.call(5, '检查数据库版本一致性...', result: result);
       await Future.delayed(const Duration(milliseconds: 200)); // 给UI时间显示结果
-      
+
       // 6. 检查通用词典完整性
       onProgress?.call(6, '检查通用词典完整性...');
       await Future.delayed(const Duration(milliseconds: 100)); // 给UI一点时间显示
@@ -118,7 +117,7 @@ class DataIntegrityChecker {
       Global.logger.d('✓ 检查通用词典完整性: ${timer6.elapsedMilliseconds}ms');
       onProgress?.call(6, '检查通用词典完整性...', result: result);
       await Future.delayed(const Duration(milliseconds: 200)); // 给UI时间显示结果
-      
+
       // 7. 检查网络连接
       onProgress?.call(7, '检查网络连接...');
       await Future.delayed(const Duration(milliseconds: 100));
@@ -128,7 +127,7 @@ class DataIntegrityChecker {
       Global.logger.d('✓ 检查网络连接: ${timer7.elapsedMilliseconds}ms');
       onProgress?.call(7, '检查网络连接...', result: result);
       await Future.delayed(const Duration(milliseconds: 200));
-      
+
       // 8. 检查后端服务器连通性
       onProgress?.call(8, '检查后端服务器连通性...');
       await Future.delayed(const Duration(milliseconds: 100));
@@ -138,7 +137,7 @@ class DataIntegrityChecker {
       Global.logger.d('✓ 检查后端服务器: ${timer8.elapsedMilliseconds}ms');
       onProgress?.call(8, '检查后端服务器连通性...', result: result);
       await Future.delayed(const Duration(milliseconds: 200));
-      
+
       // 9. 检查游戏服务器连通性
       onProgress?.call(9, '检查游戏服务器连通性...');
       await Future.delayed(const Duration(milliseconds: 100));
@@ -148,18 +147,17 @@ class DataIntegrityChecker {
       Global.logger.d('✓ 检查游戏服务器: ${timer9.elapsedMilliseconds}ms');
       onProgress?.call(9, '检查游戏服务器连通性...', result: result);
       await Future.delayed(const Duration(milliseconds: 200));
-      
+
       stopwatch.stop();
       Global.logger.d('✓ 健康检查完成，总耗时: ${stopwatch.elapsedMilliseconds}ms');
       onProgress?.call(9, '检查完成！', result: result);
       await Future.delayed(const Duration(milliseconds: 200)); // 给UI时间显示最后一项的结果
-      
     } catch (e, stackTrace) {
       stopwatch.stop();
       Global.logger.e('✗ 用户数据完整性检查过程中出现错误', error: e, stackTrace: stackTrace);
       result.addError('用户数据完整性检查过程中出现错误: $e');
     }
-    
+
     return result;
   }
 
@@ -167,26 +165,26 @@ class DataIntegrityChecker {
   Future<void> _checkUserDictWordSequences(IntegrityCheckResult result, String userId) async {
     try {
       // 获取用户拥有的词典
-      final userDicts = await (_db.dictsDao.select(_db.dicts)
-        ..where((d) => d.ownerId.equals(userId))).get();
-      
+      final userDicts = await (_db.dictsDao.select(_db.dicts)..where((d) => d.ownerId.equals(userId))).get();
+
       // 添加通用词典
       final commonDict = await _db.dictsDao.findById(Global.commonDictId);
       if (commonDict != null) {
         userDicts.add(commonDict);
       }
-      
+
       for (final dict in userDicts) {
         final wordsList = await (_db.dictWordsDao.select(_db.dictWords)
-          ..where((dw) => dw.dictId.equals(dict.id))
-          ..orderBy([(dw) => OrderingTerm.asc(dw.seq)])).get();
+              ..where((dw) => dw.dictId.equals(dict.id))
+              ..orderBy([(dw) => OrderingTerm.asc(dw.seq)]))
+            .get();
         if (wordsList.isEmpty) continue;
-        
+
         // 检查序号是否从1开始
         if (wordsList.first.seq != 1) {
           result.addIssue('序号不连续', '词典 "${dict.name}" 第一个单词序号不是1', 'dict_word_sequence');
         }
-        
+
         // 检查序号是否连续
         for (int i = 0; i < wordsList.length; i++) {
           if (wordsList[i].seq != i + 1) {
@@ -194,7 +192,7 @@ class DataIntegrityChecker {
             break;
           }
         }
-        
+
         // 检查最大序号是否等于总单词数
         if (wordsList.last.seq != wordsList.length) {
           result.addIssue('序号不连续', '词典 "${dict.name}" 最大序号不等于总单词数', 'dict_word_sequence');
@@ -210,18 +208,19 @@ class DataIntegrityChecker {
     try {
       // 获取所有词典
       final allDicts = await _db.dictsDao.select(_db.dicts).get();
-      
+
       for (final dict in allDicts) {
         final wordsList = await (_db.dictWordsDao.select(_db.dictWords)
-          ..where((dw) => dw.dictId.equals(dict.id))
-          ..orderBy([(dw) => OrderingTerm.asc(dw.seq)])).get();
+              ..where((dw) => dw.dictId.equals(dict.id))
+              ..orderBy([(dw) => OrderingTerm.asc(dw.seq)]))
+            .get();
         if (wordsList.isEmpty) continue;
-        
+
         // 检查序号是否从1开始
         if (wordsList.first.seq != 1) {
           result.addIssue('序号不连续', '词典 "${dict.name}" 第一个单词序号不是1', 'dict_word_sequence');
         }
-        
+
         // 检查序号是否连续
         for (int i = 0; i < wordsList.length; i++) {
           if (wordsList[i].seq != i + 1) {
@@ -229,7 +228,7 @@ class DataIntegrityChecker {
             break;
           }
         }
-        
+
         // 检查最大序号是否等于总单词数
         if (wordsList.last.seq != wordsList.length) {
           result.addIssue('序号不连续', '词典 "${dict.name}" 最大序号不等于总单词数', 'dict_word_sequence');
@@ -244,21 +243,18 @@ class DataIntegrityChecker {
   Future<void> _checkUserDictWordCounts(IntegrityCheckResult result, String userId) async {
     try {
       // 获取用户拥有的词典
-      final userDicts = await (_db.dictsDao.select(_db.dicts)
-        ..where((d) => d.ownerId.equals(userId))).get();
-      
+      final userDicts = await (_db.dictsDao.select(_db.dicts)..where((d) => d.ownerId.equals(userId))).get();
+
       // 添加通用词典
       final commonDict = await _db.dictsDao.findById(Global.commonDictId);
       if (commonDict != null) {
         userDicts.add(commonDict);
       }
-      
+
       for (final dict in userDicts) {
         final actualCount = await _db.dictWordsDao.getDictWordCount(dict.id);
         if (dict.wordCount != actualCount) {
-          result.addIssue('单词数量不匹配', 
-            '词典 "${dict.name}" 记录数量: ${dict.wordCount}, 实际数量: $actualCount', 
-            'dict_word_count');
+          result.addIssue('单词数量不匹配', '词典 "${dict.name}" 记录数量: ${dict.wordCount}, 实际数量: $actualCount', 'dict_word_count');
         }
       }
     } catch (e) {
@@ -270,13 +266,11 @@ class DataIntegrityChecker {
   Future<void> _checkDictWordCounts(IntegrityCheckResult result) async {
     try {
       final allDicts = await _db.dictsDao.select(_db.dicts).get();
-      
+
       for (final dict in allDicts) {
         final actualCount = await _db.dictWordsDao.getDictWordCount(dict.id);
         if (dict.wordCount != actualCount) {
-          result.addIssue('单词数量不匹配', 
-            '词典 "${dict.name}" 记录数量: ${dict.wordCount}, 实际数量: $actualCount', 
-            'dict_word_count');
+          result.addIssue('单词数量不匹配', '词典 "${dict.name}" 记录数量: ${dict.wordCount}, 实际数量: $actualCount', 'dict_word_count');
         }
       }
     } catch (e) {
@@ -288,17 +282,14 @@ class DataIntegrityChecker {
   Future<void> _checkUserLearningProgress(IntegrityCheckResult result, String userId) async {
     try {
       // 获取用户的学习词典
-      final userLearningDicts = await (_db.learningDictsDao.select(_db.learningDicts)
-        ..where((ld) => ld.userId.equals(userId))).get();
-      
+      final userLearningDicts = await (_db.learningDictsDao.select(_db.learningDicts)..where((ld) => ld.userId.equals(userId))).get();
+
       for (final learningDict in userLearningDicts) {
         final dict = await _db.dictsDao.findById(learningDict.dictId);
         if (dict == null) continue;
-        
+
         if (learningDict.currentWordSeq != null && learningDict.currentWordSeq! > dict.wordCount) {
-          result.addIssue('学习进度异常', 
-            '用户学习进度(${learningDict.currentWordSeq})超过词典单词数(${dict.wordCount})', 
-            'learning_progress');
+          result.addIssue('学习进度异常', '用户学习进度(${learningDict.currentWordSeq})超过词典单词数(${dict.wordCount})', 'learning_progress');
         }
       }
     } catch (e) {
@@ -311,21 +302,17 @@ class DataIntegrityChecker {
     try {
       // 获取用户的所有学习步骤
       final steps = await _db.userStudyStepsDao.getUserStudySteps(userId);
-      
+
       // 检查是否缺少 En2Ch
       final hasEn2Ch = steps.any((step) => step.studyStep == 'En2Ch');
       if (!hasEn2Ch) {
-        result.addIssue('学习步骤缺失', 
-          '用户缺少学习步骤：En2Ch', 
-          'user_study_steps');
+        result.addIssue('学习步骤缺失', '用户缺少学习步骤：En2Ch', 'user_study_steps');
       }
-      
+
       // 检查是否缺少 Ch2En
       final hasCh2En = steps.any((step) => step.studyStep == 'Ch2En');
       if (!hasCh2En) {
-        result.addIssue('学习步骤缺失', 
-          '用户缺少学习步骤：Ch2En', 
-          'user_study_steps');
+        result.addIssue('学习步骤缺失', '用户缺少学习步骤：Ch2En', 'user_study_steps');
       }
     } catch (e) {
       result.addError('检查用户学习步骤时出错: $e');
@@ -336,15 +323,13 @@ class DataIntegrityChecker {
   Future<void> _checkLearningProgress(IntegrityCheckResult result) async {
     try {
       final allLearningDicts = await _db.learningDictsDao.select(_db.learningDicts).get();
-      
+
       for (final learningDict in allLearningDicts) {
         final dict = await _db.dictsDao.findById(learningDict.dictId);
         if (dict == null) continue;
-        
+
         if (learningDict.currentWordSeq != null && learningDict.currentWordSeq! > dict.wordCount) {
-          result.addIssue('学习进度异常', 
-            '用户学习进度(${learningDict.currentWordSeq})超过词典单词数(${dict.wordCount})', 
-            'learning_progress');
+          result.addIssue('学习进度异常', '用户学习进度(${learningDict.currentWordSeq})超过词典单词数(${dict.wordCount})', 'learning_progress');
         }
       }
     } catch (e) {
@@ -357,15 +342,13 @@ class DataIntegrityChecker {
     try {
       final userVersion = await _db.userDbVersionsDao.getUserDbVersionByUserId(userId);
       if (userVersion == null) return;
-      
+
       // 检查是否有版本号大于当前版本的日志
       final allLogs = await _db.userDbLogsDao.getUserDbLogs(userId);
       final invalidLogs = allLogs.where((log) => log.version > userVersion.version).toList();
-      
+
       if (invalidLogs.isNotEmpty) {
-        result.addIssue('版本号异常', 
-          '用户有 ${invalidLogs.length} 条版本号异常的日志', 
-          'user_db_version');
+        result.addIssue('版本号异常', '用户有 ${invalidLogs.length} 条版本号异常的日志', 'user_db_version');
       }
     } catch (e) {
       result.addError('检查用户数据库版本时出错: $e');
@@ -376,19 +359,17 @@ class DataIntegrityChecker {
   Future<void> _checkAllUserDbVersions(IntegrityCheckResult result) async {
     try {
       final allUsers = await _db.usersDao.allUsers;
-      
+
       for (final user in allUsers) {
         final userVersion = await _db.userDbVersionsDao.getUserDbVersionByUserId(user.id);
         if (userVersion == null) continue;
-        
+
         // 检查是否有版本号大于当前版本的日志
         final allLogs = await _db.userDbLogsDao.getUserDbLogs(user.id);
         final invalidLogs = allLogs.where((log) => log.version > userVersion.version).toList();
-        
+
         if (invalidLogs.isNotEmpty) {
-          result.addIssue('版本号异常', 
-            '用户 ${user.userName} 有 ${invalidLogs.length} 条版本号异常的日志', 
-            'user_db_version');
+          result.addIssue('版本号异常', '用户 ${user.userName} 有 ${invalidLogs.length} 条版本号异常的日志', 'user_db_version');
         }
       }
     } catch (e) {
@@ -400,72 +381,66 @@ class DataIntegrityChecker {
   Future<void> _checkCommonDictIntegrity(IntegrityCheckResult result) async {
     try {
       // 检查通用词典中的单词是否有释义项
-      final wordsList = await (_db.dictWordsDao.select(_db.dictWords)
-        ..where((dw) => dw.dictId.equals(Global.commonDictId))).get();
-      
+      final wordsList = await (_db.dictWordsDao.select(_db.dictWords)..where((dw) => dw.dictId.equals(Global.commonDictId))).get();
+
       Global.logger.d('开始检查通用词典完整性，共 ${wordsList.length} 个单词');
-      
+
       // 使用批量查询提高效率
       final wordIds = wordsList.map((w) => w.wordId).toList();
-      
+
       // 批量查询所有单词的释义项
       // SQLite 的 IN 子句最多支持 999 个参数，需要分批查询
       const int batchSize = 900; // 保守起见使用 900
       Global.logger.d('查询 ${wordIds.length} 个单词的释义项（分批查询）...');
-      
+
       final allMeanings = <MeaningItem>[];
       for (int i = 0; i < wordIds.length; i += batchSize) {
         final batch = wordIds.skip(i).take(batchSize).toList();
-        final batchMeanings = await (_db.meaningItemsDao.select(_db.meaningItems)
-          ..where((mi) => mi.wordId.isIn(batch) & mi.dictId.equals(Global.commonDictId))).get();
+        final batchMeanings =
+            await (_db.meaningItemsDao.select(_db.meaningItems)..where((mi) => mi.wordId.isIn(batch) & mi.dictId.equals(Global.commonDictId))).get();
         allMeanings.addAll(batchMeanings);
       }
       Global.logger.d('查询到 ${allMeanings.length} 条释义项');
-      
+
       // 按单词分组
       final meaningsMap = <String, List<MeaningItem>>{};
       for (final meaning in allMeanings) {
         (meaningsMap[meaning.wordId] ??= []).add(meaning);
       }
-      
+
       // 检查缺少释义项的单词
       final wordsWithoutMeanings = wordIds.where((id) => !meaningsMap.containsKey(id) || meaningsMap[id]!.isEmpty).toList();
       for (final wordId in wordsWithoutMeanings) {
-        result.addIssue('通用词典不完整', 
-          '单词 "$wordId" 缺少释义项', 
-          'common_dict_integrity');
+        result.addIssue('通用词典不完整', '单词 "$wordId" 缺少释义项', 'common_dict_integrity');
       }
-      
+
       // 批量查询所有释义项的例句
       final meaningIds = allMeanings.map((m) => m.id).toList();
       Global.logger.d('查询 ${meaningIds.length} 个释义项的例句（分批查询）...');
-      
+
       final allSentences = <Sentence>[];
       for (int i = 0; i < meaningIds.length; i += batchSize) {
         final batch = meaningIds.skip(i).take(batchSize).toList();
-        final batchSentences = await (_db.sentencesDao.select(_db.sentences)
-          ..where((s) => s.meaningItemId.isIn(batch))).get();
+        final batchSentences = await (_db.sentencesDao.select(_db.sentences)..where((s) => s.meaningItemId.isIn(batch))).get();
         allSentences.addAll(batchSentences);
       }
       Global.logger.d('查询到 ${allSentences.length} 条例句');
-      
+
       // 按释义项分组
       final sentencesMap = <String, List<Sentence>>{};
       for (final sentence in allSentences) {
         (sentencesMap[sentence.meaningItemId] ??= []).add(sentence);
       }
-      
+
       // 检查缺少例句的释义项
       int meaningsWithoutSentences = 0;
       for (final meaning in allMeanings) {
         if (!sentencesMap.containsKey(meaning.id) || sentencesMap[meaning.id]!.isEmpty) {
           meaningsWithoutSentences++;
-          result.addIssue('通用词典不完整', 
-            '释义项 "${meaning.id}" 缺少例句', 
-            'common_dict_integrity');
+          result.addIssue('通用词典不完整', '释义项 "${meaning.id}" 缺少例句', 'common_dict_integrity');
         }
       }
-      
+
       Global.logger.d('通用词典完整性检查完成，检查了 ${wordsList.length} 个单词，发现 ${wordsWithoutMeanings.length} 个单词缺少释义项，$meaningsWithoutSentences 个释义项缺少例句');
     } catch (e, stackTrace) {
       Global.logger.e('检查通用词典完整性时出错: $e');
@@ -477,37 +452,36 @@ class DataIntegrityChecker {
   /// 自动修复发现的问题
   Future<IntegrityFixResult> autoFix(IntegrityCheckResult checkResult) async {
     final fixResult = IntegrityFixResult();
-    
+
     try {
       // 修复序号不连续问题
       if (checkResult.hasIssue('dict_word_sequence')) {
         await _fixDictWordSequences(fixResult);
       }
-      
+
       // 修复单词数量不匹配问题
       if (checkResult.hasIssue('dict_word_count')) {
         await _fixDictWordCounts(fixResult);
       }
-      
+
       // 修复学习进度异常问题
       if (checkResult.hasIssue('learning_progress')) {
         await _fixLearningProgress(fixResult);
       }
-      
+
       // 修复学习步骤缺失问题
       if (checkResult.hasIssue('user_study_steps')) {
         await _fixUserStudySteps(fixResult);
       }
-      
+
       // 修复版本号异常问题
       if (checkResult.hasIssue('user_db_version')) {
         await _fixUserDbVersions(fixResult);
       }
-      
     } catch (e) {
       fixResult.addError('自动修复过程中出现错误: $e');
     }
-    
+
     return fixResult;
   }
 
@@ -515,13 +489,14 @@ class DataIntegrityChecker {
   Future<void> _fixDictWordSequences(IntegrityFixResult fixResult) async {
     try {
       final allDicts = await _db.dictsDao.select(_db.dicts).get();
-      
+
       for (final dict in allDicts) {
         final wordsList = await (_db.dictWordsDao.select(_db.dictWords)
-          ..where((dw) => dw.dictId.equals(dict.id))
-          ..orderBy([(dw) => OrderingTerm.asc(dw.seq)])).get();
+              ..where((dw) => dw.dictId.equals(dict.id))
+              ..orderBy([(dw) => OrderingTerm.asc(dw.seq)]))
+            .get();
         if (wordsList.isEmpty) continue;
-        
+
         // 重新分配序号
         for (int i = 0; i < wordsList.length; i++) {
           if (wordsList[i].seq != i + 1) {
@@ -541,7 +516,7 @@ class DataIntegrityChecker {
   Future<void> _fixDictWordCounts(IntegrityFixResult fixResult) async {
     try {
       final allDicts = await _db.dictsDao.select(_db.dicts).get();
-      
+
       for (final dict in allDicts) {
         final actualCount = await _db.dictWordsDao.getDictWordCount(dict.id);
         if (dict.wordCount != actualCount) {
@@ -558,17 +533,14 @@ class DataIntegrityChecker {
   Future<void> _fixLearningProgress(IntegrityFixResult fixResult) async {
     try {
       final allLearningDicts = await _db.learningDictsDao.select(_db.learningDicts).get();
-      
+
       for (final learningDict in allLearningDicts) {
         final dict = await _db.dictsDao.findById(learningDict.dictId);
         if (dict == null) continue;
-        
+
         if (learningDict.currentWordSeq != null && learningDict.currentWordSeq! > dict.wordCount) {
           // 使用现有的更新方法
-          await _db.learningDictsDao.saveEntity(
-            learningDict.copyWith(currentWordSeq: Value(dict.wordCount)), 
-            true
-          );
+          await _db.learningDictsDao.saveEntity(learningDict.copyWith(currentWordSeq: Value(dict.wordCount)), true);
           fixResult.addFixed('修复用户学习进度: ${dict.wordCount}');
         }
       }
@@ -586,16 +558,16 @@ class DataIntegrityChecker {
         fixResult.addError('用户未登录，无法修复学习步骤');
         return;
       }
-      
+
       // 初始化用户的学习步骤（如果缺失会自动添加）
       final clientType = 'Flutter'; // 根据实际情况设置
       await _db.userStudyStepsDao.initUserStudySteps(clientType, currentUser.id, true);
-      
+
       // 验证修复后是否完整
       final steps = await _db.userStudyStepsDao.getUserStudySteps(currentUser.id);
       final hasEn2Ch = steps.any((step) => step.studyStep == 'En2Ch');
       final hasCh2En = steps.any((step) => step.studyStep == 'Ch2En');
-      
+
       if (hasEn2Ch && hasCh2En) {
         fixResult.addFixed('修复用户学习步骤：已添加缺失的 En2Ch 和 Ch2En 步骤');
       } else {
@@ -615,15 +587,15 @@ class DataIntegrityChecker {
   Future<void> _fixUserDbVersions(IntegrityFixResult fixResult) async {
     try {
       final allUsers = await _db.usersDao.allUsers;
-      
+
       for (final user in allUsers) {
         final userVersion = await _db.userDbVersionsDao.getUserDbVersionByUserId(user.id);
         if (userVersion == null) continue;
-        
+
         // 删除版本号大于当前版本的日志
         final allLogs = await _db.userDbLogsDao.getUserDbLogs(user.id);
         final invalidLogs = allLogs.where((log) => log.version > userVersion.version).toList();
-        
+
         if (invalidLogs.isNotEmpty) {
           // 使用现有的删除方法
           await _db.userDbLogsDao.deleteUserDbLogs(user.id);
@@ -640,7 +612,7 @@ class DataIntegrityChecker {
     try {
       final networkUtil = NetworkUtil();
       final isConnected = await networkUtil.isConnected();
-      
+
       if (!isConnected) {
         result.addIssue('网络不可用', '设备未连接到网络或无法访问互联网', 'network_connectivity');
       } else {
@@ -661,13 +633,13 @@ class DataIntegrityChecker {
         baseUrl: Config.serviceUrl,
         connectTimeout: const Duration(seconds: 5),
       ));
-      
+
       // 尝试调用一个简单的API来检查后端连通性
       final response = await dio.get(
         '/getGameHallData.do',
         options: Options(validateStatus: (status) => status! < 500), // 允许非200状态码
       );
-      
+
       if (response.statusCode != null && response.statusCode! < 500) {
         Global.logger.d('后端服务器连通性正常，状态码: ${response.statusCode}');
       } else {
@@ -684,13 +656,13 @@ class DataIntegrityChecker {
     try {
       // 检查 socket.io 连接状态
       final socketClient = SocketIoClient.instance;
-      
+
       // 尝试连接socket服务器
       socketClient.connect();
-      
+
       // 等待一小段时间让连接建立
       await Future.delayed(const Duration(seconds: 2));
-      
+
       // 检查连接状态
       if (socketClient.isConnectedToSocketServer) {
         Global.logger.d('游戏服务器连接正常');

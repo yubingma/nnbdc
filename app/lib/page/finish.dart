@@ -62,7 +62,7 @@ class FinishPageState extends State<FinishPage> {
     // 检查是否从页面查看器进入，如果是则模拟打卡但不入库
     final arguments = Get.arguments;
     final isFromPageViewer = arguments is Map && arguments['fromPageViewer'] == true;
-    
+
     if (!isFromPageViewer) {
       // 正常流程：执行打卡逻辑
       dakaResult = await StudyBo().saveDakaRecord("好好学习，天天向上");
@@ -110,7 +110,7 @@ class FinishPageState extends State<FinishPage> {
         children: [
           // 顶部装饰区域
           _buildHeaderSection(isDarkMode),
-          
+
           // 主要内容区域
           Expanded(
             child: SingleChildScrollView(
@@ -119,7 +119,7 @@ class FinishPageState extends State<FinishPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 16),
-                  
+
                   // 打卡结果卡片（包含积分和魔法泡泡信息）
                   _buildDakaCard(
                     isDarkMode: isDarkMode,
@@ -127,16 +127,16 @@ class FinishPageState extends State<FinishPage> {
                     textColor: textColor,
                     subtitleColor: subtitleColor,
                   ),
-                  
+
                   const SizedBox(height: 16),
-                  
+
                   // 操作按钮卡片
                   _buildActionCards(
                     isDarkMode: isDarkMode,
                     cardColor: cardColor,
                     textColor: textColor,
                   ),
-                  
+
                   const SizedBox(height: 16),
                 ],
               ),
@@ -165,7 +165,7 @@ class FinishPageState extends State<FinishPage> {
         children: [
           // 简洁的庆祝装饰
           _buildSimpleCelebration(),
-          
+
           // 副标题文本
           Positioned(
             bottom: 24,
@@ -559,7 +559,7 @@ class FinishPageState extends State<FinishPage> {
             ],
           ),
         ),
-        
+
         // 给个好评卡片（如果存在）
         if (marketAppUrl != null) ...[
           const SizedBox(height: 12),

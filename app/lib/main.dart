@@ -69,7 +69,7 @@ void main() async {
             stackString.contains('image_provider.dart') ||
             stackString.contains('ImageDecoder') ||
             stackString.contains('decodeImage');
-        
+
         if (isImageError) {
           // 图像错误只记录到日志，不输出到控制台（避免干扰）
           Global.logger.w(
@@ -84,7 +84,7 @@ void main() async {
             error: details.exception,
             stackTrace: details.stack,
           );
-          
+
           // 在debug模式下，也输出到控制台
           FlutterError.presentError(details);
         }
@@ -128,16 +128,16 @@ void main() async {
           // 初始化数据库并确保数据库完整性
           MyDatabase.instance;
           await MyDatabase.ensureDatabaseIntegrity();
-          
+
           // SocketIoClient改为延迟连接，只在需要时才连接（如进入russia页面）
           LocalWordCache.instance;
 
           // 预加载当前用户数据
           await Global.loadUserFromDb();
-          
+
           // 检查并强制执行会员限制（非会员每日单词限额 20）
           await SubscriptionUtil.checkAndEnforceMemberLimits();
-          
+
           // 初始化 AI 运行时（Apple 平台，如果已下载模型且用户是管理员）
           if ((PlatformUtils.isMacOS || PlatformUtils.isIOS) && Global.getLoggedInUser()?.isAdmin == true) {
             _initializeAppleAiRuntimeIfReady();
@@ -173,7 +173,7 @@ void _initializeAppleAiRuntimeIfReady() async {
     // 检查是否已下载模型
     final manager = AiModelManager();
     final localState = await manager.loadLocalState();
-    
+
     if (localState != null && localState.localPath.isNotEmpty) {
       Global.logger.i('检测到模型已下载，开始自动初始化 AI 运行时...');
       if (PlatformUtils.isAndroid) {
@@ -193,12 +193,12 @@ void _initializeAppleAiRuntimeIfReady() async {
 Future<bool> initializeAndroidAiRuntime() async {
   try {
     Global.logger.i('开始初始化 Android AI 运行时...');
-    
+
     // 1. 预检查设备能力，决定下载哪个级别的模型
     const channel = MethodChannel('com.nnbdc.ai_inference');
     final capResult = await channel.invokeMethod('checkCapability');
     AiModelProfile preferredProfile = AiModelProfile.mobileLite;
-    
+
     if (capResult is Map) {
       final capStr = capResult['capability'] as String?;
       if (capStr == 'full') {
@@ -216,16 +216,16 @@ Future<bool> initializeAndroidAiRuntime() async {
     // 2. 确保模型已下载
     final manager = AiModelManager();
     final modelState = await manager.ensureModel(preferredProfile);
-    
+
     if (modelState == null || modelState.localPath.isEmpty) {
       Global.logger.w('Android AI 模型 [${preferredProfile.name}] 未就绪，跳过初始化');
       return false;
     }
-    
+
     // 3. 创建并初始化 Android AI 运行时
     final runtime = AndroidAiRuntime(modelPath: modelState.localPath);
     final success = await runtime.initialize();
-    
+
     if (success) {
       // 4. 注入到 AiService
       AiService().setRuntime(runtime);
@@ -245,12 +245,12 @@ Future<bool> initializeAndroidAiRuntime() async {
 Future<bool> initializeAppleAiRuntime() async {
   try {
     Global.logger.i('开始初始化 Apple AI 运行时...');
-    
+
     // 1. 预检查设备能力，决定下载哪个级别的模型
     const channel = MethodChannel('com.nnbdc.ai_inference');
     final capResult = await channel.invokeMethod('checkCapability');
     AiModelProfile preferredProfile = AiModelProfile.desktopFull;
-    
+
     if (capResult is Map) {
       final capStr = capResult['capability'] as String?;
       if (capStr == 'light') {
@@ -265,16 +265,16 @@ Future<bool> initializeAppleAiRuntime() async {
     // 2. 确保模型已下载
     final manager = AiModelManager();
     final modelState = await manager.ensureModel(preferredProfile);
-    
+
     if (modelState == null || modelState.localPath.isEmpty) {
       Global.logger.w('Apple AI 模型 [${preferredProfile.name}] 未就绪，跳过初始化');
       return false;
     }
-    
+
     // 3. 创建并初始化 Apple AI 运行时
     final runtime = AppleAiRuntime(modelPath: modelState.localPath);
     final success = await runtime.initialize();
-    
+
     if (success) {
       // 4. 注入到 AiService
       AiService().setRuntime(runtime);
@@ -294,16 +294,16 @@ Future<bool> initializeAppleAiRuntime() async {
 Future<void> deinitializeAppleAiRuntime() async {
   try {
     Global.logger.i('开始反激活 AI 运行时...');
-    
+
     // 1. 如果当前已经是某个运行时，调用它的 dispose
     final aiService = AiService();
     if (aiService.capabilityLevel != AiCapabilityLevel.none) {
       const MethodChannel('com.nnbdc.ai_inference').invokeMethod('unloadModel');
     }
-    
+
     // 2. 重置为 NoopRuntime
     aiService.setRuntime(NoopAiRuntime());
-    
+
     Global.logger.i('AI 运行时已卸载并重置');
   } catch (e, st) {
     Global.logger.e('AI 运行时反激活异常', error: e, stackTrace: st);
@@ -426,4 +426,3 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     );
   }
 }
-

@@ -416,9 +416,11 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
                               // 使用新的根据ID查词方法，用户ID为空表示查词模式
                               var fullResult = await WordBo().searchWordById(result.word!.id!, null);
                               if (fullResult.word != null) {
-                                Get.toNamed('/word_detail', arguments: WordDetailPageArgs(fullResult.word!, false, null, false), preventDuplicates: false);
+                                Get.toNamed('/word_detail',
+                                    arguments: WordDetailPageArgs(fullResult.word!, false, null, false), preventDuplicates: false);
                               } else {
-                                Get.toNamed('/word_detail', arguments: WordDetailPageArgs(result.word!, false, null, false), preventDuplicates: false);
+                                Get.toNamed('/word_detail',
+                                    arguments: WordDetailPageArgs(result.word!, false, null, false), preventDuplicates: false);
                               }
                             }
                           } catch (e, st) {

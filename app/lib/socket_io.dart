@@ -26,24 +26,24 @@ class SocketIoClient {
 
   // 当前是否在russia游戏页面
   bool _isInRussiaGame = false;
-  
+
   // 连接引用计数，用于管理多个页面对socket的需求
   int _connectionRefCount = 0;
 
   SocketIoClient() {
     Global.logger.d('SocketIoClient: 单例创建（延迟连接模式）');
   }
-  
+
   /// 初始化socket实例（但不立即连接）
   void _initSocket() {
     if (_initialized) return;
-    
+
     Global.logger.d('SocketIoClient: 开始初始化Socket实例');
 
     // 创建 socket.io 实例，但不自动连接
     var opts = io.OptionBuilder()
         .setTransports(['websocket'])
-        .disableAutoConnect()  // 禁用自动连接
+        .disableAutoConnect() // 禁用自动连接
         .build();
     socket = io.io(Config.socketServerUrl, opts);
 
@@ -89,7 +89,6 @@ class SocketIoClient {
 
       Global.logger.w('检测到游戏服务器连接断开');
 
-
       for (var listener in socketStatusListeners) {
         listener.onDisconnected();
       }
@@ -98,7 +97,7 @@ class SocketIoClient {
     _initialized = true;
     Global.logger.d('SocketIoClient: Socket实例初始化完成');
   }
-  
+
   /// 请求连接（带引用计数）
   void connect() async {
     // 游客模式下禁止建立WebSocket连接
@@ -106,53 +105,53 @@ class SocketIoClient {
       Global.logger.d('SocketIoClient: 游客模式，跳过Socket连接');
       return;
     }
-    
+
     // 检查网络连接
     bool isConnected = await _networkUtil.isConnected();
     if (!isConnected) {
       Global.logger.d('🌐 网络连接不可用，静默跳过Socket连接');
       return;
     }
-    
+
     _initSocket();
-    
+
     _connectionRefCount++;
     Global.logger.d('SocketIoClient: 连接请求，引用计数: $_connectionRefCount');
-    
+
     if (_connectionRefCount == 1) {
       // 第一个连接请求，真正执行连接
       Global.logger.d('SocketIoClient: 开始连接到服务器');
       socket.connect();
-      
+
       // 启动心跳定时器
       _startHeartbeat();
     }
   }
-  
+
   /// 释放连接（带引用计数）
   void disconnect() {
     if (_connectionRefCount <= 0) return;
-    
+
     _connectionRefCount--;
     Global.logger.d('SocketIoClient: 断开请求，引用计数: $_connectionRefCount');
-    
+
     if (_connectionRefCount == 0) {
       // 没有任何页面需要连接了，真正断开
       Global.logger.d('SocketIoClient: 断开与服务器的连接');
-      
+
       // 停止心跳定时器
       _stopHeartbeat();
-      
+
       // 断开socket连接
       socket.disconnect();
       isConnectedToSocketServer = false;
     }
   }
-  
+
   /// 启动心跳定时器
   void _startHeartbeat() {
     if (heartBeatTimer != null) return;
-    
+
     Global.logger.d('SocketIoClient: 启动心跳定时器');
     heartBeatTimer = Timer.periodic(const Duration(milliseconds: 5000), (Timer timer) async {
       if (_disposed) {
@@ -182,7 +181,7 @@ class SocketIoClient {
       socket.emit("heartBeat", "");
     });
   }
-  
+
   /// 停止心跳定时器
   void _stopHeartbeat() {
     if (heartBeatTimer != null) {
@@ -197,8 +196,6 @@ class SocketIoClient {
     _isInRussiaGame = inRussiaGame;
     Global.logger.d('SocketIoClient: 设置russia游戏状态: $_isInRussiaGame');
   }
-
-
 
   void tryReportUserToSocketServer() {
     if (_disposed || !_initialized) return;

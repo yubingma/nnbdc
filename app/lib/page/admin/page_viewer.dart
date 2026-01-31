@@ -46,8 +46,7 @@ class _PageViewerPageState extends State<PageViewerPage> {
     }
     return _routes
         .where((route) =>
-            route.route.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-            route.description.toLowerCase().contains(_searchQuery.toLowerCase()))
+            route.route.toLowerCase().contains(_searchQuery.toLowerCase()) || route.description.toLowerCase().contains(_searchQuery.toLowerCase()))
         .toList();
   }
 
@@ -236,8 +235,3 @@ class PageRouteInfo {
 
   PageRouteInfo(this.route, this.description, this.icon);
 }
-
-
-
-
-

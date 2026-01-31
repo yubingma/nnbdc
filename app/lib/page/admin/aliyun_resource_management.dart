@@ -26,7 +26,7 @@ class _AliyunResourceManagementPageState extends State<AliyunResourceManagementP
     super.initState();
     _loadData();
   }
-  
+
   Future<void> _loadData() async {
     await Future.wait([
       _refreshBalance(),
@@ -174,7 +174,7 @@ class _AliyunResourceManagementPageState extends State<AliyunResourceManagementP
     Color textColor,
   ) {
     final isPositive = amount != '-' && (double.tryParse(amount) ?? 0) >= 0;
-    
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -435,10 +435,10 @@ class _AliyunResourceManagementPageState extends State<AliyunResourceManagementP
         // 服务器返回的是 JSON 字符串，需要手动解析
         try {
           final jsonString = result.data!;
-          
+
           // 解析 JSON 字符串
           final dataMap = jsonDecode(jsonString) as Map<String, dynamic>;
-          
+
           // 根据后端日志，数据结构是: Instances.Instance 才是数组
           // {"Instances":{"Instance":[]},...}
           final instancesObj = dataMap['Instances'];
@@ -480,4 +480,3 @@ class _AliyunResourceManagementPageState extends State<AliyunResourceManagementP
     }
   }
 }
-

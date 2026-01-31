@@ -6,36 +6,35 @@ import 'package:nnbdc/util/data_integrity_checker.dart';
 
 class AutoIntegrityChecker {
   static bool _hasRun = false;
-  
+
   /// 在应用启动时自动执行完整性检查
   static Future<void> runOnStartup(BuildContext context) async {
     if (_hasRun) return;
     _hasRun = true;
-    
+
     try {
       // 延迟3秒后执行检查，避免影响应用启动速度
       await Future.delayed(const Duration(seconds: 3));
-      
+
       final checker = DataIntegrityChecker();
       final result = await checker.performFullCheck();
-      
+
       // 如果发现问题，在后台自动修复
       if (result.hasIssues) {
         await checker.autoFix(result);
       }
-      
     } catch (e) {
       // 静默处理错误，不影响用户体验
       debugPrint('自动完整性检查失败: $e');
     }
   }
-  
+
   /// 手动触发完整性检查
   static Future<void> runManualCheck(BuildContext context) async {
     try {
       final checker = DataIntegrityChecker();
       final result = await checker.performFullCheck();
-      
+
       if (result.hasIssues) {
         // 显示检查结果
         if (context.mounted) {

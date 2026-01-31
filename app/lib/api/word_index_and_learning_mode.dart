@@ -15,4 +15,4 @@ class WordIndexAndLearningMode {
 
   factory WordIndexAndLearningMode.fromJson(Map<String, dynamic> json) => _$WordIndexAndLearningModeFromJson(json);
   Map<String, dynamic> toJson() => _$WordIndexAndLearningModeToJson(this);
-} 
+}

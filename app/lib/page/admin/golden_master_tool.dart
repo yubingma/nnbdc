@@ -24,7 +24,7 @@ class _GoldenMasterToolPageState extends State<GoldenMasterToolPage> {
   bool _isProcessing = false;
   bool _isFinished = false;
   String _statusMessage = '准备就绪';
-  
+
   // 数据库概要信息
   int? _dbVersion;
   String? _dbPath;
@@ -80,14 +80,13 @@ class _GoldenMasterToolPageState extends State<GoldenMasterToolPage> {
                       '4. 查看数据库概要信息\n\n'
                       '制作完成后，请自行将黄金母版文件拷贝到app项目的assets/db目录下。',
                       style: TextStyle(
-                        fontSize: 16, 
+                        fontSize: 16,
                         height: 1.5,
                         color: textColor,
                         fontFamily: 'NotoSansSC',
                       ),
                       textAlign: TextAlign.center,
                     ),
-                  
                   if (_isFinished) ...[
                     _buildSummaryCard(isDarkMode),
                     const SizedBox(height: 32),
@@ -103,7 +102,6 @@ class _GoldenMasterToolPageState extends State<GoldenMasterToolPage> {
                       ),
                     ),
                   ],
-
                   const SizedBox(height: 32),
                   if (_isProcessing) ...[
                     const CircularProgressIndicator(),
@@ -167,15 +165,15 @@ class _GoldenMasterToolPageState extends State<GoldenMasterToolPage> {
             ),
             const SizedBox(height: 8),
             ..._tableCounts.entries.map((e) => Padding(
-              padding: const EdgeInsets.only(left: 8, bottom: 4),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(e.key, style: TextStyle(color: textColor.withValues(alpha: 0.8))),
-                  Text('${e.value}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                ],
-              ),
-            )),
+                  padding: const EdgeInsets.only(left: 8, bottom: 4),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(e.key, style: TextStyle(color: textColor.withValues(alpha: 0.8))),
+                      Text('${e.value}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                )),
           ],
         ),
       ),
@@ -229,7 +227,7 @@ class _GoldenMasterToolPageState extends State<GoldenMasterToolPage> {
       // 1. 清空并重建本地数据库
       setState(() => _statusMessage = '正在清空并重建数据库...');
       await MyDatabase.instance.wipeAllTables();
-      
+
       // 2. 切换至生产环境 API
       setState(() => _statusMessage = '正在切换至生产环境...');
       Api.useProdUrl = true;
@@ -237,19 +235,8 @@ class _GoldenMasterToolPageState extends State<GoldenMasterToolPage> {
 
       // 3. 触发下载通用词典
       setState(() => _statusMessage = '准备下载通用词典...');
-      
-      final commonDict = DictVo(
-        Global.commonDictId, 
-        '通用词典', 
-        '通用词典', 
-        null, 
-        true, 
-        true, 
-        true, 
-        null, 
-        0, 
-        AppClock.now()
-      );
+
+      final commonDict = DictVo(Global.commonDictId, '通用词典', '通用词典', null, true, true, true, null, 0, AppClock.now());
 
       if (mounted) {
         await showDialog(
@@ -277,7 +264,6 @@ class _GoldenMasterToolPageState extends State<GoldenMasterToolPage> {
         _isFinished = true;
         _statusMessage = '制作完成';
       });
-      
     } catch (e) {
       Global.logger.e('制作黄金母版失败: $e');
       setState(() {
@@ -285,7 +271,7 @@ class _GoldenMasterToolPageState extends State<GoldenMasterToolPage> {
         _statusMessage = '制作失败: $e';
       });
       ToastUtil.error('制作失败: $e');
-      
+
       // 失败后恢复环境
       Api.useProdUrl = false;
       Api.resetClient();
@@ -297,7 +283,7 @@ class _GoldenMasterToolPageState extends State<GoldenMasterToolPage> {
     final db = MyDatabase.instance;
     _dbVersion = db.schemaVersion;
     _dbPath = await MyDatabase.getDbFilePath();
-    
+
     // 计算 SHA-256
     try {
       final file = File(_dbPath!);
@@ -307,12 +293,12 @@ class _GoldenMasterToolPageState extends State<GoldenMasterToolPage> {
       Global.logger.e('计算数据库 SHA-256 失败: $e');
       _dbSha256 = '计算失败';
     }
-    
+
     // 获取所有非系统表
-    final tableResults = await db.customSelect(
-      "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE 'drift_%' ORDER BY name"
-    ).get();
-    
+    final tableResults = await db
+        .customSelect("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE 'drift_%' ORDER BY name")
+        .get();
+
     _totalTables = tableResults.length;
     _tableCounts.clear();
     int nonZero = 0;

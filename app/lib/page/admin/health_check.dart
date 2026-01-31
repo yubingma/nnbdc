@@ -17,11 +17,11 @@ class HealthCheckPage extends StatefulWidget {
 class _HealthCheckPageState extends State<HealthCheckPage> {
   bool _isRunning = false;
   IntegrityCheckResult? _checkResult;
-  
+
   // 每项检查的状态：null=未开始, false=进行中, true=通过, 'failed'=失败
   final Map<int, dynamic> _checkStates = {}; // 1=序号, 2=数量, 3=学习进度, 4=版本, 5=通用词典
   final Map<int, String?> _checkMessages = {};
-  
+
   // 检查项配置
   static const List<Map<String, dynamic>> _checkItems = [
     {'id': 1, 'title': '您的词典单词序号连续性', 'step': 1, 'category': 'dict_word_sequence'},
@@ -104,11 +104,11 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
                   const SizedBox(height: 8),
                   // 显示每个检查项的状态
                   ..._checkItems.map((item) => _buildCheckItemWithStatus(
-                    item['title'] as String,
-                    _checkStates[item['id'] as int],
-                    isDarkMode,
-                    item['category'] as String,
-                  )),
+                        item['title'] as String,
+                        _checkStates[item['id'] as int],
+                        isDarkMode,
+                        item['category'] as String,
+                      )),
                 ],
               ),
             ),
@@ -140,24 +140,24 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
   Widget _buildResultSummary(bool isDarkMode) {
     // 获取所有检查项的 category
     final checkItemCategories = _checkItems.map((item) => item['category'] as String).toSet();
-    
+
     // 只统计已分类的问题（匹配检查项 category 的问题）
     final categorizedIssues = _checkResult!.issues.where((issue) {
       return checkItemCategories.contains(issue.category);
     }).toList();
-    
+
     // 检查是否有检查项失败
     final hasFailedCheckItem = _checkStates.values.any((state) => state == 'failed');
-    
+
     // 统计已分类的问题数量
     final categorizedIssueCount = categorizedIssues.length;
     // errors 也应该被统计
     final errorCount = _checkResult!.errors.length;
     final totalIssues = categorizedIssueCount + errorCount;
-    
+
     // 判断是否健康：所有检查项都通过，且没有已分类的问题和错误
     final isHealthy = !hasFailedCheckItem && totalIssues == 0;
-    
+
     return Card(
       color: isDarkMode ? const Color(0xFF2D2D2D) : Colors.white,
       child: Padding(
@@ -201,12 +201,11 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
     );
   }
 
- 
   Widget _buildCheckItemWithStatus(String text, dynamic status, bool isDarkMode, String category) {
     IconData icon;
     Color iconColor;
     bool isFailed = false;
-    
+
     if (status == null) {
       // 尚未检查，显示灰色时钟
       icon = Icons.access_time;
@@ -225,7 +224,7 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
       iconColor = Colors.red;
       isFailed = true;
     }
-    
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -269,16 +268,14 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
   // 显示问题详情对话框
   void _showIssueDetails(String category, String title) {
     if (_checkResult == null) return;
-    
+
     // 根据 category 过滤出相关的问题
-    final relatedIssues = _checkResult!.issues
-        .where((issue) => issue.category == category)
-        .toList();
-    
+    final relatedIssues = _checkResult!.issues.where((issue) => issue.category == category).toList();
+
     if (relatedIssues.isEmpty) {
       return;
     }
-    
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -397,9 +394,6 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
     );
   }
 
-
-
-
   Future<void> _runDiagnostic() async {
     // 重置所有检查状态
     setState(() {
@@ -415,10 +409,10 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
       if (currentUser == null) {
         throw Exception('用户未登录');
       }
-      
+
       // 使用本地数据完整性检查器进行诊断
       final checker = DataIntegrityChecker();
-      
+
       final IntegrityCheckResult checkResult = await checker.performUserCheck(
         currentUser.id,
         onProgress: (step, message, {IntegrityCheckResult? result}) async {
@@ -428,10 +422,10 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
               (item) => item['step'] == step,
               orElse: () => {},
             );
-            
+
             if (checkItem.isNotEmpty) {
               final int itemId = checkItem['id'] as int;
-              
+
               if (result == null) {
                 // 刚开始检查，设置为进行中状态
                 setState(() {
@@ -441,7 +435,7 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
                 // 检查完成，设置结果
                 final String category = checkItem['category'] as String;
                 final hasIssue = result.issues.any((issue) => issue.category == category);
-                
+
                 setState(() {
                   _checkStates[itemId] = hasIssue ? 'failed' : true; // true=通过, 'failed'=有问题
                 });
@@ -450,26 +444,24 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
           }
         },
       );
-      
+
       // 检查完成后，统一更新所有项的状态
       setState(() {
         // 获取所有检查项的 category
         final checkItemCategories = _checkItems.map((item) => item['category'] as String).toSet();
-        
+
         // 检查是否有未分类的问题
-        final uncategorizedIssues = checkResult.issues.where(
-          (issue) => !checkItemCategories.contains(issue.category)
-        ).toList();
-        
+        final uncategorizedIssues = checkResult.issues.where((issue) => !checkItemCategories.contains(issue.category)).toList();
+
         if (uncategorizedIssues.isNotEmpty) {
           Global.logger.w('发现 ${uncategorizedIssues.length} 个未分类的问题: ${uncategorizedIssues.map((i) => i.category).join(", ")}');
         }
-        
+
         // 检查是否有 errors
         if (checkResult.errors.isNotEmpty) {
           Global.logger.w('发现 ${checkResult.errors.length} 个错误: ${checkResult.errors.join(", ")}');
         }
-        
+
         for (var item in _checkItems) {
           final int itemId = item['id'] as int;
           final String category = item['category'] as String;
@@ -477,7 +469,7 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
           final hasIssue = checkResult.issues.any((issue) => issue.category == category);
           _checkStates[itemId] = hasIssue ? 'failed' : true; // true=通过, 'failed'=有问题
         }
-        
+
         _checkResult = checkResult;
         _isRunning = false;
       });
@@ -485,7 +477,7 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
       setState(() {
         _isRunning = false;
       });
-      
+
       // 记录详细的错误信息到检查结果中
       final errorResult = IntegrityCheckResult();
       errorResult.addIssue(
@@ -495,13 +487,13 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
         stackTrace: stackTrace.toString(),
         logMessage: '健康检查: $e',
       );
-      
+
       setState(() {
         _checkResult = errorResult;
       });
-      
+
       ErrorHandler.handleError(e, stackTrace, logPrefix: '健康检查', userMessage: '诊断过程中出现错误', showToast: true);
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -517,7 +509,7 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
   Future<void> _fixIssues(BuildContext context, List<IntegrityIssue> issues) async {
     // 关闭详情对话框
     if (mounted) Navigator.pop(context);
-    
+
     // 显示修复确认对话框
     final confirmed = await showDialog<bool>(
       context: context,
@@ -539,17 +531,17 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
         ],
       ),
     );
-    
+
     if (confirmed != true || !mounted) return;
-    
+
     // 显示修复进度
     _showFixProgressDialog();
-    
+
     try {
       // 使用本地数据完整性检查器进行修复
       final checker = DataIntegrityChecker();
       final fixResult = await checker.autoFix(_checkResult!);
-      
+
       // 在异步操作完成后处理UI
       if (mounted) _handleFixResult(fixResult);
     } catch (e, stackTrace) {
@@ -579,20 +571,16 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
   // 处理修复结果
   void _handleFixResult(IntegrityFixResult fixResult) {
     if (!mounted) return;
-    
+
     // 关闭进度对话框
     Navigator.pop(context);
-    
+
     // 显示修复结果
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('修复完成'),
-        content: Text(
-          fixResult.hasFixed 
-            ? '已修复 ${fixResult.fixed.length} 个问题'
-            : '没有需要修复的问题'
-        ),
+        content: Text(fixResult.hasFixed ? '已修复 ${fixResult.fixed.length} 个问题' : '没有需要修复的问题'),
         actions: [
           TextButton(
             onPressed: () {
@@ -614,12 +602,12 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
   // 处理修复错误
   void _handleFixError(dynamic e, StackTrace stackTrace) {
     if (!mounted) return;
-    
+
     // 关闭进度对话框
     Navigator.pop(context);
-    
+
     ErrorHandler.handleError(e, stackTrace, logPrefix: '修复问题', userMessage: '修复过程中出现错误', showToast: true);
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('修复过程中出现错误: $e'),
@@ -639,7 +627,7 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
       // 使用本地数据完整性检查器进行自动修复
       final checker = DataIntegrityChecker();
       final fixResult = await checker.autoFix(_checkResult!);
-      
+
       setState(() {
         _isRunning = false;
       });
@@ -647,11 +635,7 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              fixResult.hasFixed 
-                ? '已修复 ${fixResult.fixed.length} 个问题'
-                : '没有需要修复的问题'
-            ),
+            content: Text(fixResult.hasFixed ? '已修复 ${fixResult.fixed.length} 个问题' : '没有需要修复的问题'),
             backgroundColor: fixResult.hasFixed ? Colors.green : Colors.blue,
           ),
         );
@@ -660,9 +644,9 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
       setState(() {
         _isRunning = false;
       });
-      
+
       ErrorHandler.handleError(e, stackTrace, logPrefix: '自动修复', userMessage: '修复过程中出现错误', showToast: true);
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

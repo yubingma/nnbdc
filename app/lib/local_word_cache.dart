@@ -193,7 +193,7 @@ class LocalWordCache {
         // 查询用户选择的词书列表
         final learningDictsQuery = db.select(db.learningDicts)..where((tbl) => tbl.userId.equals(userId));
         final learningDicts = await learningDictsQuery.get();
-        
+
         // 为每个选择的词书查询其popularityLimit
         for (final learningDict in learningDicts) {
           final dict = await db.dictsDao.findById(learningDict.dictId);
@@ -211,7 +211,7 @@ class LocalWordCache {
         if (wordMeanings[meaning.wordId]!.isEmpty) {
           // 检查是否需要过滤通用释义
           bool shouldInclude = true;
-          
+
           // 如果有词书配置了popularityLimit，需要检查
           if (dictPopularityLimits.isNotEmpty) {
             // 检查是否有任何一个词书设置了popularityLimit
@@ -219,7 +219,7 @@ class LocalWordCache {
             if (anyLimit) {
               // 获取popularity值，如果为null则使用999作为默认值
               final int popularity = meaning.popularity;
-              
+
               // 检查是否所有词书的popularityLimit都允许该释义
               // 如果有任何一个词书的limit允许该释义，则包含
               shouldInclude = false;
@@ -236,7 +236,7 @@ class LocalWordCache {
               }
             }
           }
-          
+
           if (shouldInclude) {
             wordMeanings[meaning.wordId]!.add(meaning);
           }

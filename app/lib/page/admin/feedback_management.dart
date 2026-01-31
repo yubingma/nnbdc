@@ -34,16 +34,16 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
       final messages = await LoadingUtils.withoutApiLoading(() async {
         return await Api.client.getAllAdviceMessages();
       });
-      
+
       final stats = <String, int>{};
-      
+
       // 统计客户端类型分布
       for (final message in messages) {
         if (message.clientType != null) {
           stats[message.clientType!] = (stats[message.clientType!] ?? 0) + 1;
         }
       }
-      
+
       // 未读优先，其次按时间倒序
       messages.sort((a, b) {
         if (a.viewed != b.viewed) {
@@ -113,12 +113,8 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
   Widget _buildViewedBadge(MsgVo message) {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
     final bool isViewed = message.viewed;
-    final Color bg = isViewed
-        ? (isDarkMode ? Colors.grey[700]! : Colors.grey[200]!)
-        : const Color(0xFFFFEBEE);
-    final Color fg = isViewed
-        ? (isDarkMode ? Colors.white70 : Colors.black54)
-        : const Color(0xFFD32F2F);
+    final Color bg = isViewed ? (isDarkMode ? Colors.grey[700]! : Colors.grey[200]!) : const Color(0xFFFFEBEE);
+    final Color fg = isViewed ? (isDarkMode ? Colors.white70 : Colors.black54) : const Color(0xFFD32F2F);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -126,9 +122,7 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
         color: bg,
         borderRadius: BorderRadius.circular(999),
         border: Border.all(
-          color: isViewed
-              ? (isDarkMode ? Colors.grey[600]! : Colors.grey[300]!)
-              : const Color(0xFFFFCDD2),
+          color: isViewed ? (isDarkMode ? Colors.grey[600]! : Colors.grey[300]!) : const Color(0xFFFFCDD2),
         ),
       ),
       child: Text(
@@ -232,9 +226,7 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: isDarkMode 
-                  ? Colors.black.withValues(alpha: 0.3) 
-                  : Colors.grey.withValues(alpha: 0.15),
+              color: isDarkMode ? Colors.black.withValues(alpha: 0.3) : Colors.grey.withValues(alpha: 0.15),
               spreadRadius: 0,
               blurRadius: 8,
               offset: const Offset(0, 4),
@@ -248,108 +240,105 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
         child: Padding(
           padding: const EdgeInsets.all(20),
           child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              CircleAvatar(
-                radius: 16,
-                backgroundColor: AppTheme.primaryColor,
-                child: Text(
-                  _getUserInitial(message),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      message.fromUser.nickName ?? 
-                      message.fromUserNickName ?? 
-                      message.fromUserName ?? 
-                      '未知用户',
-                      style: TextStyle(
+              Row(
+                children: [
+                  CircleAvatar(
+                    radius: 16,
+                    backgroundColor: AppTheme.primaryColor,
+                    child: Text(
+                      _getUserInitial(message),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
                         fontWeight: FontWeight.bold,
-                        color: textColor,
                       ),
                     ),
-                    Row(
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(
-                          Icons.access_time,
-                          size: 12,
-                          color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                        ),
-                        const SizedBox(width: 4),
                         Text(
-                          DateFormat('yyyy-MM-dd HH:mm').format(message.createTime),
+                          message.fromUser.nickName ?? message.fromUserNickName ?? message.fromUserName ?? '未知用户',
                           style: TextStyle(
-                            fontSize: 12,
-                            color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                            fontWeight: FontWeight.bold,
+                            color: textColor,
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        _buildViewedBadge(message),
-                        if (message.clientType != null) ...[
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: BoxDecoration(
-                              color: _getClientTypeColor(message.clientType!).withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: _getClientTypeColor(message.clientType!).withValues(alpha: 0.3),
-                                width: 1,
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.access_time,
+                              size: 12,
+                              color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              DateFormat('yyyy-MM-dd HH:mm').format(message.createTime),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
                               ),
                             ),
-                            child: Icon(
-                              _getClientTypeIcon(message.clientType!),
-                              size: 14,
-                              color: _getClientTypeColor(message.clientType!),
-                            ),
-                          ),
-                        ],
+                            const SizedBox(width: 8),
+                            _buildViewedBadge(message),
+                            if (message.clientType != null) ...[
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: _getClientTypeColor(message.clientType!).withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: _getClientTypeColor(message.clientType!).withValues(alpha: 0.3),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Icon(
+                                  _getClientTypeIcon(message.clientType!),
+                                  size: 14,
+                                  color: _getClientTypeColor(message.clientType!),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
                       ],
                     ),
-                  ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text(
+                message.content,
+                style: TextStyle(
+                  color: textColor,
+                  fontSize: 16,
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            message.content,
-            style: TextStyle(
-              color: textColor,
-              fontSize: 16,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              TextButton.icon(
-                onPressed: () async {
-                  if (!message.viewed) {
-                    await _markMsgsAsViewed([message.id]);
-                  }
-                  _replyToMessage(message);
-                },
-                icon: const Icon(Icons.reply, size: 16),
-                label: const Text('回复'),
-                style: TextButton.styleFrom(
-                  foregroundColor: AppTheme.primaryColor,
-                ),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton.icon(
+                    onPressed: () async {
+                      if (!message.viewed) {
+                        await _markMsgsAsViewed([message.id]);
+                      }
+                      _replyToMessage(message);
+                    },
+                    icon: const Icon(Icons.reply, size: 16),
+                    label: const Text('回复'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppTheme.primaryColor,
+                    ),
+                  ),
+                ],
               ),
             ],
-          ),
-        ],
           ),
         ),
       ),
@@ -377,9 +366,7 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: isDarkMode 
-                ? Colors.black.withValues(alpha: 0.3) 
-                : Colors.grey.withValues(alpha: 0.1),
+            color: isDarkMode ? Colors.black.withValues(alpha: 0.3) : Colors.grey.withValues(alpha: 0.1),
             spreadRadius: 1,
             blurRadius: 4,
             offset: const Offset(0, 2),
@@ -469,7 +456,7 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
     final nickName = message.fromUser.nickName;
     final userNickName = message.fromUserNickName;
     final userName = message.fromUserName;
-    
+
     if (nickName != null && nickName.isNotEmpty) {
       return nickName.substring(0, 1).toUpperCase();
     } else if (userNickName != null && userNickName.isNotEmpty) {
@@ -577,11 +564,9 @@ class _ReplyDialogState extends State<_ReplyDialog> {
   Future<void> _loadConversationHistory() async {
     try {
       // 获取该用户与系统的所有消息历史
-      final messages = await Api.client.getLastestMsgsBetweenUserAndSys(
-        widget.message.fromUser.id ?? '', 
-        50  // 获取最近50条消息
-      );
-      
+      final messages = await Api.client.getLastestMsgsBetweenUserAndSys(widget.message.fromUser.id ?? '', 50 // 获取最近50条消息
+          );
+
       setState(() {
         _conversationHistory = messages;
         _isLoading = false;
@@ -598,10 +583,7 @@ class _ReplyDialogState extends State<_ReplyDialog> {
 
   Future<void> _markConversationAdviceAsViewed(List<MsgVo> messages) async {
     if (_isMarkingViewed) return;
-    final ids = messages
-        .where((m) => m.toUser.id == Global.sysUserId && !m.viewed)
-        .map((m) => m.id)
-        .toList();
+    final ids = messages.where((m) => m.toUser.id == Global.sysUserId && !m.viewed).map((m) => m.id).toList();
     if (ids.isEmpty) return;
 
     setState(() {
@@ -689,13 +671,11 @@ class _ReplyDialogState extends State<_ReplyDialog> {
                       final msg = _conversationHistory[index];
                       // 判断是否为管理员消息：消息类型为adviceReply（管理员回复）
                       final isAdminMessage = msg.msgType == 'AdviceReply';
-                      
+
                       return Padding(
                         padding: const EdgeInsets.symmetric(vertical: 4),
                         child: Row(
-                          mainAxisAlignment: isAdminMessage 
-                              ? MainAxisAlignment.end 
-                              : MainAxisAlignment.start,
+                          mainAxisAlignment: isAdminMessage ? MainAxisAlignment.end : MainAxisAlignment.start,
                           children: [
                             if (!isAdminMessage) ...[
                               // 用户头像
@@ -896,7 +876,7 @@ class _ReplyDialogState extends State<_ReplyDialog> {
         widget.message.fromUser.id ?? '',
         Global.getLoggedInUser()?.id ?? '',
       );
-      
+
       if (result.success && mounted) {
         _replyController.clear();
         // 重新加载对话历史

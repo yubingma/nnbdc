@@ -36,8 +36,7 @@ class BookmarkBo {
         final bookmarkVo = BookMarkVo(bookmark.position, bookmark.spell);
         bookmarkVo.bookMarkName = bookmark.bookMarkName;
 
-        Global.logger.d(
-            '获取书签成功: name=$bookMarkName, position=${bookmark.position}, spell=${bookmark.spell}');
+        Global.logger.d('获取书签成功: name=$bookMarkName, position=${bookmark.position}, spell=${bookmark.spell}');
         final result = Result<BookMarkVo>("SUCCESS", "获取成功", true);
         result.data = bookmarkVo;
         return result;
@@ -49,18 +48,15 @@ class BookmarkBo {
       return result;
     } catch (e, stackTrace) {
       Global.logger.e('获取书签失败: $e', stackTrace: stackTrace);
-      final result =
-          Result<BookMarkVo>("ERROR", "获取书签失败: ${e.toString()}", false);
+      final result = Result<BookMarkVo>("ERROR", "获取书签失败: ${e.toString()}", false);
       result.data = null;
       return result;
     }
   }
 
-  Future<Result> saveBookMark(
-      String bookMarkName, String spell, int position, String userId) async {
+  Future<Result> saveBookMark(String bookMarkName, String spell, int position, String userId) async {
     try {
-      Global.logger.d(
-          '开始保存书签: name=$bookMarkName, position=$position, spell=$spell, userId=$userId');
+      Global.logger.d('开始保存书签: name=$bookMarkName, position=$position, spell=$spell, userId=$userId');
       final db = MyDatabase.instance;
 
       // 检查用户是否存在
@@ -71,8 +67,7 @@ class BookmarkBo {
       }
 
       // 查询是否存在同名书签
-      final existingBookmark =
-          await db.bookmarksDao.findByUserIdAndName(userId, bookMarkName);
+      final existingBookmark = await db.bookmarksDao.findByUserIdAndName(userId, bookMarkName);
       final now = AppClock.now();
 
       // 创建或更新书签
@@ -106,5 +101,3 @@ class BookmarkBo {
     }
   }
 }
-
-

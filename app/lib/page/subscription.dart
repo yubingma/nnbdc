@@ -50,7 +50,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
         // 定义顺序：monthly 优先于 yearly/annual
         bool aIsMonthly = a.id.contains('monthly');
         bool bIsMonthly = b.id.contains('monthly');
-        
+
         if (aIsMonthly && !bIsMonthly) return 1;
         if (!aIsMonthly && bIsMonthly) return -1;
         return a.id.compareTo(b.id);
@@ -84,29 +84,25 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
     final isPremium = SubscriptionUtil.isPremium();
     final currentType = SubscriptionUtil.getSubscriptionType();
     final expireDate = SubscriptionUtil.getExpireDate();
-    
+
     // 判断产品类型
     final isMonthly = product.id.contains('monthly');
     final isAnnual = product.id.contains('yearly') || product.id.contains('annual');
-    
+
     if (isPremium && expireDate != null) {
       final formatter = DateFormat('yyyy年MM月dd日');
-      
+
       // 购买相同类型订阅时，显示确认对话框
-      if ((currentType == 'annual' && isAnnual) || 
-          (currentType == 'monthly' && isMonthly)) {
-        
+      if ((currentType == 'annual' && isAnnual) || (currentType == 'monthly' && isMonthly)) {
         final confirmed = await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
             title: const Text('确认订阅'),
-            content: Text(
-              '您已经是${isAnnual ? "年度" : "月度"}会员\n'
-              '有效期至：${formatter.format(expireDate)}\n\n'
-              '重复订阅相同类型可能会在当前订阅到期后续订，或根据 Apple 的订阅政策处理。\n\n'
-              '建议：如需续订，请等待当前订阅快到期时再操作。\n\n'
-              '确定要继续吗？'
-            ),
+            content: Text('您已经是${isAnnual ? "年度" : "月度"}会员\n'
+                '有效期至：${formatter.format(expireDate)}\n\n'
+                '重复订阅相同类型可能会在当前订阅到期后续订，或根据 Apple 的订阅政策处理。\n\n'
+                '建议：如需续订，请等待当前订阅快到期时再操作。\n\n'
+                '确定要继续吗？'),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
@@ -119,26 +115,24 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
             ],
           ),
         );
-        
+
         if (confirmed != true) {
           return;
         }
       }
-      
+
       // 从年度降级到月度时，给出明确说明
       else if (currentType == 'annual' && isMonthly) {
         final confirmed = await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
             title: const Text('降级订阅'),
-            content: Text(
-              '您当前是年度会员（有效期至 ${formatter.format(expireDate)}）\n\n'
-              '如果订阅月度会员：\n'
-              '• 您的年度会员将继续有效至到期日\n'
-              '• 年度会员到期后，将自动切换为月度会员\n'
-              '• 不会立即生效，也不会获得退款\n\n'
-              '您确定要降级吗？'
-            ),
+            content: Text('您当前是年度会员（有效期至 ${formatter.format(expireDate)}）\n\n'
+                '如果订阅月度会员：\n'
+                '• 您的年度会员将继续有效至到期日\n'
+                '• 年度会员到期后，将自动切换为月度会员\n'
+                '• 不会立即生效，也不会获得退款\n\n'
+                '您确定要降级吗？'),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
@@ -151,26 +145,24 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
             ],
           ),
         );
-        
+
         if (confirmed != true) {
           return;
         }
       }
-      
+
       // 从月度升级到年度时，强调立即生效和退款
       else if (currentType == 'monthly' && isAnnual) {
         final confirmed = await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
             title: const Text('升级到年度会员'),
-            content: Text(
-              '您当前是月度会员（有效期至 ${formatter.format(expireDate)}）\n\n'
-              '如果升级到年度会员：\n'
-              '• 立即生效，享受年度会员权益\n'
-              '• Apple 会自动退还月度订阅未使用部分的费用\n'
-              '• 年度会员价格更优惠！\n\n'
-              '确定要升级吗？'
-            ),
+            content: Text('您当前是月度会员（有效期至 ${formatter.format(expireDate)}）\n\n'
+                '如果升级到年度会员：\n'
+                '• 立即生效，享受年度会员权益\n'
+                '• Apple 会自动退还月度订阅未使用部分的费用\n'
+                '• 年度会员价格更优惠！\n\n'
+                '确定要升级吗？'),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
@@ -183,7 +175,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
             ],
           ),
         );
-        
+
         if (confirmed != true) {
           return;
         }
@@ -264,7 +256,10 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
     }
     if (subscriptionType == 'monthly' || subscriptionType.contains('monthly')) {
       return '月度订阅';
-    } else if (subscriptionType == 'annual' || subscriptionType == 'yearly' || subscriptionType.contains('yearly') || subscriptionType.contains('annual')) {
+    } else if (subscriptionType == 'annual' ||
+        subscriptionType == 'yearly' ||
+        subscriptionType.contains('yearly') ||
+        subscriptionType.contains('annual')) {
       return '年度订阅';
     } else {
       return '订阅';
@@ -282,7 +277,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
     if (isPremium) {
       final expireDate = SubscriptionUtil.getExpireDate();
       final subscriptionType = SubscriptionUtil.getSubscriptionType();
-      
+
       if (expireDate != null) {
         final formatter = DateFormat('yyyy年MM月dd日');
         final typeText = _getSubscriptionTypeText(subscriptionType).replaceAll('订阅', '');
@@ -322,7 +317,6 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-
                   // 当前订阅状态
                   Container(
                     decoration: BoxDecoration(
@@ -340,9 +334,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: isPremium 
-                              ? Colors.green.withValues(alpha: 0.3)
-                              : Colors.grey.withValues(alpha: 0.2),
+                          color: isPremium ? Colors.green.withValues(alpha: 0.3) : Colors.grey.withValues(alpha: 0.2),
                           blurRadius: 8,
                           offset: const Offset(0, 4),
                         ),
@@ -418,8 +410,8 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                           Text(
                             '订阅说明',
                             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
+                                  fontWeight: FontWeight.bold,
+                                ),
                           ),
                           const SizedBox(height: 8),
                           const Text(
@@ -504,9 +496,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
     // 检查当前订阅状态
     final isPremium = SubscriptionUtil.isPremium();
     final currentType = SubscriptionUtil.getSubscriptionType();
-    final isCurrentSubscription = isPremium && 
-        ((currentType == 'annual' && isAnnual) || 
-         (currentType == 'monthly' && isMonthly));
+    final isCurrentSubscription = isPremium && ((currentType == 'annual' && isAnnual) || (currentType == 'monthly' && isMonthly));
 
     return Card(
       elevation: isRecommended ? 4 : 2,
@@ -517,9 +507,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
         borderRadius: BorderRadius.circular(12),
         side: isCurrentSubscription
             ? BorderSide(color: Colors.green, width: 2)
-            : (isRecommended
-                ? BorderSide(color: Theme.of(context).primaryColor, width: 2)
-                : BorderSide.none),
+            : (isRecommended ? BorderSide(color: Theme.of(context).primaryColor, width: 2) : BorderSide.none),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -541,7 +529,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                                   fontWeight: FontWeight.bold,
                                 ),
                           ),
-                          if (isRecommended) ...[ 
+                          if (isRecommended) ...[
                             const SizedBox(width: 8),
                             Container(
                               padding: const EdgeInsets.symmetric(
@@ -586,7 +574,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                 ),
               ],
             ),
-            
+
             // 显示当前订阅标识
             if (isCurrentSubscription) ...[
               const SizedBox(height: 12),
@@ -610,7 +598,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                 ),
               ),
             ],
-            
+
             const SizedBox(height: 12),
             // 会员权益说明
             Container(
@@ -641,14 +629,12 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: _purchasingProductId != null
-                    ? null
-                    : () => _purchaseProduct(product),
+                onPressed: _purchasingProductId != null ? null : () => _purchaseProduct(product),
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   shape: RoundedRectangleBorder(
@@ -691,4 +677,3 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
     return '更优惠';
   }
 }
-

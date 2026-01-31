@@ -41,7 +41,6 @@ class VotedSentences extends Table {
   Set<Column>? get primaryKey => {userId, sentenceId};
 }
 
-
 class VotedWordImages extends Table {
   TextColumn get userId => text()();
 
@@ -82,7 +81,7 @@ class Users extends Table {
 
   /// 是否直接显示备选答案
   BoolColumn get showAnswersDirectly => boolean().nullable().withDefault(const Constant(true))();
- 
+
   /// 是否自动朗读单词发音
   BoolColumn get autoPlayWord => boolean().nullable().withDefault(const Constant(true))();
 

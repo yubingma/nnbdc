@@ -15,7 +15,6 @@ part 'db.g.dart';
 @DriftDatabase(tables: [
   Users,
   LocalParams,
-
   VotedSentences,
   VotedWordImages,
   LearningDicts,
@@ -65,7 +64,6 @@ part 'db.g.dart';
   MeaningItemsDao,
   SentencesDao,
   LearningWordsDao,
-
   DictGroupsDao,
   GroupAndDictLinksDao,
   UserStudyStepsDao,
@@ -115,21 +113,21 @@ class MyDatabase extends _$MyDatabase {
   static Future<void> ensureDatabaseIntegrity() async {
     try {
       final db = instance;
-      
+
       // 先触发数据库打开（如果还没打开的话），确保迁移已完成
       try {
         await db.customSelect('SELECT 1', readsFrom: {}).get();
       } catch (e) {
         // 如果数据库打开失败，可能表不存在，继续检查
       }
-      
+
       // 检查关键表是否存在（通过查询 sqlite_master 来判断）
       try {
         final tables = await db.customSelect(
           "SELECT name FROM sqlite_master WHERE type='table' AND name='users'",
           readsFrom: {},
         ).get();
-        
+
         // 如果查询返回结果，说明表存在，数据库完整
         if (tables.isNotEmpty) {
           Global.logger.d('✅ 数据库完整性检查通过');
@@ -139,7 +137,7 @@ class MyDatabase extends _$MyDatabase {
         // 如果查询失败，可能是表不存在或其他问题
         Global.logger.d('数据库完整性检查查询失败: $e');
       }
-      
+
       // 如果表不存在，自动重建数据库
       // 直接使用 wipeAllTables 进行完整重建，确保表结构正确
       Global.logger.w('⚠️ 检测到数据库表缺失，自动重建数据库...');
@@ -168,31 +166,28 @@ class MyDatabase extends _$MyDatabase {
           // 尝试从 Assets 加载
           // 注意：需要在 pubspec.yaml 中声明 assets/db/initial.sqlite
           const assetKey = 'assets/db/initial.sqlite';
-          
+
           try {
-             // 检查资源是否存在 (load 会抛出异常如果不存在)
-             // 我们不需要真正 catch，因为 rootBundle.load 失败就是不存在
-             final ByteData data = await rootBundle.load(assetKey);
-             
-             Global.logger.i('📦 发现预置数据库，正在部署...');
-             
-             // 确保父目录存在
-             if (!await dbFile.parent.exists()) {
-               await dbFile.parent.create(recursive: true);
-             }
+            // 检查资源是否存在 (load 会抛出异常如果不存在)
+            // 我们不需要真正 catch，因为 rootBundle.load 失败就是不存在
+            final ByteData data = await rootBundle.load(assetKey);
 
-             // 写入文件
-             // 直接 writeAsBytes，Flutter/Dart 会处理内存，buffer 不算太大通常没问题
-             // 如果文件真的极其巨大(>500MB)，可以考虑 openWrite().add(buffer)
-             await dbFile.writeAsBytes(
-                 data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes), 
-                 flush: true
-             );
+            Global.logger.i('📦 发现预置数据库，正在部署...');
 
-             Global.logger.i('✅ 预置数据库部署成功！');
-          } catch(e) {
-             // 资源没找到，是预期的（如果你忘了放进去，或者这是 Release 包没打进去）
-             Global.logger.d('未找到预置数据库资源($assetKey)，将使用空库初始化: $e');
+            // 确保父目录存在
+            if (!await dbFile.parent.exists()) {
+              await dbFile.parent.create(recursive: true);
+            }
+
+            // 写入文件
+            // 直接 writeAsBytes，Flutter/Dart 会处理内存，buffer 不算太大通常没问题
+            // 如果文件真的极其巨大(>500MB)，可以考虑 openWrite().add(buffer)
+            await dbFile.writeAsBytes(data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes), flush: true);
+
+            Global.logger.i('✅ 预置数据库部署成功！');
+          } catch (e) {
+            // 资源没找到，是预期的（如果你忘了放进去，或者这是 Release 包没打进去）
+            Global.logger.d('未找到预置数据库资源($assetKey)，将使用空库初始化: $e');
           }
         } catch (e) {
           Global.logger.e('❌ 部署预置数据库过程出错: $e');
@@ -205,7 +200,6 @@ class MyDatabase extends _$MyDatabase {
       Global.logger.e('预置数据库检查流程异常: $e');
     }
   }
-
 
   // we tell the database where to store the data with this constructor
   //MyDatabase() : super(_openConnection());
@@ -308,7 +302,7 @@ class MyDatabase extends _$MyDatabase {
     await transaction(() async {
       // 删除levels表
       await m.deleteTable('levels');
-      
+
       // 从user_db_logs中删除与levels相关的记录
       await customStatement("DELETE FROM user_db_logs WHERE tbl_name = 'levels' OR tbl_name = 'level';");
     });
@@ -366,7 +360,7 @@ class MyDatabase extends _$MyDatabase {
     await transaction(() async {
       // 删除voted_chineses表
       await m.deleteTable('voted_chineses');
-      
+
       // 从user_db_logs中删除相关的记录（如果存在）
       await customStatement("DELETE FROM user_db_logs WHERE tbl_name = 'voted_chineses' OR tbl_name = 'votedChineses';");
     });
@@ -476,27 +470,27 @@ class MyDatabase extends _$MyDatabase {
         ALTER TABLE users 
         ADD COLUMN is_premium_ios INTEGER NOT NULL DEFAULT 0
       ''');
-      
+
       await customStatement('''
         ALTER TABLE users 
         ADD COLUMN subscription_expire_date_ios INTEGER
       ''');
-      
+
       await customStatement('''
         ALTER TABLE users 
         ADD COLUMN subscription_type_ios TEXT
       ''');
-      
+
       await customStatement('''
         ALTER TABLE users 
         ADD COLUMN subscription_status_ios TEXT
       ''');
-      
+
       await customStatement('''
         ALTER TABLE users 
         ADD COLUMN last_receipt_data_ios TEXT
       ''');
-      
+
       Global.logger.i('✅ 添加iOS订阅相关字段完成（版本4→5）');
     });
   }
@@ -550,7 +544,6 @@ class MyDatabase extends _$MyDatabase {
       Global.logger.i('✅ 修复 users 表 iOS 订阅字段列名完成（版本5→6）');
     });
   }
-
 
   /// 初始化数据库架构（创建表、索引和基础数据）
   ///
@@ -750,7 +743,6 @@ class MyDatabase extends _$MyDatabase {
     // 重新创建表、索引和初始化数据
     await _initializeDatabaseSchema(m);
   }
-
 
   /// 在升级失败时，删除所有表并重建数据库
   ///

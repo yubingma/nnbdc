@@ -29,7 +29,6 @@ extension UserExtensions on User {
     bool? isSuperAdmin,
     bool? isAdmin,
     bool? isInputor,
-
     bool? autoPlaySentence,
     int? wordsPerDay,
     int? dakaDayCount,
@@ -40,7 +39,6 @@ extension UserExtensions on User {
     int? continuousDakaDayCount,
     int? maxContinuousDakaDayCount,
     DateTime? lastDakaDate,
-
     double? dakaRatio,
     bool? enableAllWrong,
     // iOS订阅字段

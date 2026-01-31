@@ -96,4 +96,3 @@ class WechatUtil {
     _fluwx.removeSubscriber(listener);
   }
 }
-

@@ -21,7 +21,6 @@ class LearningService {
     try {
       final db = MyDatabase.instance;
 
-
       // 如果用户的最近学习日期不是今天，重置相关数据
       final today = DateUtils.pureDate(AppClock.now());
       bool isNewDay = user.lastLearningDate == null || !DateUtils.isSameDay(user.lastLearningDate!, today);
@@ -62,7 +61,6 @@ class LearningService {
         wordExhausted = todayWords.length < (user.wordsPerDay); // 学习中词书单词是否已经耗尽
       }
 
-
       // 重新获取今日学习单词（可能有部分被删除）
       todayWords = await getTodayLearningWordsFromDb(user.id);
 
@@ -85,7 +83,6 @@ class LearningService {
       return result;
     }
   }
-
 
   /// 从数据库中获取已生成的用户今天要学习的单词列表
   static Future<List<LearningWord>> getTodayLearningWordsFromDb(String userId) async {

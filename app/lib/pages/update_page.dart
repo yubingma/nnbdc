@@ -8,7 +8,7 @@ class UpdatePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final updateService = Get.find<UpdateService>();
-    
+
     return Scaffold(
       appBar: AppBar(
         title: Text('检查更新'),

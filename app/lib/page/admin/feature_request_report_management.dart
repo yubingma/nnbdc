@@ -31,7 +31,7 @@ class _FeatureRequestReportManagementWidgetState extends State<FeatureRequestRep
       final reports = await LoadingUtils.withoutApiLoading(() async {
         return await Api.client.getAllFeatureRequestReports();
       });
-      
+
       setState(() {
         _reports = reports;
         _isLoading = false;
@@ -115,9 +115,7 @@ class _FeatureRequestReportManagementWidgetState extends State<FeatureRequestRep
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: isDarkMode 
-                ? Colors.black.withValues(alpha: 0.3) 
-                : Colors.grey.withValues(alpha: 0.15),
+            color: isDarkMode ? Colors.black.withValues(alpha: 0.3) : Colors.grey.withValues(alpha: 0.15),
             spreadRadius: 0,
             blurRadius: 8,
             offset: const Offset(0, 4),

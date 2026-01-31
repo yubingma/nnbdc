@@ -698,8 +698,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   }
 
   AsrLanguage decideAsrLanguage() {
-    Global.logger
-        .d('BDC: decideAsrLanguage() - studyStep=$_studyStep, meaning.json=${StudyStep.ch2En.json}, word.json=${StudyStep.en2Ch.json}');
+    Global.logger.d('BDC: decideAsrLanguage() - studyStep=$_studyStep, meaning.json=${StudyStep.ch2En.json}, word.json=${StudyStep.en2Ch.json}');
     if (_studyStep == StudyStep.ch2En.json) {
       Global.logger.d('BDC: 决定使用英文ASR (中→英模式)');
       return AsrLanguage.english;
@@ -800,8 +799,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
           // 进一步进行英文预处理（如去除前缀噪音、模糊匹配等）
           processedResult = AsrUtil.preprocessEnglish(result.text, _word!.spell);
-          Global.logger
-              .d('ASR: Selected & Preprocessed: "$processedResult" (原始选择: "${result.text}", 目标: ${_word!.spell}, 分数: ${result.score})');
+          Global.logger.d('ASR: Selected & Preprocessed: "$processedResult" (原始选择: "${result.text}", 目标: ${_word!.spell}, 分数: ${result.score})');
         } else {
           // 其他模式：直接使用最佳候选结果，然后进行相应预处理
           processedResult = bestCandidate;

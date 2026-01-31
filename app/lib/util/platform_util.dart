@@ -61,6 +61,6 @@ class PlatformUtils {
   /// 判断当前平台是否支持TTS（文本转语音）
   /// 目前Android、iOS支持TTS
   static bool isTtsSupported() {
-    return isAndroid || isIOS ;
+    return isAndroid || isIOS;
   }
 }
