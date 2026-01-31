@@ -101,7 +101,7 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
         case 'userCowDungLogs':
           return 5;
         default:
-          return 10;
+          throw Exception('Unknown table name: $tableName');
       }
     }
 
