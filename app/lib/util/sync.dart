@@ -149,6 +149,8 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
               Dict entity = Dict.fromJson(entityJson);
               if (log.operate == 'INSERT' || log.operate == 'UPDATE') {
                 await db.dictsDao.saveEntity(entity, false);
+              } else if (log.operate == 'DELETE') {
+                await db.dictsDao.deleteEntity(entity, false);
               }
             } else if (log.tblName == 'words') {
               Word entity = Word.fromJson(entityJson);

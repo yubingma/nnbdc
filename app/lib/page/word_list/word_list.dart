@@ -27,6 +27,7 @@ import '../index.dart';
 import '../walkman.dart';
 import '../../util/app_clock.dart';
 import '../../api/bo/word_bo.dart';
+import 'edit_meaning_dialog.dart';
 
 const String menuWordList = '浏览';
 const String menuWalkman = '随身听';
@@ -1293,7 +1294,8 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
                 Get.back();
                 ToastUtil.info('添加成功');
                 // 刷新列表
-                doQuery(true, baseIndex ?? 0, _pageSize, false);
+                await doQuery(true, baseIndex ?? 0, _pageSize, false);
+                setState(() {}); // 强制刷新UI
               }
             },
             child: const Text('添加'),
@@ -1304,90 +1306,16 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
   }
 
   Future<void> _showEditMeaningDialog(WordWrapper word) async {
-    // 获取当前释义
-    // 优先使用定制释义，如果没有则为空
-    // WordWrapper.word.meaningItems 可能混合了通用和定制。
-    // 需要识别出哪个是定制的。但在UI层，我们只需提供一个编辑器。
-    // 如果用户编辑了，我们就保存为定制释义。
-    // 获取当前显示的释义作为初始值
-    String initialMeaning = "";
-    String initialCiXing = "";
-    if (word.word.meaningItems != null && word.word.meaningItems!.isNotEmpty) {
-      // 通常 UI 显示的是 getMergedMeaningItems 或者 plain text
-      // 这里尝试获取第一个意思
-      if (word.word.meaningItems != null && word.word.meaningItems!.isNotEmpty) {
-        initialMeaning = word.word.meaningItems!.first.meaning ?? "";
-        initialCiXing = word.word.meaningItems!.first.ciXing ?? "";
-      }
-    }
-
-    final TextEditingController meaningController = TextEditingController(text: initialMeaning);
-    final TextEditingController cixingController = TextEditingController(text: initialCiXing);
-
     await showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('编辑释义: ${word.word.spell}'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: cixingController,
-              decoration: const InputDecoration(
-                hintText: '词性 (如: n., vt., adj.)',
-                labelText: '词性',
-              ),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: meaningController,
-              decoration: const InputDecoration(
-                hintText: '输入新的释义',
-                labelText: '释义',
-              ),
-              maxLines: 3,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Get.back(), child: const Text('取消')),
-          TextButton(
-            onPressed: () async {
-              final newMeaning = meaningController.text.trim();
-              final newCiXing = cixingController.text.trim();
-              if (newMeaning.isEmpty) {
-                ToastUtil.error("释义不能为空");
-                return;
-              }
-
-              final wordModifier = args.wordsProvider as WordModifier;
-              final success = await wordModifier.updateMeaning(word.word.id!, newMeaning, newCiXing);
-
-              if (success) {
-                Get.back();
-                ToastUtil.info('更新成功');
-                // 局部刷新该单词? 或者简单地重新加载页面
-                // 为了简单，重新加载
-                doQuery(true, baseIndex ?? 0, _pageSize, false);
-              }
-            },
-            child: const Text('保存'),
-          ),
-          if (word.word.meaningItems != null &&
-              word.word.meaningItems!.any((mi) => mi.id != null && mi.id!.length > 10)) // Simple check for custom ID
-            TextButton(
-              onPressed: () async {
-                final wordModifier = args.wordsProvider as WordModifier;
-                final success = await wordModifier.deleteMeaning(word.word.id!);
-                if (success) {
-                  Get.back();
-                  ToastUtil.info('已恢复默认释义');
-                  doQuery(true, baseIndex ?? 0, _pageSize, false);
-                }
-              },
-              child: const Text('恢复默认', style: TextStyle(color: Colors.red)),
-            ),
-        ],
+      builder: (context) => EditMeaningDialog(
+        word: word,
+        wordModifier: args.wordsProvider as WordModifier,
+        onSuccess: () async {
+          // 立即刷新当前页面
+          await doQuery(true, baseIndex ?? 0, _pageSize, false);
+          setState(() {}); // 强制刷新UI
+        },
       ),
     );
   }

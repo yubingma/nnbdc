@@ -29,7 +29,7 @@ class Global {
     level: logger_pkg.Level.debug, // 使用别名避免冲突
   );
   static String commonDictId = "0"; // 通用词典ID，通用词典是一个虚拟词典，它含有不属于任何词典的单词资源
-  static int localDbVersionForNewlyInstalled = 1;
+  static int localDbVersionForNewlyInstalled = 0; // 新安装或清空数据库后的初始版本，设为0以获取所有历史数据
   static String? currentUserId; // 当前登录用户ID
   static int userDbVersionInitial = 0; // 用户初始数据库版本
   static const String sysUserId = "15118"; // 系统用户ID，用于系统词典的所有者

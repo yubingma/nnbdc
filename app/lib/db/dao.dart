@@ -409,6 +409,19 @@ class DictsDao extends DatabaseAccessor<MyDatabase> with _$DictsDaoMixin {
           ..where((d) => d.name.equals('生词本')))
         .getSingleOrNull();
   }
+
+  /// 删除词典（支持日志）
+  Future<void> deleteEntity(Dict entry, bool genLog) async {
+    try {
+      await (delete(dicts)..where((d) => d.id.equals(entry.id))).go();
+      if (genLog) {
+        await DbLogUtil.logOperation(entry.ownerId, 'DELETE', 'dicts', entry.id, jsonEncode(entry.toJson()));
+      }
+    } catch (e, stackTrace) {
+      ErrorHandler.handleDatabaseError(e, stackTrace, db: this, operation: 'deleteEntity(Dict)', showToast: false);
+      rethrow;
+    }
+  }
 }
 
 @DriftAccessor(tables: [Words])

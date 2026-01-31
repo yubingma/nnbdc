@@ -1,0 +1,223 @@
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:nnbdc/api/vo.dart';
+import 'package:nnbdc/util/word_util.dart';
+import 'package:nnbdc/page/word_list/word_list.dart';
+import 'package:nnbdc/util/toast_util.dart';
+
+/// 改进的编辑释义对话框
+/// 显示所有词性的完整释义，每个词性有独立的编辑框
+class EditMeaningDialog extends StatefulWidget {
+  final WordWrapper word;
+  final WordModifier wordModifier;
+  final VoidCallback onSuccess;
+
+  const EditMeaningDialog({
+    super.key,
+    required this.word,
+    required this.wordModifier,
+    required this.onSuccess,
+  });
+
+  @override
+  State<EditMeaningDialog> createState() => _EditMeaningDialogState();
+}
+
+class _EditMeaningDialogState extends State<EditMeaningDialog> {
+  late List<MeaningItemController> controllers;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // 为每个释义项创建控制器
+    List<MeaningItemVo>? meaningItems = widget.word.word.meaningItems;
+    controllers = [];
+
+    if (meaningItems != null && meaningItems.isNotEmpty) {
+      for (var item in meaningItems) {
+        controllers.add(MeaningItemController(
+          cixingController: TextEditingController(text: item.ciXing ?? ''),
+          meaningController: TextEditingController(text: item.meaning ?? ''),
+          isCustom: (item.id?.length ?? 0) > 10,
+        ));
+      }
+    }
+
+    // 如果没有释义，添加一个空的编辑框
+    if (controllers.isEmpty) {
+      controllers.add(MeaningItemController(
+        cixingController: TextEditingController(),
+        meaningController: TextEditingController(),
+        isCustom: false,
+      ));
+    }
+  }
+
+  @override
+  void dispose() {
+    for (var controller in controllers) {
+      controller.dispose();
+    }
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text('编辑释义: ${widget.word.word.spell}'),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                '提示：编辑后将保存为自定义释义',
+                style: TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+              const SizedBox(height: 16),
+              ...controllers.asMap().entries.map((entry) {
+                int index = entry.key;
+                var controller = entry.value;
+                return _buildMeaningItemEditor(index, controller);
+              }),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Get.back(),
+          child: const Text('取消'),
+        ),
+        TextButton(
+          onPressed: _handleSave,
+          child: const Text('保存'),
+        ),
+        if (controllers.any((c) => c.isCustom))
+          TextButton(
+            onPressed: _handleRestoreDefault,
+            child: const Text('恢复默认', style: TextStyle(color: Colors.red)),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildMeaningItemEditor(int index, MeaningItemController controller) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(8),
+        color: controller.isCustom ? Colors.blue.shade50 : null,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                '释义 ${index + 1}',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              if (controller.isCustom)
+                Container(
+                  margin: const EdgeInsets.only(left: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.blue,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: const Text(
+                    '自定义',
+                    style: TextStyle(color: Colors.white, fontSize: 10),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: controller.cixingController,
+            decoration: const InputDecoration(
+              hintText: '词性 (如: n., vt., adj.)',
+              labelText: '词性',
+              border: OutlineInputBorder(),
+              isDense: true,
+            ),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: controller.meaningController,
+            decoration: const InputDecoration(
+              hintText: '输入释义',
+              labelText: '释义',
+              border: OutlineInputBorder(),
+              isDense: true,
+            ),
+            maxLines: null,
+            minLines: 2,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _handleSave() async {
+    // 收集所有非空的释义
+    List<Map<String, String>> newMeanings = [];
+    for (var controller in controllers) {
+      final meaning = controller.meaningController.text.trim();
+      final cixing = controller.cixingController.text.trim();
+      if (meaning.isNotEmpty) {
+        newMeanings.add({'cixing': cixing, 'meaning': meaning});
+      }
+    }
+
+    if (newMeanings.isEmpty) {
+      ToastUtil.error("至少需要一个释义");
+      return;
+    }
+
+    // 目前只保存第一个释义（后续可以扩展为保存多个）
+    final success = await widget.wordModifier.updateMeaning(
+      widget.word.word.id!,
+      newMeanings.first['meaning']!,
+      newMeanings.first['cixing']!,
+    );
+
+    if (success) {
+      Get.back();
+      ToastUtil.info('更新成功');
+      widget.onSuccess();
+    }
+  }
+
+  Future<void> _handleRestoreDefault() async {
+    final success = await widget.wordModifier.deleteMeaning(widget.word.word.id!);
+    if (success) {
+      Get.back();
+      ToastUtil.info('已恢复默认释义');
+      widget.onSuccess();
+    }
+  }
+}
+
+class MeaningItemController {
+  final TextEditingController cixingController;
+  final TextEditingController meaningController;
+  final bool isCustom;
+
+  MeaningItemController({
+    required this.cixingController,
+    required this.meaningController,
+    required this.isCustom,
+  });
+
+  void dispose() {
+    cixingController.dispose();
+    meaningController.dispose();
+  }
+}
