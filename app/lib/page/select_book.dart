@@ -18,6 +18,8 @@ import 'package:provider/provider.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
+import 'word_list/dict_words.dart';
+import '../api/bo/word_bo.dart';
 import '../global.dart';
 import '../state.dart';
 import '../theme/app_theme.dart';
@@ -35,6 +37,7 @@ class SelectBookPageState extends State<SelectBookPage> {
   // E2E集成测试时可将其设置为true以跳过下载步骤
   static bool skipDownloadInTest = false;
   List<DictGroupVo>? dictGroups;
+  List<DictVo>? customDicts;
   Set<DictVo>? selectedDictVos;
   Set<DictVo>? initialSelectedDictVos; // 初始选择状态
   bool downloading = false;
@@ -59,11 +62,12 @@ class SelectBookPageState extends State<SelectBookPage> {
     selectedDictVos = {};
     initialSelectedDictVos = {};
     dictGroups = [];
+    customDicts = [];
     _hasUserMadeChanges = false;
     Future.microtask(() => loadData());
   }
 
-  void loadData() async {
+  void loadData({bool keepSelection = false}) async {
     setState(() {
       _isLoading = true;
     });
@@ -178,15 +182,21 @@ class SelectBookPageState extends State<SelectBookPage> {
         dictGroups!.add(groupVo);
       }
 
-      selectedDictVos = learningDicts.map((e) => DictVo.c2(e.dictId)).toSet();
-      initialSelectedDictVos = Set.from(selectedDictVos!); // 保存初始状态
+      customDicts = await WordBo().getCustomDicts(userId);
 
+      if (!keepSelection) {
+        selectedDictVos = learningDicts.map((e) => DictVo.c2(e.dictId)).toSet();
+        initialSelectedDictVos = Set.from(selectedDictVos!); // 保存初始状态
+      }
+
+      if (!mounted) return;
       // 更新UI
       setState(() {
         _isLoading = false;
       });
     } catch (e, stackTrace) {
       ErrorHandler.handleNetworkError(e, stackTrace, api: '加载词书数据', showToast: true);
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
       });
@@ -222,6 +232,10 @@ class SelectBookPageState extends State<SelectBookPage> {
 
   renderTabs() {
     var tabs = <Widget>[];
+
+    // 添加自定义 Tab
+    tabs.add(const Tab(text: '自定义'));
+
     for (var dictGroup in dictGroups!) {
       final selectedCount = getSelectedDictsOfGroup(dictGroup).length;
 
@@ -229,6 +243,7 @@ class SelectBookPageState extends State<SelectBookPage> {
         text: selectedCount > 0 ? '${dictGroup.name}($selectedCount)' : dictGroup.name,
       ));
     }
+
     return tabs;
   }
 
@@ -239,6 +254,10 @@ class SelectBookPageState extends State<SelectBookPage> {
     final subtitleColor = isDarkMode ? Colors.grey[400] : Colors.grey[600];
 
     var tabs = <Widget>[];
+
+    // 添加自定义 Tab 内容
+    tabs.add(_buildCustomTabContent(isDarkMode, cardColor, textColor, subtitleColor));
+
     for (var dictGroup in dictGroups!) {
       var visibleDicts = dictGroup.dicts!.where((dict) => dict.visible!).toList();
 
@@ -398,7 +417,187 @@ class SelectBookPageState extends State<SelectBookPage> {
         },
       ));
     }
+
     return tabs;
+  }
+
+  Widget _buildCustomTabContent(bool isDarkMode, Color cardColor, Color textColor, Color? subtitleColor) {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: ElevatedButton.icon(
+            onPressed: _showCreateDictDialog,
+            icon: const Icon(Icons.add),
+            label: const Text('新建单词书'),
+            style: ElevatedButton.styleFrom(
+              minimumSize: const Size(double.infinity, 48),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          ),
+        ),
+        Expanded(
+          child: customDicts!.isEmpty
+              ? Center(
+                  child: Text(
+                    '点击上方按钮创建词书',
+                    style: TextStyle(color: textColor.withValues(alpha: 0.5)),
+                  ),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: customDicts!.length,
+                  itemBuilder: (context, index) {
+                    final dict = customDicts![index];
+                    final isSelected = isDictSelected(dict);
+
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      decoration: BoxDecoration(
+                        color: cardColor,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: isSelected ? AppTheme.primaryColor : (isDarkMode ? Colors.grey[700]! : Colors.grey[200]!),
+                          width: isSelected ? 2 : 1,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: (isDarkMode ? Colors.black : Colors.grey).withValues(alpha: 0.1),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(12),
+                          onTap: () => toggleDictSelectedStatus(dict),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 24,
+                                  height: 24,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: isSelected ? AppTheme.primaryColor : (isDarkMode ? Colors.grey[600]! : Colors.grey[400]!),
+                                      width: 2,
+                                    ),
+                                    color: isSelected ? AppTheme.primaryColor : Colors.transparent,
+                                  ),
+                                  child: isSelected ? const Icon(Icons.check, size: 16, color: Colors.white) : null,
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        dict.name ?? '未命名',
+                                        style: TextStyle(color: textColor, fontSize: 17, fontWeight: FontWeight.w500),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text('${dict.wordCount} 词', style: TextStyle(color: subtitleColor, fontSize: 14)),
+                                    ],
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.edit_note, size: 24, color: AppTheme.primaryColor),
+                                  onPressed: () async {
+                                    await toDictWordsListPage(dict.id, true);
+                                    loadData(keepSelection: true);
+                                  },
+                                  tooltip: '管理单词',
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.delete_outline, size: 20, color: Colors.redAccent),
+                                  onPressed: () => _confirmDeleteDict(dict),
+                                  tooltip: '删除词书',
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+        ),
+      ],
+    );
+  }
+
+  void _showCreateDictDialog() async {
+    final TextEditingController controller = TextEditingController();
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('新建单词书'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(hintText: '输入单词书名称', labelText: '名称'),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('取消')),
+          TextButton(
+            onPressed: () async {
+              final name = controller.text.trim();
+              if (name.isEmpty) return;
+              final user = Global.getLoggedInUser();
+              if (user == null) return;
+
+              final result = await WordBo().createCustomDict(name, user.id);
+              if (!context.mounted) return;
+
+              if (result.success) {
+                Navigator.pop(context);
+                ToastUtil.info('创建成功');
+                loadData(keepSelection: true);
+              } else {
+                ToastUtil.error(result.msg ?? '创建失败');
+              }
+            },
+            child: const Text('创建'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmDeleteDict(DictVo dict) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('确认删除'),
+        content: Text('确定要删除单词书 "${dict.name}" 吗？此操作不可恢复。'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('取消')),
+          TextButton(
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            onPressed: () async {
+              Navigator.pop(context);
+              final result = await WordBo().deleteCustomDict(dict.id);
+              if (result.success) {
+                ToastUtil.info('已删除');
+                // 如果已选择该词典，从选择列表中移除
+                if (selectedDictVos != null) {
+                  selectedDictVos!.removeWhere((d) => d.id == dict.id);
+                }
+                if (!mounted) return;
+                loadData(keepSelection: true);
+              } else {
+                ToastUtil.error(result.msg ?? '删除失败');
+              }
+            },
+            child: const Text('删除'),
+          ),
+        ],
+      ),
+    );
   }
 
   static Future<DictRes?> getDictRes(DictVo dict) async {
@@ -558,7 +757,9 @@ class SelectBookPageState extends State<SelectBookPage> {
           builder: (dialogContext) => DictDownloadDialog(
             dicts: dictsToDownload,
             onComplete: () {
-              Navigator.of(dialogContext).pop();
+              if (dialogContext.mounted) {
+                Navigator.of(dialogContext).pop();
+              }
             },
           ),
         );
@@ -1118,7 +1319,7 @@ class SelectBookPageState extends State<SelectBookPage> {
               ),
               const SizedBox(height: 24),
               ElevatedButton.icon(
-                onPressed: loadData,
+                onPressed: () => loadData(),
                 icon: const Icon(Icons.refresh),
                 label: const Text('重试'),
                 style: ElevatedButton.styleFrom(
@@ -1137,10 +1338,11 @@ class SelectBookPageState extends State<SelectBookPage> {
     }
 
     // 只统计在UI分组中可见且被选中的词书数量
-    final selectedCount = dictGroups!.fold<int>(0, (sum, group) => sum + getSelectedDictsOfGroup(group).length);
+    final selectedCount =
+        dictGroups!.fold<int>(0, (sum, group) => sum + getSelectedDictsOfGroup(group).length) + customDicts!.where((d) => isDictSelected(d)).length;
 
     return DefaultTabController(
-      length: dictGroups!.length,
+      length: dictGroups!.length + 1,
       child: Scaffold(
         backgroundColor: backgroundColor,
         appBar: AppBar(

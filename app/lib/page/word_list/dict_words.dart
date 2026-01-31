@@ -16,14 +16,48 @@ import '../../util/word_util.dart';
 import '../../api/bo/word_bo.dart';
 import '../../util/app_clock.dart';
 
-class DictWordsProvider implements WordsProvider {
+class DictWordsProvider implements WordsProvider, WordModifier {
   DictVo dict;
+
   /// 注意：不要缓存 `MyDatabase.instance`。
   /// 数据库在 `wipeAllTables()` / `closeDatabase()` 后会重建实例，
   /// 若缓存旧实例会导致 "Can't re-open a database after closing it"。
   MyDatabase get _db => MyDatabase.instance;
 
   DictWordsProvider(this.dict);
+
+  @override
+  Future<bool> addWord(String wordId) async {
+    final result = await WordBo().addWordToCustomDict(dict.id, wordId);
+    if (result.success) {
+      return true;
+    } else {
+      ToastUtil.error(result.msg ?? '添加失败');
+      return false;
+    }
+  }
+
+  @override
+  Future<bool> updateMeaning(String wordId, String meaning, String ciXing) async {
+    final result = await WordBo().updateMeaningForCustomDict(dict.id, wordId, meaning, ciXing);
+    if (result.success) {
+      return true;
+    } else {
+      ToastUtil.error(result.msg ?? '更新失败');
+      return false;
+    }
+  }
+
+  @override
+  Future<bool> deleteMeaning(String wordId) async {
+    final result = await WordBo().deleteMeaningForCustomDict(dict.id, wordId);
+    if (result.success) {
+      return true;
+    } else {
+      ToastUtil.error(result.msg ?? '操作失败');
+      return false;
+    }
+  }
 
   @override
   Future<PagedResults<WordWrapper>> getAPageOfWords(int fromIndex, int pageSize) async {
@@ -88,6 +122,7 @@ class DictWordsProgressProvider implements WordProgressProvider {
 class DictWordsBookMarkProvider implements BookMarkProvider {
   DictVo dict;
   late final String bookMarkName;
+
   /// 注意：不要缓存 `MyDatabase.instance`。
   /// 数据库在 `wipeAllTables()` / `closeDatabase()` 后会重建实例，
   /// 若缓存旧实例会导致 "Can't re-open a database after closing it"。
@@ -259,8 +294,10 @@ Future<dynamic>? toDictWordsListPage(String dictId, bool showDelBtn) async {
     }
 
     return Get.toNamed('/word_list',
-        arguments: WordListPageArgs(dict.shortName!, DictWordsProvider(dict), true, showDelBtn, false, '', DictWordsProgressProvider(),
-            DictWordsBookMarkProvider(dict), null));
+        arguments: WordListPageArgs(
+            dict.shortName!, DictWordsProvider(dict), true, showDelBtn, false, '', DictWordsProgressProvider(), DictWordsBookMarkProvider(dict), null)
+          ..canAddWord = (dict.name != '生词本' && showDelBtn)
+          ..canEditWord = (dict.name != '生词本' && showDelBtn));
   } catch (e) {
     ToastUtil.error("无法打开词典");
     rethrow;

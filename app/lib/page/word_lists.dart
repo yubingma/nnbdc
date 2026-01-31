@@ -36,9 +36,12 @@ class _WordListsPageState extends State<WordListsPage> {
 
   Future<void> loadData() async {
     wordLists = (await WordBo().getWordLists()).data!;
-    setState(() {
-      dataLoaded = true;
-    });
+
+    if (mounted) {
+      setState(() {
+        dataLoaded = true;
+      });
+    }
   }
 
   double contentWidth() {

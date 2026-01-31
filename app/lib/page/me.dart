@@ -1194,7 +1194,7 @@ class _MePageState extends State<MePage> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    '我的词书',
+                    '我的书桌',
                     style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.w400,

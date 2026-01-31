@@ -26,6 +26,7 @@ import '../../db/db.dart';
 import '../index.dart';
 import '../walkman.dart';
 import '../../util/app_clock.dart';
+import '../../api/bo/word_bo.dart';
 
 const String menuWordList = '浏览';
 const String menuWalkman = '随身听';
@@ -40,6 +41,12 @@ abstract class WordsProvider {
 
   /// 获取指定单词在所有单词中的位置, 如果指定单词不存在，返回-1
   Future<int> getWordIndex(String spell);
+}
+
+abstract class WordModifier {
+  Future<bool> addWord(String wordId);
+  Future<bool> updateMeaning(String wordId, String meaning, String ciXing);
+  Future<bool> deleteMeaning(String wordId);
 }
 
 abstract class WordProgressProvider {
@@ -72,6 +79,9 @@ class WordListPageArgs {
 
   /// 外部注入的button，显示在appbar上
   Widget? injectedBtn;
+
+  bool canAddWord = false;
+  bool canEditWord = false;
 
   WordListPageArgs(this.appBarTitle, this.wordsProvider, this.showBackBtn, this.showDelBtn, this.showWordProgress, this.wordProgressLabel,
       this.wordProgressProvider, this.bookMarkProvider, this.injectedBtn);
@@ -1247,6 +1257,141 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
     }
   }
 
+  Future<void> _showAddWordDialog() async {
+    final TextEditingController controller = TextEditingController();
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('添加单词'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            hintText: '输入单词拼写',
+            labelText: '单词',
+          ),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(onPressed: () => Get.back(), child: const Text('取消')),
+          TextButton(
+            onPressed: () async {
+              final spell = controller.text.trim();
+              if (spell.isEmpty) return;
+
+              final wordModifier = args.wordsProvider as WordModifier;
+              // 检查单词是否存在于通用词典
+              final searchResult = await WordBo().searchWordLocalOnly(spell);
+
+              if (searchResult.word == null) {
+                ToastUtil.error('单词未在通用词典中找到，无法添加');
+                return;
+              }
+
+              // 添加到词典
+              final success = await wordModifier.addWord(searchResult.word!.id!);
+              if (success) {
+                Get.back();
+                ToastUtil.info('添加成功');
+                // 刷新列表
+                doQuery(true, baseIndex ?? 0, _pageSize, false);
+              }
+            },
+            child: const Text('添加'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showEditMeaningDialog(WordWrapper word) async {
+    // 获取当前释义
+    // 优先使用定制释义，如果没有则为空
+    // WordWrapper.word.meaningItems 可能混合了通用和定制。
+    // 需要识别出哪个是定制的。但在UI层，我们只需提供一个编辑器。
+    // 如果用户编辑了，我们就保存为定制释义。
+    // 获取当前显示的释义作为初始值
+    String initialMeaning = "";
+    String initialCiXing = "";
+    if (word.word.meaningItems != null && word.word.meaningItems!.isNotEmpty) {
+      // 通常 UI 显示的是 getMergedMeaningItems 或者 plain text
+      // 这里尝试获取第一个意思
+      if (word.word.meaningItems != null && word.word.meaningItems!.isNotEmpty) {
+        initialMeaning = word.word.meaningItems!.first.meaning ?? "";
+        initialCiXing = word.word.meaningItems!.first.ciXing ?? "";
+      }
+    }
+
+    final TextEditingController meaningController = TextEditingController(text: initialMeaning);
+    final TextEditingController cixingController = TextEditingController(text: initialCiXing);
+
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('编辑释义: ${word.word.spell}'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: cixingController,
+              decoration: const InputDecoration(
+                hintText: '词性 (如: n., vt., adj.)',
+                labelText: '词性',
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: meaningController,
+              decoration: const InputDecoration(
+                hintText: '输入新的释义',
+                labelText: '释义',
+              ),
+              maxLines: 3,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Get.back(), child: const Text('取消')),
+          TextButton(
+            onPressed: () async {
+              final newMeaning = meaningController.text.trim();
+              final newCiXing = cixingController.text.trim();
+              if (newMeaning.isEmpty) {
+                ToastUtil.error("释义不能为空");
+                return;
+              }
+
+              final wordModifier = args.wordsProvider as WordModifier;
+              final success = await wordModifier.updateMeaning(word.word.id!, newMeaning, newCiXing);
+
+              if (success) {
+                Get.back();
+                ToastUtil.info('更新成功');
+                // 局部刷新该单词? 或者简单地重新加载页面
+                // 为了简单，重新加载
+                doQuery(true, baseIndex ?? 0, _pageSize, false);
+              }
+            },
+            child: const Text('保存'),
+          ),
+          if (word.word.meaningItems != null &&
+              word.word.meaningItems!.any((mi) => mi.id != null && mi.id!.length > 10)) // Simple check for custom ID
+            TextButton(
+              onPressed: () async {
+                final wordModifier = args.wordsProvider as WordModifier;
+                final success = await wordModifier.deleteMeaning(word.word.id!);
+                if (success) {
+                  Get.back();
+                  ToastUtil.info('已恢复默认释义');
+                  doQuery(true, baseIndex ?? 0, _pageSize, false);
+                }
+              },
+              child: const Text('恢复默认', style: TextStyle(color: Colors.red)),
+            ),
+        ],
+      ),
+    );
+  }
+
   onWordPressed(WordWrapper word, int index, bool playSound, Function? soundFinishListener) async {
     // 更新书签位置
     setState(() {
@@ -1484,6 +1629,10 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
         mainAxisAlignment: MainAxisAlignment.center,
         mainAxisSize: MainAxisSize.min,
         children: [
+          // 编辑单词释义
+          if (args.canEditWord && args.wordsProvider is WordModifier)
+            _buildHintButton(Icons.edit, const Color(0xFF4CAF50), () => _showEditMeaningDialog(word)),
+
           // 给点提示
           if ((studyMode == WordListStudyMode.dictation ||
                   studyMode == WordListStudyMode.speakChinese ||
@@ -1521,12 +1670,12 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
         child: InkWell(
           borderRadius: BorderRadius.circular(8),
           onTap: onTap,
-          child: const Padding(
-            padding: EdgeInsets.all(8),
+          child: Padding(
+            padding: const EdgeInsets.all(8),
             child: Icon(
-              Icons.lightbulb,
+              icon, // Use the passed icon
               size: 22,
-              color: Color(0xFFFFA726),
+              color: color, // Use the passed color
             ),
           ),
         ),
@@ -2084,7 +2233,8 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
               ((studyMode == WordListStudyMode.dictation ||
                       studyMode == WordListStudyMode.speakChinese ||
                       studyMode == WordListStudyMode.speakEnglish) &&
-                  isBookmarked))
+                  isBookmarked) ||
+              (args.canEditWord && args.wordsProvider is WordModifier)) // Added condition for edit button
             _buildWordActionButtons(word, i, isBookmarked),
         ],
       ),
@@ -2219,7 +2369,7 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
   @override
   Widget build(BuildContext context) {
     super.build(context); // 必须调用，因为使用了 AutomaticKeepAliveClientMixin
-    final isDarkMode = context.watch<DarkMode>().isDarkMode;
+    final isDarkMode = context.read<DarkMode>().isDarkMode;
 
     // 在页面build时，检查页面是否可见，如果可见且在语音模式下，确保ASR已启动
     // 如果不可见且在语音模式下，停止ASR（用于从页面离开时停止）
@@ -2439,6 +2589,12 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
                     ],
                   ),
                   actions: <Widget>[
+                    if (args.canAddWord && args.wordsProvider is WordModifier)
+                      IconButton(
+                        icon: const Icon(Icons.add, color: Colors.white),
+                        onPressed: _showAddWordDialog,
+                      ),
+                    if (args.injectedBtn != null) args.injectedBtn!,
                     // 使用GlobalKey包裹图标，便于计算其全局坐标
                     Container(
                       key: _menuKey,
