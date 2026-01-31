@@ -167,7 +167,8 @@ public class SyncBo {
 
                     // 检查record id是否超出长度限制
                     if (log.getRecordId().length() > 131) {
-                        throw new IllegalArgumentException(String.format("record id(%s)超出长度限制(最多131), table(%s)", log.getRecordId(), log.getTblName()));
+                        throw new IllegalArgumentException(String.format("record id(%s)超出长度限制(最多131), table(%s)",
+                                log.getRecordId(), log.getTblName()));
                     }
 
                     // 生成服务端数据库日志(用于同步到该用户的其他客户端)
@@ -238,13 +239,13 @@ public class SyncBo {
 
         // 使用 FOR UPDATE 锁定版本号记录，防止并发修改
         // 注意：这个锁会一直持有到事务提交或回滚
-        
+
         // 先确保版本记录存在（对于新用户可能不存在）
         userDbVersionDao.ensureUserDbVersionExists(jdbcTemplate, userId);
-        
+
         // 使用带锁的查询方法，锁定该用户的版本号行
         final int lastVersion = userDbVersionDao.getUserDbVersionWithLock(jdbcTemplate, userId);
-        
+
         if (expectedServerDbVersion != lastVersion) {
             throw new DbVersionNotMatchException(String.format("数据库版本不匹配，期望版本[%d]，当前版本[%d]，本次同步失败（请重试）",
                     expectedServerDbVersion, lastVersion));
@@ -276,7 +277,8 @@ public class SyncBo {
             case "mastered_word" -> processMasteredWordSync(userId, recordJson, operation);
             case "user_cow_dung_log" -> processUserCowDungLogSync(userId, recordJson, operation);
             default -> {
-                String errorMsg = String.format("不支持的表同步: %s, 记录ID: %s, 操作: %s", tableName, log.getRecordId(), operation);
+                String errorMsg = String.format("不支持的表同步: %s, 记录ID: %s, 操作: %s", tableName, log.getRecordId(),
+                        operation);
                 logger.warn(errorMsg);
                 throw new IllegalArgumentException(errorMsg);
             }
@@ -363,7 +365,7 @@ public class SyncBo {
             User user = userBo.findById(userId);
             if (user != null) {
                 User userFromClient = User.fromDto(userDto);
-                
+
                 // 保护敏感字段：isAdmin、isSuperAdmin、isSysUser 只允许后端同步到前端
                 // 将这三个字段从后端数据库的原始值恢复到 userFromClient
                 userFromClient.setIsAdmin(user.getIsAdmin());
@@ -383,7 +385,7 @@ public class SyncBo {
                 userFromClient.setPremiumOverrideUpdateTime(user.getPremiumOverrideUpdateTime());
                 userFromClient.setPremiumOverrideReason(user.getPremiumOverrideReason());
                 userFromClient.setPremiumOverrideDuration(user.getPremiumOverrideDuration());
-                
+
                 userBo.updateEntity(userFromClient);
                 logger.info("同步更新用户成功: userId={}, userName={}", userId, userFromClient.getUserName());
             }
@@ -401,72 +403,75 @@ public class SyncBo {
     private void processDictSync(String userId, String recordJson, String operation)
             throws IllegalAccessException {
         DictDto dictDto = JsonUtils.makeObject(recordJson, DictDto.class);
-        
+
         // 只允许用户同步自己的词书
         if (!userId.equals(dictDto.getOwnerId())) {
-            String errorMsg = String.format("用户%s尝试同步不属于自己的词书: dictId=%s, ownerId=%s", 
-                userId, dictDto.getId(), dictDto.getOwnerId());
+            String errorMsg = String.format("用户%s尝试同步不属于自己的词书: dictId=%s, ownerId=%s",
+                    userId, dictDto.getId(), dictDto.getOwnerId());
             logger.warn(errorMsg);
             throw new IllegalArgumentException(errorMsg);
         }
-        
+
         if (null == operation) {
             String errorMsg = String.format("不支持的词书表操作: %s", operation);
             logger.error(errorMsg);
             throw new IllegalArgumentException(errorMsg);
-        } else switch (operation) {
-            case "INSERT", "UPDATE" -> {
-                Dict dict = dictBo.findById(dictDto.getId());
-                User owner = userBo.findById(dictDto.getOwnerId());
-                if (owner == null) {
-                    String errorMsg = String.format("词书所属用户不存在: ownerId=%s", dictDto.getOwnerId());
+        } else
+            switch (operation) {
+                case "INSERT", "UPDATE" -> {
+                    Dict dict = dictBo.findById(dictDto.getId());
+                    User owner = userBo.findById(dictDto.getOwnerId());
+                    if (owner == null) {
+                        String errorMsg = String.format("词书所属用户不存在: ownerId=%s", dictDto.getOwnerId());
+                        logger.error(errorMsg);
+                        throw new IllegalArgumentException(errorMsg);
+                    }
+                    if (dict == null) {
+                        // 创建新词书
+                        dict = new Dict();
+                        dict.setId(dictDto.getId());
+                        dict.setName(dictDto.getName());
+                        dict.setOwner(owner);
+                        dict.setIsShared(dictDto.getIsShared());
+                        dict.setIsReady(dictDto.getIsReady());
+                        dict.setVisible(dictDto.getVisible());
+                        dict.setWordCount(dictDto.getWordCount());
+                        dict.setPopularityLimit(dictDto.getPopularityLimit());
+                        dict.setCreateTime(dictDto.getCreateTime());
+                        dict.setUpdateTime(dictDto.getUpdateTime());
+
+                        dictBo.createEntity(dict);
+                        logger.debug("同步创建词书成功: dictId={}, name={}, wordCount={}",
+                                dict.getId(), dict.getName(), dict.getWordCount());
+                    } else {
+                        // 更新现有词书
+                        dict.setName(dictDto.getName());
+                        dict.setOwner(owner);
+                        dict.setIsShared(dictDto.getIsShared());
+                        dict.setIsReady(dictDto.getIsReady());
+                        dict.setVisible(dictDto.getVisible());
+                        dict.setWordCount(dictDto.getWordCount());
+                        dict.setPopularityLimit(dictDto.getPopularityLimit());
+                        dict.setUpdateTime(dictDto.getUpdateTime());
+
+                        dictBo.updateEntity(dict);
+                        logger.debug("同步更新词书成功: dictId={}, name={}, wordCount={}",
+                                dict.getId(), dict.getName(), dict.getWordCount());
+                    }
+                }
+                case "DELETE" -> {
+                    Dict dict = dictBo.findById(dictDto.getId());
+                    if (dict != null) {
+                        dictBo.deleteEntity(dict);
+                        logger.debug("同步删除词书成功: dictId={}", dictDto.getId());
+                    }
+                }
+                default -> {
+                    String errorMsg = String.format("不支持的词书表操作: %s", operation);
                     logger.error(errorMsg);
                     throw new IllegalArgumentException(errorMsg);
-                }       if (dict == null) {
-                    // 创建新词书
-                    dict = new Dict();
-                    dict.setId(dictDto.getId());
-                    dict.setName(dictDto.getName());
-                    dict.setOwner(owner);
-                    dict.setIsShared(dictDto.getIsShared());
-                    dict.setIsReady(dictDto.getIsReady());
-                    dict.setVisible(dictDto.getVisible());
-                    dict.setWordCount(dictDto.getWordCount());
-                    dict.setPopularityLimit(dictDto.getPopularityLimit());
-                    dict.setCreateTime(dictDto.getCreateTime());
-                    dict.setUpdateTime(dictDto.getUpdateTime());
-                    
-                    dictBo.createEntity(dict);
-                    logger.debug("同步创建词书成功: dictId={}, name={}, wordCount={}",
-                            dict.getId(), dict.getName(), dict.getWordCount());
-                } else {
-                    // 更新现有词书
-                    dict.setName(dictDto.getName());
-                    dict.setOwner(owner);
-                    dict.setIsShared(dictDto.getIsShared());
-                    dict.setIsReady(dictDto.getIsReady());
-                    dict.setVisible(dictDto.getVisible());
-                    dict.setWordCount(dictDto.getWordCount());
-                    dict.setPopularityLimit(dictDto.getPopularityLimit());
-                    dict.setUpdateTime(dictDto.getUpdateTime());
-                    
-                    dictBo.updateEntity(dict);
-                    logger.debug("同步更新词书成功: dictId={}, name={}, wordCount={}",
-                            dict.getId(), dict.getName(), dict.getWordCount());
                 }
             }
-            case "DELETE" ->                 {
-                Dict dict = dictBo.findById(dictDto.getId());
-                if (dict != null) {
-                    dictBo.deleteEntity(dict);
-                    logger.debug("同步删除词书成功: dictId={}", dictDto.getId());
-                }                      }
-            default ->                 {
-                String errorMsg = String.format("不支持的词书表操作: %s", operation);
-                logger.error(errorMsg);
-                throw new IllegalArgumentException(errorMsg);
-                }
-        }
     }
 
     /**
@@ -478,26 +483,27 @@ public class SyncBo {
             bookMarkBo.batchDeleteUserRecords(userId, recordJson);
         } else {
             BookMarkDto bookMarkDto = JsonUtils.makeObject(recordJson, BookMarkDto.class);
-            
+
             if (null == operation) {
                 String errorMsg = String.format("不支持的书签表操作: %s", operation);
                 logger.error(errorMsg);
                 throw new IllegalArgumentException(errorMsg);
-            } else switch (operation) {
-                case "INSERT", "UPDATE" -> bookMarkBo.saveBookMark(bookMarkDto.getBookMarkName(),
-                        bookMarkDto.getSpell(),
-                        bookMarkDto.getPosition(),
-                        bookMarkDto.getUserId());
-                case "DELETE" -> {
-                    BookMark bookMark = BookMark.fromDto(bookMarkDto);
-                    bookMarkBo.deleteEntity(bookMark);
+            } else
+                switch (operation) {
+                    case "INSERT", "UPDATE" -> bookMarkBo.saveBookMark(bookMarkDto.getBookMarkName(),
+                            bookMarkDto.getSpell(),
+                            bookMarkDto.getPosition(),
+                            bookMarkDto.getUserId());
+                    case "DELETE" -> {
+                        BookMark bookMark = BookMark.fromDto(bookMarkDto);
+                        bookMarkBo.deleteEntity(bookMark);
+                    }
+                    default -> {
+                        String errorMsg = String.format("不支持的书签表操作: %s", operation);
+                        logger.error(errorMsg);
+                        throw new IllegalArgumentException(errorMsg);
+                    }
                 }
-                default -> {
-                    String errorMsg = String.format("不支持的书签表操作: %s", operation);
-                    logger.error(errorMsg);
-                    throw new IllegalArgumentException(errorMsg);
-                }
-            }
         }
     }
 
@@ -562,7 +568,7 @@ public class SyncBo {
             try {
                 DakaDto dakaDto = JsonUtils.makeObject(recordJson, DakaDto.class);
                 Daka daka = dakaBo.fromDto(dakaDto);
-                
+
                 switch (operation) {
                     case "INSERT" -> {
                         // 检查记录是否已存在，避免主键冲突
@@ -618,7 +624,8 @@ public class SyncBo {
     /**
      * 处理错词同步
      */
-    private void processUserWrongWordSync(String userId, String recordJson, String operation) throws IllegalAccessException {
+    private void processUserWrongWordSync(String userId, String recordJson, String operation)
+            throws IllegalAccessException {
         if ("BATCH_DELETE".equals(operation)) {
             wrongWordBo.batchDeleteUserRecords(userId, recordJson);
         } else {
@@ -698,9 +705,9 @@ public class SyncBo {
             logger.warn("删除dict_word时出现异常，尝试使用原生SQL删除: {}", deleteEx.getMessage());
             try {
                 String deleteSql = "DELETE FROM dict_word WHERE dict_id = ? AND word_id = ?";
-                int deletedRows = jdbcTemplate.update(deleteSql, 
-                    dictWord.getId().getDictId(), 
-                    dictWord.getId().getWordId());
+                int deletedRows = jdbcTemplate.update(deleteSql,
+                        dictWord.getId().getDictId(),
+                        dictWord.getId().getWordId());
                 if (deletedRows > 0) {
                     logger.info("使用原生SQL成功删除dict_word: dictId={}, wordId={}",
                             dictWord.getId().getDictId(), dictWord.getId().getWordId());
@@ -715,7 +722,8 @@ public class SyncBo {
     /**
      * 处理已掌握单词同步
      */
-    private void processMasteredWordSync(String userId, String recordJson, String operation) throws IllegalAccessException {
+    private void processMasteredWordSync(String userId, String recordJson, String operation)
+            throws IllegalAccessException {
         if ("BATCH_DELETE".equals(operation)) {
             masteredWordBo.batchDeleteUserRecords(userId, recordJson);
         } else {
@@ -725,32 +733,34 @@ public class SyncBo {
                 String errorMsg = String.format("不支持的已掌握单词表操作: %s", operation);
                 logger.error(errorMsg);
                 throw new IllegalArgumentException(errorMsg);
-            } else switch (operation) {
-                case "INSERT" -> {
-                    // 检查记录是否已存在，避免主键冲突
-                    MasteredWord existing = masteredWordBo.findById(masteredWord.getId());
-                    if (existing == null) {
-                        masteredWordBo.createEntity(masteredWord);
-                    } else {
-                        logger.info("mastered_word 已存在，忽略重复 INSERT: id={}", masteredWord.getId());
+            } else
+                switch (operation) {
+                    case "INSERT" -> {
+                        // 检查记录是否已存在，避免主键冲突
+                        MasteredWord existing = masteredWordBo.findById(masteredWord.getId());
+                        if (existing == null) {
+                            masteredWordBo.createEntity(masteredWord);
+                        } else {
+                            logger.info("mastered_word 已存在，忽略重复 INSERT: id={}", masteredWord.getId());
+                        }
+                    }
+                    case "DELETE" -> masteredWordBo.deleteEntity(masteredWord);
+                    default -> {
+                        String errorMsg = String.format("不支持的已掌握单词表操作: %s", operation);
+                        logger.error(errorMsg);
+                        throw new IllegalArgumentException(errorMsg);
                     }
                 }
-                case "DELETE" -> masteredWordBo.deleteEntity(masteredWord);
-                default -> {
-                    String errorMsg = String.format("不支持的已掌握单词表操作: %s", operation);
-                    logger.error(errorMsg);
-                    throw new IllegalArgumentException(errorMsg);
-                }
-            }
             // 注意：mastered_word通常不支持UPDATE操作
-            
+
         }
     }
 
     /**
      * 处理魔法泡泡日志同步
      */
-    private void processUserCowDungLogSync(String userId, String recordJson, String operation) throws IllegalAccessException {
+    private void processUserCowDungLogSync(String userId, String recordJson, String operation)
+            throws IllegalAccessException {
         if ("BATCH_DELETE".equals(operation)) {
             userCowDungLogBo.batchDeleteUserRecords(userId, recordJson);
         } else {
@@ -808,17 +818,17 @@ public class SyncBo {
         // 使用 CAS 原子更新数据库版本
         final int newVersion = lastVersion + 1;
         boolean updateSuccess = userDbVersionDao.updateUserDbVersionCAS(jdbcTemplate, userId, lastVersion, newVersion);
-        
+
         if (!updateSuccess) {
             // CAS 更新失败，说明版本号在同步过程中被其他事务修改了
             // 这种情况理论上不应该发生，因为我们在 validateUserAndVersion 中已经加了行锁
             // 但为了安全起见，还是要处理这种情况
-            logger.error("使用 CAS 更新版本号失败，用户[{}]，期望版本[{}]，新版本[{}]", 
+            logger.error("使用 CAS 更新版本号失败，用户[{}]，期望版本[{}]，新版本[{}]",
                     userId, lastVersion, newVersion);
             throw new DbVersionNotMatchException(String.format(
                     "更新数据库版本失败，期望版本[%d]，可能存在并发修改", lastVersion));
         }
-        
+
         logger.info("用户[{}]数据库版本更新成功：{} -> {}", userId, lastVersion, newVersion);
     }
 

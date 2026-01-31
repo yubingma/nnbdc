@@ -73,6 +73,52 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
       localToBackend.add(UserDbLogDto.fromJson(change));
     }
 
+    // 对同步日志进行排序,确保有外键依赖的表在父表之后同步
+    // 这样可以避免外键约束违反错误
+    localToBackend.sort((a, b) {
+      // 定义表的优先级(数字越小优先级越高,越先同步)
+      int getPriority(String tableName) {
+        switch (tableName) {
+          case 'user':
+            return 1;
+          case 'dict':
+            return 2; // dict必须在dict_word之前
+          case 'dict_word':
+            return 3; // dict_word依赖dict
+          case 'learning_dict':
+            return 4; // learning_dict依赖dict
+          case 'learning_word':
+            return 5;
+          case 'mastered_word':
+            return 5;
+          case 'user_wrong_word':
+            return 5;
+          case 'book_mark':
+            return 5;
+          case 'user_study_step':
+            return 5;
+          case 'daka':
+            return 5;
+          case 'user_oper':
+            return 5;
+          case 'user_cow_dung_log':
+            return 5;
+          default:
+            return 10;
+        }
+      }
+
+      int priorityA = getPriority(a.tblName);
+      int priorityB = getPriority(b.tblName);
+
+      if (priorityA != priorityB) {
+        return priorityA.compareTo(priorityB);
+      }
+
+      // 同优先级的按创建时间排序
+      return a.createTime.compareTo(b.createTime);
+    });
+
     List<UserDbLog> backendToLocal = [];
     for (var change in result.second) {
       backendToLocal.add(UserDbLog.fromJson(change));
