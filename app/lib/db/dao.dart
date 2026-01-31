@@ -522,26 +522,28 @@ class DictWordsDao extends DatabaseAccessor<MyDatabase> with _$DictWordsDaoMixin
     if (existing == null) {
       DictWord entryToInsert = entry;
 
-      // 获取词书中单词最大的seq
-      final maxSeqQuery = selectOnly(dictWords)
-        ..addColumns([dictWords.seq.max()])
-        ..where(dictWords.dictId.equals(entry.dictId));
+      if (genLog) {
+        // 获取词书中单词最大的seq
+        final maxSeqQuery = selectOnly(dictWords)
+          ..addColumns([dictWords.seq.max()])
+          ..where(dictWords.dictId.equals(entry.dictId));
 
-      final maxSeqResult = await maxSeqQuery.getSingle();
-      final maxSeq = maxSeqResult.read(dictWords.seq.max()) ?? 0;
+        final maxSeqResult = await maxSeqQuery.getSingle();
+        final maxSeq = maxSeqResult.read(dictWords.seq.max()) ?? 0;
 
-      // 创建新的entry，seq为最大值+1
-      entryToInsert = entry.copyWith(seq: maxSeq + 1);
-      Global.logger.d('生词本添加单词: wordId=${entry.wordId}, 新seq=${maxSeq + 1}');
+        // 创建新的entry，seq为最大值+1
+        entryToInsert = entry.copyWith(seq: maxSeq + 1);
+        Global.logger.d('生词本添加单词: wordId=${entry.wordId}, 新seq=${maxSeq + 1}');
+      }
 
       await into(dictWords).insert(entryToInsert);
       if (genLog) {
         var dict = await MyDatabase.instance.dictsDao.findById(entry.dictId);
         var owner = dict?.ownerId;
         await DbLogUtil.logOperation(owner!, 'INSERT', 'dictWords', '${entry.dictId}-${entry.wordId}', jsonEncode(entryToInsert.toJson()));
-      }
 
-      await _validateRawWordDictOrder(entry.dictId);
+        await _validateRawWordDictOrder(entry.dictId);
+      }
     }
   }
 
