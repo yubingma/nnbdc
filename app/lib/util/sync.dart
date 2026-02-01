@@ -57,22 +57,6 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
     // 同步
     var result = mergeChanges(localChangesMap, backendChangesMap);
 
-    // 把Map<String, dynamic>转换为DbLogs
-    List<UserDbLogDto> localToBackend = [];
-    for (var change in result.first /* to backend */) {
-      // 将DateTime转换为 ISO 8601 格式的字符串
-      if (change['createTime'] != null) {
-        change['createTime'] = (change['createTime'] as DateTime).toUtc().toIso8601String();
-      }
-      if (change['updateTime'] != null) {
-        change['updateTime'] = (change['updateTime'] as DateTime).toUtc().toIso8601String();
-      }
-      String oldTable = change['tblName'] as String;
-      change['tblName'] = Util.localTableNameToRemote(oldTable);
-
-      localToBackend.add(UserDbLogDto.fromJson(change));
-    }
-
     // 定义表的优先级(数字越小优先级越高,越先同步)
     int getPriority(String tableName) {
       switch (tableName) {
@@ -105,22 +89,34 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
       }
     }
 
-    // 对同步日志进行排序,确保有外键依赖的表在父表之后同步
+    // 对本地同步到后端的日志进行排序,确保有外键依赖的表在父表之后同步
     // 首先按创建时间排序,保持操作的时间顺序
     // 当创建时间相同时,按表优先级排序,确保父表在子表之前
-    localToBackend.sort((a, b) {
-      // 首先比较创建时间
-      int timeCompare = a.createTime.compareTo(b.createTime);
+    result.first.sort((a, b) {
+      // 这里的 a, b 是 Map<String, dynamic>，tblName 还是本地格式
+      int timeCompare = (a['createTime'] as DateTime).compareTo(b['createTime'] as DateTime);
       if (timeCompare != 0) {
         return timeCompare;
       }
-
-      // 创建时间相同时,按表优先级排序
-      int priorityA = getPriority(a.tblName);
-      int priorityB = getPriority(b.tblName);
-
-      return priorityA.compareTo(priorityB);
+      return getPriority(a['tblName'] as String).compareTo(getPriority(b['tblName'] as String));
     });
+
+    // 把Map<String, dynamic>转换为DbLogs
+    List<UserDbLogDto> localToBackend = [];
+    // 分离转换逻辑，确保排序时使用的是原始 map 中的本地表名
+    for (var change in result.first /* to backend */) {
+      // 这里的 change 还是 Map<String, dynamic>
+      if (change['createTime'] != null) {
+        change['createTime'] = (change['createTime'] as DateTime).toUtc().toIso8601String();
+      }
+      if (change['updateTime'] != null) {
+        change['updateTime'] = (change['updateTime'] as DateTime).toUtc().toIso8601String();
+      }
+      String oldTable = change['tblName'] as String;
+      change['tblName'] = Util.localTableNameToRemote(oldTable);
+
+      localToBackend.add(UserDbLogDto.fromJson(change));
+    }
 
     List<UserDbLog> backendToLocal = [];
     for (var change in result.second) {
