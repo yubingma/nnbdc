@@ -38,6 +38,7 @@ import beidanci.api.Result;
 import beidanci.api.model.CheckBy;
 import beidanci.api.model.ClientType;
 import beidanci.api.model.DakaDto;
+import beidanci.api.model.DictDto;
 import beidanci.api.model.DictWordDto;
 import beidanci.api.model.LearningDictDto;
 import beidanci.api.model.LearningWordDto;
@@ -1094,10 +1095,21 @@ public class UserBo extends BaseBo<User> {
         }
 
         if (needsFullSync) {
-            // 生成学习中单词全量日志
-            List<LearningWordDto> learningWords = learningWordBo.getLearningWordDtosOfUser(userId);
-            List<LearningDictDto> learningDicts = learningDictBo.getLearningDictDtosOfUser(userId);
+            // 生成全量日志
             List<UserDbLogDto> logs = new ArrayList<>();
+
+            // 1. 用户词典 (dict)
+            List<DictDto> ownDictDtos = dictBo.getDictDtosOfUser(userId);
+            for (DictDto dictDto : ownDictDtos) {
+                UserDbLogDto log = new UserDbLogDto(Util.uuid(), userId, userDbVersion, "INSERT", "dict",
+                        dictDto.getId(), JsonUtils.toJson(dictDto),
+                        dictDto.getCreateTime(),
+                        dictDto.getUpdateTime());
+                logs.add(log);
+            }
+
+            // 2. 学习中单词 (learning_word)
+            List<LearningWordDto> learningWords = learningWordBo.getLearningWordDtosOfUser(userId);
             for (LearningWordDto learningWord : learningWords) {
                 UserDbLogDto log = new UserDbLogDto(Util.uuid(), userId, userDbVersion, "INSERT", "learning_word",
                         learningWord.getUserId() + "-" + learningWord.getWordId(), JsonUtils.toJson(learningWord),
@@ -1105,6 +1117,9 @@ public class UserBo extends BaseBo<User> {
                         learningWord.getUpdateTime());
                 logs.add(log);
             }
+
+            // 3. 用户选择的词书 (learning_dict)
+            List<LearningDictDto> learningDicts = learningDictBo.getLearningDictDtosOfUser(userId);
             for (LearningDictDto learningDict : learningDicts) {
                 UserDbLogDto log = new UserDbLogDto(Util.uuid(), userId, userDbVersion, "INSERT", "learning_dict",
                         learningDict.getUserId() + "-" + learningDict.getDictId(), JsonUtils.toJson(learningDict),
@@ -1242,6 +1257,7 @@ public class UserBo extends BaseBo<User> {
 
             // 按固定顺序输出，方便排查
             Map<String, Integer> ordered = new LinkedHashMap<>();
+            ordered.put("dict", counts.getOrDefault("dict", 0));
             ordered.put("learning_word", counts.getOrDefault("learning_word", 0));
             ordered.put("learning_dict", counts.getOrDefault("learning_dict", 0));
             ordered.put("user_study_step", counts.getOrDefault("user_study_step", 0));
