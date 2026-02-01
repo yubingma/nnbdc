@@ -34,18 +34,12 @@ public class UserController {
         }
     }
 
-    @GetMapping("/getUserDbVersion.do")
-    public Result<Integer> getUserDbVersion(String userId) {
-        int version = userBo.getUserDbVersion(userId);
-        return Result.success(version);
-    }
-
     /**
      * 搜索用户（管理员功能）
      *
-     * @param keyword 搜索关键词（用户名、昵称、邮箱）
-     * @param pageNo 页码
-     * @param pageSize 每页大小
+     * @param keyword    搜索关键词（用户名、昵称、邮箱）
+     * @param pageNo     页码
+     * @param pageSize   每页大小
      * @param filterType 筛选类型：0-全部, 1-管理员, 2-超级管理员, 3-录入员
      * @return 分页结果
      * @throws IllegalAccessException
@@ -57,13 +51,13 @@ public class UserController {
             @RequestParam(defaultValue = "20") int pageSize,
             @RequestParam(required = false) Integer filterType) throws IllegalAccessException {
         PagedResults<User> pagedResults = userBo.searchUsers(keyword, pageNo, pageSize, filterType);
-        
+
         // 转换为UserVo
         List<User> users = pagedResults.getRows();
-        List<UserVo> userVos = BeanUtils.makeVos(users, UserVo.class, 
-            new String[]{"invitedBy", "StudyGroupVo.creator", "StudyGroupVo.users", 
-                        "StudyGroupVo.managers", "studyGroupPosts", "userGames"});
-        
+        List<UserVo> userVos = BeanUtils.makeVos(users, UserVo.class,
+                new String[] { "invitedBy", "StudyGroupVo.creator", "StudyGroupVo.users",
+                        "StudyGroupVo.managers", "studyGroupPosts", "userGames" });
+
         PagedResults<UserVo> result = new PagedResults<>(pagedResults.getTotal(), userVos);
         return Result.success(result);
     }
@@ -71,10 +65,10 @@ public class UserController {
     /**
      * 更新用户管理员权限（管理员功能）
      *
-     * @param userId 用户ID
-     * @param isAdmin 是否为管理员
+     * @param userId       用户ID
+     * @param isAdmin      是否为管理员
      * @param isSuperAdmin 是否为超级管理员
-     * @param isInputor 是否为录入员
+     * @param isInputor    是否为录入员
      * @return 更新结果
      * @throws IllegalAccessException
      */
@@ -91,9 +85,9 @@ public class UserController {
      * 更新“强制视为会员”开关及其元数据（管理员功能）
      * 注意：程序不会自动根据时间去改 enabled，仅在判定会员时使用这些字段做计算。
      *
-     * @param userId 用户ID
-     * @param enabled 是否强制视为会员
-     * @param reason 修改原因（可空）
+     * @param userId   用户ID
+     * @param enabled  是否强制视为会员
+     * @param reason   修改原因（可空）
      * @param duration 延续时长字符串（形如：10天/360秒/15分钟；null 表示永久）
      */
     @PostMapping("/admin/updatePremiumOverride.do")
@@ -138,7 +132,7 @@ public class UserController {
         userBo.deleteUser(user);
         return Result.success(null);
     }
-    
+
     /**
      * 获取单个用户信息（管理员功能）
      *
@@ -152,12 +146,12 @@ public class UserController {
         if (user == null) {
             return Result.fail("用户不存在");
         }
-        
+
         // 转换为UserVo，排除复杂关联对象，但保留订阅和强制会员相关字段
-        UserVo userVo = BeanUtils.makeVo(user, UserVo.class, 
-            new String[]{"invitedBy", "StudyGroupVo.creator", "StudyGroupVo.users", 
-                        "StudyGroupVo.managers", "studyGroupPosts", "userGames"});
-        
+        UserVo userVo = BeanUtils.makeVo(user, UserVo.class,
+                new String[] { "invitedBy", "StudyGroupVo.creator", "StudyGroupVo.users",
+                        "StudyGroupVo.managers", "studyGroupPosts", "userGames" });
+
         return Result.success(userVo);
     }
 }

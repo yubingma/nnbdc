@@ -338,7 +338,7 @@ class UserBo {
   Future<Result<int>> syncUserDb(int expectedServerDbVersion, String userId, List<UserDbLogDto> logs) async =>
       Api.client.syncUserDb(expectedServerDbVersion, userId, logs);
 
-  Future<Result<int>> getSystemDbVersion() async => Api.client.getSystemDbVersion();
+  Future<Result<int>> getSystemDbVersion() async => Api.client.getSysDbVersion();
 
   Future<Result<bool>> recordLogin(String? remark) async => Api.client.recordLogin(remark);
 }

@@ -4,7 +4,6 @@ import 'package:day_night_switcher/day_night_switcher.dart';
 import 'package:drift/drift.dart' as drift;
 import 'package:drift_db_viewer/drift_db_viewer.dart';
 import 'package:email_validator/email_validator.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';

@@ -481,9 +481,6 @@ abstract class RestClient {
   Future<Result<int>> syncUserDb(
       @Query("expectedServerDbVersion") int expectedServerDbVersion, @Query("userId") String userId, @Body() List<UserDbLogDto> logs);
 
-  @GET("/getSystemDbVersion.do")
-  Future<Result<int>> getSystemDbVersion();
-
   @GET("/getSysDbVersion.do")
   Future<Result<int>> getSysDbVersion();
 
