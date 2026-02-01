@@ -905,44 +905,55 @@ class WordBo {
     }
   }
 
-  /// 更新自定义词典中单词的释义
-  Future<Result> updateMeaningForCustomDict(String dictId, String wordId, String meaning, String ciXing) async {
+  /// 更新自定义词典中单词的释义（支持多个词性/释义对）
+  Future<Result> updateMeaningForCustomDict(String dictId, String wordId, List<Map<String, String>> meanings) async {
     final db = MyDatabase.instance;
     try {
-      // 检查是否存在现有定制释义
-      final existingQuery = db.select(db.meaningItems)..where((mi) => mi.wordId.equals(wordId) & mi.dictId.equals(dictId));
-      final existingItems = await existingQuery.get();
-
       final now = AppClock.now();
 
       await db.transaction(() async {
-        if (existingItems.isNotEmpty) {
-          // 更新现有释义
-          // 简化处理：假设一个单词在自定义词典里只有一个释义项（或者我们只更新第一个）
-          // 用户需求是"修改释义"，通常意味着覆盖。
-          // 先删除旧的
-          await (db.delete(db.meaningItems)..where((mi) => mi.wordId.equals(wordId) & mi.dictId.equals(dictId))).go();
+        // 1. 删除现有定制释义
+        await (db.delete(db.meaningItems)..where((mi) => mi.wordId.equals(wordId) & mi.dictId.equals(dictId))).go();
+
+        // 2. 插入新释义
+        for (var i = 0; i < meanings.length; i++) {
+          final meaning = meanings[i];
+          final newId = Util.uuid();
+          await db.into(db.meaningItems).insert(MeaningItemsCompanion.insert(
+                id: newId,
+                wordId: wordId,
+                dictId: Value(dictId),
+                ciXing: meaning['cixing'] ?? '',
+                meaning: meaning['meaning'] ?? '',
+                popularity: Value(i + 1), // 使用1-indexed排序
+                createTime: now,
+                updateTime: Value(now),
+              ));
         }
 
-        // 插入新释义
-        final newId = Util.uuid();
-        await db.into(db.meaningItems).insert(MeaningItemsCompanion.insert(
-              id: newId,
-              wordId: wordId,
-              dictId: Value(dictId),
-              ciXing: ciXing,
-              meaning: meaning,
-              createTime: now,
-              updateTime: Value(now),
-            ));
+        // 3. 记录日志以便同步
+        final userId = Global.getLoggedInUser()?.id;
+        if (userId != null) {
+          // 记录一条操作日志，或者标记需要同步
+          // 注意：这里记录对 meaningItems 的批量更新操作
+          await DbLogUtil.logOperation(
+            userId,
+            'UPDATE',
+            'meaningItems',
+            '$dictId-$wordId',
+            jsonEncode({
+              'dictId': dictId,
+              'wordId': wordId,
+              'meanings': meanings,
+            }),
+          );
+        }
       });
 
-      // 触发同步(MeaningItems变更暂未自动触发Log生成，可能需要手动处理Log?
-      // DAO中通常saveEntity会生成Log。MeaningItemsDao好像没见到?
-      // 检查MeaningItems表Sync逻辑。 MeaningItems是基础数据，通常不同步用户修改?
-      // 但是自定义词典的释义属于用户数据。
-      // 需要确认MeaningItems是否sync。
-      // 无论如何，本地修改生效即可。)
+      // 触发同步
+      Future.delayed(Duration.zero, () {
+        ThrottledDbSyncService().requestSync();
+      });
 
       return Result("SUCCESS", "更新成功", true);
     } catch (e, s) {

@@ -864,6 +864,7 @@ class Util {
       'userWrongWords': 'user_wrong_word',
       'dictWords': 'dict_word',
       'dicts': 'dict',
+      'meaningItems': 'meaning_item',
     };
 
     if (tableNameMapping.containsKey(localTableName)) {

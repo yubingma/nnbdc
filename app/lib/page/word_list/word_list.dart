@@ -46,7 +46,7 @@ abstract class WordsProvider {
 
 abstract class WordModifier {
   Future<bool> addWord(String wordId);
-  Future<bool> updateMeaning(String wordId, String meaning, String ciXing);
+  Future<bool> updateMeanings(String wordId, List<Map<String, String>> meanings);
   Future<bool> deleteMeaning(String wordId);
 }
 

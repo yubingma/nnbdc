@@ -116,6 +116,9 @@ public class UserDbSyncBo {
     private UserDbLogBo userDbLogBo;
 
     @Autowired
+    private MeaningItemBo meaningItemBo;
+
+    @Autowired
     private UserDbVersionDao userDbVersionDao;
 
     @Autowired
@@ -286,6 +289,7 @@ public class UserDbSyncBo {
             case "dict_word" -> processDictWordSync(userId, recordJson, operation);
             case "mastered_word" -> processMasteredWordSync(userId, recordJson, operation);
             case "user_cow_dung_log" -> processUserCowDungLogSync(userId, recordJson, operation);
+            case "meaning_item" -> processMeaningItemSync(userId, recordJson, operation);
             default -> {
                 String errorMsg = String.format("不支持的表同步: %s, 记录ID: %s, 操作: %s", tableName, log.getRecordId(),
                         operation);
@@ -1171,7 +1175,24 @@ public class UserDbSyncBo {
                     userDbVersion + "-" + fromVersion);
             return logs;
         }
-
     }
 
+    /**
+     * 处理单词释义同步
+     */
+    @SuppressWarnings("unchecked")
+    private void processMeaningItemSync(String userId, String recordJson, String operation) {
+        if ("UPDATE".equals(operation)) {
+            Map<String, Object> data = JsonUtils.makeObject(recordJson, Map.class);
+            String dictId = (String) data.get("dictId");
+            String wordId = (String) data.get("wordId");
+            List<Map<String, String>> meanings = (List<Map<String, String>>) data.get("meanings");
+            meaningItemBo.updateMeanings(dictId, wordId, meanings);
+            logger.info("同步更新单词释义成功: userId={}, dictId={}, wordId={}", userId, dictId, wordId);
+        } else {
+            String errorMsg = String.format("不支持的释义表操作: %s", operation);
+            logger.error(errorMsg);
+            throw new IllegalArgumentException(errorMsg);
+        }
+    }
 }

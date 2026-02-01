@@ -1,8 +1,10 @@
 package beidanci.service.bo;
+
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
@@ -16,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import beidanci.api.model.MeaningItemDto;
 import beidanci.service.dao.BaseDao;
 import beidanci.service.po.MeaningItem;
+import beidanci.service.util.Util;
 
 @Service
 @Transactional(rollbackFor = Throwable.class)
@@ -34,7 +37,7 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
         // 通用词典现在是数据库中的实际记录，统一查询
         String sql = "SELECT id, ci_xing, meaning, word_id, dict_id, popularity, create_time, update_time FROM meaning_item WHERE dict_id = :dictId";
         MapSqlParameterSource params = new MapSqlParameterSource("dictId", dictId);
-        
+
         return namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> {
             MeaningItemDto meaningItemDto = new MeaningItemDto();
             meaningItemDto.setId(rs.getString("id"));
@@ -60,8 +63,9 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
         }
 
         // 使用原生SQL一次性取回所有候选，再在内存中按 word 聚合取第一条
-        String sql = "SELECT id, ci_xing, meaning, word_id, dict_id, popularity, create_time, update_time FROM meaning_item " +
-                     "WHERE dict_id IS NOT NULL AND word_id IN (:ids) ORDER BY update_time DESC";
+        String sql = "SELECT id, ci_xing, meaning, word_id, dict_id, popularity, create_time, update_time FROM meaning_item "
+                +
+                "WHERE dict_id IS NOT NULL AND word_id IN (:ids) ORDER BY update_time DESC";
         MapSqlParameterSource params = new MapSqlParameterSource("ids", wordIds);
         List<MeaningItemDto> allResults = namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> {
             MeaningItemDto dto = new MeaningItemDto();
@@ -76,11 +80,11 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
             dto.setUpdateTime(rs.getTimestamp("update_time"));
             return dto;
         });
-        
+
         // 转换为 Object[] 格式以保持原有逻辑
-        List<?> results = allResults.stream().map(dto -> new Object[]{
-            dto.getId(), dto.getCiXing(), dto.getMeaning(), dto.getWordId(), 
-            dto.getDictId(), dto.getPopularity(), dto.getCreateTime(), dto.getUpdateTime()
+        List<?> results = allResults.stream().map(dto -> new Object[] {
+                dto.getId(), dto.getCiXing(), dto.getMeaning(), dto.getWordId(),
+                dto.getDictId(), dto.getPopularity(), dto.getCreateTime(), dto.getUpdateTime()
         }).collect(Collectors.toList());
 
         List<MeaningItemDto> picked = new ArrayList<>();
@@ -118,9 +122,10 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
      * 返回插入的行数。
      */
     public int supplementCommonMeanings() {
-        String sql =
-                "INSERT INTO meaning_item (id, ci_xing, meaning, word_id, dict_id, popularity, create_time, update_time) " +
-                "SELECT REPLACE(gen_random_uuid()::text, '-', ''), mi.ci_xing, mi.meaning, mi.word_id, '0', mi.popularity, NOW(), NOW() " +
+        String sql = "INSERT INTO meaning_item (id, ci_xing, meaning, word_id, dict_id, popularity, create_time, update_time) "
+                +
+                "SELECT REPLACE(gen_random_uuid()::text, '-', ''), mi.ci_xing, mi.meaning, mi.word_id, '0', mi.popularity, NOW(), NOW() "
+                +
                 "FROM meaning_item mi " +
                 "LEFT JOIN meaning_item cm ON cm.word_id = mi.word_id AND cm.dict_id = '0' " +
                 "WHERE mi.dict_id != '0' AND cm.id IS NULL";
@@ -145,5 +150,38 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
                 ")";
         MapSqlParameterSource params = new MapSqlParameterSource("dictId", dictId);
         return namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> rs.getString("word_id"));
+    }
+
+    /**
+     * 更新自定义词典中的单词释义（先删除该词在该词典下的所有现有释义，再插入新的）
+     */
+    public void updateMeanings(String dictId, String wordId, List<Map<String, String>> meanings) {
+        // 1. 删除现有定制释义
+        String deleteSql = "DELETE FROM meaning_item WHERE word_id = :wordId AND dict_id = :dictId";
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        params.addValue("wordId", wordId);
+        params.addValue("dictId", dictId);
+        namedParameterJdbcTemplate.update(deleteSql, params);
+
+        // 2. 插入新释义
+        if (meanings != null) {
+            String insertSql = "INSERT INTO meaning_item (id, word_id, dict_id, ci_xing, meaning, popularity, create_time, update_time) "
+                    +
+                    "VALUES (:id, :wordId, :dictId, :ciXing, :meaning, :popularity, :createTime, :updateTime)";
+            Timestamp now = new Timestamp(System.currentTimeMillis());
+            for (int i = 0; i < meanings.size(); i++) {
+                Map<String, String> meaning = meanings.get(i);
+                MapSqlParameterSource insertParams = new MapSqlParameterSource();
+                insertParams.addValue("id", Util.uuid());
+                insertParams.addValue("wordId", wordId);
+                insertParams.addValue("dictId", dictId);
+                insertParams.addValue("ciXing", meaning.get("cixing") != null ? meaning.get("cixing") : "");
+                insertParams.addValue("meaning", meaning.get("meaning") != null ? meaning.get("meaning") : "");
+                insertParams.addValue("popularity", i + 1);
+                insertParams.addValue("createTime", now);
+                insertParams.addValue("updateTime", now);
+                namedParameterJdbcTemplate.update(insertSql, insertParams);
+            }
+        }
     }
 }
