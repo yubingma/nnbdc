@@ -4,6 +4,7 @@ import 'package:day_night_switcher/day_night_switcher.dart';
 import 'package:drift/drift.dart' as drift;
 import 'package:drift_db_viewer/drift_db_viewer.dart';
 import 'package:email_validator/email_validator.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
@@ -2120,13 +2121,16 @@ class _MePageState extends State<MePage> {
 
   // 打开数据库查看器
   void _openDbViewPage() {
+    // 为查看器包裹一个局部主题，解决全局透明 AppBar 导致的图标白色不可见问题
     Navigator.of(context).push(MaterialPageRoute(
-        builder: (context) => Scaffold(
-              appBar: AppTheme.createGradientAppBar(
-                title: '数据库查看器',
-                automaticallyImplyLeading: true, // 恢复默认的回退行为
+        builder: (context) => Theme(
+              data: Theme.of(context).copyWith(
+                appBarTheme: AppBarTheme(
+                  backgroundColor: AppTheme.primaryColor,
+                  foregroundColor: Colors.white,
+                ),
               ),
-              body: DriftDbViewer(MyDatabase.instance),
+              child: DriftDbViewer(MyDatabase.instance),
             )));
   }
 
