@@ -1,17 +1,18 @@
-import 'package:drift/drift.dart';
-import 'package:nnbdc/db/table.dart';
-import 'package:nnbdc/util/toast_util.dart';
-import 'package:nnbdc/util/db_log_util.dart';
-import 'package:nnbdc/util/utils.dart';
-import 'package:nnbdc/util/oper_type.dart';
 import 'dart:convert';
-import 'package:nnbdc/util/app_clock.dart';
 
-import 'db.dart';
-import '../services/throttled_sync_service.dart';
-import '../global.dart';
+import 'package:drift/drift.dart';
 import 'package:nnbdc/api/bo/word_bo.dart';
+import 'package:nnbdc/db/table.dart';
+import 'package:nnbdc/util/app_clock.dart';
+import 'package:nnbdc/util/db_log_util.dart';
+import 'package:nnbdc/util/oper_type.dart';
+import 'package:nnbdc/util/toast_util.dart';
+import 'package:nnbdc/util/utils.dart';
+
+import '../global.dart';
+import '../services/throttled_sync_service.dart';
 import '../util/error_handler.dart';
+import 'db.dart';
 
 part 'dao.g.dart';
 
