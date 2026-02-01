@@ -1093,7 +1093,7 @@ public class UserBo extends BaseBo<User> {
             }
         }
 
-        if (needsFullSync) { 
+        if (needsFullSync) {
             // 生成学习中单词全量日志
             List<LearningWordDto> learningWords = learningWordBo.getLearningWordDtosOfUser(userId);
             List<LearningDictDto> learningDicts = learningDictBo.getLearningDictDtosOfUser(userId);

@@ -118,7 +118,7 @@ public class SysDbLogBo extends BaseBo<SysDbLog> {
      * @param fromVersion 起始版本号（不包含）
      * @return 增量日志列表，按版本号升序排列
      */
-    public List<SysDbLogDto> getNewSysDbLogs(int fromVersion) {
+    public List<SysDbLogDto> getSysDbLogs(int fromVersion) {
         int currentVersion = getSysDbVersion();
 
         // 1. 首次同步

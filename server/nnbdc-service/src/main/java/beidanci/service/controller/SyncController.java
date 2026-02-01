@@ -63,7 +63,7 @@ public class SyncController {
     @GetMapping("/getNewSysDbLogs.do")
     public Result<List<SysDbLogDto>> getNewSysDbLogs(
             @RequestParam("fromVersion") int fromVersion) {
-        List<SysDbLogDto> logs = sysDbLogBo.getNewSysDbLogs(fromVersion);
+        List<SysDbLogDto> logs = sysDbLogBo.getSysDbLogs(fromVersion);
         return Result.success(logs);
     }
 
