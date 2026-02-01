@@ -6,7 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import beidanci.service.bo.SysDbLogBo;
+import beidanci.service.bo.SysDbSyncBo;
 
 /**
  * 系统数据库日志清理定时任务
@@ -17,7 +17,7 @@ public class SysDbLogCleanupTask {
     private static final Logger log = LoggerFactory.getLogger(SysDbLogCleanupTask.class);
 
     @Autowired
-    private SysDbLogBo sysDbLogBo;
+    private SysDbSyncBo sysDbLogBo;
 
     /**
      * 每天凌晨2点执行清理任务

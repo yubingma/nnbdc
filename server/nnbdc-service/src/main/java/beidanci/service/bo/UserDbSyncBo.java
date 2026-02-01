@@ -1,14 +1,20 @@
 package beidanci.service.bo;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
@@ -48,10 +54,14 @@ import beidanci.service.po.UserStudyStepId;
 import beidanci.service.po.WrongWord;
 import beidanci.service.util.JsonUtils;
 import beidanci.service.util.UserSorter;
+import beidanci.service.util.Util;
 
 @Service
-public class SyncBo {
-    private static final Logger logger = LoggerFactory.getLogger(SyncBo.class);
+public class UserDbSyncBo {
+    private static final Logger logger = LoggerFactory.getLogger(UserDbSyncBo.class);
+
+    @Autowired
+    private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
     /**
      * 用户验证结果的内部类，仅封装数据库版本号
@@ -856,4 +866,312 @@ public class SyncBo {
             }
         }
     }
+
+    private boolean hasVersionLogs(String userId, int version) {
+        String sql = "SELECT COUNT(*) FROM user_db_log WHERE user_id = :userId AND version = :version";
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        params.addValue("userId", userId);
+        params.addValue("version", version);
+        Integer count = namedParameterJdbcTemplate.queryForObject(sql, params, Integer.class);
+        return count != null && count > 0;
+    }
+
+    /**
+     * 获取 fromVersion 之后第一条日志的创建时间
+     * 用于判断日志是否过旧，可能已被清理
+     *
+     * @param userId      用户ID
+     * @param fromVersion 起始版本号（不包含）
+     * @return 第一条日志的创建时间，如果不存在则返回 null
+     */
+    private Date getFirstLogTimeAfterVersion(String userId, int fromVersion) {
+        String sql = "SELECT create_time FROM user_db_log WHERE user_id = :userId AND version > :fromVersion ORDER BY version ASC LIMIT 1";
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        params.addValue("userId", userId);
+        params.addValue("fromVersion", fromVersion);
+        try {
+            return namedParameterJdbcTemplate.queryForObject(sql, params, Date.class);
+        } catch (org.springframework.dao.EmptyResultDataAccessException e) {
+            return null;
+        }
+    }
+
+    /**
+     * 获取增量日志数量
+     *
+     * @param userId      用户ID
+     * @param fromVersion 起始版本号（不包含）
+     * @return 增量日志数量
+     */
+    private long getIncrementalLogCount(String userId, int fromVersion) {
+        String sql = "SELECT COUNT(*) FROM user_db_log WHERE user_id = :userId AND version > :fromVersion";
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        params.addValue("userId", userId);
+        params.addValue("fromVersion", fromVersion);
+        Long count = namedParameterJdbcTemplate.queryForObject(sql, params, Long.class);
+        return count != null ? count : 0L;
+    }
+
+    /**
+     * 获取用户数据库日志
+     *
+     * @param fromVersion 从此版本开始，不包括此版本
+     * @return
+     */
+    public List<UserDbLogDto> getUserDbLogsFromVersion(String userId, int fromVersion) {
+        User user = userBo.findById(userId);
+
+        // 如果用户不存在，则返回空列表（这种情况可能发生在客户端未登录到后端时，指定要同步的用户（用户可能是前端首先创建的））
+        if (user == null) {
+            return new ArrayList<>();
+        }
+
+        // 获取用户数据库版本
+        int userDbVersion = userDbVersionDao.getUserDbVersion(jdbcTemplate, userId);
+
+        // 1. 如果前后端版本一致，无需任何同步
+        if (userDbVersion <= fromVersion) {
+            return new ArrayList<>();
+        }
+
+        // 判定是否需要全量同步
+        boolean needsFullSync = false;
+        if (fromVersion == 0) {
+            needsFullSync = true;
+        } else if (!hasVersionLogs(userId, fromVersion + 1)) {
+            // 连下一条日志都找不到，必然需要全量同步（可能是日志断档或被清理）
+            needsFullSync = true;
+        } else {
+            // 检查下一条日志的时间是否过旧
+            Date firstLogTime = getFirstLogTimeAfterVersion(userId, fromVersion);
+            Date thirtyDaysAgo = new Date(System.currentTimeMillis() - 30L * 24 * 60 * 60 * 1000);
+            if (firstLogTime != null && firstLogTime.before(thirtyDaysAgo)) {
+                needsFullSync = true;
+            } else {
+                // 日志没过旧，最后才检查条数，避免无条件执行耗时查询
+                if (getIncrementalLogCount(userId, fromVersion) > 1000) {
+                    needsFullSync = true;
+                }
+            }
+        }
+
+        if (needsFullSync) {
+            // 生成全量日志
+            List<UserDbLogDto> logs = new ArrayList<>();
+
+            // 1. 用户词典 (dict)
+            List<DictDto> ownDictDtos = dictBo.getDictDtosOfUser(userId);
+            for (DictDto dictDto : ownDictDtos) {
+                UserDbLogDto log = new UserDbLogDto(Util.uuid(), userId, userDbVersion, "INSERT", "dict",
+                        dictDto.getId(), JsonUtils.toJson(dictDto),
+                        dictDto.getCreateTime(),
+                        dictDto.getUpdateTime());
+                logs.add(log);
+            }
+
+            // 2. 学习中单词 (learning_word)
+            List<LearningWordDto> learningWords = learningWordBo.getLearningWordDtosOfUser(userId);
+            for (LearningWordDto learningWord : learningWords) {
+                UserDbLogDto log = new UserDbLogDto(Util.uuid(), userId, userDbVersion, "INSERT", "learning_word",
+                        learningWord.getUserId() + "-" + learningWord.getWordId(), JsonUtils.toJson(learningWord),
+                        learningWord.getCreateTime(),
+                        learningWord.getUpdateTime());
+                logs.add(log);
+            }
+
+            // 3. 用户选择的词书 (learning_dict)
+            List<LearningDictDto> learningDicts = learningDictBo.getLearningDictDtosOfUser(userId);
+            for (LearningDictDto learningDict : learningDicts) {
+                UserDbLogDto log = new UserDbLogDto(Util.uuid(), userId, userDbVersion, "INSERT", "learning_dict",
+                        learningDict.getUserId() + "-" + learningDict.getDictId(), JsonUtils.toJson(learningDict),
+                        learningDict.getCreateTime(),
+                        learningDict.getUpdateTime());
+                logs.add(log);
+            }
+
+            // 生成用户学习步骤全量日志
+            List<UserStudyStepDto> userStudyStepDtos = userStudyStepBo.getUserStudyStepDtosOfUser(userId);
+            for (UserStudyStepDto stepDto : userStudyStepDtos) {
+                // 创建日志条目
+                UserDbLogDto log = new UserDbLogDto(
+                        Util.uuid(),
+                        userId,
+                        userDbVersion,
+                        "INSERT",
+                        "user_study_step",
+                        userId + "-" + stepDto.getStudyStep(),
+                        JsonUtils.toJson(stepDto),
+                        stepDto.getCreateTime(),
+                        stepDto.getUpdateTime());
+                logs.add(log);
+            }
+
+            // 生成用户打卡记录全量日志
+            List<DakaDto> dakaDtos = dakaBo.getDakaDtosOfUser(userId);
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
+            for (DakaDto dakaDto : dakaDtos) {
+                // 创建日志条目
+                UserDbLogDto log = new UserDbLogDto(
+                        Util.uuid(),
+                        userId,
+                        userDbVersion,
+                        "INSERT",
+                        "daka",
+                        userId + "-" + dateFormat.format(dakaDto.getForLearningDate()),
+                        JsonUtils.toJson(dakaDto),
+                        dakaDto.getCreateTime(),
+                        dakaDto.getUpdateTime());
+                logs.add(log);
+            }
+
+            // 生成用户操作记录全量日志
+            List<UserOperDto> userOperDtos = userOperBo.getUserOperDtosOfUser(userId);
+            for (UserOperDto operDto : userOperDtos) {
+                // 创建日志条目
+                UserDbLogDto log = new UserDbLogDto(
+                        Util.uuid(),
+                        userId,
+                        userDbVersion,
+                        "INSERT",
+                        "user_oper",
+                        operDto.getId(),
+                        JsonUtils.toJson(operDto),
+                        operDto.getCreateTime(),
+                        operDto.getUpdateTime());
+                logs.add(log);
+            }
+
+            // 生成用户错词(user_wrong_word)全量日志
+            List<WrongWordDto> wrongWordDtos = wrongWordBo.getWrongWordDtosOfUser(userId);
+            for (WrongWordDto wrongWordDto : wrongWordDtos) {
+                UserDbLogDto log = new UserDbLogDto(
+                        Util.uuid(),
+                        userId,
+                        userDbVersion,
+                        "INSERT",
+                        "user_wrong_word",
+                        userId + "-" + wrongWordDto.getWordId(),
+                        JsonUtils.toJson(wrongWordDto),
+                        wrongWordDto.getCreateTime(),
+                        wrongWordDto.getUpdateTime());
+                logs.add(log);
+            }
+
+            // 生成用户生词本(dict_word)全量日志
+            List<DictWordDto> dictWordDtos = dictWordBo.getDictWordDtosOfUser(userId);
+            for (DictWordDto dictWordDto : dictWordDtos) {
+                UserDbLogDto log = new UserDbLogDto(
+                        Util.uuid(),
+                        userId,
+                        userDbVersion,
+                        "INSERT",
+                        "dict_word",
+                        dictWordDto.getDictId() + "-" + dictWordDto.getWordId(),
+                        JsonUtils.toJson(dictWordDto),
+                        dictWordDto.getCreateTime(),
+                        dictWordDto.getUpdateTime());
+                logs.add(log);
+            }
+
+            // 生成用户已掌握单词(mastered_word)全量日志
+            List<MasteredWordDto> masteredWordDtos = masteredWordBo.getMasteredWordDtosOfUser(userId);
+            for (MasteredWordDto masteredWordDto : masteredWordDtos) {
+                UserDbLogDto log = new UserDbLogDto(
+                        Util.uuid(),
+                        userId,
+                        userDbVersion,
+                        "INSERT",
+                        "mastered_word",
+                        userId + "-" + masteredWordDto.getWordId(),
+                        JsonUtils.toJson(masteredWordDto),
+                        masteredWordDto.getCreateTime(),
+                        masteredWordDto.getUpdateTime());
+                logs.add(log);
+            }
+
+            // 生成用户魔法泡泡日志(user_cow_dung_log)全量日志
+            List<UserCowDungLogDto> userCowDungLogDtos = userCowDungLogBo.getUserCowDungLogDtosOfUser(userId);
+            for (UserCowDungLogDto dto : userCowDungLogDtos) {
+                UserDbLogDto log = new UserDbLogDto(
+                        Util.uuid(),
+                        userId,
+                        userDbVersion,
+                        "INSERT",
+                        "user_cow_dung_log",
+                        dto.getId(),
+                        JsonUtils.toJson(dto),
+                        dto.getCreateTime(),
+                        dto.getUpdateTime());
+                logs.add(log);
+            }
+
+            // 打印全量同步日志分类统计（便于定位日志量过大的原因）
+            // 注意：tblName 需要与客户端同步消费的表名保持一致
+            Map<String, Integer> counts = new HashMap<>();
+            for (UserDbLogDto l : logs) {
+                String tbl = l.getTblName();
+                if (tbl == null) {
+                    tbl = "null";
+                }
+                counts.put(tbl, counts.getOrDefault(tbl, 0) + 1);
+            }
+
+            // 按固定顺序输出，方便排查
+            Map<String, Integer> ordered = new LinkedHashMap<>();
+            ordered.put("dict", counts.getOrDefault("dict", 0));
+            ordered.put("learning_word", counts.getOrDefault("learning_word", 0));
+            ordered.put("learning_dict", counts.getOrDefault("learning_dict", 0));
+            ordered.put("user_study_step", counts.getOrDefault("user_study_step", 0));
+            ordered.put("daka", counts.getOrDefault("daka", 0));
+            ordered.put("user_oper", counts.getOrDefault("user_oper", 0));
+            ordered.put("user_wrong_word", counts.getOrDefault("user_wrong_word", 0));
+            ordered.put("dict_word", counts.getOrDefault("dict_word", 0));
+            ordered.put("mastered_word", counts.getOrDefault("mastered_word", 0));
+            ordered.put("user_cow_dung_log", counts.getOrDefault("user_cow_dung_log", 0));
+
+            // 输出未在固定列表中的表名（如果有）
+            Map<String, Integer> extra = new LinkedHashMap<>();
+            for (Map.Entry<String, Integer> e : counts.entrySet()) {
+                if (!ordered.containsKey(e.getKey())) {
+                    extra.put(e.getKey(), e.getValue());
+                }
+            }
+            if (!extra.isEmpty()) {
+                logger.info("为用户{}进行全量同步分类统计(其他明细): {}", userId, extra);
+            }
+            logger.info("为用户{}进行全量同步分类统计: {}", userId, ordered);
+
+            logger.info("为用户{}进行全量同步, 共生成{}条同步日志, 服务端/客户端数据版本号为{}", userId, logs.size(),
+                    userDbVersion + "-" + fromVersion);
+
+            return logs;
+        } else { // 增量同步
+            String sql = "SELECT e.id, e.user_id, e.version, e.operate, e.tbl_name, e.record_id, e.record, e.create_time, e.update_time FROM user_db_log e "
+                    +
+                    "WHERE e.user_id = :userId AND e.version > :fromVersion AND e.create_time = " +
+                    "(SELECT MAX(e2.create_time) FROM user_db_log e2 WHERE e2.tbl_name = e.tbl_name AND e2.record_id = e.record_id) ORDER BY e.version ASC, e.create_time ASC";
+            MapSqlParameterSource params = new MapSqlParameterSource();
+            params.addValue("userId", userId);
+            params.addValue("fromVersion", fromVersion);
+            List<UserDbLogDto> logs = namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> {
+                UserDbLogDto log = new UserDbLogDto();
+                log.setId(rs.getString("id"));
+                log.setUserId(rs.getString("user_id"));
+                log.setVersion(rs.getInt("version"));
+                log.setOperate(rs.getString("operate"));
+                log.setTblName(rs.getString("tbl_name"));
+                log.setRecordId(rs.getString("record_id"));
+                log.setRecord(rs.getString("record"));
+                log.setCreateTime(rs.getTimestamp("create_time"));
+                log.setUpdateTime(rs.getTimestamp("update_time"));
+                return log;
+            });
+
+            logger.info("为用户{}进行增量同步, 共生成{}条同步日志, 服务端/客户端数据版本号为{}", userId, logs.size(),
+                    userDbVersion + "-" + fromVersion);
+            return logs;
+        }
+
+    }
+
 }

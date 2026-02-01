@@ -484,7 +484,7 @@ abstract class RestClient {
   @GET("/getSysDbVersion.do")
   Future<Result<int>> getSysDbVersion();
 
-  @GET("/getNewSysDbLogs.do")
+  @GET("/getSysDbLogs.do")
   Future<Result<List<SysDbLogDto>>> getNewSysDbLogs(@Query("fromVersion") int fromVersion);
 
   /// 记录用户登录操作

@@ -27,7 +27,7 @@ import beidanci.service.util.Util;
  */
 @Service
 @Transactional(rollbackFor = Throwable.class)
-public class SysDbLogBo extends BaseBo<SysDbLog> {
+public class SysDbSyncBo extends BaseBo<SysDbLog> {
     @Autowired
     private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 

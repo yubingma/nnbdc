@@ -23,8 +23,8 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import beidanci.api.Result;
 import beidanci.api.model.SysDbLogDto;
 import beidanci.api.model.UserDbLogDto;
-import beidanci.service.bo.SyncBo;
-import beidanci.service.bo.SysDbLogBo;
+import beidanci.service.bo.UserDbSyncBo;
+import beidanci.service.bo.SysDbSyncBo;
 import beidanci.service.bo.UserBo;
 import beidanci.service.exception.DbVersionNotMatchException;
 import beidanci.service.exception.RawWordDataErrorException;
@@ -38,10 +38,10 @@ public class SyncController {
     UserBo userBo;
 
     @Autowired
-    SyncBo syncBo;
+    UserDbSyncBo syncBo;
 
     @Autowired
-    private SysDbLogBo sysDbLogBo;
+    private SysDbSyncBo sysDbLogBo;
 
     /**
      * 获取系统数据版本号（静态元数据 + UGC内容）
@@ -60,7 +60,7 @@ public class SyncController {
      * - UGC内容：Sentences、WordImages、WordShortDescChinese
      * 同步方式：增量日志
      */
-    @GetMapping("/getNewSysDbLogs.do")
+    @GetMapping("/getSysDbLogs.do")
     public Result<List<SysDbLogDto>> getNewSysDbLogs(
             @RequestParam("fromVersion") int fromVersion) {
         List<SysDbLogDto> logs = sysDbLogBo.getSysDbLogs(fromVersion);
@@ -101,7 +101,7 @@ public class SyncController {
         log.info("开始查询用户数据库日志, userId: {}, localDbVersion: {}", userId, fromVersion);
 
         // 查询用户数据库增量日志
-        List<UserDbLogDto> logs = userBo.getUserDbLogsFromVersion(userId, fromVersion);
+        List<UserDbLogDto> logs = syncBo.getUserDbLogsFromVersion(userId, fromVersion);
         log.info("用户数据库增量日志查询完成, 数量: {}", logs.size());
 
         // 构建响应对象

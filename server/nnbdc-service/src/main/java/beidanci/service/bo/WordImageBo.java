@@ -1,4 +1,5 @@
 package beidanci.service.bo;
+
 import javax.annotation.PostConstruct;
 
 import java.io.File;
@@ -46,9 +47,9 @@ public class WordImageBo extends BaseBo<WordImage> {
     UserBo userBo;
 
     @Autowired
-    SysDbLogBo sysDbLogBo;
+    SysDbSyncBo sysDbLogBo;
 
-        @PostConstruct
+    @PostConstruct
     public void init() {
         setDao(new BaseDao<WordImage>() {
         });
@@ -61,8 +62,8 @@ public class WordImageBo extends BaseBo<WordImage> {
         updateEntity(image);
 
         // 记录系统数据日志（点赞数变化）
-        sysDbLogBo.logOperation("UPDATE", "word_image", imageId, 
-            toJsonForLog(image));
+        sysDbLogBo.logOperation("UPDATE", "word_image", imageId,
+                toJsonForLog(image));
 
         // 对作者进行奖励
         userBo.adjustCowDung(image.getAuthor(), 1, "单词配图UGC得到了赞");
@@ -80,8 +81,8 @@ public class WordImageBo extends BaseBo<WordImage> {
         updateEntity(image);
 
         // 记录系统数据日志（踩数变化）
-        sysDbLogBo.logOperation("UPDATE", "word_image", imageId, 
-            toJsonForLog(image));
+        sysDbLogBo.logOperation("UPDATE", "word_image", imageId,
+                toJsonForLog(image));
 
         if (image.getFoot() - image.getHand() >= 3) {// 如果该图片被踩的次数比被赞的次数多3（或以上），删除该图片
             deleteWordImage(imageId, user, false);
@@ -139,7 +140,8 @@ public class WordImageBo extends BaseBo<WordImage> {
         WordImageVo[] images = new WordImageVo[Math.min(total, MAX_IMAGES_FOR_DISPLAY)];
         for (int i = 0; i < images.length; i++) {
             WordImage po = wordImages.get(i);
-            WordImageVo vo = BeanUtils.makeVo(po, WordImageVo.class, new String[]{"author", "createTime", "updateTime", "word.^id,spell"});
+            WordImageVo vo = BeanUtils.makeVo(po, WordImageVo.class,
+                    new String[] { "author", "createTime", "updateTime", "word.^id,spell" });
             UserVo author = new UserVo();
             author.setDisplayNickName(po.getAuthor().getDisplayNickName());
             author.setUserName(po.getAuthor().getUserName());
@@ -183,8 +185,8 @@ public class WordImageBo extends BaseBo<WordImage> {
         createEntity(wordImage);
 
         // 记录系统数据日志（新增配图）
-        sysDbLogBo.logOperation("INSERT", "word_image", wordImage.getId(), 
-            toJsonForLog(wordImage));
+        sysDbLogBo.logOperation("INSERT", "word_image", wordImage.getId(),
+                toJsonForLog(wordImage));
 
         Event event = new Event(EventType.NewWordImage, user, wordImage);
         eventBo.createEntity(event);
@@ -235,21 +237,20 @@ public class WordImageBo extends BaseBo<WordImage> {
             // 用于格式化日期为ISO-8601格式
             SimpleDateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
             isoFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-            
+
             String createTimeStr = image.getCreateTime() != null ? isoFormat.format(image.getCreateTime()) : "";
             String updateTimeStr = image.getUpdateTime() != null ? isoFormat.format(image.getUpdateTime()) : "";
-            
+
             return String.format(
-                "{\"id\":\"%s\",\"wordId\":\"%s\",\"imageFile\":\"%s\",\"hand\":%d,\"foot\":%d,\"author\":\"%s\",\"createTime\":\"%s\",\"updateTime\":\"%s\"}",
-                image.getId(),
-                image.getWord() != null ? image.getWord().getId() : "",
-                image.getImageFile(),
-                image.getHand(),
-                image.getFoot(),
-                image.getAuthor() != null ? image.getAuthor().getId() : "",
-                createTimeStr,
-                updateTimeStr
-            );
+                    "{\"id\":\"%s\",\"wordId\":\"%s\",\"imageFile\":\"%s\",\"hand\":%d,\"foot\":%d,\"author\":\"%s\",\"createTime\":\"%s\",\"updateTime\":\"%s\"}",
+                    image.getId(),
+                    image.getWord() != null ? image.getWord().getId() : "",
+                    image.getImageFile(),
+                    image.getHand(),
+                    image.getFoot(),
+                    image.getAuthor() != null ? image.getAuthor().getId() : "",
+                    createTimeStr,
+                    updateTimeStr);
         } catch (Exception e) {
             return "{}";
         }

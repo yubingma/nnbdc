@@ -36,7 +36,7 @@ public class WordShortDescChineseBO extends BaseBo<WordShortDescChinese> {
     UserBo userBo;
 
     @Autowired
-    SysDbLogBo sysDbLogBo;
+    SysDbSyncBo sysDbLogBo;
 
     public WordShortDescChineseBO() {
         // 移除构造函数中的DAO初始化
@@ -44,10 +44,12 @@ public class WordShortDescChineseBO extends BaseBo<WordShortDescChinese> {
 
     @PostConstruct
     public void init() {
-        setDao(new BaseDao<WordShortDescChinese>() {});
+        setDao(new BaseDao<WordShortDescChinese>() {
+        });
     }
 
-    public Result<Object> deleteShortDescChinese(String chineseId, User user, boolean checkPermission) throws InvalidMeaningFormatException, EmptySpellException, IOException, ParseException {
+    public Result<Object> deleteShortDescChinese(String chineseId, User user, boolean checkPermission)
+            throws InvalidMeaningFormatException, EmptySpellException, IOException, ParseException {
         WordShortDescChinese chinese = findById(chineseId);
         if (checkPermission) {
             if (!user.getIsAdmin() && (chinese.getAuthor() == null
@@ -77,7 +79,8 @@ public class WordShortDescChineseBO extends BaseBo<WordShortDescChinese> {
     }
 
     public Result<Integer> handShortDescChinese(String chineseId, User user)
-            throws IllegalArgumentException, IllegalAccessException, InvalidMeaningFormatException, EmptySpellException, IOException, ParseException {
+            throws IllegalArgumentException, IllegalAccessException, InvalidMeaningFormatException, EmptySpellException,
+            IOException, ParseException {
         WordShortDescChinese chinese = findById(chineseId);
         chinese.setHand(chinese.getHand() + 1);
         updateEntity(chinese);
@@ -95,7 +98,8 @@ public class WordShortDescChineseBO extends BaseBo<WordShortDescChinese> {
     }
 
     public Result<Integer> footShortDescChinese(String chineseId, User user)
-            throws IllegalArgumentException, IllegalAccessException, InvalidMeaningFormatException, EmptySpellException, ParseException, IOException {
+            throws IllegalArgumentException, IllegalAccessException, InvalidMeaningFormatException, EmptySpellException,
+            ParseException, IOException {
         WordShortDescChinese chinese = findById(chineseId);
         chinese.setFoot(chinese.getFoot() + 1);
         updateEntity(chinese);
@@ -115,7 +119,8 @@ public class WordShortDescChineseBO extends BaseBo<WordShortDescChinese> {
     }
 
     public void saveShortDescChinese(Integer wordId, String chinese, User user)
-            throws IllegalArgumentException, IllegalAccessException, InvalidMeaningFormatException, EmptySpellException, IOException, ParseException {
+            throws IllegalArgumentException, IllegalAccessException, InvalidMeaningFormatException, EmptySpellException,
+            IOException, ParseException {
         // 如果句子的DIY翻译已经大于等于3个了，则把最后一个删掉（末位淘汰制）
         Word word = wordBo.findById(wordId);
         List<WordShortDescChinese> chineses = word.getWordShortDescChineses();
@@ -139,7 +144,8 @@ public class WordShortDescChineseBO extends BaseBo<WordShortDescChinese> {
         wordBo.updateEntity(word);
 
         // 记录系统数据日志（新增翻译）
-        sysDbLogBo.logOperation("INSERT", "word_shortdesc_chinese", shortDescChinese.getId(), toJsonForLog(shortDescChinese));
+        sysDbLogBo.logOperation("INSERT", "word_shortdesc_chinese", shortDescChinese.getId(),
+                toJsonForLog(shortDescChinese));
 
         Event event = new Event(EventType.NewWordShortDescChinese, user, shortDescChinese);
         eventBo.createEntity(event);
@@ -154,21 +160,20 @@ public class WordShortDescChineseBO extends BaseBo<WordShortDescChinese> {
             // 用于格式化日期为ISO-8601格式
             SimpleDateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
             isoFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-            
+
             String createTimeStr = chinese.getCreateTime() != null ? isoFormat.format(chinese.getCreateTime()) : "";
             String updateTimeStr = chinese.getUpdateTime() != null ? isoFormat.format(chinese.getUpdateTime()) : "";
-            
+
             return String.format(
-                "{\"id\":\"%s\",\"wordId\":\"%s\",\"content\":\"%s\",\"hand\":%d,\"foot\":%d,\"author\":\"%s\",\"createTime\":\"%s\",\"updateTime\":\"%s\"}",
-                chinese.getId(),
-                chinese.getWord() != null ? chinese.getWord().getId() : "",
-                chinese.getContent() != null ? chinese.getContent().replace("\"", "\\\"") : "",
-                chinese.getHand(),
-                chinese.getFoot(),
-                chinese.getAuthor() != null ? chinese.getAuthor().getId() : "",
-                createTimeStr,
-                updateTimeStr
-            );
+                    "{\"id\":\"%s\",\"wordId\":\"%s\",\"content\":\"%s\",\"hand\":%d,\"foot\":%d,\"author\":\"%s\",\"createTime\":\"%s\",\"updateTime\":\"%s\"}",
+                    chinese.getId(),
+                    chinese.getWord() != null ? chinese.getWord().getId() : "",
+                    chinese.getContent() != null ? chinese.getContent().replace("\"", "\\\"") : "",
+                    chinese.getHand(),
+                    chinese.getFoot(),
+                    chinese.getAuthor() != null ? chinese.getAuthor().getId() : "",
+                    createTimeStr,
+                    updateTimeStr);
         } catch (Exception e) {
             return "{}";
         }

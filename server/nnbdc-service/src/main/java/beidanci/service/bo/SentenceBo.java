@@ -1,4 +1,5 @@
 package beidanci.service.bo;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.TimeZone;
@@ -42,7 +43,7 @@ public class SentenceBo extends BaseBo<Sentence> {
     UserBo userBo;
 
     @Autowired
-    SysDbLogBo sysDbLogBo;
+    SysDbSyncBo sysDbLogBo;
 
     @Autowired
     private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
@@ -104,7 +105,7 @@ public class SentenceBo extends BaseBo<Sentence> {
         // 通用词典现在是数据库中的实际记录，统一查询
         String sql = "SELECT s.id, s.english, s.english_digest, s.chinese, s.last_diy_update_time, s.the_type, s.producer, s.need_tts, s.foot_count, s.hand_count, s.author_id, s.meaning_item_id, s.word_meaning, s.create_time, s.update_time FROM sentence s LEFT JOIN meaning_item mi ON mi.id = s.meaning_item_id WHERE mi.dict_id = :dictId";
         MapSqlParameterSource params = new MapSqlParameterSource("dictId", dictId);
-        
+
         return namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> {
             SentenceDto sentenceDto = new SentenceDto();
             sentenceDto.setId(rs.getString("id"));
@@ -165,7 +166,8 @@ public class SentenceBo extends BaseBo<Sentence> {
         return Result.success(null);
     }
 
-    public Sentence createSentence(String english, String chinese, String wordId, int payCowdung, String currWord, String userId)
+    public Sentence createSentence(String english, String chinese, String wordId, int payCowdung, String currWord,
+            String userId)
             throws IllegalAccessException, InvalidMeaningFormatException, EmptySpellException, ParseException,
             IOException {
         // 创建例句英文
@@ -184,7 +186,7 @@ public class SentenceBo extends BaseBo<Sentence> {
         WordSentenceId linkId = new WordSentenceId(wordId, sentence.getId());
         wordSentenceBo.createEntity(new WordSentence(linkId));
 
-                    // 付出魔法泡泡
+        // 付出魔法泡泡
         user.setCowDung(user.getCowDung() - payCowdung);
         userBo.updateEntity(user);
 
@@ -199,25 +201,24 @@ public class SentenceBo extends BaseBo<Sentence> {
             // 用于格式化日期为ISO-8601格式
             java.text.SimpleDateFormat isoFormat = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
             isoFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-            
+
             String createTimeStr = sentence.getCreateTime() != null ? isoFormat.format(sentence.getCreateTime()) : "";
             String updateTimeStr = sentence.getUpdateTime() != null ? isoFormat.format(sentence.getUpdateTime()) : "";
-            
+
             return String.format(
-                "{\"id\":\"%s\",\"english\":\"%s\",\"chinese\":\"%s\",\"englishDigest\":\"%s\",\"theType\":\"%s\",\"handCount\":%d,\"footCount\":%d,\"author\":\"%s\",\"meaningItemId\":\"%s\",\"wordMeaning\":\"%s\",\"createTime\":\"%s\",\"updateTime\":\"%s\"}",
-                sentence.getId(),
-                sentence.getEnglish() != null ? sentence.getEnglish().replace("\"", "\\\"") : "",
-                sentence.getChinese() != null ? sentence.getChinese().replace("\"", "\\\"") : "",
-                sentence.getEnglishDigest() != null ? sentence.getEnglishDigest() : "",
-                sentence.getTheType() != null ? sentence.getTheType() : "",
-                sentence.getHandCount(),
-                sentence.getFootCount(),
-                sentence.getAuthor() != null ? sentence.getAuthor().getId() : "",
-                sentence.getMeaningItem() != null ? sentence.getMeaningItem().getId() : "",
-                sentence.getWordMeaning() != null ? sentence.getWordMeaning().replace("\"", "\\\"") : "",
-                createTimeStr,
-                updateTimeStr
-            );
+                    "{\"id\":\"%s\",\"english\":\"%s\",\"chinese\":\"%s\",\"englishDigest\":\"%s\",\"theType\":\"%s\",\"handCount\":%d,\"footCount\":%d,\"author\":\"%s\",\"meaningItemId\":\"%s\",\"wordMeaning\":\"%s\",\"createTime\":\"%s\",\"updateTime\":\"%s\"}",
+                    sentence.getId(),
+                    sentence.getEnglish() != null ? sentence.getEnglish().replace("\"", "\\\"") : "",
+                    sentence.getChinese() != null ? sentence.getChinese().replace("\"", "\\\"") : "",
+                    sentence.getEnglishDigest() != null ? sentence.getEnglishDigest() : "",
+                    sentence.getTheType() != null ? sentence.getTheType() : "",
+                    sentence.getHandCount(),
+                    sentence.getFootCount(),
+                    sentence.getAuthor() != null ? sentence.getAuthor().getId() : "",
+                    sentence.getMeaningItem() != null ? sentence.getMeaningItem().getId() : "",
+                    sentence.getWordMeaning() != null ? sentence.getWordMeaning().replace("\"", "\\\"") : "",
+                    createTimeStr,
+                    updateTimeStr);
         } catch (Exception e) {
             return "{}";
         }

@@ -64,7 +64,7 @@ public class DictBo extends BaseBo<Dict> {
     WordCache wordCache;
 
     @Autowired
-    SysDbLogBo sysDbLogBo;
+    SysDbSyncBo sysDbLogBo;
 
     @Autowired
     private NamedParameterJdbcTemplate namedParameterJdbcTemplate;

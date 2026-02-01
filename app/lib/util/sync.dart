@@ -101,9 +101,8 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
       return getPriority(a['tblName'] as String).compareTo(getPriority(b['tblName'] as String));
     });
 
-    // 把Map<String, dynamic>转换为DbLogs
+    // 把发送到后端的日志进行兼容性处理
     List<UserDbLogDto> localToBackend = [];
-    // 分离转换逻辑，确保排序时使用的是原始 map 中的本地表名
     for (var change in result.first /* to backend */) {
       // 这里的 change 还是 Map<String, dynamic>
       if (change['createTime'] != null) {

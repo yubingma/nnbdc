@@ -30,7 +30,7 @@ public class SystemBo {
     private DictBo dictBo;
 
     @Autowired
-    private SysDbLogBo sysDbLogBo;
+    private SysDbSyncBo sysDbLogBo;
 
     @SuppressWarnings("unchecked")
     public SystemDataDto getSystemData() {
