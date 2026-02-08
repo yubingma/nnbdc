@@ -205,7 +205,7 @@ class _EditMeaningDialogState extends State<EditMeaningDialog> {
               Expanded(
                 flex: 2,
                 child: DropdownButtonFormField<String>(
-                  value: controller.selectedPos,
+                  initialValue: controller.selectedPos,
                   decoration: const InputDecoration(
                     labelText: '词性',
                     border: OutlineInputBorder(),

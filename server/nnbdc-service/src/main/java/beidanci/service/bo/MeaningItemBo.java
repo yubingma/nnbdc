@@ -165,9 +165,9 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
 
         // 2. 插入新释义
         if (meanings != null) {
-            String insertSql = "INSERT INTO meaning_item (id, word_id, dict_id, ci_xing, meaning, popularity, create_time, update_time) "
+            String insertSql = "INSERT INTO meaning_item (id, word_id, dict_id, ci_xing, meaning, popularity, create_time, update_time, is_updating) "
                     +
-                    "VALUES (:id, :wordId, :dictId, :ciXing, :meaning, :popularity, :createTime, :updateTime)";
+                    "VALUES (:id, :wordId, :dictId, :ciXing, :meaning, :popularity, :createTime, :updateTime, false)";
             Timestamp now = new Timestamp(System.currentTimeMillis());
             for (int i = 0; i < meanings.size(); i++) {
                 Map<String, String> meaning = meanings.get(i);
