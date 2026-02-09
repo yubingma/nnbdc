@@ -248,7 +248,7 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
     if (isQuerying ||
         doNotQueryPlease ||
         (totalWordCount >= 0 && fromIndex >= totalWordCount) ||
-        (words.length >= totalWordCount && words.isNotEmpty) ||
+        (!clearCurrent && totalWordCount >= 0 && words.length >= totalWordCount && words.isNotEmpty) ||
         fromIndex < 0 ||
         (lastQueryTime != null && AppClock.now().difference(lastQueryTime!).inMilliseconds < minQueryInterval)) {
       return;
@@ -1294,7 +1294,10 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
                 Get.back();
                 ToastUtil.info('添加成功');
                 // 刷新列表
-                await doQuery(true, baseIndex ?? 0, _pageSize, false);
+                // 此处必须重置 totalWordCount，否则 doQuery 中的优化逻辑(words.length >= totalWordCount)
+                // 会认为数据已全部加载而跳过本次查询，导致新添加的单词无法显示
+                totalWordCount = -1;
+                await doQuery(true, baseIndex ?? 0, _pageSize, true);
                 setState(() {}); // 强制刷新UI
               }
             },

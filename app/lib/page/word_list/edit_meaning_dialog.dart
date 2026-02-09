@@ -52,18 +52,34 @@ class _EditMeaningDialogState extends State<EditMeaningDialog> {
     controllers = [];
 
     if (meaningItems != null && meaningItems.isNotEmpty) {
+      // 1. 按词性分组
+      Map<String, List<MeaningItemVo>> groupedItems = {};
       for (var item in meaningItems) {
-        String ciXing = item.ciXing ?? '';
-        // 如果不在预设列表中，设为"其他"
-        String selectedPos = posList.contains(ciXing) ? ciXing : '其他';
+        String cx = item.ciXing ?? '';
+        groupedItems.putIfAbsent(cx, () => []).add(item);
+      }
+
+      // 2. 为每个词性创建一个控制器，合并释义
+      groupedItems.forEach((cx, items) {
+        // 合并释义内容，使用分号分隔
+        String mergedMeaning = items
+            .map((e) => e.meaning ?? '')
+            .where((s) => s.isNotEmpty)
+            .join('；');
+        
+        // 只要有一个是自定义的，就标记为自定义
+        bool isCustom = items.any((e) => (e.id?.length ?? 0) > 10);
+        
+        // 确定下拉框选中的值
+        String selectedPos = posList.contains(cx) ? cx : '其他';
 
         controllers.add(MeaningItemController(
           selectedPos: selectedPos,
-          cixingController: TextEditingController(text: ciXing),
-          meaningController: TextEditingController(text: item.meaning ?? ''),
-          isCustom: (item.id?.length ?? 0) > 10,
+          cixingController: TextEditingController(text: cx),
+          meaningController: TextEditingController(text: mergedMeaning),
+          isCustom: isCustom,
         ));
-      }
+      });
     }
 
     // 如果没有释义，添加一个空的编辑框
@@ -262,15 +278,27 @@ class _EditMeaningDialogState extends State<EditMeaningDialog> {
   }
 
   Future<void> _handleSave() async {
-    // 收集所有非空的释义
-    List<Map<String, String>> newMeanings = [];
+    // 收集所有非空的释义，并按词性合并
+    Map<String, List<String>> mergedMeanings = {};
+    
     for (var controller in controllers) {
       final meaning = controller.meaningController.text.trim();
       final cixing = controller.cixingController.text.trim();
+      
       if (meaning.isNotEmpty) {
-        newMeanings.add({'cixing': cixing, 'meaning': meaning});
+        mergedMeanings.putIfAbsent(cixing, () => []);
+        mergedMeanings[cixing]!.add(meaning);
       }
     }
+    
+    List<Map<String, String>> newMeanings = [];
+    mergedMeanings.forEach((cixing, meaningParts) {
+      // 同一词性的多个编辑框内容也用分号连接，且把内容中的换行也替换为分号
+      newMeanings.add({
+        'cixing': cixing, 
+        'meaning': meaningParts.map((e) => e.replaceAll('\n', '；')).join('；')
+      });
+    });
 
     if (newMeanings.isEmpty) {
       ToastUtil.error("至少需要一个释义");
@@ -284,12 +312,20 @@ class _EditMeaningDialogState extends State<EditMeaningDialog> {
 
     if (success) {
       // 立即更新内存中的数据，以便 UI 立刻显示最新内容
-      widget.word.word.meaningItems = newMeanings.map((e) => MeaningItemVo.from(e['cixing']!, e['meaning']!)).toList();
+      widget.word.word.meaningItems = newMeanings.map((e) => MeaningItemVo(
+        'custom_meaning_placeholder', // 设置一个足够长的 ID 以便被识别为自定义
+        e['cixing'], 
+        e['meaning'],
+        null, // dict
+        null, // synonyms
+        null  // sentences
+      )).toList();
 
       // 同时也更新 shortDesc 以便页面列表立刻显示最新内容
       widget.word.word.shortDesc = newMeanings.map((e) {
         String cx = e['cixing'] ?? '';
-        String m = e['meaning'] ?? '';
+        // 确保没有换行符
+        String m = (e['meaning'] ?? '').replaceAll('\n', '；');
         return cx.isNotEmpty ? "$cx $m" : m;
       }).join("; ");
 
