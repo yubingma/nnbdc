@@ -184,4 +184,26 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
             }
         }
     }
+
+    public void createMeaningItem(MeaningItemDto dto) {
+        String insertSql = "INSERT INTO meaning_item (id, word_id, dict_id, ci_xing, meaning, popularity, create_time, update_time, is_updating) "
+                +
+                "VALUES (:id, :wordId, :dictId, :ciXing, :meaning, :popularity, :createTime, :updateTime, false)";
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        params.addValue("id", dto.getId());
+        params.addValue("wordId", dto.getWordId());
+        params.addValue("dictId", dto.getDictId());
+        params.addValue("ciXing", dto.getCiXing() != null ? dto.getCiXing() : "");
+        params.addValue("meaning", dto.getMeaning() != null ? dto.getMeaning() : "");
+        params.addValue("popularity", dto.getPopularity());
+        params.addValue("createTime", dto.getCreateTime() != null ? new Timestamp(dto.getCreateTime().getTime()) : new Timestamp(System.currentTimeMillis()));
+        params.addValue("updateTime", dto.getUpdateTime() != null ? new Timestamp(dto.getUpdateTime().getTime()) : new Timestamp(System.currentTimeMillis()));
+        namedParameterJdbcTemplate.update(insertSql, params);
+    }
+
+    public void deleteMeaningItem(String id) {
+        String deleteSql = "DELETE FROM meaning_item WHERE id = :id";
+        MapSqlParameterSource params = new MapSqlParameterSource("id", id);
+        namedParameterJdbcTemplate.update(deleteSql, params);
+    }
 }

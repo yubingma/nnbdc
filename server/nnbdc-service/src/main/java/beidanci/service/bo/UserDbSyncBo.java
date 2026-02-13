@@ -1209,6 +1209,14 @@ public class UserDbSyncBo {
             List<Map<String, String>> meanings = (List<Map<String, String>>) data.get("meanings");
             meaningItemBo.updateMeanings(dictId, wordId, meanings);
             logger.info("同步更新单词释义成功: userId={}, dictId={}, wordId={}", userId, dictId, wordId);
+        } else if ("INSERT".equals(operation)) {
+            MeaningItemDto meaningItemDto = JsonUtils.makeObject(recordJson, MeaningItemDto.class);
+            meaningItemBo.createMeaningItem(meaningItemDto);
+            logger.info("同步插入单词释义成功: userId={}, id={}", userId, meaningItemDto.getId());
+        } else if ("DELETE".equals(operation)) {
+            MeaningItemDto meaningItemDto = JsonUtils.makeObject(recordJson, MeaningItemDto.class);
+            meaningItemBo.deleteMeaningItem(meaningItemDto.getId());
+            logger.info("同步删除单词释义成功: userId={}, id={}", userId, meaningItemDto.getId());
         } else {
             String errorMsg = String.format("不支持的释义表操作: %s", operation);
             logger.error(errorMsg);
