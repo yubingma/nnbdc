@@ -1441,7 +1441,7 @@ class SelectBookPageState extends State<SelectBookPage> {
                         const Icon(Icons.check, size: 20),
                         const SizedBox(width: 8),
                         Text(
-                          '确定 ($selectedCount)',
+                          '保存 ($selectedCount)',
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w500,
