@@ -912,41 +912,38 @@ class WordBo {
       final now = AppClock.now();
 
       await db.transaction(() async {
-        // 1. 删除现有定制释义
+        // 1. 先查询现有定制释义，用于记录删除日志
+        final existingQuery = db.select(db.meaningItems)
+          ..where((mi) => mi.wordId.equals(wordId) & mi.dictId.equals(dictId));
+        final existingItems = await existingQuery.get();
+        
+        // 记录删除日志
+        for (final item in existingItems) {
+          final userId = Global.getLoggedInUser()?.id;
+          if (userId != null) {
+            await DbLogUtil.logOperation(userId, 'DELETE', 'meaningItems', item.id, jsonEncode(item.toJson()));
+          }
+        }
+        
+        // 删除现有定制释义
         await (db.delete(db.meaningItems)..where((mi) => mi.wordId.equals(wordId) & mi.dictId.equals(dictId))).go();
 
-        // 2. 插入新释义
+        // 2. 插入新释义，使用 DAO 以生成正确的同步日志
         for (var i = 0; i < meanings.length; i++) {
           final meaning = meanings[i];
           final newId = Util.uuid();
-          await db.into(db.meaningItems).insert(MeaningItemsCompanion.insert(
-                id: newId,
-                wordId: wordId,
-                dictId: Value(dictId),
-                ciXing: meaning['cixing'] ?? '',
-                meaning: meaning['meaning'] ?? '',
-                popularity: Value(i + 1), // 使用1-indexed排序
-                createTime: now,
-                updateTime: Value(now),
-              ));
-        }
-
-        // 3. 记录日志以便同步
-        final userId = Global.getLoggedInUser()?.id;
-        if (userId != null) {
-          // 记录一条操作日志，或者标记需要同步
-          // 注意：这里记录对 meaningItems 的批量更新操作
-          await DbLogUtil.logOperation(
-            userId,
-            'UPDATE',
-            'meaningItems',
-            '$dictId-$wordId',
-            jsonEncode({
-              'dictId': dictId,
-              'wordId': wordId,
-              'meanings': meanings,
-            }),
+          final newItem = MeaningItem(
+            id: newId,
+            wordId: wordId,
+            dictId: dictId,
+            ciXing: meaning['cixing'] ?? '',
+            meaning: meaning['meaning'] ?? '',
+            popularity: i + 1,
+            createTime: now,
+            updateTime: now,
           );
+          // 使用 DAO 插入，会自动生成 INSERT 日志
+          await db.meaningItemsDao.insertEntity(newItem, true);
         }
       });
 
@@ -966,7 +963,27 @@ class WordBo {
   Future<Result> deleteMeaningForCustomDict(String dictId, String wordId) async {
     final db = MyDatabase.instance;
     try {
+      // 先查询现有定制释义，用于记录删除日志
+      final existingQuery = db.select(db.meaningItems)
+        ..where((mi) => mi.wordId.equals(wordId) & mi.dictId.equals(dictId));
+      final existingItems = await existingQuery.get();
+      
+      // 记录删除日志
+      for (final item in existingItems) {
+        final userId = Global.getLoggedInUser()?.id;
+        if (userId != null) {
+          await DbLogUtil.logOperation(userId, 'DELETE', 'meaningItems', item.id, jsonEncode(item.toJson()));
+        }
+      }
+      
+      // 删除定制释义
       await (db.delete(db.meaningItems)..where((mi) => mi.wordId.equals(wordId) & mi.dictId.equals(dictId))).go();
+      
+      // 触发同步
+      Future.delayed(Duration.zero, () {
+        ThrottledDbSyncService().requestSync();
+      });
+      
       return Result("SUCCESS", "已恢复默认释义", true);
     } catch (e, s) {
       Global.logger.e('删除定制释义失败: $e', stackTrace: s);
@@ -979,6 +996,19 @@ class WordBo {
     final db = MyDatabase.instance;
     try {
       await db.transaction(() async {
+        // 先查询现有定制释义，用于记录删除日志
+        final existingMeaningQuery = db.select(db.meaningItems)
+          ..where((mi) => mi.dictId.equals(dictId));
+        final existingMeaningItems = await existingMeaningQuery.get();
+        
+        // 记录删除日志
+        for (final item in existingMeaningItems) {
+          final userId = Global.getLoggedInUser()?.id;
+          if (userId != null) {
+            await DbLogUtil.logOperation(userId, 'DELETE', 'meaningItems', item.id, jsonEncode(item.toJson()));
+          }
+        }
+        
         // 删除定制释义
         await (db.delete(db.meaningItems)..where((mi) => mi.dictId.equals(dictId))).go();
         // 删除关联的单词
