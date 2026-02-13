@@ -889,6 +889,7 @@ class Util {
       'user_wrong_word': 'userWrongWords',
       'dict_word': 'dictWords',
       'dict': 'dicts',
+      'meaning_item': 'meaningItems',
     };
 
     if (specialMappings.containsKey(remoteTableName)) {
