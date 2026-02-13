@@ -36,7 +36,8 @@ const String menuSpeakEnglish = '背英文';
 const String menuWriteSpell = '默写';
 
 abstract class WordsProvider {
-  Future<PagedResults<WordWrapper>> getAPageOfWords(int fromIndex, int pageSize);
+  Future<PagedResults<WordWrapper>> getAPageOfWords(
+      int fromIndex, int pageSize);
 
   Future<bool> deleteWord(WordWrapper wordWrapper);
 
@@ -46,7 +47,8 @@ abstract class WordsProvider {
 
 abstract class WordModifier {
   Future<bool> addWord(String wordId);
-  Future<bool> updateMeanings(String wordId, List<Map<String, String>> meanings);
+  Future<bool> updateMeanings(
+      String wordId, List<Map<String, String>> meanings);
   Future<bool> deleteMeaning(String wordId);
 }
 
@@ -65,7 +67,8 @@ abstract class BookMarkProvider {
 abstract class WordListListener {
   void wordCountChanged(int currentCount, int totalCount);
 
-  void onWordDeletedFromList(WordWrapper wordWrapper, bool alreadyDeletedOnServer);
+  void onWordDeletedFromList(
+      WordWrapper wordWrapper, bool alreadyDeletedOnServer);
 }
 
 class WordListPageArgs {
@@ -84,8 +87,16 @@ class WordListPageArgs {
   bool canAddWord = false;
   bool canEditWord = false;
 
-  WordListPageArgs(this.appBarTitle, this.wordsProvider, this.showBackBtn, this.showDelBtn, this.showWordProgress, this.wordProgressLabel,
-      this.wordProgressProvider, this.bookMarkProvider, this.injectedBtn);
+  WordListPageArgs(
+      this.appBarTitle,
+      this.wordsProvider,
+      this.showBackBtn,
+      this.showDelBtn,
+      this.showWordProgress,
+      this.wordProgressLabel,
+      this.wordProgressProvider,
+      this.bookMarkProvider,
+      this.injectedBtn);
 
   @override
   String toString() {
@@ -102,7 +113,11 @@ class WordListPage extends StatefulWidget {
   }
 }
 
-class WordListPageState extends State<WordListPage> with WidgetsBindingObserver, SingleTickerProviderStateMixin, AutomaticKeepAliveClientMixin {
+class WordListPageState extends State<WordListPage>
+    with
+        WidgetsBindingObserver,
+        SingleTickerProviderStateMixin,
+        AutomaticKeepAliveClientMixin {
   static const double leftPadding = 12;
   static const double rightPadding = 16;
   static const double delBtnSize = 24;
@@ -131,7 +146,8 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
   bool canLeaveCurrWord = false;
 
   final ItemScrollController itemScrollController = ItemScrollController();
-  final ItemPositionsListener itemPositionsListener = ItemPositionsListener.create();
+  final ItemPositionsListener itemPositionsListener =
+      ItemPositionsListener.create();
 
   /// 单词列表界面最上方那个单词在所有单词中（包括那些在服务端，还未加载的）的序号（需要这个值是为了支持从中间某个位置加载单词列表）
   int? baseIndex;
@@ -171,6 +187,9 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
 
   /// 是否显示新手引导
   bool showGuide = false;
+
+  /// 菜单是否打开（用于控制iPad上的弹出菜单稳定性）
+  bool isMenuOpen = false;
 
   @override
   bool get wantKeepAlive => true; // 保持状态，避免页面重建
@@ -213,7 +232,10 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
         WidgetsBinding.instance.addPostFrameCallback((_) {
           final bookMarkUiPos = getBookMarkUiPosition();
           if (bookMarkUiPos >= 0 && bookMarkUiPos < words.length) {
-            itemScrollController.scrollTo(index: bookMarkUiPos, duration: const Duration(milliseconds: 300), alignment: 0.5); // 显示在屏幕中部
+            itemScrollController.scrollTo(
+                index: bookMarkUiPos,
+                duration: const Duration(milliseconds: 300),
+                alignment: 0.5); // 显示在屏幕中部
           }
         });
       } else {
@@ -232,7 +254,8 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
     });
 
     // 数据加载完成后，如果当前是语音模式，启动ASR
-    if (studyMode == WordListStudyMode.speakChinese || studyMode == WordListStudyMode.speakEnglish) {
+    if (studyMode == WordListStudyMode.speakChinese ||
+        studyMode == WordListStudyMode.speakEnglish) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           _restoreAsrIfNeeded('loadData');
@@ -241,16 +264,22 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
     }
   }
 
-  doQuery(bool clearCurrent, int fromIndex, final int pageSize, bool jumpToTailWhenReady) async {
+  doQuery(bool clearCurrent, int fromIndex, final int pageSize,
+      bool jumpToTailWhenReady) async {
     /// 如果正在查询，或者当前时间和最后一次查询时间之差小于规定毫秒数，则不查询（保护服务端和UI性能）
     fromIndex = fromIndex < 0 ? 0 : fromIndex;
 
     if (isQuerying ||
         doNotQueryPlease ||
         (totalWordCount >= 0 && fromIndex >= totalWordCount) ||
-        (!clearCurrent && totalWordCount >= 0 && words.length >= totalWordCount && words.isNotEmpty) ||
+        (!clearCurrent &&
+            totalWordCount >= 0 &&
+            words.length >= totalWordCount &&
+            words.isNotEmpty) ||
         fromIndex < 0 ||
-        (lastQueryTime != null && AppClock.now().difference(lastQueryTime!).inMilliseconds < minQueryInterval)) {
+        (lastQueryTime != null &&
+            AppClock.now().difference(lastQueryTime!).inMilliseconds <
+                minQueryInterval)) {
       return;
     }
 
@@ -272,10 +301,12 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
     isQuerying = false;
   }
 
-  loadAPageOfWords(final int fromIndex, final int pageSize, bool jumpToTailWhenReady) async {
+  loadAPageOfWords(
+      final int fromIndex, final int pageSize, bool jumpToTailWhenReady) async {
     try {
       // 获取一页单词
-      final result = await args.wordsProvider.getAPageOfWords(fromIndex, pageSize);
+      final result =
+          await args.wordsProvider.getAPageOfWords(fromIndex, pageSize);
 
       // 即使没有单词，也要更新totalWordCount
       if (result.rows.isEmpty) {
@@ -292,27 +323,34 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
 
       if (fromIndex < baseIndex!) {
         // 向上滚动加载，从头部插入新数据
-        Global.logger.d('向上加载数据: fromIndex=$fromIndex, baseIndex=$baseIndex, 当前words长度=${words.length}');
+        Global.logger.d(
+            '向上加载数据: fromIndex=$fromIndex, baseIndex=$baseIndex, 当前words长度=${words.length}');
         var beforeLen = newWords.length;
-        var newData = result.rows.where((element) => !words.contains(element)).toList();
+        var newData =
+            result.rows.where((element) => !words.contains(element)).toList();
         Global.logger.d('向上加载新数据: 新数据数量=${newData.length}');
         newWords.insertAll(0, newData);
         // 更新baseIndex
         var lenDelta = newWords.length - beforeLen;
         newBaseIndex = baseIndex! - lenDelta;
-        Global.logger.d('向上加载完成: 新baseIndex=$newBaseIndex, 新words长度=${newWords.length}');
+        Global.logger
+            .d('向上加载完成: 新baseIndex=$newBaseIndex, 新words长度=${newWords.length}');
 
         // 向上加载后，需要调整滚动位置，避免连续触发向上加载
         if (jumpToTailWhenReady == false) {
           // 延迟调整滚动位置，确保UI更新完成
           SchedulerBinding.instance.addPostFrameCallback((_) {
             // 滚动到新插入数据的末尾位置，保持用户当前查看的内容在相同位置
-            itemScrollController.scrollTo(index: lenDelta, duration: const Duration(milliseconds: 100), alignment: 0.5); // 显示在屏幕中部
+            itemScrollController.scrollTo(
+                index: lenDelta,
+                duration: const Duration(milliseconds: 100),
+                alignment: 0.5); // 显示在屏幕中部
           });
         }
       } else {
         // 向下滚动加载，从尾部添加新数据
-        newWords.addAll(result.rows.where((element) => !words.contains(element)));
+        newWords
+            .addAll(result.rows.where((element) => !words.contains(element)));
       }
 
       // 更新状态
@@ -323,11 +361,15 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
 
         if (jumpToTailWhenReady) {
           SchedulerBinding.instance.addPostFrameCallback((_) =>
-              itemScrollController.scrollTo(index: (words.length - 1), duration: const Duration(milliseconds: 300), alignment: 0.5)); // 显示在屏幕中部
+              itemScrollController.scrollTo(
+                  index: (words.length - 1),
+                  duration: const Duration(milliseconds: 300),
+                  alignment: 0.5)); // 显示在屏幕中部
         }
       });
     } catch (e, stackTrace) {
-      ErrorHandler.handleError(e, stackTrace, logPrefix: '加载单词失败', showToast: false);
+      ErrorHandler.handleError(e, stackTrace,
+          logPrefix: '加载单词失败', showToast: false);
     }
   }
 
@@ -341,7 +383,8 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
       // item whose trailing edge in visible in the viewport.
       min = positions
           .where((ItemPosition position) => position.itemTrailingEdge > 0)
-          .reduce((ItemPosition min, ItemPosition position) => position.itemTrailingEdge < min.itemTrailingEdge ? position : min)
+          .reduce((ItemPosition min, ItemPosition position) =>
+              position.itemTrailingEdge < min.itemTrailingEdge ? position : min)
           .index;
     }
     return min ?? -1;
@@ -386,7 +429,8 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
                     height: h,
                     margin: EdgeInsets.zero,
                     decoration: BoxDecoration(
-                      color: Color.lerp(AppTheme.gradientStartColor, AppTheme.gradientEndColor, v),
+                      color: Color.lerp(AppTheme.gradientStartColor,
+                          AppTheme.gradientEndColor, v),
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -432,7 +476,9 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
                   height: 4,
                   margin: EdgeInsets.zero,
                   decoration: BoxDecoration(
-                    color: isDarkMode ? const Color(0xFF2A2A2A) : const Color(0xFFEAEAEA),
+                    color: isDarkMode
+                        ? const Color(0xFF2A2A2A)
+                        : const Color(0xFFEAEAEA),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -450,7 +496,8 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
       // item whose leading edge in visible in the viewport.
       max = positions
           .where((ItemPosition position) => position.itemLeadingEdge < 1)
-          .reduce((ItemPosition max, ItemPosition position) => position.itemLeadingEdge > max.itemLeadingEdge ? position : max)
+          .reduce((ItemPosition max, ItemPosition position) =>
+              position.itemLeadingEdge > max.itemLeadingEdge ? position : max)
           .index;
     }
     return max ?? -1;
@@ -463,8 +510,10 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
       _lastMeterAt = AppClock.now();
     });
     _meterTimer ??= Timer.periodic(const Duration(milliseconds: 30), (_) {
+      if (isMenuOpen) return; // 菜单打开时暂停更新，避免UI重绘
       final now = AppClock.now();
-      final active = _lastMeterAt != null && now.difference(_lastMeterAt!).inMilliseconds < 150;
+      final active = _lastMeterAt != null &&
+          now.difference(_lastMeterAt!).inMilliseconds < 150;
       final v = (active ? _lastMeterLevel : 0.0).clamp(0.0, 1.0);
       _waveLevels.add(v);
       if (_waveLevels.length > _waveCapacity) {
@@ -512,7 +561,8 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
   Future<void> _checkAndShowGuide() async {
     try {
       // 检查是否已显示过引导
-      final hasShown = await MyDatabase.instance.localParamsDao.getWordListGuideShown();
+      final hasShown =
+          await MyDatabase.instance.localParamsDao.getWordListGuideShown();
       Global.logger.d('新手引导检查: hasShown=$hasShown');
       if (!hasShown) {
         // 延迟到下一帧，待布局完成后计算菜单按钮位置
@@ -522,10 +572,12 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
             if (!mounted) return;
 
             try {
-              final RenderBox? rb = _menuKey.currentContext?.findRenderObject() as RenderBox?;
+              final RenderBox? rb =
+                  _menuKey.currentContext?.findRenderObject() as RenderBox?;
               final Offset? topLeft = rb?.localToGlobal(Offset.zero);
               if (rb != null && topLeft != null) {
-                _menuRect = Rect.fromLTWH(topLeft.dx, topLeft.dy, rb.size.width, rb.size.height);
+                _menuRect = Rect.fromLTWH(
+                    topLeft.dx, topLeft.dy, rb.size.width, rb.size.height);
                 Global.logger.d('菜单按钮位置: $_menuRect');
               } else {
                 Global.logger.w('未能获取菜单按钮位置: rb=$rb, topLeft=$topLeft');
@@ -534,7 +586,8 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
               Global.logger.e('获取菜单按钮位置失败: $e');
             }
 
-            Global.logger.d('准备显示引导: mounted=$mounted, dataLoaded=$dataLoaded, _menuRect=$_menuRect');
+            Global.logger.d(
+                '准备显示引导: mounted=$mounted, dataLoaded=$dataLoaded, _menuRect=$_menuRect');
             if (mounted) {
               setState(() {
                 showGuide = true;
@@ -600,15 +653,18 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
       if (studyMode == WordListStudyMode.speakEnglish) {
         // ===== 背英文模式：启用音素模糊匹配 =====
         final curr = getBookMarkUiPosition();
-        final target = (curr >= 0 && curr < words.length) ? words[curr].word.spell : '';
+        final target =
+            (curr >= 0 && curr < words.length) ? words[curr].word.spell : '';
 
         if (resultData != null && resultData.containsKey('candidates')) {
           // 处理多个候选结果
           List<dynamic> candidates = resultData['candidates'];
-          List<String> candidateStrings = candidates.map((e) => e.toString()).toList();
+          List<String> candidateStrings =
+              candidates.map((e) => e.toString()).toList();
 
           // 结合拼写相似度和音素相似度的智能选择 (Async)
-          final result = await AsrUtil.selectBestCandidateWithPhonemeAndScore(candidateStrings, target);
+          final result = await AsrUtil.selectBestCandidateWithPhonemeAndScore(
+              candidateStrings, target);
           // 记录评分到当前单词
           if (curr >= 0 && curr < words.length) {
             words[curr].pronunciationScore = result.score;
@@ -623,12 +679,14 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
           // 先做一次预处理
           final pre = AsrUtil.preprocessEnglish(event, target);
           // 再通过音素匹配确认（把预处理结果作为唯一候选传进去）
-          final result = await AsrUtil.selectBestCandidateWithPhonemeAndScore([pre], target);
+          final result = await AsrUtil.selectBestCandidateWithPhonemeAndScore(
+              [pre], target);
           processedEvent = result.text;
           if (curr >= 0 && curr < words.length) {
             words[curr].pronunciationScore = result.score;
           }
-          Global.logger.d('ASR (Phoneme): Single result: "$event" -> "$processedEvent" (target: $target, score: ${result.score})');
+          Global.logger.d(
+              'ASR (Phoneme): Single result: "$event" -> "$processedEvent" (target: $target, score: ${result.score})');
         }
 
         // 最后确保做一次标准英文预处理（通常上面的步骤已经覆盖，但为了保险再做一次）
@@ -638,7 +696,8 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
         String bestCandidate;
         if (resultData != null && resultData.containsKey('candidates')) {
           List<dynamic> candidates = resultData['candidates'];
-          List<String> candidateStrings = candidates.map((e) => e.toString()).toList();
+          List<String> candidateStrings =
+              candidates.map((e) => e.toString()).toList();
           bestCandidate = resultData['best'] ?? candidateStrings.first;
         } else {
           bestCandidate = event;
@@ -652,26 +711,42 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
 
     if (!mounted) return;
 
-    setState(() {
-      // 最终赋值逻辑
-      if (studyMode == WordListStudyMode.speakEnglish) {
-        // 结果已经是处理过的了
-        asrResult = processedEvent;
-      } else {
-        // 背中文等模式：进行中文预处理
-        asrResult = AsrUtil.preprocess(processedEvent);
-        // 非英文模式下，不需要记录评分，或者可以在这里清除
-      }
+    // 如果当前有弹出层（如菜单、对话框）或新手引导正在显示，忽略语音结果，
+    // 避免频繁的 setState 导致 iPad 上的 Popover (弹出菜单) 失去锚点并关闭。
+    if (isMenuOpen || showGuide) {
+      return;
+    }
 
-      Global.logger.d("^^^^^语音识别最终结果: $asrResult");
+    // 计算新的 asrResult
+    String newAsrResult = "";
+    if (studyMode == WordListStudyMode.speakEnglish) {
+      newAsrResult = processedEvent;
+    } else {
+      // 背中文等模式：进行中文预处理
+      newAsrResult = AsrUtil.preprocess(processedEvent);
+    }
 
-      if (asrResult.isNotEmpty) {
-        if (asrResult != handlingAsrChinese) {
-          handlingAsrChinese = asrResult;
-          checkAsrResult(asrResult);
+    Global.logger.d("^^^^^语音识别最终结果: $newAsrResult");
+
+    // 仅当结果变化时才触发 setState，减少UI重建
+    if (newAsrResult != asrResult) {
+      setState(() {
+        asrResult = newAsrResult;
+
+        if (asrResult.isNotEmpty) {
+          if (asrResult != handlingAsrChinese) {
+            handlingAsrChinese = asrResult;
+            checkAsrResult(asrResult);
+          }
         }
+      });
+    } else {
+      // 结果未变化，通过逻辑检查是否需要处理（不触发UI更新）
+      if (newAsrResult.isNotEmpty && newAsrResult != handlingAsrChinese) {
+        handlingAsrChinese = newAsrResult;
+        checkAsrResult(newAsrResult);
       }
-    });
+    }
   }
 
   /// 当前并行的asr任务数量（由于协程，并发是可能的）
@@ -705,7 +780,8 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
         String inputText = asrResult.trim().toLowerCase();
         String correctSpell = words[currWordIndex].word.spell.toLowerCase();
 
-        Global.logger.d('背英文模式检查: inputText=$inputText, correctSpell=$correctSpell');
+        Global.logger
+            .d('背英文模式检查: inputText=$inputText, correctSpell=$correctSpell');
 
         if (inputText == correctSpell) {
           canLeaveCurrWord = true;
@@ -734,7 +810,8 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
           // 然后播放一次标准发音（提示音已播放完成，ASR已停止，不会干扰播放）
           try {
             if (!_audioPlayerDisposed) {
-              await SoundUtil.playPronounceSound2(words[currWordIndex].word, audioPlayer);
+              await SoundUtil.playPronounceSound2(
+                  words[currWordIndex].word, audioPlayer);
             }
           } catch (e) {
             Global.logger.d("播放发音失败: $e");
@@ -762,15 +839,19 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
           // 注意：这里的 await 会阻塞当前 finally 块的执行，从而保持 runningAsrTaskCount 不减少
           // 这正是用户想要的：在播放声音期间，如果有新的识别结果进来（用户快速说下一个意思），
           // runningAsrTaskCount 会增加，从而阻止当前任务触发跳转，等待所有意思都说完。
-          int sleepAfterPlay = answeredAllMeanings ? 0 : 500; // 稍微等一会, 给用户说其他释义的机会, 提升爽快感
-          await SoundUtil.playAssetSound('correct.mp3', mustAnswerAll ? 2.0 : 1.5, 0.2, 2000, sleepAfterPlay);
+          int sleepAfterPlay =
+              answeredAllMeanings ? 0 : 500; // 稍微等一会, 给用户说其他释义的机会, 提升爽快感
+          await SoundUtil.playAssetSound('correct.mp3',
+              mustAnswerAll ? 2.0 : 1.5, 0.2, 2000, sleepAfterPlay);
         }
       }
 
       // 离开当前单词，跳转到下一个（如果回答正确）
       // 背英文模式：立即跳转 (因为是一对一拼写，不需要等待)
       // 其他模式（背中文）：等待所有并发任务完成（runningAsrTaskCount == 1），以便用户一次性说出多个意思时能全部匹配
-      if (canLeaveCurrWord && (studyMode == WordListStudyMode.speakEnglish || runningAsrTaskCount == 1)) {
+      if (canLeaveCurrWord &&
+          (studyMode == WordListStudyMode.speakEnglish ||
+              runningAsrTaskCount == 1)) {
         // 立即重置标志位，防止重复跳转 (防抖)
         canLeaveCurrWord = false;
 
@@ -826,7 +907,8 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
   }
 
   AsrLanguage decideAsrLanguage() {
-    if (studyMode == WordListStudyMode.dictation || studyMode == WordListStudyMode.speakEnglish) {
+    if (studyMode == WordListStudyMode.dictation ||
+        studyMode == WordListStudyMode.speakEnglish) {
       return AsrLanguage.english;
     }
     return AsrLanguage.chinese;
@@ -953,9 +1035,11 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
     // 如果正在加载ASR，则不需要恢复（避免与 _startAsrWithLoading 冲突导致死循环）
     if (_isAsrProcessing) return;
 
-    if (studyMode == WordListStudyMode.speakChinese || studyMode == WordListStudyMode.speakEnglish) {
+    if (studyMode == WordListStudyMode.speakChinese ||
+        studyMode == WordListStudyMode.speakEnglish) {
       if (asr.state != AsrState.started && asr.state != AsrState.stopping) {
-        Global.logger.d('$caller: 检测到ASR未启动（当前状态: ${asr.state}），尝试恢复ASR，模式: $studyMode');
+        Global.logger
+            .d('$caller: 检测到ASR未启动（当前状态: ${asr.state}），尝试恢复ASR，模式: $studyMode');
         try {
           // 如果ASR卡在initialized状态，先强制停止以清除内部状态
           if (asr.state == AsrState.initialized) {
@@ -1005,10 +1089,12 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
       var positions = itemPositionsListener.itemPositions.value;
       if (positions.isNotEmpty) {
         // 找到当前单词的位置信息
-        var currentPosition = positions.where((pos) => pos.index == bookMarkUiPos).firstOrNull;
+        var currentPosition =
+            positions.where((pos) => pos.index == bookMarkUiPos).firstOrNull;
         if (currentPosition != null) {
           // 如果单词已经在屏幕中部附近（误差在5%以内），不需要滚动
-          if (currentPosition.itemLeadingEdge >= 0.45 && currentPosition.itemLeadingEdge <= 0.55) {
+          if (currentPosition.itemLeadingEdge >= 0.45 &&
+              currentPosition.itemLeadingEdge <= 0.55) {
             return;
           }
           // 如果单词在目标位置上方（更靠近屏幕顶部），不进行向下滚动调整
@@ -1019,7 +1105,10 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
       }
 
       // 让书签单词的上沿显示在屏幕中部
-      itemScrollController.scrollTo(index: bookMarkUiPos, duration: const Duration(milliseconds: 300), alignment: 0.5); // 显示在屏幕中部
+      itemScrollController.scrollTo(
+          index: bookMarkUiPos,
+          duration: const Duration(milliseconds: 300),
+          alignment: 0.5); // 显示在屏幕中部
     }
   }
 
@@ -1035,10 +1124,12 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
     var positions = itemPositionsListener.itemPositions.value;
     if (positions.isNotEmpty) {
       // 找到当前单词的位置信息
-      var currentPosition = positions.where((pos) => pos.index == wordUiIndex).firstOrNull;
+      var currentPosition =
+          positions.where((pos) => pos.index == wordUiIndex).firstOrNull;
       if (currentPosition != null) {
         // 如果单词已经在屏幕中部附近（误差在5%以内），不需要滚动
-        if (currentPosition.itemLeadingEdge >= 0.45 && currentPosition.itemLeadingEdge <= 0.55) {
+        if (currentPosition.itemLeadingEdge >= 0.45 &&
+            currentPosition.itemLeadingEdge <= 0.55) {
           return;
         }
         // 如果单词在目标位置上方（更靠近屏幕顶部），不进行向下滚动调整
@@ -1049,7 +1140,10 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
     }
 
     // 让目标单词的上沿显示在屏幕中部
-    itemScrollController.scrollTo(index: wordUiIndex, duration: const Duration(milliseconds: 300), alignment: 0.5); // 显示在屏幕中部
+    itemScrollController.scrollTo(
+        index: wordUiIndex,
+        duration: const Duration(milliseconds: 300),
+        alignment: 0.5); // 显示在屏幕中部
   }
 
   int getBookMarkUiPosition() {
@@ -1072,15 +1166,20 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
             }
 
             // 如果正在查询或者查询时间间隔未到，跳过本次处理
-            if (isQuerying || (lastQueryTime != null && AppClock.now().difference(lastQueryTime!).inMilliseconds < minQueryInterval)) {
+            if (isQuerying ||
+                (lastQueryTime != null &&
+                    AppClock.now().difference(lastQueryTime!).inMilliseconds <
+                        minQueryInterval)) {
               return false;
             }
 
             // 向下滚动 - 滑动到最下方单词时，加载下一页单词
-            if (notification.scrollDelta != null && notification.scrollDelta! > 0) {
+            if (notification.scrollDelta != null &&
+                notification.scrollDelta! > 0) {
               // 检查是否滚动到最下方单词
               if (notification.metrics.extentAfter < 100) {
-                Global.logger.d('向下滚动触发: extentAfter=${notification.metrics.extentAfter}, baseIndex=$baseIndex, words.length=${words.length}');
+                Global.logger.d(
+                    '向下滚动触发: extentAfter=${notification.metrics.extentAfter}, baseIndex=$baseIndex, words.length=${words.length}');
                 // 使用Future.microtask减少UI阻塞
                 Future.microtask(() {
                   doQuery(false, baseIndex! + words.length, _pageSize, false);
@@ -1088,22 +1187,28 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
               }
             }
             // 向上滚动 - 滑动到最上方单词时，加载上一页单词
-            else if (notification.scrollDelta != null && notification.scrollDelta! < 0) {
+            else if (notification.scrollDelta != null &&
+                notification.scrollDelta! < 0) {
               // 检查是否滚动到最上方单词，且还有更多内容可以加载
               if (notification.metrics.extentBefore < 100 && baseIndex! > 0) {
-                Global.logger.d('向上滚动触发: extentBefore=${notification.metrics.extentBefore}, baseIndex=$baseIndex, words.length=${words.length}');
+                Global.logger.d(
+                    '向上滚动触发: extentBefore=${notification.metrics.extentBefore}, baseIndex=$baseIndex, words.length=${words.length}');
                 // 使用Future.microtask减少UI阻塞
                 Future.microtask(() {
-                  Global.logger.d('开始向上查询: fromIndex=${baseIndex! - _pageSize}, pageSize=$_pageSize');
+                  Global.logger.d(
+                      '开始向上查询: fromIndex=${baseIndex! - _pageSize}, pageSize=$_pageSize');
                   doQuery(false, baseIndex! - _pageSize, _pageSize, false);
                 });
-              } else if (notification.metrics.extentBefore < 100 && baseIndex! <= 0) {
-                Global.logger.d('向上滚动检测: 已到最顶部，无法继续向上加载 extentBefore=${notification.metrics.extentBefore}, baseIndex=$baseIndex');
+              } else if (notification.metrics.extentBefore < 100 &&
+                  baseIndex! <= 0) {
+                Global.logger.d(
+                    '向上滚动检测: 已到最顶部，无法继续向上加载 extentBefore=${notification.metrics.extentBefore}, baseIndex=$baseIndex');
               }
             }
 
             // 控制"回到顶部"按钮的显示与隐藏
-            if (notification.metrics.extentBefore /*视口上方未展示的内容长度*/ < 500 && showToTopBtn) {
+            if (notification.metrics.extentBefore /*视口上方未展示的内容长度*/ < 500 &&
+                showToTopBtn) {
               // 使用 microtask 减少 UI 阻塞
               Future.microtask(() {
                 if (mounted) {
@@ -1112,7 +1217,9 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
                   });
                 }
               });
-            } else if (notification.metrics.extentBefore /*视口上方未展示的内容长度*/ > 500 && !showToTopBtn) {
+            } else if (notification.metrics.extentBefore /*视口上方未展示的内容长度*/ >
+                    500 &&
+                !showToTopBtn) {
               Future.microtask(() {
                 if (mounted) {
                   setState(() {
@@ -1161,12 +1268,16 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
                   animation: _asrModelLoadingController,
                   builder: (context, child) {
                     return Transform.scale(
-                      scale: 1.0 + 0.2 * Curves.easeInOut.transform(_asrModelLoadingController.value),
+                      scale: 1.0 +
+                          0.2 *
+                              Curves.easeInOut
+                                  .transform(_asrModelLoadingController.value),
                       child: child,
                     );
                   },
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 24, vertical: 20),
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.95),
                       borderRadius: BorderRadius.circular(16),
@@ -1289,7 +1400,8 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
               }
 
               // 添加到词典
-              final success = await wordModifier.addWord(searchResult.word!.id!);
+              final success =
+                  await wordModifier.addWord(searchResult.word!.id!);
               if (success) {
                 Get.back();
                 ToastUtil.info('添加成功');
@@ -1323,17 +1435,21 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
     );
   }
 
-  onWordPressed(WordWrapper word, int index, bool playSound, Function? soundFinishListener) async {
+  onWordPressed(WordWrapper word, int index, bool playSound,
+      Function? soundFinishListener) async {
     // 更新书签位置
     setState(() {
       if (bookMark == null || bookMark!.position != baseIndex! + index) {
         // 更新老位置的单词状态
-        if (bookMark != null && bookMark!.position >= baseIndex! && bookMark!.position <= baseIndex! + words.length) {
+        if (bookMark != null &&
+            bookMark!.position >= baseIndex! &&
+            bookMark!.position <= baseIndex! + words.length) {
           var oldWord = words[getBookMarkUiPosition()];
           if (studyMode == WordListStudyMode.dictation) {
             // 如果用户输入的单词拼写不正确，那么离开该单词时，自动提供正确的拼写
             // 仅填充正确答案，不在这里播放发音，避免与跳转前的“离开单词发音”重复
-            if (!Util.equalsIgnoreCase(oldWord.spellController.text, oldWord.word.spell)) {
+            if (!Util.equalsIgnoreCase(
+                oldWord.spellController.text, oldWord.word.spell)) {
               oldWord.spellController.text = oldWord.word.spell;
               oldWord.isAnswerProvidedBySystem = true;
             }
@@ -1346,7 +1462,8 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
         args.bookMarkProvider.saveBookMark(bookMark!).then((success) {
           if (!success) {
             // 如果保存失败，可以记录日志或者通知用户
-            Global.logger.e('书签保存失败: ${word.word.spell}, position: ${baseIndex! + index}');
+            Global.logger.e(
+                '书签保存失败: ${word.word.spell}, position: ${baseIndex! + index}');
           }
         });
 
@@ -1382,19 +1499,22 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
 
     // 在背中文或背英文模式下，手动切换单词时也清空语音识别缓存
     // 强制停止ASR将导致状态变化，从而触发 listener 更新 context strings (热词)
-    if (studyMode == WordListStudyMode.speakChinese || studyMode == WordListStudyMode.speakEnglish) {
+    if (studyMode == WordListStudyMode.speakChinese ||
+        studyMode == WordListStudyMode.speakEnglish) {
       asr.stopAsr();
       asr.reset(); // 清除缓冲区
     }
 
     // 播放单词发音（背英文模式开始时不播放，避免泄露答案）
-    final bool shouldPlaySound = playSound && studyMode != WordListStudyMode.speakEnglish;
+    final bool shouldPlaySound =
+        playSound && studyMode != WordListStudyMode.speakEnglish;
     if (shouldPlaySound) {
       debugPrint('播放单词发音: ${word.word.spell}');
       final stopwatch = Stopwatch()..start();
       await SoundUtil.playPronounceSound2(word.word, audioPlayer);
       stopwatch.stop();
-      debugPrint('单词发音播放完成: ${word.word.spell}, 耗时 ${stopwatch.elapsedMilliseconds}');
+      debugPrint(
+          '单词发音播放完成: ${word.word.spell}, 耗时 ${stopwatch.elapsedMilliseconds}');
       soundFinishListener?.call();
     } else {
       // 未播放发音时（如背英文模式），也要触发回调以继续流程（启动ASR等）
@@ -1402,7 +1522,8 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
     }
 
     // 在语音模式下，播放完成后启动语音识别
-    if (studyMode == WordListStudyMode.speakChinese || studyMode == WordListStudyMode.speakEnglish) {
+    if (studyMode == WordListStudyMode.speakChinese ||
+        studyMode == WordListStudyMode.speakEnglish) {
       _setAsrContextualPhrases();
       _startAsr(decideAsrLanguage());
       _subscribeMeterIfNeeded();
@@ -1431,7 +1552,8 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
         // 更新书签
         if (isBookMarkValid(bookMark)) {
           final bookMarkPosition = getBookMarkRawPosition(bookMark);
-          if (index + baseIndex! < bookMarkPosition && bookMarkPosition <= words.length + baseIndex!) {
+          if (index + baseIndex! < bookMarkPosition &&
+              bookMarkPosition <= words.length + baseIndex!) {
             var word = words[bookMarkPosition - baseIndex! - 1];
             setState(() {
               bookMark = BookMarkVo(bookMarkPosition - 1, word.word.spell);
@@ -1439,7 +1561,8 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
 
             args.bookMarkProvider.saveBookMark(bookMark!).then((success) {
               if (!success) {
-                Global.logger.e('删除单词后更新书签失败: spell=${bookMark!.spell}, position=${bookMarkPosition - 1}');
+                Global.logger.e(
+                    '删除单词后更新书签失败: spell=${bookMark!.spell}, position=${bookMarkPosition - 1}');
               }
             });
           }
@@ -1454,7 +1577,8 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
   }
 
   Color progressColor(WordWrapper word) {
-    double ratio = args.wordProgressProvider.getWordProgress(word.tag) / args.wordProgressProvider.getWordProgressMax(word.tag);
+    double ratio = args.wordProgressProvider.getWordProgress(word.tag) /
+        args.wordProgressProvider.getWordProgressMax(word.tag);
     if (ratio < 0.4) {
       return Colors.red;
     } else if (ratio < 0.6) {
@@ -1478,7 +1602,10 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
     }
   }
 
-  Widget _buildWordDecoration({required Widget child, required bool isBookmarked, required bool isDarkMode}) {
+  Widget _buildWordDecoration(
+      {required Widget child,
+      required bool isBookmarked,
+      required bool isDarkMode}) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
       decoration: BoxDecoration(
@@ -1505,11 +1632,16 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
               )
             : Border.all(
                 width: 1,
-                color: isDarkMode ? const Color(0xFF333333) : const Color(0xFFE0E0E0),
+                color: isDarkMode
+                    ? const Color(0xFF333333)
+                    : const Color(0xFFE0E0E0),
               ),
         boxShadow: [
           BoxShadow(
-            color: isBookmarked ? const Color(0xFF0097A7).withValues(alpha: 0.2) : (isDarkMode ? Colors.black : Colors.grey).withValues(alpha: 0.1),
+            color: isBookmarked
+                ? const Color(0xFF0097A7).withValues(alpha: 0.2)
+                : (isDarkMode ? Colors.black : Colors.grey)
+                    .withValues(alpha: 0.1),
             blurRadius: isBookmarked ? 8 : 4,
             offset: Offset(0, isBookmarked ? 4 : 2),
           ),
@@ -1541,7 +1673,8 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
   }
 
   void _handleWordLongPress(WordWrapper word, int i) {
-    if (studyMode == WordListStudyMode.speakChinese || studyMode == WordListStudyMode.speakEnglish) {
+    if (studyMode == WordListStudyMode.speakChinese ||
+        studyMode == WordListStudyMode.speakEnglish) {
       var currentUser = Global.getLoggedInUser();
       if (currentUser != null) {
         // 旧字段已废弃：不再切换，直接刷新
@@ -1562,21 +1695,24 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
         children: [
           // 编辑单词释义
           if (args.canEditWord && args.wordsProvider is WordModifier)
-            _buildHintButton(Icons.edit, const Color(0xFF4CAF50), () => _showEditMeaningDialog(word)),
+            _buildHintButton(Icons.edit, const Color(0xFF4CAF50),
+                () => _showEditMeaningDialog(word)),
 
           // 给点提示
           if ((studyMode == WordListStudyMode.dictation ||
                   studyMode == WordListStudyMode.speakChinese ||
                   studyMode == WordListStudyMode.speakEnglish) &&
               isBookmarked)
-            _buildHintButton(Icons.lightbulb, const Color(0xFFFFA726), () => giveALittleHint(word)),
+            _buildHintButton(Icons.lightbulb, const Color(0xFFFFA726),
+                () => giveALittleHint(word)),
 
           // 清除提示
           if ((studyMode == WordListStudyMode.dictation ||
                   studyMode == WordListStudyMode.speakChinese ||
                   studyMode == WordListStudyMode.speakEnglish) &&
               isBookmarked)
-            _buildHintButton(Icons.lightbulb_outline, const Color(0xFF9E9E9E), () => clearHint(word)),
+            _buildHintButton(Icons.lightbulb_outline, const Color(0xFF9E9E9E),
+                () => clearHint(word)),
 
           // 删除按钮
           if (args.showDelBtn) _buildActionButton(word, i),
@@ -1614,7 +1750,8 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
     );
   }
 
-  Widget _buildSpeakEnglishArea(WordWrapper word, bool isBookmarked, bool isDarkMode) {
+  Widget _buildSpeakEnglishArea(
+      WordWrapper word, bool isBookmarked, bool isDarkMode) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1627,7 +1764,8 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
     );
   }
 
-  Widget _buildSpeakEnglishNotPassed(WordWrapper word, bool isBookmarked, bool isDarkMode) {
+  Widget _buildSpeakEnglishNotPassed(
+      WordWrapper word, bool isBookmarked, bool isDarkMode) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1640,7 +1778,9 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
             decoration: BoxDecoration(
               border: Border(
                 bottom: BorderSide(
-                  color: isDarkMode ? Colors.white38 : (Colors.grey[500] ?? Colors.grey),
+                  color: isDarkMode
+                      ? Colors.white38
+                      : (Colors.grey[500] ?? Colors.grey),
                   width: 1.0,
                 ),
               ),
@@ -1651,7 +1791,10 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
               isBookmarked
                   ? (word.hintLetterCount > 0
                       ? word.word.spell.substring(0, word.hintLetterCount)
-                      : ((asrResult is String && (asrResult as String).isNotEmpty) ? (asrResult as String) : '请说出单词发音'))
+                      : ((asrResult is String &&
+                              (asrResult as String).isNotEmpty)
+                          ? (asrResult as String)
+                          : '请说出单词发音'))
                   : '', // 非当前单词只显示下划线，不显示文字
               textScaler: TextScaler.linear(1.0),
               style: TextStyle(
@@ -1663,13 +1806,17 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
             ),
           ),
         ),
-        if (isBookmarked && word.pronunciationScore != null && word.pronunciationScore! > 0)
+        if (isBookmarked &&
+            word.pronunciationScore != null &&
+            word.pronunciationScore! > 0)
           Padding(
             padding: const EdgeInsets.only(top: 6),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
-                color: word.pronunciationScore! >= 60 ? Colors.green.withValues(alpha: 0.1) : Colors.orange.withValues(alpha: 0.1),
+                color: word.pronunciationScore! >= 60
+                    ? Colors.green.withValues(alpha: 0.1)
+                    : Colors.orange.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Row(
@@ -1678,7 +1825,9 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
                   Icon(
                     Icons.record_voice_over,
                     size: 14,
-                    color: word.pronunciationScore! >= 60 ? Colors.green : Colors.orange,
+                    color: word.pronunciationScore! >= 60
+                        ? Colors.green
+                        : Colors.orange,
                   ),
                   const SizedBox(width: 4),
                   Text(
@@ -1686,7 +1835,9 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
-                      color: word.pronunciationScore! >= 60 ? Colors.green : Colors.orange,
+                      color: word.pronunciationScore! >= 60
+                          ? Colors.green
+                          : Colors.orange,
                     ),
                   ),
                 ],
@@ -1697,18 +1848,22 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
     );
   }
 
-  Widget _buildSpeakEnglishPassed(WordWrapper word, bool isBookmarked, bool isDarkMode) {
+  Widget _buildSpeakEnglishPassed(
+      WordWrapper word, bool isBookmarked, bool isDarkMode) {
     return LayoutBuilder(
       builder: (context, constraints) {
         // 估算单词和音标所需的宽度
         final spellWidth = word.word.spell.length * 11.0; // 估算单词宽度
         final pronounceWidth = word.word.mergedPronounce.isNotEmpty
-            ? (word.word.mergedPronounce.length * 7.0 + 24.0) // 估算音标宽度（包括容器padding）
+            ? (word.word.mergedPronounce.length * 7.0 +
+                24.0) // 估算音标宽度（包括容器padding）
             : 0.0;
         final totalWidth = spellWidth + pronounceWidth + 8.0; // 包括间距
 
         // 如果总宽度超过可用宽度，或者音标很长，则换行显示
-        final shouldWrap = totalWidth > constraints.maxWidth || (word.word.mergedPronounce.isNotEmpty && word.word.mergedPronounce.length > 25);
+        final shouldWrap = totalWidth > constraints.maxWidth ||
+            (word.word.mergedPronounce.isNotEmpty &&
+                word.word.mergedPronounce.length > 25);
 
         if (shouldWrap && word.word.mergedPronounce.isNotEmpty) {
           // 换行显示：单词一行，音标一行
@@ -1721,7 +1876,9 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
                 word.word.spell,
                 textScaler: TextScaler.linear(1.0),
                 style: TextStyle(
-                  color: isBookmarked ? const Color(0xFF0097A7) : (isDarkMode ? Colors.white : const Color(0xFF1F2937)),
+                  color: isBookmarked
+                      ? const Color(0xFF0097A7)
+                      : (isDarkMode ? Colors.white : const Color(0xFF1F2937)),
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
                   letterSpacing: 0.6,
@@ -1731,9 +1888,11 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
               Padding(
                 padding: const EdgeInsets.only(top: 4),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: (isDarkMode ? Colors.grey[700] : Colors.grey[200])?.withValues(alpha: 0.7),
+                    color: (isDarkMode ? Colors.grey[700] : Colors.grey[200])
+                        ?.withValues(alpha: 0.7),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
@@ -1763,7 +1922,9 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
                   word.word.spell,
                   textScaler: TextScaler.linear(1.0),
                   style: TextStyle(
-                    color: isBookmarked ? const Color(0xFF0097A7) : (isDarkMode ? Colors.white : const Color(0xFF1F2937)),
+                    color: isBookmarked
+                        ? const Color(0xFF0097A7)
+                        : (isDarkMode ? Colors.white : const Color(0xFF1F2937)),
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
                     letterSpacing: 0.6,
@@ -1776,9 +1937,11 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
                 const SizedBox(width: 8),
                 Flexible(
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: (isDarkMode ? Colors.grey[700] : Colors.grey[200])?.withValues(alpha: 0.7),
+                      color: (isDarkMode ? Colors.grey[700] : Colors.grey[200])
+                          ?.withValues(alpha: 0.7),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
@@ -1855,7 +2018,8 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
           },
           style: TextStyle(
               fontSize: fontSize,
-              color: Util.equalsIgnoreCase(word.word.spell, word.spellController.text)
+              color: Util.equalsIgnoreCase(
+                      word.word.spell, word.spellController.text)
                   ? word.isAnswerProvidedBySystem
                       ? Colors.blue
                       : Colors.green
@@ -1894,18 +2058,21 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
     );
   }
 
-  Widget _buildWordHeader(WordWrapper word, bool isBookmarked, bool isDarkMode) {
+  Widget _buildWordHeader(
+      WordWrapper word, bool isBookmarked, bool isDarkMode) {
     return LayoutBuilder(
       builder: (context, constraints) {
         // 估算单词和音标所需的宽度
         final spellWidth = word.word.spell.length * 11.0; // 估算单词宽度
         final pronounceWidth = word.word.mergedPronounce.isNotEmpty
-            ? (word.word.mergedPronounce.length * 7.0 + 24.0) // 估算音标宽度（包括容器padding）
+            ? (word.word.mergedPronounce.length * 7.0 +
+                24.0) // 估算音标宽度（包括容器padding）
             : 0.0;
         final totalWidth = spellWidth + pronounceWidth + 16.0; // 包括间距
 
         // 如果总宽度超过可用宽度，或者音标很长，则换行显示
-        final shouldWrap = totalWidth > constraints.maxWidth || word.word.mergedPronounce.length > 25;
+        final shouldWrap = totalWidth > constraints.maxWidth ||
+            word.word.mergedPronounce.length > 25;
 
         if (shouldWrap && word.word.mergedPronounce.isNotEmpty) {
           // 换行显示：单词一行，音标一行
@@ -1917,7 +2084,9 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
                 word.word.spell,
                 textScaler: TextScaler.linear(1.0),
                 style: TextStyle(
-                  color: isBookmarked ? const Color(0xFF0097A7) : (isDarkMode ? Colors.white : const Color(0xFF1F2937)),
+                  color: isBookmarked
+                      ? const Color(0xFF0097A7)
+                      : (isDarkMode ? Colors.white : const Color(0xFF1F2937)),
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
                   height: 1.3,
@@ -1928,9 +2097,11 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
               Padding(
                 padding: const EdgeInsets.only(top: 4),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: (isDarkMode ? Colors.grey[700] : Colors.grey[200])?.withValues(alpha: 0.7),
+                    color: (isDarkMode ? Colors.grey[700] : Colors.grey[200])
+                        ?.withValues(alpha: 0.7),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
@@ -1959,7 +2130,9 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
                   word.word.spell,
                   textScaler: TextScaler.linear(1.0),
                   style: TextStyle(
-                    color: isBookmarked ? const Color(0xFF0097A7) : (isDarkMode ? Colors.white : const Color(0xFF1F2937)),
+                    color: isBookmarked
+                        ? const Color(0xFF0097A7)
+                        : (isDarkMode ? Colors.white : const Color(0xFF1F2937)),
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
                     height: 1.3,
@@ -1971,9 +2144,11 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
                 const SizedBox(width: 8),
                 Flexible(
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: (isDarkMode ? Colors.grey[700] : Colors.grey[200])?.withValues(alpha: 0.7),
+                      color: (isDarkMode ? Colors.grey[700] : Colors.grey[200])
+                          ?.withValues(alpha: 0.7),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
@@ -1999,7 +2174,8 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
     );
   }
 
-  Widget _buildAudioIndicator(WordWrapper word, bool isBookmarked, bool isDarkMode) {
+  Widget _buildAudioIndicator(
+      WordWrapper word, bool isBookmarked, bool isDarkMode) {
     if (isBookmarked) {
       // 当前单词显示波形
       return Container(
@@ -2008,7 +2184,8 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
         margin: const EdgeInsets.only(top: 3),
         child: _audioLevelBar(),
       );
-    } else if (word.pronunciationScore != null && word.pronunciationScore! > 0) {
+    } else if (word.pronunciationScore != null &&
+        word.pronunciationScore! > 0) {
       // 已过单词显示评分
       return Container(
         width: 32,
@@ -2023,7 +2200,8 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
             height: 1.1,
             fontWeight: FontWeight.w900,
             fontFamily: 'RobotoCondensed',
-            color: word.pronunciationScore! >= 60 ? Colors.green : Colors.orange,
+            color:
+                word.pronunciationScore! >= 60 ? Colors.green : Colors.orange,
           ),
         ),
       );
@@ -2043,7 +2221,8 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
         displayText: '',
         direction: Axis.horizontal,
         displayTextStyle: const TextStyle(color: Color(0x00000000)),
-        backgroundColor: isDarkMode ? const Color(0xFF404040) : const Color(0xFFE5E7EB),
+        backgroundColor:
+            isDarkMode ? const Color(0xFF404040) : const Color(0xFFE5E7EB),
         progressColor: progressColor(word),
         animatedDuration: const Duration(milliseconds: 200),
       ),
@@ -2056,14 +2235,17 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
       height: 32,
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: isBookmarked ? [const Color(0xFF0097A7), const Color(0xFF00ACC1)] : [const Color(0xFF9CA3AF), const Color(0xFF6B7280)],
+          colors: isBookmarked
+              ? [const Color(0xFF0097A7), const Color(0xFF00ACC1)]
+              : [const Color(0xFF9CA3AF), const Color(0xFF6B7280)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
-            color: (isBookmarked ? const Color(0xFF0097A7) : Colors.grey).withValues(alpha: 0.3),
+            color: (isBookmarked ? const Color(0xFF0097A7) : Colors.grey)
+                .withValues(alpha: 0.3),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -2113,9 +2295,11 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
                         _buildWordIndexContainer(i, isBookmarked),
 
                         /// 掌握度进度条（横条）
-                        if (args.showWordProgress) _buildWordProgressContainer(word, isDarkMode),
+                        if (args.showWordProgress)
+                          _buildWordProgressContainer(word, isDarkMode),
                         // 紧凑波形或评分：放在掌握度条正下方
-                        if (studyMode == WordListStudyMode.speakChinese || studyMode == WordListStudyMode.speakEnglish)
+                        if (studyMode == WordListStudyMode.speakChinese ||
+                            studyMode == WordListStudyMode.speakEnglish)
                           _buildAudioIndicator(word, isBookmarked, isDarkMode),
                       ],
                     ),
@@ -2127,9 +2311,11 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           /// 单词英文（背英文模式统一在释义下方展示，这里不显示）
-                          (studyMode == WordListStudyMode.dictation || studyMode == WordListStudyMode.speakEnglish)
+                          (studyMode == WordListStudyMode.dictation ||
+                                  studyMode == WordListStudyMode.speakEnglish)
                               ? Container()
-                              : _buildWordHeader(word, isBookmarked, isDarkMode),
+                              : _buildWordHeader(
+                                  word, isBookmarked, isDarkMode),
 
                           /// 单词释义
                           if (studyMode == WordListStudyMode.list ||
@@ -2138,18 +2324,28 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
                             _buildWordMeaning(word, isDarkMode),
 
                           /// 给点提示
-                          studyMode == WordListStudyMode.dictation && getBookMarkUiPosition() == i ? _buildDictationHint(word) : Container(),
+                          studyMode == WordListStudyMode.dictation &&
+                                  getBookMarkUiPosition() == i
+                              ? _buildDictationHint(word)
+                              : Container(),
 
                           // 移除在内容区域的大波形展示（改为紧凑放置在掌握度条下方）
 
                           /// 单词拼写输入框
-                          studyMode == WordListStudyMode.dictation ? _buildDictationTextField(word, i) : Container(),
+                          studyMode == WordListStudyMode.dictation
+                              ? _buildDictationTextField(word, i)
+                              : Container(),
 
                           /// 默写中文输入区
-                          studyMode == WordListStudyMode.speakChinese ? _buildSpeakChineseArea(word) : Container(),
+                          studyMode == WordListStudyMode.speakChinese
+                              ? _buildSpeakChineseArea(word)
+                              : Container(),
 
                           /// 背英文输入区（释义下方：未通过仅一条下划线；通过后显示英文与音标）
-                          studyMode == WordListStudyMode.speakEnglish ? _buildSpeakEnglishArea(word, isBookmarked, isDarkMode) : Container(),
+                          studyMode == WordListStudyMode.speakEnglish
+                              ? _buildSpeakEnglishArea(
+                                  word, isBookmarked, isDarkMode)
+                              : Container(),
                         ],
                       ),
                     ),
@@ -2165,7 +2361,9 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
                       studyMode == WordListStudyMode.speakChinese ||
                       studyMode == WordListStudyMode.speakEnglish) &&
                   isBookmarked) ||
-              (args.canEditWord && args.wordsProvider is WordModifier)) // Added condition for edit button
+              (args.canEditWord &&
+                  args.wordsProvider
+                      is WordModifier)) // Added condition for edit button
             _buildWordActionButtons(word, i, isBookmarked),
         ],
       ),
@@ -2173,14 +2371,17 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
     return row;
   }
 
-  void jumpToNextWord(final int currWordIndex, bool playPronounce, Function? soundFinishListener) {
+  void jumpToNextWord(final int currWordIndex, bool playPronounce,
+      Function? soundFinishListener) {
     if (currWordIndex < words.length - 1) {
       var nextWord = words[currWordIndex + 1];
-      onWordPressed(nextWord, currWordIndex + 1, playPronounce, soundFinishListener);
+      onWordPressed(
+          nextWord, currWordIndex + 1, playPronounce, soundFinishListener);
       if (studyMode == WordListStudyMode.dictation) {
         nextWord.focusNode.requestFocus();
       }
-      if (studyMode == WordListStudyMode.speakChinese || studyMode == WordListStudyMode.speakEnglish) {
+      if (studyMode == WordListStudyMode.speakChinese ||
+          studyMode == WordListStudyMode.speakEnglish) {
         scrollToWord(currWordIndex + 1);
 
         /// 如果目标单词不可见（在视口下方），则视口向下滚动一个单词
@@ -2191,7 +2392,8 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
     } else {
       // 到达最后一个单词
       // 跳回第一个单词
-      if (studyMode == WordListStudyMode.speakChinese || studyMode == WordListStudyMode.speakEnglish) {
+      if (studyMode == WordListStudyMode.speakChinese ||
+          studyMode == WordListStudyMode.speakEnglish) {
         // 确保书签更新到第一个单词
         if (words.isNotEmpty) {
           onWordPressed(words[0], 0, playPronounce, soundFinishListener);
@@ -2304,41 +2506,16 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
 
     // 在页面build时，检查页面是否可见，如果可见且在语音模式下，确保ASR已启动
     // 如果不可见且在语音模式下，停止ASR（用于从页面离开时停止）
-    if (dataLoaded) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-
-        // 使用GetX的路由检查，更可靠
-        final isPageVisible = Get.currentRoute == '/word_list';
-
-        if (isPageVisible) {
-          // 非语音模式：如果ASR正在运行，停止它
-          if (![WordListStudyMode.speakChinese, WordListStudyMode.speakEnglish].contains(studyMode) && asr.state == AsrState.started) {
-            asr.stopAsr();
-            _unsubscribeMeter();
-          }
-        } else {
-          // 页面不可见：如果在语音模式下，停止ASR
-          if (studyMode == WordListStudyMode.speakChinese || studyMode == WordListStudyMode.speakEnglish) {
-            if (asr.state == AsrState.started) {
-              Global.logger.d('页面不可见（当前路由: ${Get.currentRoute}），停止ASR');
-              asr.stopAsr();
-              _unsubscribeMeter();
-            }
-          } else if (studyMode == WordListStudyMode.speakChinese) {
-            // 背中文模式：重置相关状态
-            asrResult = "";
-            handlingAsrChinese = "";
-            Global.logger.d('背中文模式：手动切换单词，重置自动跳转状态');
-          }
-        }
-      });
-    }
+    // 移除原有的 build 中直接调用 postFrameCallback 的 visibility 检查逻辑，
+    // 改为在需要时（如 onSelected 或 dispose）处理 ASR 状态，或通过专门的监听器。
+    // 这里保留 build 方法的简洁性。
 
     return Stack(
       children: [
         Scaffold(
-          backgroundColor: isDarkMode ? const Color(0xFF121212) : const Color(0xFFF5F7FA),
+          resizeToAvoidBottomInset: false, // 禁止分屏或键盘变化导致的布局挤压，提升 iPad 稳定性
+          backgroundColor:
+              isDarkMode ? const Color(0xFF121212) : const Color(0xFFF5F7FA),
           appBar: !dataLoaded
               ? null
               : AppBar(
@@ -2370,7 +2547,8 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
                       args.showBackBtn
                           ? IconButton(
                               onPressed: () => Navigator.pop(context),
-                              icon: const Icon(Icons.arrow_back, color: Colors.white),
+                              icon: const Icon(Icons.arrow_back,
+                                  color: Colors.white),
                             )
                           : const SizedBox(width: 16),
                       Expanded(
@@ -2413,10 +2591,14 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
                           child: Stack(
                             alignment: Alignment.center,
                             children: [
-                              const Icon(Icons.bookmark, color: Colors.white, size: 28),
+                              const Icon(Icons.bookmark,
+                                  color: Colors.white, size: 28),
                               Text(
                                 'S',
-                                style: TextStyle(fontSize: 10, fontWeight: FontWeight.w500, color: AppTheme.primaryColor),
+                                style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w500,
+                                    color: AppTheme.primaryColor),
                               ),
                             ],
                           ),
@@ -2428,7 +2610,10 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
                             doQuery(false, 0, 50, false).then((_) {
                               // 添加这一行，确保跳转到第一个单词
                               WidgetsBinding.instance.addPostFrameCallback((_) {
-                                itemScrollController.scrollTo(index: 0, duration: const Duration(milliseconds: 300), alignment: 0.5); // 显示在屏幕中部
+                                itemScrollController.scrollTo(
+                                    index: 0,
+                                    duration: const Duration(milliseconds: 300),
+                                    alignment: 0.5); // 显示在屏幕中部
                               });
                             });
                           });
@@ -2439,20 +2624,26 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
                       InkWell(
                         borderRadius: BorderRadius.circular(8),
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 4),
                           child: Stack(
                             alignment: Alignment.center,
                             children: [
-                              const Icon(Icons.bookmark, color: Colors.white, size: 28),
+                              const Icon(Icons.bookmark,
+                                  color: Colors.white, size: 28),
                               Text(
-                                isBookMarkValid(bookMark) ? '${getBookMarkRawPosition(bookMark) + 1}' : '书签\n无效',
+                                isBookMarkValid(bookMark)
+                                    ? '${getBookMarkRawPosition(bookMark) + 1}'
+                                    : '书签\n无效',
                                 textScaler: TextScaler.linear(1.0),
                                 style: TextStyle(
                                     fontSize: 9,
                                     fontWeight: FontWeight.w500,
                                     height: 1.1,
                                     letterSpacing: 0.1,
-                                    color: isBookMarkValid(bookMark) ? AppTheme.primaryColor : Colors.red[300]),
+                                    color: isBookMarkValid(bookMark)
+                                        ? AppTheme.primaryColor
+                                        : Colors.red[300]),
                               ),
                             ],
                           ),
@@ -2460,23 +2651,33 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
                         onTap: () {
                           if (isBookMarkValid(bookMark)) {
                             final bookMarkUiPos = getBookMarkUiPosition();
-                            if (bookMarkUiPos >= 0 && bookMarkUiPos < words.length) {
+                            if (bookMarkUiPos >= 0 &&
+                                bookMarkUiPos < words.length) {
                               // 书签在当前加载的单词范围内，直接跳转
                               jumpToBookMark();
                             } else {
                               // 书签不在当前范围内，重新加载数据到书签位置
                               clearQueryResult();
                               // 计算书签所在页的起始位置
-                              baseIndex = (bookMark!.position ~/ _pageSize) * _pageSize;
-                              doQuery(true, baseIndex!, _pageSize, false).then((_) {
+                              baseIndex =
+                                  (bookMark!.position ~/ _pageSize) * _pageSize;
+                              doQuery(true, baseIndex!, _pageSize, false)
+                                  .then((_) {
                                 // 滚动到书签位置，增加延迟确保UI完全更新
-                                Future.delayed(const Duration(milliseconds: 100), () {
-                                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                                    final newBookMarkUiPos = getBookMarkUiPosition();
-                                    if (newBookMarkUiPos >= 0 && newBookMarkUiPos < words.length) {
+                                Future.delayed(
+                                    const Duration(milliseconds: 100), () {
+                                  WidgetsBinding.instance
+                                      .addPostFrameCallback((_) {
+                                    final newBookMarkUiPos =
+                                        getBookMarkUiPosition();
+                                    if (newBookMarkUiPos >= 0 &&
+                                        newBookMarkUiPos < words.length) {
                                       // 直接滚动到书签位置，不使用jumpToBookMark避免位置检查
                                       itemScrollController.scrollTo(
-                                          index: newBookMarkUiPos, duration: const Duration(milliseconds: 300), alignment: 0.5);
+                                          index: newBookMarkUiPos,
+                                          duration:
+                                              const Duration(milliseconds: 300),
+                                          alignment: 0.5);
                                     }
                                   });
                                 });
@@ -2494,10 +2695,14 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
                           child: Stack(
                             alignment: Alignment.center,
                             children: [
-                              const Icon(Icons.bookmark, color: Colors.white, size: 28),
+                              const Icon(Icons.bookmark,
+                                  color: Colors.white, size: 28),
                               Text(
                                 'E',
-                                style: TextStyle(fontSize: 10, fontWeight: FontWeight.w500, color: AppTheme.primaryColor),
+                                style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w500,
+                                    color: AppTheme.primaryColor),
                               ),
                             ],
                           ),
@@ -2511,7 +2716,9 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
                               // 添加这一行，确保跳转到最后一个单词
                               WidgetsBinding.instance.addPostFrameCallback((_) {
                                 itemScrollController.scrollTo(
-                                    index: words.length - 1, duration: const Duration(milliseconds: 300), alignment: 0.5); // 显示在屏幕中部
+                                    index: words.length - 1,
+                                    duration: const Duration(milliseconds: 300),
+                                    alignment: 0.5); // 显示在屏幕中部
                               });
                             });
                           });
@@ -2527,159 +2734,248 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
                       ),
                     if (args.injectedBtn != null) args.injectedBtn!,
                     // 使用GlobalKey包裹图标，便于计算其全局坐标
-                    Container(
+                    // 使用 GlobalKey 直挂按钮，确保 iPad Popover 锚定更准确稳定
+                    // 使用 IconButton + showMenu 手动控制菜单，
+                    // 以便在菜单显示期间暂停 ASR 和 UI 更新，防止 iPad Popover 闪退
+                    IconButton(
                       key: _menuKey,
-                      alignment: Alignment.center,
-                      child: PopupMenuButton<String>(
-                        icon: const Icon(
-                          Icons.more_vert,
-                          color: Colors.white,
-                        ),
-                        onSelected: (value) {
-                          switch (value) {
-                            case menuWordList:
-                              setState(() {
-                                studyMode = WordListStudyMode.list;
-                              });
-                              _unsubscribeMeter();
-                              asr.stopAsr();
-                              break;
-                            case menuWriteSpell:
-                              setState(() {
-                                // 进入默写模式：清空所有单词的输入与系统填充状态
-                                studyMode = WordListStudyMode.dictation;
-                                for (final w in words) {
-                                  w.spellController.text = '';
-                                  w.isAnswerProvidedBySystem = false;
-                                  w.hintLetterCount = 0;
-                                }
-                              });
-                              _unsubscribeMeter();
-                              asr.stopAsr();
-                              break;
-                            case menuSpeakChinese:
-                              // 先停止并重置当前ASR，避免前一模式的缓存/语言残留
-                              asr.stopAsr();
-                              asr.reset();
-                              setState(() {
-                                clearWordStates();
-                                // 切到中文识别前，清空英文下划线的识别展示
-                                asrResult = "";
-                                handlingAsrChinese = "";
-                                studyMode = WordListStudyMode.speakChinese;
-                              });
-                              _startAsr(decideAsrLanguage());
-                              _subscribeMeterIfNeeded();
-                              break;
-                            case menuSpeakEnglish:
-                              // 先停止并重置当前ASR，避免前一模式的缓存/语言残留
-                              asr.stopAsr();
-                              asr.reset();
-                              setState(() {
-                                clearWordStates();
-                                // 清空上一次的识别展示，避免把中文结果带到英文下划线
-                                asrResult = "";
-                                handlingAsrChinese = "";
-                                studyMode = WordListStudyMode.speakEnglish;
-                              });
-                              // 用英文识别重启ASR，并订阅电平
-                              _startAsr(decideAsrLanguage());
-                              _subscribeMeterIfNeeded();
-                              break;
-                            case menuWalkman:
-                              // 跳转到walkman前，如果在语音模式下，先停止ASR
-                              if (studyMode == WordListStudyMode.speakChinese || studyMode == WordListStudyMode.speakEnglish) {
-                                asr.stopAsr();
-                                asr.reset();
-                              }
-                              Get.toNamed('/walkman', arguments: WalkmanParams(args.wordsProvider));
-                              break;
-                          }
-                        },
-                        itemBuilder: (BuildContext context) {
-                          List<String> menus = [
+                      icon: const Icon(
+                        Icons.more_vert,
+                        color: Colors.white,
+                      ),
+                      onPressed: () async {
+                        // 1. 设置标志位，屏蔽 ASR 和 Timer 对 UI 的刷新干扰
+                        isMenuOpen = true; // 立即生效，屏蔽后续可能的 setState
+
+                        // 2. 强制收起键盘并等待更长时间
+                        // iPad 上键盘动画较慢，且布局变化可能导致 Overlay 重绘
+                        // 给予足够的时间让这一过程完全结束
+                        FocusScope.of(context).unfocus();
+
+                        // 暂停加载动画，确保 UI 每一帧都静止
+                        bool wasAnimating =
+                            _asrModelLoadingController.isAnimating;
+                        if (wasAnimating) {
+                          _asrModelLoadingController.stop();
+                        }
+
+                        // 350ms 延时，足以覆盖大部分 iOS 键盘/过渡动画
+                        await Future.delayed(const Duration(milliseconds: 350));
+
+                        // 真正的解决 linter 警告：检查 context.mounted
+                        if (!context.mounted) {
+                          isMenuOpen = false;
+                          return;
+                        }
+
+                        // 将 context 相关的操作移出 try 块，紧接在 mounted 检查之后
+                        // 这样 linter 就能确认 context 的使用是安全的
+                        final RenderBox? button = _menuKey.currentContext
+                            ?.findRenderObject() as RenderBox?;
+
+                        // 预先获取 overlayState，避免在 async gap 后使用 context
+                        final BuildContext overlayContext =
+                            Overlay.of(context, rootOverlay: true).context;
+                        final RenderBox? overlayRenderBox =
+                            overlayContext.findRenderObject() as RenderBox?;
+
+                        if (button == null || overlayRenderBox == null) {
+                          isMenuOpen = false;
+                          return;
+                        }
+
+                        // 修正：确保 overlay 大小获取正确
+                        final overlayRect = Offset.zero & overlayRenderBox.size;
+
+                        final RelativeRect position = RelativeRect.fromRect(
+                          Rect.fromPoints(
+                            button.localToGlobal(const Offset(0, 50),
+                                ancestor: overlayRenderBox), // 增加垂直偏移
+                            button.localToGlobal(
+                                button.size.bottomRight(Offset.zero) +
+                                    const Offset(0, 50),
+                                ancestor: overlayRenderBox),
+                          ),
+                          overlayRect,
+                        );
+
+                        try {
+                          // 再次检查 mounted，确保 showMenu 调用安全 (虽然上面已经检查过，但为了满足 strict linter flow analysis)
+                          if (!context.mounted) return;
+
+                          // 4. 构建菜单项
+                          List<String> menuItems = [
                             menuWordList,
                             menuWalkman,
                           ];
-
-                          // 根据ASR支持情况添加语音相关菜单
                           if (PlatformUtils.isAsrSupported()) {
-                            menus.add(menuSpeakChinese); // 背中文（iOS和Android都支持）
+                            menuItems.add(menuSpeakChinese);
                           }
                           if (PlatformUtils.isEnglishAsrSupported()) {
-                            menus.add(menuSpeakEnglish); // 背英文（仅iOS支持）
+                            menuItems.add(menuSpeakEnglish);
                           }
+                          menuItems.add(menuWriteSpell);
 
-                          menus.add(menuWriteSpell);
-                          return menus.map((String choice) {
-                            IconData icon;
-                            switch (choice) {
+                          // 5. 显示菜单 (使用 RootNavigator)
+                          // ignore: use_build_context_synchronously
+                          final String? selectedValue = await showMenu<String>(
+                            context: context,
+                            position: position,
+                            useRootNavigator: true,
+                            items: menuItems.map((String choice) {
+                              IconData icon;
+                              switch (choice) {
+                                case menuWordList:
+                                  icon = Icons.list_alt;
+                                  break;
+                                case menuWalkman:
+                                  icon = Icons.headphones;
+                                  break;
+                                case menuSpeakChinese:
+                                  icon = Icons.record_voice_over;
+                                  break;
+                                case menuSpeakEnglish:
+                                  icon = Icons.record_voice_over;
+                                  break;
+                                case menuWriteSpell:
+                                  icon = Icons.edit;
+                                  break;
+                                default:
+                                  icon = Icons.help_outline;
+                              }
+
+                              bool isSelected = false;
+                              switch (choice) {
+                                case menuWordList:
+                                  isSelected =
+                                      studyMode == WordListStudyMode.list;
+                                  break;
+                                case menuSpeakChinese:
+                                  isSelected = studyMode ==
+                                      WordListStudyMode.speakChinese;
+                                  break;
+                                case menuSpeakEnglish:
+                                  isSelected = studyMode ==
+                                      WordListStudyMode.speakEnglish;
+                                  break;
+                                case menuWriteSpell:
+                                  isSelected =
+                                      studyMode == WordListStudyMode.dictation;
+                                  break;
+                              }
+
+                              return PopupMenuItem<String>(
+                                value: choice,
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: isSelected
+                                        ? const Color(0xFF0097A7)
+                                            .withValues(alpha: 0.15)
+                                        : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 4),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        icon,
+                                        size: 20,
+                                        color: isSelected
+                                            ? const Color(0xFF0097A7)
+                                            : (isDarkMode
+                                                ? Colors.white
+                                                : Colors.grey[700]),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        choice,
+                                        style: TextStyle(
+                                          color: isSelected
+                                              ? const Color(0xFF0097A7)
+                                              : (isDarkMode
+                                                  ? Colors.white
+                                                  : Colors.grey[700]),
+                                          fontWeight: isSelected
+                                              ? FontWeight.w600
+                                              : FontWeight.normal,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          );
+
+                          // 6. 处理选择
+                          if (selectedValue != null) {
+                            switch (selectedValue) {
                               case menuWordList:
-                                icon = Icons.list_alt;
+                                setState(() {
+                                  studyMode = WordListStudyMode.list;
+                                });
+                                _unsubscribeMeter();
+                                asr.stopAsr();
+                                break;
+                              case menuWriteSpell:
+                                setState(() {
+                                  studyMode = WordListStudyMode.dictation;
+                                  for (final w in words) {
+                                    w.spellController.text = '';
+                                    w.isAnswerProvidedBySystem = false;
+                                    w.hintLetterCount = 0;
+                                  }
+                                });
+                                _unsubscribeMeter();
+                                asr.stopAsr();
+                                break;
+                              case menuSpeakChinese:
+                                asr.stopAsr();
+                                asr.reset();
+                                setState(() {
+                                  clearWordStates();
+                                  asrResult = "";
+                                  handlingAsrChinese = "";
+                                  studyMode = WordListStudyMode.speakChinese;
+                                });
+                                _startAsr(decideAsrLanguage());
+                                _subscribeMeterIfNeeded();
+                                break;
+                              case menuSpeakEnglish:
+                                asr.stopAsr();
+                                asr.reset();
+                                setState(() {
+                                  clearWordStates();
+                                  asrResult = "";
+                                  handlingAsrChinese = "";
+                                  studyMode = WordListStudyMode.speakEnglish;
+                                });
+                                _startAsr(decideAsrLanguage());
+                                _subscribeMeterIfNeeded();
                                 break;
                               case menuWalkman:
-                                icon = Icons.headphones;
-                                break;
-                              case menuSpeakChinese:
-                                icon = Icons.record_voice_over;
-                                break;
-                              case menuSpeakEnglish:
-                                icon = Icons.record_voice_over;
-                                break;
-                              case menuWriteSpell:
-                                icon = Icons.edit;
-                                break;
-                              default:
-                                icon = Icons.help_outline;
-                            }
-
-                            // 判断当前菜单项是否被选中
-                            bool isSelected = false;
-                            switch (choice) {
-                              case menuWordList:
-                                isSelected = studyMode == WordListStudyMode.list;
-                                break;
-                              case menuSpeakChinese:
-                                isSelected = studyMode == WordListStudyMode.speakChinese;
-                                break;
-                              case menuSpeakEnglish:
-                                isSelected = studyMode == WordListStudyMode.speakEnglish;
-                                break;
-                              case menuWriteSpell:
-                                isSelected = studyMode == WordListStudyMode.dictation;
+                                if (studyMode ==
+                                        WordListStudyMode.speakChinese ||
+                                    studyMode ==
+                                        WordListStudyMode.speakEnglish) {
+                                  asr.stopAsr();
+                                  asr.reset();
+                                }
+                                Get.toNamed('/walkman',
+                                    arguments:
+                                        WalkmanParams(args.wordsProvider));
                                 break;
                             }
-
-                            return PopupMenuItem<String>(
-                              value: choice,
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: isSelected ? const Color(0xFF0097A7).withValues(alpha: 0.15) : Colors.transparent,
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      icon,
-                                      size: 20,
-                                      color: isSelected ? const Color(0xFF0097A7) : (isDarkMode ? Colors.white : Colors.grey[700]),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      choice,
-                                      style: TextStyle(
-                                        color: isSelected ? const Color(0xFF0097A7) : (isDarkMode ? Colors.white : Colors.grey[700]),
-                                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          }).toList();
-                        },
-                      ),
+                          }
+                        } finally {
+                          // 7. 恢复标志位
+                          isMenuOpen = false;
+                          if (wasAnimating && mounted) {
+                            _asrModelLoadingController.repeat(reverse: true);
+                          }
+                        }
+                      },
                     ),
                   ],
                 ),
@@ -2720,7 +3016,9 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
                                 '正在加载单词...',
                                 textScaler: TextScaler.linear(1.0),
                                 style: TextStyle(
-                                  color: isDarkMode ? Colors.white : const Color(0xFF2C3E50),
+                                  color: isDarkMode
+                                      ? Colors.white
+                                      : const Color(0xFF2C3E50),
                                   fontSize: 18,
                                   fontWeight: FontWeight.w400,
                                   height: 1.4,
@@ -2731,12 +3029,14 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
                           ),
                         )
                       : Padding(
-                          padding: const EdgeInsets.fromLTRB(leftPadding, 2, rightPadding, 0),
+                          padding: const EdgeInsets.fromLTRB(
+                              leftPadding, 2, rightPadding, 0),
                           child: renderPage(),
                         ),
                 ),
                 // 设置按钮 - 固定在右下角，使用 Column 垂直排列
-                if (studyMode == WordListStudyMode.speakChinese || studyMode == WordListStudyMode.speakEnglish)
+                if (studyMode == WordListStudyMode.speakChinese ||
+                    studyMode == WordListStudyMode.speakEnglish)
                   Positioned(
                     right: 16,
                     bottom: 16,
@@ -2764,13 +3064,17 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
                               doNotQueryPlease = true;
 
                               // 返回到顶部
-                              itemScrollController.scrollTo(index: 0, duration: const Duration(milliseconds: 300), alignment: 0.5); // 显示在屏幕中部
+                              itemScrollController.scrollTo(
+                                  index: 0,
+                                  duration: const Duration(milliseconds: 300),
+                                  alignment: 0.5); // 显示在屏幕中部
                               setState(() {
                                 showToTopBtn = false;
                               });
 
                               // 一段时间后，清除 "请勿查询"标志
-                              Future.delayed(const Duration(milliseconds: 500), () {
+                              Future.delayed(const Duration(milliseconds: 500),
+                                  () {
                                 doNotQueryPlease = false;
                               });
                             },
@@ -2780,7 +3084,9 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
                     ),
                   ),
                 // 回到顶部按钮（非语音模式时单独显示，语音模式下与设置按钮一起显示）
-                if (studyMode != WordListStudyMode.speakChinese && studyMode != WordListStudyMode.speakEnglish && showToTopBtn)
+                if (studyMode != WordListStudyMode.speakChinese &&
+                    studyMode != WordListStudyMode.speakEnglish &&
+                    showToTopBtn)
                   Positioned(
                     right: 16,
                     bottom: 16,
@@ -2793,7 +3099,10 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
                         doNotQueryPlease = true;
 
                         // 返回到顶部
-                        itemScrollController.scrollTo(index: 0, duration: const Duration(milliseconds: 300), alignment: 0.5); // 0.5表示中央对齐
+                        itemScrollController.scrollTo(
+                            index: 0,
+                            duration: const Duration(milliseconds: 300),
+                            alignment: 0.5); // 0.5表示中央对齐
                         setState(() {
                           showToTopBtn = false;
                         });
@@ -2935,8 +3244,10 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
                       _buildMenuItem(Icons.list_alt, '词表浏览'),
                       _buildMenuItem(Icons.headphones, '随身听'),
                       // 根据平台支持情况动态显示功能
-                      if (PlatformUtils.isAsrSupported()) _buildMenuItem(Icons.record_voice_over, '背中文'),
-                      if (PlatformUtils.isEnglishAsrSupported()) _buildMenuItem(Icons.record_voice_over, '背英文'),
+                      if (PlatformUtils.isAsrSupported())
+                        _buildMenuItem(Icons.record_voice_over, '背中文'),
+                      if (PlatformUtils.isEnglishAsrSupported())
+                        _buildMenuItem(Icons.record_voice_over, '背英文'),
                       _buildMenuItem(Icons.edit, '默写'),
                       const SizedBox(height: 16),
                       // 不再显示按钮
@@ -3013,12 +3324,15 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setDialogState) {
             return AlertDialog(
-              backgroundColor: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
+              backgroundColor:
+                  isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
               ),
               title: Text(
-                studyMode == WordListStudyMode.speakEnglish ? '背英文模式设置' : '背中文模式设置',
+                studyMode == WordListStudyMode.speakEnglish
+                    ? '背英文模式设置'
+                    : '背中文模式设置',
                 style: TextStyle(
                   color: isDarkMode ? Colors.white : const Color(0xFF2D3748),
                   fontSize: 16,
@@ -3026,25 +3340,33 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
                 ),
               ),
               content: DefaultTextStyle.merge(
-                style: const TextStyle(fontSize: 13.0, fontWeight: FontWeight.w400),
+                style: const TextStyle(
+                    fontSize: 13.0, fontWeight: FontWeight.w400),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (studyMode == WordListStudyMode.speakChinese || studyMode == WordListStudyMode.speakEnglish)
+                    if (studyMode == WordListStudyMode.speakChinese ||
+                        studyMode == WordListStudyMode.speakEnglish)
                       Row(
                         children: [
                           Icon(
-                            mustAnswerAll ? Icons.check_circle : Icons.radio_button_unchecked,
+                            mustAnswerAll
+                                ? Icons.check_circle
+                                : Icons.radio_button_unchecked,
                             size: 20,
-                            color: mustAnswerAll ? const Color(0xFF4A90E2) : Colors.grey[600],
+                            color: mustAnswerAll
+                                ? const Color(0xFF4A90E2)
+                                : Colors.grey[600],
                           ),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
                               mustAnswerAll ? '必须全部答对才跳转' : '答对一个即可跳转',
                               style: TextStyle(
-                                color: isDarkMode ? Colors.white.withValues(alpha: 0.9) : const Color(0xFF2D3748),
+                                color: isDarkMode
+                                    ? Colors.white.withValues(alpha: 0.9)
+                                    : const Color(0xFF2D3748),
                               ),
                             ),
                           ),
@@ -3060,7 +3382,8 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
                               }
                             },
                             activeThumbColor: const Color(0xFF4A90E2),
-                            activeTrackColor: const Color(0xFF4A90E2).withValues(alpha: 0.3),
+                            activeTrackColor:
+                                const Color(0xFF4A90E2).withValues(alpha: 0.3),
                           ),
                         ],
                       ),
