@@ -192,11 +192,11 @@ class SoundUtil {
                 },
               ),
             ))
-            .timeout(const Duration(milliseconds: 100));
+            .timeout(const Duration(milliseconds: 1000));
       }
 
-      await player.setPlaybackRate(speed).timeout(const Duration(milliseconds: 100));
-      await player.setVolume(volume).timeout(const Duration(milliseconds: 100));
+      await player.setPlaybackRate(speed).timeout(const Duration(milliseconds: 1001)); // 故意把超时时间设置的有点区别, 这样当发生超时异常的时候, 就可以通过日志快速看出异常发生在哪里
+      await player.setVolume(volume).timeout(const Duration(milliseconds: 1002));
 
       // 添加播放状态监听
       player.onPlayerStateChanged.listen((state) {
