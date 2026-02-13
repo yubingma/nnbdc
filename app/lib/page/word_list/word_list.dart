@@ -2621,7 +2621,8 @@ class WordListPageState extends State<WordListPage>
                       ),
 
                       /// 书签图标 - 跳到书签位置
-                      InkWell(
+                      if (isBookMarkValid(bookMark))
+                        InkWell(
                         borderRadius: BorderRadius.circular(8),
                         child: Padding(
                           padding: const EdgeInsets.symmetric(
