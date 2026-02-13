@@ -296,8 +296,8 @@ Future<dynamic>? toDictWordsListPage(String dictId, bool showDelBtn) async {
     return Get.toNamed('/word_list',
         arguments: WordListPageArgs(
             dict.shortName!, DictWordsProvider(dict), true, showDelBtn, false, '', DictWordsProgressProvider(), DictWordsBookMarkProvider(dict), null)
-          ..canAddWord = (dict.name != '生词本' && showDelBtn)
-          ..canEditWord = (dict.name != '生词本' && showDelBtn));
+          ..canAddWord = showDelBtn
+          ..canEditWord = showDelBtn);
   } catch (e) {
     ToastUtil.error("无法打开词典");
     rethrow;
