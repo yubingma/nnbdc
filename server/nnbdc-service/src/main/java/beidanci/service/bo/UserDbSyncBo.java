@@ -29,6 +29,7 @@ import beidanci.api.model.DictWordDto;
 import beidanci.api.model.LearningDictDto;
 import beidanci.api.model.LearningWordDto;
 import beidanci.api.model.MasteredWordDto;
+import beidanci.api.model.MeaningItemDto;
 import beidanci.api.model.UserCowDungLogDto;
 import beidanci.api.model.UserDbLogDto;
 import beidanci.api.model.UserDto;
@@ -1077,6 +1078,24 @@ public class UserDbSyncBo {
                 logs.add(log);
             }
 
+            // 生成用户自定义词典的释义(meaning_item)全量日志
+            for (DictDto dictDto : ownDictDtos) {
+                List<MeaningItemDto> meaningItemDtos = meaningItemBo.getMeaningItemsOfDict(dictDto.getId());
+                for (MeaningItemDto meaningItemDto : meaningItemDtos) {
+                    UserDbLogDto log = new UserDbLogDto(
+                            Util.uuid(),
+                            userId,
+                            userDbVersion,
+                            "INSERT",
+                            "meaning_item",
+                            meaningItemDto.getId(),
+                            JsonUtils.toJson(meaningItemDto),
+                            meaningItemDto.getCreateTime(),
+                            meaningItemDto.getUpdateTime());
+                    logs.add(log);
+                }
+            }
+
             // 生成用户已掌握单词(mastered_word)全量日志
             List<MasteredWordDto> masteredWordDtos = masteredWordBo.getMasteredWordDtosOfUser(userId);
             for (MasteredWordDto masteredWordDto : masteredWordDtos) {
@@ -1130,6 +1149,7 @@ public class UserDbSyncBo {
             ordered.put("user_oper", counts.getOrDefault("user_oper", 0));
             ordered.put("user_wrong_word", counts.getOrDefault("user_wrong_word", 0));
             ordered.put("dict_word", counts.getOrDefault("dict_word", 0));
+            ordered.put("meaning_item", counts.getOrDefault("meaning_item", 0));
             ordered.put("mastered_word", counts.getOrDefault("mastered_word", 0));
             ordered.put("user_cow_dung_log", counts.getOrDefault("user_cow_dung_log", 0));
 
