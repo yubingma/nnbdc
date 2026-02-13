@@ -813,18 +813,21 @@ class WordBo {
   Future<List<DictVo>> getCustomDicts(String ownerId) async {
     final db = MyDatabase.instance;
     final dicts = await (db.select(db.dicts)
-          ..where((d) => d.ownerId.equals(ownerId) & d.name.isNotValue('生词本'))
+          ..where((d) => d.ownerId.equals(ownerId))
           ..orderBy([(d) => OrderingTerm.desc(d.createTime)]))
         .get();
 
     return dicts.map((d) {
+      final isRawWordsBook = d.name == '生词本';
       return DictVo.c2(d.id)
         ..name = d.name
         ..wordCount = d.wordCount
         ..isReady = d.isReady
         ..isShared = d.isShared
         ..visible = d.visible
-        ..owner = UserVo.c2(d.ownerId);
+        ..owner = UserVo.c2(d.ownerId)
+        ..canDelete = !isRawWordsBook  // 生词本不可删除
+        ..canRename = !isRawWordsBook;  // 生词本不可重命名
     }).toList();
   }
 

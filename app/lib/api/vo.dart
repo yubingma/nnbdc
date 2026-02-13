@@ -102,6 +102,12 @@ class DictVo extends Equatable {
   /// 该单词书的单词数量
   int? wordCount;
 
+  /// 该单词书是否可删除（生词本不可删除）
+  bool? canDelete;
+
+  /// 该单词书是否可重命名（生词本不可重命名）
+  bool? canRename;
+
   DateTime? createTime;
   DateTime? updateTime;
 

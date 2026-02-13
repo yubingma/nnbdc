@@ -512,11 +512,12 @@ class SelectBookPageState extends State<SelectBookPage> {
                                   },
                                   tooltip: '管理单词',
                                 ),
-                                IconButton(
-                                  icon: const Icon(Icons.delete_outline, size: 20, color: Colors.redAccent),
-                                  onPressed: () => _confirmDeleteDict(dict),
-                                  tooltip: '删除词书',
-                                ),
+                                if (dict.canDelete != false)
+                                  IconButton(
+                                    icon: const Icon(Icons.delete_outline, size: 20, color: Colors.redAccent),
+                                    onPressed: () => _confirmDeleteDict(dict),
+                                    tooltip: '删除词书',
+                                  ),
                               ],
                             ),
                           ),
