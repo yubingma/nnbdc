@@ -84,12 +84,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				4EF092EDF6625AAB4964CB2F /* Pods_Runner.framework in Frameworks */,
-				7616A5990A317460584566A4 /* libllama.a in Frameworks */,
-				46DBF7FB1AB0B171BAA97CE1 /* libggml.a in Frameworks */,
-				4DFDB913C756079C1309FF7C /* libggml-base.a in Frameworks */,
-				238531303868AE1413A357F0 /* libggml-cpu.a in Frameworks */,
-				1E583D67A28C3630B17683DB /* libggml-metal.a in Frameworks */,
-				3A611EBA09E16A48BA4A1DCF /* libggml-blas.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -503,9 +497,13 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				LIBRARY_SEARCH_PATHS = (
+				"LIBRARY_SEARCH_PATHS[sdk=iphoneos*]" = (
 					"$(inherited)",
-					"$(PROJECT_DIR)/Runner/LlamaCpp",
+					"$(PROJECT_DIR)/Runner/LlamaCpp/iphoneos",
+				);
+				"LIBRARY_SEARCH_PATHS[sdk=iphonesimulator*]" = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Runner/LlamaCpp/iphonesimulator",
 				);
 				MARKETING_VERSION = "$(FLUTTER_BUILD_NAME)";
 				OTHER_LDFLAGS = (
@@ -708,9 +706,13 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				LIBRARY_SEARCH_PATHS = (
+				"LIBRARY_SEARCH_PATHS[sdk=iphoneos*]" = (
 					"$(inherited)",
-					"$(PROJECT_DIR)/Runner/LlamaCpp",
+					"$(PROJECT_DIR)/Runner/LlamaCpp/iphoneos",
+				);
+				"LIBRARY_SEARCH_PATHS[sdk=iphonesimulator*]" = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Runner/LlamaCpp/iphonesimulator",
 				);
 				MARKETING_VERSION = "$(FLUTTER_BUILD_NAME)";
 				OTHER_LDFLAGS = (
@@ -756,9 +758,13 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				LIBRARY_SEARCH_PATHS = (
+				"LIBRARY_SEARCH_PATHS[sdk=iphoneos*]" = (
 					"$(inherited)",
-					"$(PROJECT_DIR)/Runner/LlamaCpp",
+					"$(PROJECT_DIR)/Runner/LlamaCpp/iphoneos",
+				);
+				"LIBRARY_SEARCH_PATHS[sdk=iphonesimulator*]" = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Runner/LlamaCpp/iphonesimulator",
 				);
 				MARKETING_VERSION = "$(FLUTTER_BUILD_NAME)";
 				OTHER_LDFLAGS = (
