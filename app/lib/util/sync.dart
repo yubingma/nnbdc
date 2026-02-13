@@ -227,6 +227,13 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
               if (log.operate == 'INSERT' || log.operate == 'UPDATE') {
                 await db.userCowDungLogsDao.insertEntity(entity, false);
               }
+            } else if (log.tblName == 'meaningItems') {
+              MeaningItem entity = MeaningItem.fromJson(jsonDecode(log.record));
+              if (log.operate == 'INSERT' || log.operate == 'UPDATE') {
+                await db.meaningItemsDao.insertEntity(entity, false);
+              } else if (log.operate == 'DELETE') {
+                await db.meaningItemsDao.deleteEntity(entity.id, false);
+              }
             } else if (log.tblName != 'users' &&
                 log.tblName != 'dicts' &&
                 log.tblName != 'words' &&
@@ -239,7 +246,8 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
                 log.tblName != 'userOpers' &&
                 log.tblName != 'bookMarks' &&
                 log.tblName != 'userStudySteps' &&
-                log.tblName != 'userCowDungLogs') {
+                log.tblName != 'userCowDungLogs' &&
+                log.tblName != 'meaningItems') {
               Global.logger.w("⚠️ 不支持的表: ${log.tblName}");
               ToastUtil.error('不支持的表:${log.tblName}');
             }

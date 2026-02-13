@@ -977,8 +977,28 @@ class MeaningItemsDao extends DatabaseAccessor<MyDatabase> with _$MeaningItemsDa
     return (select(meaningItems)..where((mi) => mi.id.equals(id))).getSingleOrNull();
   }
 
-  Future<void> insertEntity(MeaningItem entry) async {
+  Future<void> insertEntity(MeaningItem entry, bool genLog) async {
     await into(meaningItems).insertOnConflictUpdate(entry);
+    if (genLog && entry.dictId != null) {
+      var dict = await MyDatabase.instance.dictsDao.findById(entry.dictId!);
+      var owner = dict?.ownerId;
+      if (owner != null) {
+        await DbLogUtil.logOperation(owner, 'INSERT', 'meaningItems', entry.id, jsonEncode(entry.toJson()));
+      }
+    }
+  }
+
+  Future<void> deleteEntity(String id, bool genLog) async {
+    // 先获取要删除的实体，以便记录日志
+    var entry = await getById(id);
+    await (delete(meaningItems)..where((mi) => mi.id.equals(id))).go();
+    if (genLog && entry != null && entry.dictId != null) {
+      var dict = await MyDatabase.instance.dictsDao.findById(entry.dictId!);
+      var owner = dict?.ownerId;
+      if (owner != null) {
+        await DbLogUtil.logOperation(owner, 'DELETE', 'meaningItems', entry.id, jsonEncode(entry.toJson()));
+      }
+    }
   }
 
   Future<void> insertEntities(List<MeaningItem> entries) async {
