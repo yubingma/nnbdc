@@ -212,9 +212,9 @@ class SoundUtil {
       // 睡眠指定时间
       await Future.delayed(Duration(milliseconds: sleepAfterPlayInMilliSeconds));
     } on TimeoutException catch (e, stackTrace) {
-      ErrorHandler.handleError(e, stackTrace, logPrefix: '播放音效出错', showToast: false);
+      ErrorHandler.handleError(e, stackTrace, logPrefix: '播放音效出错1', showToast: false);
     } catch (e, st) {
-      ErrorHandler.handleError(e, st, logPrefix: '播放音效出错', showToast: false);
+      ErrorHandler.handleError(e, st, logPrefix: '播放音效出错2', showToast: false);
     } finally {
       player.dispose();
     }
@@ -228,7 +228,7 @@ class SoundUtil {
 
     // 在后台异步处理播放和释放，不阻塞调用者
     return _playAssetSoundInBackground(player, soundFileName, speed, volume).catchError((error, stackTrace) {
-      ErrorHandler.handleError(error, stackTrace, logPrefix: '并发播放音效出错', showToast: false);
+      ErrorHandler.handleError(error, stackTrace, logPrefix: '并发播放音效出错3', showToast: false);
     });
   }
 
@@ -284,7 +284,7 @@ class SoundUtil {
         await player.onPlayerComplete.first;
       }
     } on Exception catch (e, stackTrace) {
-      ErrorHandler.handleError(e, stackTrace, logPrefix: '播放音效出错', showToast: false);
+      ErrorHandler.handleError(e, stackTrace, logPrefix: '播放音效出错4', showToast: false);
     } finally {
       player.dispose();
     }
@@ -329,7 +329,7 @@ class SoundUtil {
       }
       await Future.delayed(Duration(milliseconds: 60));
     } on Exception catch (e, stackTrace) {
-      ErrorHandler.handleError(e, stackTrace, logPrefix: '播放音效出错', showToast: false);
+      ErrorHandler.handleError(e, stackTrace, logPrefix: '播放音效出错5', showToast: false);
     } finally {
       player.dispose();
     }
