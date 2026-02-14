@@ -1631,19 +1631,11 @@ class WordListPageState extends State<WordListPage>
       required bool isBookmarked, 
       required bool isDarkMode, 
       bool? learningStatus}) {
-    // 学习状态背景色：true=已掌握(绿色), false=学习中(蓝色), null=无特殊颜色
-    Color? statusBgColor;
-    if (learningStatus == true) {
-      statusBgColor = const Color(0xFF4CAF50).withValues(alpha: 0.15);
-    } else if (learningStatus == false) {
-      statusBgColor = const Color(0xFF2196F3).withValues(alpha: 0.15);
-    }
-
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
       decoration: BoxDecoration(
         gradient: isBookmarked
-            ? LinearGradient(
+            ? LinearGradient( 
                 colors: [
                   const Color(0xFF0097A7).withValues(alpha: 0.08),
                   const Color(0xFF00ACC1).withValues(alpha: 0.08),
@@ -1654,7 +1646,7 @@ class WordListPageState extends State<WordListPage>
             : null,
         color: isBookmarked
             ? null
-            : statusBgColor ?? (isDarkMode
+            : (isDarkMode
                 ? const Color(0xFF1E1E1E).withValues(alpha: 0.6)
                 : Colors.white.withValues(alpha: 0.8)),
         borderRadius: BorderRadius.circular(12),
@@ -2533,7 +2525,7 @@ class WordListPageState extends State<WordListPage>
     // 判断是否应该显示"掌握"按钮的场景
     final bool showMasterButton = ['学习中', '阶段复习', '今日错词', '今日新词', '今日旧词', '今日单词'].contains(args.appBarTitle);
     
-    // 如果单词已掌握且是"掌握"按钮场景，显示"已掌握"状态
+    // 如果单词已掌握且是"掌握"按钮场景，显示"已掌握"状态 
     if (isMastered && showMasterButton) {
       buttonText = '掌握';
       color = const Color(0xFF9E9E9E); // 灰色，表示已掌握

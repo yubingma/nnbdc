@@ -745,7 +745,7 @@ public class UserDbSyncBo {
             MasteredWordDto masteredWordDto = JsonUtils.makeObject(recordJson, MasteredWordDto.class);
             MasteredWord masteredWord = MasteredWord.fromDto(masteredWordDto);
             if (null == operation) {
-                String errorMsg = String.format("不支持的已掌握单词表操作: %s", operation);
+                String errorMsg = String.format("不支持的已掌握单词表操作1: %s", operation);
                 logger.error(errorMsg);
                 throw new IllegalArgumentException(errorMsg);
             } else
@@ -759,15 +759,21 @@ public class UserDbSyncBo {
                             logger.info("mastered_word 已存在，忽略重复 INSERT: id={}", masteredWord.getId());
                         }
                     }
+                    case "UPDATE" -> {
+                        MasteredWord existing = masteredWordBo.findById(masteredWord.getId());
+                        if (existing == null) {
+                            masteredWordBo.createEntity(masteredWord);
+                        } else {
+                            masteredWordBo.updateEntity(masteredWord);
+                        }
+                    }
                     case "DELETE" -> masteredWordBo.deleteEntity(masteredWord);
                     default -> {
-                        String errorMsg = String.format("不支持的已掌握单词表操作: %s", operation);
+                        String errorMsg = String.format("不支持的已掌握单词表操作2: %s", operation);
                         logger.error(errorMsg);
                         throw new IllegalArgumentException(errorMsg);
                     }
                 }
-            // 注意：mastered_word通常不支持UPDATE操作
-
         }
     }
 
