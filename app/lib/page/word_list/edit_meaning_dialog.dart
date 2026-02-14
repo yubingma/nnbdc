@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:drift/drift.dart' hide Column;
+import 'package:nnbdc/api/bo/word_bo.dart';
 import 'package:nnbdc/api/vo.dart';
+import 'package:nnbdc/db/db.dart';
+import 'package:nnbdc/global.dart';
 import 'package:nnbdc/page/word_list/word_list.dart';
 import 'package:nnbdc/util/word_util.dart';
 import 'package:nnbdc/util/toast_util.dart';
@@ -25,6 +29,7 @@ class EditMeaningDialog extends StatefulWidget {
 
 class _EditMeaningDialogState extends State<EditMeaningDialog> {
   late List<MeaningItemController> controllers;
+  bool _hasDiffFromDefault = false;
   
   List<String> get availablePosList {
     // 返回所有词性选项
@@ -91,6 +96,50 @@ class _EditMeaningDialogState extends State<EditMeaningDialog> {
     // 如果没有释义，添加一个空的编辑框
     if (controllers.isEmpty) {
       _addMeaningItem();
+    }
+
+    // 异步比较当前内容与默认释义
+    _checkDiffFromDefault(meaningItems);
+  }
+
+  Future<void> _checkDiffFromDefault(List<MeaningItemVo>? currentItems) async {
+    try {
+      // 获取默认释义（从通用词典 dictId = "0"）
+      final db = MyDatabase.instance;
+      final defaultQuery = db.select(db.meaningItems)
+        ..where((mi) => mi.wordId.equals(widget.word.word.id!) & mi.dictId.equals(Global.commonDictId))
+        ..orderBy([(mi) => OrderingTerm(expression: mi.popularity)]);
+      final defaultItems = await defaultQuery.get();
+      
+      if (defaultItems.isEmpty) return;
+      
+      // 将默认释义按词性分组并合并
+      Map<String, List<dynamic>> defaultGrouped = {};
+      for (var item in defaultItems) {
+        String cx = item.ciXing ?? '';
+        defaultGrouped.putIfAbsent(cx, () => []).add(item);
+      }
+      
+      String defaultStr = '';
+      defaultGrouped.forEach((cx, items) {
+        String merged = items.map((e) => e.meaning ?? '').where((s) => s.isNotEmpty).join('；');
+        defaultStr += '${cx.isNotEmpty ? cx : "无"}:$merged;';
+      });
+      
+      // 将当前编辑内容转为字符串比较
+      String currentStr = '';
+      for (var c in controllers) {
+        currentStr += '${c.selectedPos}:${c.meaningController.text};';
+      }
+      
+      // 比较是否不同
+      if (mounted) {
+        setState(() {
+          _hasDiffFromDefault = currentStr.trim() != defaultStr.trim();
+        });
+      }
+    } catch (e) {
+      // 忽略错误，默认不显示按钮
     }
   }
 
@@ -177,7 +226,7 @@ class _EditMeaningDialogState extends State<EditMeaningDialog> {
           onPressed: _handleSave,
           child: const Text('保存'),
         ),
-        if (controllers.any((c) => c.isCustom))
+        if (_hasDiffFromDefault)
           TextButton(
             onPressed: _handleRestoreDefault,
             child: const Text('恢复默认', style: TextStyle(color: Colors.red)),
@@ -240,6 +289,8 @@ class _EditMeaningDialogState extends State<EditMeaningDialog> {
                         controller.cixingController.text = '';
                       }
                     });
+                    // 词性变化时也触发差异检测
+                    _checkDiffFromDefault(null);
                   },
                 ),
               ),
@@ -256,6 +307,7 @@ class _EditMeaningDialogState extends State<EditMeaningDialog> {
                           isDense: true,
                           contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 12),
                         ),
+                        onChanged: (_) => _checkDiffFromDefault(null),
                       )
                     : const SizedBox.shrink(),
               ),
@@ -281,6 +333,7 @@ class _EditMeaningDialogState extends State<EditMeaningDialog> {
             ),
             maxLines: 3,
             minLines: 1,
+            onChanged: (_) => _checkDiffFromDefault(null),
           ),
         ],
       ),
@@ -348,9 +401,64 @@ class _EditMeaningDialogState extends State<EditMeaningDialog> {
   Future<void> _handleRestoreDefault() async {
     final success = await widget.wordModifier.deleteMeaning(widget.word.word.id!);
     if (success) {
-      Get.back();
+      // 重新加载默认释义 - 从数据库获取该词的默认释义
+      final userId = Global.getLoggedInUser()?.id;
+      if (userId != null) {
+        final defaultMeaningItems = await WordBo().getMeaningItemsForWord(widget.word.word.id!, userId);
+        // 更新WordWrapper中的meaningItems
+        widget.word.word.meaningItems = defaultMeaningItems;
+      }
+      // 重新初始化控制器
+      setState(() {
+        // 销毁旧的控制器
+        for (var controller in controllers) {
+          controller.dispose();
+        }
+        
+        // 重新创建控制器
+        List<MeaningItemVo>? meaningItems = widget.word.word.meaningItems;
+        controllers = [];
+
+        if (meaningItems != null && meaningItems.isNotEmpty) {
+          // 1. 按词性分组
+          Map<String, List<MeaningItemVo>> groupedItems = {};
+          for (var item in meaningItems) {
+            String cx = item.ciXing ?? '';
+            groupedItems.putIfAbsent(cx, () => []).add(item);
+          }
+
+          // 2. 为每个词性创建一个控制器，合并释义
+          groupedItems.forEach((cx, items) {
+            // 合并释义内容，使用分号分隔
+            String mergedMeaning = items
+                .map((e) => e.meaning ?? '')
+                .where((s) => s.isNotEmpty)
+                .join('；');
+            
+            // 标记为非自定义
+            bool isCustom = false;
+            
+            // 确定下拉框选中的值
+            String selectedPos = posList.contains(cx) ? cx : '无';
+
+            controllers.add(MeaningItemController(
+              selectedPos: selectedPos,
+              cixingController: TextEditingController(text: selectedPos == '无' ? '' : cx),
+              meaningController: TextEditingController(text: mergedMeaning),
+              isCustom: isCustom,
+            ));
+          });
+        }
+
+        // 如果没有释义，添加一个空的编辑框
+        if (controllers.isEmpty) {
+          _addMeaningItem();
+        }
+        
+        // 恢复默认后，内容与默认相同
+        _hasDiffFromDefault = false;
+      });
       ToastUtil.info('已恢复默认释义');
-      widget.onSuccess();
     }
   }
 }
@@ -360,16 +468,27 @@ class MeaningItemController {
   final TextEditingController cixingController;
   final TextEditingController meaningController;
   final bool isCustom;
+  VoidCallback? onMeaningChanged;
 
   MeaningItemController({
     required this.selectedPos,
     required this.cixingController,
     required this.meaningController,
     required this.isCustom,
-  });
+  }) {
+    // 添加文本变化监听，实时触发差异检测
+    meaningController.addListener(_onTextChanged);
+    cixingController.addListener(_onTextChanged);
+  }
+
+  void _onTextChanged() {
+    onMeaningChanged?.call();
+  }
 
   void dispose() {
+    cixingController.removeListener(_onTextChanged);
     cixingController.dispose();
+    meaningController.removeListener(_onTextChanged);
     meaningController.dispose();
   }
 }
