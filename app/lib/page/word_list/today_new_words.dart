@@ -43,6 +43,12 @@ class TodayNewWordsProvider with WordsProvider {
       return -1;
     }
   }
+
+  @override
+  Future<bool?> getWordLearningStatus(String wordId) async {
+    // "今日新词"页面的单词都是新词，学习状态是"学习中"
+    return false;
+  }
 }
 
 class TodayNewWordsProgressProvider implements WordProgressProvider {

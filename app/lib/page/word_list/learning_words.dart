@@ -47,6 +47,25 @@ class LearningWordsProvider with WordsProvider {
       return -1;
     }
   }
+
+  @override
+  Future<bool?> getWordLearningStatus(String wordId) async {
+    // "学习中"页面的所有单词都是学习中的，所以直接返回 false
+    // 如果需要更精确的状态（检查是否已掌握），可以查询 masteredWords 表
+    final user = Global.getLoggedInUser();
+    if (user == null) return null;
+
+    final db = MyDatabase.instance;
+
+    // 检查是否已掌握（可能从学习中升级为已掌握）
+    final masteredQuery = db.select(db.masteredWords)
+      ..where((mw) => mw.userId.equals(user.id) & mw.wordId.equals(wordId));
+    final mastered = await masteredQuery.getSingleOrNull();
+    if (mastered != null) return true; // 已掌握
+
+    // 页面中的单词本身就是学习中的，返回 false 
+    return false;
+  }
 }
 
 class LearningWordsProgressProvider implements WordProgressProvider {

@@ -1,10 +1,12 @@
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
+import 'package:drift/drift.dart' hide Value;
 import 'package:nnbdc/api/bo/study_bo.dart';
 import 'package:nnbdc/api/bo/word_bo.dart';
 import 'package:nnbdc/api/bo/bookmark_bo.dart';
 import 'package:nnbdc/api/result.dart';
 import 'package:nnbdc/api/vo.dart';
+import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/page/word_list/word_list.dart';
 import 'package:nnbdc/util/toast_util.dart';
 
@@ -50,6 +52,28 @@ class StageWordsProvider with WordsProvider {
     }
 
     return -1; // 单词不在当前阶段中
+  }
+
+  @override
+  Future<bool?> getWordLearningStatus(String wordId) async {
+    final user = Global.getLoggedInUser();
+    if (user == null) return null;
+
+    final db = MyDatabase.instance;
+
+    // 检查是否已掌握
+    final masteredQuery = db.select(db.masteredWords)
+      ..where((mw) => mw.userId.equals(user.id) & mw.wordId.equals(wordId));
+    final mastered = await masteredQuery.getSingleOrNull();
+    if (mastered != null) return true; // 已掌握
+
+    // 检查是否在学习中（生命值 > 0）
+    final learningQuery = db.select(db.learningWords)
+      ..where((lw) => lw.userId.equals(user.id) & lw.wordId.equals(wordId) & lw.lifeValue.isBiggerThanValue(0));
+    final learning = await learningQuery.getSingleOrNull();
+    if (learning != null) return false; // 学习中
+
+    return null; // 未学习
   }
 }
 

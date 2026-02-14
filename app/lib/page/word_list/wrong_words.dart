@@ -46,6 +46,12 @@ class WrongWordsProvider with WordsProvider {
       return -1;
     }
   }
+
+  @override
+  Future<bool?> getWordLearningStatus(String wordId) async {
+    // "今日错词"页面的单词都是错词，学习状态应该是"学习中"
+    return false;
+  }
 }
 
 class WrongWordsProgressProvider implements WordProgressProvider {

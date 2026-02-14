@@ -43,6 +43,12 @@ class MasteredWordsProvider with WordsProvider {
       return -1;
     }
   }
+
+  @override
+  Future<bool?> getWordLearningStatus(String wordId) async {
+    // "已掌握"页面的所有单词都是已掌握的
+    return true;
+  }
 }
 
 class MasteredWordsProgressProvider implements WordProgressProvider {
