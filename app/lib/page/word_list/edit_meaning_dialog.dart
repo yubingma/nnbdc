@@ -121,7 +121,7 @@ class _EditMeaningDialogState extends State<EditMeaningDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      insetPadding: const EdgeInsets.symmetric(horizontal: 4),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 8),
       title: Text('编辑释义: ${widget.word.word.spell}'),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       content: SizedBox(
@@ -131,10 +131,6 @@ class _EditMeaningDialogState extends State<EditMeaningDialog> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                '提示：编辑后将保存为自定义释义',
-                style: TextStyle(fontSize: 12, color: Colors.grey),
-              ),
               const SizedBox(height: 16),
               ...controllers.asMap().entries.map((entry) {
                 int index = entry.key;
