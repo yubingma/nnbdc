@@ -817,7 +817,7 @@ class WordBo {
           ..orderBy([(d) => OrderingTerm.desc(d.createTime)]))
         .get();
 
-    // 获取每个词典的实际单词数量
+    // 获取每个词典的实际单词数量，并同步到dict表
     final List<DictVo> results = [];
     for (final d in dicts) {
       final countQuery = db.selectOnly(db.dictWords)
@@ -825,6 +825,11 @@ class WordBo {
         ..where(db.dictWords.dictId.equals(d.id));
       final countResult = await countQuery.getSingle();
       final actualCount = countResult.read(countAll()) ?? 0;
+      
+      // 如果dict表中的wordCount与实际不一致，同步更新
+      if (d.wordCount != actualCount) {
+        await db.dictsDao.updateWordCount(d.id, true);
+      }
       
       final isRawWordsBook = d.name == '生词本';
       results.add(DictVo.c2(d.id)
