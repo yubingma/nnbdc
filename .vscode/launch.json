@@ -11,6 +11,7 @@
             "type": "dart",
             "program": "${workspaceFolder}/app/lib/main.dart",
             "deviceId": "chrome",
+            "args": [],
             "flutterMode": "debug"
         },
         {
@@ -27,6 +28,7 @@
             "type": "dart",
             "program": "${workspaceFolder}/app/lib/main.dart",
             "deviceId": "YXDBB20628208720",
+            "args": [],
             "flutterMode": "debug"
         },
         {
@@ -35,6 +37,7 @@
             "type": "dart",
             "program": "${workspaceFolder}/app/lib/main.dart",
             "deviceId": "9759342B-477D-431E-9A2F-9AD6665B0362",
+            "args": [],
             "flutterMode": "debug"
         },
         {
@@ -43,6 +46,7 @@
             "type": "dart",
             "program": "${workspaceFolder}/app/lib/main.dart",
             "deviceId": "7D73A734-78E6-4B44-A97B-CEE5F60EFFEE",
+            "args": [],
             "flutterMode": "debug"
         },
         {
@@ -51,6 +55,7 @@
             "type": "dart",
             "program": "${workspaceFolder}/app/lib/main.dart",
             "deviceId": "8308A5A8-D214-4EB7-8E4F-B89A148E7064",
+            "args": [],
             "flutterMode": "debug"
         },
         {
@@ -59,6 +64,7 @@
             "type": "dart",
             "program": "${workspaceFolder}/app/lib/main.dart",
             "deviceId": "00008110-0004692621BB801E",
+            "args": [],
             "flutterMode": "debug"
         },
         {
@@ -67,6 +73,7 @@
             "type": "dart",
             "program": "${workspaceFolder}/app/lib/main.dart",
             "deviceId": "00008120-000A7C523EC2601E",
+            "args": [],
             "flutterMode": "debug"
         },
         {
@@ -75,6 +82,7 @@
             "type": "dart",
             "program": "${workspaceFolder}/app/lib/main.dart",
             "deviceId": "windows",
+            "args": [],
             "flutterMode": "debug"
         },
         {
@@ -83,6 +91,7 @@
             "type": "dart",
             "program": "${workspaceFolder}/app/lib/main.dart",
             "deviceId": "macos",
+            "args": [],
             "flutterMode": "debug"
         }
     ]

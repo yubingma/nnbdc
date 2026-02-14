@@ -1628,12 +1628,17 @@ class WordListPageState extends State<WordListPage>
 
   Widget _buildWordDecoration(
       {required Widget child,
-      required bool isBookmarked,
-      required bool isDarkMode,
+      required bool isBookmarked, 
+      required bool isDarkMode, 
       bool? learningStatus}) {
-    // 学习状态颜色：true=已掌握(绿色), false=学习中(蓝色), null=未学习(无特殊颜色)
-    final bool? statusColor = learningStatus;
-    
+    // 学习状态背景色：true=已掌握(绿色), false=学习中(蓝色), null=无特殊颜色
+    Color? statusBgColor;
+    if (learningStatus == true) {
+      statusBgColor = const Color(0xFF4CAF50).withValues(alpha: 0.15);
+    } else if (learningStatus == false) {
+      statusBgColor = const Color(0xFF2196F3).withValues(alpha: 0.15);
+    }
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
       decoration: BoxDecoration(
@@ -1649,31 +1654,18 @@ class WordListPageState extends State<WordListPage>
             : null,
         color: isBookmarked
             ? null
-            : isDarkMode
+            : statusBgColor ?? (isDarkMode
                 ? const Color(0xFF1E1E1E).withValues(alpha: 0.6)
-                : Colors.white.withValues(alpha: 0.8),
+                : Colors.white.withValues(alpha: 0.8)),
         borderRadius: BorderRadius.circular(12),
-        border: isBookmarked
-            ? Border.all(
-                width: 2,
-                color: const Color(0xFF0097A7).withValues(alpha: 0.3),
-              )
-            : statusColor == true
-                ? Border.all(
-                    width: 2,
-                    color: const Color(0xFF4CAF50).withValues(alpha: 0.5), // 已掌握-绿色
-                  )
-                : statusColor == false
-                    ? Border.all(
-                        width: 2,
-                        color: const Color(0xFF2196F3).withValues(alpha: 0.5), // 学习中-蓝色
-                      )
-                    : Border.all(
-                        width: 1,
-                        color: isDarkMode
-                            ? const Color(0xFF333333)
-                            : const Color(0xFFE0E0E0),
-                      ),
+        border: Border.all(
+          width: 1,
+          color: isBookmarked
+              ? const Color(0xFF0097A7).withValues(alpha: 0.3)
+              : isDarkMode
+                  ? const Color(0xFF333333)
+                  : const Color(0xFFE0E0E0),
+        ),
         boxShadow: [
           BoxShadow(
             color: isBookmarked
@@ -2097,7 +2089,45 @@ class WordListPageState extends State<WordListPage>
   }
 
   Widget _buildWordHeader(
-      WordWrapper word, bool isBookmarked, bool isDarkMode) {
+      WordWrapper word, bool isBookmarked, bool isDarkMode, {bool? learningStatus}) {
+    // 状态标签
+    Widget? statusTag;
+    if (learningStatus == true) {
+      statusTag = Container(
+        margin: const EdgeInsets.only(left: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        decoration: BoxDecoration(
+          color: const Color(0xFF4CAF50),
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: const Text(
+          '已掌握',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 10,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      );
+    } else if (learningStatus == false) {
+      statusTag = Container(
+        margin: const EdgeInsets.only(left: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        decoration: BoxDecoration(
+          color: const Color(0xFF2196F3),
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: const Text(
+          '学习中',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 10,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      );
+    }
+
     return LayoutBuilder(
       builder: (context, constraints) {
         // 估算单词和音标所需的宽度
@@ -2113,98 +2143,117 @@ class WordListPageState extends State<WordListPage>
             word.word.mergedPronounce.length > 25;
 
         if (shouldWrap && word.word.mergedPronounce.isNotEmpty) {
-          // 换行显示：单词一行，音标一行
+          // 换行显示：单词一行，音标一行，右侧始终有状态标签
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 单词行
-              Text(
-                word.word.spell,
-                textScaler: TextScaler.linear(1.0),
-                style: TextStyle(
-                  color: isBookmarked
-                      ? const Color(0xFF0097A7)
-                      : (isDarkMode ? Colors.white : const Color(0xFF1F2937)),
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  height: 1.3,
-                  letterSpacing: 0.3,
-                ),
+              // 单词行（右侧固定状态标签）
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      word.word.spell,
+                      textScaler: TextScaler.linear(1.0),
+                      style: TextStyle(
+                        color: isBookmarked
+                            ? const Color(0xFF0097A7)
+                            : (isDarkMode ? Colors.white : const Color(0xFF1F2937)),
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        height: 1.3,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                  ),
+                  if (statusTag != null) statusTag,
+                ],
               ),
               // 音标行
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: (isDarkMode ? Colors.grey[700] : Colors.grey[200])
-                        ?.withValues(alpha: 0.7),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    '[${word.word.mergedPronounce}]',
-                    textScaler: TextScaler.linear(1.0),
-                    style: TextStyle(
-                      color: isDarkMode ? Colors.grey[300] : Colors.grey[600],
-                      fontSize: 12,
-                      fontFamily: 'NotoSans',
-                      fontWeight: FontWeight.w500,
-                      height: 1.3,
+              Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: (isDarkMode ? Colors.grey[700] : Colors.grey[200])
+                            ?.withValues(alpha: 0.7),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        '[${word.word.mergedPronounce}]',
+                        textScaler: TextScaler.linear(1.0),
+                        style: TextStyle(
+                          color: isDarkMode ? Colors.grey[300] : Colors.grey[600],
+                          fontSize: 12,
+                          fontFamily: 'NotoSans',
+                          fontWeight: FontWeight.w500,
+                          height: 1.3,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
                     ),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
                   ),
-                ),
+                ],
               ),
             ],
           );
         } else {
-          // 同行显示：单词和音标在一行
+          // 同行显示：单词和音标占满左侧空间，状态标签固定在右侧
           return Row(
             children: [
-              Flexible(
-                child: Text(
-                  word.word.spell,
-                  textScaler: TextScaler.linear(1.0),
-                  style: TextStyle(
-                    color: isBookmarked
-                        ? const Color(0xFF0097A7)
-                        : (isDarkMode ? Colors.white : const Color(0xFF1F2937)),
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                    height: 1.3,
-                    letterSpacing: 0.3,
-                  ),
+              // 单词和音标占满剩余空间
+              Expanded(
+                child: Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        word.word.spell,
+                        textScaler: TextScaler.linear(1.0),
+                        style: TextStyle(
+                          color: isBookmarked
+                              ? const Color(0xFF0097A7)
+                              : (isDarkMode ? Colors.white : const Color(0xFF1F2937)),
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          height: 1.3,
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                    ),
+                    if (word.word.mergedPronounce.isNotEmpty) ...[
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: Container(
+                          padding:
+                              const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: (isDarkMode ? Colors.grey[700] : Colors.grey[200])
+                                ?.withValues(alpha: 0.7),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            '[${word.word.mergedPronounce}]',
+                            textScaler: TextScaler.linear(1.0),
+                            style: TextStyle(
+                              color: isDarkMode ? Colors.grey[300] : Colors.grey[600],
+                              fontSize: 12,
+                              fontFamily: 'NotoSans',
+                              fontWeight: FontWeight.w500,
+                              height: 1.3,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
-              if (word.word.mergedPronounce.isNotEmpty) ...[
-                const SizedBox(width: 8),
-                Flexible(
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: (isDarkMode ? Colors.grey[700] : Colors.grey[200])
-                          ?.withValues(alpha: 0.7),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      '[${word.word.mergedPronounce}]',
-                      textScaler: TextScaler.linear(1.0),
-                      style: TextStyle(
-                        color: isDarkMode ? Colors.grey[300] : Colors.grey[600],
-                        fontSize: 12,
-                        fontFamily: 'NotoSans',
-                        fontWeight: FontWeight.w500,
-                        height: 1.3,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 1,
-                    ),
-                  ),
-                ),
-              ],
+              // 右侧固定状态标签
+              if (statusTag != null) statusTag,
             ],
           );
         }
@@ -2357,7 +2406,7 @@ class WordListPageState extends State<WordListPage>
                                   studyMode == WordListStudyMode.speakEnglish)
                               ? Container()
                               : _buildWordHeader(
-                                  word, isBookmarked, isDarkMode),
+                                  word, isBookmarked, isDarkMode, learningStatus: learningStatus),
 
                           /// 单词释义
                           if (studyMode == WordListStudyMode.list ||
