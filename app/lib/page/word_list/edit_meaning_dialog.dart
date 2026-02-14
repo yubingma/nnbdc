@@ -40,7 +40,7 @@ class _EditMeaningDialogState extends State<EditMeaningDialog> {
     'int.',
     'phrase.',
     'abbr.',
-    '其他'
+    '无'
   ];
 
   @override
@@ -71,7 +71,7 @@ class _EditMeaningDialogState extends State<EditMeaningDialog> {
         bool isCustom = items.any((e) => (e.id?.length ?? 0) > 10);
         
         // 确定下拉框选中的值
-        String selectedPos = posList.contains(cx) ? cx : '其他';
+        String selectedPos = posList.contains(cx) ? cx : '无';
 
         controllers.add(MeaningItemController(
           selectedPos: selectedPos,
@@ -89,10 +89,22 @@ class _EditMeaningDialogState extends State<EditMeaningDialog> {
   }
 
   void _addMeaningItem() {
+    // 获取已使用的词性
+    final usedPos = controllers.map((c) => c.selectedPos).toSet();
+    
+    // 找出可用的词性（未使用的）
+    String defaultPos = 'n.';
+    for (final pos in posList) {
+      if (!usedPos.contains(pos)) {
+        defaultPos = pos;
+        break;
+      }
+    }
+    
     setState(() {
       controllers.add(MeaningItemController(
-        selectedPos: 'n.',
-        cixingController: TextEditingController(text: 'n.'),
+        selectedPos: defaultPos,
+        cixingController: TextEditingController(text: defaultPos == '无' ? '' : defaultPos),
         meaningController: TextEditingController(),
         isCustom: false,
       ));
@@ -235,7 +247,7 @@ class _EditMeaningDialogState extends State<EditMeaningDialog> {
                   onChanged: (newValue) {
                     setState(() {
                       controller.selectedPos = newValue!;
-                      if (newValue != '其他') {
+                      if (newValue != '无') {
                         controller.cixingController.text = newValue;
                       }
                     });
@@ -243,14 +255,14 @@ class _EditMeaningDialogState extends State<EditMeaningDialog> {
                 ),
               ),
               const SizedBox(width: 8),
-              if (controller.selectedPos == '其他')
+              if (controller.selectedPos == '无')
                 Expanded(
                   flex: 2,
                   child: TextField(
                     controller: controller.cixingController,
                     decoration: const InputDecoration(
                       hintText: '输入词性',
-                      labelText: '其他词性',
+                      labelText: '无词性',
                       border: OutlineInputBorder(),
                       isDense: true,
                     ),
