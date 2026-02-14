@@ -207,7 +207,7 @@ class MyDatabase extends _$MyDatabase {
   // you should bump this number whenever you change or add a table definition. Migrations
   // are covered later in this readme.
   @override
-  int get schemaVersion => 12;
+  int get schemaVersion => 13;
 
   @override
   MigrationStrategy get migration {
@@ -257,6 +257,9 @@ class MyDatabase extends _$MyDatabase {
           }
           if (from < 12) {
             await _migrateFromV11ToV12RemoveVotedChinesesTable(m);
+          }
+          if (from < 13) {
+            await _migrateFromV12ToV13RemoveLearningPositionFields();
           }
         } catch (e, stackTrace) {
           // 升级失败，记录错误日志
@@ -363,6 +366,23 @@ class MyDatabase extends _$MyDatabase {
 
       // 从user_db_logs中删除相关的记录（如果存在）
       await customStatement("DELETE FROM user_db_logs WHERE tbl_name = 'voted_chineses' OR tbl_name = 'votedChineses';");
+    });
+  }
+
+  /// 从版本 12 升级到版本 13：删除 learning_dicts 表中的 current_word_id 和 current_word_seq 字段
+  /// 这两个字段已废弃，进度改为基于 learning_words 和 mastered_words 表动态计算
+  Future<void> _migrateFromV12ToV13RemoveLearningPositionFields() async {
+    await transaction(() async {
+      try {
+        await customStatement('ALTER TABLE learningDicts DROP COLUMN current_word_id');
+      } catch (e) {
+        Global.logger.w('删除 current_word_id 列失败: $e');
+      }
+      try {
+        await customStatement('ALTER TABLE learningDicts DROP COLUMN current_word_seq');
+      } catch (e) {
+        Global.logger.w('删除 current_word_seq 列失败: $e');
+      }
     });
   }
 

@@ -287,10 +287,6 @@ class DataIntegrityChecker {
       for (final learningDict in userLearningDicts) {
         final dict = await _db.dictsDao.findById(learningDict.dictId);
         if (dict == null) continue;
-
-        if (learningDict.currentWordSeq != null && learningDict.currentWordSeq! > dict.wordCount) {
-          result.addIssue('学习进度异常', '用户学习进度(${learningDict.currentWordSeq})超过词典单词数(${dict.wordCount})', 'learning_progress');
-        }
       }
     } catch (e) {
       result.addError('检查用户学习进度时出错: $e');
@@ -327,10 +323,6 @@ class DataIntegrityChecker {
       for (final learningDict in allLearningDicts) {
         final dict = await _db.dictsDao.findById(learningDict.dictId);
         if (dict == null) continue;
-
-        if (learningDict.currentWordSeq != null && learningDict.currentWordSeq! > dict.wordCount) {
-          result.addIssue('学习进度异常', '用户学习进度(${learningDict.currentWordSeq})超过词典单词数(${dict.wordCount})', 'learning_progress');
-        }
       }
     } catch (e) {
       result.addError('检查学习进度时出错: $e');
@@ -531,22 +523,8 @@ class DataIntegrityChecker {
 
   /// 修复学习进度
   Future<void> _fixLearningProgress(IntegrityFixResult fixResult) async {
-    try {
-      final allLearningDicts = await _db.learningDictsDao.select(_db.learningDicts).get();
-
-      for (final learningDict in allLearningDicts) {
-        final dict = await _db.dictsDao.findById(learningDict.dictId);
-        if (dict == null) continue;
-
-        if (learningDict.currentWordSeq != null && learningDict.currentWordSeq! > dict.wordCount) {
-          // 使用现有的更新方法
-          await _db.learningDictsDao.saveEntity(learningDict.copyWith(currentWordSeq: Value(dict.wordCount)), true);
-          fixResult.addFixed('修复用户学习进度: ${dict.wordCount}');
-        }
-      }
-    } catch (e) {
-      fixResult.addError('修复学习进度时出错: $e');
-    }
+    // 学习进度已改为基于状态计算，不再需要修复 currentWordSeq
+    // 保留此方法以避免破坏现有调用
   }
 
   /// 修复用户学习步骤缺失问题

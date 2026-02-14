@@ -72,10 +72,9 @@ class LevelVo {
 @JsonSerializable()
 class LearningDictVo {
   DictVo dict;
-  int? currentWordSeq;
   bool isPrivileged;
 
-  LearningDictVo(this.dict, this.currentWordSeq, this.isPrivileged);
+  LearningDictVo(this.dict, this.isPrivileged);
 
   factory LearningDictVo.fromJson(Map<String, dynamic> json) => _$LearningDictVoFromJson(json);
 

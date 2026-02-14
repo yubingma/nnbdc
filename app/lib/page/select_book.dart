@@ -678,8 +678,6 @@ class SelectBookPageState extends State<SelectBookPage> {
                       dictId: dictVo.id,
                       isPrivileged: false,
                       fetchMastered: false,
-                      currentWordId: null,
-                      currentWordSeq: null,
                       createTime: AppClock.now(),
                       updateTime: null);
                   await learningDictsDao.saveEntity(learningDict, true);

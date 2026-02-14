@@ -187,11 +187,6 @@ class LearningDicts extends Table {
   BoolColumn get isPrivileged => boolean()();
   BoolColumn get fetchMastered => boolean()();
 
-  TextColumn get currentWordId => text().nullable()();
-
-  /// 当前已取词位置
-  IntColumn get currentWordSeq => integer().nullable()();
-
   DateTimeColumn get createTime => dateTime()();
 
   DateTimeColumn get updateTime => dateTime().nullable()();

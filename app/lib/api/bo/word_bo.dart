@@ -1411,16 +1411,7 @@ class WordBo {
         }
         // 更新词书的wordCount（并生成日志用于同步）
         await db.dictsDao.updateWordCount(dictId, true);
-        final learningDict =
-            await (db.select(db.learningDicts)..where((ld) => ld.userId.equals(userId) & ld.dictId.equals(dictId))).getSingleOrNull();
-        if (learningDict != null && learningDict.currentWordSeq != null) {
-          if (learningDict.currentWordSeq! > seqNo) {
-            await (db.update(db.learningDicts)..where((ld) => ld.userId.equals(userId) & ld.dictId.equals(dictId))).write(LearningDictsCompanion(
-              currentWordSeq: Value(learningDict.currentWordSeq! - 1),
-              updateTime: Value(AppClock.now()),
-            ));
-          }
-        }
+        // 学习进度已改为基于状态计算，不再需要维护 currentWordSeq
       });
 
       // 延迟触发同步，确保事务完全提交

@@ -257,13 +257,6 @@ class _MePageState extends State<MePage> {
 
       // 获取所有词书的学习状态
       var learningDicts = await MyDatabase.instance.learningDictsDao.getLearningDictsOfUser(user.id);
-      var allDictsFinished = true;
-      for (var dict in learningDicts) {
-        var dictInfo = await MyDatabase.instance.dictsDao.findById(dict.dictId);
-        if (dictInfo != null && (dict.currentWordSeq ?? 0) < dictInfo.wordCount) {
-          allDictsFinished = false;
-        }
-      }
 
       // 获取词书中的单词总数
       var dictWords = await (db.select(db.dictWords)..where((dw) => dw.dictId.isIn(learningDicts.map((d) => d.dictId).toList()))).get();
@@ -275,6 +268,9 @@ class _MePageState extends State<MePage> {
         ..where(db.masteredWords.userId.equals(user.id));
       var masteredWordsResult = await masteredWordsQuery.getSingle();
       var masteredWordsCount = masteredWordsResult.read(drift.countAll()) ?? 0;
+
+      // 判断是否所有词书都已学完：学习中+已掌握 >= 总单词数
+      var allDictsFinished = (learningWordsCount + masteredWordsCount) >= rawWordCount;
 
       // 使用LevelUtil根据总积分计算等级
       LevelVo levelVo = LevelUtil.getLevelVoByScore(UserHelper.calculateTotalScore(user.gameScore, user.dakaScore));
@@ -2275,12 +2271,15 @@ class DictCard extends StatefulWidget {
 class _DictCardState extends State<DictCard> {
   late LearningDict currentLearningDict;
   int? actualWordCount; // 用于存储生词本的实际单词数量
+  int learnedCount = 0; // 学习中的单词数
+  int masteredCount = 0; // 已掌握的单词数
 
   @override
   void initState() {
     super.initState();
     currentLearningDict = widget.learningDict;
     _loadActualWordCount();
+    _loadLearnedAndMasteredCount();
   }
 
   @override
@@ -2289,6 +2288,50 @@ class _DictCardState extends State<DictCard> {
     if (oldWidget.learningDict != widget.learningDict) {
       currentLearningDict = widget.learningDict;
       _loadActualWordCount();
+      _loadLearnedAndMasteredCount();
+    }
+  }
+
+  // 加载学习中和已掌握的单词数量
+  Future<void> _loadLearnedAndMasteredCount() async {
+    final db = MyDatabase.instance;
+    final dictId = widget.learningDict.dictId;
+    final userId = widget.learningDict.userId;
+
+    // 获取该词书的所有单词ID
+    final dictWords = await (db.select(db.dictWords)
+          ..where((dw) => dw.dictId.equals(dictId)))
+        .get();
+    final wordIds = dictWords.map((dw) => dw.wordId).toSet();
+
+    // 获取学习中的单词（生命值>0）
+    final learningWords = await (db.select(db.learningWords)
+          ..where((lw) => lw.userId.equals(userId) & lw.lifeValue.isBiggerThanValue(0)))
+        .get();
+    final learningWordIds = learningWords.map((w) => w.wordId).toSet();
+
+    // 获取已掌握的单词
+    final masteredWords = await (db.select(db.masteredWords)
+          ..where((mw) => mw.userId.equals(userId)))
+        .get();
+    final masteredWordIds = masteredWords.map((w) => w.wordId).toSet();
+
+    // 计算该词书中学习和掌握的数量
+    int learned = 0;
+    int mastered = 0;
+    for (var wordId in wordIds) {
+      if (learningWordIds.contains(wordId)) {
+        learned++;
+      } else if (masteredWordIds.contains(wordId)) {
+        mastered++;
+      }
+    }
+
+    if (mounted) {
+      setState(() {
+        learnedCount = learned;
+        masteredCount = mastered;
+      });
     }
   }
 
@@ -2312,7 +2355,8 @@ class _DictCardState extends State<DictCard> {
   @override
   Widget build(BuildContext context) {
     final totalWords = widget.dictInfo.name == '生词本' ? (actualWordCount ?? 0) : widget.dictInfo.wordCount;
-    final progress = totalWords > 0 ? (currentLearningDict.currentWordSeq ?? 0) / totalWords : 0.0;
+    final learnedWords = learnedCount + masteredCount;
+    final progress = totalWords > 0 ? learnedWords / totalWords : 0.0;
     final progressPercent = (progress * 100).toInt();
 
     return Container(
@@ -2384,8 +2428,8 @@ class _DictCardState extends State<DictCard> {
                       const SizedBox(height: 4),
                       Text(
                         widget.dictInfo.name == '生词本'
-                            ? '${currentLearningDict.currentWordSeq ?? 0} / ${actualWordCount ?? 0}'
-                            : '${currentLearningDict.currentWordSeq ?? 0} / ${widget.dictInfo.wordCount}',
+                            ? '${learnedCount + masteredCount} / ${actualWordCount ?? 0}'
+                            : '${learnedCount + masteredCount} / ${widget.dictInfo.wordCount}',
                         style: TextStyle(
                           color: Colors.white.withValues(alpha: 0.8),
                           fontSize: 14,
@@ -2423,7 +2467,6 @@ class _DictCardState extends State<DictCard> {
                             dictId: currentLearningDict.dictId,
                             isPrivileged: newPrivilegedStatus,
                             fetchMastered: currentLearningDict.fetchMastered,
-                            currentWordSeq: currentLearningDict.currentWordSeq,
                             createTime: currentLearningDict.createTime,
                             updateTime: currentLearningDict.updateTime,
                           );
@@ -2487,7 +2530,6 @@ class _DictCardState extends State<DictCard> {
                         dictId: currentLearningDict.dictId,
                         isPrivileged: currentLearningDict.isPrivileged,
                         fetchMastered: currentLearningDict.fetchMastered,
-                        currentWordSeq: 0,
                         createTime: currentLearningDict.createTime,
                         updateTime: currentLearningDict.updateTime,
                       );

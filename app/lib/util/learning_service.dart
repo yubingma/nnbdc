@@ -293,9 +293,6 @@ class LearningService {
     // 从词书取新词
     List<LearningWord> newLearningWords = await fetchNewWordsToLearn(userId, todayDayNumber, newWordCount);
 
-    // 更新词书的当前位置
-    await updateCurrentPositionForUserDicts(userId);
-
     return newLearningWords;
   }
 
@@ -335,9 +332,9 @@ class LearningService {
       final dict = await db.dictsDao.findById(learningDict.dictId);
       if (dict == null) continue;
 
-      // 查询符合条件的单词
+      // 查询词书所有单词，按 seq 顺序
       final dictWords = await (db.select(db.dictWords)
-            ..where((dw) => dw.dictId.equals(learningDict.dictId) & dw.seq.isBiggerThanValue(learningDict.currentWordSeq ?? 0))
+            ..where((dw) => dw.dictId.equals(learningDict.dictId))
             ..orderBy([(dw) => OrderingTerm.asc(dw.seq)]))
           .get();
 
@@ -372,68 +369,5 @@ class LearningService {
     }
 
     return learningWords;
-  }
-
-  /// 更新用户所有学习中词书的当前已取词位置, 让用户能够观察到词书的取词进度
-  static Future<void> updateCurrentPositionForUserDicts(String userId) async {
-    final db = MyDatabase.instance;
-
-    // 获取用户选择的词书
-    final learningDicts = await (db.select(db.learningDicts)..where((ld) => ld.userId.equals(userId))).get();
-
-    // 获取用户已掌握的单词
-    final masteredWords = await db.masteredWordsDao.getMasteredWordsForUser(userId);
-    final masteredWordIds = masteredWords.map((w) => w.wordId).toSet();
-
-    // 获取学习中的单词
-    final learningWords = await (db.select(db.learningWords)..where((lw) => lw.userId.equals(userId))).get();
-    final learningWordIds = learningWords.map((w) => w.wordId).toSet();
-
-    for (var learningDict in learningDicts) {
-      // 获取词书信息
-      final dict = await db.dictsDao.findById(learningDict.dictId);
-      if (dict == null) continue;
-
-      // 获取该词书中的单词，按序号排序
-      final List<DictWord> dictWords = await (db.select(db.dictWords)
-            ..where((dw) => dw.dictId.equals(learningDict.dictId))
-            ..orderBy([(dw) => OrderingTerm.asc(dw.seq)]))
-          .get();
-
-      if (dictWords.isEmpty) continue;
-
-      // 找出下一个要取词的位置
-      int nextPosition = learningDict.currentWordSeq ?? 0;
-
-      // 从当前位置开始，找到下一个可以取词的位置
-      for (int i = 0; i < dictWords.length; i++) {
-        var dictWord = dictWords[i];
-        // 跳过已经处理过的单词
-        if (dictWord.seq <= nextPosition) continue;
-
-        // 检查单词是否已经在学习中
-        bool isLearned = learningWordIds.contains(dictWord.wordId);
-
-        // 检查单词是否已经掌握（根据fetchMastered设置决定）
-        bool isMastered = masteredWordIds.contains(dictWord.wordId);
-        bool shouldSkipMastered = !learningDict.fetchMastered && isMastered;
-
-        // 如果单词可以正常取词（不需要跳过），则更新为上一个位置, 并退出循环
-        if (!isLearned && !shouldSkipMastered) {
-          nextPosition = dictWord.seq - 1;
-          break;
-        }
-
-        // 如果单词需要跳过，继续检查下一个
-        nextPosition = dictWord.seq + 1;
-      }
-
-      // 更新词书的当前已取词位置
-      nextPosition = nextPosition >= dictWords.length ? dictWords.length - 1 : nextPosition;
-      final updatedLearningDict = learningDict.copyWith(
-          currentWordId: Value(dictWords[nextPosition].wordId), currentWordSeq: Value(nextPosition), updateTime: Value(AppClock.now()));
-
-      await db.learningDictsDao.saveEntity(updatedLearningDict, true);
-    }
   }
 }
