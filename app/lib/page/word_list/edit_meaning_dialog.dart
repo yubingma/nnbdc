@@ -25,6 +25,12 @@ class EditMeaningDialog extends StatefulWidget {
 
 class _EditMeaningDialogState extends State<EditMeaningDialog> {
   late List<MeaningItemController> controllers;
+  
+  List<String> get availablePosList {
+    // 返回所有词性选项
+    return posList;
+  }
+  
   final List<String> posList = [
     'n.',
     'v.',
@@ -75,7 +81,7 @@ class _EditMeaningDialogState extends State<EditMeaningDialog> {
 
         controllers.add(MeaningItemController(
           selectedPos: selectedPos,
-          cixingController: TextEditingController(text: cx),
+          cixingController: TextEditingController(text: selectedPos == '无' ? '' : cx),
           meaningController: TextEditingController(text: mergedMeaning),
           isCustom: isCustom,
         ));
@@ -147,7 +153,7 @@ class _EditMeaningDialogState extends State<EditMeaningDialog> {
               ...controllers.asMap().entries.map((entry) {
                 int index = entry.key;
                 var controller = entry.value;
-                return _buildMeaningItemEditor(index, controller);
+                return _buildMeaningItemEditor(index, controller, availablePosListForIndex(index));
               }),
               const SizedBox(height: 8),
               OutlinedButton.icon(
@@ -180,7 +186,20 @@ class _EditMeaningDialogState extends State<EditMeaningDialog> {
     );
   }
 
-  Widget _buildMeaningItemEditor(int index, MeaningItemController controller) {
+  List<String> availablePosListForIndex(int excludeIndex) {
+    final usedPos = controllers
+        .asMap()
+        .entries
+        .where((e) => e.key != excludeIndex)
+        .map((e) => e.value.selectedPos)
+        .toSet();
+    // 始终包含当前控制器已选的值（即使被其他控制器使用），否则下拉框会报错
+    final currentPos = controllers[excludeIndex].selectedPos;
+    final result = posList.where((pos) => !usedPos.contains(pos) || pos == currentPos).toList();
+    return result;
+  }
+  
+  Widget _buildMeaningItemEditor(int index, MeaningItemController controller, List<String> availablePos) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(12),
@@ -238,7 +257,7 @@ class _EditMeaningDialogState extends State<EditMeaningDialog> {
                     isDense: true,
                     contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 12),
                   ),
-                  items: posList.map((String value) {
+                  items: availablePos.map((String value) {
                     return DropdownMenuItem<String>(
                       value: value,
                       child: Text(value),
@@ -249,6 +268,8 @@ class _EditMeaningDialogState extends State<EditMeaningDialog> {
                       controller.selectedPos = newValue!;
                       if (newValue != '无') {
                         controller.cixingController.text = newValue;
+                      } else {
+                        controller.cixingController.text = '';
                       }
                     });
                   },
