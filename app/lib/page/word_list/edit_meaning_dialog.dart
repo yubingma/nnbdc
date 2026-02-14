@@ -201,7 +201,7 @@ class _EditMeaningDialogState extends State<EditMeaningDialog> {
   
   Widget _buildMeaningItemEditor(int index, MeaningItemController controller, List<String> availablePos) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         border: Border.all(color: Colors.grey.shade300),
@@ -211,39 +211,7 @@ class _EditMeaningDialogState extends State<EditMeaningDialog> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Text(
-                    '释义 ${index + 1}',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  if (controller.isCustom)
-                    Container(
-                      margin: const EdgeInsets.only(left: 8),
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Colors.blue,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: const Text(
-                        '自定义',
-                        style: TextStyle(color: Colors.white, fontSize: 10),
-                      ),
-                    ),
-                ],
-              ),
-              IconButton(
-                icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
-                onPressed: () => _removeMeaningItem(index),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
+          // 词性行：下拉框 + 自定义词性输入框 + 删除按钮
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -291,9 +259,17 @@ class _EditMeaningDialogState extends State<EditMeaningDialog> {
                       )
                     : const SizedBox.shrink(),
               ),
+              const SizedBox(width: 8),
+              IconButton(
+                icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
+                onPressed: () => _removeMeaningItem(index),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
+          // 释义内容行
           TextField(
             controller: controller.meaningController,
             decoration: const InputDecoration(
@@ -303,7 +279,7 @@ class _EditMeaningDialogState extends State<EditMeaningDialog> {
               isDense: true,
               contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 12),
             ),
-            maxLines: null,
+            maxLines: 3,
             minLines: 1,
           ),
         ],
