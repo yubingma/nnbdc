@@ -121,7 +121,9 @@ class _EditMeaningDialogState extends State<EditMeaningDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
+      insetPadding: const EdgeInsets.symmetric(horizontal: 4),
       title: Text('编辑释义: ${widget.word.word.spell}'),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       content: SizedBox(
         width: double.maxFinite,
         child: SingleChildScrollView(
