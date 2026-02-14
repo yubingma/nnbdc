@@ -1715,7 +1715,7 @@ class WordListPageState extends State<WordListPage>
     }
   }
 
-  Widget _buildWordActionButtons(WordWrapper word, int i, bool isBookmarked) {
+  Widget _buildWordActionButtons(WordWrapper word, int i, bool isBookmarked, {bool? learningStatus}) {
     return Container(
       constraints: const BoxConstraints(maxWidth: 60),
       padding: const EdgeInsets.only(left: 4),
@@ -1745,7 +1745,7 @@ class WordListPageState extends State<WordListPage>
                 () => clearHint(word)),
 
           // 删除按钮
-          if (args.showDelBtn) _buildActionButton(word, i),
+          if (args.showDelBtn) _buildActionButton(word, i, learningStatus: learningStatus),
         ],
       ),
     );
@@ -2455,7 +2455,7 @@ class WordListPageState extends State<WordListPage>
               (args.canEditWord &&
                   args.wordsProvider
                       is WordModifier)) // Added condition for edit button
-            _buildWordActionButtons(word, i, isBookmarked),
+            _buildWordActionButtons(word, i, isBookmarked, learningStatus: learningStatus),
         ],
       ),
     );
@@ -2522,38 +2522,50 @@ class WordListPageState extends State<WordListPage>
     });
   }
 
-  Widget _buildActionButton(WordWrapper word, int index) {
+  Widget _buildActionButton(WordWrapper word, int index, {bool? learningStatus}) {
     // 根据不同的单词列表类型，显示不同的文字和颜色
     String buttonText;
     Color color;
-
-    switch (args.appBarTitle) {
-      case '已掌握':
-        buttonText = '重学';
-        color = const Color(0xFF2196F3); // 蓝色，表示重学
-        break;
-      case '学习中':
-        buttonText = '掌握';
-        color = const Color(0xFF4CAF50); // 绿色，表示完成/掌握
-        break;
-      case '生词本':
-        buttonText = '删除';
-        color = const Color(0xFFEF5350); // 红色，表示删除
-        break;
-      case '阶段复习':
-        buttonText = '掌握';
-        color = const Color(0xFF4CAF50); // 绿色，表示掌握
-        break;
-      case '今日错词':
-      case '今日新词':
-      case '今日旧词':
-      case '今日单词':
-        buttonText = '掌握';
-        color = const Color(0xFF4CAF50); // 绿色，表示掌握
-        break;
-      default:
-        buttonText = '删除';
-        color = const Color(0xFFEF5350);
+    
+    // 如果单词已掌握，禁用按钮
+    final bool isMastered = learningStatus == true;
+    
+    // 判断是否应该显示"掌握"按钮的场景
+    final bool showMasterButton = ['学习中', '阶段复习', '今日错词', '今日新词', '今日旧词', '今日单词'].contains(args.appBarTitle);
+    
+    // 如果单词已掌握且是"掌握"按钮场景，显示"已掌握"状态
+    if (isMastered && showMasterButton) {
+      buttonText = '掌握';
+      color = const Color(0xFF9E9E9E); // 灰色，表示已掌握
+    } else {
+      switch (args.appBarTitle) {
+        case '已掌握':
+          buttonText = '重学';
+          color = const Color(0xFF2196F3); // 蓝色，表示重学
+          break;
+        case '学习中':
+          buttonText = '掌握';
+          color = const Color(0xFF4CAF50); // 绿色，表示完成/掌握
+          break;
+        case '生词本':
+          buttonText = '删除';
+          color = const Color(0xFFEF5350); // 红色，表示删除
+          break;
+        case '阶段复习':
+          buttonText = '掌握';
+          color = const Color(0xFF4CAF50); // 绿色，表示掌握
+          break;
+        case '今日错词':
+        case '今日新词':
+        case '今日旧词':
+        case '今日单词':
+          buttonText = '掌握';
+          color = const Color(0xFF4CAF50); // 绿色，表示掌握
+          break;
+        default:
+          buttonText = '删除';
+          color = const Color(0xFFEF5350);
+      }
     }
 
     return Container(
@@ -2569,7 +2581,7 @@ class WordListPageState extends State<WordListPage>
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(6),
-          onTap: () {
+          onTap: isMastered && showMasterButton ? null : () {
             onDelBtnPressed(word, index);
           },
           child: Padding(
@@ -2578,7 +2590,7 @@ class WordListPageState extends State<WordListPage>
               buttonText,
               textScaler: TextScaler.linear(1.0),
               style: TextStyle(
-                color: color,
+                color: isMastered && showMasterButton ? color.withValues(alpha: 0.5) : color,
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
                 height: 1.2,

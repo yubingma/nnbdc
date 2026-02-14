@@ -10,10 +10,8 @@ import 'package:nnbdc/page/word_list/wrong_words.dart';
 import 'package:provider/provider.dart';
 
 import '../api/vo.dart';
-import '../global.dart';
 import '../state.dart';
 import '../theme/app_theme.dart';
-import '../util/user_helper.dart';
 
 class WordListsPage extends StatefulWidget {
   const WordListsPage({super.key});
@@ -113,16 +111,14 @@ class _WordListsPageState extends State<WordListsPage> {
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
           onTap: () async {
-            var canDeleteTodayWords = !UserHelper.isTodayLearningStartedFromUser(Global.getLoggedInUser()!) ||
-                UserHelper.isTodayLearningFinishedFromUser(Global.getLoggedInUser()!);
             if (wordList.name == '今日错词') {
               toWrongWordsListPage();
             } else if (wordList.name == '今日新词') {
-              toTodayNewWordsListPage(canDeleteTodayWords)!.then((value) => loadData());
+              toTodayNewWordsListPage(true)!.then((value) => loadData());
             } else if (wordList.name == '今日旧词') {
-              toTodayOldWordsListPage(canDeleteTodayWords)!.then((value) => loadData());
+              toTodayOldWordsListPage(true)!.then((value) => loadData());
             } else if (wordList.name == '今日单词') {
-              toTodayWordsListPage(canDeleteTodayWords)!.then((value) => loadData());
+              toTodayWordsListPage(true)!.then((value) => loadData());
             } else if (wordList.name == '学习中') {
               toLearningWordsListPage(true)!.then((value) => loadData());
             } else if (wordList.name == '生词本') {

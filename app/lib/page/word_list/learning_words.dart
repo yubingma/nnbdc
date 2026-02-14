@@ -61,7 +61,7 @@ class LearningWordsProvider with WordsProvider {
     final masteredQuery = db.select(db.masteredWords)
       ..where((mw) => mw.userId.equals(user.id) & mw.wordId.equals(wordId));
     final mastered = await masteredQuery.getSingleOrNull();
-    if (mastered != null) return true; // 已掌握
+    if (mastered != null) return true; // 已掌握 
 
     // 页面中的单词本身就是学习中的，返回 false 
     return false;
