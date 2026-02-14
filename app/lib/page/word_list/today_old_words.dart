@@ -9,7 +9,7 @@ import 'package:nnbdc/util/toast_util.dart';
 import '../../global.dart';
 import '../../util/word_util.dart';
 
-class TodayOldWordsProvider implements WordsProvider {
+class TodayOldWordsProvider with WordsProvider {
   @override
   Future<PagedResults<WordWrapper>> getAPageOfWords(int fromIndex, int pageSize) async {
     var words = await WordBo().getTodayOldWordsForAPage(fromIndex, pageSize, Global.getLoggedInUser()!.id);

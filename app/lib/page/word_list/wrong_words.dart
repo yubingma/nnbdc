@@ -9,7 +9,7 @@ import 'package:nnbdc/util/toast_util.dart';
 
 import '../../util/word_util.dart';
 
-class WrongWordsProvider implements WordsProvider {
+class WrongWordsProvider with WordsProvider {
   @override
   Future<PagedResults<WordWrapper>> getAPageOfWords(int fromIndex, int pageSize) async {
     var words = await WordBo().getAnswerWrongWords(Global.getLoggedInUser()!.id);

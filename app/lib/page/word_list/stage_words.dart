@@ -11,7 +11,7 @@ import 'package:nnbdc/util/toast_util.dart';
 import '../../global.dart';
 import '../../util/word_util.dart';
 
-class StageWordsProvider implements WordsProvider {
+class StageWordsProvider with WordsProvider {
   @override
   Future<PagedResults<WordWrapper>> getAPageOfWords(int fromIndex, int pageSize) async {
     var words = await StudyBo().getCurrentStageCache();

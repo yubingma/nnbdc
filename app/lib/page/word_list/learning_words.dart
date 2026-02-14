@@ -13,7 +13,7 @@ import 'package:nnbdc/util/utils.dart';
 import '../../util/word_util.dart';
 import '../../util/app_clock.dart';
 
-class LearningWordsProvider implements WordsProvider {
+class LearningWordsProvider with WordsProvider {
   @override
   Future<PagedResults<WordWrapper>> getAPageOfWords(int fromIndex, int pageSize) async {
     var words = await WordBo().getLearningWordsForAPage(fromIndex, pageSize, Global.getLoggedInUser()!.id);

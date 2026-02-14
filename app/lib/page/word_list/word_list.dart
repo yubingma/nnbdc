@@ -35,7 +35,7 @@ const String menuSpeakChinese = '背中文';
 const String menuSpeakEnglish = '背英文';
 const String menuWriteSpell = '默写';
 
-abstract class WordsProvider {
+mixin WordsProvider {
   Future<PagedResults<WordWrapper>> getAPageOfWords(
       int fromIndex, int pageSize);
 
@@ -43,6 +43,9 @@ abstract class WordsProvider {
 
   /// 获取指定单词在所有单词中的位置, 如果指定单词不存在，返回-1
   Future<int> getWordIndex(String spell);
+
+  /// 获取单词的学习状态：null=未学习, true=已掌握, false=学习中
+  Future<bool?> getWordLearningStatus(String wordId) async => null;
 }
 
 abstract class WordModifier {
@@ -154,6 +157,9 @@ class WordListPageState extends State<WordListPage>
 
   /// 加载到界面的单词列表（其中第一个单词在所有单词中的序号为 baseIndex)
   List<WordWrapper> words = [];
+
+  /// 单词的学习状态：wordId -> null(未学习), true(已掌握), false(学习中)
+  Map<String, bool?> learningStatusMap = {};
 
   /// 是否显示返回到顶部按钮
   bool showToTopBtn = false;
@@ -367,9 +373,27 @@ class WordListPageState extends State<WordListPage>
                   alignment: 0.5)); // 显示在屏幕中部
         }
       });
+
+      // 异步加载学习状态
+      _loadLearningStatusForWords(result.rows);
     } catch (e, stackTrace) {
       ErrorHandler.handleError(e, stackTrace,
           logPrefix: '加载单词失败', showToast: false);
+    }
+  }
+
+  /// 异步加载单词的学习状态
+  Future<void> _loadLearningStatusForWords(List<WordWrapper> newWords) async {
+    for (var wordWrapper in newWords) {
+      final wordId = wordWrapper.word.id;
+      if (wordId != null && !learningStatusMap.containsKey(wordId)) {
+        final status = await args.wordsProvider.getWordLearningStatus(wordId);
+        if (mounted && status != null) {
+          setState(() {
+            learningStatusMap[wordId] = status;
+          });
+        }
+      }
     }
   }
 
@@ -1605,7 +1629,11 @@ class WordListPageState extends State<WordListPage>
   Widget _buildWordDecoration(
       {required Widget child,
       required bool isBookmarked,
-      required bool isDarkMode}) {
+      required bool isDarkMode,
+      bool? learningStatus}) {
+    // 学习状态颜色：true=已掌握(绿色), false=学习中(蓝色), null=未学习(无特殊颜色)
+    final bool? statusColor = learningStatus;
+    
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
       decoration: BoxDecoration(
@@ -1630,12 +1658,22 @@ class WordListPageState extends State<WordListPage>
                 width: 2,
                 color: const Color(0xFF0097A7).withValues(alpha: 0.3),
               )
-            : Border.all(
-                width: 1,
-                color: isDarkMode
-                    ? const Color(0xFF333333)
-                    : const Color(0xFFE0E0E0),
-              ),
+            : statusColor == true
+                ? Border.all(
+                    width: 2,
+                    color: const Color(0xFF4CAF50).withValues(alpha: 0.5), // 已掌握-绿色
+                  )
+                : statusColor == false
+                    ? Border.all(
+                        width: 2,
+                        color: const Color(0xFF2196F3).withValues(alpha: 0.5), // 学习中-蓝色
+                      )
+                    : Border.all(
+                        width: 1,
+                        color: isDarkMode
+                            ? const Color(0xFF333333)
+                            : const Color(0xFFE0E0E0),
+                      ),
         boxShadow: [
           BoxShadow(
             color: isBookmarked
@@ -2271,11 +2309,15 @@ class WordListPageState extends State<WordListPage>
     var word = words[i];
     final isDarkMode = context.read<DarkMode>().isDarkMode;
     final isBookmarked = getBookMarkUiPosition() == i;
+    
+    // 获取学习状态
+    final learningStatus = word.word.id != null ? learningStatusMap[word.word.id] : null;
 
     /// 一个单词
     var row = _buildWordDecoration(
       isBookmarked: isBookmarked,
       isDarkMode: isDarkMode,
+      learningStatus: learningStatus,
       child: Row(
         children: [
           /// 单词内容
@@ -2733,7 +2775,6 @@ class WordListPageState extends State<WordListPage>
                         icon: const Icon(Icons.add, color: Colors.white),
                         onPressed: _showAddWordDialog,
                       ),
-                    if (args.injectedBtn != null) args.injectedBtn!,
                     // 使用GlobalKey包裹图标，便于计算其全局坐标
                     // 使用 GlobalKey 直挂按钮，确保 iPad Popover 锚定更准确稳定
                     // 使用 IconButton + showMenu 手动控制菜单，
