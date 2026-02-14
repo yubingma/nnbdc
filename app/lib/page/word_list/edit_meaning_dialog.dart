@@ -276,19 +276,21 @@ class _EditMeaningDialogState extends State<EditMeaningDialog> {
                 ),
               ),
               const SizedBox(width: 8),
-              if (controller.selectedPos == '无')
-                Expanded(
-                  flex: 2,
-                  child: TextField(
-                    controller: controller.cixingController,
-                    decoration: const InputDecoration(
-                      hintText: '输入词性',
-                      labelText: '无词性',
-                      border: OutlineInputBorder(),
-                      isDense: true,
-                    ),
-                  ),
-                ),
+              Expanded(
+                flex: 2,
+                child: controller.selectedPos == '无'
+                    ? TextField(
+                        controller: controller.cixingController,
+                        decoration: const InputDecoration(
+                          hintText: '输入词性',
+                          labelText: '无词性',
+                          border: OutlineInputBorder(),
+                          isDense: true,
+                          contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+                        ),
+                      )
+                    : const SizedBox.shrink(),
+              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -299,6 +301,7 @@ class _EditMeaningDialogState extends State<EditMeaningDialog> {
               labelText: '释义内容',
               border: OutlineInputBorder(),
               isDense: true,
+              contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 12),
             ),
             maxLines: null,
             minLines: 1,
