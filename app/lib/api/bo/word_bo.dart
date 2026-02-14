@@ -817,18 +817,27 @@ class WordBo {
           ..orderBy([(d) => OrderingTerm.desc(d.createTime)]))
         .get();
 
-    return dicts.map((d) {
+    // 获取每个词典的实际单词数量
+    final List<DictVo> results = [];
+    for (final d in dicts) {
+      final countQuery = db.selectOnly(db.dictWords)
+        ..addColumns([countAll()])
+        ..where(db.dictWords.dictId.equals(d.id));
+      final countResult = await countQuery.getSingle();
+      final actualCount = countResult.read(countAll()) ?? 0;
+      
       final isRawWordsBook = d.name == '生词本';
-      return DictVo.c2(d.id)
+      results.add(DictVo.c2(d.id)
         ..name = d.name
-        ..wordCount = d.wordCount
+        ..wordCount = actualCount
         ..isReady = d.isReady
         ..isShared = d.isShared
         ..visible = d.visible
         ..owner = UserVo.c2(d.ownerId)
-        ..canDelete = !isRawWordsBook  // 生词本不可删除
-        ..canRename = !isRawWordsBook;  // 生词本不可重命名
-    }).toList();
+        ..canDelete = !isRawWordsBook
+        ..canRename = !isRawWordsBook);
+    }
+    return results;
   }
 
   /// 创建自定义词典
