@@ -908,21 +908,23 @@ class WordBo {
     }
   }
 
-  /// 更新自定义词典中单词的释义（支持多个词性/释义对）
-  Future<Result> updateMeaningForCustomDict(String dictId, String wordId, List<Map<String, String>> meanings) async {
+  /// 更新自定义词典中单词的释义
+  /// 用户输入的每个 MeaningUpdateItem.meaning 可以包含多个释义，用分号分隔
+  /// 例如: MeaningUpdateItem(ciXing: "n.", meaning: "脸,脸面;面对") 会产生2个释义项
+  Future<Result> updateMeaningForCustomDict(String dictId, String wordId, List<MeaningUpdateItem> meanings) async {
     final db = MyDatabase.instance;
     try {
       final now = AppClock.now();
+      final userId = Global.getLoggedInUser()?.id;
 
       await db.transaction(() async {
-        // 1. 先查询现有定制释义，用于记录删除日志
+        // 1. 查询并删除现有定制释义
         final existingQuery = db.select(db.meaningItems)
           ..where((mi) => mi.wordId.equals(wordId) & mi.dictId.equals(dictId));
         final existingItems = await existingQuery.get();
         
         // 记录删除日志
         for (final item in existingItems) {
-          final userId = Global.getLoggedInUser()?.id;
           if (userId != null) {
             await DbLogUtil.logOperation(userId, 'DELETE', 'meaningItems', item.id, jsonEncode(item.toJson()));
           }
@@ -931,22 +933,45 @@ class WordBo {
         // 删除现有定制释义
         await (db.delete(db.meaningItems)..where((mi) => mi.wordId.equals(wordId) & mi.dictId.equals(dictId))).go();
 
-        // 2. 插入新释义，使用 DAO 以生成正确的同步日志
-        for (var i = 0; i < meanings.length; i++) {
-          final meaning = meanings[i];
-          final newId = Util.uuid();
-          final newItem = MeaningItem(
-            id: newId,
-            wordId: wordId,
-            dictId: dictId,
-            ciXing: meaning['cixing'] ?? '',
-            meaning: meaning['meaning'] ?? '',
-            popularity: i + 1,
-            createTime: now,
-            updateTime: now,
-          );
-          // 使用 DAO 插入，会自动生成 INSERT 日志
-          await db.meaningItemsDao.insertEntity(newItem, true);
+        // 2. 解析用户输入，创建新的释义项
+        // 按分号分隔(支持中文和英文分号)
+        final semicolonRegex = RegExp(r'[;；]');
+        int popularity = 1;
+        
+        // 用于去重 (ciXing + meaning 的组合)
+        Set<String> seen = {};
+        
+        for (final item in meanings) {
+          final cixing = item.ciXing;
+          final meaningText = item.meaning;
+          
+          if (meaningText.isEmpty) continue;
+          
+          // 按分号分割
+          final parts = meaningText.split(semicolonRegex);
+          
+          for (final part in parts) {
+            final trimmed = part.trim();
+            if (trimmed.isEmpty) continue;
+            
+            // 去重
+            final key = '$cixing|$trimmed';
+            if (seen.contains(key)) continue;
+            seen.add(key);
+            
+            final newId = Util.uuid();
+            final newItem = MeaningItem(
+              id: newId,
+              wordId: wordId,
+              dictId: dictId,
+              ciXing: cixing,
+              meaning: trimmed,
+              popularity: popularity++,
+              createTime: now,
+              updateTime: now,
+            );
+            await db.meaningItemsDao.insertEntity(newItem, true);
+          }
         }
       });
 

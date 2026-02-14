@@ -38,7 +38,7 @@ class DictWordsProvider implements WordsProvider, WordModifier {
   }
 
   @override
-  Future<bool> updateMeanings(String wordId, List<Map<String, String>> meanings) async {
+  Future<bool> updateMeanings(String wordId, List<MeaningUpdateItem> meanings) async {
     final result = await WordBo().updateMeaningForCustomDict(dict.id, wordId, meanings);
     if (result.success) {
       return true;

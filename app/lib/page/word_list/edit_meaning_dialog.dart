@@ -291,13 +291,13 @@ class _EditMeaningDialogState extends State<EditMeaningDialog> {
       }
     }
     
-    List<Map<String, String>> newMeanings = [];
+    List<MeaningUpdateItem> newMeanings = [];
     mergedMeanings.forEach((cixing, meaningParts) {
       // 同一词性的多个编辑框内容也用分号连接，且把内容中的换行也替换为分号
-      newMeanings.add({
-        'cixing': cixing, 
-        'meaning': meaningParts.map((e) => e.replaceAll('\n', '；')).join('；')
-      });
+      newMeanings.add(MeaningUpdateItem(
+        ciXing: cixing, 
+        meaning: meaningParts.map((e) => e.replaceAll('\n', '；')).join('；')
+      ));
     });
 
     if (newMeanings.isEmpty) {
@@ -314,8 +314,8 @@ class _EditMeaningDialogState extends State<EditMeaningDialog> {
       // 立即更新内存中的数据，以便 UI 立刻显示最新内容
       widget.word.word.meaningItems = newMeanings.map((e) => MeaningItemVo(
         'custom_meaning_placeholder', // 设置一个足够长的 ID 以便被识别为自定义
-        e['cixing'], 
-        e['meaning'],
+        e.ciXing, 
+        e.meaning,
         null, // dict
         null, // synonyms
         null  // sentences
@@ -323,9 +323,9 @@ class _EditMeaningDialogState extends State<EditMeaningDialog> {
 
       // 同时也更新 shortDesc 以便页面列表立刻显示最新内容
       widget.word.word.shortDesc = newMeanings.map((e) {
-        String cx = e['cixing'] ?? '';
+        String cx = e.ciXing;
         // 确保没有换行符
-        String m = (e['meaning'] ?? '').replaceAll('\n', '；');
+        String m = e.meaning.replaceAll('\n', '；');
         return cx.isNotEmpty ? "$cx $m" : m;
       }).join("; ");
 

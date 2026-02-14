@@ -756,6 +756,17 @@ class MeaningItemVo {
   Map<String, dynamic> toJson() => _$MeaningItemVoToJson(this);
 }
 
+/// 用于更新单词释义的输入参数
+class MeaningUpdateItem {
+  final String ciXing;
+  final String meaning;
+
+  MeaningUpdateItem({
+    required this.ciXing,
+    required this.meaning,
+  });
+}
+
 @JsonSerializable()
 class SynonymVo {
   MeaningItemVo? meaningItem;
