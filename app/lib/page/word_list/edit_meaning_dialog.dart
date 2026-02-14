@@ -171,6 +171,8 @@ class _EditMeaningDialogState extends State<EditMeaningDialog> {
       if (controllers.length > 1) {
         controllers[index].dispose();
         controllers.removeAt(index);
+        // 删除后检测差异
+        _checkDiffFromDefault(null);
       } else {
         ToastUtil.error("至少需要保留一个释义");
       }
