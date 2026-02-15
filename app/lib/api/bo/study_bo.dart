@@ -13,6 +13,7 @@ import 'dart:async';
 import 'dart:math';
 import 'package:nnbdc/util/app_clock.dart';
 import 'word_bo.dart';
+import 'package:nnbdc/util/date_utils.dart';
 
 /// 业务对象（BO）：承载本地实现逻辑
 class StudyBo {
@@ -109,7 +110,10 @@ class StudyBo {
       final query = db.select(db.learningWords)
         ..where((tbl) =>
             tbl.userId.equals(user.id) & tbl.lastLearningDate.isBiggerOrEqualValue(startOfDay) & tbl.lastLearningDate.isSmallerOrEqualValue(endOfDay))
-        ..orderBy([(tbl) => OrderingTerm(expression: tbl.learningOrder)]);
+        ..orderBy([
+          (tbl) => OrderingTerm(expression: tbl.batchId),
+          (tbl) => OrderingTerm(expression: tbl.learningOrder),
+        ]);
       final todayWords = await query.get();
 
       // 获取当前学习位置
@@ -163,7 +167,7 @@ class StudyBo {
 
           // 构建 LearningWordVo
           final learningWordVo = LearningWordVo(userVo, stageWord.addTime, stageWord.addDay, stageWord.lifeValue, stageWord.lastLearningDate,
-              stageWord.learningOrder, stageWord.learnedTimes, wordVo);
+              stageWord.learningOrder, stageWord.learnedTimes, wordVo, stageWord.batchId);
 
           result.add(learningWordVo);
         } else {
@@ -347,13 +351,9 @@ class StudyBo {
 
       // 跨天检测：直接根据用户 lastLearningDate 判断
       final DateTime now = AppClock.now();
-      if (user.lastLearningDate != null) {
-        final DateTime u = user.lastLearningDate!;
-        final bool isSameDay = now.year == u.year && now.month == u.month && now.day == u.day;
-        if (!isSameDay) {
-          Global.logger.d('检测到跨天：user.lastLearningDate=$u, now=$now');
-          return Result<GetWordResult>("NEW_DAY", "已进入新的一天，今天的学习已终止", true);
-        }
+      if (user.lastLearningDate != null && !DateUtils.isSameDay(now, user.lastLearningDate!)) {
+        Global.logger.d('检测到跨天：user.lastLearningDate=${user.lastLearningDate}, now=$now');
+        return Result<GetWordResult>("NEW_DAY", "已进入新的一天，今天的学习已终止", true);
       }
       final DateTime dateOnlyNow = DateTime(now.year, now.month, now.day);
       final startOfDay = dateOnlyNow; // Already date-only
@@ -371,7 +371,10 @@ class StudyBo {
       final query = db.select(db.learningWords)
         ..where((tbl) =>
             tbl.userId.equals(user.id) & tbl.lastLearningDate.isBiggerOrEqualValue(startOfDay) & tbl.lastLearningDate.isSmallerOrEqualValue(endOfDay))
-        ..orderBy([(tbl) => OrderingTerm(expression: tbl.learningOrder)]);
+        ..orderBy([
+          (tbl) => OrderingTerm(expression: tbl.batchId),
+          (tbl) => OrderingTerm(expression: tbl.learningOrder),
+        ]);
       var todayWords = await query.get();
 
       if (todayWords.isEmpty) {
@@ -445,7 +448,7 @@ class StudyBo {
       final userVo = UserVo.fromUser(user);
       final wordVo = WordVo.c2('')..id = returnWord.wordId; // 仅返回ID
       final learningWordVo = LearningWordVo(userVo, returnWord.addTime, returnWord.addDay, returnWord.lifeValue, returnWord.lastLearningDate,
-          returnWord.learningOrder, returnWord.learnedTimes, wordVo);
+          returnWord.learningOrder, returnWord.learnedTimes, wordVo, returnWord.batchId);
 
       // 使用 WordBo.getWordMeaningItems 获取目标单词释义并用于生成混淆项
       final targetMeaningItems = await WordBo().getWordMeaningItems(returnWord.wordId, returnWord.userId);

@@ -290,6 +290,10 @@ class UserVo {
 
     userVo.level = LevelUtil.getLevelVoByScore(UserHelper.calculateTotalScore(user.gameScore, user.dakaScore));
 
+    // 学习状态
+    userVo.isTodayLearningStarted = UserHelper.isTodayLearningStartedFromUser(user);
+    userVo.isTodayLearningFinished = UserHelper.isTodayLearningFinishedFromUser(user);
+
     return userVo;
   }
 
@@ -847,11 +851,14 @@ class LearningWordVo {
 
   int? learningOrder;
 
+  /// 学习中单词的取词批次(仅对今日学习中的单词有意义), 用于维护今日学习位置的有效性(因为学习中单词允许用户删除(已掌握))
+  int? batchId;
+
   int learnedTimes;
 
   WordVo word;
 
-  LearningWordVo(this.user, this.addTime, this.addDay, this.lifeValue, this.lastLearningDate, this.learningOrder, this.learnedTimes, this.word);
+  LearningWordVo(this.user, this.addTime, this.addDay, this.lifeValue, this.lastLearningDate, this.learningOrder, this.learnedTimes, this.word, [this.batchId]);
 
   factory LearningWordVo.fromJson(Map<String, dynamic> json) => _$LearningWordVoFromJson(json);
 

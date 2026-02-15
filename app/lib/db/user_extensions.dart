@@ -233,8 +233,13 @@ extension UserExtensions on User {
     userVo.wordsPerDay = wordsPerDay;
     userVo.dakaDayCount = dakaDayCount;
     userVo.masteredWordsCount = masteredWordsCount;
+    // 魔法泡泡记录
     userVo.cowDung = cowDung;
     userVo.throwDiceChance = throwDiceChance;
+
+    // 学习状态
+    userVo.isTodayLearningStarted = UserHelper.isTodayLearningStartedFromUser(this);
+    userVo.isTodayLearningFinished = UserHelper.isTodayLearningFinishedFromUser(this);
 
     // 处理invitedBy字段，这是一个UserVo类型
     // 我们不处理这个字段，因为这需要额外的数据库查询
@@ -263,4 +268,10 @@ extension UserExtensions on User {
 
     return userVo;
   }
+
+  /// 判断用户今天是否已经开始学习
+  bool get isTodayLearningStarted => UserHelper.isTodayLearningStartedFromUser(this);
+
+  /// 判断用户今天是否已经完成学习
+  bool get isTodayLearningFinished => UserHelper.isTodayLearningFinishedFromUser(this);
 }

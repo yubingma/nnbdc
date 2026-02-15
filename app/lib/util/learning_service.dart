@@ -53,7 +53,7 @@ class LearningService {
       // 尝试从数据库中读取今日学习单词
       List<LearningWord> todayWords = await getTodayLearningWordsFromDb(user.id);
 
-      // 生成今日要学习的单词列表
+      // 生成(或补充)今日要学习的单词列表
       bool needAddNewWords = todayWords.isEmpty || (todayWords.length < (user.wordsPerDay) && addNewWordsIfNotEnough);
       bool wordExhausted = false;
       if (needAddNewWords) {
@@ -97,7 +97,10 @@ class LearningService {
     try {
       final query = db.select(db.learningWords)
         ..where((lw) => lw.userId.equals(userId) & lw.lastLearningDate.isBiggerOrEqualValue(today) & lw.lastLearningDate.isSmallerThanValue(tomorrow))
-        ..orderBy([(lw) => OrderingTerm(expression: lw.learningOrder)]);
+        ..orderBy([
+          (lw) => OrderingTerm(expression: lw.batchId),
+          (lw) => OrderingTerm(expression: lw.learningOrder),
+        ]);
 
       // 使用get()而不是getSingleOrNull()，因为我们需要所有匹配的记录
       return await query.get();
@@ -142,7 +145,16 @@ class LearningService {
       }
     }
 
-    // 如果需要，添加新单词到learning words（按照后端逻辑传递allLearningWords）
+    // 产生批次 ID：若今天还没生成过单词，批次为 1；否则为当前最大批次 + 1
+    int maxBatchId = 0;
+    if (todayLearningWords.isNotEmpty) {
+      for (var w in todayLearningWords) {
+        if (w.batchId > maxBatchId) maxBatchId = w.batchId;
+      }
+    }
+    int targetBatchId = maxBatchId == 0 ? 1 : maxBatchId + 1;
+
+    // 如果需要，添加新单词到learning words
     final newLearningWords = await addNewLearningWords(userId, allLearningWords, todayDayNumber);
     candidateWords.addAll(newLearningWords);
 
@@ -153,7 +165,8 @@ class LearningService {
 
       for (var word in learningWordsOfADay) {
         if (!todayLearningWords.any((w) => w.userId == word.userId && w.wordId == word.wordId)) {
-          todayLearningWords.add(word);
+          // 给今日学习单词分配批次
+          todayLearningWords.add(word.copyWith(batchId: targetBatchId));
           candidateWords.removeWhere((w) => w.userId == word.userId && w.wordId == word.wordId);
 
           // 按照后端逻辑：达到数量就立即返回
@@ -175,7 +188,8 @@ class LearningService {
       }
 
       if (!todayLearningWords.any((w) => w.userId == oldestWord.userId && w.wordId == oldestWord.wordId)) {
-        todayLearningWords.add(oldestWord);
+        // 给补足的单词分配批次
+        todayLearningWords.add(oldestWord.copyWith(batchId: targetBatchId));
         candidateWords.removeWhere((w) => w.userId == oldestWord.userId && w.wordId == oldestWord.wordId);
       }
     }
@@ -224,40 +238,51 @@ class LearningService {
   /// 将今日的学习单词更新到数据库
   static Future<void> updateTodayLearningWords(List<LearningWord> todayLearningWords, DateTime now) async {
     final db = MyDatabase.instance;
+    if (todayLearningWords.isEmpty) return;
 
-    // 按生命值从大到小排序
-    todayLearningWords.sort((a, b) => b.lifeValue.compareTo(a.lifeValue));
+    // 1. 找出当前最大的 batchId
+    int maxBatchId = 1;
+    for (var w in todayLearningWords) {
+      if (w.batchId > maxBatchId) maxBatchId = w.batchId;
+    }
 
-    int learningOrder = 1;
-    int updatedCount = 0;
+    // 2. 排序逻辑：
+    // 首先按照 batchId 升序排列。
+    // 对于最新批次 (batchId == maxBatchId)，内部按照 lifeValue 降序排列。
+    // 对于旧批次，内部保持原有的 learningOrder 顺序。
+    todayLearningWords.sort((a, b) {
+      if (a.batchId != b.batchId) {
+        return a.batchId.compareTo(b.batchId);
+      }
+      if (a.batchId == maxBatchId) {
+        // 最新批次：生命值降序
+        return b.lifeValue.compareTo(a.lifeValue);
+      }
+      // 旧批次：既有学习顺序升序
+      return a.learningOrder.compareTo(b.learningOrder);
+    });
 
+    // 3. 全局刷新 learningOrder 并保存
     try {
-      for (var learningWord in todayLearningWords) {
-        // 直接修改现有对象，与后端逻辑一致
+      for (int i = 0; i < todayLearningWords.length; i++) {
+        var learningWord = todayLearningWords[i];
+
+        // 统一更新日期标记（如果是新生成或刚跨天加入的）
         if (learningWord.lastLearningDate == null || !DateUtils.isSameDay(now, learningWord.lastLearningDate!)) {
-          // 如果lastLearningDate为null或不是同一天，更新lastLearningDate和isTodayNewWord
           learningWord = learningWord.copyWith(
             lastLearningDate: Value(now),
             isTodayNewWord: learningWord.learnedTimes == 0,
           );
         }
-        // 更新学习顺序
-        learningWord = learningWord.copyWith(learningOrder: learningOrder);
 
-        learningOrder++;
+        // 重新分配全局连续的学习顺序
+        learningWord = learningWord.copyWith(learningOrder: i + 1);
+
+        todayLearningWords[i] = learningWord;
         await db.learningWordsDao.saveEntity(learningWord, true);
-        updatedCount++;
       }
 
-      Global.logger.d('今日学习单词更新完成，共更新 $updatedCount 个单词');
-
-      // 检查数据库日志是否正确记录
-      if (todayLearningWords.isNotEmpty) {
-        String userId = todayLearningWords.first.userId;
-        List<UserDbLog> logs = await db.userDbLogsDao.getUserDbLogs(userId);
-        int learningWordsLogCount = logs.where((log) => log.tblName == 'learningWords').length;
-        Global.logger.d('更新后的学习单词相关日志数量: $learningWordsLogCount');
-      }
+      Global.logger.d('今日学习单词全局重排完成，共更新 ${todayLearningWords.length} 个单词');
     } catch (e, stackTrace) {
       Global.logger.d('更新今日学习单词时出错: $e');
       Global.logger.d('异常堆栈: $stackTrace');
@@ -355,6 +380,7 @@ class LearningService {
             addTime: now,
             addDay: todayDayNumber,
             lifeValue: newLearningWordLifeValue,
+            batchId: 0, // 初始批次设为 0，只有加入今日学习时才分配有效批次
             lastLearningDate: null, // 与后端逻辑一致，初始化为null
             learningOrder: 0,
             isTodayNewWord: false,

@@ -1550,7 +1550,10 @@ class WordBo {
     final query = db.select(db.learningWords)
       ..where((tbl) =>
           tbl.userId.equals(userId) & tbl.lastLearningDate.isBiggerOrEqualValue(startOfDay) & tbl.lastLearningDate.isSmallerOrEqualValue(endOfDay))
-      ..orderBy([(tbl) => OrderingTerm(expression: tbl.learningOrder)])
+      ..orderBy([
+        (tbl) => OrderingTerm(expression: tbl.batchId),
+        (tbl) => OrderingTerm(expression: tbl.learningOrder),
+      ])
       ..limit(pageSize, offset: fromIndex);
     final learningWords = await query.get();
     final countQuery = db.selectOnly(db.learningWords)
@@ -1581,8 +1584,8 @@ class WordBo {
           meaningItemVos.add(MeaningItemVo(mi.id, mi.ciXing, mi.meaning, null, null, null));
         }
         wordVo.meaningItems = meaningItemVos;
-        final learningWordVo =
-            LearningWordVo(userVo, lw.addTime, lw.addDay, lw.lifeValue, lw.lastLearningDate, lw.learningOrder, lw.learnedTimes, wordVo);
+        final learningWordVo = LearningWordVo(
+            userVo, lw.addTime, lw.addDay, lw.lifeValue, lw.lastLearningDate, lw.learningOrder, lw.learnedTimes, wordVo, lw.batchId);
         learningWordVos.add(learningWordVo);
       }
     }

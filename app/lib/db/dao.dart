@@ -6,6 +6,7 @@ import 'package:nnbdc/db/table.dart';
 import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/db_log_util.dart';
 import 'package:nnbdc/util/oper_type.dart';
+import 'package:nnbdc/util/learning_service.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/util/utils.dart';
 
@@ -13,6 +14,7 @@ import '../global.dart';
 import '../services/throttled_sync_service.dart';
 import '../util/error_handler.dart';
 import 'db.dart';
+import 'package:nnbdc/db/user_extensions.dart';
 
 part 'dao.g.dart';
 
@@ -1595,7 +1597,11 @@ class MasteredWordsDao extends DatabaseAccessor<MyDatabase> with _$MasteredWords
     final learningWord = await db.learningWordsDao.getById(userId, wordId);
 
     if (learningWord != null) {
-      // 创建已掌握单词记录
+      // 1. 确定待删除词的索引
+      final todayLearningWords = await LearningService.getTodayLearningWordsFromDb(userId);
+      int deleteIndex = todayLearningWords.indexWhere((w) => w.wordId == wordId);
+
+      // 2. 创建已掌握单词记录
       final now = AppClock.now();
       final masteredWord = MasteredWord(
         userId: userId,
@@ -1607,9 +1613,24 @@ class MasteredWordsDao extends DatabaseAccessor<MyDatabase> with _$MasteredWords
 
       await saveMasteredWord(masteredWord, true, true);
 
-      // 如果需要，删除学习中的单词
+      // 3. 如果需要，删除学习中的单词
       if (deleteLearningWord) {
         await db.learningWordsDao.deleteEntity(learningWord, true);
+
+        // 4. 智能调整学习进度
+        var user = await db.usersDao.getUserById(userId);
+        if (user != null && deleteIndex != -1 && user.isTodayLearningStarted) {
+          int currentPosition = user.lastLearningPosition!;
+            if (deleteIndex < currentPosition) {
+              // 删除的词在当前位置之前，位置减 1
+              await db.usersDao.saveUser(user.copyWith(lastLearningPosition: Value(currentPosition - 1)), true);
+              Global.logger.d('已掌握单词在当前记录前，学习位置减一: wordId=$wordId, oldPos=$currentPosition, newPos=${currentPosition - 1}');
+            } else if (deleteIndex == currentPosition) {
+              // 删除的词正是当前词，位置保持不变但重置当前词的学习步骤（因为原来的 nextWord 会顶替上来变为当前的 deleteIndex）
+              await db.usersDao.saveUser(user.copyWith(lastLearningMode: const Value(0)), true);
+              Global.logger.d('已掌握单词正是当前词，重置学习步骤: wordId=$wordId, pos=$currentPosition');
+          }
+        }
       }
     }
   }
