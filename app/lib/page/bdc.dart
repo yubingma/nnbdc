@@ -757,7 +757,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         SoundUtil.playAsrReadyHintSound();
       }
     } finally {
-      _isAsrProcessing = false;
     }
   }
 

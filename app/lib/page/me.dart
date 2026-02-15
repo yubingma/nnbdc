@@ -772,7 +772,7 @@ class _MePageState extends State<MePage> {
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              '非会员每日最多学习 20 个单词，开通会员可解除限制。',
+                              '非会员每日最多学习 20 个单词，开通会员可解除限制。',  
                               style: TextStyle(
                                 color: Colors.amber.shade900,
                                 fontSize: 13,
@@ -780,39 +780,6 @@ class _MePageState extends State<MePage> {
                                 fontFamily: 'NotoSansSC',
                               ),
                               textScaler: const TextScaler.linear(1.0),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          GestureDetector(
-                            onTap: () {
-                              Navigator.pushNamed(context, '/privacy');
-                            },
-                            child: Text(
-                              '隐私政策',
-                              style: TextStyle(
-                                color: Colors.amber.shade900,
-                                fontSize: 12,
-                                decoration: TextDecoration.underline,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          GestureDetector(
-                            onTap: () {
-                              Navigator.pushNamed(context, '/protocol');
-                            },
-                            child: Text(
-                              '使用条款',
-                              style: TextStyle(
-                                color: Colors.amber.shade900,
-                                fontSize: 12,
-                                decoration: TextDecoration.underline,
-                              ),
                             ),
                           ),
                         ],
