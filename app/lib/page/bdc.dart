@@ -607,6 +607,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
   /// 实际执行ASR启动/停止逻辑
   void _doHandleTabChangeForAsr() {
+
     if (_isInSpeakTab) {
       // 当前在"说"tab，如果ASR已经启动且状态正确，不需要再次启动
       if (asr.state == AsrState.started && !_isKeyboardVisible) {
@@ -620,7 +621,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         _setAsrContextualPhrases();
         final language = decideAsrLanguage();
         Global.logger.d('BDC: 准备启动ASR，语言=${language.locale}');
-        asr.startAsr(language);
+        // 启动ASR并播放提示音
+        _startAsrWithHint(language);
       }
     } else {
       // 当前在"选"tab，如果ASR已经停止，不需要再次停止
@@ -731,6 +733,31 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       }
     } catch (e) {
       Global.logger.d('设置ASR上下文短语失败: $e');
+    }
+  }
+
+  /// 启动ASR并播放提示音
+  Future<void> _startAsrWithHint(AsrLanguage language) async {
+    // 如果ASR已经在运行中，不需要重复启动
+    if (asr.state == AsrState.started) {
+      Global.logger.d('BDC: ASR已经在运行中，跳过重复启动');
+      return;
+    }
+
+    try {
+      await asr.startAsr(language);
+      Global.logger.d('BDC: ASR启动成功，播放提示音');
+      SoundUtil.playAsrReadyHintSound();
+    } catch (e, stackTrace) {
+      Global.logger.e('BDC: ASR启动失败', error: e, stackTrace: stackTrace);
+      // 即使启动抛出异常，如果 ASR 状态已经是 started（iOS 上会抛异常但实际已启动），
+      // 仍然需要播放提示音，提示用户可以开始说话
+      if (asr.state == AsrState.started) {
+        Global.logger.d('BDC: ASR状态为started，播放提示音');
+        SoundUtil.playAsrReadyHintSound();
+      }
+    } finally {
+      _isAsrProcessing = false;
     }
   }
 
@@ -1241,12 +1268,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       var user = Global.getLoggedInUserNotNull();
 
       if (_studyStep == StudyStep.en2Ch.json) {
-        //根据拼写
         playWordAndFirstSentence(await user.toUserVo(), false, false);
-        //根据发音
-        playWordAndFirstSentence(await user.toUserVo(), true, false);
       } else if (_studyStep == StudyStep.ch2En.json) {
-        // 中→英：根据发音
         playWordAndFirstSentence(await user.toUserVo(), true, false);
       }
       _initChoiceData(getWordResult, user);
