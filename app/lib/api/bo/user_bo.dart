@@ -161,7 +161,11 @@ class UserBo {
 
   Future<Result<List<String>>> getDayStatuses(int recentNDays) async {
     final db = MyDatabase.instance;
-    final user = await db.usersDao.getLastLoggedInUser();
+    User? user;
+    if (Global.currentUserId != null) {
+      user = await db.usersDao.getUserById(Global.currentUserId!);
+    }
+    user ??= await db.usersDao.getLastLoggedInUser();
     if (user == null || user.id.isEmpty) {
       final result = Result<List<String>>("ERROR", "用户未登录", false);
       result.data = null;
@@ -174,6 +178,13 @@ class UserBo {
 
     final List<UserDayStatus> dayStatuses = List.filled(recentNDays, UserDayStatus.notLogin);
 
+    // 从 dakas 表查询打卡记录（与 hasDakaToday 保持一致的数据源）
+    final allDakas = await db.dakasDao.getDakaRecords(userId);
+    final Set<DateTime> dakaDateSet = allDakas
+        .map((d) => DateTime(d.forLearningDate.year, d.forLearningDate.month, d.forLearningDate.day))
+        .toSet();
+
+    // 从 userOpers 表查询登录和学习记录
     final allOpers = await db.userOpersDao.getUserOpers(userId);
 
     final filteredOpers = allOpers.where((hist) {
@@ -189,14 +200,16 @@ class UserBo {
 
     for (int i = 0; i < recentNDays; i++) {
       final date = startDate.add(Duration(days: i));
-      final operTypes = dateOperMap[date] ?? {};
 
-      if (operTypes.contains(OperType.daka.value)) {
+      if (dakaDateSet.contains(date)) {
         dayStatuses[i] = UserDayStatus.dakaed;
-      } else if (operTypes.contains(OperType.startLearn.value)) {
-        dayStatuses[i] = UserDayStatus.studied;
-      } else if (operTypes.contains(OperType.login.value)) {
-        dayStatuses[i] = UserDayStatus.loggedIn;
+      } else {
+        final operTypes = dateOperMap[date] ?? {};
+        if (operTypes.contains(OperType.startLearn.value)) {
+          dayStatuses[i] = UserDayStatus.studied;
+        } else if (operTypes.contains(OperType.login.value)) {
+          dayStatuses[i] = UserDayStatus.loggedIn;
+        }
       }
     }
 
@@ -210,7 +223,9 @@ class UserBo {
     try {
       final db = MyDatabase.instance;
       final today = DateTime(AppClock.now().year, AppClock.now().month, AppClock.now().day);
-      final hasDakaToday = await db.dakasDao.findById(userId, today) != null;
+      final found = await db.dakasDao.findById(userId, today);
+      final hasDakaToday = found != null;
+      Global.logger.d('hasDakaToday: userId=$userId, today=$today (${today.millisecondsSinceEpoch}), found=${found?.forLearningDate} (${found?.forLearningDate.millisecondsSinceEpoch}), result=$hasDakaToday');
       final result = Result<bool>("SUCCESS", "获取成功", true);
       result.data = hasDakaToday;
       return result;

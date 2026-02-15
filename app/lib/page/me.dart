@@ -298,27 +298,20 @@ class _MePageState extends State<MePage> {
         });
       }
 
-      if (Global.isGuest) {
-        // 访客模式：根据本地数据库中的 daka 记录生成最近30天打卡状态
-        // 这里简单初始化为空状态，或者可以从本地数据库查询 daka 表生成
-        // 暂时只给空状态
+      // 访客和登录用户统一从本地数据库查询打卡状态
+      var result2 = await UserBo().getDayStatuses(30);
+      if (result2.success) {
         if (mounted) {
           setState(() {
-            // 初始化30天未打卡
-            last30DaysDakaStatus = List.filled(30, UserDayStatus.loggedIn.json);
-            // 还需要查询本地 daka 表来更新今天是否打卡等，这里暂略，后续可优化
+            last30DaysDakaStatus = result2.data!;
           });
         }
       } else {
-        var result2 = await UserBo().getDayStatuses(30);
-        if (result2.success) {
-          if (mounted) {
-            setState(() {
-              last30DaysDakaStatus = result2.data!;
-            });
-          }
-        } else {
-          ToastUtil.error(result2.msg!);
+        // 查询失败时回退为默认状态
+        if (mounted) {
+          setState(() {
+            last30DaysDakaStatus = List.filled(30, UserDayStatus.notLogin.json);
+          });
         }
       }
 

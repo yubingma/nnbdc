@@ -126,13 +126,13 @@ class _EditMeaningDialogState extends State<EditMeaningDialog> {
         defaultStr += '${cx.isNotEmpty ? cx : "无"}:$merged;';
       });
       
-      // 将当前编辑内容转为字符串比较
+      // 将当前编辑内容转为字符串比较 
       String currentStr = '';
       for (var c in controllers) {
         currentStr += '${c.selectedPos}:${c.meaningController.text};';
       }
       
-      // 比较是否不同
+      // 比较是否不同 
       if (mounted) {
         setState(() {
           _hasDiffFromDefault = currentStr.trim() != defaultStr.trim();
