@@ -417,6 +417,72 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
                   ),
                 ),
 
+                // 单词不足提示 & 补充按钮
+                if (prepareResult!.success && todayWordCount! < user!.wordsPerDay!)
+                  Container(
+                    margin: const EdgeInsets.only(top: 16),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF3E0),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: const Color(0xFFFF9800).withValues(alpha: 0.3),
+                        width: 1,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.info_outline_rounded,
+                          color: Color(0xFFFF9800),
+                          size: 20,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            '今日单词不足（${todayWordCount!}/${user!.wordsPerDay!}）',
+                            textScaler: const TextScaler.linear(1.0),
+                            style: const TextStyle(
+                              fontFamily: 'NotoSansSC',
+                              color: Color(0xFFE65100),
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                              height: 1.2,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFFF9800),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            elevation: 0,
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          onPressed: () async {
+                            await StudyBo().prepareForStudy(true);
+                            loadData();
+                          },
+                          child: Text(
+                            '补充到${user!.wordsPerDay!}个',
+                            textScaler: const TextScaler.linear(1.0),
+                            style: const TextStyle(
+                              fontFamily: 'NotoSansSC',
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              height: 1.2,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
                 const SizedBox(height: 8),
                 // 主要操作按钮
                 if (prepareResult!.success)

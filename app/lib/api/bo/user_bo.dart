@@ -24,7 +24,7 @@ class UserBo {
 
   Future<Result<UserVo>> checkUser(CheckBy checkBy, String? email, String? userName, String password, String clientType, String clientVersion) async {
     try {
-      // 在正式进入系统前, 首先同步系统数据库, 因为系统数据更加基础
+      // 在正式进入系统前, 首先同步系统数据库, 因为系统数据更加基础 
       try {
         await dbsync.syncSysDb();
       } catch (e, stackTrace) {
@@ -223,9 +223,7 @@ class UserBo {
     try {
       final db = MyDatabase.instance;
       final today = DateTime(AppClock.now().year, AppClock.now().month, AppClock.now().day);
-      final found = await db.dakasDao.findById(userId, today);
-      final hasDakaToday = found != null;
-      Global.logger.d('hasDakaToday: userId=$userId, today=$today (${today.millisecondsSinceEpoch}), found=${found?.forLearningDate} (${found?.forLearningDate.millisecondsSinceEpoch}), result=$hasDakaToday');
+      final hasDakaToday = await db.dakasDao.findById(userId, today) != null;
       final result = Result<bool>("SUCCESS", "获取成功", true);
       result.data = hasDakaToday;
       return result;
