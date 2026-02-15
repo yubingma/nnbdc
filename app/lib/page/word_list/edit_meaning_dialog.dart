@@ -10,7 +10,7 @@ import 'package:nnbdc/util/word_util.dart';
 import 'package:nnbdc/util/toast_util.dart';
 
 /// 改进的编辑释义对话框
-/// 显示所有词性的完整释义，每个词性有独立的下拉选择框和编辑框
+/// 显示所有词性的完整释义，每个词性有独立的下拉选择框和编辑框 
 class EditMeaningDialog extends StatefulWidget {
   final WordWrapper word;
   final WordModifier wordModifier;
@@ -116,7 +116,7 @@ class _EditMeaningDialogState extends State<EditMeaningDialog> {
       // 将默认释义按词性分组并合并
       Map<String, List<dynamic>> defaultGrouped = {};
       for (var item in defaultItems) {
-        String cx = item.ciXing ?? '';
+        String cx = item.ciXing;
         defaultGrouped.putIfAbsent(cx, () => []).add(item);
       }
       
