@@ -102,9 +102,9 @@ class Users extends Table {
   // 累计学习天数，记录用户从开始使用app以来，总共学习了多少天(不是用户存在了多少天)。
   IntColumn get learnedDays => integer()();
 
-  IntColumn get lastLearningPosition => integer().nullable()();
+  // IntColumn get lastLearningPosition => integer().nullable()(); // 已废弃，进化为动态计算进度
 
-  IntColumn get lastLearningMode => integer().nullable()();
+  // IntColumn get lastLearningMode => integer().nullable()(); // 已废弃，进化为动态计算进度
 
   BoolColumn get learningFinished => boolean().nullable().withDefault(const Constant(false))();
 
@@ -453,6 +453,7 @@ class LearningWords extends Table {
 
   BoolColumn get isTodayNewWord => boolean()();
   IntColumn get learnedTimes => integer()();
+  IntColumn get todayLearnedTimes => integer().withDefault(const Constant(0))();
 
   DateTimeColumn get createTime => dateTime()();
 

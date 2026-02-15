@@ -5,9 +5,7 @@ import java.util.Date;
 public class LearningDictDto {
     private String dictId;
     private String userId;
-    private Integer currentWordSeq;
     private Boolean isPrivileged;
-    private String currentWord;
     private Boolean fetchMastered;
     private Date createTime;
     private Date updateTime;
@@ -45,23 +43,6 @@ public class LearningDictDto {
 
     public void setUserId(String userId) {
         this.userId = userId;
-    }
-
-    public Integer getCurrentWordSeq() {
-        return currentWordSeq;
-    }
-
-    public void setCurrentWordSeq(Integer currentWordSeq) {
-        this.currentWordSeq = currentWordSeq;
-    }
-
-
-    public String getCurrentWord() {
-        return currentWord;
-    }
-
-    public void setCurrentWord(String currentWord) {
-        this.currentWord = currentWord;
     }
 
     public Boolean getIsPrivileged() {

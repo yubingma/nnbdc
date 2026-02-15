@@ -26,8 +26,6 @@ public class SystemHealthCheckBo {
     @Autowired
     private DictBo dictBo;
     
-    @Autowired
-    private LearningDictBo learningDictBo;
     
     @Autowired
     private UserDbVersionDao userDbVersionDao;
@@ -115,32 +113,8 @@ public class SystemHealthCheckBo {
      * 检查学习进度合理性
      */
     public SystemHealthCheckResult checkLearningProgress() {
-        List<SystemHealthIssue> issues = new ArrayList<>();
-        List<String> errors = new ArrayList<>();
-        
-        try {
-            // 查找学习进度大于词书单词数量的记录
-            List<Object[]> invalidRecords = learningDictBo.findInvalidLearningProgress();
-            
-            for (Object[] record : invalidRecords) {
-                String userId = (String) record[0];
-                String dictId = (String) record[1];
-                Integer currentSeq = (Integer) record[2];
-                Integer wordCount = (Integer) record[3];
-                
-                issues.add(new SystemHealthIssue(
-                    "学习进度异常",
-                    String.format("用户 %s 在词典 %s 中的学习进度(%d)超过词典单词数(%d)", 
-                                userId, dictId, currentSeq, wordCount),
-                    "learning_progress"
-                ));
-            }
-            
-        } catch (Exception e) {
-            errors.add("检查学习进度合理性时出错: " + e.getMessage());
-        }
-        
-        return new SystemHealthCheckResult(issues.isEmpty() && errors.isEmpty(), issues, errors);
+        // current_word_seq 已从 learning_dict 中移除，此检查不再需要
+        return new SystemHealthCheckResult(true, new ArrayList<>(), new ArrayList<>());
     }
 
     /**
@@ -328,7 +302,7 @@ public class SystemHealthCheckBo {
                         fixedCount += fixUserDictIntegrity(fixed);
                         break;
                     case "learning_progress":
-                        fixedCount += fixLearningProgress(fixed);
+                        // fixedCount += fixLearningProgress(fixed);
                         break;
                     case "db_version":
                         fixedCount += fixDbVersionConsistency(fixed);
@@ -635,24 +609,6 @@ public class SystemHealthCheckBo {
         return fixedCount;
     }
 
-    private int fixLearningProgress(List<String> fixed) {
-        int fixedCount = 0;
-        try {
-            List<Object[]> invalidRecords = learningDictBo.findInvalidLearningProgress();
-            for (Object[] record : invalidRecords) {
-                String userId = (String) record[0];
-                String dictId = (String) record[1];
-                Integer wordCount = (Integer) record[3];
-                
-                learningDictBo.fixLearningProgress(userId, dictId, wordCount);
-                fixed.add(String.format("修复用户 %s 在词典 %s 中的学习进度", userId, dictId));
-                fixedCount++;
-            }
-        } catch (Exception e) {
-            // 错误已在调用方处理
-        }
-        return fixedCount;
-    }
 
     private int fixDbVersionConsistency(List<String> fixed) {
         int fixedCount = 0;

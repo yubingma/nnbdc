@@ -1,7 +1,5 @@
 package beidanci.service.bo;
 
-import java.io.IOException;
-import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -14,7 +12,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.annotation.PostConstruct;
-import javax.naming.NamingException;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -36,13 +33,9 @@ import beidanci.api.model.ClientType;
 import beidanci.api.model.DictWordDto;
 import beidanci.api.model.PagedResults;
 import beidanci.api.model.UserVo;
-import beidanci.api.model.WordVo;
 import beidanci.service.dao.BaseDao;
 import beidanci.service.dao.EntityRowMapper;
 import beidanci.service.dao.UserDbVersionDao;
-import beidanci.service.exception.EmptySpellException;
-import beidanci.service.exception.InvalidMeaningFormatException;
-import beidanci.service.exception.ParseException;
 import beidanci.service.po.Daka;
 import beidanci.service.po.DakaId;
 import beidanci.service.po.Dict;
@@ -54,7 +47,6 @@ import beidanci.service.po.StudyGroup;
 import beidanci.service.po.User;
 import beidanci.service.po.UserCowDungLog;
 import beidanci.service.po.UserDbLog;
-import beidanci.service.po.Word;
 import beidanci.service.store.WordCache;
 import beidanci.service.util.BeanUtils;
 import beidanci.service.util.JsonUtils;
@@ -179,11 +171,15 @@ public class UserBo extends BaseBo<User> {
     @Transactional
     public void deleteUnStartedDicts(User user, HashSet<String> exceptFor)
             throws IllegalArgumentException, IllegalAccessException {
+        // 由于移除了 currentWord 字段，这里改为通过检查该词典下是否有已学习记录来判断
         for (Iterator<LearningDict> i = user.getLearningDicts().iterator(); i.hasNext();) {
             LearningDict learningDict = i.next();
-            if (learningDict.getCurrentWord() == null && !exceptFor.contains(learningDict.getDict().getId())) {
-                learningDictBo.deleteEntity(learningDict);
-                i.remove();
+            if (!exceptFor.contains(learningDict.getDict().getId())) {
+                boolean hasLearningWords = learningWordBo.hasLearningWordsOfDict(user.getId(), learningDict.getDict().getId());
+                if (!hasLearningWords) {
+                    learningDictBo.deleteEntity(learningDict);
+                    i.remove();
+                }
             }
         }
     }
@@ -233,94 +229,7 @@ public class UserBo extends BaseBo<User> {
         return Result.success(null);
     }
 
-    /**
-     * 随机从指定的某本单词书中取一个单词。
-     *
-     * @param selectedLearningDicts 单词书列表，将从中随机选出一本，并取一个单词。注意，指定的单词书中可能也包含生词本（生词本被模拟成一本特殊的单词书）
-     * @return
-     * @throws EmptySpellException
-     * @throws InvalidMeaningFormatException
-     * @throws ParseException
-     * @throws IOException
-     * @throws IllegalAccessException
-     * @throws IllegalArgumentException
-     */
-    private WordVo getNewWordFromDicts(List<LearningDict> selectedLearningDicts, User user)
-            throws IOException, ParseException,
-            InvalidMeaningFormatException, EmptySpellException, IllegalArgumentException, IllegalAccessException {
-
-        // 将单词书打乱次序，模拟随机从某本单词书取词的效果
-        Collections.shuffle(selectedLearningDicts);
-
-        // 从当前学习的某本单词书中取下一个单词
-        WordVo wordToLearn;
-        for (LearningDict learningDict : selectedLearningDicts) {
-
-            // 获取该单词书当前的学习位置
-            Integer wordOrderInDict = learningDict.getCurrentWordSeq();
-            if (wordOrderInDict == null) {// 尚未开始学习该单词书
-                wordOrderInDict = 0;
-            }
-
-            // 如果该单词书尚未被学完，则取当前单词的下一个单词，并更新当前单词
-            // Dict realDict = dictBo.findById(learningDict.getDict().getId());
-            while (wordOrderInDict < learningDict.getDict().getWordCount()) {
-                // 从单词书中取下一个单词
-                WordVo nextWord = dictWordBo.getWordOfOrder(learningDict.getDict().getId(),
-                        wordOrderInDict + 1);
-
-                // 判断该单词是否已经取出过
-                List<LearningDict> allLearningDicts = new ArrayList<>(user.getLearningDicts());// 用户所有学习中的单词书(包括当前并未选中的)
-                boolean isLearned = isWordLearned(nextWord.getId(), allLearningDicts, learningDict);
-
-                // 更新该单词书的当前单词
-                wordToLearn = wordCache.getWordBySpell(nextWord.getSpell(), new String[] {
-                        "SynonymVo.meaningItem", "SynonymVo.word", "similarWords", "DictVo.dictWords" });
-                learningDict.setCurrentWord(new Word(nextWord.getId()));
-                learningDict.setCurrentWordSeq(wordOrderInDict + 1);
-                learningDictBo.updateEntity(learningDict);
-
-                // 如果该单词已经学习过，则略过, 否则返回该单词
-                if (isLearned) {
-                    wordOrderInDict++;
-                } else {
-                    return wordToLearn;
-                }
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * 从用户的某本单词书中选出一个单词学习
-     *
-     * @return 某个未学过的单词，如果所有单词都学过，return null.
-     * @throws SQLException
-     * @throws IOException
-     * @throws ParseException
-     * @throws InvalidMeaningFormatException
-     * @throws EmptySpellException
-     * @throws NamingException
-     * @throws ClassNotFoundException
-     * @throws IllegalAccessException
-     * @throws IllegalArgumentException
-     */
-    public WordVo getNewWordToLearn(User user, List<LearningDict> highPriorityLearningDicts,
-            List<LearningDict> lowPriorityLearningDicts)
-            throws SQLException, IOException, ParseException, InvalidMeaningFormatException, EmptySpellException,
-            NamingException, ClassNotFoundException, IllegalArgumentException, IllegalAccessException {
-
-        // 从高优先级单词书中随机取一个单词
-        WordVo word = getNewWordFromDicts(highPriorityLearningDicts, user);
-
-        // 从普通优先级单词书中随机取一个单词
-        if (word == null) {
-            word = getNewWordFromDicts(lowPriorityLearningDicts, user);
-        }
-
-        return word;
-    }
+    // getNewWordToLearn and getNewWordFromDicts have been removed as the study logic now uses learning_word table with batchId.
 
     /**
      * 获取指定优先级的所有学习中单词书
@@ -355,20 +264,7 @@ public class UserBo extends BaseBo<User> {
      * @param learningDicts
      * @return
      */
-    private boolean isWordLearned(String wordId, List<LearningDict> learningDicts, LearningDict ignoreDict) {
-        for (LearningDict dict : learningDicts) {
-            if (dict.equals(ignoreDict)) { // 性能优化
-                continue;
-            }
-            int wordOrder = dictWordBo.getOrderOfWordId(dict.getDict().getId(), wordId);
 
-            Integer currentWordSeq = dict.getCurrentWordSeq();
-            if (wordOrder != -1 && wordOrder <= (currentWordSeq == null ? -1 : currentWordSeq)) {
-                return true;
-            }
-        }
-        return false;
-    }
 
     public void deleteDeadUsers(int idleDays) throws IllegalAccessException {
         // 查询长期未登录的用户

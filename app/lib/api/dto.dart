@@ -423,8 +423,6 @@ class UserDto {
   String? email;
   DateTime? lastLearningDate;
   int? learnedDays;
-  int? lastLearningPosition;
-  int? lastLearningMode;
   bool? learningFinished;
   bool? inviteAwardTaken;
   bool? isSuperAdmin;

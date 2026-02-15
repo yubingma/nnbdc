@@ -15,8 +15,6 @@ public class UserDto {
     private String email;
     private Date lastLearningDate;
     private Integer learnedDays;
-    private Integer lastLearningPosition;
-    private Integer lastLearningMode;
     private Boolean learningFinished;
     private Boolean inviteAwardTaken;
     private Boolean isSuperAdmin;
@@ -138,21 +136,7 @@ public class UserDto {
         this.learnedDays = learnedDays;
     }
 
-    public Integer getLastLearningPosition() {
-        return lastLearningPosition;
-    }
 
-    public void setLastLearningPosition(Integer lastLearningPosition) {
-        this.lastLearningPosition = lastLearningPosition;
-    }
-
-    public Integer getLastLearningMode() {
-        return lastLearningMode;
-    }
-
-    public void setLastLearningMode(Integer lastLearningMode) {
-        this.lastLearningMode = lastLearningMode;
-    }
 
     public Boolean getLearningFinished() {
         return learningFinished;

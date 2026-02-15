@@ -116,16 +116,17 @@ class StudyBo {
         ]);
       final todayWords = await query.get();
 
-      // 获取当前学习位置
-      int currentWordIndex = user.lastLearningPosition ?? 0;
-      if (currentWordIndex < 0) currentWordIndex = 0;
+      // 获取学习环节总数 (modeCount)
+      final steps = await db.userStudyStepsDao.getActiveUserStudySteps(user.id);
+      final modeCount = steps.length;
 
-      // 计算当前阶段的起始位置（每10个单词为一个阶段）
-      int stageStartIndex = (currentWordIndex ~/ 10) * 10;
+      // 状态驱动：推导当前阶段起始位置 (stageStartIndex)
+      const int stageSize = 10;
+      int stageStartIndex = _calculateStageStartIndex(todayWords, modeCount, stageSize: stageSize);
 
       // 获取当前阶段的单词（最多10个）
       List<LearningWord> stageWords = [];
-      for (int i = stageStartIndex; i < todayWords.length && i < stageStartIndex + 10; i++) {
+      for (int i = stageStartIndex; i < todayWords.length && i < stageStartIndex + stageSize; i++) {
         stageWords.add(todayWords[i]);
       }
 
@@ -381,16 +382,37 @@ class StudyBo {
         throw Exception('未知错误: 今日学习单词数为0');
       }
 
-      // 获取当前单词索引 (currentWordIndex) 和 当前学习模式 (currentLearningMode)
-      int currentWordIndex = user.lastLearningPosition ?? -1;
-      if (currentWordIndex < 0 || currentWordIndex >= todayWords.length) {
-        currentWordIndex = 0;
+      // 状态驱动：推导当前阶段起始位置 (stageStartIndex)
+      const int stageSize = 10;
+      int stageStartIndex = _calculateStageStartIndex(todayWords, modeCount, stageSize: stageSize);
+
+      // 获取当前阶段的 10 个词
+      List<LearningWord> stageWords = [];
+      for (int i = stageStartIndex; i < todayWords.length && i < stageStartIndex + stageSize; i++) {
+        stageWords.add(todayWords[i]);
       }
 
-      // 获取当前学习模式
-      int currentLearningMode = user.lastLearningMode ?? -1;
-      if (currentLearningMode < 0 || currentLearningMode >= modeCount) {
-        currentLearningMode = 0;
+      // 在当前阶段内，推导当前单词和环节
+      List<LearningWord> sortedStageWords = List.from(stageWords);
+      sortedStageWords.sort((a, b) {
+        // 优先练习今日学习次数较少的单词
+        if (a.todayLearnedTimes != b.todayLearnedTimes) {
+          return a.todayLearnedTimes.compareTo(b.todayLearnedTimes);
+        }
+        // 次数相同时，练习最后学习时间较早的单词
+        if (a.lastLearningDate == null && b.lastLearningDate == null) return 0;
+        if (a.lastLearningDate == null) return -1;
+        if (b.lastLearningDate == null) return 1;
+        return a.lastLearningDate!.compareTo(b.lastLearningDate!);
+      });
+
+      final currentWordForPos = sortedStageWords.first;
+      int currentWordIndex = todayWords.indexOf(currentWordForPos);
+
+      // 获取当前学习环节：由该单词今日已练习的次数推导
+      int currentLearningMode = currentWordForPos.todayLearnedTimes;
+      if (currentLearningMode >= modeCount) {
+        currentLearningMode = modeCount - 1;
       }
 
       // 更新当前单词的状态
@@ -399,10 +421,12 @@ class StudyBo {
       await updateCurrWord(isWordMastered, currWord, user, now, db, isAnswerCorrect, allStepsCompletedForWord);
 
       // 计算下一个单词的索引 (nextWordIndex) 和学习模式 (nextLearningMode)
+      // 计算下一个单词和环节的信息（如果是 gotoNext=false 的预览模式则保持现状）
       int nextWordIndex = currentWordIndex;
       int nextLearningMode = currentLearningMode;
       if (shouldEnterNextStage) {
-        nextWordIndex = currentWordIndex + 1;
+        // 进入下一阶段
+        nextWordIndex = (stageStartIndex + stageSize) < todayWords.length ? (stageStartIndex + stageSize) : currentWordIndex;
         nextLearningMode = 0;
       } else if (gotoNext) {
         int stageWordCount = 10;
@@ -428,19 +452,9 @@ class StudyBo {
         }
       }
 
-      // 更新用户取词位置信息
-      Global.logger.d("~~~~~nextWordIndex: $nextWordIndex, nextLearningMode: $nextLearningMode, todayWords.length: ${todayWords.length}");
+      // 记录已学完，以便返回
       if (nextWordIndex >= todayWords.length) {
-        // 今日所有单词都学习完了
         return _buildTodayStudyFinishedResult();
-      } else {
-        // 更新用户取词位置信息
-        await db.usersDao.saveUser(
-            user.copyWith(
-              lastLearningMode: Value(nextLearningMode),
-              lastLearningPosition: Value(nextWordIndex),
-            ),
-            true);
       }
 
       // 获取目标学习单词，仅返回其ID，释义交由本地通过 WordBo.getWordMeaningItems 加载
@@ -491,6 +505,8 @@ class StudyBo {
 
   Future<void> updateCurrWord(
       bool isWordMastered, LearningWord currWord, User user, DateTime now, MyDatabase db, bool isAnswerCorrect, bool allStepsCompletedForWord) async {
+    // 停止使用 dateOnlyNow，保留完整时间戳以支持状态驱动定位
+    final DateTime learningTime = now;
     final DateTime dateOnlyNow = DateTime(now.year, now.month, now.day);
     if (isWordMastered) {
       // 保存已掌握单词
@@ -509,8 +525,9 @@ class StudyBo {
       await db.learningWordsDao.saveEntity(
           currWord.copyWith(
             lifeValue: (currWord.lifeValue) - 1, // 生命值减1
-            lastLearningDate: Value(dateOnlyNow),
+            lastLearningDate: Value(learningTime),
             learnedTimes: (currWord.learnedTimes) + 1,
+            todayLearnedTimes: (currWord.todayLearnedTimes) + 1,
           ),
           true);
 
@@ -526,15 +543,14 @@ class StudyBo {
         );
       }
     } else {
-      // 如果不是上述情况 (回答错误/单词标记为已掌握/已完成今日学习)，
       // 只更新学习时间和学习次数，不改变生命值
       Global.logger
-          .d('Word ${currWord.wordId}. All steps completed: $allStepsCompletedForWord, AnswerCorrect: $isAnswerCorrect. Updating learnedTimes only.');
+          .d('Word ${currWord.wordId}. All steps completed: $allStepsCompletedForWord, AnswerCorrect: $isAnswerCorrect. Updating learnedTimes/todayLearnedTimes.');
       await db.learningWordsDao.saveEntity(
           currWord.copyWith(
-            // lifeValue 不变
-            lastLearningDate: Value(dateOnlyNow),
+            lastLearningDate: Value(learningTime),
             learnedTimes: (currWord.learnedTimes) + 1,
+            todayLearnedTimes: (currWord.todayLearnedTimes) + 1,
           ),
           true);
     }
@@ -786,20 +802,37 @@ class StudyBo {
     return items.map((e) => MeaningItemVo(e.id, e.ciXing, e.meaning, null, null, null)).toList();
   }
 
+  /// 状态驱动：推导当前阶段起始位置 (stageStartIndex)
+  /// 逻辑：找到第一个今日尚未完成所有学习环节的阶段
+  static int _calculateStageStartIndex(List<LearningWord> todayWords, int modeCount, {int stageSize = 10}) {
+    int stageStartIndex = 0;
+    for (int i = 0; i < todayWords.length; i += stageSize) {
+      bool stageFinished = true;
+      for (int j = i; j < i + stageSize && j < todayWords.length; j++) {
+        // 如果某个词的今日学习次数还没达到环节总数，说明这个阶段还没学完
+        if (todayWords[j].todayLearnedTimes < modeCount) {
+          stageFinished = false;
+          break;
+        }
+      }
+      if (!stageFinished) {
+        stageStartIndex = i;
+        break;
+      }
+      stageStartIndex = i; // 如果都学完了，停在最后一个阶段
+    }
+    return stageStartIndex;
+  }
+
   /// 计算指定单词的指定学习模式, 在第几个顺位出现
   int calculateLearningIndexByWordIndexAndMode(int wordIndex, int mode, int modeCount, int todayWordCount, int stageWordCount) {
-    assert(wordIndex >= 0 && wordIndex < todayWordCount);
-    assert(stageWordCount > 0);
-
-    // 计算当前单词所在的学习阶段
-    final stage = wordIndex ~/ stageWordCount;
-    // 计算当前单词在阶段内的索引
-    final stageWordIndex = wordIndex % stageWordCount;
 
     // 新的学习顺序：
     // 1. 先完成当前阶段所有单词的当前模式
     // 2. 再进入下一个模式
     // 3. 最后进入下一个阶段
+    final int stage = wordIndex ~/ stageWordCount;
+    final int stageWordIndex = wordIndex % stageWordCount;
 
     // 计算当前阶段的基础索引
     final stageBaseIndex = stage * stageWordCount * modeCount;

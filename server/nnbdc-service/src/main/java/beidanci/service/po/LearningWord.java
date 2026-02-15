@@ -44,11 +44,17 @@ public class LearningWord extends Po {
     @Column(name = "learning_order")
     private Integer learningOrder;
 
+    @Column(name = "batch_id", nullable = false)
+    private Integer batchId = 0;
+
     /**
      * 已学习次数，一个单词完成一天的学习，这个值增加的值一般大于1（因为用户一般会选择多个学习步骤）
      */
     @Column(name = "learned_times", nullable = false)
     private Integer learnedTimes;
+
+    @Column(name = "today_learned_times", nullable = false)
+    private Integer todayLearnedTimes = 0;
 
 
     /**
@@ -75,6 +81,7 @@ public class LearningWord extends Po {
         this.addDay = addDay;
         this.lifeValue = lifeValue;
         this.learnedTimes = 0;
+        this.todayLearnedTimes = 0;
         this.isTodayNewWord = false;
     }
 
@@ -155,6 +162,22 @@ public class LearningWord extends Po {
         this.learningOrder = learningOrder;
     }
 
+    public Integer getBatchId() {
+        return batchId;
+    }
+
+    public void setBatchId(Integer batchId) {
+        this.batchId = batchId;
+    }
+
+    public Integer getTodayLearnedTimes() {
+        return todayLearnedTimes;
+    }
+
+    public void setTodayLearnedTimes(Integer todayLearnedTimes) {
+        this.todayLearnedTimes = todayLearnedTimes;
+    }
+
     public WordVo getWord(WordCache wordCache, String[] excludeFields) throws IOException, ParseException, InvalidMeaningFormatException, EmptySpellException {
         return wordCache.getWordById(id.getWordId(), excludeFields);
     }
@@ -182,7 +205,9 @@ public class LearningWord extends Po {
         learningWord.setAddDay(dto.getAddDay());
         learningWord.setLearningOrder(dto.getLearningOrder());
         learningWord.setLearnedTimes(dto.getLearnedTimes());
+        learningWord.setTodayLearnedTimes(dto.getTodayLearnedTimes() != null ? dto.getTodayLearnedTimes() : 0);
         learningWord.setIsTodayNewWord(dto.getIsTodayNewWord());
+        learningWord.setBatchId(dto.getBatchId() != null ? dto.getBatchId() : 0);
         if (dto.getCreateTime() != null) {
             learningWord.setCreateTime(dto.getCreateTime());
         }
@@ -190,5 +215,23 @@ public class LearningWord extends Po {
             learningWord.setUpdateTime(dto.getUpdateTime());
         }
         return learningWord;
+    }
+
+    public LearningWordDto swallowToDto() {
+        LearningWordDto dto = new LearningWordDto();
+        dto.setUserId(id.getUserId());
+        dto.setWordId(id.getWordId());
+        dto.setAddTime(addTime);
+        dto.setAddDay(addDay);
+        dto.setLifeValue(lifeValue);
+        dto.setLastLearningDate(lastLearningDate);
+        dto.setLearningOrder(learningOrder);
+        dto.setLearnedTimes(learnedTimes);
+        dto.setTodayLearnedTimes(todayLearnedTimes);
+        dto.setIsTodayNewWord(isTodayNewWord);
+        dto.setBatchId(batchId);
+        dto.setCreateTime(createTime);
+        dto.setUpdateTime(updateTime);
+        return dto;
     }
 }

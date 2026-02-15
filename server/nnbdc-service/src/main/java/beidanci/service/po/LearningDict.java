@@ -24,12 +24,6 @@ public class LearningDict extends Po {
     @Column(name = "user_id")
     private User user;
 
-    @Column(name = "current_word_id")
-    private Word currentWord;
-
-    @Column(name = "current_word_seq")
-    private Integer currentWordSeq;
-
     @Column(name = "is_privileged", nullable = false)
     private Boolean isPrivileged;
 
@@ -91,22 +85,6 @@ public class LearningDict extends Po {
         this.user = user;
     }
 
-    public Word getCurrentWord() {
-        return this.currentWord;
-    }
-
-    public void setCurrentWord(Word currentWord) {
-        this.currentWord = currentWord;
-    }
-
-    public Integer getCurrentWordSeq() {
-        return this.currentWordSeq;
-    }
-
-    public void setCurrentWordSeq(Integer currentWordSeq) {
-        this.currentWordSeq = currentWordSeq;
-    }
-
     public Boolean getIsPrivileged() {
         return isPrivileged;
     }
@@ -120,10 +98,6 @@ public class LearningDict extends Po {
         learningDict.setId(new LearningDictId(dto.getUserId(), dto.getDictId()));
         learningDict.setIsPrivileged(dto.getIsPrivileged());
         learningDict.setFetchMastered(dto.getFetchMastered());
-        learningDict.setCurrentWordSeq(dto.getCurrentWordSeq());
-        if (dto.getCurrentWord() != null) {
-            learningDict.setCurrentWord(wordBo.findById(dto.getCurrentWord()));
-        }
         if (dto.getCreateTime() != null) {
             learningDict.setCreateTime(dto.getCreateTime());
         }

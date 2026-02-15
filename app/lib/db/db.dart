@@ -207,7 +207,7 @@ class MyDatabase extends _$MyDatabase {
   // you should bump this number whenever you change or add a table definition. Migrations
   // are covered later in this readme.
   @override
-  int get schemaVersion => 13;
+  int get schemaVersion => 14;
 
   @override
   MigrationStrategy get migration {
@@ -260,6 +260,9 @@ class MyDatabase extends _$MyDatabase {
           }
           if (from < 13) {
             await _migrateFromV12ToV13RemoveLearningPositionFields();
+          }
+          if (from < 14) {
+            await _migrateFromV13ToV14(m);
           }
         } catch (e, stackTrace) {
           // 升级失败，记录错误日志
@@ -374,14 +377,40 @@ class MyDatabase extends _$MyDatabase {
   Future<void> _migrateFromV12ToV13RemoveLearningPositionFields() async {
     await transaction(() async {
       try {
-        await customStatement('ALTER TABLE learningDicts DROP COLUMN current_word_id');
+        await customStatement('ALTER TABLE learning_dicts DROP COLUMN current_word_id');
       } catch (e) {
         Global.logger.w('删除 current_word_id 列失败: $e');
       }
       try {
-        await customStatement('ALTER TABLE learningDicts DROP COLUMN current_word_seq');
+        await customStatement('ALTER TABLE learning_dicts DROP COLUMN current_word_seq');
       } catch (e) {
         Global.logger.w('删除 current_word_seq 列失败: $e');
+      }
+    });
+  }
+
+  /// 从版本 13 升级到版本 14：
+  /// 1. 向 learning_words 表添加 today_learned_times 字段
+  /// 2. 从 users 表删除已废弃的 last_learning_mode 字段
+  Future<void> _migrateFromV13ToV14(Migrator m) async {
+    await transaction(() async {
+      // 1. 添加 today_learned_times 字段
+      try {
+        await m.addColumn(learningWords, learningWords.todayLearnedTimes);
+      } catch (e) {
+        Global.logger.w('添加 today_learned_times 列失败: $e');
+      }
+
+      // 2. 删除 last_learning_mode 和 last_learning_position 字段
+      try {
+        await customStatement('ALTER TABLE users DROP COLUMN last_learning_mode');
+      } catch (e) {
+        Global.logger.w('删除 last_learning_mode 列失败: $e');
+      }
+      try {
+        await customStatement('ALTER TABLE users DROP COLUMN last_learning_position');
+      } catch (e) {
+        Global.logger.w('删除 last_learning_position 列失败: $e');
       }
     });
   }

@@ -35,9 +35,11 @@ class LearningService {
         await (db.update(db.users)..where((u) => u.id.equals(user.id))).write(UsersCompanion(
             lastLearningDate: Value(today),
             learnedDays: Value(user.learnedDays + 1),
-            lastLearningPosition: const Value(-1),
-            lastLearningMode: const Value(-1),
             learningFinished: const Value(false)));
+
+        // 重置所有单词的今日学习次数
+        await (db.update(db.learningWords)..where((u) => u.userId.equals(user.id))).write(const LearningWordsCompanion(
+            todayLearnedTimes: Value(0)));
 
         // 重新获取更新后的用户信息
         final updatedUser = await db.usersDao.getUserById(user.id);
@@ -385,6 +387,7 @@ class LearningService {
             learningOrder: 0,
             isTodayNewWord: false,
             learnedTimes: 0,
+            todayLearnedTimes: 0,
             createTime: now,
             updateTime: now);
 

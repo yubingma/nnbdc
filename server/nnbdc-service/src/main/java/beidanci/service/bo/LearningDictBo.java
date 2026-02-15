@@ -19,7 +19,6 @@ import beidanci.service.dao.BaseDao;
 import beidanci.service.dao.EntityRowMapper;
 import beidanci.service.po.LearningDict;
 import beidanci.service.po.User;
-import beidanci.service.util.Util;
 
 @Service
 @Transactional(rollbackFor = Throwable.class)
@@ -51,9 +50,14 @@ public class LearningDictBo extends BaseBo<LearningDict> {
     }
 
     public boolean needSelectDictBeforeStudy(User user) {
-        List<LearningDict> learningDicts = getLearningDictsOfUser(user);
-        boolean allDictsFinished = Util.isAllDictsFinished(learningDicts);
-        return allDictsFinished;
+        String sql = "SELECT COUNT(*) FROM dict_word dw " +
+                "INNER JOIN learning_dict ld ON dw.dict_id = ld.dict_id " +
+                "WHERE ld.user_id = :userId " +
+                "AND NOT EXISTS (SELECT 0 FROM mastered_word mw WHERE mw.user_id = ld.user_id AND mw.word_id = dw.word_id) " +
+                "AND NOT EXISTS (SELECT 0 FROM learning_word lw WHERE lw.user_id = ld.user_id AND lw.word_id = dw.word_id)";
+        MapSqlParameterSource params = new MapSqlParameterSource("userId", user.getId());
+        Long count = namedParameterJdbcTemplate.queryForObject(sql, params, Long.class);
+        return count == null || count == 0;
     }
 
     /**
@@ -74,46 +78,15 @@ public class LearningDictBo extends BaseBo<LearningDict> {
         return total != null && total > 0;
     }
 
-    /**
-     * 更新指定用户的所有单词书的当前已取词位置
-     *
-     * @Param ignoreCurrent 是否忽略当前取词位置，true：从头计算取词位置 false: 从当前取词位置开始计算新的取词位置
-     */
-    public void updateCurrentPositionForUserDicts(User user, boolean ignoreCurrent) {
-        // JDBC 不需要手动 flush，事务提交时会自动提交
-        String sql = "UPDATE learning_dict SET current_word_seq = currPosOfLearningDict(user_id, dict_id, :ignoreCurrent) WHERE user_id = :userId";
-        MapSqlParameterSource params = new MapSqlParameterSource();
-        params.addValue("userId", user.getId());
-        params.addValue("ignoreCurrent", ignoreCurrent ? 1 : 0);
-        namedParameterJdbcTemplate.update(sql, params);
-    }
-
-    /**
-     * 更新指定用户单词书的当前已取词位置
-     *
-     * @Param ignoreCurrent 是否忽略当前取词位置，true：从头计算取词位置 false: 从当前取词位置开始计算新的取词位置
-     */
-    public void updateCurrentPositionForUserDict(User user, String dictId, boolean ignoreCurrent) {
-        // JDBC 不需要手动 flush，事务提交时会自动提交
-        String sql = "UPDATE learning_dict SET current_word_seq = currPosOfLearningDict(user_id, dict_id, :ignoreCurrent) WHERE user_id = :userId AND dict_id = :dictId";
-        MapSqlParameterSource params = new MapSqlParameterSource();
-        params.addValue("userId", user.getId());
-        params.addValue("dictId", dictId);
-        params.addValue("ignoreCurrent", ignoreCurrent ? 1 : 0);
-        namedParameterJdbcTemplate.update(sql, params);
-    }
-
     public List<LearningDictDto> getLearningDictDtosOfUser(String userId) {
-        String sql = "SELECT user_id, dict_id, current_word_seq, is_privileged, current_word_id, fetch_mastered, create_time, update_time FROM learning_dict WHERE user_id = :userId";
+        String sql = "SELECT user_id, dict_id, is_privileged, fetch_mastered, create_time, update_time FROM learning_dict WHERE user_id = :userId";
         MapSqlParameterSource params = new MapSqlParameterSource("userId", userId);
         
         List<LearningDictDto> dtos = namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> {
             LearningDictDto dto = new LearningDictDto();
             dto.setUserId(rs.getString("user_id"));
             dto.setDictId(rs.getString("dict_id"));
-            dto.setCurrentWordSeq(rs.getInt("current_word_seq"));
             dto.setIsPrivileged(rs.getBoolean("is_privileged"));
-            dto.setCurrentWord(rs.getString("current_word_id"));
             dto.setFetchMastered(rs.getBoolean("fetch_mastered"));
             dto.setCreateTime(rs.getTimestamp("create_time"));
             dto.setUpdateTime(rs.getTimestamp("update_time"));
@@ -196,40 +169,5 @@ public class LearningDictBo extends BaseBo<LearningDict> {
     // 系统健康检查相关方法
     // ============================================
 
-    /**
-     * 查找学习进度异常的记录
-     */
-    public List<Object[]> findInvalidLearningProgress() {
-        String sql = """
-            SELECT ld.user_id, ld.dict_id, ld.current_word_seq, d.word_count
-            FROM learning_dict ld
-            JOIN dict d ON ld.dict_id = d.id
-            WHERE ld.current_word_seq > d.word_count
-            ORDER BY ld.user_id, ld.dict_id
-            """;
-        List<Object[]> resultList = namedParameterJdbcTemplate.query(sql, (rs, rowNum) -> 
-            new Object[]{
-                rs.getString("user_id"),
-                rs.getString("dict_id"),
-                rs.getInt("current_word_seq"),
-                rs.getInt("word_count")
-            });
-        return resultList;
-    }
-
-    /**
-     * 修复学习进度
-     */
-    public void fixLearningProgress(String userId, String dictId, Integer correctSeq) {
-        String sql = """
-            UPDATE learning_dict
-            SET current_word_seq = :correctSeq
-            WHERE user_id = :userId AND dict_id = :dictId
-            """;
-        MapSqlParameterSource params = new MapSqlParameterSource();
-        params.addValue("correctSeq", correctSeq);
-        params.addValue("userId", userId);
-        params.addValue("dictId", dictId);
-        namedParameterJdbcTemplate.update(sql, params);
-    }
+    // current_word_seq 已移除，相关健康检查和修复逻辑不再需要
 }

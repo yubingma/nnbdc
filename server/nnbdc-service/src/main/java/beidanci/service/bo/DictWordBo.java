@@ -295,8 +295,7 @@ public class DictWordBo extends BaseBo<DictWord> {
         params = new MapSqlParameterSource("dictId", dictId);
         namedParameterJdbcTemplate.update(sql, params);
 
-        // 更新词书的当前学习位置
-        learningDictBo.updateCurrentPositionForUserDict(user, dictId, true);
+        // 已移除词书学习位置相关字段，此处不再需要更新
         return Result.success(null);
     }
 

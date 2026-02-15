@@ -12,6 +12,8 @@ public class LearningWordDto {
     private Boolean isTodayNewWord;
     private Integer learningOrder;
     private Integer learnedTimes;
+    private Integer todayLearnedTimes;
+    private Integer batchId;
     private Date createTime;
     private Date updateTime;
 
@@ -83,6 +85,14 @@ public class LearningWordDto {
         this.learnedTimes = learnedTimes;
     }
 
+    public Integer getTodayLearnedTimes() {
+        return todayLearnedTimes;
+    }
+
+    public void setTodayLearnedTimes(Integer todayLearnedTimes) {
+        this.todayLearnedTimes = todayLearnedTimes;
+    }
+
     public Date getCreateTime() {
         return createTime;
     }
@@ -105,6 +115,14 @@ public class LearningWordDto {
 
     public void setIsTodayNewWord(Boolean isTodayNewWord) {
         this.isTodayNewWord = isTodayNewWord;
+    }
+
+    public Integer getBatchId() {
+        return batchId;
+    }
+
+    public void setBatchId(Integer batchId) {
+        this.batchId = batchId;
     }
 
 }

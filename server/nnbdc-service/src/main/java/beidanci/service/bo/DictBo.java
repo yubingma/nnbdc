@@ -267,8 +267,7 @@ public class DictBo extends BaseBo<Dict> {
         dict.setWordCount(0);
         updateEntity(dict);
 
-        // 重置学习中词书的当前学习位置
-        learningDictBo.updateCurrentPositionForUserDict(user, dict.getId(), true);
+        // 重置学习中词书的当前学习位置 - 已移除相关字段，此处不再需要
     }
 
     public List<Word> getDictWords(Dict dict) {

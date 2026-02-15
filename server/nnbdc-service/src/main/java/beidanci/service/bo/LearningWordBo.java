@@ -78,16 +78,12 @@ public class LearningWordBo extends BaseBo<LearningWord> {
             return new ArrayList<>(0);
         }
 
-        String sql = "select word_id, min(seq) as minSeq, max(ld.is_privileged) as is_privileged " +
-                "from dict_word dw left join learning_dict ld on dw.dict_id = ld.dict_id   left join dict d on dw.dict_id  = d.id "
-                +
+        String sql = "select dw.word_id, min(dw.seq) as minSeq, max(ld.is_privileged) as is_privileged " +
+                "from dict_word dw join learning_dict ld on dw.dict_id = ld.dict_id join dict d on dw.dict_id = d.id " +
                 "where ld.user_id = :userId " +
-                "and (ld.current_word_seq is null or ld.current_word_seq < d.word_count) " +
-                "and (dw.seq > ld.current_word_seq or ld.current_word_seq is null) " +
-                "and (ld.fetch_mastered = 1 or not exists (select 0 from mastered_word mw where mw.user_id=:userId and mw.word_id=dw.word_id)) "
-                +
+                "and not exists (select 0 from mastered_word mw where mw.user_id=:userId and mw.word_id=dw.word_id) " +
                 "and not exists (select 0 from learning_word lw where lw.user_id=:userId and lw.word_id=dw.word_id) " +
-                "group by word_id order by is_privileged desc, minSeq asc limit :limit ";
+                "group by dw.word_id order by is_privileged desc, minSeq asc limit :limit ";
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("userId", user.getId());
         params.addValue("limit", countToFetch);
@@ -102,6 +98,17 @@ public class LearningWordBo extends BaseBo<LearningWord> {
             learningWords.add(learningWord);
         }
         return learningWords;
+    }
+
+    public boolean hasLearningWordsOfDict(String userId, String dictId) {
+        String sql = "SELECT COUNT(*) FROM learning_word lw " +
+                "INNER JOIN dict_word dw ON lw.word_id = dw.word_id " +
+                "WHERE lw.user_id = :userId AND dw.dict_id = :dictId";
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        params.addValue("userId", userId);
+        params.addValue("dictId", dictId);
+        Long count = namedParameterJdbcTemplate.queryForObject(sql, params, Long.class);
+        return count != null && count > 0;
     }
 
     /**
@@ -138,8 +145,8 @@ public class LearningWordBo extends BaseBo<LearningWord> {
         Date startTime = new Date();
         List<LearningWord> newLearningWords = fetchNewWordsToLearn(user, todayDayNumber, newWordCount);
 
-        // 更新词书的当前位置
-        learningDictBo.updateCurrentPositionForUserDicts(user, false);
+        // 不再需要显式更新词书的当前学习位置序号位，因为新的取词逻辑不再依赖该字段
+        // learningDictBo.updateCurrentPositionForUserDicts(user, false);
 
         Date endTime = new Date();
         log.info("从单词书取新词，耗时：" + (endTime.getTime() - startTime.getTime()));
@@ -189,6 +196,7 @@ public class LearningWordBo extends BaseBo<LearningWord> {
                 learningWord.setIsTodayNewWord(learningWord.getLearnedTimes() == 0);
             }
             learningWord.setLearningOrder(learningOrder);
+            learningWord.setBatchId(1); // 后端生成的初始批次设为 1
             learningOrder++;
             updateEntity(learningWord);
         }
@@ -355,10 +363,13 @@ public class LearningWordBo extends BaseBo<LearningWord> {
         if (!Util.isSameDay(user.getLastLearningDate(), new Date())) {
             user.setLastLearningDate(Utils.getPureDate(new Date()));
             user.setLearnedDays(user.getLearnedDays() + 1);
-            user.setLastLearningPosition(-1);
-            user.setLastLearningMode(-1);
             user.setLearningFinished(false);
             user.getWrongWords().clear();
+
+            // 重置该用户所有单词的今日学习次数 (后端作为备份)
+            String sqlCheck = "UPDATE learning_word SET today_learned_times = 0 WHERE user_id = :userId";
+            namedParameterJdbcTemplate.update(sqlCheck, new MapSqlParameterSource("userId", user.getId()));
+
             userBo.updateEntity(user);
         }
 
@@ -629,7 +640,7 @@ public class LearningWordBo extends BaseBo<LearningWord> {
     }
 
     public List<LearningWordDto> getLearningWordDtosOfUser(String userId) {
-        String sql = "SELECT user_id, word_id, learning_order, is_today_new_word, life_value, last_learning_date, add_time, add_day, learned_times, create_time, update_time FROM learning_word WHERE user_id = :userId";
+        String sql = "SELECT user_id, word_id, learning_order, is_today_new_word, life_value, last_learning_date, add_time, add_day, learned_times, batch_id, create_time, update_time FROM learning_word WHERE user_id = :userId";
         MapSqlParameterSource params = new MapSqlParameterSource("userId", userId);
         
         List<LearningWordDto> dtos = namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> {
@@ -643,6 +654,7 @@ public class LearningWordBo extends BaseBo<LearningWord> {
             dto.setAddTime(rs.getTimestamp("add_time"));
             dto.setAddDay(rs.getInt("add_day"));
             dto.setLearnedTimes(rs.getInt("learned_times"));
+            dto.setBatchId(rs.getInt("batch_id"));
             dto.setCreateTime(rs.getTimestamp("create_time"));
             dto.setUpdateTime(rs.getTimestamp("update_time"));
             return dto;

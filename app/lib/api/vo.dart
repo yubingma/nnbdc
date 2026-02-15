@@ -154,11 +154,6 @@ class UserVo {
   DateTime? lastLearningDate;
 
   int? learnedDays;
-
-  int? lastLearningPosition;
-
-  int? lastLearningMode;
-
   bool? learningFinished;
 
   bool? inviteAwardTaken;
@@ -252,8 +247,6 @@ class UserVo {
     userVo.email = user.email;
     userVo.lastLearningDate = user.lastLearningDate;
     userVo.learnedDays = user.learnedDays;
-    userVo.lastLearningPosition = user.lastLearningPosition;
-    userVo.lastLearningMode = user.lastLearningMode;
     userVo.learningFinished = user.learningFinished;
     userVo.inviteAwardTaken = user.inviteAwardTaken;
     userVo.isSuperAdmin = user.isSuperAdmin;
@@ -303,7 +296,7 @@ class UserVo {
 
   @override
   String toString() {
-    return 'UserVo{id: $id, userName: $userName, nickName: $nickName, hasDakaToday: $hasDakaToday, gameScore: $gameScore, password: $password, dakaScore: $dakaScore, showAnswersDirectly: $showAnswersDirectly, autoPlayWord: $autoPlayWord, lastLoginTime: $lastLoginTime, lastShareTime: $lastShareTime, email: $email, lastLearningDate: $lastLearningDate, learnedDays: $learnedDays, lastLearningPosition: $lastLearningPosition, lastLearningMode: $lastLearningMode, learningFinished: $learningFinished, inviteAwardTaken: $inviteAwardTaken, isSuperAdmin: $isSuperAdmin, isAdmin: $isAdmin, isInputor: $isInputor, isTodayLearningStarted: $isTodayLearningStarted, isTodayLearningFinished: $isTodayLearningFinished, autoPlaySentence: $autoPlaySentence, wordsPerDay: $wordsPerDay, dakaDayCount: $dakaDayCount, masteredWordsCount: $masteredWordsCount, cowDung: $cowDung, throwDiceChance: $throwDiceChance, displayNickName: $displayNickName, invitedBy: $invitedBy, level: $level, continuousDakaDayCount: $continuousDakaDayCount, maxContinuousDakaDayCount: $maxContinuousDakaDayCount, lastDakaDate: $lastDakaDate, totalScore: $totalScore, dakaRatio: $dakaRatio, enableAllWrong: $enableAllWrong}';
+    return 'UserVo{id: $id, userName: $userName, nickName: $nickName, hasDakaToday: $hasDakaToday, gameScore: $gameScore, password: $password, dakaScore: $dakaScore, showAnswersDirectly: $showAnswersDirectly, autoPlayWord: $autoPlayWord, lastLoginTime: $lastLoginTime, lastShareTime: $lastShareTime, email: $email, lastLearningDate: $lastLearningDate, learnedDays: $learnedDays, learningFinished: $learningFinished, inviteAwardTaken: $inviteAwardTaken, isSuperAdmin: $isSuperAdmin, isAdmin: $isAdmin, isInputor: $isInputor, isTodayLearningStarted: $isTodayLearningStarted, isTodayLearningFinished: $isTodayLearningFinished, autoPlaySentence: $autoPlaySentence, wordsPerDay: $wordsPerDay, dakaDayCount: $dakaDayCount, masteredWordsCount: $masteredWordsCount, cowDung: $cowDung, throwDiceChance: $throwDiceChance, displayNickName: $displayNickName, invitedBy: $invitedBy, level: $level, continuousDakaDayCount: $continuousDakaDayCount, maxContinuousDakaDayCount: $maxContinuousDakaDayCount, lastDakaDate: $lastDakaDate, totalScore: $totalScore, dakaRatio: $dakaRatio, enableAllWrong: $enableAllWrong}';
   }
 
   bool isGuest() {
@@ -1188,8 +1181,6 @@ User userVo2User(UserVo userVo) {
       invitedById: userVo.invitedBy?.id,
       lastDakaDate: userVo.lastDakaDate,
       lastLearningDate: userVo.lastLearningDate,
-      lastLearningMode: userVo.lastLearningMode,
-      lastLearningPosition: userVo.lastLearningPosition,
       lastLoginTime: userVo.lastLoginTime,
       lastShareTime: userVo.lastShareTime,
       nickName: userVo.nickName,

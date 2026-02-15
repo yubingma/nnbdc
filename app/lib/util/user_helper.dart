@@ -30,12 +30,12 @@ class UserHelper {
 
   /// 判断用户今天是否已经开始学习 (User 版本)
   static bool isTodayLearningStartedFromUser(User user) {
-    return _isTodayLearningStarted(user.lastLearningPosition, user.lastLearningDate);
+    return _isTodayLearningStarted(user.lastLearningDate);
   }
 
   /// 判断用户今天是否已经开始学习 (UserVo 版本)
   static bool isTodayLearningStarted(UserVo user) {
-    return _isTodayLearningStarted(user.lastLearningPosition, user.lastLearningDate);
+    return _isTodayLearningStarted(user.lastLearningDate);
   }
 
   /// 判断用户今天是否已经完成学习 (User 版本)
@@ -49,20 +49,13 @@ class UserHelper {
   }
 
   /// 判断用户今天是否已经开始学习（内部辅助方法）
-  static bool _isTodayLearningStarted(int? lastLearningPosition, DateTime? lastLearningDate) {
-    // 如果用户从未开始过学习（lastLearningPosition 为 -1 或 null），则认为未开始
-    // 否则检查最后学习日期是否是今天
-    if (lastLearningPosition == null || lastLearningPosition == -1) {
-      return false;
-    }
-
-    // 检查最后学习日期是否是今天
+  static bool _isTodayLearningStarted(DateTime? lastLearningDate) {
+    // 检查最后学习日期是否是今天即可判断是否已开始
     if (lastLearningDate == null) {
       return false;
     }
 
     final today = AppClock.today();
-
     return _isSameDay(today, lastLearningDate);
   }
 

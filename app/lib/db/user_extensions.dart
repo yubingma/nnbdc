@@ -22,8 +22,6 @@ extension UserExtensions on User {
     String? email,
     DateTime? lastLearningDate,
     int? learnedDays,
-    int? lastLearningPosition,
-    int? lastLearningMode,
     bool? learningFinished,
     bool? inviteAwardTaken,
     bool? isSuperAdmin,
@@ -68,8 +66,6 @@ extension UserExtensions on User {
       email: email ?? this.email,
       lastLearningDate: lastLearningDate ?? this.lastLearningDate,
       learnedDays: learnedDays ?? this.learnedDays,
-      lastLearningPosition: lastLearningPosition ?? this.lastLearningPosition,
-      lastLearningMode: lastLearningMode ?? this.lastLearningMode,
       learningFinished: learningFinished ?? this.learningFinished,
       inviteAwardTaken: inviteAwardTaken ?? this.inviteAwardTaken,
       isSuperAdmin: isSuperAdmin ?? this.isSuperAdmin,
@@ -121,8 +117,6 @@ extension UserExtensions on User {
       email: Value(email),
       lastLearningDate: Value(lastLearningDate),
       learnedDays: Value(learnedDays),
-      lastLearningPosition: Value(lastLearningPosition),
-      lastLearningMode: Value(lastLearningMode),
       learningFinished: Value(learningFinished),
       inviteAwardTaken: Value(inviteAwardTaken),
       isSuperAdmin: Value(isSuperAdmin),
@@ -172,8 +166,6 @@ extension UserExtensions on User {
       email: Value(email),
       lastLearningDate: Value(lastLearningDate),
       learnedDays: Value(learnedDays),
-      lastLearningPosition: Value(lastLearningPosition),
-      lastLearningMode: Value(lastLearningMode),
       learningFinished: Value(learningFinished),
       inviteAwardTaken: Value(inviteAwardTaken),
       isSuperAdmin: Value(isSuperAdmin),
@@ -222,8 +214,6 @@ extension UserExtensions on User {
     userVo.email = email;
     userVo.lastLearningDate = lastLearningDate;
     userVo.learnedDays = learnedDays;
-    userVo.lastLearningPosition = lastLearningPosition;
-    userVo.lastLearningMode = lastLearningMode;
     userVo.learningFinished = learningFinished;
     userVo.inviteAwardTaken = inviteAwardTaken;
     userVo.isSuperAdmin = isSuperAdmin;

@@ -623,8 +623,6 @@ public class Util {
         user.setCreateTime(new Timestamp(new Date().getTime()));
         user.setLearnedDays(0);
         user.setLearningFinished(false);
-        user.setLastLearningPosition(-1);
-        user.setLastLearningMode(-1);
         user.setMasteredWordsCount(0);
         user.setCowDung(20); // 注册送魔法泡泡
         user.setThrowDiceChance(0);
@@ -802,20 +800,7 @@ public class Util {
         return eyeMode;
     }
 
-    public static boolean isAllDictsFinished(List<LearningDict> learningDicts) {
-        boolean allDictsFinished = true;
-        for (LearningDict dict : learningDicts) {
-            Integer currentWordSeq = dict.getCurrentWordSeq();
-            Integer wordCount = dict.getDict().getWordCount();
-            boolean isLearningFinished = (currentWordSeq == null ? -1 : currentWordSeq) >= (wordCount == null ? 0
-                    : wordCount);
-            if (!isLearningFinished) {
-                allDictsFinished = false;
-                break;
-            }
-        }
-        return allDictsFinished;
-    }
+
 
     /**
      * 生成指定范围内的随机整数

@@ -51,14 +51,6 @@ public class User extends UuidPo {
     @Column(name = "learned_days", nullable = false)
     private Integer learnedDays;
 
-    /**
-     * 正在学习的单词在今日学习单词列表中的序号
-     */
-    @Column(name = "last_learning_position")
-    private Integer lastLearningPosition;
-
-    @Column(name = "last_learning_mode")
-    private Integer lastLearningMode;
     @Column(name = "learning_finished", nullable = false)
     private Boolean learningFinished = false;
     @Column(name = "invite_award_taken", nullable = false)
@@ -482,21 +474,7 @@ public class User extends UuidPo {
         this.learnedDays = learnedDays;
     }
 
-    public Integer getLastLearningPosition() {
-        return this.lastLearningPosition;
-    }
 
-    public void setLastLearningPosition(Integer lastLearningPosition) {
-        this.lastLearningPosition = lastLearningPosition;
-    }
-
-    public Integer getLastLearningMode() {
-        return this.lastLearningMode;
-    }
-
-    public void setLastLearningMode(Integer lastLearningMode) {
-        this.lastLearningMode = lastLearningMode;
-    }
 
     public Boolean getLearningFinished() {
         return this.learningFinished;
@@ -817,8 +795,7 @@ public class User extends UuidPo {
     }
 
     public Boolean getIsTodayLearningStarted() {
-        return !lastLearningPosition.equals(-1)
-                && Util.isSameDay(lastLearningDate, new Date());
+        return Util.isSameDay(lastLearningDate, new Date());
     }
 
     /**
@@ -840,12 +817,6 @@ public class User extends UuidPo {
 
         Integer learnedDays = dto.getLearnedDays();
         user.setLearnedDays(learnedDays != null ? learnedDays : 0);
-
-        Integer lastLearningPosition = dto.getLastLearningPosition();
-        user.setLastLearningPosition(lastLearningPosition != null ? lastLearningPosition : -1);
-
-        Integer lastLearningMode = dto.getLastLearningMode();
-        user.setLastLearningMode(lastLearningMode != null ? lastLearningMode : 0);
 
         Boolean learningFinished = dto.getLearningFinished();
         user.setLearningFinished(learningFinished != null ? learningFinished : false);
@@ -947,8 +918,6 @@ public class User extends UuidPo {
         dto.setEmail(this.getEmail());
         dto.setLastLearningDate(this.getLastLearningDate());
         dto.setLearnedDays(this.getLearnedDays());
-        dto.setLastLearningPosition(this.getLastLearningPosition());
-        dto.setLastLearningMode(this.getLastLearningMode());
         dto.setLearningFinished(Boolean.TRUE.equals(this.getLearningFinished()));
         dto.setInviteAwardTaken(Boolean.TRUE.equals(this.getInviteAwardTaken()));
         dto.setIsSuperAdmin(Boolean.TRUE.equals(this.getIsSuperAdmin()));
