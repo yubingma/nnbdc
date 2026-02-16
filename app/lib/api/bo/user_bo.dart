@@ -155,10 +155,6 @@ class UserBo {
     }
   }
 
-  Future<Result> getPwd(String email) async {
-    return await Api.client.getPwd(email);
-  }
-
   Future<Result<List<String>>> getDayStatuses(int recentNDays) async {
     final db = MyDatabase.instance;
     User? user;
@@ -352,6 +348,4 @@ class UserBo {
       Api.client.syncUserDb(expectedServerDbVersion, userId, logs);
 
   Future<Result<int>> getSystemDbVersion() async => Api.client.getSysDbVersion();
-
-  Future<Result<bool>> recordLogin(String? remark) async => Api.client.recordLogin(remark);
 }

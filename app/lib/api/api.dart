@@ -363,9 +363,6 @@ abstract class RestClient {
   Future<Result> checkUser(@Field("checkBy") String checkBy, @Field("email") String? email, @Field("userName") String? userName,
       @Field("password") String password, @Field("clientType") String clientType, @Field("clientVersion") String clientVersion);
 
-  @GET("/getPwd.do")
-  Future<Result> getPwd(@Query("email") String email);
-
   // 邮箱验证码API
   @POST("/sendEmailCode.do")
   @FormUrlEncoded()
@@ -420,12 +417,6 @@ abstract class RestClient {
   Future<Result<SentenceVo>> saveSentence(@Field("english") String english, @Field("chinese") String chinese, @Field("wordId") String wordId,
       @Field("payCowdung") int payCowdung, @Query("currWord") String? currWord, @Query("userId") String userId);
 
-  @PUT("/handSentenceChinese.do")
-  Future<Result<int>> handSentenceUgcChinese(@Query("id") String itemId, @Query("currWord") String? currWord);
-
-  @PUT("/footSentenceChinese.do")
-  Future<Result<int>> footSentenceUgcChinese(@Query("id") String itemId, @Query("currWord") String? currWord);
-
   @PUT("/handSentence.do")
   @FormUrlEncoded()
   Future<Result> handSentence(@Field("id") String id, @Query("currWord") String? currWord, @Query("userId") String userId);
@@ -444,9 +435,6 @@ abstract class RestClient {
 
   @DELETE("/deleteImage.do")
   Future<Result> deleteWordImage(@Query("id") String id, @Query("userId") String userId);
-
-  @DELETE("/deleteSentenceChinese.do")
-  Future<Result> deleteSentenceChinese(@Query("id") String itemId, @Query("currWord") String? currWord);
 
   @DELETE("/unRegister.do")
   Future<Result> unRegister(@Query("userId") String userId);
@@ -486,10 +474,6 @@ abstract class RestClient {
 
   @GET("/getSysDbLogs.do")
   Future<Result<List<SysDbLogDto>>> getNewSysDbLogs(@Query("fromVersion") int fromVersion);
-
-  /// 记录用户登录操作
-  @POST('/recordLogin.do')
-  Future<Result<bool>> recordLogin(@Query('remark') String? remark);
 
   @GET("/getUserDbVersion.do")
   Future<Result<int>> getUserDbVersion(@Query("userId") String userId);
