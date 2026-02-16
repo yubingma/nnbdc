@@ -44,33 +44,5 @@ public class EmailVerificationController {
             return Result.fail(result);
         }
     }
-
-    /**
-     * 验证邮箱验证码
-     * @param email 邮箱地址
-     * @param code 验证码
-     * @param type 验证码类型
-     * @return 验证结果
-     */
-    @PostMapping("/verifyEmailCode.do")
-    @ResponseBody
-    public Result<Void> verifyEmailCode(
-            @RequestParam("email") String email,
-            @RequestParam("code") String code,
-            @RequestParam("type") String type) {
-        EmailCodeType codeType;
-        try {
-            codeType = EmailCodeType.valueOf(type.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            return Result.fail("无效的验证码类型");
-        }
-
-        String result = emailVerificationCodeBo.verifyCode(email, code, codeType);
-        if ("OK".equals(result)) {
-            return Result.success("验证成功", null);
-        } else {
-            return Result.fail(result);
-        }
-    }
 }
 
