@@ -1156,7 +1156,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
             backgroundColor: Colors.green,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           ),
-          label: const Text('下一组'),
+          label: const Text('继续'),
           onPressed: () async {
             Get.back(result: true);
             _args.fromPage = 'stage_list';
