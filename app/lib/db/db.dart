@@ -207,7 +207,7 @@ class MyDatabase extends _$MyDatabase {
   // you should bump this number whenever you change or add a table definition. Migrations
   // are covered later in this readme.
   @override
-  int get schemaVersion => 14;
+  int get schemaVersion => 15;
 
   @override
   MigrationStrategy get migration {
@@ -263,6 +263,9 @@ class MyDatabase extends _$MyDatabase {
           }
           if (from < 14) {
             await _migrateFromV13ToV14(m);
+          }
+          if (from < 15) {
+            await _migrateFromV14ToV15(m);
           }
         } catch (e, stackTrace) {
           // 升级失败，记录错误日志
@@ -413,6 +416,16 @@ class MyDatabase extends _$MyDatabase {
         Global.logger.w('删除 last_learning_position 列失败: $e');
       }
     });
+  }
+
+  /// 从版本 14 升级到版本 15
+  /// 向 learning_words 表添加 batch_id 字段
+  Future<void> _migrateFromV14ToV15(Migrator m) async {
+    try {
+      await m.addColumn(learningWords, learningWords.batchId);
+    } catch (e) {
+      Global.logger.w('添加 batch_id 列失败: $e');
+    }
   }
 
   /// 从版本 1 升级到版本 2 的迁移逻辑

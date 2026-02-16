@@ -96,9 +96,10 @@ class LearningService {
     final tomorrow = today.add(const Duration(days: 1));
 
     // 查询今天的学习单词
+    // 注意：batchId 可能是 NULL（旧数据），只查询有 batchId 的记录
     try {
       final query = db.select(db.learningWords)
-        ..where((lw) => lw.userId.equals(userId) & lw.lastLearningDate.isBiggerOrEqualValue(today) & lw.lastLearningDate.isSmallerThanValue(tomorrow))
+        ..where((lw) => lw.userId.equals(userId) & lw.lastLearningDate.isBiggerOrEqualValue(today) & lw.lastLearningDate.isSmallerThanValue(tomorrow) & lw.batchId.isNotNull())
         ..orderBy([
           (lw) => OrderingTerm(expression: lw.batchId),
           (lw) => OrderingTerm(expression: lw.learningOrder),
@@ -151,7 +152,7 @@ class LearningService {
     int maxBatchId = 0;
     if (todayLearningWords.isNotEmpty) {
       for (var w in todayLearningWords) {
-        if (w.batchId > maxBatchId) maxBatchId = w.batchId;
+        if ((w.batchId ?? 0) > maxBatchId) maxBatchId = w.batchId!;
       }
     }
     int targetBatchId = maxBatchId == 0 ? 1 : maxBatchId + 1;
@@ -168,7 +169,7 @@ class LearningService {
       for (var word in learningWordsOfADay) {
         if (!todayLearningWords.any((w) => w.userId == word.userId && w.wordId == word.wordId)) {
           // 给今日学习单词分配批次
-          todayLearningWords.add(word.copyWith(batchId: targetBatchId));
+          todayLearningWords.add(word.copyWith(batchId: Value(targetBatchId)));
           candidateWords.removeWhere((w) => w.userId == word.userId && w.wordId == word.wordId);
 
           // 按照后端逻辑：达到数量就立即返回
@@ -191,7 +192,7 @@ class LearningService {
 
       if (!todayLearningWords.any((w) => w.userId == oldestWord.userId && w.wordId == oldestWord.wordId)) {
         // 给补足的单词分配批次
-        todayLearningWords.add(oldestWord.copyWith(batchId: targetBatchId));
+        todayLearningWords.add(oldestWord.copyWith(batchId: Value(targetBatchId)));
         candidateWords.removeWhere((w) => w.userId == oldestWord.userId && w.wordId == oldestWord.wordId);
       }
     }
@@ -245,7 +246,7 @@ class LearningService {
     // 1. 找出当前最大的 batchId
     int maxBatchId = 1;
     for (var w in todayLearningWords) {
-      if (w.batchId > maxBatchId) maxBatchId = w.batchId;
+      if ((w.batchId ?? 0) > maxBatchId) maxBatchId = w.batchId!;
     }
 
     // 2. 排序逻辑：
@@ -254,7 +255,7 @@ class LearningService {
     // 对于旧批次，内部保持原有的 learningOrder 顺序。
     todayLearningWords.sort((a, b) {
       if (a.batchId != b.batchId) {
-        return a.batchId.compareTo(b.batchId);
+        return (a.batchId ?? 0).compareTo(b.batchId ?? 0);
       }
       if (a.batchId == maxBatchId) {
         // 最新批次：生命值降序
@@ -301,7 +302,7 @@ class LearningService {
       throw Exception('用户不存在');
     }
 
-    // 计算目前所有的learning words的总生命值
+    // 计算目前所有的learning words的总生命值 
     int currentLifeValue = 0;
     for (var word in currentLearningWords) {
       currentLifeValue += word.lifeValue;

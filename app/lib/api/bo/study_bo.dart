@@ -107,9 +107,10 @@ class StudyBo {
       final endOfDay = DateTime(now.year, now.month, now.day, 23, 59, 59, 999);
 
       // 查询今日学习单词，按学习顺序排序
+      // 注意：batchId 可能是 NULL（旧数据），只查询有 batchId 的记录
       final query = db.select(db.learningWords)
         ..where((tbl) =>
-            tbl.userId.equals(user.id) & tbl.lastLearningDate.isBiggerOrEqualValue(startOfDay) & tbl.lastLearningDate.isSmallerOrEqualValue(endOfDay))
+            tbl.userId.equals(user.id) & tbl.lastLearningDate.isBiggerOrEqualValue(startOfDay) & tbl.lastLearningDate.isSmallerOrEqualValue(endOfDay) & tbl.batchId.isNotNull())
         ..orderBy([
           (tbl) => OrderingTerm(expression: tbl.batchId),
           (tbl) => OrderingTerm(expression: tbl.learningOrder),
@@ -369,9 +370,10 @@ class StudyBo {
       }
 
       // 查询今日学习单词，按学习顺序排序
+      // 注意：batchId 可能是 NULL（旧数据），只查询有 batchId 的记录
       final query = db.select(db.learningWords)
         ..where((tbl) =>
-            tbl.userId.equals(user.id) & tbl.lastLearningDate.isBiggerOrEqualValue(startOfDay) & tbl.lastLearningDate.isSmallerOrEqualValue(endOfDay))
+            tbl.userId.equals(user.id) & tbl.lastLearningDate.isBiggerOrEqualValue(startOfDay) & tbl.lastLearningDate.isSmallerOrEqualValue(endOfDay) & tbl.batchId.isNotNull())
         ..orderBy([
           (tbl) => OrderingTerm(expression: tbl.batchId),
           (tbl) => OrderingTerm(expression: tbl.learningOrder),

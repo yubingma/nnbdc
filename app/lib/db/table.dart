@@ -446,7 +446,8 @@ class LearningWords extends Table {
   IntColumn get learningOrder => integer()();
 
   /// 批次ID，今日学习开始前总是1，开始后每补充一次递增
-  IntColumn get batchId => integer().withDefault(const Constant(1))();
+  /// nullable() to handle legacy data where batch_id might be NULL
+  IntColumn get batchId => integer().nullable().withDefault(const Constant(1))();
 
   /// 生命值(需要学习的次数)，0-5，0表示已掌握，1-5表示需要学习
   IntColumn get lifeValue => integer()();

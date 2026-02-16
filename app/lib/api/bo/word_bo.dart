@@ -1547,9 +1547,10 @@ class WordBo {
     final now = AppClock.now();
     final startOfDay = DateTime(now.year, now.month, now.day);
     final endOfDay = DateTime(now.year, now.month, now.day, 23, 59, 59, 999);
+    // 注意：batchId 可能是 NULL（旧数据），只查询有 batchId 的记录
     final query = db.select(db.learningWords)
       ..where((tbl) =>
-          tbl.userId.equals(userId) & tbl.lastLearningDate.isBiggerOrEqualValue(startOfDay) & tbl.lastLearningDate.isSmallerOrEqualValue(endOfDay))
+          tbl.userId.equals(userId) & tbl.lastLearningDate.isBiggerOrEqualValue(startOfDay) & tbl.lastLearningDate.isSmallerOrEqualValue(endOfDay) & tbl.batchId.isNotNull())
       ..orderBy([
         (tbl) => OrderingTerm(expression: tbl.batchId),
         (tbl) => OrderingTerm(expression: tbl.learningOrder),
