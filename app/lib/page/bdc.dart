@@ -1138,14 +1138,14 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       }
 
       // 检查当前学习模式是否超出范围
-      if (getWordResult.learningMode >= activeUserStudySteps.length) {
-        Global.logger.d('无效的学习模式: ${getWordResult.learningMode}');
+      if (getWordResult.stepIndex >= activeUserStudySteps.length) {
+        Global.logger.d('无效的学习模式: ${getWordResult.stepIndex}');
         ToastUtil.error('学习模式配置错误');
         return;
       }
 
       // 获取当前学习步骤
-      final currentStep = activeUserStudySteps[getWordResult.learningMode].studyStep;
+      final currentStep = activeUserStudySteps[getWordResult.stepIndex].studyStep;
 
       // 如果当前学习步骤是列表模式，显示单词列表
       if (currentStep == 'List') {
@@ -1179,7 +1179,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
       // 记录旧的学习模式，用于检测模式切换（英→中 / 中→英）
       String? oldStudyStep = _studyStep;
-      _studyStep = activeUserStudySteps[getWordResult.learningMode].studyStep;
+      _studyStep = activeUserStudySteps[getWordResult.stepIndex].studyStep;
 
       // 当学习模式发生切换，或这是本次会话首次设置学习模式时，或从阶段复习返回时，
       // 先确保ASR完全停止，然后重新初始化 ASR 事件监听，确保事件订阅始终绑定到当前 BdcPage

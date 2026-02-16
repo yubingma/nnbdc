@@ -1111,7 +1111,7 @@ class WordList {
 @JsonSerializable()
 class GetWordResult {
   LearningWordVo? learningWord;
-  int learningMode;
+  int stepIndex;
   List<WordVo>? otherWords;
   List<int>? progress;
   String? sound;
@@ -1129,7 +1129,7 @@ class GetWordResult {
 
   GetWordResult(
     this.learningWord,
-    this.learningMode,
+    this.stepIndex,
     this.otherWords,
     this.progress,
     this.sound,

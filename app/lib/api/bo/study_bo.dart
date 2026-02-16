@@ -412,23 +412,23 @@ class StudyBo {
       int currentWordIndex = todayWords.indexOf(currentWordForPos);
 
       // 获取当前学习环节：由该单词今日已练习的次数推导
-      int currentStep = currentWordForPos.todayLearnedTimes;
-      if (currentStep >= modeCount) {
-        currentStep = modeCount - 1;
+      int currentStepIndex = currentWordForPos.todayLearnedTimes;
+      if (currentStepIndex >= modeCount) {
+        currentStepIndex = modeCount - 1;
       }
 
       // 更新当前单词的状态
       final currWord = todayWords[currentWordIndex];
-      bool allStepsCompletedForWord = currentStep >= steps.length - 1;
+      bool allStepsCompletedForWord = currentStepIndex >= steps.length - 1;
       await updateCurrWord(isWordMastered, currWord, user, now, db, isAnswerCorrect, allStepsCompletedForWord);
 
       // 如果当前是列表模式，返回列表页面
-      bool isListStep = currentStep < steps.length && steps[currentStep].studyStep == 'List';
+      bool isListStep = currentStepIndex < steps.length && steps[currentStepIndex].studyStep == 'List';
       if (isListStep) {
         Global.logger.d('当前为列表模式，显示阶段单词列表');
         return Result<GetWordResult>("SUCCESS", "获取成功", true)
           ..data = GetWordResult(
-            null, -1, null, [0, 0], null, false, false, null, null, null,
+            null, currentStepIndex, null, [0, 0], null, false, false, null, null, null,
             null, [], [], [],
             false, false,
           );
@@ -437,13 +437,13 @@ class StudyBo {
       // 计算下一个单词的索引 (nextWordIndex) 和学习模式 (nextLearningMode)
       // 计算下一个单词和环节的信息（如果是 gotoNext=false 的预览模式则保持现状）
       int nextWordIndex = currentWordIndex;
-      int nextLearningMode = currentStep;
+      int nextStepIndex = currentStepIndex;
 
       // 阶段切换逻辑：从阶段列表返回时，进入下一阶段
       if (shouldEnterNextStage) {
         // 进入下一阶段
         nextWordIndex = (stageStartIndex + stageSize) < todayWords.length ? (stageStartIndex + stageSize) : currentWordIndex;
-        nextLearningMode = 0;
+        nextStepIndex = 0;
       } else if (gotoNext) {
         int stageWordCount = 10;
         bool isStageBounderyReached = (currentWordIndex + 1) % stageWordCount == 0;
@@ -451,14 +451,14 @@ class StudyBo {
           if (allStepsCompletedForWord) {
             // 当前阶段已完成，进入下一阶段
             nextWordIndex = currentWordIndex - stageWordCount + 1;
-            nextLearningMode = 0;
+            nextStepIndex = 0;
           } else {
             nextWordIndex = currentWordIndex - stageWordCount + 1;
-            nextLearningMode = currentStep == modeCount - 1 ? 0 : currentStep + 1;
+            nextStepIndex = currentStepIndex == modeCount - 1 ? 0 : currentStepIndex + 1;
           }
         } else {
           nextWordIndex = currentWordIndex + 1;
-          nextLearningMode = currentStep;
+          nextStepIndex = currentStepIndex;
         }
       }
 
@@ -479,18 +479,18 @@ class StudyBo {
       final targetMeaningItemVos = targetMeaningItems.map((e) => MeaningItemVo(e.id, e.ciXing, e.meaning, null, null, null)).toList();
 
       // 生成两个混淆单词（其释义同样通过 WordBo.getWordMeaningItems 获取）
-      final otherWords = await getTwoOtherWords(steps, nextLearningMode, targetMeaningItemVos, todayWords, returnWord, db);
+      final otherWords = await getTwoOtherWords(steps, nextStepIndex, targetMeaningItemVos, todayWords, returnWord, db);
 
       // 计算学习进度
       final totalWordsToday = todayWords.length;
-      final currentLearningIndex = calculateLearningIndexByWordIndexAndMode(nextWordIndex, nextLearningMode, modeCount, totalWordsToday, 10);
+      final currentLearningIndex = calculateLearningIndexByWordIndexAndMode(nextWordIndex, nextStepIndex, modeCount, totalWordsToday, 10);
       final maxLearningIndex = totalWordsToday * modeCount;
       final progress = [(totalWordsToday * ((currentLearningIndex + 1.0) / (maxLearningIndex + 1))).toInt(), totalWordsToday];
 
       return Result<GetWordResult>("SUCCESS", "获取成功", true)
         ..data = GetWordResult(
           learningWordVo,
-          nextLearningMode,
+          nextStepIndex,
           otherWords,
           progress,
           null, // sound
