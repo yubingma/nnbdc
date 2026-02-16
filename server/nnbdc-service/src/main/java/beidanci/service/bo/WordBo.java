@@ -1,8 +1,6 @@
 package beidanci.service.bo;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
@@ -18,18 +16,14 @@ import beidanci.api.model.MeaningItemVo;
 import beidanci.api.model.SimilarWordDto;
 import beidanci.api.model.WordDto;
 import beidanci.api.model.WordImageDto;
-import beidanci.api.model.WordList;
 import beidanci.api.model.WordVo;
 import beidanci.service.dao.BaseDao;
 import beidanci.service.dao.EntityRowMapper;
 import beidanci.service.exception.EmptySpellException;
 import beidanci.service.exception.InvalidMeaningFormatException;
 import beidanci.service.exception.ParseException;
-import beidanci.service.po.Dict;
 import beidanci.service.po.MeaningItem;
-import beidanci.service.po.User;
 import beidanci.service.po.Word;
-import beidanci.service.po.WrongWord;
 import beidanci.service.store.WordCache;
 import beidanci.service.util.SysParamUtil;
 import beidanci.util.Utils;
@@ -44,17 +38,7 @@ public class WordBo extends BaseBo<Word> {
     @Autowired
     SysParamUtil sysParamUtil;
 
-    @Autowired
-    WrongWordBo wrongWordBo;
 
-    @Autowired
-    LearningWordBo learningWordBo;
-
-    @Autowired
-    DictBo dictBo;
-
-    @Autowired
-    UserBo userBo;
 
     @Autowired
     private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
@@ -189,26 +173,7 @@ public class WordBo extends BaseBo<Word> {
         return null;
     }
 
-    public List<WordList> getWordLists(String userId) {
-        User user = userBo.findById(userId);
-        List<WordList> wordLists = new ArrayList<>();
-        WrongWord wrongWord = new WrongWord(null, user);
-        wordLists.add(new WordList("今日错词", wrongWordBo.pagedQuery(wrongWord, 1, 1).getTotal()));
 
-        wordLists
-                .add(new WordList("今日新词", learningWordBo.getTodayNewWordsForAPage2(0, 1, user, new Date()).getTotal()));
-        wordLists
-                .add(new WordList("今日旧词", learningWordBo.getTodayOldWordsForAPage2(0, 1, user, new Date()).getTotal()));
-        wordLists.add(new WordList("今日单词", learningWordBo.getTodayWordsForAPage2(0, 1, user, new Date()).getTotal()));
-        wordLists.add(new WordList("学习中", learningWordBo.getLearningWordsForAPage2(0, 1, user).getTotal()));
-
-        Dict rawWordDict = dictBo.getRawWordDict(user);
-        wordLists.add(new WordList("生词本", rawWordDict.getWordCount()));
-
-        wordLists.add(new WordList("已掌握", user.getMasteredWordsCount()));
-
-        return wordLists;
-    }
 
     public List<WordDto> getWordsOfDict(String dictId) {
         // 通用词典现在也有dict_word记录，统一查询逻辑
