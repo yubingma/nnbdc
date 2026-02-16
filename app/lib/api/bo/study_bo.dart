@@ -412,20 +412,34 @@ class StudyBo {
       int currentWordIndex = todayWords.indexOf(currentWordForPos);
 
       // 获取当前学习环节：由该单词今日已练习的次数推导
-      int currentLearningMode = currentWordForPos.todayLearnedTimes;
-      if (currentLearningMode >= modeCount) {
-        currentLearningMode = modeCount - 1;
+      int currentStep = currentWordForPos.todayLearnedTimes;
+      if (currentStep >= modeCount) {
+        currentStep = modeCount - 1;
       }
 
       // 更新当前单词的状态
       final currWord = todayWords[currentWordIndex];
-      bool allStepsCompletedForWord = currentLearningMode >= steps.length - 1;
+      bool allStepsCompletedForWord = currentStep >= steps.length - 1;
       await updateCurrWord(isWordMastered, currWord, user, now, db, isAnswerCorrect, allStepsCompletedForWord);
+
+      // 如果当前是列表模式，返回列表页面
+      bool isListStep = currentStep < steps.length && steps[currentStep].studyStep == 'List';
+      if (isListStep) {
+        Global.logger.d('当前为列表模式，显示阶段单词列表');
+        return Result<GetWordResult>("SUCCESS", "获取成功", true)
+          ..data = GetWordResult(
+            null, -1, null, [0, 0], null, false, false, null, null, null,
+            null, [], [], [],
+            false, false,
+          );
+      }
 
       // 计算下一个单词的索引 (nextWordIndex) 和学习模式 (nextLearningMode)
       // 计算下一个单词和环节的信息（如果是 gotoNext=false 的预览模式则保持现状）
       int nextWordIndex = currentWordIndex;
-      int nextLearningMode = currentLearningMode;
+      int nextLearningMode = currentStep;
+
+      // 阶段切换逻辑：从阶段列表返回时，进入下一阶段
       if (shouldEnterNextStage) {
         // 进入下一阶段
         nextWordIndex = (stageStartIndex + stageSize) < todayWords.length ? (stageStartIndex + stageSize) : currentWordIndex;
@@ -433,24 +447,18 @@ class StudyBo {
       } else if (gotoNext) {
         int stageWordCount = 10;
         bool isStageBounderyReached = (currentWordIndex + 1) % stageWordCount == 0;
-        if (isStageBounderyReached) {
+          if (isStageBounderyReached) {
           if (allStepsCompletedForWord) {
-            Global.logger.d('每学完10个单词，进入阶段复习模式: nextWordIndex=$nextWordIndex');
-            return Result<GetWordResult>("SUCCESS", "获取成功", true)
-              ..data = GetWordResult(
-                null, -1, null, [0, 0], null, false, false, null, null, null,
-                null,
-                true, // shouldEnterReviewMode
-                null, null, null, false,
-                false, // wordMastered
-              );
+            // 当前阶段已完成，进入下一阶段
+            nextWordIndex = currentWordIndex - stageWordCount + 1;
+            nextLearningMode = 0;
           } else {
             nextWordIndex = currentWordIndex - stageWordCount + 1;
-            nextLearningMode = currentLearningMode == modeCount - 1 ? 0 : currentLearningMode + 1;
+            nextLearningMode = currentStep == modeCount - 1 ? 0 : currentStep + 1;
           }
         } else {
           nextWordIndex = currentWordIndex + 1;
-          nextLearningMode = currentLearningMode;
+          nextLearningMode = currentStep;
         }
       }
 
@@ -492,7 +500,6 @@ class StudyBo {
           [], // additionalInfos
           [], // errorReports
           null, // shortDesc
-          false, // shouldEnterReviewMode
           [], // images
           [], // verbTenses
           [], // shortDescChineses
@@ -572,12 +579,11 @@ class StudyBo {
         null,
         null,
         null,
-        false,
         null,
         null,
         null,
         false,
-        false, // wordMastered
+        false,
       );
   }
 

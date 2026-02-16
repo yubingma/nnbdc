@@ -991,7 +991,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       ToastUtil.error('获取单词失败');
       return;
     }
-    if (_currentGetWordResult!.finished || _currentGetWordResult!.noWord || _currentGetWordResult!.shouldEnterReviewMode) {
+    if (_currentGetWordResult!.finished || _currentGetWordResult!.noWord) {
       return;
     }
   }
@@ -1135,7 +1135,20 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         Global.logger.d('getWordResult.noWord为true,跳转到选择词书页面');
         Get.toNamed("/select_book");
         return;
-      } else if (getWordResult.shouldEnterReviewMode) {
+      }
+
+      // 检查当前学习模式是否超出范围
+      if (getWordResult.learningMode >= activeUserStudySteps.length) {
+        Global.logger.d('无效的学习模式: ${getWordResult.learningMode}');
+        ToastUtil.error('学习模式配置错误');
+        return;
+      }
+
+      // 获取当前学习步骤
+      final currentStep = activeUserStudySteps[getWordResult.learningMode].studyStep;
+
+      // 如果当前学习步骤是列表模式，显示单词列表
+      if (currentStep == 'List') {
         var nextWordBtn = ElevatedButton.icon(
           icon: const Icon(Icons.navigate_next, size: 24.0, color: Colors.white),
           style: ElevatedButton.styleFrom(
@@ -1145,43 +1158,24 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
           ),
           label: const Text('下一组'),
           onPressed: () async {
-            // 先关闭阶段复习对话框
             Get.back();
-            // 更新参数，标记从阶段复习返回
-            _args.fromPage = 'stage_review';
+            _args.fromPage = 'stage_list';
             await GetStorage().write("BdcPageArgs", _args.toJson());
-            // 直接刷新当前页面，而不是创建新实例
-            // 这样可以避免 dispose 导致 ASR 事件监听被取消
             await getNextWord(false);
           },
         );
-        // 进入阶段复习列表前，先停止ASR，避免在阶段复习页面时ASR还在运行
         await asr.stopAsr();
         await asr.reset();
-        // 进入阶段复习列表，返回后刷新，并交给统一的ASR状态机处理启动/停止
         if (!mounted) return;
-        // 保存 mounted 状态，避免在异步回调中使用 context
         final wasMounted = mounted;
         if (!wasMounted) return;
-        toStageWordsListPage(true, nextWordBtn, context)?.then((_) async {
-          // 从阶段复习返回后，检查页面是否仍然挂载
+        toStageWordsListPage('单词列表', true, nextWordBtn, context)?.then((_) async {
           if (!mounted) return;
-          // 刷新学习内容（内部会更新 studyStep、word、重建 TabController）
-          // 注意：getNextWord 会在 handleWord 中自动调用 initAsr 重新初始化事件监听
-          // 不需要在这里手动调用 _handleTabChangeForAsr()，
-          // 因为 playWordAndFirstSentence 播放完成后会自动调用
         });
         return;
       }
 
       _isWordMastered = false;
-
-      //单词掌握度及当前学习步骤
-      if (getWordResult.learningMode >= activeUserStudySteps.length) {
-        Global.logger.d('无效的学习模式: ${getWordResult.learningMode}');
-        ToastUtil.error('学习模式配置错误');
-        return;
-      }
 
       // 记录旧的学习模式，用于检测模式切换（英→中 / 中→英）
       String? oldStudyStep = _studyStep;

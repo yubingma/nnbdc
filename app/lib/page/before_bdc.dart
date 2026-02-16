@@ -728,7 +728,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
                 ),
                 const SizedBox(width: 12),
                 Text(
-                  '学习方式',
+                  '学习步骤',
                   textScaler: TextScaler.linear(1.0),
                   style: const TextStyle(
                     fontFamily: 'NotoSansSC',
@@ -745,7 +745,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
 
           // 现代化的学习方式列表
           Container(
-            height: 128,
+            height: 166,
             padding: const EdgeInsets.all(12),
             child: ReorderableListView(
               buildDefaultDragHandles: false,

@@ -92,8 +92,10 @@ class StudyStepsService {
         return StudyStep.en2Ch;
       case 'Ch2En':
         return StudyStep.ch2En;
+      case 'List':
+        return StudyStep.list;
       default:
-        return StudyStep.en2Ch;
+        throw Exception('无效的StudyStep值：$stepStr');
     }
   }
 

@@ -116,8 +116,8 @@ class StageWordsBookMarkProvider implements BookMarkProvider {
   }
 }
 
-Future<dynamic>? toStageWordsListPage(bool showDelBtn, Widget nextWorkBtn, BuildContext context) {
+Future<dynamic>? toStageWordsListPage(String title, bool showDelBtn, Widget nextWorkBtn, BuildContext context) {
   return Get.toNamed('/word_list',
       arguments: WordListPageArgs(
-          '阶段复习', StageWordsProvider(), true, showDelBtn, true, '掌握度', StageWordsProgressProvider(), StageWordsBookMarkProvider(), nextWorkBtn));
+          title, StageWordsProvider(), true, showDelBtn, true, '掌握度', StageWordsProgressProvider(), StageWordsBookMarkProvider(), nextWorkBtn));
 }

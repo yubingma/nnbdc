@@ -1121,12 +1121,11 @@ class GetWordResult {
   List<WordAdditionalInfoVo>? additionalInfos;
   List<ErrorReportVo>? errorReports;
   String? shortDesc;
-  bool shouldEnterReviewMode;
   List<WordImageVo>? images;
   List<VerbTenseVo>? verbTenses;
   List<WordShortDescChineseVo>? shortDescChineses;
   bool inRawWordDict;
-  bool wordMastered; // 新增字段：标识单词已掌握，需要调用者重新获取下一个单词
+  bool wordMastered;
 
   GetWordResult(
     this.learningWord,
@@ -1140,7 +1139,6 @@ class GetWordResult {
     this.additionalInfos,
     this.errorReports,
     this.shortDesc,
-    this.shouldEnterReviewMode,
     this.images,
     this.verbTenses,
     this.shortDescChineses,

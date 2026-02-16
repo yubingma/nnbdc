@@ -71,7 +71,10 @@ enum StudyStep {
   en2Ch,
 
   /// 中→英 - 眼
-  ch2En
+  ch2En,
+
+  /// 列表模式 - 预览/复习当前阶段单词
+  list
 }
 
 extension StudyStepExt on StudyStep {
@@ -81,6 +84,8 @@ extension StudyStepExt on StudyStep {
         return "En2Ch";
       case StudyStep.ch2En:
         return "Ch2En";
+      case StudyStep.list:
+        return "List";
     }
   }
 
@@ -90,6 +95,8 @@ extension StudyStepExt on StudyStep {
         return "英→中";
       case StudyStep.ch2En:
         return "中→英";
+      case StudyStep.list: 
+        return "单词列表";
     }
   }
 
@@ -99,6 +106,8 @@ extension StudyStepExt on StudyStep {
         return StudyStep.en2Ch;
       case "Ch2En":
         return StudyStep.ch2En;
+      case "List":
+        return StudyStep.list;
       default:
         throw ArgumentError('无效的StudyStep值：$value');
     }

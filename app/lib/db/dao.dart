@@ -14,7 +14,6 @@ import '../services/throttled_sync_service.dart';
 import '../util/error_handler.dart';
 import 'db.dart';
 
-
 part 'dao.g.dart';
 
 // the _TodosDaoMixin will be created by drift. It contains all the necessary
@@ -1199,10 +1198,9 @@ class UserStudyStepsDao extends DatabaseAccessor<MyDatabase> with _$UserStudySte
     if (steps.isEmpty) {
       final newSteps = <UserStudyStep>[];
 
-      // 根据客户端类型设置初始状态
       newSteps.add(UserStudyStep(
         userId: userId,
-        studyStep: 'En2Ch',
+        studyStep: 'List',
         seq: 0,
         state: 'Active',
         createTime: AppClock.now(),
@@ -1210,8 +1208,16 @@ class UserStudyStepsDao extends DatabaseAccessor<MyDatabase> with _$UserStudySte
 
       newSteps.add(UserStudyStep(
         userId: userId,
-        studyStep: 'Ch2En',
+        studyStep: 'En2Ch',
         seq: 1,
+        state: 'Active',
+        createTime: AppClock.now(),
+      ));
+
+      newSteps.add(UserStudyStep(
+        userId: userId,
+        studyStep: 'Ch2En',
+        seq: 2,
         state: 'Active',
         createTime: AppClock.now(),
       ));

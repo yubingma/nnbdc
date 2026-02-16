@@ -207,7 +207,7 @@ class MyDatabase extends _$MyDatabase {
   // you should bump this number whenever you change or add a table definition. Migrations
   // are covered later in this readme.
   @override
-  int get schemaVersion => 15;
+  int get schemaVersion => 16;
 
   @override
   MigrationStrategy get migration {
@@ -266,6 +266,9 @@ class MyDatabase extends _$MyDatabase {
           }
           if (from < 15) {
             await _migrateFromV14ToV15(m);
+          }
+          if (from < 16) {
+            await _migrateFromV15ToV16();
           }
         } catch (e, stackTrace) {
           // 升级失败，记录错误日志
@@ -425,6 +428,41 @@ class MyDatabase extends _$MyDatabase {
       await m.addColumn(learningWords, learningWords.batchId);
     } catch (e) {
       Global.logger.w('添加 batch_id 列失败: $e');
+    }
+  }
+
+  /// 从版本 15 升级到版本 16
+  /// 重建学习步骤，添加 List 学习步骤
+  Future<void> _migrateFromV15ToV16() async {
+    try {
+      // 清空所有用户的学习步骤
+      await customStatement('DELETE FROM user_study_steps');
+      
+      // 重新获取所有用户（users 表的主键是 id）
+      final users = await customSelect('SELECT id FROM users').get();
+      
+      for (final user in users) {
+        final userId = user.data['id'] as String;
+        final now = DateTime.now().toIso8601String();
+        
+        // 重建学习步骤：List（预习）-> En2Ch -> Ch2En
+        await customStatement(
+          'INSERT INTO user_study_steps (user_id, study_step, seq, state, create_time) VALUES (?, ?, ?, ?, ?)',
+          [userId, 'List', 0, 'Active', now],
+        );
+        await customStatement(
+          'INSERT INTO user_study_steps (user_id, study_step, seq, state, create_time) VALUES (?, ?, ?, ?, ?)',
+          [userId, 'En2Ch', 1, 'Active', now],
+        );
+        await customStatement(
+          'INSERT INTO user_study_steps (user_id, study_step, seq, state, create_time) VALUES (?, ?, ?, ?, ?)',
+          [userId, 'Ch2En', 2, 'Active', now],
+        );
+
+        Global.logger.d('重建用户 $userId 的学习步骤: List, En2Ch, Ch2En');
+      }
+    } catch (e) {
+      Global.logger.w('重建学习步骤失败: $e');
     }
   }
 
