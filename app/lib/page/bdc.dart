@@ -1158,7 +1158,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
           ),
           label: const Text('下一组'),
           onPressed: () async {
-            Get.back();
+            Get.back(result: true);
             _args.fromPage = 'stage_list';
             await GetStorage().write("BdcPageArgs", _args.toJson());
             await getNextWord(false);
@@ -1169,8 +1169,11 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         if (!mounted) return;
         final wasMounted = mounted;
         if (!wasMounted) return;
-        toStageWordsListPage('单词列表', true, nextWordBtn, context)?.then((_) async {
+        toStageWordsListPage('单词列表', true, nextWordBtn, context)?.then((result) async {
           if (!mounted) return;
+          if (result == null) {
+            Navigator.pop(context);
+          }
         });
         return;
       }
