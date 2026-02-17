@@ -1270,10 +1270,10 @@ class WordListPageState extends State<WordListPage>
                   },
                   itemScrollController: itemScrollController,
                   itemPositionsListener: itemPositionsListener,
-                  padding: EdgeInsets.zero,
+                  padding: const EdgeInsets.only(bottom: 120),
                 ),
               ),
-              // 底部的按钮，固定在页面底部
+              // 底部的按钮，固定在页面底部 
               if (args.injectedBtn != null)
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16.0, 4.0, 16.0, 0.0),
