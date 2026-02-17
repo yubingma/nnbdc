@@ -607,7 +607,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
   /// 实际执行ASR启动/停止逻辑
   void _doHandleTabChangeForAsr() {
-
     if (_isInSpeakTab) {
       // 当前在"说"tab，如果ASR已经启动且状态正确，不需要再次启动
       if (asr.state == AsrState.started && !_isKeyboardVisible) {
@@ -756,8 +755,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         Global.logger.d('BDC: ASR状态为started，播放提示音');
         SoundUtil.playAsrReadyHintSound();
       }
-    } finally {
-    }
+    } finally {}
   }
 
   @override
@@ -1889,16 +1887,44 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
               color: context.watch<DarkMode>().isDarkMode ? const Color(0xFF2A2A3E) : const Color(0xFFE8F1FF),
             ),
             child: _currentGetWordResult?.progress != null
-                ? FAProgressBar(
-                    borderRadius: const BorderRadius.all(Radius.circular(3)),
-                    currentValue: _currentGetWordResult!.progress![0].toDouble(),
-                    maxValue: _currentGetWordResult!.progress![1].toDouble(),
-                    displayText: '',
-                    direction: Axis.horizontal,
-                    displayTextStyle: const TextStyle(color: Color(0x00000000)),
-                    backgroundColor: Colors.transparent,
-                    progressColor: AppTheme.primaryColor,
-                    animatedDuration: const Duration(milliseconds: 300),
+                ? LayoutBuilder(
+                    builder: (context, constraints) {
+                      final maxValue = _currentGetWordResult!.progress![1].toDouble();
+                      final width = constraints.maxWidth;
+                      const batchSize = 10;
+                      final dividerCount = (maxValue / batchSize).floor() - (maxValue % batchSize == 0 ? 1 : 0);
+
+                      return Stack(
+                        children: [
+                          FAProgressBar(
+                            borderRadius: const BorderRadius.all(Radius.circular(3)),
+                            currentValue: _currentGetWordResult!.progress![0].toDouble(),
+                            maxValue: maxValue,
+                            displayText: '',
+                            direction: Axis.horizontal,
+                            displayTextStyle: const TextStyle(color: Color(0x00000000)),
+                            backgroundColor: Colors.transparent,
+                            progressColor: AppTheme.primaryColor,
+                            animatedDuration: const Duration(milliseconds: 300),
+                          ),
+                          if (maxValue > 0)
+                            ...List.generate(max(0, dividerCount), (index) {
+                              final left = ((index + 1) * batchSize / maxValue) * width;
+                              // 只有当计算出的位置在进度条范围内时才显示（简单的边界检查）
+                              if (left >= width) return const SizedBox.shrink();
+                              return Positioned(
+                                left: left,
+                                top: 0,
+                                bottom: 0,
+                                child: Container(
+                                  width: 1.5,
+                                  color: Colors.white,
+                                ),
+                              );
+                            }),
+                        ],
+                      );
+                    },
                   )
                 : const SizedBox.shrink(),
           ),
