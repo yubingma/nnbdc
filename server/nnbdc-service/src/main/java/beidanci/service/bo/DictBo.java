@@ -18,6 +18,7 @@ import java.util.Objects;
 
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -462,7 +463,7 @@ public class DictBo extends BaseBo<Dict> {
                     dict.getUpdateTime());
 
             sysDbLogBo.logOperation("UPDATE", "dict", dictId, JsonUtils.toJson(dictDto));
-        } catch (Exception e) {
+        } catch (IllegalAccessException | IllegalArgumentException e) {
             throw new RuntimeException("更新词典失败: " + e.getMessage(), e);
         }
     }
@@ -510,7 +511,7 @@ public class DictBo extends BaseBo<Dict> {
             record.put("updateTime", new java.sql.Timestamp(System.currentTimeMillis()));
 
             sysDbLogBo.logOperation("UPDATE", "word", wordId, JsonUtils.toJson(record));
-        } catch (Exception e) {
+        } catch (DataAccessException e) {
             throw new RuntimeException("更新单词失败: " + e.getMessage(), e);
         }
     }
@@ -531,7 +532,7 @@ public class DictBo extends BaseBo<Dict> {
                 if (seq != null) {
                     deletedSeq = seq;
                 }
-            } catch (Exception e) {
+            } catch (DataAccessException e) {
                 // 如果记录不存在，忽略错误
             }
 
@@ -568,7 +569,7 @@ public class DictBo extends BaseBo<Dict> {
             dictWordDto.setUpdateTime(new java.sql.Timestamp(System.currentTimeMillis()));
 
             sysDbLogBo.logOperation("DELETE", "dict_word", dictId + "_" + wordId, JsonUtils.toJson(dictWordDto));
-        } catch (Exception e) {
+        } catch (DataAccessException e) {
             throw new RuntimeException("删除单词失败: " + e.getMessage(), e);
         }
     }
@@ -623,7 +624,7 @@ public class DictBo extends BaseBo<Dict> {
                     dictId, deletedSentences, deletedMeaningItems, deletedLearningDicts, deletedDictWords,
                     deletedDicts);
 
-        } catch (Exception e) {
+        } catch (DataAccessException e) {
             log.error("安全删除词典失败: dictId={}, 错误: {}", dictId, e.getMessage(), e);
             throw new RuntimeException("删除词典失败: " + e.getMessage(), e);
         }

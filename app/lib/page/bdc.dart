@@ -1894,19 +1894,73 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                       const batchSize = 10;
                       final dividerCount = (maxValue / batchSize).floor() - (maxValue % batchSize == 0 ? 1 : 0);
 
+                      // 计算批次颜色：从红色(0) -> 蓝色(0.5) -> 绿色(1.0) 渐变
+                      // 根据白天/黑夜模式调整基础透明度
+                      final bool isDarkMode = context.watch<DarkMode>().isDarkMode;
+                      final double baseAlpha = isDarkMode ? 0.25 : 0.15; // 黑夜模式稍明显一点，白天模式更淡
+
+                      // 获取批次的基础颜色（不透明度）
+                      Color getBatchBaseColor(int batchIndex, int totalBatches) {
+                        if (totalBatches <= 1) {
+                          return const Color(0xFF4CAF50); // 只有一个批次时显示绿色
+                        }
+                        final double t = batchIndex / (totalBatches - 1); // 0.0 到 1.0
+                        if (t < 0.5) {
+                          // 红色到蓝色
+                          final double localT = t * 2; // 0.0 到 1.0
+                          return Color.lerp(const Color(0xFFE53935), const Color(0xFF1E88E5), localT)!;
+                        } else {
+                          // 蓝色到绿色
+                          final double localT = (t - 0.5) * 2; // 0.0 到 1.0
+                          return Color.lerp(const Color(0xFF1E88E5), const Color(0xFF43A047), localT)!;
+                        }
+                      }
+
+                      Color getBatchColor(int batchIndex, int totalBatches) {
+                        return getBatchBaseColor(batchIndex, totalBatches).withValues(alpha: baseAlpha);
+                      }
+
+                      final totalBatches = max(1, dividerCount + 1);
+
+                      // 计算当前进度所在的批次索引
+                      final currentProgress = _currentGetWordResult!.progress![0].toDouble();
+                      final currentBatchIndex = min((currentProgress / batchSize).floor(), totalBatches - 1);
+                      // 获取当前批次的鲜艳颜色作为进度条前景色
+                      final progressColor = getBatchBaseColor(currentBatchIndex, totalBatches);
+
                       return Stack(
                         children: [
+                          // 批次背景色层
+                          Row(
+                            children: List.generate(totalBatches, (index) {
+                              final isLastBatch = index == totalBatches - 1;
+                              final batchWords = isLastBatch ? maxValue - (index * batchSize) : batchSize.toDouble();
+                              final batchWidth = (batchWords / maxValue) * width;
+                              return Container(
+                                width: batchWidth,
+                                decoration: BoxDecoration(
+                                  color: getBatchColor(index, totalBatches),
+                                  borderRadius: BorderRadius.horizontal(
+                                    left: index == 0 ? const Radius.circular(3) : Radius.zero,
+                                    right: isLastBatch ? const Radius.circular(3) : Radius.zero,
+                                  ),
+                                ),
+                              );
+                            }),
+                          ),
+                          // 进度条层
                           FAProgressBar(
                             borderRadius: const BorderRadius.all(Radius.circular(3)),
-                            currentValue: _currentGetWordResult!.progress![0].toDouble(),
+                            currentValue: currentProgress,
                             maxValue: maxValue,
                             displayText: '',
                             direction: Axis.horizontal,
                             displayTextStyle: const TextStyle(color: Color(0x00000000)),
                             backgroundColor: Colors.transparent,
-                            progressColor: AppTheme.primaryColor,
+                            progressColor: progressColor,
                             animatedDuration: const Duration(milliseconds: 300),
                           ),
+                          // 批次分隔线
                           if (maxValue > 0)
                             ...List.generate(max(0, dividerCount), (index) {
                               final left = ((index + 1) * batchSize / maxValue) * width;
@@ -1918,7 +1972,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                                 bottom: 0,
                                 child: Container(
                                   width: 1.5,
-                                  color: Colors.white,
+                                  color: Colors.white.withValues(alpha: 0.7),
                                 ),
                               );
                             }),
