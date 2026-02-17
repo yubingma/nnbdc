@@ -1017,11 +1017,11 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     _highlightedWordImg = null;
     _wordImageEdited = false;
 
-    //如果是从批次复习跳转来的，则第一次从服务端取单词时，通知服务端进入下一个学习批次
+    //如果是从批次单词列表跳转来的，则第一次从服务端取单词时，通知服务端进入下一个学习批次
     var shouldEnterNextBatch = false;
     bool isFromBatchWordList = false;
     if (_args.fromPage != null && _args.fromPage == 'batch_word_list') {
-      shouldEnterNextBatch = true;
+      shouldEnterNextBatch = false;
       isFromBatchWordList = true;
       // 立即清除标记，通过参数传递给 handleWord
       _args.fromPage = null;
