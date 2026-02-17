@@ -929,11 +929,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
           Future.delayed(Duration(milliseconds: 150)).then((_) {
             _playingCorrectSounds.remove(soundFuture);
             if (_playingCorrectSounds.isEmpty && _isAnswerCorrect) {
-              // 步进进度条
-              if (_currentGetWordResult?.progress != null && _currentGetWordResult!.progress!.isNotEmpty) {
-                _currentGetWordResult!.progress![0] += 1;
-                setState(() {});
-              }
               getNextWord(true);
             }
           });
@@ -952,11 +947,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         soundFuture.whenComplete(() async {
           // 播放一遍单词的标准发音
           await SoundUtil.playPronounceSound2(_word!, _audioPlayer);
-          // 步进进度条
-          if (_currentGetWordResult?.progress != null && _currentGetWordResult!.progress!.isNotEmpty) {
-            _currentGetWordResult!.progress![0] += 1;
-            setState(() {});
-          }
           getNextWord(true);
         });
       }
@@ -1168,12 +1158,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
           label: const Text('继续'),
           onPressed: () async {
             Get.back(result: true);
-
-            // 步进进度条 (batchSize)
-            if (_currentGetWordResult?.progress != null && _currentGetWordResult!.progress!.isNotEmpty) {
-              _currentGetWordResult!.progress![0] += BdcPageState.batchSize;
-              setState(() {});
-            }
 
             // 完成当前批次列表学习
             await StudyBo().completeListStepForCurrentBatch();
@@ -2139,11 +2123,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                 ),
                 label: const Text('下一词'),
                 onPressed: () {
-                  // 步进进度条
-                  if (_currentGetWordResult?.progress != null && _currentGetWordResult!.progress!.isNotEmpty) {
-                    _currentGetWordResult!.progress![0] += 1;
-                    setState(() {});
-                  }
                   getNextWord(true);
                 },
               ),
@@ -2498,11 +2477,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       soundFuture.whenComplete(() {
         _playingCorrectSounds.remove(soundFuture);
       });
-      // 步进进度条
-      if (_currentGetWordResult?.progress != null && _currentGetWordResult!.progress!.isNotEmpty) {
-        _currentGetWordResult!.progress![0] += 1;
-        setState(() {});
-      }
       getNextWord(true);
     } else {
       //不认识或答案错误（错误提示音不需要等待，因为不会跳转到下一个单词）
@@ -2521,11 +2495,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       child: InkWell(
         onTap: () {
           Navigator.pop(context);
-          // 步进进度条
-          if (_currentGetWordResult?.progress != null && _currentGetWordResult!.progress!.isNotEmpty) {
-            _currentGetWordResult!.progress![0] += 1;
-            setState(() {});
-          }
           getNextWord(true);
         },
         borderRadius: BorderRadius.circular(8),

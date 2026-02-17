@@ -110,7 +110,10 @@ class StudyBo {
       // 注意：batchId 可能是 NULL（旧数据），只查询有 batchId 的记录
       final query = db.select(db.learningWords)
         ..where((tbl) =>
-            tbl.userId.equals(user.id) & tbl.lastLearningDate.isBiggerOrEqualValue(startOfDay) & tbl.lastLearningDate.isSmallerOrEqualValue(endOfDay) & tbl.batchId.isNotNull())
+            tbl.userId.equals(user.id) &
+            tbl.lastLearningDate.isBiggerOrEqualValue(startOfDay) &
+            tbl.lastLearningDate.isSmallerOrEqualValue(endOfDay) &
+            tbl.batchId.isNotNull())
         ..orderBy([
           (tbl) => OrderingTerm(expression: tbl.batchId),
           (tbl) => OrderingTerm(expression: tbl.learningOrder),
@@ -460,7 +463,10 @@ class StudyBo {
       // 注意：batchId 可能是 NULL（旧数据），只查询有 batchId 的记录
       final query = db.select(db.learningWords)
         ..where((tbl) =>
-            tbl.userId.equals(user.id) & tbl.lastLearningDate.isBiggerOrEqualValue(startOfDay) & tbl.lastLearningDate.isSmallerOrEqualValue(endOfDay) & tbl.batchId.isNotNull())
+            tbl.userId.equals(user.id) &
+            tbl.lastLearningDate.isBiggerOrEqualValue(startOfDay) &
+            tbl.lastLearningDate.isSmallerOrEqualValue(endOfDay) &
+            tbl.batchId.isNotNull())
         ..orderBy([
           (tbl) => OrderingTerm(expression: tbl.batchId),
           (tbl) => OrderingTerm(expression: tbl.learningOrder),
@@ -518,9 +524,22 @@ class StudyBo {
         Global.logger.d('当前为列表模式，显示批次单词列表');
         return Result<GetWordResult>("SUCCESS", "获取成功", true)
           ..data = GetWordResult(
-            null, currentStepIndex, null, [0, 0], null, false, false, null, null, null,
-            null, [], [], [],
-            false, false,
+            null,
+            currentStepIndex,
+            null,
+            [0, 0],
+            null,
+            false,
+            false,
+            null,
+            null,
+            null,
+            null,
+            [],
+            [],
+            [],
+            false,
+            false,
           );
       }
 
@@ -577,10 +596,21 @@ class StudyBo {
       final otherWords = await getTwoOtherWords(steps, nextStepIndex, targetMeaningItemVos, todayWords, returnWord, db);
 
       // 计算学习进度
+      // 状态驱动：根据今日单词的实际学习次数计算进度
+      // 每个单词的每个学习步骤都算作一个进度单位
       final totalWordsToday = todayWords.length;
-      final currentLearningIndex = calculateLearningIndexByWordIndexAndMode(nextWordIndex, nextStepIndex, modeCount, totalWordsToday, 10);
-      final maxLearningIndex = totalWordsToday * modeCount;
-      final progress = [(totalWordsToday * ((currentLearningIndex + 1.0) / (maxLearningIndex + 1))).toInt(), totalWordsToday];
+
+      // 计算所有单词的今日已学习次数总和
+      int totalCompletedSteps = 0;
+      for (final word in todayWords) {
+        // todayLearnedTimes 表示该单词今日已完成的步骤数
+        totalCompletedSteps += word.todayLearnedTimes;
+      }
+
+      // 总步数 = 单词数 × 每个单词的步骤数
+      final totalSteps = totalWordsToday * modeCount;
+
+      final progress = [totalCompletedSteps, totalSteps];
 
       return Result<GetWordResult>("SUCCESS", "获取成功", true)
         ..data = GetWordResult(
@@ -648,8 +678,8 @@ class StudyBo {
       }
     } else {
       // 只更新学习时间和学习次数，不改变生命值
-      Global.logger
-          .d('Word ${currWord.wordId}. All steps completed: $allStepsCompletedForWord, AnswerCorrect: $isAnswerCorrect. Updating learnedTimes/todayLearnedTimes.');
+      Global.logger.d(
+          'Word ${currWord.wordId}. All steps completed: $allStepsCompletedForWord, AnswerCorrect: $isAnswerCorrect. Updating learnedTimes/todayLearnedTimes.');
       await db.learningWordsDao.saveEntity(
           currWord.copyWith(
             lastLearningDate: Value(learningTime),
@@ -926,7 +956,6 @@ class StudyBo {
 
   /// 计算指定单词的指定学习模式, 在第几个顺位出现
   int calculateLearningIndexByWordIndexAndMode(int wordIndex, int mode, int modeCount, int todayWordCount, int batchWordCount) {
-
     // 新的学习顺序：
     // 1. 先完成当前批次所有单词的当前模式
     // 2. 再进入下一个模式
