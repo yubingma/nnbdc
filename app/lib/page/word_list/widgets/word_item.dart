@@ -645,7 +645,7 @@ class WordItem extends StatelessWidget {
       case '已掌握':
         return Icons.refresh;
       case '学习中':
-      case '阶段复习':
+      case '单词列表':
       case '今日错词':
       case '今日新词':
       case '今日旧词':
@@ -662,7 +662,7 @@ class WordItem extends StatelessWidget {
       case '已掌握':
         return const Color(0xFF2196F3);
       case '学习中':
-      case '阶段复习':
+      case '单词列表':
       case '今日错词':
       case '今日新词':
       case '今日旧词':

@@ -2523,7 +2523,7 @@ class WordListPageState extends State<WordListPage>
     final bool isMastered = learningStatus == true;
     
     // 判断是否应该显示"掌握"按钮的场景
-    final bool showMasterButton = ['学习中', '阶段复习', '今日错词', '今日新词', '今日旧词', '今日单词'].contains(args.appBarTitle);
+    final bool showMasterButton = ['学习中', '单词列表', '今日错词', '今日新词', '今日旧词', '今日单词'].contains(args.appBarTitle);
     
     // 如果单词已掌握且是"掌握"按钮场景，显示"已掌握"状态 
     if (isMastered && showMasterButton) {
@@ -2543,7 +2543,7 @@ class WordListPageState extends State<WordListPage>
           buttonText = '删除';
           color = const Color(0xFFEF5350); // 红色，表示删除
           break;
-        case '阶段复习':
+        case '单词列表':
           buttonText = '掌握';
           color = const Color(0xFF4CAF50); // 绿色，表示掌握
           break;

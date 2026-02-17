@@ -1017,7 +1017,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     _highlightedWordImg = null;
     _wordImageEdited = false;
 
-    //如果是从阶段复习跳转来的，则第一次从服务端取单词时，通知服务端进入下一个学习阶段
+    //如果是从批次复习跳转来的，则第一次从服务端取单词时，通知服务端进入下一个学习批次
     var shouldEnterNextStage = false;
     bool isFromStageReview = false;
     if (_args.fromPage != null && _args.fromPage == 'stage_review') {
@@ -1159,6 +1159,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
           label: const Text('继续'),
           onPressed: () async {
             Get.back(result: true);
+            // 完成当前批次列表学习
+            await StudyBo().completeListStepForCurrentBatch();
             _args.fromPage = 'stage_list';
             await GetStorage().write("BdcPageArgs", _args.toJson());
             await getNextWord(false);

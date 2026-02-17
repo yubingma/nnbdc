@@ -41,7 +41,7 @@ class StageWordsProvider with WordsProvider {
 
   @override
   Future<int> getWordIndex(String spell) async {
-    // 获取当前阶段的所有单词
+    // 获取当批次的所有单词
     var words = await StudyBo().getCurrentStageCache();
 
     // 查找指定单词的位置
@@ -51,7 +51,7 @@ class StageWordsProvider with WordsProvider {
       }
     }
 
-    return -1; // 单词不在当前阶段中
+    return -1; // 单词不在当前批次中
   }
 
   @override

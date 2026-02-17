@@ -93,11 +93,11 @@ class StudyBo {
     try {
       final user = Global.getLoggedInUser();
       if (user == null) {
-        Global.logger.e('获取阶段单词失败：用户未登录');
+        Global.logger.e('获取批次单词失败：用户未登录');
         return [];
       }
 
-      Global.logger.d('开始获取阶段单词: userId=${user.id}');
+      Global.logger.d('开始获取批次单词: userId=${user.id}');
       final db = MyDatabase.instance;
 
       // 获取今天的开始和结束时间
@@ -121,17 +121,17 @@ class StudyBo {
       final steps = await db.userStudyStepsDao.getActiveUserStudySteps(user.id);
       final modeCount = steps.length;
 
-      // 状态驱动：推导当前阶段起始位置 (stageStartIndex)
+      // 状态驱动：推导当前批次起始位置 (stageStartIndex)
       const int stageSize = 10;
       int stageStartIndex = _calculateStageStartIndex(todayWords, modeCount, stageSize: stageSize);
 
-      // 获取当前阶段的单词（最多10个）
+      // 获取当前批次的单词（最多10个）
       List<LearningWord> stageWords = [];
       for (int i = stageStartIndex; i < todayWords.length && i < stageStartIndex + stageSize; i++) {
         stageWords.add(todayWords[i]);
       }
 
-      Global.logger.d('获取到阶段单词数量: ${stageWords.length}, 阶段起始索引: $stageStartIndex');
+      Global.logger.d('获取到批次单词数量: ${stageWords.length}, 批次起始索引: $stageStartIndex');
 
       // 转换为 LearningWordVo
       final result = <LearningWordVo>[];
@@ -173,16 +173,16 @@ class StudyBo {
 
           result.add(learningWordVo);
         } else {
-          Global.logger.e('阶段单词不存在: wordId=${stageWord.wordId}');
+          Global.logger.e('批次单词不存在: wordId=${stageWord.wordId}');
         }
       }
 
       if (result.isEmpty) {
-        Global.logger.w('当前阶段没有单词可供复习');
+        Global.logger.w('当前批次没有单词可供复习');
       }
       return result;
     } catch (e, stackTrace) {
-      Global.logger.e('获取阶段单词失败: $e', stackTrace: stackTrace);
+      Global.logger.e('获取批次单词失败: $e', stackTrace: stackTrace);
       return [];
     }
   }
@@ -328,14 +328,94 @@ class StudyBo {
     }
   }
 
+  /// 完成当前批次列表学习
+  Future<Result<void>> completeListStepForCurrentBatch() async {
+    try {
+      Global.logger.d('开始完成批次列表学习...');
+      final db = MyDatabase.instance;
+      // 获取当前 user
+      final user = await db.usersDao.getLastLoggedInUser();
+      if (user == null) {
+        return Result("ERROR", "用户未登录", false);
+      }
+
+      final now = AppClock.now();
+      final startOfDay = DateTime(now.year, now.month, now.day);
+      final endOfDay = DateTime(now.year, now.month, now.day, 23, 59, 59, 999);
+
+      // 获取今日学习单词
+      final query = db.select(db.learningWords)
+        ..where((tbl) =>
+            tbl.userId.equals(user.id) &
+            tbl.lastLearningDate.isBiggerOrEqualValue(startOfDay) &
+            tbl.lastLearningDate.isSmallerOrEqualValue(endOfDay) &
+            tbl.batchId.isNotNull())
+        ..orderBy([
+          (tbl) => OrderingTerm(expression: tbl.batchId),
+          (tbl) => OrderingTerm(expression: tbl.learningOrder),
+        ]);
+      final todayWords = await query.get();
+
+      if (todayWords.isEmpty) {
+        return Result("ERROR", "今日没有学习单词", false);
+      }
+
+      // 获取当前 active steps count
+      final steps = await db.userStudyStepsDao.getActiveUserStudySteps(user.id);
+      final modeCount = steps.length;
+      if (modeCount == 0) {
+        return Result("ERROR", "未配置学习步骤", false);
+      }
+
+      // 计算 stageStartIndex
+      final stageStartIndex = _calculateStageStartIndex(todayWords, modeCount);
+
+      // 获取当前 stage words
+      final stageWords = <LearningWord>[];
+      for (int i = stageStartIndex; i < todayWords.length && i < stageStartIndex + 10; i++) {
+        stageWords.add(todayWords[i]);
+      }
+
+      if (stageWords.isEmpty) {
+        return Result("ERROR", "当前没有批次单词需要完成列表学习", false);
+      }
+
+      // 遍历当前批次单词，如果是 List 步骤，则 increment
+      bool anyUpdated = false;
+      for (final word in stageWords) {
+        int currentStepIndex = word.todayLearnedTimes;
+        if (currentStepIndex < modeCount && steps[currentStepIndex].studyStep == 'List') {
+          await db.learningWordsDao.saveEntity(
+              word.copyWith(
+                learnedTimes: word.learnedTimes + 1,
+                todayLearnedTimes: word.todayLearnedTimes + 1,
+                lastLearningDate: Value(now),
+              ),
+              true);
+          anyUpdated = true;
+        }
+      }
+
+      if (anyUpdated) {
+        ThrottledDbSyncService().requestSync();
+        return Result("SUCCESS", "完成列表学习成功", true);
+      } else {
+        return Result("SUCCESS", "无需更新", true);
+      }
+    } catch (e, stackTrace) {
+      Global.logger.e('完成批次列表学习失败', error: e, stackTrace: stackTrace);
+      return Result("ERROR", "完成列表学习失败", false);
+    }
+  }
+
   /// 获取下一个学习单词
   ///
   /// [isAnswerCorrect] 当前单词的回答是否正确
   /// [isWordMastered] 当前单词是否已掌握
-  /// [shouldEnterNextStage] 是否应该进入下一个学习阶段（从阶段复习返回时使用）
+  /// [shouldEnterNextStage] 是否应该进入下一个学习批次（从批次列表返回时使用）
   /// [gotoNext] 是否跳转到下一个单词/学习模式
   ///   - true: 会推进学习进度，移动到下一个单词或下一个学习模式，并更新用户的学习位置
-  ///   - false: 仅刷新当前单词，不改变学习位置（用于初始加载、从阶段复习返回后刷新等场景）
+  ///   - false: 仅刷新当前单词，不改变学习位置（用于初始加载、从批次列表返回后刷新等场景）
   ///
   /// 返回下一个单词的学习信息，包括单词详情、学习模式、混淆项等
   Future<Result<GetWordResult>> getNextWord(bool isAnswerCorrect, bool isWordMastered, bool shouldEnterNextStage, bool gotoNext) async {
@@ -384,17 +464,17 @@ class StudyBo {
         throw Exception('未知错误: 今日学习单词数为0');
       }
 
-      // 状态驱动：推导当前阶段起始位置 (stageStartIndex)
+      // 状态驱动：推导当前批次起始位置 (stageStartIndex)
       const int stageSize = 10;
       int stageStartIndex = _calculateStageStartIndex(todayWords, modeCount, stageSize: stageSize);
 
-      // 获取当前阶段的 10 个词
+      // 获取当前批次的 10 个词
       List<LearningWord> stageWords = [];
       for (int i = stageStartIndex; i < todayWords.length && i < stageStartIndex + stageSize; i++) {
         stageWords.add(todayWords[i]);
       }
 
-      // 在当前阶段内，推导当前单词和环节
+      // 在当前批次内，推导当前单词和环节
       List<LearningWord> sortedStageWords = List.from(stageWords);
       sortedStageWords.sort((a, b) {
         // 优先练习今日学习次数较少的单词
@@ -425,7 +505,7 @@ class StudyBo {
       // 如果当前是列表模式，返回列表页面
       bool isListStep = currentStepIndex < steps.length && steps[currentStepIndex].studyStep == 'List';
       if (isListStep) {
-        Global.logger.d('当前为列表模式，显示阶段单词列表');
+        Global.logger.d('当前为列表模式，显示批次单词列表');
         return Result<GetWordResult>("SUCCESS", "获取成功", true)
           ..data = GetWordResult(
             null, currentStepIndex, null, [0, 0], null, false, false, null, null, null,
@@ -439,9 +519,9 @@ class StudyBo {
       int nextWordIndex = currentWordIndex;
       int nextStepIndex = currentStepIndex;
 
-      // 阶段切换逻辑：从阶段列表返回时，进入下一阶段
+      // 批次切换逻辑：从批次列表返回时，进入下一批次
       if (shouldEnterNextStage) {
-        // 进入下一阶段
+        // 进入下一批次
         nextWordIndex = (stageStartIndex + stageSize) < todayWords.length ? (stageStartIndex + stageSize) : currentWordIndex;
         nextStepIndex = 0;
       } else if (gotoNext) {
@@ -449,7 +529,7 @@ class StudyBo {
         bool isStageBounderyReached = (currentWordIndex + 1) % stageWordCount == 0;
           if (isStageBounderyReached) {
           if (allStepsCompletedForWord) {
-            // 当前阶段已完成，进入下一阶段
+            // 当前批次已完成，进入下一批次
             nextWordIndex = currentWordIndex - stageWordCount + 1;
             nextStepIndex = 0;
           } else {
@@ -810,14 +890,14 @@ class StudyBo {
     return items.map((e) => MeaningItemVo(e.id, e.ciXing, e.meaning, null, null, null)).toList();
   }
 
-  /// 状态驱动：推导当前阶段起始位置 (stageStartIndex)
-  /// 逻辑：找到第一个今日尚未完成所有学习环节的阶段
+  /// 状态驱动：推导当前批次起始位置 (stageStartIndex)
+  /// 逻辑：找到第一个今日尚未完成所有学习环节的批次
   static int _calculateStageStartIndex(List<LearningWord> todayWords, int modeCount, {int stageSize = 10}) {
     int stageStartIndex = 0;
     for (int i = 0; i < todayWords.length; i += stageSize) {
       bool stageFinished = true;
       for (int j = i; j < i + stageSize && j < todayWords.length; j++) {
-        // 如果某个词的今日学习次数还没达到环节总数，说明这个阶段还没学完
+        // 如果某个词的今日学习次数还没达到环节总数，说明这个批次还没学完
         if (todayWords[j].todayLearnedTimes < modeCount) {
           stageFinished = false;
           break;
@@ -827,7 +907,7 @@ class StudyBo {
         stageStartIndex = i;
         break;
       }
-      stageStartIndex = i; // 如果都学完了，停在最后一个阶段
+      stageStartIndex = i; // 如果都学完了，停在最后一个批次
     }
     return stageStartIndex;
   }
@@ -836,15 +916,15 @@ class StudyBo {
   int calculateLearningIndexByWordIndexAndMode(int wordIndex, int mode, int modeCount, int todayWordCount, int stageWordCount) {
 
     // 新的学习顺序：
-    // 1. 先完成当前阶段所有单词的当前模式
+    // 1. 先完成当前批次所有单词的当前模式
     // 2. 再进入下一个模式
-    // 3. 最后进入下一个阶段
+    // 3. 最后进入下一个批次
     final int stage = wordIndex ~/ stageWordCount;
     final int stageWordIndex = wordIndex % stageWordCount;
 
-    // 计算当前阶段的基础索引
+    // 计算当前批次的基础索引
     final stageBaseIndex = stage * stageWordCount * modeCount;
-    // 计算当前单词在当前阶段内的索引
+    // 计算当前单词在当前批次内的索引
     final stageWordBaseIndex = stageWordIndex + (mode * stageWordCount);
 
     return stageBaseIndex + stageWordBaseIndex;
