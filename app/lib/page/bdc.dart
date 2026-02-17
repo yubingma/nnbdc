@@ -18,7 +18,7 @@ import 'package:nnbdc/api/bo/user_bo.dart';
 import 'package:nnbdc/api/bo/word_bo.dart';
 import 'package:nnbdc/page/pic_search.dart';
 import 'package:nnbdc/page/word_detail.dart';
-import 'package:nnbdc/page/word_list/stage_words.dart';
+import 'package:nnbdc/page/word_list/batch_words.dart';
 import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/util/sound.dart';
 import 'package:nnbdc/util/toast_util.dart';
@@ -1018,11 +1018,11 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     _wordImageEdited = false;
 
     //如果是从批次复习跳转来的，则第一次从服务端取单词时，通知服务端进入下一个学习批次
-    var shouldEnterNextStage = false;
-    bool isFromStageReview = false;
-    if (_args.fromPage != null && _args.fromPage == 'stage_review') {
-      shouldEnterNextStage = true;
-      isFromStageReview = true;
+    var shouldEnterNextBatch = false;
+    bool isFromBatchWordList = false;
+    if (_args.fromPage != null && _args.fromPage == 'batch_word_list') {
+      shouldEnterNextBatch = true;
+      isFromBatchWordList = true;
       // 立即清除标记，通过参数传递给 handleWord
       _args.fromPage = null;
       await GetStorage().write("BdcPageArgs", _args.toJson());
@@ -1031,7 +1031,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     // 循环调用直到获取到有效单词或遇到其他状态
     int triedCount = 0;
     while (true) {
-      var resp = await StudyBo().getNextWord(_isAnswerCorrect, _isWordMastered, shouldEnterNextStage, triedCount == 0 ? gotoNext : true);
+      var resp = await StudyBo().getNextWord(_isAnswerCorrect, _isWordMastered, shouldEnterNextBatch, triedCount == 0 ? gotoNext : true);
       triedCount++;
       if (!resp.success) {
         if (resp.code == 'NEW_DAY') {
@@ -1065,7 +1065,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         // 重置状态，准备获取下一个单词
         _isAnswerCorrect = true; // 设置为true以便前进到下一个单词
         _isWordMastered = false; // 重置掌握状态
-        shouldEnterNextStage = false; // 后续调用不需要进入下一阶段
+        shouldEnterNextBatch = false; // 后续调用不需要进入下一阶段
         continue; // 继续循环获取下一个单词
       }
 
@@ -1073,7 +1073,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       break;
     }
 
-    handleWord(_currentGetWordResult, isFromStageReview: isFromStageReview);
+    handleWord(_currentGetWordResult, isFromBatchWordList: isFromBatchWordList);
   }
 
   /// 播放单词和第一个例句
@@ -1119,7 +1119,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     }
   }
 
-  void handleWord(final GetWordResult? getWordResult, {bool isFromStageReview = false}) async {
+  void handleWord(final GetWordResult? getWordResult, {bool isFromBatchWordList = false}) async {
     try {
       if (getWordResult == null) {
         Global.logger.d('getWordResult 为空');
@@ -1161,7 +1161,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
             Get.back(result: true);
             // 完成当前批次列表学习
             await StudyBo().completeListStepForCurrentBatch();
-            _args.fromPage = 'stage_list';
+            _args.fromPage = 'batch_word_list';
             await GetStorage().write("BdcPageArgs", _args.toJson());
             await getNextWord(false);
           },
@@ -1171,7 +1171,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         if (!mounted) return;
         final wasMounted = mounted;
         if (!wasMounted) return;
-        toStageWordsListPage('单词列表', true, nextWordBtn, context)?.then((result) async {
+        toBatchWordsListPage('单词列表', true, nextWordBtn, context)?.then((result) async {
           if (!mounted) return;
           if (result == null) {
             Navigator.pop(context);
@@ -1188,8 +1188,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
       // 当学习模式发生切换，或这是本次会话首次设置学习模式时，或从阶段复习返回时，
       // 先确保ASR完全停止，然后重新初始化 ASR 事件监听，确保事件订阅始终绑定到当前 BdcPage
-      if (oldStudyStep == null || oldStudyStep != _studyStep || isFromStageReview) {
-        Global.logger.i('BDC: 学习模式更新: $oldStudyStep => $_studyStep，从阶段复习返回: $isFromStageReview，先停止ASR，然后重新初始化ASR监听');
+      if (oldStudyStep == null || oldStudyStep != _studyStep || isFromBatchWordList) {
+        Global.logger.i('BDC: 学习模式更新: $oldStudyStep => $_studyStep，从阶段复习返回: $isFromBatchWordList，先停止ASR，然后重新初始化ASR监听');
         // 先停止ASR，确保没有正在执行的启动流程
         await asr.stopAsr();
         await asr.reset();

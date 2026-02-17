@@ -538,7 +538,6 @@ class UserCowDungLogs extends Table {
   Set<Column>? get primaryKey => {id};
 }
 
-// UserStageWords table has been removed - StageWord functionality is no longer used
 
 /// 用户错词表
 class UserWrongWords extends Table {

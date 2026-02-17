@@ -16,7 +16,7 @@ import '../../util/word_util.dart';
 class StageWordsProvider with WordsProvider {
   @override
   Future<PagedResults<WordWrapper>> getAPageOfWords(int fromIndex, int pageSize) async {
-    var words = await StudyBo().getCurrentStageCache();
+    var words = await StudyBo().getCurrentBatchCache();
     var results = PagedResults<WordWrapper>(words.length);
     for (var i = 0; i < words.length; i++) {
       var word = words[i];
@@ -42,7 +42,7 @@ class StageWordsProvider with WordsProvider {
   @override
   Future<int> getWordIndex(String spell) async {
     // 获取当批次的所有单词
-    var words = await StudyBo().getCurrentStageCache();
+    var words = await StudyBo().getCurrentBatchCache();
 
     // 查找指定单词的位置
     for (int i = 0; i < words.length; i++) {
@@ -90,7 +90,7 @@ class StageWordsProgressProvider implements WordProgressProvider {
 }
 
 class StageWordsBookMarkProvider implements BookMarkProvider {
-  static const String bookMarkName = 'stage_words_list';
+  static const String bookMarkName = 'batch_word_list';
 
   @override
   Future<BookMarkVo?> getBookMark() async {
@@ -116,7 +116,7 @@ class StageWordsBookMarkProvider implements BookMarkProvider {
   }
 }
 
-Future<dynamic>? toStageWordsListPage(String title, bool showDelBtn, Widget nextWorkBtn, BuildContext context) {
+Future<dynamic>? toBatchWordsListPage(String title, bool showDelBtn, Widget nextWorkBtn, BuildContext context) {
   return Get.toNamed('/word_list',
       arguments: WordListPageArgs(
           title, StageWordsProvider(), true, showDelBtn, true, '掌握度', StageWordsProgressProvider(), StageWordsBookMarkProvider(), nextWorkBtn));

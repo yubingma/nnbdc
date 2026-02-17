@@ -728,7 +728,6 @@ class MyDatabase extends _$MyDatabase {
       ON sentences (meaning_item_id)
     ''');
 
-    // UserStageWords table has been removed
 
     // 为words表添加索引
     await customStatement('''

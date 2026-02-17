@@ -1834,7 +1834,7 @@ class UserCowDungLogsDao extends DatabaseAccessor<MyDatabase> with _$UserCowDung
   }
 }
 
-// UserStageWordsDao has been removed - StageWord functionality is no longer used
+// UserBatchWordsDao has been removed - BatchWord functionality is no longer used
 
 @DriftAccessor(tables: [UserWrongWords])
 class UserWrongWordsDao extends DatabaseAccessor<MyDatabase> with _$UserWrongWordsDaoMixin {
