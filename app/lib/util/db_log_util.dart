@@ -14,6 +14,33 @@ class DbLogUtil {
     String recordId,
     String record,
   ) async {
+    // 【快速失败机制】检查关键字段是否为空
+    if (userId.isEmpty) {
+      throw Exception('【快速失败】无法记录数据库日志：userId 为空，表: $table, 操作: $operate, recordId: $recordId');
+    }
+    if (recordId.isEmpty) {
+      throw Exception('【快速失败】无法记录数据库日志：recordId 为空，表: $table, 操作: $operate, userId: $userId');
+    }
+    if (record.isEmpty) {
+      throw Exception('【快速失败】无法记录数据库日志：record 为空，表: $table, 操作: $operate, userId: $userId, recordId: $recordId');
+    }
+
+    // 对于 dakas 表，额外检查 record 中是否包含 userId
+    if (table == 'dakas') {
+      try {
+        final recordMap = jsonDecode(record) as Map<String, dynamic>;
+        final dakaUserId = recordMap['userId'] as String?;
+        if (dakaUserId == null || dakaUserId.isEmpty) {
+          throw Exception('【快速失败】dakas 表记录中 userId 为空，无法同步到服务端。record: $record');
+        }
+      } catch (e) {
+        if (e is Exception && e.toString().contains('【快速失败】')) {
+          rethrow;
+        }
+        throw Exception('【快速失败】无法解析 dakas 表记录：$e，record: $record');
+      }
+    }
+
     try {
       final db = MyDatabase.instance;
 

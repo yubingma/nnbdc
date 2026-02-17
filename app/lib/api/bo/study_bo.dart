@@ -612,7 +612,7 @@ class StudyBo {
 
       final progress = [totalCompletedSteps, totalSteps];
 
-      return Result<GetWordResult>("SUCCESS", "获取成功", true)
+      return Result<GetWordResult>("SUCCESS", "获取成功", true) 
         ..data = GetWordResult(
           learningWordVo,
           nextStepIndex,

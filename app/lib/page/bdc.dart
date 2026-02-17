@@ -1893,8 +1893,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                     builder: (context, constraints) {
                       final maxValue = _currentGetWordResult!.progress![1].toDouble();
                       final width = constraints.maxWidth;
-                      const batchSize = BdcPageState.batchSize;
-                      final dividerCount = (maxValue / batchSize).floor() - (maxValue % batchSize == 0 ? 1 : 0);
 
                       // 计算批次颜色：从红色(0) -> 蓝色(0.5) -> 绿色(1.0) 渐变
                       // 根据白天/黑夜模式调整基础透明度
@@ -1922,22 +1920,40 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                         return getBatchBaseColor(batchIndex, totalBatches).withValues(alpha: baseAlpha);
                       }
 
-                      final totalBatches = max(1, dividerCount + 1);
+                      // 计算批次数量（基于单词数量，每批次10个单词）
+                      final modeCount = activeUserStudySteps.length;
+
+                      // 【根本原因修复】检查 modeCount 和 maxValue 是否有效
+                      // 如果学习步骤未配置或进度数据无效，不渲染进度条
+                      if (modeCount <= 0 || maxValue <= 0 || width <= 0) {
+                        return const SizedBox.shrink();
+                      }
+
+                      final wordCount = (maxValue / modeCount).ceil();
+                      final batchWordCount = 10;
+                      final totalBatches = max(1, (wordCount / batchWordCount).ceil());
 
                       // 计算当前进度所在的批次索引
                       final currentProgress = _currentGetWordResult!.progress![0].toDouble();
-                      final currentBatchIndex = min((currentProgress / batchSize).floor(), totalBatches - 1);
+                      // 当前步进对应的单词索引
+                      final currentWordIndex = min((currentProgress / modeCount).floor(), wordCount - 1);
+                      final currentBatchIndex = min((currentWordIndex / batchWordCount).floor(), totalBatches - 1);
                       // 获取当前批次的鲜艳颜色作为进度条前景色
                       final progressColor = getBatchBaseColor(currentBatchIndex, totalBatches);
 
                       return Stack(
                         children: [
-                          // 批次背景色层
+                          // 批次背景色层（基于单词批次）
                           Row(
                             children: List.generate(totalBatches, (index) {
                               final isLastBatch = index == totalBatches - 1;
-                              final batchWords = isLastBatch ? maxValue - (index * batchSize) : batchSize.toDouble();
-                              final batchWidth = (batchWords / maxValue) * width;
+                              // 计算该批次包含的单词数
+                              final startWordIndex = index * batchWordCount;
+                              final endWordIndex = min((index + 1) * batchWordCount, wordCount);
+                              final batchWords = endWordIndex - startWordIndex;
+                              // 转换为进度条宽度（乘以模式数）
+                              final batchSteps = batchWords * modeCount;
+                              final batchWidth = (batchSteps / maxValue) * width;
                               return Container(
                                 width: batchWidth,
                                 decoration: BoxDecoration(
@@ -1962,12 +1978,15 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                             progressColor: progressColor,
                             animatedDuration: const Duration(milliseconds: 300),
                           ),
-                          // 批次分隔线
-                          if (maxValue > 0)
-                            ...List.generate(max(0, dividerCount), (index) {
-                              final left = ((index + 1) * batchSize / maxValue) * width;
-                              // 只有当计算出的位置在进度条范围内时才显示（简单的边界检查）
-                              if (left >= width) return const SizedBox.shrink();
+                          // 批次分隔线（只在批次边界处显示）
+                          if (totalBatches > 1)
+                            ...List.generate(totalBatches - 1, (index) {
+                              // 计算批次边界对应的进度位置
+                              final boundaryWordIndex = (index + 1) * batchWordCount;
+                              final boundaryStep = boundaryWordIndex * modeCount;
+                              final left = (boundaryStep / maxValue) * width;
+                              // 只有当计算出的位置在进度条范围内时才显示 
+                              if (left <= 0 || left >= width) return const SizedBox.shrink();
                               return Positioned(
                                 left: left,
                                 top: 0,
