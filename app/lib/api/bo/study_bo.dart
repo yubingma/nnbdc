@@ -124,6 +124,10 @@ class StudyBo {
       // 状态驱动：推导当前批次起始位置 (stageStartIndex)
       const int stageSize = 10;
       int stageStartIndex = _calculateStageStartIndex(todayWords, modeCount, stageSize: stageSize);
+      if (stageStartIndex == -1) {
+        Global.logger.d('所有批次单词已完成');
+        return [];
+      }
 
       // 获取当前批次的单词（最多10个）
       List<LearningWord> stageWords = [];
@@ -369,6 +373,9 @@ class StudyBo {
 
       // 计算 stageStartIndex
       final stageStartIndex = _calculateStageStartIndex(todayWords, modeCount);
+      if (stageStartIndex == -1) {
+        return Result("ERROR", "所有单词已完成列表学习", false);
+      }
 
       // 获取当前 stage words
       final stageWords = <LearningWord>[];
@@ -467,6 +474,9 @@ class StudyBo {
       // 状态驱动：推导当前批次起始位置 (stageStartIndex)
       const int stageSize = 10;
       int stageStartIndex = _calculateStageStartIndex(todayWords, modeCount, stageSize: stageSize);
+      if (stageStartIndex == -1) {
+        return _buildTodayStudyFinishedResult();
+      }
 
       // 获取当前批次的 10 个词
       List<LearningWord> stageWords = [];
@@ -525,15 +535,20 @@ class StudyBo {
         nextWordIndex = (stageStartIndex + stageSize) < todayWords.length ? (stageStartIndex + stageSize) : currentWordIndex;
         nextStepIndex = 0;
       } else if (gotoNext) {
-        int stageWordCount = 10;
-        bool isStageBounderyReached = (currentWordIndex + 1) % stageWordCount == 0;
-          if (isStageBounderyReached) {
+        // 动态计算当前批次的结束位置 (exclusive)
+        int currentBatchEndIndex = min(stageStartIndex + stageSize, todayWords.length);
+        // 检查是否到达当前批次边界
+        bool isStageBounderyReached = (currentWordIndex + 1) == currentBatchEndIndex;
+
+        if (isStageBounderyReached) {
           if (allStepsCompletedForWord) {
-            // 当前批次已完成，进入下一批次
-            nextWordIndex = currentWordIndex - stageWordCount + 1;
+            // 当前批次已完成，尝试进入下一批次
+            // 下一批次起始位置总是 stageStartIndex + stageSize (固定网格)
+            nextWordIndex = stageStartIndex + stageSize;
             nextStepIndex = 0;
           } else {
-            nextWordIndex = currentWordIndex - stageWordCount + 1;
+            // 回到当前批次起始，开始下一轮（步骤）
+            nextWordIndex = stageStartIndex;
             nextStepIndex = currentStepIndex == modeCount - 1 ? 0 : currentStepIndex + 1;
           }
         } else {
@@ -893,7 +908,6 @@ class StudyBo {
   /// 状态驱动：推导当前批次起始位置 (stageStartIndex)
   /// 逻辑：找到第一个今日尚未完成所有学习环节的批次
   static int _calculateStageStartIndex(List<LearningWord> todayWords, int modeCount, {int stageSize = 10}) {
-    int stageStartIndex = 0;
     for (int i = 0; i < todayWords.length; i += stageSize) {
       bool stageFinished = true;
       for (int j = i; j < i + stageSize && j < todayWords.length; j++) {
@@ -904,12 +918,10 @@ class StudyBo {
         }
       }
       if (!stageFinished) {
-        stageStartIndex = i;
-        break;
+        return i;
       }
-      stageStartIndex = i; // 如果都学完了，停在最后一个批次
     }
-    return stageStartIndex;
+    return -1; // 所有批次都学完了
   }
 
   /// 计算指定单词的指定学习模式, 在第几个顺位出现
