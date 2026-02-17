@@ -1,20 +1,19 @@
-import 'package:get/get.dart';
-import 'package:drift/drift.dart' hide Value;
 import 'package:drift/drift.dart' as drift show Value;
-import 'package:nnbdc/api/vo.dart';
+import 'package:drift/drift.dart' hide Value;
+import 'package:get/get.dart';
 import 'package:nnbdc/api/result.dart';
+import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/page/word_list/word_list.dart';
 import 'package:nnbdc/services/throttled_sync_service.dart';
+import 'package:nnbdc/util/db_log_util.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/util/utils.dart';
-import 'package:nnbdc/util/db_log_util.dart';
-import 'dart:convert';
 
-import '../../global.dart';
-import '../../util/word_util.dart';
 import '../../api/bo/word_bo.dart';
+import '../../global.dart';
 import '../../util/app_clock.dart';
+import '../../util/word_util.dart';
 
 class DictWordsProvider with WordsProvider implements WordModifier {
   DictVo dict;
@@ -259,7 +258,7 @@ class DictWordsBookMarkProvider implements BookMarkProvider {
 
         if (bookmark != null) {
           // 记录书签变更到 userDbLogs 表
-          await DbLogUtil.logOperation(userId, 'UPDATE', 'bookMarks', bookmark.id, json.encode(bookmark.toJson()));
+          await DbLogUtil.logOperation(userId, 'UPDATE', 'bookMarks', bookmark.id, bookmark);
         }
 
         ThrottledDbSyncService().requestSync();

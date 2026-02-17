@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:drift/drift.dart';
 import 'package:nnbdc/api/bo/word_bo.dart';
 import 'package:nnbdc/db/table.dart';
@@ -55,13 +53,13 @@ class UsersDao extends DatabaseAccessor<MyDatabase> with _$UsersDaoMixin {
       if (user == null) {
         await into(users).insert(entry);
         if (genLog) {
-          await DbLogUtil.logOperation(entry.id, 'INSERT', 'users', entry.id, jsonEncode(entry.toJson()));
+          await DbLogUtil.logOperation(entry.id, 'INSERT', 'users', entry.id, entry);
           ThrottledDbSyncService().requestSync();
         }
       } else {
         await update(users).replace(entry);
         if (genLog) {
-          await DbLogUtil.logOperation(entry.id, 'UPDATE', 'users', entry.id, jsonEncode(entry.toJson()));
+          await DbLogUtil.logOperation(entry.id, 'UPDATE', 'users', entry.id, entry);
           ThrottledDbSyncService().requestSync();
         }
       }
@@ -227,7 +225,7 @@ class LearningDictsDao extends DatabaseAccessor<MyDatabase> with _$LearningDicts
   Future<void> deleteEntity(LearningDict entity, bool genLog) async {
     await delete(learningDicts).delete(entity);
     if (genLog) {
-      await DbLogUtil.logOperation(entity.userId, 'DELETE', 'learningDicts', '${entity.userId}-${entity.dictId}', jsonEncode(entity.toJson()));
+      await DbLogUtil.logOperation(entity.userId, 'DELETE', 'learningDicts', '${entity.userId}-${entity.dictId}', entity);
     }
   }
 
@@ -237,12 +235,12 @@ class LearningDictsDao extends DatabaseAccessor<MyDatabase> with _$LearningDicts
       if (dict == null) {
         await into(learningDicts).insert(entry);
         if (genLog) {
-          await DbLogUtil.logOperation(entry.userId, 'INSERT', 'learningDicts', '${entry.userId}-${entry.dictId}', jsonEncode(entry.toJson()));
+          await DbLogUtil.logOperation(entry.userId, 'INSERT', 'learningDicts', '${entry.userId}-${entry.dictId}', entry);
         }
       } else {
         await update(learningDicts).replace(entry);
         if (genLog) {
-          await DbLogUtil.logOperation(entry.userId, 'UPDATE', 'learningDicts', '${entry.userId}-${entry.dictId}', jsonEncode(entry.toJson()));
+          await DbLogUtil.logOperation(entry.userId, 'UPDATE', 'learningDicts', '${entry.userId}-${entry.dictId}', entry);
         }
       }
     } catch (e, stackTrace) {
@@ -265,7 +263,7 @@ class LearningDictsDao extends DatabaseAccessor<MyDatabase> with _$LearningDicts
 
     if (genLog) {
       final updatedDict = dict.copyWith(isPrivileged: newPrivilegedStatus);
-      await DbLogUtil.logOperation(userId, 'UPDATE', 'learningDicts', '$userId-$dictId', jsonEncode(updatedDict.toJson()));
+      await DbLogUtil.logOperation(userId, 'UPDATE', 'learningDicts', '$userId-$dictId', updatedDict);
     }
 
     return newPrivilegedStatus;
@@ -322,12 +320,12 @@ class DictsDao extends DatabaseAccessor<MyDatabase> with _$DictsDaoMixin {
       if (existing == null) {
         await into(dicts).insert(entry);
         if (genLog) {
-          await DbLogUtil.logOperation(entry.ownerId, 'INSERT', 'dicts', entry.id, jsonEncode(entry.toJson()));
+          await DbLogUtil.logOperation(entry.ownerId, 'INSERT', 'dicts', entry.id, entry);
         }
       } else {
         await update(dicts).replace(entry);
         if (genLog) {
-          await DbLogUtil.logOperation(entry.ownerId, 'UPDATE', 'dicts', entry.id, jsonEncode(entry.toJson()));
+          await DbLogUtil.logOperation(entry.ownerId, 'UPDATE', 'dicts', entry.id, entry);
         }
       }
     } catch (e, stackTrace) {
@@ -374,7 +372,7 @@ class DictsDao extends DatabaseAccessor<MyDatabase> with _$DictsDaoMixin {
             createTime: dict.createTime,
             updateTime: now,
           );
-          await DbLogUtil.logOperation(dict.ownerId, 'UPDATE', 'dicts', dictId, jsonEncode(updatedDict.toJson()));
+          await DbLogUtil.logOperation(dict.ownerId, 'UPDATE', 'dicts', dictId, updatedDict);
         }
 
         Global.logger.d('已更新词书wordCount: dictId=$dictId, 旧值=${dict.wordCount}, 新值=$actualCount');
@@ -416,7 +414,7 @@ class DictsDao extends DatabaseAccessor<MyDatabase> with _$DictsDaoMixin {
     try {
       await (delete(dicts)..where((d) => d.id.equals(entry.id))).go();
       if (genLog) {
-        await DbLogUtil.logOperation(entry.ownerId, 'DELETE', 'dicts', entry.id, jsonEncode(entry.toJson()));
+        await DbLogUtil.logOperation(entry.ownerId, 'DELETE', 'dicts', entry.id, entry);
       }
     } catch (e, stackTrace) {
       ErrorHandler.handleDatabaseError(e, stackTrace, db: this, operation: 'deleteEntity(Dict)', showToast: false);
@@ -541,7 +539,7 @@ class DictWordsDao extends DatabaseAccessor<MyDatabase> with _$DictWordsDaoMixin
       if (genLog) {
         var dict = await MyDatabase.instance.dictsDao.findById(entry.dictId);
         var owner = dict?.ownerId;
-        await DbLogUtil.logOperation(owner!, 'INSERT', 'dictWords', '${entry.dictId}-${entry.wordId}', jsonEncode(entryToInsert.toJson()));
+        await DbLogUtil.logOperation(owner!, 'INSERT', 'dictWords', '${entry.dictId}-${entry.wordId}', entryToInsert);
 
         await _validateRawWordDictOrder(entry.dictId);
       }
@@ -554,7 +552,7 @@ class DictWordsDao extends DatabaseAccessor<MyDatabase> with _$DictWordsDaoMixin
       var dict = await MyDatabase.instance.dictsDao.findById(entry.dictId);
       var owner = dict?.ownerId;
       // 先生成删除日志
-      await DbLogUtil.logOperation(owner!, 'DELETE', 'dictWords', '${entry.dictId}-${entry.wordId}', jsonEncode(entry.toJson()));
+      await DbLogUtil.logOperation(owner!, 'DELETE', 'dictWords', '${entry.dictId}-${entry.wordId}', entry);
     }
     // 删除数据
     await delete(dictWords).delete(entry);
@@ -584,7 +582,7 @@ class DictWordsDao extends DatabaseAccessor<MyDatabase> with _$DictWordsDaoMixin
     if (genLog) {
       var dict = await MyDatabase.instance.dictsDao.findById(dictId);
       var owner = dict?.ownerId;
-      await DbLogUtil.logOperation(owner!, 'DELETE', 'dictWords', '$dictId-$wordId', jsonEncode(dictWord.toJson()));
+      await DbLogUtil.logOperation(owner!, 'DELETE', 'dictWords', '$dictId-$wordId', dictWord);
     }
 
     // 删除记录
@@ -621,7 +619,7 @@ class DictWordsDao extends DatabaseAccessor<MyDatabase> with _$DictWordsDaoMixin
       for (var entry in entries) {
         var dict = await MyDatabase.instance.dictsDao.findById(entry.dictId);
         var owner = dict?.ownerId;
-        await DbLogUtil.logOperation(owner!, 'INSERT', 'dictWords', '${entry.dictId}-${entry.wordId}', jsonEncode(entry.toJson()));
+        await DbLogUtil.logOperation(owner!, 'INSERT', 'dictWords', '${entry.dictId}-${entry.wordId}', entry);
       }
     }
 
@@ -664,7 +662,7 @@ class DictWordsDao extends DatabaseAccessor<MyDatabase> with _$DictWordsDaoMixin
       await (delete(dictWords)..where((dw) => dw.dictId.equals(dictId))).go();
       // 生成删除日志
       for (var entry in entries) {
-        await DbLogUtil.logOperation(owner, 'DELETE', 'dictWords', '${entry.dictId}-${entry.wordId}', jsonEncode(entry.toJson()));
+        await DbLogUtil.logOperation(owner, 'DELETE', 'dictWords', '${entry.dictId}-${entry.wordId}', entry);
       }
     } else {
       // 不生成日志时直接删除
@@ -748,7 +746,7 @@ class DictWordsDao extends DatabaseAccessor<MyDatabase> with _$DictWordsDaoMixin
         if (genLog) {
           var dict = await MyDatabase.instance.dictsDao.findById(dictId);
           var owner = dict?.ownerId;
-          await DbLogUtil.logOperation(owner!, 'UPDATE', 'dictWords', '$dictId-${oldEntry.wordId}', jsonEncode(newEntry.toJson()));
+          await DbLogUtil.logOperation(owner!, 'UPDATE', 'dictWords', '$dictId-${oldEntry.wordId}', newEntry);
         }
       }
     }
@@ -822,7 +820,7 @@ class DictWordsDao extends DatabaseAccessor<MyDatabase> with _$DictWordsDaoMixin
     // 生成本地全量日志：直接生成UPDATE日志，覆盖后端数据
     final owner = rawDict.ownerId; // 非空列
     for (final w in words) {
-      await DbLogUtil.logOperation(owner, 'UPDATE', 'dictWords', '${w.dictId}-${w.wordId}', jsonEncode(w.toJson()));
+      await DbLogUtil.logOperation(owner, 'UPDATE', 'dictWords', '${w.dictId}-${w.wordId}', w);
     }
   }
 
@@ -958,7 +956,7 @@ class MeaningItemsDao extends DatabaseAccessor<MyDatabase> with _$MeaningItemsDa
       var dict = await MyDatabase.instance.dictsDao.findById(entry.dictId!);
       var owner = dict?.ownerId;
       if (owner != null) {
-        await DbLogUtil.logOperation(owner, 'INSERT', 'meaningItems', entry.id, jsonEncode(entry.toJson()));
+        await DbLogUtil.logOperation(owner, 'INSERT', 'meaningItems', entry.id, entry);
       }
     }
   }
@@ -971,7 +969,7 @@ class MeaningItemsDao extends DatabaseAccessor<MyDatabase> with _$MeaningItemsDa
       var dict = await MyDatabase.instance.dictsDao.findById(entry.dictId!);
       var owner = dict?.ownerId;
       if (owner != null) {
-        await DbLogUtil.logOperation(owner, 'DELETE', 'meaningItems', entry.id, jsonEncode(entry.toJson()));
+        await DbLogUtil.logOperation(owner, 'DELETE', 'meaningItems', entry.id, entry);
       }
     }
   }
@@ -1040,12 +1038,12 @@ class LearningWordsDao extends DatabaseAccessor<MyDatabase> with _$LearningWords
       if (existing == null) {
         await into(learningWords).insertOnConflictUpdate(entry);
         if (genLog) {
-          await DbLogUtil.logOperation(entry.userId, 'INSERT', 'learningWords', '${entry.userId}-${entry.wordId}', jsonEncode(entry.toJson()));
+          await DbLogUtil.logOperation(entry.userId, 'INSERT', 'learningWords', '${entry.userId}-${entry.wordId}', entry);
         }
       } else {
         await into(learningWords).insertOnConflictUpdate(entry);
         if (genLog) {
-          await DbLogUtil.logOperation(entry.userId, 'UPDATE', 'learningWords', '${entry.userId}-${entry.wordId}', jsonEncode(entry.toJson()));
+          await DbLogUtil.logOperation(entry.userId, 'UPDATE', 'learningWords', '${entry.userId}-${entry.wordId}', entry);
         }
       }
     } catch (e, stackTrace) {
@@ -1058,7 +1056,7 @@ class LearningWordsDao extends DatabaseAccessor<MyDatabase> with _$LearningWords
   Future<void> deleteEntity(LearningWord entity, bool genLog) async {
     await delete(learningWords).delete(entity);
     if (genLog) {
-      await DbLogUtil.logOperation(entity.userId, 'DELETE', 'learningWords', '${entity.userId}-${entity.wordId}', jsonEncode(entity.toJson()));
+      await DbLogUtil.logOperation(entity.userId, 'DELETE', 'learningWords', '${entity.userId}-${entity.wordId}', entity);
     }
   }
 
@@ -1160,7 +1158,7 @@ class UserStudyStepsDao extends DatabaseAccessor<MyDatabase> with _$UserStudySte
     if (existing == null) {
       await into(userStudySteps).insert(step);
       if (genLog) {
-        await DbLogUtil.logOperation(step.userId, 'INSERT', 'userStudySteps', '${step.userId}-${step.studyStep}', jsonEncode(step.toJson()));
+        await DbLogUtil.logOperation(step.userId, 'INSERT', 'userStudySteps', '${step.userId}-${step.studyStep}', step);
       }
     } else {
       // 更新
@@ -1168,7 +1166,7 @@ class UserStudyStepsDao extends DatabaseAccessor<MyDatabase> with _$UserStudySte
       if (existing.state != step.state || existing.seq != step.seq) {
         await update(userStudySteps).replace(step);
         if (genLog) {
-          await DbLogUtil.logOperation(step.userId, 'UPDATE', 'userStudySteps', '${step.userId}-${step.studyStep}', jsonEncode(step.toJson()));
+          await DbLogUtil.logOperation(step.userId, 'UPDATE', 'userStudySteps', '${step.userId}-${step.studyStep}', step);
         }
       }
     }
@@ -1185,7 +1183,7 @@ class UserStudyStepsDao extends DatabaseAccessor<MyDatabase> with _$UserStudySte
   Future<void> deleteUserStudyStep(String userId, String studyStep, bool genLog) async {
     await (delete(userStudySteps)..where((s) => s.userId.equals(userId) & s.studyStep.equals(studyStep))).go();
     if (genLog) {
-      await DbLogUtil.logOperation(userId, 'DELETE', 'userStudySteps', '$userId-$studyStep', '{}');
+      await DbLogUtil.logOperation(userId, 'DELETE', 'userStudySteps', '$userId-$studyStep', null);
     }
   }
 
@@ -1229,7 +1227,7 @@ class UserStudyStepsDao extends DatabaseAccessor<MyDatabase> with _$UserStudySte
 
       if (genLog) {
         for (final step in newSteps) {
-          await DbLogUtil.logOperation(step.userId, 'INSERT', 'userStudySteps', '${step.userId}-${step.studyStep}', jsonEncode(step.toJson()));
+          await DbLogUtil.logOperation(step.userId, 'INSERT', 'userStudySteps', '${step.userId}-${step.studyStep}', step);
         }
       }
     }
@@ -1299,14 +1297,13 @@ class DakasDao extends DatabaseAccessor<MyDatabase> with _$DakasDaoMixin {
     if (existing == null) {
       await into(dakas).insert(record);
       if (genLog) {
-        await DbLogUtil.logOperation(
-            record.userId, 'INSERT', 'dakas', '${record.userId}-${Util.formatDate(record.forLearningDate)}', jsonEncode(record.toJson()));
+        await DbLogUtil.logOperation(record.userId, 'INSERT', 'dakas', '${record.userId}-${Util.formatDate(record.forLearningDate)}', record);
       }
     } else {
       await update(dakas).replace(record);
       if (genLog) {
         await DbLogUtil.logOperation(
-            record.userId, 'UPDATE', 'dakas', '${record.userId}-${Util.formatDate(record.forLearningDate)}', jsonEncode(record.toJson()));
+            record.userId, 'UPDATE', 'dakas', '${record.userId}-${Util.formatDate(record.forLearningDate)}', record);
       }
     }
   }
@@ -1316,7 +1313,7 @@ class DakasDao extends DatabaseAccessor<MyDatabase> with _$DakasDaoMixin {
     await delete(dakas).delete(record);
     if (genLog) {
       await DbLogUtil.logOperation(
-          record.userId, 'DELETE', 'dakas', '${record.userId}-${Util.formatDate(record.forLearningDate)}', jsonEncode(record.toJson()));
+          record.userId, 'DELETE', 'dakas', '${record.userId}-${Util.formatDate(record.forLearningDate)}', record);
     }
   }
 
@@ -1390,7 +1387,7 @@ class UserOpersDao extends DatabaseAccessor<MyDatabase> with _$UserOpersDaoMixin
     }
 
     if (genLog) {
-      await DbLogUtil.logOperation(record.userId, 'INSERT', 'userOpers', record.id, jsonEncode(record.toJson()));
+      await DbLogUtil.logOperation(record.userId, 'INSERT', 'userOpers', record.id, record);
     }
   }
 
@@ -1523,12 +1520,12 @@ class MasteredWordsDao extends DatabaseAccessor<MyDatabase> with _$MasteredWords
     if (existing == null) {
       await into(masteredWords).insert(word);
       if (genLog) {
-        await DbLogUtil.logOperation(word.userId, 'INSERT', 'masteredWords', '${word.userId}-${word.wordId}', jsonEncode(word.toJson()));
+        await DbLogUtil.logOperation(word.userId, 'INSERT', 'masteredWords', '${word.userId}-${word.wordId}', word);
       }
     } else {
       await update(masteredWords).replace(word);
       if (genLog) {
-        await DbLogUtil.logOperation(word.userId, 'UPDATE', 'masteredWords', '${word.userId}-${word.wordId}', jsonEncode(word.toJson()));
+        await DbLogUtil.logOperation(word.userId, 'UPDATE', 'masteredWords', '${word.userId}-${word.wordId}', word);
       }
     }
     if (updateUser) {
@@ -1549,7 +1546,7 @@ class MasteredWordsDao extends DatabaseAccessor<MyDatabase> with _$MasteredWords
       await (delete(masteredWords)..where((m) => m.userId.equals(userId) & m.wordId.equals(wordId))).go();
 
       if (genLog) {
-        await DbLogUtil.logOperation(userId, 'DELETE', 'masteredWords', '$userId-$wordId', jsonEncode(masteredWord.toJson()));
+        await DbLogUtil.logOperation(userId, 'DELETE', 'masteredWords', '$userId-$wordId', masteredWord);
       }
 
       // 2. 将单词添加到生词本
@@ -1724,12 +1721,12 @@ class BookmarksDao extends DatabaseAccessor<MyDatabase> with _$BookmarksDaoMixin
     if (bookmark == null) {
       await into(bookMarks).insert(entity);
       if (genLog) {
-        await DbLogUtil.logOperation(entity.userId, 'INSERT', 'bookMarks', entity.id, jsonEncode(entity.toJson()));
+        await DbLogUtil.logOperation(entity.userId, 'INSERT', 'bookMarks', entity.id, entity);
       }
     } else {
       await update(bookMarks).replace(entity);
       if (genLog) {
-        await DbLogUtil.logOperation(entity.userId, 'UPDATE', 'bookMarks', entity.id, jsonEncode(entity.toJson()));
+        await DbLogUtil.logOperation(entity.userId, 'UPDATE', 'bookMarks', entity.id, entity);
       }
     }
   }
@@ -1741,7 +1738,7 @@ class BookmarksDao extends DatabaseAccessor<MyDatabase> with _$BookmarksDaoMixin
       await (delete(bookMarks)..where((b) => b.id.equals(bookmarkId))).go();
 
       if (genLog) {
-        await DbLogUtil.logOperation(bookmark.userId, 'DELETE', 'bookMarks', bookmarkId, jsonEncode(bookmark.toJson()));
+        await DbLogUtil.logOperation(bookmark.userId, 'DELETE', 'bookMarks', bookmarkId, bookmark);
       }
     }
   }
@@ -1792,7 +1789,7 @@ class UserCowDungLogsDao extends DatabaseAccessor<MyDatabase> with _$UserCowDung
         'INSERT',
         'userCowDungLogs',
         log.id,
-        jsonEncode(log.toJson()),
+        log,
       );
     }
   }
@@ -1849,13 +1846,13 @@ class UserWrongWordsDao extends DatabaseAccessor<MyDatabase> with _$UserWrongWor
     if (entity == null) {
       await into(userWrongWords).insert(entry);
       if (genLog) {
-        await DbLogUtil.logOperation(entry.userId, 'INSERT', 'userWrongWords', '${entry.userId}-${entry.wordId}', jsonEncode(entry.toJson()));
+        await DbLogUtil.logOperation(entry.userId, 'INSERT', 'userWrongWords', '${entry.userId}-${entry.wordId}', entry);
         ThrottledDbSyncService().requestSync();
       }
     } else {
       await update(userWrongWords).replace(entry);
       if (genLog) {
-        await DbLogUtil.logOperation(entry.userId, 'UPDATE', 'userWrongWords', '${entry.userId}-${entry.wordId}', jsonEncode(entry.toJson()));
+        await DbLogUtil.logOperation(entry.userId, 'UPDATE', 'userWrongWords', '${entry.userId}-${entry.wordId}', entry);
         ThrottledDbSyncService().requestSync();
       }
     }
@@ -1864,7 +1861,7 @@ class UserWrongWordsDao extends DatabaseAccessor<MyDatabase> with _$UserWrongWor
   Future<void> deleteEntity(UserWrongWord entry, bool genLog) async {
     await (delete(userWrongWords)..where((uw) => uw.userId.equals(entry.userId) & uw.wordId.equals(entry.wordId))).go();
     if (genLog) {
-      await DbLogUtil.logOperation(entry.userId, 'DELETE', 'userWrongWords', '${entry.userId}-${entry.wordId}', jsonEncode(entry.toJson()));
+      await DbLogUtil.logOperation(entry.userId, 'DELETE', 'userWrongWords', '${entry.userId}-${entry.wordId}', entry);
       ThrottledDbSyncService().requestSync();
     }
   }

@@ -1208,25 +1208,34 @@ public class UserDbSyncBo {
      */
     @SuppressWarnings("unchecked")
     private void processMeaningItemSync(String userId, String recordJson, String operation) {
-        if ("UPDATE".equals(operation)) {
-            Map<String, Object> data = JsonUtils.makeObject(recordJson, Map.class);
-            String dictId = (String) data.get("dictId");
-            String wordId = (String) data.get("wordId");
-            List<Map<String, String>> meanings = (List<Map<String, String>>) data.get("meanings");
-            meaningItemBo.updateMeanings(dictId, wordId, meanings);
-            logger.info("同步更新单词释义成功: userId={}, dictId={}, wordId={}", userId, dictId, wordId);
-        } else if ("INSERT".equals(operation)) {
-            MeaningItemDto meaningItemDto = JsonUtils.makeObject(recordJson, MeaningItemDto.class);
-            meaningItemBo.createMeaningItem(meaningItemDto);
-            logger.info("同步插入单词释义成功: userId={}, id={}", userId, meaningItemDto.getId());
-        } else if ("DELETE".equals(operation)) {
-            MeaningItemDto meaningItemDto = JsonUtils.makeObject(recordJson, MeaningItemDto.class);
-            meaningItemBo.deleteMeaningItem(meaningItemDto.getId());
-            logger.info("同步删除单词释义成功: userId={}, id={}", userId, meaningItemDto.getId());
-        } else {
+        if (null == operation) {
             String errorMsg = String.format("不支持的释义表操作: %s", operation);
             logger.error(errorMsg);
             throw new IllegalArgumentException(errorMsg);
+        } else switch (operation) {
+            case "UPDATE" -> {
+                Map<String, Object> data = JsonUtils.makeObject(recordJson, Map.class);
+                String dictId = (String) data.get("dictId");
+                String wordId = (String) data.get("wordId");
+                List<Map<String, String>> meanings = (List<Map<String, String>>) data.get("meanings");
+                meaningItemBo.updateMeanings(dictId, wordId, meanings);
+                logger.info("同步更新单词释义成功: userId={}, dictId={}, wordId={}", userId, dictId, wordId);
+            }
+            case "INSERT" ->                 {
+                    MeaningItemDto meaningItemDto = JsonUtils.makeObject(recordJson, MeaningItemDto.class);
+                    meaningItemBo.createMeaningItem(meaningItemDto);
+                    logger.info("同步插入单词释义成功: userId={}, id={}", userId, meaningItemDto.getId());
+                }
+            case "DELETE" ->                 {
+                    MeaningItemDto meaningItemDto = JsonUtils.makeObject(recordJson, MeaningItemDto.class);
+                    meaningItemBo.deleteMeaningItem(meaningItemDto.getId());
+                    logger.info("同步删除单词释义成功: userId={}, id={}", userId, meaningItemDto.getId());
+                }
+            default -> {
+                String errorMsg = String.format("不支持的释义表操作: %s", operation);
+                logger.error(errorMsg);
+                throw new IllegalArgumentException(errorMsg);
+            }
         }
     }
 }

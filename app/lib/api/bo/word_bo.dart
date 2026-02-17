@@ -1,17 +1,18 @@
+import 'dart:async';
+
 import 'package:drift/drift.dart';
-import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/api/result.dart';
-import 'package:nnbdc/util/app_clock.dart';
+import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/global.dart';
-import 'package:nnbdc/util/error_handler.dart';
-import 'dart:async';
-import '../../services/throttled_sync_service.dart';
-import 'package:nnbdc/util/user_helper.dart';
-import 'package:nnbdc/util/level_util.dart';
-import 'dart:convert';
-import 'package:nnbdc/util/utils.dart';
+import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/db_log_util.dart';
+import 'package:nnbdc/util/error_handler.dart';
+import 'package:nnbdc/util/level_util.dart';
+import 'package:nnbdc/util/user_helper.dart';
+import 'package:nnbdc/util/utils.dart';
+
+import '../../services/throttled_sync_service.dart';
 
 class WordBo {
   static final WordBo _instance = WordBo._internal();
@@ -940,7 +941,7 @@ class WordBo {
         // 记录删除日志
         for (final item in existingItems) {
           if (userId != null) {
-            await DbLogUtil.logOperation(userId, 'DELETE', 'meaningItems', item.id, jsonEncode(item.toJson()));
+            await DbLogUtil.logOperation(userId, 'DELETE', 'meaningItems', item.id, item);
           }
         }
         
@@ -1014,7 +1015,7 @@ class WordBo {
       for (final item in existingItems) {
         final userId = Global.getLoggedInUser()?.id;
         if (userId != null) {
-          await DbLogUtil.logOperation(userId, 'DELETE', 'meaningItems', item.id, jsonEncode(item.toJson()));
+          await DbLogUtil.logOperation(userId, 'DELETE', 'meaningItems', item.id, item);
         }
       }
       
@@ -1047,7 +1048,7 @@ class WordBo {
         for (final item in existingMeaningItems) {
           final userId = Global.getLoggedInUser()?.id;
           if (userId != null) {
-            await DbLogUtil.logOperation(userId, 'DELETE', 'meaningItems', item.id, jsonEncode(item.toJson()));
+            await DbLogUtil.logOperation(userId, 'DELETE', 'meaningItems', item.id, item);
           }
         }
         
@@ -1059,7 +1060,7 @@ class WordBo {
         final dict = await db.dictsDao.findById(dictId);
         if (dict != null) {
           await (db.delete(db.dicts)..where((d) => d.id.equals(dictId))).go();
-          await DbLogUtil.logOperation(dict.ownerId, 'DELETE', 'dicts', dictId, jsonEncode(dict.toJson()));
+          await DbLogUtil.logOperation(dict.ownerId, 'DELETE', 'dicts', dictId, dict);
         }
       });
       ThrottledDbSyncService().requestSync();

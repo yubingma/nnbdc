@@ -7,12 +7,17 @@ import 'package:nnbdc/util/utils.dart';
 /// 数据库日志工具类
 class DbLogUtil {
   /// 记录数据库操作日志
+  /// [userId] 用户ID
+  /// [operate] 操作类型：INSERT、UPDATE、DELETE
+  /// [table] 表名
+  /// [recordId] 记录ID
+  /// [record] 原始记录对象，会在函数内部转换为JSON字符串
   static Future<void> logOperation(
     String userId,
     String operate,
     String table,
     String recordId,
-    String record,
+    Object? record,
   ) async {
     // 【快速失败机制】检查关键字段是否为空
     if (userId.isEmpty) {
@@ -21,23 +26,29 @@ class DbLogUtil {
     if (recordId.isEmpty) {
       throw Exception('【快速失败】无法记录数据库日志：recordId 为空，表: $table, 操作: $operate, userId: $userId');
     }
-    if (record.isEmpty) {
-      throw Exception('【快速失败】无法记录数据库日志：record 为空，表: $table, 操作: $operate, userId: $userId, recordId: $recordId');
+
+    // 将原始对象转换为JSON字符串
+    final String recordJson;
+    try {
+      recordJson = jsonEncode(record);
+    } catch (e) {
+      throw Exception('【快速失败】无法将记录对象转换为JSON：表: $table, 操作: $operate, userId: $userId, recordId: $recordId, 错误: $e');
+    }
+    if (recordJson.isEmpty) {
+      throw Exception('【快速失败】无法记录数据库日志：record 转换后为空，表: $table, 操作: $operate, userId: $userId, recordId: $recordId');
     }
 
-    // 对于 dakas 表，额外检查 record 中是否包含 userId
+        // 对于 dakas 表，额外检查 record 中是否包含 userId
     if (table == 'dakas') {
-      try {
-        final recordMap = jsonDecode(record) as Map<String, dynamic>;
-        final dakaUserId = recordMap['userId'] as String?;
-        if (dakaUserId == null || dakaUserId.isEmpty) {
-          throw Exception('【快速失败】dakas 表记录中 userId 为空，无法同步到服务端。record: $record');
+      // 直接从对象中检查 userId，避免先序列化再反序列化
+      if (record is Daka) {
+        final dakaUserId = record.userId;
+        if (dakaUserId.isEmpty) {
+          throw Exception('【快速失败】dakas 表记录中 userId 为空，无法同步到服务端。record: $recordJson');
         }
-      } catch (e) {
-        if (e is Exception && e.toString().contains('【快速失败】')) {
-          rethrow;
-        }
-        throw Exception('【快速失败】无法解析 dakas 表记录：$e，record: $record');
+      } else {
+        // 如果不是 Map，说明对象转换有问题
+        throw Exception('【快速失败】dakas 表记录不是有效 Map 对象，无法检查 userId。表: $table, 操作: $operate');
       }
     }
 
@@ -56,7 +67,7 @@ class DbLogUtil {
             operate: operate,
             tblName: table,
             recordId: recordId,
-            record: record,
+            record: recordJson,
             version: 0, // 客户端不设置版本号
             createTime: now,
             updateTime: now,
