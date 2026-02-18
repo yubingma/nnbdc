@@ -38,6 +38,7 @@ import '../util/utils.dart';
 import '../db/user_extensions.dart';
 import '../theme/app_theme.dart';
 import '../util/error_handler.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class BdcPageArgs {
   /// 从哪个页面进入本页面
@@ -1976,7 +1977,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                               final boundaryWordIndex = (index + 1) * batchWordCount;
                               final boundaryStep = boundaryWordIndex * modeCount;
                               final left = (boundaryStep / maxValue) * width;
-                              // 只有当计算出的位置在进度条范围内时才显示 
+                              // 只有当计算出的位置在进度条范围内时才显示
                               if (left <= 0 || left >= width) return const SizedBox.shrink();
                               return Positioned(
                                 left: left,
@@ -3539,19 +3540,17 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     switch (studyStep) {
       case 'En2Ch':
         // 英→中模式：使用外国人形象
-        return Image.asset(
-          'assets/images/foreign-person.svg',
-          width: 20,
-          height: 20,
-          color: AppTheme.primaryColor,
-        );
-      case 'Ch2En':
-        // 中→英模式：使用中国人形象
-        return Image.asset(
+        return SvgPicture.asset(
           'assets/images/chinese-person.svg',
           width: 20,
           height: 20,
-          color: AppTheme.primaryColor,
+        );
+      case 'Ch2En':
+        // 中→英模式：使用中国人形象
+        return SvgPicture.asset(
+          'assets/images/foreign-person.svg',
+          width: 20,
+          height: 20,
         );
       default:
         return const Icon(Icons.school, size: 16);
