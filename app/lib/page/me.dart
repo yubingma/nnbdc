@@ -1136,11 +1136,12 @@ class _MePageState extends State<MePage> {
           margin: const EdgeInsets.symmetric(vertical: 8),
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [AppTheme.primaryLightColor, AppTheme.primaryDarkColor],
+            image: DecorationImage(
+              image: AssetImage('assets/images/bg.jpg'),
+              fit: BoxFit.cover,
+              opacity: 0.15, // 降低透明度，避免影响文字可读性
             ),
+            color: AppTheme.primaryLightColor.withValues(alpha: 0.3), // 保留一点主色调作为底色
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
@@ -1167,6 +1168,13 @@ class _MePageState extends State<MePage> {
                       letterSpacing: 1.5,
                       fontFamily: null, // 使用系统默认字体
                       decoration: TextDecoration.none,
+                      shadows: [
+                        Shadow(
+                          color: Colors.black.withValues(alpha: 0.5),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
                     textScaler: const TextScaler.linear(1.0),
                   ),
