@@ -52,6 +52,9 @@ class Asr {
   /// 当前的事件监听器回调函数，用于在事件回调中正确调用
   void Function(dynamic)? _currentAsrListener;
 
+  /// Meter 流订阅，使用单例模式避免重复订阅导致 iOS 端报错
+  StreamSubscription<double>? _meterSubscription;
+
   AsrState get state => _state;
   setState(AsrState newState) {
     Global.logger.i('ASR: State change: $_state => $newState');
@@ -78,7 +81,7 @@ class Asr {
     // 如果正在初始化，等待初始化完成
     if (_isInitializing) {
       Global.logger.w('ASR: 警告：在初始化过程中调用 dispose()，等待初始化完成');
-      // 等待初始化完成（最多等待1秒）
+      // 等待初始化完成（最多等待 1 秒）
       int waitCount = 0;
       while (_isInitializing && waitCount < 20) {
         Future.delayed(const Duration(milliseconds: 50));
@@ -94,6 +97,8 @@ class Asr {
     _eventSubscription?.cancel();
     _eventSubscription = null;
     _currentAsrListener = null;
+    // 清理 meter 订阅
+    disposeMeter();
   }
 
   Future<void> _updateLanguage(AsrLanguage language) async {
@@ -254,11 +259,39 @@ class Asr {
     return result ?? false;
   }
 
+  /// 获取音量计数据流，使用单例模式避免重复订阅
+  /// 每次调用都会返回同一个流订阅，避免 iOS 端出现 "No active stream to cancel" 错误
   Stream<double> meterStream() {
+    // 如果已经有订阅，直接返回现有的流（通过检查订阅是否存在）
+    // 注意：这里无法直接返回已存在的 Stream，所以采用延迟初始化的方式
+    // 调用方应该只调用一次 meterStream() 并保存订阅
     return asrMeterChannel
         .receiveBroadcastStream('nnbdc/asr_meter')
         .map((event) => (event as num).toDouble())
         .handleError((e) => Global.logger.i('ASR meter error: $e'));
+  }
+
+  /// 获取或创建 meter 订阅，确保全局只有一个有效的 meter 订阅
+  StreamSubscription<double> getOrCreateMeterSubscription(void Function(double level) onLevel) {
+    // 如果已有订阅，先取消旧的（理论上不应该发生）
+    if (_meterSubscription != null) {
+      Global.logger.w('ASR: 警告：getMeterSubscription 被多次调用，取消旧订阅');
+      _meterSubscription!.cancel();
+    }
+
+    _meterSubscription = meterStream().listen(onLevel);
+    Global.logger.d('ASR: 创建新的 meter 订阅');
+    return _meterSubscription!;
+  }
+
+  /// 取消 meter 订阅，在 dispose 时调用
+  void disposeMeter() {
+    Global.logger.d('ASR: disposeMeter() 被调用，取消 meter 订阅');
+    if (_meterSubscription != null) {
+      _meterSubscription!.cancel();
+      _meterSubscription = null;
+      Global.logger.d('ASR: meter 订阅已取消');
+    }
   }
 
   /// 初始化语音识别事件监听

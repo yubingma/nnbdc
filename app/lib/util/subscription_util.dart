@@ -285,7 +285,14 @@ class SubscriptionUtil {
         if (_showToasts) {
           // 区分是新订阅还是恢复订阅
           if (purchaseDetails.status == PurchaseStatus.restored) {
-            ToastUtil.success('恢复订阅成功！');
+            // 检查订阅是否真的有效
+            final user = Global.getLoggedInUser();
+            if (user != null && user.isPremiumIos == true) {
+              ToastUtil.success('恢复订阅成功！');
+            } else {
+              // 恢复的订阅已过期
+              ToastUtil.info('未找到有效的订阅记录');
+            }
           } else {
             ToastUtil.success('订阅成功！');
           }

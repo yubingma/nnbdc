@@ -223,6 +223,11 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
         // 等待一段时间后刷新用户信息
         await Future.delayed(const Duration(seconds: 2));
         await _refreshUserInfo();
+        
+        // 检查恢复后是否为会员状态，如果不是则给出提示
+        if (!SubscriptionUtil.isPremium()) {
+          ToastUtil.info('未找到有效的订阅记录。');
+        }
       }
     } catch (e) {
       Global.logger.e('恢复购买异常', error: e);

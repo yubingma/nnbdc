@@ -485,10 +485,11 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
 
   /// 订阅音量计数据
   void _subscribeMeterIfNeeded() {
-    _meterSub ??= asr.meterStream().listen((level) {
-      _lastMeterLevel = level.clamp(0.0, 1.0);
-      _lastMeterAt = AppClock.now();
-    });
+    // 使用 ASR 单例的 meter 订阅管理，避免重复订阅
+    _meterSub ??= asr.getOrCreateMeterSubscription((level) {
+        _lastMeterLevel = level.clamp(0.0, 1.0);
+        _lastMeterAt = AppClock.now();
+      });
     _meterTimer ??= Timer.periodic(const Duration(milliseconds: 30), (_) {
       if (isMenuOpen) return; // 菜单打开时暂停更新，避免UI重绘
       final now = AppClock.now();
@@ -940,16 +941,20 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-
+  
     // 停止 ASR
     try {
       asr.stopAsr();
     } catch (e) {
-      Global.logger.d("dispose: 停止 ASR 失败: $e");
+      Global.logger.d("dispose: 停止 ASR 失败：$e");
     }
-
-    _audioPlayerDisposed = true; // 标记为已释放
+  
+    // 清理 meter 订阅（通过 ASR 单例统一管理）
     _unsubscribeMeter();
+    // 确保调用 ASR 的 disposeMeter 来彻底清理
+    asr.disposeMeter();
+  
+    _audioPlayerDisposed = true; // 标记为已释放
     _meterLevelNotifier.dispose();
     _asrModelLoadingController.dispose();
 

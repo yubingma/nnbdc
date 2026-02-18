@@ -917,10 +917,22 @@ extension AppDelegate: FlutterStreamHandler {
             self.ttsEventSink = nil
         } else if let channelName = arguments as? String, channelName == "nnbdc/asr_meter" {
             print("IOS: Cancelling ASR Meter EventChannel")
-            self.meterEventSink = nil
+            // 仅在非 nil 时清空，避免重复取消
+            if self.meterEventSink != nil {
+                self.meterEventSink = nil
+                print("IOS: ASR Meter EventChannel cancelled successfully")
+            } else {
+                print("IOS: ASR Meter EventChannel already cancelled (no active stream)")
+            }
         } else {
             print("IOS: Cancelling ASR EventChannel")
-            self.eventSink = nil
+            // 仅在非 nil 时清空，避免重复取消
+            if self.eventSink != nil {
+                self.eventSink = nil
+                print("IOS: ASR EventChannel cancelled successfully")
+            } else {
+                print("IOS: ASR EventChannel already cancelled (no active stream)")
+            }
         }
         return nil
     }
