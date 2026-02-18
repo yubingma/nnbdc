@@ -2554,12 +2554,21 @@ class _DictCardState extends State<DictCard> {
 
                   if (!mounted) return;
 
+                  // 获取用户书桌上的所有其他词书（排除待删除的词书）
+                  final otherLearningDictsQuery = db.select(db.learningDicts)
+                    ..where((ld) => ld.userId.equals(user.id) & ld.dictId.isNotValue(currentLearningDict.dictId));
+                  final otherLearningDicts = await otherLearningDictsQuery.get();
+                  final otherDictIds = otherLearningDicts.map((ld) => ld.dictId).toSet();
+
+                  if (!mounted) return;
+
                   // 找出仅在该词书中的学习单词
                   final learningWordIdsInOtherDicts = <String>{};
                   for (final learningWord in learningWords) {
-                    // 检查这个学习单词是否在其他词书中
+                    // 检查这个学习单词是否在用户的其他书桌词书中
                     final otherDictsQuery = db.select(db.dictWords)
-                      ..where((dw) => dw.wordId.equals(learningWord.wordId) & dw.dictId.isNotValue(currentLearningDict.dictId));
+                      ..where((dw) => dw.wordId.equals(learningWord.wordId) & 
+                                  dw.dictId.isIn(otherDictIds.isEmpty ? [''] : otherDictIds.toList()));
                     final otherDicts = await otherDictsQuery.get();
 
                     if (!mounted) return;
