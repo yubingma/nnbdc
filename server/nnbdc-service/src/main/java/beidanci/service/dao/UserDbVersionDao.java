@@ -2,6 +2,9 @@ package beidanci.service.dao;
 
 import java.util.List;
 
+import javax.annotation.PostConstruct;
+import javax.annotation.Resource;
+
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.stereotype.Repository;
@@ -12,6 +15,21 @@ import beidanci.util.Constants;
 
 @Repository
 public class UserDbVersionDao extends BaseDao<UserDbVersion> {
+    
+    @Resource
+    private JdbcTemplate jdbcTemplateForInit;  // 用于初始化的 JdbcTemplate
+    
+    /**
+     * 初始化 NamedParameterJdbcTemplate
+     * 注意：@PostConstruct 执行时，@Autowired/@Resource 注入的依赖已经完成
+     * 由于父类 BaseDao 的 jdbcTemplate 字段没有 @Autowired 注解，
+     * 需要在这里通过 @Resource 注入后手动调用 setJdbcTemplate()
+     */
+    @PostConstruct
+    public void init() {
+        // 使用注入的 jdbcTemplate 初始化父类
+        setJdbcTemplate(jdbcTemplateForInit);
+    }
     
     /**
      * 获取用户数据库版本（不加锁，仅用于只读查询）
