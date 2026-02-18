@@ -3296,7 +3296,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(_getStepIcon(_studyStep!), color: AppTheme.primaryColor, size: 16),
+                _getStepIcon(_studyStep!),
                 const SizedBox(width: 6),
                 Text(
                   key: const Key('learning_mode_text'),
@@ -3431,7 +3431,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(_getStepIcon(_studyStep!), color: const Color(0xFF4A90E2), size: 16),
+                _getStepIcon(_studyStep!),
                 const SizedBox(width: 6),
                 const Text(
                     key: Key('learning_mode_text'), '中→英', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF4A90E2))),
@@ -3535,16 +3535,26 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     );
   }
 
-  IconData _getStepIcon(String studyStep) {
+  Widget _getStepIcon(String studyStep) {
     switch (studyStep) {
       case 'En2Ch':
-        // 英→中模式：使用外国人形象（西方人轮廓）
-        return Icons.emoji_people;
+        // 英→中模式：使用外国人形象
+        return Image.asset(
+          'assets/images/foreign-person.svg',
+          width: 20,
+          height: 20,
+          color: AppTheme.primaryColor,
+        );
       case 'Ch2En':
-        // 中→英模式：使用中国人形象（亚洲人脸）
-        return Icons.face;
+        // 中→英模式：使用中国人形象
+        return Image.asset(
+          'assets/images/chinese-person.svg',
+          width: 20,
+          height: 20,
+          color: AppTheme.primaryColor,
+        );
       default:
-        return Icons.school;
+        return const Icon(Icons.school, size: 16);
     }
   }
 
