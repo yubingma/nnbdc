@@ -1355,7 +1355,7 @@ class _MePageState extends State<MePage> {
                 ),
                 _buildMenuTile(
                   icon: Icons.storage,
-                  title: '数据库查看器',
+                  title: '数据库查看器(版本:${MyDatabase.instance.schemaVersion})',
                   onTap: () => _openDbViewPage(),
                 ),
                 _buildMenuTile(
