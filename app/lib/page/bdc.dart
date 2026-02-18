@@ -1900,23 +1900,14 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                       final double baseAlpha = isDarkMode ? 0.25 : 0.15; // 黑夜模式稍明显一点，白天模式更淡
 
                       // 获取批次的基础颜色（不透明度）
+                      // 修改：所有批次都使用最后一个批次的颜色（绿色）
                       Color getBatchBaseColor(int batchIndex, int totalBatches) {
-                        if (totalBatches <= 1) {
-                          return const Color(0xFF4CAF50); // 只有一个批次时显示绿色
-                        }
-                        final double t = batchIndex / (totalBatches - 1); // 0.0 到 1.0
-                        if (t < 0.5) {
-                          // 红色到蓝色
-                          final double localT = t * 2; // 0.0 到 1.0
-                          return Color.lerp(const Color(0xFFE53935), const Color(0xFF1E88E5), localT)!;
-                        } else {
-                          // 蓝色到绿色
-                          final double localT = (t - 0.5) * 2; // 0.0 到 1.0
-                          return Color.lerp(const Color(0xFF1E88E5), const Color(0xFF43A047), localT)!;
-                        }
+                        // 始终使用最后一个批次的颜色（绿色）
+                        return const Color(0xFF43A047);
                       }
 
                       Color getBatchColor(int batchIndex, int totalBatches) {
+                        // 所有批次都使用统一的半透明绿色作为背景色
                         return getBatchBaseColor(batchIndex, totalBatches).withValues(alpha: baseAlpha);
                       }
 
