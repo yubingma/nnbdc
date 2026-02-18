@@ -301,7 +301,7 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
                 log.tblName != 'userCowDungLogs' &&
                 log.tblName != 'meaningItems') {
               Global.logger.w("⚠️ 不支持的表: ${log.tblName}");
-              ToastUtil.error('不支持的表:${log.tblName}');
+              // 不弹出错误提示，只记录日志
             }
           } catch (e, stackTrace) {
             Global.logger.e("❌ 处理表数据失败: ${log.tblName} - $e");
@@ -332,7 +332,7 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
               return;
             } else {
               Global.logger.e("❌ 上传到远程数据库失败: ${result.msg}");
-              ToastUtil.error(result.msg!);
+              // 不弹出错误提示，只记录日志
               throw Exception(result.msg);
             }
           } else {
@@ -355,7 +355,7 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
   } catch (e, stackTrace) {
     stopwatch.stop();
     Global.logger.e("❌ 执行用户数据库同步失败: $e - 耗时: ${stopwatch.elapsedMilliseconds}ms", error: e, stackTrace: stackTrace);
-    await ErrorHandler.handleDatabaseError(e, stackTrace, db: MyDatabase.instance.usersDao, operation: 'doSyncUserDb', showToast: true);
+    await ErrorHandler.handleDatabaseError(e, stackTrace, db: MyDatabase.instance.usersDao, operation: 'doSyncUserDb', showToast: false);
     rethrow;
   }
 }
@@ -409,7 +409,7 @@ Future<void> _handleBatchDeleteUserRecords(UserDbLog log, String userId) async {
         break;
       default:
         Global.logger.w('⚠️ 不支持批量删除用户的数据的表: $table');
-        ToastUtil.error('不支持批量删除用户的数据的表: $table');
+        // 不弹出错误提示，只记录日志
         return;
     }
 

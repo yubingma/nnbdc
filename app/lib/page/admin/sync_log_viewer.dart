@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:nnbdc/models/sync_log.dart';
 import 'package:nnbdc/services/sync_log_service.dart';
+import 'package:nnbdc/services/throttled_sync_service.dart';
 import 'package:nnbdc/theme/app_theme.dart';
 import 'package:provider/provider.dart';
 import 'package:nnbdc/state.dart';
 import 'package:nnbdc/util/toast_util.dart';
+import 'package:nnbdc/global.dart';
 
 /// 云同步日志查看器
 class SyncLogViewerPage extends StatefulWidget {
@@ -18,6 +20,7 @@ class _SyncLogViewerPageState extends State<SyncLogViewerPage> {
   List<SyncLog> _logs = [];
   bool _isLoading = true;
   int _totalCount = 0;
+  bool _isSyncing = false;
 
   @override
   void initState() {
@@ -35,10 +38,43 @@ class _SyncLogViewerPageState extends State<SyncLogViewerPage> {
       _logs = await service.getRecentLogs(limit: 100);
       _totalCount = _logs.length;
     } catch (e) {
-      ToastUtil.error('加载同步日志失败: $e');
+      // 不弹出错误提示，只记录日志
+      Global.logger.e('加载同步日志失败: $e');
     } finally {
       setState(() {
         _isLoading = false;
+      });
+    }
+  }
+
+  /// 手动触发同步
+  Future<void> _manualSync() async {
+    if (_isSyncing) return;
+
+    setState(() {
+      _isSyncing = true;
+    });
+
+    try {
+      ToastUtil.info('正在同步...');
+      // 立即执行同步并等待完成
+      await ThrottledDbSyncService().requestSyncAndWait(immediate: true);
+      
+      // 同步完成后刷新日志列表
+      await _loadLogs();
+      
+      // 检查最后一次同步结果，只在成功时提示
+      final lastLog = _logs.isNotEmpty ? _logs.first : null;
+      if (lastLog != null && lastLog.success) {
+        ToastUtil.success('同步成功');
+      }
+      // 失败时不弹出提示，用户可以在日志列表中查看失败原因
+    } catch (e) {
+      // 同步失败，刷新日志列表查看失败原因，不弹出错误提示
+      await _loadLogs();
+    } finally {
+      setState(() {
+        _isSyncing = false;
       });
     }
   }
@@ -50,7 +86,8 @@ class _SyncLogViewerPageState extends State<SyncLogViewerPage> {
       ToastUtil.success('删除成功');
       _loadLogs();
     } catch (e) {
-      ToastUtil.error('删除失败: $e');
+      // 不弹出错误提示，只记录日志
+      Global.logger.e('删除失败: $e');
     }
   }
 
@@ -80,7 +117,8 @@ class _SyncLogViewerPageState extends State<SyncLogViewerPage> {
         ToastUtil.success('已删除所有同步日志');
         _loadLogs();
       } catch (e) {
-        ToastUtil.error('删除失败: $e');
+        // 不弹出错误提示，只记录日志
+        Global.logger.e('删除失败: $e');
       }
     }
   }
@@ -220,7 +258,7 @@ class _SyncLogViewerPageState extends State<SyncLogViewerPage> {
       backgroundColor: backgroundColor,
       appBar: AppBar(
         title: const Text(
-          '云同步日志',
+          '云同步',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w400,
@@ -272,6 +310,39 @@ class _SyncLogViewerPageState extends State<SyncLogViewerPage> {
                 )
               : Column(
                   children: [
+                    // 手动同步按钮
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      color: cardColor,
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: _isSyncing ? null : _manualSync,
+                          icon: _isSyncing
+                              ? SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      isDarkMode ? Colors.white : Colors.white,
+                                    ),
+                                  ),
+                                )
+                              : const Icon(Icons.sync),
+                          label: Text(_isSyncing ? '同步中...' : '立即同步'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.primaryColor,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const Divider(height: 1),
                     // 统计信息
                     Container(
                       padding: const EdgeInsets.all(16),
