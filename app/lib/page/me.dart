@@ -2618,6 +2618,11 @@ class _DictCardState extends State<DictCard> {
                       ),
                     );
 
+                    // 如果用户点击对话框外部取消（返回 null），则取消删除操作
+                    if (confirmResult == null) {
+                      return;
+                    }
+                    
                     deleteLearningWords = confirmResult == true;
                   } else {
                     // 没有仅在该词书中的学习单词，直接确认删除词书
@@ -2641,6 +2646,7 @@ class _DictCardState extends State<DictCard> {
                       ),
                     );
 
+                    // 如果用户点击取消或对话框外部（返回 null 或 false），则取消删除操作
                     if (confirmed != true) {
                       return;
                     }
