@@ -2214,21 +2214,22 @@ class _MePageState extends State<MePage> {
                   backgroundColor: backgroundColor,
                   elevation: 0,
                   centerTitle: true,
-                  title:
-                      // 用户头像
-                      Container(
-                    width: MediaQuery.of(context).size.width > 600 ? 80 : 48,
-                    height: MediaQuery.of(context).size.width > 600 ? 80 : 48,
-                    margin: EdgeInsets.fromLTRB(0, 8, 0, 0),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.blue.withValues(alpha: 0.2),
-                      border: Border.all(color: Colors.white, width: 3),
-                    ),
-                    child: Icon(
-                      Icons.person,
-                      size: MediaQuery.of(context).size.width > 600 ? 40 : 30,
-                      color: Colors.white,
+                  title: GestureDetector(
+                    onTap: () => Get.toNamed('/email_login'),
+                    child: Container(
+                      width: MediaQuery.of(context).size.width > 600 ? 80 : 48,
+                      height: MediaQuery.of(context).size.width > 600 ? 80 : 48,
+                      margin: EdgeInsets.fromLTRB(0, 8, 0, 0),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.blue.withValues(alpha: 0.2),
+                        border: Border.all(color: Colors.white, width: 3),
+                      ),
+                      child: Icon(
+                        Icons.person,
+                        size: MediaQuery.of(context).size.width > 600 ? 40 : 30,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ),

@@ -3538,9 +3538,11 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   IconData _getStepIcon(String studyStep) {
     switch (studyStep) {
       case 'En2Ch':
-        return Icons.auto_stories;
+        // 英→中模式：使用外国人形象（西方人轮廓）
+        return Icons.emoji_people;
       case 'Ch2En':
-        return Icons.school;
+        // 中→英模式：使用中国人形象（亚洲人脸）
+        return Icons.face;
       default:
         return Icons.school;
     }
