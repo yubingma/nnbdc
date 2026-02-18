@@ -19,9 +19,6 @@ import java.util.stream.Collectors;
 
 import javax.persistence.Id;
 
-// JDBC 不再支持 Hibernate 代理
-// import org.hibernate.Hibernate;
-// import org.hibernate.proxy.HibernateProxy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.StringUtils;
@@ -103,7 +100,7 @@ public class BeanUtils {
         return result2;
     }
 
-    @SuppressWarnings({"deprecation", "unchecked"})
+    @SuppressWarnings({"deprecation"})
     private static <T extends Vo> T doMakeVo(Po po, Class<T> voClass, HashSet<String> excludeFields, String fullFieldName) {
         if (po == null) {
             return null;

@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -166,7 +167,7 @@ public class DakaBo extends BaseBo<Daka> {
             int deletedCount = namedParameterJdbcTemplate.update(Objects.requireNonNull(sql.toString(), "SQL cannot be null"), params);
             System.out.println("批量删除dakas记录完成，用户ID: " + userId + ", 删除数量: " + deletedCount);
             
-        } catch (Exception e) {
+        } catch (DataAccessException e) {
             System.err.println("批量删除dakas记录失败，用户ID: " + userId + ", 错误: " + e.getMessage());
             throw new RuntimeException("批量删除dakas记录失败: " + e.getMessage(), e);
         }

@@ -2,6 +2,7 @@
 // 在应用启动时自动执行数据完整性检查
 
 import 'package:flutter/material.dart';
+import 'package:nnbdc/global.dart';
 import 'package:nnbdc/util/data_integrity_checker.dart';
 
 class AutoIntegrityChecker {
@@ -21,7 +22,15 @@ class AutoIntegrityChecker {
 
       // 如果发现问题，在后台自动修复
       if (result.hasIssues) {
-        await checker.autoFix(result);
+        // 获取当前登录用户 (如果有)
+        final currentUser = Global.getLoggedInUser();
+        if (currentUser != null) {
+          // 只有用户登录了才执行修复，传入用户 ID 进行权限验证
+          await checker.autoFix(result, currentUser.id);
+        } else {
+          // 用户未登录时不执行修复 (避免操作他人数据)
+          debugPrint('用户未登录，跳过自动修复');
+        }
       }
     } catch (e) {
       // 静默处理错误，不影响用户体验

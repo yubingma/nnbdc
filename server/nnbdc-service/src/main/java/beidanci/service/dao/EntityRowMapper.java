@@ -1,6 +1,7 @@
 package beidanci.service.dao;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -201,7 +202,6 @@ public class EntityRowMapper<E extends Po> implements RowMapper<E> {
                             keyField.setAccessible(true);
                             // 处理枚举类型
                             if (keyField.getType().isEnum() && keyValue instanceof String) {
-                                @SuppressWarnings("unchecked")
                                 Class<? extends Enum<?>> enumClass = (Class<? extends Enum<?>>) keyField.getType();
                                 java.lang.reflect.Method valueOfMethod = enumClass.getMethod("valueOf", String.class);
                                 Enum<?> enumValue = (Enum<?>) valueOfMethod.invoke(null, (String) keyValue);
@@ -213,14 +213,14 @@ public class EntityRowMapper<E extends Po> implements RowMapper<E> {
                     }
                     
                     compositeKeyField.set(entity, compositeKey);
-                } catch (Exception e) {
+                } catch (IllegalAccessException | IllegalArgumentException | InstantiationException | NoSuchMethodException | SecurityException | InvocationTargetException e) {
                     logger.error("设置复合主键时出错: entityClass={}, field={}", entityClass.getName(), compositeKeyField.getName(), e);
                     throw new RuntimeException("设置复合主键失败", e);
                 }
             }
             
             return entity;
-        } catch (Exception e) {
+        } catch (IllegalAccessException | InstantiationException | NoSuchMethodException | RuntimeException | InvocationTargetException | SQLException e) {
             logger.error("映射 ResultSet 到 {} 时出错", entityClass.getName(), e);
             throw new SQLException("映射 ResultSet 时出错", e);
         }
@@ -238,7 +238,6 @@ public class EntityRowMapper<E extends Po> implements RowMapper<E> {
             if (Po.class.isAssignableFrom(fieldType) && !field.getName().endsWith("Id")) {
                 if (value != null) {
                     // 创建关联对象并设置 ID
-                    @SuppressWarnings("unchecked")
                     Class<? extends Po> poClass = (Class<? extends Po>) fieldType;
                     Po associatedObject = poClass.getDeclaredConstructor().newInstance();
                     // 通过反射设置 ID 字段
@@ -258,7 +257,6 @@ public class EntityRowMapper<E extends Po> implements RowMapper<E> {
             } 
             // 处理枚举类型：如果字段是枚举类型，且值是字符串，则转换为枚举
             else if (fieldType.isEnum() && value instanceof String) {
-                @SuppressWarnings("unchecked")
                 Class<? extends Enum<?>> enumClass = (Class<? extends Enum<?>>) fieldType;
                 // 使用反射调用 valueOf 方法，因为 Enum.valueOf 需要具体的泛型类型
                 try {
@@ -280,7 +278,7 @@ public class EntityRowMapper<E extends Po> implements RowMapper<E> {
             logger.error("设置枚举字段值时出错: field={}, value={}, enumType={}", 
                 field.getName(), value, fieldType.getName(), e);
             throw new RuntimeException("无法将值 '" + value + "' 转换为枚举类型 " + fieldType.getName(), e);
-        } catch (Exception e) {
+        } catch (InstantiationException | NoSuchMethodException | RuntimeException | InvocationTargetException e) {
             logger.error("设置关联对象字段值时出错: field={}, value={}", field.getName(), value, e);
             throw new RuntimeException("设置关联对象字段值失败: " + field.getName(), e);
         }

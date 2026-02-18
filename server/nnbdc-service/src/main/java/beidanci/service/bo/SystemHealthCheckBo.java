@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -102,7 +103,7 @@ public class SystemHealthCheckBo {
                 checkDictWordSequenceAndCount(dictId, dictName, ownerId, wordCount, issues);
             }
             
-        } catch (Exception e) {
+        } catch (DataAccessException e) {
             errors.add("检查用户词典完整性时出错: " + e.getMessage());
         }
         
@@ -193,7 +194,7 @@ public class SystemHealthCheckBo {
                 ));
             }
             
-        } catch (Exception e) {
+        } catch (DataAccessException e) {
             errors.add("检查用户学习步骤时出错: " + e.getMessage());
         }
         
@@ -276,7 +277,7 @@ public class SystemHealthCheckBo {
                 ));
             }
             
-        } catch (Exception e) {
+        } catch (DataAccessException e) {
             errors.add("检查用户生词本缺失时出错: " + e.getMessage());
         }
         
@@ -295,31 +296,18 @@ public class SystemHealthCheckBo {
         try {
             for (String issueType : issueTypes) {
                 switch (issueType) {
-                    case "system_dict_integrity":
-                        fixedCount += fixSystemDictIntegrity(fixed);
-                        break;
-                    case "user_dict_integrity":
-                        fixedCount += fixUserDictIntegrity(fixed);
-                        break;
-                    case "learning_progress":
-                        // fixedCount += fixLearningProgress(fixed);
-                        break;
-                    case "db_version":
-                        fixedCount += fixDbVersionConsistency(fixed);
-                        break;
-                    case "common_dict_integrity":
-                        fixedCount += fixCommonDictIntegrity(fixed);
-                        break;
-                    case "user_study_steps":
-                        fixedCount += fixUserStudySteps(fixed);
-                        break;
-                    case "missing_raw_word_dict":
-                        fixedCount += fixMissingRawWordDict(fixed);
-                        break;
-                    default:
-                        errors.add("未知的问题类型: " + issueType);
+                    case "system_dict_integrity" -> fixedCount += fixSystemDictIntegrity(fixed);
+                    case "user_dict_integrity" -> fixedCount += fixUserDictIntegrity(fixed);
+                    case "learning_progress" -> {
+                    }
+                    case "db_version" -> fixedCount += fixDbVersionConsistency(fixed);
+                    case "common_dict_integrity" -> fixedCount += fixCommonDictIntegrity();
+                    case "user_study_steps" -> fixedCount += fixUserStudySteps(fixed);
+                    case "missing_raw_word_dict" -> fixedCount += fixMissingRawWordDict(fixed);
+                    default -> errors.add("未知的问题类型: " + issueType);
                 }
-            }
+                // fixedCount += fixLearningProgress(fixed);
+                            }
         } catch (Exception e) {
             errors.add("自动修复过程中出错: " + e.getMessage());
         }
@@ -425,7 +413,7 @@ public class SystemHealthCheckBo {
                 ));
             }
             
-        } catch (Exception e) {
+        } catch (DataAccessException e) {
             issues.add(new SystemHealthIssue(
                 "检查序号连续性失败",
                 String.format("检查词典 %s 序号连续性时出错: %s", dictName, e.getMessage()),
@@ -631,7 +619,7 @@ public class SystemHealthCheckBo {
         return fixedCount;
     }
 
-    private int fixCommonDictIntegrity(List<String> fixed) {
+    private int fixCommonDictIntegrity() {
         // 通用词典完整性修复比较复杂，需要根据具体业务逻辑实现
         // 这里暂时返回0，表示暂不支持自动修复
         return 0;
@@ -668,7 +656,7 @@ public class SystemHealthCheckBo {
                 fixed.add(String.format("批量插入 %d 个用户的 Ch2En 学习步骤", ch2EnCount));
             }
             
-        } catch (Exception e) {
+        } catch (DataAccessException e) {
             // 错误已在调用方处理
         }
         return fixedCount;
@@ -716,7 +704,7 @@ public class SystemHealthCheckBo {
                             userName, userId, e.getMessage()));
                 }
             }
-        } catch (Exception e) {
+        } catch (DataAccessException e) {
             // 错误已在调用方处理
         }
         return fixedCount;

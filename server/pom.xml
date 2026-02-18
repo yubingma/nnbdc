@@ -209,7 +209,7 @@
                         <release>17</release>
                         <encoding>UTF-8</encoding>
                         <compilerArgs>
-                            <arg>-Xlint:all,-unchecked</arg>
+                            <arg>-Xlint:all,-unchecked,-varargs</arg>
                         </compilerArgs>
                     </configuration>
                 </plugin>

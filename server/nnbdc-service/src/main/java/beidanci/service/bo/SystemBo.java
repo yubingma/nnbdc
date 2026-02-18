@@ -32,7 +32,6 @@ public class SystemBo {
     @Autowired
     private SysDbSyncBo sysDbLogBo;
 
-    @SuppressWarnings("unchecked")
     public SystemDataDto getSystemData() {
         System.out.println("开始获取系统数据...");
         SystemDataDto systemData = new SystemDataDto();

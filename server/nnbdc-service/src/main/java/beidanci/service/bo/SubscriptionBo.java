@@ -4,8 +4,13 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.PublicKey;
 import java.security.Signature;
+import java.security.SignatureException;
+import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -21,6 +26,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -153,7 +159,7 @@ public class SubscriptionBo extends BaseBo<User> {
 
             return new Result<>(true, "订阅验证成功", subscriptionVo);
 
-        } catch (Exception e) {
+        } catch (IOException | IllegalArgumentException e) {
             logger.error("验证订阅异常", e);
             return new Result<>(false, "验证订阅失败: " + e.getMessage(), null);
         }
@@ -196,10 +202,6 @@ public class SubscriptionBo extends BaseBo<User> {
         return receiptData.startsWith("eyJ") && receiptData.split("\\.").length == 3;
     }
     
-    /**
-     * 验证JWT格式的收据（StoreKit 2）
-     * JWT收据包含签名的交易信息，可以直接解析payload获取订阅信息
-     */
     /**
      * 验证JWT格式的收据（StoreKit 2）
      * 完整验证流程：
@@ -267,7 +269,7 @@ public class SubscriptionBo extends BaseBo<User> {
             
             return new ReceiptVerificationResult(true, "验证成功", 0, productId, expiresDate, subscriptionType);
             
-        } catch (Exception e) {
+        } catch (JsonProcessingException e) {
             logger.error("解析JWT收据失败", e);
             return new ReceiptVerificationResult(false, "JWT解析失败: " + e.getMessage(), -1, null, null, null);
         }
@@ -347,7 +349,7 @@ public class SubscriptionBo extends BaseBo<User> {
                 // 我们直接验证最后一个证书是否由Trusted Root签名
                 try {
                     cert.verify(trustedRoot.getPublicKey());
-                } catch (Exception e) {
+                } catch (InvalidKeyException | NoSuchAlgorithmException | NoSuchProviderException | SignatureException | CertificateException e) {
                      // 如果最后一个证书就是Root（自签名），再试一次
                      if (cert.equals(trustedRoot)) {
                          return;
@@ -449,12 +451,18 @@ public class SubscriptionBo extends BaseBo<User> {
             // 发送请求
             Response response = httpClient.newCall(request).execute();
             if (!response.isSuccessful()) {
-                logger.error("Apple收据验证请求失败: {}", response.code());
+                logger.error("Apple 收据验证请求失败：{}", response.code());
                 return new ReceiptVerificationResult(false, "验证请求失败", response.code(), null, null, null);
             }
-
-            // 解析响应
-            String responseBody = response.body().string();
+            
+            // 解析响应 - 先检查 body 是否为 null
+            okhttp3.ResponseBody responseBodyObj = response.body();
+            if (responseBodyObj == null) {
+                logger.error("Apple 收据验证响应体为空");
+                return new ReceiptVerificationResult(false, "验证响应体为空", -1, null, null, null);
+            }
+                        
+            String responseBody = responseBodyObj.string();
             
             // 记录完整的响应体（用于调试）
             logger.info("Apple收据验证完整响应: {}", responseBody);
@@ -571,28 +579,18 @@ public class SubscriptionBo extends BaseBo<User> {
      * 根据状态码获取错误信息
      */
     private String getErrorMessage(int status) {
-        switch (status) {
-            case 21000:
-                return "App Store无法读取你提供的JSON数据";
-            case 21002:
-                return "receipt-data属性中的数据格式错误或丢失";
-            case 21003:
-                return "收据无法验证";
-            case 21004:
-                return "你提供的共享密钥与账户的共享密钥不匹配";
-            case 21005:
-                return "收据服务器当前不可用";
-            case 21006:
-                return "此收据有效，但订阅已过期";
-            case 21007:
-                return "此收据来自测试环境，但被发送到生产环境进行验证";
-            case 21008:
-                return "此收据来自生产环境，但被发送到测试环境进行验证";
-            case 21010:
-                return "此收据无法被授权";
-            default:
-                return "未知错误 (状态码: " + status + ")";
-        }
+        return switch (status) {
+            case 21000 -> "App Store无法读取你提供的JSON数据";
+            case 21002 -> "receipt-data属性中的数据格式错误或丢失";
+            case 21003 -> "收据无法验证";
+            case 21004 -> "你提供的共享密钥与账户的共享密钥不匹配";
+            case 21005 -> "收据服务器当前不可用";
+            case 21006 -> "此收据有效，但订阅已过期";
+            case 21007 -> "此收据来自测试环境，但被发送到生产环境进行验证";
+            case 21008 -> "此收据来自生产环境，但被发送到测试环境进行验证";
+            case 21010 -> "此收据无法被授权";
+            default -> "未知错误 (状态码: " + status + ")";
+        };
     }
 
     /**
@@ -640,7 +638,7 @@ public class SubscriptionBo extends BaseBo<User> {
                             logger.error("更新iOS订阅状态失败", e);
                         }
                     }
-                } catch (Exception e) {
+                } catch (IOException | IllegalArgumentException e) {
                     logger.warn("恢复iOS订阅失败", e);
                 }
             }

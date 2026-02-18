@@ -3,6 +3,8 @@ import 'package:nnbdc/global.dart';
 import 'package:nnbdc/config.dart';
 import 'package:nnbdc/util/network_util.dart';
 import 'package:nnbdc/socket_io.dart';
+import 'package:nnbdc/util/db_log_util.dart';
+import 'package:nnbdc/util/app_clock.dart';
 import 'package:dio/dio.dart';
 import 'package:drift/drift.dart';
 
@@ -442,107 +444,159 @@ class DataIntegrityChecker {
   }
 
   /// 自动修复发现的问题
-  Future<IntegrityFixResult> autoFix(IntegrityCheckResult checkResult) async {
+  /// [userId] 当前登录用户 ID，用于权限验证
+  Future<IntegrityFixResult> autoFix(IntegrityCheckResult checkResult, String userId) async {
     final fixResult = IntegrityFixResult();
 
     try {
       // 修复序号不连续问题
       if (checkResult.hasIssue('dict_word_sequence')) {
-        await _fixDictWordSequences(fixResult);
+        await _fixDictWordSequences(fixResult, userId);
       }
 
       // 修复单词数量不匹配问题
       if (checkResult.hasIssue('dict_word_count')) {
-        await _fixDictWordCounts(fixResult);
+        await _fixDictWordCounts(fixResult, userId);
       }
 
       // 修复学习进度异常问题
       if (checkResult.hasIssue('learning_progress')) {
-        await _fixLearningProgress(fixResult);
+        await _fixLearningProgress(fixResult, userId);
       }
 
       // 修复学习步骤缺失问题
       if (checkResult.hasIssue('user_study_steps')) {
-        await _fixUserStudySteps(fixResult);
+        await _fixUserStudySteps(fixResult, userId);
       }
 
       // 修复版本号异常问题
       if (checkResult.hasIssue('user_db_version')) {
-        await _fixUserDbVersions(fixResult);
+        await _fixUserDbVersions(fixResult, userId);
       }
     } catch (e) {
-      fixResult.addError('自动修复过程中出现错误: $e');
+      fixResult.addError('自动修复过程中出现错误：$e');
     }
 
     return fixResult;
   }
 
   /// 修复词典单词序号
-  Future<void> _fixDictWordSequences(IntegrityFixResult fixResult) async {
+  Future<void> _fixDictWordSequences(IntegrityFixResult fixResult, String currentUserId) async {
     try {
       final allDicts = await _db.dictsDao.select(_db.dicts).get();
 
       for (final dict in allDicts) {
+        // 安全验证：只修复当前用户的词典或通用词典
+        if (dict.ownerId != currentUserId && dict.id != Global.commonDictId) {
+          Global.logger.w('⚠️ 跳过非当前用户的词典：dictId=${dict.id}, ownerId=${dict.ownerId}, currentUserId=$currentUserId');
+          continue;
+        }
+
         final wordsList = await (_db.dictWordsDao.select(_db.dictWords)
               ..where((dw) => dw.dictId.equals(dict.id))
               ..orderBy([(dw) => OrderingTerm.asc(dw.seq)]))
             .get();
         if (wordsList.isEmpty) continue;
 
-        // 重新分配序号
+        // 检查是否需要修复
+        bool needsFix = false;
         for (int i = 0; i < wordsList.length; i++) {
           if (wordsList[i].seq != i + 1) {
-            // 使用现有的重新排序方法
-            await _db.dictWordsDao.validateRawWordDictOrder(dict.id);
-            fixResult.addFixed('修复词典 "${dict.name}" 单词序号');
+            needsFix = true;
             break;
           }
         }
+
+        // 如果需要修复，调用重新排序方法
+        if (needsFix) {
+          // 判断是否为生词本，使用对应的修复方法
+          if (dict.name == '生词本') {
+            await _db.dictWordsDao.fixUserRawDictOrder(dict.ownerId, true);
+          } else {
+            // 其他词典使用通用的重新排序逻辑
+            await _reorderGenericDict(dict.id, false);
+          }
+          fixResult.addFixed('修复词典 "${dict.name}" 单词序号');
+        }
       }
     } catch (e) {
-      fixResult.addError('修复词典单词序号时出错: $e');
+      fixResult.addError('修复词典单词序号时出错：$e');
     }
   }
 
+  /// 重新排序普通词典的 seq(非生词本)
+  Future<void> _reorderGenericDict(String dictId, bool genLog) async {
+    // 获取词典中所有单词，按 seq 排序
+    final dictWordsList = await (_db.dictWordsDao.select(_db.dictWords)
+          ..where((dw) => dw.dictId.equals(dictId))
+          ..orderBy([(dw) => OrderingTerm.asc(dw.seq)]))
+        .get();
+
+    if (dictWordsList.isEmpty) return;
+
+    // 重新分配 seq，从 1 开始
+    for (int i = 0; i < dictWordsList.length; i++) {
+      final oldEntry = dictWordsList[i];
+      final newSeq = i + 1;
+
+      if (oldEntry.seq != newSeq) {
+        // 更新 seq
+        await (_db.update(_db.dictWords)..where((dw) => dw.dictId.equals(dictId) & dw.wordId.equals(oldEntry.wordId)))
+            .write(DictWordsCompanion(seq: Value(newSeq), updateTime: Value(AppClock.now())));
+
+        // 生成更新日志 (如果需要)
+        if (genLog) {
+          final dict = await _db.dictsDao.findById(dictId);
+          final owner = dict?.ownerId;
+          if (owner != null) {
+            final newEntry = oldEntry.copyWith(seq: newSeq);
+            await DbLogUtil.logOperation(owner, 'UPDATE', 'dictWords', '$dictId-${oldEntry.wordId}', newEntry);
+          }
+        }
+      }
+    }
+
+    Global.logger.d('✅ 词典单词序号重新排序完成：dictId=$dictId, 总数=${dictWordsList.length}');
+  }
+
   /// 修复词典单词数量
-  Future<void> _fixDictWordCounts(IntegrityFixResult fixResult) async {
+  Future<void> _fixDictWordCounts(IntegrityFixResult fixResult, String currentUserId) async {
     try {
       final allDicts = await _db.dictsDao.select(_db.dicts).get();
 
       for (final dict in allDicts) {
+        // 安全验证：只修复当前用户的词典或通用词典
+        if (dict.ownerId != currentUserId && dict.id != Global.commonDictId) {
+          Global.logger.w('⚠️ 跳过非当前用户的词典：dictId=${dict.id}, ownerId=${dict.ownerId}, currentUserId=$currentUserId');
+          continue;
+        }
+
         final actualCount = await _db.dictWordsDao.getDictWordCount(dict.id);
         if (dict.wordCount != actualCount) {
           await _db.dictsDao.updateWordCount(dict.id, true);
-          fixResult.addFixed('修复词典 "${dict.name}" 单词数量: $actualCount');
+          fixResult.addFixed('修复词典 "${dict.name}" 单词数量：$actualCount');
         }
       }
     } catch (e) {
-      fixResult.addError('修复词典单词数量时出错: $e');
+      fixResult.addError('修复词典单词数量时出错：$e');
     }
   }
 
   /// 修复学习进度
-  Future<void> _fixLearningProgress(IntegrityFixResult fixResult) async {
+  Future<void> _fixLearningProgress(IntegrityFixResult fixResult, String currentUserId) async {
     // 学习进度已改为基于状态计算，不再需要修复 currentWordSeq
     // 保留此方法以避免破坏现有调用
   }
 
   /// 修复用户学习步骤缺失问题
-  Future<void> _fixUserStudySteps(IntegrityFixResult fixResult) async {
+  Future<void> _fixUserStudySteps(IntegrityFixResult fixResult, String currentUserId) async {
     try {
-      // 获取当前登录用户
-      final currentUser = Global.getLoggedInUser();
-      if (currentUser == null) {
-        fixResult.addError('用户未登录，无法修复学习步骤');
-        return;
-      }
-
-      // 初始化用户的学习步骤（如果缺失会自动添加）
+      // 初始化当前用户的学习步骤（如果缺失会自动添加）
       final clientType = 'Flutter'; // 根据实际情况设置
-      await _db.userStudyStepsDao.initUserStudySteps(clientType, currentUser.id, true);
+      await _db.userStudyStepsDao.initUserStudySteps(clientType, currentUserId, true);
 
       // 验证修复后是否完整
-      final steps = await _db.userStudyStepsDao.getUserStudySteps(currentUser.id);
+      final steps = await _db.userStudyStepsDao.getUserStudySteps(currentUserId);
       final hasEn2Ch = steps.any((step) => step.studyStep == 'En2Ch');
       final hasCh2En = steps.any((step) => step.studyStep == 'Ch2En');
 
@@ -557,31 +611,31 @@ class DataIntegrityChecker {
         }
       }
     } catch (e) {
-      fixResult.addError('修复用户学习步骤时出错: $e');
+      fixResult.addError('修复用户学习步骤时出错：$e');
     }
   }
 
   /// 修复用户数据库版本
-  Future<void> _fixUserDbVersions(IntegrityFixResult fixResult) async {
+  Future<void> _fixUserDbVersions(IntegrityFixResult fixResult, String currentUserId) async {
     try {
-      final allUsers = await _db.usersDao.allUsers;
+      // 安全验证：只修复当前用户的版本信息
+      final userVersion = await _db.userDbVersionsDao.getUserDbVersionByUserId(currentUserId);
+      if (userVersion == null) {
+        Global.logger.w('⚠️ 当前用户没有数据库版本记录：userId=$currentUserId');
+        return;
+      }
 
-      for (final user in allUsers) {
-        final userVersion = await _db.userDbVersionsDao.getUserDbVersionByUserId(user.id);
-        if (userVersion == null) continue;
+      // 删除版本号大于当前版本的日志
+      final allLogs = await _db.userDbLogsDao.getUserDbLogs(currentUserId);
+      final invalidLogs = allLogs.where((log) => log.version > userVersion.version).toList();
 
-        // 删除版本号大于当前版本的日志
-        final allLogs = await _db.userDbLogsDao.getUserDbLogs(user.id);
-        final invalidLogs = allLogs.where((log) => log.version > userVersion.version).toList();
-
-        if (invalidLogs.isNotEmpty) {
-          // 使用现有的删除方法
-          await _db.userDbLogsDao.deleteUserDbLogs(user.id);
-          fixResult.addFixed('删除用户 ${user.userName} 的 ${invalidLogs.length} 条异常日志');
-        }
+      if (invalidLogs.isNotEmpty) {
+        // 使用现有的删除方法
+        await _db.userDbLogsDao.deleteUserDbLogs(currentUserId);
+        fixResult.addFixed('删除当前用户的 ${invalidLogs.length} 条异常日志');
       }
     } catch (e) {
-      fixResult.addError('修复用户数据库版本时出错: $e');
+      fixResult.addError('修复用户数据库版本时出错：$e');
     }
   }
 

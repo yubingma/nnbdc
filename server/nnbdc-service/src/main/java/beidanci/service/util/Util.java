@@ -1,7 +1,5 @@
 package beidanci.service.util;
 
-import static beidanci.util.Utils.getPureDate;
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -54,6 +52,7 @@ import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
@@ -90,6 +89,7 @@ import beidanci.service.store.WordCache;
 import beidanci.util.Constants;
 import beidanci.util.MD5Utils;
 import beidanci.util.Utils;
+import static beidanci.util.Utils.getPureDate;
 import net.sf.json.JSONObject;
 import net.sf.json.JSONSerializer;
 
@@ -511,7 +511,7 @@ public class Util {
                 } else {
                     log.error("邮件发送失败，收件人：{}，错误：{}", toEmail, result);
                 }
-            } catch (Exception e) {
+            } catch (BeansException e) {
                 log.error("邮件发送异常，收件人：{}", toEmail, e);
             }
         }).start();
@@ -668,7 +668,6 @@ public class Util {
         return params;
     }
 
-    @SuppressWarnings("unchecked")
     public static Map<String, Object> parseJsonToMap(String response) {
         JSONObject jsonObject = JSONObject.fromObject(response);
         Map<String, Object> map = jsonObject;

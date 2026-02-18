@@ -509,7 +509,7 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
   Future<void> _fixIssues(BuildContext context, List<IntegrityIssue> issues) async {
     // 关闭详情对话框
     if (mounted) Navigator.pop(context);
-
+  
     // 显示修复确认对话框
     final confirmed = await showDialog<bool>(
       context: context,
@@ -531,18 +531,25 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
         ],
       ),
     );
-
+  
     if (confirmed != true || !mounted) return;
-
+  
+    // 获取当前登录用户
+    final currentUser = Global.getLoggedInUser();
+    if (currentUser == null) {
+      ErrorHandler.handleError(Exception('用户未登录'), StackTrace.current, logPrefix: '修复问题', userMessage: '请先登录', showToast: true);
+      return;
+    }
+  
     // 显示修复进度
     _showFixProgressDialog();
-
+  
     try {
       // 使用本地数据完整性检查器进行修复
       final checker = DataIntegrityChecker();
-      final fixResult = await checker.autoFix(_checkResult!);
-
-      // 在异步操作完成后处理UI
+      final fixResult = await checker.autoFix(_checkResult!, currentUser.id);
+  
+      // 在异步操作完成后处理 UI
       if (mounted) _handleFixResult(fixResult);
     } catch (e, stackTrace) {
       // 在异步操作完成后处理错误
@@ -618,20 +625,27 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
 
   Future<void> _runAutoFix() async {
     if (_checkResult == null) return;
-
+  
+    // 获取当前登录用户
+    final currentUser = Global.getLoggedInUser();
+    if (currentUser == null) {
+      ErrorHandler.handleError(Exception('用户未登录'), StackTrace.current, logPrefix: '自动修复', userMessage: '请先登录', showToast: true);
+      return;
+    }
+  
     setState(() {
       _isRunning = true;
     });
-
+  
     try {
       // 使用本地数据完整性检查器进行自动修复
       final checker = DataIntegrityChecker();
-      final fixResult = await checker.autoFix(_checkResult!);
-
+      final fixResult = await checker.autoFix(_checkResult!, currentUser.id);
+  
       setState(() {
         _isRunning = false;
       });
-
+  
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -644,13 +658,13 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
       setState(() {
         _isRunning = false;
       });
-
+  
       ErrorHandler.handleError(e, stackTrace, logPrefix: '自动修复', userMessage: '修复过程中出现错误', showToast: true);
-
+  
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('修复过程中出现错误: $e'),
+            content: Text('修复过程中出现错误：$e'),
             backgroundColor: Colors.red,
           ),
         );

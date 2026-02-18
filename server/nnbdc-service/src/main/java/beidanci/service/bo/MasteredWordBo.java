@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -211,7 +212,7 @@ public class MasteredWordBo extends BaseBo<MasteredWord> {
             int deletedCount = namedParameterJdbcTemplate.update(Objects.requireNonNull(sql.toString(), "SQL cannot be null"), params);
             System.out.println("批量删除mastered_word记录完成，用户ID: " + userId + ", 删除数量: " + deletedCount);
             
-        } catch (Exception e) {
+        } catch (DataAccessException e) {
             logger.error("批量删除mastered_word记录失败: userId={}", userId, e);
             throw new RuntimeException("批量删除mastered_word记录失败: " + e.getMessage(), e);
         }

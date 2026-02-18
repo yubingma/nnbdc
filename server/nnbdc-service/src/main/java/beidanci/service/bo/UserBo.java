@@ -47,7 +47,6 @@ import beidanci.service.po.StudyGroup;
 import beidanci.service.po.User;
 import beidanci.service.po.UserCowDungLog;
 import beidanci.service.po.UserDbLog;
-import beidanci.service.store.WordCache;
 import beidanci.service.util.BeanUtils;
 import beidanci.service.util.JsonUtils;
 import beidanci.service.util.SysParamUtil;
@@ -65,8 +64,6 @@ public class UserBo extends BaseBo<User> {
     @Autowired
     private TransactionTemplate trxTemplate;
 
-    @Autowired
-    WordCache wordCache;
 
     @Autowired
     UserCowDungLogBo userCowDungLogBo;
@@ -107,8 +104,6 @@ public class UserBo extends BaseBo<User> {
     @Autowired
     SysParamBo sysParamBo;
 
-    @Autowired
-    UserOperBo userOperBo;
 
     @Autowired
     private UserDbVersionDao userDbVersionDao;

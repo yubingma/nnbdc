@@ -40,7 +40,7 @@ public abstract class BaseBo<E extends Po> {
      * 分页查询
      *
      * @param sortField 排序字段名
-     * @param order     升序还是降序， 可取值 asc 或 desc
+     * @param order     升序还是降序，可取值 asc 或 desc
      */
     public PagedResults<E> pagedQuery(E preciseEntity, int pageNo, int pageSize, String sortField, String order) {
         return baseDao.pagedQuery(jdbcTemplate, preciseEntity, pageNo, pageSize, sortField, order);
@@ -50,18 +50,50 @@ public abstract class BaseBo<E extends Po> {
         return baseDao.pagedQuery2(jdbcTemplate, preciseEntity, fromIndex, pageSize, sortRules);
     }
 
+    /**
+     * 使用 SQL 进行分页查询
+     *
+     * @param sql        SQL 语句
+     * @param pageNo     页码（从 1 开始）
+     * @param pageSize   每页大小
+     * @param parameters 命名参数数组，每个参数为 Pair<参数名，参数值>
+     * @return 分页结果
+     */
     @SafeVarargs
     public final PagedResults<E> pagedQuery(String sql, int pageNo, int pageSize, Pair<String, Object>... parameters) {
+        // 该方法委托给 BaseDao，由于方法是 final 的且不对 varargs 数组进行修改，
+        // 不会导致堆污染，因此使用 @SafeVarargs 是安全的
         return baseDao.pagedQuery(jdbcTemplate, sql, pageNo, pageSize, parameters);
     }
 
+    /**
+     * 使用 SQL 查询唯一记录
+     *
+     * @param sql        SQL 语句
+     * @param parameters 命名参数数组，每个参数为 Pair<参数名，参数值>
+     * @return 唯一记录，如果没有找到则返回 null
+     */
     @SafeVarargs
     public final E queryUnique(String sql, Pair<String, Object>... parameters) {
+        // 该方法委托给 BaseDao，由于方法是 final 的且不对 varargs 数组进行修改，
+        // 不会导致堆污染，因此使用 @SafeVarargs 是安全的
         return baseDao.queryUnique(jdbcTemplate, sql, parameters);
     }
 
+    /**
+     * 使用 SQL 进行分页查询（从指定索引开始）
+     *
+     * @param sql        SQL 语句
+     * @param fromIndex  起始索引
+     * @param pageSize   每页大小
+     * @param parameters 命名参数数组，每个参数为 Pair<参数名，参数值>
+     * @return 分页结果
+     */
     @SafeVarargs
-    public final PagedResults<E> pagedQuery2(String sql, int fromIndex, int pageSize, Pair<String, Object>... parameters) {
+    public final PagedResults<E> pagedQuery2(String sql, int fromIndex, int pageSize,
+            Pair<String, Object>... parameters) {
+        // 该方法委托给 BaseDao，由于方法是 final 的且不对 varargs 数组进行修改，
+        // 不会导致堆污染，因此使用 @SafeVarargs 是安全的
         return baseDao.pagedQuery2(jdbcTemplate, sql, fromIndex, pageSize, parameters);
     }
 

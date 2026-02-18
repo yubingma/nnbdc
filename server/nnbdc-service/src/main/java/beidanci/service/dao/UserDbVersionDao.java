@@ -2,11 +2,8 @@ package beidanci.service.dao;
 
 import java.util.List;
 
-import javax.annotation.Resource;
-
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 import beidanci.service.po.UserDbVersion;
@@ -16,12 +13,6 @@ import beidanci.util.Constants;
 @Repository
 public class UserDbVersionDao extends BaseDao<UserDbVersion> {
     
-    @Resource
-    private JdbcTemplate jdbcTemplate;
-    
-    @Resource
-    private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
-
     /**
      * 获取用户数据库版本（不加锁，仅用于只读查询）
      * 
@@ -43,7 +34,11 @@ public class UserDbVersionDao extends BaseDao<UserDbVersion> {
         List<Integer> results = namedParameterJdbcTemplate.query(sql, params, 
             (rs, rowNum) -> rs.getInt("version"));
         
-        return results.isEmpty() ? Constants.USER_DB_VERSION_INITIAL : results.get(0);
+        if (results.isEmpty()) {
+            return Constants.USER_DB_VERSION_INITIAL;
+        }
+        Integer version = results.get(0);
+        return version != null ? version : Constants.USER_DB_VERSION_INITIAL;
     }
 
     /**
@@ -57,13 +52,17 @@ public class UserDbVersionDao extends BaseDao<UserDbVersion> {
      * @return 数据库版本号，若不存在则返回0
      */
     public int getUserDbVersionWithLock(JdbcTemplate jdbcTemplate, String userId) {
-        // 使用原生SQL的 FOR UPDATE 子句来加行锁
+        // 使用原生 SQL 的 FOR UPDATE 子句来加行锁
         String sql = "SELECT version FROM user_db_version WHERE user_id = :userId FOR UPDATE";
         MapSqlParameterSource params = new MapSqlParameterSource("userId", userId);
         List<Integer> results = namedParameterJdbcTemplate.query(sql, params, 
             (rs, rowNum) -> rs.getInt("version"));
-        
-        return results.isEmpty() ? Constants.USER_DB_VERSION_INITIAL : results.get(0);
+            
+        if (results.isEmpty()) {
+            return Constants.USER_DB_VERSION_INITIAL;
+        }
+        Integer version = results.get(0);
+        return version != null ? version : Constants.USER_DB_VERSION_INITIAL;
     }
 
     /**

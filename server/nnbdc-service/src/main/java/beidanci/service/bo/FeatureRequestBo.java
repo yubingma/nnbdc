@@ -19,11 +19,10 @@ import org.springframework.transaction.annotation.Transactional;
 import beidanci.api.model.FeatureRequestStatus;
 import beidanci.service.dao.EntityRowMapper;
 import beidanci.service.dao.FeatureRequestDao;
-import beidanci.service.util.Util;
-import beidanci.service.dao.FeatureRequestVoteDao;
 import beidanci.service.po.FeatureRequest;
 import beidanci.service.po.FeatureRequestVote;
 import beidanci.service.po.User;
+import beidanci.service.util.Util;
 
 @Service
 @Transactional(rollbackFor = Throwable.class)
@@ -32,8 +31,6 @@ public class FeatureRequestBo extends BaseBo<FeatureRequest> {
     @Resource
     private FeatureRequestDao featureRequestDao;
     
-    @Resource
-    private FeatureRequestVoteDao featureRequestVoteDao;
 
     @Autowired
     private NamedParameterJdbcTemplate namedParameterJdbcTemplate;

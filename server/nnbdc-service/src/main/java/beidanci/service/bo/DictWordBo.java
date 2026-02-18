@@ -13,6 +13,7 @@ import javax.annotation.PostConstruct;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -45,9 +46,6 @@ public class DictWordBo extends BaseBo<DictWord> {
 
     @Autowired
     UserBo userBo;
-
-    @Autowired
-    LearningDictBo learningDictBo;
 
     @Autowired
     private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
@@ -511,7 +509,7 @@ public class DictWordBo extends BaseBo<DictWord> {
             int deletedCount = namedParameterJdbcTemplate.update(Objects.requireNonNull(sql.toString(), "SQL cannot be null"), params);
             System.out.println("批量删除dict_word记录完成，用户ID: " + userId + ", 删除数量: " + deletedCount);
 
-        } catch (Exception e) {
+        } catch (IllegalArgumentException | DataAccessException e) {
             System.err.println("批量删除dict_word记录失败，用户ID: " + userId + ", 错误: " + e.getMessage());
             throw new RuntimeException("批量删除dict_word记录失败: " + e.getMessage(), e);
         }

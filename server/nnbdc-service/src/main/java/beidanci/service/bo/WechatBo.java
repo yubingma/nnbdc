@@ -81,11 +81,17 @@ public class WechatBo {
 
             Response tokenResponse = httpClient.newCall(tokenRequest).execute();
             if (!tokenResponse.isSuccessful()) {
-                logger.error("微信token请求失败: {}", tokenResponse.code());
+                logger.error("微信 token 请求失败：{}", tokenResponse.code());
                 return new Result<>(false, "微信授权失败", null);
             }
-
-            String tokenBody = tokenResponse.body().string();
+            
+            okhttp3.ResponseBody tokenResponseBody = tokenResponse.body();
+            if (tokenResponseBody == null) {
+                logger.error("微信 token 响应体为空");
+                return new Result<>(false, "微信授权失败", null);
+            }
+            
+            String tokenBody = tokenResponseBody.string();
             logger.info("微信token响应: {}", tokenBody);
 
             JsonNode tokenJson = objectMapper.readTree(tokenBody);
@@ -111,11 +117,17 @@ public class WechatBo {
 
             Response userInfoResponse = httpClient.newCall(userInfoRequest).execute();
             if (!userInfoResponse.isSuccessful()) {
-                logger.error("微信用户信息请求失败: {}", userInfoResponse.code());
+                logger.error("微信用户信息请求失败：{}", userInfoResponse.code());
                 return new Result<>(false, "获取用户信息失败", null);
             }
-
-            String userInfoBody = userInfoResponse.body().string();
+            
+            okhttp3.ResponseBody userInfoResponseBody = userInfoResponse.body();
+            if (userInfoResponseBody == null) {
+                logger.error("微信用户信息响应体为空");
+                return new Result<>(false, "获取用户信息失败", null);
+            }
+            
+            String userInfoBody = userInfoResponseBody.string();
             logger.info("微信用户信息响应: {}", userInfoBody);
 
             JsonNode userInfoJson = objectMapper.readTree(userInfoBody);

@@ -1,19 +1,21 @@
 package beidanci.service.util;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.aliyuncs.DefaultAcsClient;
-import com.aliyuncs.IAcsClient;
 import com.aliyuncs.CommonRequest;
 import com.aliyuncs.CommonResponse;
+import com.aliyuncs.DefaultAcsClient;
+import com.aliyuncs.IAcsClient;
+import com.aliyuncs.exceptions.ClientException;
 import com.aliyuncs.http.MethodType;
 import com.aliyuncs.profile.DefaultProfile;
-import java.util.HashMap;
-import java.util.Map;
-
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -112,7 +114,7 @@ public class EmailUtil {
                 logger.error("邮件发送失败，收件人：{}，主题：{}，错误：{}", toEmail, subject, errorMsg);
                 return errorMsg;
             }
-        } catch (Exception e) {
+        } catch (ClientException | JsonProcessingException e) {
             logger.error("邮件发送异常，收件人：{}，主题：{}", toEmail, subject, e);
             return e.getMessage();
         }
@@ -137,8 +139,8 @@ public class EmailUtil {
             paramMap.put("code", code);
             String templateParam = objectMapper.writeValueAsString(paramMap);
             logger.debug("发送验证码邮件，收件人：{}，模板：{}，参数：{}", toEmail, templateId, templateParam);
-            return sendTemplatedEmail(toEmail, toName, "邮箱验证码", templateId, templateParam);
-        } catch (Exception e) {
+            return sendTemplatedEmail(toEmail, "邮箱验证码", templateId, templateParam);
+        } catch (JsonProcessingException e) {
             logger.error("构建模板参数失败，收件人：{}，验证码：{}", toEmail, code, e);
             return "Failed to build template parameters: " + e.getMessage();
         }
@@ -163,8 +165,8 @@ public class EmailUtil {
             Map<String, String> paramMap = new HashMap<>();
             paramMap.put("pwd", password);
             String templateParam = objectMapper.writeValueAsString(paramMap);
-            return sendTemplatedEmail(toEmail, toName, "找回密码", templateId, templateParam);
-        } catch (Exception e) {
+            return sendTemplatedEmail(toEmail, "找回密码", templateId, templateParam);
+        } catch (JsonProcessingException e) {
             logger.error("构建模板参数失败，收件人：{}", toEmail, e);
             return "Failed to build template parameters: " + e.getMessage();
         }
@@ -179,7 +181,7 @@ public class EmailUtil {
      * @param templateParam 模板参数（JSON格式）
      * @return 发送结果
      */
-    private String sendTemplatedEmail(String toEmail, String toName, String subject, String templateId, String templateParam) {
+    private String sendTemplatedEmail(String toEmail, String subject, String templateId, String templateParam) {
         try {
             if (client == null) {
                 initClient();
@@ -225,12 +227,11 @@ public class EmailUtil {
                 Map<String, Object> templateMap = new HashMap<>();
                 templateMap.put("TemplateId", templateId);
                 // TemplateData 需要是对象，将 JSON 字符串解析为对象
-                @SuppressWarnings("unchecked")
                 Map<String, Object> templateDataMap = objectMapper.readValue(finalTemplateParam, Map.class);
                 templateMap.put("TemplateData", templateDataMap);
                 String templateJson = objectMapper.writeValueAsString(templateMap);
                 request.putQueryParameter("Template", templateJson);
-            } catch (Exception e) {
+            } catch (JsonProcessingException e) {
                 logger.error("构建 Template 参数失败: {}", e.getMessage(), e);
                 return "Failed to build Template parameter: " + e.getMessage();
             }
@@ -252,7 +253,7 @@ public class EmailUtil {
                 logger.error("模板邮件发送失败，收件人：{}，模板：{}，错误：{}", toEmail, templateId, errorMsg);
                 return errorMsg;
             }
-        } catch (Exception e) {
+        } catch (ClientException | JsonProcessingException e) {
             logger.error("模板邮件发送异常，收件人：{}，模板：{}", toEmail, templateId, e);
             return e.getMessage();
         }

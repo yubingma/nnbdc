@@ -75,7 +75,11 @@ public class SysDbSyncBo extends BaseBo<SysDbLog> {
         String sql = "SELECT * FROM sys_db_version WHERE id = 'singleton'";
         List<SysDbVersion> versions = namedParameterJdbcTemplate.query(sql,
                 new EntityRowMapper<>(SysDbVersion.class));
-        return versions.isEmpty() ? 0 : versions.get(0).getVersion();
+        if (versions.isEmpty()) {
+            return 0;
+        }
+        Integer version = versions.get(0).getVersion();
+        return version != null ? version : 0;
     }
 
     /**

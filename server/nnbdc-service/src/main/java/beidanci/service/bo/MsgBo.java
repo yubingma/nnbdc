@@ -11,6 +11,7 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -210,7 +211,7 @@ public class MsgBo extends BaseBo<Msg> {
         } catch (EmptyResultDataAccessException e) {
             // COUNT(*) 不应该返回空结果，但为了安全起见处理这种情况
             return 0;
-        } catch (Exception e) {
+        } catch (DataAccessException e) {
             // 处理任何其他异常，确保始终返回非 null 值
             logger.error("获取未读持久消息数量失败: toUserId={}", toUserId, e);
             return 0;
@@ -235,7 +236,7 @@ public class MsgBo extends BaseBo<Msg> {
         } catch (EmptyResultDataAccessException e) {
             // COUNT(*) 不应该返回空结果，但为了安全起见处理这种情况
             return 0;
-        } catch (Exception e) {
+        } catch (DataAccessException e) {
             // 处理任何其他异常，确保始终返回非 null 值
             logger.error("获取所有持久消息数量失败: toUserId={}", toUserId, e);
             return 0;

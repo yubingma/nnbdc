@@ -1206,7 +1206,6 @@ public class UserDbSyncBo {
     /**
      * 处理单词释义同步
      */
-    @SuppressWarnings("unchecked")
     private void processMeaningItemSync(String userId, String recordJson, String operation) {
         if (null == operation) {
             String errorMsg = String.format("不支持的释义表操作: %s", operation);

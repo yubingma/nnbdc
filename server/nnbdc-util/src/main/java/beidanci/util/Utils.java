@@ -128,7 +128,6 @@ public class Utils {
      * @param clazz
      * @return
      */
-    @SuppressWarnings("unchecked")
     public static <T> List<T> abstractEntityFromList(List<Object> objects, Class<T> clazz) {
         List<T> entities = new ArrayList<>(objects.size());
         if (!objects.isEmpty()) {

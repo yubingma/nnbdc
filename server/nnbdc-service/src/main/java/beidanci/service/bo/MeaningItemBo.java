@@ -102,7 +102,8 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
             dto.setWordId(wordId);
             dto.setDictId((String) tuple[4]);
             // 处理 popularity 可能为 NULL 的情况，默认值为 999
-            dto.setPopularity(tuple[5] != null ? (Integer) tuple[5] : 999);
+            Integer popularityValue = (Integer) tuple[5];
+            dto.setPopularity(popularityValue != null ? popularityValue : 999);
             dto.setCreateTime((Timestamp) tuple[6]);
             dto.setUpdateTime((Timestamp) tuple[7]);
             picked.add(dto);
