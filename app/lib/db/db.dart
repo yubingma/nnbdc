@@ -207,7 +207,7 @@ class MyDatabase extends _$MyDatabase {
   // you should bump this number whenever you change or add a table definition. Migrations
   // are covered later in this readme.
   @override
-  int get schemaVersion => 16;
+  int get schemaVersion => 17;
 
   @override
   MigrationStrategy get migration {
@@ -269,6 +269,9 @@ class MyDatabase extends _$MyDatabase {
           }
           if (from < 16) {
             await _migrateFromV15ToV16();
+          }
+          if (from < 17) {
+            await _migrateFromV16ToV17FixDateTimeFormat();
           }
         } catch (e, stackTrace) {
           // 升级失败，记录错误日志
@@ -431,34 +434,79 @@ class MyDatabase extends _$MyDatabase {
     }
   }
 
+  /// 从版本 16 升级到版本 17
+  /// 修复 user_study_steps 表中错误的 DateTime 格式(ISO8601字符串 -> Unix时间戳)
+  Future<void> _migrateFromV16ToV17FixDateTimeFormat() async {
+    try {
+      // 查询所有 create_time 为字符串格式的记录
+      final rows = await customSelect('SELECT user_id, study_step FROM user_study_steps').get();
+      
+      if (rows.isEmpty) {
+        Global.logger.d('user_study_steps 表为空,跳过修复');
+        return;
+      }
+      
+      // 删除所有记录
+      await customStatement('DELETE FROM user_study_steps');
+      
+      // 为每个用户重新插入正确格式的记录
+      final userIds = rows.map((r) => r.data['user_id'] as String).toSet();
+      
+      for (final userId in userIds) {
+        final now = DateTime.now();
+        final nowTimestamp = now.millisecondsSinceEpoch ~/ 1000;
+        
+        // 重建学习步骤:List(预习)-> En2Ch -> Ch2En
+        await customStatement(
+          'INSERT INTO user_study_steps (user_id, study_step, seq, state, create_time) VALUES (?, ?, ?, ?, ?)',
+          [userId, 'List', 0, 'Active', nowTimestamp],
+        );
+        await customStatement(
+          'INSERT INTO user_study_steps (user_id, study_step, seq, state, create_time) VALUES (?, ?, ?, ?, ?)',
+          [userId, 'En2Ch', 1, 'Active', nowTimestamp],
+        );
+        await customStatement(
+          'INSERT INTO user_study_steps (user_id, study_step, seq, state, create_time) VALUES (?, ?, ?, ?, ?)',
+          [userId, 'Ch2En', 2, 'Active', nowTimestamp],
+        );
+      }
+      
+      Global.logger.i('✅ 修复 user_study_steps 表 DateTime 格式完成,影响 ${userIds.length} 个用户');
+    } catch (e) {
+      Global.logger.w('修复 user_study_steps DateTime 格式失败: $e');
+    }
+  }
+
   /// 从版本 15 升级到版本 16
-  /// 重建学习步骤，添加 List 学习步骤
+  /// 重建学习步骤,添加 List 学习步骤
   Future<void> _migrateFromV15ToV16() async {
     try {
       // 清空所有用户的学习步骤
       await customStatement('DELETE FROM user_study_steps');
-      
-      // 重新获取所有用户（users 表的主键是 id）
+        
+      // 重新获取所有用户(users 表的主键是 id)
       final users = await customSelect('SELECT id FROM users').get();
-      
+        
       for (final user in users) {
         final userId = user.data['id'] as String;
-        final now = DateTime.now().toIso8601String();
-        
-        // 重建学习步骤：List（预习）-> En2Ch -> Ch2En
+        // 使用 Drift 的 DateTimeType 将 DateTime 转换为 Unix 时间戳(秒)
+        final now = DateTime.now();
+        final nowTimestamp = now.millisecondsSinceEpoch ~/ 1000;
+          
+        // 重建学习步骤:List(预习)-> En2Ch -> Ch2En
         await customStatement(
           'INSERT INTO user_study_steps (user_id, study_step, seq, state, create_time) VALUES (?, ?, ?, ?, ?)',
-          [userId, 'List', 0, 'Active', now],
+          [userId, 'List', 0, 'Active', nowTimestamp],
         );
         await customStatement(
           'INSERT INTO user_study_steps (user_id, study_step, seq, state, create_time) VALUES (?, ?, ?, ?, ?)',
-          [userId, 'En2Ch', 1, 'Active', now],
+          [userId, 'En2Ch', 1, 'Active', nowTimestamp],
         );
         await customStatement(
           'INSERT INTO user_study_steps (user_id, study_step, seq, state, create_time) VALUES (?, ?, ?, ?, ?)',
-          [userId, 'Ch2En', 2, 'Active', now],
+          [userId, 'Ch2En', 2, 'Active', nowTimestamp],
         );
-
+  
         Global.logger.d('重建用户 $userId 的学习步骤: List, En2Ch, Ch2En');
       }
     } catch (e) {
