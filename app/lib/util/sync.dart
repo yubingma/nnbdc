@@ -7,6 +7,7 @@ import 'package:nnbdc/api/result.dart';
 import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/global.dart';
+import 'package:nnbdc/services/sync_log_service.dart';
 import 'package:nnbdc/util/db_log_util.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/util/utils.dart';
@@ -16,6 +17,55 @@ import 'package:nnbdc/util/sys_db_sync.dart';
 import 'package:nnbdc/util/network_util.dart';
 
 export 'package:nnbdc/util/sys_db_sync.dart' show syncSysDb;
+
+// 当前同步日志ID，用于记录同步统计信息
+String? _currentSyncLogId;
+int _uploadCount = 0;
+int _downloadCount = 0;
+
+/// 设置当前同步日志ID
+void setCurrentSyncLogId(String logId) {
+  _currentSyncLogId = logId;
+  _uploadCount = 0;
+  _downloadCount = 0;
+}
+
+/// 清除当前同步日志ID
+void clearCurrentSyncLogId() {
+  _currentSyncLogId = null;
+  _uploadCount = 0;
+  _downloadCount = 0;
+}
+
+/// 记录上行数量
+void addUploadCount(int count) {
+  _uploadCount += count;
+}
+
+/// 记录下行数量
+void addDownloadCount(int count) {
+  _downloadCount += count;
+}
+
+/// 完成同步日志记录
+Future<void> completeSyncLog({bool success = true, String? errorMessage}) async {
+  if (_currentSyncLogId == null) return;
+  
+  final service = SyncLogService();
+  if (success) {
+    await service.completeSync(
+      logId: _currentSyncLogId!,
+      uploadCount: _uploadCount,
+      downloadCount: _downloadCount,
+    );
+  } else {
+    await service.failSync(
+      logId: _currentSyncLogId!,
+      errorMessage: errorMessage ?? '同步失败',
+    );
+  }
+  clearCurrentSyncLogId();
+}
 
 // 同步用户的本地数据库和后端数据库
 Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backendChanges, int backendDbVersion, String userId) async {
@@ -498,8 +548,8 @@ Future<void> syncUserDb(String userId) async {
       remoteDbVersion = remoteDbVersionResult.data!;
     } else {
       Global.logger.e("❌ 获取服务端数据库版本失败: ${remoteDbVersionResult.msg}");
-      ToastUtil.error(remoteDbVersionResult.msg!);
-      return;
+      // 不再弹出错误提示
+      throw Exception(remoteDbVersionResult.msg ?? '获取服务端数据库版本失败');
     }
 
     // 获取本地数据库变更日志
@@ -513,12 +563,18 @@ Future<void> syncUserDb(String userId) async {
       if (result1.success) {
         List<UserDbLogDto> remoteLogs = result1.data!;
         Global.logger.i("✅ 获取远程变更日志成功 - 耗时: ${stopwatch.elapsedMilliseconds}ms, 本地变更: ${localLogs.length}, 远程变更: ${remoteLogs.length}");
+        
+        // 记录上下行数量
+        addUploadCount(localLogs.length);
+        addDownloadCount(remoteLogs.length);
+        
         await doSyncUserDb(localLogs, remoteLogs, remoteDbVersion, userId);
         stopwatch.stop();
         Global.logger.i("✅ 用户数据库同步完成 - 耗时: ${stopwatch.elapsedMilliseconds}ms, 本地变更: ${localLogs.length}, 远程变更: ${remoteLogs.length}");
       } else {
         Global.logger.e("❌ 获取远程变更日志失败: ${result1.msg}");
-        ToastUtil.error(result1.msg!);
+        // 不再弹出错误提示
+        throw Exception(result1.msg ?? '获取远程变更日志失败');
       }
     } else {
       stopwatch.stop();
@@ -527,7 +583,8 @@ Future<void> syncUserDb(String userId) async {
   } catch (e, stackTrace) {
     stopwatch.stop();
     Global.logger.e("❌ 同步用户数据库失败: $e - 耗时: ${stopwatch.elapsedMilliseconds}ms", error: e, stackTrace: stackTrace);
-    await ErrorHandler.handleDatabaseError(e, stackTrace, db: MyDatabase.instance.usersDao, operation: 'syncUserDb', showToast: true);
+    // 不再调用 ErrorHandler 显示错误提示，只抛出异常让上层处理
+    // await ErrorHandler.handleDatabaseError(e, stackTrace, db: MyDatabase.instance.usersDao, operation: 'syncUserDb', showToast: true);
     rethrow;
   }
 }
@@ -535,6 +592,8 @@ Future<void> syncUserDb(String userId) async {
 // 同步当前登录用户的用户数据库和系统数据库
 Future<void> syncDb() async {
   final stopwatch = Stopwatch()..start();
+  String? syncLogId;
+  
   try {
     Global.logger.i("🔄 开始数据库同步流程");
 
@@ -550,9 +609,13 @@ Future<void> syncDb() async {
     UserVo? loggedInUser = await Global.refreshLoggedInUser();
     if (loggedInUser == null) {
       Global.logger.e("❌ 用户未登录，同步终止");
-      ToastUtil.error('请先登录');
+      // 不再弹出错误提示，只记录日志
       return;
     }
+
+    // 开始记录同步日志
+    syncLogId = await SyncLogService().startSync(userId: loggedInUser.id);
+    setCurrentSyncLogId(syncLogId);
 
     // 先同步所有系统数据（静态元数据 + UGC内容）
     await syncSysDb();
@@ -564,10 +627,18 @@ Future<void> syncDb() async {
 
     stopwatch.stop();
     Global.logger.i("🎉 数据库同步完成 - 总耗时: ${stopwatch.elapsedMilliseconds}ms");
+    
+    // 完成同步日志记录
+    await completeSyncLog(success: true);
   } catch (e, stackTrace) {
     stopwatch.stop();
     Global.logger.e("❌ 数据库同步失败: $e - 耗时: ${stopwatch.elapsedMilliseconds}ms", error: e, stackTrace: stackTrace);
-    await ErrorHandler.handleDatabaseError(e, stackTrace, db: MyDatabase.instance.usersDao, operation: 'syncDb', showToast: true);
+    
+    // 记录同步失败，不再弹出错误提示
+    await completeSyncLog(success: false, errorMessage: e.toString());
+    
+    // 不再调用 ErrorHandler 显示错误提示
+    // await ErrorHandler.handleDatabaseError(e, stackTrace, db: MyDatabase.instance.usersDao, operation: 'syncDb', showToast: true);
     rethrow;
   }
 }

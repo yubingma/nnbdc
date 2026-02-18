@@ -15,6 +15,8 @@ import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/page/admin/exception_log_viewer.dart';
 import 'package:nnbdc/page/admin/health_check.dart';
 import 'package:nnbdc/page/admin/page_viewer.dart';
+import 'package:nnbdc/page/admin/sync_log_viewer.dart';
+import 'package:nnbdc/services/sync_log_service.dart';
 import 'package:nnbdc/page/feature_request_wall.dart';
 import 'package:nnbdc/page/level_path_page.dart';
 import 'package:nnbdc/page/subscription.dart';
@@ -66,6 +68,9 @@ class _MePageState extends State<MePage> {
   final bool _isSyncing = false;
   late Function(String event, List args) _socketEventListener;
   StreamSubscription<List<PurchaseDetails>>? _subscriptionStreamSubscription;
+  
+  /// 最近一次同步是否失败
+  bool _isLastSyncFailed = false;
 
   @override
   void initState() {
@@ -120,6 +125,9 @@ class _MePageState extends State<MePage> {
 
     try {
       isDarkMode = await MyDatabase.instance.localParamsDao.getIsDarkMode();
+      
+      // 检查最近一次同步状态
+      _isLastSyncFailed = await SyncLogService().isLastSyncFailed();
 
       if (Global.isGuest) {
         // 访客模式：直接使用本地用户信息
@@ -1340,6 +1348,22 @@ class _MePageState extends State<MePage> {
                 onTap: () => _navigateToDataDiagnostic(),
               ),
               _buildMenuTile(
+                icon: Icons.cloud_sync,
+                title: '云同步${_isLastSyncFailed ? "(失败)" : ""}',
+                iconColor: _isLastSyncFailed ? Colors.red : null,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const SyncLogViewerPage(),
+                    ),
+                  ).then((_) {
+                    // 返回时重新检查同步状态
+                    _checkSyncStatus();
+                  });
+                },
+              ),
+              _buildMenuTile(
                 icon: Icons.cleaning_services,
                 title: '清空本地数据',
                 onTap: () => _showWipeLocalDataDialog(),
@@ -2104,6 +2128,7 @@ class _MePageState extends State<MePage> {
     Widget? trailing,
     required VoidCallback onTap,
     bool isDestructive = false,
+    Color? iconColor,
   }) {
     final isDarkModeEnabled = context.watch<DarkMode>().isDarkMode;
     final textColor = isDarkModeEnabled ? Colors.white : const Color(0xFF2C3E50);
@@ -2111,7 +2136,7 @@ class _MePageState extends State<MePage> {
     return ListTile(
       leading: Icon(
         icon,
-        color: isDestructive ? Colors.red : const Color(0xFF3498DB),
+        color: iconColor ?? (isDestructive ? Colors.red : const Color(0xFF3498DB)),
       ),
       title: Text(
         title,
@@ -2128,6 +2153,16 @@ class _MePageState extends State<MePage> {
       onTap: onTap,
       contentPadding: EdgeInsets.zero,
     );
+  }
+
+  /// 检查同步状态
+  Future<void> _checkSyncStatus() async {
+    final isFailed = await SyncLogService().isLastSyncFailed();
+    if (mounted && _isLastSyncFailed != isFailed) {
+      setState(() {
+        _isLastSyncFailed = isFailed;
+      });
+    }
   }
 
   Future<void> _showWipeLocalDataDialog() async {
