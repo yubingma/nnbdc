@@ -205,9 +205,11 @@ public class LearningWord extends Po {
         learningWord.setAddDay(dto.getAddDay());
         learningWord.setLearningOrder(dto.getLearningOrder());
         learningWord.setLearnedTimes(dto.getLearnedTimes());
-        learningWord.setTodayLearnedTimes(dto.getTodayLearnedTimes() != null ? dto.getTodayLearnedTimes() : 0);
+        Integer todayLearnedTimes = dto.getTodayLearnedTimes();
+        learningWord.setTodayLearnedTimes(todayLearnedTimes != null ? todayLearnedTimes : 0);
         learningWord.setIsTodayNewWord(dto.getIsTodayNewWord());
-        learningWord.setBatchId(dto.getBatchId() != null ? dto.getBatchId() : 0);
+        Integer batchId = dto.getBatchId();
+        learningWord.setBatchId(batchId != null ? batchId : 0);
         if (dto.getCreateTime() != null) {
             learningWord.setCreateTime(dto.getCreateTime());
         }

@@ -4,14 +4,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import javax.annotation.PostConstruct;
 
+import javax.annotation.PostConstruct;
 
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -46,7 +47,7 @@ public class LearningWordBo extends BaseBo<LearningWord> {
     }
 
     public List<LearningWordDto> getLearningWordDtosOfUser(String userId) {
-        String sql = "SELECT user_id, word_id, learning_order, is_today_new_word, life_value, last_learning_date, add_time, add_day, learned_times, batch_id, create_time, update_time FROM learning_word WHERE user_id = :userId";
+        String sql = "SELECT user_id, word_id, learning_order, is_today_new_word, life_value, last_learning_date, add_time, add_day, learned_times, today_learned_times, batch_id, create_time, update_time FROM learning_word WHERE user_id = :userId";
         MapSqlParameterSource params = new MapSqlParameterSource("userId", userId);
         
         List<LearningWordDto> dtos = namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> {
@@ -60,6 +61,7 @@ public class LearningWordBo extends BaseBo<LearningWord> {
             dto.setAddTime(rs.getTimestamp("add_time"));
             dto.setAddDay(rs.getInt("add_day"));
             dto.setLearnedTimes(rs.getInt("learned_times"));
+            dto.setTodayLearnedTimes(rs.getInt("today_learned_times"));
             dto.setBatchId(rs.getInt("batch_id"));
             dto.setCreateTime(rs.getTimestamp("create_time"));
             dto.setUpdateTime(rs.getTimestamp("update_time"));
@@ -104,7 +106,7 @@ public class LearningWordBo extends BaseBo<LearningWord> {
             int deletedCount = namedParameterJdbcTemplate.update(Objects.requireNonNull(sql.toString(), "SQL cannot be null"), params);
             log.info("批量删除学习单词记录完成，用户ID: {}, 删除数量: {}", userId, deletedCount);
             
-        } catch (Exception e) {
+        } catch (DataAccessException e) {
             log.error("批量删除学习单词记录失败，用户ID: {}, 错误: {}", userId, e.getMessage(), e);
             throw new RuntimeException("批量删除学习单词记录失败: " + e.getMessage(), e);
         }
