@@ -53,8 +53,19 @@ public class UserStudyStepBo extends BaseBo<UserStudyStep> {
             UserStudyStepId id;
             UserStudyStep step;
 
-            List<UserStudyStep> newSteps = getUserStudySteps(userId);
+            // 使用新列表而不是重新查询数据库
+            List<UserStudyStep> newSteps = new ArrayList<>(userStudySteps);
 
+            // 添加缺失的 List 步骤
+            if (!existingSteps.contains(StudyStep.List)) {
+                id = new UserStudyStepId(userId, StudyStep.List);
+                step = new UserStudyStep(id);
+                step.setSeq(0);
+                step.setState(StudyStepState.Active);
+                newSteps.add(step);
+            }
+
+            // 添加缺失的 En2Ch 步骤
             if (!existingSteps.contains(StudyStep.En2Ch)) {
                 id = new UserStudyStepId(userId, StudyStep.En2Ch);
                 step = new UserStudyStep(id);
@@ -63,6 +74,7 @@ public class UserStudyStepBo extends BaseBo<UserStudyStep> {
                 newSteps.add(step);
             }
 
+            // 添加缺失的 Ch2En 步骤
             if (!existingSteps.contains(StudyStep.Ch2En)) {
                 id = new UserStudyStepId(userId, StudyStep.Ch2En);
                 step = new UserStudyStep(id);
