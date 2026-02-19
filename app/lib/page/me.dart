@@ -314,6 +314,8 @@ class _MePageState extends State<MePage> {
         dicts: dicts,
         onComplete: () {
           Navigator.of(dialogContext).pop();
+          // 词书下载完成后，刷新页面数据以更新学习进度显示
+          loadData();
         },
       ),
     );
