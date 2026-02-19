@@ -132,7 +132,7 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
 
     // 【关键修复】检查并补全缺失的父级词书日志
     // 防止因预置数据库缺失日志导致服务端出现 "dict_word violates foreign key constraint" 错误
-    await _ensureParentDictsLogs(result.first);
+    await _ensureParentDictsLogs(result.first, userId);
 
     // 定义表的优先级(数字越小优先级越高,越先同步)
     int getPriority(String tableName) {
@@ -678,12 +678,13 @@ Future<void> syncDb() async {
   }
 }
 
-/// 检查并补全缺失的父级词书（Dict）日志
+/// 检查并补全缺失的父级词书（Dict）日志, 用于容错
 ///
 /// 扫描待同步日志中的子表（dictWords, learningDicts），如果发现其引用的 dictId 在当前同步批次中
 /// 没有对应的 dicts 日志，则尝试从本地数据库加载该 Dict 并生成补充的 INSERT 日志。
-/// 服务端对 Dict 的 INSERT 操作是幂等的（如果存在则更新/忽略），因此重复发送是安全的。
-Future<void> _ensureParentDictsLogs(List<Map<String, dynamic>> logsToBackend) async {
+///
+/// 注意：仅补全 ownerId 等于当前 userId 的词书日志。系统词书不由用户同步。
+Future<void> _ensureParentDictsLogs(List<Map<String, dynamic>> logsToBackend, String userId) async {
   // 1. 收集所有被引用的 dictId
   final referencedDictIds = <String>{};
 
@@ -735,6 +736,13 @@ Future<void> _ensureParentDictsLogs(List<Map<String, dynamic>> logsToBackend) as
       // 使用 DAO 获取
       final dict = await db.dictsDao.findById(dictId);
       if (dict != null) {
+        // 【重要】只补全属于当前用户的词书日志。系统词书或他人词书不能由当前用户同步，
+        // 否则后端会校验 ownerId 失败导致同步报错。
+        if (dict.ownerId != userId) {
+          Global.logger.d('ℹ️ 词书 $dictId 的 Owner ${dict.ownerId} 与当前用户 $userId 不符，跳过日志补全');
+          continue;
+        }
+
         // 构造虚拟的 INSERT 日志
         // 使用 Dict 的真实创建时间，确保排序正确（通常早于子表）
         final now = AppClock.now();
