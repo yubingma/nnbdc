@@ -162,90 +162,14 @@ class _MePageState extends State<MePage> {
         // 检查并强制执行会员限制（非会员每日单词限额 20）
         await SubscriptionUtil.checkAndEnforceMemberLimits();
 
-        // 同步数据库：检查是否有本地学习词书，决定是否等待同步完成
-        final existingLearningDicts = await MyDatabase.instance.learningDictsDao.getLearningDictsOfUser(loggedInUser!.id!);
-        if (existingLearningDicts.isNotEmpty) {
-          // 有本地词书，异步同步即可
-          ThrottledDbSyncService().requestSync();
-        } else {
-          // 没有本地词书，等待同步完成以获取用户词书数据
-          await ThrottledDbSyncService().requestSync();
-        }
+        // 同步数据库并下载词书
+        // 使用异步方式，不阻塞页面加载，同步完成后自动显示下载进度对话框
+        _syncAndDownloadDicts();
       }
 
-      // 下载本地数据库不存在的词书（访客和登录用户逻辑一致，只是无需从服务器获取词书列表）
-      try {
-        // 先检查并下载通用词典
-        var db = MyDatabase.instance;
-        bool hasWords = await db.dictWordsDao.hasDictWords(Global.commonDictId);
-        if (!hasWords) {
-          // 通用词典中没有单词，需要下载
-          Global.logger.i("通用词典存在但没有单词，需要下载");
-          if (mounted) {
-            await _showDictDownloadDialog([DictVo(Global.commonDictId, '通用词典', '通用词典', null, true, true, true, null, 0, AppClock.now())]);
-          }
-        } else {
-          Global.logger.i("通用词典已存在且包含单词，无需下载");
-        }
-
-        // 再下载用户选择的词书
-        List<LearningDict> learningDicts = await MyDatabase.instance.learningDictsDao.getLearningDictsOfUser(loggedInUser!.id!);
-        List<DictVo> dictsToDownload = [];
-
-        // 收集需要下载的词书
-        for (var learningDict in learningDicts) {
-          var db = MyDatabase.instance;
-          Dict? existing = await db.dictsDao.findById(learningDict.dictId);
-
-          // 检查词书是否存在，或存在但没有单词
-          if (existing == null) {
-            // 词书不存在，需要下载
-            Global.logger.i("词书不存在，需要下载: ${learningDict.dictId}");
-
-            // 获取词书名称，如果获取不到则使用ID
-            String dictName = '词书 ${learningDict.dictId}';
-            try {
-              // 这里只是获取名称：使用轻量接口，避免下载完整词书资源
-              final result = await Api.client.getDictInfo(learningDict.dictId);
-              if (result.success && result.data?.name != null) {
-                dictName = result.data!.name;
-              }
-            } catch (e) {
-              Global.logger.e("获取词书名称失败: $e");
-            }
-
-            // 将dictName处理为无后缀的短名称
-            String shortName = getShortName(dictName);
-
-            dictsToDownload.add(DictVo(learningDict.dictId, dictName, shortName, null, true, true, true, null, 0, AppClock.now()));
-          } else {
-            // 词书存在，但只有当owner是系统用户(系统词书)时才需要检查是否有单词
-            if (existing.ownerId == Global.sysUserId) {
-              bool hasWords = await db.dictWordsDao.hasDictWords(learningDict.dictId);
-              if (!hasWords) {
-                // 系统词书中没有单词，需要下载
-                Global.logger.i("系统词书存在但没有单词，需要下载: ${learningDict.dictId}");
-
-                // 将dictName处理为无后缀的短名称
-                String shortName = getShortName(existing.name);
-
-                dictsToDownload.add(DictVo(learningDict.dictId, existing.name, shortName, null, true, true, true, null, 0, AppClock.now()));
-              } else {
-                Global.logger.i("系统词书已存在且包含单词，无需下载, 词书ID: ${learningDict.dictId}");
-              }
-            } else {
-              Global.logger.i("非系统词书已存在，无需检查单词数量, 词书ID: ${learningDict.dictId}, 名称: ${existing.name}");
-            }
-          }
-        }
-
-        // 如果有需要下载的词书，显示下载对话框
-        if (dictsToDownload.isNotEmpty && mounted) {
-          await _showDictDownloadDialog(dictsToDownload);
-        }
-      } catch (e) {
-        Global.logger.e("下载用户词书失败: $e");
-        ToastUtil.error("部分词书下载失败，请重试");
+      // 访客模式：直接检查并下载本地不存在的词书（异步，不阻塞页面）
+      if (Global.isGuest) {
+        _checkAndDownloadDicts();
       }
 
       // 从本地数据库获取用户学习进度
@@ -393,6 +317,104 @@ class _MePageState extends State<MePage> {
         },
       ),
     );
+  }
+
+  /// 同步数据库并下载词书
+  /// 同步完成后自动检查并下载本地缺失的词书，显示下载进度对话框
+  Future<void> _syncAndDownloadDicts() async {
+    try {
+      // 等待同步完成
+      await ThrottledDbSyncService().requestSyncAndWait(immediate: true);
+
+      // 同步完成后，检查并下载词书
+      await _checkAndDownloadDicts();
+    } catch (e) {
+      Global.logger.e("同步或下载词书失败: $e");
+      // 同步失败不影响页面显示，静默处理
+    }
+  }
+
+  /// 检查并下载本地缺失的词书
+  /// 先检查通用词典，再检查用户选择的词书
+  Future<void> _checkAndDownloadDicts() async {
+    if (!mounted) return;
+
+    try {
+      // 先检查并下载通用词典
+      var db = MyDatabase.instance;
+      bool hasWords = await db.dictWordsDao.hasDictWords(Global.commonDictId);
+      if (!hasWords) {
+        // 通用词典中没有单词，需要下载
+        Global.logger.i("通用词典存在但没有单词，需要下载");
+        if (mounted) {
+          await _showDictDownloadDialog([DictVo(Global.commonDictId, '通用词典', '通用词典', null, true, true, true, null, 0, AppClock.now())]);
+        }
+      } else {
+        Global.logger.i("通用词典已存在且包含单词，无需下载");
+      }
+
+      // 再下载用户选择的词书
+      // 注意：必须重新查询learningDicts，因为上面的同步可能已经从服务器获取了用户的词书数据
+      List<LearningDict> learningDicts = await MyDatabase.instance.learningDictsDao.getLearningDictsOfUser(loggedInUser!.id!);
+      List<DictVo> dictsToDownload = [];
+
+      // 收集需要下载的词书
+      for (var learningDict in learningDicts) {
+        var db = MyDatabase.instance;
+        Dict? existing = await db.dictsDao.findById(learningDict.dictId);
+
+        // 检查词书是否存在，或存在但没有单词
+        if (existing == null) {
+          // 词书不存在，需要下载
+          Global.logger.i("词书不存在，需要下载: ${learningDict.dictId}");
+
+          // 获取词书名称，如果获取不到则使用ID
+          String dictName = '词书 ${learningDict.dictId}';
+          try {
+            // 这里只是获取名称：使用轻量接口，避免下载完整词书资源
+            final result = await Api.client.getDictInfo(learningDict.dictId);
+            if (result.success && result.data?.name != null) {
+              dictName = result.data!.name;
+            }
+          } catch (e) {
+            Global.logger.e("获取词书名称失败: $e");
+          }
+
+          // 将dictName处理为无后缀的短名称
+          String shortName = getShortName(dictName);
+
+          dictsToDownload.add(DictVo(learningDict.dictId, dictName, shortName, null, true, true, true, null, 0, AppClock.now()));
+        } else {
+          // 词书存在，但只有当owner是系统用户(系统词书)时才需要检查是否有单词
+          if (existing.ownerId == Global.sysUserId) {
+            bool hasWords = await db.dictWordsDao.hasDictWords(learningDict.dictId);
+            if (!hasWords) {
+              // 系统词书中没有单词，需要下载
+              Global.logger.i("系统词书存在但没有单词，需要下载: ${learningDict.dictId}");
+
+              // 将dictName处理为无后缀的短名称
+              String shortName = getShortName(existing.name);
+
+              dictsToDownload.add(DictVo(learningDict.dictId, existing.name, shortName, null, true, true, true, null, 0, AppClock.now()));
+            } else {
+              Global.logger.i("系统词书已存在且包含单词，无需下载, 词书ID: ${learningDict.dictId}");
+            }
+          } else {
+            Global.logger.i("非系统词书已存在，无需检查单词数量, 词书ID: ${learningDict.dictId}, 名称: ${existing.name}");
+          }
+        }
+      }
+
+      // 如果有需要下载的词书，显示下载对话框
+      if (dictsToDownload.isNotEmpty && mounted) {
+        await _showDictDownloadDialog(dictsToDownload);
+      }
+    } catch (e) {
+      Global.logger.e("下载用户词书失败: $e");
+      if (mounted) {
+        ToastUtil.error("部分词书下载失败，请重试");
+      }
+    }
   }
 
   /// 解析形如：10天 / 360秒 / 15分钟 的时长字符串，返回毫秒；解析失败返回 null
