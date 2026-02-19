@@ -64,6 +64,8 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
     });
   }
 
+  bool _isLoadingData = false;
+
   @override
   void initState() {
     super.initState();
@@ -79,9 +81,9 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
   void didChangeDependencies() {
     super.didChangeDependencies();
     // 使用Timer.run确保完全异步执行，避免阻塞UI
-    if (mounted) {
+    if (mounted && !dataLoaded && !_isLoadingData) {
       Timer.run(() {
-        if (mounted) {
+        if (mounted && !dataLoaded && !_isLoadingData) {
           loadData();
         }
       });
@@ -89,6 +91,10 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
   }
 
   Future<void> loadData() async {
+    // 防止重复加载
+    if (_isLoadingData) return;
+    _isLoadingData = true;
+
     // 禁用loading提示
     Api.setLoadingDisabled(true);
 
@@ -124,20 +130,29 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
           listStep.seq = 0;
           studySteps!.add(listStep);
           
-          // 保存到数据库并生成同步日志
-          await MyDatabase.instance.userStudyStepsDao.saveUserStudyStep(
-            UserStudyStep(
-              userId: user!.id!,
-              studyStep: 'List',
-              seq: listStep.seq,
-              state: listStep.state,
-              createTime: AppClock.now(),
-              updateTime: AppClock.now(),
-            ),
-            true, // 生成同步日志
-          );
-          
-          Global.logger.d('已自动添加 List 学习步骤并生成同步日志');
+          try {
+            // 保存到数据库并生成同步日志
+            await MyDatabase.instance.userStudyStepsDao.saveUserStudyStep(
+              UserStudyStep(
+                userId: user!.id!,
+                studyStep: 'List',
+                seq: listStep.seq,
+                state: listStep.state,
+                createTime: AppClock.now(),
+                updateTime: AppClock.now(),
+              ),
+              true, // 生成同步日志
+            );
+            Global.logger.d('已自动添加 List 学习步骤并生成同步日志');
+          } catch (e) {
+            // 如果插入失败（如已存在），则忽略错误
+            Global.logger.w('添加 List 学习步骤时出错（可能已存在）: $e');
+            // 重新加载学习步骤以确保数据一致性
+            var reloadResult = await StudyBo().getUserStudySteps();
+            if (reloadResult.success) {
+              studySteps = reloadResult.data!;
+            }
+          }
         }
       } else {
         ToastUtil.error(result.msg!);
@@ -173,6 +188,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
     } finally {
       // 重新启用loading提示
       Api.setLoadingDisabled(false);
+      _isLoadingData = false;
     }
   }
 

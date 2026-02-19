@@ -20,7 +20,14 @@ class SyncLogService {
   Future<List<SyncLog>> getAllLogs() async {
     try {
       final db = MyDatabase.instance;
-      final param = await db.localParamsDao.getParamByName(_syncLogsKey);
+      final param = await (db.select(db.localParams)
+            ..where((e) => e.name.equals(_syncLogsKey)))
+          .getSingleOrNull();
+      
+      if (param == null) {
+        return [];
+      }
+      
       final jsonString = param.value;
       
       if (jsonString.isEmpty || jsonString == 'null') {

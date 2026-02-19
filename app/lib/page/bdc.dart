@@ -1010,70 +1010,132 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   /// 获取下一个单词
   /// @param gotoNext true: 取下一个位置的单词 false: 获取当前位置的单词
   getNextWord(bool gotoNext) async {
-    asr.stopAsr();
-    asr.reset();
-    _meaningController.text = '';
-    _handlingChinese = '';
-    _highlightedWordImg = null;
-    _wordImageEdited = false;
+    try {
+      asr.stopAsr();
+      asr.reset();
+      _meaningController.text = '';
+      _handlingChinese = '';
+      _highlightedWordImg = null;
+      _wordImageEdited = false;
 
-    //如果是从批次单词列表跳转来的，则第一次从服务端取单词时，通知服务端进入下一个学习批次
-    var shouldEnterNextBatch = false;
-    bool isFromBatchWordList = false;
-    if (_args.fromPage != null && _args.fromPage == 'batch_word_list') {
-      shouldEnterNextBatch = false;
-      isFromBatchWordList = true;
-      // 立即清除标记，通过参数传递给 handleWord
-      _args.fromPage = null;
-      await GetStorage().write("BdcPageArgs", _args.toJson());
-    }
+      //如果是从批次单词列表跳转来的，则第一次从服务端取单词时，通知服务端进入下一个学习批次
+      var shouldEnterNextBatch = false;
+      bool isFromBatchWordList = false;
+      if (_args.fromPage != null && _args.fromPage == 'batch_word_list') {
+        shouldEnterNextBatch = false;
+        isFromBatchWordList = true;
+        // 立即清除标记，通过参数传递给 handleWord
+        _args.fromPage = null;
+        await GetStorage().write("BdcPageArgs", _args.toJson());
+      }
 
-    // 循环调用直到获取到有效单词或遇到其他状态
-    int triedCount = 0;
-    while (true) {
-      var resp = await StudyBo().getNextWord(_isAnswerCorrect, _isWordMastered, shouldEnterNextBatch, triedCount == 0 ? gotoNext : true);
-      triedCount++;
-      if (!resp.success) {
-        if (resp.code == 'NEW_DAY') {
-          if (!mounted) return;
-          await showDialog(
-            context: context,
-            builder: (ctx) => AlertDialog(
-              title: const Text('新的一天'),
-              content: const Text('已进入新的一天，今天的学习请从"我"页面开始。'),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(ctx).pop(),
-                  child: const Text('知道了'),
-                ),
-              ],
-            ),
-          );
-          if (!mounted) return;
-          Get.offAllNamed('/index', arguments: IndexPageArgs(4));
+      // 循环调用直到获取到有效单词或遇到其他状态
+      int triedCount = 0;
+      while (true) {
+        var resp = await StudyBo().getNextWord(_isAnswerCorrect, _isWordMastered, shouldEnterNextBatch, triedCount == 0 ? gotoNext : true);
+        triedCount++;
+        if (!resp.success) {
+          if (resp.code == 'NEW_DAY') {
+            if (!mounted) return;
+            await showDialog(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                title: const Text('新的一天'),
+                content: const Text('已进入新的一天，今天的学习请从"我"页面开始。'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(ctx).pop(),
+                    child: const Text('知道了'),
+                  ),
+                ],
+              ),
+            );
+            if (!mounted) return;
+            Get.offAllNamed('/index', arguments: IndexPageArgs(4));
+            return;
+          }
+          ToastUtil.error(resp.msg!);
+          Get.toNamed("/email_login");
           return;
         }
-        ToastUtil.error(resp.msg!);
-        Get.toNamed("/email_login");
-        return;
+
+        _currentGetWordResult = resp.data;
+
+        // 如果单词已掌握，重置状态并继续获取下一个单词
+        if (_currentGetWordResult!.wordMastered) {
+          // 重置状态，准备获取下一个单词
+          _isAnswerCorrect = true; // 设置为true以便前进到下一个单词
+          _isWordMastered = false; // 重置掌握状态
+          shouldEnterNextBatch = false; // 后续调用不需要进入下一阶段
+          continue; // 继续循环获取下一个单词
+        }
+
+        // 获取到有效单词，跳出循环
+        break;
       }
 
-      _currentGetWordResult = resp.data;
-
-      // 如果单词已掌握，重置状态并继续获取下一个单词
-      if (_currentGetWordResult!.wordMastered) {
-        // 重置状态，准备获取下一个单词
-        _isAnswerCorrect = true; // 设置为true以便前进到下一个单词
-        _isWordMastered = false; // 重置掌握状态
-        shouldEnterNextBatch = false; // 后续调用不需要进入下一阶段
-        continue; // 继续循环获取下一个单词
+      handleWord(_currentGetWordResult, isFromBatchWordList: isFromBatchWordList);
+    } catch (e, stackTrace) {
+      Global.logger.e('获取下一个单词时发生异常', error: e, stackTrace: stackTrace);
+      if (mounted) {
+        setState(() {
+          dataLoaded = true;
+        });
+        // 显示错误提示，并提供重试按钮
+        _showErrorWidget('加载单词失败: ${e.toString()}');
       }
-
-      // 获取到有效单词，跳出循环
-      break;
     }
+  }
 
-    handleWord(_currentGetWordResult, isFromBatchWordList: isFromBatchWordList);
+  /// 显示错误提示界面，提供重试和返回选项
+  void _showErrorWidget(String errorMessage) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.error_outline, color: Colors.red[400]),
+            const SizedBox(width: 8),
+            const Text('出错了'),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(errorMessage),
+              const SizedBox(height: 8),
+              const Text(
+                '您可以尝试重新加载或返回上一页。',
+                style: TextStyle(color: Colors.grey, fontSize: 12),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              Navigator.of(context).pop();
+            },
+            child: const Text('返回'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              setState(() {
+                dataLoaded = false;
+              });
+              // 重新加载当前单词
+              getNextWord(false);
+            },
+            child: const Text('重试'),
+          ),
+        ],
+      ),
+    );
   }
 
   /// 播放单词和第一个例句
@@ -1275,6 +1337,14 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     } catch (e, stackTrace) {
       ErrorHandler.handleDatabaseError(e, stackTrace, operation: '处理单词');
       ToastUtil.error('处理单词时出错');
+      // 异常时也要设置 dataLoaded，避免白屏
+      if (mounted) {
+        setState(() {
+          dataLoaded = true;
+        });
+        // 显示错误提示，让用户可以选择重试或返回
+        _showErrorWidget('处理单词时出错: ${e.toString()}');
+      }
       return;
     }
 
@@ -1287,12 +1357,13 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
   /// 初始化选择题数据
   void _initChoiceData(GetWordResult getWordResult, User user) {
-    {
+    try {
       if (_studyStep == StudyStep.en2Ch.json || _studyStep == StudyStep.ch2En.json) {
         // 把当前单词及混淆单词放入数组，并随机打乱
         if (getWordResult.otherWords == null || getWordResult.otherWords!.length < 2) {
-          Global.logger.e('混淆单词数量（${getWordResult.otherWords!.length}）不足');
-          ToastUtil.error('混淆单词数量（${getWordResult.otherWords!.length}）不足');
+          final actualLength = getWordResult.otherWords?.length ?? 0;
+          Global.logger.e('混淆单词数量（$actualLength）不足');
+          ToastUtil.error('混淆单词数量（$actualLength）不足，请稍后重试');
           return;
         }
 
@@ -1336,6 +1407,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
           }
         }
       }
+    } catch (e, stackTrace) {
+      Global.logger.e('初始化选择题数据时发生异常', error: e, stackTrace: stackTrace);
+      ToastUtil.error('初始化选择题失败，请稍后重试');
     }
   }
 
