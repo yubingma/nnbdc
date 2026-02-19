@@ -704,7 +704,7 @@ Future<void> _ensureParentDictsLogs(List<Map<String, dynamic>> logsToBackend, St
           referencedDictIds.add(recordMap['dictId']);
         }
       } catch (e) {
-        // 忽略解析错误
+        Global.logger.e('❌ 补全词书日志失败1: $e');
       }
     } else if (log['tblName'] == 'learningDicts') {
       try {
@@ -714,7 +714,7 @@ Future<void> _ensureParentDictsLogs(List<Map<String, dynamic>> logsToBackend, St
           referencedDictIds.add(recordMap['dictId']);
         }
       } catch (e) {
-        // 忽略解析错误
+        Global.logger.e('❌ 补全词书日志失败2: $e');
       }
     }
   }
