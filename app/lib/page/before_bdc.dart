@@ -167,19 +167,6 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
           newWordCount = counts[0];
           oldWordCount = counts[1];
           todayWordCount = newWordCount! + oldWordCount!;
-            
-          // 自动检测：如果今日单词不足且用户设置了目标数量，自动补充
-          if (user != null && user!.wordsPerDay! > 0 && todayWordCount! < user!.wordsPerDay!) {
-            Global.logger.d('检测到今日单词不足（${todayWordCount!}/${user!.wordsPerDay!}），自动补充');
-            // 自动补充单词
-            prepareResult = await StudyBo().prepareForStudy(true);
-            if (prepareResult!.success) {
-              List<int> updatedCounts = prepareResult!.data!;
-              newWordCount = updatedCounts[0];
-              oldWordCount = updatedCounts[1];
-              todayWordCount = newWordCount! + oldWordCount!;
-            }
-          }
         } else {
           ToastUtil.error(prepareResult!.msg!);
           return;
