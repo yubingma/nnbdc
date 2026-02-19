@@ -557,7 +557,7 @@ Pair<List<Map<String, dynamic>>, List<Map<String, dynamic>>> mergeChanges(
     }
   }
 
-  // 去除重复项，确保每个 ID 只出现一次
+  // 去除重复项，确保每个 ID 只出现一次, 减小数据库操作次数和网络包体积
   localToBackend = List.from({for (var log in localToBackend) '${log['tblName']}|${log['recordId']}': log}.values);
   backToLocalLogs = List.from({for (var log in backToLocalLogs) '${log['tblName']}|${log['recordId']}': log}.values);
 
