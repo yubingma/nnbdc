@@ -418,11 +418,16 @@ public class UserDbSyncBo {
     private void processDictSync(String userId, String recordJson, String operation)
             throws IllegalAccessException {
         DictDto dictDto = JsonUtils.makeObject(recordJson, DictDto.class);
-
-        // 只允许用户同步自己的词书
-        if (!userId.equals(dictDto.getOwnerId())) {
-            String errorMsg = String.format("用户%s尝试同步不属于自己的词书: dictId=%s, ownerId=%s",
-                    userId, dictDto.getId(), dictDto.getOwnerId());
+    
+        // 只允许用户同步自己的词书或共享词书
+        // 场景 1: 用户同步自己创建的词书 (ownerId == userId)
+        // 场景 2: 用户同步其他人创建的共享词书 (isShared == true)
+        boolean isOwner = userId.equals(dictDto.getOwnerId());
+        boolean isShared = Boolean.TRUE.equals(dictDto.getIsShared());
+            
+        if (!isOwner && !isShared) {
+            String errorMsg = String.format("用户%s尝试同步不属于自己的词书且该词书未共享：dictId=%s, ownerId=%s, isShared=%s",
+                    userId, dictDto.getId(), dictDto.getOwnerId(), dictDto.getIsShared());
             logger.warn(errorMsg);
             throw new IllegalArgumentException(errorMsg);
         }
