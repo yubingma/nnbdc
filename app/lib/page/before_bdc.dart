@@ -94,13 +94,13 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
     // 防止重复加载
     if (_isLoadingData) return;
     _isLoadingData = true;
-
-    // 禁用loading提示
+  
+    // 禁用 loading 提示
     Api.setLoadingDisabled(true);
-
+  
     // 添加一个短暂延迟，确保加载动画能够显示
     await Future.delayed(const Duration(milliseconds: 500));
-
+  
     try {
       // 获取用户基本信息
       var result0 = await UserBo().getLoggedInUser();
@@ -110,7 +110,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
         ToastUtil.error(result0.msg!);
         return;
       }
-
+  
       // 获取用户的学习步骤
       var result = await StudyBo().getUserStudySteps();
       if (result.success) {
@@ -119,17 +119,17 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
         for (UserStudyStepVo step in userStudySteps) {
           studySteps!.add(step);
         }
-        
+          
         // 检查是否有 List 学习步骤，如果没有则自动添加
         final hasListStep = studySteps!.any((step) => step.studyStep == 'List');
         if (!hasListStep && user != null && user!.id != null) {
           Global.logger.d('检测到用户缺少 List 学习步骤，自动添加');
-          
+            
           // 创建 List 学习步骤
           final listStep = UserStudyStepVo('List', studySteps!.length, StudyStepState.active.json);
           listStep.seq = 0;
           studySteps!.add(listStep);
-          
+            
           try {
             // 保存到数据库并生成同步日志
             await MyDatabase.instance.userStudyStepsDao.saveUserStudyStep(
@@ -158,7 +158,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
         ToastUtil.error(result.msg!);
         return;
       }
-
+  
       // 生成（或获取）用户的今日单词
       try {
         prepareResult = await StudyBo().prepareForStudy(false);
@@ -167,6 +167,19 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
           newWordCount = counts[0];
           oldWordCount = counts[1];
           todayWordCount = newWordCount! + oldWordCount!;
+            
+          // 自动检测：如果今日单词不足且用户设置了目标数量，自动补充
+          if (user != null && user!.wordsPerDay! > 0 && todayWordCount! < user!.wordsPerDay!) {
+            Global.logger.d('检测到今日单词不足（${todayWordCount!}/${user!.wordsPerDay!}），自动补充');
+            // 自动补充单词
+            prepareResult = await StudyBo().prepareForStudy(true);
+            if (prepareResult!.success) {
+              List<int> updatedCounts = prepareResult!.data!;
+              newWordCount = updatedCounts[0];
+              oldWordCount = updatedCounts[1];
+              todayWordCount = newWordCount! + oldWordCount!;
+            }
+          }
         } else {
           ToastUtil.error(prepareResult!.msg!);
           return;
@@ -175,18 +188,18 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
         ErrorHandler.handleError(e, stackTrace, logPrefix: '准备学习失败', userMessage: '准备学习失败，请稍后重试', showToast: true);
         return;
       }
-
+  
       // 获取用户的今日打卡状态
       hasDakaToday = (await UserBo().hasDakaToday(user!.id!)).data!;
-
-      // 检查页面是否仍然挂载，避免在dispose后调用setState
+  
+      // 检查页面是否仍然挂载，避免在 dispose 后调用 setState
       if (mounted) {
         setState(() {
           dataLoaded = true;
         });
       }
     } finally {
-      // 重新启用loading提示
+      // 重新启用 loading 提示
       Api.setLoadingDisabled(false);
       _isLoadingData = false;
     }
