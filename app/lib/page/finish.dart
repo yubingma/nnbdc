@@ -82,6 +82,11 @@ class FinishPageState extends State<FinishPage> {
         } else {
           ToastUtil.error(result.msg!);
         }
+
+        // iOS/macOS 平台：打卡成功后请求应用内评分
+        if (PlatformUtils.isIOS || PlatformUtils.isMacOS) {
+          _requestAppReview();
+        }
       }
     } else {
       // 从页面查看器进入：模拟打卡数据，但不入库
@@ -95,6 +100,17 @@ class FinishPageState extends State<FinishPage> {
     setState(() {
       dataLoaded = true;
     });
+  }
+
+  /// iOS/macOS 平台请求应用内评分
+  Future<void> _requestAppReview() async {
+    try {
+      const platform = MethodChannel('com.nnbdc.review');
+      await platform.invokeMethod('requestReview');
+      Global.logger.d('已请求 iOS/macOS 应用内评分');
+    } catch (e) {
+      Global.logger.w('请求 iOS/macOS 应用内评分失败: $e');
+    }
   }
 
   Widget renderPage() {

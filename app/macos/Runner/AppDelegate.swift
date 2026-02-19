@@ -1,5 +1,6 @@
 import Cocoa
 import FlutterMacOS
+import StoreKit
 
 @main
 class AppDelegate: FlutterAppDelegate {
@@ -9,6 +10,52 @@ class AppDelegate: FlutterAppDelegate {
     if let registrar = controller?.registrar(forPlugin: "AiInferenceChannel") {
       AiInferenceChannel.register(with: registrar)
     }
+    
+    // 设置应用评分 MethodChannel
+    if let controller = mainFlutterWindow?.contentViewController as? FlutterViewController {
+      let reviewChannel = FlutterMethodChannel(
+        name: "com.nnbdc.review",
+        binaryMessenger: controller.engine.binaryMessenger
+      )
+      reviewChannel.setMethodCallHandler { [weak self] (call: FlutterMethodCall, result: @escaping FlutterResult) in
+        self?.handleReviewMethodCall(call: call, result: result)
+      }
+    }
+  }
+  
+  private func handleReviewMethodCall(call: FlutterMethodCall, result: @escaping FlutterResult) {
+    switch call.method {
+    case "requestReview":
+      requestAppReview(result: result)
+    default:
+      result(FlutterMethodNotImplemented)
+    }
+  }
+  
+  private func requestAppReview(result: @escaping FlutterResult) {
+    print("macOS: Requesting app review")
+    
+    // macOS 14+ 使用新版 API
+    if #available(macOS 14.0, *) {
+      DispatchQueue.main.async {
+        if let scene = NSApplication.shared.windows.first?.windowScene {
+          SKStoreReviewController.requestReview(in: scene)
+          print("macOS: App review requested successfully (macOS 14+)")
+        } else {
+          // 如果无法获取 windowScene，使用旧版 API
+          SKStoreReviewController.requestReview()
+          print("macOS: App review requested successfully (fallback)")
+        }
+      }
+    } else {
+      // macOS 10.14+ 使用旧版 API
+      DispatchQueue.main.async {
+        SKStoreReviewController.requestReview()
+        print("macOS: App review requested successfully (macOS 10.14+)")
+      }
+    }
+    
+    result(nil)
   }
   
   override func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {

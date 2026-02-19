@@ -3,6 +3,7 @@ import Flutter
 import Speech
 import AVFoundation
 import AVFAudio
+import StoreKit
 
 @main
 @objc class AppDelegate: FlutterAppDelegate {
@@ -81,6 +82,15 @@ import AVFAudio
         )
         ttsEventChannel.setStreamHandler(self)
         print("IOS: TTS EventChannel 设置完成: nnbdc/tts_events")
+        
+        // 设置应用评分 MethodChannel
+        let reviewChannel = FlutterMethodChannel(
+            name: "com.nnbdc.review",
+            binaryMessenger: controller.binaryMessenger
+        )
+        reviewChannel.setMethodCallHandler { [weak self] (call: FlutterMethodCall, result: @escaping FlutterResult) in
+            self?.handleReviewMethodCall(call: call, result: result)
+        }
         
         // 初始化语音识别器
         setupSpeechRecognizer()
@@ -1027,5 +1037,42 @@ extension AppDelegate: AVSpeechSynthesizerDelegate {
     
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, willSpeakRangeOfSpeechString characterRange: NSRange, utterance: AVSpeechUtterance) {
         print("IOS: TTS willSpeakRange: \(characterRange), utteranceId=\(currentUtteranceId ?? "nil")")
+    }
+}
+
+// MARK: - App Review Methods
+
+extension AppDelegate {
+    private func handleReviewMethodCall(call: FlutterMethodCall, result: @escaping FlutterResult) {
+        switch call.method {
+        case "requestReview":
+            requestAppReview(result: result)
+        default:
+            result(FlutterMethodNotImplemented)
+        }
+    }
+    
+    private func requestAppReview(result: @escaping FlutterResult) {
+        print("IOS: Requesting app review")
+        
+        // iOS 14+ 使用 SKStoreReviewController.requestReview(in:)
+        if #available(iOS 14.0, *) {
+            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
+                DispatchQueue.main.async {
+                    SKStoreReviewController.requestReview(in: windowScene)
+                    print("IOS: App review requested successfully (iOS 14+)")
+                }
+            } else {
+                print("IOS: Could not find window scene for review request")
+            }
+        } else {
+            // iOS 10.3 - 13.x 使用旧版 API
+            DispatchQueue.main.async {
+                SKStoreReviewController.requestReview()
+                print("IOS: App review requested successfully (iOS 10.3-13)")
+            }
+        }
+        
+        result(nil)
     }
 }
