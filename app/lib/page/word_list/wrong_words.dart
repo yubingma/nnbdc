@@ -5,6 +5,7 @@ import 'package:nnbdc/api/result.dart';
 import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/page/word_list/word_list.dart';
+import 'package:nnbdc/util/sound.dart';
 import 'package:nnbdc/util/toast_util.dart';
 
 import '../../util/word_util.dart';
@@ -28,7 +29,7 @@ class WrongWordsProvider with WordsProvider {
   Future<bool> deleteWord(WordWrapper wordWrapper) async {
     var result = await WordBo().setLearningWordAsMastered(Global.getLoggedInUser()!.id, wordWrapper.word.id!, true);
     if (result.success) {
-      ToastUtil.info("${wordWrapper.word.spell} 标记为已掌握");
+      SoundUtil.playAssetSoundConcurrent('bubble-pop.mp3', 1.0, 0.5);
     } else {
       ToastUtil.error(result.msg!);
     }
