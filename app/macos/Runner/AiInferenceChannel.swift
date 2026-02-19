@@ -117,36 +117,23 @@ class AiInferenceChannel: NSObject, FlutterPlugin {
         // 在后台串行队列执行推理，确保线程安全
         inferenceQueue.async {
             let startTime = Date()
-            
-            // 调用 llama.cpp 推理 - 添加崩溃保护
-            var response: String?
-            do {
-                NSLog("[AiInferenceChannel] 调用 LlamaCppBridge.inference")
-                response = bridge.inference(
-                    prompt: prompt,
-                    maxTokens: maxTokens,
-                    temperature: temperature,
-                    onPartial: { [weak self] delta in
-                        guard let self = self, let channel = self.channel else { return }
-                        DispatchQueue.main.async {
-                            channel.invokeMethod("onPartialResult", arguments: [
-                                "text": delta
-                            ])
-                        }
+                    
+            // 调用 llama.cpp 推理
+            NSLog("[AiInferenceChannel] 调用 LlamaCppBridge.inference")
+            let response = bridge.inference(
+                prompt: prompt,
+                maxTokens: maxTokens,
+                temperature: temperature,
+                onPartial: { [weak self] delta in
+                    guard let self = self, let channel = self.channel else { return }
+                    DispatchQueue.main.async {
+                        channel.invokeMethod("onPartialResult", arguments: [
+                            "text": delta
+                        ])
                     }
-                )
-                NSLog("[AiInferenceChannel] LlamaCppBridge.inference 返回")
-            } catch {
-                NSLog("[AiInferenceChannel] ❌ 推理过程异常: \(error)")
-                DispatchQueue.main.async {
-                    result(FlutterError(
-                        code: "INFERENCE_EXCEPTION",
-                        message: "Inference crashed: \(error)",
-                        details: nil
-                    ))
                 }
-                return
-            }
+            )
+            NSLog("[AiInferenceChannel] LlamaCppBridge.inference 返回")
             
             guard let response = response else {
                 DispatchQueue.main.async {

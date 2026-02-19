@@ -35,26 +35,8 @@ class AppDelegate: FlutterAppDelegate {
   private func requestAppReview(result: @escaping FlutterResult) {
     print("macOS: Requesting app review")
     
-    // macOS 14+ 使用新版 API
-    if #available(macOS 14.0, *) {
-      DispatchQueue.main.async {
-        if let scene = NSApplication.shared.windows.first?.windowScene {
-          SKStoreReviewController.requestReview(in: scene)
-          print("macOS: App review requested successfully (macOS 14+)")
-        } else {
-          // 如果无法获取 windowScene，使用旧版 API
-          SKStoreReviewController.requestReview()
-          print("macOS: App review requested successfully (fallback)")
-        }
-      }
-    } else {
-      // macOS 10.14+ 使用旧版 API
-      DispatchQueue.main.async {
-        SKStoreReviewController.requestReview()
-        print("macOS: App review requested successfully (macOS 10.14+)")
-      }
-    }
-    
+    // macOS 不支持 SKStoreReviewController，直接返回成功
+    NSLog("[AppDelegate] macOS 不支持应用内评分，跳过请求")
     result(nil)
   }
   
