@@ -9,6 +9,8 @@ import 'package:nnbdc/api/enum.dart';
 import 'package:nnbdc/api/result.dart';
 import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/db/db.dart';
+import 'package:nnbdc/global.dart';
+import 'package:nnbdc/util/app_clock.dart';
 
 import 'package:nnbdc/page/word_list/today_new_words.dart';
 import 'package:nnbdc/page/word_list/today_old_words.dart';
@@ -110,6 +112,32 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
         List<UserStudyStepVo> userStudySteps = result.data!;
         for (UserStudyStepVo step in userStudySteps) {
           studySteps!.add(step);
+        }
+        
+        // 检查是否有 List 学习步骤，如果没有则自动添加
+        final hasListStep = studySteps!.any((step) => step.studyStep == 'List');
+        if (!hasListStep && user != null && user!.id != null) {
+          Global.logger.d('检测到用户缺少 List 学习步骤，自动添加');
+          
+          // 创建 List 学习步骤
+          final listStep = UserStudyStepVo('List', studySteps!.length, StudyStepState.active.json);
+          listStep.seq = 0;
+          studySteps!.add(listStep);
+          
+          // 保存到数据库并生成同步日志
+          await MyDatabase.instance.userStudyStepsDao.saveUserStudyStep(
+            UserStudyStep(
+              userId: user!.id!,
+              studyStep: 'List',
+              seq: listStep.seq,
+              state: listStep.state,
+              createTime: AppClock.now(),
+              updateTime: AppClock.now(),
+            ),
+            true, // 生成同步日志
+          );
+          
+          Global.logger.d('已自动添加 List 学习步骤并生成同步日志');
         }
       } else {
         ToastUtil.error(result.msg!);
