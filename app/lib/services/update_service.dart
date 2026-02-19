@@ -342,21 +342,60 @@ class UpdateService extends GetxController {
   /// 打开 App Store（用于 iOS/macOS）
   Future<void> openAppStore() async {
     try {
-      // TODO: 替换为实际的 App Store ID
-      const appStoreId = '6479052096'; // 这里需要替换为实际的 App Store ID
+      const appStoreId = '6756229006'; // App Store ID
+      const appName = '泡泡单词'; // App 名称，用于搜索
       
       if (Platform.isIOS) {
-        // iOS: 使用 itms-apps URL scheme
-        final url = 'itms-apps://itunes.apple.com/app/id$appStoreId';
-        await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+        // iOS: 优先尝试直接打开 App Store 页面
+        // 如果失败，则使用搜索方式
+        try {
+          // 方法1: 使用 https URL（推荐，跨地区兼容性好）
+          final url = 'https://apps.apple.com/app/id$appStoreId';
+          final launched = await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+          
+          if (!launched) {
+            // 如果失败，使用搜索方式
+            await _openAppStoreBySearch(appName);
+          }
+        } catch (e) {
+          debugPrint('使用 https URL 打开失败: $e，尝试搜索方式');
+          await _openAppStoreBySearch(appName);
+        }
       } else if (Platform.isMacOS) {
-        // macOS: 使用 macappstore URL scheme
-        final url = 'macappstore://itunes.apple.com/app/id$appStoreId';
-        await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+        // macOS: 使用 https URL
+        try {
+          final url = 'https://apps.apple.com/app/id$appStoreId';
+          final launched = await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+          
+          if (!launched) {
+            await _openAppStoreBySearch(appName);
+          }
+        } catch (e) {
+          debugPrint('使用 https URL 打开失败: $e，尝试搜索方式');
+          await _openAppStoreBySearch(appName);
+        }
       }
     } catch (e) {
       debugPrint('打开 App Store 失败: $e');
       Get.snackbar('提示', '无法打开 App Store，请手动搜索"泡泡单词"进行更新', snackPosition: SnackPosition.TOP);
+    }
+  }
+
+  /// 通过搜索方式打开 App Store
+  Future<void> _openAppStoreBySearch(String appName) async {
+    try {
+      if (Platform.isIOS) {
+        // iOS: 使用搜索 URL
+        final searchUrl = 'https://apps.apple.com/search?term=${Uri.encodeComponent(appName)}';
+        await launchUrl(Uri.parse(searchUrl), mode: LaunchMode.externalApplication);
+      } else if (Platform.isMacOS) {
+        // macOS: 使用搜索 URL
+        final searchUrl = 'https://apps.apple.com/search?term=${Uri.encodeComponent(appName)}';
+        await launchUrl(Uri.parse(searchUrl), mode: LaunchMode.externalApplication);
+      }
+    } catch (e) {
+      debugPrint('搜索方式打开失败: $e');
+      rethrow;
     }
   }
 
