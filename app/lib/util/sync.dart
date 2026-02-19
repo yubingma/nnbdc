@@ -678,12 +678,13 @@ Future<void> syncDb() async {
   }
 }
 
-/// 检查并补全缺失的父级词书（Dict）日志, 用于容错
+/// 确保待同步日志中包含词书（Dict）的 INSERT 日志，用于容错。
 ///
-/// 扫描待同步日志中的子表（dictWords, learningDicts），如果发现其引用的 dictId 在当前同步批次中
-/// 没有对应的 dicts 日志，则尝试从本地数据库加载该 Dict 并生成补充的 INSERT 日志。
+/// 扫描待同步日志，提取所有涉及的词书 ID（包括 dicts 记录本身及子表引用的 ID）。
+/// 只要发现词书属于当前用户，就总是构造一条 INSERT 日志，最后通过去重机制保留一份。
+/// 这样可以确保后端在处理子表记录前，数据库中一定已经存在对应的父表记录，防止外键约束错误。
 ///
-/// 注意：仅补全 ownerId 等于当前 userId 的词书日志。系统词书不由用户同步。
+/// 注意：仅处理 ownerId 等于当前 userId 的词书。系统词书不由用户同步。
 Future<void> _ensureParentDictsLogs(List<Map<String, dynamic>> logsToBackend, String userId) async {
   // 1. 收集所有相关的 dictId (包括 dicts 本身和引用的子表)
   final referencedDictIds = <String>{};
