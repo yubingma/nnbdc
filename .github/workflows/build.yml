@@ -498,6 +498,16 @@ jobs:
           $verCode = [int]$BUILD_NUMBER
           $verName = $VERSION_NUMBER
           
+          # 从 pubspec.yaml 读取 min_ver_code
+          $minVerCode = $verCode  # 默认值为当前版本
+          $minVerCodeLine = Select-String -Path $pubspecPath -Pattern "^min_ver_code:" | Select-Object -First 1
+          if ($minVerCodeLine) {
+            $minVerCode = [int](($minVerCodeLine -split " ")[1])
+            Write-Host "从 pubspec.yaml 读取到 min_ver_code: $minVerCode"
+          } else {
+            Write-Host "警告: 未在 pubspec.yaml 中找到 min_ver_code，使用当前版本号 $verCode"
+          }
+          
           # 从 pubspec.yaml 读取 changes
           $changes = @()
           $inChangesSection = $false
@@ -552,13 +562,14 @@ jobs:
             }
           }
           
-          # 手动构建格式化的 JSON 字符串以确保字段顺序固定：verCode, verName, changes
+          # 手动构建格式化的 JSON 字符串以确保字段顺序固定：verCode, verName, minVerCode, changes
           # changes 数组元素需要缩进 4 个空格（根对象 2 空格 + 数组 2 空格）
           $changesJson = ($changes | ForEach-Object { "    `"$_`"" }) -join ",`r`n"
           $jsonLines = @(
             "{",
             "  `"verCode`": $verCode,",
             "  `"verName`": `"$verName`",",
+            "  `"minVerCode`": $minVerCode,",
             "  `"changes`": [",
             $changesJson,
             "  ]",
@@ -566,7 +577,7 @@ jobs:
           )
           $jsonContent = $jsonLines -join "`r`n"
           $jsonContent | Out-File -FilePath "$DEPLOY_DIR\ver.json" -Encoding UTF8 -NoNewline -Force
-          Write-Host "版本信息已更新: $VERSION_NUMBER ($BUILD_NUMBER)"
+          Write-Host "版本信息已更新: $VERSION_NUMBER ($BUILD_NUMBER), minVerCode: $minVerCode"
         shell: pwsh
 
       # 准备部署文件 - 其他平台
@@ -637,6 +648,15 @@ jobs:
           BUILD_NUMBER=$(echo $VERSION | cut -d'+' -f2)
           VERSION_NUMBER=$(echo $VERSION | cut -d'+' -f1)
           
+          # 从 pubspec.yaml 读取 min_ver_code
+          MIN_VER_CODE=$BUILD_NUMBER  # 默认值为当前版本
+          if grep -q "^min_ver_code:" "$PUBSPEC_PATH"; then
+            MIN_VER_CODE=$(grep "^min_ver_code:" "$PUBSPEC_PATH" | cut -d' ' -f2)
+            echo "从 pubspec.yaml 读取到 min_ver_code: $MIN_VER_CODE"
+          else
+            echo "警告: 未在 pubspec.yaml 中找到 min_ver_code，使用当前版本号 $BUILD_NUMBER"
+          fi
+          
           # 从 pubspec.yaml 读取 changes
           CHANGES_ARRAY=""
           IN_CHANGES_SECTION=false
@@ -675,7 +695,7 @@ jobs:
             echo "从 pubspec.yaml 读取到更新项: [$CHANGES_ARRAY]"
           fi
           
-          # 创建版本信息 JSON（对象格式，确保字段顺序固定：verCode, verName, changes）
+          # 创建版本信息 JSON（对象格式，确保字段顺序固定：verCode, verName, minVerCode, changes）
           # 格式化 changes 数组，每个元素一行，缩进 4 个空格（根对象 2 空格 + 数组 2 空格）
           # 将逗号分隔的字符串转换为每行一个元素，并添加缩进
           CHANGES_FORMATTED=$(echo "$CHANGES_ARRAY" | sed 's/","/",\n    "/g' | sed 's/^/    /')
@@ -683,6 +703,7 @@ jobs:
             echo '{'
             echo '  "verCode": '$BUILD_NUMBER','
             echo '  "verName": "'$VERSION_NUMBER'",'
+            echo '  "minVerCode": '$MIN_VER_CODE','
             echo '  "changes": ['
             echo "$CHANGES_FORMATTED"
             echo '  ]'
@@ -691,7 +712,7 @@ jobs:
           
           # 复制版本信息文件到部署目录
           cp ver.json "$DEPLOY_DIR/ver.json"
-          echo "版本信息已更新: $VERSION_NUMBER ($BUILD_NUMBER)"
+          echo "版本信息已更新: $VERSION_NUMBER ($BUILD_NUMBER), minVerCode: $MIN_VER_CODE"
         shell: bash
 
       # 上传到服务器（如果 SSH 密钥未配置，此步骤会失败但不影响整体构建）

@@ -1,1 +1,11 @@
-{"verCode":25101301,"verName":"25.10.13","minVerCode":25101301,"changes":["修复已知问题，提升稳定性"]}
+{
+  "verCode": 26021901,
+  "verName": "26.02.19",
+  "minVerCode": 26021901,
+  "changes": [
+    "支持自定义词典",
+    "支持单词列表作为独立的学习步骤",
+    "fix bugs"
+  ]
+}
+
