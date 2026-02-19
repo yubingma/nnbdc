@@ -66,6 +66,30 @@ Future<void> completeSyncLog({bool success = true, String? errorMessage}) async 
   clearCurrentSyncLogId();
 }
 
+/// 根据操作类型决定表依赖排序方向
+///
+/// - INSERT/UPDATE: 正序（优先级小的先执行，即先父后子）
+/// - DELETE/BATCH_DELETE: 逆序（优先级大的先执行，即先子后父）
+/// - 混合情况: 非删除操作优先于删除操作（确保先完成增改，再执行删除）
+int _comparePriorityByOperate(
+  String operateA, String operateB,
+  int priorityA, int priorityB,
+) {
+  bool isDeleteA = operateA == 'DELETE' || operateA == 'BATCH_DELETE';
+  bool isDeleteB = operateB == 'DELETE' || operateB == 'BATCH_DELETE';
+
+  if (isDeleteA && isDeleteB) {
+    // 两个都是删除：逆序排列（先删子表，即优先级数字大的先执行）
+    return priorityB.compareTo(priorityA);
+  } else if (!isDeleteA && !isDeleteB) {
+    // 两个都不是删除：正序排列（先操作父表，即优先级数字小的先执行）
+    return priorityA.compareTo(priorityB);
+  } else {
+    // 一个删除一个非删除：非删除操作先执行
+    return isDeleteA ? 1 : -1;
+  }
+}
+
 // 同步用户的本地数据库和后端数据库
 Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backendChanges, int backendDbVersion, String userId) async {
   final stopwatch = Stopwatch()..start();
@@ -140,16 +164,21 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
       }
     }
 
-    // 对本地同步到后端的日志进行排序,确保有外键依赖的表在父表之后同步
+    // 对本地同步到后端的日志进行排序,确保：
+    // - INSERT/UPDATE: 父表在子表之前（正序依赖）
+    // - DELETE/BATCH_DELETE: 子表在父表之前（逆序依赖）
     // 首先按创建时间排序,保持操作的时间顺序
-    // 当创建时间相同时,按表优先级排序,确保父表在子表之前
+    // 当创建时间相同时,根据操作类型决定依赖排序方向
     result.first.sort((a, b) {
       // 这里的 a, b 是 Map<String, dynamic>，tblName 还是本地格式
       int timeCompare = (a['createTime'] as DateTime).compareTo(b['createTime'] as DateTime);
       if (timeCompare != 0) {
         return timeCompare;
       }
-      return getPriority(a['tblName'] as String).compareTo(getPriority(b['tblName'] as String));
+      return _comparePriorityByOperate(
+        a['operate'] as String, b['operate'] as String,
+        getPriority(a['tblName'] as String), getPriority(b['tblName'] as String),
+      );
     });
 
     // 把发送到后端的日志进行兼容性处理
@@ -179,7 +208,10 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
       if (timeCompare != 0) {
         return timeCompare;
       }
-      return getPriority(a.tblName).compareTo(getPriority(b.tblName));
+      return _comparePriorityByOperate(
+        a.operate, b.operate,
+        getPriority(a.tblName), getPriority(b.tblName),
+      );
     });
 
     // 分别保存本地数据库和后端数据库(用事务保证一致性)
