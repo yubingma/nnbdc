@@ -745,7 +745,6 @@ Future<void> _ensureParentDictsLogs(List<Map<String, dynamic>> logsToBackend, St
 
         // 构造虚拟的 INSERT 日志
         // 使用 Dict 的真实创建时间，确保排序正确（通常早于子表）
-        final now = AppClock.now();
         final logId = Util.uuid(); // 生成临时 ID
 
         // 将 Dict 转换为 JSON Map
@@ -762,7 +761,7 @@ Future<void> _ensureParentDictsLogs(List<Map<String, dynamic>> logsToBackend, St
           'record': jsonEncode(dictJson),
           'version': 0,
           'createTime': dict.createTime, // DateTime 类型
-          'updateTime': dict.updateTime ?? now, // DateTime 类型
+          'updateTime': dict.createTime, // DateTime 类型
         };
 
         logsToBackend.add(newLog);
