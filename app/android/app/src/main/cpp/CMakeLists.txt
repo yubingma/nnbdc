@@ -63,6 +63,10 @@ set(LLAMA_BUILD_COMMIT "unknown")
 # Add llama.cpp core
 add_subdirectory(${LLAMA_SRC} build-llama)
 
+# Add cpp-httplib required by common library
+# Note: common/CMakeLists.txt unconditionally links cpp-httplib, so we need to add it even if LLAMA_HTTPLIB is OFF
+add_subdirectory(${LLAMA_SRC}/vendor/cpp-httplib build-cpp-httplib)
+
 # Add llama.cpp common manually since the automatic inclusion is tricky in some environments
 add_subdirectory(${LLAMA_SRC}/common build-common)
 
