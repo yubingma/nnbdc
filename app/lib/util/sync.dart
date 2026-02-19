@@ -130,6 +130,10 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
     // 同步
     var result = mergeChanges(localChangesMap, backendChangesMap);
 
+    // 【关键修复】检查并补全缺失的父级词书日志
+    // 防止因预置数据库缺失日志导致服务端出现 "dict_word violates foreign key constraint" 错误
+    await _ensureParentDictsLogs(result.first);
+
     // 定义表的优先级(数字越小优先级越高,越先同步)
     int getPriority(String tableName) {
       switch (tableName) {
@@ -671,5 +675,95 @@ Future<void> syncDb() async {
     // 不再调用 ErrorHandler 显示错误提示
     // await ErrorHandler.handleDatabaseError(e, stackTrace, db: MyDatabase.instance.usersDao, operation: 'syncDb', showToast: true);
     rethrow;
+  }
+}
+
+/// 检查并补全缺失的父级词书（Dict）日志
+///
+/// 扫描待同步日志中的子表（dictWords, learningDicts），如果发现其引用的 dictId 在当前同步批次中
+/// 没有对应的 dicts 日志，则尝试从本地数据库加载该 Dict 并生成补充的 INSERT 日志。
+/// 服务端对 Dict 的 INSERT 操作是幂等的（如果存在则更新/忽略），因此重复发送是安全的。
+Future<void> _ensureParentDictsLogs(List<Map<String, dynamic>> logsToBackend) async {
+  // 1. 收集所有被引用的 dictId
+  final referencedDictIds = <String>{};
+
+  // 记录当前同步批次中已存在的 dictId（避免重复添加）
+  final existingDictLogIds = <String>{};
+
+  for (var log in logsToBackend) {
+    if (log['tblName'] == 'dicts') {
+      // 尝试解析 recordId 或直接从 json 中提取 id
+      // 注意：dicts 表的主键就是 id，通常 recordId 就是 dictId
+      existingDictLogIds.add(log['recordId']);
+    } else if (log['tblName'] == 'dictWords') {
+      try {
+        // dictWords 的 record 是 JSON，包含 dictId
+        final recordMap = jsonDecode(log['record']) as Map<String, dynamic>;
+        if (recordMap.containsKey('dictId')) {
+          referencedDictIds.add(recordMap['dictId']);
+        }
+      } catch (e) {
+        // 忽略解析错误
+      }
+    } else if (log['tblName'] == 'learningDicts') {
+      try {
+        // learningDicts 的 record 是 JSON，包含 dictId
+        final recordMap = jsonDecode(log['record']) as Map<String, dynamic>;
+        if (recordMap.containsKey('dictId')) {
+          referencedDictIds.add(recordMap['dictId']);
+        }
+      } catch (e) {
+        // 忽略解析错误
+      }
+    }
+  }
+
+  // 2. 找出缺失的 dictId
+  final missingDictIds = referencedDictIds.difference(existingDictLogIds);
+
+  if (missingDictIds.isEmpty) {
+    return;
+  }
+
+  Global.logger.i('🔍 检测到同步日志中引用了 ${missingDictIds.length} 个未包含创建日志的词书，尝试补全...');
+
+  final db = MyDatabase.instance;
+
+  // 3. 从本地数据库获取缺失的 Dict 并生成日志
+  for (var dictId in missingDictIds) {
+    try {
+      // 使用 DAO 获取
+      final dict = await db.dictsDao.findById(dictId);
+      if (dict != null) {
+        // 构造虚拟的 INSERT 日志
+        // 使用 Dict 的真实创建时间，确保排序正确（通常早于子表）
+        final now = AppClock.now();
+        final logId = Util.uuid(); // 生成临时 ID
+
+        // 将 Dict 转换为 JSON Map
+        final dictJson = dict.toJson();
+        
+        // 构造符合 local logs 格式的 Map
+        // 注意：createTime/updateTime 必须是 DateTime 对象，因为后续代码会进行排序
+        final newLog = <String, dynamic>{
+          'id': logId,
+          'userId': dict.ownerId,
+          'operate': 'INSERT',
+          'tblName': 'dicts',
+          'recordId': dict.id,
+          'record': jsonEncode(dictJson),
+          'version': 0,
+          'createTime': dict.createTime, // DateTime 类型
+          'updateTime': dict.updateTime ?? now, // DateTime 类型
+        };
+
+        logsToBackend.add(newLog);
+        Global.logger.i('✅ 补全了缺失的词书创建日志: ${dict.name} (ID: ${dict.id})');
+      } else {
+        Global.logger.w('⚠️ 无法补全词书日志: 本地也找不到 ID 为 $dictId 的词书，可能已被删除');
+      }
+    } catch (e) {
+      Global.logger.e('❌ 补全词书日志失败 (ID: $dictId): $e');
+    }
   }
 }
