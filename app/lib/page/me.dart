@@ -234,7 +234,7 @@ class _MePageState extends State<MePage> {
                 Global.logger.i("系统词书已存在且包含单词，无需下载, 词书ID: ${learningDict.dictId}");
               }
             } else {
-              Global.logger.i("非系统词书已存在，无需检查单词数量, 词书ID: ${learningDict.dictId}");
+              Global.logger.i("非系统词书已存在，无需检查单词数量, 词书ID: ${learningDict.dictId}, 名称: ${existing.name}");
             }
           }
         }
