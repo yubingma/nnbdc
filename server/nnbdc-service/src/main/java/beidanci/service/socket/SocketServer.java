@@ -116,6 +116,8 @@ public class SocketServer {
         config.setHostname(sysParamUtil.getSocketServerAddr());
         config.setPort(sysParamUtil.getSocketServerPort());
         config.setExceptionListener(new MyExceptionListener());
+        // 启用 SO_REUSEADDR 选项，允许绑定到 TIME_WAIT 状态的端口，这是解决端口占用问题的根本方案
+        config.getSocketConfig().setReuseAddress(true);
 
         server = new SocketIOServer(config);
 
