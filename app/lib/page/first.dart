@@ -104,7 +104,9 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
         final versionInfo = await updateService.checkForUpdateOnStartup(buildNumber);
 
         if (versionInfo != null) {
-          // 发现新版本
+          // 检查是否低于最低支持版本
+          bool belowMinVersion = versionInfo['belowMinVersion'] as bool? ?? false;
+          bool hasUpdate = versionInfo['hasUpdate'] as bool? ?? false;
           int verCode = versionInfo['verCode'] as int;
           var changes = versionInfo['changes'] as List<String>;
 
@@ -113,8 +115,17 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
             newVerCode = verCode; // 保存版本号，用于下载时添加版本参数和显示
             newVersionChanges = changes;
           });
-          // 调用升级确认对话框
-          await showUpgradeConfirmDlg(verCode, changes);
+
+          // 如果低于最低支持版本，显示强制升级对话框
+          if (belowMinVersion) {
+            await showForceUpgradeDialog(verCode, changes);
+          } else if (hasUpdate) {
+            // 有新版本但不强制，显示普通升级对话框
+            await showUpgradeConfirmDlg(verCode, changes);
+          } else {
+            // 已经是最新版本
+            tryAutoLogin();
+          }
         } else {
           /// 已经是最新版本
           tryAutoLogin();
@@ -125,8 +136,54 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
         ToastUtil.error('获取版本信息失败: $e');
         tryAutoLogin();
       }
+    } else if (PlatformUtils.isIOS || PlatformUtils.isMacOS) {
+      // iOS/macOS 平台也需要检查最低版本
+      setState(() {
+        _preparingMessage = '正在检查版本…';
+      });
+
+      PackageInfo packageInfo = await PackageInfo.fromPlatform();
+      int buildNumber = int.parse(packageInfo.buildNumber);
+      Global.version = packageInfo.version;
+
+      if (mounted) {
+        setState(() {
+          _buildNumber = packageInfo.buildNumber;
+        });
+      }
+
+      try {
+        UpdateService? updateService;
+        try {
+          updateService = Get.find<UpdateService>();
+        } catch (e) {
+          updateService = UpdateService();
+          Get.put(updateService);
+        }
+
+        final versionInfo = await updateService.checkForUpdateOnStartup(buildNumber);
+
+        if (versionInfo != null) {
+          bool belowMinVersion = versionInfo['belowMinVersion'] as bool? ?? false;
+          int verCode = versionInfo['verCode'] as int;
+          var changes = versionInfo['changes'] as List<String>;
+
+          // 如果低于最低支持版本，显示强制升级提示
+          if (belowMinVersion) {
+            await showForceUpgradeDialogForApple(verCode, changes);
+          } else {
+            // iOS/macOS 正常进入应用
+            tryAutoLogin();
+          }
+        } else {
+          tryAutoLogin();
+        }
+      } catch (e, stackTrace) {
+        Global.logger.e('检查版本异常', error: e, stackTrace: stackTrace);
+        tryAutoLogin();
+      }
     } else {
-      /// 非android/windows/linux
+      /// 其他平台
       tryAutoLogin();
     }
   }
@@ -174,7 +231,7 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
     }
   }
 
-  /// 初始化版本信息，避免出现“版本 null (dev)”这种误导信息
+  /// 初始化版本信息，避免出现"版本 null (dev)"这种误导信息
   Future<void> _initVersionInfo() async {
     try {
       final packageInfo = await PackageInfo.fromPlatform();
@@ -189,7 +246,162 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
       Global.logger.w('获取版本信息失败', error: e, stackTrace: stackTrace);
     }
   }
-
+  
+  /// 显示强制升级对话框（用于 Android/Windows/Linux）
+  Future<void> showForceUpgradeDialog(int verCode, List<dynamic> changes) async {
+    if (PlatformUtils.isWindows) {
+      // Windows 平台：强制升级
+      await showDialog(
+        context: context,
+        barrierDismissible: false, // 不允许点击外部关闭
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('需要升级'),
+            content: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text("当前版本过低，必须升级到版本 $verCode 才能继续使用"),
+                const SizedBox(height: 8),
+                const Text('更新内容：', style: TextStyle(fontWeight: FontWeight.bold)),
+                for (String change in changes) Text('• $change'),
+                const SizedBox(height: 8),
+                Text('\n将自动完成安装，无需手动操作。', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+              ],
+            ),
+            actions: [
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  downloadWindowsAndUpgrade(useSilent: true);
+                },
+                child: const Text('立即升级'),
+              ),
+            ],
+          );
+        },
+      );
+    } else if (PlatformUtils.isLinux) {
+      // Linux 平台：强制升级
+      await showDialog(
+        context: context,
+        barrierDismissible: false, // 不允许点击外部关闭
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('需要升级'),
+            content: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text("当前版本过低，必须升级到版本 $verCode 才能继续使用"),
+                const SizedBox(height: 8),
+                const Text('更新内容：', style: TextStyle(fontWeight: FontWeight.bold)),
+                for (String change in changes) Text('• $change'),
+                const SizedBox(height: 8),
+                Text('\n将自动下载并替换应用文件，无需手动操作。', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+              ],
+            ),
+            actions: [
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  downloadLinuxAndUpgrade();
+                },
+                child: const Text('立即升级'),
+              ),
+            ],
+          );
+        },
+      );
+    } else if (PlatformUtils.isAndroid) {
+      // Android 平台：强制升级
+      await showDialog(
+        context: context,
+        barrierDismissible: false, // 不允许点击外部关闭
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('需要升级'),
+            content: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text("当前版本过低，必须升级到版本 $verCode 才能继续使用"),
+                const SizedBox(height: 8),
+                const Text('更新内容：', style: TextStyle(fontWeight: FontWeight.bold)),
+                for (String change in changes) Text('• $change'),
+              ],
+            ),
+            actions: [
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  downloadApkAndUpgrade();
+                },
+                child: const Text('立即升级'),
+              ),
+            ],
+          );
+        },
+      );
+    }
+  }
+  
+  /// 显示强制升级对话框（用于 iOS/macOS - 导航到 App Store）
+  Future<void> showForceUpgradeDialogForApple(int verCode, List<dynamic> changes) async {
+    // 获取 UpdateService
+    UpdateService? updateService;
+    try {
+      updateService = Get.find<UpdateService>();
+    } catch (e) {
+      updateService = UpdateService();
+      Get.put(updateService);
+    }
+  
+    await showDialog(
+      context: context,
+      barrierDismissible: false, // 不允许点击外部关闭
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(PlatformUtils.isIOS ? 'app 版本过低' : 'app 版本过低'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text("当前版本过低，必须升级到版本 $verCode 才能继续使用"),
+              const SizedBox(height: 16),
+              const Text('更新内容：', style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              for (String change in changes) Text('• $change'),
+              const SizedBox(height: 16),
+              const Text('升级步骤：', style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              const Text('1. 点击下方按钮打开 App Store'),
+              const Text('2. 搜索"泡泡单词"'),
+              const Text('3. 点击"更新"按钮'),
+            ],
+          ),
+          actions: [
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                updateService?.openAppStore();
+                // 打开 App Store 后退出应用
+                Future.delayed(const Duration(seconds: 1), () {
+                  SystemNavigator.pop();
+                });
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('前往 App Store'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+  
   Future<void> showUpgradeConfirmDlg(int verCode, changes) async {
     if (PlatformUtils.isWindows) {
       // Windows 平台：直接使用静默安装，显示确认对话框

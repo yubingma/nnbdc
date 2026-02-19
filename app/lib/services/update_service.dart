@@ -71,6 +71,13 @@ class UpdateService extends GetxController {
 
   /// 检查更新（用于启动时检查，返回版本信息但不显示对话框）
   /// 如果没有新版本或检查失败，返回 null
+  /// 返回结果中包含：
+  /// - hasUpdate: 是否有新版本
+  /// - belowMinVersion: 是否低于最低支持版本
+  /// - verCode: 最新版本号
+  /// - minVerCode: 最低支持版本号
+  /// - verName: 版本名称
+  /// - changes: 更新内容
   Future<Map<String, dynamic>?> checkForUpdateOnStartup(int currentBuildNumber) async {
     if (_isChecking.value) return null;
 
@@ -86,7 +93,7 @@ class UpdateService extends GetxController {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
 
-        // 对象格式：{"verCode":25101301,"verName":"25.10.13", "changes":["修复已知问题"]}
+        // 对象格式：{"verCode":25101301,"verName":"25.10.13", "minVerCode":25101301, "changes":["修复已知问题"]}
         if (data is Map<String, dynamic>) {
           final verCodeObj = data['verCode'];
           int? verCode;
@@ -96,9 +103,28 @@ class UpdateService extends GetxController {
             verCode = int.tryParse(verCodeObj);
           }
 
-          if (verCode != null && verCode > currentBuildNumber) {
+          // 解析最低支持版本
+          final minVerCodeObj = data['minVerCode'];
+          int? minVerCode;
+          if (minVerCodeObj is int) {
+            minVerCode = minVerCodeObj;
+          } else if (minVerCodeObj is String) {
+            minVerCode = int.tryParse(minVerCodeObj);
+          }
+
+          // 检查是否低于最低支持版本
+          bool belowMinVersion = false;
+          if (minVerCode != null && currentBuildNumber < minVerCode) {
+            belowMinVersion = true;
+          }
+
+          // 检查是否有新版本或低于最低支持版本
+          if (verCode != null && (verCode > currentBuildNumber || belowMinVersion)) {
             return {
+              'hasUpdate': verCode > currentBuildNumber,
+              'belowMinVersion': belowMinVersion,
               'verCode': verCode,
+              'minVerCode': minVerCode,
               'verName': data['verName']?.toString() ?? '',
               'changes': List<String>.from(data['changes'] ?? []),
             };
@@ -293,7 +319,7 @@ class UpdateService extends GetxController {
               onPressed: () {
                 Get.back();
                 // 打开 App Store
-                launchUrl(Uri.parse('macappstore://itunes.apple.com/app/id[YOUR_APP_ID]'));
+                openAppStore();
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue,
@@ -311,6 +337,27 @@ class UpdateService extends GetxController {
         ],
       ),
     );
+  }
+
+  /// 打开 App Store（用于 iOS/macOS）
+  Future<void> openAppStore() async {
+    try {
+      // TODO: 替换为实际的 App Store ID
+      const appStoreId = '6479052096'; // 这里需要替换为实际的 App Store ID
+      
+      if (Platform.isIOS) {
+        // iOS: 使用 itms-apps URL scheme
+        final url = 'itms-apps://itunes.apple.com/app/id$appStoreId';
+        await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+      } else if (Platform.isMacOS) {
+        // macOS: 使用 macappstore URL scheme
+        final url = 'macappstore://itunes.apple.com/app/id$appStoreId';
+        await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+      }
+    } catch (e) {
+      debugPrint('打开 App Store 失败: $e');
+      Get.snackbar('提示', '无法打开 App Store，请手动搜索"泡泡单词"进行更新', snackPosition: SnackPosition.TOP);
+    }
   }
 
   /// 显示 Linux 升级说明
