@@ -608,7 +608,12 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
                                 }
 
                                 await GetStorage().write("BdcPageArgs", BdcPageArgs('before_bdc').toJson());
-                                Get.toNamed('/bdc');
+                                Get.toNamed('/bdc')?.then((value) {
+                                  // 从 BDC 页面返回时，重新加载数据以检测是否需要补充单词
+                                  if (mounted && !_isLoadingData) {
+                                    loadData();
+                                  }
+                                });
                               },
                             ),
                           ),
