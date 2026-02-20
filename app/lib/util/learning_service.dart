@@ -35,6 +35,7 @@ class LearningService {
         await (db.update(db.users)..where((u) => u.id.equals(user.id))).write(UsersCompanion(
             lastLearningDate: Value(today),
             learnedDays: Value(user.learnedDays + 1),
+            todayStudyStarted: const Value(false),
             learningFinished: const Value(false)));
 
         // 重置所有单词的今日学习次数

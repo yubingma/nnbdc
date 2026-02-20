@@ -1,28 +1,28 @@
 import 'dart:async';
+
+import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:nnbdc/api/api.dart';
-import 'package:nnbdc/api/bo/user_bo.dart';
 import 'package:nnbdc/api/bo/study_bo.dart';
+import 'package:nnbdc/api/bo/user_bo.dart';
 import 'package:nnbdc/api/enum.dart';
 import 'package:nnbdc/api/result.dart';
 import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/global.dart';
-import 'package:nnbdc/util/app_clock.dart';
-
 import 'package:nnbdc/page/word_list/today_new_words.dart';
 import 'package:nnbdc/page/word_list/today_old_words.dart';
 import 'package:nnbdc/page/word_list/today_words.dart';
-import 'package:nnbdc/util/toast_util.dart';
-import 'package:nnbdc/util/error_handler.dart';
 import 'package:nnbdc/state.dart';
+import 'package:nnbdc/util/app_clock.dart';
+import 'package:nnbdc/util/error_handler.dart';
+import 'package:nnbdc/util/toast_util.dart';
 import 'package:provider/provider.dart';
 
 import '../theme/app_theme.dart';
 import 'bdc.dart';
-import '../util/user_helper.dart';
 
 class BeforeBdcPage extends StatefulWidget {
   const BeforeBdcPage({super.key});
@@ -462,7 +462,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
                 ),
 
                 // 单词不足提示 & 补充按钮
-                if (prepareResult!.success && todayWordCount! < user!.wordsPerDay!)
+                if (prepareResult!.success && todayWordCount! < user!.wordsPerDay! && !(user!.todayStudyStarted ?? false))
                   Container(
                     margin: const EdgeInsets.only(top: 16),
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -605,6 +605,12 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
                                 // 记录用户开始学习操作
                                 if (user != null) {
                                   await MyDatabase.instance.userOpersDao.recordStartLearn(user!.id!, remark: "用户开始学习");
+                                  // 更新用户的“今日学习已开始”标记
+                                  await (MyDatabase.instance.update(MyDatabase.instance.users)..where((u) => u.id.equals(user!.id!))).write(UsersCompanion(
+                                    todayStudyStarted: const drift.Value(true),
+                                  ));
+                                  // 更新内存中的用户信息
+                                  await Global.loadUserFromDb();
                                 }
 
                                 await GetStorage().write("BdcPageArgs", BdcPageArgs('before_bdc').toJson());

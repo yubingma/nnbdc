@@ -143,6 +143,9 @@ class Users extends Table {
 
   BoolColumn get enableAllWrong => boolean().nullable().withDefault(const Constant(false))();
 
+  /// 今日学习是否已经开始（点击了今日学习计划页面的“开始学习”按钮）
+  BoolColumn get todayStudyStarted => boolean().withDefault(const Constant(false))();
+
   // 订阅相关字段（仅支持iOS平台）
 
   // iOS订阅字段

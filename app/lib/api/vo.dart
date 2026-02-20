@@ -201,6 +201,8 @@ class UserVo {
 
   bool? enableAllWrong;
 
+  bool? todayStudyStarted;
+
   /// 订阅相关字段（按平台区分，符合苹果和Google Play规则）
 
   // iOS订阅字段
@@ -265,6 +267,7 @@ class UserVo {
     userVo.totalScore = UserHelper.calculateTotalScore(user.gameScore, user.dakaScore);
     userVo.dakaRatio = user.dakaRatio;
     userVo.enableAllWrong = user.enableAllWrong;
+    userVo.todayStudyStarted = user.todayStudyStarted;
 
     // 订阅相关字段（iOS平台）
     userVo.isPremiumIos = user.isPremiumIos;
@@ -1159,6 +1162,7 @@ User userVo2User(UserVo userVo) {
       dakaDayCount: userVo.dakaDayCount!,
       dakaScore: userVo.dakaScore!,
       enableAllWrong: userVo.enableAllWrong!,
+      todayStudyStarted: userVo.todayStudyStarted ?? false,
       gameScore: userVo.gameScore!,
       id: userVo.id!,
       inviteAwardTaken: userVo.inviteAwardTaken!,

@@ -100,7 +100,7 @@ public class BeanUtils {
         return result2;
     }
 
-    @SuppressWarnings({"deprecation"})
+    @SuppressWarnings({"deprecation", "unchecked"})
     private static <T extends Vo> T doMakeVo(Po po, Class<T> voClass, HashSet<String> excludeFields, String fullFieldName) {
         if (po == null) {
             return null;
@@ -158,11 +158,12 @@ public class BeanUtils {
                                     field.getName(), field.getType().getSimpleName()));
                         }
                         if (srcValue != null && !(srcValue instanceof Po)) {
-                            throw new RuntimeException(String.format("期望是Po但实际是%s--", srcValue.getClass())
+                            throw new RuntimeException(String.format("期望是 Po 但实际是%s--", srcValue.getClass())
                                     + String.format("voClass[%s] fieldName[%s] fieldType[%s]", voClass.getSimpleName(),
                                     field.getName(), field.getType().getSimpleName()));
                         }
-                        destValue = doMakeVo((Po) srcValue, (Class<T>) field.getType(), excludeFields, fullName);
+                        Class<T> clazzT = (Class<T>) field.getType();
+                        destValue = doMakeVo((Po) srcValue, clazzT, excludeFields, fullName);
                     } else if (List.class.isAssignableFrom(field.getType())) {
                         Type fc = field.getGenericType();
                         if (fc instanceof ParameterizedType pt) {

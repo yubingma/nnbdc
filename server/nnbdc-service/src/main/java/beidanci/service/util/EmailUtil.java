@@ -181,6 +181,7 @@ public class EmailUtil {
      * @param templateParam 模板参数（JSON格式）
      * @return 发送结果
      */
+    @SuppressWarnings("unchecked")
     private String sendTemplatedEmail(String toEmail, String subject, String templateId, String templateParam) {
         try {
             if (client == null) {

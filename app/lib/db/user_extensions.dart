@@ -97,7 +97,9 @@ extension UserExtensions on User {
       premiumOverrideEnabled: premiumOverrideEnabled ?? this.premiumOverrideEnabled,
       premiumOverrideUpdateTime: premiumOverrideUpdateTime ?? this.premiumOverrideUpdateTime,
       premiumOverrideReason: premiumOverrideReason ?? this.premiumOverrideReason,
-      premiumOverrideDuration: premiumOverrideDuration ?? this.premiumOverrideDuration,
+      premiumOverrideDuration: premiumOverrideDuration ?? this.premiumOverrideDuration, 
+      
+      todayStudyStarted: false,
     );
   }
 

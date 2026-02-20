@@ -202,6 +202,7 @@ public class EntityRowMapper<E extends Po> implements RowMapper<E> {
                             keyField.setAccessible(true);
                             // 处理枚举类型
                             if (keyField.getType().isEnum() && keyValue instanceof String) {
+                                @SuppressWarnings("unchecked")
                                 Class<? extends Enum<?>> enumClass = (Class<? extends Enum<?>>) keyField.getType();
                                 java.lang.reflect.Method valueOfMethod = enumClass.getMethod("valueOf", String.class);
                                 Enum<?> enumValue = (Enum<?>) valueOfMethod.invoke(null, (String) keyValue);
@@ -238,6 +239,7 @@ public class EntityRowMapper<E extends Po> implements RowMapper<E> {
             if (Po.class.isAssignableFrom(fieldType) && !field.getName().endsWith("Id")) {
                 if (value != null) {
                     // 创建关联对象并设置 ID
+                    @SuppressWarnings("unchecked")
                     Class<? extends Po> poClass = (Class<? extends Po>) fieldType;
                     Po associatedObject = poClass.getDeclaredConstructor().newInstance();
                     // 通过反射设置 ID 字段
@@ -257,6 +259,7 @@ public class EntityRowMapper<E extends Po> implements RowMapper<E> {
             } 
             // 处理枚举类型：如果字段是枚举类型，且值是字符串，则转换为枚举
             else if (fieldType.isEnum() && value instanceof String) {
+                @SuppressWarnings("unchecked")
                 Class<? extends Enum<?>> enumClass = (Class<? extends Enum<?>>) fieldType;
                 // 使用反射调用 valueOf 方法，因为 Enum.valueOf 需要具体的泛型类型
                 try {
@@ -264,7 +267,7 @@ public class EntityRowMapper<E extends Po> implements RowMapper<E> {
                     Enum<?> enumValue = (Enum<?>) valueOfMethod.invoke(null, (String) value);
                     field.set(entity, enumValue);
                 } catch (NoSuchMethodException | java.lang.reflect.InvocationTargetException e) {
-                    logger.error("无法将值转换为枚举类型: field={}, value={}, enumType={}", 
+                    logger.error("无法将值转换为枚举类型：field={}, value={}, enumType={}", 
                         field.getName(), value, fieldType.getName(), e);
                     throw new RuntimeException("无法将值 '" + value + "' 转换为枚举类型 " + fieldType.getName(), e);
                 }

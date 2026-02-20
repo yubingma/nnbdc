@@ -207,7 +207,7 @@ class MyDatabase extends _$MyDatabase {
   // you should bump this number whenever you change or add a table definition. Migrations
   // are covered later in this readme.
   @override
-  int get schemaVersion => 17;
+  int get schemaVersion => 18;
 
   @override
   MigrationStrategy get migration {
@@ -272,6 +272,9 @@ class MyDatabase extends _$MyDatabase {
           }
           if (from < 17) {
             await _migrateFromV16ToV17FixDateTimeFormat();
+          }
+          if (from < 18) {
+            await _migrateFromV17ToV18AddTodayStudyStarted(m);
           }
         } catch (e, stackTrace) {
           // 升级失败，记录错误日志
@@ -475,6 +478,13 @@ class MyDatabase extends _$MyDatabase {
     } catch (e) {
       Global.logger.w('修复 user_study_steps DateTime 格式失败: $e');
     }
+  }
+
+  /// 从版本 17 升级到版本 18：添加“今日学习是否已开始”字段
+  Future<void> _migrateFromV17ToV18AddTodayStudyStarted(Migrator m) async {
+    await transaction(() async {
+      await customStatement('ALTER TABLE users ADD COLUMN today_study_started INTEGER NOT NULL DEFAULT 0');
+    });
   }
 
   /// 从版本 15 升级到版本 16

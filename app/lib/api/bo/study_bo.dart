@@ -980,14 +980,25 @@ class StudyBo {
     required MyDatabase db,
     bool updateUserMasteredCount = false,
   }) async {
-    // 把学习中单词生命值设置为0(已掌握)
-    await db.learningWordsDao.saveEntity(
-        learningWord.copyWith(
-          lifeValue: 0,
-          lastLearningDate: Value(dateOnlyNow),
-          learnedTimes: learningWord.learnedTimes + 1,
-        ),
-        true);
+    // 获取当前学习模式的总步骤数（用于饱和填充状态）
+    final steps = await db.userStudyStepsDao.getActiveUserStudySteps(user.id);
+    final int stepCount = steps.length;
+
+    if (user.todayStudyStarted) {
+      // 已经进入学习执行阶段：不删除记录，而是将状态“填满”
+      // 这样进度条的分母保持不变，分子增加，体验更平滑
+      await db.learningWordsDao.saveEntity(
+          learningWord.copyWith(
+            lifeValue: 0,
+            lastLearningDate: Value(now),
+            learnedTimes: learningWord.learnedTimes + 1,
+            todayLearnedTimes: stepCount, // 饱和今天的所有环节
+          ),
+          true);
+    } else {
+      // 还在规划阶段：直接删除该学习记录
+      await db.learningWordsDao.deleteEntity(learningWord, true);
+    }
 
     // 将单词添加到已掌握单词表
     await db.masteredWordsDao.saveMasteredWord(
@@ -1001,14 +1012,14 @@ class StudyBo {
         true,
         true);
 
-    // 如果需要，更新用户已掌握单词数量
-    if (updateUserMasteredCount) {
-      await db.usersDao.saveUser(
-          user.copyWith(
-            masteredWordsCount: user.masteredWordsCount + 1,
-          ),
-          true);
-      ThrottledDbSyncService().requestSync();
-    }
+    // 更新用户已掌握单词数量
+    final int currentMasteredCount = user.masteredWordsCount;
+    await db.usersDao.saveUser(
+        user.copyWith(
+          masteredWordsCount: currentMasteredCount + 1,
+        ),
+        true);
+
+    ThrottledDbSyncService().requestSync();
   }
 }

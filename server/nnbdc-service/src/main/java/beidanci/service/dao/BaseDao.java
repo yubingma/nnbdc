@@ -42,6 +42,7 @@ public abstract class BaseDao<E extends Po> {
 
     private final ParameterizedType parameterizedType = (ParameterizedType) getClass().getGenericSuperclass();
 
+    @SuppressWarnings("unchecked")
     protected final Class<E> valueClass = (Class<E>) (parameterizedType).getActualTypeArguments()[0];
 
     protected JdbcTemplate jdbcTemplate;
@@ -195,21 +196,22 @@ public abstract class BaseDao<E extends Po> {
                     field.setAccessible(true);
                     Object associatedObject = field.get(entity);
                     Object foreignKeyValue = null;
-
+                
                     if (associatedObject != null) {
                         // 提取关联对象的 ID
+                        @SuppressWarnings("unchecked")
                         Class<? extends Po> associatedPoClass = (Class<? extends Po>) field.getType();
                         Field associatedIdField = EntityTableInfo.getIdField(associatedPoClass);
                         associatedIdField.setAccessible(true);
                         foreignKeyValue = associatedIdField.get(associatedObject);
                     }
-
+                
                     columnNames.add(foreignKeyColumnName);
                     values.add(foreignKeyValue);
                 } catch (IllegalAccessException e) {
-                    logger.error("创建实体时获取关联字段值失败: entityClass={}, field={}",
+                    logger.error("创建实体时获取关联字段值失败：entityClass={}, field={}",
                             valueClass.getName(), field.getName(), e);
-                    throw new RuntimeException("获取关联字段值失败: " + field.getName(), e);
+                    throw new RuntimeException("获取关联字段值失败：" + field.getName(), e);
                 }
                 continue;
             }
@@ -687,21 +689,22 @@ public abstract class BaseDao<E extends Po> {
                     field.setAccessible(true);
                     Object associatedObject = field.get(entity);
                     Object foreignKeyValue = null;
-
+                
                     if (associatedObject != null) {
                         // 提取关联对象的 ID
+                        @SuppressWarnings("unchecked")
                         Class<? extends Po> associatedPoClass = (Class<? extends Po>) field.getType();
                         Field associatedIdField = EntityTableInfo.getIdField(associatedPoClass);
                         associatedIdField.setAccessible(true);
                         foreignKeyValue = associatedIdField.get(associatedObject);
                     }
-
+                
                     setParts.add(foreignKeyColumnName + " = ?");
                     values.add(foreignKeyValue);
                 } catch (IllegalAccessException e) {
-                    logger.error("更新实体时获取关联字段值失败: entityClass={}, field={}",
+                    logger.error("更新实体时获取关联字段值失败：entityClass={}, field={}",
                             valueClass.getName(), field.getName(), e);
-                    throw new RuntimeException("获取关联字段值失败: " + field.getName(), e);
+                    throw new RuntimeException("获取关联字段值失败：" + field.getName(), e);
                 }
                 continue;
             }

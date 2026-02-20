@@ -35,6 +35,7 @@ public class UserDto {
     private Date lastDakaDate;
     private Integer dakaScore;
     private Boolean enableAllWrong;
+    private Boolean todayStudyStarted;
 
     // =========================
     // 订阅 / 会员相关字段
@@ -296,6 +297,14 @@ public class UserDto {
 
     public void setEnableAllWrong(Boolean enableAllWrong) {
         this.enableAllWrong = enableAllWrong;
+    }
+
+    public Boolean getTodayStudyStarted() {
+        return todayStudyStarted;
+    }
+
+    public void setTodayStudyStarted(Boolean todayStudyStarted) {
+        this.todayStudyStarted = todayStudyStarted;
     }
 
     public Boolean getIsPremiumIos() {

@@ -670,6 +670,7 @@ public class Util {
 
     public static Map<String, Object> parseJsonToMap(String response) {
         JSONObject jsonObject = JSONObject.fromObject(response);
+        @SuppressWarnings("unchecked")
         Map<String, Object> map = jsonObject;
         return map;
 

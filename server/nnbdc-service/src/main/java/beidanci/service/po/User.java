@@ -175,6 +175,12 @@ public class User extends UuidPo {
     @Column(name = "enable_all_wrong", nullable = false)
     private Boolean enableAllWrong = false;
 
+    /**
+     * 今日学习是否已经开始（点击了“开始学习”按钮）
+     */
+    @Column(name = "today_study_started", nullable = false)
+    private Boolean todayStudyStarted = false;
+
 
     /**
      * ASR答对判定规则：ONE/HALF/ALL
@@ -318,6 +324,14 @@ public class User extends UuidPo {
 
     public void setPremiumOverrideDuration(String premiumOverrideDuration) {
         this.premiumOverrideDuration = premiumOverrideDuration;
+    }
+
+    public Boolean getTodayStudyStarted() {
+        return todayStudyStarted;
+    }
+
+    public void setTodayStudyStarted(Boolean todayStudyStarted) {
+        this.todayStudyStarted = todayStudyStarted;
     }
 
     /**
@@ -877,6 +891,9 @@ public class User extends UuidPo {
         Boolean enableAllWrong = dto.getEnableAllWrong();
         user.setEnableAllWrong(enableAllWrong != null ? enableAllWrong : false);
 
+        Boolean todayStudyStarted = dto.getTodayStudyStarted();
+        user.setTodayStudyStarted(todayStudyStarted != null ? todayStudyStarted : false);
+
         user.setAsrPassRule(dto.getAsrPassRule());
 
         // ========== 订阅/强制会员字段（客户端同步不一定包含，允许为 null） ==========
@@ -938,6 +955,7 @@ public class User extends UuidPo {
         dto.setLastDakaDate(this.getLastDakaDate());
         dto.setDakaScore(this.getDakaScore());
         dto.setEnableAllWrong(Boolean.TRUE.equals(this.getEnableAllWrong()));
+        dto.setTodayStudyStarted(Boolean.TRUE.equals(this.getTodayStudyStarted()));
         dto.setAsrPassRule(this.getAsrPassRule());
 
 
