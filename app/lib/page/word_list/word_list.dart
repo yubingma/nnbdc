@@ -29,11 +29,11 @@ import '../../util/app_clock.dart';
 import '../../api/bo/word_bo.dart';
 import 'edit_meaning_dialog.dart';
 
-const String menuWordList = '浏览';
+const String menuWordList = '浏览词表';
 const String menuWalkman = '随身听';
-const String menuSpeakChinese = '背中文';
-const String menuSpeakEnglish = '背英文';
-const String menuWriteSpell = '默写';
+const String menuSpeakChinese = '说中文';
+const String menuSpeakEnglish = '说英文';
+const String menuWriteSpell = '拼写练习';
 
 mixin WordsProvider {
   Future<PagedResults<WordWrapper>> getAPageOfWords(int fromIndex, int pageSize);
