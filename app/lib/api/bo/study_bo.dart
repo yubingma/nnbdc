@@ -542,9 +542,34 @@ class StudyBo {
       if (gotoNext) {
         final currWord = todayWords[currentWordIndex];
         await updateCurrWord(isWordMastered, currWord, user, now, db, isAnswerCorrect, allStepsCompletedForWord);
+
+        // 同步内存状态，以便准确推导下一个单词
+        todayWords = List.from(todayWords); // 确保列表可变
+        if (isWordMastered) {
+          masteredWordIds.add(currWord.wordId);
+          // lifeValue=0 或者放入 masteredWordIds 都会被认为是已掌握
+        } else if (isAnswerCorrect) {
+          int newLifeValue = currWord.lifeValue;
+          if (allStepsCompletedForWord && currWord.lifeValue > 0) {
+            newLifeValue -= 1;
+            if (newLifeValue == 0) {
+              masteredWordIds.add(currWord.wordId);
+            }
+          }
+          todayWords[currentWordIndex] = currWord.copyWith(
+            lifeValue: newLifeValue,
+            lastLearningDate: Value(now),
+            learnedTimes: currWord.learnedTimes + 1,
+            todayLearnedTimes: currWord.todayLearnedTimes + 1,
+          );
+        } else {
+          todayWords[currentWordIndex] = currWord.copyWith(
+            lastLearningDate: Value(now),
+          );
+        }
       }
 
-      // 如果当前是列表模式，返回列表页面
+      // 如果当前是列表模式，直接返回列表页面，不关心下一个单词逻辑（因为是由 "CompleteList" 触发批量进度）
       bool isListStep = currentStepIndex < steps.length && steps[currentStepIndex].studyStep == 'List';
       if (isListStep) {
         Global.logger.d('当前为列表模式，显示批次单词列表');
@@ -569,42 +594,43 @@ class StudyBo {
           );
       }
 
-      // 计算下一个单词的索引 (nextWordIndex) 和学习模式 (nextLearningMode)
-      // 计算下一个单词和环节的信息（如果是 gotoNext=false 的预览模式则保持现状）
-      int nextWordIndex = currentWordIndex;
-      int nextStepIndex = currentStepIndex;
-
-      // 批次切换逻辑：从批次列表返回时，进入下一批次
-      if (shouldEnterNextBatch) {
-        // 进入下一批次
-        nextWordIndex = (batchStartIndex + batchSize) < todayWords.length ? (batchStartIndex + batchSize) : currentWordIndex;
-        nextStepIndex = 0;
-      } else if (gotoNext) {
-        // 动态计算当前批次的结束位置 (exclusive)
-        int currentBatchEndIndex = min(batchStartIndex + batchSize, todayWords.length);
-        // 检查是否到达当前批次边界
-        bool isBatchBounderyReached = (currentWordIndex + 1) == currentBatchEndIndex;
-
-        if (isBatchBounderyReached) {
-          if (allStepsCompletedForWord) {
-            // 当前批次已完成，尝试进入下一批次
-            // 下一批次起始位置总是 batchStartIndex + batchSize (固定网格)
-            nextWordIndex = batchStartIndex + batchSize;
-            nextStepIndex = 0;
-          } else {
-            // 回到当前批次起始，开始下一轮（步骤）
-            nextWordIndex = batchStartIndex;
-            nextStepIndex = currentStepIndex == activeStepCount - 1 ? 0 : currentStepIndex + 1;
-          }
-        } else {
-          nextWordIndex = currentWordIndex + 1;
-          nextStepIndex = currentStepIndex;
-        }
+      // 完全基于当前（已更新的）状态，重新推导下一个单词
+      int nextBatchStartIndex = _calculateBatchStartIndex(todayWords, activeStepCount, masteredWordIds, batchSize: batchSize);
+      if (nextBatchStartIndex == -1) {
+        return _buildTodayStudyFinishedResult();
       }
 
-      // 记录已学完，以便返回
-      if (nextWordIndex >= todayWords.length) {
-        return _buildTodayStudyFinishedResult();
+      // 获取下一个单词所在的批次
+      List<LearningWord> nextBatchWords = [];
+      for (int i = nextBatchStartIndex; i < todayWords.length && i < nextBatchStartIndex + batchSize; i++) {
+        nextBatchWords.add(todayWords[i]);
+      }
+
+      // 按照学习效率 (eff) 排序，找出该批次最需要学习的下一个单词
+      nextBatchWords.sort((a, b) {
+        final bool isAFinished = a.lifeValue == 0 || masteredWordIds.contains(a.wordId);
+        final bool isBFinished = b.lifeValue == 0 || masteredWordIds.contains(b.wordId);
+
+        final int effA = isAFinished ? activeStepCount : a.todayLearnedTimes;
+        final int effB = isBFinished ? activeStepCount : b.todayLearnedTimes;
+
+        if (effA != effB) {
+          return effA.compareTo(effB);
+        }
+        if (a.lastLearningDate == null && b.lastLearningDate == null) return a.learningOrder.compareTo(b.learningOrder);
+        if (a.lastLearningDate == null) return -1;
+        if (b.lastLearningDate == null) return 1;
+        return a.lastLearningDate!.compareTo(b.lastLearningDate!);
+      });
+
+      final nextWordForPos = nextBatchWords.first;
+      int nextWordIndex = todayWords.indexOf(nextWordForPos);
+
+      // 计算下一个单词应该展示的学习环节
+      final bool nextWordFinished = nextWordForPos.lifeValue == 0 || masteredWordIds.contains(nextWordForPos.wordId);
+      int nextStepIndex = nextWordFinished ? activeStepCount : nextWordForPos.todayLearnedTimes;
+      if (nextStepIndex >= activeStepCount) {
+        nextStepIndex = activeStepCount - 1;
       }
 
       // 获取目标学习单词，仅返回其ID，释义交由本地通过 WordBo.getWordMeaningItems 加载
@@ -642,7 +668,7 @@ class StudyBo {
 
       final progress = [totalCompletedSteps, totalSteps];
 
-      return Result<GetWordResult>("SUCCESS", "获取成功", true) 
+      return Result<GetWordResult>("SUCCESS", "获取成功", true)
         ..data = GetWordResult(
           learningWordVo,
           nextStepIndex,
@@ -972,9 +998,8 @@ class StudyBo {
       bool batchFinished = true;
       for (int j = i; j < i + batchSize && j < todayWords.length; j++) {
         // 状态驱动：如果单词已通过 lifeValue=0 标记，或者在 masteredWords 表中存在，或者今日学习次数已达到环节总数，视为学完
-        bool wordFinished = todayWords[j].lifeValue == 0 || 
-                           masteredWordIds.contains(todayWords[j].wordId) || 
-                           todayWords[j].todayLearnedTimes >= modeCount;
+        bool wordFinished =
+            todayWords[j].lifeValue == 0 || masteredWordIds.contains(todayWords[j].wordId) || todayWords[j].todayLearnedTimes >= modeCount;
         if (!wordFinished) {
           batchFinished = false;
           break;
