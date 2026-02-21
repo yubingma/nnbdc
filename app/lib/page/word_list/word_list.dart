@@ -8,6 +8,7 @@ import 'package:nnbdc/api/result.dart';
 import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/util/asr.dart';
 import 'package:nnbdc/util/asr_util.dart';
+import 'package:nnbdc/constants.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/util/utils.dart';
 import 'package:nnbdc/util/error_handler.dart';
@@ -752,7 +753,19 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
 
         Global.logger.d('背英文模式检查: inputText=$inputText, correctSpell=$correctSpell');
 
-        if (inputText == correctSpell) {
+        // 判定通过条件：
+        // 1. 精确拼写匹配（preprocessEnglish 已做过编辑距离/映射表救援）
+        // 2. 音素相似度达到阈值（兜底同音词场景，如 mail vs male）
+        bool isMatch = inputText == correctSpell;
+        if (!isMatch && currWordIndex >= 0 && currWordIndex < words.length) {
+          final score = words[currWordIndex].pronunciationScore;
+          if (score != null && score >= Constants.phonemeMatchThreshold) {
+            Global.logger.d('背英文: 拼写不匹配("$inputText" != "$correctSpell")，但音素相似度($score)达到阈值(${Constants.phonemeMatchThreshold})，判定通过');
+            isMatch = true;
+          }
+        }
+
+        if (isMatch) {
           canLeaveCurrWord = true;
           words[currWordIndex].answeredAllMeanings = true;
           // 标记通过以揭示英文
