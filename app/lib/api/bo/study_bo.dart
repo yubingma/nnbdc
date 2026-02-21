@@ -513,10 +513,15 @@ class StudyBo {
         currentStepIndex = modeCount - 1;
       }
 
-      // 更新当前单词的状态
-      final currWord = todayWords[currentWordIndex];
+      // allStepsCompletedForWord 需要在后面的批次边界逻辑中也用到
       bool allStepsCompletedForWord = currentStepIndex >= steps.length - 1;
-      await updateCurrWord(isWordMastered, currWord, user, now, db, isAnswerCorrect, allStepsCompletedForWord);
+
+      // 仅在推进进度时更新当前单词状态（gotoNext=true）
+      // gotoNext=false 表示初始加载或刷新，不应修改学习进度
+      if (gotoNext) {
+        final currWord = todayWords[currentWordIndex];
+        await updateCurrWord(isWordMastered, currWord, user, now, db, isAnswerCorrect, allStepsCompletedForWord);
+      }
 
       // 如果当前是列表模式，返回列表页面
       bool isListStep = currentStepIndex < steps.length && steps[currentStepIndex].studyStep == 'List';

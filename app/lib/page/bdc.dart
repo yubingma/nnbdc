@@ -1256,8 +1256,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         // 先停止ASR，确保没有正在执行的启动流程
         await asr.stopAsr();
         await asr.reset();
-        // 重新初始化事件监听
-        asr.initAsr(onAsrResult);
+        // 重新初始化事件监听（必须 await，否则事件订阅未建立就启动 ASR，
+        // 导致识别结果无法回传到 onAsrResult）
+        await asr.initAsr(onAsrResult);
       }
 
       // 重新初始化TabController以适应动态tabs
