@@ -1092,6 +1092,26 @@ class LearningWordsDao extends DatabaseAccessor<MyDatabase> with _$LearningWords
 
     await query.go();
   }
+
+  /// 删除用户已经掌握的单词（从mastered_words表推导）
+  Future<void> deleteMasteredWords(String userId) async {
+    final db = MyDatabase.instance;
+    // 获取用户已掌握的所有单词ID
+    final masteredQuery = db.selectOnly(db.masteredWords)
+      ..addColumns([db.masteredWords.wordId])
+      ..where(db.masteredWords.userId.equals(userId));
+
+    final rows = await masteredQuery.get();
+    final masteredWordIds = rows.map((row) => row.read(db.masteredWords.wordId)!).toList();
+
+    if (masteredWordIds.isNotEmpty) {
+      // 从 learning_words 表中批量删除这些已掌握的词
+      await (delete(learningWords)
+            ..where((lw) => lw.userId.equals(userId) & lw.wordId.isIn(masteredWordIds)))
+          .go();
+      Global.logger.d('已从 learningWords 中删除 ${masteredWordIds.length} 个已掌握单词');
+    }
+  }
 }
 
 @DriftAccessor(tables: [DictGroups])
@@ -1611,10 +1631,27 @@ class MasteredWordsDao extends DatabaseAccessor<MyDatabase> with _$MasteredWords
 
       await saveMasteredWord(masteredWord, true, true);
 
-      // 3. 如果需要，删除学习中的单词
-      if (deleteLearningWord) {
-        await db.learningWordsDao.deleteEntity(learningWord, true);
-        // 不再需要手动调整 lastLearningPosition，因为现在进度由已学单词状态动态计算
+      // 2. 处理学习中记录
+      final user = await db.usersDao.getUserById(userId);
+      if (user?.todayStudyStarted ?? false) {
+        // 已经进入学习执行阶段：不删除记录，而是将状态“填满”
+        // 这样进度条的分母保持不变，分子增加，体验更平滑
+        final steps = await db.userStudyStepsDao.getActiveUserStudySteps(userId);
+        await db.learningWordsDao.saveEntity(
+            learningWord.copyWith(
+              lifeValue: 0,
+              lastLearningDate: Value(now),
+              learnedTimes: learningWord.learnedTimes + 1,
+              todayLearnedTimes: steps.length, // 饱和今天的所有环节
+            ),
+            true);
+      } else {
+        // 还在规划阶段或非执行期：按参数决定是否删除
+        if (deleteLearningWord) {
+          await db.learningWordsDao.deleteEntity(learningWord, true);
+        } else {
+          await db.learningWordsDao.saveEntity(learningWord.copyWith(lifeValue: 0), true);
+        }
       }
     }
   }

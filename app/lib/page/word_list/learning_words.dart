@@ -28,7 +28,7 @@ class LearningWordsProvider with WordsProvider {
 
   @override
   Future<bool> deleteWord(WordWrapper wordWrapper) async {
-    var result = await WordBo().setLearningWordAsMastered(Global.getLoggedInUser()!.id, wordWrapper.word.id!, false);
+    var result = await WordBo().setLearningWordAsMastered(Global.getLoggedInUser()!.id, wordWrapper.word.id!, true);
     if (result.success) {
       SoundUtil.playAssetSoundConcurrent('bubble-pop.mp3', 1.0, 0.5);
     } else {

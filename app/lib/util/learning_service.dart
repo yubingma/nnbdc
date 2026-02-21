@@ -27,6 +27,9 @@ class LearningService {
       if (isNewDay) {
         Global.logger.d('检测到新的学习日期，开始重置用户数据: userId=${user.id}');
 
+        // 新的一天开始时，删除已经在 mastered_words 表中的学习单词
+        await db.learningWordsDao.deleteMasteredWords(user.id);
+
         // 清空用户错词（新的一天开始，清空昨日错词）
         await db.userWrongWordsDao.clearUserWrongWords(user.id, true);
         Global.logger.d('已清空用户错词');
@@ -39,8 +42,7 @@ class LearningService {
             learningFinished: const Value(false)));
 
         // 重置所有单词的今日学习次数
-        await (db.update(db.learningWords)..where((u) => u.userId.equals(user.id))).write(const LearningWordsCompanion(
-            todayLearnedTimes: Value(0)));
+        await (db.update(db.learningWords)..where((u) => u.userId.equals(user.id))).write(const LearningWordsCompanion(todayLearnedTimes: Value(0)));
 
         // 重新获取更新后的用户信息
         final updatedUser = await db.usersDao.getUserById(user.id);
@@ -100,7 +102,11 @@ class LearningService {
     // 注意：batchId 可能是 NULL（旧数据），只查询有 batchId 的记录
     try {
       final query = db.select(db.learningWords)
-        ..where((lw) => lw.userId.equals(userId) & lw.lastLearningDate.isBiggerOrEqualValue(today) & lw.lastLearningDate.isSmallerThanValue(tomorrow) & lw.batchId.isNotNull())
+        ..where((lw) =>
+            lw.userId.equals(userId) &
+            lw.lastLearningDate.isBiggerOrEqualValue(today) &
+            lw.lastLearningDate.isSmallerThanValue(tomorrow) &
+            lw.batchId.isNotNull())
         ..orderBy([
           (lw) => OrderingTerm(expression: lw.batchId),
           (lw) => OrderingTerm(expression: lw.learningOrder),
@@ -303,7 +309,7 @@ class LearningService {
       throw Exception('用户不存在');
     }
 
-    // 计算目前所有的learning words的总生命值 
+    // 计算目前所有的learning words的总生命值
     int currentLifeValue = 0;
     for (var word in currentLearningWords) {
       currentLifeValue += word.lifeValue;
