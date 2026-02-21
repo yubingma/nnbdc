@@ -34,6 +34,7 @@ import '../global.dart';
 import '../state.dart';
 import '../util/asr.dart';
 import '../util/asr_util.dart';
+import '../constants.dart';
 import '../util/utils.dart';
 import '../db/user_extensions.dart';
 import '../theme/app_theme.dart';
@@ -940,7 +941,16 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       String inputText = _handlingChinese.trim().toLowerCase();
       String correctSpell = _word!.spell.toLowerCase();
 
-      if (inputText == correctSpell) {
+      // 判定通过条件：
+      // 1. 精确拼写匹配（preprocessEnglish 已做过编辑距离/映射表救援）
+      // 2. 音素相似度达到阈值（兜底同音词场景，如 mail vs male）
+      bool isMatch = inputText == correctSpell;
+      if (!isMatch && _currentScore != null && _currentScore! >= Constants.phonemeMatchThreshold) {
+        Global.logger.d('Ch2En: 拼写不匹配("$inputText" != "$correctSpell")，但音素相似度($_currentScore)达到阈值(${Constants.phonemeMatchThreshold})，判定通过');
+        isMatch = true;
+      }
+
+      if (isMatch) {
         _isAnswerCorrect = true;
 
         // 播放正确提示音
