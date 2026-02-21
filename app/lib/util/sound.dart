@@ -30,7 +30,7 @@ class SoundUtil {
   /// 播放单词发音
   static Future<void> playPronounceSound2(WordVo word, AudioPlayer player) async {
     var soundUrl = Util.getWordSoundUrl(word.spell);
-    await playSoundByUrl(soundUrl, player, false);
+    await playSoundByUrl(soundUrl, player, false, loadTimeoutMs: 3000, playTimeoutMs: 5000);
   }
 
   /// 播放单词发音
@@ -42,7 +42,7 @@ class SoundUtil {
   /// 播放单词发音，使用已存在的AudioPlayer实例
   static Future<void> playPronounceSoundBySpell2(String spell, AudioPlayer player) async {
     var soundUrl = Util.getWordSoundUrl(spell);
-    await playSoundByUrl(soundUrl, player, false);
+    await playSoundByUrl(soundUrl, player, false, loadTimeoutMs: 3000, playTimeoutMs: 5000);
   }
 
   /// 播放例句发音
@@ -54,10 +54,10 @@ class SoundUtil {
   /// 播放例句发音
   static Future<void> playSentenceSound2(String englishDigest, AudioPlayer player) async {
     var soundUrl = Util.getSentenceSoundUrl(englishDigest);
-    await playSoundByUrl(soundUrl, player, false);
+    await playSoundByUrl(soundUrl, player, false, loadTimeoutMs: 5000, playTimeoutMs: 15000);
   }
 
-  static Future<void> playSoundByUrl(String soundUrl, AudioPlayer player, bool disposeWhenFinish) async {
+  static Future<void> playSoundByUrl(String soundUrl, AudioPlayer player, bool disposeWhenFinish, {int loadTimeoutMs = 3000, int playTimeoutMs = 10000}) async {
     try {
       // player 为 AudioPlayerFactory.create() 产物（真实或 Mock），无需判空
       if (PlatformUtils.isWeb) {
@@ -76,7 +76,7 @@ class SoundUtil {
           // 先检查当前状态，如果已经是停止状态，就不需要调用 stop()
           final currentState = player.state;
           if (currentState != PlayerState.stopped && currentState != PlayerState.disposed) {
-            await player.stop();
+            await player.stop().timeout(const Duration(milliseconds: 500), onTimeout: () => {});
             // 添加短暂延迟，确保播放器完全停止，避免新旧音频重叠产生爆音
             // 使用固定延迟比等待状态变化更可靠，因为 stop() 后状态可能立即变为停止
             await Future.delayed(const Duration(milliseconds: 50));
@@ -87,14 +87,14 @@ class SoundUtil {
       }
 
       if (PlatformUtils.isWeb) {
-        await player.play(UrlSource(soundUrl));
+        await player.play(UrlSource(soundUrl)).timeout(Duration(milliseconds: loadTimeoutMs));
       } else {
-        var file = await DefaultCacheManager().getSingleFile(soundUrl);
-        await player.play(DeviceFileSource(file.path));
+        var file = await DefaultCacheManager().getSingleFile(soundUrl).timeout(Duration(milliseconds: loadTimeoutMs));
+        await player.play(DeviceFileSource(file.path)).timeout(const Duration(milliseconds: 1000));
       }
 
       // 等待播放完成
-      await player.onPlayerComplete.first;
+      await player.onPlayerComplete.first.timeout(Duration(milliseconds: playTimeoutMs));
     } catch (e, st) {
       ErrorHandler.handleAudioError(e, st, audioType: 'url:$soundUrl');
       try {
@@ -151,14 +151,14 @@ class SoundUtil {
       // 使用独立播放器，不需要停止其他播放
 
       if (PlatformUtils.isWeb) {
-        await player.play(UrlSource(soundUrl));
+        await player.play(UrlSource(soundUrl)).timeout(const Duration(milliseconds: 3000));
       } else {
-        var file = await DefaultCacheManager().getSingleFile(soundUrl);
-        await player.play(DeviceFileSource(file.path));
+        var file = await DefaultCacheManager().getSingleFile(soundUrl).timeout(const Duration(milliseconds: 3000));
+        await player.play(DeviceFileSource(file.path)).timeout(const Duration(milliseconds: 1000));
       }
 
       // 等待播放完成
-      await player.onPlayerComplete.first;
+      await player.onPlayerComplete.first.timeout(const Duration(milliseconds: 10000));
     } catch (e, st) {
       ErrorHandler.handleAudioError(e, st, audioType: 'url:$soundUrl');
       try {
