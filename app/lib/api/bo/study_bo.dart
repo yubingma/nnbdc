@@ -453,8 +453,8 @@ class StudyBo {
 
       // 获取用户的学习步骤配置
       final steps = await db.userStudyStepsDao.getActiveUserStudySteps(user.id);
-      final modeCount = steps.length;
-      if (modeCount == 0) {
+      final activeStepCount = steps.length;
+      if (activeStepCount == 0) {
         Global.logger.e('Error: No active study steps found for user ${user.id}. Cannot proceed.');
         return Result("ERROR", "用户学习步骤未配置", false);
       }
@@ -479,7 +479,7 @@ class StudyBo {
 
       // 状态驱动：推导当前批次起始位置 (batchStartIndex)
       const int batchSize = 10;
-      int batchStartIndex = _calculateBatchStartIndex(todayWords, modeCount, batchSize: batchSize);
+      int batchStartIndex = _calculateBatchStartIndex(todayWords, activeStepCount, batchSize: batchSize);
       if (batchStartIndex == -1) {
         return _buildTodayStudyFinishedResult();
       }
@@ -493,9 +493,13 @@ class StudyBo {
       // 在当前批次内，推导当前单词和环节
       List<LearningWord> sortedBatchWords = List.from(batchWords);
       sortedBatchWords.sort((a, b) {
+        // 状态驱动：已掌握单词（lifeValue == 0）视为已完成今日所有环节
+        final int effA = a.lifeValue == 0 ? activeStepCount : a.todayLearnedTimes;
+        final int effB = b.lifeValue == 0 ? activeStepCount : b.todayLearnedTimes;
+
         // 优先练习今日学习次数较少的单词
-        if (a.todayLearnedTimes != b.todayLearnedTimes) {
-          return a.todayLearnedTimes.compareTo(b.todayLearnedTimes);
+        if (effA != effB) {
+          return effA.compareTo(effB);
         }
         // 次数相同时，练习最后学习时间较早的单词
         if (a.lastLearningDate == null && b.lastLearningDate == null) return 0;
@@ -508,9 +512,10 @@ class StudyBo {
       int currentWordIndex = todayWords.indexOf(currentWordForPos);
 
       // 获取当前学习环节：由该单词今日已练习的次数推导
-      int currentStepIndex = currentWordForPos.todayLearnedTimes;
-      if (currentStepIndex >= modeCount) {
-        currentStepIndex = modeCount - 1;
+      // 状态驱动：已掌握单词直接视为处于最后一个环节或已越过
+      int currentStepIndex = currentWordForPos.lifeValue == 0 ? activeStepCount : currentWordForPos.todayLearnedTimes;
+      if (currentStepIndex >= activeStepCount) {
+        currentStepIndex = activeStepCount - 1;
       }
 
       // allStepsCompletedForWord 需要在后面的批次边界逻辑中也用到
@@ -573,7 +578,7 @@ class StudyBo {
           } else {
             // 回到当前批次起始，开始下一轮（步骤）
             nextWordIndex = batchStartIndex;
-            nextStepIndex = currentStepIndex == modeCount - 1 ? 0 : currentStepIndex + 1;
+            nextStepIndex = currentStepIndex == activeStepCount - 1 ? 0 : currentStepIndex + 1;
           }
         } else {
           nextWordIndex = currentWordIndex + 1;
@@ -608,12 +613,16 @@ class StudyBo {
       // 计算所有单词的今日已学习次数总和
       int totalCompletedSteps = 0;
       for (final word in todayWords) {
-        // todayLearnedTimes 表示该单词今日已完成的步骤数
-        totalCompletedSteps += word.todayLearnedTimes;
+        // 状态驱动：已掌握单词贡献满分进度，活跃单词取 min(已学次数, 总环节数) 避免溢出
+        if (word.lifeValue == 0) {
+          totalCompletedSteps += activeStepCount;
+        } else {
+          totalCompletedSteps += min(word.todayLearnedTimes, activeStepCount);
+        }
       }
 
       // 总步数 = 单词数 × 每个单词的步骤数
-      final totalSteps = totalWordsToday * modeCount;
+      final totalSteps = totalWordsToday * activeStepCount;
 
       final progress = [totalCompletedSteps, totalSteps];
 
@@ -946,8 +955,9 @@ class StudyBo {
     for (int i = 0; i < todayWords.length; i += batchSize) {
       bool batchFinished = true;
       for (int j = i; j < i + batchSize && j < todayWords.length; j++) {
-        // 如果某个词的今日学习次数还没达到环节总数，说明这个批次还没学完
-        if (todayWords[j].todayLearnedTimes < modeCount) {
+        // 状态驱动：如果单词已掌握，或者今日学习次数已达到环节总数，视为学完
+        bool wordFinished = todayWords[j].lifeValue == 0 || todayWords[j].todayLearnedTimes >= modeCount;
+        if (!wordFinished) {
           batchFinished = false;
           break;
         }
