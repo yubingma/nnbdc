@@ -124,9 +124,13 @@ class StudyBo {
       final steps = await db.userStudyStepsDao.getActiveUserStudySteps(user.id);
       final modeCount = steps.length;
 
+      // 获取用户已掌握的单词（状态驱动）
+      final masteredWords = await db.masteredWordsDao.getMasteredWordsForUser(user.id);
+      final masteredWordIds = masteredWords.map((e) => e.wordId).toSet();
+
       // 状态驱动：推导当前批次起始位置 (batchStartIndex)
       const int batchSize = 10;
-      int batchStartIndex = _calculateBatchStartIndex(todayWords, modeCount, batchSize: batchSize);
+      int batchStartIndex = _calculateBatchStartIndex(todayWords, modeCount, masteredWordIds, batchSize: batchSize);
       if (batchStartIndex == -1) {
         Global.logger.d('所有批次单词已完成');
         return [];
@@ -374,8 +378,12 @@ class StudyBo {
         return Result("ERROR", "未配置学习步骤", false);
       }
 
+      // 计算掌握情况（状态驱动）
+      final masteredWords = await db.masteredWordsDao.getMasteredWordsForUser(user.id);
+      final masteredWordIds = masteredWords.map((e) => e.wordId).toSet();
+
       // 计算 batchStartIndex
-      final batchStartIndex = _calculateBatchStartIndex(todayWords, modeCount);
+      final batchStartIndex = _calculateBatchStartIndex(todayWords, modeCount, masteredWordIds);
       if (batchStartIndex == -1) {
         return Result("ERROR", "所有单词已完成列表学习", false);
       }
@@ -477,9 +485,13 @@ class StudyBo {
         throw Exception('未知错误: 今日学习单词数为0');
       }
 
+      // 获取用户已掌握的所有单词ID（最严谨的状态驱动：支持在外部标记掌握后实时生效）
+      final masteredWords = await db.masteredWordsDao.getMasteredWordsForUser(user.id);
+      final masteredWordIds = masteredWords.map((e) => e.wordId).toSet();
+
       // 状态驱动：推导当前批次起始位置 (batchStartIndex)
       const int batchSize = 10;
-      int batchStartIndex = _calculateBatchStartIndex(todayWords, activeStepCount, batchSize: batchSize);
+      int batchStartIndex = _calculateBatchStartIndex(todayWords, activeStepCount, masteredWordIds, batchSize: batchSize);
       if (batchStartIndex == -1) {
         return _buildTodayStudyFinishedResult();
       }
@@ -493,9 +505,12 @@ class StudyBo {
       // 在当前批次内，推导当前单词和环节
       List<LearningWord> sortedBatchWords = List.from(batchWords);
       sortedBatchWords.sort((a, b) {
-        // 状态驱动：已掌握单词（lifeValue == 0）视为已完成今日所有环节
-        final int effA = a.lifeValue == 0 ? activeStepCount : a.todayLearnedTimes;
-        final int effB = b.lifeValue == 0 ? activeStepCount : b.todayLearnedTimes;
+        // 状态驱动：已掌握单词（通过 lifeValue=0 或在 masteredWordIds 中存在判断）视为已完成今日所有环节
+        final bool isAFinished = a.lifeValue == 0 || masteredWordIds.contains(a.wordId);
+        final bool isBFinished = b.lifeValue == 0 || masteredWordIds.contains(b.wordId);
+
+        final int effA = isAFinished ? activeStepCount : a.todayLearnedTimes;
+        final int effB = isBFinished ? activeStepCount : b.todayLearnedTimes;
 
         // 优先练习今日学习次数较少的单词
         if (effA != effB) {
@@ -513,7 +528,8 @@ class StudyBo {
 
       // 获取当前学习环节：由该单词今日已练习的次数推导
       // 状态驱动：已掌握单词直接视为处于最后一个环节或已越过
-      int currentStepIndex = currentWordForPos.lifeValue == 0 ? activeStepCount : currentWordForPos.todayLearnedTimes;
+      final bool currentWordFinished = currentWordForPos.lifeValue == 0 || masteredWordIds.contains(currentWordForPos.wordId);
+      int currentStepIndex = currentWordFinished ? activeStepCount : currentWordForPos.todayLearnedTimes;
       if (currentStepIndex >= activeStepCount) {
         currentStepIndex = activeStepCount - 1;
       }
@@ -614,7 +630,7 @@ class StudyBo {
       int totalCompletedSteps = 0;
       for (final word in todayWords) {
         // 状态驱动：已掌握单词贡献满分进度，活跃单词取 min(已学次数, 总环节数) 避免溢出
-        if (word.lifeValue == 0) {
+        if (word.lifeValue == 0 || masteredWordIds.contains(word.wordId)) {
           totalCompletedSteps += activeStepCount;
         } else {
           totalCompletedSteps += min(word.todayLearnedTimes, activeStepCount);
@@ -951,12 +967,14 @@ class StudyBo {
 
   /// 状态驱动：推导当前批次起始位置 (batchStartIndex)
   /// 逻辑：找到第一个今日尚未完成所有学习环节的批次
-  static int _calculateBatchStartIndex(List<LearningWord> todayWords, int modeCount, {int batchSize = 10}) {
+  static int _calculateBatchStartIndex(List<LearningWord> todayWords, int modeCount, Set<String> masteredWordIds, {int batchSize = 10}) {
     for (int i = 0; i < todayWords.length; i += batchSize) {
       bool batchFinished = true;
       for (int j = i; j < i + batchSize && j < todayWords.length; j++) {
-        // 状态驱动：如果单词已掌握，或者今日学习次数已达到环节总数，视为学完
-        bool wordFinished = todayWords[j].lifeValue == 0 || todayWords[j].todayLearnedTimes >= modeCount;
+        // 状态驱动：如果单词已通过 lifeValue=0 标记，或者在 masteredWords 表中存在，或者今日学习次数已达到环节总数，视为学完
+        bool wordFinished = todayWords[j].lifeValue == 0 || 
+                           masteredWordIds.contains(todayWords[j].wordId) || 
+                           todayWords[j].todayLearnedTimes >= modeCount;
         if (!wordFinished) {
           batchFinished = false;
           break;
