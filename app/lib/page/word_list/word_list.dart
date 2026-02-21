@@ -1484,10 +1484,32 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
   }
 
   onDelBtnPressed(WordWrapper word, int index) {
-    // 删除单词并更新书签
+    // 删除或掌握单词
     args.wordsProvider.deleteWord(word).then((value) {
       if (value) {
-        // 删除单词
+        // 判断是否应该从UI上移除单词
+        // 如果是今日学习相关的列表（包括分批次学习的阶段列表），并且今日学习已经正式开始，则不从UI移除记录，只更新状态
+        // 这样可以保持今日学习单词表的记录总数不变，符合已经开始后的预期
+        final String providerType = args.wordsProvider.runtimeType.toString();
+        final bool isTodayTask = providerType == 'StageWordsProvider' ||
+            ['学习中', '今日错词', '今日新词', '今日旧词', '今日单词', '单词列表'].contains(args.appBarTitle);
+        final bool todayStudyStarted = Global.getLoggedInUser()?.todayStudyStarted ?? false;
+
+        if (todayStudyStarted && isTodayTask) {
+          // 仅更新状态，不从UI移除
+          setState(() {
+            if (word.word.id != null) {
+              learningStatusMap[word.word.id!] = true;
+            }
+            // 同时更新进度条显示逻辑所依赖的 tag 数据
+            if (word.tag is LearningWordVo) {
+              (word.tag as LearningWordVo).lifeValue = 0;
+            }
+          });
+          return;
+        }
+
+        // 默认行为：从UI移除单词并更新书签
         setState(() {
           words.remove(word);
           totalWordCount--;
