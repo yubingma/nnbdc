@@ -955,11 +955,14 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
   
-    // 停止 ASR
-    try {
-      asr.stopAsr();
-    } catch (e) {
-      Global.logger.d("dispose: 停止 ASR 失败：$e");
+    // 停止 ASR：仅当当前页面处于语音学习模式时才停止，
+    // 避免作为子页面销毁时误杀了父页面的 ASR 实例
+    if (studyMode == WordListStudyMode.speakChinese || studyMode == WordListStudyMode.speakEnglish) {
+      try {
+        asr.stopAsr();
+      } catch (e) {
+        Global.logger.d("dispose: 停止 ASR 失败：$e");
+      }
     }
   
     // 清理 meter 订阅（通过 ASR 单例统一管理）

@@ -1231,6 +1231,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
           label: const Text('继续'),
           onPressed: () async {
             Get.back(result: true);
+            // 给 UI 一个缓冲时间，确保列表页面完全关闭并清理 ASR 状态后再进入下一步
+            await Future.delayed(const Duration(milliseconds: 100));
 
             // 完成当前批次列表学习
             await StudyBo().completeListStepForCurrentBatch();
@@ -1259,15 +1261,11 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       String? oldStudyStep = _studyStep;
       _studyStep = activeUserStudySteps[getWordResult.stepIndex].studyStep;
 
-      // 当学习模式发生切换，或这是本次会话首次设置学习模式时，或从阶段复习返回时，
-      // 先确保ASR完全停止，然后重新初始化 ASR 事件监听，确保事件订阅始终绑定到当前 BdcPage
-      if (oldStudyStep == null || oldStudyStep != _studyStep || isFromBatchWordList) {
-        Global.logger.i('BDC: 学习模式更新: $oldStudyStep => $_studyStep，从阶段复习返回: $isFromBatchWordList，先停止ASR，然后重新初始化ASR监听');
-        // 先停止ASR，确保没有正在执行的启动流程
+      // 只有在模式真正改变时，才重新初始化 ASR（防止在相同模式下刷新导致 ASR 意外停止）
+      if (oldStudyStep == null || oldStudyStep != _studyStep) {
+        Global.logger.i('BDC: 学习模式从 $oldStudyStep 切换到 $_studyStep，初始化 ASR 监听');
         await asr.stopAsr();
         await asr.reset();
-        // 重新初始化事件监听（必须 await，否则事件订阅未建立就启动 ASR，
-        // 导致识别结果无法回传到 onAsrResult）
         await asr.initAsr(onAsrResult);
       }
 
