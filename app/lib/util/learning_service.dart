@@ -27,6 +27,9 @@ class LearningService {
       if (isNewDay) {
         Global.logger.d('检测到新的学习日期，开始重置用户数据: userId=${user.id}');
 
+        // 新的一天开始时，删除生命值为零的学习中单词
+        await db.learningWordsDao.deleteZeroLifeWords(user.id);
+
         // 新的一天开始时，删除已经在 mastered_words 表中的学习单词
         await db.learningWordsDao.deleteMasteredWords(user.id);
 

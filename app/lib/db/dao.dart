@@ -1112,6 +1112,17 @@ class LearningWordsDao extends DatabaseAccessor<MyDatabase> with _$LearningWords
       Global.logger.d('已从 learningWords 中删除 ${masteredWordIds.length} 个已掌握单词');
     }
   }
+
+  /// 删除生命值为零的学习中单词
+  Future<int> deleteZeroLifeWords(String userId) async {
+    final query = delete(learningWords)
+      ..where((lw) => lw.userId.equals(userId) & lw.lifeValue.equals(0));
+    final deletedCount = await query.go();
+    if (deletedCount > 0) {
+      Global.logger.d('已从 learningWords 中删除 $deletedCount 个生命值为零的单词');
+    }
+    return deletedCount;
+  }
 }
 
 @DriftAccessor(tables: [DictGroups])
