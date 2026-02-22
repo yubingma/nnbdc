@@ -488,9 +488,9 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
   void _subscribeMeterIfNeeded() {
     // 使用 ASR 单例的 meter 订阅管理，避免重复订阅
     _meterSub ??= asr.getOrCreateMeterSubscription((level) {
-        _lastMeterLevel = level.clamp(0.0, 1.0);
-        _lastMeterAt = AppClock.now();
-      });
+      _lastMeterLevel = level.clamp(0.0, 1.0);
+      _lastMeterAt = AppClock.now();
+    });
     _meterTimer ??= Timer.periodic(const Duration(milliseconds: 30), (_) {
       if (isMenuOpen) return; // 菜单打开时暂停更新，避免UI重绘
       final now = AppClock.now();
@@ -954,7 +954,7 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-  
+
     // 停止 ASR：仅当当前页面处于语音学习模式时才停止，
     // 避免作为子页面销毁时误杀了父页面的 ASR 实例
     if (studyMode == WordListStudyMode.speakChinese || studyMode == WordListStudyMode.speakEnglish) {
@@ -964,12 +964,12 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
         Global.logger.d("dispose: 停止 ASR 失败：$e");
       }
     }
-  
+
     // 清理 meter 订阅（通过 ASR 单例统一管理）
     _unsubscribeMeter();
     // 确保调用 ASR 的 disposeMeter 来彻底清理
     asr.disposeMeter();
-  
+
     _audioPlayerDisposed = true; // 标记为已释放
     _meterLevelNotifier.dispose();
     _asrModelLoadingController.dispose();
@@ -1324,68 +1324,94 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
   }
 
   Future<void> _showAddWordDialog() async {
-    final TextEditingController controller = TextEditingController();
-    await showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('添加单词'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(
-            hintText: '输入单词拼写',
-            labelText: '单词',
+    isMenuOpen = true;
+    try {
+      FocusScope.of(context).unfocus();
+      bool wasAnimating = _asrModelLoadingController.isAnimating;
+      if (wasAnimating) {
+        _asrModelLoadingController.stop();
+      }
+      await Future.delayed(const Duration(milliseconds: 350));
+      if (!context.mounted) return;
+
+      final TextEditingController controller = TextEditingController();
+      await showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('添加单词'),
+          content: TextField(
+            controller: controller,
+            decoration: const InputDecoration(
+              hintText: '输入单词拼写',
+              labelText: '单词',
+            ),
+            autofocus: true,
           ),
-          autofocus: true,
+          actions: [
+            TextButton(onPressed: () => Get.back(), child: const Text('取消')),
+            TextButton(
+              onPressed: () async {
+                final spell = controller.text.trim();
+                if (spell.isEmpty) return;
+
+                final wordModifier = args.wordsProvider as WordModifier;
+                // 检查单词是否存在于通用词典
+                final searchResult = await WordBo().searchWordLocalOnly(spell);
+
+                if (searchResult.word == null) {
+                  ToastUtil.error('单词未在通用词典中找到，无法添加');
+                  return;
+                }
+
+                // 添加到词典
+                final success = await wordModifier.addWord(searchResult.word!.id!);
+                if (success) {
+                  Get.back();
+                  ToastUtil.info('添加成功');
+                  // 刷新列表
+                  // 此处必须重置 totalWordCount，否则 doQuery 中的优化逻辑(words.length >= totalWordCount)
+                  // 会认为数据已全部加载而跳过本次查询，导致新添加的单词无法显示
+                  totalWordCount = -1;
+                  await doQuery(true, baseIndex ?? 0, _pageSize, true);
+                  setState(() {}); // 强制刷新UI
+                }
+              },
+              child: const Text('添加'),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(onPressed: () => Get.back(), child: const Text('取消')),
-          TextButton(
-            onPressed: () async {
-              final spell = controller.text.trim();
-              if (spell.isEmpty) return;
-
-              final wordModifier = args.wordsProvider as WordModifier;
-              // 检查单词是否存在于通用词典
-              final searchResult = await WordBo().searchWordLocalOnly(spell);
-
-              if (searchResult.word == null) {
-                ToastUtil.error('单词未在通用词典中找到，无法添加');
-                return;
-              }
-
-              // 添加到词典
-              final success = await wordModifier.addWord(searchResult.word!.id!);
-              if (success) {
-                Get.back();
-                ToastUtil.info('添加成功');
-                // 刷新列表
-                // 此处必须重置 totalWordCount，否则 doQuery 中的优化逻辑(words.length >= totalWordCount)
-                // 会认为数据已全部加载而跳过本次查询，导致新添加的单词无法显示
-                totalWordCount = -1;
-                await doQuery(true, baseIndex ?? 0, _pageSize, true);
-                setState(() {}); // 强制刷新UI
-              }
-            },
-            child: const Text('添加'),
-          ),
-        ],
-      ),
-    );
+      );
+    } finally {
+      isMenuOpen = false;
+    }
   }
 
   Future<void> _showEditMeaningDialog(WordWrapper word) async {
-    await showDialog(
-      context: context,
-      builder: (context) => EditMeaningDialog(
-        word: word,
-        wordModifier: args.wordsProvider as WordModifier,
-        onSuccess: () async {
-          // 立即刷新当前页面
-          await doQuery(true, baseIndex ?? 0, _pageSize, false);
-          setState(() {}); // 强制刷新UI
-        },
-      ),
-    );
+    isMenuOpen = true;
+    try {
+      FocusScope.of(context).unfocus();
+      bool wasAnimating = _asrModelLoadingController.isAnimating;
+      if (wasAnimating) {
+        _asrModelLoadingController.stop();
+      }
+      await Future.delayed(const Duration(milliseconds: 350));
+      if (!context.mounted) return;
+
+      await showDialog(
+        context: context,
+        builder: (context) => EditMeaningDialog(
+          word: word,
+          wordModifier: args.wordsProvider as WordModifier,
+          onSuccess: () async {
+            // 立即刷新当前页面
+            await doQuery(true, baseIndex ?? 0, _pageSize, false);
+            setState(() {}); // 强制刷新UI
+          },
+        ),
+      );
+    } finally {
+      isMenuOpen = false;
+    }
   }
 
   onWordPressed(WordWrapper word, int index, bool playSound, Function? soundFinishListener) async {
@@ -1491,8 +1517,7 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
         // 如果是今日学习相关的列表（包括分批次学习的阶段列表），并且今日学习已经正式开始，则不从UI移除记录，只更新状态
         // 这样可以保持今日学习单词表的记录总数不变，符合已经开始后的预期
         final String providerType = args.wordsProvider.runtimeType.toString();
-        final bool isTodayTask = providerType == 'StageWordsProvider' ||
-            ['学习中', '今日错词', '今日新词', '今日旧词', '今日单词', '单词列表'].contains(args.appBarTitle);
+        final bool isTodayTask = providerType == 'StageWordsProvider' || ['学习中', '今日错词', '今日新词', '今日旧词', '今日单词', '单词列表'].contains(args.appBarTitle);
         final bool todayStudyStarted = Global.getLoggedInUser()?.todayStudyStarted ?? false;
 
         if (todayStudyStarted && isTodayTask) {
@@ -3193,88 +3218,101 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
     );
   }
 
-  void _showSettingsDialog() {
-    final isDarkMode = context.read<DarkMode>().isDarkMode;
+  Future<void> _showSettingsDialog() async {
+    isMenuOpen = true;
+    try {
+      FocusScope.of(context).unfocus();
+      bool wasAnimating = _asrModelLoadingController.isAnimating;
+      if (wasAnimating) {
+        _asrModelLoadingController.stop();
+      }
+      await Future.delayed(const Duration(milliseconds: 350));
+      if (!context.mounted) return;
 
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (BuildContext context, StateSetter setDialogState) {
-            return AlertDialog(
-              backgroundColor: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              title: Text(
-                studyMode == WordListStudyMode.speakEnglish ? '背英文模式设置' : '背中文模式设置',
-                style: TextStyle(
-                  color: isDarkMode ? Colors.white : const Color(0xFF2D3748),
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
+      final isDarkMode = context.read<DarkMode>().isDarkMode;
+
+      await showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return StatefulBuilder(
+            builder: (BuildContext context, StateSetter setDialogState) {
+              return AlertDialog(
+                backgroundColor: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
                 ),
-              ),
-              content: DefaultTextStyle.merge(
-                style: const TextStyle(fontSize: 13.0, fontWeight: FontWeight.w400),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (studyMode == WordListStudyMode.speakChinese || studyMode == WordListStudyMode.speakEnglish)
-                      Row(
-                        children: [
-                          Icon(
-                            mustAnswerAll ? Icons.check_circle : Icons.radio_button_unchecked,
-                            size: 20,
-                            color: mustAnswerAll ? const Color(0xFF4A90E2) : Colors.grey[600],
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              mustAnswerAll ? '必须全部答对才跳转' : '答对一个即可跳转',
-                              style: TextStyle(
-                                color: isDarkMode ? Colors.white.withValues(alpha: 0.9) : const Color(0xFF2D3748),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Switch(
-                            value: mustAnswerAll,
-                            onChanged: (value) async {
-                              var currentUser = Global.getLoggedInUser();
-                              if (currentUser != null) {
-                                // 旧字段已删除：此开关UI保留但不再修改本地用户字段
-                                setState(() {});
-                                setDialogState(() {});
-                              }
-                            },
-                            activeThumbColor: const Color(0xFF4A90E2),
-                            activeTrackColor: const Color(0xFF4A90E2).withValues(alpha: 0.3),
-                          ),
-                        ],
-                      ),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                  child: Text(
-                    '关闭',
-                    style: const TextStyle(
-                      color: Color(0xFF4A90E2),
-                      fontSize: 13,
-                    ),
+                title: Text(
+                  studyMode == WordListStudyMode.speakEnglish ? '背英文模式设置' : '背中文模式设置',
+                  style: TextStyle(
+                    color: isDarkMode ? Colors.white : const Color(0xFF2D3748),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
-              ],
-            );
-          },
-        );
-      },
-    );
+                content: DefaultTextStyle.merge(
+                  style: const TextStyle(fontSize: 13.0, fontWeight: FontWeight.w400),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (studyMode == WordListStudyMode.speakChinese || studyMode == WordListStudyMode.speakEnglish)
+                        Row(
+                          children: [
+                            Icon(
+                              mustAnswerAll ? Icons.check_circle : Icons.radio_button_unchecked,
+                              size: 20,
+                              color: mustAnswerAll ? const Color(0xFF4A90E2) : Colors.grey[600],
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                mustAnswerAll ? '必须全部答对才跳转' : '答对一个即可跳转',
+                                style: TextStyle(
+                                  color: isDarkMode ? Colors.white.withValues(alpha: 0.9) : const Color(0xFF2D3748),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Switch(
+                              value: mustAnswerAll,
+                              onChanged: (value) async {
+                                var currentUser = Global.getLoggedInUser();
+                                if (currentUser != null) {
+                                  // 旧字段已删除：此开关UI保留但不再修改本地用户字段
+                                  setState(() {});
+                                  setDialogState(() {});
+                                }
+                              },
+                              activeThumbColor: const Color(0xFF4A90E2),
+                              activeTrackColor: const Color(0xFF4A90E2).withValues(alpha: 0.3),
+                            ),
+                          ],
+                        ),
+                    ],
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                    child: Text(
+                      '关闭',
+                      style: const TextStyle(
+                        color: Color(0xFF4A90E2),
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
+          );
+        },
+      );
+    } finally {
+      isMenuOpen = false;
+    }
   }
 }
 
