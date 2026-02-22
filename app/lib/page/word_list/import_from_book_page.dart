@@ -32,7 +32,11 @@ class ImportFromBookPageState extends State<ImportFromBookPage> {
   void initState() {
     super.initState();
     _loadTargetWordIds();
-    _loadDicts();
+    _loadDicts().then((_) {
+      if (mounted && _availableDicts.isNotEmpty) {
+        _showDictPicker();
+      }
+    });
   }
 
   Future<void> _loadTargetWordIds() async {
