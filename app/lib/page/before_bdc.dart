@@ -91,7 +91,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
     }
   }
 
-  Future<void> loadData() async {
+  Future<void> loadData({bool forceSupplement = false}) async {
     // 防止重复加载
     if (_isLoadingData) return;
     _isLoadingData = true;
@@ -162,7 +162,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
   
       // 生成（或获取）用户的今日单词
       try {
-        prepareResult = await StudyBo().prepareForStudy(false);
+        prepareResult = await StudyBo().prepareForStudy(forceSupplement);
         if (prepareResult!.success || prepareResult!.code == "NNBDC-0012" /*未取到足够单词*/) {
           List<int> counts = prepareResult!.data!;
           newWordCount = counts[0];
@@ -695,7 +695,14 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
                                   ),
                                 ),
                                 onPressed: () {
-                                  Get.toNamed('/select_book')?.then((value) => loadData());
+                                  Get.toNamed('/select_book')?.then((value) {
+                                    if (mounted) {
+                                      setState(() {
+                                        _hasTriedSupplement = false;
+                                      });
+                                      loadData(forceSupplement: true);
+                                    }
+                                  });
                                 },
                               ),
                             ),
