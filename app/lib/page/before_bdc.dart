@@ -42,6 +42,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
   UserVo? user;
   bool hasDakaToday = false;
   Result<List<int>>? prepareResult;
+  bool _hasTriedSupplement = false;
 
   static const double leftPadding = 16;
   static const double rightPadding = 16;
@@ -462,7 +463,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
                 ),
 
                 // 单词不足提示 & 补充按钮
-                if (prepareResult!.success && todayWordCount! < user!.wordsPerDay! && !(user!.todayStudyStarted ?? false))
+                if (prepareResult!.success && todayWordCount! < user!.wordsPerDay! && !(user!.todayStudyStarted ?? false) && !_hasTriedSupplement)
                   Container(
                     margin: const EdgeInsets.only(top: 16),
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -510,6 +511,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
                           ),
                           onPressed: () async {
                             await StudyBo().prepareForStudy(true);
+                            _hasTriedSupplement = true;
                             loadData();
                           },
                           child: Text(
@@ -625,7 +627,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
                           ),
                   ),
                 // 错误提示和备选操作
-                if (prepareResult!.code == "NNBDC-0012")
+                if (prepareResult!.code == "NNBDC-0012" || (_hasTriedSupplement && todayWordCount! < user!.wordsPerDay!))
                   Container(
                     margin: const EdgeInsets.only(top: 16),
                     padding: const EdgeInsets.all(20),

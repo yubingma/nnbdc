@@ -24,6 +24,9 @@ class DictWordsProvider with WordsProvider implements WordModifier {
   MyDatabase get _db => MyDatabase.instance;
 
   DictWordsProvider(this.dict);
+  
+  @override
+  String? get targetDictId => dict.id;
 
   @override
   Future<bool> addWord(String wordId) async {
