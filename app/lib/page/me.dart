@@ -194,12 +194,9 @@ class _MePageState extends State<MePage> {
       var dictWords = await (db.select(db.dictWords)..where((dw) => dw.dictId.isIn(learningDicts.map((d) => d.dictId).toList()))).get();
       var rawWordCount = dictWords.length;
 
-      // 获取已掌握单词数量（直接从mastered_words表查询，确保准确）
-      var masteredWordsQuery = db.selectOnly(db.masteredWords)
-        ..addColumns([drift.countAll()])
-        ..where(db.masteredWords.userId.equals(user.id));
-      var masteredWordsResult = await masteredWordsQuery.getSingle();
-      var masteredWordsCount = masteredWordsResult.read(drift.countAll()) ?? 0;
+      // 获取已掌握单词数量（从"已掌握"词书的dict_word中查询）
+      var masteredWordIds = await db.masteredWordsDao.getMasteredWordIdSet(user.id);
+      var masteredWordsCount = masteredWordIds.length;
 
       // 判断是否所有词书都已学完：学习中+已掌握 >= 总单词数
       var allDictsFinished = (learningWordsCount + masteredWordsCount) >= rawWordCount;
@@ -2373,8 +2370,7 @@ class _DictCardState extends State<DictCard> {
     final learningWordIds = learningWords.map((w) => w.wordId).toSet();
 
     // 获取已掌握的单词
-    final masteredWords = await (db.select(db.masteredWords)..where((mw) => mw.userId.equals(userId))).get();
-    final masteredWordIds = masteredWords.map((w) => w.wordId).toSet();
+    final masteredWordIds = await db.masteredWordsDao.getMasteredWordIdSet(userId);
 
     // 计算该词书中学习和掌握的数量
     int learned = 0;

@@ -1058,24 +1058,11 @@ class StudyBo {
       await db.learningWordsDao.deleteEntity(learningWord, true);
     }
 
-    // 将单词添加到已掌握单词表
+    // 将单词添加到已掌握词书
     await db.masteredWordsDao.saveMasteredWord(
-        MasteredWord(
-          userId: user.id,
-          wordId: learningWord.wordId,
-          masterAtTime: now,
-          createTime: now,
-          updateTime: now,
-        ),
+        user.id,
+        learningWord.wordId,
         true,
-        true);
-
-    // 更新用户已掌握单词数量
-    final int currentMasteredCount = user.masteredWordsCount;
-    await db.usersDao.saveUser(
-        user.copyWith(
-          masteredWordsCount: currentMasteredCount + 1,
-        ),
         true);
 
     ThrottledDbSyncService().requestSync();

@@ -38,7 +38,7 @@ part 'db.g.dart';
   UserStudySteps,
   Dakas,
   UserOpers,
-  MasteredWords,
+  MasteredWords, // 已废弃，保留在列表中仅为了让 Drift 生成 deleteTable 迁移所需的引用
   UserCowDungLogs,
   UserWrongWords,
   SysDbVersion,
@@ -207,7 +207,7 @@ class MyDatabase extends _$MyDatabase {
   // you should bump this number whenever you change or add a table definition. Migrations
   // are covered later in this readme.
   @override
-  int get schemaVersion => 19;
+  int get schemaVersion => 20;
 
   @override
   MigrationStrategy get migration {
@@ -278,6 +278,9 @@ class MyDatabase extends _$MyDatabase {
           }
           if (from < 19) {
             await _migrateFromV18ToV19AddEditable(m);
+          }
+          if (from < 20) {
+            await _migrateFromV19ToV20DropMasteredWordsTable(m);
           }
         } catch (e, stackTrace) {
           // 升级失败，记录错误日志
@@ -497,6 +500,23 @@ class MyDatabase extends _$MyDatabase {
       // 生词本和自定义词书（ownerId 不是系统用户）默认 editable 为 true
       // 系统用户 ID 为 Global.sysUserId (15118)
       await customStatement("UPDATE dicts SET editable = 1 WHERE name = '生词本' OR owner_id != '${Global.sysUserId}'");
+    });
+  }
+
+  /// 从版本 19 升级到版本 20：删除 mastered_words 表
+  /// 已掌握单词现在存储在 dict_word 表中，通过"已掌握"词书管理
+  Future<void> _migrateFromV19ToV20DropMasteredWordsTable(Migrator m) async {
+    await transaction(() async {
+      // 删除 mastered_words 表
+      try {
+        await m.deleteTable('mastered_words');
+        Global.logger.i('✅ 已删除 mastered_words 表');
+      } catch (e) {
+        Global.logger.w('删除 mastered_words 表失败（可能已不存在）: $e');
+      }
+
+      // 从 user_db_logs 中删除 masteredWords 相关的日志记录
+      await customStatement("DELETE FROM user_db_logs WHERE tbl_name = 'masteredWords' OR tbl_name = 'mastered_word';");
     });
   }
 
@@ -782,16 +802,7 @@ class MyDatabase extends _$MyDatabase {
       ON learning_dicts (user_id)
     ''');
 
-    // 为mastered_words表添加索引（现在统一使用下划线格式）
-    await customStatement('''
-      CREATE INDEX IF NOT EXISTS idx_mastered_words_user 
-      ON mastered_words (user_id)
-    ''');
-
-    await customStatement('''
-      CREATE INDEX IF NOT EXISTS idx_mastered_words_user_time 
-      ON mastered_words (user_id, master_at_time)
-    ''');
+    // mastered_words 表已在 v20 中删除，不再创建索引
 
     // 为sentences表添加索引
     await customStatement('''

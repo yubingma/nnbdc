@@ -28,7 +28,6 @@ import beidanci.api.model.DictDto;
 import beidanci.api.model.DictWordDto;
 import beidanci.api.model.LearningDictDto;
 import beidanci.api.model.LearningWordDto;
-import beidanci.api.model.MasteredWordDto;
 import beidanci.api.model.MeaningItemDto;
 import beidanci.api.model.UserCowDungLogDto;
 import beidanci.api.model.UserDbLogDto;
@@ -45,7 +44,6 @@ import beidanci.service.po.Dict;
 import beidanci.service.po.DictWord;
 import beidanci.service.po.LearningDict;
 import beidanci.service.po.LearningWord;
-import beidanci.service.po.MasteredWord;
 import beidanci.service.po.User;
 import beidanci.service.po.UserCowDungLog;
 import beidanci.service.po.UserDbLog;
@@ -106,9 +104,6 @@ public class UserDbSyncBo {
 
     @Autowired
     private DictWordBo dictWordBo;
-
-    @Autowired
-    private MasteredWordBo masteredWordBo;
 
     @Autowired
     private UserCowDungLogBo userCowDungLogBo;
@@ -288,7 +283,11 @@ public class UserDbSyncBo {
             case "user_oper" -> processUserOperSync(userId, recordJson, operation);
             case "user_wrong_word" -> processUserWrongWordSync(userId, recordJson, operation);
             case "dict_word" -> processDictWordSync(userId, recordJson, operation);
-            case "mastered_word" -> processMasteredWordSync(userId, recordJson, operation);
+            case "mastered_word" -> {
+                // 已废弃：mastered_word 表已迁移到 dict + dict_word 体系
+                // 保留此 case 以兼容老客户端可能发送的旧格式日志，直接忽略
+                logger.info("忽略已废弃的 mastered_word 同步日志: userId={}, operation={}", userId, operation);
+            }
             case "user_cow_dung_log" -> processUserCowDungLogSync(userId, recordJson, operation);
             case "meaning_item" -> processMeaningItemSync(userId, recordJson, operation);
             default -> {
@@ -457,6 +456,7 @@ public class UserDbSyncBo {
                         dict.setVisible(dictDto.getVisible());
                         dict.setWordCount(dictDto.getWordCount());
                         dict.setPopularityLimit(dictDto.getPopularityLimit());
+                        dict.setEditable(dictDto.getEditable() != null ? dictDto.getEditable() : false);
                         dict.setCreateTime(dictDto.getCreateTime());
                         dict.setUpdateTime(dictDto.getUpdateTime());
 
@@ -472,6 +472,7 @@ public class UserDbSyncBo {
                         dict.setVisible(dictDto.getVisible());
                         dict.setWordCount(dictDto.getWordCount());
                         dict.setPopularityLimit(dictDto.getPopularityLimit());
+                        dict.setEditable(dictDto.getEditable() != null ? dictDto.getEditable() : false);
                         dict.setUpdateTime(dictDto.getUpdateTime());
 
                         dictBo.updateEntity(dict);
@@ -739,48 +740,7 @@ public class UserDbSyncBo {
         }
     }
 
-    /**
-     * 处理已掌握单词同步
-     */
-    private void processMasteredWordSync(String userId, String recordJson, String operation)
-            throws IllegalAccessException {
-        if ("BATCH_DELETE".equals(operation)) {
-            masteredWordBo.batchDeleteUserRecords(userId, recordJson);
-        } else {
-            MasteredWordDto masteredWordDto = JsonUtils.makeObject(recordJson, MasteredWordDto.class);
-            MasteredWord masteredWord = MasteredWord.fromDto(masteredWordDto);
-            if (null == operation) {
-                String errorMsg = String.format("不支持的已掌握单词表操作1: %s", operation);
-                logger.error(errorMsg);
-                throw new IllegalArgumentException(errorMsg);
-            } else
-                switch (operation) {
-                    case "INSERT" -> {
-                        // 检查记录是否已存在，避免主键冲突
-                        MasteredWord existing = masteredWordBo.findById(masteredWord.getId());
-                        if (existing == null) {
-                            masteredWordBo.createEntity(masteredWord);
-                        } else {
-                            logger.info("mastered_word 已存在，忽略重复 INSERT: id={}", masteredWord.getId());
-                        }
-                    }
-                    case "UPDATE" -> {
-                        MasteredWord existing = masteredWordBo.findById(masteredWord.getId());
-                        if (existing == null) {
-                            masteredWordBo.createEntity(masteredWord);
-                        } else {
-                            masteredWordBo.updateEntity(masteredWord);
-                        }
-                    }
-                    case "DELETE" -> masteredWordBo.deleteEntity(masteredWord);
-                    default -> {
-                        String errorMsg = String.format("不支持的已掌握单词表操作2: %s", operation);
-                        logger.error(errorMsg);
-                        throw new IllegalArgumentException(errorMsg);
-                    }
-                }
-        }
-    }
+    // processMasteredWordSync 已移除：mastered_word 表已迁移到 dict + dict_word 体系
 
     /**
      * 处理魔法泡泡日志同步
@@ -1107,21 +1067,7 @@ public class UserDbSyncBo {
                 }
             }
 
-            // 生成用户已掌握单词(mastered_word)全量日志
-            List<MasteredWordDto> masteredWordDtos = masteredWordBo.getMasteredWordDtosOfUser(userId);
-            for (MasteredWordDto masteredWordDto : masteredWordDtos) {
-                UserDbLogDto log = new UserDbLogDto(
-                        Util.uuid(),
-                        userId,
-                        userDbVersion,
-                        "INSERT",
-                        "mastered_word",
-                        userId + "-" + masteredWordDto.getWordId(),
-                        JsonUtils.toJson(masteredWordDto),
-                        masteredWordDto.getCreateTime(),
-                        masteredWordDto.getUpdateTime());
-                logs.add(log);
-            }
+            // mastered_word 全量日志已不再需要：已掌握单词现在作为 dict + dict_word 同步
 
             // 生成用户魔法泡泡日志(user_cow_dung_log)全量日志
             List<UserCowDungLogDto> userCowDungLogDtos = userCowDungLogBo.getUserCowDungLogDtosOfUser(userId);
@@ -1161,7 +1107,6 @@ public class UserDbSyncBo {
             ordered.put("user_wrong_word", counts.getOrDefault("user_wrong_word", 0));
             ordered.put("dict_word", counts.getOrDefault("dict_word", 0));
             ordered.put("meaning_item", counts.getOrDefault("meaning_item", 0));
-            ordered.put("mastered_word", counts.getOrDefault("mastered_word", 0));
             ordered.put("user_cow_dung_log", counts.getOrDefault("user_cow_dung_log", 0));
 
             // 输出未在固定列表中的表名（如果有）

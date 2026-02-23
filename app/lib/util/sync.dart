@@ -147,7 +147,7 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
           return 4; // learningDicts依赖dicts
         case 'learningWords':
           return 5;
-        case 'masteredWords':
+        case 'masteredWords': // 已废弃，但保留case以避免unknown table warning
           return 5;
         case 'userWrongWords':
           return 5;
@@ -263,12 +263,9 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
                 await db.learningWordsDao.deleteEntity(entity, false);
               }
             } else if (log.tblName == 'masteredWords') {
-              final entity = MasteredWord.fromJson(jsonDecode(log.record));
-              if (log.operate == 'INSERT' || log.operate == 'UPDATE') {
-                await db.masteredWordsDao.saveMasteredWord(entity, false, false);
-              } else if (log.operate == 'DELETE') {
-                await db.masteredWordsDao.deleteMasteredWord(entity.userId, entity.wordId, false, false);
-              }
+              // 已废弃：mastered_word 已迁移到 dict + dict_word 体系
+              // 忽略来自后端的旧格式日志
+              Global.logger.i('忽略已废弃的 masteredWords 同步日志: operate=${log.operate}');
             } else if (log.tblName == 'userWrongWords') {
               final entity = UserWrongWord.fromJson(jsonDecode(log.record));
               if (log.operate == 'INSERT' || log.operate == 'UPDATE') {
@@ -419,7 +416,8 @@ Future<void> _handleBatchDeleteUserRecords(UserDbLog log, String userId) async {
         await db.learningWordsDao.batchDeleteUserRecords(userId, filters: filters);
         break;
       case 'masteredWords':
-        await db.masteredWordsDao.batchDeleteUserRecords(userId, filters: filters);
+        // 已废弃：mastered_word 已迁移到 dict + dict_word 体系
+        Global.logger.i('忽略已废弃的 masteredWords 批量删除日志');
         break;
       case 'userWrongWords':
         await db.userWrongWordsDao.batchDeleteUserRecords(userId, filters: filters);

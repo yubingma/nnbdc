@@ -1,44 +1,39 @@
 package beidanci.service.bo;
 
-import javax.annotation.PostConstruct;
-
 import java.io.IOException;
-import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 
-import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import beidanci.api.model.MasteredWordDto;
 import beidanci.api.model.PagedResults;
 import beidanci.api.model.WordVo;
-import beidanci.service.dao.BaseDao;
 import beidanci.service.exception.EmptySpellException;
 import beidanci.service.exception.InvalidMeaningFormatException;
 import beidanci.service.exception.ParseException;
 import beidanci.service.po.Dict;
+import beidanci.service.po.DictWord;
 import beidanci.service.po.LearningWord;
-import beidanci.service.po.MasteredWord;
-import beidanci.service.po.MasteredWordId;
 import beidanci.service.po.User;
 import beidanci.service.po.Word;
 import beidanci.service.store.WordCache;
 
+/**
+ * 已掌握单词业务逻辑层
+ * 
+ * 重构后，已掌握单词不再使用独立的 mastered_word 表，
+ * 而是作为一本用户词书（name='已掌握'）存储在 dict + dict_word 体系中。
+ */
 @Service
 @Transactional(rollbackFor = Throwable.class)
-public class MasteredWordBo extends BaseBo<MasteredWord> {
+public class MasteredWordBo {
     private static final Logger logger = LoggerFactory.getLogger(MasteredWordBo.class);
-    
+
     @Autowired
     LearningWordBo learningWordBo;
 
@@ -60,37 +55,96 @@ public class MasteredWordBo extends BaseBo<MasteredWord> {
     @Autowired
     private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
-    @PostConstruct
-    public void init() {
-        setDao(new BaseDao<MasteredWord>() {
+    /**
+     * 获取用户的"已掌握"词书，如果不存在则自动创建
+     */
+    private Dict getMasteredWordDict(User user) {
+        Dict dict = dictBo.getMasteredWordDict(user);
+        if (dict == null) {
+            dict = dictBo.createMasteredWordDictForUser(user);
+        }
+        return dict;
+    }
+
+    /**
+     * 获取用户的"已掌握"词书（通过userId），如果不存在则自动创建
+     */
+    private Dict getMasteredWordDictByUserId(String userId) {
+        Dict dict = dictBo.getMasteredWordDictByUserId(userId);
+        if (dict == null) {
+            User user = userBo.findById(userId);
+            if (user != null) {
+                dict = dictBo.createMasteredWordDictForUser(user);
+            }
+        }
+        return dict;
+    }
+
+    /**
+     * 检查单词是否已被用户掌握（在"已掌握"词书中）
+     */
+    public boolean isWordMastered(String userId, String wordId) {
+        Dict dict = getMasteredWordDictByUserId(userId);
+        if (dict == null) return false;
+        
+        String sql = "SELECT COUNT(*) FROM dict_word WHERE dict_id = :dictId AND word_id = :wordId";
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        params.addValue("dictId", dict.getId());
+        params.addValue("wordId", wordId);
+        Long count = namedParameterJdbcTemplate.queryForObject(sql, params, Long.class);
+        return count != null && count > 0;
+    }
+
+    /**
+     * 分页获取已掌握单词（现在从"已掌握"词书中的dict_word获取）
+     */
+    public PagedResults<DictWord> getMasteredWordsForAPage2(int fromIndex, int pageSize, User user) {
+        Dict dict = getMasteredWordDict(user);
+        String sql = "SELECT * FROM dict_word WHERE dict_id = :dictId ORDER BY seq ASC";
+        
+        // 获取总数
+        String countSql = "SELECT COUNT(*) FROM dict_word WHERE dict_id = :dictId";
+        MapSqlParameterSource params = new MapSqlParameterSource("dictId", dict.getId());
+        Long total = namedParameterJdbcTemplate.queryForObject(countSql, params, Long.class);
+        
+        // 获取分页数据
+        String pagedSql = sql + " LIMIT :pageSize OFFSET :fromIndex";
+        params.addValue("pageSize", pageSize);
+        params.addValue("fromIndex", fromIndex);
+        
+        List<DictWord> dictWords = namedParameterJdbcTemplate.query(pagedSql, params, (rs, rowNum) -> {
+            DictWord dw = new DictWord();
+            dw.setDict(dictBo.findById(rs.getString("dict_id")));
+            dw.setWord(wordBo.findById(rs.getString("word_id")));
+            dw.setSeq(rs.getInt("seq"));
+            dw.setCreateTime(rs.getTimestamp("create_time"));
+            dw.setUpdateTime(rs.getTimestamp("update_time"));
+            return dw;
         });
+        
+        PagedResults<DictWord> results = new PagedResults<>();
+        results.setTotal(total != null ? total.intValue() : 0);
+        results.setRows(dictWords);
+        return results;
     }
 
-    public List<MasteredWord> findByUser(User user) {
-        MasteredWord exam = new MasteredWord();
-        exam.setUser(user);
-        return queryAll(exam, false);
-    }
-
-    public PagedResults<MasteredWord> getMasteredWordsForAPage2(int fromIndex, int pageSize, User user) {
-        String sql = "SELECT * FROM mastered_word WHERE user_id = :userId " +
-                "ORDER BY master_at_time ASC, word_id ASC";
-        PagedResults<MasteredWord> learningWords = pagedQuery2(sql, fromIndex, pageSize,
-                new ImmutablePair<>("userId", user.getId()));
-        return learningWords;
-    }
-
+    /**
+     * 将单词标记为已掌握：添加到"已掌握"词书中
+     */
     public void setWordAsMastered(LearningWord learningWord, User user, boolean deleteLearningWord, String userId)
             throws IllegalAccessException, InvalidMeaningFormatException, EmptySpellException, ParseException,
             IOException {
         learningWord.setLifeValue(0);
         learningWordBo.updateEntity(learningWord);
 
-        // 添加已掌握单词
-        MasteredWordId id = new MasteredWordId(user.getId(), learningWord.getId().getWordId());
-        if (findById(id) == null) {
-            MasteredWord masteredWord = new MasteredWord(id, user, new Date());
-            createEntity(masteredWord);
+        // 添加到"已掌握"词书
+        String wordId = learningWord.getId().getWordId();
+        if (!isWordMastered(user.getId(), wordId)) {
+            Dict masteredDict = getMasteredWordDict(user);
+            Word word = wordBo.findById(wordId);
+            if (word != null) {
+                dictWordBo.addWordToDict(word.getSpell(), masteredDict, "mastered", wordCache, wordBo, dictBo);
+            }
 
             // 将用户掌握的单词数+1
             onWordMastered(userBo, user);
@@ -108,27 +162,33 @@ public class MasteredWordBo extends BaseBo<MasteredWord> {
     }
 
     /**
-     * 删除已掌握单词（并移动到生词本）
-     *
-     * @param id
+     * 删除已掌握单词（从"已掌握"词书中移除，并移动到生词本）
      */
-    public void deleteMasterdWord(MasteredWordId id, String userId) throws IllegalAccessException, InvalidMeaningFormatException,
+    public void deleteMasteredWord(String userId, String wordId) throws IllegalAccessException, InvalidMeaningFormatException,
             EmptySpellException, IOException, ParseException {
-        // 删除已掌握单词
-        MasteredWord masteredWord = findById(id);
-        deleteEntity(masteredWord);
+        Dict masteredDict = getMasteredWordDictByUserId(userId);
+        if (masteredDict == null) {
+            logger.warn("用户没有已掌握词书: userId={}", userId);
+            return;
+        }
+
+        // 使用 dictWordBo.removeWordFromDict 来处理删除（包括seq重排和word_count更新）
+        dictWordBo.removeWordFromDict(masteredDict.getId(), wordId, userId);
 
         // 把已删除的已掌握单词移动到生词本
-        Word word = wordBo.findById(masteredWord.getId().getWordId());
-        Dict dict = dictBo.getRawWordDict(userBo.findById(id.getUserId()));
-        dictWordBo.addWordToDict(word.getSpell(), dict, "delete mastered word", wordCache, wordBo, dictBo);
+        Word word = wordBo.findById(wordId);
+        User user = userBo.findById(userId);
+        Dict rawDict = dictBo.getRawWordDict(user);
+        dictWordBo.addWordToDict(word.getSpell(), rawDict, "delete mastered word", wordCache, wordBo, dictBo);
 
         // 更新用户信息
-        User user = userBo.findById(userId);
-        user.setMasteredWordsCount(user.getMasteredWordsCount() - 1);
+        user.setMasteredWordsCount(Math.max(0, user.getMasteredWordsCount() - 1));
         userBo.updateEntity(user);
     }
 
+    /**
+     * 获取已掌握单词在列表中的位置
+     */
     public int getMasteredWordOrder(String userId, String spell)
             throws InvalidMeaningFormatException, EmptySpellException, IOException, ParseException {
         WordVo word = wordCache.getWordBySpell(spell, new String[] {
@@ -136,113 +196,31 @@ public class MasteredWordBo extends BaseBo<MasteredWord> {
         if (word == null) {
             return -1;
         }
-        String sql = "SELECT * FROM mastered_word WHERE user_id = :userId AND word_id = :wordId";
-        MasteredWord masteredWord = queryUnique(sql,
-                new ImmutablePair<>("userId", userId),
-                new ImmutablePair<>("wordId", word.getId()));
-        if (masteredWord == null) {
+
+        Dict masteredDict = getMasteredWordDictByUserId(userId);
+        if (masteredDict == null) {
             return -1;
         }
 
-        // 转换为 SQL
-        String countSql = "SELECT COUNT(*) FROM mastered_word WHERE user_id = :userId " +
-                "AND (master_at_time < :masterAtTime OR (master_at_time = :masterAtTime AND word_id <= :wordId))";
+        // 检查该单词是否在已掌握词书中
+        String checkSql = "SELECT seq FROM dict_word WHERE dict_id = :dictId AND word_id = :wordId";
+        MapSqlParameterSource checkParams = new MapSqlParameterSource();
+        checkParams.addValue("dictId", masteredDict.getId());
+        checkParams.addValue("wordId", word.getId());
+        List<Integer> seqs = namedParameterJdbcTemplate.queryForList(checkSql, checkParams, Integer.class);
+        if (seqs.isEmpty()) {
+            return -1;
+        }
+
+        int seq = seqs.get(0);
+        // 计算位置：统计 seq <= 当前单词 seq 的记录数
+        String countSql = "SELECT COUNT(*) FROM dict_word WHERE dict_id = :dictId AND seq <= :seq";
         MapSqlParameterSource params = new MapSqlParameterSource();
-        params.addValue("userId", userId);
-        params.addValue("masterAtTime", masteredWord.getMasterAtTime());
-        params.addValue("wordId", word.getId());
+        params.addValue("dictId", masteredDict.getId());
+        params.addValue("seq", seq);
         Long result = namedParameterJdbcTemplate.queryForObject(countSql, params, Long.class);
         long count = result != null ? result : 0L;
 
         return (int) count;
-    }
-
-    /**
-     * 获取用户所有已掌握单词的DTO列表，用于全量同步
-     */
-    public List<MasteredWordDto> getMasteredWordDtosOfUser(String userId) {
-        String sql = "SELECT user_id, word_id, master_at_time, create_time, update_time FROM mastered_word WHERE user_id = :userId ORDER BY master_at_time, word_id";
-        MapSqlParameterSource params = new MapSqlParameterSource("userId", userId);
-        
-        List<MasteredWordDto> masteredWordDtos = namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> {
-            MasteredWordDto masteredWordDto = new MasteredWordDto();
-            masteredWordDto.setUserId(rs.getString("user_id"));
-            masteredWordDto.setWordId(rs.getString("word_id"));
-            masteredWordDto.setMasterAtTime(rs.getTimestamp("master_at_time"));
-            masteredWordDto.setCreateTime(rs.getTimestamp("create_time"));
-            masteredWordDto.setUpdateTime(rs.getTimestamp("update_time"));
-            return masteredWordDto;
-        });
-        return masteredWordDtos;
-    }
-
-    /**
-     * 批量删除用户的mastered_word记录
-     * @param userId 用户ID
-     * @param filtersJson 过滤条件JSON字符串
-     */
-    public void batchDeleteUserRecords(String userId, String filtersJson) {
-        try {
-            // 解析过滤条件
-            Map<String, Object> filters = new HashMap<>();
-            if (filtersJson != null && !filtersJson.trim().isEmpty()) {
-                filters = parseFilters(filtersJson);
-            }
-            
-            // 构建删除SQL
-            StringBuilder sql = new StringBuilder("DELETE FROM mastered_word WHERE user_id = :userId");
-            Map<String, Object> parameters = new HashMap<>();
-            parameters.put("userId", userId);
-            
-            // 添加过滤条件
-            if (filters.containsKey("wordId")) {
-                sql.append(" AND word_id = :wordId");
-                parameters.put("wordId", filters.get("wordId"));
-            }
-            if (filters.containsKey("masterAtTime")) {
-                sql.append(" AND master_at_time = :masterAtTime");
-                parameters.put("masterAtTime", filters.get("masterAtTime"));
-            }
-            
-            MapSqlParameterSource params = new MapSqlParameterSource();
-            for (Map.Entry<String, Object> entry : parameters.entrySet()) {
-                params.addValue(Objects.requireNonNull(entry.getKey(), "Parameter key cannot be null"), entry.getValue());
-            }
-            
-            int deletedCount = namedParameterJdbcTemplate.update(Objects.requireNonNull(sql.toString(), "SQL cannot be null"), params);
-            System.out.println("批量删除mastered_word记录完成，用户ID: " + userId + ", 删除数量: " + deletedCount);
-            
-        } catch (DataAccessException e) {
-            logger.error("批量删除mastered_word记录失败: userId={}", userId, e);
-            throw new RuntimeException("批量删除mastered_word记录失败: " + e.getMessage(), e);
-        }
-    }
-    
-    /**
-     * 简单的JSON解析方法，将JSON字符串转换为Map
-     */
-    private Map<String, Object> parseFilters(String filtersJson) {
-        Map<String, Object> filters = new HashMap<>();
-        try {
-            // 移除JSON的大括号
-            String content = filtersJson.trim();
-            if (content.startsWith("{") && content.endsWith("}")) {
-                content = content.substring(1, content.length() - 1);
-            }
-            
-            // 简单的键值对解析
-            String[] pairs = content.split(",");
-            for (String pair : pairs) {
-                String[] keyValue = pair.split(":");
-                if (keyValue.length == 2) {
-                    String key = keyValue[0].trim().replace("\"", "");
-                    String value = keyValue[1].trim().replace("\"", "");
-                    filters.put(key, value);
-                }
-            }
-        } catch (Exception e) {
-            System.err.println("解析过滤条件失败: " + e.getMessage());
-        }
-        return filters;
     }
 }

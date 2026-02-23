@@ -54,7 +54,7 @@ public class LearningDictBo extends BaseBo<LearningDict> {
         String sql = "SELECT COUNT(*) FROM dict_word dw " +
                 "INNER JOIN learning_dict ld ON dw.dict_id = ld.dict_id " +
                 "WHERE ld.user_id = :userId " +
-                "AND NOT EXISTS (SELECT 0 FROM mastered_word mw WHERE mw.user_id = ld.user_id AND mw.word_id = dw.word_id) " +
+                "AND NOT EXISTS (SELECT 0 FROM dict_word mdw INNER JOIN dict md ON mdw.dict_id = md.id WHERE md.owner_id = ld.user_id AND md.name = '已掌握' AND mdw.word_id = dw.word_id) " +
                 "AND NOT EXISTS (SELECT 0 FROM learning_word lw WHERE lw.user_id = ld.user_id AND lw.word_id = dw.word_id)";
         MapSqlParameterSource params = new MapSqlParameterSource("userId", user.getId());
         Long count = namedParameterJdbcTemplate.queryForObject(sql, params, Long.class);

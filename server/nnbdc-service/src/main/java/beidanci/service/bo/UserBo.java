@@ -297,9 +297,8 @@ public class UserBo extends BaseBo<User> {
                 sql = "DELETE FROM learning_word WHERE user_id = ?";
                 jdbcTemplate.update(sql, user.getId());
 
-                // 删除用户已掌握的单词
-                sql = "DELETE FROM mastered_word WHERE user_id = ?";
-                jdbcTemplate.update(sql, user.getId());
+                // 已掌握单词现在作为用户词书(dict + dict_word)存储，
+                // 上面 deleteDictSafely 已经处理了删除
 
                 // 删除用户发送的消息（使用批量删除避免外键约束问题）
                 sql = "DELETE FROM msg WHERE from_user_id = ?";

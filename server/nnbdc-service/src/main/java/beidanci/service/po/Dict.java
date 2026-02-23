@@ -65,12 +65,26 @@ public class Dict extends UuidPo {
     @Column(name = "popularity_limit", nullable = true)
     private Integer popularityLimit;
 
+    /**
+     * 是否可编辑（生词本、已掌握和用户自定义词书为 true）
+     */
+    @Column(name = "editable", nullable = false)
+    private Boolean editable = false;
+
     public Integer getPopularityLimit() {
         return popularityLimit;
     }
 
     public void setPopularityLimit(Integer popularityLimit) {
         this.popularityLimit = popularityLimit;
+    }
+
+    public Boolean getEditable() {
+        return editable;
+    }
+
+    public void setEditable(Boolean editable) {
+        this.editable = editable;
     }
 
     public List<DictWord> getDictWords() {

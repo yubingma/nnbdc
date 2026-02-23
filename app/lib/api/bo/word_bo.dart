@@ -618,23 +618,15 @@ class WordBo {
       if (userId == null) {
         return results;
       }
-      final countQuery = db.selectOnly(db.masteredWords)
-        ..addColumns([countAll()])
-        ..where(db.masteredWords.userId.equals(userId));
-      final count = await countQuery.getSingle();
-      results.total = count.read(countAll()) ?? 0;
-      final masteredWordQuery = db.select(db.masteredWords)
-        ..where((mw) => mw.userId.equals(userId))
-        ..orderBy([
-          (t) => OrderingTerm(expression: t.masterAtTime, mode: OrderingMode.desc),
-          (t) => OrderingTerm(expression: t.wordId, mode: OrderingMode.desc)
-        ])
-        ..limit(pageSize, offset: fromIndex);
-      final masteredWordEntries = await masteredWordQuery.get();
-      if (masteredWordEntries.isEmpty) {
+      // 从"已掌握"词书获取所有已掌握单词
+      final allMasteredWords = await db.masteredWordsDao.getMasteredWordsForUser(userId);
+      results.total = allMasteredWords.length;
+      // 手动分页
+      final pagedEntries = allMasteredWords.skip(fromIndex).take(pageSize).toList();
+      if (pagedEntries.isEmpty) {
         return results;
       }
-      final wordIds = masteredWordEntries.map((mw) => mw.wordId).toList();
+      final wordIds = pagedEntries.map((dw) => dw.wordId).toList();
       final wordQuery = db.select(db.words)..where((w) => w.id.isIn(wordIds));
       final wordEntries = await wordQuery.get();
       final wordMap = {for (var word in wordEntries) word.id: word};
@@ -646,8 +638,8 @@ class WordBo {
           meaningItemsMap[wordId] = meaningItems;
         }
       }
-      for (var masteredWord in masteredWordEntries) {
-        final wordEntry = wordMap[masteredWord.wordId];
+      for (var dictWord in pagedEntries) {
+        final wordEntry = wordMap[dictWord.wordId];
         if (wordEntry != null) {
           final wordVo = WordVo.c2(wordEntry.spell)
             ..id = wordEntry.id
@@ -665,7 +657,7 @@ class WordBo {
           }
           wordVo.meaningItems = meaningItemVos;
           final userVo = UserVo.c2(userId);
-          results.rows.add(MasteredWordVo(userVo, wordVo, masteredWord.masterAtTime));
+          results.rows.add(MasteredWordVo(userVo, wordVo, dictWord.createTime));
         }
       }
       return results;
@@ -1507,11 +1499,8 @@ class WordBo {
         rawWordCount = rawWordCountResult.read(countAll()) ?? 0;
       }
       wordLists.add(WordList("生词本", rawWordCount));
-      final masteredWordsQuery = db.selectOnly(db.masteredWords)
-        ..addColumns([countAll()])
-        ..where(db.masteredWords.userId.equals(user.id));
-      final masteredWordsCount = await masteredWordsQuery.getSingle();
-      wordLists.add(WordList("已掌握", masteredWordsCount.read(countAll()) ?? 0));
+      final masteredWordIds = await db.masteredWordsDao.getMasteredWordIdSet(user.id);
+      wordLists.add(WordList("已掌握", masteredWordIds.length));
       return Result("SUCCESS", "获取成功", true)..data = wordLists;
     } catch (e, stackTrace) {
       Global.logger.e('获取单词列表失败: $e', stackTrace: stackTrace);

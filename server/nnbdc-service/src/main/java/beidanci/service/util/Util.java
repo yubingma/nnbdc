@@ -653,6 +653,9 @@ public class Util {
         // 创建用户的生词本
         dictBo.createRawWordDictForUser(user);
 
+        // 创建用户的"已掌握"词书
+        dictBo.createMasteredWordDictForUser(user);
+
         return user;
     }
 

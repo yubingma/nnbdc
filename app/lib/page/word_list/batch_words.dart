@@ -63,10 +63,8 @@ class StageWordsProvider with WordsProvider {
     final db = MyDatabase.instance;
 
     // 检查是否已掌握
-    final masteredQuery = db.select(db.masteredWords)
-      ..where((mw) => mw.userId.equals(user.id) & mw.wordId.equals(wordId));
-    final mastered = await masteredQuery.getSingleOrNull();
-    if (mastered != null) return true; // 已掌握
+    final isMastered = await db.masteredWordsDao.isWordMastered(user.id, wordId);
+    if (isMastered) return true; // 已掌握
 
     // 检查是否在学习中（生命值 > 0）
     final learningQuery = db.select(db.learningWords)

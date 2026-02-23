@@ -410,6 +410,16 @@ class DictsDao extends DatabaseAccessor<MyDatabase> with _$DictsDaoMixin {
         .getSingleOrNull();
   }
 
+  /// 查找指定用户的"已掌握"词书
+  /// @param userId 用户ID
+  /// @return 用户的"已掌握"词书，如果不存在则返回null
+  Future<Dict?> findUserMasteredDict(String userId) async {
+    return (select(dicts)
+          ..where((d) => d.ownerId.equals(userId))
+          ..where((d) => d.name.equals('已掌握')))
+        .getSingleOrNull();
+  }
+
   /// 删除词典（支持日志）
   Future<void> deleteEntity(Dict entry, bool genLog) async {
     try {
@@ -1094,21 +1104,16 @@ class LearningWordsDao extends DatabaseAccessor<MyDatabase> with _$LearningWords
     await query.go();
   }
 
-  /// 删除用户已经掌握的单词（从mastered_words表推导）
+  /// 删除用户已经掌握的单词（从"已掌握"词书推导）
   Future<void> deleteMasteredWords(String userId) async {
     final db = MyDatabase.instance;
     // 获取用户已掌握的所有单词ID
-    final masteredQuery = db.selectOnly(db.masteredWords)
-      ..addColumns([db.masteredWords.wordId])
-      ..where(db.masteredWords.userId.equals(userId));
-
-    final rows = await masteredQuery.get();
-    final masteredWordIds = rows.map((row) => row.read(db.masteredWords.wordId)!).toList();
+    final masteredWordIds = await db.masteredWordsDao.getMasteredWordIdSet(userId);
 
     if (masteredWordIds.isNotEmpty) {
       // 从 learning_words 表中批量删除这些已掌握的词
       await (delete(learningWords)
-            ..where((lw) => lw.userId.equals(userId) & lw.wordId.isIn(masteredWordIds)))
+            ..where((lw) => lw.userId.equals(userId) & lw.wordId.isIn(masteredWordIds.toList())))
           .go();
       Global.logger.d('已从 learningWords 中删除 ${masteredWordIds.length} 个已掌握单词');
     }
@@ -1529,62 +1534,118 @@ class UserOpersDao extends DatabaseAccessor<MyDatabase> with _$UserOpersDaoMixin
   }
 }
 
-@DriftAccessor(tables: [MasteredWords])
+@DriftAccessor(tables: [DictWords, Dicts])
 class MasteredWordsDao extends DatabaseAccessor<MyDatabase> with _$MasteredWordsDaoMixin {
   MasteredWordsDao(super.db);
 
-  // 根据用户ID和单词ID获取掌握的单词
-  Future<MasteredWord?> getById(String userId, String wordId) {
-    return (select(masteredWords)..where((m) => m.userId.equals(userId) & m.wordId.equals(wordId))).getSingleOrNull();
+  /// 获取用户的"已掌握"词书的dictId
+  Future<String?> _getMasteredDictId(String userId) async {
+    final dict = await db.dictsDao.findUserMasteredDict(userId);
+    return dict?.id;
   }
 
-  // 获取用户所有掌握的单词
-  Future<List<MasteredWord>> getMasteredWordsForUser(String userId) {
-    return (select(masteredWords)
-          ..where((m) => m.userId.equals(userId))
-          ..orderBy([(m) => OrderingTerm(expression: m.masterAtTime, mode: OrderingMode.desc)]))
+  /// 获取用户所有已掌握单词（从"已掌握"词书的dict_word获取）
+  Future<List<DictWord>> getMasteredWordsForUser(String userId) async {
+    final dictId = await _getMasteredDictId(userId);
+    if (dictId == null) return [];
+    return (select(db.dictWords)
+          ..where((dw) => dw.dictId.equals(dictId))
+          ..orderBy([(dw) => OrderingTerm(expression: dw.seq, mode: OrderingMode.asc)]))
         .get();
   }
 
-  // 保存掌握的单词
-  Future<void> saveMasteredWord(MasteredWord word, bool genLog, bool updateUser) async {
-    var existing = await getById(word.userId, word.wordId);
-    if (existing == null) {
-      await into(masteredWords).insert(word);
-      if (genLog) {
-        await DbLogUtil.logOperation(word.userId, 'INSERT', 'masteredWords', '${word.userId}-${word.wordId}', word);
-      }
-    } else {
-      await update(masteredWords).replace(word);
-      if (genLog) {
-        await DbLogUtil.logOperation(word.userId, 'UPDATE', 'masteredWords', '${word.userId}-${word.wordId}', word);
-      }
+  /// 获取用户已掌握单词的wordId集合（高效接口，只返回wordId）
+  Future<Set<String>> getMasteredWordIdSet(String userId) async {
+    final dictId = await _getMasteredDictId(userId);
+    if (dictId == null) return {};
+    final rows = await (selectOnly(db.dictWords)
+          ..addColumns([db.dictWords.wordId])
+          ..where(db.dictWords.dictId.equals(dictId)))
+        .get();
+    return rows.map((row) => row.read(db.dictWords.wordId)!).toSet();
+  }
+
+  // 检查单词是否已被掌握（在"已掌握"词书中）
+  Future<bool> isWordMastered(String userId, String wordId) async {
+    final dictId = await _getMasteredDictId(userId);
+    if (dictId == null) return false;
+    final existing = await (select(db.dictWords)
+          ..where((dw) => dw.dictId.equals(dictId) & dw.wordId.equals(wordId)))
+        .getSingleOrNull();
+    return existing != null;
+  }
+
+  // 将单词添加到"已掌握"词书
+  Future<void> saveMasteredWord(String userId, String wordId, bool genLog, bool updateUser) async {
+    final dictId = await _getMasteredDictId(userId);
+    if (dictId == null) {
+      Global.logger.w('用户没有"已掌握"词书: userId=$userId');
+      return;
     }
+
+    // 检查是否已存在
+    final existing = await (select(db.dictWords)
+          ..where((dw) => dw.dictId.equals(dictId) & dw.wordId.equals(wordId)))
+        .getSingleOrNull();
+
+    if (existing != null) {
+      Global.logger.d('单词已在已掌握词书中: wordId=$wordId');
+      return;
+    }
+
+    // 获取最大seq
+    final maxSeqResult = await (selectOnly(db.dictWords)
+          ..addColumns([db.dictWords.seq.max()])
+          ..where(db.dictWords.dictId.equals(dictId)))
+        .getSingle();
+    final maxSeq = maxSeqResult.read(db.dictWords.seq.max()) ?? 0;
+
+    final now = AppClock.now();
+    final newDictWord = DictWord(
+      dictId: dictId,
+      wordId: wordId,
+      seq: maxSeq + 1,
+      createTime: now,
+      updateTime: now,
+    );
+
+    await db.dictWordsDao.insertEntity(newDictWord, genLog);
+
+    // 更新词书wordCount
+    await db.dictsDao.updateWordCount(dictId, genLog);
+
     if (updateUser) {
-      updateUserMasteredWordCount(word.userId);
+      await updateUserMasteredWordCount(userId);
     }
   }
 
-  // 删除掌握的单词（本地化deleteMasteredWord API）
+  // 删除掌握的单词（从"已掌握"词书中移除，并移动到生词本）
   Future<void> deleteMasteredWord(String userId, String wordId, bool genLog, bool updateUser) async {
     try {
-      var masteredWord = await getById(userId, wordId);
-      if (masteredWord == null) {
-        Global.logger.w('要删除的已掌握单词不存在: userId=$userId, wordId=$wordId');
+      final dictId = await _getMasteredDictId(userId);
+      if (dictId == null) {
+        Global.logger.w('用户没有"已掌握"词书: userId=$userId');
         return;
       }
 
-      // 1. 删除已掌握单词记录
-      await (delete(masteredWords)..where((m) => m.userId.equals(userId) & m.wordId.equals(wordId))).go();
-
-      if (genLog) {
-        await DbLogUtil.logOperation(userId, 'DELETE', 'masteredWords', '$userId-$wordId', masteredWord);
+      final existing = await (select(db.dictWords)
+            ..where((dw) => dw.dictId.equals(dictId) & dw.wordId.equals(wordId)))
+          .getSingleOrNull();
+      if (existing == null) {
+        Global.logger.w('要删除的已掌握单词不在词书中: userId=$userId, wordId=$wordId');
+        return;
       }
 
-      // 2. 将单词添加到生词本
+      // 1. 从已掌握词书中删除
+      await db.dictWordsDao.deleteEntity(existing, genLog);
+
+      // 2. 更新词书wordCount
+      await db.dictsDao.updateWordCount(dictId, genLog);
+
+      // 3. 将单词添加到生词本
       await _addWordToRawWordDict(userId, wordId, genLog);
 
-      // 3. 更新用户已掌握单词数量
+      // 4. 更新用户已掌握单词数量
       if (updateUser) {
         await updateUserMasteredWordCount(userId);
       }
@@ -1599,14 +1660,11 @@ class MasteredWordsDao extends DatabaseAccessor<MyDatabase> with _$MasteredWords
   // 将单词添加到生词本的私有方法
   Future<void> _addWordToRawWordDict(String userId, String wordId, bool genLog) async {
     try {
-      // 获取单词的拼写
       final word = await (select(db.words)..where((w) => w.id.equals(wordId))).getSingleOrNull();
       if (word == null) {
         Global.logger.e('单词不存在: wordId=$wordId');
         return;
       }
-
-      // 直接调用本地业务对象将单词添加到生词本
       final result = await WordBo().addRawWord(word.spell, '重学添加');
       if (!result.success) {
         Global.logger.e('添加单词到生词本失败: ${result.msg}');
@@ -1615,14 +1673,7 @@ class MasteredWordsDao extends DatabaseAccessor<MyDatabase> with _$MasteredWords
       }
     } catch (e) {
       Global.logger.e('添加单词到生词本失败: userId=$userId, wordId=$wordId, error=$e');
-      // 不重新抛出异常，因为这是辅助操作，不应该影响主要的删除操作
     }
-  }
-
-  // 检查单词是否已被掌握
-  Future<bool> isWordMastered(String userId, String wordId) async {
-    var word = await getById(userId, wordId);
-    return word != null;
   }
 
   // 将学习中的单词标记为已掌握
@@ -1631,34 +1682,23 @@ class MasteredWordsDao extends DatabaseAccessor<MyDatabase> with _$MasteredWords
     final learningWord = await db.learningWordsDao.getById(userId, wordId);
 
     if (learningWord != null) {
-      // 1. 创建已掌握单词记录
       final now = AppClock.now();
-      final masteredWord = MasteredWord(
-        userId: userId,
-        wordId: wordId,
-        masterAtTime: now,
-        createTime: now,
-        updateTime: now,
-      );
-
-      await saveMasteredWord(masteredWord, true, true);
+      // 1. 添加到已掌握词书
+      await saveMasteredWord(userId, wordId, true, true);
 
       // 2. 处理学习中记录
       final user = await db.usersDao.getUserById(userId);
       if (user?.todayStudyStarted ?? false) {
-        // 已经进入学习执行阶段：不删除记录，而是将状态“填满”
-        // 这样进度条的分母保持不变，分子增加，体验更平滑
         final steps = await db.userStudyStepsDao.getActiveUserStudySteps(userId);
         await db.learningWordsDao.saveEntity(
             learningWord.copyWith(
               lifeValue: 0,
               lastLearningDate: Value(now),
               learnedTimes: learningWord.learnedTimes + 1,
-              todayLearnedTimes: steps.length, // 饱和今天的所有环节
+              todayLearnedTimes: steps.length,
             ),
             true);
       } else {
-        // 还在规划阶段或非执行期：按参数决定是否删除
         if (deleteLearningWord) {
           await db.learningWordsDao.deleteEntity(learningWord, true);
         } else {
@@ -1668,13 +1708,13 @@ class MasteredWordsDao extends DatabaseAccessor<MyDatabase> with _$MasteredWords
     }
   }
 
-  // 查询已掌握单词表, 并据此更新用户已掌握单词数量
+  // 查询已掌握词书中的单词数, 并据此更新用户已掌握单词数量
   Future<void> updateUserMasteredWordCount(String userId) async {
-    final count = await (selectOnly(masteredWords)
-          ..addColumns([countAll()])
-          ..where(masteredWords.userId.equals(userId)))
-        .getSingle();
-    final masteredCount = count.read(countAll()) ?? 0;
+    final dictId = await _getMasteredDictId(userId);
+    int masteredCount = 0;
+    if (dictId != null) {
+      masteredCount = await db.dictWordsDao.getDictWordCount(dictId);
+    }
 
     final user = await db.usersDao.getUserById(userId);
     if (user != null) {
@@ -1682,29 +1722,24 @@ class MasteredWordsDao extends DatabaseAccessor<MyDatabase> with _$MasteredWords
     }
   }
 
-  // 获取已掌握单词在列表中的位置（本地化getMasteredWordOrder API）
+  // 获取已掌握单词在列表中的位置
   Future<int> getMasteredWordOrder(String userId, String spell) async {
     try {
-      // 1. 根据单词拼写查找单词ID
       final word = await (select(db.words)..where((w) => w.spell.equals(spell))).getSingleOrNull();
+      if (word == null) return -1;
 
-      if (word == null) {
-        return -1; // 单词不存在
-      }
+      final dictId = await _getMasteredDictId(userId);
+      if (dictId == null) return -1;
 
-      // 2. 查找该单词是否在已掌握列表中
-      final masteredWord = await (select(masteredWords)..where((mw) => mw.userId.equals(userId) & mw.wordId.equals(word.id))).getSingleOrNull();
+      final dictWord = await (select(db.dictWords)
+            ..where((dw) => dw.dictId.equals(dictId) & dw.wordId.equals(word.id)))
+          .getSingleOrNull();
+      if (dictWord == null) return -1;
 
-      if (masteredWord == null) {
-        return -1; // 该单词未被掌握
-      }
-
-      // 3. 计算位置：统计掌握时间晚于或等于当前单词的记录数（因为现在是倒序排列）
-      final count = await (selectOnly(masteredWords)
+      final count = await (selectOnly(db.dictWords)
             ..addColumns([countAll()])
-            ..where(masteredWords.userId.equals(userId) &
-                (masteredWords.masterAtTime.isBiggerThanValue(masteredWord.masterAtTime) |
-                    (masteredWords.masterAtTime.equals(masteredWord.masterAtTime) & masteredWords.wordId.isBiggerOrEqualValue(word.id)))))
+            ..where(db.dictWords.dictId.equals(dictId) &
+                db.dictWords.seq.isSmallerOrEqualValue(dictWord.seq)))
           .getSingle();
 
       return count.read(countAll()) ?? 0;
@@ -1714,36 +1749,17 @@ class MasteredWordsDao extends DatabaseAccessor<MyDatabase> with _$MasteredWords
     }
   }
 
-  /// 删除用户的所有已掌握单词记录
-  /// [userId] 用户ID
-  /// [filters] 可选的过滤条件，Map<字段名, 字段值>，只删除匹配的记录
+  /// 删除用户的所有已掌握单词记录（从"已掌握"词书中清空）
   Future<void> batchDeleteUserRecords(String userId, {Map<String, dynamic>? filters}) async {
-    var query = delete(masteredWords)..where((m) => m.userId.equals(userId));
+    final dictId = await _getMasteredDictId(userId);
+    if (dictId == null) return;
 
-    // 应用过滤条件
-    if (filters != null && filters.isNotEmpty) {
-      for (final entry in filters.entries) {
-        final fieldName = entry.key;
-        final fieldValue = entry.value;
-
-        switch (fieldName) {
-          case 'wordId':
-            query = query..where((m) => m.wordId.equals(fieldValue.toString()));
-            break;
-          case 'masterAtTime':
-            if (fieldValue is DateTime) {
-              query = query..where((m) => m.masterAtTime.equals(fieldValue));
-            }
-            break;
-          default:
-            Global.logger.w('⚠️ MasteredWordsDao不支持过滤字段: $fieldName');
-        }
-      }
-    }
-
-    await query.go();
+    await (delete(db.dictWords)..where((dw) => dw.dictId.equals(dictId))).go();
+    await db.dictsDao.updateWordCount(dictId, false);
   }
 }
+
+
 
 @DriftAccessor(tables: [BookMarks])
 class BookmarksDao extends DatabaseAccessor<MyDatabase> with _$BookmarksDaoMixin {

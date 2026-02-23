@@ -243,6 +243,7 @@ public class DictBo extends BaseBo<Dict> {
         rawDict.setIsReady(true);
         rawDict.setIsShared(false);
         rawDict.setVisible(true);
+        rawDict.setEditable(true);
         rawDict.setOwner(user);
         rawDict.setPopularityLimit(5); // 新用户生词本默认 popularityLimit 为 5
         createEntity(rawDict);
@@ -253,6 +254,57 @@ public class DictBo extends BaseBo<Dict> {
         learningDictBo.createEntity(learningDict);
 
         return rawDict;
+    }
+
+    /**
+     * 获取用户的"已掌握"词书
+     */
+    public Dict getMasteredWordDict(User user) {
+        String sql = "SELECT * FROM dict WHERE owner_id = :ownerId AND name = :name LIMIT 1";
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        params.addValue("ownerId", user.getId());
+        params.addValue("name", "已掌握");
+        List<Dict> results = namedParameterJdbcTemplate.query(sql, params, new EntityRowMapper<>(Dict.class));
+        return results.isEmpty() ? null : results.get(0);
+    }
+
+    /**
+     * 获取用户的"已掌握"词书（通过userId）
+     */
+    public Dict getMasteredWordDictByUserId(String userId) {
+        String sql = "SELECT * FROM dict WHERE owner_id = :ownerId AND name = :name LIMIT 1";
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        params.addValue("ownerId", userId);
+        params.addValue("name", "已掌握");
+        List<Dict> results = namedParameterJdbcTemplate.query(sql, params, new EntityRowMapper<>(Dict.class));
+        return results.isEmpty() ? null : results.get(0);
+    }
+
+    /**
+     * 为用户创建"已掌握"词书（包括创建词书和学习词典关联）
+     * 
+     * @param user 用户对象
+     * @return 创建的"已掌握"词书对象
+     */
+    public Dict createMasteredWordDictForUser(User user) {
+        // 检查是否已存在
+        Dict existing = getMasteredWordDict(user);
+        if (existing != null) {
+            return existing;
+        }
+
+        // 创建"已掌握"词书
+        Dict masteredDict = new Dict();
+        masteredDict.setName("已掌握");
+        masteredDict.setWordCount(0);
+        masteredDict.setIsReady(true);
+        masteredDict.setIsShared(false);
+        masteredDict.setVisible(true);
+        masteredDict.setEditable(true);
+        masteredDict.setOwner(user);
+        createEntity(masteredDict);
+
+        return masteredDict;
     }
 
     public void clearDict(User user, Dict dict) throws IllegalAccessException {
@@ -281,7 +333,7 @@ public class DictBo extends BaseBo<Dict> {
 
     public DictDto getDictDto(String dictId) throws ParseException {
         // 通用词典现在是数据库中的实际记录，统一从数据库查询
-        String sql = "SELECT id, name, owner_id, is_shared, is_ready, visible, word_count, popularity_limit, create_time, update_time FROM dict WHERE id=:dictId";
+        String sql = "SELECT id, name, owner_id, is_shared, is_ready, visible, word_count, popularity_limit, editable, create_time, update_time FROM dict WHERE id=:dictId";
         MapSqlParameterSource params = new MapSqlParameterSource("dictId", dictId);
         List<DictDto> results = namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> {
             DictDto dto = new DictDto();
@@ -293,6 +345,7 @@ public class DictBo extends BaseBo<Dict> {
             dto.setVisible(rs.getBoolean("visible"));
             dto.setWordCount(rs.getObject("word_count", Integer.class));
             dto.setPopularityLimit(rs.getObject("popularity_limit", Integer.class));
+            dto.setEditable(rs.getBoolean("editable"));
             dto.setCreateTime(rs.getTimestamp("create_time"));
             dto.setUpdateTime(rs.getTimestamp("update_time"));
             return dto;
@@ -304,7 +357,7 @@ public class DictBo extends BaseBo<Dict> {
      * 获取指定用户的所有词书DTO
      */
     public List<DictDto> getDictDtosOfUser(String userId) {
-        String sql = "SELECT id, name, owner_id, is_shared, is_ready, visible, word_count, popularity_limit, create_time, update_time "
+        String sql = "SELECT id, name, owner_id, is_shared, is_ready, visible, word_count, popularity_limit, editable, create_time, update_time "
                 +
                 "FROM dict WHERE owner_id = :userId";
         MapSqlParameterSource params = new MapSqlParameterSource("userId", userId);
@@ -318,6 +371,7 @@ public class DictBo extends BaseBo<Dict> {
             dto.setVisible(rs.getBoolean("visible"));
             dto.setWordCount(rs.getObject("word_count", Integer.class));
             dto.setPopularityLimit(rs.getObject("popularity_limit", Integer.class));
+            dto.setEditable(rs.getBoolean("editable"));
             dto.setCreateTime(rs.getTimestamp("create_time"));
             dto.setUpdateTime(rs.getTimestamp("update_time"));
             return dto;
@@ -459,6 +513,7 @@ public class DictBo extends BaseBo<Dict> {
                     dict.getVisible(),
                     dict.getWordCount(),
                     dict.getPopularityLimit(),
+                    dict.getEditable(),
                     dict.getCreateTime(),
                     dict.getUpdateTime());
 
