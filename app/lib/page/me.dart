@@ -2560,178 +2560,158 @@ class _DictCardState extends State<DictCard> {
                 label: widget.dictInfo.name == '生词本' ? '清空' : '删除',
                 isActive: true,
                 isDestructive: true,
-                onTap: () async {
-                  // 如果是生词本，使用原有逻辑
-                  if (widget.dictInfo.name == '生词本') {
-                    final confirmed = await showDialog<bool>(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        title: const Text('确认'),
-                        content: Text('确实要清空"${widget.dictInfo.name}"中的单词？'),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.of(context).pop(false),
-                            child: const Text('否'),
-                          ),
-                          TextButton(
-                            onPressed: () => Navigator.of(context).pop(true),
-                            child: const Text('是'),
-                          ),
-                        ],
-                      ),
-                    );
-
-                    if (confirmed == true && mounted) {
-                      MyDatabase.instance.dictWordsDao.clearDictWord(currentLearningDict.dictId, true);
-
-                      final updatedDict = LearningDict(
-                        userId: currentLearningDict.userId,
-                        dictId: currentLearningDict.dictId,
-                        isPrivileged: currentLearningDict.isPrivileged,
-                        fetchMastered: currentLearningDict.fetchMastered,
-                        createTime: currentLearningDict.createTime,
-                        updateTime: currentLearningDict.updateTime,
-                      );
-                      await MyDatabase.instance.learningDictsDao.saveEntity(updatedDict, true);
-
-                      if (mounted) {
-                        setState(() {
-                          currentLearningDict = updatedDict;
-                          actualWordCount = 0; // 清空后更新实际单词数量
-                        });
-                      }
-                      ThrottledDbSyncService().requestSync();
-                    }
-                    return;
-                  }
-
-                  // 删除普通词书的逻辑
-                  final db = MyDatabase.instance;
-                  final user = Global.getLoggedInUser()!;
-
-                  // 查询用户所有学习中的单词（lifeValue > 0）
-                  final learningWordsQuery = db.select(db.learningWords)
-                    ..where((lw) => lw.userId.equals(user.id) & lw.lifeValue.isBiggerThanValue(0));
-                  final learningWords = await learningWordsQuery.get();
-
-                  if (!mounted) return;
-
-                  // 获取用户书桌上的所有其他词书（排除待删除的词书）
-                  final otherLearningDictsQuery = db.select(db.learningDicts)
-                    ..where((ld) => ld.userId.equals(user.id) & ld.dictId.isNotValue(currentLearningDict.dictId));
-                  final otherLearningDicts = await otherLearningDictsQuery.get();
-                  final otherDictIds = otherLearningDicts.map((ld) => ld.dictId).toSet();
-
-                  if (!mounted) return;
-
-                  // 找出仅在该词书中的学习单词
-                  final learningWordIdsInOtherDicts = <String>{};
-                  for (final learningWord in learningWords) {
-                    // 检查这个学习单词是否在用户的其他书桌词书中
-                    final otherDictsQuery = db.select(db.dictWords)
-                      ..where((dw) => dw.wordId.equals(learningWord.wordId) & dw.dictId.isIn(otherDictIds.isEmpty ? [''] : otherDictIds.toList()));
-                    final otherDicts = await otherDictsQuery.get();
-
-                    if (!mounted) return;
-
-                    if (otherDicts.isNotEmpty) {
-                      learningWordIdsInOtherDicts.add(learningWord.wordId);
-                    }
-                  }
-
-                  // 找出仅在当前词书中的学习单词
-                  final learningWordIdsOnlyInThisDict = learningWords.where((lw) => !learningWordIdsInOtherDicts.contains(lw.wordId)).toList();
-
-                  bool deleteLearningWords = false;
-
-                  // 如果有仅在该词书中的学习单词，询问用户
-                  if (learningWordIdsOnlyInThisDict.isNotEmpty) {
-                    if (!context.mounted) return;
-
-                    final confirmResult = await showDialog<bool>(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        title: const Text('确认删除'),
-                        content: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('确定要删除词书《${widget.dictInfo.name.replaceAll('.dict', '')}》吗？'),
-                            const SizedBox(height: 16),
-                            Text(
-                              '⚠️ 该词书有 ${learningWordIdsOnlyInThisDict.length} 个单词正在学习。',
-                              style: TextStyle(color: Colors.orange[800]),
-                            ),
-                            const SizedBox(height: 8),
-                            Text('是否也要删除这些学习中的单词？'),
-                          ],
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.of(context).pop(false),
-                            child: const Text('仅删除词书'),
-                          ),
-                          TextButton(
-                            onPressed: () => Navigator.of(context).pop(true),
-                            child: const Text('删除词书和学习中单词'),
-                          ),
-                        ],
-                      ),
-                    );
-
-                    // 如果用户点击对话框外部取消（返回 null），则取消删除操作
-                    if (confirmResult == null) {
-                      return;
-                    }
-
-                    deleteLearningWords = confirmResult == true;
-                  } else {
-                    // 没有仅在该词书中的学习单词，直接确认删除词书
-                    if (!context.mounted) return;
-
-                    final confirmed = await showDialog<bool>(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        title: const Text('确认'),
-                        content: Text('确实要删除词书《${widget.dictInfo.name.replaceAll('.dict', '')}》？'),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.of(context).pop(false),
-                            child: const Text('否'),
-                          ),
-                          TextButton(
-                            onPressed: () => Navigator.of(context).pop(true),
-                            child: const Text('是'),
-                          ),
-                        ],
-                      ),
-                    );
-
-                    // 如果用户点击取消或对话框外部（返回 null 或 false），则取消删除操作
-                    if (confirmed != true) {
-                      return;
-                    }
-                  }
-
-                  // 执行删除操作
-                  await db.learningDictsDao.deleteEntity(currentLearningDict, true);
-
-                  // 如果需要删除学习中的单词
-                  if (deleteLearningWords) {
-                    for (final learningWord in learningWordIdsOnlyInThisDict) {
-                      await db.learningWordsDao.deleteEntity(learningWord, true);
-                    }
-                  }
-
-                  widget.onDictChanged();
-                  ThrottledDbSyncService().requestSync();
-                },
+                onTap: () => _handleDictDataAction(isClearOnly: widget.dictInfo.name == '生词本'),
               ),
             ],
           ),
         ],
       ),
     );
+  }
+
+  /// 统一处理词书数据操作（清空单词或删除词书）
+  Future<void> _handleDictDataAction({required bool isClearOnly}) async {
+    final db = MyDatabase.instance;
+    final user = Global.getLoggedInUser()!;
+    final dictName = widget.dictInfo.name.replaceAll('.dict', '');
+
+    // 1. 获取该词书中的所有单词 ID
+    final dictWords = await (db.select(db.dictWords)..where((dw) => dw.dictId.equals(currentLearningDict.dictId))).get();
+    final wordIdsInDict = dictWords.map((dw) => dw.wordId).toSet();
+
+    // 2. 查询用户所有学习中的单词（lifeValue > 0）
+    final learningWords = await (db.select(db.learningWords)..where((lw) => lw.userId.equals(user.id) & lw.lifeValue.isBiggerThanValue(0))).get();
+
+    if (!mounted) return;
+
+    // 3. 获取用户书桌上的所有其他词书 ID
+    final otherLearningDicts = await (db.select(db.learningDicts)..where((ld) => ld.userId.equals(user.id) & ld.dictId.isNotValue(currentLearningDict.dictId)))
+        .get();
+    final otherDictIds = otherLearningDicts.map((ld) => ld.dictId).toSet();
+
+    if (!mounted) return;
+
+    // 4. 找出仅在当前词书中的学习单词
+    final learningWordsOnlyInThisDict = <LearningWord>[];
+    for (final lw in learningWords) {
+      if (!wordIdsInDict.contains(lw.wordId)) continue;
+
+      final otherDicts = await (db.select(db.dictWords)
+            ..where((dw) => dw.wordId.equals(lw.wordId) & dw.dictId.isIn(otherDictIds.isEmpty ? [''] : otherDictIds.toList())))
+          .get();
+
+      if (!mounted) return;
+      if (otherDicts.isEmpty) {
+        learningWordsOnlyInThisDict.add(lw);
+      }
+    }
+
+    bool deleteLearningWords = false;
+    bool shouldProceed = false;
+
+    // 5. 询问用户
+    if (learningWordsOnlyInThisDict.isNotEmpty) {
+      final String actionLabel = isClearOnly ? "清空" : "删除";
+      final confirmResult = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('确认$actionLabel'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(isClearOnly ? '确定要清空"$dictName"中的单词吗？' : '确定要删除词书《$dictName》吗？'),
+              const SizedBox(height: 16),
+              Text(
+                '⚠️ 有 ${learningWordsOnlyInThisDict.length} 个单词正在学习。',
+                style: TextStyle(color: Colors.orange[800]),
+              ),
+              const SizedBox(height: 8),
+              Text('是否也要删除这些学习中的单词？'),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(null), // 取消
+              child: const Text('取消'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false), // 仅操作词书
+              child: Text(isClearOnly ? '仅清空' : '仅删除词书'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true), // 同时删除学习记录
+              child: Text(isClearOnly ? '清空并删除学习中单词' : '删除词书和学习中单词'),
+            ),
+          ],
+        ),
+      );
+
+      if (confirmResult != null) {
+        shouldProceed = true;
+        deleteLearningWords = confirmResult;
+      }
+    } else {
+      // 没有独有学习词，直接确认
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('确认'),
+          content: Text(isClearOnly ? '确实要清空"$dictName"中的单词？' : '确实要删除词书《$dictName》？'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('否'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('是'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed == true) {
+        shouldProceed = true;
+      }
+    }
+
+    // 6. 执行核心逻辑
+    if (shouldProceed && mounted) {
+      if (isClearOnly) {
+        await db.dictWordsDao.clearDictWord(currentLearningDict.dictId, true);
+
+        final updatedDict = LearningDict(
+          userId: currentLearningDict.userId,
+          dictId: currentLearningDict.dictId,
+          isPrivileged: currentLearningDict.isPrivileged,
+          fetchMastered: currentLearningDict.fetchMastered,
+          createTime: currentLearningDict.createTime,
+          updateTime: currentLearningDict.updateTime,
+        );
+        await db.learningDictsDao.saveEntity(updatedDict, true);
+
+        if (mounted) {
+          setState(() {
+            currentLearningDict = updatedDict;
+            actualWordCount = 0;
+            learnedCount = 0;
+          });
+          _loadLearnedAndMasteredCount();
+        }
+      } else {
+        await db.learningDictsDao.deleteEntity(currentLearningDict, true);
+        widget.onDictChanged();
+      }
+
+      // 处理相关学习记录
+      if (deleteLearningWords) {
+        for (final lw in learningWordsOnlyInThisDict) {
+          await db.learningWordsDao.deleteEntity(lw, true);
+        }
+      }
+
+      ThrottledDbSyncService().requestSync();
+    }
   }
 
   // 词书操作按钮组件
