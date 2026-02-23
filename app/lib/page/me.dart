@@ -349,7 +349,21 @@ class _MePageState extends State<MePage> {
         // 通用词典中没有单词，需要下载
         Global.logger.i("通用词典存在但没有单词，需要下载");
         if (mounted) {
-          await _showDictDownloadDialog([DictVo(Global.commonDictId, '通用词典', '通用词典', null, true, true, true, null, 0, AppClock.now())]);
+          await _showDictDownloadDialog([
+            DictVo(
+              id: Global.commonDictId,
+              name: '通用词典',
+              shortName: '通用词典',
+              owner: null,
+              isShared: true,
+              isReady: true,
+              visible: true,
+              editable: false,
+              dictWords: null,
+              wordCount: 0,
+              createTime: AppClock.now(),
+            )
+          ]);
         }
       } else {
         Global.logger.i("通用词典已存在且包含单词，无需下载");
@@ -385,7 +399,19 @@ class _MePageState extends State<MePage> {
           // 将dictName处理为无后缀的短名称
           String shortName = getShortName(dictName);
 
-          dictsToDownload.add(DictVo(learningDict.dictId, dictName, shortName, null, true, true, true, null, 0, AppClock.now()));
+          dictsToDownload.add(DictVo(
+            id: learningDict.dictId,
+            name: dictName,
+            shortName: shortName,
+            owner: null,
+            isShared: true,
+            isReady: true,
+            visible: true,
+            editable: dictName == '生词本', // 这里初步判断，如果是生词本则 editable
+            dictWords: null,
+            wordCount: 0,
+            createTime: AppClock.now(),
+          ));
         } else {
           // 词书存在，但只有当owner是系统用户(系统词书)时才需要检查是否有单词
           if (existing.ownerId == Global.sysUserId) {
@@ -397,7 +423,19 @@ class _MePageState extends State<MePage> {
               // 将dictName处理为无后缀的短名称
               String shortName = getShortName(existing.name);
 
-              dictsToDownload.add(DictVo(learningDict.dictId, existing.name, shortName, null, true, true, true, null, 0, AppClock.now()));
+              dictsToDownload.add(DictVo(
+                id: learningDict.dictId,
+                name: existing.name,
+                shortName: shortName,
+                owner: null,
+                isShared: true,
+                isReady: true,
+                visible: true,
+                editable: existing.name == '生词本' || (existing.ownerId != Global.sysUserId),
+                dictWords: null,
+                wordCount: 0,
+                createTime: AppClock.now(),
+              ));
             } else {
               Global.logger.i("系统词书已存在且包含单词，无需下载, 词书ID: ${learningDict.dictId}");
             }
@@ -2591,8 +2629,7 @@ class _DictCardState extends State<DictCard> {
                   for (final learningWord in learningWords) {
                     // 检查这个学习单词是否在用户的其他书桌词书中
                     final otherDictsQuery = db.select(db.dictWords)
-                      ..where((dw) => dw.wordId.equals(learningWord.wordId) & 
-                                  dw.dictId.isIn(otherDictIds.isEmpty ? [''] : otherDictIds.toList()));
+                      ..where((dw) => dw.wordId.equals(learningWord.wordId) & dw.dictId.isIn(otherDictIds.isEmpty ? [''] : otherDictIds.toList()));
                     final otherDicts = await otherDictsQuery.get();
 
                     if (!mounted) return;
@@ -2646,7 +2683,7 @@ class _DictCardState extends State<DictCard> {
                     if (confirmResult == null) {
                       return;
                     }
-                    
+
                     deleteLearningWords = confirmResult == true;
                   } else {
                     // 没有仅在该词书中的学习单词，直接确认删除词书

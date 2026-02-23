@@ -207,7 +207,7 @@ class MyDatabase extends _$MyDatabase {
   // you should bump this number whenever you change or add a table definition. Migrations
   // are covered later in this readme.
   @override
-  int get schemaVersion => 18;
+  int get schemaVersion => 19;
 
   @override
   MigrationStrategy get migration {
@@ -275,6 +275,9 @@ class MyDatabase extends _$MyDatabase {
           }
           if (from < 18) {
             await _migrateFromV17ToV18AddTodayStudyStarted(m);
+          }
+          if (from < 19) {
+            await _migrateFromV18ToV19AddEditable(m);
           }
         } catch (e, stackTrace) {
           // 升级失败，记录错误日志
@@ -484,6 +487,16 @@ class MyDatabase extends _$MyDatabase {
   Future<void> _migrateFromV17ToV18AddTodayStudyStarted(Migrator m) async {
     await transaction(() async {
       await customStatement('ALTER TABLE users ADD COLUMN today_study_started INTEGER NOT NULL DEFAULT 0');
+    });
+  }
+
+  /// 从版本 18 升级到版本 19：添加“是否可编辑”字段
+  Future<void> _migrateFromV18ToV19AddEditable(Migrator m) async {
+    await transaction(() async {
+      await customStatement('ALTER TABLE dicts ADD COLUMN editable INTEGER NOT NULL DEFAULT 0');
+      // 生词本和自定义词书（ownerId 不是系统用户）默认 editable 为 true
+      // 系统用户 ID 为 Global.sysUserId (15118)
+      await customStatement("UPDATE dicts SET editable = 1 WHERE name = '生词本' OR owner_id != '${Global.sysUserId}'");
     });
   }
 

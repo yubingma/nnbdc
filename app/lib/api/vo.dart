@@ -96,6 +96,7 @@ class DictVo extends Equatable {
   /// 该单词书是否已经准备就绪（只有准备就绪的单词书才能供用户使用，并且一旦就绪后就不能再编辑）
   bool? isReady;
   bool? visible;
+  bool? editable;
   List<DictWordVo>? dictWords;
 
   /// 该单词书的单词数量
@@ -112,7 +113,19 @@ class DictVo extends Equatable {
 
   DictVo.c2(this.id, [this.wordCount]);
 
-  DictVo(this.id, this.name, this.shortName, this.owner, this.isShared, this.isReady, this.visible, this.dictWords, this.wordCount, this.createTime);
+  DictVo({
+    required this.id,
+    this.name,
+    this.shortName,
+    this.owner,
+    this.isShared,
+    this.isReady,
+    this.visible,
+    this.editable,
+    this.dictWords,
+    this.wordCount,
+    this.createTime,
+  });
 
   factory DictVo.fromJson(Map<String, dynamic> json) => _$DictVoFromJson(json);
 

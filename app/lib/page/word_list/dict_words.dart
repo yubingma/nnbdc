@@ -292,6 +292,7 @@ Future<dynamic>? toDictWordsListPage(String dictId, bool showDelBtn) async {
       dict.isReady = dictEntry.isReady;
       dict.isShared = dictEntry.isShared;
       dict.visible = dictEntry.visible;
+      dict.editable = dictEntry.editable;
     } else {
       // 如果本地没有，创建一个默认词典对象
       dict = DictVo.c2(dictId);
@@ -311,6 +312,7 @@ Future<dynamic>? toDictWordsListPage(String dictId, bool showDelBtn) async {
               wordCount: 0,
               ownerId: Global.getLoggedInUser()?.id ?? 'local',
               visible: true,
+              editable: dict.name == '生词本' || (Global.getLoggedInUser()?.id != null && Global.getLoggedInUser()?.id != Global.sysUserId),
               createTime: AppClock.now(),
               updateTime: AppClock.now(),
             ),
@@ -320,8 +322,8 @@ Future<dynamic>? toDictWordsListPage(String dictId, bool showDelBtn) async {
     return Get.toNamed('/word_list',
         arguments: WordListPageArgs(
             dict.shortName!, DictWordsProvider(dict), true, showDelBtn, false, '', DictWordsProgressProvider(), DictWordsBookMarkProvider(dict), null)
-          ..canAddWord = showDelBtn
-          ..canEditWord = showDelBtn);
+          ..canAddWord = showDelBtn || (dict.editable ?? false)
+          ..canEditWord = showDelBtn || (dict.editable ?? false));
   } catch (e) {
     ToastUtil.error("无法打开词典");
     rethrow;
