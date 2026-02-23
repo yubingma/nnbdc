@@ -1334,12 +1334,13 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
       if (wasAnimating) {
         _asrModelLoadingController.stop();
       }
+      final capturedContext = context;
       await Future.delayed(const Duration(milliseconds: 350));
-      if (!context.mounted) return;
+      if (!capturedContext.mounted) return;
 
       final TextEditingController controller = TextEditingController();
       await showDialog(
-        context: context,
+        context: capturedContext,
         builder: (context) => AlertDialog(
           title: const Text('添加单词'),
           content: TextField(
@@ -1397,11 +1398,12 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
       if (wasAnimating) {
         _asrModelLoadingController.stop();
       }
+      final capturedContext = context;
       await Future.delayed(const Duration(milliseconds: 350));
-      if (!context.mounted) return;
+      if (!capturedContext.mounted) return;
 
       await showDialog(
-        context: context,
+        context: capturedContext,
         builder: (context) => EditMeaningDialog(
           word: word,
           wordModifier: args.wordsProvider as WordModifier,
@@ -2711,10 +2713,11 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
                         }
 
                         // 350ms 延时，足以覆盖大部分 iOS 键盘/过渡动画
+                        final capturedContext = context;
                         await Future.delayed(const Duration(milliseconds: 350));
 
                         // 真正的解决 linter 警告：检查 context.mounted
-                        if (!context.mounted) {
+                        if (!capturedContext.mounted) {
                           isMenuOpen = false;
                           return;
                         }
@@ -2724,7 +2727,7 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
                         final RenderBox? button = _menuKey.currentContext?.findRenderObject() as RenderBox?;
 
                         // 预先获取 overlayState，避免在 async gap 后使用 context
-                        final BuildContext overlayContext = Overlay.of(context, rootOverlay: true).context;
+                        final BuildContext overlayContext = Overlay.of(capturedContext, rootOverlay: true).context;
                         final RenderBox? overlayRenderBox = overlayContext.findRenderObject() as RenderBox?;
 
                         if (button == null || overlayRenderBox == null) {
@@ -2745,7 +2748,7 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
 
                         try {
                           // 再次检查 mounted，确保 showMenu 调用安全 (虽然上面已经检查过，但为了满足 strict linter flow analysis)
-                          if (!context.mounted) return;
+                          if (!capturedContext.mounted) return;
 
                           // 4. 构建菜单项
                           List<String> menuItems = [
@@ -2766,7 +2769,7 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
                           // 5. 显示菜单 (使用 RootNavigator)
                           // ignore: use_build_context_synchronously
                           final String? selectedValue = await showMenu<String>(
-                            context: context,
+                            context: capturedContext,
                             position: position,
                             useRootNavigator: true,
                             items: menuItems.map((String choice) {
@@ -3250,13 +3253,14 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
       if (wasAnimating) {
         _asrModelLoadingController.stop();
       }
+      final capturedContext = context;
       await Future.delayed(const Duration(milliseconds: 350));
-      if (!context.mounted) return;
+      if (!capturedContext.mounted) return;
 
-      final isDarkMode = context.read<DarkMode>().isDarkMode;
-
+      final isDarkMode = capturedContext.read<DarkMode>().isDarkMode;
+      
       await showDialog(
-        context: context,
+        context: capturedContext,
         builder: (BuildContext context) {
           return StatefulBuilder(
             builder: (BuildContext context, StateSetter setDialogState) {

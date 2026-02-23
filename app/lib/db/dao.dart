@@ -369,6 +369,7 @@ class DictsDao extends DatabaseAccessor<MyDatabase> with _$DictsDaoMixin {
             wordCount: actualCount,
             ownerId: dict.ownerId,
             visible: dict.visible,
+            editable: dict.editable,
             createTime: dict.createTime,
             updateTime: now,
           );

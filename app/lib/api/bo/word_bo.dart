@@ -866,6 +866,7 @@ class WordBo {
         wordCount: 0,
         ownerId: ownerId,
         visible: true,
+        editable: true,
         createTime: now,
         updateTime: now,
       );

@@ -1035,6 +1035,7 @@ class SelectBookPageState extends State<SelectBookPage> {
                   name: dictRes.dict!.name,
                   wordCount: dictRes.dict!.wordCount,
                   visible: dictRes.dict!.visible,
+                  editable: dictRes.dict!.editable ?? (dictRes.dict!.name == '生词本' || dictRes.dict!.ownerId != Global.sysUserId),
                   popularityLimit: dictRes.dict!.popularityLimit,
                   createTime: dictRes.dict!.createTime,
                   updateTime: dictRes.dict!.updateTime),
