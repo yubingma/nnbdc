@@ -18,12 +18,23 @@ public class DictVo extends UuidVo {
      */
     private Boolean isReady;
     private Boolean visible;
+    private Boolean editable;
+    private Boolean deletable;
     private List<DictWordVo> dictWords;
     /**
      * 该单词书的单词数量
      */
     private Integer wordCount;
 
+    public Boolean getDeletable() {
+        return deletable;
+    }
+
+    public void setDeletable(Boolean deletable) {
+        this.deletable = deletable;
+    }
+
+    
     public String getName() {
         return name;
     }
@@ -87,6 +98,14 @@ public class DictVo extends UuidVo {
 
     public void setIsReady(Boolean isReady) {
         this.isReady = isReady;
+    }
+
+    public Boolean getEditable() {
+        return editable;
+    }
+
+    public void setEditable(Boolean editable) {
+        this.editable = editable;
     }
 
 }

@@ -824,7 +824,6 @@ class WordBo {
         await db.dictsDao.updateWordCount(d.id, true);
       }
       
-      final isRawWordsBook = d.name == '生词本';
       results.add(DictVo.c2(d.id)
         ..name = d.name
         ..wordCount = actualCount
@@ -832,8 +831,8 @@ class WordBo {
         ..isShared = d.isShared
         ..visible = d.visible
         ..owner = UserVo.c2(d.ownerId)
-        ..canDelete = !isRawWordsBook
-        ..canRename = !isRawWordsBook);
+        ..canDelete = d.deletable
+        ..canRename = d.deletable);
     }
     return results;
   }

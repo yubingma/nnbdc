@@ -85,6 +85,8 @@ public class SystemBo {
                 dictDto.setIsReady(dict.getIsReady());
                 dictDto.setVisible(dict.getVisible());
                 dictDto.setWordCount(dict.getWordCount());
+                dictDto.setEditable(dict.getEditable());
+                dictDto.setDeletable(dict.getDeletable());
                 dictDto.setCreateTime(dict.getCreateTime());
                 dictDto.setUpdateTime(dict.getUpdateTime());
                 dictDtos.add(dictDto);

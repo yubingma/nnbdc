@@ -97,6 +97,7 @@ class DictVo extends Equatable {
   bool? isReady;
   bool? visible;
   bool? editable;
+  bool? deletable;
   List<DictWordVo>? dictWords;
 
   /// 该单词书的单词数量
@@ -122,6 +123,7 @@ class DictVo extends Equatable {
     this.isReady,
     this.visible,
     this.editable,
+    this.deletable,
     this.dictWords,
     this.wordCount,
     this.createTime,

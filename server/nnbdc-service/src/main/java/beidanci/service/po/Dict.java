@@ -66,10 +66,16 @@ public class Dict extends UuidPo {
     private Integer popularityLimit;
 
     /**
-     * 是否可编辑（生词本、已掌握和用户自定义词书为 true）
+     * 是否允许用户对词书中的单词进行增删改（生词本、已掌握和用户自定义词书为 true）
      */
     @Column(name = "editable", nullable = false)
     private Boolean editable = false;
+
+    /**
+     * 是否允许用户删除词书本身（系统词书、生词本、已掌握 不可删除）
+     */
+    @Column(name = "deletable", nullable = false)
+    private Boolean deletable = true;
 
     public Integer getPopularityLimit() {
         return popularityLimit;
@@ -85,6 +91,14 @@ public class Dict extends UuidPo {
 
     public void setEditable(Boolean editable) {
         this.editable = editable;
+    }
+
+    public Boolean getDeletable() {
+        return deletable;
+    }
+
+    public void setDeletable(Boolean deletable) {
+        this.deletable = deletable;
     }
 
     public List<DictWord> getDictWords() {

@@ -214,6 +214,8 @@ class Dicts extends Table {
   BoolColumn get visible => boolean()();
   
   BoolColumn get editable => boolean().withDefault(const Constant(false))();
+  
+  BoolColumn get deletable => boolean().withDefault(const Constant(true))();
 
   IntColumn get popularityLimit => integer().nullable()();
 

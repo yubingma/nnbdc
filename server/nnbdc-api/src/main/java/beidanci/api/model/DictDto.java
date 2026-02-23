@@ -21,6 +21,7 @@ public class DictDto implements Dto {
     private Integer wordCount;
     private Integer popularityLimit;
     private Boolean editable;
+    private Boolean deletable;
     private Date createTime;
     private Date updateTime;
 
@@ -28,7 +29,7 @@ public class DictDto implements Dto {
     }
 
     public DictDto(String id, String name, String ownerId, Boolean isShared, Boolean isReady, Boolean visible,
-            Integer wordCount, Integer popularityLimit, Boolean editable, Date createTime, Date updateTime) {
+            Integer wordCount, Integer popularityLimit, Boolean editable, Boolean deletable, Date createTime, Date updateTime) {
         this.id = id;
         this.name = name;
         this.ownerId = ownerId;
@@ -38,8 +39,17 @@ public class DictDto implements Dto {
         this.wordCount = wordCount;
         this.popularityLimit = popularityLimit;
         this.editable = editable;
+        this.deletable = deletable;
         this.createTime = createTime;
         this.updateTime = updateTime;
+    }
+
+    public Boolean getDeletable() {
+        return deletable;
+    }
+
+    public void setDeletable(Boolean deletable) {
+        this.deletable = deletable;
     }
 
     public Date getCreateTime() {

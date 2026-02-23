@@ -207,7 +207,7 @@ class MyDatabase extends _$MyDatabase {
   // you should bump this number whenever you change or add a table definition. Migrations
   // are covered later in this readme.
   @override
-  int get schemaVersion => 20;
+  int get schemaVersion => 21;
 
   @override
   MigrationStrategy get migration {
@@ -281,6 +281,9 @@ class MyDatabase extends _$MyDatabase {
           }
           if (from < 20) {
             await _migrateFromV19ToV20DropMasteredWordsTable(m);
+          }
+          if (from < 21) {
+            await _migrateFromV20ToV21AddDeletable(m);
           }
         } catch (e, stackTrace) {
           // 升级失败，记录错误日志
@@ -517,6 +520,16 @@ class MyDatabase extends _$MyDatabase {
 
       // 从 user_db_logs 中删除 masteredWords 相关的日志记录
       await customStatement("DELETE FROM user_db_logs WHERE tbl_name = 'masteredWords' OR tbl_name = 'mastered_word';");
+    });
+  }
+
+  /// 从版本 20 升级到版本 21：添加“是否可删除”字段
+  Future<void> _migrateFromV20ToV21AddDeletable(Migrator m) async {
+    await transaction(() async {
+      await customStatement('ALTER TABLE dicts ADD COLUMN deletable INTEGER NOT NULL DEFAULT 1');
+      // 系统词书（ownerId 是系统用户）、生词本和已掌握 不可删除
+      // 系统用户 ID 为 Global.sysUserId (15118)
+      await customStatement("UPDATE dicts SET deletable = 0 WHERE name IN ('生词本', '已掌握') OR owner_id = '${Global.sysUserId}'");
     });
   }
 
