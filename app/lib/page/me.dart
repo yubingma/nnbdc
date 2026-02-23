@@ -2614,36 +2614,100 @@ class _DictCardState extends State<DictCard> {
       final String actionLabel = isClearOnly ? "清空" : "删除";
       final confirmResult = await showDialog<bool>(
         context: context,
-        builder: (context) => AlertDialog(
-          title: Text('确认$actionLabel'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(isClearOnly ? '确定要清空"$dictName"中的单词吗？' : '确定要删除词书《$dictName》吗？'),
-              const SizedBox(height: 16),
-              Text(
-                '⚠️ 有 ${learningWordsOnlyInThisDict.length} 个单词正在学习。',
-                style: TextStyle(color: Colors.orange[800]),
-              ),
-              const SizedBox(height: 8),
-              Text('是否也要删除这些学习中的单词？'),
-            ],
+        builder: (context) => Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // 顶部警告图标
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(Icons.warning_amber_rounded, color: Colors.orange[800], size: 40),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  '确认$actionLabel',
+                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  isClearOnly ? '确定要清空"$dictName"中的单词吗？' : '确定要删除词书《$dictName》吗？',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey[600], fontSize: 15),
+                ),
+                const SizedBox(height: 20),
+                // 独有学习单词提示卡片
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.orange.withValues(alpha: 0.2)),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.info_outline, size: 16, color: Colors.orange[800]),
+                          const SizedBox(width: 8),
+                          Text(
+                            '存在学习中单词',
+                            style: TextStyle(color: Colors.orange[800], fontWeight: FontWeight.w600, fontSize: 14),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '该词书中有 ${learningWordsOnlyInThisDict.length} 个单词正在学习。',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.orange[900], fontSize: 13, height: 1.4),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+                // 操作按钮
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(true),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red[400],
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      elevation: 0,
+                    ),
+                    child: Text(isClearOnly ? '清空单词并删除学习记录' : '删除词书和学习记录'),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.of(context).pop(false),
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(color: Colors.grey[300]!),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      foregroundColor: Colors.grey[700],
+                    ),
+                    child: Text(isClearOnly ? '仅清空单词' : '仅删除词书'),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(null),
+                  child: Text('取消', style: TextStyle(color: Colors.grey[500])),
+                ),
+              ],
+            ),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(null), // 取消
-              child: const Text('取消'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false), // 仅操作词书
-              child: Text(isClearOnly ? '仅清空' : '仅删除词书'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(true), // 同时删除学习记录
-              child: Text(isClearOnly ? '清空并删除学习中单词' : '删除词书和学习中单词'),
-            ),
-          ],
         ),
       );
 
@@ -2655,19 +2719,63 @@ class _DictCardState extends State<DictCard> {
       // 没有独有学习词，直接确认
       final confirmed = await showDialog<bool>(
         context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('确认'),
-          content: Text(isClearOnly ? '确实要清空"$dictName"中的单词？' : '确实要删除词书《$dictName》？'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('否'),
+        builder: (context) => Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(isClearOnly ? Icons.clear_all : Icons.delete_outline, color: AppTheme.primaryColor, size: 40),
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  '确认操作',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  isClearOnly ? '确实要清空"$dictName"中的单词吗？' : '确实要删除词书《$dictName》？',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey[600], fontSize: 15),
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.of(context).pop(false),
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(color: Colors.grey[300]!),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          foregroundColor: Colors.grey[700],
+                        ),
+                        child: const Text('否'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.of(context).pop(true),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primaryColor,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          elevation: 0,
+                        ),
+                        child: const Text('是'),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('是'),
-            ),
-          ],
+          ),
         ),
       );
       if (confirmed == true) {
