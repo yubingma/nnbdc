@@ -114,8 +114,6 @@ public class UserBo extends BaseBo<User> {
     @Autowired
     private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
-    @Autowired
-    private EmailVerificationCodeBo emailVerificationCodeBo;
 
     @PostConstruct
     public void init() {
@@ -1268,45 +1266,5 @@ public class UserBo extends BaseBo<User> {
         }
     }
 
-    /**
-     * 绑定或修改用户邮箱
-     *
-     * @param userId 用户ID
-     * @param email 新邮箱地址
-     * @param code 邮箱验证码
-     * @return 绑定结果
-     * @throws IllegalAccessException
-     */
-    @Transactional
-    public Result<Void> bindEmail(String userId, String email, String code) throws IllegalAccessException {
-        // 1. 获取当前用户
-        User user = findById(userId);
-        if (user == null) {
-            return Result.fail("用户不存在");
-        }
-
-        // 2. 校验邮箱验证码
-        String verifyResult = emailVerificationCodeBo.verifyCode(email, code, beidanci.service.po.EmailCodeType.BIND_EMAIL);
-        if (!"OK".equals(verifyResult)) {
-            return Result.fail(verifyResult);
-        }
-
-        // 3. 校验该邮箱是否已被其他账号占用
-        List<User> existingUsers = findByEmail(email);
-        if (existingUsers != null && !existingUsers.isEmpty()) {
-            for (User existingUser : existingUsers) {
-                if (!existingUser.getId().equals(userId)) {
-                    return Result.fail("该邮箱已被其他账号注册或绑定，请更换邮箱");
-                }
-            }
-        }
-
-        // 4. 更新邮箱并保存
-        user.setEmail(email);
-        updateEntity(user);
-
-        logger.info("用户成功绑定邮箱: userId={}, email={}", userId, email);
-        return Result.success(null);
-    }
 
 }

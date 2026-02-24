@@ -8,7 +8,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import beidanci.api.Result;
 import beidanci.service.bo.EmailVerificationCodeBo;
+import beidanci.service.bo.UserBo;
 import beidanci.service.po.EmailCodeType;
+import beidanci.service.po.User;
+import java.util.List;
 
 /**
  * 邮箱验证码控制器
@@ -18,6 +21,9 @@ public class EmailVerificationController {
 
     @Autowired
     private EmailVerificationCodeBo emailVerificationCodeBo;
+
+    @Autowired
+    private UserBo userBo;
 
     /**
      * 发送邮箱验证码
@@ -37,9 +43,44 @@ public class EmailVerificationController {
             return Result.fail("无效的验证码类型");
         }
 
+        if (codeType == EmailCodeType.BIND_EMAIL) {
+            List<User> users = userBo.findByEmail(email);
+            if (users != null && !users.isEmpty()) {
+                return Result.fail("该邮箱已被其他账号使用");
+            }
+        }
+
         String result = emailVerificationCodeBo.sendVerificationCode(email, codeType);
         if ("OK".equals(result)) {
             return Result.success("验证码已发送到您的邮箱", null);
+        } else {
+            return Result.fail(result);
+        }
+    }
+
+    /**
+     * 验证邮箱验证码
+     * @param email 邮箱地址
+     * @param code 验证码
+     * @param type 验证码类型
+     * @return 验证结果
+     */
+    @PostMapping("/verifyEmailCode.do")
+    @ResponseBody
+    public Result<String> verifyEmailCode(
+            @RequestParam("email") String email,
+            @RequestParam("code") String code,
+            @RequestParam("type") String type) {
+        EmailCodeType codeType;
+        try {
+            codeType = EmailCodeType.valueOf(type.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return Result.fail("无效的验证码类型");
+        }
+
+        String result = emailVerificationCodeBo.verifyCode(email, code, codeType);
+        if ("OK".equals(result)) {
+            return Result.success("验证成功");
         } else {
             return Result.fail(result);
         }

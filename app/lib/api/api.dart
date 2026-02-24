@@ -368,15 +368,14 @@ abstract class RestClient {
   @FormUrlEncoded()
   Future<Result> sendEmailCode(@Field("email") String email, @Field("type") String type);
 
+  @POST("/verifyEmailCode.do")
+  @FormUrlEncoded()
+  Future<Result> verifyEmailCode(@Field("email") String email, @Field("code") String code, @Field("type") String type);
+
   @POST("/loginByEmailCode.do")
   @FormUrlEncoded()
   Future<Result> loginByEmailCode(
       @Field("email") String email, @Field("code") String code, @Field("clientType") String clientType, @Field("clientVersion") String clientVersion);
-
-  @POST("/bindEmail.do")
-  @FormUrlEncoded()
-  Future<Result> bindEmail(
-      @Field("userId") String userId, @Field("email") String email, @Field("code") String code);
 
   // 微信登录API
   @POST("/loginByWechat.do")

@@ -34,16 +34,6 @@ public class UserController {
         }
     }
 
-    /**
-     * 绑定或修改用户邮箱
-     */
-    @PostMapping("/bindEmail.do")
-    public Result<Void> bindEmail(
-            @RequestParam String userId,
-            @RequestParam String email,
-            @RequestParam String code) throws IllegalAccessException {
-        return userBo.bindEmail(userId, email, code);
-    }
 
     /**
      * 搜索用户（管理员功能）

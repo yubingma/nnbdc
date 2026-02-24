@@ -1766,21 +1766,19 @@ class _MePageState extends State<MePage> {
                                         }
 
                                         if (emailChanged) {
-                                          // 绑定新邮箱到后端
                                           Api.setLoadingDisabled(false);
-                                          var result = await Api.client.bindEmail(Global.getLoggedInUser()!.id, email.text, codeController.text);
-                                          if (!context.mounted) return;
-                                          if (result.success) {
-                                            timer?.cancel();
-                                            Navigator.pop(context, true);
-                                          } else {
-                                            ToastUtil.error(result.msg!);
-                                          }
+                                          var result = await Api.client.verifyEmailCode(email.text, codeController.text, "BIND_EMAIL");
                                           Api.setLoadingDisabled(true);
-                                        } else {
-                                          timer?.cancel();
-                                          Navigator.pop(context, true);
+                                          
+                                          if (!context.mounted) return;
+                                          if (!result.success) {
+                                            ToastUtil.error(result.msg ?? "验证码错误");
+                                            return;
+                                          }
                                         }
+                                        
+                                        timer?.cancel();
+                                        Navigator.pop(context, true);
                                       },
                                       isPrimary: true,
                                       isDarkMode: isDarkModeEnabled,

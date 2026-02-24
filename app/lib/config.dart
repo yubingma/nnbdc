@@ -57,5 +57,5 @@ class Config {
   static final String wordImageBaseUrl = profile["wordImageBaseUrl"];
 
   // Configuration for ThrottledDbSyncService
-  static const Duration dbSyncThrottleInterval = Duration(seconds: 60);
+  static const Duration dbSyncThrottleInterval = Duration(seconds: 300);
 }
