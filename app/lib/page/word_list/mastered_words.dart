@@ -8,8 +8,9 @@ import 'package:nnbdc/util/toast_util.dart';
 
 import '../../global.dart';
 import '../../util/word_util.dart';
+import 'package:nnbdc/db/db.dart';
 
-class MasteredWordsProvider with WordsProvider {
+class MasteredWordsProvider with WordsProvider implements WordModifier {
   @override
   Future<PagedResults<WordWrapper>> getAPageOfWords(int fromIndex, int pageSize) async {
     var words = await WordBo().getMasteredWordsForAPage(fromIndex, pageSize);
@@ -48,6 +49,46 @@ class MasteredWordsProvider with WordsProvider {
   Future<bool?> getWordLearningStatus(String wordId) async {
     // "已掌握"页面的所有单词都是已掌握的
     return true;
+  }
+
+  Future<String?> _getMasteredDictId() async {
+    final userId = Global.getLoggedInUser()?.id;
+    if (userId == null) return null;
+    final dict = await MyDatabase.instance.dictsDao.findUserMasteredDict(userId);
+    return dict?.id;
+  }
+
+  @override
+  String? get targetDictId => null;
+
+  @override
+  Future<bool> addWord(String wordId) async {
+    final dictId = await _getMasteredDictId();
+    if (dictId == null) return false;
+    final result = await WordBo().addWordToCustomDict(dictId, wordId);
+    if (result.success) return true;
+    ToastUtil.error(result.msg ?? '添加失败');
+    return false;
+  }
+
+  @override
+  Future<bool> updateMeanings(String wordId, List<MeaningUpdateItem> meanings) async {
+    final dictId = await _getMasteredDictId();
+    if (dictId == null) return false;
+    final result = await WordBo().updateMeaningForCustomDict(dictId, wordId, meanings);
+    if (result.success) return true;
+    ToastUtil.error(result.msg ?? '更新失败');
+    return false;
+  }
+
+  @override
+  Future<bool> deleteMeaning(String wordId) async {
+    final dictId = await _getMasteredDictId();
+    if (dictId == null) return false;
+    final result = await WordBo().deleteMeaningForCustomDict(dictId, wordId);
+    if (result.success) return true;
+    ToastUtil.error(result.msg ?? '操作失败');
+    return false;
   }
 }
 
@@ -93,5 +134,7 @@ class MasteredWordsBookMarkProvider implements BookMarkProvider {
 Future<dynamic>? toMasteredWordsListPage(bool showDelBtn) {
   return Get.toNamed('/word_list',
       arguments: WordListPageArgs(
-          '已掌握', MasteredWordsProvider(), true, showDelBtn, true, '掌握度', MasteredWordsProgressProvider(), MasteredWordsBookMarkProvider(), null));
+          '已掌握', MasteredWordsProvider(), true, showDelBtn, true, '掌握度', MasteredWordsProgressProvider(), MasteredWordsBookMarkProvider(), null)
+        ..canAddWord = true
+        ..canEditWord = true);
 }
