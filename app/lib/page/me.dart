@@ -2400,15 +2400,9 @@ class _MePageState extends State<MePage> {
           ? const Center(child: CircularProgressIndicator())
           : CustomScrollView(
               slivers: [
-                SliverAppBar(
-                  expandedHeight: 20,
-                  floating: false,
-                  pinned: true,
-                  backgroundColor: backgroundColor,
-                  elevation: 0,
-                ),
+
                 SliverPadding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: EdgeInsets.fromLTRB(16, MediaQuery.of(context).padding.top + 16, 16, 0),
                   sliver: SliverList(
                     delegate: SliverChildListDelegate([
                       renderStudyProgress(),
