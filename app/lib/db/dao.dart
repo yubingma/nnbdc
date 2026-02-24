@@ -763,12 +763,12 @@ class DictWordsDao extends DatabaseAccessor<MyDatabase> with _$DictWordsDaoMixin
       }
     }
 
-    // 验证生词本顺序号
-    await _validateRawWordDictOrder(dictId);
+    // 验证生词本顺序号 (不自动修复以防无限循环)
+    await _validateRawWordDictOrder(dictId, autoFix: false);
   }
 
   // 验证生词本顺序号的完整性
-  Future<void> _validateRawWordDictOrder(String dictId) async {
+  Future<void> _validateRawWordDictOrder(String dictId, {bool autoFix = true}) async {
     // 获取生词本中所有单词，按seq排序
     final dictWordsList = await (select(dictWords)
           ..where((dw) => dw.dictId.equals(dictId))
@@ -781,25 +781,36 @@ class DictWordsDao extends DatabaseAccessor<MyDatabase> with _$DictWordsDaoMixin
     final minSeq = dictWordsList.first.seq;
     final maxSeq = dictWordsList.last.seq;
 
+    bool needsFix = false;
+
     // 检查1: 最小序号是1，最大顺序号是总单词数量
     if (minSeq != 1 || maxSeq != totalCount) {
-      final errorMsg = '生词本顺序号异常: 最小序号=$minSeq, 最大序号=$maxSeq, 总数量=$totalCount';
+      final errorMsg = '⛔ 生词本顺序号异常: 最小序号=$minSeq, 最大序号=$maxSeq, 总数量=$totalCount';
       Global.logger.e(errorMsg);
-      _showValidationError(errorMsg);
-      return;
+      needsFix = true;
     }
 
-    // 检查2: 序号是否连续
-    for (int i = 0; i < dictWordsList.length; i++) {
-      if (dictWordsList[i].seq != i + 1) {
-        final errorMsg = '生词本序号不连续: 期望=${i + 1}, 实际=${dictWordsList[i].seq}, 单词ID: ${dictWordsList[i].wordId}';
-        Global.logger.e(errorMsg);
-        _showValidationError(errorMsg);
-        return;
+    if (!needsFix) {
+      // 检查2: 序号是否连续
+      for (int i = 0; i < dictWordsList.length; i++) {
+        if (dictWordsList[i].seq != i + 1) {
+          final errorMsg = '⛔ 生词本序号不连续: 期望=${i + 1}, 实际=${dictWordsList[i].seq}, 单词ID: ${dictWordsList[i].wordId}';
+          Global.logger.e(errorMsg);
+          needsFix = true;
+          break;
+        }
       }
     }
 
-    Global.logger.d('生词本顺序号验证成功: 总数=$totalCount, 最小序号=$minSeq, 最大序号=$maxSeq');
+    if (needsFix) {
+      if (autoFix) {
+        Global.logger.i('🔧 检测到词书顺序异常，将静默重排(dictId=$dictId)...');
+        await _reorderRawWordDict(dictId, false);
+      }
+      return;
+    }
+
+    Global.logger.d('词书顺序号验证成功: 总数=$totalCount');
   }
 
   // 对外公开的校验方法，供同步前调用
@@ -836,11 +847,7 @@ class DictWordsDao extends DatabaseAccessor<MyDatabase> with _$DictWordsDaoMixin
     }
   }
 
-  // 显示验证错误
-  void _showValidationError(String errorMsg) {
-    // 使用ToastUtil显示错误信息
-    ToastUtil.error('生词本数据异常: $errorMsg');
-  }
+  // 删除 _showValidationError 方法，不再弹出吐司打扰用户
 }
 
 @DriftAccessor(tables: [WordImages])
