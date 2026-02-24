@@ -1390,22 +1390,9 @@ class WordBo {
       if (dictWord == null) {
         return Result("ERROR", "词书中无该单词", false);
       }
-      final seqNo = dictWord.seq;
+      
       await db.transaction(() async {
-        await db.dictWordsDao.deleteEntity(dictWord, true);
-        Global.logger.d('已删除词典单词: dictId=$dictId, wordId=$wordId, seqNo=$seqNo');
-        final laterWordsQuery = db.select(db.dictWords)..where((dw) => dw.dictId.equals(dictId) & dw.seq.isBiggerThanValue(seqNo));
-        final laterWords = await laterWordsQuery.get();
-        for (final laterWord in laterWords) {
-          await (db.update(db.dictWords)..where((dw) => dw.dictId.equals(laterWord.dictId) & dw.wordId.equals(laterWord.wordId)))
-              .write(DictWordsCompanion(
-            seq: Value(laterWord.seq - 1),
-            updateTime: Value(AppClock.now()),
-          ));
-        }
-        // 更新词书的wordCount（并生成日志用于同步）
-        await db.dictsDao.updateWordCount(dictId, true);
-        // 学习进度已改为基于状态计算，不再需要维护 currentWordSeq
+        await db.dictWordsDao.deleteDictWordWithCleanup(dictId, wordId, userId, true);
       });
 
       // 延迟触发同步，确保事务完全提交

@@ -82,9 +82,8 @@ class DictWordsProvider with WordsProvider implements WordModifier {
   @override
   Future<bool> deleteWord(WordWrapper wordWrapper) async {
     try {
-      // 从本地数据库中删除dictWord记录
-      var dictWord = await _db.dictWordsDao.getById(dict.id, wordWrapper.word.id!);
-      await _db.dictWordsDao.deleteEntity(dictWord!, true);
+      // 从本地数据库中删除dictWord记录，并清理后续序号
+      await _db.dictWordsDao.deleteDictWordWithCleanup(dict.id, wordWrapper.word.id!, Global.getLoggedInUser()?.id, true);
 
       // 触发同步
       ThrottledDbSyncService().requestSync();

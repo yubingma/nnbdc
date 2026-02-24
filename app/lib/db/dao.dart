@@ -544,7 +544,7 @@ class DictWordsDao extends DatabaseAccessor<MyDatabase> with _$DictWordsDaoMixin
 
         // 创建新的entry，seq为最大值+1
         entryToInsert = entry.copyWith(seq: maxSeq + 1);
-        Global.logger.d('生词本添加单词: wordId=${entry.wordId}, 新seq=${maxSeq + 1}');
+        Global.logger.d('词书添加单词: wordId=${entry.wordId}, 新seq=${maxSeq + 1}');
       }
 
       await into(dictWords).insert(entryToInsert);
@@ -553,12 +553,12 @@ class DictWordsDao extends DatabaseAccessor<MyDatabase> with _$DictWordsDaoMixin
         var owner = dict?.ownerId;
         await DbLogUtil.logOperation(owner!, 'INSERT', 'dictWords', '${entry.dictId}-${entry.wordId}', entryToInsert);
 
-        await _validateRawWordDictOrder(entry.dictId);
+        await _validateDictWordsOrder(entry.dictId);
       }
     }
   }
 
-  // 删除词书中的单词（适用于生词本）
+  // 删除词书中的单词（单纯删除数据，不处理序号，仅供同步或已有清理逻辑的包装方法使用）
   Future<void> deleteEntity(DictWord entry, bool genLog) async {
     if (genLog) {
       var dict = await MyDatabase.instance.dictsDao.findById(entry.dictId);
@@ -568,12 +568,6 @@ class DictWordsDao extends DatabaseAccessor<MyDatabase> with _$DictWordsDaoMixin
     }
     // 删除数据
     await delete(dictWords).delete(entry);
-
-    // 如果是生词本，删除后需要重新排序
-    final dict = await MyDatabase.instance.dictsDao.findById(entry.dictId);
-    if (dict != null && dict.name == '生词本') {
-      await _reorderRawWordDict(entry.dictId, genLog);
-    }
   }
 
   /// 完整删除词典单词（包括后续序号调整、wordCount更新、学习进度修复）
@@ -604,10 +598,19 @@ class DictWordsDao extends DatabaseAccessor<MyDatabase> with _$DictWordsDaoMixin
     final laterWords = await (select(dictWords)..where((dw) => dw.dictId.equals(dictId) & dw.seq.isBiggerThanValue(seqNo))).get();
 
     for (final laterWord in laterWords) {
-      await (update(dictWords)..where((dw) => dw.dictId.equals(laterWord.dictId) & dw.wordId.equals(laterWord.wordId))).write(DictWordsCompanion(
-        seq: Value(laterWord.seq - 1),
+      final newWord = laterWord.copyWith(
+        seq: laterWord.seq - 1,
         updateTime: Value(AppClock.now()),
+      );
+      await (update(dictWords)..where((dw) => dw.dictId.equals(laterWord.dictId) & dw.wordId.equals(laterWord.wordId))).write(DictWordsCompanion(
+        seq: Value(newWord.seq),
+        updateTime: Value(newWord.updateTime),
       ));
+      if (genLog) {
+        var dict = await MyDatabase.instance.dictsDao.findById(dictId);
+        var owner = dict?.ownerId;
+        await DbLogUtil.logOperation(owner!, 'UPDATE', 'dictWords', '$dictId-${newWord.wordId}', newWord);
+      }
     }
 
     // 更新词书的wordCount
@@ -733,9 +736,9 @@ class DictWordsDao extends DatabaseAccessor<MyDatabase> with _$DictWordsDaoMixin
     }
   }
 
-  // 重新排序生词本的seq
-  Future<void> _reorderRawWordDict(String dictId, bool genLog) async {
-    // 获取生词本中所有单词，按seq排序
+  // 重新排序词书的seq
+  Future<void> _reorderDictWords(String dictId, bool genLog) async {
+    // 获取词书中所有单词，按seq排序
     final dictWordsList = await (select(dictWords)
           ..where((dw) => dw.dictId.equals(dictId))
           ..orderBy([(dw) => OrderingTerm.asc(dw.seq)]))
@@ -763,13 +766,13 @@ class DictWordsDao extends DatabaseAccessor<MyDatabase> with _$DictWordsDaoMixin
       }
     }
 
-    // 验证生词本顺序号 (不自动修复以防无限循环)
-    await _validateRawWordDictOrder(dictId, autoFix: false);
+    // 验证词书顺序号 (不自动修复以防无限循环)
+    await _validateDictWordsOrder(dictId, autoFix: false);
   }
 
-  // 验证生词本顺序号的完整性
-  Future<void> _validateRawWordDictOrder(String dictId, {bool autoFix = true}) async {
-    // 获取生词本中所有单词，按seq排序
+  // 验证词书顺序号的完整性
+  Future<void> _validateDictWordsOrder(String dictId, {bool autoFix = true}) async {
+    // 获取词书中所有单词，按seq排序
     final dictWordsList = await (select(dictWords)
           ..where((dw) => dw.dictId.equals(dictId))
           ..orderBy([(dw) => OrderingTerm.asc(dw.seq)]))
@@ -785,7 +788,7 @@ class DictWordsDao extends DatabaseAccessor<MyDatabase> with _$DictWordsDaoMixin
 
     // 检查1: 最小序号是1，最大顺序号是总单词数量
     if (minSeq != 1 || maxSeq != totalCount) {
-      final errorMsg = '⛔ 生词本顺序号异常: 最小序号=$minSeq, 最大序号=$maxSeq, 总数量=$totalCount';
+      final errorMsg = '⛔ 词书($dictId)顺序号异常: 最小序号=$minSeq, 最大序号=$maxSeq, 总数量=$totalCount';
       Global.logger.e(errorMsg);
       needsFix = true;
     }
@@ -794,7 +797,7 @@ class DictWordsDao extends DatabaseAccessor<MyDatabase> with _$DictWordsDaoMixin
       // 检查2: 序号是否连续
       for (int i = 0; i < dictWordsList.length; i++) {
         if (dictWordsList[i].seq != i + 1) {
-          final errorMsg = '⛔ 生词本序号不连续: 期望=${i + 1}, 实际=${dictWordsList[i].seq}, 单词ID: ${dictWordsList[i].wordId}';
+          final errorMsg = '⛔ 词书($dictId)序号不连续: 期望=${i + 1}, 实际=${dictWordsList[i].seq}, 单词ID: ${dictWordsList[i].wordId}';
           Global.logger.e(errorMsg);
           needsFix = true;
           break;
@@ -805,7 +808,7 @@ class DictWordsDao extends DatabaseAccessor<MyDatabase> with _$DictWordsDaoMixin
     if (needsFix) {
       if (autoFix) {
         Global.logger.i('🔧 检测到词书顺序异常，将静默重排(dictId=$dictId)...');
-        await _reorderRawWordDict(dictId, false);
+        await _reorderDictWords(dictId, false);
       }
       return;
     }
@@ -814,8 +817,8 @@ class DictWordsDao extends DatabaseAccessor<MyDatabase> with _$DictWordsDaoMixin
   }
 
   // 对外公开的校验方法，供同步前调用
-  Future<void> validateRawWordDictOrder(String dictId) async {
-    await _validateRawWordDictOrder(dictId);
+  Future<void> validateDictWordsOrder(String dictId) async {
+    await _validateDictWordsOrder(dictId);
   }
 
   // 对外公开的修复方法，供同步时调用
@@ -825,7 +828,7 @@ class DictWordsDao extends DatabaseAccessor<MyDatabase> with _$DictWordsDaoMixin
     if (rawDict == null) return;
 
     // 调用私有方法重新排序
-    await _reorderRawWordDict(rawDict.id, genLog);
+    await _reorderDictWords(rawDict.id, genLog);
   }
 
   // 生成本地全量日志：直接生成UPDATE日志，覆盖后端数据
