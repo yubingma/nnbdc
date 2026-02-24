@@ -8,12 +8,10 @@ class WechatUtil {
   static final Fluwx _fluwx = Fluwx();
 
   /// 微信AppID - 需要在微信开放平台申请
-  /// TODO: 替换为实际的微信AppID
-  static const String appId = 'YOUR_WECHAT_APP_ID';
+  static const String appId = 'wx42e6014d1927e5f0';
 
   /// iOS通用链接 - 用于iOS微信登录回调
-  /// TODO: 替换为实际的Universal Link
-  static const String universalLink = 'https://yourdomain.com/';
+  static const String universalLink = 'https://back.nnbdc.com/wxlink/';
 
   /// 初始化微信SDK
   static Future<void> init() async {
@@ -21,7 +19,7 @@ class WechatUtil {
 
     try {
       // 检查配置
-      if (appId == 'YOUR_WECHAT_APP_ID') {
+      if (appId.isEmpty) {
         Global.logger.w('微信AppID未配置，微信登录功能将不可用');
         return;
       }

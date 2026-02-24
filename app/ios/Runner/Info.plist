@@ -53,6 +53,19 @@
 		<string>需要相机权限来扫描并识别书本上的单词</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>需要语音识别权限来进行发音练习和单词识别</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>weixin</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>wx42e6014d1927e5f0</string>
+			</array>
+		</dict>
+	</array>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>weixin</string>

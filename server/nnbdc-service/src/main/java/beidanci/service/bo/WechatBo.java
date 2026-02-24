@@ -24,8 +24,7 @@ public class WechatBo {
     private static final Logger logger = LoggerFactory.getLogger(WechatBo.class);
 
     // 微信开放平台配置
-    // TODO: 在application.properties中配置这些值
-    @Value("${wechat.app.id:YOUR_APP_ID}")
+    @Value("${wechat.app.id:wx42e6014d1927e5f0}")
     private String appId;
 
     @Value("${wechat.app.secret:YOUR_APP_SECRET}")
@@ -65,8 +64,8 @@ public class WechatBo {
     public Result<WechatUserInfo> getUserInfoByCode(String code) {
         try {
             // 检查配置
-            if ("YOUR_APP_ID".equals(appId) || "YOUR_APP_SECRET".equals(appSecret)) {
-                logger.error("微信开放平台配置未设置，请在application.properties中配置wechat.app.id和wechat.app.secret");
+            if ("wx42e6014d1927e5f0".equals(appId) && "YOUR_APP_SECRET".equals(appSecret)) {
+                logger.error("微信开放平台配置未设置，请在环境变量或application.properties中配置wechat.app.secret");
                 return new Result<>(false, "微信登录功能未配置，请联系管理员", null);
             }
 
