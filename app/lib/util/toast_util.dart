@@ -6,6 +6,7 @@ class ToastUtil {
     toastification.show(
       title: Text(
         info,
+        maxLines: 10,
         softWrap: true,
       ),
       autoCloseDuration: const Duration(seconds: 3),
@@ -19,7 +20,7 @@ class ToastUtil {
     toastification.show(
       title: Text(
         info,
-        maxLines: 5,
+        maxLines: 10,
         softWrap: true,
       ),
       autoCloseDuration: const Duration(seconds: 3),
@@ -33,6 +34,7 @@ class ToastUtil {
     toastification.show(
       title: Text(
         info,
+        maxLines: 10,
         softWrap: true,
       ),
       autoCloseDuration: const Duration(seconds: 3),
