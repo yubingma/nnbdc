@@ -953,6 +953,19 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
       return false;
     }
     args = Get.arguments;
+
+    if (args.wordsProvider is WordModifier) {
+      final String? targetDictId = (args.wordsProvider as WordModifier).targetDictId;
+      if (targetDictId != null) {
+        final dict = await MyDatabase.instance.dictsDao.findById(targetDictId);
+        if (dict != null && dict.editable) {
+          args.canEditWord = true;
+          args.showDelBtn = true;
+          args.canAddWord = true;
+        }
+      }
+    }
+
     return true;
   }
 
