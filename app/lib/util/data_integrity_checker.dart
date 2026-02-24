@@ -108,39 +108,49 @@ class DataIntegrityChecker {
       onProgress?.call(5, '检查通用词典完整性...', result: result);
       await Future.delayed(const Duration(milliseconds: 200)); // 给UI时间显示结果
 
-      // 6. 检查网络连接
-      onProgress?.call(6, '检查网络连接...');
+      // 6. 检查用户词书完整性（生词本 + 已掌握）
+      onProgress?.call(6, '检查用户词书完整性...');
       await Future.delayed(const Duration(milliseconds: 100));
       final timer6 = Stopwatch()..start();
-      await _checkNetworkConnectivity(result);
+      await _checkUserDicts(result, userId);
       timer6.stop();
-      Global.logger.d('✓ 检查网络连接: ${timer6.elapsedMilliseconds}ms');
-      onProgress?.call(6, '检查网络连接...', result: result);
+      Global.logger.d('✓ 检查用户词书完整性: ${timer6.elapsedMilliseconds}ms');
+      onProgress?.call(6, '检查用户词书完整性...', result: result);
       await Future.delayed(const Duration(milliseconds: 200));
 
-      // 7. 检查后端服务器连通性
-      onProgress?.call(7, '检查后端服务器连通性...');
+      // 7. 检查网络连接
+      onProgress?.call(7, '检查网络连接...');
       await Future.delayed(const Duration(milliseconds: 100));
       final timer7 = Stopwatch()..start();
-      await _checkBackendServer(result);
+      await _checkNetworkConnectivity(result);
       timer7.stop();
-      Global.logger.d('✓ 检查后端服务器: ${timer7.elapsedMilliseconds}ms');
-      onProgress?.call(7, '检查后端服务器连通性...', result: result);
+      Global.logger.d('✓ 检查网络连接: ${timer7.elapsedMilliseconds}ms');
+      onProgress?.call(7, '检查网络连接...', result: result);
       await Future.delayed(const Duration(milliseconds: 200));
 
-      // 8. 检查游戏服务器连通性
-      onProgress?.call(8, '检查游戏服务器连通性...');
+      // 8. 检查后端服务器连通性
+      onProgress?.call(8, '检查后端服务器连通性...');
       await Future.delayed(const Duration(milliseconds: 100));
       final timer8 = Stopwatch()..start();
-      await _checkGameServer(result);
+      await _checkBackendServer(result);
       timer8.stop();
-      Global.logger.d('✓ 检查游戏服务器: ${timer8.elapsedMilliseconds}ms');
-      onProgress?.call(8, '检查游戏服务器连通性...', result: result);
+      Global.logger.d('✓ 检查后端服务器: ${timer8.elapsedMilliseconds}ms');
+      onProgress?.call(8, '检查后端服务器连通性...', result: result);
+      await Future.delayed(const Duration(milliseconds: 200));
+
+      // 9. 检查游戏服务器连通性
+      onProgress?.call(9, '检查游戏服务器连通性...');
+      await Future.delayed(const Duration(milliseconds: 100));
+      final timer9 = Stopwatch()..start();
+      await _checkGameServer(result);
+      timer9.stop();
+      Global.logger.d('✓ 检查游戏服务器: ${timer9.elapsedMilliseconds}ms');
+      onProgress?.call(9, '检查游戏服务器连通性...', result: result);
       await Future.delayed(const Duration(milliseconds: 200));
 
       stopwatch.stop();
       Global.logger.d('✓ 健康检查完成，总耗时: ${stopwatch.elapsedMilliseconds}ms');
-      onProgress?.call(8, '检查完成！', result: result);
+      onProgress?.call(9, '检查完成！', result: result);
       await Future.delayed(const Duration(milliseconds: 200)); // 给UI时间显示最后一项的结果
     } catch (e, stackTrace) {
       stopwatch.stop();
@@ -291,6 +301,28 @@ class DataIntegrityChecker {
     }
   }
 
+  /// 检查用户是否拥有必要的词书（生词本 和 已掌握）
+  Future<void> _checkUserDicts(IntegrityCheckResult result, String userId) async {
+    try {
+      // 获取用户拥有的所有词典
+      final userDicts = await (_db.dictsDao.select(_db.dicts)..where((d) => d.ownerId.equals(userId))).get();
+
+      // 检查是否有生词本
+      final hasRawWordDict = userDicts.any((dict) => dict.name == '生词本');
+      if (!hasRawWordDict) {
+        result.addIssue('用户词书缺失', '用户缺少词书：生词本', 'missing_user_dict');
+      }
+
+      // 检查是否有已掌握词书
+      final hasMasteredDict = userDicts.any((dict) => dict.name == '已掌握');
+      if (!hasMasteredDict) {
+        result.addIssue('用户词书缺失', '用户缺少词书：已掌握', 'missing_user_dict');
+      }
+    } catch (e) {
+      result.addError('检查用户词书时出错: $e');
+    }
+  }
+
     
   /// 检查用户数据库版本一致性
   Future<void> _checkUserDbVersions(IntegrityCheckResult result, String userId) async {
@@ -424,6 +456,11 @@ class DataIntegrityChecker {
       // 修复学习步骤缺失问题
       if (checkResult.hasIssue('user_study_steps')) {
         await _fixUserStudySteps(fixResult, userId);
+      }
+
+      // 修复用户词书缺失问题
+      if (checkResult.hasIssue('missing_user_dict')) {
+        await _fixMissingUserDicts(fixResult, userId);
       }
 
       // 修复版本号异常问题
@@ -566,6 +603,27 @@ class DataIntegrityChecker {
       fixResult.addError('修复用户学习步骤时出错：$e');
     }
   }
+
+  /// 修复用户缺失的词书（生词本 / 已掌握）
+  /// 这种情况通常需要从服务端同步才能解决，在本地无法直接创建
+  Future<void> _fixMissingUserDicts(IntegrityFixResult fixResult, String currentUserId) async {
+    try {
+      final userDicts = await (_db.dictsDao.select(_db.dicts)..where((d) => d.ownerId.equals(currentUserId))).get();
+      final hasRawWordDict = userDicts.any((dict) => dict.name == '生词本');
+      final hasMasteredDict = userDicts.any((dict) => dict.name == '已掌握');
+
+      List<String> missing = [];
+      if (!hasRawWordDict) missing.add('生词本');
+      if (!hasMasteredDict) missing.add('已掌握');
+
+      if (missing.isNotEmpty) {
+        fixResult.addError('用户缺少词书: ${missing.join(", ")}. 请重新登录以触发服务端自动创建');
+      }
+    } catch (e) {
+      fixResult.addError('检查用户词书时出错: $e');
+    }
+  }
+
 
   /// 修复用户数据库版本
   Future<void> _fixUserDbVersions(IntegrityFixResult fixResult, String currentUserId) async {

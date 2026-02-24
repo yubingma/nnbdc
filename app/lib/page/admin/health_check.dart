@@ -28,9 +28,10 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
     {'id': 3, 'title': '您的学习步骤完整性', 'step': 3, 'category': 'user_study_steps'},
     {'id': 4, 'title': '您的数据库版本一致性', 'step': 4, 'category': 'user_db_version'},
     {'id': 5, 'title': '通用词典完整性', 'step': 5, 'category': 'common_dict_integrity'},
-    {'id': 6, 'title': '网络连接', 'step': 6, 'category': 'network_connectivity'},
-    {'id': 7, 'title': '后端服务器连通性', 'step': 7, 'category': 'backend_server'},
-    {'id': 8, 'title': '游戏服务器连通性', 'step': 8, 'category': 'game_server'},
+    {'id': 6, 'title': '您的词书完整性', 'step': 6, 'category': 'missing_user_dict'},
+    {'id': 7, 'title': '网络连接', 'step': 7, 'category': 'network_connectivity'},
+    {'id': 8, 'title': '后端服务器连通性', 'step': 8, 'category': 'backend_server'},
+    {'id': 9, 'title': '游戏服务器连通性', 'step': 9, 'category': 'game_server'},
   ];
 
   @override
