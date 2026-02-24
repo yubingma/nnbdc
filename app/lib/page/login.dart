@@ -754,21 +754,20 @@ class LoginPageState extends State<LoginPage> {
     });
 
     try {
-      // 1. 发起微信授权
-      bool success = await WechatUtil.login();
+      // 1. 先注册一次性监听器，再发起授权（避免回调丢失）
+      bool handled = false;
+      late final FluwxCancelable cancelable;
 
-      if (!success) {
-        setState(() {
-          _isLoading = false;
-        });
-        return;
-      }
+      cancelable = WechatUtil.addSubscriber((response) async {
+        // 防止重复处理
+        if (handled) return;
+        if (response is! WeChatAuthResponse) return;
+        handled = true;
+        cancelable.cancel(); // 移除此监听器
 
-      // 2. 监听微信授权结果
-      WechatUtil.addSubscriber((response) async {
-        if (response is WeChatAuthResponse) {
-          if (response.code != null) {
-            // 3. 使用code调用后端API登录
+        if (response.code != null) {
+          try {
+            // 2. 使用code调用后端API登录
             final result = await Api.client.loginByWechat(
               response.code!,
               getClientType().name,
@@ -776,25 +775,39 @@ class LoginPageState extends State<LoginPage> {
             );
 
             if (result.success) {
-              // 4. 登录成功，保存用户信息
+              // 3. 登录成功，保存用户信息
               final userResult = await UserBo().getLoggedInUser();
               if (userResult.success && userResult.data != null) {
                 await Global.setLoggedInUser(userResult.data!);
               }
               Get.offAllNamed('/index');
+              return;
             } else {
               ToastUtil.error(result.msg ?? '微信登录失败');
             }
-          } else {
-            ToastUtil.error('微信授权失败');
+          } catch (e, stackTrace) {
+            ErrorHandler.handleNetworkError(e, stackTrace, api: 'loginByWechat');
           }
+        } else {
+          ToastUtil.error('微信授权失败');
         }
 
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+      });
+
+      // 4. 发起微信授权
+      bool success = await WechatUtil.login();
+      if (!success) {
+        handled = true;
+        cancelable.cancel();
         setState(() {
           _isLoading = false;
         });
-      });
-
+      }
     } catch (e, stackTrace) {
       ErrorHandler.handleNetworkError(e, stackTrace, api: 'loginByWechat');
       setState(() {
