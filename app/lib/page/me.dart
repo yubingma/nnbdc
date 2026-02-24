@@ -29,6 +29,7 @@ import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/error_handler.dart';
 import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/util/subscription_util.dart';
+import 'package:nnbdc/services/throttled_sync_service.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/util/user_helper.dart';
 import 'package:nnbdc/util/utils.dart';
@@ -1520,167 +1521,246 @@ class _MePageState extends State<MePage> {
     final textColor = isDarkModeEnabled ? Colors.white : Colors.black;
     final cardColor = isDarkModeEnabled ? const Color(0xFF3D3D3D) : const Color(0xFFF8F9FA);
 
+    final String oldEmail = loggedInUser?.email ?? '';
+    final codeController = TextEditingController();
+    int cooldown = 0;
+    Timer? timer;
+    bool isSendingCode = false;
+
     bool? choice = await showDialog<bool>(
         barrierDismissible: false,
         context: context,
         builder: (BuildContext context) {
-          return Dialog(
-            backgroundColor: Colors.transparent,
-            child: Container(
-              width: MediaQuery.of(context).size.width * 0.95,
-              margin: const EdgeInsets.symmetric(horizontal: 0),
-              decoration: BoxDecoration(
-                color: backgroundColor,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: isDarkModeEnabled ? Colors.black.withValues(alpha: 0.5) : Colors.black.withValues(alpha: 0.1),
-                    blurRadius: 20,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // 标题栏
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [Color(0xFF4A90E2), Color(0xFF7B68EE)],
+          return StatefulBuilder(builder: (context, setDialogState) {
+            final emailChanged = email.text.isNotEmpty && email.text != oldEmail;
+            return Dialog(
+              backgroundColor: Colors.transparent,
+              child: Container(
+                width: MediaQuery.of(context).size.width * 0.95,
+                margin: const EdgeInsets.symmetric(horizontal: 0),
+                decoration: BoxDecoration(
+                  color: backgroundColor,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: isDarkModeEnabled ? Colors.black.withValues(alpha: 0.5) : Colors.black.withValues(alpha: 0.1),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // 标题栏
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [Color(0xFF4A90E2), Color(0xFF7B68EE)],
+                        ),
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(20),
+                          topRight: Radius.circular(20),
+                        ),
                       ),
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(20),
-                        topRight: Radius.circular(20),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(
+                              Icons.person_outline,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            '修改个人信息',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w500,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Icon(
-                            Icons.person_outline,
-                            color: Colors.white,
-                            size: 20,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Text(
-                          '修改个人信息',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w500,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
 
-                  // 表单内容 - 添加可滚动支持
-                  Flexible(
-                    child: SingleChildScrollView(
-                      child: Padding(
-                        padding: const EdgeInsets.all(20),
-                        child: Column(
-                          children: [
-                            // Email 输入框
-                            _buildInputField(
-                              controller: email,
-                              label: '邮箱地址',
-                              icon: Icons.email_outlined,
-                              validator: (value) => EmailValidator.validate(value ?? '') ? null : "请输入有效的邮箱地址",
-                              isDarkMode: isDarkModeEnabled,
-                              cardColor: cardColor,
-                              textColor: textColor,
-                            ),
-                            const SizedBox(height: 12),
-
-                            // 昵称输入框
-                            _buildInputField(
-                              controller: nickname,
-                              label: '昵称',
-                              icon: Icons.person_outline,
-                              isDarkMode: isDarkModeEnabled,
-                              cardColor: cardColor,
-                              textColor: textColor,
-                            ),
-                            const SizedBox(height: 12),
-
-                            // 密码输入框
-                            _buildInputField(
-                              controller: password,
-                              label: '新密码',
-                              icon: Icons.lock_outline,
-                              obscureText: true,
-                              isDarkMode: isDarkModeEnabled,
-                              cardColor: cardColor,
-                              textColor: textColor,
-                            ),
-                            const SizedBox(height: 12),
-
-                            // 确认密码输入框
-                            _buildInputField(
-                              controller: password2,
-                              label: '确认新密码',
-                              icon: Icons.lock_outline,
-                              obscureText: true,
-                              isDarkMode: isDarkModeEnabled,
-                              cardColor: cardColor,
-                              textColor: textColor,
-                            ),
-
-                            const SizedBox(height: 20),
-
-                            // 按钮区域
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: _buildDialogButton(
-                                    text: '取消',
-                                    onPressed: () => Navigator.pop(context, false),
-                                    isPrimary: false,
-                                    isDarkMode: isDarkModeEnabled,
+                    // 表单内容 - 添加可滚动支持
+                    Flexible(
+                      child: SingleChildScrollView(
+                        child: Padding(
+                          padding: const EdgeInsets.all(20),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              // Email 输入框与获取验证码按钮同行
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(
+                                    child: _buildInputField(
+                                      controller: email,
+                                      label: '邮箱地址',
+                                      icon: Icons.email_outlined,
+                                      validator: (value) => EmailValidator.validate(value ?? '') ? null : "请输入有效的邮箱地址",
+                                      isDarkMode: isDarkModeEnabled,
+                                      cardColor: cardColor,
+                                      textColor: textColor,
+                                      onChanged: (value) {
+                                        setDialogState(() {});
+                                      },
+                                    ),
                                   ),
+                                  if (emailChanged) ...[
+                                    const SizedBox(width: 8),
+                                    SizedBox(
+                                      height: 50,
+                                      child: ElevatedButton(
+                                        style: ElevatedButton.styleFrom(
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                                        ),
+                                        onPressed: (cooldown > 0 || isSendingCode) ? null : () async {
+                                          if (!EmailValidator.validate(email.text)) {
+                                            ToastUtil.error("请输入有效的邮箱地址");
+                                            return;
+                                          }
+                                          setDialogState(() {
+                                            isSendingCode = true;
+                                          });
+                                          var result = await Api.client.sendEmailCode(email.text, "BIND_EMAIL");
+                                          if (result.success) {
+                                            ToastUtil.info("验证码已发送");
+                                            setDialogState(() {
+                                              cooldown = 60;
+                                              isSendingCode = false;
+                                            });
+                                            timer = Timer.periodic(const Duration(seconds: 1), (t) {
+                                              setDialogState(() {
+                                                if (cooldown > 0) {
+                                                  cooldown--;
+                                                } else {
+                                                  timer?.cancel();
+                                                  timer = null;
+                                                }
+                                              });
+                                            });
+                                          } else {
+                                            ToastUtil.error(result.msg!);
+                                            setDialogState(() {
+                                              isSendingCode = false;
+                                            });
+                                          }
+                                        },
+                                        child: isSendingCode ? 
+                                              const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : 
+                                              Text(cooldown > 0 ? '${cooldown}s' : '获取验证码'),
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+
+                              // 如果修改了邮箱，必须验证新邮箱。仅在用户点击过后（或者计时器启动后）才显示输入框更符合语境，
+                              // 但如果希望在「发验证码按钮」存在时就允许输入，那么只要修改了邮箱就显示
+                              if (emailChanged) ...[
+                                _buildInputField(
+                                  controller: codeController,
+                                  label: '验证码',
+                                  icon: Icons.security,
+                                  isDarkMode: isDarkModeEnabled,
+                                  cardColor: cardColor,
+                                  textColor: textColor,
                                 ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: _buildDialogButton(
-                                    text: '保存',
-                                    onPressed: () {
-                                      if (password.text != password2.text) {
-                                        ToastUtil.error("两次输入的密码不一致");
-                                        return;
-                                      }
-                                      Navigator.pop(context, true);
-                                    },
-                                    isPrimary: true,
-                                    isDarkMode: isDarkModeEnabled,
-                                  ),
-                                ),
+                                const SizedBox(height: 12),
                               ],
-                            ),
-                          ],
+
+                              // 昵称输入框
+                              _buildInputField(
+                                controller: nickname,
+                                label: '昵称',
+                                icon: Icons.person_outline,
+                                isDarkMode: isDarkModeEnabled,
+                                cardColor: cardColor,
+                                textColor: textColor,
+                              ),
+
+                              const SizedBox(height: 20),
+
+                              // 按钮区域
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: _buildDialogButton(
+                                      text: '取消',
+                                      onPressed: () {
+                                        timer?.cancel();
+                                        Navigator.pop(context, false);
+                                      },
+                                      isPrimary: false,
+                                      isDarkMode: isDarkModeEnabled,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: _buildDialogButton(
+                                      text: '保存',
+                                      onPressed: () async {
+                                        if (emailChanged && codeController.text.isEmpty) {
+                                          ToastUtil.error("需要输入验证码验证新邮箱");
+                                          return;
+                                        }
+
+                                        if (emailChanged) {
+                                          // 绑定新邮箱到后端
+                                          Api.setLoadingDisabled(false);
+                                          var result = await Api.client.bindEmail(Global.getLoggedInUser()!.id, email.text, codeController.text);
+                                          if (!context.mounted) return;
+                                          if (result.success) {
+                                            timer?.cancel();
+                                            Navigator.pop(context, true);
+                                          } else {
+                                            ToastUtil.error(result.msg!);
+                                          }
+                                          Api.setLoadingDisabled(true);
+                                        } else {
+                                          timer?.cancel();
+                                          Navigator.pop(context, true);
+                                        }
+                                      },
+                                      isPrimary: true,
+                                      isDarkMode: isDarkModeEnabled,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          );
+            );
+          });
         });
 
     if (choice ?? false) {
-      UserBo().updateUserInfo(email.text, nickname.text, password.text, password2.text, Global.getLoggedInUser()!.id).then((value) async {
+      // 密码被取消后，传入原来的密码 (这里用空字符串，后端/UserBo里处理空字符串就不修改密码)
+      UserBo().updateUserInfo(email.text, nickname.text, '', '', Global.getLoggedInUser()!.id).then((value) async {
         if (value.success) {
           ToastUtil.info("修改成功");
           // 重新加载用户信息并刷新界面
@@ -1691,6 +1771,8 @@ class _MePageState extends State<MePage> {
               // 界面会自动刷新，显示更新后的昵称
             });
           }
+          // 因为修改了敏感字段，此处触发挥发型防抖同步
+          ThrottledDbSyncService().requestSync();
         } else {
           ToastUtil.error(value.msg!);
         }
@@ -1708,6 +1790,7 @@ class _MePageState extends State<MePage> {
     required bool isDarkMode,
     required Color cardColor,
     required Color textColor,
+    void Function(String)? onChanged,
   }) {
     return Container(
       decoration: BoxDecoration(
@@ -1722,6 +1805,7 @@ class _MePageState extends State<MePage> {
         controller: controller,
         obscureText: obscureText,
         validator: validator,
+        onChanged: onChanged,
         style: TextStyle(
           color: textColor,
           fontSize: 15,

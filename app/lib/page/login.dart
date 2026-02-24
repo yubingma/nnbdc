@@ -18,6 +18,7 @@ import '../global.dart';
 import '../util/client_type.dart';
 import 'package:fluwx/fluwx.dart';
 import 'package:nnbdc/util/wechat_util.dart';
+import 'package:nnbdc/util/platform_util.dart';
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
@@ -480,7 +481,8 @@ class LoginPageState extends State<LoginPage> {
               ),
             ),
 
-            // 微信登录按钮
+            // 微信登录按钮 (仅手机端插件支持)
+            if (PlatformUtils.isIOS || PlatformUtils.isAndroid)
             Container(
               width: double.infinity,
               margin: EdgeInsets.symmetric(

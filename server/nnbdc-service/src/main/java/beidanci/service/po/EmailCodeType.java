@@ -17,7 +17,12 @@ public enum EmailCodeType {
     /**
      * 获取密码验证码（找回密码）
      */
-    GET_PASSWORD("获取密码验证码");
+    GET_PASSWORD("获取密码验证码"),
+
+    /**
+     * 绑定邮箱验证码
+     */
+    BIND_EMAIL("绑定邮箱验证码");
 
     private final String description;
 

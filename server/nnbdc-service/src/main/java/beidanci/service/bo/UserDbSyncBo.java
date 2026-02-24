@@ -381,10 +381,16 @@ public class UserDbSyncBo {
                 User userFromClient = User.fromDto(userDto);
 
                 // 保护敏感字段：isAdmin、isSuperAdmin、isSysUser 只允许后端同步到前端
-                // 将这三个字段从后端数据库的原始值恢复到 userFromClient
+                // 将这些字段从后端数据库的原始值恢复到 userFromClient
                 userFromClient.setIsAdmin(user.getIsAdmin());
                 userFromClient.setIsSuperAdmin(user.getIsSuperAdmin());
                 userFromClient.setIsSysUser(user.getIsSysUser());
+
+                // 同样，保护微信相关的只读字段，如果不回填，会被无相关支持的老客户端/未下发字段写成空
+                userFromClient.setWechatOpenId(user.getWechatOpenId());
+                userFromClient.setWechatUnionId(user.getWechatUnionId());
+                userFromClient.setWechatNickname(user.getWechatNickname());
+                userFromClient.setWechatAvatar(user.getWechatAvatar());
 
                 // 订阅字段仅允许后端维护（客户端同步UserDto不包含这些字段）
                 // 如果不回填，update 时会把字段覆盖成 null/默认值，甚至触发 NOT NULL 约束
@@ -399,6 +405,21 @@ public class UserDbSyncBo {
                 userFromClient.setPremiumOverrideUpdateTime(user.getPremiumOverrideUpdateTime());
                 userFromClient.setPremiumOverrideReason(user.getPremiumOverrideReason());
                 userFromClient.setPremiumOverrideDuration(user.getPremiumOverrideDuration());
+
+                // 防止邮箱冲突：如果客户端同步过来的邮箱已被占用，置空它以防报错阻断同步
+                String clientEmail = userFromClient.getEmail();
+                if (clientEmail != null && !clientEmail.isEmpty()) {
+                    java.util.List<User> existingUsers = userBo.findByEmail(clientEmail);
+                    if (existingUsers != null && !existingUsers.isEmpty()) {
+                        for (User u : existingUsers) {
+                            if (!u.getId().equals(userId)) {
+                                logger.warn("用户同步的邮箱 '{}' 已被其他账号使用，强制清空该同步数据", clientEmail);
+                                userFromClient.setEmail("");
+                                break;
+                            }
+                        }
+                    }
+                }
 
                 userBo.updateEntity(userFromClient);
                 logger.info("同步更新用户成功: userId={}, userName={}", userId, userFromClient.getUserName());
