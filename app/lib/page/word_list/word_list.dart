@@ -30,6 +30,7 @@ import '../../util/app_clock.dart';
 import '../../api/bo/word_bo.dart';
 import 'edit_meaning_dialog.dart';
 import 'import_from_book_page.dart';
+import 'import_from_scan_page.dart';
 
 const String menuWordList = '浏览词表';
 const String menuWalkman = '随身听';
@@ -37,6 +38,7 @@ const String menuSpeakChinese = '说中文';
 const String menuSpeakEnglish = '说英文';
 const String menuWriteSpell = '拼写练习';
 const String menuImportFromBook = '从词书导入';
+const String menuImportFromScan = '扫描导入';
 
 mixin WordsProvider {
   Future<PagedResults<WordWrapper>> getAPageOfWords(int fromIndex, int pageSize);
@@ -2757,6 +2759,7 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
                           ];
                           if (args.canAddWord && args.wordsProvider is WordModifier) {
                             menuItems.add(menuImportFromBook);
+                            menuItems.add(menuImportFromScan);
                           }
                           if (PlatformUtils.isAsrSupported()) {
                             menuItems.add(menuSpeakChinese);
@@ -2783,6 +2786,9 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
                                   break;
                                 case menuImportFromBook:
                                   icon = Icons.import_contacts;
+                                  break;
+                                case menuImportFromScan:
+                                  icon = Icons.camera_alt;
                                   break;
                                 case menuSpeakChinese:
                                   icon = Icons.record_voice_over;
@@ -2813,6 +2819,9 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
                                   break;
                                 case menuImportFromBook:
                                   isSelected = false; // it does not represent a state
+                                  break;
+                                case menuImportFromScan:
+                                  isSelected = false;
                                   break;
                               }
 
@@ -2858,6 +2867,18 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
                                 break;
                               case menuImportFromBook:
                                 final needRefresh = await Get.to(() => ImportFromBookPage(
+                                      wordModifier: args.wordsProvider as WordModifier,
+                                    ));
+                                if (needRefresh == true) {
+                                  // 刷新当前页面
+                                  totalWordCount = -1;
+                                  baseIndex ??= 0;
+                                  await doQuery(true, baseIndex!, _pageSize, false);
+                                  setState(() {});
+                                }
+                                break;
+                              case menuImportFromScan:
+                                final needRefresh = await Get.to(() => ImportFromScanPage(
                                       wordModifier: args.wordsProvider as WordModifier,
                                     ));
                                 if (needRefresh == true) {
