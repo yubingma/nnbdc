@@ -55,7 +55,7 @@ class _ImportFromScanPageState extends State<ImportFromScanPage> {
     }
 
     setState(() {
-      _extractedWords = wordSet.toList()..sort();
+      _extractedWords = wordSet.toList();
       _isAnalyzing = false;
     });
 
