@@ -78,70 +78,69 @@ class DataIntegrityChecker {
       onProgress?.call(2, '检查词典单词数量一致性...', result: result);
       await Future.delayed(const Duration(milliseconds: 200)); // 给UI时间显示结果
 
-    
-      // 4. 检查用户学习步骤完整性
-      onProgress?.call(4, '检查学习步骤完整性...');
+      // 3. 检查用户学习步骤完整性
+      onProgress?.call(3, '检查学习步骤完整性...');
+      await Future.delayed(const Duration(milliseconds: 100)); // 给UI一点时间显示
+      final timer3 = Stopwatch()..start();
+      await _checkUserStudySteps(result, userId);
+      timer3.stop();
+      Global.logger.d('✓ 检查学习步骤完整性: ${timer3.elapsedMilliseconds}ms');
+      onProgress?.call(3, '检查学习步骤完整性...', result: result);
+      await Future.delayed(const Duration(milliseconds: 200)); // 给UI时间显示结果
+
+      // 4. 检查用户数据库版本一致性
+      onProgress?.call(4, '检查数据库版本一致性...');
       await Future.delayed(const Duration(milliseconds: 100)); // 给UI一点时间显示
       final timer4 = Stopwatch()..start();
-      await _checkUserStudySteps(result, userId);
+      await _checkUserDbVersions(result, userId);
       timer4.stop();
-      Global.logger.d('✓ 检查学习步骤完整性: ${timer4.elapsedMilliseconds}ms');
-      onProgress?.call(4, '检查学习步骤完整性...', result: result);
+      Global.logger.d('✓ 检查数据库版本一致性: ${timer4.elapsedMilliseconds}ms');
+      onProgress?.call(4, '检查数据库版本一致性...', result: result);
       await Future.delayed(const Duration(milliseconds: 200)); // 给UI时间显示结果
 
-      // 5. 检查用户数据库版本一致性
-      onProgress?.call(5, '检查数据库版本一致性...');
+      // 5. 检查通用词典完整性
+      onProgress?.call(5, '检查通用词典完整性...');
       await Future.delayed(const Duration(milliseconds: 100)); // 给UI一点时间显示
       final timer5 = Stopwatch()..start();
-      await _checkUserDbVersions(result, userId);
-      timer5.stop();
-      Global.logger.d('✓ 检查数据库版本一致性: ${timer5.elapsedMilliseconds}ms');
-      onProgress?.call(5, '检查数据库版本一致性...', result: result);
-      await Future.delayed(const Duration(milliseconds: 200)); // 给UI时间显示结果
-
-      // 6. 检查通用词典完整性
-      onProgress?.call(6, '检查通用词典完整性...');
-      await Future.delayed(const Duration(milliseconds: 100)); // 给UI一点时间显示
-      final timer6 = Stopwatch()..start();
       await _checkCommonDictIntegrity(result);
-      timer6.stop();
-      Global.logger.d('✓ 检查通用词典完整性: ${timer6.elapsedMilliseconds}ms');
-      onProgress?.call(6, '检查通用词典完整性...', result: result);
+      timer5.stop();
+      Global.logger.d('✓ 检查通用词典完整性: ${timer5.elapsedMilliseconds}ms');
+      onProgress?.call(5, '检查通用词典完整性...', result: result);
       await Future.delayed(const Duration(milliseconds: 200)); // 给UI时间显示结果
 
-      // 7. 检查网络连接
-      onProgress?.call(7, '检查网络连接...');
+      // 6. 检查网络连接
+      onProgress?.call(6, '检查网络连接...');
+      await Future.delayed(const Duration(milliseconds: 100));
+      final timer6 = Stopwatch()..start();
+      await _checkNetworkConnectivity(result);
+      timer6.stop();
+      Global.logger.d('✓ 检查网络连接: ${timer6.elapsedMilliseconds}ms');
+      onProgress?.call(6, '检查网络连接...', result: result);
+      await Future.delayed(const Duration(milliseconds: 200));
+
+      // 7. 检查后端服务器连通性
+      onProgress?.call(7, '检查后端服务器连通性...');
       await Future.delayed(const Duration(milliseconds: 100));
       final timer7 = Stopwatch()..start();
-      await _checkNetworkConnectivity(result);
+      await _checkBackendServer(result);
       timer7.stop();
-      Global.logger.d('✓ 检查网络连接: ${timer7.elapsedMilliseconds}ms');
-      onProgress?.call(7, '检查网络连接...', result: result);
+      Global.logger.d('✓ 检查后端服务器: ${timer7.elapsedMilliseconds}ms');
+      onProgress?.call(7, '检查后端服务器连通性...', result: result);
       await Future.delayed(const Duration(milliseconds: 200));
 
-      // 8. 检查后端服务器连通性
-      onProgress?.call(8, '检查后端服务器连通性...');
+      // 8. 检查游戏服务器连通性
+      onProgress?.call(8, '检查游戏服务器连通性...');
       await Future.delayed(const Duration(milliseconds: 100));
       final timer8 = Stopwatch()..start();
-      await _checkBackendServer(result);
-      timer8.stop();
-      Global.logger.d('✓ 检查后端服务器: ${timer8.elapsedMilliseconds}ms');
-      onProgress?.call(8, '检查后端服务器连通性...', result: result);
-      await Future.delayed(const Duration(milliseconds: 200));
-
-      // 9. 检查游戏服务器连通性
-      onProgress?.call(9, '检查游戏服务器连通性...');
-      await Future.delayed(const Duration(milliseconds: 100));
-      final timer9 = Stopwatch()..start();
       await _checkGameServer(result);
-      timer9.stop();
-      Global.logger.d('✓ 检查游戏服务器: ${timer9.elapsedMilliseconds}ms');
-      onProgress?.call(9, '检查游戏服务器连通性...', result: result);
+      timer8.stop();
+      Global.logger.d('✓ 检查游戏服务器: ${timer8.elapsedMilliseconds}ms');
+      onProgress?.call(8, '检查游戏服务器连通性...', result: result);
       await Future.delayed(const Duration(milliseconds: 200));
 
       stopwatch.stop();
       Global.logger.d('✓ 健康检查完成，总耗时: ${stopwatch.elapsedMilliseconds}ms');
-      onProgress?.call(9, '检查完成！', result: result);
+      onProgress?.call(8, '检查完成！', result: result);
       await Future.delayed(const Duration(milliseconds: 200)); // 给UI时间显示最后一项的结果
     } catch (e, stackTrace) {
       stopwatch.stop();
