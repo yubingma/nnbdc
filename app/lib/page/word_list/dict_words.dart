@@ -311,6 +311,7 @@ Future<dynamic>? toDictWordsListPage(String dictId, bool showDelBtn) async {
               ownerId: Global.getLoggedInUser()?.id ?? 'local',
               visible: true,
               editable: dict.name == '生词本' || (Global.getLoggedInUser()?.id != null && Global.getLoggedInUser()?.id != Global.sysUserId),
+              deletable: dict.name != '生词本' && dict.name != '已掌握' && (Global.getLoggedInUser()?.id != null && Global.getLoggedInUser()?.id != Global.sysUserId),
               createTime: AppClock.now(),
               updateTime: AppClock.now(),
             ),

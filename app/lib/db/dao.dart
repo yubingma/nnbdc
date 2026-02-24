@@ -370,6 +370,7 @@ class DictsDao extends DatabaseAccessor<MyDatabase> with _$DictsDaoMixin {
             ownerId: dict.ownerId,
             visible: dict.visible,
             editable: dict.editable,
+            deletable: dict.deletable,
             createTime: dict.createTime,
             updateTime: now,
           );

@@ -168,6 +168,7 @@ Future<void> _runImport({
                 wordCount: d.wordCount,
                 visible: d.visible,
                 editable: d.editable ?? (d.name == '生词本' || d.ownerId != Global.sysUserId),
+                deletable: d.deletable ?? (d.name != '生词本' && d.name != '已掌握' && d.ownerId != Global.sysUserId),
                 popularityLimit: d.popularityLimit,
                 createTime: d.createTime,
                 updateTime: d.updateTime),
