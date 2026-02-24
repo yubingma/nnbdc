@@ -30,6 +30,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 import beidanci.api.Result;
 import beidanci.api.model.CheckBy;
 import beidanci.api.model.ClientType;
+import beidanci.api.model.DictDto;
 import beidanci.api.model.DictWordDto;
 import beidanci.api.model.PagedResults;
 import beidanci.api.model.UserVo;
@@ -807,6 +808,147 @@ public class UserBo extends BaseBo<User> {
         }
     }
 
+    /**
+     * 为新创建的用户生成初始数据的同步日志（UserDbLog）。
+     *
+     * 当服务端直接创建用户数据（生词本、已掌握词书、学习步骤等）时，
+     * 这些操作不经过客户端同步流程，因此不会自动生成 UserDbLog。
+     * 客户端的增量同步依赖 UserDbLog 来获取变更，
+     * 如果没有对应的日志，客户端将永远无法拉取到这些数据。
+     *
+     * 本方法在用户创建完成后被调用，为所有初始数据生成 INSERT 日志,
+     * 确保客户端首次同步时能完整拉取到生词本、已掌握词书等必要数据。
+     */
+    @Transactional
+    public void logInitialUserDataForSync(User user, Dict rawWordDict, Dict masteredDict) {
+        String userId = user.getId();
+        Date now = new Date();
+
+        // 确保版本记录存在
+        userDbVersionDao.ensureUserDbVersionExists(jdbcTemplate, userId);
+        int currentVersion = userDbVersionDao.getUserDbVersionWithLock(jdbcTemplate, userId);
+        int nextVersion = currentVersion + 1;
+
+        // --- 1. 用户本身的 INSERT 日志 ---
+        UserDbLog userLog = new UserDbLog();
+        userLog.setUserId(userId);
+        userLog.setVersion(nextVersion);
+        userLog.setCreateTime(now);
+        userLog.setUpdateTime(now);
+        userLog.setTable("user");
+        userLog.setOperate("INSERT");
+        userLog.setRecordId(userId);
+        userLog.setRecord(JsonUtils.toJson(user.toDto()));
+        userDbLogBo.createEntity(userLog);
+
+        // --- 2. 生词本的 INSERT 日志 ---
+        DictDto rawDictDto = makeDictDto(rawWordDict);
+        UserDbLog rawDictLog = new UserDbLog();
+        rawDictLog.setUserId(userId);
+        rawDictLog.setVersion(nextVersion);
+        rawDictLog.setCreateTime(now);
+        rawDictLog.setUpdateTime(now);
+        rawDictLog.setTable("dict");
+        rawDictLog.setOperate("INSERT");
+        rawDictLog.setRecordId(rawWordDict.getId());
+        rawDictLog.setRecord(JsonUtils.toJson(rawDictDto));
+        userDbLogBo.createEntity(rawDictLog);
+
+        // --- 3. 已掌握词书的 INSERT 日志 ---
+        DictDto masteredDictDto = makeDictDto(masteredDict);
+        UserDbLog masteredDictLog = new UserDbLog();
+        masteredDictLog.setUserId(userId);
+        masteredDictLog.setVersion(nextVersion);
+        masteredDictLog.setCreateTime(now);
+        masteredDictLog.setUpdateTime(now);
+        masteredDictLog.setTable("dict");
+        masteredDictLog.setOperate("INSERT");
+        masteredDictLog.setRecordId(masteredDict.getId());
+        masteredDictLog.setRecord(JsonUtils.toJson(masteredDictDto));
+        userDbLogBo.createEntity(masteredDictLog);
+
+        // --- 4. 生词本的 LearningDict (学习词典关联) INSERT 日志 ---
+        logLearningDictInsert(userId, rawWordDict.getId(), true, now, nextVersion);
+
+        // --- 5. 已掌握词书不一定有 LearningDict 关联，根据实际逻辑决定 ---
+        // createMasteredWordDictForUser 没有创建 LearningDict，所以不需要
+
+        // --- 6. 学习步骤的 INSERT 日志 ---
+        List<beidanci.service.po.UserStudyStep> steps = userStudyStepBo.getUserStudySteps(userId);
+        for (beidanci.service.po.UserStudyStep step : steps) {
+            beidanci.api.model.UserStudyStepDto stepDto = new beidanci.api.model.UserStudyStepDto(
+                    step.getId().getUserId(),
+                    step.getStudyStep(),
+                    step.getSeq(),
+                    step.getState(),
+                    step.getCreateTime(),
+                    step.getUpdateTime()
+            );
+            UserDbLog stepLog = new UserDbLog();
+            stepLog.setUserId(userId);
+            stepLog.setVersion(nextVersion);
+            stepLog.setCreateTime(now);
+            stepLog.setUpdateTime(now);
+            stepLog.setTable("user_study_step");
+            stepLog.setOperate("INSERT");
+            stepLog.setRecordId(userId + "_" + step.getStudyStep().name());
+            stepLog.setRecord(JsonUtils.toJson(stepDto));
+            userDbLogBo.createEntity(stepLog);
+        }
+
+        // 更新数据库版本号
+        boolean ok = userDbVersionDao.updateUserDbVersionCAS(jdbcTemplate, userId, currentVersion, nextVersion);
+        if (!ok) {
+            throw new RuntimeException("更新 user_db_version 失败（可能存在并发修改），userId=" + userId);
+        }
+
+        logger.info("为新用户[{}]生成了初始同步日志, version: {} -> {}", user.getDisplayNickName(), currentVersion, nextVersion);
+    }
+
+    /**
+     * 将 Dict 实体转换为 DictDto 用于序列化到同步日志
+     */
+    private DictDto makeDictDto(Dict dict) {
+        return new DictDto(
+                dict.getId(),
+                dict.getName(),
+                dict.getOwner().getId(),
+                dict.getIsShared(),
+                dict.getIsReady(),
+                dict.getVisible(),
+                dict.getWordCount(),
+                dict.getPopularityLimit(),
+                dict.getEditable(),
+                dict.getDeletable(),
+                dict.getCreateTime(),
+                dict.getUpdateTime()
+        );
+    }
+
+    /**
+     * 生成 LearningDict 的 INSERT 同步日志
+     */
+    private void logLearningDictInsert(String userId, String dictId, boolean fetchMastered, Date now, int version) {
+        beidanci.api.model.LearningDictDto ldDto = new beidanci.api.model.LearningDictDto();
+        ldDto.setDictId(dictId);
+        ldDto.setUserId(userId);
+        ldDto.setIsPrivileged(false);
+        ldDto.setFetchMastered(fetchMastered);
+        ldDto.setCreateTime(now);
+        ldDto.setUpdateTime(now);
+
+        UserDbLog ldLog = new UserDbLog();
+        ldLog.setUserId(userId);
+        ldLog.setVersion(version);
+        ldLog.setCreateTime(now);
+        ldLog.setUpdateTime(now);
+        ldLog.setTable("learning_dict");
+        ldLog.setOperate("INSERT");
+        ldLog.setRecordId(userId + "_" + dictId);
+        ldLog.setRecord(JsonUtils.toJson(ldDto));
+        userDbLogBo.createEntity(ldLog);
+    }
+
     @Transactional(readOnly = true)
     public UserVo getUserVoById(String userId) {
         User user = findById(userId);
@@ -920,13 +1062,17 @@ public class UserBo extends BaseBo<User> {
         logger.info("创建了新用户: [{}]", user.getDisplayNickName());
 
         // 创建用户的生词本
-        dictBo.createRawWordDictForUser(user);
+        Dict rawWordDict = dictBo.createRawWordDictForUser(user);
 
         // 创建用户的"已掌握"词书
-        dictBo.createMasteredWordDictForUser(user);
+        Dict masteredDict = dictBo.createMasteredWordDictForUser(user);
 
         // 初始化学习步骤（En2Ch、Ch2En、List）
         userStudyStepBo.initUserStudySteps(user.getId());
+
+        // 为新用户的初始数据生成 UserDbLog 同步日志，
+        // 使客户端通过增量同步即可拉取到这些数据（生词本、已掌握词书、学习步骤等）
+        logInitialUserDataForSync(user, rawWordDict, masteredDict);
 
         return user;
     }
