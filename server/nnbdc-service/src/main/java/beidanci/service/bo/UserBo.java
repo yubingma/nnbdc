@@ -943,6 +943,10 @@ public class UserBo extends BaseBo<User> {
             newUser.setContinuousDakaDayCount(0);
             newUser.setMaxContinuousDakaDayCount(0);
             newUser.setEnableAllWrong(false);
+            newUser.setDakaScore(0);
+            newUser.setTodayStudyStarted(false);
+            newUser.setIsPremiumIos(false);
+            newUser.setPremiumOverrideEnabled(false);
 
             // 保存用户
             createEntity(newUser);
