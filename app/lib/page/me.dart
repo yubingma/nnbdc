@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:day_night_switcher/day_night_switcher.dart';
 import 'package:drift/drift.dart' as drift;
 import 'package:drift_db_viewer/drift_db_viewer.dart';
@@ -572,6 +573,45 @@ class _MePageState extends State<MePage> {
               ),
               SizedBox(height: MediaQuery.of(context).size.width > 600 ? 16 : 12),
               // 学习天数
+
+              // 用户头像
+              if (loggedInUser?.wechatAvatar != null && loggedInUser!.wechatAvatar!.isNotEmpty)
+                Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 2),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.1),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: CircleAvatar(
+                    radius: MediaQuery.of(context).size.width > 600 ? 36 : 32,
+                    backgroundImage: CachedNetworkImageProvider(loggedInUser!.wechatAvatar!),
+                    backgroundColor: Colors.white.withValues(alpha: 0.2),
+                  ),
+                )
+              else
+                Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 2),
+                  ),
+                  child: CircleAvatar(
+                    radius: MediaQuery.of(context).size.width > 600 ? 36 : 32,
+                    backgroundColor: Colors.white.withValues(alpha: 0.2),
+                    child: Icon(
+                      Icons.person,
+                      size: MediaQuery.of(context).size.width > 600 ? 40 : 36,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
 
               // 用户昵称
               Text(

@@ -166,6 +166,14 @@ class UserVo {
 
   String? email;
 
+  String? wechatOpenId;
+
+  String? wechatUnionId;
+
+  String? wechatNickname;
+
+  String? wechatAvatar;
+
   DateTime? lastLearningDate;
 
   int? learnedDays;
@@ -262,6 +270,10 @@ class UserVo {
     userVo.lastLoginTime = user.lastLoginTime;
     userVo.lastShareTime = user.lastShareTime;
     userVo.email = user.email;
+    userVo.wechatOpenId = user.wechatOpenId;
+    userVo.wechatUnionId = user.wechatUnionId;
+    userVo.wechatNickname = user.wechatNickname;
+    userVo.wechatAvatar = user.wechatAvatar;
     userVo.lastLearningDate = user.lastLearningDate;
     userVo.learnedDays = user.learnedDays;
     userVo.learningFinished = user.learningFinished;
@@ -1195,6 +1207,10 @@ User userVo2User(UserVo userVo) {
       password: userVo.password,
       dakaRatio: userVo.dakaRatio,
       email: userVo.email,
+      wechatOpenId: userVo.wechatOpenId,
+      wechatUnionId: userVo.wechatUnionId,
+      wechatNickname: userVo.wechatNickname,
+      wechatAvatar: userVo.wechatAvatar,
       invitedById: userVo.invitedBy?.id,
       lastDakaDate: userVo.lastDakaDate,
       lastLearningDate: userVo.lastLearningDate,
