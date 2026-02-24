@@ -828,6 +828,10 @@ public class User extends UuidPo {
         user.setLastShareTime(dto.getLastShareTime());
         user.setEmail(dto.getEmail());
         user.setLastLearningDate(dto.getLastLearningDate());
+        user.setWechatOpenId(dto.getWechatOpenId());
+        user.setWechatUnionId(dto.getWechatUnionId());
+        user.setWechatNickname(dto.getWechatNickname());
+        user.setWechatAvatar(dto.getWechatAvatar());
 
         Integer learnedDays = dto.getLearnedDays();
         user.setLearnedDays(learnedDays != null ? learnedDays : 0);
@@ -933,6 +937,10 @@ public class User extends UuidPo {
         dto.setLastLoginTime(this.getLastLoginTime());
         dto.setLastShareTime(this.getLastShareTime());
         dto.setEmail(this.getEmail());
+        dto.setWechatOpenId(this.getWechatOpenId());
+        dto.setWechatUnionId(this.getWechatUnionId());
+        dto.setWechatNickname(this.getWechatNickname());
+        dto.setWechatAvatar(this.getWechatAvatar());
         dto.setLastLearningDate(this.getLastLearningDate());
         dto.setLearnedDays(this.getLearnedDays());
         dto.setLearningFinished(Boolean.TRUE.equals(this.getLearningFinished()));

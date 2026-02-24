@@ -423,6 +423,10 @@ class UserDto {
   DateTime? lastLoginTime;
   DateTime? lastShareTime;
   String? email;
+  String? wechatOpenId;
+  String? wechatUnionId;
+  String? wechatNickname;
+  String? wechatAvatar;
   DateTime? lastLearningDate;
   int? learnedDays;
   bool? learningFinished;

@@ -1305,9 +1305,6 @@ public class UserBo extends BaseBo<User> {
         user.setEmail(email);
         updateEntity(user);
 
-        // 5. 写入同步日志，以便各客户端同步
-        logUserUpdateForSync(user);
-
         logger.info("用户成功绑定邮箱: userId={}, email={}", userId, email);
         return Result.success(null);
     }
