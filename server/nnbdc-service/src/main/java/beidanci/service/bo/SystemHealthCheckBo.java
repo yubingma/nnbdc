@@ -234,45 +234,52 @@ public class SystemHealthCheckBo {
     }
 
     /**
-     * 检查用户是否缺失生词本
+     * 检查用户是否缺失生词本或已掌握词书
      */
-    public SystemHealthCheckResult checkMissingRawWordDict() {
+    public SystemHealthCheckResult checkMissingUserDicts() {
         List<SystemHealthIssue> issues = new ArrayList<>();
         List<String> errors = new ArrayList<>();
         
         try {
-            // 使用 SQL 查询找出所有没有生词本的用户
-            String sql = "SELECT u.id, u.user_name, u.nick_name " +
+            // 使用一条 SQL 查询同时找出缺少"生词本"或"已掌握"词书的用户
+            String sql = "SELECT u.id, u.user_name, u.nick_name, '生词本' as missing_dict " +
                         "FROM \"user\" u " +
                         "LEFT JOIN dict d ON u.id = d.owner_id AND d.name = '生词本' " +
                         "WHERE d.id IS NULL " +
-                        "ORDER BY u.create_time DESC";
+                        "UNION ALL " +
+                        "SELECT u.id, u.user_name, u.nick_name, '已掌握' as missing_dict " +
+                        "FROM \"user\" u " +
+                        "LEFT JOIN dict d ON u.id = d.owner_id AND d.name = '已掌握' " +
+                        "WHERE d.id IS NULL " +
+                        "ORDER BY missing_dict, id";
             
-            List<Object[]> usersWithoutRawDict = namedParameterJdbcTemplate.query(sql, 
+            List<Object[]> missingDicts = namedParameterJdbcTemplate.query(sql, 
                 new MapSqlParameterSource(), 
                 (rs, rowNum) -> new Object[]{
                     rs.getString("id"),
                     rs.getString("user_name"),
-                    rs.getString("nick_name")
+                    rs.getString("nick_name"),
+                    rs.getString("missing_dict")
                 }
             );
             
             // 将查询结果转换为问题列表
-            for (Object[] record : usersWithoutRawDict) {
+            for (Object[] record : missingDicts) {
                 String userId = (String) record[0];
                 String userName = (String) record[1];
                 String nickName = (String) record[2];
+                String missingDict = (String) record[3];
                 
                 issues.add(new SystemHealthIssue(
-                    "用户缺失生词本",
-                    String.format("用户 %s (%s, ID: %s) 缺少生词本", 
-                                nickName != null ? nickName : userName, userName, userId),
-                    "missing_raw_word_dict"
+                    "用户缺失词书",
+                    String.format("用户 %s (%s, ID: %s) 缺少词书：%s", 
+                                nickName != null ? nickName : userName, userName, userId, missingDict),
+                    "missing_user_dict"
                 ));
             }
             
         } catch (DataAccessException e) {
-            errors.add("检查用户生词本缺失时出错: " + e.getMessage());
+            errors.add("检查用户词书缺失时出错: " + e.getMessage());
         }
         
         return new SystemHealthCheckResult(issues.isEmpty() && errors.isEmpty(), issues, errors);
@@ -296,7 +303,7 @@ public class SystemHealthCheckBo {
                     case "db_version" -> fixedCount += fixDbVersionConsistency(fixed);
                     case "common_dict_integrity" -> fixedCount += fixCommonDictIntegrity();
                     case "user_study_steps" -> fixedCount += fixUserStudySteps(fixed);
-                    case "missing_raw_word_dict" -> fixedCount += fixMissingRawWordDict(fixed);
+                    case "missing_raw_word_dict", "missing_user_dict" -> fixedCount += fixMissingUserDicts(fixed);
                     default -> errors.add("未知的问题类型: " + issueType);
                 }
                 // fixedCount += fixLearningProgress(fixed);
@@ -655,29 +662,36 @@ public class SystemHealthCheckBo {
         return fixedCount;
     }
 
-    private int fixMissingRawWordDict(List<String> fixed) {
+    private int fixMissingUserDicts(List<String> fixed) {
         int fixedCount = 0;
         try {
-            // 查找所有没有生词本的用户
-            String sql = "SELECT u.id, u.user_name, u.nick_name " +
+            // 一次性查出所有缺少"生词本"或"已掌握"词书的用户
+            String sql = "SELECT u.id, u.user_name, u.nick_name, '生词本' as missing_dict " +
                         "FROM \"user\" u " +
                         "LEFT JOIN dict d ON u.id = d.owner_id AND d.name = '生词本' " +
+                        "WHERE d.id IS NULL " +
+                        "UNION ALL " +
+                        "SELECT u.id, u.user_name, u.nick_name, '已掌握' as missing_dict " +
+                        "FROM \"user\" u " +
+                        "LEFT JOIN dict d ON u.id = d.owner_id AND d.name = '已掌握' " +
                         "WHERE d.id IS NULL";
             
-            List<Object[]> usersWithoutRawDict = namedParameterJdbcTemplate.query(sql, 
+            List<Object[]> missingDicts = namedParameterJdbcTemplate.query(sql, 
                 new MapSqlParameterSource(), 
                 (rs, rowNum) -> new Object[]{
                     rs.getString("id"),
                     rs.getString("user_name"),
-                    rs.getString("nick_name")
+                    rs.getString("nick_name"),
+                    rs.getString("missing_dict")
                 }
             );
             
-            // 为每个缺失生词本的用户创建生词本
-            for (Object[] record : usersWithoutRawDict) {
+            // 为每个缺失词书的用户创建对应词书
+            for (Object[] record : missingDicts) {
                 String userId = (String) record[0];
                 String userName = (String) record[1];
                 String nickName = (String) record[2];
+                String missingDict = (String) record[3];
                 
                 try {
                     User user = userBo.findById(userId);
@@ -685,16 +699,19 @@ public class SystemHealthCheckBo {
                         continue;
                     }
                     
-                    // 使用公共方法创建生词本
-                    dictBo.createRawWordDictForUser(user);
+                    if ("生词本".equals(missingDict)) {
+                        dictBo.createRawWordDictForUser(user);
+                    } else {
+                        dictBo.createMasteredWordDictForUser(user);
+                    }
                     
-                    fixed.add(String.format("为用户 %s (%s, ID: %s) 创建生词本", 
-                            nickName != null ? nickName : userName, userName, userId));
+                    fixed.add(String.format("为用户 %s (%s, ID: %s) 创建%s", 
+                            nickName != null ? nickName : userName, userName, userId, missingDict));
                     fixedCount++;
                 } catch (Exception e) {
                     // 记录错误但继续处理其他用户
-                    fixed.add(String.format("为用户 %s (ID: %s) 创建生词本失败: %s", 
-                            userName, userId, e.getMessage()));
+                    fixed.add(String.format("为用户 %s (ID: %s) 创建%s失败: %s", 
+                            userName, userId, missingDict, e.getMessage()));
                 }
             }
         } catch (DataAccessException e) {

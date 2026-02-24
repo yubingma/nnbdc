@@ -157,11 +157,11 @@ public class SystemController {
     }
 
     /**
-     * 检查用户是否缺失生词本
+     * 检查用户是否缺失生词本或已掌握词书
      */
-    @GetMapping("/admin/checkMissingRawWordDict.do")
-    public Result<SystemHealthCheckResult> checkMissingRawWordDict() {
-        SystemHealthCheckResult result = systemHealthCheckBo.checkMissingRawWordDict();
+    @GetMapping("/admin/checkMissingUserDicts.do")
+    public Result<SystemHealthCheckResult> checkMissingUserDicts() {
+        SystemHealthCheckResult result = systemHealthCheckBo.checkMissingUserDicts();
         return Result.success(result);
     }
 
