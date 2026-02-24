@@ -925,6 +925,9 @@ public class UserBo extends BaseBo<User> {
         // 创建用户的"已掌握"词书
         dictBo.createMasteredWordDictForUser(user);
 
+        // 初始化学习步骤（En2Ch、Ch2En、List）
+        userStudyStepBo.initUserStudySteps(user.getId());
+
         return user;
     }
 
