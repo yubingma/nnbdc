@@ -54,9 +54,11 @@ class LoginPageState extends State<LoginPage> {
   // 从本地数据库读取用户名和邮箱列表
   loadData() async {
     var user = await MyDatabase.instance.usersDao.getLastLoggedInUser();
-    if (user != null && user.email != null) {
+    if (user != null) {
       setState(() {
-        email.text = user.email!;
+        if (user.email != null) {
+          email.text = user.email!;
+        }
         _approved = true;
       });
     }
