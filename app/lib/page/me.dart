@@ -1812,7 +1812,7 @@ class _MePageState extends State<MePage> {
             });
           }
           // 因为修改了敏感字段，此处触发挥发型防抖同步
-          ThrottledDbSyncService().requestSync();
+          ThrottledDbSyncService().requestSync(immediate: true);
         } else {
           ToastUtil.error(value.msg!);
         }
