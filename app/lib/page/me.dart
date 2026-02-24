@@ -2552,12 +2552,13 @@ class _DictCardState extends State<DictCard> {
                 },
               ),
               _buildDictActionButton(
-                icon: widget.dictInfo.name == '生词本' ? Icons.clear_all : Icons.delete_outline,
-                label: widget.dictInfo.name == '生词本' ? '清空' : '删除',
+                icon: Icons.remove_circle_outline,
+                label: '移出',
                 isActive: true,
                 isDestructive: true,
-                onTap: () => _handleDictDataAction(isClearOnly: widget.dictInfo.name == '生词本'),
+                onTap: () => _handleDictDataAction(),
               ),
+
             ],
           ),
         ],
@@ -2566,7 +2567,7 @@ class _DictCardState extends State<DictCard> {
   }
 
   /// 统一处理词书数据操作（清空单词或删除词书）
-  Future<void> _handleDictDataAction({required bool isClearOnly}) async {
+  Future<void> _handleDictDataAction() async {
     final db = MyDatabase.instance;
     final user = Global.getLoggedInUser()!;
     final dictName = widget.dictInfo.name.replaceAll('.dict', '');
@@ -2607,7 +2608,6 @@ class _DictCardState extends State<DictCard> {
 
     // 5. 询问用户
     if (learningWordsOnlyInThisDict.isNotEmpty) {
-      final String actionLabel = isClearOnly ? "清空" : "删除";
       final confirmResult = await showDialog<bool>(
         context: context,
         builder: (context) => Dialog(
@@ -2627,13 +2627,13 @@ class _DictCardState extends State<DictCard> {
                   child: Icon(Icons.warning_amber_rounded, color: Colors.orange[800], size: 40),
                 ),
                 const SizedBox(height: 20),
-                Text(
-                  '确认$actionLabel',
-                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                const Text(
+                  '确认移出书桌',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  isClearOnly ? '确定要清空"$dictName"中的单词吗？' : '确定要删除词书《$dictName》吗？',
+                  '确定要将词书《$dictName》从书桌移出（停止学习）吗？',
                   textAlign: TextAlign.center,
                   style: TextStyle(color: Colors.grey[600], fontSize: 15),
                 ),
@@ -2681,7 +2681,7 @@ class _DictCardState extends State<DictCard> {
                       elevation: 0,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
-                    child: Text(isClearOnly ? '清空单词并删除学习记录' : '删除词书和学习记录'),
+                    child: const Text('移出书桌并删除学习记录'),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -2695,7 +2695,7 @@ class _DictCardState extends State<DictCard> {
                       foregroundColor: Colors.grey[800],
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
-                    child: Text(isClearOnly ? '仅清空单词' : '仅删除词书'),
+                    child: const Text('仅移出书桌'),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -2739,7 +2739,7 @@ class _DictCardState extends State<DictCard> {
                     color: AppTheme.primaryColor.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(isClearOnly ? Icons.clear_all : Icons.delete_outline, color: AppTheme.primaryColor, size: 40),
+                  child: const Icon(Icons.remove_circle_outline, color: AppTheme.primaryColor, size: 40),
                 ),
                 const SizedBox(height: 20),
                 const Text(
@@ -2748,7 +2748,7 @@ class _DictCardState extends State<DictCard> {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  isClearOnly ? '确实要清空"$dictName"中的单词吗？' : '确实要删除词书《$dictName》？',
+                  '确实要将词书《$dictName》从书桌移出？',
                   textAlign: TextAlign.center,
                   style: TextStyle(color: Colors.grey[600], fontSize: 15),
                 ),
@@ -2794,31 +2794,8 @@ class _DictCardState extends State<DictCard> {
 
     // 6. 执行核心逻辑
     if (shouldProceed && mounted) {
-      if (isClearOnly) {
-        await db.dictWordsDao.clearDictWord(currentLearningDict.dictId, true);
-
-        final updatedDict = LearningDict(
-          userId: currentLearningDict.userId,
-          dictId: currentLearningDict.dictId,
-          isPrivileged: currentLearningDict.isPrivileged,
-          fetchMastered: currentLearningDict.fetchMastered,
-          createTime: currentLearningDict.createTime,
-          updateTime: currentLearningDict.updateTime,
-        );
-        await db.learningDictsDao.saveEntity(updatedDict, true);
-
-        if (mounted) {
-          setState(() {
-            currentLearningDict = updatedDict;
-            actualWordCount = 0;
-            learnedCount = 0;
-          });
-          _loadLearnedAndMasteredCount();
-        }
-      } else {
-        await db.learningDictsDao.deleteEntity(currentLearningDict, true);
-        widget.onDictChanged();
-      }
+      await db.learningDictsDao.deleteEntity(currentLearningDict, true);
+      widget.onDictChanged();
 
       // 处理相关学习记录
       if (deleteLearningWords) {
