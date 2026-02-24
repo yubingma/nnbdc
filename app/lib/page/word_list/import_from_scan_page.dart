@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:provider/provider.dart';
 
 import '../../api/bo/word_bo.dart';
+import '../../db/db.dart';
 import '../../global.dart';
 import '../../state.dart';
 import '../../theme/app_theme.dart';
@@ -87,24 +88,60 @@ class _ImportFromScanPageState extends State<ImportFromScanPage> {
       _isImporting = true;
     });
 
+    int existCount = 0;
+    int successCountThisTime = 0;
+    final dictId = widget.wordModifier.targetDictId;
+
     try {
       for (String word in _extractedWords.toList()) {
         final voRes = await WordBo().searchWordLocalOnly(word);
         if (voRes.word != null) {
           final wordVo = voRes.word!;
-          await widget.wordModifier.addWord(wordVo.id!);
-          _successImportCount++;
+          bool shouldAdd = true;
+          
+          // 如果能够获取到当前词书ID，提前查重，跳过已存在的单词以防报错刷屏
+          if (dictId != null) {
+            final existing = await MyDatabase.instance.dictWordsDao.getById(dictId, wordVo.id!);
+            if (existing != null) {
+              shouldAdd = false;
+              existCount++;
+            }
+          }
+          
+          if (shouldAdd) {
+            // 如果内部抛出错误，会被 catch 拦截，或者如果内部弹出错误 Toast 我们也无法完全干预，
+            // 但上方提前查重能拦截约 90% 的 "单词已存在" 错误
+            final success = await widget.wordModifier.addWord(wordVo.id!);
+            if (success) {
+              _successImportCount++;
+              successCountThisTime++;
+            }
+          }
+          
           setState(() {
             _extractedWords.remove(word);
           });
         }
       }
       
-      if (_extractedWords.isEmpty) {
-        ToastUtil.info('全部单词导入成功！共 $_successImportCount 个');
-        Get.back(result: true);
-      } else {
-        ToastUtil.info('导入 $_successImportCount 个，还有 ${_extractedWords.length} 个本地词库中未找到');
+      // 组装分行汇总提示
+      final msg = StringBuffer();
+      msg.writeln('本次处理完成：');
+      msg.writeln('• 成功导入: $successCountThisTime 个');
+      if (existCount > 0) {
+        msg.writeln('• 已在词书中: $existCount 个');
+      }
+      if (_invalidWords.isNotEmpty) {
+        msg.writeln('• 无法识别: ${_invalidWords.length} 个（不在泡泡词典中）');
+      }
+      if (_extractedWords.isNotEmpty && _invalidWords.isEmpty) {
+        msg.writeln('• 剩余未处理: ${_extractedWords.length} 个');
+      }
+      
+      ToastUtil.info(msg.toString().trim());
+
+      if (_extractedWords.isEmpty && _invalidWords.isEmpty) {
+        Get.back(result: _successImportCount > 0);
       }
     } catch (e) {
       Global.logger.e('导入失败', error: e);
