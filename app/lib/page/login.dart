@@ -775,11 +775,20 @@ class LoginPageState extends State<LoginPage> {
             );
 
             if (result.success) {
-              // 3. 登录成功，保存用户信息
-              final userResult = await UserBo().getLoggedInUser();
-              if (userResult.success && userResult.data != null) {
-                await Global.setLoggedInUser(userResult.data!);
+              // 3. 登录成功，保存用户信息到本地数据库
+              if (result.data != null) {
+                final userVo = UserVo.fromJson(result.data as Map<String, dynamic>);
+                userVo.lastLoginTime = AppClock.now();
+
+                // 保存到本地数据库
+                final db = MyDatabase.instance;
+                await db.usersDao.saveUser(userVo2User(userVo), false);
+
+                // 设置全局用户
+                await Global.setLoggedInUser(userVo);
               }
+              // 登录成功后自动触发静默恢复购买
+              SubscriptionUtil.restorePurchases(showToast: false);
               Get.offAllNamed('/index');
               return;
             } else {
