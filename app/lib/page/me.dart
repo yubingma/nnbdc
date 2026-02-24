@@ -523,6 +523,7 @@ class _MePageState extends State<MePage> {
           ),
           child: Column(
             children: [
+
               // 说话气泡 (带浮动动画)
               FloatingSpeechBubble(
                 text: LevelUtil.getTitleQuote(studyProgress!.level.level ?? 1),
@@ -575,43 +576,45 @@ class _MePageState extends State<MePage> {
               // 学习天数
 
               // 用户头像
-              if (loggedInUser?.wechatAvatar != null && loggedInUser!.wechatAvatar!.isNotEmpty)
-                Container(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 2),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
+              GestureDetector(
+                onTap: () => Get.toNamed('/email_login'),
+                child: (loggedInUser?.wechatAvatar != null && loggedInUser!.wechatAvatar!.isNotEmpty)
+                    ? Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 2),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.1),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: CircleAvatar(
+                          radius: MediaQuery.of(context).size.width > 600 ? 36 : 30,
+                          backgroundImage: CachedNetworkImageProvider(loggedInUser!.wechatAvatar!),
+                          backgroundColor: Colors.white.withValues(alpha: 0.2),
+                        ),
+                      )
+                    : Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 2),
+                        ),
+                        child: CircleAvatar(
+                          radius: MediaQuery.of(context).size.width > 600 ? 36 : 30,
+                          backgroundColor: Colors.white.withValues(alpha: 0.2),
+                          child: Icon(
+                            Icons.person,
+                            size: MediaQuery.of(context).size.width > 600 ? 40 : 34,
+                            color: Colors.white,
+                          ),
+                        ),
                       ),
-                    ],
-                  ),
-                  child: CircleAvatar(
-                    radius: MediaQuery.of(context).size.width > 600 ? 36 : 32,
-                    backgroundImage: CachedNetworkImageProvider(loggedInUser!.wechatAvatar!),
-                    backgroundColor: Colors.white.withValues(alpha: 0.2),
-                  ),
-                )
-              else
-                Container(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 2),
-                  ),
-                  child: CircleAvatar(
-                    radius: MediaQuery.of(context).size.width > 600 ? 36 : 32,
-                    backgroundColor: Colors.white.withValues(alpha: 0.2),
-                    child: Icon(
-                      Icons.person,
-                      size: MediaQuery.of(context).size.width > 600 ? 40 : 36,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
+              ),
 
               // 用户昵称
               Text(
@@ -2398,30 +2401,11 @@ class _MePageState extends State<MePage> {
           : CustomScrollView(
               slivers: [
                 SliverAppBar(
-                  expandedHeight: 60,
+                  expandedHeight: 20,
                   floating: false,
                   pinned: true,
                   backgroundColor: backgroundColor,
                   elevation: 0,
-                  centerTitle: true,
-                  title: GestureDetector(
-                    onTap: () => Get.toNamed('/email_login'),
-                    child: Container(
-                      width: MediaQuery.of(context).size.width > 600 ? 80 : 48,
-                      height: MediaQuery.of(context).size.width > 600 ? 80 : 48,
-                      margin: EdgeInsets.fromLTRB(0, 8, 0, 0),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.blue.withValues(alpha: 0.2),
-                        border: Border.all(color: Colors.white, width: 3),
-                      ),
-                      child: Icon(
-                        Icons.person,
-                        size: MediaQuery.of(context).size.width > 600 ? 40 : 30,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
                 ),
                 SliverPadding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
