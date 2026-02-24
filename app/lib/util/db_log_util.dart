@@ -58,6 +58,19 @@ class DbLogUtil {
       // 创建日志记录，version 字段为空，由服务端在同步时设置
       var now = AppClock.now();
       try {
+        // 【智能合并日志】如果是 UPDATE 操作，检查之前是否有未同步的对应的 INSERT/UPDATE 日志
+        if (operate == 'UPDATE') {
+          final existingLog = await db.userDbLogsDao.getLatestLog(userId, table, recordId);
+          if (existingLog != null && (existingLog.operate == 'INSERT' || existingLog.operate == 'UPDATE')) {
+            final updatedLog = existingLog.copyWith(
+              record: recordJson,
+              updateTime: now,
+            );
+            await db.userDbLogsDao.updateEntity(updatedLog);
+            return;
+          }
+        }
+
         final logId = Util.uuid();
 
         await db.userDbLogsDao.insertEntity(

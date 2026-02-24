@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
 
@@ -345,32 +346,82 @@ class _ImportFromScanPageState extends State<ImportFromScanPage> {
                           ),
                         ),
                       const SizedBox(height: 16),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 50,
-                        child: ElevatedButton(
-                          onPressed: _isAnalyzing || _isImporting
-                              ? null
-                              : (_extractedWords.isEmpty ? _analyzeText : _importWords),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.primaryColor,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                      const SizedBox(height: 16),
+                      if (_extractedWords.isEmpty)
+                        Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: () async {
+                                  final data = await Clipboard.getData(Clipboard.kTextPlain);
+                                  if (data != null && data.text != null && data.text!.isNotEmpty) {
+                                    setState(() {
+                                      _textController.text += data.text!;
+                                    });
+                                  } else {
+                                    ToastUtil.info('剪贴板为空或不是纯文本');
+                                  }
+                                },
+                                icon: const Icon(Icons.paste, size: 20),
+                                label: const Text('粘贴内容'),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: isDarkMode ? Colors.white70 : Colors.black87,
+                                  side: BorderSide(color: isDarkMode ? Colors.grey[700]! : Colors.grey[300]!),
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                              ),
                             ),
-                            elevation: 0,
-                          ),
-                          child: Text(
-                            _isImporting
-                                ? '正在导入...'
-                                : (_extractedWords.isEmpty ? '提取单词' : '一键导入'),
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                onPressed: _isAnalyzing ? null : _analyzeText,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppTheme.primaryColor,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  elevation: 0,
+                                ),
+                                icon: const Icon(Icons.auto_awesome, size: 20),
+                                label: const Text(
+                                  '提取单词',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        )
+                      else
+                        SizedBox(
+                          width: double.infinity,
+                          height: 50,
+                          child: ElevatedButton(
+                            onPressed: _isImporting || _isAnalyzing ? null : _importWords,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.primaryColor,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              elevation: 0,
+                            ),
+                            child: Text(
+                              _isImporting ? '正在导入...' : '一键导入',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
                         ),
-                      ),
                       if (_extractedWords.isNotEmpty) ...[
                         const SizedBox(height: 12),
                         SizedBox(

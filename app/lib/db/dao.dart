@@ -501,6 +501,18 @@ class UserDbLogsDao extends DatabaseAccessor<MyDatabase> with _$UserDbLogsDaoMix
     }
   }
 
+  Future<void> updateEntity(UserDbLog entry) async {
+    await update(userDbLogs).replace(entry);
+  }
+
+  Future<UserDbLog?> getLatestLog(String userId, String tblName, String recordId) {
+    return (select(userDbLogs)
+          ..where((lg) => lg.userId.equals(userId) & lg.tblName.equals(tblName) & lg.recordId.equals(recordId))
+          ..orderBy([(lg) => OrderingTerm(expression: lg.createTime, mode: OrderingMode.desc)])
+          ..limit(1))
+        .getSingleOrNull();
+  }
+
   // 清空指定用户的所有日志
   Future<void> deleteUserDbLogs(String userId) async {
     await (delete(userDbLogs)..where((lg) => lg.userId.equals(userId))).go();
