@@ -20,7 +20,7 @@ import java.net.URLConnection;
 import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
-import java.sql.Timestamp;
+
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -74,14 +74,11 @@ import beidanci.api.model.WordShortDescChineseVo;
 import beidanci.api.model.WordVo;
 import beidanci.service.Global;
 import beidanci.service.SessionData;
-import beidanci.service.bo.DictBo;
 import beidanci.service.bo.LearningDictBo;
-import beidanci.service.bo.SysParamBo;
-import beidanci.service.bo.UserBo;
 import beidanci.service.po.Dict;
 import beidanci.service.po.DictWord;
 import beidanci.service.po.LearningDict;
-import beidanci.service.po.SysParam;
+
 import beidanci.service.po.User;
 import beidanci.service.po.Word;
 import beidanci.service.po.WordShortDescChinese;
@@ -611,53 +608,6 @@ public class Util {
         return request.getHeader("User-Agent");
     }
 
-    public static User createNewUser(String userName, String password, String nickName, String email, User invitedBy,
-            SysParamBo sysParamBo, DictBo dictBo, UserBo userBo, LearningDictBo learningDictBo, boolean isSysUser) {
-        User user = new User();
-        user.setUserName(userName.toLowerCase());
-        user.setPassword(password);
-        user.setNickName(EmojiFilter.filterEmoji(nickName));
-        user.setEmail(email);
-        SysParam sysParam = sysParamBo.findById("DefaultWordsPerDay", false);
-        user.setWordsPerDay(Integer.valueOf(sysParam.getParamValue()));
-        user.setCreateTime(new Timestamp(new Date().getTime()));
-        user.setLearnedDays(0);
-        user.setLearningFinished(false);
-        user.setMasteredWordsCount(0);
-        user.setCowDung(20); // 注册送魔法泡泡
-        user.setThrowDiceChance(0);
-        user.setInvitedBy(invitedBy);
-        user.setInviteAwardTaken(false);
-        user.setIsSuperAdmin(false);
-        user.setIsAdmin(false);
-        user.setDakaDayCount(0);
-        user.setAutoPlaySentence(false);
-        user.setAutoPlayWord(true);
-        user.setShowAnswersDirectly(true);
-        user.setContinuousDakaDayCount(0);
-        user.setMaxContinuousDakaDayCount(0);
-        user.setDakaScore(0);
-        user.setGameScore(0);
-        user.setIsInputor(false);
-        user.setEnableAllWrong(false);
-        user.setAsrPassRule("ONE");
-        user.setIsSysUser(isSysUser);
-        user.setIsPremiumIos(false);
-        user.setSubscriptionExpireDateIos(null);
-        user.setSubscriptionTypeIos(null);
-        user.setSubscriptionStatusIos(null);
-        user.setLastReceiptDataIos(null);
-        userBo.createEntity(user);
-        log.info(String.format("创建了新用户:[%s]", user.getDisplayNickName()));
-
-        // 创建用户的生词本
-        dictBo.createRawWordDictForUser(user);
-
-        // 创建用户的"已掌握"词书
-        dictBo.createMasteredWordDictForUser(user);
-
-        return user;
-    }
 
     public static Map<String, String> parseUrlParams(String paramStr) {
         Map<String, String> params = new HashMap<>();

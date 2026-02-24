@@ -48,9 +48,11 @@ import beidanci.service.po.User;
 import beidanci.service.po.UserCowDungLog;
 import beidanci.service.po.UserDbLog;
 import beidanci.service.util.BeanUtils;
+import beidanci.service.util.EmojiFilter;
 import beidanci.service.util.JsonUtils;
 import beidanci.service.util.SysParamUtil;
 import beidanci.service.util.Util;
+import beidanci.service.po.SysParam;
 import beidanci.util.Constants;
 import beidanci.util.MD5Utils;
 import beidanci.util.Utils;
@@ -145,9 +147,8 @@ public class UserBo extends BaseBo<User> {
             sysUser_deleted = getByUserName(Constants.SYS_USER_DELETED, openNewSession);
 
             if (sysUser_deleted == null) {
-                sysUser_deleted = Util.createNewUser(Constants.SYS_USER_DELETED, "YouCantGuessIt~", "已删除用户(虚拟)", null,
-                        null, sysParamBo,
-                        dictBo, this, learningDictBo, true);
+                sysUser_deleted = createNewUser(Constants.SYS_USER_DELETED, "YouCantGuessIt~", "已删除用户(虚拟)",
+                        null, null, true);
             }
         }
         return sysUser_deleted;
@@ -497,16 +498,11 @@ public class UserBo extends BaseBo<User> {
                     user = getByUserName(userName, false);
                     if (user == null) {
                         // 如果用户不存在，创建一个新用户
-                        user = Util.createNewUser(userName + "@example.com", password, userName,
-                                userName + "@example.com",
-                                null, sysParamBo,
-                                dictBo, this, learningDictBo, false);
-                        user.setWordsPerDay(20);
                         try {
-                            createEntity(user);
+                            user = createNewUser(userName + "@example.com", password, userName,
+                                    userName + "@example.com", null, false);
                         } catch (Exception e) {
                             logger.error("自动创建用户失败: userName={}", userName, e);
-                            // 创建用户失败，抛出异常让调用者知道
                             throw new RuntimeException("自动创建用户失败: " + e.getMessage(), e);
                         }
                     }
@@ -518,14 +514,10 @@ public class UserBo extends BaseBo<User> {
                     } else {
                         // 如果Email对应的账户不存在，自动创建账户
                         String nickname = email != null && email.contains("@") ? email.split("@")[0] : "user";
-                        user = Util.createNewUser(email, password, nickname, email, null, sysParamBo,
-                                dictBo, this, learningDictBo, false);
-                        user.setWordsPerDay(20);
                         try {
-                            createEntity(user);
+                            user = createNewUser(email, password, nickname, email, null, false);
                         } catch (Exception e) {
                             logger.error("自动创建用户失败: email={}", email, e);
-                            // 创建用户失败，抛出异常让调用者知道
                             throw new RuntimeException("自动创建用户失败: " + e.getMessage(), e);
                         }
                     }
@@ -566,12 +558,8 @@ public class UserBo extends BaseBo<User> {
             // 密码设为空字符串（CS架构下不再使用密码，登录后自动登录）
             String nickname = email != null && email.contains("@") ? email.split("@")[0] : "user";
             try {
-                user = Util.createNewUser(email, "", nickname, email, null, sysParamBo,
-                        dictBo, this, learningDictBo, false);
-                user.setWordsPerDay(20);
-                // 注意：genNewUser 内部已经调用了 createEntity，所以这里只需要更新 wordsPerDay
-                updateEntity(user);
-            } catch (IllegalAccessException | IllegalArgumentException e) {
+                user = createNewUser(email, "", nickname, email, null, false);
+            } catch (Exception e) {
                 logger.error("自动创建用户失败", e);
                 return new Result<>(false, "创建用户失败", null);
             }
@@ -877,6 +865,70 @@ public class UserBo extends BaseBo<User> {
     }
 
     /**
+     * 统一的创建新用户方法 — 所有注册方式（邮箱、微信等）都应调用此方法。
+     * 负责设置所有默认字段、持久化到数据库、创建生词本和已掌握词书。
+     *
+     * @param userName  用户名（会被转为小写）
+     * @param password  密码（微信方式可传随机值）
+     * @param nickName  昵称
+     * @param email     邮箱（微信方式可传 null）
+     * @param invitedBy 邀请人（可为 null）
+     * @param isSysUser 是否为系统用户
+     * @return 已持久化的 User 对象
+     */
+    public User createNewUser(String userName, String password, String nickName,
+                              String email, User invitedBy, boolean isSysUser) {
+        User user = new User();
+        user.setUserName(userName.toLowerCase());
+        user.setPassword(password);
+        user.setNickName(EmojiFilter.filterEmoji(nickName));
+        user.setEmail(email);
+
+        // wordsPerDay 从系统参数读取默认值
+        SysParam sysParam = sysParamBo.findById("DefaultWordsPerDay", false);
+        user.setWordsPerDay(Integer.valueOf(sysParam.getParamValue()));
+
+        user.setCreateTime(new Timestamp(new Date().getTime()));
+        user.setLastLoginTime(new Date());
+        user.setLearnedDays(0);
+        user.setLearningFinished(false);
+        user.setMasteredWordsCount(0);
+        user.setCowDung(20); // 注册送魔法泡泡
+        user.setThrowDiceChance(0);
+        user.setInvitedBy(invitedBy);
+        user.setInviteAwardTaken(false);
+        user.setIsSuperAdmin(false);
+        user.setIsAdmin(false);
+        user.setIsInputor(false);
+        user.setDakaDayCount(0);
+        user.setAutoPlaySentence(false);
+        user.setAutoPlayWord(true);
+        user.setShowAnswersDirectly(true);
+        user.setContinuousDakaDayCount(0);
+        user.setMaxContinuousDakaDayCount(0);
+        user.setDakaScore(0);
+        user.setGameScore(0);
+        user.setEnableAllWrong(false);
+        user.setTodayStudyStarted(false);
+        user.setAsrPassRule("ONE");
+        user.setIsSysUser(isSysUser);
+        user.setIsPremiumIos(false);
+        user.setPremiumOverrideEnabled(false);
+
+        // 持久化
+        createEntity(user);
+        logger.info("创建了新用户: [{}]", user.getDisplayNickName());
+
+        // 创建用户的生词本
+        dictBo.createRawWordDictForUser(user);
+
+        // 创建用户的"已掌握"词书
+        dictBo.createMasteredWordDictForUser(user);
+
+        return user;
+    }
+
+    /**
      * 根据微信信息查找或创建用户
      * 
      * @param wechatUserInfo 微信用户信息
@@ -904,55 +956,21 @@ public class UserBo extends BaseBo<User> {
                 return existingUser;
             }
 
-            // 2. 用户不存在，创建新用户
-            User newUser = new User();
+            // 2. 用户不存在，使用统一方法创建新用户
+            String userName = "wx_" + wechatUserInfo.openId.substring(0, Math.min(20, wechatUserInfo.openId.length()));
+            String randomPassword = MD5Utils.md5(wechatUserInfo.openId + System.currentTimeMillis());
 
-            // 设置微信相关信息
+            User newUser = createNewUser(userName, randomPassword, wechatUserInfo.nickname,
+                    null, null, false);
+
+            // 设置微信特有字段
             newUser.setWechatOpenId(wechatUserInfo.openId);
             newUser.setWechatUnionId(wechatUserInfo.unionId);
             newUser.setWechatNickname(wechatUserInfo.nickname);
             newUser.setWechatAvatar(wechatUserInfo.headImgUrl);
-
-            // 设置基本信息（使用微信昵称作为用户名和昵称）
-            // 生成唯一的用户名（微信昵称可能重复）
-            String userName = "wx_" + wechatUserInfo.openId.substring(0, Math.min(20, wechatUserInfo.openId.length()));
-            newUser.setUserName(userName);
-            newUser.setNickName(wechatUserInfo.nickname);
-
-            // 微信登录不需要密码，但字段不能为空，设置一个随机密码
-            newUser.setPassword(MD5Utils.md5(wechatUserInfo.openId + System.currentTimeMillis()));
-
-            // 设置默认值
-            newUser.setLastLoginTime(new Date());
-            newUser.setLearnedDays(0);
-            newUser.setLearningFinished(false);
-            newUser.setInviteAwardTaken(false);
-            newUser.setIsSuperAdmin(false);
-            newUser.setIsAdmin(false);
-            newUser.setIsInputor(false);
-            newUser.setIsSysUser(false);
-            newUser.setAutoPlaySentence(true);
-            newUser.setAutoPlayWord(true);
-            newUser.setWordsPerDay(20);
-            newUser.setDakaDayCount(0);
-            newUser.setMasteredWordsCount(0);
-            newUser.setCowDung(0);
-            newUser.setThrowDiceChance(0);
-            newUser.setGameScore(0);
-            newUser.setShowAnswersDirectly(false);
-            newUser.setContinuousDakaDayCount(0);
-            newUser.setMaxContinuousDakaDayCount(0);
-            newUser.setEnableAllWrong(false);
-            newUser.setDakaScore(0);
-            newUser.setTodayStudyStarted(false);
-            newUser.setIsPremiumIos(false);
-            newUser.setPremiumOverrideEnabled(false);
-
-            // 保存用户
-            createEntity(newUser);
+            updateEntity(newUser);
 
             logger.info("创建微信用户成功: openId={}, nickname={}", wechatUserInfo.openId, wechatUserInfo.nickname);
-
             return newUser;
 
         } catch (IllegalAccessException | IllegalArgumentException | DataAccessException e) {
