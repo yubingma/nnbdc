@@ -24,10 +24,10 @@ public class WechatBo {
     private static final Logger logger = LoggerFactory.getLogger(WechatBo.class);
 
     // 微信开放平台配置
-    @Value("${wechat.app.id:wx42e6014d1927e5f0}")
+    @Value("${wechat_app_id:wx42e6014d1927e5f0}")
     private String appId;
 
-    @Value("${wechat.app.secret:YOUR_APP_SECRET}")
+    @Value("${wechat_app_secret:YOUR_APP_SECRET}")
     private String appSecret;
 
     private static final String WECHAT_AUTH_URL = "https://api.weixin.qq.com/sns/oauth2/access_token";
@@ -65,13 +65,15 @@ public class WechatBo {
         try {
             // 检查配置
             if ("wx42e6014d1927e5f0".equals(appId) && "YOUR_APP_SECRET".equals(appSecret)) {
-                logger.error("微信开放平台配置未设置，请在环境变量或application.properties中配置wechat.app.secret");
+                logger.error("微信开放平台配置未设置，请在环境变量或application.properties中配置wechat_app_secret");
                 return new Result<>(false, "微信登录功能未配置，请联系管理员", null);
             }
 
             // 1. 使用code换取access_token和openid
             String tokenUrl = String.format("%s?appid=%s&secret=%s&code=%s&grant_type=authorization_code",
                     WECHAT_AUTH_URL, appId, appSecret, code);
+                    
+            logger.info("微信 token 请求URL(不含secret): %s?appid=%s&code=%s&grant...".formatted(WECHAT_AUTH_URL, appId, code));
 
             Request tokenRequest = new Request.Builder()
                     .url(tokenUrl)
