@@ -15,7 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import beidanci.api.model.LearningDictDto;
-import beidanci.api.model.WordVo;
+    
 import beidanci.service.dao.BaseDao;
 import beidanci.service.dao.EntityRowMapper;
 import beidanci.service.po.LearningDict;
@@ -50,34 +50,7 @@ public class LearningDictBo extends BaseBo<LearningDict> {
         return results.isEmpty() ? null : results.get(0);
     }
 
-    public boolean needSelectDictBeforeStudy(User user) {
-        String sql = "SELECT COUNT(*) FROM dict_word dw " +
-                "INNER JOIN learning_dict ld ON dw.dict_id = ld.dict_id " +
-                "WHERE ld.user_id = :userId " +
-                "AND NOT EXISTS (SELECT 0 FROM dict_word mdw INNER JOIN dict md ON mdw.dict_id = md.id WHERE md.owner_id = ld.user_id AND md.name = '已掌握' AND mdw.word_id = dw.word_id) " +
-                "AND NOT EXISTS (SELECT 0 FROM learning_word lw WHERE lw.user_id = ld.user_id AND lw.word_id = dw.word_id)";
-        MapSqlParameterSource params = new MapSqlParameterSource("userId", user.getId());
-        Long count = namedParameterJdbcTemplate.queryForObject(sql, params, Long.class);
-        return count == null || count == 0;
-    }
-
-    /**
-     * 判断指定单词是否在用户选择的单词书中
-     *
-     * @param user
-     * @return
-     */
-    public boolean isWordInMySelectedDicts(WordVo word, User user) {
-        // 判断单词是否在用户选择的词书中
-        String sql = "SELECT COUNT(*) FROM dict_word dw " +
-                     "INNER JOIN learning_dict ld ON dw.dict_id = ld.dict_id " +
-                     "WHERE dw.word_id = :wordId AND ld.user_id = :userId";
-        MapSqlParameterSource params = new MapSqlParameterSource();
-        params.addValue("wordId", word.getId());
-        params.addValue("userId", user.getId());
-        Long total = namedParameterJdbcTemplate.queryForObject(sql, params, Long.class);
-        return total != null && total > 0;
-    }
+    
 
     public List<LearningDictDto> getLearningDictDtosOfUser(String userId) {
         String sql = "SELECT user_id, dict_id, is_privileged, fetch_mastered, create_time, update_time FROM learning_dict WHERE user_id = :userId";

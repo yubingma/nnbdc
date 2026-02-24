@@ -110,13 +110,7 @@ public class SystemHealthCheckBo {
         return new SystemHealthCheckResult(issues.isEmpty() && errors.isEmpty(), issues, errors);
     }
 
-    /**
-     * 检查学习进度合理性
-     */
-    public SystemHealthCheckResult checkLearningProgress() {
-        // current_word_seq 已从 learning_dict 中移除，此检查不再需要
-        return new SystemHealthCheckResult(true, new ArrayList<>(), new ArrayList<>());
-    }
+    
 
     /**
      * 检查数据库版本一致性
@@ -298,8 +292,7 @@ public class SystemHealthCheckBo {
                 switch (issueType) {
                     case "system_dict_integrity" -> fixedCount += fixSystemDictIntegrity(fixed);
                     case "user_dict_integrity" -> fixedCount += fixUserDictIntegrity(fixed);
-                    case "learning_progress" -> {
-                    }
+    
                     case "db_version" -> fixedCount += fixDbVersionConsistency(fixed);
                     case "common_dict_integrity" -> fixedCount += fixCommonDictIntegrity();
                     case "user_study_steps" -> fixedCount += fixUserStudySteps(fixed);

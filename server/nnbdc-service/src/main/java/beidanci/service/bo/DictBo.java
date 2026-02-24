@@ -613,14 +613,7 @@ public class DictBo extends BaseBo<Dict> {
             String updateCountSql = "UPDATE dict SET word_count = (SELECT COUNT(*) FROM dict_word WHERE dict_id = :dictId) WHERE id = :dictId";
             namedParameterJdbcTemplate.update(updateCountSql, params);
 
-            // 5. 检查并修复学习进度
-            String fixLearningProgressSql = "UPDATE learning_dict ld " +
-                    "JOIN dict d ON ld.dict_id = d.id " +
-                    "SET ld.current_word_seq = LEAST(ld.current_word_seq, d.word_count) " +
-                    "WHERE ld.dict_id = :dictId AND ld.current_word_seq > d.word_count";
-            namedParameterJdbcTemplate.update(fixLearningProgressSql, params);
-
-            // 6. 记录系统数据同步日志
+                // 6. 记录系统数据同步日志
             DictWordDto dictWordDto = new DictWordDto();
             dictWordDto.setDictId(dictId);
             dictWordDto.setWordId(wordId);

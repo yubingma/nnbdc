@@ -33,9 +33,7 @@ class DataIntegrityChecker {
       // 2. 检查词典单词数量一致性
       await _checkDictWordCounts(result);
 
-      // 3. 检查学习进度合理性
-      await _checkLearningProgress(result);
-
+    
       // 4. 检查用户数据库版本一致性
       await _checkAllUserDbVersions(result);
 
@@ -80,16 +78,7 @@ class DataIntegrityChecker {
       onProgress?.call(2, '检查词典单词数量一致性...', result: result);
       await Future.delayed(const Duration(milliseconds: 200)); // 给UI时间显示结果
 
-      // 3. 检查用户学习进度合理性
-      onProgress?.call(3, '检查学习进度合理性...');
-      await Future.delayed(const Duration(milliseconds: 100)); // 给UI一点时间显示
-      final timer3 = Stopwatch()..start();
-      await _checkUserLearningProgress(result, userId);
-      timer3.stop();
-      Global.logger.d('✓ 检查学习进度合理性: ${timer3.elapsedMilliseconds}ms');
-      onProgress?.call(3, '检查学习进度合理性...', result: result);
-      await Future.delayed(const Duration(milliseconds: 200)); // 给UI时间显示结果
-
+    
       // 4. 检查用户学习步骤完整性
       onProgress?.call(4, '检查学习步骤完整性...');
       await Future.delayed(const Duration(milliseconds: 100)); // 给UI一点时间显示
@@ -280,21 +269,7 @@ class DataIntegrityChecker {
     }
   }
 
-  /// 检查用户学习进度合理性
-  Future<void> _checkUserLearningProgress(IntegrityCheckResult result, String userId) async {
-    try {
-      // 获取用户的学习词典
-      final userLearningDicts = await (_db.learningDictsDao.select(_db.learningDicts)..where((ld) => ld.userId.equals(userId))).get();
-
-      for (final learningDict in userLearningDicts) {
-        final dict = await _db.dictsDao.findById(learningDict.dictId);
-        if (dict == null) continue;
-      }
-    } catch (e) {
-      result.addError('检查用户学习进度时出错: $e');
-    }
-  }
-
+    
   /// 检查用户学习步骤完整性
   Future<void> _checkUserStudySteps(IntegrityCheckResult result, String userId) async {
     try {
@@ -317,20 +292,7 @@ class DataIntegrityChecker {
     }
   }
 
-  /// 检查学习进度合理性
-  Future<void> _checkLearningProgress(IntegrityCheckResult result) async {
-    try {
-      final allLearningDicts = await _db.learningDictsDao.select(_db.learningDicts).get();
-
-      for (final learningDict in allLearningDicts) {
-        final dict = await _db.dictsDao.findById(learningDict.dictId);
-        if (dict == null) continue;
-      }
-    } catch (e) {
-      result.addError('检查学习进度时出错: $e');
-    }
-  }
-
+    
   /// 检查用户数据库版本一致性
   Future<void> _checkUserDbVersions(IntegrityCheckResult result, String userId) async {
     try {
@@ -459,11 +421,7 @@ class DataIntegrityChecker {
         await _fixDictWordCounts(fixResult, userId);
       }
 
-      // 修复学习进度异常问题
-      if (checkResult.hasIssue('learning_progress')) {
-        await _fixLearningProgress(fixResult, userId);
-      }
-
+    
       // 修复学习步骤缺失问题
       if (checkResult.hasIssue('user_study_steps')) {
         await _fixUserStudySteps(fixResult, userId);
@@ -582,12 +540,7 @@ class DataIntegrityChecker {
     }
   }
 
-  /// 修复学习进度
-  Future<void> _fixLearningProgress(IntegrityFixResult fixResult, String currentUserId) async {
-    // 学习进度已改为基于状态计算，不再需要修复 currentWordSeq
-    // 保留此方法以避免破坏现有调用
-  }
-
+    
   /// 修复用户学习步骤缺失问题
   Future<void> _fixUserStudySteps(IntegrityFixResult fixResult, String currentUserId) async {
     try {

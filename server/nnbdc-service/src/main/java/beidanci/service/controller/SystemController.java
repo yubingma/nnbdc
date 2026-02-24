@@ -127,14 +127,7 @@ public class SystemController {
         return Result.success(result);
     }
 
-    /**
-     * 检查学习进度合理性
-     */
-    @GetMapping("/admin/checkLearningProgress.do")
-    public Result<SystemHealthCheckResult> checkLearningProgress() {
-        SystemHealthCheckResult result = systemHealthCheckBo.checkLearningProgress();
-        return Result.success(result);
-    }
+    
 
     /**
      * 检查数据库版本一致性

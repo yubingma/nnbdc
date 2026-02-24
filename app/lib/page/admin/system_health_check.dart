@@ -31,7 +31,6 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
   static const List<Map<String, dynamic>> _checkItems = [
     {'id': 1, 'title': '系统词典完整性', 'step': 1, 'category': 'system_dict_integrity'},
     {'id': 2, 'title': '用户词典完整性', 'step': 2, 'category': 'user_dict_integrity'},
-    {'id': 3, 'title': '学习进度合理性', 'step': 3, 'category': 'learning_progress'},
     {'id': 4, 'title': '用户学习步骤完整性', 'step': 4, 'category': 'user_study_steps'},
     {'id': 5, 'title': '数据库版本一致性', 'step': 5, 'category': 'db_version'},
     {'id': 6, 'title': '通用词典完整性', 'step': 6, 'category': 'common_dict_integrity'},
@@ -597,9 +596,7 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
       // 2. 检查用户词典完整性
       await _checkUserDictIntegrity(result, 2);
 
-      // 3. 检查学习进度合理性
-      await _checkLearningProgress(result, 3);
-
+    
       // 4. 检查用户学习步骤完整性
       await _checkUserStudySteps(result, 4);
 
@@ -741,49 +738,7 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
     }
   }
 
-  Future<void> _checkLearningProgress(SystemHealthResult result, int step) async {
-    setState(() {
-      _checkStates[step] = false; // 进行中
-    });
-
-    try {
-      final apiResult = await Api.client.checkLearningProgress();
-
-      if (apiResult.success && apiResult.data != null) {
-        final data = apiResult.data!;
-
-        if ((data.isHealthy == false) && data.issues.isNotEmpty) {
-          for (final issue in data.issues) {
-            result.addIssue(issue.type, issue.description, 'learning_progress');
-          }
-          setState(() {
-            _checkStates[step] = 'failed';
-          });
-        } else {
-          setState(() {
-            _checkStates[step] = true; // 通过
-          });
-        }
-      } else {
-        result.addIssue('学习进度合理性', 'API调用失败: ${apiResult.msg}', 'learning_progress');
-        setState(() {
-          _checkStates[step] = 'failed';
-        });
-      }
-    } catch (e, stackTrace) {
-      Global.logger.e('检查学习进度合理性时出错: $e', error: e, stackTrace: stackTrace);
-      result.addIssue(
-        '学习进度合理性',
-        '检查学习进度合理性时出错: $e',
-        'learning_progress',
-        stackTrace: stackTrace.toString(),
-        logMessage: '学习进度合理性检查: $e',
-      );
-      setState(() {
-        _checkStates[step] = 'failed';
-      });
-    }
-  }
+    
 
   Future<void> _checkUserStudySteps(SystemHealthResult result, int step) async {
     setState(() {

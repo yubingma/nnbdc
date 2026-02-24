@@ -515,9 +515,6 @@ abstract class RestClient {
   @GET("/admin/checkUserDictIntegrity.do")
   Future<Result<SystemHealthCheckResult>> checkUserDictIntegrity();
 
-  @GET("/admin/checkLearningProgress.do")
-  Future<Result<SystemHealthCheckResult>> checkLearningProgress();
-
   @GET("/admin/checkDbVersionConsistency.do")
   Future<Result<SystemHealthCheckResult>> checkDbVersionConsistency();
 
