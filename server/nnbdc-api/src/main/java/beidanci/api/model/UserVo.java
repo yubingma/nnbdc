@@ -29,6 +29,10 @@ public class UserVo extends UuidVo {
     private Date lastLoginTime;
     private Date lastShareTime;
     private String email;
+    private String wechatOpenId;
+    private String wechatUnionId;
+    private String wechatNickname;
+    private String wechatAvatar;
     private Date lastLearningDate;
     private Integer learnedDays;
     private Boolean learningFinished;
@@ -345,6 +349,38 @@ public class UserVo extends UuidVo {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public String getWechatOpenId() {
+        return wechatOpenId;
+    }
+
+    public void setWechatOpenId(String wechatOpenId) {
+        this.wechatOpenId = wechatOpenId;
+    }
+
+    public String getWechatUnionId() {
+        return wechatUnionId;
+    }
+
+    public void setWechatUnionId(String wechatUnionId) {
+        this.wechatUnionId = wechatUnionId;
+    }
+
+    public String getWechatNickname() {
+        return wechatNickname;
+    }
+
+    public void setWechatNickname(String wechatNickname) {
+        this.wechatNickname = wechatNickname;
+    }
+
+    public String getWechatAvatar() {
+        return wechatAvatar;
+    }
+
+    public void setWechatAvatar(String wechatAvatar) {
+        this.wechatAvatar = wechatAvatar;
     }
 
     public Date getLastLearningDate() {
