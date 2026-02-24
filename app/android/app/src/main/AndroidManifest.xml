@@ -2,6 +2,10 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="com.nn.nnbdc">
 
+    <queries>
+        <package android:name="com.tencent.mm" />
+    </queries>
+
     <application
         android:icon="@mipmap/ic_launcher"
         android:label="泡泡单词"

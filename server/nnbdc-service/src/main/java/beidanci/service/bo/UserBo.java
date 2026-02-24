@@ -1086,17 +1086,30 @@ public class UserBo extends BaseBo<User> {
     @Transactional
     public User findOrCreateUserByWechat(WechatBo.WechatUserInfo wechatUserInfo) {
         try {
-            // 1. 根据openId查找用户
-            String sql = "SELECT * FROM \"user\" WHERE wechat_open_id = :openId";
-            MapSqlParameterSource params = new MapSqlParameterSource("openId", wechatUserInfo.openId);
-            List<User> users = namedParameterJdbcTemplate.query(sql, params,
-                    new EntityRowMapper<>(User.class));
+            // 1. 优先根据 unionId 查找用户 (如果微信返回了 unionId)
+            List<User> users = new ArrayList<>();
+            if (wechatUserInfo.unionId != null && !wechatUserInfo.unionId.isEmpty()) {
+                String sql = "SELECT * FROM \"user\" WHERE wechat_union_id = :unionId";
+                MapSqlParameterSource params = new MapSqlParameterSource("unionId", wechatUserInfo.unionId);
+                users = namedParameterJdbcTemplate.query(sql, params, new EntityRowMapper<>(User.class));
+            }
+
+            // 1.5 降级：如果根据 unionId 没找到，尝试根据 openId 查找（兼容历史没有保存 unionId 的老数据）
+            if (users.isEmpty() && wechatUserInfo.openId != null && !wechatUserInfo.openId.isEmpty()) {
+                String sql = "SELECT * FROM \"user\" WHERE wechat_open_id = :openId";
+                MapSqlParameterSource params = new MapSqlParameterSource("openId", wechatUserInfo.openId);
+                users = namedParameterJdbcTemplate.query(sql, params, new EntityRowMapper<>(User.class));
+            }
 
             if (!users.isEmpty()) {
-                // 用户已存在，更新微信信息（昵称和头像可能变化）
+                // 用户已存在，更新微信信息（昵称、头像和可能补充上的 unionId）
                 User existingUser = users.get(0);
                 existingUser.setWechatNickname(wechatUserInfo.nickname);
                 existingUser.setWechatAvatar(wechatUserInfo.headImgUrl);
+                // 只要新的 openId 存在就更新一下，确保对应当前端的 openId 是最新的 (如果是从网站应用扫码进来的)
+                if (wechatUserInfo.openId != null) {
+                   existingUser.setWechatOpenId(wechatUserInfo.openId);
+                }
                 if (wechatUserInfo.unionId != null) {
                     existingUser.setWechatUnionId(wechatUserInfo.unionId);
                 }
