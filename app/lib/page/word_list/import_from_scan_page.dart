@@ -138,7 +138,10 @@ class _ImportFromScanPageState extends State<ImportFromScanPage> {
         msg.writeln('• 剩余未处理: ${_extractedWords.length} 个');
       }
       
-      ToastUtil.info(msg.toString().trim());
+      ToastUtil.info(
+        msg.toString().trim(),
+        autoCloseDuration: null, // 当设置为 null 时，不自动关闭，需用户手动点击关闭
+      );
 
       if (_extractedWords.isEmpty && _invalidWords.isEmpty) {
         Get.back(result: _successImportCount > 0);
