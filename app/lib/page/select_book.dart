@@ -182,7 +182,7 @@ class SelectBookPageState extends State<SelectBookPage> {
         dictGroups!.add(groupVo);
       }
 
-      customDicts = await WordBo().getCustomDicts(userId);
+      customDicts = (await WordBo().getCustomDicts(userId)).where((d) => d.name != '已掌握').toList();
 
       if (!keepSelection) {
         selectedDictVos = learningDicts.map((e) => DictVo.c2(e.dictId)).toSet();
