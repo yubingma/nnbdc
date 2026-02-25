@@ -359,14 +359,19 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
               Global.logger.w('⚠️ 服务端检测到生词本顺序异常，生成本地全量修改日志，等待下次同步覆盖');
 
               // 生成批量删除生词日志, 使得在下次同步到服务端时, 能够首先清空用户生词本中的单词
-              final rawDict = await MyDatabase.instance.dictsDao.findByOwnerId(userId).then((value) => value.first);
-              await DbLogUtil.logDeleteAllTableRecords(userId, 'dictWords', filters: {'dictId': rawDict.id});
+              final rawDict = await MyDatabase.instance.dictsDao.findUserRawDict(userId);
+              if (rawDict != null) {
+                await DbLogUtil.logDeleteAllTableRecords(userId, 'dictWords', filters: {'dictId': rawDict.id});
 
-              // 修复本地生词本顺序
-              await MyDatabase.instance.dictWordsDao.fixUserRawDictOrder(userId, false);
+                // 休眠以确保时间戳先后顺序，避免排序时全量修改的 UPDATE 日志先于 BATCH_DELETE 执行而导致后端数据被清空
+                await Future.delayed(const Duration(milliseconds: 100));
 
-              // 生成本地生词本全量修改日志, 使得在下次同步到服务端时, 能够是服务端和本地生词本完全一致
-              await MyDatabase.instance.dictWordsDao.generateFullRawDictRewriteLogs(userId);
+                // 修复本地生词本顺序
+                await MyDatabase.instance.dictWordsDao.fixUserRawDictOrder(userId, false);
+
+                // 生成本地生词本全量修改日志, 使得在下次同步到服务端时, 能够让服务端和本地生词本完全一致
+                await MyDatabase.instance.dictWordsDao.generateFullRawDictRewriteLogs(userId);
+              }
 
               // 直接返回，由其他用户操作触发下一次同步(这里不直接触发同步, 是因为当前代码已经在同步中了)
               // 注意, 因为是直接返回, 没有抛异常, 所以[服务端==>本地]是同步成功的, 但是[本地==>服务端]是同步失败的
