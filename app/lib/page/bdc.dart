@@ -2491,6 +2491,12 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     });
   }
 
+  void giveFullHint(WordWrapper word) {
+    setState(() {
+      word.hintLetterCount = 999;
+    });
+  }
+
   void clearHint(WordWrapper word) {
     setState(() {
       word.hintLetterCount = 0;
@@ -3180,6 +3186,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                         child: InkWell(
                           borderRadius: BorderRadius.circular(8),
                           onTap: () => giveALittleHint(_wordWrapper!),
+                          onLongPress: () => giveFullHint(_wordWrapper!),
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                             child: Row(
