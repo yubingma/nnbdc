@@ -355,8 +355,8 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
           Result<int> result = await Api.client.syncUserDb(backendDbVersion, userId, localToBackend);
           if (!result.success) {
               // 若是后端特殊应答，要求进行全量修改日志”，由下次同步自然覆盖
-              if ((result.code).contains('RAW_WORD_ORDER_INVALID')) {
-                // message 格式可能是: RAW_WORD_ORDER_INVALID: dictId|具体错误信息
+              if ((result.code).contains('DICT_WORD_ORDER_INVALID')) {
+                // message 格式可能是: DICT_WORD_ORDER_INVALID: dictId|具体错误信息
                 String dictId = '';
                 final msg = result.msg ?? '';
                 final parts = msg.split('|');

@@ -809,8 +809,8 @@ public class UserDbSyncBo {
         try {
             String issue = dictWordBo.validateDictWordsOrderOfUser(userId);
             if (issue != null) {
-                userDbIssueBo.recordIssue(userId, "RAW_WORD_ORDER_INVALID", issue);
-                throw new RawWordDataErrorException("RAW_WORD_ORDER_INVALID: " + issue);
+                userDbIssueBo.recordIssue(userId, "DICT_WORD_ORDER_INVALID", issue);
+                throw new RawWordDataErrorException("DICT_WORD_ORDER_INVALID: " + issue);
             }
         } catch (RawWordDataErrorException e) {
             throw e;
