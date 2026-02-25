@@ -32,6 +32,7 @@ class LoginPageState extends State<LoginPage> {
   final FocusNode _verificationCodeFocusNode = FocusNode();
   bool _approved = false;
   bool _isLoading = false;
+  bool _isWechatLoading = false;
   bool _isSendingCode = false; // 是否正在发送验证码
   int _countdown = 0; // 倒计时秒数
   Timer? _countdownTimer; // 倒计时定时器
@@ -490,7 +491,7 @@ class LoginPageState extends State<LoginPage> {
                 vertical: MediaQuery.of(context).size.width > 600 ? 10 : 5,
               ),
               child: ElevatedButton.icon(
-                onPressed: _isLoading ? null : wechatLoginPressed,
+                onPressed: _isWechatLoading ? null : wechatLoginPressed,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF09BB07), // 微信绿色
                   padding: EdgeInsets.symmetric(
@@ -502,7 +503,7 @@ class LoginPageState extends State<LoginPage> {
                 ),
                 icon: const Icon(Icons.wechat, color: Colors.white, size: 24),
                 label: Text(
-                  '微信登录',
+                  _isWechatLoading ? '登录中…' : '微信登录',
                   style: TextStyle(
                     fontSize: MediaQuery.of(context).size.width > 600 ? 18 : 14,
                     color: Colors.white,
@@ -754,7 +755,7 @@ class LoginPageState extends State<LoginPage> {
     }
 
     setState(() {
-      _isLoading = true;
+      _isWechatLoading = true;
     });
 
     try {
@@ -807,7 +808,7 @@ class LoginPageState extends State<LoginPage> {
 
         if (mounted) {
           setState(() {
-            _isLoading = false;
+            _isWechatLoading = false;
           });
         }
       });
@@ -818,13 +819,13 @@ class LoginPageState extends State<LoginPage> {
         handled = true;
         cancelable.cancel();
         setState(() {
-          _isLoading = false;
+          _isWechatLoading = false;
         });
       }
     } catch (e, stackTrace) {
       ErrorHandler.handleNetworkError(e, stackTrace, api: 'loginByWechat');
       setState(() {
-        _isLoading = false;
+        _isWechatLoading = false;
       });
     }
   }
