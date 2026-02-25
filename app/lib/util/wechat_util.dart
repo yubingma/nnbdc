@@ -51,13 +51,6 @@ class WechatUtil {
   /// 发起微信登录
   static Future<bool> login() async {
     try {
-      // 检查微信是否安装
-      bool installed = await isWechatInstalled();
-      if (!installed) {
-        ToastUtil.error('请先安装微信客户端');
-        return false;
-      }
-
       // 检查SDK是否初始化
       if (!_initialized) {
         await init();
@@ -65,6 +58,13 @@ class WechatUtil {
           ToastUtil.error('微信登录功能未配置');
           return false;
         }
+      }
+
+      // 检查微信是否安装
+      bool installed = await isWechatInstalled();
+      if (!installed) {
+        ToastUtil.error('请先安装微信客户端');
+        return false;
       }
 
       // 发起微信授权
