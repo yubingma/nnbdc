@@ -80,6 +80,23 @@ class DictWordsProvider with WordsProvider implements WordModifier {
   }
 
   @override
+  Future<bool> masterWord(WordWrapper wordWrapper) async {
+    try {
+      if (dict.name == '生词本') {
+        await WordBo().setLearningWordAsMastered(Global.getLoggedInUser()!.id, wordWrapper.word.id!, true);
+        await _db.dictWordsDao.deleteDictWordWithCleanup(dict.id, wordWrapper.word.id!, Global.getLoggedInUser()?.id, true);
+        ThrottledDbSyncService().requestSync();
+        SoundUtil.playAssetSoundConcurrent('bubble-pop.mp3', 1.0, 0.5);
+        return true;
+      }
+      return false;
+    } catch (e) {
+      ToastUtil.error("操作失败: $e");
+      return false;
+    }
+  }
+
+  @override
   Future<bool> deleteWord(WordWrapper wordWrapper) async {
     try {
       // 从本地数据库中删除dictWord记录，并清理后续序号

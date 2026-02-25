@@ -45,6 +45,8 @@ mixin WordsProvider {
 
   Future<bool> deleteWord(WordWrapper wordWrapper);
 
+  Future<bool> masterWord(WordWrapper wordWrapper) async => false;
+
   /// 获取指定单词在所有单词中的位置, 如果指定单词不存在，返回-1
   Future<int> getWordIndex(String spell);
 
@@ -1590,6 +1592,42 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
     });
   }
 
+  onMasterBtnPressed(WordWrapper word, int index) {
+    args.wordsProvider.masterWord(word).then((value) {
+      if (value) {
+        setState(() {
+          if (word.word.id != null) {
+            learningStatusMap[word.word.id!] = true;
+          }
+          if (word.tag is LearningWordVo) {
+            (word.tag as LearningWordVo).lifeValue = 0;
+          }
+          words.remove(word);
+          totalWordCount--;
+        });
+
+        if (isBookMarkValid(bookMark)) {
+          final bookMarkPosition = getBookMarkRawPosition(bookMark);
+          if (index + baseIndex! < bookMarkPosition && bookMarkPosition <= words.length + baseIndex!) {
+            var word = words[bookMarkPosition - baseIndex! - 1];
+            setState(() {
+              bookMark = BookMarkVo(bookMarkPosition - 1, word.word.spell);
+            });
+            args.bookMarkProvider.saveBookMark(bookMark!).then((success) {
+              if (!success) {
+                Global.logger.e('掌握单词后更新书签失败: spell=${bookMark!.spell}, position=${bookMarkPosition - 1}');
+              }
+            });
+          }
+        }
+
+        if (words.length < minWordCount) {
+          doQuery(false, baseIndex! + words.length, _pageSize, false);
+        }
+      }
+    });
+  }
+
   Color progressColor(WordWrapper word) {
     double ratio = args.wordProgressProvider.getWordProgress(word.tag) / args.wordProgressProvider.getWordProgressMax(word.tag);
     if (ratio < 0.4) {
@@ -1714,6 +1752,10 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
                   studyMode == WordListStudyMode.speakEnglish) &&
               isBookmarked)
             _buildHintButton(Icons.refresh, const Color(0xFF9E9E9E), () => clearHint(word)),
+
+          // 掌握按钮 (针对生词本特别添加)
+          if (args.showDelBtn && args.appBarTitle == '生词本') 
+            _buildMasterButton(word, i, learningStatus: learningStatus),
 
           // 删除按钮
           if (args.showDelBtn) _buildActionButton(word, i, learningStatus: learningStatus),
@@ -2438,6 +2480,45 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
     });
   }
 
+  Widget _buildMasterButton(WordWrapper word, int index, {bool? learningStatus}) {
+    final bool isMastered = learningStatus == true;
+    Color color = const Color(0xFF4CAF50); // 绿色
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(
+          color: color.withValues(alpha: 0.3),
+          width: 1,
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(6),
+          onTap: isMastered ? null : () {
+                  onMasterBtnPressed(word, index);
+                },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Text(
+              '掌握',
+              textScaler: TextScaler.linear(1.0),
+              style: TextStyle(
+                color: isMastered ? color.withValues(alpha: 0.5) : color,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                height: 1.2,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildActionButton(WordWrapper word, int index, {bool? learningStatus}) {
     // 根据不同的单词列表类型，显示不同的文字和颜色
     String buttonText;
@@ -2503,7 +2584,7 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
                   onDelBtnPressed(word, index);
                 },
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             child: Text(
               buttonText,
               textScaler: TextScaler.linear(1.0),

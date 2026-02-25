@@ -29,6 +29,7 @@ class WordItem extends StatelessWidget {
   final VoidCallback? onHintTap;
   final VoidCallback? onClearHintTap;
   final VoidCallback? onDeleteTap;
+  final VoidCallback? onMasterTap;
 
   const WordItem({
     super.key,
@@ -49,6 +50,7 @@ class WordItem extends StatelessWidget {
     this.onHintTap,
     this.onClearHintTap,
     this.onDeleteTap,
+    this.onMasterTap,
   });
 
   @override
@@ -569,8 +571,16 @@ class WordItem extends StatelessWidget {
               ),
             ],
           ],
-          if (showDelBtn && onDeleteTap != null) ...[
+          if (onMasterTap != null) ...[
             if (_shouldShowActionButtons()) const SizedBox(height: 6),
+            _buildActionButton(
+              icon: Icons.check,
+              color: const Color(0xFF4CAF50),
+              onTap: onMasterTap!,
+            ),
+          ],
+          if (showDelBtn && onDeleteTap != null) ...[
+            if (_shouldShowActionButtons() || onMasterTap != null) const SizedBox(height: 6),
             _buildActionButton(
               icon: _getActionIcon(),
               color: _getActionColor(),

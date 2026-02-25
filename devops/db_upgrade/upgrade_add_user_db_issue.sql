@@ -1,0 +1,8 @@
+CREATE TABLE IF NOT EXISTS user_db_issue (
+    id VARCHAR(32) PRIMARY KEY,
+    user_id VARCHAR(32) NOT NULL REFERENCES "user"(id),
+    issue_type VARCHAR(64) NOT NULL,
+    details VARCHAR(2000),
+    create_time TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+    update_time TIMESTAMP WITHOUT TIME ZONE
+);
