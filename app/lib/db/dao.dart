@@ -833,35 +833,22 @@ class DictWordsDao extends DatabaseAccessor<MyDatabase> with _$DictWordsDaoMixin
     await _validateDictWordsOrder(dictId);
   }
 
-  // 对外公开的修复方法，供同步时调用
-  Future<void> fixUserRawDictOrder(String userId, bool genLog) async {
-    // 查找用户的生词本
-    final rawDict = await MyDatabase.instance.dictsDao.findUserRawDict(userId);
-    if (rawDict == null) return;
-
-    // 调用私有方法重新排序
-    await _reorderDictWords(rawDict.id, genLog);
+  // 通用修复方法，供同步时调用
+  Future<void> fixDictOrder(String dictId, bool genLog) async {
+    await _reorderDictWords(dictId, genLog);
   }
 
-  // 生成本地全量日志：直接生成UPDATE日志，覆盖后端数据
-  Future<void> generateFullRawDictRewriteLogs(String userId) async {
-    // 查找用户的生词本
-    final rawDict = await MyDatabase.instance.dictsDao.findUserRawDict(userId);
-    if (rawDict == null) return;
-
-    // 取出生词本全部词，按序号
+  // 通用生成本地全量日志：直接生成UPDATE日志，覆盖后端数据
+  Future<void> generateFullDictRewriteLogs(String userId, String dictId) async {
     final words = await (select(dictWords)
-          ..where((dw) => dw.dictId.equals(rawDict.id))
+          ..where((dw) => dw.dictId.equals(dictId))
           ..orderBy([(dw) => OrderingTerm.asc(dw.seq)]))
         .get();
 
-    // 生成本地全量日志：直接生成UPDATE日志，覆盖后端数据
-    final owner = rawDict.ownerId; // 非空列
     for (final w in words) {
-      await DbLogUtil.logOperation(owner, 'UPDATE', 'dictWords', '${w.dictId}-${w.wordId}', w);
+      await DbLogUtil.logOperation(userId, 'UPDATE', 'dictWords', '${w.dictId}-${w.wordId}', w);
     }
   }
-
 }
 
 @DriftAccessor(tables: [WordImages])

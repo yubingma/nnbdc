@@ -386,18 +386,24 @@ public class DictWordBo extends BaseBo<DictWord> {
     }
 
     /**
-     * 校验指定用户的生词本序号是否从1开始且连续
-     * 若发现问题，返回问题描述字符串，否则返回null
+     * 校验指定用户的所有词书的单词序号是否从1开始且连续
+     * 若发现问题，返回问题描述字符串(格式为 `dictId|问题描述`)，否则返回null
      */
-    public String validateRawWordOrderOfUser(String userId) {
-        // 查找用户的生词本
-        Dict rawWordDict = dictBo.getRawWordDict(userBo.findById(userId));
-        if (rawWordDict == null) {
-            return null;
+    public String validateDictWordsOrderOfUser(String userId) {
+        List<Dict> dicts = dictBo.getDictsByOwnerId(userId, null);
+        for (Dict dict : dicts) {
+            String issue = validateDictWordOrder(dict.getId());
+            if (issue != null) {
+                return dict.getId() + "|" + issue;
+            }
         }
-        // 取出生词本内所有词，按seq排序
+        return null;
+    }
+
+    private String validateDictWordOrder(String dictId) {
+        // 取出词书内所有词，按seq排序
         String sql = "SELECT dw.word_id, dw.seq FROM dict_word dw WHERE dw.dict_id = :dictId ORDER BY dw.seq";
-        MapSqlParameterSource params = new MapSqlParameterSource("dictId", rawWordDict.getId());
+        MapSqlParameterSource params = new MapSqlParameterSource("dictId", dictId);
         List<Object[]> list = namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> 
             new Object[]{rs.getString("word_id"), rs.getInt("seq")});
         if (list == null || list.isEmpty()) {

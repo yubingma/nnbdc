@@ -3,8 +3,6 @@ import 'package:nnbdc/global.dart';
 import 'package:nnbdc/config.dart';
 import 'package:nnbdc/util/network_util.dart';
 import 'package:nnbdc/socket_io.dart';
-import 'package:nnbdc/util/db_log_util.dart';
-import 'package:nnbdc/util/app_clock.dart';
 import 'package:dio/dio.dart';
 import 'package:drift/drift.dart';
 
@@ -503,54 +501,15 @@ class DataIntegrityChecker {
 
         // 如果需要修复，调用重新排序方法
         if (needsFix) {
-          // 判断是否为生词本，使用对应的修复方法
-          if (dict.name == '生词本') {
-            await _db.dictWordsDao.fixUserRawDictOrder(dict.ownerId, true);
-          } else {
-            // 其他词典使用通用的重新排序逻辑
-            await _reorderGenericDict(dict.id, false);
-          }
+          // 判断是否为生词本
+          bool genLog = dict.name == '生词本';
+          await _db.dictWordsDao.fixDictOrder(dict.id, genLog);
           fixResult.addFixed('修复词典 "${dict.name}" 单词序号');
         }
       }
     } catch (e) {
       fixResult.addError('修复词典单词序号时出错：$e');
     }
-  }
-
-  /// 重新排序普通词典的 seq(非生词本)
-  Future<void> _reorderGenericDict(String dictId, bool genLog) async {
-    // 获取词典中所有单词，按 seq 排序
-    final dictWordsList = await (_db.dictWordsDao.select(_db.dictWords)
-          ..where((dw) => dw.dictId.equals(dictId))
-          ..orderBy([(dw) => OrderingTerm.asc(dw.seq)]))
-        .get();
-
-    if (dictWordsList.isEmpty) return;
-
-    // 重新分配 seq，从 1 开始
-    for (int i = 0; i < dictWordsList.length; i++) {
-      final oldEntry = dictWordsList[i];
-      final newSeq = i + 1;
-
-      if (oldEntry.seq != newSeq) {
-        // 更新 seq
-        await (_db.update(_db.dictWords)..where((dw) => dw.dictId.equals(dictId) & dw.wordId.equals(oldEntry.wordId)))
-            .write(DictWordsCompanion(seq: Value(newSeq), updateTime: Value(AppClock.now())));
-
-        // 生成更新日志 (如果需要)
-        if (genLog) {
-          final dict = await _db.dictsDao.findById(dictId);
-          final owner = dict?.ownerId;
-          if (owner != null) {
-            final newEntry = oldEntry.copyWith(seq: newSeq);
-            await DbLogUtil.logOperation(owner, 'UPDATE', 'dictWords', '$dictId-${oldEntry.wordId}', newEntry);
-          }
-        }
-      }
-    }
-
-    Global.logger.d('✅ 词典单词序号重新排序完成：dictId=$dictId, 总数=${dictWordsList.length}');
   }
 
   /// 修复词典单词数量

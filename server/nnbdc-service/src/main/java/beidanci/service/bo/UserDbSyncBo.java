@@ -805,9 +805,9 @@ public class UserDbSyncBo {
      */
     private void validateAndFinalizeSync(String userId, List<UserDbLogDto> logs, int lastVersion)
             throws IllegalAccessException, RawWordDataErrorException, DbVersionNotMatchException {
-        // 生词本顺序校验
+        // 用户所有个人词书的顺序校验
         try {
-            String issue = dictWordBo.validateRawWordOrderOfUser(userId);
+            String issue = dictWordBo.validateDictWordsOrderOfUser(userId);
             if (issue != null) {
                 userDbIssueBo.recordIssue(userId, "RAW_WORD_ORDER_INVALID", issue);
                 throw new RawWordDataErrorException("RAW_WORD_ORDER_INVALID: " + issue);
