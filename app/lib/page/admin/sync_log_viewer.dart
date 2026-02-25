@@ -384,7 +384,7 @@ class _SyncLogViewerPageState extends State<SyncLogViewerPage> {
                               side: BorderSide(
                                 color: log.success
                                     ? (isDarkMode ? Colors.grey[700]! : Colors.grey[200]!)
-                                    : Colors.red[300]!,
+                                    : (log.isWarning ? Colors.orange[300]! : Colors.red[300]!),
                                 width: log.success ? 1 : 2,
                               ),
                             ),
@@ -394,16 +394,16 @@ class _SyncLogViewerPageState extends State<SyncLogViewerPage> {
                                 vertical: 8,
                               ),
                               leading: Icon(
-                                log.success ? Icons.cloud_done : Icons.cloud_off,
-                                color: log.success ? Colors.green : Colors.red,
+                                log.success ? Icons.cloud_done : (log.isWarning ? Icons.warning_amber_rounded : Icons.cloud_off),
+                                color: log.success ? Colors.green : (log.isWarning ? Colors.orange : Colors.red),
                                 size: 32,
                               ),
                               title: Row(
                                 children: [
                                   Text(
-                                    log.success ? '同步成功' : '同步失败',
+                                    log.success ? '同步成功' : (log.isWarning ? '同步异常' : '同步失败'),
                                     style: TextStyle(
-                                      color: log.success ? Colors.green : Colors.red,
+                                      color: log.success ? Colors.green : (log.isWarning ? Colors.orange : Colors.red),
                                       fontSize: 16,
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -460,7 +460,7 @@ class _SyncLogViewerPageState extends State<SyncLogViewerPage> {
                                           ? '${log.errorMessage!.substring(0, 50)}...'
                                           : log.errorMessage!,
                                       style: TextStyle(
-                                        color: Colors.red[400],
+                                        color: log.isWarning ? Colors.orange[400] : Colors.red[400],
                                         fontSize: 11,
                                       ),
                                       maxLines: 1,

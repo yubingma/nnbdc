@@ -103,8 +103,10 @@ class SyncLog {
     );
   }
 
+  bool get isWarning => !success && errorMessage != null && errorMessage!.contains('下次修复');
+
   @override
   String toString() {
-    return 'SyncLog(id: $id, startTime: $startTime, success: $success, durationMs: $durationMs, upload: $uploadCount, download: $downloadCount)';
+    return 'SyncLog(id: $id, startTime: $startTime, success: $success, isWarning: $isWarning, durationMs: $durationMs, upload: $uploadCount, download: $downloadCount)';
   }
 }

@@ -8,14 +8,23 @@ import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/services/sync_log_service.dart';
+import 'package:drift/drift.dart';
 import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/db_log_util.dart';
 import 'package:nnbdc/util/error_handler.dart';
+
 import 'package:nnbdc/util/network_util.dart';
 import 'package:nnbdc/util/sys_db_sync.dart';
 import 'package:nnbdc/util/utils.dart';
 
 export 'package:nnbdc/util/sys_db_sync.dart' show syncSysDb;
+
+class DictWordOrderInvalidWarningException implements Exception {
+  final String message;
+  DictWordOrderInvalidWarningException(this.message);
+  @override
+  String toString() => message;
+}
 
 // 当前同步日志ID，用于记录同步统计信息
 String? _currentSyncLogId;
@@ -225,6 +234,7 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
     });
 
     // 分别保存本地数据库和后端数据库(用事务保证一致性)
+    DictWordOrderInvalidWarningException? warningExcept;
     var db = MyDatabase.instance;
     await db.transaction(() async {
       try {
@@ -372,6 +382,11 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
                 if (dictId.isNotEmpty) {
                   Global.logger.w('⚠️ 服务端检测到词书($dictId)顺序异常，生成本地全量修改日志，等待下次同步覆盖');
 
+                  // 清理掉所有关于这个字典的单词的旧同步日志，包括可能存在的过旧的 BATCH_DELETE
+                  await (MyDatabase.instance.delete(MyDatabase.instance.userDbLogs)
+                        ..where((l) => l.userId.equals(userId) & l.tblName.equals('dictWords') & (l.recordId.like('$dictId-%') | l.operate.equals('BATCH_DELETE'))))
+                      .go();
+
                   await DbLogUtil.logDeleteAllTableRecords(userId, 'dictWords', filters: {'dictId': dictId});
 
                   // 休眠以确保时间戳先后顺序，避免排序时全量修改的 UPDATE 日志先于 BATCH_DELETE 执行而导致后端数据被清空
@@ -384,8 +399,14 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
                   await MyDatabase.instance.dictWordsDao.generateFullDictRewriteLogs(userId, dictId);
                 }
 
-              // 直接返回，由其他用户操作触发下一次同步(这里不直接触发同步, 是因为当前代码已经在同步中了)
-              // 注意, 因为是直接返回, 没有抛异常, 所以[服务端==>本地]是同步成功的, 但是[本地==>服务端]是同步失败的
+              // 记录特定异常，使其能被捕获为警告状态。我们在这里不直接抛出以免回滚前面的成功操作（特别是已经写入的日志记录修复）
+              warningExcept = DictWordOrderInvalidWarningException("下次修复");
+              
+              // 更新本地数据库版本（虽然本地未成功提交给后端，但我们已经接收了后端的变动应当更新本地的后端进度）
+              await db.userDbVersionsDao
+                  .saveEntity(UserDbVersion(userId: userId, version: backendDbVersion, createTime: AppClock.now(), updateTime: AppClock.now()));
+              
+              // 提前退出此事务处理过程：保留其余所有待上传的日志，不要走到最后的清空环节, 等待下次重推
               return;
             } else {
               Global.logger.e("❌ 上传到远程数据库失败: ${result.msg}");
@@ -407,6 +428,11 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
         rethrow; // 重新抛出异常，让事务回滚
       }
     });
+
+    if (warningExcept != null) {
+      throw warningExcept!;
+    }
+
     stopwatch.stop();
     Global.logger.i("✅ 用户数据库同步操作完成 - 耗时: ${stopwatch.elapsedMilliseconds}ms, 处理记录数: ${backendToLocal.length}");
   } catch (e, stackTrace) {
@@ -688,6 +714,11 @@ Future<void> syncDb() async {
 
     // 完成同步日志记录
     await completeSyncLog(success: true);
+  } on DictWordOrderInvalidWarningException catch (e) {
+    stopwatch.stop();
+    Global.logger.w("⚠️ 数据库同步中止(进入修复计划): $e - 耗时: ${stopwatch.elapsedMilliseconds}ms");
+    await completeSyncLog(success: false, errorMessage: e.message);
+    rethrow;
   } catch (e, stackTrace) {
     stopwatch.stop();
     Global.logger.e("❌ 数据库同步失败: $e - 耗时: ${stopwatch.elapsedMilliseconds}ms", error: e, stackTrace: stackTrace);
