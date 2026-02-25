@@ -49,7 +49,7 @@ void addDownloadCount(int count) {
 /// 完成同步日志记录
 Future<void> completeSyncLog({bool success = true, String? errorMessage}) async {
   if (_currentSyncLogId == null) return;
-  
+
   final service = SyncLogService();
   if (success) {
     await service.completeSync(
@@ -72,8 +72,10 @@ Future<void> completeSyncLog({bool success = true, String? errorMessage}) async 
 /// - DELETE/BATCH_DELETE: 逆序（优先级大的先执行，即先子后父）
 /// - 混合情况: 非删除操作优先于删除操作（确保先完成增改，再执行删除）
 int _comparePriorityByOperate(
-  String operateA, String operateB,
-  int priorityA, int priorityB,
+  String operateA,
+  String operateB,
+  int priorityA,
+  int priorityB,
 ) {
   bool isDeleteA = operateA == 'DELETE' || operateA == 'BATCH_DELETE';
   bool isDeleteB = operateB == 'DELETE' || operateB == 'BATCH_DELETE';
@@ -180,8 +182,10 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
         return timeCompare;
       }
       return _comparePriorityByOperate(
-        a['operate'] as String, b['operate'] as String,
-        getPriority(a['tblName'] as String), getPriority(b['tblName'] as String),
+        a['operate'] as String,
+        b['operate'] as String,
+        getPriority(a['tblName'] as String),
+        getPriority(b['tblName'] as String),
       );
     });
 
@@ -213,8 +217,10 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
         return timeCompare;
       }
       return _comparePriorityByOperate(
-        a.operate, b.operate,
-        getPriority(a.tblName), getPriority(b.tblName),
+        a.operate,
+        b.operate,
+        getPriority(a.tblName),
+        getPriority(b.tblName),
       );
     });
 
@@ -237,6 +243,9 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
                 await db.usersDao.saveUser(entity, false);
               }
             } else if (log.tblName == 'dicts') {
+              entityJson['editable'] ??= true;
+              entityJson['deletable'] ??= true;
+              entityJson['visible'] ??= true;
               Dict entity = Dict.fromJson(entityJson);
               if (log.operate == 'INSERT' || log.operate == 'UPDATE') {
                 await db.dictsDao.saveEntity(entity, false);
@@ -596,11 +605,11 @@ Future<void> syncUserDb(String userId) async {
       if (result1.success) {
         List<UserDbLogDto> remoteLogs = result1.data!;
         Global.logger.i("✅ 获取远程变更日志成功 - 耗时: ${stopwatch.elapsedMilliseconds}ms, 本地变更: ${localLogs.length}, 远程变更: ${remoteLogs.length}");
-        
+
         // 记录上下行数量
         addUploadCount(localLogs.length);
         addDownloadCount(remoteLogs.length);
-        
+
         await doSyncUserDb(localLogs, remoteLogs, remoteDbVersion, userId);
         stopwatch.stop();
         Global.logger.i("✅ 用户数据库同步完成 - 耗时: ${stopwatch.elapsedMilliseconds}ms, 本地变更: ${localLogs.length}, 远程变更: ${remoteLogs.length}");
@@ -626,7 +635,7 @@ Future<void> syncUserDb(String userId) async {
 Future<void> syncDb() async {
   final stopwatch = Stopwatch()..start();
   String? syncLogId;
-  
+
   try {
     Global.logger.i("🔄 开始数据库同步流程");
 
@@ -660,16 +669,16 @@ Future<void> syncDb() async {
 
     stopwatch.stop();
     Global.logger.i("🎉 数据库同步完成 - 总耗时: ${stopwatch.elapsedMilliseconds}ms");
-    
+
     // 完成同步日志记录
     await completeSyncLog(success: true);
   } catch (e, stackTrace) {
     stopwatch.stop();
     Global.logger.e("❌ 数据库同步失败: $e - 耗时: ${stopwatch.elapsedMilliseconds}ms", error: e, stackTrace: stackTrace);
-    
+
     // 记录同步失败，不再弹出错误提示
     await completeSyncLog(success: false, errorMessage: e.toString());
-    
+
     // 不再调用 ErrorHandler 显示错误提示
     // await ErrorHandler.handleDatabaseError(e, stackTrace, db: MyDatabase.instance.usersDao, operation: 'syncDb', showToast: true);
     rethrow;

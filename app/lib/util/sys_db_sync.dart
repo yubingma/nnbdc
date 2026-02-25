@@ -32,8 +32,15 @@ Future<void> syncSysDb() async {
 
     // 3. 版本一致，无需同步
     if (localVersion == remoteVersion) {
-      Global.logger.i("✅ 系统数据已是最新 - 版本: $localVersion");
-      return;
+      // 容错: 如果版本一致，但表里实际上缺少系统词书数据，可能是异常中止导致的，强制从头拉取
+      var sysDicts = await (db.select(db.dicts)..where((d) => d.ownerId.equals('15118'))).get();
+      if (localVersion > 0 && sysDicts.isEmpty) {
+        Global.logger.w("⚠️ 系统数据版本为 $localVersion 但本地无系统词书数据，触发全量重新同步！");
+        localVersion = 0;
+      } else {
+        Global.logger.i("✅ 系统数据已是最新 - 版本: $localVersion");
+        return;
+      }
     }
 
     // 4. 拉取增量日志
@@ -107,6 +114,9 @@ Future<void> _applySysDbLogs(List<SysDbLogDto> logs) async {
           if (log.operate == 'DELETE') {
             await (db.delete(db.dicts)..where((t) => t.id.equals(log.recordId))).go();
           } else {
+            entityJson['editable'] ??= false;
+            entityJson['deletable'] ??= false;
+            entityJson['visible'] ??= true;
             Dict entity = Dict.fromJson(entityJson);
             await db.dictsDao.saveEntity(entity, false);
           }
