@@ -40,6 +40,13 @@ class SubscriptionUtil {
     }
 
     try {
+      // 当前仅支持iOS平台的应用内购买订阅
+      if (!Platform.isIOS) {
+        _isAvailable = false;
+        _initialized = true;
+        return false;
+      }
+
       // 检查是否支持应用内购买（iOS/Android）
       _isAvailable = await _iap.isAvailable();
 
