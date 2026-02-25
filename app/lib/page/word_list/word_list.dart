@@ -1696,14 +1696,19 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
                   studyMode == WordListStudyMode.speakChinese ||
                   studyMode == WordListStudyMode.speakEnglish) &&
               isBookmarked)
-            _buildHintButton(Icons.lightbulb, const Color(0xFFFFA726), () => giveALittleHint(word)),
+            _buildHintButton(
+              Icons.emoji_objects_rounded,
+              const Color(0xFF4A90E2),
+              () => giveALittleHint(word),
+              onLongPress: () => giveFullHint(word),
+            ),
 
           // 清除提示
           if ((studyMode == WordListStudyMode.dictation ||
                   studyMode == WordListStudyMode.speakChinese ||
                   studyMode == WordListStudyMode.speakEnglish) &&
               isBookmarked)
-            _buildHintButton(Icons.lightbulb_outline, const Color(0xFF9E9E9E), () => clearHint(word)),
+            _buildHintButton(Icons.refresh, const Color(0xFF9E9E9E), () => clearHint(word)),
 
           // 删除按钮
           if (args.showDelBtn) _buildActionButton(word, i, learningStatus: learningStatus),
@@ -1712,7 +1717,7 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
     );
   }
 
-  Widget _buildHintButton(IconData icon, Color color, VoidCallback onTap) {
+  Widget _buildHintButton(IconData icon, Color color, VoidCallback onTap, {VoidCallback? onLongPress}) {
     return Container(
       margin: const EdgeInsets.only(bottom: 6),
       decoration: BoxDecoration(
@@ -1728,6 +1733,7 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
         child: InkWell(
           borderRadius: BorderRadius.circular(8),
           onTap: onTap,
+          onLongPress: onLongPress,
           child: Padding(
             padding: const EdgeInsets.all(8),
             child: Icon(
@@ -2413,6 +2419,16 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
         if (word.hintLetterCount < word.word.spell.length) {
           word.hintLetterCount++;
         }
+      }
+    });
+  }
+
+  void giveFullHint(WordWrapper word) {
+    setState(() {
+      if (studyMode == WordListStudyMode.dictation || studyMode == WordListStudyMode.speakEnglish) {
+        word.hintLetterCount = word.word.spell.length;
+      } else if (studyMode == WordListStudyMode.speakChinese) {
+        word.hintLetterCount = 999;
       }
     });
   }
@@ -3292,7 +3308,7 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
       if (!capturedContext.mounted) return;
 
       final isDarkMode = capturedContext.read<DarkMode>().isDarkMode;
-      
+
       await showDialog(
         context: capturedContext,
         builder: (BuildContext context) {
