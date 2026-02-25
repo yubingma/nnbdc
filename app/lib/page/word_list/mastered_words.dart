@@ -26,7 +26,7 @@ class MasteredWordsProvider with WordsProvider implements WordModifier {
   Future<bool> deleteWord(WordWrapper wordWrapper) async {
     var result = await WordBo().deleteMasteredWord(Global.getLoggedInUser()!.id, wordWrapper.word.id!);
     if (result.success) {
-      ToastUtil.info("${wordWrapper.word.spell} 重新加入生词本");
+      ToastUtil.info("${wordWrapper.word.spell} 已重新加入生词本");
     } else {
       ToastUtil.error(result.msg!);
     }
