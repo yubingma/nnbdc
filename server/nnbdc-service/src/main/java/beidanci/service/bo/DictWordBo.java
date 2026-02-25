@@ -489,16 +489,15 @@ public class DictWordBo extends BaseBo<DictWord> {
                 throw new IllegalArgumentException("dictId 不能为空");
             }
 
-            // 构建删除SQL - 通过JOIN确保只删除属于该用户的生词本中的记录
-            StringBuilder sql = new StringBuilder("DELETE dw FROM dict_word dw ");
-            sql.append("INNER JOIN dict d ON dw.dict_id = d.id ");
-            sql.append("WHERE d.owner_id = :userId");
+            // 构建删除SQL - 确保只删除属于该用户的生词本中的记录
+            StringBuilder sql = new StringBuilder("DELETE FROM dict_word ");
+            sql.append("WHERE dict_id IN (SELECT id FROM dict WHERE owner_id = :userId)");
 
             Map<String, Object> parameters = new HashMap<>();
             parameters.put("userId", userId);
 
             // 添加过滤条件
-            sql.append(" AND dw.dict_id = :dictId");
+            sql.append(" AND dict_id = :dictId");
             parameters.put("dictId", filters.get("dictId"));
 
             MapSqlParameterSource params = new MapSqlParameterSource();
