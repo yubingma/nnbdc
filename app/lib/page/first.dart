@@ -23,10 +23,12 @@ import 'package:percent_indicator/circular_percent_indicator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:drift/drift.dart' as drift hide Column;
 
 import '../config.dart';
 import '../global.dart';
 import '../services/update_service.dart';
+import '../util/app_clock.dart';
 
 class FirstPage extends StatefulWidget {
   const FirstPage({super.key});
@@ -246,7 +248,7 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
       Global.logger.w('获取版本信息失败', error: e, stackTrace: stackTrace);
     }
   }
-  
+
   /// 显示强制升级对话框（用于 Android/Windows/Linux）
   Future<void> showForceUpgradeDialog(int verCode, List<dynamic> changes) async {
     if (PlatformUtils.isWindows) {
@@ -345,7 +347,7 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
       );
     }
   }
-  
+
   /// 显示强制升级对话框（用于 iOS/macOS - 导航到 App Store）
   Future<void> showForceUpgradeDialogForApple(int verCode, List<dynamic> changes) async {
     // 获取 UpdateService
@@ -356,7 +358,7 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
       updateService = UpdateService();
       Get.put(updateService);
     }
-  
+
     await showDialog(
       context: context,
       barrierDismissible: false, // 不允许点击外部关闭
@@ -401,7 +403,7 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
       },
     );
   }
-  
+
   Future<void> showUpgradeConfirmDlg(int verCode, changes) async {
     if (PlatformUtils.isWindows) {
       // Windows 平台：直接使用静默安装，显示确认对话框
@@ -1707,6 +1709,11 @@ endlocal
 
       if (user != null && user.email != null) {
         _setPreparingMessage('正在加载用户信息…');
+
+        // 更新最后登录时间
+        final now = AppClock.now();
+        await MyDatabase.instance.usersDao.saveUser(user.copyWith(lastLoginTime: drift.Value(now)), true);
+        await MyDatabase.instance.userOpersDao.recordLogin(user.id, remark: '自动登录');
 
         // CS架构下，本地有用户信息就可以直接登录，不需要密码验证
         // 直接获取用户信息并登录
