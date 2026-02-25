@@ -719,9 +719,14 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       WordVo? word = _currentGetWordResult?.learningWord?.word;
       if (word != null) {
         List<String> allowPhrases = [];
-        if (_studyStep == StudyStep.ch2En.json) {
+      if (_studyStep == StudyStep.ch2En.json) {
+        // 如果是短语，拆分成单独的单词作为热词，防止 iOS 语音识别过度联想（只说一两个词就补全整个短语）
+        if (word.spell.contains(' ') || word.spell.contains('-')) {
+          allowPhrases = word.spell.split(RegExp(r'[\s\-]+'));
+        } else {
           allowPhrases = [word.spell];
-        } else if (_studyStep == StudyStep.en2Ch.json) {
+        }
+      } else if (_studyStep == StudyStep.en2Ch.json) {
           allowPhrases = AsrUtil.extractContextualPhrases(
             _currentGetWordResult!.learningWord!.word.getMergedMeaningItems(),
           );

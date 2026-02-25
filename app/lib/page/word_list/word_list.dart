@@ -904,9 +904,14 @@ class WordListPageState extends State<WordListPage> with WidgetsBindingObserver,
         // 根据模式提取上下文短语
         List<String> allowPhrases;
         if (studyMode == WordListStudyMode.speakEnglish) {
-          // 背英文模式：热词为英文拼写
-          allowPhrases = [words[curr].word.spell];
+        // 背英文模式：如果为短语，拆分成单词提供热词，防止iOS联想补全
+        final spell = words[curr].word.spell;
+        if (spell.contains(' ') || spell.contains('-')) {
+          allowPhrases = spell.split(RegExp(r'[\s\-]+'));
         } else {
+          allowPhrases = [spell];
+        }
+      } else {
           // 背中文模式：热词为中文释义
           allowPhrases = AsrUtil.extractContextualPhrases(
             words[curr].word.getMergedMeaningItems(),

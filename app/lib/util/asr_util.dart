@@ -341,40 +341,53 @@ class AsrUtil {
   }
 
   /// 检查两个单词是否有显著的重叠部分
-  static bool _hasSignificantOverlap(String word1, String word2) {
-    int minLength = [word1.length, word2.length].reduce((a, b) => a < b ? a : b);
-    if (minLength < 3) return false; // 太短的单词不检查重叠
+static bool _hasSignificantOverlap(String word1, String word2) {
+  int minLength = [word1.length, word2.length].reduce((a, b) => a < b ? a : b);
+  int maxLength = [word1.length, word2.length].reduce((a, b) => a > b ? a : b);
+  if (minLength < 3) return false; // 太短的单词不检查重叠
 
-    // 检查前缀重叠
-    for (int i = 3; i <= minLength; i++) {
-      String prefix1 = word1.substring(0, i);
-      String prefix2 = word2.substring(0, i);
-      if (prefix1 == prefix2) {
-        return true;
-      }
+  // 如果是短语，要求更严格的重叠比例 (80%)，单个单词要求 60%
+  bool isPhrase = word1.contains(' ') || word2.contains(' ');
+  double ratio = isPhrase ? 0.8 : 0.6;
+  
+  // 长度差异过大时不判定为重叠
+  if (minLength < maxLength * ratio) return false;
+
+  // 动态计算需要匹配的重叠字符数
+  int overlapLength = (maxLength * ratio).floor();
+  if (overlapLength < 3) overlapLength = 3;
+  if (minLength < overlapLength) return false;
+
+  // 检查前缀重叠
+  for (int i = overlapLength; i <= minLength; i++) {
+    String prefix1 = word1.substring(0, i);
+    String prefix2 = word2.substring(0, i);
+    if (prefix1 == prefix2) {
+      return true;
     }
-
-    // 检查后缀重叠
-    for (int i = 3; i <= minLength; i++) {
-      String suffix1 = word1.substring(word1.length - i);
-      String suffix2 = word2.substring(word2.length - i);
-      if (suffix1 == suffix2) {
-        return true;
-      }
-    }
-
-    // 检查中间部分重叠（对于复合词很有用）
-    if (minLength >= 4) {
-      for (int i = 0; i <= word1.length - 4; i++) {
-        String substring1 = word1.substring(i, i + 4);
-        if (word2.contains(substring1)) {
-          return true;
-        }
-      }
-    }
-
-    return false;
   }
+
+  // 检查后缀重叠
+  for (int i = overlapLength; i <= minLength; i++) {
+    String suffix1 = word1.substring(word1.length - i);
+    String suffix2 = word2.substring(word2.length - i);
+    if (suffix1 == suffix2) {
+      return true;
+    }
+  }
+
+  // 检查中间部分重叠（对于复合词很有用）
+  if (minLength >= overlapLength) {
+    for (int i = 0; i <= word1.length - overlapLength; i++) {
+      String substring1 = word1.substring(i, i + overlapLength);
+      if (word2.contains(substring1)) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
 
   /// 计算两个字符串的编辑距离（Levenshtein距离）
   // 移除本地实现，统一使用 EditDistance
