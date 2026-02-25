@@ -12,6 +12,7 @@ import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter/services.dart';
 import 'package:nnbdc/api/api.dart';
 import 'package:nnbdc/api/bo/study_bo.dart';
 import 'package:nnbdc/api/bo/user_bo.dart';
@@ -641,6 +642,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     _args = BdcPageArgs.fromJson(GetStorage().read<String>("BdcPageArgs")!);
 
     // 初始化两个动画控制器
@@ -790,6 +792,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       }
     });
 
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: SystemUiOverlay.values);
     super.dispose();
   }
 
