@@ -1910,11 +1910,11 @@ class WordListPageState extends State<WordListPage>
           onLongPress: onLongPress,
           child: Container(
             width: 48,
-            padding: const EdgeInsets.symmetric(vertical: 8),
+            height: 32,
             alignment: Alignment.center,
             child: Icon(
               icon, // Use the passed icon
-              size: 22,
+              size: 20,
               color: color, // Use the passed color
             ),
           ),
@@ -2714,7 +2714,7 @@ class WordListPageState extends State<WordListPage>
                 },
           child: Container(
             width: 48,
-            padding: const EdgeInsets.symmetric(vertical: 8),
+            height: 32,
             alignment: Alignment.center,
             child: Text(
               '掌握',
@@ -2807,7 +2807,7 @@ class WordListPageState extends State<WordListPage>
                 },
           child: Container(
             width: 48,
-            padding: const EdgeInsets.symmetric(vertical: 8),
+            height: 32,
             alignment: Alignment.center,
             child: Text(
               buttonText,
