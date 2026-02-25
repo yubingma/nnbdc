@@ -43,18 +43,18 @@ class Config {
     }
   };
 
-  static final Map profile = profiles[profileName];
+  static Map get profile => profiles[profileName];
 
-  static final String serviceUrl = profile["service_url"];
-  static final String socketServerUrl = profile["socketServerUrl"];
-  static final String cdnBackUrl = profile["cdnBackUrl"];
-  static final String soundBaseUrl = profile["sound_base_url"];
-  static final String updateUrl = profile["updateUrl"];
-  static final String apkUrl = profile["apkUrl"];
-  static final String windowsUrl = profile["windowsUrl"];
-  static final String linuxUrl = profile["linuxUrl"];
-  static final String aiModelUrl = profile["aiModelUrl"];
-  static final String wordImageBaseUrl = profile["wordImageBaseUrl"];
+  static String get serviceUrl => profile["service_url"];
+  static String get socketServerUrl => profile["socketServerUrl"];
+  static String get cdnBackUrl => profile["cdnBackUrl"];
+  static String get soundBaseUrl => profile["sound_base_url"];
+  static String get updateUrl => profile["updateUrl"];
+  static String get apkUrl => profile["apkUrl"];
+  static String get windowsUrl => profile["windowsUrl"];
+  static String get linuxUrl => profile["linuxUrl"];
+  static String get aiModelUrl => profile["aiModelUrl"];
+  static String get wordImageBaseUrl => profile["wordImageBaseUrl"];
 
   // Configuration for ThrottledDbSyncService
   static const Duration dbSyncThrottleInterval = Duration(seconds: 300);

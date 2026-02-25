@@ -251,4 +251,17 @@ class SocketIoClient {
   void removeSocketStatusListener(SocketStatusListener listener) {
     socketStatusListeners.remove(listener);
   }
+
+  /// 重新设置Socket实例（用于切换环境时）
+  void reset() {
+    if (!_initialized) return;
+
+    Global.logger.d('SocketIoClient: 重置Socket实例，更新连接URL');
+    _stopHeartbeat();
+    socket.disconnect();
+    socket.dispose();
+    _initialized = false;
+    isConnectedToSocketServer = false;
+    _connectionRefCount = 0;
+  }
 }

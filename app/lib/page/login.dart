@@ -15,6 +15,7 @@ import 'package:nnbdc/util/error_handler.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../config.dart';
 import '../global.dart';
+import '../socket_io.dart';
 import '../util/client_type.dart';
 import 'package:fluwx/fluwx.dart';
 import 'package:nnbdc/util/wechat_util.dart';
@@ -837,7 +838,6 @@ class LoginPageState extends State<LoginPage> {
       PackageInfo packageInfo = await PackageInfo.fromPlatform();
       String version = packageInfo.version;
       String buildNumber = packageInfo.buildNumber;
-      String profile = Config.profileName;
 
       // 获取数据库版本号
       int dbVersion = MyDatabase.instance.schemaVersion;
@@ -857,7 +857,30 @@ class LoginPageState extends State<LoginPage> {
                 const SizedBox(height: 8),
                 Text('构建号: $buildNumber'),
                 const SizedBox(height: 8),
-                Text('Profile: $profile'),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Profile: ${Config.profileName}'),
+                    ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          if (Config.profileName == 'dev') {
+                            Config.profileName = 'prod';
+                            Api.useProdUrl = true;
+                          } else {
+                            Config.profileName = 'dev';
+                            Api.useProdUrl = false;
+                          }
+                        });
+                        Api.resetClient();
+                        SocketIoClient.instance.reset();
+                        Navigator.of(context).pop();
+                        ToastUtil.success('已切换到 ${Config.profileName} 环境');
+                      },
+                      child: const Text('切换'),
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 8),
                 Text('数据库版本: $dbVersion'),
               ],
