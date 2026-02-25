@@ -862,7 +862,6 @@ class DictWordsDao extends DatabaseAccessor<MyDatabase> with _$DictWordsDaoMixin
     }
   }
 
-  // 删除 _showValidationError 方法，不再弹出吐司打扰用户
 }
 
 @DriftAccessor(tables: [WordImages])

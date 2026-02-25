@@ -180,9 +180,14 @@ public class SyncController {
     public Result<Integer> syncUserDb2Back(@RequestParam("expectedServerDbVersion") int expectedServerDbVersion,
             @RequestParam("userId") String userId,
             @RequestBody ArrayList<UserDbLogDto> logs)
-            throws IllegalAccessException, DbVersionNotMatchException, RawWordDataErrorException {
-        int lastVersion = syncBo.syncUserDb2Back(userId, expectedServerDbVersion, logs);
-        return Result.success(lastVersion);
+            throws IllegalAccessException, DbVersionNotMatchException {
+        try {
+            int lastVersion = syncBo.syncUserDb2Back(userId, expectedServerDbVersion, logs);
+            return Result.success(lastVersion);
+        } catch (RawWordDataErrorException e) {
+            log.warn("同步用户数据时发生生词本数据异常，将通知客户端重做全量生词同步: userId=[{}], error=[{}]", userId, e.getMessage());
+            return new Result<>("RAW_WORD_ORDER_INVALID", e.getMessage(), null);
+        }
     }
 
 }
