@@ -804,7 +804,8 @@ class LoginPageState extends State<LoginPage> {
             ErrorHandler.handleNetworkError(e, stackTrace, api: 'loginByWechat');
           }
         } else {
-          ToastUtil.error('微信授权失败');
+          Global.logger.e('微信授权失败，errCode: ${response.errCode}, errStr: ${response.errStr}');
+          ToastUtil.error('微信授权失败: ${response.errCode} - ${response.errStr ?? "未知错误"}');
         }
 
         if (mounted) {

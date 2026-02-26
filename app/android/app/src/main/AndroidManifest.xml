@@ -67,11 +67,10 @@
 
         <!-- 微信登录回调 -->
         <activity
-            android:name=".wxapi.WXEntryActivity"
+            android:name="com.nn.nnbdc.android.wxapi.WXEntryActivity"
             android:exported="true"
             android:label="@string/app_name"
-            android:launchMode="singleTask"
-            android:taskAffinity="com.nn.nnbdc">
+            android:launchMode="singleTask">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
