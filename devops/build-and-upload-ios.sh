@@ -39,6 +39,8 @@ print_step() {
 APPLE_ID="${APPLE_ID:-your-apple-id@example.com}"
 TEAM_ID="${TEAM_ID:-YOUR_TEAM_ID}"
 APP_PASSWORD="${APP_PASSWORD:-}"  # App 专用密码（可通过环境变量传入）
+API_KEY="${API_KEY:-}"            # App Store Connect API Key ID
+API_ISSUER="${API_ISSUER:-}"      # App Store Connect API Issuer ID
 BUNDLE_ID="com.nn.nnbdc.nnbdc"
 SCHEME="Runner"
 WORKSPACE="app/ios/Runner.xcworkspace"
@@ -89,6 +91,8 @@ show_usage() {
   --apple-id ID          Apple ID（也可以通过 APPLE_ID 环境变量设置）
   --team-id ID           Team ID（也可以通过 TEAM_ID 环境变量设置）
   --app-password PASS    App 专用密码（也可以通过 APP_PASSWORD 环境变量设置）
+  --api-key KEY          App Store Connect API Key ID (用于替代 Apple ID 登录)
+  --api-issuer ISSUER    App Store Connect API Issuer ID
   --skip-clean          跳过清理步骤
   --skip-build          跳过构建步骤（仅上传）
   --skip-upload         跳过上传步骤（仅构建）
@@ -99,7 +103,9 @@ show_usage() {
 环境变量:
   APPLE_ID               Apple ID
   TEAM_ID                Team ID
-  APP_PASSWORD           App 专用密码（推荐使用环境变量，更安全）
+  APP_PASSWORD           App 专用密码
+  API_KEY                API Key ID (如 XXXXXXXXXX)
+  API_ISSUER             API Issuer ID
 
 示例:
   # 构建并上传（需要先设置环境变量）
@@ -140,6 +146,14 @@ parse_args() {
                 ;;
             --app-password)
                 APP_PASSWORD="$2"
+                shift 2
+                ;;
+            --api-key)
+                API_KEY="$2"
+                shift 2
+                ;;
+            --api-issuer)
+                API_ISSUER="$2"
                 shift 2
                 ;;
             --skip-clean)
@@ -211,23 +225,27 @@ check_config() {
     if [ "$SKIP_UPLOAD" = false ] && [ "$BUILD_ONLY" = false ]; then
         print_step "检查上传配置..."
         
-        if [ -z "$APPLE_ID" ] || [ "$APPLE_ID" = "your-apple-id@example.com" ]; then
-            print_error "未设置 Apple ID"
-            print_info "请使用 --apple-id 参数或设置 APPLE_ID 环境变量"
-            exit 1
-        fi
-        
-        if [ -z "$TEAM_ID" ] || [ "$TEAM_ID" = "YOUR_TEAM_ID" ]; then
-            print_error "未设置 Team ID"
-            print_info "请使用 --team-id 参数或设置 TEAM_ID 环境变量"
-            exit 1
-        fi
-        
-        if [ -z "$APP_PASSWORD" ]; then
-            print_error "未设置 App 专用密码"
-            print_info "请使用 --app-password 参数或设置 APP_PASSWORD 环境变量"
-            print_info "获取 App 专用密码: https://appleid.apple.com → 安全性 → App 专用密码"
-            exit 1
+        if [ -n "$API_KEY" ] && [ -n "$API_ISSUER" ]; then
+            print_info "已配置 App Store Connect API Key，将使用 API Key 进行上传验证"
+        else
+            if [ -z "$APPLE_ID" ] || [ "$APPLE_ID" = "your-apple-id@example.com" ]; then
+                print_error "未设置 Apple ID 且缺乏 API Key"
+                print_info "请使用 --apple-id 参数、设置 APPLE_ID 环境变量，或同时配置 --api-key 和 --api-issuer"
+                exit 1
+            fi
+            
+            if [ -z "$TEAM_ID" ] || [ "$TEAM_ID" = "YOUR_TEAM_ID" ]; then
+                print_error "未设置 Team ID"
+                print_info "请使用 --team-id 参数或设置 TEAM_ID 环境变量"
+                exit 1
+            fi
+            
+            if [ -z "$APP_PASSWORD" ]; then
+                print_error "未设置 App 专用密码"
+                print_info "请使用 --app-password 参数或设置 APP_PASSWORD 环境变量"
+                print_info "获取 App 专用密码: https://appleid.apple.com → 安全性 → App 专用密码"
+                exit 1
+            fi
         fi
     fi
 }
@@ -425,28 +443,51 @@ upload_with_altool() {
     fi
     
     # 验证凭证
-    print_info "验证 Apple ID 凭证..."
-    xcrun altool --validate-app \
-        --file "$IPA_FILE" \
-        --type ios \
-        --username "$APPLE_ID" \
-        --password "$APP_PASSWORD" \
-        --team-id "$TEAM_ID" || {
-        print_error "IPA 验证失败"
-        exit 1
-    }
+    print_info "验证 App 凭证..."
     
-    # 上传
-    print_info "上传 IPA 到 App Store Connect..."
-    xcrun altool --upload-app \
-        --file "$IPA_FILE" \
-        --type ios \
-        --username "$APPLE_ID" \
-        --password "$APP_PASSWORD" \
-        --team-id "$TEAM_ID" || {
-        print_error "上传失败"
-        exit 1
-    }
+    if [ -n "$API_KEY" ] && [ -n "$API_ISSUER" ]; then
+        print_info "验证方式: App Store Connect API Key"
+        xcrun altool --validate-app \
+            --file "$IPA_FILE" \
+            --type ios \
+            --apiKey "$API_KEY" \
+            --apiIssuer "$API_ISSUER" || {
+            print_error "IPA 验证失败"
+            exit 1
+        }
+        
+        print_info "上传 IPA 到 App Store Connect..."
+        xcrun altool --upload-app \
+            --file "$IPA_FILE" \
+            --type ios \
+            --apiKey "$API_KEY" \
+            --apiIssuer "$API_ISSUER" || {
+            print_error "上传失败"
+            exit 1
+        }
+    else
+        print_info "验证方式: Apple ID"
+        xcrun altool --validate-app \
+            --file "$IPA_FILE" \
+            --type ios \
+            --username "$APPLE_ID" \
+            --password "$APP_PASSWORD" \
+            --team-id "$TEAM_ID" || {
+            print_error "IPA 验证失败"
+            exit 1
+        }
+        
+        print_info "上传 IPA 到 App Store Connect..."
+        xcrun altool --upload-app \
+            --file "$IPA_FILE" \
+            --type ios \
+            --username "$APPLE_ID" \
+            --password "$APP_PASSWORD" \
+            --team-id "$TEAM_ID" || {
+            print_error "上传失败"
+            exit 1
+        }
+    fi
     
     print_info "上传成功！"
     print_info "请前往 App Store Connect 查看构建状态："
@@ -497,12 +538,20 @@ main() {
             print_info "IPA 文件位置: $IPA_FILE"
             print_info "可以使用以下命令手动上传："
             echo ""
-            echo "  xcrun altool --upload-app \\"
-            echo "    --file \"$IPA_FILE\" \\"
-            echo "    --type ios \\"
-            echo "    --username \"\$APPLE_ID\" \\"
-            echo "    --password \"\$APP_PASSWORD\" \\"
-            echo "    --team-id \"\$TEAM_ID\""
+            if [ -n "$API_KEY" ] && [ -n "$API_ISSUER" ]; then
+                echo "  xcrun altool --upload-app \\"
+                echo "    --file \"$IPA_FILE\" \\"
+                echo "    --type ios \\"
+                echo "    --apiKey \"\$API_KEY\" \\"
+                echo "    --apiIssuer \"\$API_ISSUER\""
+            else
+                echo "  xcrun altool --upload-app \\"
+                echo "    --file \"$IPA_FILE\" \\"
+                echo "    --type ios \\"
+                echo "    --username \"\$APPLE_ID\" \\"
+                echo "    --password \"\$APP_PASSWORD\" \\"
+                echo "    --team-id \"\$TEAM_ID\""
+            fi
             echo ""
         fi
     fi
