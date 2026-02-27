@@ -14,7 +14,7 @@ class StudyProgress {
   int dakaDayCount;
   double? dakaRatio;
   int totalScore;
-  int? userOrder;
+  double? userOrder;
   int rawWordCount;
   int cowDung;
   LevelVo level;

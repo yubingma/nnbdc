@@ -483,7 +483,7 @@ abstract class RestClient {
   Future<Result<int>> getUserDbVersion(@Query("userId") String userId);
 
   @GET("/getUserRank.do")
-  Future<Result<int>> getUserRank(@Query("userId") String userId);
+  Future<Result<double>> getUserRank(@Query("userId") String userId);
 
   @GET("/getSystemDictsWithStats.do")
   Future<Result<List<DictStatsVo>>> getSystemDictsWithStats();

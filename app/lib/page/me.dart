@@ -211,7 +211,7 @@ class _MePageState extends State<MePage> {
             user.dakaDayCount,
             user.dakaRatio ?? 0.0,
             UserHelper.calculateTotalScore(user.gameScore, user.dakaScore),
-            -1, // 排名信息通过API获取，初始化为-1表示未获取
+            -1.0, // 排名信息通过API获取，初始化为-1表示未获取
             rawWordCount,
             user.cowDung,
             levelVo,
@@ -859,7 +859,7 @@ class _MePageState extends State<MePage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            "词汇掌握与排名",
+                            "词汇量排名",
                             style: TextStyle(
                               color: textColor,
                               fontSize: 14,
@@ -869,7 +869,7 @@ class _MePageState extends State<MePage> {
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            "掌握单词: ${studyProgress!.masteredWordsCount} | 当前排名: ${studyProgress!.userOrder! == -1 ? '未排名' : studyProgress!.userOrder}",
+                            "掌握单词: ${studyProgress!.masteredWordsCount} | 超过了: ${studyProgress!.userOrder! < 0 ? '暂无' : '${studyProgress!.userOrder!.toStringAsFixed(2)}%的用户'}",
                             style: TextStyle(
                               color: numberColor,
                               fontSize: 12,

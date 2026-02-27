@@ -237,6 +237,10 @@ public class UserSorter implements InitializingBean {
      *
      * @return
      */
+    public int getUserCount() {
+        return userOrders.size();
+    }
+
     public Collection<UserScoreRecord> getUserScoreRecords() {
         return userOrders.values();
     }

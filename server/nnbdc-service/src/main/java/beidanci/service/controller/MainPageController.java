@@ -31,13 +31,18 @@ public class MainPageController {
     LearningDictBo learningDictBo;
 
     @GetMapping("getUserRank.do")
-    public Result<Integer> getUserRank(@RequestParam("userId") String userId) throws IllegalAccessException {
+    public Result<Double> getUserRank(@RequestParam("userId") String userId) throws IllegalAccessException {
         User user = userBo.findById(userId);
         if (user == null) {
             return Result.fail("用户不存在");
         }
 
         int rank = userSorter.getOrderOfUser(user.getUserName());
-        return Result.success(rank);
+        if (rank > 0) {
+            int total = userSorter.getUserCount();
+            double percentage = ((total - rank) * 100.0) / total;
+            return Result.success(percentage);
+        }
+        return Result.success(-1.0);
     }
 }
