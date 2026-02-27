@@ -545,7 +545,7 @@ class _MePageState extends State<MePage> {
                       padding: const EdgeInsets.all(2), // 边框间距
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: isDarkModeEnabled ? const Color(0xFF00E1FF) : const Color(0xFFFF007F),
+                        color: LevelUtil.getTitleColor(studyProgress!.level.level ?? 1),
                       ),
                       child: CircleAvatar(
                         radius: MediaQuery.of(context).size.width > 600 ? 32 : 28,
@@ -703,109 +703,129 @@ class _MePageState extends State<MePage> {
                 children: [
                   // 卡片 1: DAY Circle
                   Expanded(
-                    flex: 4,
-                    child: Container(
-                      height: 120,
-                      decoration: BoxDecoration(
-                        color: innerCardBgColor,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: innerCardBorderColor),
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(
-                            width: 70,
-                            height: 70,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(color: numberColor, width: 2),
-                            ),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  "天数",
-                                  style: TextStyle(
-                                    color: numberColor,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
+                    flex: 1,
+                    child: AspectRatio(
+                      aspectRatio: 1.0,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: innerCardBgColor,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: innerCardBorderColor),
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              width: 70,
+                              height: 70,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(color: numberColor, width: 2),
+                              ),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    "天数",
+                                    style: TextStyle(
+                                      color: numberColor,
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    textScaler: const TextScaler.linear(1.0),
                                   ),
-                                ),
-                                Text(
-                                  studyProgress!.existDays.toString(),
-                                  style: TextStyle(
-                                    color: textColor,
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.w900,
+                                  Text(
+                                    studyProgress!.existDays.toString(),
+                                    style: TextStyle(
+                                      color: textColor,
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                    textScaler: const TextScaler.linear(1.0),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),
                   const SizedBox(width: 12),
                   // 卡片 2: Words Learned
                   Expanded(
-                    flex: 3,
-                    child: Container(
-                      height: 120,
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: innerCardBgColor,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: innerCardBorderColor),
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.check_box_outlined, color: numberColor, size: 28),
-                          const SizedBox(height: 4),
-                          Text(
-                            studyProgress!.masteredWordsCount.toString(),
-                            style: TextStyle(color: isDarkModeEnabled ? Colors.white : Colors.black, fontSize: 22, fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            "已掌握\n单词",
-                            textAlign: TextAlign.center,
-                            style: TextStyle(color: subtitleColor, fontSize: 10, height: 1.1),
-                          ),
-                        ],
+                    flex: 1,
+                    child: AspectRatio(
+                      aspectRatio: 1.0,
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: innerCardBgColor,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: innerCardBorderColor),
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.check_box_outlined, color: numberColor, size: 24),
+                            const SizedBox(height: 2),
+                            Text(
+                              studyProgress!.masteredWordsCount.toString(),
+                              style: TextStyle(
+                                color: isDarkModeEnabled ? Colors.white : Colors.black,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textScaler: const TextScaler.linear(1.0),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              "已掌握\n单词",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(color: subtitleColor, fontSize: 9, height: 1.1),
+                              textScaler: const TextScaler.linear(1.0),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
                   const SizedBox(width: 12),
                   // 卡片 3: Score / Points
                   Expanded(
-                    flex: 3,
-                    child: Container(
-                      height: 120,
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: innerCardBgColor,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: innerCardBorderColor),
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.schedule, color: numberColor, size: 28),
-                          const SizedBox(height: 4),
-                          Text(
-                            (studyProgress!.totalLearningSeconds / 3600.0).toStringAsFixed(1),
-                            style: TextStyle(color: isDarkModeEnabled ? Colors.white : Colors.black, fontSize: 22, fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            "学习总\n时长(时)",
-                            textAlign: TextAlign.center,
-                            style: TextStyle(color: subtitleColor, fontSize: 10, height: 1.1),
-                          ),
-                        ],
+                    flex: 1,
+                    child: AspectRatio(
+                      aspectRatio: 1.0,
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: innerCardBgColor,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: innerCardBorderColor),
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.schedule, color: numberColor, size: 24),
+                            const SizedBox(height: 2),
+                            Text(
+                              (studyProgress!.totalLearningSeconds / 3600.0).toStringAsFixed(1),
+                              style: TextStyle(
+                                color: isDarkModeEnabled ? Colors.white : Colors.black,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textScaler: const TextScaler.linear(1.0),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              "学习总\n时长(时)",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(color: subtitleColor, fontSize: 9, height: 1.1),
+                              textScaler: const TextScaler.linear(1.0),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
