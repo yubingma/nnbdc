@@ -20,6 +20,8 @@ class StudyProgress {
   LevelVo level;
   int masteredWordsCount;
   int learningWordsCount;
+  int masteredWordsInSelectedDictsCount;
+  int learningWordsInSelectedDictsCount;
   int wordsPerDay;
   int continuousDakaDayCount;
   int throwDiceChance;
@@ -40,6 +42,8 @@ class StudyProgress {
       this.level,
       this.masteredWordsCount,
       this.learningWordsCount,
+      this.masteredWordsInSelectedDictsCount,
+      this.learningWordsInSelectedDictsCount,
       this.wordsPerDay,
       this.continuousDakaDayCount,
       this.throwDiceChance,

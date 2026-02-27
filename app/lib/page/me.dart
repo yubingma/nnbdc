@@ -183,6 +183,13 @@ class _MePageState extends State<MePage> {
       // 获取所有词书的学习状态
       var learningDicts = await MyDatabase.instance.learningDictsDao.getLearningDictsOfUser(user.id);
 
+      // 获取学习中的单词数量（只统计生命值大于0的单词）
+      var totalLearningWords = await (db.select(db.learningWords)
+            ..where((lw) => lw.userId.equals(user.id))
+            ..where((lw) => lw.lifeValue.isBiggerThanValue(0)))
+          .get();
+      var globalLearningWordsCount = totalLearningWords.length;
+
       // 获取词书中的唯一单词总数
       var dictWordIds = await (db.selectOnly(db.dictWords)
             ..addColumns([db.dictWords.wordId])
@@ -191,27 +198,24 @@ class _MePageState extends State<MePage> {
       var uniqueWordIdsInDicts = dictWordIds.map((row) => row.read(db.dictWords.wordId)!).toSet();
       var rawWordCount = uniqueWordIdsInDicts.length;
 
-      // 获取学习中的单词数量（只统计生命值大于0的且在当前所选词书中的单词）
-      var allLearningWords = await (db.select(db.learningWords)
-            ..where((lw) => lw.userId.equals(user.id))
-            ..where((lw) => lw.lifeValue.isBiggerThanValue(0)))
-          .get();
-      var learningWordIds = allLearningWords.map((w) => w.wordId).toSet();
+      // 统计当前所选词书中的学习中单词数量
+      var learningWordIds = totalLearningWords.map((w) => w.wordId).toSet();
       var learningWordsInSelectedDictsCount = learningWordIds.intersection(uniqueWordIdsInDicts).length;
-      var learningWordsCount = learningWordsInSelectedDictsCount;
 
-      // 获取已掌握单词数量（从"已掌握"词书的dict_word中查询）
-      var allMasteredWordIds = await db.masteredWordsDao.getMasteredWordIdSet(user.id);
+      // 获取所有已掌握单词数量
+      var allMasteredWordIdSet = await db.masteredWordsDao.getMasteredWordIdSet(user.id);
+      var globalMasteredWordsCount = allMasteredWordIdSet.length;
       
-      // 只统计当前所选词书中的已掌握单词，避免进度超过100%
-      var masteredWordIdsInSelectedDicts = allMasteredWordIds.intersection(uniqueWordIdsInDicts);
-      var masteredWordsCount = masteredWordIdsInSelectedDicts.length;
+      // 只统计当前所选词书中的已掌握单词，用于计算词书进度百分比
+      var masteredWordIdsInSelectedDicts = allMasteredWordIdSet.intersection(uniqueWordIdsInDicts);
+      var masteredWordsInSelectedDictsCount = masteredWordIdsInSelectedDicts.length;
 
       // 判断是否所有词书都已学完(已经取不出词进入学习中单词池了)：学习中+已掌握 >= 总单词数
-      var allDictsFinished = (learningWordsCount + masteredWordsCount) >= rawWordCount;
+      // 这里的口径是“当前勾选的词书”
+      var allDictsFinished = (learningWordsInSelectedDictsCount + masteredWordsInSelectedDictsCount) >= rawWordCount;
 
-      // 使用LevelUtil根据掌握单词数计算等级
-      LevelVo levelVo = LevelUtil.getLevelVoByWordCount(masteredWordsCount);
+      // 使用LevelUtil根据 全局 掌握单词数计算等级（成就感不应因为取消勾选词书而下降）
+      LevelVo levelVo = LevelUtil.getLevelVoByWordCount(globalMasteredWordsCount);
 
       if (mounted) {
         setState(() {
@@ -224,8 +228,10 @@ class _MePageState extends State<MePage> {
             rawWordCount,
             user.cowDung,
             levelVo,
-            masteredWordsCount, // 使用直接查询的结果而不是用户表中的字段
-            learningWordsCount,
+            globalMasteredWordsCount,
+            globalLearningWordsCount,
+            masteredWordsInSelectedDictsCount,
+            learningWordsInSelectedDictsCount,
             user.wordsPerDay,
             user.continuousDakaDayCount,
             user.throwDiceChance,
@@ -682,7 +688,7 @@ class _MePageState extends State<MePage> {
                     ),
                   ),
                   Text(
-                    '已掌握 ${((studyProgress!.rawWordCount > 0 ? studyProgress!.masteredWordsCount / studyProgress!.rawWordCount : 0.0) * 100).toStringAsFixed(1)}%',
+                    '已掌握 ${((studyProgress!.rawWordCount > 0 ? studyProgress!.masteredWordsInSelectedDictsCount / studyProgress!.rawWordCount : 0.0) * 100).toStringAsFixed(1)}%',
                     style: TextStyle(
                       color: highlightColor,
                       fontSize: 11,
@@ -703,7 +709,9 @@ class _MePageState extends State<MePage> {
                 ),
                 child: LayoutBuilder(
                   builder: (context, constraints) {
-                    final progress = studyProgress!.rawWordCount > 0 ? studyProgress!.masteredWordsCount / studyProgress!.rawWordCount : 0.0;
+                    final progress = studyProgress!.rawWordCount > 0
+                        ? studyProgress!.masteredWordsInSelectedDictsCount / studyProgress!.rawWordCount
+                        : 0.0;
                     final clampedProgress = progress > 1.0 ? 1.0 : progress;
                     return Container(
                       width: constraints.maxWidth * clampedProgress,
