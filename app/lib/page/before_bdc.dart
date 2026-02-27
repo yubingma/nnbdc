@@ -21,6 +21,9 @@ import 'package:nnbdc/util/error_handler.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:provider/provider.dart';
 
+import 'package:nnbdc/services/throttled_sync_service.dart';
+import 'package:nnbdc/util/subscription_util.dart';
+
 import '../theme/app_theme.dart';
 import 'bdc.dart';
 
@@ -215,7 +218,11 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
             margin: const EdgeInsets.fromLTRB(16, 8, 16, 16),
             child: Column(
               children: [
-                // 今日学习概览卡片
+                // 1. 计划设置卡片 (每日单词数量选择)
+                renderDailyWordsSetting(),
+                const SizedBox(height: 16),
+
+                // 2. 今日学习概览卡片
                 Container(
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
@@ -742,6 +749,172 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
               ],
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+
+
+  Widget renderDailyWordsSetting() {
+    final isDarkMode = context.watch<DarkMode>().isDarkMode;
+    final cardColor = isDarkMode ? const Color(0xFF1E1E1E) : Colors.white;
+    final textColor = isDarkMode ? Colors.white : const Color(0xFF2C3E50);
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: (isDarkMode ? Colors.black : const Color(0xFF0097A7)).withValues(alpha: 0.1),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  Icons.settings_suggest_rounded,
+                  color: AppTheme.primaryColor,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '今日计划',
+                    textScaler: const TextScaler.linear(1.0),
+                    style: TextStyle(
+                      color: textColor,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      fontFamily: 'NotoSansSC',
+                    ),
+                  ),
+                  Text(
+                    '设定今日要学习的单词数',
+                    textScaler: const TextScaler.linear(1.0),
+                    style: TextStyle(
+                      color: isDarkMode ? Colors.white60 : Colors.black54,
+                      fontSize: 12,
+                      fontFamily: 'NotoSansSC',
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            decoration: BoxDecoration(
+              color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isDarkMode ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
+                width: 1,
+              ),
+            ),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<int>(
+                value: (() {
+                  final isPremium = SubscriptionUtil.isPremium();
+                  final raw = user?.wordsPerDay ?? 10;
+                  if (!isPremium && raw > 20) return 20;
+                  return raw;
+                })(),
+                isDense: true,
+                icon: Icon(
+                  Icons.keyboard_arrow_down_rounded,
+                  color: isDarkMode ? Colors.white70 : Colors.black54,
+                  size: 20,
+                ),
+                dropdownColor: isDarkMode ? const Color(0xFF2D2D2D) : Colors.white,
+                style: TextStyle(
+                  color: isDarkMode ? Colors.white : Colors.black,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+                items: (() {
+                  final isPremium = SubscriptionUtil.isPremium();
+                  final all = <int>[10, 20, 30, 50, 75, 100, 150, 200, 300, 400, 500];
+                  return all.map((v) {
+                    final isRestricted = !isPremium && v > 20;
+                    return DropdownMenuItem<int>(
+                      value: v,
+                      enabled: !isRestricted,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            '$v',
+                            style: TextStyle(
+                              color: isRestricted ? (isDarkMode ? Colors.white30 : Colors.black26) : (isDarkMode ? Colors.white : Colors.black),
+                            ),
+                          ),
+                          if (isRestricted) ...[
+                            const SizedBox(width: 8),
+                            const Icon(Icons.workspace_premium, color: Colors.amber, size: 14),
+                            const SizedBox(width: 4),
+                            const Text(
+                              '会员',
+                              style: TextStyle(color: Colors.amber, fontSize: 10, fontWeight: FontWeight.bold),
+                            ),
+                          ]
+                        ],
+                      ),
+                    );
+                  }).toList();
+                })(),
+                onChanged: (user?.todayStudyStarted == true) 
+                    ? null // 已开始学习，锁定不可更改
+                    : (value) async {
+                  if (value == null) return;
+
+                  if (!SubscriptionUtil.isPremium() && value > 20) {
+                    ToastUtil.info('开通会员可选择更多单词数量');
+                    return;
+                  }
+
+                  setState(() {
+                    user!.wordsPerDay = value;
+                    dataLoaded = false; // 触发重新加载
+                  });
+                  await Global.setLoggedInUser(user!);
+                  await MyDatabase.instance.usersDao.updateWordsPerDay(user!.id!, value);
+                  ThrottledDbSyncService().requestSync();
+                  
+                  // 重新加载数据以应用新的单词数量
+                  loadData(forceSupplement: true);
+                },
+              ),
+            ),
+          ),
+          if (user?.todayStudyStarted == true)
+            Padding(
+              padding: const EdgeInsets.only(left: 8),
+              child: GestureDetector(
+                onTap: () => ToastUtil.info('今日学习已开始，无法修改计划数量'),
+                child: Icon(
+                  Icons.lock_outline_rounded,
+                  color: isDarkMode ? Colors.white30 : Colors.black26,
+                  size: 16,
+                ),
+              ),
+            ),
         ],
       ),
     );

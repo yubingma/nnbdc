@@ -72,6 +72,12 @@ class LearningService {
       // 重新获取今日学习单词（可能有部分被删除）
       todayWords = await getTodayLearningWordsFromDb(user.id);
 
+      // 如果今日单词数量超过了设定的目标，需要削减（支持从计划页面调低数量）
+      if (todayWords.length > user.wordsPerDay) {
+        Global.logger.d('今日单词数 (${todayWords.length}) 超过目标 (${user.wordsPerDay})，开始削减');
+        todayWords = await shrinkTodayWords(user.id, todayWords, user.wordsPerDay);
+      }
+
       // 计算今日新词数
       int newWordCount = 0;
       for (var word in todayWords) {
@@ -246,6 +252,68 @@ class LearningService {
     }
 
     return oldestWord;
+  }
+
+  /// 削减今日学习单词（当用户调低每日单词量时）
+  static Future<List<LearningWord>> shrinkTodayWords(String userId, List<LearningWord> todayWords, int targetCount) async {
+    final db = MyDatabase.instance;
+
+    // 1. 甄别哪些单词是可以被移除的（今天还没开始学的词）
+    List<LearningWord> untaughtWords = todayWords.where((w) => w.todayLearnedTimes == 0).toList();
+    List<LearningWord> learnedWords = todayWords.where((w) => w.todayLearnedTimes > 0).toList();
+
+    // 如果即便把还没学的词全删了，剩下的词依然超过目标（说明用户今天已经学了很多了），那我们也无法强行删除已学的词
+    if (learnedWords.length >= targetCount) {
+      Global.logger.d('已学习单词数 (${learnedWords.length}) 已达到或超过目标，无法继续削减');
+      return todayWords; 
+    }
+
+    // 2. 计算需要移除的数量
+    int needToRemove = todayWords.length - targetCount;
+    
+    // 3. 排序待移除的单词：按 batchId 降序，然后再按 learningOrder 降序（先移除后面批次的，再移除批次内靠后的）
+    untaughtWords.sort((a, b) {
+      if (a.batchId != b.batchId) {
+        return (b.batchId ?? 0).compareTo(a.batchId ?? 0);
+      }
+      return b.learningOrder.compareTo(a.learningOrder);
+    });
+
+    // 4. 执行移除逻辑
+    List<LearningWord> wordsToRemove = untaughtWords.take(needToRemove).toList();
+    List<LearningWord> remainingUntaughtWords = untaughtWords.skip(needToRemove).toList();
+
+    for (var word in wordsToRemove) {
+      // 通过将 batchId 设为 0 并清空 lastLearningDate，使其不再出现在今日列表中
+      await db.learningWordsDao.saveEntity(
+        word.copyWith(
+          batchId: const Value(0),
+          lastLearningDate: const Value(null),
+          learningOrder: 0,
+        ),
+        true,
+      );
+    }
+
+    Global.logger.d('已成功移除 $needToRemove 个未学习单词');
+
+    // 5. 合并并返回剩余的单词
+    List<LearningWord> finalWords = [...learnedWords, ...remainingUntaughtWords];
+    
+    // 重新校正剩余单词的 learningOrder
+    finalWords.sort((a, b) {
+      if (a.batchId != b.batchId) {
+        return (a.batchId ?? 0).compareTo(b.batchId ?? 0);
+      }
+      return a.learningOrder.compareTo(b.learningOrder);
+    });
+
+    for (int i = 0; i < finalWords.length; i++) {
+        finalWords[i] = finalWords[i].copyWith(learningOrder: i + 1);
+        await db.learningWordsDao.saveEntity(finalWords[i], true);
+    }
+
+    return finalWords;
   }
 
   /// 将今日的学习单词更新到数据库
