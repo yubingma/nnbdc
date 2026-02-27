@@ -1114,23 +1114,50 @@ class _MePageState extends State<MePage> {
                         items: (() {
                           final isPremium = SubscriptionUtil.isPremium();
                           final all = <int>[10, 20, 30, 50, 75, 100, 150, 200, 300, 400, 500];
-                          final values = isPremium ? all : <int>[10, 20];
-                          return values.map((v) => DropdownMenuItem<int>(
-                            value: v, 
-                            child: Text('$v')
-                          )).toList();
+                          return all.map((v) {
+                            final isRestricted = !isPremium && v > 20;
+                            return DropdownMenuItem<int>(
+                              value: v,
+                              enabled: !isRestricted,
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    '$v',
+                                    style: TextStyle(
+                                      color: isRestricted 
+                                          ? (isDarkModeEnabled ? Colors.white30 : Colors.black26)
+                                          : (isDarkModeEnabled ? Colors.white : Colors.black),
+                                    ),
+                                  ),
+                                  if (isRestricted) ...[
+                                    const SizedBox(width: 8),
+                                    const Icon(Icons.workspace_premium, color: Colors.amber, size: 14),
+                                    const SizedBox(width: 4),
+                                    const Text(
+                                      '会员',
+                                      style: TextStyle(color: Colors.amber, fontSize: 10, fontWeight: FontWeight.bold),
+                                    ),
+                                  ]
+                                ],
+                              ),
+                            );
+                          }).toList();
                         })(),
                         onChanged: (value) async {
                           if (value == null) return;
-                          int newValue = value;
-                          if (!SubscriptionUtil.isPremium() && newValue > 20) {
-                            newValue = 20;
+                          
+                          // 虽然 UI 上禁用了，但逻辑上双重保险
+                          if (!SubscriptionUtil.isPremium() && value > 20) {
+                            ToastUtil.info('开通会员可选择更多单词数量');
+                            return;
                           }
+
                           setState(() {
-                            loggedInUser!.wordsPerDay = newValue;
+                            loggedInUser!.wordsPerDay = value;
                           });
                           await Global.setLoggedInUser(loggedInUser!);
-                          await MyDatabase.instance.usersDao.updateWordsPerDay(loggedInUser!.id!, newValue);
+                          await MyDatabase.instance.usersDao.updateWordsPerDay(loggedInUser!.id!, value);
                           ThrottledDbSyncService().requestSync();
                         },
                       ),
