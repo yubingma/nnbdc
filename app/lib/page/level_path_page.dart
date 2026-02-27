@@ -125,7 +125,7 @@ class _LevelNode extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      'LV.${level.level} | ${level.minScore} 积分',
+                      'LV.${level.level} | ${level.minWords} 单词',
                       style: TextStyle(
                         fontSize: 12,
                         color: isReached ? Colors.grey.shade600 : Colors.grey.shade400,

@@ -237,7 +237,7 @@ extension UserExtensions on User {
     // 我们不处理这个字段，因为这需要额外的数据库查询
 
     // 使用LevelUtil根据总积分计算等级
-    userVo.level = LevelUtil.getLevelVoByScore(UserHelper.getTotalScoreFromUser(this));
+    userVo.level = LevelUtil.getLevelVoByWordCount(masteredWordsCount);
 
     userVo.continuousDakaDayCount = continuousDakaDayCount;
     userVo.maxContinuousDakaDayCount = maxContinuousDakaDayCount;

@@ -320,7 +320,7 @@ class UserVo {
     userVo.password = user.password;
     userVo.lastLoginTime = user.lastLoginTime;
 
-    userVo.level = LevelUtil.getLevelVoByScore(UserHelper.calculateTotalScore(user.gameScore, user.dakaScore));
+    userVo.level = LevelUtil.getLevelVoByWordCount(user.masteredWordsCount);
 
     // 学习状态
     userVo.isTodayLearningStarted = UserHelper.isTodayLearningStartedFromUser(user);

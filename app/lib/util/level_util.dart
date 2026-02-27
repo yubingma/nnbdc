@@ -9,8 +9,8 @@ class Level {
   final List<String> quotes;
   final Color color;
   final int level;
-  final int minScore;
-  final int maxScore;
+  final int minWords;
+  final int maxWords;
   final String style;
 
   const Level({
@@ -19,8 +19,8 @@ class Level {
     required this.quotes,
     required this.color,
     required this.level,
-    required this.minScore,
-    required this.maxScore,
+    required this.minWords,
+    required this.maxWords,
     this.style = "",
   });
 }
@@ -41,8 +41,8 @@ class LevelUtil {
       ],
       color: Color(0xFF81C784),
       level: 0,
-      minScore: 0,
-      maxScore: 50,
+      minWords: 0,
+      maxWords: 49,
       style: "color:gray;",
     ),
     Level(
@@ -57,8 +57,8 @@ class LevelUtil {
       ],
       color: Color(0xFFFF8A65),
       level: 1,
-      minScore: 51,
-      maxScore: 200,
+      minWords: 50,
+      maxWords: 199,
       style: "color:black;",
     ),
     Level(
@@ -73,8 +73,8 @@ class LevelUtil {
       ],
       color: Color(0xFFFFD54F),
       level: 2,
-      minScore: 201,
-      maxScore: 800,
+      minWords: 200,
+      maxWords: 599,
       style: "color:darkcyan;",
     ),
     Level(
@@ -89,8 +89,8 @@ class LevelUtil {
       ],
       color: Color(0xFFBA68C8),
       level: 3,
-      minScore: 801,
-      maxScore: 2000,
+      minWords: 600,
+      maxWords: 1199,
       style: "color:blue;",
     ),
     Level(
@@ -105,8 +105,8 @@ class LevelUtil {
       ],
       color: Color(0xFF9575CD),
       level: 4,
-      minScore: 2001,
-      maxScore: 4000,
+      minWords: 1200,
+      maxWords: 2499,
       style: "color:coral;",
     ),
     Level(
@@ -121,8 +121,8 @@ class LevelUtil {
       ],
       color: Color(0xFF90A4AE),
       level: 5,
-      minScore: 4001,
-      maxScore: 8000,
+      minWords: 2500,
+      maxWords: 4999,
       style: "color:darkgoldenrod;",
     ),
     Level(
@@ -137,8 +137,8 @@ class LevelUtil {
       ],
       color: Color(0xFFA1887F),
       level: 6,
-      minScore: 8001,
-      maxScore: 15000,
+      minWords: 5000,
+      maxWords: 9999,
       style: "color:darkmagenta;",
     ),
     Level(
@@ -153,8 +153,8 @@ class LevelUtil {
       ],
       color: Color(0xFF64B5F6),
       level: 7,
-      minScore: 15001,
-      maxScore: 25000,
+      minWords: 10000,
+      maxWords: 19999,
       style: "color:midnightblue;",
     ),
     Level(
@@ -169,8 +169,8 @@ class LevelUtil {
       ],
       color: Color(0xFFFFB74D),
       level: 8,
-      minScore: 25001,
-      maxScore: 40000,
+      minWords: 20000,
+      maxWords: 29999,
       style: "color:peru;",
     ),
     Level(
@@ -185,8 +185,8 @@ class LevelUtil {
       ],
       color: Color(0xFF455A64),
       level: 9,
-      minScore: 40001,
-      maxScore: 60000,
+      minWords: 30000,
+      maxWords: 39999,
       style: "color:purple;",
     ),
     Level(
@@ -201,8 +201,8 @@ class LevelUtil {
       ],
       color: Color(0xFF4DB6AC),
       level: 10,
-      minScore: 60001,
-      maxScore: 99999999,
+      minWords: 40000,
+      maxWords: 99999999,
       style: "color:rosybrown;",
     ),
   ];
@@ -236,23 +236,23 @@ class LevelUtil {
     return getTitle(level).color;
   }
 
-  static Level getLevelByScore(int score) {
+  static Level getLevelByWordCount(int wordCount) {
     for (int i = _levels.length - 1; i >= 0; i--) {
-      if (score >= _levels[i].minScore) {
+      if (wordCount >= _levels[i].minWords) {
         return _levels[i];
       }
     }
     return _levels[0]; // 默认返回最低等级
   }
 
-  static LevelVo getLevelVoByScore(int score) {
-    Level level = getLevelByScore(score);
+  static LevelVo getLevelVoByWordCount(int wordCount) {
+    Level level = getLevelByWordCount(wordCount);
     LevelVo levelVo = LevelVo(level.level.toString())
       ..level = level.level
       ..name = level.name
       ..figure = level.icon
-      ..minScore = level.minScore
-      ..maxScore = level.maxScore
+      ..minScore = level.minWords
+      ..maxScore = level.maxWords
       ..style = level.style;
     return levelVo;
   }

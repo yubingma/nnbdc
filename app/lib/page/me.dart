@@ -202,7 +202,7 @@ class _MePageState extends State<MePage> {
       var allDictsFinished = (learningWordsCount + masteredWordsCount) >= rawWordCount;
 
       // 使用LevelUtil根据总积分计算等级
-      LevelVo levelVo = LevelUtil.getLevelVoByScore(UserHelper.calculateTotalScore(user.gameScore, user.dakaScore));
+      LevelVo levelVo = LevelUtil.getLevelVoByWordCount(masteredWordsCount);
 
       if (mounted) {
         setState(() {

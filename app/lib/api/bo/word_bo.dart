@@ -9,7 +9,7 @@ import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/db_log_util.dart';
 import 'package:nnbdc/util/error_handler.dart';
 import 'package:nnbdc/util/level_util.dart';
-import 'package:nnbdc/util/user_helper.dart';
+
 import 'package:nnbdc/util/utils.dart';
 
 import '../../services/throttled_sync_service.dart';
@@ -466,7 +466,7 @@ class WordBo {
         final word = await db.wordsDao.getWordById(lw.wordId);
         if (word != null) {
           final userVo = UserVo.c2(userId);
-          userVo.level = LevelUtil.getLevelVoByScore(UserHelper.calculateTotalScore(user.gameScore, user.dakaScore));
+          userVo.level = LevelUtil.getLevelVoByWordCount(user.masteredWordsCount);
           final wordVo = WordVo.c2(word.spell)
             ..id = word.id
             ..shortDesc = word.shortDesc
@@ -527,7 +527,7 @@ class WordBo {
       final word = await db.wordsDao.getWordById(lw.wordId);
       if (word != null) {
         final userVo = UserVo.c2(userId);
-        userVo.level = LevelUtil.getLevelVoByScore(UserHelper.calculateTotalScore(user.gameScore, user.dakaScore));
+        userVo.level = LevelUtil.getLevelVoByWordCount(user.masteredWordsCount);
         final wordVo = WordVo.c2(word.spell)
           ..id = word.id
           ..shortDesc = word.shortDesc
@@ -584,7 +584,7 @@ class WordBo {
       final word = await db.wordsDao.getWordById(lw.wordId);
       if (word != null) {
         final userVo = UserVo.c2(userId);
-        userVo.level = LevelUtil.getLevelVoByScore(UserHelper.calculateTotalScore(user.gameScore, user.dakaScore));
+        userVo.level = LevelUtil.getLevelVoByWordCount(user.masteredWordsCount);
         final wordVo = WordVo.c2(word.spell)
           ..id = word.id
           ..shortDesc = word.shortDesc
@@ -1547,7 +1547,7 @@ class WordBo {
       final word = await db.wordsDao.getWordById(lw.wordId);
       if (word != null) {
         final userVo = UserVo.c2(userId);
-        userVo.level = LevelUtil.getLevelVoByScore(UserHelper.calculateTotalScore(user.gameScore, user.dakaScore));
+        userVo.level = LevelUtil.getLevelVoByWordCount(user.masteredWordsCount);
         final wordVo = WordVo.c2(word.spell)
           ..id = word.id
           ..shortDesc = word.shortDesc
