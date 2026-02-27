@@ -499,16 +499,8 @@ class _MePageState extends State<MePage> {
     final iconColor = isDarkModeEnabled ? Colors.white70 : const Color(0xFF95A5A6);
     final cardColor = isDarkModeEnabled ? const Color(0xFF2D2D2D) : Colors.white;
 
-    final bgGradientColors = isDarkModeEnabled 
-        ? const [Color(0xFF1E1E32), Color(0xFF2A1C3C), Color(0xFF3B2A45)]
-        : const [Color(0xFFFFFFFF), Color(0xFFF8F9FA), Color(0xFFE9ECEF)];
-    
     final borderColor = isDarkModeEnabled 
         ? Colors.white.withValues(alpha: 0.15) 
-        : Colors.black.withValues(alpha: 0.05);
-
-    final shadowColor = isDarkModeEnabled
-        ? Colors.purpleAccent.withValues(alpha: 0.2)
         : Colors.black.withValues(alpha: 0.05);
 
     final innerCardBgColor = isDarkModeEnabled
@@ -536,21 +528,9 @@ class _MePageState extends State<MePage> {
           ),
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: bgGradientColors,
-            ),
+            color: isDarkModeEnabled ? const Color(0xFF2D2D2D) : const Color(0xFFF8F9FA),
             borderRadius: BorderRadius.circular(24),
             border: Border.all(color: borderColor, width: 1.5),
-            boxShadow: [
-              BoxShadow(
-                color: shadowColor,
-                blurRadius: 20,
-                spreadRadius: 2,
-                offset: const Offset(0, 10),
-              ),
-            ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -565,18 +545,7 @@ class _MePageState extends State<MePage> {
                       padding: const EdgeInsets.all(2), // 边框间距
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF00E1FF), Color(0xFFFF00E5)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFFFF00E5).withValues(alpha: 0.3),
-                            blurRadius: 10,
-                            spreadRadius: 1,
-                          ),
-                        ],
+                        color: isDarkModeEnabled ? const Color(0xFF00E1FF) : const Color(0xFFFF007F),
                       ),
                       child: CircleAvatar(
                         radius: MediaQuery.of(context).size.width > 600 ? 32 : 28,
@@ -720,19 +689,8 @@ class _MePageState extends State<MePage> {
                     return Container(
                       width: constraints.maxWidth * clampedProgress,
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFFFF007F), Color(0xFFFFB000)],
-                          begin: Alignment.centerLeft,
-                          end: Alignment.centerRight,
-                        ),
+                        color: const Color(0xFFFF007F),
                         borderRadius: BorderRadius.circular(4),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFFFF007F).withValues(alpha: 0.6),
-                            blurRadius: 8,
-                            spreadRadius: 1,
-                          ),
-                        ],
                       ),
                     );
                   },
@@ -762,13 +720,6 @@ class _MePageState extends State<MePage> {
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               border: Border.all(color: numberColor, width: 2),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: numberColor.withValues(alpha: 0.3),
-                                  blurRadius: 15,
-                                  spreadRadius: 2,
-                                ),
-                              ],
                             ),
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -925,14 +876,6 @@ class _MePageState extends State<MePage> {
           decoration: BoxDecoration(
             color: cardColor,
             borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: isDarkModeEnabled ? Colors.black.withValues(alpha: 0.3) : Colors.grey.withValues(alpha: 0.1),
-                spreadRadius: 1,
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1038,11 +981,7 @@ class _MePageState extends State<MePage> {
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(12),
-                        gradient: LinearGradient(
-                          colors: [Colors.green.shade400, Colors.green.shade600],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
+                        color: Colors.green.shade600,
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1203,8 +1142,7 @@ class _MePageState extends State<MePage> {
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          elevation: 4,
-                          shadowColor: AppTheme.primaryColor.withValues(alpha: 0.3),
+                          elevation: 0,
                         ),
                         icon: const Icon(Icons.school, color: Colors.white, size: 20),
                         label: Text(
@@ -1235,14 +1173,6 @@ class _MePageState extends State<MePage> {
           decoration: BoxDecoration(
             color: cardColor,
             borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: isDarkModeEnabled ? Colors.black.withValues(alpha: 0.3) : Colors.grey.withValues(alpha: 0.1),
-                spreadRadius: 1,
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1291,14 +1221,6 @@ class _MePageState extends State<MePage> {
           decoration: BoxDecoration(
             color: cardColor,
             borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: isDarkModeEnabled ? Colors.black.withValues(alpha: 0.3) : Colors.grey.withValues(alpha: 0.1),
-                spreadRadius: 1,
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1350,14 +1272,6 @@ class _MePageState extends State<MePage> {
           decoration: BoxDecoration(
             color: cardColor,
             borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: isDarkModeEnabled ? Colors.black.withValues(alpha: 0.3) : Colors.grey.withValues(alpha: 0.1),
-                spreadRadius: 1,
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1396,21 +1310,8 @@ class _MePageState extends State<MePage> {
           margin: const EdgeInsets.symmetric(vertical: 8),
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            image: DecorationImage(
-              image: AssetImage('assets/images/bg.jpg'),
-              fit: BoxFit.cover,
-              opacity: 0.15, // 降低透明度，避免影响文字可读性
-            ),
             color: AppTheme.primaryLightColor.withValues(alpha: 0.3), // 保留一点主色调作为底色
             borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: AppTheme.primaryColor.withValues(alpha: 0.25),
-                spreadRadius: 2,
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1428,13 +1329,6 @@ class _MePageState extends State<MePage> {
                       letterSpacing: 1.5,
                       fontFamily: null, // 使用系统默认字体
                       decoration: TextDecoration.none,
-                      shadows: [
-                        Shadow(
-                          color: Colors.black.withValues(alpha: 0.5),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
                     ),
                     textScaler: const TextScaler.linear(1.0),
                   ),
@@ -1497,14 +1391,6 @@ class _MePageState extends State<MePage> {
           decoration: BoxDecoration(
             color: cardColor,
             borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: isDarkModeEnabled ? Colors.black.withValues(alpha: 0.3) : Colors.grey.withValues(alpha: 0.1),
-                spreadRadius: 1,
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1738,17 +1624,10 @@ class _MePageState extends State<MePage> {
               child: Container(
                 width: MediaQuery.of(context).size.width * 0.95,
                 margin: const EdgeInsets.symmetric(horizontal: 0),
-                decoration: BoxDecoration(
-                  color: backgroundColor,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: isDarkModeEnabled ? Colors.black.withValues(alpha: 0.5) : Colors.black.withValues(alpha: 0.1),
-                      blurRadius: 20,
-                      offset: const Offset(0, 10),
-                    ),
-                  ],
-                ),
+                  decoration: BoxDecoration(
+                    color: backgroundColor,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -1756,11 +1635,7 @@ class _MePageState extends State<MePage> {
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [Color(0xFF4A90E2), Color(0xFF7B68EE)],
-                        ),
+                        color: const Color(0xFF4A90E2),
                         borderRadius: const BorderRadius.only(
                           topLeft: Radius.circular(20),
                           topRight: Radius.circular(20),
@@ -2043,8 +1918,7 @@ class _MePageState extends State<MePage> {
       style: ElevatedButton.styleFrom(
         backgroundColor: isPrimary ? const Color(0xFF4A90E2) : (isDarkMode ? const Color(0xFF3D3D3D) : const Color(0xFFF0F0F0)),
         foregroundColor: isPrimary ? Colors.white : (isDarkMode ? Colors.white : Colors.black),
-        elevation: isPrimary ? 4 : 0,
-        shadowColor: isPrimary ? const Color(0xFF4A90E2).withValues(alpha: 0.3) : Colors.transparent,
+        elevation: 0,
         padding: const EdgeInsets.symmetric(vertical: 12),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
@@ -2089,13 +1963,6 @@ class _MePageState extends State<MePage> {
                   decoration: BoxDecoration(
                     color: backgroundColor,
                     borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: isDarkModeEnabled ? Colors.black.withValues(alpha: 0.5) : Colors.black.withValues(alpha: 0.1),
-                        blurRadius: 20,
-                        offset: const Offset(0, 10),
-                      ),
-                    ],
                   ),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -2104,11 +1971,7 @@ class _MePageState extends State<MePage> {
                       Container(
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [Color(0xFFE74C3C), Color(0xFFC0392B)],
-                          ),
+                          color: const Color(0xFFE74C3C),
                           borderRadius: const BorderRadius.only(
                             topLeft: Radius.circular(20),
                             topRight: Radius.circular(20),
@@ -2198,8 +2061,7 @@ class _MePageState extends State<MePage> {
                                         style: ElevatedButton.styleFrom(
                                           backgroundColor: const Color(0xFFE74C3C),
                                           foregroundColor: Colors.white,
-                                          elevation: 4,
-                                          shadowColor: const Color(0xFFE74C3C).withValues(alpha: 0.3),
+                                          elevation: 0,
                                           padding: const EdgeInsets.symmetric(vertical: 16),
                                           shape: RoundedRectangleBorder(
                                             borderRadius: BorderRadius.circular(12),
@@ -2621,13 +2483,6 @@ class _DictCardState extends State<DictCard> {
         color: AppTheme.primaryColor,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
-        boxShadow: [
-          BoxShadow(
-            color: AppTheme.primaryColor.withValues(alpha: 0.2),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
