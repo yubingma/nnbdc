@@ -523,37 +523,53 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
             ],
           ),
           const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF4CAF50), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                  icon: const Icon(Icons.library_books, color: Colors.white, size: 18),
-                  label: const Text('选择词书', style: TextStyle(color: Colors.white)),
-                  onPressed: () {
-                    Get.toNamed('/select_book')?.then((v) {
-                      if (mounted) {
-                        setState(() => _hasTriedSupplement = false);
-                        loadData(forceSupplement: true);
-                      }
-                    });
-                  },
-                ),
-              ),
-              if (todayWordCount! > 0) ...[
-                const SizedBox(width: 12),
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch, // 确保子组件填满高度
+              children: [
                 Expanded(
                   child: ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFF9800), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                    icon: const Icon(Icons.play_arrow, color: Colors.white, size: 18),
-                    label: const Text('就这样吧，去学习', style: TextStyle(color: Colors.white)),
-                    onPressed: () => Get.toNamed('/bdc'),
+                      backgroundColor: const Color(0xFF4CAF50),
+                      minimumSize: const Size(0, 48), // 设置最小高度
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    icon: const Icon(Icons.library_books, color: Colors.white, size: 18),
+                    label: const Text('选择词书', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
+                    onPressed: () {
+                      Get.toNamed('/select_book')?.then((v) {
+                        if (mounted) {
+                          setState(() => _hasTriedSupplement = false);
+                          loadData(forceSupplement: true);
+                        }
+                      });
+                    },
                   ),
                 ),
+                if (todayWordCount! > 0) ...[
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFFF9800),
+                        minimumSize: const Size(0, 48), // 设置最小高度
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      icon: const Icon(Icons.play_arrow, color: Colors.white, size: 18),
+                      label: const Text(
+                        '就这样吧\n去学习',
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold, height: 1.2),
+                      ),
+                      onPressed: () => Get.toNamed('/bdc'),
+                    ),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ],
       ),
