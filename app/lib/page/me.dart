@@ -565,16 +565,26 @@ class _MePageState extends State<MePage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          Util.getNickNameOfUser(loggedInUser),
-                          style: TextStyle(
-                            color: textColor,
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 0.5,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                        Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                Util.getNickNameOfUser(loggedInUser),
+                                style: TextStyle(
+                                  color: textColor,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 0.5,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            if (SubscriptionUtil.isPremium()) ...[
+                              const SizedBox(width: 6),
+                              const Icon(Icons.verified, color: Color(0xFF2196F3), size: 18),
+                            ],
+                          ],
                         ),
                         const SizedBox(height: 4),
                         Text(
@@ -883,6 +893,112 @@ class _MePageState extends State<MePage> {
                   ],
                 ),
               ),
+              const SizedBox(height: 16),
+
+              // 5. 会员状况/订阅入口 (放在卡片内底部)
+              Builder(builder: (context) {
+                final isPremium = SubscriptionUtil.isPremium();
+                String? premiumInfoText;
+                if (isPremium) {
+                  final type = SubscriptionUtil.getSubscriptionType();
+                  final expire = SubscriptionUtil.getExpireDate();
+                  final isOverride = loggedInUser?.premiumOverrideEnabled == true && (loggedInUser?.isPremiumIos != true);
+
+                  if (type != null && type.isNotEmpty) {
+                    final typeText = type == 'monthly' ? '月度会员' : '年度会员';
+                    if (expire != null) {
+                      premiumInfoText = '$typeText，有效期至：${expire.year}年${expire.month}月${expire.day}日';
+                    } else {
+                      premiumInfoText = typeText;
+                    }
+                  } else if (isOverride) {
+                    final updateTime = loggedInUser?.premiumOverrideUpdateTime;
+                    final duration = loggedInUser?.premiumOverrideDuration;
+                    if (duration == null) {
+                      premiumInfoText = '会员（永久）';
+                    } else if (updateTime != null) {
+                      final ms = _parseDurationMillis(duration);
+                      if (ms != null && ms > 0) {
+                        final expireTime = updateTime.add(Duration(milliseconds: ms));
+                        premiumInfoText = '会员，有效期至：${expireTime.year}年${expireTime.month}月${expireTime.day}日';
+                      } else {
+                        premiumInfoText = '会员';
+                      }
+                    } else {
+                      premiumInfoText = '会员';
+                    }
+                  } else {
+                    premiumInfoText = '会员';
+                  }
+                }
+
+                if (!isPremium && PlatformUtils.isIOS) {
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.of(context).push(MaterialPageRoute(builder: (context) => const SubscriptionPage())).then((_) {
+                        loadData();
+                      });
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        color: isDarkModeEnabled ? Colors.white.withValues(alpha: 0.03) : Colors.black.withValues(alpha: 0.02),
+                        border: Border.all(color: Colors.amber.shade300.withValues(alpha: 0.5)),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(Icons.stars_rounded, color: Colors.amber.shade700, size: 18),
+                              const SizedBox(width: 8),
+                              Text(
+                                '解锁 100+ 每日单词及更多专属特权',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: isDarkModeEnabled ? Colors.amber.shade200 : Colors.amber.shade900,
+                                  fontFamily: 'NotoSansSC',
+                                ),
+                              ),
+                            ],
+                          ),
+                          Icon(Icons.chevron_right, color: Colors.amber.shade700, size: 16),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+
+                if (isPremium && premiumInfoText != null && PlatformUtils.isIOS) {
+                  return Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      color: Colors.blue.withValues(alpha: 0.05),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.verified_user_rounded, color: Colors.blue, size: 16),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            premiumInfoText,
+                            style: const TextStyle(
+                              color: Colors.blue,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              fontFamily: 'NotoSansSC',
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+                return const SizedBox.shrink();
+              }),
             ],
           ),
         ),
@@ -900,138 +1016,6 @@ class _MePageState extends State<MePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 会员入口/会员信息（放在每日单词选择框上方）
-              Builder(builder: (context) {
-                final isPremium = SubscriptionUtil.isPremium();
-
-                String? premiumInfoText;
-                if (isPremium) {
-                  // 优先显示 iOS 订阅信息
-                  final type = SubscriptionUtil.getSubscriptionType();
-                  final expire = SubscriptionUtil.getExpireDate();
-                  final isOverride = loggedInUser?.premiumOverrideEnabled == true && (loggedInUser?.isPremiumIos != true);
-
-                  if (type != null && type.isNotEmpty) {
-                    final typeText = type == 'monthly' ? '月度会员' : '年度会员';
-                    if (expire != null) {
-                      premiumInfoText = '$typeText，有效期至：${expire.year}年${expire.month}月${expire.day}日';
-                    } else {
-                      premiumInfoText = '$typeText（有效期未知）';
-                    }
-                  } else if (isOverride) {
-                    // 特殊授权会员
-                    final updateTime = loggedInUser?.premiumOverrideUpdateTime;
-                    final duration = loggedInUser?.premiumOverrideDuration;
-                    if (duration == null) {
-                      premiumInfoText = '会员（特殊授权，永久）';
-                    } else if (updateTime != null) {
-                      // 仅用于展示：若解析失败，也不阻塞显示
-                      final ms = _parseDurationMillis(duration);
-                      if (ms != null && ms > 0) {
-                        final expireTime = updateTime.add(Duration(milliseconds: ms));
-                        premiumInfoText = '会员（特殊授权），有效期至：${expireTime.year}年${expireTime.month}月${expireTime.day}日';
-                      } else {
-                        premiumInfoText = '会员（特殊授权，有效期未知）';
-                      }
-                    } else {
-                      premiumInfoText = '会员（特殊授权，有效期未知）';
-                    }
-                  } else {
-                    premiumInfoText = '会员';
-                  }
-                }
-
-                // 非会员：显示订阅按钮（仅 iOS 可点）
-                if (!isPremium && PlatformUtils.isIOS) {
-                  return GestureDetector(
-                    onTap: () {
-                      Navigator.of(context).push(MaterialPageRoute(builder: (context) => const SubscriptionPage())).then((_) {
-                        loadData();
-                      });
-                    },
-                    child: Container(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        color: isDarkModeEnabled ? const Color(0xFF2D2D2D) : Colors.white,
-                        border: Border.all(color: Colors.amber.shade300.withValues(alpha: 0.8)),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Row(
-                                children: [
-                                  Icon(Icons.star_border, color: Colors.amber.shade700, size: 22),
-                                  const SizedBox(width: 10),
-                                  Text(
-                                    '去订阅会员',
-                                    style: TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w600,
-                                      color: textColor,
-                                      fontFamily: 'NotoSansSC',
-                                    ),
-                                    textScaler: const TextScaler.linear(1.0),
-                                  ),
-                                ],
-                              ),
-                              Icon(Icons.chevron_right, color: isDarkModeEnabled ? Colors.grey[400] : const Color(0xFF7F8C8D)),
-                            ],
-                          )
-                        ],
-                      ),
-                    ),
-                  );
-                }
-
-                // 会员：显示订阅信息，可点击进入订阅页面查看详情
-                if (isPremium && premiumInfoText != null && PlatformUtils.isIOS) {
-                  return GestureDetector(
-                    onTap: () {
-                      Navigator.of(context).push(MaterialPageRoute(builder: (context) => const SubscriptionPage())).then((_) {
-                        loadData();
-                      });
-                    },
-                    child: Container(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        color: Colors.green.shade600,
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Icon(Icons.star, color: Colors.white, size: 22),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              premiumInfoText,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500,
-                                height: 1.2,
-                                fontFamily: 'NotoSansSC',
-                              ),
-                              textScaler: const TextScaler.linear(1.0),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Icon(Icons.chevron_right, color: Colors.white.withValues(alpha: 0.8), size: 20),
-                        ],
-                      ),
-                    ),
-                  );
-                }
-
-                return const SizedBox.shrink();
-              }),
-
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
