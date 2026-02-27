@@ -21,8 +21,7 @@ import 'package:nnbdc/page/feature_request_wall.dart';
 import 'package:nnbdc/page/level_path_page.dart';
 import 'package:nnbdc/page/subscription.dart';
 import 'package:nnbdc/page/word_list/dict_words.dart';
-import 'package:nnbdc/page/word_list/learning_words.dart';
-import 'package:nnbdc/page/word_list/mastered_words.dart';
+
 import 'package:nnbdc/services/sync_log_service.dart';
 import 'package:nnbdc/services/throttled_sync_service.dart';
 import 'package:nnbdc/socket_io.dart';
@@ -34,7 +33,7 @@ import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/util/user_helper.dart';
 import 'package:nnbdc/util/utils.dart';
 import 'package:nnbdc/widget/dict_download_dialog.dart';
-import 'package:nnbdc/widget/floating_speech_bubble.dart';
+
 import "package:percent_indicator/percent_indicator.dart";
 import 'package:provider/provider.dart';
 
@@ -496,203 +495,390 @@ class _MePageState extends State<MePage> {
 
     return Column(
       children: [
-        // 用户头像和基本信息卡片
+        // 玻璃拟物化学习成就卡片 (Glassmorphism Achievement Card)
         Container(
           margin: EdgeInsets.symmetric(
             vertical: MediaQuery.of(context).size.width > 600 ? 16 : 12,
           ),
-          padding: EdgeInsets.all(MediaQuery.of(context).size.width > 600 ? 20 : 16),
+          padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            gradient: LinearGradient(
+            gradient: const LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                LevelUtil.getTitleColor(studyProgress!.level.level ?? 1).withValues(alpha: 0.8),
-                LevelUtil.getTitleColor(studyProgress!.level.level ?? 1),
+                Color(0xFF1E1E32), // Dark starry background
+                Color(0xFF2A1C3C), // Purple hue
+                Color(0xFF3B2A45),
               ],
             ),
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.15), width: 1.5),
             boxShadow: [
               BoxShadow(
-                color: AppTheme.primaryColor.withValues(alpha: 0.3),
+                color: Colors.purpleAccent.withValues(alpha: 0.2),
+                blurRadius: 20,
                 spreadRadius: 2,
-                blurRadius: 10,
-                offset: const Offset(0, 4),
+                offset: const Offset(0, 10),
               ),
             ],
           ),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
-              // 说话气泡 (带浮动动画)
-              FloatingSpeechBubble(
-                text: LevelUtil.getTitleQuote(studyProgress!.level.level ?? 1),
-                backgroundColor: Colors.white,
-                textColor: AppTheme.primaryColor,
-              ),
-              const SizedBox(height: 12),
-              // 等级信息
-              GestureDetector(
-                onTap: () {
-                  Get.to(() => LevelPathPage(currentLevel: studyProgress!.level.level ?? 1));
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.25),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 1),
+              // 1. 头像和昵称行
+              Row(
+                children: [
+                  // 头像
+                  GestureDetector(
+                    onTap: () => Get.toNamed('/email_login'),
+                    child: Container(
+                      padding: const EdgeInsets.all(2), // 边框间距
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF00E1FF), Color(0xFFFF00E5)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFFFF00E5).withValues(alpha: 0.3),
+                            blurRadius: 10,
+                            spreadRadius: 1,
+                          ),
+                        ],
+                      ),
+                      child: CircleAvatar(
+                        radius: MediaQuery.of(context).size.width > 600 ? 32 : 28,
+                        backgroundColor: const Color(0xFF1A1A2E),
+                        backgroundImage: (loggedInUser?.wechatAvatar != null && loggedInUser!.wechatAvatar!.isNotEmpty)
+                            ? CachedNetworkImageProvider(loggedInUser!.wechatAvatar!)
+                            : null,
+                        child: (loggedInUser?.wechatAvatar == null || loggedInUser!.wechatAvatar!.isEmpty)
+                            ? const Icon(Icons.person, color: Colors.white70, size: 30)
+                            : null,
+                      ),
+                    ),
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        studyProgress!.level.figure ?? '',
-                        style: TextStyle(
-                          fontSize: MediaQuery.of(context).size.width > 600 ? 20 : 18,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        studyProgress!.level.name!,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: MediaQuery.of(context).size.width > 600 ? 16 : 14,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 1.2,
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Icon(
-                        Icons.help_outline,
-                        color: Colors.white.withValues(alpha: 0.8),
-                        size: 16,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              SizedBox(height: MediaQuery.of(context).size.width > 600 ? 16 : 12),
-              // 学习天数
-
-              // 用户头像
-              GestureDetector(
-                onTap: () => Get.toNamed('/email_login'),
-                child: (loggedInUser?.wechatAvatar != null && loggedInUser!.wechatAvatar!.isNotEmpty)
-                    ? Container(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 2),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.1),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: CircleAvatar(
-                          radius: MediaQuery.of(context).size.width > 600 ? 36 : 30,
-                          backgroundImage: CachedNetworkImageProvider(loggedInUser!.wechatAvatar!),
-                          backgroundColor: Colors.white.withValues(alpha: 0.2),
-                        ),
-                      )
-                    : Container(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 2),
-                        ),
-                        child: CircleAvatar(
-                          radius: MediaQuery.of(context).size.width > 600 ? 36 : 30,
-                          backgroundColor: Colors.white.withValues(alpha: 0.2),
-                          child: Icon(
-                            Icons.person,
-                            size: MediaQuery.of(context).size.width > 600 ? 40 : 34,
+                  const SizedBox(width: 16),
+                  // 昵称信息
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          Util.getNickNameOfUser(loggedInUser),
+                          style: const TextStyle(
                             color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.5,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          LevelUtil.getTitleQuote(studyProgress!.level.level ?? 1),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                            letterSpacing: 0.5,
                           ),
                         ),
-                      ),
-              ),
-
-              // 用户昵称
-              Text(
-                Util.getNickNameOfUser(loggedInUser),
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: MediaQuery.of(context).size.width > 600 ? 20 : 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              // 同步状态指示器
-              if (_isSyncing) ...[
-                SizedBox(height: MediaQuery.of(context).size.width > 600 ? 8 : 6),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    SizedBox(
-                      width: MediaQuery.of(context).size.width > 600 ? 16 : 12,
-                      height: MediaQuery.of(context).size.width > 600 ? 16 : 12,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
-                    ),
-                    SizedBox(width: MediaQuery.of(context).size.width > 600 ? 8 : 6),
-                    Text(
-                      '同步中...',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: MediaQuery.of(context).size.width > 600 ? 12 : 10,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-              SizedBox(height: MediaQuery.of(context).size.width > 600 ? 8 : 6),
-
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.baseline,
-                textBaseline: TextBaseline.alphabetic,
-                children: [
-                  Text(
-                    studyProgress!.existDays.toString(),
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: MediaQuery.of(context).size.width > 600 ? 32 : 24,
+                      ],
                     ),
                   ),
-                  const SizedBox(width: 4),
-                  Text(
-                    '天',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: MediaQuery.of(context).size.width > 600 ? 16 : 14,
+                  // 右上角浮动气泡/等级
+                  GestureDetector(
+                    onTap: () {
+                      Get.to(() => LevelPathPage(currentLevel: studyProgress!.level.level ?? 1));
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 1),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            studyProgress!.level.figure ?? '',
+                            style: const TextStyle(fontSize: 14),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            studyProgress!.level.name!,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 4),
-              // 今日打卡状态
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: last30DaysDakaStatus![29] == UserDayStatus.dakaed.json
-                      ? Colors.green.withValues(alpha: 0.8)
-                      : Colors.orange.withValues(alpha: 0.8),
-                  borderRadius: BorderRadius.circular(15),
+              const SizedBox(height: 24),
+
+              // 同步状态指示器
+              if (_isSyncing) ...[
+                Row(
+                  children: [
+                    const SizedBox(
+                      width: 12,
+                      height: 12,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white70),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      '同步中...',
+                      style: TextStyle(color: Colors.white70, fontSize: 10),
+                    ),
+                  ],
                 ),
-                child: Text(
-                  last30DaysDakaStatus![29] == UserDayStatus.dakaed.json ? '✓ 今日已打卡' : '○ 今日未打卡',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: MediaQuery.of(context).size.width > 600 ? 12 : 10,
-                    fontWeight: FontWeight.w500,
+                const SizedBox(height: 12),
+              ],
+
+              // 2. DAILY MILESTONE 进度条标题
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    "TOTAL PROGRESS",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.2,
+                    ),
                   ),
+                  Text(
+                    '已掌握 ${((studyProgress!.rawWordCount > 0 ? studyProgress!.masteredWordsCount / studyProgress!.rawWordCount : 0.0) * 100).toStringAsFixed(1)}%',
+                    style: const TextStyle(
+                      color: Colors.greenAccent,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              // 发光进度条
+              Container(
+                height: 8,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final progress = studyProgress!.rawWordCount > 0 ? studyProgress!.masteredWordsCount / studyProgress!.rawWordCount : 0.0;
+                    final clampedProgress = progress > 1.0 ? 1.0 : progress;
+                    return Container(
+                      width: constraints.maxWidth * clampedProgress,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFFFF007F), Color(0xFFFFB000)],
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                        ),
+                        borderRadius: BorderRadius.circular(4),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFFFF007F).withValues(alpha: 0.6),
+                            blurRadius: 8,
+                            spreadRadius: 1,
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // 3. 数据小卡片行 (Glass Cards)
+              Row(
+                children: [
+                  // 卡片 1: DAY Circle
+                  Expanded(
+                    flex: 4,
+                    child: Container(
+                      height: 120,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.05),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            width: 70,
+                            height: 70,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.amber, width: 2),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.amber.withValues(alpha: 0.3),
+                                  blurRadius: 15,
+                                  spreadRadius: 2,
+                                ),
+                              ],
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Text(
+                                  "DAY",
+                                  style: TextStyle(
+                                    color: Colors.amber,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Text(
+                                  studyProgress!.existDays.toString(),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // 卡片 2: Words Learned
+                  Expanded(
+                    flex: 3,
+                    child: Container(
+                      height: 120,
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.05),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.check_box_outlined, color: Colors.white70, size: 28),
+                          const SizedBox(height: 4),
+                          Text(
+                            studyProgress!.masteredWordsCount.toString(),
+                            style: const TextStyle(color: Colors.amber, fontSize: 22, fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 4),
+                          const Text(
+                            "Words\nLearned",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Colors.white54, fontSize: 10, height: 1.1),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // 卡片 3: Score / Points
+                  Expanded(
+                    flex: 3,
+                    child: Container(
+                      height: 120,
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.05),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.star_border, color: Colors.white70, size: 28),
+                          const SizedBox(height: 4),
+                          Text(
+                            studyProgress!.totalScore.toString(),
+                            style: const TextStyle(color: Colors.amber, fontSize: 22, fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 4),
+                          const Text(
+                            "Total\nScore",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Colors.white54, fontSize: 10, height: 1.1),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+
+              // 4. Milestone Achieved Banner (Glassmorphism)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            "CURRENT SCORE & RANKING",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            "总积分: ${studyProgress!.totalScore} | 当前排名: ${studyProgress!.userOrder! == -1 ? '未排名' : studyProgress!.userOrder}",
+                            style: const TextStyle(
+                              color: Colors.amberAccent,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              height: 1.4,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    // 一个上扬的星星图标效果
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.purpleAccent.withValues(alpha: 0.2),
+                      ),
+                      child: const Icon(Icons.auto_awesome, color: Colors.amberAccent, size: 32),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -1066,65 +1252,6 @@ class _MePageState extends State<MePage> {
 
         // 订阅入口已移动到“学习设置/今日单词”上方
 
-        // 统计数据网格
-        Container(
-          margin: const EdgeInsets.symmetric(vertical: 8),
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildStatCard(
-                      icon: Icons.emoji_events,
-                      title: '积分',
-                      value: studyProgress!.totalScore.toString(),
-                      color: const Color(0xFFFF6B6B),
-                      onTap: null,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildStatCard(
-                      icon: Icons.trending_up,
-                      title: '排名',
-                      value: studyProgress!.userOrder! == -1 ? '未排名' : studyProgress!.userOrder!.toString(),
-                      color: const Color(0xFF4ECDC4),
-                      onTap: null,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildStatCard(
-                      icon: Icons.check_circle,
-                      title: '已掌握',
-                      value: studyProgress!.masteredWordsCount.toString(),
-                      color: const Color(0xFF45B7D1),
-                      onTap: () {
-                        toMasteredWordsListPage(true)?.then((value) => loadData());
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildStatCard(
-                      icon: Icons.school,
-                      title: '学习中',
-                      value: studyProgress!.learningWordsCount.toString(),
-                      color: const Color(0xFF96CEB4),
-                      onTap: () {
-                        toLearningWordsListPage(true)?.then((value) => loadData());
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
 
         // 打卡统计卡片
         Container(
@@ -2194,64 +2321,6 @@ class _MePageState extends State<MePage> {
     }
   }
 
-  // 统计卡片组件
-  Widget _buildStatCard({
-    required IconData icon,
-    required String title,
-    required String value,
-    required Color color,
-    VoidCallback? onTap,
-  }) {
-    final isDarkModeEnabled = context.watch<DarkMode>().isDarkMode;
-    final cardColor = isDarkModeEnabled ? const Color(0xFF2D2D2D) : Colors.white;
-
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: cardColor,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: isDarkModeEnabled ? Colors.black.withValues(alpha: 0.3) : color.withValues(alpha: 0.1),
-              spreadRadius: 1,
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: color, size: 28),
-            const SizedBox(height: 8),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 13,
-                color: isDarkModeEnabled ? Colors.grey[400] : const Color(0xFF7F8C8D),
-                height: 1.2,
-                fontWeight: FontWeight.w400,
-                fontFamily: 'NotoSansSC',
-              ),
-              textScaler: const TextScaler.linear(1.0),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   // 进度项组件
   Widget _buildProgressItem(String title, String value, IconData icon, Color color, {double? rotationAngle}) {
@@ -2510,7 +2579,7 @@ class _DictCardState extends State<DictCard> {
   @override
   Widget build(BuildContext context) {
     final totalWords = widget.dictInfo.name == '生词本' ? (actualWordCount ?? 0) : widget.dictInfo.wordCount;
-    final learnedWords = learnedCount + masteredCount;
+    final learnedWords = masteredCount;
     final progress = totalWords > 0 ? learnedWords / totalWords : 0.0;
     final progressPercent = (progress * 100).toInt();
 
@@ -2583,8 +2652,8 @@ class _DictCardState extends State<DictCard> {
                       const SizedBox(height: 4),
                       Text(
                         widget.dictInfo.name == '生词本'
-                            ? '${learnedCount + masteredCount} / ${actualWordCount ?? 0}'
-                            : '${learnedCount + masteredCount} / ${widget.dictInfo.wordCount}',
+                            ? '${masteredCount} / ${actualWordCount ?? 0}'
+                            : '${masteredCount} / ${widget.dictInfo.wordCount}',
                         style: TextStyle(
                           color: Colors.white.withValues(alpha: 0.8),
                           fontSize: 14,
