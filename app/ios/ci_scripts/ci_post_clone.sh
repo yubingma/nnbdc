@@ -454,10 +454,12 @@ if [ -d "$IOS_WORKDIR" ]; then
         log "⚙️  已设置 NNBDC_FORCE_POD_INSTALL=1，将强制执行 pod install"
       fi
       
-      # Fix Xcode Cloud SQLite download timeout issue by manually resolving the IP
-      log "🔧 配置 curl 绕过 www.sqlite.org 的 DNS 解析问题..."
+      # Fix Xcode Cloud SQLite and WeChat SDK download timeout issue by manually resolving the IP
+      log "🔧 配置 curl 绕过 www.sqlite.org 和 dldir1.qq.com 的 DNS 解析问题..."
       echo "--resolve www.sqlite.org:443:194.195.208.62" >> ~/.curlrc
       echo "--resolve www.sqlite.org:80:194.195.208.62" >> ~/.curlrc
+      echo "--resolve dldir1.qq.com:443:118.123.208.150" >> ~/.curlrc
+      echo "--resolve dldir1.qq.com:80:118.123.208.150" >> ~/.curlrc
       
       log "📦 运行 pod install..."
       cd "$IOS_WORKDIR" || fail "无法进入 iOS 目录: $IOS_WORKDIR"
