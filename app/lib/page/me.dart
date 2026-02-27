@@ -655,7 +655,7 @@ class _MePageState extends State<MePage> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text(
-                    "TOTAL PROGRESS",
+                    "词书总进度",
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 12,
