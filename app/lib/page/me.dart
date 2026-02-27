@@ -762,11 +762,11 @@ class _MePageState extends State<MePage> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.check_box_outlined, color: iconColor, size: 28),
+                          Icon(Icons.check_box_outlined, color: numberColor, size: 28),
                           const SizedBox(height: 4),
                           Text(
                             studyProgress!.masteredWordsCount.toString(),
-                            style: TextStyle(color: numberColor, fontSize: 22, fontWeight: FontWeight.bold),
+                            style: TextStyle(color: isDarkModeEnabled ? Colors.white : Colors.black, fontSize: 22, fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 4),
                           Text(
@@ -793,11 +793,11 @@ class _MePageState extends State<MePage> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.schedule, color: iconColor, size: 28),
+                          Icon(Icons.schedule, color: numberColor, size: 28),
                           const SizedBox(height: 4),
                           Text(
                             (studyProgress!.totalLearningSeconds / 3600.0).toStringAsFixed(1),
-                            style: TextStyle(color: numberColor, fontSize: 22, fontWeight: FontWeight.bold),
+                            style: TextStyle(color: isDarkModeEnabled ? Colors.white : Colors.black, fontSize: 22, fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 4),
                           Text(
