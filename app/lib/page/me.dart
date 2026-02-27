@@ -888,7 +888,7 @@ class _MePageState extends State<MePage> {
                         shape: BoxShape.circle,
                         color: starContainerColor,
                       ),
-                      child: Icon(Icons.auto_awesome, color: numberColor, size: 32),
+                      child: Icon(Icons.leaderboard_rounded, color: numberColor, size: 32),
                     ),
                   ],
                 ),
