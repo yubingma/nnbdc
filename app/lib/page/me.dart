@@ -678,6 +678,7 @@ class _MePageState extends State<MePage> {
               Container(
                 height: 8,
                 width: double.infinity,
+                alignment: Alignment.centerLeft,
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(4),
