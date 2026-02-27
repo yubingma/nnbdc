@@ -95,16 +95,21 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
   }
 
   Future<void> loadData({bool forceSupplement = false}) async {
+    // 如果不是强制补充模式，重置“已尝试补充”标记
+    if (!forceSupplement) {
+      _hasTriedSupplement = false;
+    }
+
     // 防止重复加载
     if (_isLoadingData) return;
     _isLoadingData = true;
-  
+
     // 禁用 loading 提示
     Api.setLoadingDisabled(true);
-  
+
     // 添加一个短暂延迟，确保加载动画能够显示
     await Future.delayed(const Duration(milliseconds: 500));
-  
+
     try {
       // 获取用户基本信息
       var result0 = await UserBo().getLoggedInUser();
@@ -114,7 +119,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
         ToastUtil.error(result0.msg!);
         return;
       }
-  
+
       // 获取用户的学习步骤
       var result = await StudyBo().getUserStudySteps();
       if (result.success) {
@@ -123,17 +128,17 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
         for (UserStudyStepVo step in userStudySteps) {
           studySteps!.add(step);
         }
-          
+
         // 检查是否有 List 学习步骤，如果没有则自动添加
         final hasListStep = studySteps!.any((step) => step.studyStep == 'List');
         if (!hasListStep && user != null && user!.id != null) {
           Global.logger.d('检测到用户缺少 List 学习步骤，自动添加');
-            
+
           // 创建 List 学习步骤
           final listStep = UserStudyStepVo('List', studySteps!.length, StudyStepState.active.json);
           listStep.seq = 0;
           studySteps!.add(listStep);
-            
+
           try {
             // 保存到数据库并生成同步日志
             await MyDatabase.instance.userStudyStepsDao.saveUserStudyStep(
@@ -162,11 +167,14 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
         ToastUtil.error(result.msg!);
         return;
       }
-  
+
       // 生成（或获取）用户的今日单词
       try {
         prepareResult = await StudyBo().prepareForStudy(forceSupplement);
         if (prepareResult!.success || prepareResult!.code == "NNBDC-0012" /*未取到足够单词*/) {
+          if (forceSupplement) {
+            _hasTriedSupplement = true;
+          }
           List<int> counts = prepareResult!.data!;
           newWordCount = counts[0];
           oldWordCount = counts[1];
@@ -179,10 +187,10 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
         ErrorHandler.handleError(e, stackTrace, logPrefix: '准备学习失败', userMessage: '准备学习失败，请稍后重试', showToast: true);
         return;
       }
-  
+
       // 获取用户的今日打卡状态
       hasDakaToday = (await UserBo().hasDakaToday(user!.id!)).data!;
-  
+
       // 检查页面是否仍然挂载，避免在 dispose 后调用 setState
       if (mounted) {
         setState(() {
@@ -207,884 +215,454 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
   }
 
   Widget renderPage() {
-    final isDarkMode = context.watch<DarkMode>().isDarkMode;
-
     return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
       child: Column(
         children: [
+          // 1. 学习步骤/模式设置
           renderStudySteps(),
-          // 统计信息卡片
-          Container(
-            margin: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-            child: Column(
+
+          // 2. 今日核心任务卡片 (目标设置 + 单词统计)
+          renderMissionCard(),
+
+          // 底部额外操作 (如果是错误状态)
+          if (prepareResult!.code == "NNBDC-0012" || (_hasTriedSupplement && todayWordCount! < user!.wordsPerDay!)) renderErrorActions(),
+
+          // 底部间距
+          const SizedBox(height: 40),
+        ],
+      ),
+    );
+  }
+
+  Widget renderMissionCard() {
+    final isDarkMode = context.watch<DarkMode>().isDarkMode;
+    final cardColor = isDarkMode ? const Color(0xFF1E1E1E) : Colors.white;
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: (isDarkMode ? Colors.black : AppTheme.primaryColor).withValues(alpha: 0.08),
+            blurRadius: 24,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // 顶部：目标设置
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // 1. 计划设置卡片 (每日单词数量选择)
-                renderDailyWordsSetting(),
-                const SizedBox(height: 16),
-
-                // 2. 今日学习概览卡片
-                Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        const Color(0xFF0097A7).withValues(alpha: 0.1),
-                        const Color(0xFF00ACC1).withValues(alpha: 0.1),
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
+                Row(
+                  children: [
+                    Text(
+                      '今日目标',
+                      style: TextStyle(
+                        color: isDarkMode ? Colors.white70 : Colors.black87,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        fontFamily: 'NotoSansSC',
+                      ),
                     ),
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(
-                      color: const Color(0xFF0097A7).withValues(alpha: 0.2),
-                      width: 1,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF0097A7).withValues(alpha: 0.1),
-                        blurRadius: 20,
-                        offset: const Offset(0, 8),
+                    if (user?.todayStudyStarted == true) ...[
+                      const SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: () => ToastUtil.info('今日学习已开始，无法修改计划数量'),
+                        child: Icon(
+                          Icons.lock_outline_rounded,
+                          color: isDarkMode ? Colors.white30 : Colors.black26,
+                          size: 16,
+                        ),
                       ),
                     ],
-                  ),
-                  child: Column(
-                    children: [
-                      // 标题
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: AppTheme.primaryColor,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: const Icon(
-                              Icons.today_rounded,
-                              color: Colors.white,
-                              size: 20,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Text(
-                            '今日学习概览',
-                            textScaler: TextScaler.linear(1.0),
-                            style: TextStyle(
-                              color: isDarkMode ? Colors.white : const Color(0xFF2C3E50),
-                              fontSize: 20,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      const SizedBox(height: 24),
-
-                      // 统计数据网格
-                      Row(
-                        children: [
-                          // 总单词数
-                          Expanded(
-                            child: GestureDetector(
-                              onTap: () {
-                                toTodayWordsListPage(true)?.then((value) => loadData());
-                              },
-                              child: Container(
-                                height: 152, // 70 + 12 + 70 = 152 (新词高度 + 间距 + 旧词高度)
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(
-                                    color: AppTheme.primaryColor.withValues(alpha: 0.3),
-                                    width: 1,
-                                  ),
-                                ),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.library_books_rounded,
-                                      color: AppTheme.primaryColor,
-                                      size: 30,
-                                    ),
-                                    const SizedBox(height: 10),
-                                    Text(
-                                      '${todayWordCount!}',
-                                      textScaler: TextScaler.linear(1.0),
-                                      style: TextStyle(
-                                        color: AppTheme.primaryColor,
-                                        fontSize: 26,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      '今日单词',
-                                      textScaler: TextScaler.linear(1.0),
-                                      style: TextStyle(
-                                        fontFamily: 'NotoSansSC',
-                                        color: isDarkMode ? Colors.white.withValues(alpha: 0.8) : const Color(0xFF495057),
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w500,
-                                        letterSpacing: 0.5,
-                                        height: 1.2,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-
-                          const SizedBox(width: 16),
-
-                          // 新词和旧词
-                          Expanded(
-                            child: Column(
-                              children: [
-                                // 新词
-                                GestureDetector(
-                                  onTap: () {
-                                    toTodayNewWordsListPage(true)?.then((value) => loadData());
-                                  },
-                                  child: Container(
-                                    height: 70, // 设置固定高度
-                                    width: double.infinity,
-                                    padding: const EdgeInsets.all(12),
-                                    decoration: BoxDecoration(
-                                      color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                                      borderRadius: BorderRadius.circular(16),
-                                      border: Border.all(
-                                        color: AppTheme.primaryColor.withValues(alpha: 0.3),
-                                        width: 1,
-                                      ),
-                                    ),
-                                    child: Column(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Row(
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          children: [
-                                            Icon(
-                                              Icons.fiber_new_rounded,
-                                              color: AppTheme.primaryColor,
-                                              size: 18,
-                                            ),
-                                            const SizedBox(width: 6),
-                                            Text(
-                                              '${newWordCount!}',
-                                              textScaler: TextScaler.linear(1.0),
-                                              style: TextStyle(
-                                                color: AppTheme.primaryColor,
-                                                fontSize: 18,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          '新词',
-                                          textScaler: TextScaler.linear(1.0),
-                                          style: TextStyle(
-                                            fontFamily: 'NotoSansSC',
-                                            color: isDarkMode ? Colors.white.withValues(alpha: 0.8) : const Color(0xFF495057),
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.w500,
-                                            letterSpacing: 0.5,
-                                            height: 1.2,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-
-                                const SizedBox(height: 12),
-
-                                // 旧词
-                                GestureDetector(
-                                  onTap: () {
-                                    toTodayOldWordsListPage(true)?.then((value) => loadData());
-                                  },
-                                  child: Container(
-                                    height: 70, // 设置固定高度
-                                    width: double.infinity,
-                                    padding: const EdgeInsets.all(12),
-                                    decoration: BoxDecoration(
-                                      color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                                      borderRadius: BorderRadius.circular(16),
-                                      border: Border.all(
-                                        color: AppTheme.primaryColor.withValues(alpha: 0.3),
-                                        width: 1,
-                                      ),
-                                    ),
-                                    child: Column(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Row(
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          children: [
-                                            Icon(
-                                              Icons.refresh_rounded,
-                                              color: AppTheme.primaryColor,
-                                              size: 18,
-                                            ),
-                                            const SizedBox(width: 6),
-                                            Text(
-                                              '${oldWordCount!}',
-                                              textScaler: TextScaler.linear(1.0),
-                                              style: TextStyle(
-                                                color: AppTheme.primaryColor,
-                                                fontSize: 18,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          '旧词',
-                                          textScaler: TextScaler.linear(1.0),
-                                          style: TextStyle(
-                                            fontFamily: 'NotoSansSC',
-                                            color: isDarkMode ? Colors.white.withValues(alpha: 0.8) : const Color(0xFF495057),
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.w500,
-                                            letterSpacing: 0.5,
-                                            height: 1.2,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+                  ],
                 ),
-
-                // 单词不足提示 & 补充按钮
-                if (prepareResult!.success && todayWordCount! < user!.wordsPerDay! && !(user!.todayStudyStarted ?? false) && !_hasTriedSupplement)
-                  Container(
-                    margin: const EdgeInsets.only(top: 16),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFFF3E0),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: const Color(0xFFFF9800).withValues(alpha: 0.3),
-                        width: 1,
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.info_outline_rounded,
-                          color: Color(0xFFFF9800),
-                          size: 20,
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            '今日单词不足（${todayWordCount!}/${user!.wordsPerDay!}）',
-                            textScaler: const TextScaler.linear(1.0),
-                            style: const TextStyle(
-                              fontFamily: 'NotoSansSC',
-                              color: Color(0xFFE65100),
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                              height: 1.2,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFFF9800),
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            elevation: 0,
-                            minimumSize: Size.zero,
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          ),
-                          onPressed: () async {
-                            await StudyBo().prepareForStudy(true);
-                            _hasTriedSupplement = true;
-                            loadData();
-                          },
-                          child: Text(
-                            '补充到${user!.wordsPerDay!}个',
-                            textScaler: const TextScaler.linear(1.0),
-                            style: const TextStyle(
-                              fontFamily: 'NotoSansSC',
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              height: 1.2,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                const SizedBox(height: 8),
-                // 主要操作按钮
-                if (prepareResult!.success)
-                  Container(
-                    margin: const EdgeInsets.only(top: 8, bottom: 16),
-                    child: hasDakaToday
-                        ? Container(
-                            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-                            decoration: BoxDecoration(
-                              color: AppTheme.primaryColor,
-                              borderRadius: BorderRadius.circular(20),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppTheme.primaryColor.withValues(alpha: 0.2),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(
-                                  Icons.check_circle_rounded,
-                                  color: Colors.white,
-                                  size: 24,
-                                ),
-                                const SizedBox(width: 12),
-                                Text(
-                                  '今日已打卡',
-                                  textScaler: TextScaler.linear(1.0),
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )
-                        : SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppTheme.primaryColor,
-                                foregroundColor: Colors.white,
-                                padding: EdgeInsets.symmetric(
-                                  vertical: MediaQuery.of(context).size.width > 600 ? 20 : 16,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                elevation: 4,
-                                shadowColor: AppTheme.primaryColor.withValues(alpha: 0.3),
-                              ),
-                              icon: Icon(
-                                Icons.play_arrow_rounded,
-                                size: MediaQuery.of(context).size.width > 600 ? 28 : 24,
-                              ),
-                              key: const Key('before_bdc_start_learn_btn'),
-                              label: Text(
-                                '开始学习',
-                                textScaler: TextScaler.linear(1.0),
-                                style: TextStyle(
-                                  fontSize: MediaQuery.of(context).size.width > 600 ? 20 : 18,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 1.0,
-                                ),
-                              ),
-                              onPressed: () async {
-                                if (selectedSteps().isEmpty) {
-                                  ToastUtil.error('请至少选择一个学习方式');
-                                  return;
-                                }
-
-                                // 记录用户开始学习操作
-                                if (user != null) {
-                                  await MyDatabase.instance.userOpersDao.recordStartLearn(user!.id!, remark: "用户开始学习");
-                                  // 更新用户的“今日学习已开始”标记
-                                  await (MyDatabase.instance.update(MyDatabase.instance.users)..where((u) => u.id.equals(user!.id!))).write(UsersCompanion(
-                                    todayStudyStarted: const drift.Value(true),
-                                  ));
-                                  // 更新内存中的用户信息
-                                  await Global.loadUserFromDb();
-                                }
-
-                                await GetStorage().write("BdcPageArgs", BdcPageArgs('before_bdc').toJson());
-                                Get.toNamed('/bdc')?.then((value) {
-                                  // 从 BDC 页面返回时，重新加载数据以检测是否需要补充单词
-                                  if (mounted && !_isLoadingData) {
-                                    loadData();
-                                  }
-                                });
-                              },
-                            ),
-                          ),
-                  ),
-                // 错误提示和备选操作
-                if (prepareResult!.code == "NNBDC-0012" || (_hasTriedSupplement && todayWordCount! < user!.wordsPerDay!))
-                  Container(
-                    margin: const EdgeInsets.only(top: 16),
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFFEBEE),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: const Color(0xFFFF5252).withValues(alpha: 0.3),
-                        width: 1,
-                      ),
-                    ),
-                    child: Column(
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFFF5252).withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Icon(
-                                Icons.warning_rounded,
-                                color: Color(0xFFFF5252),
-                                size: 20,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                '没有取到足够单词',
-                                textScaler: TextScaler.linear(1.0),
-                                style: const TextStyle(
-                                  color: Color(0xFFFF5252),
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 16),
-
-                        // 操作按钮
-                        Row(
-                          children: [
-                            Expanded(
-                              child: ElevatedButton.icon(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF4CAF50),
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(vertical: 12),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                ),
-                                icon: const Icon(Icons.library_books, size: 18),
-                                label: Text(
-                                  '选择词书',
-                                  textScaler: TextScaler.linear(1.0),
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                onPressed: () {
-                                  Get.toNamed('/select_book')?.then((value) {
-                                    if (mounted) {
-                                      setState(() {
-                                        _hasTriedSupplement = false;
-                                      });
-                                      loadData(forceSupplement: true);
-                                    }
-                                  });
-                                },
-                              ),
-                            ),
-                            if (todayWordCount! < user!.wordsPerDay! && todayWordCount! > 0) ...[
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: ElevatedButton.icon(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFFFF9800),
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(vertical: 12),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                  ),
-                                  icon: const Icon(Icons.play_arrow, size: 18),
-                                  label: Text(
-                                    '继续学习',
-                                    textScaler: TextScaler.linear(1.0),
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                  onPressed: () {},
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-
-                // 底部间距
-                const SizedBox(height: 100),
+                renderGoalDropdown(),
               ],
             ),
+          ),
+
+          // 中间：核心数据
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Row(
+              children: [
+                _buildStatItem('今日单词', todayWordCount!, Icons.library_books_rounded, AppTheme.primaryColor,
+                    () => toTodayWordsListPage(true)?.then((v) => loadData())),
+                _buildStatItem('新词', newWordCount!, Icons.fiber_new_rounded, const Color(0xFF4CAF50),
+                    () => toTodayNewWordsListPage(true)?.then((v) => loadData())),
+                _buildStatItem('复习', oldWordCount!, Icons.refresh_rounded, const Color(0xFFFF9800),
+                    () => toTodayOldWordsListPage(true)?.then((v) => loadData())),
+              ],
+            ),
+          ),
+
+          // 单词不足补充提醒
+          if (prepareResult!.success && todayWordCount! < user!.wordsPerDay! && !(user!.todayStudyStarted ?? false) && !_hasTriedSupplement)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFF9800).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.info_outline, color: Color(0xFFFF9800), size: 18),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '任务量不足，建议点击旁边按钮补充',
+                        style: TextStyle(color: const Color(0xFFE65100), fontSize: 12, fontWeight: FontWeight.w500),
+                      ),
+                    ),
+                    TextButton(
+                      style: TextButton.styleFrom(
+                        backgroundColor: const Color(0xFFFF9800),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      onPressed: () async {
+                        loadData(forceSupplement: true);
+                      },
+                      child: const Text('补充', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+          // 底部：开始按钮
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: renderStartButton(),
           ),
         ],
       ),
     );
   }
 
-
-
-  Widget renderDailyWordsSetting() {
+  Widget _buildStatItem(String label, int count, IconData icon, Color color, VoidCallback onTap) {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    final cardColor = isDarkMode ? const Color(0xFF1E1E1E) : Colors.white;
-    final textColor = isDarkMode ? Colors.white : const Color(0xFF2C3E50);
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: (isDarkMode ? Colors.black : const Color(0xFF0097A7)).withValues(alpha: 0.1),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 6),
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: color.withValues(alpha: 0.1)),
           ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
+          child: Column(
             children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(
-                  Icons.settings_suggest_rounded,
-                  color: AppTheme.primaryColor,
-                  size: 20,
-                ),
+              Icon(icon, color: color, size: 20),
+              const SizedBox(height: 8),
+              Text(
+                '$count',
+                style: TextStyle(color: color, fontSize: 24, fontWeight: FontWeight.bold, height: 1.1),
               ),
-              const SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '今日计划',
-                    textScaler: const TextScaler.linear(1.0),
-                    style: TextStyle(
-                      color: textColor,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      fontFamily: 'NotoSansSC',
-                    ),
-                  ),
-                  Text(
-                    '设定今日要学习的单词数',
-                    textScaler: const TextScaler.linear(1.0),
-                    style: TextStyle(
-                      color: isDarkMode ? Colors.white60 : Colors.black54,
-                      fontSize: 12,
-                      fontFamily: 'NotoSansSC',
-                    ),
-                  ),
-                ],
+              const SizedBox(height: 2),
+              Text(
+                label,
+                style: TextStyle(
+                  color: isDarkMode ? Colors.white54 : Colors.black54,
+                  fontSize: 12,
+                  fontFamily: 'NotoSansSC',
+                ),
               ),
             ],
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            decoration: BoxDecoration(
-              color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: isDarkMode ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
-                width: 1,
-              ),
-            ),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<int>(
-                value: (() {
-                  final isPremium = SubscriptionUtil.isPremium();
-                  final raw = user?.wordsPerDay ?? 10;
-                  if (!isPremium && raw > 20) return 20;
-                  return raw;
-                })(),
-                isDense: true,
-                icon: Icon(
-                  Icons.keyboard_arrow_down_rounded,
-                  color: isDarkMode ? Colors.white70 : Colors.black54,
-                  size: 20,
-                ),
-                dropdownColor: isDarkMode ? const Color(0xFF2D2D2D) : Colors.white,
-                style: TextStyle(
-                  color: isDarkMode ? Colors.white : Colors.black,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-                items: (() {
-                  final isPremium = SubscriptionUtil.isPremium();
-                  final all = <int>[10, 20, 30, 50, 75, 100, 150, 200, 300, 400, 500];
-                  return all.map((v) {
-                    final isRestricted = !isPremium && v > 20;
-                    return DropdownMenuItem<int>(
-                      value: v,
-                      enabled: !isRestricted,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            '$v',
-                            style: TextStyle(
-                              color: isRestricted ? (isDarkMode ? Colors.white30 : Colors.black26) : (isDarkMode ? Colors.white : Colors.black),
-                            ),
-                          ),
-                          if (isRestricted) ...[
-                            const SizedBox(width: 8),
-                            const Icon(Icons.workspace_premium, color: Colors.amber, size: 14),
-                            const SizedBox(width: 4),
-                            const Text(
-                              '会员',
-                              style: TextStyle(color: Colors.amber, fontSize: 10, fontWeight: FontWeight.bold),
-                            ),
-                          ]
-                        ],
-                      ),
-                    );
-                  }).toList();
-                })(),
-                onChanged: (user?.todayStudyStarted == true) 
-                    ? null // 已开始学习，锁定不可更改
-                    : (value) async {
-                  if (value == null) return;
+        ),
+      ),
+    );
+  }
 
+  Widget renderGoalDropdown() {
+    final isDarkMode = context.watch<DarkMode>().isDarkMode;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      decoration: BoxDecoration(
+        color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<int>(
+          value: (() {
+            final isPremium = SubscriptionUtil.isPremium();
+            final raw = user?.wordsPerDay ?? 20;
+            if (!isPremium && raw > 20) return 20;
+            return raw;
+          })(),
+          isDense: true,
+          icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 18),
+          dropdownColor: isDarkMode ? const Color(0xFF2D2D2D) : Colors.white,
+          style: TextStyle(
+            color: isDarkMode ? Colors.white : Colors.black,
+            fontSize: 15,
+            fontWeight: FontWeight.bold,
+          ),
+          onChanged: (user?.todayStudyStarted == true)
+              ? null
+              : (value) async {
+                  if (value == null) return;
                   if (!SubscriptionUtil.isPremium() && value > 20) {
                     ToastUtil.info('开通会员可选择更多单词数量');
                     return;
                   }
-
                   setState(() {
                     user!.wordsPerDay = value;
-                    dataLoaded = false; // 触发重新加载
+                    dataLoaded = false;
                   });
                   await Global.setLoggedInUser(user!);
                   await MyDatabase.instance.usersDao.updateWordsPerDay(user!.id!, value);
                   ThrottledDbSyncService().requestSync();
-                  
-                  // 重新加载数据以应用新的单词数量
-                  loadData(forceSupplement: true);
+                  loadData(forceSupplement: false);
                 },
-              ),
-            ),
+          items: (() {
+            final isPremium = SubscriptionUtil.isPremium();
+            return [10, 20, 30, 50, 75, 100, 150, 200, 300, 400, 500].map((v) {
+              final isRestricted = !isPremium && v > 20;
+              return DropdownMenuItem<int>(
+                value: v,
+                enabled: !isRestricted,
+                child: Row(
+                  children: [
+                    Text('$v'),
+                    if (isRestricted) ...[
+                      const SizedBox(width: 4),
+                      const Icon(Icons.workspace_premium, color: Colors.amber, size: 14),
+                    ]
+                  ],
+                ),
+              );
+            }).toList();
+          })(),
+        ),
+      ),
+    );
+  }
+
+  Widget renderStartButton() {
+    if (hasDakaToday) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(
+          color: Colors.green.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.green.withValues(alpha: 0.2)),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.check_circle_rounded, color: Colors.green, size: 24),
+            const SizedBox(width: 8),
+            const Text('今日已打卡', style: TextStyle(color: Colors.green, fontSize: 18, fontWeight: FontWeight.bold)),
+          ],
+        ),
+      );
+    }
+
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppTheme.primaryColor,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          elevation: 2,
+        ),
+        onPressed: () async {
+          if (selectedSteps().isEmpty) {
+            ToastUtil.error('请至少选择一个学习方式');
+            return;
+          }
+          if (user != null) {
+            await MyDatabase.instance.userOpersDao.recordStartLearn(user!.id!, remark: "用户开始学习");
+            await (MyDatabase.instance.update(MyDatabase.instance.users)..where((u) => u.id.equals(user!.id!))).write(UsersCompanion(
+              todayStudyStarted: const drift.Value(true),
+            ));
+            await Global.loadUserFromDb();
+          }
+          await GetStorage().write("BdcPageArgs", BdcPageArgs('before_bdc').toJson());
+          Get.toNamed('/bdc')?.then((value) {
+            if (mounted && !_isLoadingData) loadData();
+          });
+        },
+        child: const Text('准备好了，开始学习', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+      ),
+    );
+  }
+
+  Widget renderErrorActions() {
+    return Container(
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFEBEE),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Column(
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.warning_rounded, color: Color(0xFFFF5252), size: 24),
+              SizedBox(width: 12),
+              Text('没有取到足够单词', style: TextStyle(color: Color(0xFFFF5252), fontSize: 16, fontWeight: FontWeight.bold)),
+            ],
           ),
-          if (user?.todayStudyStarted == true)
-            Padding(
-              padding: const EdgeInsets.only(left: 8),
-              child: GestureDetector(
-                onTap: () => ToastUtil.info('今日学习已开始，无法修改计划数量'),
-                child: Icon(
-                  Icons.lock_outline_rounded,
-                  color: isDarkMode ? Colors.white30 : Colors.black26,
-                  size: 16,
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF4CAF50), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                  icon: const Icon(Icons.library_books, color: Colors.white, size: 18),
+                  label: const Text('选择词书', style: TextStyle(color: Colors.white)),
+                  onPressed: () {
+                    Get.toNamed('/select_book')?.then((v) {
+                      if (mounted) {
+                        setState(() => _hasTriedSupplement = false);
+                        loadData(forceSupplement: true);
+                      }
+                    });
+                  },
                 ),
               ),
-            ),
+              if (todayWordCount! > 0) ...[
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFFF9800), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                    icon: const Icon(Icons.play_arrow, color: Colors.white, size: 18),
+                    label: const Text('就这样吧，去学习', style: TextStyle(color: Colors.white)),
+                    onPressed: () => Get.toNamed('/bdc'),
+                  ),
+                ),
+              ],
+            ],
+          ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildStepTile(step) {
+    final isDarkMode = context.watch<DarkMode>().isDarkMode;
+    final isActive = step.state == StudyStepState.active.json;
+    return Container(
+      key: ValueKey(step),
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(
+        color: isActive
+            ? AppTheme.primaryColor.withValues(alpha: 0.05)
+            : (isDarkMode ? Colors.white.withValues(alpha: 0.02) : Colors.black.withValues(alpha: 0.02)),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isActive ? AppTheme.primaryColor.withValues(alpha: 0.2) : Colors.transparent,
+          width: 1.5,
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () {
+            setState(() {
+              step.state = isActive ? StudyStepState.inactive.json : StudyStepState.active.json;
+              saveStudyStep();
+            });
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              children: [
+                Icon(
+                  isActive ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+                  color: isActive ? AppTheme.primaryColor : (isDarkMode ? Colors.white24 : Colors.black26),
+                  size: 22,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    StudyStepExt.fromString(step.studyStep).description,
+                    style: TextStyle(
+                      color: isActive ? AppTheme.primaryColor : (isDarkMode ? Colors.white70 : Colors.black87),
+                      fontSize: 16,
+                      fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+                    ),
+                  ),
+                ),
+                Icon(
+                  Icons.drag_indicator_rounded,
+                  color: isDarkMode ? Colors.white10 : Colors.black12,
+                  size: 20,
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
 
   Widget renderStudySteps() {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    final backgroundColor = isDarkMode ? const Color(0xFF1A1A1A) : Colors.white;
-
-    return Container(
-      margin: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: (isDarkMode ? Colors.black : const Color(0xFF0097A7)).withValues(alpha: 0.1),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 简洁的标题栏
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: AppTheme.primaryColor,
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(24),
-                topRight: Radius.circular(24),
+          Row(
+            children: [
+              Text(
+                '学习模式',
+                style: TextStyle(
+                  color: isDarkMode ? Colors.white70 : Colors.black87,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  fontFamily: 'NotoSansSC',
+                ),
               ),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(
-                    Icons.list_alt_rounded,
-                    color: Colors.white,
-                    size: 18,
-                  ),
+              const Spacer(),
+              Text(
+                '长按可调整顺序',
+                style: TextStyle(
+                  color: isDarkMode ? Colors.white24 : Colors.black26,
+                  fontSize: 12,
+                  fontFamily: 'NotoSansSC',
                 ),
-                const SizedBox(width: 12),
-                Text(
-                  '学习步骤',
-                  textScaler: TextScaler.linear(1.0),
-                  style: const TextStyle(
-                    fontFamily: 'NotoSansSC',
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w500,
-                    letterSpacing: 1.0,
-                    height: 1.2,
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-
-          // 现代化的学习方式列表
-          Container(
-            height: 166,
-            padding: const EdgeInsets.all(12),
-            child: ReorderableListView(
-              buildDefaultDragHandles: false,
-              onReorder: reorderData,
-              shrinkWrap: true,
-              itemExtent: 48, // 固定每个item的高度（两项更紧凑）
-              children: <Widget>[
-                for (final step in studySteps!)
-                  ReorderableDragStartListener(
-                    key: ValueKey(step),
-                    index: step.seq,
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(16),
-                        onTap: () {
-                          if (!mounted) return;
-                          setState(() {
-                            step.state = step.state == StudyStepState.active.json ? StudyStepState.inactive.json : StudyStepState.active.json;
-                            saveStudyStep();
-                          });
-                        },
-                        child: Container(
-                          margin: const EdgeInsets.symmetric(vertical: 2),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 300),
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: step.state == StudyStepState.active.json
-                                  ? (isDarkMode ? const Color(0xFF2D3748) : const Color(0xFFF0F4F8))
-                                  : (isDarkMode ? const Color(0xFF1A202C) : Colors.white),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: step.state == StudyStepState.active.json
-                                    ? AppTheme.primaryColor
-                                    : (isDarkMode ? const Color(0xFF404040) : const Color(0xFFE2E8F0)),
-                                width: step.state == StudyStepState.active.json ? 2 : 1,
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                // 状态指示器
-                                AnimatedContainer(
-                                  duration: const Duration(milliseconds: 300),
-                                  width: 18,
-                                  height: 18,
-                                  decoration: BoxDecoration(
-                                    color: step.state == StudyStepState.active.json ? AppTheme.primaryColor : Colors.transparent,
-                                    borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(
-                                      color: step.state == StudyStepState.active.json
-                                          ? AppTheme.primaryColor
-                                          : (isDarkMode ? const Color(0xFF666666) : const Color(0xFFADB5BD)),
-                                      width: 2,
-                                    ),
-                                  ),
-                                  child: step.state == StudyStepState.active.json
-                                      ? const Icon(
-                                          Icons.check,
-                                          color: Colors.white,
-                                          size: 10,
-                                        )
-                                      : null,
-                                ),
-                                const SizedBox(width: 12),
-
-                                // 步骤文本
-                                Expanded(
-                                  child: Text(
-                                    StudyStepExt.fromString(step.studyStep).description,
-                                    textScaler: TextScaler.linear(1.0),
-                                    style: TextStyle(
-                                      fontFamily: 'NotoSansSC',
-                                      color: step.state == StudyStepState.active.json
-                                          ? AppTheme.primaryColor
-                                          : (isDarkMode ? const Color(0xFFE9ECEF) : const Color(0xFF495057)),
-                                      fontSize: 15,
-                                      fontWeight: step.state == StudyStepState.active.json ? FontWeight.w500 : FontWeight.w400,
-                                      letterSpacing: 0.5,
-                                      height: 1.3,
-                                    ),
-                                  ),
-                                ),
-
-                                // 拖拽指示器
-                                Container(
-                                  padding: const EdgeInsets.all(4),
-                                  child: Icon(
-                                    Icons.drag_indicator,
-                                    color: isDarkMode ? const Color(0xFF666666) : const Color(0xFFADB5BD),
-                                    size: 14,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
+          const SizedBox(height: 16),
+          ReorderableListView(
+            buildDefaultDragHandles: false,
+            onReorder: reorderData,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            children: [
+              for (final step in studySteps!)
+                ReorderableDragStartListener(
+                  key: ValueKey(step),
+                  index: step.seq,
+                  child: _buildStepTile(step),
+                ),
+            ],
           ),
         ],
       ),
@@ -1127,84 +705,33 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
           slivers: [
             // 美化的AppBar
             SliverAppBar(
-              expandedHeight: 88,
-              floating: false,
               pinned: true,
               backgroundColor: Colors.transparent,
               elevation: 0,
+              centerTitle: true,
               automaticallyImplyLeading: Get.currentRoute != '/index',
-              flexibleSpace: FlexibleSpaceBar(
-                background: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        AppTheme.gradientStartColor,
-                        AppTheme.gradientEndColor,
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppTheme.primaryColor.withValues(alpha: 0.3),
-                        blurRadius: 20,
-                        offset: const Offset(0, 10),
-                      ),
-                    ],
+              leading: Get.currentRoute != '/index'
+                  ? IconButton(
+                      icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
+                      onPressed: () => Get.back(),
+                    )
+                  : null,
+              flexibleSpace: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [AppTheme.gradientStartColor, AppTheme.gradientEndColor],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
-                  child: SafeArea(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        // 主要内容层
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.2),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Icon(
-                                Icons.school,
-                                color: Colors.white,
-                                size: 28,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  '今日学习计划',
-                                  textScaler: TextScaler.linear(1.0),
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w400,
-                                    height: 1.5,
-                                    letterSpacing: 1.5,
-                                  ),
-                                ),
-                                Text(
-                                  '开始你的学习之旅',
-                                  textScaler: TextScaler.linear(1.0),
-                                  style: TextStyle(
-                                    color: Colors.white.withValues(alpha: 0.9),
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w300,
-                                    height: 1.5,
-                                    letterSpacing: 0.8,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
+                ),
+              ),
+              title: const Text(
+                '今日学习计划',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 1.2,
                 ),
               ),
             ),
