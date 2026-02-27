@@ -7,6 +7,10 @@ import 'package:nnbdc/util/date_utils.dart';
 import 'package:nnbdc/util/app_clock.dart';
 
 class LearningService {
+  static void debugLog(String msg) {
+    Global.logger.d(msg);
+  }
+
   static const int newLearningWordLifeValue = 5;
 
   /// 准备今日学习单词
@@ -60,17 +64,25 @@ class LearningService {
 
       // 尝试从数据库中读取今日学习单词
       List<LearningWord> todayWords = await getTodayLearningWordsFromDb(user.id);
+      debugLog('[prepareTodayStudy] 从DB获取到今日单词数: ${todayWords.length}, 目标数: ${user.wordsPerDay}');
 
       // 生成(或补充)今日要学习的单词列表
       bool needAddNewWords = todayWords.isEmpty || (todayWords.length < (user.wordsPerDay) && addNewWordsIfNotEnough);
+      debugLog('[prepareTodayStudy] 是否需要补充单词: $needAddNewWords (todayWords.isEmpty: ${todayWords.isEmpty}, addNewWordsIfNotEnough: $addNewWordsIfNotEnough)');
+      
       bool wordExhausted = false;
       if (needAddNewWords) {
         todayWords = await genTodayWords(user.id, AppClock.now(), todayWords);
-        wordExhausted = todayWords.length < (user.wordsPerDay); // 学习中词书单词是否已经耗尽
+        wordExhausted = todayWords.length < (user.wordsPerDay); 
+        debugLog('[prepareTodayStudy] genTodayWords后今日单词数: ${todayWords.length}, wordExhausted: $wordExhausted');
       }
 
-      // 重新获取今日学习单词（可能有部分被删除）
-      todayWords = await getTodayLearningWordsFromDb(user.id);
+    // 重新获取今日学习单词
+    todayWords = await getTodayLearningWordsFromDb(user.id);
+    debugLog('[prepareTodayStudy] 最终确定今日单词数: ${todayWords.length}');
+    if (todayWords.isNotEmpty) {
+      debugLog('[prepareTodayStudy] 样词展示: ${todayWords.take(5).map((w) => w.wordId).toList()}');
+    }
 
       // 如果今日单词数量超过了设定的目标，需要削减（支持从计划页面调低数量）
       if (todayWords.length > user.wordsPerDay) {
@@ -115,7 +127,7 @@ class LearningService {
             lw.userId.equals(userId) &
             lw.lastLearningDate.isBiggerOrEqualValue(today) &
             lw.lastLearningDate.isSmallerThanValue(tomorrow) &
-            lw.batchId.isNotNull())
+            lw.batchId.isBiggerThanValue(0))
         ..orderBy([
           (lw) => OrderingTerm(expression: lw.batchId),
           (lw) => OrderingTerm(expression: lw.learningOrder),
@@ -140,12 +152,15 @@ class LearningService {
 
     // 获取所有正在学习中的单词(作为备选单词列表)
     final allLearningWords = await (db.select(db.learningWords)..where((lw) => lw.userId.equals(userId) & lw.lifeValue.isBiggerThanValue(0))).get();
+    debugLog('[genTodayWords] 学习中单词总数(lifeValue>0): ${allLearningWords.length}');
 
     // 从备选单词列表中删除那些已经选为今天学习的单词
     final List<LearningWord> candidateWords = List.from(allLearningWords);
     for (var todayWord in todayLearningWords) {
       candidateWords.removeWhere((word) => word.userId == todayWord.userId && word.wordId == todayWord.wordId);
     }
+    debugLog('[genTodayWords] 被排除的今日已选单词数: ${todayLearningWords.length}, 剩余候选池大小: ${candidateWords.length}');
+    Global.logger.d('[genTodayWords] 过滤掉今日已选单词后，候选池大小: ${candidateWords.length}');
 
     // 通过查询最新加入到学习列表的单词，得知今天是第几天添加单词
     LearningWord? latestWord;
@@ -175,12 +190,16 @@ class LearningService {
 
     // 如果需要，添加新单词到learning words
     final newLearningWords = await addNewLearningWords(userId, allLearningWords, todayDayNumber);
+    debugLog('[genTodayWords] 从词书新抓取单词数: ${newLearningWords.length}');
     candidateWords.addAll(newLearningWords);
 
     // 取{ 0, 1, 3, 6, 14 }天之前加入的单词
     final fetchDays = [0, 1, 3, 6, 14];
     for (int day in fetchDays) {
       final learningWordsOfADay = getLearningWordsAddedAtDay(todayDayNumber - day, candidateWords);
+      if (learningWordsOfADay.isNotEmpty) {
+        debugLog('[genTodayWords] 尝试从 ${day} 天前的单词中提取: ${learningWordsOfADay.length} 个可用');
+      }
 
       for (var word in learningWordsOfADay) {
         if (!todayLearningWords.any((w) => w.userId == word.userId && w.wordId == word.wordId)) {
@@ -190,6 +209,7 @@ class LearningService {
 
           // 按照后端逻辑：达到数量就立即返回
           if (todayLearningWords.length >= user.wordsPerDay) {
+            debugLog('[genTodayWords] 已达到目标数量 ${user.wordsPerDay}，通过记忆曲线逻辑完成');
             await updateTodayLearningWords(todayLearningWords, now);
             return todayLearningWords;
           }
@@ -198,11 +218,13 @@ class LearningService {
     }
 
     // 如果没有取到足够单词，则从最早的单词往前取
+    int countBeforeOldest = todayLearningWords.length;
     while (todayLearningWords.length < user.wordsPerDay) {
       final oldestWord = getOldestLearningWord(candidateWords);
 
       // 取不到更多单词了，单词书中单词耗尽
       if (oldestWord == null) {
+        Global.logger.d('[genTodayWords] 无法从候选池获取更多单词，停止。');
         break;
       }
 
@@ -212,6 +234,7 @@ class LearningService {
         candidateWords.removeWhere((w) => w.userId == oldestWord.userId && w.wordId == oldestWord.wordId);
       }
     }
+    Global.logger.d('[genTodayWords] 保底逻辑抓取了 ${todayLearningWords.length - countBeforeOldest} 个单词');
 
     // 将今日的学习单词更新到数据库
     await updateTodayLearningWords(todayLearningWords, now);
@@ -388,9 +411,11 @@ class LearningService {
 
     // 计算期望的总生命值
     final expectedTotalLifeValue = user.wordsPerDay * 29 ~/ 5;
+    debugLog('[addNewLearningWords] 当前总生命值: $currentLifeValue, 期望生命值: $expectedTotalLifeValue');
 
     // 计算需要添加的新单词数量（以达到期望的总生命值）
     int newWordCount = (expectedTotalLifeValue - currentLifeValue + 0.0).ceil() ~/ newLearningWordLifeValue;
+    debugLog('[addNewLearningWords] 计算需添加新词数: $newWordCount');
 
     // 按照后端逻辑：限制不超过每日单词数
     int wordsPerDay = user.wordsPerDay;
