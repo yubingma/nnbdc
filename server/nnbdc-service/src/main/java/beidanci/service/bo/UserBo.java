@@ -156,12 +156,12 @@ public class UserBo extends BaseBo<User> {
         return sysUser_deleted;
     }
 
-    public List<User> findUsersTotalScoreMoreThan(int score, boolean includeGuest) {
+    public List<User> findUsersWithMasteredWords(boolean includeGuest) {
         String sql;
         if (includeGuest) {
-            sql = "SELECT * FROM \"user\" WHERE (game_score > 0 OR daka_score > 0)";
+            sql = "SELECT * FROM \"user\" WHERE (mastered_words_count > 0)";
         } else {
-            sql = "SELECT * FROM \"user\" WHERE user_name NOT LIKE 'guest%' AND user_name NOT LIKE 'guess%' AND user_name NOT LIKE '游客%' AND (game_score > 0 OR daka_score > 0)";
+            sql = "SELECT * FROM \"user\" WHERE user_name NOT LIKE 'guest%' AND user_name NOT LIKE 'guess%' AND user_name NOT LIKE '游客%' AND (mastered_words_count > 0)";
         }
         return jdbcTemplate.query(sql, new EntityRowMapper<>(User.class));
     }

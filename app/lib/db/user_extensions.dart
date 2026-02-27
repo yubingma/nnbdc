@@ -236,7 +236,7 @@ extension UserExtensions on User {
     // 处理invitedBy字段，这是一个UserVo类型
     // 我们不处理这个字段，因为这需要额外的数据库查询
 
-    // 使用LevelUtil根据总积分计算等级
+    // 使用LevelUtil根据已掌握单词数计算等级
     userVo.level = LevelUtil.getLevelVoByWordCount(masteredWordsCount);
 
     userVo.continuousDakaDayCount = continuousDakaDayCount;

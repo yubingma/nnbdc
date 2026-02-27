@@ -201,7 +201,7 @@ class _MePageState extends State<MePage> {
       // 判断是否所有词书都已学完：学习中+已掌握 >= 总单词数
       var allDictsFinished = (learningWordsCount + masteredWordsCount) >= rawWordCount;
 
-      // 使用LevelUtil根据总积分计算等级
+      // 使用LevelUtil根据掌握单词数计算等级
       LevelVo levelVo = LevelUtil.getLevelVoByWordCount(masteredWordsCount);
 
       if (mounted) {
@@ -801,7 +801,7 @@ class _MePageState extends State<MePage> {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  // 卡片 3: Score / Points
+                  // 卡片 3: Learning Duration
                   Expanded(
                     flex: 1,
                     child: AspectRatio(
@@ -859,7 +859,7 @@ class _MePageState extends State<MePage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            "当前积分与排名",
+                            "词汇掌握与排名",
                             style: TextStyle(
                               color: textColor,
                               fontSize: 14,
@@ -869,7 +869,7 @@ class _MePageState extends State<MePage> {
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            "总积分: ${studyProgress!.totalScore} | 当前排名: ${studyProgress!.userOrder! == -1 ? '未排名' : studyProgress!.userOrder}",
+                            "掌握单词: ${studyProgress!.masteredWordsCount} | 当前排名: ${studyProgress!.userOrder! == -1 ? '未排名' : studyProgress!.userOrder}",
                             style: TextStyle(
                               color: numberColor,
                               fontSize: 12,

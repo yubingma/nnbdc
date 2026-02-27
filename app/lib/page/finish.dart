@@ -70,8 +70,8 @@ class FinishPageState extends State<FinishPage> {
         var user = await UserBo().getLoggedInUser();
         await Global.setLoggedInUser(user.data!);
 
-        // 记录用户打卡操作
-        await MyDatabase.instance.userOpersDao.recordDaka(user.data!.id!, remark: "用户完成打卡，获得10积分");
+        // 记录用户打卡操作 (不再提及积分奖励，因为UI上弱化积分)
+        await MyDatabase.instance.userOpersDao.recordDaka(user.data!.id!, remark: "用户完成打卡");
 
         todayDakaScore = 10; // 每天固定10分
 
@@ -369,41 +369,6 @@ class FinishPageState extends State<FinishPage> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                // 获得积分
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.star,
-                            color: AppTheme.primaryColor,
-                            size: 16,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            '获得积分',
-                            style: TextStyle(
-                              color: subtitleColor,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w400,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 5),
-                      Text(
-                        todayDakaScore.toString(),
-                        style: TextStyle(
-                          color: AppTheme.primaryColor,
-                          fontSize: 24,
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
                 // 获得魔法泡泡
                 Expanded(
                   child: Column(

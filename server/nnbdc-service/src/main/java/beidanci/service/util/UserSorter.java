@@ -56,7 +56,7 @@ public class UserSorter implements InitializingBean {
         try {
             long startTime = System.currentTimeMillis();
             log.info("正在初始化用户排序器...");
-            List<User> users = userBo.findUsersTotalScoreMoreThan(0, false);
+            List<User> users = userBo.findUsersWithMasteredWords(false);
 
             // 将用户加入到保存排序结果的哈西表，稍后对此哈希表进行排序
             userOrders.clear();
@@ -80,7 +80,7 @@ public class UserSorter implements InitializingBean {
 
         // 对用户列表进行排序
         Collections.sort(userSortRecords,
-                (UserScoreRecord o1, UserScoreRecord o2) -> o2.getTotalScore() - o1.getTotalScore());
+                (UserScoreRecord o1, UserScoreRecord o2) -> o2.getMasteredWordCount() - o1.getMasteredWordCount());
 
         // 保存排序结果到哈希表，以加快查询速度
         userOrders.clear();
@@ -91,7 +91,7 @@ public class UserSorter implements InitializingBean {
         }
 
         long endTime = System.currentTimeMillis();
-        log.info(String.format("对用户积分进行排名，耗时:%dms", endTime - startTime));
+        log.info(String.format("对用户已掌握单词数进行排名，耗时:%dms", endTime - startTime));
     }
 
     public void onUserChanged(List<User> changedUsers) {
