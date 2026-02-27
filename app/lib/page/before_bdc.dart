@@ -424,8 +424,8 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
                     user!.wordsPerDay = value;
                     dataLoaded = false;
                   });
-                  await Global.setLoggedInUser(user!);
                   await MyDatabase.instance.usersDao.updateWordsPerDay(user!.id!, value);
+                  await Global.loadUserFromDb();
                   ThrottledDbSyncService().requestSync();
                   loadData(forceSupplement: false);
                 },
