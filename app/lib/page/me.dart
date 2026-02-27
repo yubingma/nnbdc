@@ -180,25 +180,34 @@ class _MePageState extends State<MePage> {
         return;
       }
 
-      // 获取学习中的单词数量（只统计生命值大于0的单词）
-      var learningWords = await (db.select(db.learningWords)
-            ..where((lw) => lw.userId.equals(user.id))
-            ..where((lw) => lw.lifeValue.isBiggerThanValue(0)))
-          .get();
-      var learningWordsCount = learningWords.length;
-
       // 获取所有词书的学习状态
       var learningDicts = await MyDatabase.instance.learningDictsDao.getLearningDictsOfUser(user.id);
 
-      // 获取词书中的单词总数
-      var dictWords = await (db.select(db.dictWords)..where((dw) => dw.dictId.isIn(learningDicts.map((d) => d.dictId).toList()))).get();
-      var rawWordCount = dictWords.length;
+      // 获取词书中的唯一单词总数
+      var dictWordIds = await (db.selectOnly(db.dictWords)
+            ..addColumns([db.dictWords.wordId])
+            ..where(db.dictWords.dictId.isIn(learningDicts.map((d) => d.dictId).toList())))
+          .get();
+      var uniqueWordIdsInDicts = dictWordIds.map((row) => row.read(db.dictWords.wordId)!).toSet();
+      var rawWordCount = uniqueWordIdsInDicts.length;
+
+      // 获取学习中的单词数量（只统计生命值大于0的且在当前所选词书中的单词）
+      var allLearningWords = await (db.select(db.learningWords)
+            ..where((lw) => lw.userId.equals(user.id))
+            ..where((lw) => lw.lifeValue.isBiggerThanValue(0)))
+          .get();
+      var learningWordIds = allLearningWords.map((w) => w.wordId).toSet();
+      var learningWordsInSelectedDictsCount = learningWordIds.intersection(uniqueWordIdsInDicts).length;
+      var learningWordsCount = learningWordsInSelectedDictsCount;
 
       // 获取已掌握单词数量（从"已掌握"词书的dict_word中查询）
-      var masteredWordIds = await db.masteredWordsDao.getMasteredWordIdSet(user.id);
-      var masteredWordsCount = masteredWordIds.length;
+      var allMasteredWordIds = await db.masteredWordsDao.getMasteredWordIdSet(user.id);
+      
+      // 只统计当前所选词书中的已掌握单词，避免进度超过100%
+      var masteredWordIdsInSelectedDicts = allMasteredWordIds.intersection(uniqueWordIdsInDicts);
+      var masteredWordsCount = masteredWordIdsInSelectedDicts.length;
 
-      // 判断是否所有词书都已学完：学习中+已掌握 >= 总单词数
+      // 判断是否所有词书都已学完(已经取不出词进入学习中单词池了)：学习中+已掌握 >= 总单词数
       var allDictsFinished = (learningWordsCount + masteredWordsCount) >= rawWordCount;
 
       // 使用LevelUtil根据掌握单词数计算等级

@@ -23,7 +23,7 @@ class StudyProgress {
   int wordsPerDay;
   int continuousDakaDayCount;
   int throwDiceChance;
-  bool allDictsFinished;
+  bool allDictsFinished; // 所有词书都已学完(已经取不出词进入学习中单词池了)
   bool todayLearningFinished;
   List<LearningDict> learningDicts;
   int totalLearningSeconds;
