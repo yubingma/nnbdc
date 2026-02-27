@@ -631,6 +631,12 @@ class MyDatabase extends _$MyDatabase {
           Global.logger.i('✅ 已将 learning_words 掌握度数据迁移至 FSRS 稳定性参数');
 
           // 3. 删除旧字段 (mastery_level)
+          // 注意：必须在 alterTable 之前先删除引用该列的旧索引，
+          // 因为 alterTable 会尝试在重建表后重新创建索引，如果索引引用了已删除的列会报错。
+          await customStatement('DROP INDEX IF EXISTS idx_learning_words_user_mastery');
+          await customStatement('DROP INDEX IF EXISTS idx_learning_words_user_life');
+          await customStatement('DROP INDEX IF EXISTS idx_learning_words_add_time_life');
+
           // 由于 masteryLevel 已经在 table.dart 的 LearningWords 类中删除了，
           // 调用 m.alterTable(TableMigration(learningWords)) 会自动识别并执行“删除列”的操作
           await m.alterTable(TableMigration(learningWords));
@@ -642,10 +648,7 @@ class MyDatabase extends _$MyDatabase {
         await customStatement("DELETE FROM user_db_logs WHERE tbl_name = 'learningWords' OR tbl_name = 'learning_words';");
         Global.logger.i('✅ 已清空旧批次数据和同步日志');
 
-        // 5. 更新索引
-        await customStatement('DROP INDEX IF EXISTS idx_learning_words_user_mastery');
-        await customStatement('DROP INDEX IF EXISTS idx_learning_words_user_life');
-        await customStatement('DROP INDEX IF EXISTS idx_learning_words_add_time_life');
+        // 5. 更新索引 (新索引)
         await customStatement('''
           CREATE INDEX IF NOT EXISTS idx_learning_words_user_stability 
           ON learning_words (user_id, stability)
