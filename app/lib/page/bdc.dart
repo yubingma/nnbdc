@@ -483,6 +483,10 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   /// 当前正在播放的所有提示音 Future 列表，用于等待所有提示音播放完成
   final List<Future<void>> _playingCorrectSounds = [];
 
+  /// 学习时长计时器
+  Timer? _learningTimer;
+  int _accumulatedSeconds = 0;
+
   /// Tab控制器，用于管理说/选两个tab
   TabController? _tabController;
 
@@ -700,7 +704,59 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       vsync: this,
     );
 
+    _startLearningTimer();
+
     loadData();
+  }
+
+  void _startLearningTimer() {
+    _learningTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      _accumulatedSeconds++;
+      if (_accumulatedSeconds % 10 == 0) {
+        _syncLearningTimeToDb();
+      }
+    });
+  }
+
+  Future<void> _syncLearningTimeToDb() async {
+    if (_accumulatedSeconds <= 0) return;
+    int secsToSync = _accumulatedSeconds;
+    _accumulatedSeconds = 0;
+
+    try {
+      final user = Global.getLoggedInUser();
+      if (user == null) return;
+      final dao = MyDatabase.instance.usersDao;
+      final dbUser = await dao.getUserById(user.id);
+      if (dbUser != null) {
+        // 重置今日学习时长（如果不是今天）
+        int todaySecs = dbUser.todayLearningSeconds ?? 0;
+        if (dbUser.lastLearningDate != null) {
+          final now = DateTime.now();
+          if (dbUser.lastLearningDate!.year != now.year ||
+              dbUser.lastLearningDate!.month != now.month ||
+              dbUser.lastLearningDate!.day != now.day) {
+            todaySecs = 0;
+          }
+        }
+
+        final newTotal = (dbUser.totalLearningSeconds ?? 0) + secsToSync;
+        final newToday = todaySecs + secsToSync;
+        
+        final updatedDbUser = dbUser.copyWith(
+          totalLearningSeconds: drift.Value(newTotal),
+          todayLearningSeconds: drift.Value(newToday),
+          lastLearningDate: drift.Value(DateTime.now()),
+        );
+        
+        await dao.saveUser(updatedDbUser, true);
+        Global.updateUserCache(updatedDbUser);
+      }
+    } catch (e) {
+      Global.logger.e("同步学习时长失败", error: e);
+      // 如果失败把时间加回去
+      _accumulatedSeconds += secsToSync;
+    }
   }
 
   AsrLanguage decideAsrLanguage() {
@@ -770,6 +826,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
   @override
   void dispose() {
+    _learningTimer?.cancel();
+    _syncLearningTimeToDb();
+    
     asr.removeStateListener((state) {
       if (mounted) {
         setState(() {});

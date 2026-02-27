@@ -146,6 +146,12 @@ class Users extends Table {
   /// 今日学习是否已经开始（点击了今日学习计划页面的“开始学习”按钮）
   BoolColumn get todayStudyStarted => boolean().withDefault(const Constant(false))();
 
+  /// 学习总时长（秒）
+  IntColumn get totalLearningSeconds => integer().nullable().withDefault(const Constant(0))();
+
+  /// 今日学习时长（秒）
+  IntColumn get todayLearningSeconds => integer().nullable().withDefault(const Constant(0))();
+
   // 订阅相关字段（仅支持iOS平台）
 
   // iOS订阅字段

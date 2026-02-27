@@ -207,7 +207,7 @@ class MyDatabase extends _$MyDatabase {
   // you should bump this number whenever you change or add a table definition. Migrations
   // are covered later in this readme.
   @override
-  int get schemaVersion => 21;
+  int get schemaVersion => 22;
 
   @override
   MigrationStrategy get migration {
@@ -284,6 +284,9 @@ class MyDatabase extends _$MyDatabase {
           }
           if (from < 21) {
             await _migrateFromV20ToV21AddDeletable(m);
+          }
+          if (from < 22) {
+            await _migrateFromV21ToV22AddLearningSeconds(m);
           }
         } catch (e, stackTrace) {
           // 升级失败，记录错误日志
@@ -530,6 +533,18 @@ class MyDatabase extends _$MyDatabase {
       // 系统词书（ownerId 是系统用户）、生词本和已掌握 不可删除
       // 系统用户 ID 为 Global.sysUserId (15118)
       await customStatement("UPDATE dicts SET deletable = 0 WHERE name IN ('生词本', '已掌握') OR owner_id = '${Global.sysUserId}'");
+    });
+  }
+
+  /// 从版本 21 升级到版本 22：添加“学习时长”字段
+  Future<void> _migrateFromV21ToV22AddLearningSeconds(Migrator m) async {
+    await transaction(() async {
+      try {
+        await m.addColumn(users, users.totalLearningSeconds);
+        await m.addColumn(users, users.todayLearningSeconds);
+      } catch (e) {
+        Global.logger.w('添加学习时长字段失败: $e');
+      }
     });
   }
 

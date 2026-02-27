@@ -223,6 +223,8 @@ class _MePageState extends State<MePage> {
             allDictsFinished,
             UserHelper.isTodayLearningFinishedFromUser(user),
             learningDicts,
+            totalLearningSeconds: user.totalLearningSeconds ?? 0,
+            todayLearningSeconds: user.todayLearningSeconds ?? 0,
           );
         });
       }
@@ -812,15 +814,15 @@ class _MePageState extends State<MePage> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.star_border, color: Colors.white70, size: 28),
+                          const Icon(Icons.schedule, color: Colors.white70, size: 28),
                           const SizedBox(height: 4),
                           Text(
-                            studyProgress!.totalScore.toString(),
+                            (studyProgress!.totalLearningSeconds / 3600.0).toStringAsFixed(1),
                             style: const TextStyle(color: Colors.amber, fontSize: 22, fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 4),
                           const Text(
-                            "累计\n积分",
+                            "学习总\n时长(时)",
                             textAlign: TextAlign.center,
                             style: TextStyle(color: Colors.white54, fontSize: 10, height: 1.1),
                           ),
@@ -2653,8 +2655,8 @@ class _DictCardState extends State<DictCard> {
                       const SizedBox(height: 4),
                       Text(
                         widget.dictInfo.name == '生词本'
-                            ? '${masteredCount} / ${actualWordCount ?? 0}'
-                            : '${masteredCount} / ${widget.dictInfo.wordCount}',
+                            ? '$masteredCount / ${actualWordCount ?? 0}'
+                            : '$masteredCount / ${widget.dictInfo.wordCount}',
                         style: TextStyle(
                           color: Colors.white.withValues(alpha: 0.8),
                           fontSize: 14,

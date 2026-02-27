@@ -181,6 +181,17 @@ public class User extends UuidPo {
     @Column(name = "today_study_started", nullable = false)
     private Boolean todayStudyStarted = false;
 
+    /**
+     * 总计学习时长（秒）
+     */
+    @Column(name = "total_learning_seconds", nullable = false)
+    private Integer totalLearningSeconds = 0;
+
+    /**
+     * 今日学习时长（秒）
+     */
+    @Column(name = "today_learning_seconds", nullable = false)
+    private Integer todayLearningSeconds = 0;
 
     /**
      * ASR答对判定规则：ONE/HALF/ALL
@@ -332,6 +343,22 @@ public class User extends UuidPo {
 
     public void setTodayStudyStarted(Boolean todayStudyStarted) {
         this.todayStudyStarted = todayStudyStarted;
+    }
+
+    public Integer getTotalLearningSeconds() {
+        return totalLearningSeconds;
+    }
+
+    public void setTotalLearningSeconds(Integer totalLearningSeconds) {
+        this.totalLearningSeconds = totalLearningSeconds;
+    }
+
+    public Integer getTodayLearningSeconds() {
+        return todayLearningSeconds;
+    }
+
+    public void setTodayLearningSeconds(Integer todayLearningSeconds) {
+        this.todayLearningSeconds = todayLearningSeconds;
     }
 
     /**

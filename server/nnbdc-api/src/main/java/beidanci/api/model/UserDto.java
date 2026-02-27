@@ -40,6 +40,8 @@ public class UserDto {
     private Integer dakaScore;
     private Boolean enableAllWrong;
     private Boolean todayStudyStarted;
+    private Integer totalLearningSeconds;
+    private Integer todayLearningSeconds;
 
     // =========================
     // 订阅 / 会员相关字段
@@ -341,6 +343,22 @@ public class UserDto {
 
     public void setTodayStudyStarted(Boolean todayStudyStarted) {
         this.todayStudyStarted = todayStudyStarted;
+    }
+
+    public Integer getTotalLearningSeconds() {
+        return totalLearningSeconds;
+    }
+
+    public void setTotalLearningSeconds(Integer totalLearningSeconds) {
+        this.totalLearningSeconds = totalLearningSeconds;
+    }
+
+    public Integer getTodayLearningSeconds() {
+        return todayLearningSeconds;
+    }
+
+    public void setTodayLearningSeconds(Integer todayLearningSeconds) {
+        this.todayLearningSeconds = todayLearningSeconds;
     }
 
     public Boolean getIsPremiumIos() {
