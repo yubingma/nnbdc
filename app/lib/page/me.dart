@@ -1032,41 +1032,6 @@ class _MePageState extends State<MePage> {
                 return const SizedBox.shrink();
               }),
 
-              // 非会员黄色提示框：说明每日单词限额
-              if (!SubscriptionUtil.isPremium())
-                Container(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: Colors.amber.shade100,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.amber.shade300),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(Icons.info_outline, color: Colors.amber.shade900, size: 18),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              '非会员每日最多学习 20 个单词，开通会员可解除限制。',
-                              style: TextStyle(
-                                color: Colors.amber.shade900,
-                                fontSize: 13,
-                                height: 1.2,
-                                fontFamily: 'NotoSansSC',
-                              ),
-                              textScaler: const TextScaler.linear(1.0),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
