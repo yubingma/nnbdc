@@ -736,7 +736,7 @@ class _MePageState extends State<MePage> {
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   Text(
-                                    "天数",
+                                    "学习天数",
                                     style: TextStyle(
                                       color: numberColor,
                                       fontSize: 9,
@@ -957,7 +957,7 @@ class _MePageState extends State<MePage> {
                                 '解锁 100+ 每日单词及更多专属特权',
                                 style: TextStyle(
                                   fontSize: 12,
-                                  fontWeight: FontWeight.w600,
+                                  fontWeight: FontWeight.normal,
                                   color: isDarkModeEnabled ? Colors.amber.shade200 : Colors.amber.shade900,
                                   fontFamily: 'NotoSansSC',
                                 ),
@@ -1285,7 +1285,7 @@ class _MePageState extends State<MePage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                '最近30天打卡记录',
+                '最近30天学习情况',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w500,
