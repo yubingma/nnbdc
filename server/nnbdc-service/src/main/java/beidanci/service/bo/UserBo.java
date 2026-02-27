@@ -159,9 +159,9 @@ public class UserBo extends BaseBo<User> {
     public List<User> findUsersWithMasteredWords(boolean includeGuest) {
         String sql;
         if (includeGuest) {
-            sql = "SELECT * FROM \"user\" WHERE (mastered_words_count > 0)";
+            sql = "SELECT * FROM \"user\" WHERE (mastered_words > 0)";
         } else {
-            sql = "SELECT * FROM \"user\" WHERE user_name NOT LIKE 'guest%' AND user_name NOT LIKE 'guess%' AND user_name NOT LIKE '游客%' AND (mastered_words_count > 0)";
+            sql = "SELECT * FROM \"user\" WHERE user_name NOT LIKE 'guest%' AND user_name NOT LIKE 'guess%' AND user_name NOT LIKE '游客%' AND (mastered_words > 0)";
         }
         return jdbcTemplate.query(sql, new EntityRowMapper<>(User.class));
     }
