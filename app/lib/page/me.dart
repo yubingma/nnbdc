@@ -744,7 +744,7 @@ class _MePageState extends State<MePage> {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 const Text(
-                                  "DAY",
+                                  "天数",
                                   style: TextStyle(
                                     color: Colors.amber,
                                     fontSize: 10,
@@ -789,7 +789,7 @@ class _MePageState extends State<MePage> {
                           ),
                           const SizedBox(height: 4),
                           const Text(
-                            "Words\nLearned",
+                            "已掌握\n单词",
                             textAlign: TextAlign.center,
                             style: TextStyle(color: Colors.white54, fontSize: 10, height: 1.1),
                           ),
@@ -820,7 +820,7 @@ class _MePageState extends State<MePage> {
                           ),
                           const SizedBox(height: 4),
                           const Text(
-                            "Total\nScore",
+                            "累计\n积分",
                             textAlign: TextAlign.center,
                             style: TextStyle(color: Colors.white54, fontSize: 10, height: 1.1),
                           ),
@@ -848,7 +848,7 @@ class _MePageState extends State<MePage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
-                            "CURRENT SCORE & RANKING",
+                            "当前积分与排名",
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 14,
