@@ -11,6 +11,7 @@ import '../global.dart';
 import '../services/throttled_sync_service.dart';
 import '../util/error_handler.dart';
 import 'db.dart';
+import '../constants.dart';
 
 part 'dao.g.dart';
 
@@ -1048,11 +1049,6 @@ class LearningWordsDao extends DatabaseAccessor<MyDatabase> with _$LearningWords
 
   Future<void> saveEntity(LearningWord entry, bool genLog) async {
     try {
-      // 检查life value是否在0-5之间
-      if (entry.lifeValue < 0 || entry.lifeValue > 5) {
-        ToastUtil.error('life value must be between 0 and 5');
-        return;
-      }
 
       var existing = await getById(entry.userId, entry.wordId);
       if (existing == null) {
@@ -1096,8 +1092,8 @@ class LearningWordsDao extends DatabaseAccessor<MyDatabase> with _$LearningWords
           case 'wordId':
             query = query..where((lw) => lw.wordId.equals(fieldValue.toString()));
             break;
-          case 'lifeValue':
-            query = query..where((lw) => lw.lifeValue.equals(fieldValue is int ? fieldValue : int.tryParse(fieldValue.toString()) ?? 0));
+          case 'stability':
+            query = query..where((lw) => lw.stability.equals(fieldValue is double ? fieldValue : double.tryParse(fieldValue.toString()) ?? 0.0));
             break;
           case 'lastLearningDate':
             if (fieldValue is DateTime) {
@@ -1128,13 +1124,13 @@ class LearningWordsDao extends DatabaseAccessor<MyDatabase> with _$LearningWords
     }
   }
 
-  /// 删除生命值为零的学习中单词
-  Future<int> deleteZeroLifeWords(String userId) async {
+  /// 删除已掌握的学习中单词（掌握度为5）
+  Future<int> deleteMasteredLearningWords(String userId) async {
     final query = delete(learningWords)
-      ..where((lw) => lw.userId.equals(userId) & lw.lifeValue.equals(0));
+      ..where((lw) => lw.userId.equals(userId) & lw.stability.isBiggerOrEqualValue(Constants.graduationStability));
     final deletedCount = await query.go();
     if (deletedCount > 0) {
-      Global.logger.d('已从 learningWords 中删除 $deletedCount 个生命值为零的单词');
+      Global.logger.d('已从 learningWords 中删除 $deletedCount 个已掌握（掌握度为5）的单词');
     }
     return deletedCount;
   }
@@ -1701,7 +1697,7 @@ class MasteredWordsDao extends DatabaseAccessor<MyDatabase> with _$MasteredWords
         final steps = await db.userStudyStepsDao.getActiveUserStudySteps(userId);
         await db.learningWordsDao.saveEntity(
             learningWord.copyWith(
-              lifeValue: 0,
+              stability: Value(Constants.graduationStability),
               lastLearningDate: Value(now),
               learnedTimes: learningWord.learnedTimes + 1,
               todayLearnedTimes: steps.length,
@@ -1711,7 +1707,7 @@ class MasteredWordsDao extends DatabaseAccessor<MyDatabase> with _$MasteredWords
         if (deleteLearningWord) {
           await db.learningWordsDao.deleteEntity(learningWord, true);
         } else {
-          await db.learningWordsDao.saveEntity(learningWord.copyWith(lifeValue: 0), true);
+          await db.learningWordsDao.saveEntity(learningWord.copyWith(stability: Value(Constants.graduationStability)), true);
         }
       }
     }

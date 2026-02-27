@@ -881,7 +881,6 @@ class LearningWordVo {
 
   int addDay;
 
-  int lifeValue;
 
   DateTime? lastLearningDate;
 
@@ -892,9 +891,19 @@ class LearningWordVo {
 
   int learnedTimes;
 
+  /// FSRS 相关字段
+  double? stability;
+  double? difficulty;
+  int? elapsedDays;
+  int? scheduledDays;
+  int? reps;
+  int? lapses;
+  int? state; // 0: New, 1: Learning, 2: Review, 3: Relearning
+
   WordVo word;
 
-  LearningWordVo(this.user, this.addTime, this.addDay, this.lifeValue, this.lastLearningDate, this.learningOrder, this.learnedTimes, this.word, [this.batchId]);
+  LearningWordVo(this.user, this.addTime, this.addDay, this.lastLearningDate, this.learningOrder, this.learnedTimes, this.word,
+      [this.batchId, this.stability, this.difficulty, this.elapsedDays, this.scheduledDays, this.reps, this.lapses, this.state]);
 
   factory LearningWordVo.fromJson(Map<String, dynamic> json) => _$LearningWordVoFromJson(json);
 

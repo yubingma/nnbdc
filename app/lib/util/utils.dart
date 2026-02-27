@@ -672,23 +672,6 @@ class Util {
     return await WordBo().searchWordLocalOnly(spell);
   }
 
-  /// 根据单词的生命值计算下次学习该单词应在多少天之后
-  ///
-  /// @param lifeValue
-  /// @return
-  static int calcuNextStudyDayByLifeValue(int lifeValue) {
-    var nextDay = 0;
-    if (lifeValue == 5) {
-      nextDay = 1;
-    } else if (lifeValue == 4) {
-      nextDay = 2;
-    } else if (lifeValue == 3) {
-      nextDay = 3;
-    } else if (lifeValue == 2) {
-      nextDay = 8;
-    }
-    return nextDay;
-  }
 
   /// 关闭输入法
   static void closeIme() {

@@ -1661,7 +1661,7 @@ class WordListPageState extends State<WordListPage>
             }
             // 同时更新进度条显示逻辑所依赖的 tag 数据
             if (word.tag is LearningWordVo) {
-              (word.tag as LearningWordVo).lifeValue = 0;
+              (word.tag as LearningWordVo).stability = 180.0;
             }
           });
           return;
@@ -1708,7 +1708,7 @@ class WordListPageState extends State<WordListPage>
             learningStatusMap[word.word.id!] = true;
           }
           if (word.tag is LearningWordVo) {
-            (word.tag as LearningWordVo).lifeValue = 0;
+            (word.tag as LearningWordVo).stability = 180.0;
           }
           words.remove(word);
           totalWordCount--;

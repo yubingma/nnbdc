@@ -487,6 +487,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   Timer? _learningTimer;
   int _accumulatedSeconds = 0;
 
+  /// 当前单词学习的开始时间
+  DateTime? _wordStartTime;
+
   /// Tab控制器，用于管理说/选两个tab
   TabController? _tabController;
 
@@ -998,7 +1001,17 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
           Future.delayed(Duration(milliseconds: 150)).then((_) {
             _playingCorrectSounds.remove(soundFuture);
             if (_playingCorrectSounds.isEmpty && _isAnswerCorrect) {
-              getNextWord(true);
+              // 计算 FSRS 评分 (1-4)
+              int rating = 3; // 默认 Good
+              if (_wordStartTime != null) {
+                final responseTime = DateTime.now().difference(_wordStartTime!).inSeconds;
+                if (responseTime < 3) {
+                  rating = 4; // Easy
+                } else if (responseTime >= 10) {
+                  rating = 2; // Hard
+                }
+              }
+              getNextWord(true, fsrsRating: rating);
             }
           });
         });
@@ -1020,12 +1033,23 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       if (isMatch) {
         _isAnswerCorrect = true;
 
+        // 计算 FSRS 评分 (1-4)
+        int rating = 3; // 默认 Good
+        if (_wordStartTime != null) {
+          final responseTime = DateTime.now().difference(_wordStartTime!).inSeconds;
+          if (responseTime < 2 && (_currentScore == null || _currentScore! >= 90)) {
+            rating = 4; // Easy
+          } else if (responseTime >= 7) {
+            rating = 2; // Hard
+          }
+        }
+
         // 播放正确提示音
         final soundFuture = SoundUtil.playAssetSoundConcurrent('correct.mp3', 1.5, 0.2);
         soundFuture.whenComplete(() async {
           // 播放一遍单词的标准发音
           await SoundUtil.playPronounceSound2(_word!, _audioPlayer);
-          getNextWord(true);
+          getNextWord(true, fsrsRating: rating);
         });
       }
     }
@@ -1085,8 +1109,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   }
 
   /// 获取下一个单词
-  /// @param gotoNext true: 取下一个位置的单词 false: 获取当前位置的单词
-  getNextWord(bool gotoNext) async {
+  /// @param gotoNext true: 取下一个位置的单词 false: 获取当前位置 of the单词
+  getNextWord(bool gotoNext, {int? fsrsRating}) async {
     try {
       asr.stopAsr();
       asr.reset();
@@ -1096,23 +1120,22 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       _wordImageEdited = false;
 
       //如果是从批次单词列表跳转来的，则第一次从服务端取单词时，通知服务端进入下一个学习批次
-      var shouldEnterNextBatch = false;
       bool isFromBatchWordList = false;
       if (_args.fromPage != null && _args.fromPage == 'batch_word_list') {
-        shouldEnterNextBatch = false;
         isFromBatchWordList = true;
         // 立即清除标记，通过参数传递给 handleWord
         _args.fromPage = null;
         await GetStorage().write("BdcPageArgs", _args.toJson());
       }
 
-      // 循环调用直到获取到有效单词或遇到其他状态
+      // 循环读取，直到获取到非“已掌握”单词（如果是 gotoNext=true，服务端可能会自动跳过已掌握词，但前端也要防御）
       int triedCount = 0;
       while (true) {
-        var resp = await StudyBo().getNextWord(_isAnswerCorrect, _isWordMastered, shouldEnterNextBatch, triedCount == 0 ? gotoNext : true);
+        final result = await StudyBo().getWord(_isWordMastered, _isAnswerCorrect, triedCount == 0 ? gotoNext : true, fsrsRating: fsrsRating);
         triedCount++;
-        if (!resp.success) {
-          if (resp.code == 'NEW_DAY') {
+
+        if (!result.success) {
+          if (result.code == 'NEW_DAY') {
             if (!mounted) return;
             await showDialog(
               context: context,
@@ -1131,23 +1154,20 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
             Get.offAllNamed('/index', arguments: IndexPageArgs(4));
             return;
           }
-          ToastUtil.error(resp.msg!);
-          Get.toNamed("/email_login");
+          ToastUtil.error(result.msg ?? '获取单词失败');
           return;
         }
 
-        _currentGetWordResult = resp.data;
+        _currentGetWordResult = result.data;
+        if (_currentGetWordResult == null) break;
 
         // 如果单词已掌握，重置状态并继续获取下一个单词
         if (_currentGetWordResult!.wordMastered) {
-          // 重置状态，准备获取下一个单词
-          _isAnswerCorrect = true; // 设置为true以便前进到下一个单词
-          _isWordMastered = false; // 重置掌握状态
-          shouldEnterNextBatch = false; // 后续调用不需要进入下一阶段
-          continue; // 继续循环获取下一个单词
+          _isAnswerCorrect = true;
+          _isWordMastered = false;
+          fsrsRating = null; // 后续跳词不需要评分
+          continue;
         }
-
-        // 获取到有效单词，跳出循环
         break;
       }
 
@@ -1247,6 +1267,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         // 检查 studyStep 和 word 是否还是原来的值
         if (savedStudyStep == _studyStep && savedWordId == _word?.id) {
           Global.logger.d('BDC: playWordAndFirstSentence 播放完成，准备启动ASR (studyStep=$_studyStep, wordId=${_word?.id})');
+          _wordStartTime = DateTime.now(); // 记录 ASR 开始时间，作为响应时长的起点
           _handleTabChangeForAsr();
         } else {
           Global.logger.d(

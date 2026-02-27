@@ -13,6 +13,7 @@ import 'package:nnbdc/util/level_util.dart';
 import 'package:nnbdc/util/utils.dart';
 
 import '../../services/throttled_sync_service.dart';
+import '../../constants.dart';
 
 class WordBo {
   static final WordBo _instance = WordBo._internal();
@@ -447,10 +448,10 @@ class WordBo {
     }
     try {
       final query = db.select(db.learningWords)
-        ..where((tbl) => tbl.userId.equals(userId) & tbl.lifeValue.isBiggerThanValue(0))
+        ..where((tbl) => tbl.userId.equals(userId) & tbl.stability.isSmallerThanValue(Constants.graduationStability))
         ..orderBy([
           (tbl) => OrderingTerm(expression: tbl.addTime),
-          (tbl) => OrderingTerm(expression: tbl.lifeValue),
+          (tbl) => OrderingTerm.asc(tbl.stability),
           (tbl) => OrderingTerm(expression: tbl.wordId)
         ])
         ..limit(pageSize, offset: fromIndex);
@@ -459,7 +460,7 @@ class WordBo {
       final countQuery = db.selectOnly(db.learningWords)
         ..addColumns([countAll()])
         ..where(db.learningWords.userId.equals(userId))
-        ..where(db.learningWords.lifeValue.isBiggerThanValue(0));
+        ..where(db.learningWords.stability.isSmallerThanValue(Constants.graduationStability));
       final countResult = await countQuery.getSingle();
       final total = countResult.read(countAll()) ?? 0;
       List<LearningWordVo> learningWordVos = [];
@@ -483,8 +484,22 @@ class WordBo {
             meaningItemVos.add(MeaningItemVo(mi.id, mi.ciXing, mi.meaning, null, null, null));
           }
           wordVo.meaningItems = meaningItemVos;
-          final learningWordVo =
-              LearningWordVo(userVo, lw.addTime, lw.addDay, lw.lifeValue, lw.lastLearningDate, lw.learningOrder, lw.learnedTimes, wordVo);
+          final learningWordVo = LearningWordVo(
+              userVo,
+              lw.addTime,
+              lw.addDay,
+              lw.lastLearningDate,
+              lw.learningOrder,
+              lw.learnedTimes,
+              wordVo,
+              lw.batchId,
+              lw.stability,
+              lw.difficulty,
+              lw.elapsedDays,
+              lw.scheduledDays,
+              lw.reps,
+              lw.lapses,
+              lw.state);
           learningWordVos.add(learningWordVo);
         }
       }
@@ -546,8 +561,22 @@ class WordBo {
           meaningItemVos.add(MeaningItemVo(mi.id, mi.ciXing, mi.meaning, null, null, null));
         }
         wordVo.meaningItems = meaningItemVos;
-        final learningWordVo =
-            LearningWordVo(userVo, lw.addTime, lw.addDay, lw.lifeValue, lw.lastLearningDate, lw.learningOrder, lw.learnedTimes, wordVo);
+        final learningWordVo = LearningWordVo(
+            userVo,
+            lw.addTime,
+            lw.addDay,
+            lw.lastLearningDate,
+            lw.learningOrder,
+            lw.learnedTimes,
+            wordVo,
+            lw.batchId,
+            lw.stability,
+            lw.difficulty,
+            lw.elapsedDays,
+            lw.scheduledDays,
+            lw.reps,
+            lw.lapses,
+            lw.state);
         learningWordVos.add(learningWordVo);
       }
     }
@@ -605,8 +634,22 @@ class WordBo {
           meaningItemVos.add(MeaningItemVo(mi.id, mi.ciXing, mi.meaning, null, null, null));
         }
         wordVo.meaningItems = meaningItemVos;
-        final learningWordVo =
-            LearningWordVo(userVo, lw.addTime, lw.addDay, lw.lifeValue, lw.lastLearningDate, lw.learningOrder, lw.learnedTimes, wordVo);
+        final learningWordVo = LearningWordVo(
+            userVo,
+            lw.addTime,
+            lw.addDay,
+            lw.lastLearningDate,
+            lw.learningOrder,
+            lw.learnedTimes,
+            wordVo,
+            lw.batchId,
+            lw.stability,
+            lw.difficulty,
+            lw.elapsedDays,
+            lw.scheduledDays,
+            lw.reps,
+            lw.lapses,
+            lw.state);
         learningWordVos.add(learningWordVo);
       }
     }
@@ -1087,7 +1130,8 @@ class WordBo {
         return Result("SUCCESS", "获取成功", true)..data = -1;
       }
       final learningWordQuery = db.select(db.learningWords)
-        ..where((tbl) => tbl.userId.equals(userId) & tbl.wordId.equals(word.id) & tbl.lifeValue.isBiggerThanValue(0));
+        ..where((tbl) =>
+            tbl.userId.equals(userId) & tbl.wordId.equals(word.id) & tbl.stability.isSmallerThanValue(Constants.graduationStability));
       final learningWord = await learningWordQuery.getSingleOrNull();
       if (learningWord == null) {
         Global.logger.d('用户未在学习单词 $spell');
@@ -1095,15 +1139,15 @@ class WordBo {
       }
       final countQuery = db.selectOnly(db.learningWords)..addColumns([countAll()]);
       final userIdCondition = db.learningWords.userId.equals(userId);
-      final lifeValueCondition = db.learningWords.lifeValue.isBiggerThanValue(0);
+      final stabilityThresholdCondition = db.learningWords.stability.isSmallerThanValue(Constants.graduationStability);
       final beforeTimeCondition = db.learningWords.addTime.isSmallerThanValue(learningWord.addTime);
-      final sameTimeSmallerLifeCondition =
-          db.learningWords.addTime.equals(learningWord.addTime) & db.learningWords.lifeValue.isSmallerThanValue(learningWord.lifeValue);
-      final sameTimeSameLifeSmallerWordIdCondition = db.learningWords.addTime.equals(learningWord.addTime) &
-          db.learningWords.lifeValue.equals(learningWord.lifeValue) &
+      final sameTimeMoreStableCondition =
+          db.learningWords.addTime.equals(learningWord.addTime) & db.learningWords.stability.isBiggerThanValue(learningWord.stability ?? 0.0);
+      final sameTimeSameStabilitySmallerWordIdCondition = db.learningWords.addTime.equals(learningWord.addTime) &
+          db.learningWords.stability.equals(learningWord.stability ?? 0.0) &
           db.learningWords.wordId.isSmallerThanValue(learningWord.wordId);
       countQuery.where(
-          userIdCondition & lifeValueCondition & (beforeTimeCondition | sameTimeSmallerLifeCondition | sameTimeSameLifeSmallerWordIdCondition));
+          userIdCondition & stabilityThresholdCondition & (beforeTimeCondition | sameTimeMoreStableCondition | sameTimeSameStabilitySmallerWordIdCondition));
       final countResult = await countQuery.getSingle();
       int position = countResult.read(countAll()) ?? 0;
       position += 1;
@@ -1481,7 +1525,7 @@ class WordBo {
       final learningWordsCountQuery = db.selectOnly(db.learningWords)
         ..addColumns([countAll()])
         ..where(db.learningWords.userId.equals(user.id))
-        ..where(db.learningWords.lifeValue.isBiggerThanValue(0));
+        ..where(db.learningWords.stability.isSmallerThanValue(Constants.graduationStability));
       final learningWordsCountResult = await learningWordsCountQuery.getSingle();
       wordLists.add(WordList("学习中", learningWordsCountResult.read(countAll()) ?? 0));
 
@@ -1579,7 +1623,21 @@ class WordBo {
         }
         wordVo.meaningItems = meaningItemVos;
         final learningWordVo = LearningWordVo(
-            userVo, lw.addTime, lw.addDay, lw.lifeValue, lw.lastLearningDate, lw.learningOrder, lw.learnedTimes, wordVo, lw.batchId);
+            userVo,
+            lw.addTime,
+            lw.addDay,
+            lw.lastLearningDate,
+            lw.learningOrder,
+            lw.learnedTimes,
+            wordVo,
+            lw.batchId,
+            lw.stability,
+            lw.difficulty,
+            lw.elapsedDays,
+            lw.scheduledDays,
+            lw.reps,
+            lw.lapses,
+            lw.state);
         learningWordVos.add(learningWordVo);
       }
     }

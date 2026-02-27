@@ -5,9 +5,9 @@ import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,7 +18,6 @@ import beidanci.service.exception.InvalidMeaningFormatException;
 import beidanci.service.exception.ParseException;
 import beidanci.service.po.Dict;
 import beidanci.service.po.DictWord;
-import beidanci.service.po.LearningWord;
 import beidanci.service.po.User;
 import beidanci.service.po.Word;
 import beidanci.service.store.WordCache;
@@ -128,38 +127,7 @@ public class MasteredWordBo {
         return results;
     }
 
-    /**
-     * 将单词标记为已掌握：添加到"已掌握"词书中
-     */
-    public void setWordAsMastered(LearningWord learningWord, User user, boolean deleteLearningWord, String userId)
-            throws IllegalAccessException, InvalidMeaningFormatException, EmptySpellException, ParseException,
-            IOException {
-        learningWord.setLifeValue(0);
-        learningWordBo.updateEntity(learningWord);
 
-        // 添加到"已掌握"词书
-        String wordId = learningWord.getId().getWordId();
-        if (!isWordMastered(user.getId(), wordId)) {
-            Dict masteredDict = getMasteredWordDict(user);
-            Word word = wordBo.findById(wordId);
-            if (word != null) {
-                dictWordBo.addWordToDict(word.getSpell(), masteredDict, "mastered", wordCache, wordBo, dictBo);
-            }
-
-            // 将用户掌握的单词数+1
-            onWordMastered(userBo, user);
-        }
-
-        if (deleteLearningWord) {
-            learningWordBo.deleteEntity(learningWord);
-        }
-    }
-
-    private void onWordMastered(UserBo userDAO, User user)
-            throws IllegalArgumentException, IllegalAccessException {
-        user.setMasteredWordsCount(user.getMasteredWordsCount() + 1);
-        userDAO.updateEntity(user);
-    }
 
     /**
      * 删除已掌握单词（从"已掌握"词书中移除，并移动到生词本）

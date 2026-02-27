@@ -47,7 +47,7 @@ public class LearningWordBo extends BaseBo<LearningWord> {
     }
 
     public List<LearningWordDto> getLearningWordDtosOfUser(String userId) {
-        String sql = "SELECT user_id, word_id, learning_order, is_today_new_word, life_value, last_learning_date, add_time, add_day, learned_times, today_learned_times, batch_id, create_time, update_time FROM learning_word WHERE user_id = :userId";
+        String sql = "SELECT user_id, word_id, learning_order, is_today_new_word, last_learning_date, add_time, add_day, learned_times, today_learned_times, batch_id, stability, difficulty, elapsed_days, scheduled_days, reps, lapses, state, create_time, update_time FROM learning_word WHERE user_id = :userId";
         MapSqlParameterSource params = new MapSqlParameterSource("userId", userId);
         
         List<LearningWordDto> dtos = namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> {
@@ -56,13 +56,19 @@ public class LearningWordBo extends BaseBo<LearningWord> {
             dto.setWordId(rs.getString("word_id"));
             dto.setLearningOrder(rs.getInt("learning_order"));
             dto.setIsTodayNewWord(rs.getBoolean("is_today_new_word"));
-            dto.setLifeValue(rs.getInt("life_value"));
             dto.setLastLearningDate(rs.getTimestamp("last_learning_date"));
             dto.setAddTime(rs.getTimestamp("add_time"));
             dto.setAddDay(rs.getInt("add_day"));
             dto.setLearnedTimes(rs.getInt("learned_times"));
             dto.setTodayLearnedTimes(rs.getInt("today_learned_times"));
             dto.setBatchId(rs.getInt("batch_id"));
+            dto.setStability(rs.getDouble("stability"));
+            dto.setDifficulty(rs.getDouble("difficulty"));
+            dto.setElapsedDays(rs.getInt("elapsed_days"));
+            dto.setScheduledDays(rs.getInt("scheduled_days"));
+            dto.setReps(rs.getInt("reps"));
+            dto.setLapses(rs.getInt("lapses"));
+            dto.setState(rs.getInt("state"));
             dto.setCreateTime(rs.getTimestamp("create_time"));
             dto.setUpdateTime(rs.getTimestamp("update_time"));
             return dto;
@@ -93,10 +99,6 @@ public class LearningWordBo extends BaseBo<LearningWord> {
             if (filters.containsKey("wordId")) {
                 sql.append(" AND word_id = :wordId");
                 params.addValue("wordId", filters.get("wordId"));
-            }
-            if (filters.containsKey("lifeValue")) {
-                sql.append(" AND life_value = :lifeValue");
-                params.addValue("lifeValue", filters.get("lifeValue"));
             }
             if (filters.containsKey("lastLearningDate")) {
                 sql.append(" AND last_learning_date = :lastLearningDate");

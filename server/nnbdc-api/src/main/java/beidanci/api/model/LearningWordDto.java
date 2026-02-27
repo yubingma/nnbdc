@@ -7,13 +7,19 @@ public class LearningWordDto {
     private String wordId;
     private Date addTime;
     private Integer addDay;
-    private Integer lifeValue;
     private Date lastLearningDate;
     private Boolean isTodayNewWord;
     private Integer learningOrder;
     private Integer learnedTimes;
     private Integer todayLearnedTimes;
     private Integer batchId;
+    private Double stability;
+    private Double difficulty;
+    private Integer elapsedDays;
+    private Integer scheduledDays;
+    private Integer reps;
+    private Integer lapses;
+    private Integer state;
     private Date createTime;
     private Date updateTime;
 
@@ -52,13 +58,6 @@ public class LearningWordDto {
         this.addDay = addDay;
     }
 
-    public Integer getLifeValue() {
-        return lifeValue;
-    }
-
-    public void setLifeValue(Integer lifeValue) {
-        this.lifeValue = lifeValue;
-    }
 
     public Date getLastLearningDate() {
         return lastLearningDate;
@@ -123,6 +122,62 @@ public class LearningWordDto {
 
     public void setBatchId(Integer batchId) {
         this.batchId = batchId;
+    }
+
+    public Double getStability() {
+        return stability;
+    }
+
+    public void setStability(Double stability) {
+        this.stability = stability;
+    }
+
+    public Double getDifficulty() {
+        return difficulty;
+    }
+
+    public void setDifficulty(Double difficulty) {
+        this.difficulty = difficulty;
+    }
+
+    public Integer getElapsedDays() {
+        return elapsedDays;
+    }
+
+    public void setElapsedDays(Integer elapsedDays) {
+        this.elapsedDays = elapsedDays;
+    }
+
+    public Integer getScheduledDays() {
+        return scheduledDays;
+    }
+
+    public void setScheduledDays(Integer scheduledDays) {
+        this.scheduledDays = scheduledDays;
+    }
+
+    public Integer getReps() {
+        return reps;
+    }
+
+    public void setReps(Integer reps) {
+        this.reps = reps;
+    }
+
+    public Integer getLapses() {
+        return lapses;
+    }
+
+    public void setLapses(Integer lapses) {
+        this.lapses = lapses;
+    }
+
+    public Integer getState() {
+        return state;
+    }
+
+    public void setState(Integer state) {
+        this.state = state;
     }
 
 }

@@ -21,7 +21,6 @@ import beidanci.service.store.WordCache;
 @Entity
 @Table(name = "learning_word", indexes = {@Index(name = "idx_userid", columnList = "user_id")})
 public class LearningWord extends Po {
-    public static final Integer NEW_LEARNING_WORD_LIFE_VALUE = 5;
 
     @Id
     private LearningWordId id;
@@ -35,8 +34,6 @@ public class LearningWord extends Po {
     @Column(name = "add_day", nullable = false)
     private Integer addDay;
 
-    @Column(name = "life_value", nullable = false)
-    private Integer lifeValue;
 
     @Column(name = "last_learning_date")
     private Date lastLearningDate;
@@ -44,8 +41,8 @@ public class LearningWord extends Po {
     @Column(name = "learning_order")
     private Integer learningOrder;
 
-    @Column(name = "batch_id", nullable = false)
-    private Integer batchId = 0;
+    @Column(name = "batch_id")
+    private Integer batchId;
 
     /**
      * 已学习次数，一个单词完成一天的学习，这个值增加的值一般大于1（因为用户一般会选择多个学习步骤）
@@ -55,6 +52,27 @@ public class LearningWord extends Po {
 
     @Column(name = "today_learned_times", nullable = false)
     private Integer todayLearnedTimes = 0;
+
+    @Column(name = "stability")
+    private Double stability;
+
+    @Column(name = "difficulty")
+    private Double difficulty;
+
+    @Column(name = "elapsed_days")
+    private Integer elapsedDays;
+
+    @Column(name = "scheduled_days")
+    private Integer scheduledDays;
+
+    @Column(name = "reps")
+    private Integer reps;
+
+    @Column(name = "lapses")
+    private Integer lapses;
+
+    @Column(name = "state")
+    private Integer state;
 
 
     /**
@@ -74,12 +92,11 @@ public class LearningWord extends Po {
     /**
      * minimal constructor
      */
-    public LearningWord(LearningWordId id, User user, Timestamp addTime, Integer addDay, Integer lifeValue) {
+    public LearningWord(LearningWordId id, User user, Timestamp addTime, Integer addDay) {
         this.id = id;
         this.user = user;
         this.addTime = addTime;
         this.addDay = addDay;
-        this.lifeValue = lifeValue;
         this.learnedTimes = 0;
         this.todayLearnedTimes = 0;
         this.isTodayNewWord = false;
@@ -138,13 +155,6 @@ public class LearningWord extends Po {
         this.addDay = addDay;
     }
 
-    public Integer getLifeValue() {
-        return this.lifeValue;
-    }
-
-    public void setLifeValue(Integer lifeValue) {
-        this.lifeValue = lifeValue;
-    }
 
     public Date getLastLearningDate() {
         return this.lastLearningDate;
@@ -178,6 +188,62 @@ public class LearningWord extends Po {
         this.todayLearnedTimes = todayLearnedTimes;
     }
 
+    public Double getStability() {
+        return stability;
+    }
+
+    public void setStability(Double stability) {
+        this.stability = stability;
+    }
+
+    public Double getDifficulty() {
+        return difficulty;
+    }
+
+    public void setDifficulty(Double difficulty) {
+        this.difficulty = difficulty;
+    }
+
+    public Integer getElapsedDays() {
+        return elapsedDays;
+    }
+
+    public void setElapsedDays(Integer elapsedDays) {
+        this.elapsedDays = elapsedDays;
+    }
+
+    public Integer getScheduledDays() {
+        return scheduledDays;
+    }
+
+    public void setScheduledDays(Integer scheduledDays) {
+        this.scheduledDays = scheduledDays;
+    }
+
+    public Integer getReps() {
+        return reps;
+    }
+
+    public void setReps(Integer reps) {
+        this.reps = reps;
+    }
+
+    public Integer getLapses() {
+        return lapses;
+    }
+
+    public void setLapses(Integer lapses) {
+        this.lapses = lapses;
+    }
+
+    public Integer getState() {
+        return state;
+    }
+
+    public void setState(Integer state) {
+        this.state = state;
+    }
+
     public WordVo getWord(WordCache wordCache, String[] excludeFields) throws IOException, ParseException, InvalidMeaningFormatException, EmptySpellException {
         return wordCache.getWordById(id.getWordId(), excludeFields);
     }
@@ -199,7 +265,6 @@ public class LearningWord extends Po {
         LearningWordId id = new LearningWordId(dto.getUserId(), dto.getWordId());
         LearningWord learningWord = new LearningWord();
         learningWord.setId(id);
-        learningWord.setLifeValue(dto.getLifeValue());
         learningWord.setLastLearningDate(dto.getLastLearningDate());
         learningWord.setAddTime(dto.getAddTime());
         learningWord.setAddDay(dto.getAddDay());
@@ -216,6 +281,13 @@ public class LearningWord extends Po {
         if (dto.getUpdateTime() != null) {
             learningWord.setUpdateTime(dto.getUpdateTime());
         }
+        learningWord.setStability(dto.getStability());
+        learningWord.setDifficulty(dto.getDifficulty());
+        learningWord.setElapsedDays(dto.getElapsedDays());
+        learningWord.setScheduledDays(dto.getScheduledDays());
+        learningWord.setReps(dto.getReps());
+        learningWord.setLapses(dto.getLapses());
+        learningWord.setState(dto.getState());
         return learningWord;
     }
 
@@ -225,13 +297,19 @@ public class LearningWord extends Po {
         dto.setWordId(id.getWordId());
         dto.setAddTime(addTime);
         dto.setAddDay(addDay);
-        dto.setLifeValue(lifeValue);
         dto.setLastLearningDate(lastLearningDate);
         dto.setLearningOrder(learningOrder);
         dto.setLearnedTimes(learnedTimes);
         dto.setTodayLearnedTimes(todayLearnedTimes);
         dto.setIsTodayNewWord(isTodayNewWord);
         dto.setBatchId(batchId);
+        dto.setStability(stability);
+        dto.setDifficulty(difficulty);
+        dto.setElapsedDays(elapsedDays);
+        dto.setScheduledDays(scheduledDays);
+        dto.setReps(reps);
+        dto.setLapses(lapses);
+        dto.setState(state);
         dto.setCreateTime(createTime);
         dto.setUpdateTime(updateTime);
         return dto;

@@ -41,6 +41,7 @@ import '../global.dart';
 import '../state.dart';
 import '../theme/app_theme.dart';
 import '../util/level_util.dart';
+import '../constants.dart';
 
 class MePage extends StatefulWidget {
   const MePage({super.key});
@@ -183,10 +184,10 @@ class _MePageState extends State<MePage> {
       // 获取所有词书的学习状态
       var learningDicts = await MyDatabase.instance.learningDictsDao.getLearningDictsOfUser(user.id);
 
-      // 获取学习中的单词数量（只统计生命值大于0的单词）
+      // 获取学习中的单词数量（只统计掌握度小于5的单词）
       var totalLearningWords = await (db.select(db.learningWords)
             ..where((lw) => lw.userId.equals(user.id))
-            ..where((lw) => lw.lifeValue.isBiggerThanValue(0)))
+            ..where((lw) => lw.stability.isSmallerThanValue(Constants.graduationStability)))
           .get();
       var globalLearningWordsCount = totalLearningWords.length;
 
@@ -2352,8 +2353,8 @@ class _DictCardState extends State<DictCard> {
     final dictWords = await (db.select(db.dictWords)..where((dw) => dw.dictId.equals(dictId))).get();
     final wordIds = dictWords.map((dw) => dw.wordId).toSet();
 
-    // 获取学习中的单词（生命值>0）
-    final learningWords = await (db.select(db.learningWords)..where((lw) => lw.userId.equals(userId) & lw.lifeValue.isBiggerThanValue(0))).get();
+    // 获取学习中的单词（stability < graduationStability）
+    final learningWords = await (db.select(db.learningWords)..where((lw) => lw.userId.equals(userId) & lw.stability.isSmallerThanValue(Constants.graduationStability))).get();
     final learningWordIds = learningWords.map((w) => w.wordId).toSet();
 
     // 获取已掌握的单词
@@ -2556,8 +2557,8 @@ class _DictCardState extends State<DictCard> {
     final dictWords = await (db.select(db.dictWords)..where((dw) => dw.dictId.equals(currentLearningDict.dictId))).get();
     final wordIdsInDict = dictWords.map((dw) => dw.wordId).toSet();
 
-    // 2. 查询用户所有学习中的单词（lifeValue > 0）
-    final learningWords = await (db.select(db.learningWords)..where((lw) => lw.userId.equals(user.id) & lw.lifeValue.isBiggerThanValue(0))).get();
+    // 2. 查询用户所有学习中的单词（stability < graduationStability）
+    final learningWords = await (db.select(db.learningWords)..where((lw) => lw.userId.equals(user.id) & lw.stability.isSmallerThanValue(Constants.graduationStability))).get();
 
     if (!mounted) return;
 

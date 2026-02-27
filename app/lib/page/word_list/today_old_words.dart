@@ -9,6 +9,7 @@ import 'package:nnbdc/util/sound.dart';
 
 import '../../global.dart';
 import '../../util/word_util.dart';
+import '../../constants.dart';
 
 class TodayOldWordsProvider with WordsProvider {
   @override
@@ -56,12 +57,12 @@ class TodayOldWordsProvider with WordsProvider {
 class TodayOldWordsProgressProvider implements WordProgressProvider {
   @override
   double getWordProgress(wordTag) {
-    return 5.0 - (wordTag as LearningWordVo).lifeValue;
+    return (wordTag as LearningWordVo).stability ?? 0.0;
   }
 
   @override
   double getWordProgressMax(wordTag) {
-    return 5.0;
+    return Constants.graduationStability;
   }
 }
 

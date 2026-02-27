@@ -11,9 +11,11 @@ import 'package:nnbdc/util/oper_type.dart';
 import 'package:drift/drift.dart';
 import 'dart:async';
 import 'dart:math';
+import 'package:nnbdc/util/fsrs.dart';
 import 'package:nnbdc/util/app_clock.dart';
 import 'word_bo.dart';
 import 'package:nnbdc/util/date_utils.dart';
+import 'package:nnbdc/constants.dart';
 
 /// 业务对象（BO）：承载本地实现逻辑
 class StudyBo {
@@ -100,20 +102,9 @@ class StudyBo {
       Global.logger.d('开始获取批次单词: userId=${user.id}');
       final db = MyDatabase.instance;
 
-      // 获取今天的开始和结束时间
-      final DateTime now = AppClock.now();
-      final DateTime dateOnlyNow = DateTime(now.year, now.month, now.day);
-      final startOfDay = dateOnlyNow;
-      final endOfDay = DateTime(now.year, now.month, now.day, 23, 59, 59, 999);
-
-      // 查询今日学习单词，按学习顺序排序
-      // 注意：batchId 可能是 NULL（旧数据），只查询有 batchId 的记录
+      // 查询今日已分配批次的单词 (batchId > 0 表示该词属于今日学习计划)
       final query = db.select(db.learningWords)
-        ..where((tbl) =>
-            tbl.userId.equals(user.id) &
-            tbl.lastLearningDate.isBiggerOrEqualValue(startOfDay) &
-            tbl.lastLearningDate.isSmallerOrEqualValue(endOfDay) &
-            tbl.batchId.isNotNull())
+        ..where((tbl) => tbl.userId.equals(user.id) & tbl.batchId.isBiggerThanValue(0))
         ..orderBy([
           (tbl) => OrderingTerm(expression: tbl.batchId),
           (tbl) => OrderingTerm(expression: tbl.learningOrder),
@@ -179,8 +170,22 @@ class StudyBo {
           wordVo.meaningItems = meaningItemVos;
 
           // 构建 LearningWordVo
-          final learningWordVo = LearningWordVo(userVo, batchWord.addTime, batchWord.addDay, batchWord.lifeValue, batchWord.lastLearningDate,
-              batchWord.learningOrder, batchWord.learnedTimes, wordVo, batchWord.batchId);
+          final learningWordVo = LearningWordVo(
+              userVo,
+              batchWord.addTime,
+              batchWord.addDay,
+              batchWord.lastLearningDate,
+              batchWord.learningOrder,
+              batchWord.learnedTimes,
+              wordVo,
+              batchWord.batchId,
+              batchWord.stability,
+              batchWord.difficulty,
+              batchWord.elapsedDays,
+              batchWord.scheduledDays,
+              batchWord.reps,
+              batchWord.lapses,
+              batchWord.state);
 
           result.add(learningWordVo);
         } else {
@@ -351,16 +356,10 @@ class StudyBo {
       }
 
       final now = AppClock.now();
-      final startOfDay = DateTime(now.year, now.month, now.day);
-      final endOfDay = DateTime(now.year, now.month, now.day, 23, 59, 59, 999);
 
-      // 获取今日学习单词
+      // 获取今日学习单词 (batchId > 0)
       final query = db.select(db.learningWords)
-        ..where((tbl) =>
-            tbl.userId.equals(user.id) &
-            tbl.lastLearningDate.isBiggerOrEqualValue(startOfDay) &
-            tbl.lastLearningDate.isSmallerOrEqualValue(endOfDay) &
-            tbl.batchId.isNotNull())
+        ..where((tbl) => tbl.userId.equals(user.id) & tbl.batchId.isBiggerThanValue(0))
         ..orderBy([
           (tbl) => OrderingTerm(expression: tbl.batchId),
           (tbl) => OrderingTerm(expression: tbl.learningOrder),
@@ -436,10 +435,9 @@ class StudyBo {
   ///   - false: 仅刷新当前单词，不改变学习位置（用于初始加载、从批次列表返回后刷新等场景）
   ///
   /// 返回下一个单词的学习信息，包括单词详情、学习模式、混淆项等
-  Future<Result<GetWordResult>> getNextWord(bool isAnswerCorrect, bool isWordMastered, bool shouldEnterNextBatch, bool gotoNext) async {
+  Future<Result<GetWordResult>> getWord(bool isWordMastered, bool isAnswerCorrect, bool gotoNext, {int? fsrsRating}) async {
     try {
-      Global.logger.d(
-          '开始获取下一个单词: isAnswerCorrect=$isAnswerCorrect, isWordMastered=$isWordMastered, shouldEnterNextBatch=$shouldEnterNextBatch, gotoNext=$gotoNext');
+      Global.logger.d('开始获取单词: isAnswerCorrect=$isAnswerCorrect, isWordMastered=$isWordMastered, gotoNext=$gotoNext, fsrsRating=$fsrsRating');
       final db = MyDatabase.instance;
 
       // 获取当前登录用户
@@ -455,9 +453,6 @@ class StudyBo {
         Global.logger.d('检测到跨天：user.lastLearningDate=${user.lastLearningDate}, now=$now');
         return Result<GetWordResult>("NEW_DAY", "已进入新的一天，今天的学习已终止", true);
       }
-      final DateTime dateOnlyNow = DateTime(now.year, now.month, now.day);
-      final startOfDay = dateOnlyNow; // Already date-only
-      final endOfDay = DateTime(now.year, now.month, now.day, 23, 59, 59, 999);
 
       // 获取用户的学习步骤配置
       final steps = await db.userStudyStepsDao.getActiveUserStudySteps(user.id);
@@ -470,11 +465,7 @@ class StudyBo {
       // 查询今日学习单词，按学习顺序排序
       // 注意：batchId 可能是 NULL（旧数据），只查询有 batchId 的记录
       final query = db.select(db.learningWords)
-        ..where((tbl) =>
-            tbl.userId.equals(user.id) &
-            tbl.lastLearningDate.isBiggerOrEqualValue(startOfDay) &
-            tbl.lastLearningDate.isSmallerOrEqualValue(endOfDay) &
-            tbl.batchId.isNotNull())
+        ..where((tbl) => tbl.userId.equals(user.id) & tbl.batchId.isBiggerThanValue(0))
         ..orderBy([
           (tbl) => OrderingTerm(expression: tbl.batchId),
           (tbl) => OrderingTerm(expression: tbl.learningOrder),
@@ -505,9 +496,9 @@ class StudyBo {
       // 在当前批次内，推导当前单词和环节
       List<LearningWord> sortedBatchWords = List.from(batchWords);
       sortedBatchWords.sort((a, b) {
-        // 状态驱动：已掌握单词（通过 lifeValue=0 或在 masteredWordIds 中存在判断）视为已完成今日所有环节
-        final bool isAFinished = a.lifeValue == 0 || masteredWordIds.contains(a.wordId);
-        final bool isBFinished = b.lifeValue == 0 || masteredWordIds.contains(b.wordId);
+        // 状态驱动：已掌握单词视为已完成今日所有环节
+        final bool isAFinished = _isEffectivelyMastered(a, masteredWordIds);
+        final bool isBFinished = _isEffectivelyMastered(b, masteredWordIds);
 
         final int effA = isAFinished ? activeStepCount : a.todayLearnedTimes;
         final int effB = isBFinished ? activeStepCount : b.todayLearnedTimes;
@@ -528,7 +519,7 @@ class StudyBo {
 
       // 获取当前学习环节：由该单词今日已练习的次数推导
       // 状态驱动：已掌握单词直接视为处于最后一个环节或已越过
-      final bool currentWordFinished = currentWordForPos.lifeValue == 0 || masteredWordIds.contains(currentWordForPos.wordId);
+      final bool currentWordFinished = _isEffectivelyMastered(currentWordForPos, masteredWordIds);
       int currentStepIndex = currentWordFinished ? activeStepCount : currentWordForPos.todayLearnedTimes;
       if (currentStepIndex >= activeStepCount) {
         currentStepIndex = activeStepCount - 1;
@@ -541,23 +532,23 @@ class StudyBo {
       // gotoNext=false 表示初始加载或刷新，不应修改学习进度
       if (gotoNext) {
         final currWord = todayWords[currentWordIndex];
-        await updateCurrWord(isWordMastered, currWord, user, now, db, isAnswerCorrect, allStepsCompletedForWord);
+        await updateCurrWord(
+          isWordMastered: isWordMastered,
+          currWord: currWord,
+          user: user,
+          now: now,
+          db: db,
+          isAnswerCorrect: isAnswerCorrect,
+          allStepsCompletedForWord: allStepsCompletedForWord,
+          fsrsRating: fsrsRating,
+        );
 
         // 同步内存状态，以便准确推导下一个单词
         todayWords = List.from(todayWords); // 确保列表可变
         if (isWordMastered) {
           masteredWordIds.add(currWord.wordId);
-          // lifeValue=0 或者放入 masteredWordIds 都会被认为是已掌握
         } else if (isAnswerCorrect) {
-          int newLifeValue = currWord.lifeValue;
-          if (allStepsCompletedForWord && currWord.lifeValue > 0) {
-            newLifeValue -= 1;
-            if (newLifeValue == 0) {
-              masteredWordIds.add(currWord.wordId);
-            }
-          }
           todayWords[currentWordIndex] = currWord.copyWith(
-            lifeValue: newLifeValue,
             lastLearningDate: Value(now),
             learnedTimes: currWord.learnedTimes + 1,
             todayLearnedTimes: currWord.todayLearnedTimes + 1,
@@ -608,8 +599,8 @@ class StudyBo {
 
       // 按照学习效率 (eff) 排序，找出该批次最需要学习的下一个单词
       nextBatchWords.sort((a, b) {
-        final bool isAFinished = a.lifeValue == 0 || masteredWordIds.contains(a.wordId);
-        final bool isBFinished = b.lifeValue == 0 || masteredWordIds.contains(b.wordId);
+        final bool isAFinished = _isEffectivelyMastered(a, masteredWordIds);
+        final bool isBFinished = _isEffectivelyMastered(b, masteredWordIds);
 
         final int effA = isAFinished ? activeStepCount : a.todayLearnedTimes;
         final int effB = isBFinished ? activeStepCount : b.todayLearnedTimes;
@@ -627,7 +618,7 @@ class StudyBo {
       int nextWordIndex = todayWords.indexOf(nextWordForPos);
 
       // 计算下一个单词应该展示的学习环节
-      final bool nextWordFinished = nextWordForPos.lifeValue == 0 || masteredWordIds.contains(nextWordForPos.wordId);
+      final bool nextWordFinished = _isEffectivelyMastered(nextWordForPos, masteredWordIds);
       int nextStepIndex = nextWordFinished ? activeStepCount : nextWordForPos.todayLearnedTimes;
       if (nextStepIndex >= activeStepCount) {
         nextStepIndex = activeStepCount - 1;
@@ -637,8 +628,22 @@ class StudyBo {
       final returnWord = todayWords[nextWordIndex];
       final userVo = UserVo.fromUser(user);
       final wordVo = WordVo.c2('')..id = returnWord.wordId; // 仅返回ID
-      final learningWordVo = LearningWordVo(userVo, returnWord.addTime, returnWord.addDay, returnWord.lifeValue, returnWord.lastLearningDate,
-          returnWord.learningOrder, returnWord.learnedTimes, wordVo, returnWord.batchId);
+      final learningWordVo = LearningWordVo(
+          userVo,
+          returnWord.addTime,
+          returnWord.addDay,
+          returnWord.lastLearningDate,
+          returnWord.learningOrder,
+          returnWord.learnedTimes,
+          wordVo,
+          returnWord.batchId,
+          returnWord.stability,
+          returnWord.difficulty,
+          returnWord.elapsedDays,
+          returnWord.scheduledDays,
+          returnWord.reps,
+          returnWord.lapses,
+          returnWord.state);
 
       // 使用 WordBo.getWordMeaningItems 获取目标单词释义并用于生成混淆项
       final targetMeaningItems = await WordBo().getWordMeaningItems(returnWord.wordId, returnWord.userId);
@@ -656,7 +661,7 @@ class StudyBo {
       int totalCompletedSteps = 0;
       for (final word in todayWords) {
         // 状态驱动：已掌握单词贡献满分进度，活跃单词取 min(已学次数, 总环节数) 避免溢出
-        if (word.lifeValue == 0 || masteredWordIds.contains(word.wordId)) {
+        if (_isEffectivelyMastered(word, masteredWordIds)) {
           totalCompletedSteps += activeStepCount;
         } else {
           totalCompletedSteps += min(word.todayLearnedTimes, activeStepCount);
@@ -685,7 +690,7 @@ class StudyBo {
           [], // verbTenses
           [], // shortDescChineses
           false, // inRawWordDict
-          false, // wordMastered
+          _isEffectivelyMastered(returnWord, masteredWordIds), // wordMastered
         );
     } catch (e, stackTrace) {
       Global.logger.e('获取下一个单词失败: $e', stackTrace: stackTrace);
@@ -693,11 +698,20 @@ class StudyBo {
     }
   }
 
-  Future<void> updateCurrWord(
-      bool isWordMastered, LearningWord currWord, User user, DateTime now, MyDatabase db, bool isAnswerCorrect, bool allStepsCompletedForWord) async {
+  Future<void> updateCurrWord({
+    required bool isWordMastered,
+    required LearningWord currWord,
+    required User user,
+    required DateTime now,
+    required MyDatabase db,
+    required bool isAnswerCorrect,
+    required bool allStepsCompletedForWord,
+    int? fsrsRating,
+  }) async {
     // 停止使用 dateOnlyNow，保留完整时间戳以支持状态驱动定位
     final DateTime learningTime = now;
     final DateTime dateOnlyNow = DateTime(now.year, now.month, now.day);
+
     if (isWordMastered) {
       // 保存已掌握单词
       await _saveMasteredWord(
@@ -707,43 +721,83 @@ class StudyBo {
         dateOnlyNow: dateOnlyNow,
         db: db,
       );
-    } else if (!isAnswerCorrect) {
+      return;
+    }
+
+    if (!isAnswerCorrect) {
       // 若回答错误, 则保存错词
       await saveWrongWord(currWord, db, user, now);
-    } else if (allStepsCompletedForWord && isAnswerCorrect && currWord.lifeValue > 0) {
-      Global.logger.d('All steps completed correctly for ${currWord.wordId}. Decrementing lifeValue.');
-      await db.learningWordsDao.saveEntity(
-          currWord.copyWith(
-            lifeValue: (currWord.lifeValue) - 1, // 生命值减1
-            lastLearningDate: Value(learningTime),
-            learnedTimes: (currWord.learnedTimes) + 1,
-            todayLearnedTimes: (currWord.todayLearnedTimes) + 1,
-          ),
-          true);
-
-      // 如果生命值降为0，则标记为已掌握
-      if (currWord.lifeValue - 1 == 0) {
-        await _saveMasteredWord(
-          learningWord: currWord.copyWith(lifeValue: 0),
-          user: user,
-          now: now,
-          dateOnlyNow: dateOnlyNow,
-          db: db,
-          updateUserMasteredCount: true,
-        );
-      }
-    } else {
-      // 只更新学习时间和学习次数，不改变生命值
-      Global.logger.d(
-          'Word ${currWord.wordId}. All steps completed: $allStepsCompletedForWord, AnswerCorrect: $isAnswerCorrect. Updating learnedTimes/todayLearnedTimes.');
-      await db.learningWordsDao.saveEntity(
-          currWord.copyWith(
-            lastLearningDate: Value(learningTime),
-            learnedTimes: (currWord.learnedTimes) + 1,
-            todayLearnedTimes: (currWord.todayLearnedTimes) + 1,
-          ),
-          true);
     }
+
+    // FSRS 逻辑
+    FSRSItem? nextFsrs;
+    if (fsrsRating != null && fsrsRating >= 1 && fsrsRating <= 4) {
+      final fsrs = FSRS();
+      if (currWord.stability == null) {
+        // 第一次使用 FSRS
+        nextFsrs = fsrs.init(fsrsRating);
+      } else {
+        // 复习
+        final currentFsrs = FSRSItem(
+          stability: currWord.stability!,
+          difficulty: currWord.difficulty!,
+          elapsedDays: currWord.elapsedDays!,
+          scheduledDays: currWord.scheduledDays!,
+          reps: currWord.reps!,
+          lapses: currWord.lapses!,
+          state: currWord.state!,
+        );
+        // 计算经过的天数 (使用日历天数差)
+        int elapsedDays = 0;
+        if (currWord.lastLearningDate != null) {
+          final lastDate = DateTime(
+            currWord.lastLearningDate!.year,
+            currWord.lastLearningDate!.month,
+            currWord.lastLearningDate!.day,
+          );
+          final todayDate = DateTime(now.year, now.month, now.day);
+          elapsedDays = todayDate.difference(lastDate).inDays;
+        }
+        nextFsrs = fsrs.next(currentFsrs, fsrsRating, elapsedDays);
+      }
+    }
+
+    // 判定是否毕业（进入已掌握单词表）
+    bool shouldGraduate = isWordMastered || (nextFsrs != null && nextFsrs.stability >= Constants.graduationStability);
+
+    if (shouldGraduate) {
+      // 保存已掌握单词
+      await _saveMasteredWord(
+        learningWord: currWord,
+        user: user,
+        now: now,
+        dateOnlyNow: dateOnlyNow,
+        db: db,
+      );
+      return;
+    }
+
+    if (!isAnswerCorrect) {
+      // 若回答错误, 则保存错词
+      await saveWrongWord(currWord, db, user, now);
+    }
+
+    // 更新学习状态
+    Global.logger.d('Word ${currWord.wordId}. Updating FSRS and learnedTimes.');
+    await db.learningWordsDao.saveEntity(
+        currWord.copyWith(
+          lastLearningDate: Value(learningTime),
+          learnedTimes: (currWord.learnedTimes) + 1,
+          todayLearnedTimes: isAnswerCorrect ? (currWord.todayLearnedTimes) + 1 : currWord.todayLearnedTimes,
+          stability: nextFsrs != null ? Value(nextFsrs.stability) : const Value.absent(),
+          difficulty: nextFsrs != null ? Value(nextFsrs.difficulty) : const Value.absent(),
+          elapsedDays: nextFsrs != null ? Value(nextFsrs.elapsedDays) : const Value.absent(),
+          scheduledDays: nextFsrs != null ? Value(nextFsrs.scheduledDays) : const Value.absent(),
+          reps: nextFsrs != null ? Value(nextFsrs.reps) : const Value.absent(),
+          lapses: nextFsrs != null ? Value(nextFsrs.lapses) : const Value.absent(),
+          state: nextFsrs != null ? Value(nextFsrs.state) : const Value.absent(),
+        ),
+        true);
   }
 
   Result<GetWordResult> _buildTodayStudyFinishedResult() {
@@ -876,16 +930,9 @@ class StudyBo {
 
         // 2. 如果今日单词中找不到足够的混淆单词，从所有学习中单词(不包括今日单词)中查找词性相同的
         if (otherWords.length < 2) {
-          // 计算今日的日期范围
-          final DateTime now = AppClock.now();
-          final DateTime startOfDay = DateTime(now.year, now.month, now.day);
-          final DateTime endOfDay = DateTime(now.year, now.month, now.day, 23, 59, 59, 999);
-
-          // 获取用户的所有学习单词（不包括今日单词）
+          // 获取用户的所有学习单词（不包括今日单词，即 batchId 为空的单词）
           final allLearningWordsQuery = db.select(db.learningWords)
-            ..where((lw) =>
-                lw.userId.equals(targetWordLearningData.userId) &
-                (lw.lastLearningDate.isSmallerThanValue(startOfDay) | lw.lastLearningDate.isBiggerThanValue(endOfDay)));
+            ..where((lw) => lw.userId.equals(targetWordLearningData.userId) & (lw.batchId.isNull() | lw.batchId.equals(0)));
           final allLearningWords = await allLearningWordsQuery.get();
 
           // 从所有学习单词中查找词性相同的混淆单词
@@ -997,9 +1044,8 @@ class StudyBo {
     for (int i = 0; i < todayWords.length; i += batchSize) {
       bool batchFinished = true;
       for (int j = i; j < i + batchSize && j < todayWords.length; j++) {
-        // 状态驱动：如果单词已通过 lifeValue=0 标记，或者在 masteredWords 表中存在，或者今日学习次数已达到环节总数，视为学完
-        bool wordFinished =
-            todayWords[j].lifeValue == 0 || masteredWordIds.contains(todayWords[j].wordId) || todayWords[j].todayLearnedTimes >= modeCount;
+        // 状态驱动：如果单词已学完（达到毕业稳定性，或者在 masteredWords 表中存在，或者今日学习次数已达到模式环节总数）
+        bool wordFinished = _isEffectivelyMastered(todayWords[j], masteredWordIds) || todayWords[j].todayLearnedTimes >= modeCount;
         if (!wordFinished) {
           batchFinished = false;
           break;
@@ -1030,13 +1076,18 @@ class StudyBo {
   }
 
   /// 将单词标记为已掌握
+  static bool _isEffectivelyMastered(LearningWord lw, Set<String> masteredWordIds) {
+    if (masteredWordIds.contains(lw.wordId)) return true;
+    if (lw.stability != null && lw.stability! >= Constants.graduationStability) return true;
+    return false;
+  }
+
   Future<void> _saveMasteredWord({
     required LearningWord learningWord,
     required User user,
     required DateTime now,
     required DateTime dateOnlyNow,
     required MyDatabase db,
-    bool updateUserMasteredCount = false,
   }) async {
     // 获取当前学习模式的总步骤数（用于饱和填充状态）
     final steps = await db.userStudyStepsDao.getActiveUserStudySteps(user.id);
@@ -1047,7 +1098,7 @@ class StudyBo {
       // 这样进度条的分母保持不变，分子增加，体验更平滑
       await db.learningWordsDao.saveEntity(
           learningWord.copyWith(
-            lifeValue: 0,
+            stability: Value(Constants.graduationStability),
             lastLearningDate: Value(now),
             learnedTimes: learningWord.learnedTimes + 1,
             todayLearnedTimes: stepCount, // 饱和今天的所有环节
@@ -1059,11 +1110,7 @@ class StudyBo {
     }
 
     // 将单词添加到已掌握词书
-    await db.masteredWordsDao.saveMasteredWord(
-        user.id,
-        learningWord.wordId,
-        true,
-        true);
+    await db.masteredWordsDao.saveMasteredWord(user.id, learningWord.wordId, true, true);
 
     ThrottledDbSyncService().requestSync();
   }

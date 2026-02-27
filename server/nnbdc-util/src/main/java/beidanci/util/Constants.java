@@ -6,5 +6,6 @@ public class Constants {
     public static final String SYS_USER_DELETED = "deleted";
     public static final String COMMON_DICT_ID = "0";
     public static final int USER_DB_VERSION_INITIAL = 0;
+    public static final double GRADUATION_STABILITY = 180.0;
 
 }

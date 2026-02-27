@@ -11,6 +11,7 @@ import 'package:nnbdc/util/sound.dart';
 
 import '../../global.dart';
 import '../../util/word_util.dart';
+import '../../constants.dart';
 
 class TodayWordsProvider with WordsProvider {
   @override
@@ -59,9 +60,9 @@ class TodayWordsProvider with WordsProvider {
     final isMastered = await db.masteredWordsDao.isWordMastered(user.id, wordId);
     if (isMastered) return true; // 已掌握
 
-    // 检查是否在学习中（生命值 > 0）
+    // 检查是否在学习中（掌握度 < 5）
     final learningQuery = db.select(db.learningWords)
-      ..where((lw) => lw.userId.equals(user.id) & lw.wordId.equals(wordId) & lw.lifeValue.isBiggerThanValue(0));
+      ..where((lw) => lw.userId.equals(user.id) & lw.wordId.equals(wordId) & lw.stability.isSmallerThanValue(Constants.graduationStability));
     final learning = await learningQuery.getSingleOrNull();
     if (learning != null) return false; // 学习中
 
@@ -72,12 +73,12 @@ class TodayWordsProvider with WordsProvider {
 class TodayWordsProgressProvider implements WordProgressProvider {
   @override
   double getWordProgress(wordTag) {
-    return 5.0 - (wordTag as LearningWordVo).lifeValue;
+    return (wordTag as LearningWordVo).stability ?? 0.0;
   }
 
   @override
   double getWordProgressMax(wordTag) {
-    return 5.0;
+    return Constants.graduationStability;
   }
 }
 

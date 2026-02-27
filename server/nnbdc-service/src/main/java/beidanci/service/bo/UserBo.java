@@ -1,5 +1,6 @@
 package beidanci.service.bo;
 
+import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -8,6 +9,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -20,12 +22,15 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.util.StreamUtils;
 
 import beidanci.api.Result;
 import beidanci.api.model.CheckBy;
@@ -42,9 +47,9 @@ import beidanci.service.po.DakaId;
 import beidanci.service.po.Dict;
 import beidanci.service.po.LearningDict;
 import beidanci.service.po.LearningDictId;
-import beidanci.service.po.LearningWord;
 import beidanci.service.po.LoginLog;
 import beidanci.service.po.StudyGroup;
+import beidanci.service.po.SysParam;
 import beidanci.service.po.User;
 import beidanci.service.po.UserCowDungLog;
 import beidanci.service.po.UserDbLog;
@@ -53,7 +58,6 @@ import beidanci.service.util.EmojiFilter;
 import beidanci.service.util.JsonUtils;
 import beidanci.service.util.SysParamUtil;
 import beidanci.service.util.Util;
-import beidanci.service.po.SysParam;
 import beidanci.util.Constants;
 import beidanci.util.MD5Utils;
 import beidanci.util.Utils;
@@ -119,6 +123,26 @@ public class UserBo extends BaseBo<User> {
     public void init() {
         setDao(new BaseDao<User>() {
         });
+
+        // 执行数据库迁移
+        upgradeDatabase();
+    }
+
+    private void upgradeDatabase() {
+        try {
+            Resource resource = new ClassPathResource("sql/upgrade.sql");
+            if (resource.exists()) {
+                logger.info("正在执行数据库升级脚本 (sql/upgrade.sql)...");
+                String sql = StreamUtils.copyToString(resource.getInputStream(), Objects.requireNonNull(StandardCharsets.UTF_8));
+                // PostgreSQL 驱动支持在一个 execute() 调用中运行多个语句(以分号分隔)
+                jdbcTemplate.execute(sql);
+                logger.info("数据库升级脚本执行完成！");
+            } else {
+                logger.warn("未找到数据库升级脚本: sql/upgrade.sql");
+            }
+        } catch (Exception e) {
+            logger.error("执行数据库升级失败", e);
+        }
     }
 
     public int getUserDbVersion(String userId) {
@@ -182,21 +206,6 @@ public class UserBo extends BaseBo<User> {
         }
     }
 
-    /**
-     * 删除生命值为0,且不是今天学习的单词
-     */
-    @Transactional
-    public void deleteFinishedLearningWordsExceptToday(User user)
-            throws IllegalArgumentException, IllegalAccessException {
-        for (Iterator<LearningWord> i = user.getLearningWords().iterator(); i.hasNext();) {
-            LearningWord learningWord = i.next();
-            if (learningWord.getLifeValue() == 0 && !Util.isSameDay(learningWord.getLastLearningDate(), new Date())) {
-                learningWordBo.deleteEntity(learningWord);
-                i.remove();
-            }
-        }
-        updateEntity(user);
-    }
 
     /**
      * 删除用户收藏的某本单词书，如果该单词书还没有开始学习，则也从正在学习的单词书中删除

@@ -458,12 +458,19 @@ class LearningWords extends Table {
   DateTimeColumn get lastLearningDate => dateTime().nullable()();
   IntColumn get learningOrder => integer()();
 
-  /// 批次ID，今日学习开始前总是1，开始后每补充一次递增
+  /// 批次ID，今日计划选中的单词会被分配批次，未选中的为 NULL
   /// nullable() to handle legacy data where batch_id might be NULL
-  IntColumn get batchId => integer().nullable().withDefault(const Constant(1))();
+  IntColumn get batchId => integer().nullable()();
 
-  /// 生命值(需要学习的次数)，0-5，0表示已掌握，1-5表示需要学习
-  IntColumn get lifeValue => integer()();
+
+  /// FSRS 算法相关字段
+  RealColumn get stability => real().nullable().withDefault(const Constant(0.0))();
+  RealColumn get difficulty => real().nullable().withDefault(const Constant(0.0))();
+  IntColumn get elapsedDays => integer().nullable().withDefault(const Constant(0))();
+  IntColumn get scheduledDays => integer().nullable().withDefault(const Constant(0))();
+  IntColumn get reps => integer().nullable().withDefault(const Constant(0))();
+  IntColumn get lapses => integer().nullable().withDefault(const Constant(0))();
+  IntColumn get state => integer().nullable().withDefault(const Constant(0))(); // 0: New, 1: Learning, 2: Review, 3: Relearning
 
   BoolColumn get isTodayNewWord => boolean()();
   IntColumn get learnedTimes => integer()();

@@ -15,7 +15,6 @@ public class LearningWordVo extends Vo {
 
     private Integer addDay;
 
-    private Integer lifeValue;
 
     private Date lastLearningDate;
 
@@ -63,13 +62,6 @@ public class LearningWordVo extends Vo {
         this.addDay = addDay;
     }
 
-    public Integer getLifeValue() {
-        return lifeValue;
-    }
-
-    public void setLifeValue(Integer lifeValue) {
-        this.lifeValue = lifeValue;
-    }
 
     public Date getLastLearningDate() {
         return lastLearningDate;

@@ -24,4 +24,10 @@ class Constants {
 
   /// 重叠度在拼写相似度中的权重（0.0-1.0）
   static const double spellingOverlapWeight = 0.3;
+
+  // ========== FSRS 相关常量 ==========
+
+  /// 稳定性毕业阈值 (天)
+  /// 当稳定性达到此数值时，认为单词已掌握，移出学习中库
+  static const double graduationStability = 180.0;
 }

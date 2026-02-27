@@ -13,6 +13,7 @@ import 'package:nnbdc/util/utils.dart';
 
 import '../../util/word_util.dart';
 import '../../util/app_clock.dart';
+import '../../constants.dart';
 
 class LearningWordsProvider with WordsProvider {
   @override
@@ -70,12 +71,15 @@ class LearningWordsProvider with WordsProvider {
 class LearningWordsProgressProvider implements WordProgressProvider {
   @override
   double getWordProgress(wordTag) {
-    return 5.0 - (wordTag as LearningWordVo).lifeValue;
+    final lw = wordTag as LearningWordVo;
+    // 返回 stability 作为当前进度
+    return lw.stability ?? 0.0;
   }
 
   @override
   double getWordProgressMax(wordTag) {
-    return 5.0;
+    // 稳定性达到毕业阈值即为 100%
+    return Constants.graduationStability;
   }
 }
 

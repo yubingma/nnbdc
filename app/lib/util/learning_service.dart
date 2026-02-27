@@ -5,13 +5,15 @@ import 'package:nnbdc/util/toast_util.dart';
 import 'package:drift/drift.dart';
 import 'package:nnbdc/util/date_utils.dart';
 import 'package:nnbdc/util/app_clock.dart';
+import 'package:nnbdc/constants.dart';
 
 class LearningService {
   static void debugLog(String msg) {
     Global.logger.d(msg);
   }
 
-  static const int newLearningWordLifeValue = 5;
+  static const double initialStability = 0.0;
+  static double get masteredStability => Constants.graduationStability;
 
   /// 准备今日学习单词
   static Future<Result<List<int>>> prepareTodayStudy(bool addNewWordsIfNotEnough) async {
@@ -31,8 +33,8 @@ class LearningService {
       if (isNewDay) {
         Global.logger.d('检测到新的学习日期，开始重置用户数据: userId=${user.id}');
 
-        // 新的一天开始时，删除生命值为零的学习中单词
-        await db.learningWordsDao.deleteZeroLifeWords(user.id);
+        // 新的一天开始时，删除已经掌握的学习中单词
+        await db.learningWordsDao.deleteMasteredLearningWords(user.id);
 
         // 新的一天开始时，删除已经在 mastered_words 表中的学习单词
         await db.learningWordsDao.deleteMasteredWords(user.id);
@@ -48,8 +50,11 @@ class LearningService {
             todayStudyStarted: const Value(false),
             learningFinished: const Value(false)));
 
-        // 重置所有单词的今日学习次数
-        await (db.update(db.learningWords)..where((u) => u.userId.equals(user.id))).write(const LearningWordsCompanion(todayLearnedTimes: Value(0)));
+        // 重置所有单词的今日学习次数和批次ID
+        await (db.update(db.learningWords)..where((u) => u.userId.equals(user.id))).write(const LearningWordsCompanion(
+          todayLearnedTimes: Value(0),
+          batchId: Value(null),
+        ));
 
         // 重新获取更新后的用户信息
         final updatedUser = await db.usersDao.getUserById(user.id);
@@ -113,20 +118,12 @@ class LearningService {
   /// 从数据库中获取已生成的用户今天要学习的单词列表
   static Future<List<LearningWord>> getTodayLearningWordsFromDb(String userId) async {
     final db = MyDatabase.instance;
-    final now = AppClock.now();
 
-    // 获取今天开始和结束的时间
-    final today = DateTime(now.year, now.month, now.day);
-    final tomorrow = today.add(const Duration(days: 1));
-
-    // 查询今天的学习单词
-    // 注意：batchId 可能是 NULL（旧数据），只查询有 batchId 的记录
+    // 查询今天的学习单词 (只需按 batchId 过滤，因为新一天开始时 batchId 已重置)
     try {
       final query = db.select(db.learningWords)
         ..where((lw) =>
             lw.userId.equals(userId) &
-            lw.lastLearningDate.isBiggerOrEqualValue(today) &
-            lw.lastLearningDate.isSmallerThanValue(tomorrow) &
             lw.batchId.isBiggerThanValue(0))
         ..orderBy([
           (lw) => OrderingTerm(expression: lw.batchId),
@@ -151,8 +148,8 @@ class LearningService {
     }
 
     // 获取所有正在学习中的单词(作为备选单词列表)
-    final allLearningWords = await (db.select(db.learningWords)..where((lw) => lw.userId.equals(userId) & lw.lifeValue.isBiggerThanValue(0))).get();
-    debugLog('[genTodayWords] 学习中单词总数(lifeValue>0): ${allLearningWords.length}');
+    final allLearningWords = await (db.select(db.learningWords)..where((lw) => lw.userId.equals(userId) & lw.stability.isSmallerThanValue(Constants.graduationStability))).get();
+    debugLog('[genTodayWords] 学习中单词总数(stability < ${Constants.graduationStability}): ${allLearningWords.length}');
 
     // 从备选单词列表中删除那些已经选为今天学习的单词
     final List<LearningWord> candidateWords = List.from(allLearningWords);
@@ -253,8 +250,8 @@ class LearningService {
       }
     }
 
-    // 对该天的单词进行排序，生命值大的排在前面，以便被优先选为本日学习单词
-    learningWords.sort((a, b) => b.lifeValue.compareTo(a.lifeValue));
+    // 对该天的单词进行排序，掌握度小的排在前面，以便被优先选为本日学习单词
+    learningWords.sort((a, b) => (a.stability ?? 0.0).compareTo(b.stability ?? 0.0));
 
     return learningWords;
   }
@@ -268,7 +265,7 @@ class LearningService {
     LearningWord? oldestWord;
     for (var learningWord in allLearningWords) {
       if (oldestWord == null ||
-          (DateUtils.isSameDay(learningWord.addTime, oldestWord.addTime) && learningWord.lifeValue > oldestWord.lifeValue) ||
+          (DateUtils.isSameDay(learningWord.addTime, oldestWord.addTime) && (learningWord.stability ?? 0.0) < (oldestWord.stability ?? 0.0)) ||
           (learningWord.addTime.isBefore(oldestWord.addTime) && !DateUtils.isSameDay(learningWord.addTime, oldestWord.addTime))) {
         oldestWord = learningWord;
       }
@@ -352,15 +349,15 @@ class LearningService {
 
     // 2. 排序逻辑：
     // 首先按照 batchId 升序排列。
-    // 对于最新批次 (batchId == maxBatchId)，内部按照 lifeValue 降序排列。
+    // 对于最新批次 (batchId == maxBatchId)，内部按照 stability 升序排列。
     // 对于旧批次，内部保持原有的 learningOrder 顺序。
     todayLearningWords.sort((a, b) {
       if (a.batchId != b.batchId) {
         return (a.batchId ?? 0).compareTo(b.batchId ?? 0);
       }
       if (a.batchId == maxBatchId) {
-        // 最新批次：生命值降序
-        return b.lifeValue.compareTo(a.lifeValue);
+        // 最新批次：掌握度升序
+        return (a.stability ?? 0.0).compareTo(b.stability ?? 0.0);
       }
       // 旧批次：既有学习顺序升序
       return a.learningOrder.compareTo(b.learningOrder);
@@ -371,10 +368,10 @@ class LearningService {
       for (int i = 0; i < todayLearningWords.length; i++) {
         var learningWord = todayLearningWords[i];
 
-        // 统一更新日期标记（如果是新生成或刚跨天加入的）
-        if (learningWord.lastLearningDate == null || !DateUtils.isSameDay(now, learningWord.lastLearningDate!)) {
+        // 统一更新日期标记（如果是第一次加入今天的批次）
+        // 不再预更新 lastLearningDate，保留其原始值用于 FSRS 间隔计算
+        if (learningWord.isTodayNewWord != (learningWord.learnedTimes == 0)) {
           learningWord = learningWord.copyWith(
-            lastLearningDate: Value(now),
             isTodayNewWord: learningWord.learnedTimes == 0,
           );
         }
@@ -403,18 +400,20 @@ class LearningService {
       throw Exception('用户不存在');
     }
 
-    // 计算目前所有的learning words的总生命值
-    int currentLifeValue = 0;
+    // 计算目前所有的learning words的总“剩余待学值”
+    double currentGapValue = 0;
     for (var word in currentLearningWords) {
-      currentLifeValue += word.lifeValue;
+      currentGapValue += (masteredStability - (word.stability ?? 0.0));
     }
 
-    // 计算期望的总生命值
-    final expectedTotalLifeValue = user.wordsPerDay * 29 ~/ 5;
-    debugLog('[addNewLearningWords] 当前总生命值: $currentLifeValue, 期望生命值: $expectedTotalLifeValue');
+    // 计算期望的总“剩余待学值”
+    // 原逻辑是 user.wordsPerDay * 29 ~/ 5，其中 5 是 masteredMasteryLevel
+    // 换算到 stability (180)，比例是 180 / 5 = 36
+    final expectedTotalGapValue = user.wordsPerDay * 29.0 * (masteredStability / 5.0) / 5.0;
+    debugLog('[addNewLearningWords] 当前总剩余待学值: $currentGapValue, 期望值: $expectedTotalGapValue');
 
-    // 计算需要添加的新单词数量（以达到期望的总生命值）
-    int newWordCount = (expectedTotalLifeValue - currentLifeValue + 0.0).ceil() ~/ newLearningWordLifeValue;
+    // 计算需要添加的新单词数量
+    int newWordCount = (expectedTotalGapValue - currentGapValue).ceil() ~/ (masteredStability - initialStability);
     debugLog('[addNewLearningWords] 计算需添加新词数: $newWordCount');
 
     // 按照后端逻辑：限制不超过每日单词数
@@ -485,7 +484,7 @@ class LearningService {
             wordId: dictWord.wordId,
             addTime: now,
             addDay: todayDayNumber,
-            lifeValue: newLearningWordLifeValue,
+            stability: initialStability,
             batchId: 0, // 初始批次设为 0，只有加入今日学习时才分配有效批次
             lastLearningDate: null, // 与后端逻辑一致，初始化为null
             learningOrder: 0,

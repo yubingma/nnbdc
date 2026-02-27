@@ -207,7 +207,7 @@ class MyDatabase extends _$MyDatabase {
   // you should bump this number whenever you change or add a table definition. Migrations
   // are covered later in this readme.
   @override
-  int get schemaVersion => 22;
+  int get schemaVersion => 24;
 
   @override
   MigrationStrategy get migration {
@@ -287,6 +287,12 @@ class MyDatabase extends _$MyDatabase {
           }
           if (from < 22) {
             await _migrateFromV21ToV22AddLearningSeconds(m);
+          }
+          if (from < 23) {
+            await _migrateFromV22ToV23(m);
+          }
+          if (from < 24) {
+            await _migrateFromV23ToV24(m);
           }
         } catch (e, stackTrace) {
           // 升级失败，记录错误日志
@@ -548,6 +554,114 @@ class MyDatabase extends _$MyDatabase {
     });
   }
 
+  /// 从版本 22 升级到版本 23：重构 life_value 为 mastery_level
+  Future<void> _migrateFromV22ToV23(Migrator m) async {
+    await transaction(() async {
+      try {
+        // 1. 重命名列 life_value -> mastery_level
+        // 注意：SQLite 3.25.0+ (2018-09-15) 才支持 RENAME COLUMN
+        // Flutter 捆绑的 SQLite 通常足够新。
+        await customStatement('ALTER TABLE learning_words RENAME COLUMN life_value TO mastery_level');
+        Global.logger.i('✅ 已重命名 learning_words.life_value 为 mastery_level');
+
+        // 2. 转换数据逻辑：mastery_level = 5 - life_value
+        // 此时 mastery_level 列里的数据还是原来的 life_value 值 (5,4,3,2,1,0)
+        await customStatement('UPDATE learning_words SET mastery_level = 5 - mastery_level');
+        Global.logger.i('✅ 已转换 learning_words 掌握度数据');
+
+        // 3. 删除相关的同步日志 (user_db_logs)，因为 life_value 字段已不存在，后端也已重构
+        // 这样可以避免同步旧数据到已更名的列
+        await customStatement("DELETE FROM user_db_logs WHERE tbl_name = 'learningWords' OR tbl_name = 'learning_words';");
+        Global.logger.i('✅ 已清空学习中单词相关的同步日志');
+        
+        // 4. 更新相关索引
+        await customStatement('DROP INDEX IF EXISTS idx_learning_words_user_life');
+        await customStatement('''
+          CREATE INDEX IF NOT EXISTS idx_learning_words_user_mastery 
+          ON learning_words (user_id, mastery_level)
+        ''');
+        Global.logger.i('✅ 已更新 learning_words 索引');
+
+      } catch (e, stackTrace) {
+        Global.logger.e('升级从 V22 到 V23 失败: $e', error: e, stackTrace: stackTrace);
+        rethrow;
+      }
+    });
+  }
+
+  /// 从版本 23 升级到版本 24：添加 FSRS 算法相关字段
+  Future<void> _migrateFromV23ToV24(Migrator m) async {
+    await transaction(() async {
+      try {
+        // 1. 添加 FSRS 列
+        // 使用 try-catch 保护，防止列已存在时报错
+        try { await m.addColumn(learningWords, learningWords.stability); } catch(_) {}
+        try { await m.addColumn(learningWords, learningWords.difficulty); } catch(_) {}
+        try { await m.addColumn(learningWords, learningWords.elapsedDays); } catch(_) {}
+        try { await m.addColumn(learningWords, learningWords.scheduledDays); } catch(_) {}
+        try { await m.addColumn(learningWords, learningWords.reps); } catch(_) {}
+        try { await m.addColumn(learningWords, learningWords.lapses); } catch(_) {}
+        try { await m.addColumn(learningWords, learningWords.state); } catch(_) {}
+        Global.logger.i('✅ 已向 learning_words 添加 FSRS 算法字段');
+
+        // 2. 迁移数据：根据 mastery_level 智能设置初始 Stability
+        // 检查 mastery_level 列是否存在
+        final columns = await customSelect("PRAGMA table_info(learning_words)").get();
+        final hasMasteryLevel = columns.any((element) => element.read<String>('name') == 'mastery_level');
+
+        if (hasMasteryLevel) {
+          await customStatement('''
+            UPDATE learning_words SET 
+              stability = CASE 
+                WHEN mastery_level >= 5 THEN 180.0 
+                WHEN mastery_level = 4 THEN 14.0 
+                WHEN mastery_level = 3 THEN 6.0 
+                WHEN mastery_level = 2 THEN 3.0 
+                WHEN mastery_level = 1 THEN 1.0 
+                ELSE 0.1 
+              END,
+              difficulty = 5.0,
+              reps = COALESCE(mastery_level, 0),
+              state = 2, -- Review
+              elapsed_days = 0,
+              scheduled_days = 0,
+              lapses = 0
+            WHERE stability IS NULL OR stability = 0.0
+          ''');
+          Global.logger.i('✅ 已将 learning_words 掌握度数据迁移至 FSRS 稳定性参数');
+
+          // 3. 删除旧字段 (mastery_level)
+          // 由于 masteryLevel 已经在 table.dart 的 LearningWords 类中删除了，
+          // 调用 m.alterTable(TableMigration(learningWords)) 会自动识别并执行“删除列”的操作
+          await m.alterTable(TableMigration(learningWords));
+          Global.logger.i('✅ 已成功删除 mastery_level 冗余字段');
+        }
+
+        // 4. 清理旧格式数据
+        await customStatement("UPDATE learning_words SET batch_id = NULL;");
+        await customStatement("DELETE FROM user_db_logs WHERE tbl_name = 'learningWords' OR tbl_name = 'learning_words';");
+        Global.logger.i('✅ 已清空旧批次数据和同步日志');
+
+        // 5. 更新索引
+        await customStatement('DROP INDEX IF EXISTS idx_learning_words_user_mastery');
+        await customStatement('DROP INDEX IF EXISTS idx_learning_words_user_life');
+        await customStatement('DROP INDEX IF EXISTS idx_learning_words_add_time_life');
+        await customStatement('''
+          CREATE INDEX IF NOT EXISTS idx_learning_words_user_stability 
+          ON learning_words (user_id, stability)
+        ''');
+        await customStatement('''
+          CREATE INDEX IF NOT EXISTS idx_learning_words_add_time_stability 
+          ON learning_words (add_time, stability, word_id)
+        ''');
+        Global.logger.i('✅ 已更新 FSRS 相关索引');
+      } catch (e, stackTrace) {
+        Global.logger.e('升级从 V23 到 V24 失败: $e', error: e, stackTrace: stackTrace);
+        rethrow;
+      }
+    });
+  }
+
   /// 从版本 15 升级到版本 16
   /// 重建学习步骤,添加 List 学习步骤
   Future<void> _migrateFromV15ToV16() async {
@@ -793,8 +907,8 @@ class MyDatabase extends _$MyDatabase {
   Future<void> _createPerformanceIndexes() async {
     // 为learning_words表添加复合索引以优化常见查询
     await customStatement('''
-      CREATE INDEX IF NOT EXISTS idx_learning_words_user_life 
-      ON learning_words (user_id, life_value)
+      CREATE INDEX IF NOT EXISTS idx_learning_words_user_stability 
+      ON learning_words (user_id, stability)
     ''');
 
     await customStatement('''
@@ -808,8 +922,8 @@ class MyDatabase extends _$MyDatabase {
     ''');
 
     await customStatement('''
-      CREATE INDEX IF NOT EXISTS idx_learning_words_add_time_life 
-      ON learning_words (add_time, life_value, word_id)
+      CREATE INDEX IF NOT EXISTS idx_learning_words_add_time_stability 
+      ON learning_words (add_time, stability, word_id)
     ''');
 
     // 为meaning_items表添加索引以优化释义查询
