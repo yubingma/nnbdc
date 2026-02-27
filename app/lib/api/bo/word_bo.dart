@@ -510,7 +510,8 @@ class WordBo {
           tbl.userId.equals(userId) &
           tbl.isTodayNewWord.equals(true) &
           tbl.lastLearningDate.isBiggerOrEqualValue(startOfDay) &
-          tbl.lastLearningDate.isSmallerOrEqualValue(endOfDay))
+          tbl.lastLearningDate.isSmallerOrEqualValue(endOfDay) &
+          tbl.batchId.isBiggerThanValue(0))
       ..orderBy([(tbl) => OrderingTerm(expression: tbl.learningOrder)])
       ..limit(pageSize, offset: fromIndex);
     final learningWords = await query.get();
@@ -519,7 +520,8 @@ class WordBo {
       ..where(db.learningWords.userId.equals(userId))
       ..where(db.learningWords.isTodayNewWord.equals(true))
       ..where(db.learningWords.lastLearningDate.isBiggerOrEqualValue(startOfDay))
-      ..where(db.learningWords.lastLearningDate.isSmallerOrEqualValue(endOfDay));
+      ..where(db.learningWords.lastLearningDate.isSmallerOrEqualValue(endOfDay))
+      ..where(db.learningWords.batchId.isBiggerThanValue(0));
     final countResult = await countQuery.getSingle();
     final total = countResult.read(countAll()) ?? 0;
     List<LearningWordVo> learningWordVos = [];
@@ -567,7 +569,8 @@ class WordBo {
           tbl.userId.equals(userId) &
           tbl.isTodayNewWord.equals(false) &
           tbl.lastLearningDate.isBiggerOrEqualValue(startOfDay) &
-          tbl.lastLearningDate.isSmallerOrEqualValue(endOfDay))
+          tbl.lastLearningDate.isSmallerOrEqualValue(endOfDay) &
+          tbl.batchId.isBiggerThanValue(0))
       ..orderBy([(tbl) => OrderingTerm(expression: tbl.learningOrder)])
       ..limit(pageSize, offset: fromIndex);
     final learningWords = await query.get();
@@ -576,7 +579,8 @@ class WordBo {
       ..where(db.learningWords.userId.equals(userId))
       ..where(db.learningWords.isTodayNewWord.equals(false))
       ..where(db.learningWords.lastLearningDate.isBiggerOrEqualValue(startOfDay))
-      ..where(db.learningWords.lastLearningDate.isSmallerOrEqualValue(endOfDay));
+      ..where(db.learningWords.lastLearningDate.isSmallerOrEqualValue(endOfDay))
+      ..where(db.learningWords.batchId.isBiggerThanValue(0));
     final countResult = await countQuery.getSingle();
     final total = countResult.read(countAll()) ?? 0;
     List<LearningWordVo> learningWordVos = [];
@@ -1528,7 +1532,10 @@ class WordBo {
     // 注意：batchId 可能是 NULL（旧数据），只查询有 batchId 的记录
     final query = db.select(db.learningWords)
       ..where((tbl) =>
-          tbl.userId.equals(userId) & tbl.lastLearningDate.isBiggerOrEqualValue(startOfDay) & tbl.lastLearningDate.isSmallerOrEqualValue(endOfDay) & tbl.batchId.isNotNull())
+          tbl.userId.equals(userId) &
+          tbl.lastLearningDate.isBiggerOrEqualValue(startOfDay) &
+          tbl.lastLearningDate.isSmallerOrEqualValue(endOfDay) &
+          tbl.batchId.isBiggerThanValue(0))
       ..orderBy([
         (tbl) => OrderingTerm(expression: tbl.batchId),
         (tbl) => OrderingTerm(expression: tbl.learningOrder),
@@ -1539,7 +1546,8 @@ class WordBo {
       ..addColumns([countAll()])
       ..where(db.learningWords.userId.equals(userId))
       ..where(db.learningWords.lastLearningDate.isBiggerOrEqualValue(startOfDay))
-      ..where(db.learningWords.lastLearningDate.isSmallerOrEqualValue(endOfDay));
+      ..where(db.learningWords.lastLearningDate.isSmallerOrEqualValue(endOfDay))
+      ..where(db.learningWords.batchId.isBiggerThanValue(0));
     final countResult = await countQuery.getSingle();
     final total = countResult.read(countAll()) ?? 0;
     List<LearningWordVo> learningWordVos = [];

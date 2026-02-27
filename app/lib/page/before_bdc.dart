@@ -225,9 +225,6 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
           // 2. 今日核心任务卡片 (目标设置 + 单词统计)
           renderMissionCard(),
 
-          // 底部额外操作 (如果是错误状态)
-          if (prepareResult!.code == "NNBDC-0012" || (_hasTriedSupplement && todayWordCount! < user!.wordsPerDay!)) renderErrorActions(),
-
           // 底部间距
           const SizedBox(height: 40),
         ],
@@ -341,10 +338,12 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
               ),
             ),
 
-          // 底部：开始按钮
+          // 底部：开始按钮 或 错误处理区域
           Padding(
             padding: const EdgeInsets.all(20),
-            child: renderStartButton(),
+            child: (prepareResult?.code == "NNBDC-0012" || (_hasTriedSupplement && todayWordCount! < (user?.wordsPerDay ?? 0)))
+                ? renderErrorActions()
+                : renderStartButton(),
           ),
         ],
       ),
@@ -508,11 +507,11 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
 
   Widget renderErrorActions() {
     return Container(
-      margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: const Color(0xFFFFEBEE),
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFFFCDD2), width: 1),
       ),
       child: Column(
         children: [
