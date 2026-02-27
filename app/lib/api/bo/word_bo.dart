@@ -446,19 +446,8 @@ class WordBo {
       throw Exception('用户不存在');
     }
     try {
-      // 获取用户当前选中的词书
-      final learningDicts = await db.learningDictsDao.getLearningDictsOfUser(userId);
-      final selectedDictIds = learningDicts.map((d) => d.dictId).toList();
-
-      // 获取当前勾选的所有词书里包含的单词ID集合
-      final dictWordIdsRow = await (db.selectOnly(db.dictWords)
-            ..addColumns([db.dictWords.wordId])
-            ..where(db.dictWords.dictId.isIn(selectedDictIds)))
-          .get();
-      final uniqueWordIdsInDicts = dictWordIdsRow.map((row) => row.read(db.dictWords.wordId)!).toSet();
-
       final query = db.select(db.learningWords)
-        ..where((tbl) => tbl.userId.equals(userId) & tbl.lifeValue.isBiggerThanValue(0) & tbl.wordId.isIn(uniqueWordIdsInDicts))
+        ..where((tbl) => tbl.userId.equals(userId) & tbl.lifeValue.isBiggerThanValue(0))
         ..orderBy([
           (tbl) => OrderingTerm(expression: tbl.addTime),
           (tbl) => OrderingTerm(expression: tbl.lifeValue),
@@ -470,8 +459,7 @@ class WordBo {
       final countQuery = db.selectOnly(db.learningWords)
         ..addColumns([countAll()])
         ..where(db.learningWords.userId.equals(userId))
-        ..where(db.learningWords.lifeValue.isBiggerThanValue(0))
-        ..where(db.learningWords.wordId.isIn(uniqueWordIdsInDicts));
+        ..where(db.learningWords.lifeValue.isBiggerThanValue(0));
       final countResult = await countQuery.getSingle();
       final total = countResult.read(countAll()) ?? 0;
       List<LearningWordVo> learningWordVos = [];
@@ -635,22 +623,13 @@ class WordBo {
       if (userId == null) {
         return results;
       }
-      // 获取当前勾选的所有词书里包含的单词ID集合
-      final learningDicts = await db.learningDictsDao.getLearningDictsOfUser(userId);
-      final selectedDictIds = learningDicts.map((d) => d.dictId).toList();
-      final dictWordIdsRow = await (db.selectOnly(db.dictWords)
-            ..addColumns([db.dictWords.wordId])
-            ..where(db.dictWords.dictId.isIn(selectedDictIds)))
-          .get();
-      final uniqueWordIdsInDicts = dictWordIdsRow.map((row) => row.read(db.dictWords.wordId)!).toSet();
 
-      // 从"已掌握"总集中获取，并过滤
+      // 从"已掌握"总集中获取所有单词
       final allMasteredWords = await db.masteredWordsDao.getMasteredWordsForUser(userId);
-      final filteredMasteredWords = allMasteredWords.where((mw) => uniqueWordIdsInDicts.contains(mw.wordId)).toList();
 
-      results.total = filteredMasteredWords.length;
+      results.total = allMasteredWords.length;
       // 手动分页
-      final pagedEntries = filteredMasteredWords.skip(fromIndex).take(pageSize).toList();
+      final pagedEntries = allMasteredWords.skip(fromIndex).take(pageSize).toList();
       if (pagedEntries.isEmpty) {
         return results;
       }
@@ -1498,26 +1477,13 @@ class WordBo {
         ..where(db.learningWords.lastLearningDate.isSmallerOrEqualValue(endOfDay));
       final totalWordsCount = await todayWordsQuery.getSingle();
       wordLists.add(WordList("今日单词", totalWordsCount.read(countAll()) ?? 0));
-      // 获取学习中的单词数量（只统计生命值大于0的单词）
-      final learningWordsQuery = db.select(db.learningWords)
-        ..where((tbl) => tbl.userId.equals(user.id) & tbl.lifeValue.isBiggerThanValue(0));
-      final learningWords = await learningWordsQuery.get();
-      final learningWordIds = learningWords.map((w) => w.wordId).toSet();
-
-      // 获取所有词书的学习状态
-      final learningDicts = await MyDatabase.instance.learningDictsDao.getLearningDictsOfUser(user.id);
-      final selectedDictIds = learningDicts.map((d) => d.dictId).toList();
-
-      // 获取词书中的唯一单词总数 (用于过滤学习中和已掌握的统计口径)
-      final dictWordIdsRow = await (db.selectOnly(db.dictWords)
-            ..addColumns([db.dictWords.wordId])
-            ..where(db.dictWords.dictId.isIn(selectedDictIds)))
-          .get();
-      final uniqueWordIdsInDicts = dictWordIdsRow.map((row) => row.read(db.dictWords.wordId)!).toSet();
-
-      // 统计当前所选词书中的学习中单词数量
-      final learningWordsInSelectedDictsCount = learningWordIds.intersection(uniqueWordIdsInDicts).length;
-      wordLists.add(WordList("学习中", learningWordsInSelectedDictsCount));
+      // 获取全局学习中的单词数量（生命值大于0的所有单词）
+      final learningWordsCountQuery = db.selectOnly(db.learningWords)
+        ..addColumns([countAll()])
+        ..where(db.learningWords.userId.equals(user.id))
+        ..where(db.learningWords.lifeValue.isBiggerThanValue(0));
+      final learningWordsCountResult = await learningWordsCountQuery.getSingle();
+      wordLists.add(WordList("学习中", learningWordsCountResult.read(countAll()) ?? 0));
 
       final rawWordDict = await db.dictsDao.findUserRawDict(user.id);
       int rawWordCount = 0;
@@ -1530,10 +1496,9 @@ class WordBo {
       }
       wordLists.add(WordList("生词本", rawWordCount));
 
-      // 统计当前所选词书中的已掌握单词数量
-      final allMasteredWordIds = await db.masteredWordsDao.getMasteredWordIdSet(user.id);
-      final masteredWordIdsInSelectedDicts = allMasteredWordIds.intersection(uniqueWordIdsInDicts);
-      wordLists.add(WordList("已掌握", masteredWordIdsInSelectedDicts.length));
+      // 获取全局已掌握单词数量
+      final masteredWordIds = await db.masteredWordsDao.getMasteredWordIdSet(user.id);
+      wordLists.add(WordList("已掌握", masteredWordIds.length));
       return Result("SUCCESS", "获取成功", true)..data = wordLists;
     } catch (e, stackTrace) {
       Global.logger.e('获取单词列表失败: $e', stackTrace: stackTrace);
