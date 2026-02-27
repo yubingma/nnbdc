@@ -1082,46 +1082,58 @@ class _MePageState extends State<MePage> {
                     textScaler: const TextScaler.linear(1.0),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
                     decoration: BoxDecoration(
-                      color: isDarkModeEnabled ? const Color(0xFF3D3D3D) : const Color(0xFFF0F0F0),
-                      borderRadius: BorderRadius.circular(8),
+                      color: isDarkModeEnabled ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(
+                        color: isDarkModeEnabled ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
+                        width: 1,
+                      ),
                     ),
-                    child: DropdownButton<int>(
-                      value: (() {
-                        final isPremium = SubscriptionUtil.isPremium();
-                        final raw = loggedInUser!.wordsPerDay!;
-                        if (!isPremium && raw > 20) return 20;
-                        return raw;
-                      })(),
-                      underline: const SizedBox(),
-                      icon: Icon(
-                        Icons.arrow_drop_down,
-                        color: isDarkModeEnabled ? Colors.white : Colors.black,
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<int>(
+                        value: (() {
+                          final isPremium = SubscriptionUtil.isPremium();
+                          final raw = loggedInUser!.wordsPerDay!;
+                          if (!isPremium && raw > 20) return 20;
+                          return raw;
+                        })(),
+                        isDense: true,
+                        icon: Icon(
+                          Icons.keyboard_arrow_down_rounded,
+                          color: isDarkModeEnabled ? Colors.white70 : Colors.black54,
+                          size: 20,
+                        ),
+                        dropdownColor: isDarkModeEnabled ? const Color(0xFF2D2D2D) : Colors.white,
+                        style: TextStyle(
+                          color: isDarkModeEnabled ? Colors.white : Colors.black,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        items: (() {
+                          final isPremium = SubscriptionUtil.isPremium();
+                          final all = <int>[10, 20, 30, 50, 75, 100, 150, 200, 300, 400, 500];
+                          final values = isPremium ? all : <int>[10, 20];
+                          return values.map((v) => DropdownMenuItem<int>(
+                            value: v, 
+                            child: Text('$v')
+                          )).toList();
+                        })(),
+                        onChanged: (value) async {
+                          if (value == null) return;
+                          int newValue = value;
+                          if (!SubscriptionUtil.isPremium() && newValue > 20) {
+                            newValue = 20;
+                          }
+                          setState(() {
+                            loggedInUser!.wordsPerDay = newValue;
+                          });
+                          await Global.setLoggedInUser(loggedInUser!);
+                          await MyDatabase.instance.usersDao.updateWordsPerDay(loggedInUser!.id!, newValue);
+                          ThrottledDbSyncService().requestSync();
+                        },
                       ),
-                      dropdownColor: isDarkModeEnabled ? const Color(0xFF2D2D2D) : Colors.white,
-                      style: TextStyle(
-                        color: isDarkModeEnabled ? Colors.white : Colors.black,
-                        fontSize: 14,
-                      ),
-                      items: (() {
-                        final isPremium = SubscriptionUtil.isPremium();
-                        final all = <int>[10, 20, 30, 50, 75, 100, 150, 200, 300, 400, 500];
-                        final values = isPremium ? all : <int>[10, 20];
-                        return values.map((v) => DropdownMenuItem<int>(value: v, child: Text('$v'))).toList();
-                      })(),
-                      onChanged: (value) async {
-                        int newValue = value as int;
-                        if (!SubscriptionUtil.isPremium() && newValue > 20) {
-                          newValue = 20;
-                        }
-                        setState(() {
-                          loggedInUser!.wordsPerDay = newValue;
-                        });
-                        await Global.setLoggedInUser(loggedInUser!);
-                        await MyDatabase.instance.usersDao.updateWordsPerDay(loggedInUser!.id!, newValue);
-                        ThrottledDbSyncService().requestSync();
-                      },
                     ),
                   ),
                 ],
