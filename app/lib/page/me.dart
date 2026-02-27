@@ -492,8 +492,40 @@ class _MePageState extends State<MePage> {
 
   Widget renderStudyProgress() {
     final isDarkModeEnabled = context.watch<DarkMode>().isDarkMode;
-    final textColor = isDarkModeEnabled ? Colors.white : Colors.black;
+    final textColor = isDarkModeEnabled ? Colors.white : const Color(0xFF2C3E50);
+    final subtitleColor = isDarkModeEnabled ? Colors.white70 : const Color(0xFF7F8C8D);
+    final numberColor = isDarkModeEnabled ? Colors.amber : const Color(0xFFE67E22);
+    final highlightColor = isDarkModeEnabled ? Colors.greenAccent : const Color(0xFF27AE60);
+    final iconColor = isDarkModeEnabled ? Colors.white70 : const Color(0xFF95A5A6);
     final cardColor = isDarkModeEnabled ? const Color(0xFF2D2D2D) : Colors.white;
+
+    final bgGradientColors = isDarkModeEnabled 
+        ? const [Color(0xFF1E1E32), Color(0xFF2A1C3C), Color(0xFF3B2A45)]
+        : const [Color(0xFFFFFFFF), Color(0xFFF8F9FA), Color(0xFFE9ECEF)];
+    
+    final borderColor = isDarkModeEnabled 
+        ? Colors.white.withValues(alpha: 0.15) 
+        : Colors.black.withValues(alpha: 0.05);
+
+    final shadowColor = isDarkModeEnabled
+        ? Colors.purpleAccent.withValues(alpha: 0.2)
+        : Colors.black.withValues(alpha: 0.05);
+
+    final innerCardBgColor = isDarkModeEnabled
+        ? Colors.white.withValues(alpha: 0.05)
+        : Colors.black.withValues(alpha: 0.03);
+
+    final innerCardBorderColor = isDarkModeEnabled
+        ? Colors.white.withValues(alpha: 0.1)
+        : Colors.black.withValues(alpha: 0.05);
+
+    final progressTrackColor = isDarkModeEnabled
+        ? Colors.white.withValues(alpha: 0.1)
+        : Colors.black.withValues(alpha: 0.05);
+
+    final starContainerColor = isDarkModeEnabled
+        ? Colors.purpleAccent.withValues(alpha: 0.2)
+        : Colors.orange.withValues(alpha: 0.1);
 
     return Column(
       children: [
@@ -504,20 +536,16 @@ class _MePageState extends State<MePage> {
           ),
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
+            gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
-                Color(0xFF1E1E32), // Dark starry background
-                Color(0xFF2A1C3C), // Purple hue
-                Color(0xFF3B2A45),
-              ],
+              colors: bgGradientColors,
             ),
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.15), width: 1.5),
+            border: Border.all(color: borderColor, width: 1.5),
             boxShadow: [
               BoxShadow(
-                color: Colors.purpleAccent.withValues(alpha: 0.2),
+                color: shadowColor,
                 blurRadius: 20,
                 spreadRadius: 2,
                 offset: const Offset(0, 10),
@@ -557,7 +585,7 @@ class _MePageState extends State<MePage> {
                             ? CachedNetworkImageProvider(loggedInUser!.wechatAvatar!)
                             : null,
                         child: (loggedInUser?.wechatAvatar == null || loggedInUser!.wechatAvatar!.isEmpty)
-                            ? const Icon(Icons.person, color: Colors.white70, size: 30)
+                            ? Icon(Icons.person, color: iconColor, size: 30)
                             : null,
                       ),
                     ),
@@ -570,8 +598,8 @@ class _MePageState extends State<MePage> {
                       children: [
                         Text(
                           Util.getNickNameOfUser(loggedInUser),
-                          style: const TextStyle(
-                            color: Colors.white,
+                          style: TextStyle(
+                            color: textColor,
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
                             letterSpacing: 0.5,
@@ -584,8 +612,8 @@ class _MePageState extends State<MePage> {
                           LevelUtil.getTitleQuote(studyProgress!.level.level ?? 1),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: Colors.white70,
+                          style: TextStyle(
+                            color: subtitleColor,
                             fontSize: 11,
                             fontWeight: FontWeight.w500,
                             letterSpacing: 0.5,
@@ -602,9 +630,9 @@ class _MePageState extends State<MePage> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.1),
+                        color: innerCardBgColor,
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 1),
+                        border: Border.all(color: innerCardBorderColor, width: 1),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -616,8 +644,8 @@ class _MePageState extends State<MePage> {
                           const SizedBox(width: 4),
                           Text(
                             studyProgress!.level.name!,
-                            style: const TextStyle(
-                              color: Colors.white,
+                            style: TextStyle(
+                              color: textColor,
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
                             ),
@@ -634,18 +662,18 @@ class _MePageState extends State<MePage> {
               if (_isSyncing) ...[
                 Row(
                   children: [
-                    const SizedBox(
+                    SizedBox(
                       width: 12,
                       height: 12,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white70),
+                        valueColor: AlwaysStoppedAnimation<Color>(iconColor),
                       ),
                     ),
                     const SizedBox(width: 8),
-                    const Text(
+                    Text(
                       '同步中...',
-                      style: TextStyle(color: Colors.white70, fontSize: 10),
+                      style: TextStyle(color: subtitleColor, fontSize: 10),
                     ),
                   ],
                 ),
@@ -656,10 +684,10 @@ class _MePageState extends State<MePage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     "词书总进度",
                     style: TextStyle(
-                      color: Colors.white,
+                      color: textColor,
                       fontSize: 12,
                       fontWeight: FontWeight.w800,
                       letterSpacing: 1.2,
@@ -667,8 +695,8 @@ class _MePageState extends State<MePage> {
                   ),
                   Text(
                     '已掌握 ${((studyProgress!.rawWordCount > 0 ? studyProgress!.masteredWordsCount / studyProgress!.rawWordCount : 0.0) * 100).toStringAsFixed(1)}%',
-                    style: const TextStyle(
-                      color: Colors.greenAccent,
+                    style: TextStyle(
+                      color: highlightColor,
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
                     ),
@@ -682,7 +710,7 @@ class _MePageState extends State<MePage> {
                 width: double.infinity,
                 alignment: Alignment.centerLeft,
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.1),
+                  color: progressTrackColor,
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: LayoutBuilder(
@@ -721,9 +749,9 @@ class _MePageState extends State<MePage> {
                     child: Container(
                       height: 120,
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.05),
+                        color: innerCardBgColor,
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                        border: Border.all(color: innerCardBorderColor),
                       ),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -733,10 +761,10 @@ class _MePageState extends State<MePage> {
                             height: 70,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              border: Border.all(color: Colors.amber, width: 2),
+                              border: Border.all(color: numberColor, width: 2),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.amber.withValues(alpha: 0.3),
+                                  color: numberColor.withValues(alpha: 0.3),
                                   blurRadius: 15,
                                   spreadRadius: 2,
                                 ),
@@ -745,18 +773,18 @@ class _MePageState extends State<MePage> {
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                const Text(
+                                Text(
                                   "天数",
                                   style: TextStyle(
-                                    color: Colors.amber,
+                                    color: numberColor,
                                     fontSize: 10,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
                                 Text(
                                   studyProgress!.existDays.toString(),
-                                  style: const TextStyle(
-                                    color: Colors.white,
+                                  style: TextStyle(
+                                    color: textColor,
                                     fontSize: 24,
                                     fontWeight: FontWeight.w900,
                                   ),
@@ -776,24 +804,24 @@ class _MePageState extends State<MePage> {
                       height: 120,
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.05),
+                        color: innerCardBgColor,
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                        border: Border.all(color: innerCardBorderColor),
                       ),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.check_box_outlined, color: Colors.white70, size: 28),
+                          Icon(Icons.check_box_outlined, color: iconColor, size: 28),
                           const SizedBox(height: 4),
                           Text(
                             studyProgress!.masteredWordsCount.toString(),
-                            style: const TextStyle(color: Colors.amber, fontSize: 22, fontWeight: FontWeight.bold),
+                            style: TextStyle(color: numberColor, fontSize: 22, fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 4),
-                          const Text(
+                          Text(
                             "已掌握\n单词",
                             textAlign: TextAlign.center,
-                            style: TextStyle(color: Colors.white54, fontSize: 10, height: 1.1),
+                            style: TextStyle(color: subtitleColor, fontSize: 10, height: 1.1),
                           ),
                         ],
                       ),
@@ -807,24 +835,24 @@ class _MePageState extends State<MePage> {
                       height: 120,
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.05),
+                        color: innerCardBgColor,
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                        border: Border.all(color: innerCardBorderColor),
                       ),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.schedule, color: Colors.white70, size: 28),
+                          Icon(Icons.schedule, color: iconColor, size: 28),
                           const SizedBox(height: 4),
                           Text(
                             (studyProgress!.totalLearningSeconds / 3600.0).toStringAsFixed(1),
-                            style: const TextStyle(color: Colors.amber, fontSize: 22, fontWeight: FontWeight.bold),
+                            style: TextStyle(color: numberColor, fontSize: 22, fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 4),
-                          const Text(
+                          Text(
                             "学习总\n时长(时)",
                             textAlign: TextAlign.center,
-                            style: TextStyle(color: Colors.white54, fontSize: 10, height: 1.1),
+                            style: TextStyle(color: subtitleColor, fontSize: 10, height: 1.1),
                           ),
                         ],
                       ),
@@ -839,9 +867,9 @@ class _MePageState extends State<MePage> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.08),
+                  color: innerCardBgColor,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+                  border: Border.all(color: innerCardBorderColor),
                 ),
                 child: Row(
                   children: [
@@ -849,10 +877,10 @@ class _MePageState extends State<MePage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
+                          Text(
                             "当前积分与排名",
                             style: TextStyle(
-                              color: Colors.white,
+                              color: textColor,
                               fontSize: 14,
                               fontWeight: FontWeight.w900,
                               letterSpacing: 0.5,
@@ -861,8 +889,8 @@ class _MePageState extends State<MePage> {
                           const SizedBox(height: 6),
                           Text(
                             "总积分: ${studyProgress!.totalScore} | 当前排名: ${studyProgress!.userOrder! == -1 ? '未排名' : studyProgress!.userOrder}",
-                            style: const TextStyle(
-                              color: Colors.amberAccent,
+                            style: TextStyle(
+                              color: numberColor,
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
                               height: 1.4,
@@ -877,9 +905,9 @@ class _MePageState extends State<MePage> {
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.purpleAccent.withValues(alpha: 0.2),
+                        color: starContainerColor,
                       ),
-                      child: const Icon(Icons.auto_awesome, color: Colors.amberAccent, size: 32),
+                      child: Icon(Icons.auto_awesome, color: numberColor, size: 32),
                     ),
                   ],
                 ),
