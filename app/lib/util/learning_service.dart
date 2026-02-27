@@ -198,7 +198,7 @@ class LearningService {
     for (int day in fetchDays) {
       final learningWordsOfADay = getLearningWordsAddedAtDay(todayDayNumber - day, candidateWords);
       if (learningWordsOfADay.isNotEmpty) {
-        debugLog('[genTodayWords] 尝试从 ${day} 天前的单词中提取: ${learningWordsOfADay.length} 个可用');
+        debugLog('[genTodayWords] 尝试从 $day 天前的单词中提取: ${learningWordsOfADay.length} 个可用');
       }
 
       for (var word in learningWordsOfADay) {
