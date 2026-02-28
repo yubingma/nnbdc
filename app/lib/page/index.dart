@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:nnbdc/page/before_bdc.dart';
+import 'package:nnbdc/page/today_plan.dart';
 import 'package:nnbdc/page/search.dart';
 import 'package:nnbdc/page/word_lists.dart';
 import 'package:nnbdc/theme/app_theme.dart';
