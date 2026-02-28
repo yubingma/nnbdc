@@ -748,7 +748,7 @@ class StudyBo {
           scheduledDays: currWord.scheduledDays!,
           reps: currWord.reps!,
           lapses: currWord.lapses!,
-          state: currWord.state!,
+          state: FsrsStateExt.fromInt(currWord.state),
         );
         // 计算经过的天数 (使用日历天数差)
         int elapsedDays = 0;
@@ -798,7 +798,7 @@ class StudyBo {
           scheduledDays: nextFsrs != null ? Value(nextFsrs.scheduledDays) : const Value.absent(),
           reps: nextFsrs != null ? Value(nextFsrs.reps) : const Value.absent(),
           lapses: nextFsrs != null ? Value(nextFsrs.lapses) : const Value.absent(),
-          state: nextFsrs != null ? Value(nextFsrs.state) : const Value.absent(),
+          state: nextFsrs != null ? Value(nextFsrs.state.value) : const Value.absent(),
         ),
         true);
   }

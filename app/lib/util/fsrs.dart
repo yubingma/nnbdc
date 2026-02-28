@@ -32,8 +32,8 @@ class FSRS {
       elapsedDays: 0,
       scheduledDays: _calculateInterval(stability),
       reps: 1,
-      lapses: (rating == 1) ? 1 : 0,
-      state: 1, // Learning
+      lapses: (rating == FsrsRating.again) ? 1 : 0,
+      state: FsrsState.learning,
     );
   }
 
@@ -78,7 +78,7 @@ class FSRS {
       scheduledDays: _calculateInterval(nextS),
       reps: lastItem.reps + 1,
       lapses: (rating == FsrsRating.again) ? lastItem.lapses + 1 : lastItem.lapses,
-      state: (rating == FsrsRating.again) ? 3 : 2, // 3: Relearning, 2: Review
+      state: (rating == FsrsRating.again) ? FsrsState.relearning : FsrsState.review,
     );
   }
 
@@ -105,7 +105,7 @@ class FSRSItem {
   final int scheduledDays;
   final int reps;
   final int lapses;
-  final int state;
+  final FsrsState state;
 
   FSRSItem({
     required this.stability,

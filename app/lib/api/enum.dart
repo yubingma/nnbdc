@@ -279,3 +279,48 @@ extension FsrsRatingExt on FsrsRating {
     }
   }
 }
+
+enum FsrsState {
+  /// 新词
+  newItem,
+
+  /// 学习中
+  learning,
+
+  /// 复习中
+  review,
+
+  /// 重学中
+  relearning
+}
+
+extension FsrsStateExt on FsrsState {
+  int get value {
+    switch (this) {
+      case FsrsState.newItem:
+        return 0;
+      case FsrsState.learning:
+        return 1;
+      case FsrsState.review:
+        return 2;
+      case FsrsState.relearning:
+        return 3;
+    }
+  }
+
+  static FsrsState fromInt(int? value) {
+    if (value == null) return FsrsState.newItem;
+    switch (value) {
+      case 0:
+        return FsrsState.newItem;
+      case 1:
+        return FsrsState.learning;
+      case 2:
+        return FsrsState.review;
+      case 3:
+        return FsrsState.relearning;
+      default:
+        return FsrsState.newItem;
+    }
+  }
+}
