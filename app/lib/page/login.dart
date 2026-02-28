@@ -24,7 +24,7 @@ class LoginPage extends StatefulWidget {
   LoginPageState createState() => LoginPageState();
 }
 
-class LoginPageState extends State<LoginPage> {
+class LoginPageState extends State<LoginPage> with WidgetsBindingObserver {
   bool _approved = false;
   bool _isWechatLoading = false;
   // 双击检测相关
@@ -33,6 +33,7 @@ class LoginPageState extends State<LoginPage> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
@@ -49,7 +50,23 @@ class LoginPageState extends State<LoginPage> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     loadData();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _isWechatLoading) {
+      // 这里的逻辑是：如果用户从微信授权页切换回 APP，但没有触发回调（比如手动切回），
+      // 我们需要重置加载状态。为了不干扰正常的回调处理，稍作延迟再重置。
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted && _isWechatLoading) {
+          setState(() {
+            _isWechatLoading = false;
+          });
+        }
+      });
+    }
   }
 
   @override

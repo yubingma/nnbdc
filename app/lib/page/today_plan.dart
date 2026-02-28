@@ -263,7 +263,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
                     () => toTodayWordsListPage(true)?.then((v) => loadData())),
                 _buildStatItem('新词', newWordCount!, Icons.fiber_new_rounded, const Color(0xFF4CAF50),
                     () => toTodayNewWordsListPage(true)?.then((v) => loadData())),
-                _buildStatItem('复习', oldWordCount!, Icons.refresh_rounded, const Color(0xFFFF9800),
+                _buildStatItem('旧词', oldWordCount!, Icons.refresh_rounded, const Color(0xFFFF9800),
                     () => toTodayOldWordsListPage(true)?.then((v) => loadData())),
               ],
             ),
