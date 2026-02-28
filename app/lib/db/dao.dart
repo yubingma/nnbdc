@@ -1229,51 +1229,7 @@ class UserStudyStepsDao extends DatabaseAccessor<MyDatabase> with _$UserStudySte
     }
   }
 
-  // 初始化用户的学习步骤
-  Future<void> initUserStudySteps(String clientType, String userId, bool genLog) async {
-    // 获取当前用户的学习步骤
-    final steps = await getUserStudySteps(userId);
 
-    // 检查是否需要初始化
-    if (steps.isEmpty) {
-      final newSteps = <UserStudyStep>[];
-
-      newSteps.add(UserStudyStep(
-        userId: userId,
-        studyStep: 'En2Ch',
-        seq: 0,
-        state: 'Active',
-        createTime: AppClock.now(),
-      ));
-
-      newSteps.add(UserStudyStep(
-        userId: userId,
-        studyStep: 'Ch2En',
-        seq: 1,
-        state: 'Active',
-        createTime: AppClock.now(),
-      ));
-
-      newSteps.add(UserStudyStep(
-        userId: userId,
-        studyStep: 'List',
-        seq: 2,
-        state: 'Active',
-        createTime: AppClock.now(),
-      ));
-
-      // 并发安全：批量插入且忽略重复，避免 UNIQUE 约束报错
-      await batch((batch) {
-        batch.insertAll(userStudySteps, newSteps, mode: InsertMode.insertOrIgnore);
-      });
-
-      if (genLog) {
-        for (final step in newSteps) {
-          await DbLogUtil.logOperation(step.userId, 'INSERT', 'userStudySteps', '${step.userId}-${step.studyStep}', step);
-        }
-      }
-    }
-  }
 
   /// 删除用户的所有学习步骤记录
   /// [userId] 用户ID

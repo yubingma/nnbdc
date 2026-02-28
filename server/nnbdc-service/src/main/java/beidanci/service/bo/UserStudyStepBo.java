@@ -1,4 +1,5 @@
 package beidanci.service.bo;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -30,7 +31,7 @@ import beidanci.service.po.UserStudyStepId;
 public class UserStudyStepBo extends BaseBo<UserStudyStep> {
     private static final Logger logger = LoggerFactory.getLogger(UserStudyStepBo.class);
 
-        @PostConstruct
+    @PostConstruct
     public void init() {
         setDao(new BaseDao<UserStudyStep>() {
         });
@@ -38,7 +39,6 @@ public class UserStudyStepBo extends BaseBo<UserStudyStep> {
 
     @Autowired
     private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
-
 
     /**
      * 如果用户的学习步骤不足， 则添加缺失的学习步骤
@@ -48,7 +48,8 @@ public class UserStudyStepBo extends BaseBo<UserStudyStep> {
     public void initUserStudySteps(String userId) {
         // 如果用户的学习步骤不足， 则添加缺失的学习步骤
         List<UserStudyStep> userStudySteps = getUserStudySteps(userId);
-        List<StudyStep> existingSteps = userStudySteps.stream().map(UserStudyStep::getStudyStep).collect(Collectors.toList());
+        List<StudyStep> existingSteps = userStudySteps.stream().map(UserStudyStep::getStudyStep)
+                .collect(Collectors.toList());
         if (existingSteps.size() < StudyStep.values().length) {
             UserStudyStepId id;
             UserStudyStep step;
@@ -56,20 +57,11 @@ public class UserStudyStepBo extends BaseBo<UserStudyStep> {
             // 使用新列表而不是重新查询数据库
             List<UserStudyStep> newSteps = new ArrayList<>(userStudySteps);
 
-            // 添加缺失的 List 步骤
-            if (!existingSteps.contains(StudyStep.List)) {
-                id = new UserStudyStepId(userId, StudyStep.List);
-                step = new UserStudyStep(id);
-                step.setSeq(0);
-                step.setState(StudyStepState.Active);
-                newSteps.add(step);
-            }
-
             // 添加缺失的 En2Ch 步骤
             if (!existingSteps.contains(StudyStep.En2Ch)) {
                 id = new UserStudyStepId(userId, StudyStep.En2Ch);
                 step = new UserStudyStep(id);
-                step.setSeq(1);
+                step.setSeq(0);
                 step.setState(StudyStepState.Active);
                 newSteps.add(step);
             }
@@ -77,6 +69,15 @@ public class UserStudyStepBo extends BaseBo<UserStudyStep> {
             // 添加缺失的 Ch2En 步骤
             if (!existingSteps.contains(StudyStep.Ch2En)) {
                 id = new UserStudyStepId(userId, StudyStep.Ch2En);
+                step = new UserStudyStep(id);
+                step.setSeq(1);
+                step.setState(StudyStepState.Active);
+                newSteps.add(step);
+            }
+
+            // 添加缺失的 List 步骤
+            if (!existingSteps.contains(StudyStep.List)) {
+                id = new UserStudyStepId(userId, StudyStep.List);
                 step = new UserStudyStep(id);
                 step.setSeq(2);
                 step.setState(StudyStepState.Active);
@@ -189,7 +190,8 @@ public class UserStudyStepBo extends BaseBo<UserStudyStep> {
 
     /**
      * 批量删除用户的user_study_step记录
-     * @param userId 用户ID
+     * 
+     * @param userId      用户ID
      * @param filtersJson 过滤条件JSON字符串
      */
     public void batchDeleteUserRecords(String userId, String filtersJson) {
@@ -199,12 +201,12 @@ public class UserStudyStepBo extends BaseBo<UserStudyStep> {
             if (filtersJson != null && !filtersJson.trim().isEmpty()) {
                 filters = parseFilters(filtersJson);
             }
-            
+
             // 构建删除SQL
             StringBuilder sql = new StringBuilder("DELETE FROM user_study_step WHERE user_id = :userId");
             Map<String, Object> parameters = new HashMap<>();
             parameters.put("userId", userId);
-            
+
             // 添加过滤条件
             if (filters.containsKey("studyStep")) {
                 sql.append(" AND study_step = :studyStep");
@@ -218,21 +220,23 @@ public class UserStudyStepBo extends BaseBo<UserStudyStep> {
                 sql.append(" AND seq = :seq");
                 parameters.put("seq", filters.get("seq"));
             }
-            
+
             MapSqlParameterSource params = new MapSqlParameterSource();
             for (Map.Entry<String, Object> entry : parameters.entrySet()) {
-                params.addValue(Objects.requireNonNull(entry.getKey(), "Parameter key cannot be null"), entry.getValue());
+                params.addValue(Objects.requireNonNull(entry.getKey(), "Parameter key cannot be null"),
+                        entry.getValue());
             }
-            
-            int deletedCount = namedParameterJdbcTemplate.update(Objects.requireNonNull(sql.toString(), "SQL cannot be null"), params);
+
+            int deletedCount = namedParameterJdbcTemplate
+                    .update(Objects.requireNonNull(sql.toString(), "SQL cannot be null"), params);
             System.out.println("批量删除user_study_step记录完成，用户ID: " + userId + ", 删除数量: " + deletedCount);
-            
+
         } catch (DataAccessException e) {
             logger.error("批量删除user_study_step记录失败: userId={}", userId, e);
             throw new RuntimeException("批量删除user_study_step记录失败: " + e.getMessage(), e);
         }
     }
-    
+
     /**
      * 简单的JSON解析方法，将JSON字符串转换为Map
      */
@@ -244,7 +248,7 @@ public class UserStudyStepBo extends BaseBo<UserStudyStep> {
             if (content.startsWith("{") && content.endsWith("}")) {
                 content = content.substring(1, content.length() - 1);
             }
-            
+
             // 简单的键值对解析
             String[] pairs = content.split(",");
             for (String pair : pairs) {

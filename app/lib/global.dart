@@ -182,6 +182,39 @@ class Global {
       logger.i('已为访客创建已掌握词书: id=$masteredDictId');
     }
 
+    // 为访客初始化学习步骤（与后端 createNewUser 对齐）
+    // 仅在首次创建访客时生成，避免重复登录时产生重复记录
+    final existingSteps = await db.userStudyStepsDao.getUserStudySteps(guestId);
+    if (existingSteps.isEmpty) {
+      final newSteps = [
+        UserStudyStep(
+          userId: guestId,
+          studyStep: 'En2Ch',
+          seq: 0,
+          state: 'Active',
+          createTime: now,
+        ),
+        UserStudyStep(
+          userId: guestId,
+          studyStep: 'Ch2En',
+          seq: 1,
+          state: 'Active',
+          createTime: now,
+        ),
+        UserStudyStep(
+          userId: guestId,
+          studyStep: 'List',
+          seq: 2,
+          state: 'Active',
+          createTime: now,
+        ),
+      ];
+      await db.batch((batch) {
+        batch.insertAll(db.userStudySteps, newSteps);
+      });
+      logger.i('已为访客初始化学习步骤');
+    }
+
     // 设置为当前登录用户
     await setLoggedInUser(guestVo);
   }

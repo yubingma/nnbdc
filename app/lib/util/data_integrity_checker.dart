@@ -535,31 +535,25 @@ class DataIntegrityChecker {
     }
   }
 
-    
   /// 修复用户学习步骤缺失问题
+  /// 这种情况通常需要从服务端同步才能解决，在本地无法直接创建
   Future<void> _fixUserStudySteps(IntegrityFixResult fixResult, String currentUserId) async {
     try {
-      // 初始化当前用户的学习步骤（如果缺失会自动添加）
-      final clientType = 'Flutter'; // 根据实际情况设置
-      await _db.userStudyStepsDao.initUserStudySteps(clientType, currentUserId, true);
-
-      // 验证修复后是否完整
       final steps = await _db.userStudyStepsDao.getUserStudySteps(currentUserId);
       final hasEn2Ch = steps.any((step) => step.studyStep == 'En2Ch');
       final hasCh2En = steps.any((step) => step.studyStep == 'Ch2En');
+      final hasList = steps.any((step) => step.studyStep == 'List');
 
-      if (hasEn2Ch && hasCh2En) {
-        fixResult.addFixed('修复用户学习步骤：已添加缺失的 En2Ch 和 Ch2En 步骤');
-      } else {
-        if (!hasEn2Ch) {
-          fixResult.addError('修复失败：仍缺少 En2Ch 步骤');
-        }
-        if (!hasCh2En) {
-          fixResult.addError('修复失败：仍缺少 Ch2En 步骤');
-        }
+      List<String> missing = [];
+      if (!hasEn2Ch) missing.add('En2Ch');
+      if (!hasCh2En) missing.add('Ch2En');
+      if (!hasList) missing.add('List');
+
+      if (missing.isNotEmpty) {
+        fixResult.addError('用户缺少学习步骤: ${missing.join(", ")}. 请重新登录以触发服务端同步');
       }
     } catch (e) {
-      fixResult.addError('修复用户学习步骤时出错：$e');
+      fixResult.addError('检查用户学习步骤时出错：$e');
     }
   }
 

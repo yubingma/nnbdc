@@ -19,12 +19,9 @@ class StudyStepsService {
       return [];
     }
 
-    // 初始化学习步骤（如果需要）
-    final clientType = await _getClientType();
-    await _db.userStudyStepsDao.initUserStudySteps(clientType, user.id, true);
-
     // 查询学习步骤
     final steps = await _db.userStudyStepsDao.getUserStudySteps(user.id);
+
 
     // 转换为VO对象
     var voSteps = steps.map(_convertToVo).toList();
@@ -107,11 +104,6 @@ class StudyStepsService {
     }
   }
 
-  /// 获取客户端类型
-  Future<String> _getClientType() async {
-    // 根据实际情况返回客户端类型，这里简单返回Flutter
-    return 'Flutter';
-  }
 
   /// 将数据库实体转换为VO对象
   UserStudyStepVo _convertToVo(UserStudyStep step) {
