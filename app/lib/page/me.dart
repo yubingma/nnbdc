@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:day_night_switcher/day_night_switcher.dart';
@@ -918,15 +919,7 @@ class _MePageState extends State<MePage> {
                       ),
                     ),
                     const SizedBox(width: 12),
-                    // 一个上扬的星星图标效果
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: starContainerColor,
-                      ),
-                      child: Icon(Icons.leaderboard_rounded, color: textColor, size: 32),
-                    ),
+                    _buildVisualRanking(studyProgress!.userOrder ?? -1, numberColor, starContainerColor, textColor),
                   ],
                 ),
               ),
@@ -2319,6 +2312,45 @@ class _MePageState extends State<MePage> {
             ),
     );
   }
+
+  Widget _buildVisualRanking(double percentile, Color markerColor, Color containerColor, Color textColor) {
+    return Container(
+      width: 80,
+      height: 60,
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: containerColor.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: textColor.withValues(alpha: 0.1), width: 1),
+      ),
+      child: Column(
+        children: [
+          Expanded(
+            child: CustomPaint(
+              size: const Size(double.infinity, double.infinity),
+              painter: RankingPainter(
+                percentile: percentile,
+                markerColor: markerColor,
+                curveColor: textColor,
+              ),
+            ),
+          ),
+          if (percentile >= 0)
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Text(
+                percentile > 99.9 ? "Top Rank" : (percentile > 50 ? "Top ${(100 - percentile).toStringAsFixed(0)}%" : "第${(100 - percentile).toStringAsFixed(0)}%"),
+                style: TextStyle(
+                  color: textColor.withValues(alpha: 0.6),
+                  fontSize: 7,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
 }
 
 // 独立的词书卡片组件，有自己的状态管理
@@ -2904,4 +2936,87 @@ class _DictCardState extends State<DictCard> {
       ),
     );
   }
+
+}
+
+class RankingPainter extends CustomPainter {
+  final double percentile;
+  final Color markerColor;
+  final Color curveColor;
+
+  RankingPainter({
+    required this.percentile,
+    required this.markerColor,
+    required this.curveColor,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (size.width <= 0 || size.height <= 0) return;
+    final w = size.width;
+    final h = size.height;
+
+    // Draw generic bell curve shape
+    final path = Path();
+    final fillPath = Path();
+
+    // Map x: from -2 to 2 for width
+    const double xRange = 2.0;
+
+    fillPath.moveTo(0, h);
+    for (double i = 0; i <= w; i += 1) {
+      double xNormalized = (i / w) * 2.0 * xRange - xRange; // x from -2 to 2
+      double yVal = math.exp(-0.7 * xNormalized * xNormalized);
+      double drawY = h - (yVal * h * 0.85);
+
+      if (i == 0) {
+        path.moveTo(i, drawY);
+      } else {
+        path.lineTo(i, drawY);
+      }
+      fillPath.lineTo(i, drawY);
+    }
+    fillPath.lineTo(w, h);
+    fillPath.close();
+
+    // Paint Area
+    final fillPaint = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          curveColor.withValues(alpha: 0.05),
+          Colors.transparent,
+        ],
+      ).createShader(Rect.fromLTWH(0, 0, w, h));
+    canvas.drawPath(fillPath, fillPaint);
+
+    // Paint Curve stroke
+    final curvePaint = Paint()
+      ..color = curveColor.withValues(alpha: 0.2)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5
+      ..strokeCap = StrokeCap.round;
+    canvas.drawPath(path, curvePaint);
+
+    // Marker
+    if (percentile >= 0) {
+      double xPos = (percentile / 100.0) * w;
+      double xNormalized = (xPos / w) * 2.0 * xRange - xRange;
+      double yVal = math.exp(-0.7 * xNormalized * xNormalized);
+      double yPos = h - (yVal * h * 0.85);
+
+      final markerLinePaint = Paint()
+        ..color = markerColor.withValues(alpha: 0.4)
+        ..strokeWidth = 1;
+      canvas.drawLine(Offset(xPos, yPos + 4), Offset(xPos, h), markerLinePaint);
+
+      canvas.drawCircle(Offset(xPos, yPos), 4, Paint()..color = markerColor);
+      canvas.drawCircle(Offset(xPos, yPos), 6, Paint()..color = markerColor.withValues(alpha: 0.2));
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant RankingPainter oldDelegate) =>
+      oldDelegate.percentile != percentile || oldDelegate.markerColor != markerColor;
 }
