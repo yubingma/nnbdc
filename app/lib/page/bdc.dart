@@ -635,7 +635,10 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         _startAsrWithHint(language);
       }
     } else {
-      // 当前在"选"tab，如果ASR已经停止，不需要再次停止
+      // 当前在"选"tab，从切换这一刻重新开始计时（之前的播放时间或 ASR 等待时间不计入）
+      _wordStartTime = DateTime.now();
+
+      // 如果当前在"选"tab，如果ASR已经停止，不需要再次停止
       if (asr.state == AsrState.stopped || asr.state == AsrState.initialized) {
         Global.logger.d('BDC: 当前在"选"tab，ASR已停止，跳过重复停止');
         return;
@@ -814,15 +817,17 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
     try {
       await asr.startAsr(language);
-      Global.logger.d('BDC: ASR启动成功，播放提示音');
+      Global.logger.d('BDC: ASR启动成功，播放提示音并计时');
       SoundUtil.playAsrReadyHintSound();
+      _wordStartTime = DateTime.now(); // ASR 准备就绪，开始计时
     } catch (e, stackTrace) {
       Global.logger.e('BDC: ASR启动失败', error: e, stackTrace: stackTrace);
       // 即使启动抛出异常，如果 ASR 状态已经是 started（iOS 上会抛异常但实际已启动），
       // 仍然需要播放提示音，提示用户可以开始说话
       if (asr.state == AsrState.started) {
-        Global.logger.d('BDC: ASR状态为started，播放提示音');
+        Global.logger.d('BDC: ASR状态为started，播放提示音并计时');
         SoundUtil.playAsrReadyHintSound();
+        _wordStartTime = DateTime.now(); // ASR 准备就绪，开始计时
       }
     } finally {}
   }
@@ -1005,9 +1010,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                   FsrsRating rating = FsrsRating.good; // 默认 Good
                   if (_wordStartTime != null) {
                     final responseTime = DateTime.now().difference(_wordStartTime!).inSeconds;
-                    if (responseTime < 3) {
+                    if (responseTime < 5) {
                       rating = FsrsRating.easy; // Easy
-                    } else if (responseTime >= 10) {
+                    } else if (responseTime >= 12) {
                       rating = FsrsRating.hard; // Hard
                     }
                   }
@@ -1037,9 +1042,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         FsrsRating rating = FsrsRating.good; // 默认 Good
         if (_wordStartTime != null) {
           final responseTime = DateTime.now().difference(_wordStartTime!).inSeconds;
-          if (responseTime < 2 && (_currentScore == null || _currentScore! >= 90)) {
+          if (responseTime < 4 && (_currentScore == null || _currentScore! >= 90)) {
             rating = FsrsRating.easy; // Easy
-          } else if (responseTime >= 7) {
+          } else if (responseTime >= 10) {
             rating = FsrsRating.hard; // Hard
           }
         }
@@ -1276,7 +1281,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         // 检查 studyStep 和 word 是否还是原来的值
         if (savedStudyStep == _studyStep && savedWordId == _word?.id) {
           Global.logger.d('BDC: playWordAndFirstSentence 播放完成，准备启动ASR (studyStep=$_studyStep, wordId=${_word?.id})');
-          _wordStartTime = DateTime.now(); // 记录 ASR 开始时间，作为响应时长的起点
           _handleTabChangeForAsr();
         } else {
           Global.logger.d(
@@ -1458,6 +1462,10 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
     setState(() {
       dataLoaded = true;
+      // 只有在不在"说"tab时才直接启动计时（"说"tab会等 ASR 准备好以后再启动计时）
+      if (!_isInSpeakTab) {
+        _wordStartTime = DateTime.now();
+      }
     });
   }
 
