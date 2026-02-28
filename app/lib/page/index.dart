@@ -46,7 +46,7 @@ class _IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    args = Get.arguments ?? IndexPageArgs(4);
+    args = Get.arguments ?? IndexPageArgs(0);
     _currentIndex = args.buttonIndex;
 
     /// 初始化导航图标
