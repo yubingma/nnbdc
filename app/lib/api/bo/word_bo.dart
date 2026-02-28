@@ -449,7 +449,7 @@ class WordBo {
       final query = db.select(db.learningWords)
         ..where((tbl) => tbl.userId.equals(userId))
         ..orderBy(
-            [(tbl) => OrderingTerm(expression: tbl.addTime), (tbl) => OrderingTerm.asc(tbl.stability), (tbl) => OrderingTerm(expression: tbl.wordId)])
+            [(tbl) => OrderingTerm(expression: tbl.addTime), (tbl) => OrderingTerm(expression: tbl.wordId)])
         ..limit(pageSize, offset: fromIndex);
       final learningWords = await query.get();
 
@@ -1071,13 +1071,10 @@ class WordBo {
       final countQuery = db.selectOnly(db.learningWords)..addColumns([countAll()]);
       final userIdCondition = db.learningWords.userId.equals(userId);
       final beforeTimeCondition = db.learningWords.addTime.isSmallerThanValue(learningWord.addTime);
-      final sameTimeMoreStableCondition =
-          db.learningWords.addTime.equals(learningWord.addTime) & db.learningWords.stability.isBiggerThanValue(learningWord.stability ?? 0.0);
-      final sameTimeSameStabilitySmallerWordIdCondition = db.learningWords.addTime.equals(learningWord.addTime) &
-          db.learningWords.stability.equals(learningWord.stability ?? 0.0) &
+      final sameTimeSmallerWordIdCondition = db.learningWords.addTime.equals(learningWord.addTime) &
           db.learningWords.wordId.isSmallerThanValue(learningWord.wordId);
       countQuery.where(userIdCondition &
-          (beforeTimeCondition | sameTimeMoreStableCondition | sameTimeSameStabilitySmallerWordIdCondition));
+          (beforeTimeCondition | sameTimeSmallerWordIdCondition));
       final countResult = await countQuery.getSingle();
       int position = countResult.read(countAll()) ?? 0;
       position += 1;
