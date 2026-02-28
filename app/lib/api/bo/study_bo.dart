@@ -765,6 +765,10 @@ class StudyBo {
       }
     }
 
+    if (nextFsrs != null) {
+      Global.logger.d('=====FSRS稳定性计算结果: wordId=${currWord.wordId}, rating=$fsrsRating, old_stability=${currWord.stability?.toStringAsFixed(2)}, new_stability=${nextFsrs.stability.toStringAsFixed(2)}, scheduledDays=${nextFsrs.scheduledDays}');
+    }
+
     // 判定是否毕业（进入已掌握单词表）
     bool shouldGraduate = isWordMastered || (nextFsrs != null && nextFsrs.stability >= Constants.graduationStability);
 
