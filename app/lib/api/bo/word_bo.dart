@@ -13,7 +13,6 @@ import 'package:nnbdc/util/level_util.dart';
 import 'package:nnbdc/util/utils.dart';
 
 import '../../services/throttled_sync_service.dart';
-import '../../constants.dart';
 
 class WordBo {
   static final WordBo _instance = WordBo._internal();
@@ -1063,7 +1062,7 @@ class WordBo {
         return Result("SUCCESS", "获取成功", true)..data = -1;
       }
       final learningWordQuery = db.select(db.learningWords)
-        ..where((tbl) => tbl.userId.equals(userId) & tbl.wordId.equals(word.id) & tbl.stability.isSmallerThanValue(Constants.graduationStability));
+        ..where((tbl) => tbl.userId.equals(userId) & tbl.wordId.equals(word.id));
       final learningWord = await learningWordQuery.getSingleOrNull();
       if (learningWord == null) {
         Global.logger.d('用户未在学习单词 $spell');
@@ -1071,7 +1070,6 @@ class WordBo {
       }
       final countQuery = db.selectOnly(db.learningWords)..addColumns([countAll()]);
       final userIdCondition = db.learningWords.userId.equals(userId);
-      final stabilityThresholdCondition = db.learningWords.stability.isSmallerThanValue(Constants.graduationStability);
       final beforeTimeCondition = db.learningWords.addTime.isSmallerThanValue(learningWord.addTime);
       final sameTimeMoreStableCondition =
           db.learningWords.addTime.equals(learningWord.addTime) & db.learningWords.stability.isBiggerThanValue(learningWord.stability ?? 0.0);
@@ -1079,7 +1077,6 @@ class WordBo {
           db.learningWords.stability.equals(learningWord.stability ?? 0.0) &
           db.learningWords.wordId.isSmallerThanValue(learningWord.wordId);
       countQuery.where(userIdCondition &
-          stabilityThresholdCondition &
           (beforeTimeCondition | sameTimeMoreStableCondition | sameTimeSameStabilitySmallerWordIdCondition));
       final countResult = await countQuery.getSingle();
       int position = countResult.read(countAll()) ?? 0;
