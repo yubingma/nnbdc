@@ -235,3 +235,47 @@ extension FeatureRequestStatusExt on FeatureRequestStatus {
     }
   }
 }
+
+enum FsrsRating {
+  /// 重来
+  again,
+
+  /// 困难
+  hard,
+
+  /// 一般
+  good,
+
+  /// 简单
+  easy
+}
+
+extension FsrsRatingExt on FsrsRating {
+  int get value {
+    switch (this) {
+      case FsrsRating.again:
+        return 1;
+      case FsrsRating.hard:
+        return 2;
+      case FsrsRating.good:
+        return 3;
+      case FsrsRating.easy:
+        return 4;
+    }
+  }
+
+  static FsrsRating fromInt(int value) {
+    switch (value) {
+      case 1:
+        return FsrsRating.again;
+      case 2:
+        return FsrsRating.hard;
+      case 3:
+        return FsrsRating.good;
+      case 4:
+        return FsrsRating.easy;
+      default:
+        throw ArgumentError('Invalid FsrsRating value: $value');
+    }
+  }
+}

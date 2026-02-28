@@ -435,7 +435,7 @@ class StudyBo {
   ///   - false: 仅刷新当前单词，不改变学习位置（用于初始加载、从批次列表返回后刷新等场景）
   ///
   /// 返回下一个单词的学习信息，包括单词详情、学习模式、混淆项等
-  Future<Result<GetWordResult>> getWord(bool isWordMastered, bool isAnswerCorrect, bool gotoNext, {int? fsrsRating}) async {
+  Future<Result<GetWordResult>> getWord(bool isWordMastered, bool isAnswerCorrect, bool gotoNext, {FsrsRating? fsrsRating}) async {
     try {
       Global.logger.d('开始获取单词: isAnswerCorrect=$isAnswerCorrect, isWordMastered=$isWordMastered, gotoNext=$gotoNext, fsrsRating=$fsrsRating');
       final db = MyDatabase.instance;
@@ -706,7 +706,7 @@ class StudyBo {
     required MyDatabase db,
     required bool isAnswerCorrect,
     required bool allStepsCompletedForWord,
-    int? fsrsRating,
+    FsrsRating? fsrsRating,
   }) async {
     // 停止使用 dateOnlyNow，保留完整时间戳以支持状态驱动定位
     final DateTime learningTime = now;
@@ -731,7 +731,7 @@ class StudyBo {
 
     // FSRS 逻辑
     FSRSItem? nextFsrs;
-    if (fsrsRating != null && fsrsRating >= 1 && fsrsRating <= 4) {
+    if (fsrsRating != null) {
       final fsrs = FSRS();
       if (currWord.stability == null) {
         // 第一次使用 FSRS

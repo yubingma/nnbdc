@@ -1000,19 +1000,19 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         soundFuture.whenComplete(() {
           Future.delayed(Duration(milliseconds: 150)).then((_) {
             _playingCorrectSounds.remove(soundFuture);
-            if (_playingCorrectSounds.isEmpty && _isAnswerCorrect) {
-              // 计算 FSRS 评分 (1-4)
-              int rating = 3; // 默认 Good
-              if (_wordStartTime != null) {
-                final responseTime = DateTime.now().difference(_wordStartTime!).inSeconds;
-                if (responseTime < 3) {
-                  rating = 4; // Easy
-                } else if (responseTime >= 10) {
-                  rating = 2; // Hard
+                if (_playingCorrectSounds.isEmpty && _isAnswerCorrect) {
+                  // 计算 FSRS 评分
+                  FsrsRating rating = FsrsRating.good; // 默认 Good
+                  if (_wordStartTime != null) {
+                    final responseTime = DateTime.now().difference(_wordStartTime!).inSeconds;
+                    if (responseTime < 3) {
+                      rating = FsrsRating.easy; // Easy
+                    } else if (responseTime >= 10) {
+                      rating = FsrsRating.hard; // Hard
+                    }
+                  }
+                  getNextWord(true, fsrsRating: rating);
                 }
-              }
-              getNextWord(true, fsrsRating: rating);
-            }
           });
         });
       }
@@ -1033,14 +1033,14 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       if (isMatch) {
         _isAnswerCorrect = true;
 
-        // 计算 FSRS 评分 (1-4)
-        int rating = 3; // 默认 Good
+        // 计算 FSRS 评分
+        FsrsRating rating = FsrsRating.good; // 默认 Good
         if (_wordStartTime != null) {
           final responseTime = DateTime.now().difference(_wordStartTime!).inSeconds;
           if (responseTime < 2 && (_currentScore == null || _currentScore! >= 90)) {
-            rating = 4; // Easy
+            rating = FsrsRating.easy; // Easy
           } else if (responseTime >= 7) {
-            rating = 2; // Hard
+            rating = FsrsRating.hard; // Hard
           }
         }
 
@@ -1110,7 +1110,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
   /// 获取下一个单词
   /// @param gotoNext true: 取下一个位置的单词 false: 获取当前位置 of the单词
-  getNextWord(bool gotoNext, {int? fsrsRating}) async {
+  getNextWord(bool gotoNext, {FsrsRating? fsrsRating}) async {
     try {
       asr.stopAsr();
       asr.reset();

@@ -1,4 +1,5 @@
 import 'dart:math';
+import '../api/enum.dart';
 
 /// FSRS (Free Spaced Repetition Scheduler) 算法实现 (v4.5)
 /// 核心逻辑参考: https://github.com/open-spaced-repetition/fsrs4anki
@@ -17,12 +18,12 @@ class FSRS {
   FSRS({this.requestRetention = 0.9, this.w = defaultWeights});
 
   /// 初始状态转换 (New -> Learning/Review)
-  /// @param rating 1: Again, 2: Hard, 3: Good, 4: Easy
-  FSRSItem init(int rating) {
-    assert(rating >= 1 && rating <= 4, 'FSRS init: rating 必须在 1-4 之间, 当前为 $rating');
+  /// @param rating FsrsRating.again, FsrsRating.hard, FsrsRating.good, FsrsRating.easy
+  FSRSItem init(FsrsRating rating) {
+    int ratingValue = rating.value;
     
-    double stability = w[rating - 1];
-    double difficulty = w[4] - (rating - 1) * w[5];
+    double stability = w[ratingValue - 1];
+    double difficulty = w[4] - (ratingValue - 1) * w[5];
     difficulty = difficulty.clamp(1.0, 10.0);
 
     return FSRSItem(
@@ -38,13 +39,12 @@ class FSRS {
 
   /// 复习状态转换
   /// @param lastItem 当前单词的状态
-  /// @param rating 1: Again, 2: Hard, 3: Good, 4: Easy
+  /// @param rating FsrsRating.again, FsrsRating.hard, FsrsRating.good, FsrsRating.easy
   /// @param elapsedDays 自上次复习以来经过的天数
-  FSRSItem next(FSRSItem lastItem, int rating, int elapsedDays) {
+  FSRSItem next(FSRSItem lastItem, FsrsRating rating, int elapsedDays) {
     // 根因定位辅助断言
     assert(lastItem.stability > 0 && lastItem.stability.isFinite, 'FSRS next: 输入的 stability 异常: ${lastItem.stability}');
     assert(lastItem.difficulty >= 1 && lastItem.difficulty <= 10 && lastItem.difficulty.isFinite, 'FSRS next: 输入的 difficulty 异常: ${lastItem.difficulty}');
-    assert(rating >= 1 && rating <= 4, 'FSRS next: rating 必须在 1-4 之间, 当前为 $rating');
     assert(elapsedDays >= 0, 'FSRS next: elapsedDays 不能为负数: $elapsedDays');
 
     double s = lastItem.stability;
@@ -52,19 +52,19 @@ class FSRS {
     double r = pow(0.9, elapsedDays / s).toDouble(); // Retrievability
 
     // 更新难度
-    double nextD = d - w[6] * (rating - 3);
+    double nextD = d - w[6] * (rating.value - 3);
     nextD = _meanReversion(w[4], nextD);
     nextD = nextD.clamp(1.0, 10.0);
 
     // 更新稳定性
     double nextS;
-    if (rating == 1) {
+    if (rating == FsrsRating.again) {
       // 遗忘
       nextS = w[7] * pow(nextD, -w[8]) * (pow(s + 1, w[9]) - 1) * exp(w[10] * (1 - r));
     } else {
       // 记忆
-      double hardPenalty = (rating == 2) ? w[15] : 1.0;
-      double easyBonus = (rating == 4) ? w[16] : 1.0;
+      double hardPenalty = (rating == FsrsRating.hard) ? w[15] : 1.0;
+      double easyBonus = (rating == FsrsRating.easy) ? w[16] : 1.0;
       nextS = s * (1 + exp(w[11]) * (11 - nextD) * pow(s, -w[12]) * (exp((1 - r) * w[13]) - 1) * hardPenalty * easyBonus);
     }
     
@@ -77,8 +77,8 @@ class FSRS {
       elapsedDays: elapsedDays,
       scheduledDays: _calculateInterval(nextS),
       reps: lastItem.reps + 1,
-      lapses: (rating == 1) ? lastItem.lapses + 1 : lastItem.lapses,
-      state: (rating == 1) ? 3 : 2, // 3: Relearning, 2: Review
+      lapses: (rating == FsrsRating.again) ? lastItem.lapses + 1 : lastItem.lapses,
+      state: (rating == FsrsRating.again) ? 3 : 2, // 3: Relearning, 2: Review
     );
   }
 
