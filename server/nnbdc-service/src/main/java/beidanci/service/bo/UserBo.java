@@ -951,6 +951,10 @@ public class UserBo extends BaseBo<User> {
         )).collect(java.util.stream.Collectors.toList());
         baseData.put("studySteps", stepDtos);
 
+        // 更新数据库版本号，确保客户端能够检测到全量同步需求（从 0 升级到 1）
+        userDbVersionDao.ensureUserDbVersionExists(jdbcTemplate, user.getId());
+        userDbVersionDao.updateUserDbVersionCAS(jdbcTemplate, user.getId(), Constants.USER_DB_VERSION_INITIAL, 1);
+
         return baseData;
     }
 

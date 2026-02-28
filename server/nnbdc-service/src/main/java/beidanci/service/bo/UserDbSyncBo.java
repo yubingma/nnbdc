@@ -925,9 +925,11 @@ public class UserDbSyncBo {
 
         // 获取用户数据库版本
         int userDbVersion = userDbVersionDao.getUserDbVersion(jdbcTemplate, userId);
+        logger.info("查询用户数据库日志: userId={}, serverVersion={}, clientFromVersion={}", userId, userDbVersion, fromVersion);
 
         // 1. 如果前后端版本一致，无需任何同步
-        if (userDbVersion <= fromVersion) {
+        if (userDbVersion <= fromVersion && fromVersion > 0) {
+            logger.info("前后端版本一致且不为0，无需同步: userId={}", userId);
             return new ArrayList<>();
         }
 
@@ -951,6 +953,8 @@ public class UserDbSyncBo {
                 }
             }
         }
+        
+        logger.info("同步决策: userId={}, needsFullSync={}", userId, needsFullSync);
 
         if (needsFullSync) {
             // 生成全量日志
