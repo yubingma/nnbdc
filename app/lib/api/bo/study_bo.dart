@@ -112,7 +112,16 @@ class StudyBo {
       final todayWords = await query.get();
 
       // 获取学习环节总数 (modeCount)
-      final steps = await db.userStudyStepsDao.getActiveUserStudySteps(user.id);
+      final stepsVo = await _studyStepsService.getActiveUserStudySteps();
+      final steps = stepsVo
+          .map((vo) => UserStudyStep(
+                userId: user.id,
+                studyStep: vo.studyStep,
+                seq: vo.seq,
+                state: vo.state,
+                createTime: AppClock.now(),
+              ))
+          .toList();
       final modeCount = steps.length;
 
       // 获取用户已掌握的单词（状态驱动）
@@ -371,7 +380,16 @@ class StudyBo {
       }
 
       // 获取当前 active steps count
-      final steps = await db.userStudyStepsDao.getActiveUserStudySteps(user.id);
+      final stepsVo = await _studyStepsService.getActiveUserStudySteps();
+      final steps = stepsVo
+          .map((vo) => UserStudyStep(
+                userId: user.id,
+                studyStep: vo.studyStep,
+                seq: vo.seq,
+                state: vo.state,
+                createTime: AppClock.now(),
+              ))
+          .toList();
       final modeCount = steps.length;
       if (modeCount == 0) {
         return Result("ERROR", "未配置学习步骤", false);
@@ -455,7 +473,16 @@ class StudyBo {
       }
 
       // 获取用户的学习步骤配置
-      final steps = await db.userStudyStepsDao.getActiveUserStudySteps(user.id);
+      final stepsVo = await _studyStepsService.getActiveUserStudySteps();
+      final steps = stepsVo
+          .map((vo) => UserStudyStep(
+                userId: user.id,
+                studyStep: vo.studyStep,
+                seq: vo.seq,
+                state: vo.state,
+                createTime: AppClock.now(),
+              ))
+          .toList();
       final activeStepCount = steps.length;
       if (activeStepCount == 0) {
         Global.logger.e('Error: No active study steps found for user ${user.id}. Cannot proceed.');
@@ -766,7 +793,7 @@ class StudyBo {
     }
 
     if (nextFsrs != null) {
-      Global.logger.d('=====FSRS稳定性计算结果: wordId=${currWord.wordId}, rating=$fsrsRating, old_stability=${currWord.stability?.toStringAsFixed(2)}, new_stability=${nextFsrs.stability.toStringAsFixed(2)}, elapsedDays=${nextFsrs.elapsedDays}, scheduledDays=${nextFsrs.scheduledDays}');
+      Global.logger.d('~~~~~FSRS稳定性计算结果: wordId=${currWord.wordId}, rating=$fsrsRating, old_stability=${currWord.stability?.toStringAsFixed(2)}, new_stability=${nextFsrs.stability.toStringAsFixed(2)}, elapsedDays=${nextFsrs.elapsedDays}, scheduledDays=${nextFsrs.scheduledDays}');
     }
 
     // 判定是否毕业（进入已掌握单词表）
@@ -805,6 +832,9 @@ class StudyBo {
           state: nextFsrs != null ? Value(nextFsrs.state.value) : const Value.absent(),
         ),
         true);
+
+    // 触发同步到后端
+    ThrottledDbSyncService().requestSync();
   }
 
   Result<GetWordResult> _buildTodayStudyFinishedResult() {
@@ -860,6 +890,9 @@ class StudyBo {
           true);
       Global.logger.d('错词已存在，更新时间: ${wrongWord.wordId}');
     }
+
+    // 触发同步到后端
+    ThrottledDbSyncService().requestSync();
   }
 
   Future<List<WordVo>> getTwoOtherWords(List<UserStudyStep> steps, int learningMode, List<MeaningItemVo> meaningItemVos,
@@ -1097,7 +1130,16 @@ class StudyBo {
     required MyDatabase db,
   }) async {
     // 获取当前学习模式的总步骤数（用于饱和填充状态）
-    final steps = await db.userStudyStepsDao.getActiveUserStudySteps(user.id);
+    final stepsVo = await _studyStepsService.getActiveUserStudySteps();
+    final steps = stepsVo
+        .map((vo) => UserStudyStep(
+              userId: user.id,
+              studyStep: vo.studyStep,
+              seq: vo.seq,
+              state: vo.state,
+              createTime: AppClock.now(),
+            ))
+        .toList();
     final int stepCount = steps.length;
 
     if (user.todayStudyStarted) {

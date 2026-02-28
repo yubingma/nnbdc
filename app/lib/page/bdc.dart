@@ -1077,23 +1077,31 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   }
 
   Future<void> loadData() async {
-    _isDarkMode = await MyDatabase.instance.localParamsDao.getIsDarkMode();
+    try {
+      _isDarkMode = await MyDatabase.instance.localParamsDao.getIsDarkMode();
 
-    // 获取用户的学习步骤配置（已激活的学习步骤)
-    var stepsResult = await StudyBo().getActiveUserStudySteps();
-    if (!stepsResult.success || stepsResult.data == null) {
-      ToastUtil.error(stepsResult.msg ?? '获取学习步骤失败');
-      return;
-    }
-    activeUserStudySteps = stepsResult.data!;
+      // 获取用户的学习步骤配置（已激活的学习步骤)
+      var stepsResult = await StudyBo().getActiveUserStudySteps();
+      if (!stepsResult.success || stepsResult.data == null) {
+        Global.logger.e('loadData: 获取激活学习步骤失败: code=${stepsResult.code}, msg=${stepsResult.msg}');
+        ToastUtil.error(stepsResult.msg ?? '获取学习步骤失败');
+        return;
+      }
+      activeUserStudySteps = stepsResult.data!;
 
-    await getNextWord(false);
-    if (_currentGetWordResult == null) {
-      ToastUtil.error('获取单词失败');
-      return;
-    }
-    if (_currentGetWordResult!.finished || _currentGetWordResult!.noWord) {
-      return;
+      Global.logger.d('开始加载单词数据...');
+      await getNextWord(false);
+      if (_currentGetWordResult == null) {
+        Global.logger.e('loadData: _currentGetWordResult is null after getNextWord');
+        ToastUtil.error('获取单词失败');
+        return;
+      }
+      if (_currentGetWordResult!.finished || _currentGetWordResult!.noWord) {
+        return;
+      }
+    } catch (e, stackTrace) {
+      Global.logger.e('loadData: 发生未捕获异常', error: e, stackTrace: stackTrace);
+      ErrorHandler.handleError(e, stackTrace, logPrefix: 'loadData');
     }
   }
 
@@ -1154,6 +1162,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
             Get.offAllNamed('/index', arguments: IndexPageArgs(4));
             return;
           }
+          Global.logger.e('getNextWord: 获取单词结果失败: code=${result.code}, msg=${result.msg}');
           ToastUtil.error(result.msg ?? '获取单词失败');
           return;
         }
@@ -1361,8 +1370,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       _reinitializeTabController();
 
       if (getWordResult.learningWord?.word == null) {
-        Global.logger.d('学习单词为空');
-        ToastUtil.error('单词数据错误');
+        Global.logger.e('处理单词失败：获取到的单词数据中 learningWord.word 为空。 stepIndex=${getWordResult.stepIndex}, finished=${getWordResult.finished}');
+        ToastUtil.error('单词数据加载错误');
         return;
       }
       _word = getWordResult.learningWord!.word;
