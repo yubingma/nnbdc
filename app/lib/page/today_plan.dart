@@ -357,64 +357,73 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
 
   Widget renderGoalDropdown() {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      decoration: BoxDecoration(
-        color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<int>(
-          value: (() {
-            final isPremium = SubscriptionUtil.isPremium();
-            final raw = user?.wordsPerDay ?? 20;
-            if (!isPremium && raw > 20) return 20;
-            return raw;
-          })(),
-          isDense: true,
-          icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 18),
-          dropdownColor: isDarkMode ? const Color(0xFF2D2D2D) : Colors.white,
-          style: TextStyle(
-            color: isDarkMode ? Colors.white : Colors.black,
-            fontSize: 15,
-            fontWeight: FontWeight.bold,
+    final bool isStarted = user?.todayStudyStarted == true;
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: isStarted ? () => ToastUtil.info('今日学习已开始，无法修改计划数量') : null,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        decoration: BoxDecoration(
+          color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: IgnorePointer(
+          ignoring: isStarted,
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<int>(
+              value: (() {
+                final isPremium = SubscriptionUtil.isPremium();
+                final raw = user?.wordsPerDay ?? 20;
+                if (!isPremium && raw > 20) return 20;
+                return raw;
+              })(),
+              isDense: true,
+              icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 18),
+              dropdownColor: isDarkMode ? const Color(0xFF2D2D2D) : Colors.white,
+              style: TextStyle(
+                color: isDarkMode ? Colors.white : Colors.black,
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+              ),
+              onChanged: isStarted
+                  ? null
+                  : (value) async {
+                      if (value == null) return;
+                      if (!SubscriptionUtil.isPremium() && value > 20) {
+                        ToastUtil.info('开通会员可选择更多单词数量');
+                        return;
+                      }
+                      setState(() {
+                        user!.wordsPerDay = value;
+                        dataLoaded = false;
+                      });
+                      await MyDatabase.instance.usersDao.updateWordsPerDay(user!.id!, value);
+                      await Global.loadUserFromDb();
+                      ThrottledDbSyncService().requestSync();
+                      loadData(forceSupplement: false);
+                    },
+              items: (() {
+                final isPremium = SubscriptionUtil.isPremium();
+                return [10, 20, 30, 50, 75, 100, 150, 200, 300, 400, 500].map((v) {
+                  final isRestricted = !isPremium && v > 20;
+                  return DropdownMenuItem<int>(
+                    value: v,
+                    enabled: !isRestricted,
+                    child: Row(
+                      children: [
+                        Text('$v'),
+                        if (isRestricted) ...[
+                          const SizedBox(width: 4),
+                          const Icon(Icons.workspace_premium, color: Colors.amber, size: 14),
+                        ]
+                      ],
+                    ),
+                  );
+                }).toList();
+              })(),
+            ),
           ),
-          onChanged: (user?.todayStudyStarted == true)
-              ? null
-              : (value) async {
-                  if (value == null) return;
-                  if (!SubscriptionUtil.isPremium() && value > 20) {
-                    ToastUtil.info('开通会员可选择更多单词数量');
-                    return;
-                  }
-                  setState(() {
-                    user!.wordsPerDay = value;
-                    dataLoaded = false;
-                  });
-                  await MyDatabase.instance.usersDao.updateWordsPerDay(user!.id!, value);
-                  await Global.loadUserFromDb();
-                  ThrottledDbSyncService().requestSync();
-                  loadData(forceSupplement: false);
-                },
-          items: (() {
-            final isPremium = SubscriptionUtil.isPremium();
-            return [10, 20, 30, 50, 75, 100, 150, 200, 300, 400, 500].map((v) {
-              final isRestricted = !isPremium && v > 20;
-              return DropdownMenuItem<int>(
-                value: v,
-                enabled: !isRestricted,
-                child: Row(
-                  children: [
-                    Text('$v'),
-                    if (isRestricted) ...[
-                      const SizedBox(width: 4),
-                      const Icon(Icons.workspace_premium, color: Colors.amber, size: 14),
-                    ]
-                  ],
-                ),
-              );
-            }).toList();
-          })(),
         ),
       ),
     );
