@@ -1703,7 +1703,7 @@ endlocal
         await Global.setLoggedInUser(guestVo);
         // 游客自动登录也尝试恢复购买状态
         SubscriptionUtil.restorePurchases(showToast: false);
-        Get.offNamed("/index", arguments: IndexPageArgs(4));
+        Get.offNamed("/index", arguments: IndexPageArgs(0));
         return;
       }
 
@@ -1727,7 +1727,7 @@ endlocal
           // 用户信息会在进入需要socket的页面（如me、russia）时自动上报
           // SocketIoClient.instance.tryReportUserToSocketServer();
 
-          Get.offNamed("/index", arguments: IndexPageArgs(4));
+          Get.offNamed("/index", arguments: IndexPageArgs(0));
         } else {
           _setPreparingMessage('自动登录失败，正在跳转登录页…');
           Get.offNamed("/email_login");

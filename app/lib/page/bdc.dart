@@ -1154,7 +1154,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
               context: context,
               builder: (ctx) => AlertDialog(
                 title: const Text('新的一天'),
-                content: const Text('已进入新的一天，今天的学习请从"我"页面开始。'),
+                content: const Text('已进入新的一天，将开始新的学习。'),
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.of(ctx).pop(),
@@ -1164,7 +1164,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
               ),
             );
             if (!mounted) return;
-            Get.offAllNamed('/index', arguments: IndexPageArgs(4));
+            Get.offAllNamed('/index', arguments: IndexPageArgs(0));
             return;
           }
           Global.logger.e('getNextWord: 获取单词结果失败: code=${result.code}, msg=${result.msg}');
