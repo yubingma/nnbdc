@@ -2985,7 +2985,7 @@ class RankingPainter extends CustomPainter {
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
         colors: [
-          curveColor.withValues(alpha: 0.05),
+          curveColor.withValues(alpha: 0.1),
           Colors.transparent,
         ],
       ).createShader(Rect.fromLTWH(0, 0, w, h));
@@ -2993,26 +2993,70 @@ class RankingPainter extends CustomPainter {
 
     // Paint Curve stroke
     final curvePaint = Paint()
-      ..color = curveColor.withValues(alpha: 0.2)
+      ..color = curveColor.withValues(alpha: 0.3)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5
+      ..strokeWidth = 1.2
       ..strokeCap = StrokeCap.round;
     canvas.drawPath(path, curvePaint);
 
+    // Function to calculate curve height and slope (tangent)
+    double getCurveValue(double xFrac) {
+      double xNormalized = xFrac * 2.0 * xRange - xRange;
+      return math.exp(-0.7 * xNormalized * xNormalized);
+    }
+
+    // Draw small directional arrows along the curve (Flow from Left to Right)
+    final arrowPaint = Paint()
+      ..color = curveColor.withValues(alpha: 0.5)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2
+      ..strokeCap = StrokeCap.round;
+
+    for (double xFrac in [0.2, 0.45, 0.75]) {
+      double x = xFrac * w;
+      double yVal = getCurveValue(xFrac);
+      double y = h - (yVal * h * 0.85);
+      
+      // Approximate slope using a small delta
+      double nextXFrac = xFrac + 0.01;
+      double nextX = nextXFrac * w;
+      double nextYVal = getCurveValue(nextXFrac);
+      double nextY = h - (nextYVal * h * 0.85);
+      
+      double angle = math.atan2(nextY - y, nextX - x);
+      
+      canvas.save();
+      canvas.translate(x, y);
+      canvas.rotate(angle);
+      
+      // Draw arrow head ">"
+      final arrowPath = Path();
+      arrowPath.moveTo(-3, -3);
+      arrowPath.lineTo(0, 0);
+      arrowPath.lineTo(-3, 3);
+      canvas.drawPath(arrowPath, arrowPaint);
+      
+      canvas.restore();
+    }
+
     // Marker
     if (percentile >= 0) {
-      double xPos = (percentile / 100.0) * w;
-      double xNormalized = (xPos / w) * 2.0 * xRange - xRange;
-      double yVal = math.exp(-0.7 * xNormalized * xNormalized);
+      double xFrac = percentile / 100.0;
+      double xPos = xFrac * w;
+      double yVal = getCurveValue(xFrac);
       double yPos = h - (yVal * h * 0.85);
 
       final markerLinePaint = Paint()
-        ..color = markerColor.withValues(alpha: 0.4)
+        ..color = markerColor.withValues(alpha: 0.3)
         ..strokeWidth = 1;
       canvas.drawLine(Offset(xPos, yPos + 4), Offset(xPos, h), markerLinePaint);
 
+      final glowPaint = Paint()..color = markerColor.withValues(alpha: 0.2);
+      canvas.drawCircle(Offset(xPos, yPos), 7, glowPaint);
       canvas.drawCircle(Offset(xPos, yPos), 4, Paint()..color = markerColor);
-      canvas.drawCircle(Offset(xPos, yPos), 6, Paint()..color = markerColor.withValues(alpha: 0.2));
+      
+      // Add a tiny white dot in center for "eye-catching" effect
+      canvas.drawCircle(Offset(xPos, yPos), 1.5, Paint()..color = Colors.white.withValues(alpha: 0.8));
     }
   }
 
