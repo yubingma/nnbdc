@@ -1028,9 +1028,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                     final asrPassRule = await MyDatabase.instance.localParamsDao.getAsrPassRule();
                     final timeToUse = (asrPassRule == 'ALL' && _firstMatchTime != null) ? _firstMatchTime! : DateTime.now();
                     final responseTime = timeToUse.difference(_wordStartTime!).inSeconds;
-                    if (responseTime < 5) {
+                    if (responseTime < 8) {
                       rating = FsrsRating.easy; // Easy
-                    } else if (responseTime >= 12) {
+                    } else if (responseTime >= 18) {
                       rating = FsrsRating.hard; // Hard
                     }
                   }
@@ -1062,9 +1062,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
           rating = FsrsRating.again;
         } else if (_wordStartTime != null) {
           final responseTime = DateTime.now().difference(_wordStartTime!).inSeconds;
-          if (responseTime < 4 && (_currentScore == null || _currentScore! >= 90)) {
+          if (responseTime < 6 && (_currentScore == null || _currentScore! >= 90)) {
             rating = FsrsRating.easy; // Easy
-          } else if (responseTime >= 10) {
+          } else if (responseTime >= 15) {
             rating = FsrsRating.hard; // Hard
           }
         }
@@ -2704,9 +2704,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       FsrsRating rating = FsrsRating.good; // 默认 Good
       if (_wordStartTime != null) {
         final responseTime = DateTime.now().difference(_wordStartTime!).inSeconds;
-        if (responseTime < 5) {
+        if (responseTime < 8) {
           rating = FsrsRating.easy; // Easy
-        } else if (responseTime >= 12) {
+        } else if (responseTime >= 18) {
           rating = FsrsRating.hard; // Hard
         }
       }
