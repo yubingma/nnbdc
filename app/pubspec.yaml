@@ -6,16 +6,16 @@ description: 泡泡单词 - 智能背单词应用
 publish_to: "none" # Remove this line if you wish to publish to pub.dev
 
 # 升级时修改这里
-version: 26.02.26+26022601
+version: 26.02.28+26022801
 
 # 最低支持版本（用于强制升级检查）
-min_ver_code: 26022601
+min_ver_code: 26022801
 
 # 版本更新说明（用于构建脚本生成 ver.json）
 # 格式：每行一个更新项，以 "- " 开头
 changes:
-  - "微信登录"
-  - "自定义词书"
+  - "记忆算法升级到 FSRS 4.5"
+  - "UI简化"
 
 
 environment:
