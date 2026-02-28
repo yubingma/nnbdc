@@ -547,56 +547,69 @@ class DataIntegrityChecker {
         // 恢复词书
         if (data.rawDict != null) {
           final dictDto = data.rawDict!;
-          final dict = Dict(
-            id: dictDto.id,
-            name: dictDto.name,
-            ownerId: dictDto.ownerId,
-            isShared: dictDto.isShared,
-            isReady: dictDto.isReady,
-            visible: dictDto.visible,
-            wordCount: dictDto.wordCount,
-            popularityLimit: dictDto.popularityLimit ?? 0,
-            editable: dictDto.editable ?? true,
-            deletable: dictDto.deletable ?? false,
-            createTime: dictDto.createTime,
-            updateTime: dictDto.updateTime ?? DateTime.now(),
-          );
-          await _db.dictsDao.saveEntity(dict, false);
+          final existing = await _db.dictsDao.findById(dictDto.id);
+          if (existing == null) {
+            final dict = Dict(
+              id: dictDto.id,
+              name: dictDto.name,
+              ownerId: dictDto.ownerId,
+              isShared: dictDto.isShared,
+              isReady: dictDto.isReady,
+              visible: dictDto.visible,
+              wordCount: dictDto.wordCount,
+              popularityLimit: dictDto.popularityLimit ?? 0,
+              editable: dictDto.editable ?? true,
+              deletable: dictDto.deletable ?? false,
+              createTime: dictDto.createTime,
+              updateTime: dictDto.updateTime ?? DateTime.now(),
+            );
+            await _db.dictsDao.saveEntity(dict, false);
+          }
         }
 
         if (data.masteredDict != null) {
           final dictDto = data.masteredDict!;
-          final dict = Dict(
-            id: dictDto.id,
-            name: dictDto.name,
-            ownerId: dictDto.ownerId,
-            isShared: dictDto.isShared,
-            isReady: dictDto.isReady,
-            visible: dictDto.visible,
-            wordCount: dictDto.wordCount,
-            popularityLimit: dictDto.popularityLimit ?? 0,
-            editable: dictDto.editable ?? true,
-            deletable: dictDto.deletable ?? false,
-            createTime: dictDto.createTime,
-            updateTime: dictDto.updateTime ?? DateTime.now(),
-          );
-          await _db.dictsDao.saveEntity(dict, false);
+          final existing = await _db.dictsDao.findById(dictDto.id);
+          if (existing == null) {
+            final dict = Dict(
+              id: dictDto.id,
+              name: dictDto.name,
+              ownerId: dictDto.ownerId,
+              isShared: dictDto.isShared,
+              isReady: dictDto.isReady,
+              visible: dictDto.visible,
+              wordCount: dictDto.wordCount,
+              popularityLimit: dictDto.popularityLimit ?? 0,
+              editable: dictDto.editable ?? true,
+              deletable: dictDto.deletable ?? false,
+              createTime: dictDto.createTime,
+              updateTime: dictDto.updateTime ?? DateTime.now(),
+            );
+            await _db.dictsDao.saveEntity(dict, false);
+          }
         }
 
         // 恢复学习步骤
         if (data.studySteps != null) {
-          final newSteps = data.studySteps!.map((stepDto) => UserStudyStep(
-            userId: stepDto.userId,
-            studyStep: stepDto.studyStep,
-            seq: stepDto.seq,
-            state: stepDto.state,
-            createTime: stepDto.createTime,
-            updateTime: stepDto.updateTime ?? DateTime.now(),
-          )).toList();
+          final existingSteps = await _db.userStudyStepsDao.getUserStudySteps(currentUserId);
+          final existingStepNames = existingSteps.map((e) => e.studyStep).toSet();
           
-          await _db.batch((batch) {
-            batch.insertAll(_db.userStudySteps, newSteps, mode: InsertMode.insertOrReplace);
-          });
+          final stepsToInsert = data.studySteps!
+              .where((stepDto) => !existingStepNames.contains(stepDto.studyStep))
+              .map((stepDto) => UserStudyStep(
+                userId: stepDto.userId,
+                studyStep: stepDto.studyStep,
+                seq: stepDto.seq,
+                state: stepDto.state,
+                createTime: stepDto.createTime,
+                updateTime: stepDto.updateTime ?? DateTime.now(),
+              )).toList();
+          
+          if (stepsToInsert.isNotEmpty) {
+            await _db.batch((batch) {
+              batch.insertAll(_db.userStudySteps, stepsToInsert, mode: InsertMode.insertOrIgnore);
+            });
+          }
         }
         return true;
       } else {
