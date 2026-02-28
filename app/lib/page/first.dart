@@ -1730,11 +1730,11 @@ endlocal
           Get.offNamed("/index", arguments: IndexPageArgs(0));
         } else {
           _setPreparingMessage('自动登录失败，正在跳转登录页…');
-          Get.offNamed("/email_login");
+          Get.offNamed("/login");
         }
       } else {
         _setPreparingMessage('未检测到登录信息，正在跳转登录页…');
-        Get.offNamed("/email_login");
+        Get.offNamed("/login");
       }
     } catch (e, stackTrace) {
       // 不吃异常：记录日志 + 显示在界面上（非toast）

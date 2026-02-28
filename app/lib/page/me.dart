@@ -557,7 +557,7 @@ class _MePageState extends State<MePage> {
                 children: [
                   // 头像
                   GestureDetector(
-                    onTap: () => Get.toNamed('/email_login'),
+                    onTap: () => Get.toNamed('/login'),
                     child: Container(
                       padding: const EdgeInsets.all(2), // 边框间距
                       decoration: BoxDecoration(
@@ -1403,7 +1403,7 @@ class _MePageState extends State<MePage> {
               _buildMenuTile(
                 icon: Icons.swap_horiz,
                 title: '切换账号',
-                onTap: () => Get.toNamed('/email_login'),
+                onTap: () => Get.toNamed('/login'),
               ),
               _buildMenuTile(
                 icon: Icons.delete_forever,
@@ -2045,7 +2045,7 @@ class _MePageState extends State<MePage> {
       UserBo().unRegister(userId).then((value) {
         if (value.success) {
           ToastUtil.info("账户已注销");
-          Get.toNamed('/email_login');
+          Get.toNamed('/login');
         } else {
           ToastUtil.error(value.msg!);
         }
@@ -2285,7 +2285,7 @@ class _MePageState extends State<MePage> {
           await MyDatabase.instance.wipeAllTables();
           ToastUtil.info('已重建数据库');
           // 重建后跳转到登录页面
-          Get.offAllNamed('/email_login');
+          Get.offAllNamed('/login');
         },
         operationName: '重建数据库',
       );

@@ -20,7 +20,7 @@ class _PageViewerPageState extends State<PageViewerPage> {
   final List<PageRouteInfo> _routes = [
     PageRouteInfo('/test', '测试页面', Icons.bug_report),
     PageRouteInfo('/first', '首次启动页', Icons.first_page),
-    PageRouteInfo('/email_login', '登录页', Icons.login),
+    PageRouteInfo('/login', '登录页', Icons.login),
     PageRouteInfo('/index', '主页（词表）', Icons.home),
     PageRouteInfo('/protocol', '用户协议', Icons.description),
     PageRouteInfo('/privacy', '隐私政策', Icons.privacy_tip),

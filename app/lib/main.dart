@@ -20,6 +20,7 @@ import 'package:nnbdc/page/first.dart';
 import 'package:nnbdc/page/game.dart';
 import 'package:nnbdc/page/index.dart';
 import 'package:nnbdc/page/login.dart';
+import 'package:nnbdc/page/email_login.dart';
 import 'package:nnbdc/page/msg.dart';
 import 'package:nnbdc/page/pic_search.dart';
 import 'package:nnbdc/page/privacy.dart';
@@ -382,7 +383,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       routes: {
         '/test': (context) => TestPage(),
         '/first': (context) => const FirstPage(),
-        '/email_login': (context) => const LoginPage(),
+        '/login': (context) => const LoginPage(),
+        '/email_login': (context) => const EmailLoginPage(),
         '/index': (context) => const IndexPage(),
         '/protocol': (context) => const ProtocolPage(),
         '/privacy': (context) => const PrivacyPage(),

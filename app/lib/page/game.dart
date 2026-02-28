@@ -736,7 +736,7 @@ class _GamePageState extends State<GamePage> with TickerProviderStateMixin {
               ),
               const SizedBox(height: 24),
               ElevatedButton(
-                onPressed: () => Get.toNamed('/email_login'),
+                onPressed: () => Get.toNamed('/login'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.primaryColor,
                   foregroundColor: Colors.white,

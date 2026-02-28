@@ -83,7 +83,7 @@ class SelectBookPageState extends State<SelectBookPage> {
       if (user == null) {
         ToastUtil.error("请先登录");
         if (mounted) {
-          Navigator.of(context).pushReplacementNamed('/email_login');
+          Navigator.of(context).pushReplacementNamed('/login');
         }
         return;
       }
