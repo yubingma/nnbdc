@@ -621,16 +621,18 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   /// 实际执行ASR启动/停止逻辑
   void _doHandleTabChangeForAsr() {
     if (_isInSpeakTab) {
-      // 当前在"说"tab，如果是从"选"切换过来，重制计时器
-      _wordStartTime = DateTime.now();
+      // 当前在"说"tab
       _firstMatchTime = null;
 
-      // 当前在"说"tab，如果ASR已经启动且状态正确，不需要再次启动
+      // 如果ASR已经启动且状态正确，计时器已经开始或将在_startAsrWithHint中重置
       if (asr.state == AsrState.started && !_isKeyboardVisible) {
-        Global.logger.d('BDC: 当前在"说"tab，ASR已启动，跳过重复启动');
+        Global.logger.d('BDC: 当前在"说"tab，ASR已启动，保持计时');
         return;
       }
-      // 当前在"说"tab，启动ASR
+      // 将在此处设置初始计时，防止_startAsrWithHint被跳过或延迟太久
+      _wordStartTime = DateTime.now();
+
+      // 启动ASR
       Global.logger.d('BDC: 当前在"说"tab，启动ASR (studyStep=$_studyStep)');
       if (!_isKeyboardVisible) {
         // 设置上下文短语
@@ -827,16 +829,16 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     try {
       await asr.startAsr(language);
       Global.logger.d('BDC: ASR启动成功，播放提示音并计时');
-      SoundUtil.playAsrReadyHintSound();
-      _wordStartTime = DateTime.now(); // ASR 准备就绪，开始计时
+      await SoundUtil.playAsrReadyHintSound();
+      _wordStartTime = DateTime.now(); // ASR 准备就绪且提示音播放完成，开始计时
     } catch (e, stackTrace) {
       Global.logger.e('BDC: ASR启动失败', error: e, stackTrace: stackTrace);
       // 即使启动抛出异常，如果 ASR 状态已经是 started（iOS 上会抛异常但实际已启动），
       // 仍然需要播放提示音，提示用户可以开始说话
       if (asr.state == AsrState.started) {
         Global.logger.d('BDC: ASR状态为started，播放提示音并计时');
-        SoundUtil.playAsrReadyHintSound();
-        _wordStartTime = DateTime.now(); // ASR 准备就绪，开始计时
+        await SoundUtil.playAsrReadyHintSound();
+        _wordStartTime = DateTime.now(); // ASR 准备就绪且提示音播放完成，开始计时
       }
     } finally {}
   }
