@@ -489,6 +489,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
   /// 当前单词学习的开始时间
   DateTime? _wordStartTime;
+  DateTime? _firstMatchTime;
+  bool _hintUsed = false;
 
   /// Tab控制器，用于管理说/选两个tab
   TabController? _tabController;
@@ -619,6 +621,10 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   /// 实际执行ASR启动/停止逻辑
   void _doHandleTabChangeForAsr() {
     if (_isInSpeakTab) {
+      // 当前在"说"tab，如果是从"选"切换过来，重制计时器
+      _wordStartTime = DateTime.now();
+      _firstMatchTime = null;
+
       // 当前在"说"tab，如果ASR已经启动且状态正确，不需要再次启动
       if (asr.state == AsrState.started && !_isKeyboardVisible) {
         Global.logger.d('BDC: 当前在"说"tab，ASR已启动，跳过重复启动');
@@ -637,6 +643,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     } else {
       // 当前在"选"tab，从切换这一刻重新开始计时（之前的播放时间或 ASR 等待时间不计入）
       _wordStartTime = DateTime.now();
+      _firstMatchTime = null;
+
+      // 如果当前在"选"tab，如果ASR已经停止，不需要再次停止
 
       // 如果当前在"选"tab，如果ASR已经停止，不需要再次停止
       if (asr.state == AsrState.stopped || asr.state == AsrState.initialized) {
@@ -986,6 +995,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       // 检查用户说出的正确释义数量是否达到要求
       final total = result.totalCount;
       final matched = result.matchedCount;
+      if (_firstMatchTime == null && matched >= 1) {
+        _firstMatchTime = DateTime.now();
+      }
       _isAnswerCorrect = await _isAsrPass(total, matched);
 
       // 如果本次有新增匹配，播放音效并设置状态
@@ -1003,13 +1015,17 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         // 等待音频播放完成，然后再等待短暂延迟后执行后续逻辑
         // 这样用户有机会说出下一个释义, 用户体验会更好一点
         soundFuture.whenComplete(() {
-          Future.delayed(Duration(milliseconds: 150)).then((_) {
+          Future.delayed(Duration(milliseconds: 150)).then((_) async {
             _playingCorrectSounds.remove(soundFuture);
                 if (_playingCorrectSounds.isEmpty && _isAnswerCorrect) {
                   // 计算 FSRS 评分
                   FsrsRating rating = FsrsRating.good; // 默认 Good
-                  if (_wordStartTime != null) {
-                    final responseTime = DateTime.now().difference(_wordStartTime!).inSeconds;
+                  if (_hintUsed) {
+                    rating = FsrsRating.again;
+                  } else if (_wordStartTime != null) {
+                    final asrPassRule = await MyDatabase.instance.localParamsDao.getAsrPassRule();
+                    final timeToUse = (asrPassRule == 'ALL' && _firstMatchTime != null) ? _firstMatchTime! : DateTime.now();
+                    final responseTime = timeToUse.difference(_wordStartTime!).inSeconds;
                     if (responseTime < 5) {
                       rating = FsrsRating.easy; // Easy
                     } else if (responseTime >= 12) {
@@ -1040,7 +1056,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
         // 计算 FSRS 评分
         FsrsRating rating = FsrsRating.good; // 默认 Good
-        if (_wordStartTime != null) {
+        if (_hintUsed) {
+          rating = FsrsRating.again;
+        } else if (_wordStartTime != null) {
           final responseTime = DateTime.now().difference(_wordStartTime!).inSeconds;
           if (responseTime < 4 && (_currentScore == null || _currentScore! >= 90)) {
             rating = FsrsRating.easy; // Easy
@@ -1129,6 +1147,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       asr.reset();
       _meaningController.text = '';
       _handlingChinese = '';
+      _firstMatchTime = null;
+      _hintUsed = false;
       _highlightedWordImg = null;
       _wordImageEdited = false;
 
@@ -2297,7 +2317,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 ),
                 label: const Text('不认识'),
-                onPressed: () => showWordDetail(_word, true),
+                onPressed: () => showWordDetail(_word, true, fsrsRating: FsrsRating.again),
               ),
             if (_showAnswerButtons || _studyStep == StudyStep.en2Ch.json)
               ElevatedButton.icon(
@@ -2309,7 +2329,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 ),
                 label: const Text('再学学'),
-                onPressed: () => showWordDetail(_word, false),
+                onPressed: () => showWordDetail(_word, false, fsrsRating: FsrsRating.good),
               ),
             if (_canLeaveCurrWord)
               ElevatedButton.icon(
@@ -2592,12 +2612,14 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
   void giveALittleHint(WordWrapper word) {
     setState(() {
+      _hintUsed = true;
       word.hintLetterCount++;
     });
   }
 
   void giveFullHint(WordWrapper word) {
     setState(() {
+      _hintUsed = true;
       word.hintLetterCount = 999;
     });
   }
@@ -2676,21 +2698,32 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   onAnswerClicked(var selectedAnswerIndex) async {
     _isAnswerCorrect = selectedAnswerIndex == _correctAnswerIndex;
     if (_isAnswerCorrect) {
+      // 计算 FSRS 评分
+      FsrsRating rating = FsrsRating.good; // 默认 Good
+      if (_wordStartTime != null) {
+        final responseTime = DateTime.now().difference(_wordStartTime!).inSeconds;
+        if (responseTime < 5) {
+          rating = FsrsRating.easy; // Easy
+        } else if (responseTime >= 12) {
+          rating = FsrsRating.hard; // Hard
+        }
+      }
+
       // 并发播放提示音，将 Future 添加到列表中用于后续等待
       final soundFuture = SoundUtil.playAssetSoundConcurrent('correct.mp3', 1.5, 0.2);
       _playingCorrectSounds.add(soundFuture);
       soundFuture.whenComplete(() {
         _playingCorrectSounds.remove(soundFuture);
       });
-      getNextWord(true);
+      getNextWord(true, fsrsRating: rating);
     } else {
       //不认识或答案错误（错误提示音不需要等待，因为不会跳转到下一个单词）
       SoundUtil.playAssetSoundConcurrent('cow2.mp3', 1.5, 0.2);
-      showWordDetail(_word!, true); // 传递true表示本次回答错误
+      showWordDetail(_word!, true, fsrsRating: FsrsRating.again); // 传递true表示本次回答错误
     }
   }
 
-  showWordDetail(var word, bool isAnswerWrong) {
+  showWordDetail(var word, bool isAnswerWrong, {FsrsRating? fsrsRating}) {
     var bottomBtn = Container(
       decoration: BoxDecoration(
         color: Colors.blue,
@@ -2700,7 +2733,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       child: InkWell(
         onTap: () {
           Navigator.pop(context);
-          getNextWord(true);
+          getNextWord(true, fsrsRating: fsrsRating);
         },
         borderRadius: BorderRadius.circular(8),
         child: const Row(
