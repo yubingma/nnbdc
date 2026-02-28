@@ -748,7 +748,7 @@ class _MePageState extends State<MePage> {
                               height: 70,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                border: Border.all(color: numberColor, width: 2),
+                                border: Border.all(color: textColor.withValues(alpha: 0.5), width: 2),
                               ),
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
@@ -756,18 +756,18 @@ class _MePageState extends State<MePage> {
                                   Text(
                                     "学习天数",
                                     style: TextStyle(
-                                      color: numberColor,
+                                      color: textColor,
                                       fontSize: 9,
-                                      fontWeight: FontWeight.bold,
+                                      fontWeight: FontWeight.normal,
                                     ),
                                     textScaler: const TextScaler.linear(1.0),
                                   ),
                                   Text(
                                     studyProgress!.existDays.toString(),
                                     style: TextStyle(
-                                      color: textColor,
+                                      color: numberColor,
                                       fontSize: 20,
-                                      fontWeight: FontWeight.w900,
+                                      fontWeight: FontWeight.bold,
                                     ),
                                     textScaler: const TextScaler.linear(1.0),
                                   ),
@@ -795,12 +795,12 @@ class _MePageState extends State<MePage> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.check_box_outlined, color: numberColor, size: 24),
+                            Icon(Icons.check_box_outlined, color: textColor, size: 24),
                             const SizedBox(height: 2),
                             Text(
                               studyProgress!.masteredWordsCount.toString(),
                               style: TextStyle(
-                                color: isDarkModeEnabled ? Colors.white : Colors.black,
+                                color: numberColor,
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -834,12 +834,12 @@ class _MePageState extends State<MePage> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.schedule, color: numberColor, size: 24),
+                            Icon(Icons.schedule, color: textColor, size: 24),
                             const SizedBox(height: 2),
                             Text(
                               (studyProgress!.totalLearningSeconds / 3600.0).toStringAsFixed(1),
                               style: TextStyle(
-                                color: isDarkModeEnabled ? Colors.white : Colors.black,
+                                color: numberColor,
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -925,7 +925,7 @@ class _MePageState extends State<MePage> {
                         shape: BoxShape.circle,
                         color: starContainerColor,
                       ),
-                      child: Icon(Icons.leaderboard_rounded, color: numberColor, size: 32),
+                      child: Icon(Icons.leaderboard_rounded, color: textColor, size: 32),
                     ),
                   ],
                 ),
