@@ -449,11 +449,8 @@ class WordBo {
     try {
       final query = db.select(db.learningWords)
         ..where((tbl) => tbl.userId.equals(userId) & tbl.stability.isSmallerThanValue(Constants.graduationStability))
-        ..orderBy([
-          (tbl) => OrderingTerm(expression: tbl.addTime),
-          (tbl) => OrderingTerm.asc(tbl.stability),
-          (tbl) => OrderingTerm(expression: tbl.wordId)
-        ])
+        ..orderBy(
+            [(tbl) => OrderingTerm(expression: tbl.addTime), (tbl) => OrderingTerm.asc(tbl.stability), (tbl) => OrderingTerm(expression: tbl.wordId)])
         ..limit(pageSize, offset: fromIndex);
       final learningWords = await query.get();
 
@@ -484,22 +481,8 @@ class WordBo {
             meaningItemVos.add(MeaningItemVo(mi.id, mi.ciXing, mi.meaning, null, null, null));
           }
           wordVo.meaningItems = meaningItemVos;
-          final learningWordVo = LearningWordVo(
-              userVo,
-              lw.addTime,
-              lw.addDay,
-              lw.lastLearningDate,
-              lw.learningOrder,
-              lw.learnedTimes,
-              wordVo,
-              lw.batchId,
-              lw.stability,
-              lw.difficulty,
-              lw.elapsedDays,
-              lw.scheduledDays,
-              lw.reps,
-              lw.lapses,
-              lw.state);
+          final learningWordVo = LearningWordVo(userVo, lw.addTime, lw.addDay, lw.lastLearningDate, lw.learningOrder, lw.learnedTimes, wordVo,
+              lw.batchId, lw.stability, lw.difficulty, lw.elapsedDays, lw.scheduledDays, lw.reps, lw.lapses, lw.state);
           learningWordVos.add(learningWordVo);
         }
       }
@@ -518,16 +501,9 @@ class WordBo {
     if (user == null) {
       throw Exception('用户不存在');
     }
-    final now = AppClock.now();
-    final startOfDay = DateTime(now.year, now.month, now.day);
-    final endOfDay = DateTime(now.year, now.month, now.day, 23, 59, 59, 999);
+    // Remove unused date variables
     final query = db.select(db.learningWords)
-      ..where((tbl) =>
-          tbl.userId.equals(userId) &
-          tbl.isTodayNewWord.equals(true) &
-          tbl.lastLearningDate.isBiggerOrEqualValue(startOfDay) &
-          tbl.lastLearningDate.isSmallerOrEqualValue(endOfDay) &
-          tbl.batchId.isBiggerThanValue(0))
+      ..where((tbl) => tbl.userId.equals(userId) & tbl.isTodayNewWord.equals(true) & tbl.batchId.isBiggerThanValue(0))
       ..orderBy([(tbl) => OrderingTerm(expression: tbl.learningOrder)])
       ..limit(pageSize, offset: fromIndex);
     final learningWords = await query.get();
@@ -535,8 +511,6 @@ class WordBo {
       ..addColumns([countAll()])
       ..where(db.learningWords.userId.equals(userId))
       ..where(db.learningWords.isTodayNewWord.equals(true))
-      ..where(db.learningWords.lastLearningDate.isBiggerOrEqualValue(startOfDay))
-      ..where(db.learningWords.lastLearningDate.isSmallerOrEqualValue(endOfDay))
       ..where(db.learningWords.batchId.isBiggerThanValue(0));
     final countResult = await countQuery.getSingle();
     final total = countResult.read(countAll()) ?? 0;
@@ -561,22 +535,8 @@ class WordBo {
           meaningItemVos.add(MeaningItemVo(mi.id, mi.ciXing, mi.meaning, null, null, null));
         }
         wordVo.meaningItems = meaningItemVos;
-        final learningWordVo = LearningWordVo(
-            userVo,
-            lw.addTime,
-            lw.addDay,
-            lw.lastLearningDate,
-            lw.learningOrder,
-            lw.learnedTimes,
-            wordVo,
-            lw.batchId,
-            lw.stability,
-            lw.difficulty,
-            lw.elapsedDays,
-            lw.scheduledDays,
-            lw.reps,
-            lw.lapses,
-            lw.state);
+        final learningWordVo = LearningWordVo(userVo, lw.addTime, lw.addDay, lw.lastLearningDate, lw.learningOrder, lw.learnedTimes, wordVo,
+            lw.batchId, lw.stability, lw.difficulty, lw.elapsedDays, lw.scheduledDays, lw.reps, lw.lapses, lw.state);
         learningWordVos.add(learningWordVo);
       }
     }
@@ -591,16 +551,9 @@ class WordBo {
     if (user == null) {
       throw Exception('用户不存在');
     }
-    final now = AppClock.now();
-    final startOfDay = DateTime(now.year, now.month, now.day);
-    final endOfDay = DateTime(now.year, now.month, now.day, 23, 59, 59, 999);
+    // Remove unused date variables
     final query = db.select(db.learningWords)
-      ..where((tbl) =>
-          tbl.userId.equals(userId) &
-          tbl.isTodayNewWord.equals(false) &
-          tbl.lastLearningDate.isBiggerOrEqualValue(startOfDay) &
-          tbl.lastLearningDate.isSmallerOrEqualValue(endOfDay) &
-          tbl.batchId.isBiggerThanValue(0))
+      ..where((tbl) => tbl.userId.equals(userId) & tbl.isTodayNewWord.equals(false) & tbl.batchId.isBiggerThanValue(0))
       ..orderBy([(tbl) => OrderingTerm(expression: tbl.learningOrder)])
       ..limit(pageSize, offset: fromIndex);
     final learningWords = await query.get();
@@ -608,8 +561,6 @@ class WordBo {
       ..addColumns([countAll()])
       ..where(db.learningWords.userId.equals(userId))
       ..where(db.learningWords.isTodayNewWord.equals(false))
-      ..where(db.learningWords.lastLearningDate.isBiggerOrEqualValue(startOfDay))
-      ..where(db.learningWords.lastLearningDate.isSmallerOrEqualValue(endOfDay))
       ..where(db.learningWords.batchId.isBiggerThanValue(0));
     final countResult = await countQuery.getSingle();
     final total = countResult.read(countAll()) ?? 0;
@@ -634,22 +585,8 @@ class WordBo {
           meaningItemVos.add(MeaningItemVo(mi.id, mi.ciXing, mi.meaning, null, null, null));
         }
         wordVo.meaningItems = meaningItemVos;
-        final learningWordVo = LearningWordVo(
-            userVo,
-            lw.addTime,
-            lw.addDay,
-            lw.lastLearningDate,
-            lw.learningOrder,
-            lw.learnedTimes,
-            wordVo,
-            lw.batchId,
-            lw.stability,
-            lw.difficulty,
-            lw.elapsedDays,
-            lw.scheduledDays,
-            lw.reps,
-            lw.lapses,
-            lw.state);
+        final learningWordVo = LearningWordVo(userVo, lw.addTime, lw.addDay, lw.lastLearningDate, lw.learningOrder, lw.learnedTimes, wordVo,
+            lw.batchId, lw.stability, lw.difficulty, lw.elapsedDays, lw.scheduledDays, lw.reps, lw.lapses, lw.state);
         learningWordVos.add(learningWordVo);
       }
     }
@@ -868,12 +805,12 @@ class WordBo {
         ..where(db.dictWords.dictId.equals(d.id));
       final countResult = await countQuery.getSingle();
       final actualCount = countResult.read(countAll()) ?? 0;
-      
+
       // 如果dict表中的wordCount与实际不一致，同步更新
       if (d.wordCount != actualCount) {
         await db.dictsDao.updateWordCount(d.id, true);
       }
-      
+
       results.add(DictVo.c2(d.id)
         ..name = d.name
         ..wordCount = actualCount
@@ -977,17 +914,16 @@ class WordBo {
 
       await db.transaction(() async {
         // 1. 查询并删除现有定制释义
-        final existingQuery = db.select(db.meaningItems)
-          ..where((mi) => mi.wordId.equals(wordId) & mi.dictId.equals(dictId));
+        final existingQuery = db.select(db.meaningItems)..where((mi) => mi.wordId.equals(wordId) & mi.dictId.equals(dictId));
         final existingItems = await existingQuery.get();
-        
+
         // 记录删除日志
         for (final item in existingItems) {
           if (userId != null) {
             await DbLogUtil.logOperation(userId, 'DELETE', 'meaningItems', item.id, item);
           }
         }
-        
+
         // 删除现有定制释义
         await (db.delete(db.meaningItems)..where((mi) => mi.wordId.equals(wordId) & mi.dictId.equals(dictId))).go();
 
@@ -995,28 +931,28 @@ class WordBo {
         // 按分号分隔(支持中文和英文分号)
         final semicolonRegex = RegExp(r'[;；]');
         int popularity = 1;
-        
+
         // 用于去重 (ciXing + meaning 的组合)
         Set<String> seen = {};
-        
+
         for (final item in meanings) {
           final cixing = item.ciXing;
           final meaningText = item.meaning;
-          
+
           if (meaningText.isEmpty) continue;
-          
+
           // 按分号分割
           final parts = meaningText.split(semicolonRegex);
-          
+
           for (final part in parts) {
             final trimmed = part.trim();
             if (trimmed.isEmpty) continue;
-            
+
             // 去重
             final key = '$cixing|$trimmed';
             if (seen.contains(key)) continue;
             seen.add(key);
-            
+
             final newId = Util.uuid();
             final newItem = MeaningItem(
               id: newId,
@@ -1050,10 +986,9 @@ class WordBo {
     final db = MyDatabase.instance;
     try {
       // 先查询现有定制释义，用于记录删除日志
-      final existingQuery = db.select(db.meaningItems)
-        ..where((mi) => mi.wordId.equals(wordId) & mi.dictId.equals(dictId));
+      final existingQuery = db.select(db.meaningItems)..where((mi) => mi.wordId.equals(wordId) & mi.dictId.equals(dictId));
       final existingItems = await existingQuery.get();
-      
+
       // 记录删除日志
       for (final item in existingItems) {
         final userId = Global.getLoggedInUser()?.id;
@@ -1061,15 +996,15 @@ class WordBo {
           await DbLogUtil.logOperation(userId, 'DELETE', 'meaningItems', item.id, item);
         }
       }
-      
+
       // 删除定制释义
       await (db.delete(db.meaningItems)..where((mi) => mi.wordId.equals(wordId) & mi.dictId.equals(dictId))).go();
-      
+
       // 触发同步
       Future.delayed(Duration.zero, () {
         ThrottledDbSyncService().requestSync();
       });
-      
+
       return Result("SUCCESS", "已恢复默认释义", true);
     } catch (e, s) {
       Global.logger.e('删除定制释义失败: $e', stackTrace: s);
@@ -1083,10 +1018,9 @@ class WordBo {
     try {
       await db.transaction(() async {
         // 先查询现有定制释义，用于记录删除日志
-        final existingMeaningQuery = db.select(db.meaningItems)
-          ..where((mi) => mi.dictId.equals(dictId));
+        final existingMeaningQuery = db.select(db.meaningItems)..where((mi) => mi.dictId.equals(dictId));
         final existingMeaningItems = await existingMeaningQuery.get();
-        
+
         // 记录删除日志
         for (final item in existingMeaningItems) {
           final userId = Global.getLoggedInUser()?.id;
@@ -1094,7 +1028,7 @@ class WordBo {
             await DbLogUtil.logOperation(userId, 'DELETE', 'meaningItems', item.id, item);
           }
         }
-        
+
         // 删除定制释义
         await (db.delete(db.meaningItems)..where((mi) => mi.dictId.equals(dictId))).go();
         // 删除关联的单词
@@ -1130,8 +1064,7 @@ class WordBo {
         return Result("SUCCESS", "获取成功", true)..data = -1;
       }
       final learningWordQuery = db.select(db.learningWords)
-        ..where((tbl) =>
-            tbl.userId.equals(userId) & tbl.wordId.equals(word.id) & tbl.stability.isSmallerThanValue(Constants.graduationStability));
+        ..where((tbl) => tbl.userId.equals(userId) & tbl.wordId.equals(word.id) & tbl.stability.isSmallerThanValue(Constants.graduationStability));
       final learningWord = await learningWordQuery.getSingleOrNull();
       if (learningWord == null) {
         Global.logger.d('用户未在学习单词 $spell');
@@ -1146,8 +1079,9 @@ class WordBo {
       final sameTimeSameStabilitySmallerWordIdCondition = db.learningWords.addTime.equals(learningWord.addTime) &
           db.learningWords.stability.equals(learningWord.stability ?? 0.0) &
           db.learningWords.wordId.isSmallerThanValue(learningWord.wordId);
-      countQuery.where(
-          userIdCondition & stabilityThresholdCondition & (beforeTimeCondition | sameTimeMoreStableCondition | sameTimeSameStabilitySmallerWordIdCondition));
+      countQuery.where(userIdCondition &
+          stabilityThresholdCondition &
+          (beforeTimeCondition | sameTimeMoreStableCondition | sameTimeSameStabilitySmallerWordIdCondition));
       final countResult = await countQuery.getSingle();
       int position = countResult.read(countAll()) ?? 0;
       position += 1;
@@ -1175,9 +1109,6 @@ class WordBo {
         Global.logger.e('查询今日单词位置失败: 用户不存在 userId=$userId');
         return Result("ERROR", "用户不存在", false);
       }
-      final now = AppClock.now();
-      final startOfDay = DateTime(now.year, now.month, now.day);
-      final endOfDay = DateTime(now.year, now.month, now.day, 23, 59, 59, 999);
       final wordQuery = db.select(db.words)..where((tbl) => tbl.spell.equals(spell));
       final word = await wordQuery.getSingleOrNull();
       if (word == null) {
@@ -1185,11 +1116,7 @@ class WordBo {
         return Result("SUCCESS", "获取成功", true)..data = -1;
       }
       final learningWordQuery = db.select(db.learningWords)
-        ..where((tbl) =>
-            tbl.userId.equals(userId) &
-            tbl.wordId.equals(word.id) &
-            tbl.lastLearningDate.isBiggerOrEqualValue(startOfDay) &
-            tbl.lastLearningDate.isSmallerOrEqualValue(endOfDay));
+        ..where((tbl) => tbl.userId.equals(userId) & tbl.wordId.equals(word.id) & tbl.batchId.isBiggerThanValue(0));
       final learningWord = await learningWordQuery.getSingleOrNull();
       if (learningWord == null) {
         Global.logger.d('单词 $spell 不在今日单词列表中');
@@ -1197,10 +1124,9 @@ class WordBo {
       }
       final countQuery = db.selectOnly(db.learningWords)..addColumns([countAll()]);
       final userIdCondition = db.learningWords.userId.equals(userId);
-      final dateCondition =
-          db.learningWords.lastLearningDate.isBiggerOrEqualValue(startOfDay) & db.learningWords.lastLearningDate.isSmallerOrEqualValue(endOfDay);
+      final wordCondition = db.learningWords.batchId.isBiggerThanValue(0);
       final beforeOrderCondition = db.learningWords.learningOrder.isSmallerThanValue(learningWord.learningOrder);
-      countQuery.where(userIdCondition & dateCondition & beforeOrderCondition);
+      countQuery.where(userIdCondition & wordCondition & beforeOrderCondition);
       final countResult = await countQuery.getSingle();
       int position = countResult.read(countAll()) ?? 0;
       position += 1;
@@ -1255,9 +1181,6 @@ class WordBo {
         Global.logger.e('查询今日新词位置失败: 用户不存在 userId=$userId');
         return Result("ERROR", "用户不存在", false);
       }
-      final now = AppClock.now();
-      final startOfDay = DateTime(now.year, now.month, now.day);
-      final endOfDay = DateTime(now.year, now.month, now.day, 23, 59, 59, 999);
       final wordQuery = db.select(db.words)..where((tbl) => tbl.spell.equals(spell));
       final word = await wordQuery.getSingleOrNull();
       if (word == null) {
@@ -1265,12 +1188,7 @@ class WordBo {
         return Result("SUCCESS", "获取成功", true)..data = -1;
       }
       final learningWordQuery = db.select(db.learningWords)
-        ..where((tbl) =>
-            tbl.userId.equals(userId) &
-            tbl.wordId.equals(word.id) &
-            tbl.isTodayNewWord.equals(true) &
-            tbl.lastLearningDate.isBiggerOrEqualValue(startOfDay) &
-            tbl.lastLearningDate.isSmallerOrEqualValue(endOfDay));
+        ..where((tbl) => tbl.userId.equals(userId) & tbl.wordId.equals(word.id) & tbl.isTodayNewWord.equals(true) & tbl.batchId.isBiggerThanValue(0));
       final learningWord = await learningWordQuery.getSingleOrNull();
       if (learningWord == null) {
         Global.logger.d('单词 $spell 不在今日新词列表中');
@@ -1279,10 +1197,9 @@ class WordBo {
       final countQuery = db.selectOnly(db.learningWords)..addColumns([countAll()]);
       final userIdCondition = db.learningWords.userId.equals(userId);
       final isNewWordCondition = db.learningWords.isTodayNewWord.equals(true);
-      final dateCondition =
-          db.learningWords.lastLearningDate.isBiggerOrEqualValue(startOfDay) & db.learningWords.lastLearningDate.isSmallerOrEqualValue(endOfDay);
+      final batchCondition = db.learningWords.batchId.isBiggerThanValue(0);
       final beforeOrderCondition = db.learningWords.learningOrder.isSmallerThanValue(learningWord.learningOrder);
-      countQuery.where(userIdCondition & isNewWordCondition & dateCondition & beforeOrderCondition);
+      countQuery.where(userIdCondition & isNewWordCondition & batchCondition & beforeOrderCondition);
       final countResult = await countQuery.getSingle();
       int position = countResult.read(countAll()) ?? 0;
       position += 1;
@@ -1303,9 +1220,6 @@ class WordBo {
         Global.logger.e('查询今日旧词位置失败: 用户不存在 userId=$userId');
         return Result("ERROR", "用户不存在", false);
       }
-      final now = AppClock.now();
-      final startOfDay = DateTime(now.year, now.month, now.day);
-      final endOfDay = DateTime(now.year, now.month, now.day, 23, 59, 59, 999);
       final wordQuery = db.select(db.words)..where((tbl) => tbl.spell.equals(spell));
       final word = await wordQuery.getSingleOrNull();
       if (word == null) {
@@ -1313,12 +1227,8 @@ class WordBo {
         return Result("SUCCESS", "获取成功", true)..data = -1;
       }
       final learningWordQuery = db.select(db.learningWords)
-        ..where((tbl) =>
-            tbl.userId.equals(userId) &
-            tbl.wordId.equals(word.id) &
-            tbl.isTodayNewWord.equals(false) &
-            tbl.lastLearningDate.isBiggerOrEqualValue(startOfDay) &
-            tbl.lastLearningDate.isSmallerOrEqualValue(endOfDay));
+        ..where(
+            (tbl) => tbl.userId.equals(userId) & tbl.wordId.equals(word.id) & tbl.isTodayNewWord.equals(false) & tbl.batchId.isBiggerThanValue(0));
       final learningWord = await learningWordQuery.getSingleOrNull();
       if (learningWord == null) {
         Global.logger.d('单词 $spell 不在今日旧词列表中');
@@ -1327,10 +1237,9 @@ class WordBo {
       final countQuery = db.selectOnly(db.learningWords)..addColumns([countAll()]);
       final userIdCondition = db.learningWords.userId.equals(userId);
       final isOldWordCondition = db.learningWords.isTodayNewWord.equals(false);
-      final dateCondition =
-          db.learningWords.lastLearningDate.isBiggerOrEqualValue(startOfDay) & db.learningWords.lastLearningDate.isSmallerOrEqualValue(endOfDay);
+      final batchCondition = db.learningWords.batchId.isBiggerThanValue(0);
       final beforeOrderCondition = db.learningWords.learningOrder.isSmallerThanValue(learningWord.learningOrder);
-      countQuery.where(userIdCondition & isOldWordCondition & dateCondition & beforeOrderCondition);
+      countQuery.where(userIdCondition & isOldWordCondition & batchCondition & beforeOrderCondition);
       final countResult = await countQuery.getSingle();
       int position = countResult.read(countAll()) ?? 0;
       position += 1;
@@ -1441,7 +1350,7 @@ class WordBo {
       if (dictWord == null) {
         return Result("ERROR", "词书中无该单词", false);
       }
-      
+
       await db.transaction(() async {
         await db.dictWordsDao.deleteDictWordWithCleanup(dictId, wordId, userId, true);
       });
@@ -1502,23 +1411,20 @@ class WordBo {
         ..addColumns([countAll()])
         ..where(db.learningWords.userId.equals(user.id))
         ..where(db.learningWords.isTodayNewWord.equals(true))
-        ..where(db.learningWords.lastLearningDate.isBiggerOrEqualValue(startOfDay))
-        ..where(db.learningWords.lastLearningDate.isSmallerOrEqualValue(endOfDay));
+        ..where(db.learningWords.batchId.isBiggerThanValue(0));
       final newWordsCount = await newWordsQuery.getSingle();
       wordLists.add(WordList("今日新词", newWordsCount.read(countAll()) ?? 0));
       final oldWordsQuery = db.selectOnly(db.learningWords)
         ..addColumns([countAll()])
         ..where(db.learningWords.userId.equals(user.id))
         ..where(db.learningWords.isTodayNewWord.equals(false))
-        ..where(db.learningWords.lastLearningDate.isBiggerOrEqualValue(startOfDay))
-        ..where(db.learningWords.lastLearningDate.isSmallerOrEqualValue(endOfDay));
+        ..where(db.learningWords.batchId.isBiggerThanValue(0));
       final oldWordsCount = await oldWordsQuery.getSingle();
       wordLists.add(WordList("今日旧词", oldWordsCount.read(countAll()) ?? 0));
       final todayWordsQuery = db.selectOnly(db.learningWords)
         ..addColumns([countAll()])
         ..where(db.learningWords.userId.equals(user.id))
-        ..where(db.learningWords.lastLearningDate.isBiggerOrEqualValue(startOfDay))
-        ..where(db.learningWords.lastLearningDate.isSmallerOrEqualValue(endOfDay));
+        ..where(db.learningWords.batchId.isBiggerThanValue(0));
       final totalWordsCount = await todayWordsQuery.getSingle();
       wordLists.add(WordList("今日单词", totalWordsCount.read(countAll()) ?? 0));
       // 获取全局学习中的单词数量（生命值大于0的所有单词）
@@ -1577,16 +1483,9 @@ class WordBo {
     if (user == null) {
       throw Exception('用户不存在');
     }
-    final now = AppClock.now();
-    final startOfDay = DateTime(now.year, now.month, now.day);
-    final endOfDay = DateTime(now.year, now.month, now.day, 23, 59, 59, 999);
     // 注意：batchId 可能是 NULL（旧数据），只查询有 batchId 的记录
     final query = db.select(db.learningWords)
-      ..where((tbl) =>
-          tbl.userId.equals(userId) &
-          tbl.lastLearningDate.isBiggerOrEqualValue(startOfDay) &
-          tbl.lastLearningDate.isSmallerOrEqualValue(endOfDay) &
-          tbl.batchId.isBiggerThanValue(0))
+      ..where((tbl) => tbl.userId.equals(userId) & tbl.batchId.isBiggerThanValue(0))
       ..orderBy([
         (tbl) => OrderingTerm(expression: tbl.batchId),
         (tbl) => OrderingTerm(expression: tbl.learningOrder),
@@ -1596,8 +1495,6 @@ class WordBo {
     final countQuery = db.selectOnly(db.learningWords)
       ..addColumns([countAll()])
       ..where(db.learningWords.userId.equals(userId))
-      ..where(db.learningWords.lastLearningDate.isBiggerOrEqualValue(startOfDay))
-      ..where(db.learningWords.lastLearningDate.isSmallerOrEqualValue(endOfDay))
       ..where(db.learningWords.batchId.isBiggerThanValue(0));
     final countResult = await countQuery.getSingle();
     final total = countResult.read(countAll()) ?? 0;
@@ -1622,22 +1519,8 @@ class WordBo {
           meaningItemVos.add(MeaningItemVo(mi.id, mi.ciXing, mi.meaning, null, null, null));
         }
         wordVo.meaningItems = meaningItemVos;
-        final learningWordVo = LearningWordVo(
-            userVo,
-            lw.addTime,
-            lw.addDay,
-            lw.lastLearningDate,
-            lw.learningOrder,
-            lw.learnedTimes,
-            wordVo,
-            lw.batchId,
-            lw.stability,
-            lw.difficulty,
-            lw.elapsedDays,
-            lw.scheduledDays,
-            lw.reps,
-            lw.lapses,
-            lw.state);
+        final learningWordVo = LearningWordVo(userVo, lw.addTime, lw.addDay, lw.lastLearningDate, lw.learningOrder, lw.learnedTimes, wordVo,
+            lw.batchId, lw.stability, lw.difficulty, lw.elapsedDays, lw.scheduledDays, lw.reps, lw.lapses, lw.state);
         learningWordVos.add(learningWordVo);
       }
     }
