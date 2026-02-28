@@ -880,19 +880,38 @@ class _MePageState extends State<MePage> {
                             "词汇量排名",
                             style: TextStyle(
                               color: textColor,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 0.5,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 1.2,
                             ),
                           ),
                           const SizedBox(height: 6),
-                          Text(
-                            "掌握单词: ${studyProgress!.masteredWordsCount} | 超过了: ${studyProgress!.userOrder! < 0 ? '暂无' : '${studyProgress!.userOrder!.toStringAsFixed(2)}%的用户'}",
+                          Text.rich(
+                            TextSpan(
+                              children: [
+                                const TextSpan(text: "掌握单词: "),
+                                TextSpan(
+                                  text: "${studyProgress!.masteredWordsCount}",
+                                  style: TextStyle(color: numberColor, fontWeight: FontWeight.normal),
+                                ),
+                                const TextSpan(text: " | 超过了: "),
+                                if (studyProgress!.userOrder! < 0)
+                                  const TextSpan(text: '暂无')
+                                else ...[
+                                  TextSpan(
+                                    text: "${studyProgress!.userOrder!.toStringAsFixed(2)}%",
+                                    style: TextStyle(color: numberColor, fontWeight: FontWeight.normal),
+                                  ),
+                                  const TextSpan(text: "的用户"),
+                                ],
+                              ],
+                            ),
                             style: TextStyle(
-                              color: numberColor,
+                              color: textColor,
                               fontSize: 12,
-                              fontWeight: FontWeight.bold,
+                              fontWeight: FontWeight.normal,
                               height: 1.4,
+                              fontFamily: 'NotoSansSC',
                             ),
                           ),
                         ],
