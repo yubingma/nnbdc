@@ -16,7 +16,7 @@ import 'package:nnbdc/page/word_list/today_new_words.dart';
 import 'package:nnbdc/page/word_list/today_old_words.dart';
 import 'package:nnbdc/page/word_list/today_words.dart';
 import 'package:nnbdc/state.dart';
-import 'package:nnbdc/util/app_clock.dart';
+
 import 'package:nnbdc/util/error_handler.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:provider/provider.dart';
@@ -126,41 +126,9 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
         studySteps = [];
         List<UserStudyStepVo> userStudySteps = result.data!;
         for (UserStudyStepVo step in userStudySteps) {
-          studySteps!.add(step);
-        }
-
-        // 检查是否有 List 学习步骤，如果没有则自动添加
-        final hasListStep = studySteps!.any((step) => step.studyStep == 'List');
-        if (!hasListStep && user != null && user!.id != null) {
-          Global.logger.d('检测到用户缺少 List 学习步骤，自动添加');
-
-          // 创建 List 学习步骤
-          final listStep = UserStudyStepVo('List', studySteps!.length, StudyStepState.active.json);
-          listStep.seq = 0;
-          studySteps!.add(listStep);
-
-          try {
-            // 保存到数据库并生成同步日志
-            await MyDatabase.instance.userStudyStepsDao.saveUserStudyStep(
-              UserStudyStep(
-                userId: user!.id!,
-                studyStep: 'List',
-                seq: listStep.seq,
-                state: listStep.state,
-                createTime: AppClock.now(),
-                updateTime: AppClock.now(),
-              ),
-              true, // 生成同步日志
-            );
-            Global.logger.d('已自动添加 List 学习步骤并生成同步日志');
-          } catch (e) {
-            // 如果插入失败（如已存在），则忽略错误
-            Global.logger.w('添加 List 学习步骤时出错（可能已存在）: $e');
-            // 重新加载学习步骤以确保数据一致性
-            var reloadResult = await StudyBo().getUserStudySteps();
-            if (reloadResult.success) {
-              studySteps = reloadResult.data!;
-            }
+          // 在UI设置中隐藏“单词列表”阶段，让它成为一个隐形的固定环节
+          if (step.studyStep != 'List') {
+            studySteps!.add(step);
           }
         }
       } else {
@@ -671,11 +639,11 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             children: [
-              for (final step in studySteps!)
+              for (int i = 0; i < studySteps!.length; i++)
                 ReorderableDragStartListener(
-                  key: ValueKey(step),
-                  index: step.seq,
-                  child: _buildStepTile(step),
+                  key: ValueKey(studySteps![i].studyStep),
+                  index: i,
+                  child: _buildStepTile(studySteps![i]),
                 ),
             ],
           ),

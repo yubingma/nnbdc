@@ -1240,7 +1240,7 @@ class UserStudyStepsDao extends DatabaseAccessor<MyDatabase> with _$UserStudySte
 
       newSteps.add(UserStudyStep(
         userId: userId,
-        studyStep: 'List',
+        studyStep: 'En2Ch',
         seq: 0,
         state: 'Active',
         createTime: AppClock.now(),
@@ -1248,7 +1248,7 @@ class UserStudyStepsDao extends DatabaseAccessor<MyDatabase> with _$UserStudySte
 
       newSteps.add(UserStudyStep(
         userId: userId,
-        studyStep: 'En2Ch',
+        studyStep: 'Ch2En',
         seq: 1,
         state: 'Active',
         createTime: AppClock.now(),
@@ -1256,7 +1256,7 @@ class UserStudyStepsDao extends DatabaseAccessor<MyDatabase> with _$UserStudySte
 
       newSteps.add(UserStudyStep(
         userId: userId,
-        studyStep: 'Ch2En',
+        studyStep: 'List',
         seq: 2,
         state: 'Active',
         createTime: AppClock.now(),

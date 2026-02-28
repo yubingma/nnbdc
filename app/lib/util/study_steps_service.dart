@@ -27,22 +27,37 @@ class StudyStepsService {
     final steps = await _db.userStudyStepsDao.getUserStudySteps(user.id);
 
     // 转换为VO对象
-    return steps.map(_convertToVo).toList();
+    var voSteps = steps.map(_convertToVo).toList();
+
+    // 强制“单词列表”阶段排在最后且必须激活
+    var listStepIndex = voSteps.indexWhere((s) => s.studyStep == 'List');
+    UserStudyStepVo? listStep;
+
+    if (listStepIndex != -1) {
+      listStep = voSteps.removeAt(listStepIndex);
+    } else {
+      // 如果不存在则补齐
+      listStep = UserStudyStepVo('List', steps.length, StudyStepState.active.json);
+    }
+
+    listStep.state = StudyStepState.active.json;
+    voSteps.add(listStep);
+
+    // 重新校正所有的seq，确保有序且List排在最后
+    for (var i = 0; i < voSteps.length; i++) {
+      voSteps[i].seq = i;
+    }
+
+    return voSteps;
   }
 
   /// 获取当前用户的激活状态的学习步骤
   Future<List<UserStudyStepVo>> getActiveUserStudySteps() async {
-    // 获取当前登录用户
-    final user = Global.getLoggedInUser();
-    if (user == null) {
-      return [];
-    }
-
-    // 查询激活的学习步骤
-    final steps = await _db.userStudyStepsDao.getActiveUserStudySteps(user.id);
+    // 直接复用 getUserStudySteps 以确保规则一致（List必然存在且在最后）
+    final allSteps = await getUserStudySteps();
 
     // 转换为VO对象
-    return steps.map(_convertToVo).toList();
+    return allSteps.where((s) => s.state == StudyStepState.active.json).toList();
   }
 
   /// 保存用户学习步骤
@@ -53,8 +68,29 @@ class StudyStepsService {
     }
 
     try {
+      // 转换为VO对象以便于处理
+      var voSteps = List<UserStudyStepVo>.from(steps);
+
+      // 强制“单词列表”阶段排在最后且必须激活
+      var listStepIndex = voSteps.indexWhere((s) => s.studyStep == 'List');
+      UserStudyStepVo? listStep;
+
+      if (listStepIndex != -1) {
+        listStep = voSteps.removeAt(listStepIndex);
+      } else {
+        listStep = UserStudyStepVo('List', voSteps.length, StudyStepState.active.json);
+      }
+
+      listStep.state = StudyStepState.active.json;
+      voSteps.add(listStep);
+
+      // 重新校正顺序
+      for (var i = 0; i < voSteps.length; i++) {
+        voSteps[i].seq = i;
+      }
+
       // 转换为实体对象
-      final entities = steps
+      final entities = voSteps
           .map((vo) => UserStudyStep(
                 userId: user.id,
                 studyStep: vo.studyStep,
