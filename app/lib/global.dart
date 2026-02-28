@@ -5,6 +5,7 @@ import 'package:nnbdc/api/bo/user_bo.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/toast_util.dart';
+import 'package:nnbdc/util/utils.dart';
 
 import 'api/vo.dart';
 
@@ -138,6 +139,48 @@ class Global {
     // 保存到本地数据库
     final db = MyDatabase.instance;
     await db.usersDao.saveUser(userVo2User(guestVo), false);
+
+    // 为访客创建"生词本"和"已掌握"词书（与后端 createNewUser 对齐）
+    // 仅在首次创建访客时生成，避免重复登录时产生重复词书
+    final existingRawDict = await db.dictsDao.findUserRawDict(guestId);
+    if (existingRawDict == null) {
+      final rawDictId = Util.uuid();
+      final rawDict = Dict(
+        id: rawDictId,
+        isReady: true,
+        isShared: false,
+        name: '生词本',
+        wordCount: 0,
+        ownerId: guestId,
+        visible: true,
+        editable: true,
+        deletable: false,
+        createTime: now,
+        updateTime: now,
+      );
+      await db.dictsDao.saveEntity(rawDict, false);
+      logger.i('已为访客创建生词本: id=$rawDictId');
+    }
+
+    final existingMasteredDict = await db.dictsDao.findUserMasteredDict(guestId);
+    if (existingMasteredDict == null) {
+      final masteredDictId = Util.uuid();
+      final masteredDict = Dict(
+        id: masteredDictId,
+        isReady: true,
+        isShared: false,
+        name: '已掌握',
+        wordCount: 0,
+        ownerId: guestId,
+        visible: true,
+        editable: false,
+        deletable: false,
+        createTime: now,
+        updateTime: now,
+      );
+      await db.dictsDao.saveEntity(masteredDict, false);
+      logger.i('已为访客创建已掌握词书: id=$masteredDictId');
+    }
 
     // 设置为当前登录用户
     await setLoggedInUser(guestVo);

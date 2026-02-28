@@ -1543,30 +1543,14 @@ class UserOpersDao extends DatabaseAccessor<MyDatabase> with _$UserOpersDaoMixin
 class MasteredWordsDao extends DatabaseAccessor<MyDatabase> with _$MasteredWordsDaoMixin {
   MasteredWordsDao(super.db);
 
-  /// 获取用户的"已掌握"词书的dictId（若不存在则自动创建）
+  /// 获取用户的"已掌握"词书的dictId
+  /// "已掌握"词书只允许在创建用户时创建（后端createNewUser或前端loginAsGuest）
   Future<String> _getMasteredDictId(String userId) async {
     final existing = await db.dictsDao.findUserMasteredDict(userId);
     if (existing != null) return existing.id;
 
-    // 自动为用户创建"已掌握"词书
-    final dictId = Util.uuid();
-    final now = AppClock.now();
-    final newDict = Dict(
-      id: dictId,
-      isReady: true,
-      isShared: false,
-      name: '已掌握',
-      wordCount: 0,
-      ownerId: userId,
-      visible: true,
-      editable: false,
-      deletable: false,
-      createTime: now,
-      updateTime: now,
-    );
-    await db.dictsDao.saveEntity(newDict, true);
-    Global.logger.i('已为用户创建"已掌握"词书: userId=$userId, dictId=$dictId');
-    return dictId;
+    throw StateError('用户的"已掌握"词书不存在: userId=$userId。'
+        '"已掌握"词书应在创建用户时由后端创建，或在访客登录时由前端创建。');
   }
 
   /// 获取用户所有已掌握单词（从"已掌握"词书的dict_word获取）
