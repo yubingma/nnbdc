@@ -613,7 +613,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
           Row(
             children: [
               Text(
-                '学习模式',
+                '学习步骤',
                 style: TextStyle(
                   color: isDarkMode ? Colors.white70 : Colors.black87,
                   fontSize: 16,
