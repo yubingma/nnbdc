@@ -6,6 +6,7 @@ import 'package:nnbdc/socket_io.dart';
 import 'package:dio/dio.dart';
 import 'package:drift/drift.dart';
 import 'package:nnbdc/api/api.dart';
+import 'package:nnbdc/services/throttled_sync_service.dart';
 
 /// 进度回调函数类型
 typedef ProgressCallback = void Function(int step, String message, {IntegrityCheckResult? result});
@@ -637,6 +638,29 @@ class DataIntegrityChecker {
       if (!hasList) missing.add('List');
 
       if (missing.isNotEmpty) {
+        // 先尝试通过常规的 syncUserDb 恢复
+        try {
+          await ThrottledDbSyncService().requestSyncAndWait(immediate: true);
+          
+          // 同步后重新检查是否成功恢复
+          final newSteps = await _db.userStudyStepsDao.getUserStudySteps(currentUserId);
+          final newHasEn2Ch = newSteps.any((step) => step.studyStep == 'En2Ch');
+          final newHasCh2En = newSteps.any((step) => step.studyStep == 'Ch2En');
+          final newHasList = newSteps.any((step) => step.studyStep == 'List');
+
+          missing.clear();
+          if (!newHasEn2Ch) missing.add('En2Ch');
+          if (!newHasCh2En) missing.add('Ch2En');
+          if (!newHasList) missing.add('List');
+
+          if (missing.isEmpty) {
+            fixResult.addFixed('通过数据同步成功补全了学习步骤');
+            return;
+          }
+        } catch (e) {
+          Global.logger.e('尝试通过数据同步恢复学习步骤时出错', error: e);
+        }
+
         bool ok = await _fetchAndSaveBaseData(currentUserId, fixResult);
         if (ok) {
            fixResult.addFixed('成功拉取服务端同步补全了缺失的学习步骤: ${missing.join(", ")}');
@@ -662,6 +686,27 @@ class DataIntegrityChecker {
       if (!hasMasteredDict) missing.add('已掌握');
 
       if (missing.isNotEmpty) {
+        // 先尝试通过常规的 syncUserDb 恢复
+        try {
+          await ThrottledDbSyncService().requestSyncAndWait(immediate: true);
+
+          // 同步后重新检查
+          final newUserDicts = await (_db.dictsDao.select(_db.dicts)..where((d) => d.ownerId.equals(currentUserId))).get();
+          final newHasRawWordDict = newUserDicts.any((dict) => dict.name == '生词本');
+          final newHasMasteredDict = newUserDicts.any((dict) => dict.name == '已掌握');
+
+          missing.clear();
+          if (!newHasRawWordDict) missing.add('生词本');
+          if (!newHasMasteredDict) missing.add('已掌握');
+
+          if (missing.isEmpty) {
+            fixResult.addFixed('通过数据同步成功补全了基础词书');
+            return;
+          }
+        } catch (e) {
+          Global.logger.e('尝试通过数据同步恢复基础词书时出错', error: e);
+        }
+
         bool ok = await _fetchAndSaveBaseData(currentUserId, fixResult);
         if (ok) {
            fixResult.addFixed('成功拉取服务端同步补全了缺失的基础词书: ${missing.join(", ")}');
