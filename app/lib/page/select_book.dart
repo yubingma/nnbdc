@@ -9,7 +9,10 @@ import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/db/dict_import_worker.dart';
 import 'package:nnbdc/services/throttled_sync_service.dart';
+import 'package:nnbdc/page/subscription.dart';
 import 'package:nnbdc/util/loading_utils.dart';
+import 'package:nnbdc/util/platform_util.dart';
+import 'package:nnbdc/util/subscription_util.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/util/error_handler.dart';
 import 'package:nnbdc/util/app_clock.dart';
@@ -221,6 +224,31 @@ class SelectBookPageState extends State<SelectBookPage> {
     });
   }
 
+  void _showPremiumPrompt() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('会员专属功能'),
+        content: const Text('自定义词书是会员专享特权，开通会员即可解锁自定义词书及其它多项专属功能。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.of(context).push(MaterialPageRoute(builder: (context) => const SubscriptionPage())).then((_) {
+                loadData();
+              });
+            },
+            child: const Text('去开通'),
+          ),
+        ],
+      ),
+    );
+  }
+
   // 比较两个Set是否相等
   bool _setsEqual(Set<DictVo> set1, Set<DictVo> set2) {
     if (set1.length != set2.length) return false;
@@ -426,15 +454,20 @@ class SelectBookPageState extends State<SelectBookPage> {
       children: [
         Padding(
           padding: const EdgeInsets.all(16),
-          child: ElevatedButton.icon(
-            onPressed: _showCreateDictDialog,
-            icon: const Icon(Icons.add),
-            label: const Text('新建单词书'),
-            style: ElevatedButton.styleFrom(
-              minimumSize: const Size(double.infinity, 48),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-          ),
+          child: Builder(builder: (context) {
+            final restricted = PlatformUtils.isIOS && !SubscriptionUtil.isPremium();
+            return ElevatedButton.icon(
+              onPressed: _showCreateDictDialog,
+              icon: Icon(restricted ? Icons.lock_outline : Icons.add, size: 20),
+              label: const Text('新建单词书'),
+              style: ElevatedButton.styleFrom(
+                minimumSize: const Size(double.infinity, 48),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                backgroundColor: restricted ? Colors.grey : AppTheme.primaryColor,
+                foregroundColor: Colors.white,
+              ),
+            );
+          }),
         ),
         Expanded(
           child: customDicts!.isEmpty
@@ -505,8 +538,12 @@ class SelectBookPageState extends State<SelectBookPage> {
                                   ),
                                 ),
                                 IconButton(
-                                  icon: const Icon(Icons.edit_note, size: 24, color: AppTheme.primaryColor),
+                                  icon: Icon(Icons.edit_note, size: 24, color: (PlatformUtils.isIOS && !SubscriptionUtil.isPremium()) ? Colors.grey : AppTheme.primaryColor),
                                   onPressed: () async {
+                                    if (PlatformUtils.isIOS && !SubscriptionUtil.isPremium()) {
+                                      _showPremiumPrompt();
+                                      return;
+                                    }
                                     await toDictWordsListPage(dict.id, true);
                                     loadData(keepSelection: true);
                                   },
@@ -532,6 +569,32 @@ class SelectBookPageState extends State<SelectBookPage> {
   }
 
   void _showCreateDictDialog() async {
+    if (PlatformUtils.isIOS && !SubscriptionUtil.isPremium()) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('会员专属功能'),
+          content: const Text('自定义词书是会员专享特权，开通会员即可解锁自定义词书及其它多项专属功能。'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('取消'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                Navigator.of(context).push(MaterialPageRoute(builder: (context) => const SubscriptionPage())).then((_) {
+                  loadData();
+                });
+              },
+              child: const Text('去开通'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
     final TextEditingController controller = TextEditingController();
     await showDialog(
       context: context,

@@ -984,7 +984,7 @@ class _MePageState extends State<MePage> {
                               Icon(Icons.stars_rounded, color: Colors.amber.shade700, size: 18),
                               const SizedBox(width: 8),
                               Text(
-                                '解锁 100+ 每日单词及更多专属特权',
+                                '解锁每日单词上限及更多专属特权',
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.normal,
@@ -3038,6 +3038,25 @@ class RankingPainter extends CustomPainter {
       
       canvas.restore();
     }
+
+    // Draw a small flag at the far right (Goal / Finish)
+    const flagXFrac = 0.95;
+    final fX = flagXFrac * w;
+    final fY = h - (getCurveValue(flagXFrac) * h * 0.85);
+    
+    final flagPaint = Paint()
+      ..color = curveColor.withValues(alpha: 0.6)
+      ..strokeWidth = 1.2;
+
+    // Pole
+    canvas.drawLine(Offset(fX, fY), Offset(fX, fY - 10), flagPaint);
+    // Flag banner
+    final flagBannerPath = Path();
+    flagBannerPath.moveTo(fX, fY - 10);
+    flagBannerPath.lineTo(fX + 6, fY - 7);
+    flagBannerPath.lineTo(fX, fY - 4);
+    flagBannerPath.close();
+    canvas.drawPath(flagBannerPath, Paint()..color = curveColor.withValues(alpha: 0.4));
 
     // Marker
     if (percentile >= 0) {
