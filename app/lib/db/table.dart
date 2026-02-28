@@ -464,12 +464,12 @@ class LearningWords extends Table {
 
 
   /// FSRS 算法相关字段
-  RealColumn get stability => real().nullable().withDefault(const Constant(0.0))();
-  RealColumn get difficulty => real().nullable().withDefault(const Constant(0.0))();
-  IntColumn get elapsedDays => integer().nullable().withDefault(const Constant(0))();
-  IntColumn get scheduledDays => integer().nullable().withDefault(const Constant(0))();
-  IntColumn get reps => integer().nullable().withDefault(const Constant(0))();
-  IntColumn get lapses => integer().nullable().withDefault(const Constant(0))();
+  RealColumn get stability => real().nullable()();
+  RealColumn get difficulty => real().nullable()();
+  IntColumn get elapsedDays => integer().nullable()();
+  IntColumn get scheduledDays => integer().nullable()();
+  IntColumn get reps => integer().nullable()();
+  IntColumn get lapses => integer().nullable()();
   IntColumn get state => integer().nullable().withDefault(const Constant(0))(); // 0: New, 1: Learning, 2: Review, 3: Relearning
 
   BoolColumn get isTodayNewWord => boolean()();

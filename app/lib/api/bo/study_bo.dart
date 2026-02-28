@@ -733,7 +733,10 @@ class StudyBo {
     FSRSItem? nextFsrs;
     if (fsrsRating != null) {
       final fsrs = FSRS();
-      if (currWord.stability == null) {
+      if (currWord.stability == null || currWord.stability == 0.0) {
+        if (currWord.stability == 0.0) {
+           Global.logger.w('发现存量数据 stability 为 0.0, wordId: ${currWord.wordId}, 将视同新词执行 init');
+        }
         // 第一次使用 FSRS
         nextFsrs = fsrs.init(fsrsRating);
       } else {

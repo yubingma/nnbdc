@@ -484,7 +484,13 @@ class LearningService {
             wordId: dictWord.wordId,
             addTime: now,
             addDay: todayDayNumber,
-            stability: initialStability,
+            stability: null, // FSRS 初始状态设为 null
+            difficulty: null,
+            elapsedDays: null,
+            scheduledDays: null,
+            reps: null,
+            lapses: null,
+            state: 0, // 0: New
             batchId: 0, // 初始批次设为 0，只有加入今日学习时才分配有效批次
             lastLearningDate: null, // 与后端逻辑一致，初始化为null
             learningOrder: 0,
