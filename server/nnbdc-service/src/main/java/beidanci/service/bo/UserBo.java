@@ -124,26 +124,8 @@ public class UserBo extends BaseBo<User> {
         setDao(new BaseDao<User>() {
         });
 
-        // 执行数据库迁移
-        upgradeDatabase();
     }
 
-    private void upgradeDatabase() {
-        try {
-            Resource resource = new ClassPathResource("sql/upgrade.sql");
-            if (resource.exists()) {
-                logger.info("正在执行数据库升级脚本 (sql/upgrade.sql)...");
-                String sql = StreamUtils.copyToString(resource.getInputStream(), Objects.requireNonNull(StandardCharsets.UTF_8));
-                // PostgreSQL 驱动支持在一个 execute() 调用中运行多个语句(以分号分隔)
-                jdbcTemplate.execute(sql);
-                logger.info("数据库升级脚本执行完成！");
-            } else {
-                logger.warn("未找到数据库升级脚本: sql/upgrade.sql");
-            }
-        } catch (Exception e) {
-            logger.error("执行数据库升级失败", e);
-        }
-    }
 
     public int getUserDbVersion(String userId) {
         return userDbVersionDao.getUserDbVersion(jdbcTemplate, userId);
