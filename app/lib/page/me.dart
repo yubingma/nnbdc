@@ -1247,10 +1247,12 @@ class _MePageState extends State<MePage> {
         // 词书管理卡片
         Container(
           margin: const EdgeInsets.symmetric(vertical: 8),
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: AppTheme.primaryLightColor.withValues(alpha: 0.3), // 保留一点主色调作为底色
-            borderRadius: BorderRadius.circular(16),
+            color: isDarkModeEnabled 
+                ? const Color(0xFF2C2C2E) 
+                : const Color(0xFFF2F2F7),
+            borderRadius: BorderRadius.circular(24),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1261,29 +1263,31 @@ class _MePageState extends State<MePage> {
                   Text(
                     '我的书桌',
                     style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w400,
-                      color: Colors.white,
-                      height: 1.6,
-                      letterSpacing: 1.5,
-                      fontFamily: null, // 使用系统默认字体
-                      decoration: TextDecoration.none,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: textColor,
+                      fontFamily: 'NotoSansSC',
                     ),
                     textScaler: const TextScaler.linear(1.0),
                   ),
-                  OutlinedButton.icon(
+                  TextButton.icon(
                     key: const Key('me_choose_book_btn'),
-                    icon: const Icon(Icons.add, color: Colors.white, size: 16),
-                    label: const Text(
+                    icon: Icon(Icons.add_circle_outline, color: AppTheme.primaryColor, size: 18),
+                    label: Text(
                       '选择词书',
-                      style: TextStyle(color: Colors.white, fontSize: 12),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Colors.white),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                      style: TextStyle(
+                        color: AppTheme.primaryColor, 
+                        fontSize: 14, 
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'NotoSansSC',
                       ),
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    ),
+                    style: TextButton.styleFrom(
+                      backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.1),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     ),
                     onPressed: () {
                       Get.toNamed("/select_book")!.then((value) {
@@ -2454,147 +2458,167 @@ class _DictCardState extends State<DictCard> {
     final progress = totalWords > 0 ? learnedWords / totalWords : 0.0;
     final progressPercent = (progress * 100).toInt();
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.primaryColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              // 圆形进度指示器
-              Stack(
-                alignment: Alignment.center,
-                children: [
-                  CircularPercentIndicator(
-                    radius: 25.0,
-                    lineWidth: 4.0,
-                    percent: progress,
-                    backgroundColor: Colors.white.withValues(alpha: 0.3),
-                    progressColor: Colors.white, // 使用白色，与绿色渐变背景形成对比
-                    circularStrokeCap: CircularStrokeCap.round,
-                  ),
-                  Text(
-                    '$progressPercent%',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Colors.white,
-                      fontWeight: FontWeight.w500,
-                      height: 1.1,
-                    ),
-                  ),
-                ],
+    final isDarkMode = context.watch<DarkMode>().isDarkMode;
+    
+    return Stack(
+      children: [
+        Container(
+          margin: const EdgeInsets.only(bottom: 16),
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF6366F1), Color(0xFF4F46E5)], // 统一使用靛青蓝
+            ),
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDarkMode ? 0.3 : 0.15),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
               ),
-              const SizedBox(width: 16),
-              // 词书信息
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.only(right: 8.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+            ],
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Stack(
+            children: [
+              // 背景水印图标
+              Positioned(
+                right: -10,
+                top: -10,
+                child: Icon(
+                  Icons.menu_book, // 统一使用书本图标
+                  size: 80,
+                  color: Colors.white.withValues(alpha: 0.1),
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
                     children: [
-                      Text(
-                        widget.dictInfo.name.replaceAll('.dict', ''),
-                        key: Key('me_dict_name_${widget.learningDict.dictId}'),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 19,
-                          fontWeight: FontWeight.w300,
-                          height: 1.6,
-                          letterSpacing: 1.2,
-                          fontFamily: null,
-                          decoration: TextDecoration.none,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                        textScaler: const TextScaler.linear(1.0),
+                      // 圆形进度指示器
+                      Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          CircularPercentIndicator(
+                            radius: 25.0,
+                            lineWidth: 4.0,
+                            percent: progress,
+                            backgroundColor: Colors.white.withValues(alpha: 0.2),
+                            progressColor: Colors.white,
+                            circularStrokeCap: CircularStrokeCap.round,
+                          ),
+                          Text(
+                            '$progressPercent%',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              height: 1.1,
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        widget.dictInfo.name == '生词本'
-                            ? '$masteredCount / ${actualWordCount ?? 0}'
-                            : '$masteredCount / ${widget.dictInfo.wordCount}',
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.8),
-                          fontSize: 14,
-                          height: 1.3,
-                          letterSpacing: 0.3,
-                          fontWeight: FontWeight.w400,
-                          fontFamily: 'NotoSansSC',
+                      const SizedBox(width: 16),
+                      // 词书信息
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              widget.dictInfo.name.replaceAll('.dict', ''),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.5,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              widget.dictInfo.name == '生词本'
+                                  ? '$masteredCount / ${actualWordCount ?? 0} 词'
+                                  : '$masteredCount / ${widget.dictInfo.wordCount} 词',
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.8),
+                                fontSize: 13,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                          ],
                         ),
-                        textScaler: const TextScaler.linear(1.0),
                       ),
                     ],
                   ),
-                ),
+                  const SizedBox(height: 20),
+                  // 操作按钮
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _buildDictCheckbox(
+                        label: '优先取词',
+                        value: currentLearningDict.isPrivileged,
+                        onChanged: (bool? value) async {
+                          if (value != null) {
+                            try {
+                              final newPrivilegedStatus =
+                                  await MyDatabase.instance.learningDictsDao.togglePrivileged(currentLearningDict.userId, currentLearningDict.dictId, true);
+        
+                              if (mounted) {
+                                setState(() {
+                                  currentLearningDict = LearningDict(
+                                    userId: currentLearningDict.userId,
+                                    dictId: currentLearningDict.dictId,
+                                    isPrivileged: newPrivilegedStatus,
+                                    fetchMastered: currentLearningDict.fetchMastered,
+                                    createTime: currentLearningDict.createTime,
+                                    updateTime: currentLearningDict.updateTime,
+                                  );
+                                });
+                              }
+        
+                              // 触发同步
+                              ThrottledDbSyncService().requestSync();
+                            } catch (error) {
+                              Global.logger.d('切换优先取词状态失败: $error');
+                              ToastUtil.error('操作失败，请重试');
+                            }
+                          }
+                        },
+                      ),
+                      const SizedBox(width: 8),
+                      _buildDictActionButton(
+                        icon: Icons.list_alt,
+                        label: '单词列表',
+                        isActive: true,
+                        onTap: () async {
+                          try {
+                            await toDictWordsListPage(currentLearningDict.dictId, false);
+                            widget.onDictChanged();
+                          } catch (e) {
+                            ToastUtil.error("无法打开词书");
+                          }
+                        },
+                      ),
+                      const SizedBox(width: 8),
+                      _buildDictActionButton(
+                        icon: Icons.remove_circle_outline,
+                        label: '移出',
+                        isActive: true,
+                        isDestructive: true,
+                        onTap: () => _handleDictDataAction(),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          // 操作按钮
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _buildDictCheckbox(
-                label: '优先取词',
-                value: currentLearningDict.isPrivileged,
-                onChanged: (bool? value) async {
-                  if (value != null) {
-                    try {
-                      final newPrivilegedStatus =
-                          await MyDatabase.instance.learningDictsDao.togglePrivileged(currentLearningDict.userId, currentLearningDict.dictId, true);
-
-                      if (mounted) {
-                        setState(() {
-                          currentLearningDict = LearningDict(
-                            userId: currentLearningDict.userId,
-                            dictId: currentLearningDict.dictId,
-                            isPrivileged: newPrivilegedStatus,
-                            fetchMastered: currentLearningDict.fetchMastered,
-                            createTime: currentLearningDict.createTime,
-                            updateTime: currentLearningDict.updateTime,
-                          );
-                        });
-                      }
-
-                      // 触发同步
-                      ThrottledDbSyncService().requestSync();
-                    } catch (error) {
-                      Global.logger.d('切换优先取词状态失败: $error');
-                      ToastUtil.error('操作失败，请重试');
-                    }
-                  }
-                },
-              ),
-              _buildDictActionButton(
-                icon: Icons.list_alt,
-                label: '单词列表',
-                isActive: true,
-                onTap: () async {
-                  try {
-                    await toDictWordsListPage(currentLearningDict.dictId, false);
-                    widget.onDictChanged();
-                  } catch (e) {
-                    ToastUtil.error("无法打开词书");
-                  }
-                },
-              ),
-              _buildDictActionButton(
-                icon: Icons.remove_circle_outline,
-                label: '移出',
-                isActive: true,
-                isDestructive: true,
-                onTap: () => _handleDictDataAction(),
-              ),
-
-            ],
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
