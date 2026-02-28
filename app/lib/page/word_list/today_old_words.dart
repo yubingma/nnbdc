@@ -24,7 +24,7 @@ class TodayOldWordsProvider with WordsProvider {
   }
 
   @override
-  Future<bool> deleteWord(WordWrapper wordWrapper) async {
+  Future<bool> masterWord(WordWrapper wordWrapper) async {
     var result = await WordBo().setLearningWordAsMastered(Global.getLoggedInUser()!.id, wordWrapper.word.id!, true);
     if (result.success) {
       // 播放水滴音效，不弹出提示框
@@ -33,6 +33,11 @@ class TodayOldWordsProvider with WordsProvider {
       ToastUtil.error(result.msg!);
     }
     return result.success;
+  }
+
+  @override
+  Future<bool> deleteWord(WordWrapper wordWrapper) async {
+    return await masterWord(wordWrapper);
   }
 
   @override

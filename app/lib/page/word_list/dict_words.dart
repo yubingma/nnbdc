@@ -83,19 +83,25 @@ class DictWordsProvider with WordsProvider implements WordModifier {
   @override
   Future<bool> masterWord(WordWrapper wordWrapper) async {
     try {
-      if (dict.name == '生词本') {
-        await WordBo().setLearningWordAsMastered(Global.getLoggedInUser()!.id, wordWrapper.word.id!, true);
-        await _db.dictWordsDao.deleteDictWordWithCleanup(dict.id, wordWrapper.word.id!, Global.getLoggedInUser()?.id, true);
-        ThrottledDbSyncService().requestSync();
-        SoundUtil.playAssetSoundConcurrent('bubble-pop.mp3', 1.0, 0.5);
-        return true;
+      final userId = Global.getLoggedInUser()?.id;
+      if (userId == null) return false;
+
+      await WordBo().setLearningWordAsMastered(userId, wordWrapper.word.id!, true);
+      
+      // 如果是自定义词书（如生词本），掌握后从原词书中移除
+      if (dict.name == '生词本' || (dict.editable == true)) {
+        await _db.dictWordsDao.deleteDictWordWithCleanup(dict.id, wordWrapper.word.id!, userId, true);
       }
-      return false;
+      
+      ThrottledDbSyncService().requestSync();
+      SoundUtil.playAssetSoundConcurrent('bubble-pop.mp3', 1.0, 0.5);
+      return true;
     } catch (e) {
       ToastUtil.error("操作失败: $e");
       return false;
     }
   }
+
 
   @override
   Future<bool> deleteWord(WordWrapper wordWrapper) async {
