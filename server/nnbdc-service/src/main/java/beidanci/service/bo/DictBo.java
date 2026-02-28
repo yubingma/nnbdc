@@ -310,6 +310,7 @@ public class DictBo extends BaseBo<Dict> {
         masteredDict.setEditable(true);
         masteredDict.setDeletable(false);
         masteredDict.setOwner(user);
+        masteredDict.setPopularityLimit(5);
         createEntity(masteredDict);
 
         return masteredDict;
