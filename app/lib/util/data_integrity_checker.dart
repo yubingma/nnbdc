@@ -5,6 +5,7 @@ import 'package:nnbdc/util/network_util.dart';
 import 'package:nnbdc/socket_io.dart';
 import 'package:dio/dio.dart';
 import 'package:drift/drift.dart';
+import 'package:nnbdc/api/api.dart';
 
 /// 进度回调函数类型
 typedef ProgressCallback = void Function(int step, String message, {IntegrityCheckResult? result});
@@ -535,8 +536,81 @@ class DataIntegrityChecker {
     }
   }
 
+
+  /// 从后端拉取用户基础数据（包括缺失的词书、学习步骤等）
+  Future<bool> _fetchAndSaveBaseData(String currentUserId, IntegrityFixResult fixResult) async {
+    try {
+      final response = await Api.client.getUserBaseData(currentUserId);
+      if (response.success && response.data != null) {
+        final data = response.data!;
+        
+        // 恢复词书
+        if (data.rawDict != null) {
+          final dictDto = data.rawDict!;
+          final dict = Dict(
+            id: dictDto.id,
+            name: dictDto.name,
+            ownerId: dictDto.ownerId,
+            isShared: dictDto.isShared,
+            isReady: dictDto.isReady,
+            visible: dictDto.visible,
+            wordCount: dictDto.wordCount,
+            popularityLimit: dictDto.popularityLimit ?? 0,
+            editable: dictDto.editable ?? true,
+            deletable: dictDto.deletable ?? false,
+            createTime: dictDto.createTime,
+            updateTime: dictDto.updateTime ?? DateTime.now(),
+          );
+          await _db.dictsDao.saveEntity(dict, false);
+        }
+
+        if (data.masteredDict != null) {
+          final dictDto = data.masteredDict!;
+          final dict = Dict(
+            id: dictDto.id,
+            name: dictDto.name,
+            ownerId: dictDto.ownerId,
+            isShared: dictDto.isShared,
+            isReady: dictDto.isReady,
+            visible: dictDto.visible,
+            wordCount: dictDto.wordCount,
+            popularityLimit: dictDto.popularityLimit ?? 0,
+            editable: dictDto.editable ?? true,
+            deletable: dictDto.deletable ?? false,
+            createTime: dictDto.createTime,
+            updateTime: dictDto.updateTime ?? DateTime.now(),
+          );
+          await _db.dictsDao.saveEntity(dict, false);
+        }
+
+        // 恢复学习步骤
+        if (data.studySteps != null) {
+          final newSteps = data.studySteps!.map((stepDto) => UserStudyStep(
+            userId: stepDto.userId,
+            studyStep: stepDto.studyStep,
+            seq: stepDto.seq,
+            state: stepDto.state,
+            createTime: stepDto.createTime,
+            updateTime: stepDto.updateTime ?? DateTime.now(),
+          )).toList();
+          
+          await _db.batch((batch) {
+            batch.insertAll(_db.userStudySteps, newSteps, mode: InsertMode.insertOrReplace);
+          });
+        }
+        return true;
+      } else {
+        fixResult.addError('从服务端获取基础数据失败: ${response.msg}');
+        return false;
+      }
+    } catch (e) {
+      fixResult.addError('请求服务端基础数据时发生异常: $e');
+      return false;
+    }
+  }
+
   /// 修复用户学习步骤缺失问题
-  /// 这种情况通常需要从服务端同步才能解决，在本地无法直接创建
+  /// 通过拉取服务端的基础数据自动恢复
   Future<void> _fixUserStudySteps(IntegrityFixResult fixResult, String currentUserId) async {
     try {
       final steps = await _db.userStudyStepsDao.getUserStudySteps(currentUserId);
@@ -550,7 +624,12 @@ class DataIntegrityChecker {
       if (!hasList) missing.add('List');
 
       if (missing.isNotEmpty) {
-        fixResult.addError('用户缺少学习步骤: ${missing.join(", ")}. 请重新登录以触发服务端同步');
+        bool ok = await _fetchAndSaveBaseData(currentUserId, fixResult);
+        if (ok) {
+           fixResult.addFixed('成功拉取服务端同步补全了缺失的学习步骤: ${missing.join(", ")}');
+        } else {
+           fixResult.addError('用户缺少学习步骤: ${missing.join(", ")}. 同步恢复失败。');
+        }
       }
     } catch (e) {
       fixResult.addError('检查用户学习步骤时出错：$e');
@@ -558,7 +637,7 @@ class DataIntegrityChecker {
   }
 
   /// 修复用户缺失的词书（生词本 / 已掌握）
-  /// 这种情况通常需要从服务端同步才能解决，在本地无法直接创建
+  /// 通过拉取服务端的基础数据自动恢复
   Future<void> _fixMissingUserDicts(IntegrityFixResult fixResult, String currentUserId) async {
     try {
       final userDicts = await (_db.dictsDao.select(_db.dicts)..where((d) => d.ownerId.equals(currentUserId))).get();
@@ -570,12 +649,18 @@ class DataIntegrityChecker {
       if (!hasMasteredDict) missing.add('已掌握');
 
       if (missing.isNotEmpty) {
-        fixResult.addError('用户缺少词书: ${missing.join(", ")}. 请重新登录以触发服务端自动创建');
+        bool ok = await _fetchAndSaveBaseData(currentUserId, fixResult);
+        if (ok) {
+           fixResult.addFixed('成功拉取服务端同步补全了缺失的基础词书: ${missing.join(", ")}');
+        } else {
+           fixResult.addError('用户缺少基础词书: ${missing.join(", ")}. 同步恢复失败。');
+        }
       }
     } catch (e) {
       fixResult.addError('检查用户词书时出错: $e');
     }
   }
+
 
 
   /// 修复用户数据库版本

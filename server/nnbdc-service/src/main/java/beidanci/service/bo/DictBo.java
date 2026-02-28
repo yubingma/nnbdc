@@ -236,6 +236,12 @@ public class DictBo extends BaseBo<Dict> {
      * @return 创建的生词本对象
      */
     public Dict createRawWordDictForUser(User user) {
+        // 检查是否已存在
+        Dict existing = getRawWordDict(user);
+        if (existing != null) {
+            return existing;
+        }
+
         // 创建生词本
         Dict rawDict = new Dict();
         rawDict.setName("生词本");

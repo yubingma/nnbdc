@@ -1,3 +1,4 @@
+import 'package:nnbdc/api/dto.dart';
 import 'package:nnbdc/global.dart';
 import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
@@ -1527,4 +1528,17 @@ class SubscriptionVo {
   factory SubscriptionVo.fromJson(Map<String, dynamic> json) => _$SubscriptionVoFromJson(json);
 
   Map<String, dynamic> toJson() => _$SubscriptionVoToJson(this);
+}
+
+@JsonSerializable()
+class UserBaseDataVo {
+  final DictDto? rawDict;
+  final DictDto? masteredDict;
+  final List<UserStudyStepDto>? studySteps;
+
+  UserBaseDataVo({this.rawDict, this.masteredDict, this.studySteps});
+
+  factory UserBaseDataVo.fromJson(Map<String, dynamic> json) => _$UserBaseDataVoFromJson(json);
+
+  Map<String, dynamic> toJson() => _$UserBaseDataVoToJson(this);
 }

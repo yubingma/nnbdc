@@ -10,6 +10,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
 import javax.servlet.ServletException;
@@ -30,8 +31,11 @@ import org.springframework.transaction.support.TransactionTemplate;
 import beidanci.api.Result;
 import beidanci.api.model.CheckBy;
 import beidanci.api.model.ClientType;
+import beidanci.api.model.DictDto;
 import beidanci.api.model.DictWordDto;
 import beidanci.api.model.PagedResults;
+import beidanci.api.model.UserBaseDataVo;
+import beidanci.api.model.UserStudyStepDto;
 import beidanci.api.model.UserVo;
 import beidanci.service.dao.BaseDao;
 import beidanci.service.dao.EntityRowMapper;
@@ -47,6 +51,7 @@ import beidanci.service.po.SysParam;
 import beidanci.service.po.User;
 import beidanci.service.po.UserCowDungLog;
 import beidanci.service.po.UserDbLog;
+import beidanci.service.po.UserStudyStep;
 import beidanci.service.util.BeanUtils;
 import beidanci.service.util.EmojiFilter;
 import beidanci.service.util.JsonUtils;
@@ -908,18 +913,105 @@ public class UserBo extends BaseBo<User> {
         createEntity(user);
         logger.info("创建了新用户: [{}]", user.getDisplayNickName());
 
-        // 创建用户的生词本
-        dictBo.createRawWordDictForUser(user);
-
-        // 创建用户的"已掌握"词书
-        dictBo.createMasteredWordDictForUser(user);
-
-        // 初始化学习步骤（En2Ch、Ch2En、List）
-        userStudyStepBo.initUserStudySteps(user.getId());
+        createUserBaseData(user);
 
 
         return user;
     }
+
+    /**
+     * 为用户创建并返回初始的基础数据 (包括 生词本、已掌握词书、学习步骤 等)。
+     * 如果对应的基础数据已经存在，则只返回已有数据。
+     * 可供新注册时使用，也可用于健康检查恢复客户端数据。
+     */
+    @Transactional
+    public java.util.Map<String, Object> createUserBaseData(User user) {
+        // 创建用户的生词本
+        Dict rawDict = dictBo.createRawWordDictForUser(user);
+
+        // 创建用户的"已掌握"词书
+        Dict masteredDict = dictBo.createMasteredWordDictForUser(user);
+
+        // 初始化学习步骤（En2Ch、Ch2En、List）
+        userStudyStepBo.initUserStudySteps(user.getId());
+        List<UserStudyStep> studySteps = userStudyStepBo.getUserStudySteps(user.getId());
+
+        // 组装返回对象，供前端使用
+        java.util.Map<String, Object> baseData = new java.util.HashMap<>();
+        baseData.put("rawDict", makeDictDto(rawDict));
+        baseData.put("masteredDict", makeDictDto(masteredDict));
+        
+        List<UserStudyStepDto> stepDtos = studySteps.stream().map(step -> new UserStudyStepDto(
+                step.getId().getUserId(),
+                step.getStudyStep(),
+                step.getSeq(),
+                step.getState(),
+                step.getCreateTime(),
+                step.getUpdateTime()
+        )).collect(java.util.stream.Collectors.toList());
+        baseData.put("studySteps", stepDtos);
+
+        return baseData;
+    }
+
+    /**
+     * 辅助方法：生成 DictDto
+     */
+    private DictDto makeDictDto(beidanci.service.po.Dict dict) {
+        return new DictDto(
+                dict.getId(),
+                dict.getName(),
+                dict.getOwner().getId(),
+                dict.getIsShared(),
+                dict.getIsReady(),
+                dict.getVisible(),
+                dict.getWordCount(),
+                dict.getPopularityLimit(),
+                dict.getEditable(),
+                dict.getDeletable(),
+                dict.getCreateTime(),
+                dict.getUpdateTime()
+        );
+    }
+
+    /**
+     * 获取用户的基础数据，供前端调用（用于重装、环境健康检查等数据恢复，不包含自动创建）
+     */
+    @Transactional(readOnly = true)
+    public Result<UserBaseDataVo> getUserBaseData(String userId) {
+        User user = findById(userId);
+        if (user == null) {
+            return Result.fail("用户不存在");
+        }
+        
+        UserBaseDataVo baseData = new UserBaseDataVo();
+        
+        Dict rawDict = dictBo.getRawWordDict(user);
+        if (rawDict != null) {
+            baseData.setRawDict(makeDictDto(rawDict));
+        }
+
+        Dict masteredDict = dictBo.getMasteredWordDict(user);
+        if (masteredDict != null) {
+            baseData.setMasteredDict(makeDictDto(masteredDict));
+        }
+
+        List<UserStudyStep> studySteps = userStudyStepBo.getUserStudySteps(user.getId());
+        if (studySteps != null && !studySteps.isEmpty()) {
+            List<UserStudyStepDto> stepDtos = studySteps.stream().map(step -> new UserStudyStepDto(
+                    step.getId().getUserId(),
+                    step.getStudyStep(),
+                    step.getSeq(),
+                    step.getState(),
+                    step.getCreateTime(),
+                    step.getUpdateTime()
+            )).collect(Collectors.toList());
+            baseData.setStudySteps(stepDtos);
+        }
+
+        return Result.success(baseData);
+    }
+
 
     /**
      * 根据微信信息查找或创建用户

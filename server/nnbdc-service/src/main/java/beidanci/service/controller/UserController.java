@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import beidanci.api.Result;
 import beidanci.api.model.PagedResults;
+import beidanci.api.model.UserBaseDataVo;
 import beidanci.api.model.UserVo;
 import beidanci.service.bo.UserBo;
 import beidanci.service.po.User;
@@ -32,6 +33,10 @@ public class UserController {
             userBo.unRegister(user.getId());
             return Result.success(null);
         }
+    }
+    @GetMapping("/getUserBaseData.do")
+    public Result<UserBaseDataVo> getUserBaseData(@RequestParam String userId) {
+        return userBo.getUserBaseData(userId);
     }
 
 

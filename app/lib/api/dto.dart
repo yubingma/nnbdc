@@ -517,3 +517,23 @@ class WordShortDescChineseDto {
 
   Map<String, dynamic> toJson() => _$WordShortDescChineseDtoToJson(this);
 }
+
+@JsonSerializable()
+@CustomDateTimeConverter()
+class UserStudyStepDto {
+  final String userId;
+  final String studyStep;
+  final int seq;
+  final String state;
+  final DateTime createTime;
+  final DateTime? updateTime;
+
+  UserStudyStepDto(this.userId, this.studyStep, this.seq, this.state, this.createTime, this.updateTime);
+
+  factory UserStudyStepDto.fromJson(Map<String, dynamic> json) => _$UserStudyStepDtoFromJson(json);
+
+  Map<String, dynamic> toJson() => _$UserStudyStepDtoToJson(this);
+}
+
+
+
