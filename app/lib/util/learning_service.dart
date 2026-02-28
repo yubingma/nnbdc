@@ -138,45 +138,52 @@ class LearningService {
     }
   }
 
-  /// 产生今天要学习的单词列表，并把该列表更新到数据库
+  /// 产生（或补充）今天要学习的单词列表，并把该列表更新到数据库
   static Future<List<LearningWord>> genTodayWords(String userId, DateTime now, List<LearningWord> todayLearningWords) async {
     final db = MyDatabase.instance;
     final user = await db.usersDao.getUserById(userId);
-
     if (user == null) {
       throw Exception('用户不存在');
     }
 
-    // 获取所有正在学习中的单词(作为备选单词列表)
-    final allLearningWords = await (db.select(db.learningWords)..where((lw) => lw.userId.equals(userId) & lw.stability.isSmallerThanValue(Constants.graduationStability))).get();
-    debugLog('[genTodayWords] 学习中单词总数(stability < ${Constants.graduationStability}): ${allLearningWords.length}');
+    // 获取所有正在学习中的单词 (即：尚未毕业的候选人)
+    final allLearningWords = await (db.select(db.learningWords)
+          ..where((lw) => lw.userId.equals(userId) & lw.stability.isSmallerThanValue(Constants.graduationStability)))
+        .get();
 
-    // 从备选单词列表中删除那些已经选为今天学习的单词
+    // 排除今天已经选取要学的单词
     final List<LearningWord> candidateWords = List.from(allLearningWords);
     for (var todayWord in todayLearningWords) {
-      candidateWords.removeWhere((word) => word.userId == todayWord.userId && word.wordId == todayWord.wordId);
+      candidateWords.removeWhere((word) => word.wordId == todayWord.wordId);
     }
-    debugLog('[genTodayWords] 被排除的今日已选单词数: ${todayLearningWords.length}, 剩余候选池大小: ${candidateWords.length}');
-    Global.logger.d('[genTodayWords] 过滤掉今日已选单词后，候选池大小: ${candidateWords.length}');
 
-    // 通过查询最新加入到学习列表的单词，得知今天是第几天添加单词
-    LearningWord? latestWord;
-    for (var word in candidateWords) {
-      if (latestWord == null || word.addTime.isAfter(latestWord.addTime)) {
-        latestWord = word;
+    // 1. 识别到期单词 (Due Words)
+    final today = DateTime(now.year, now.month, now.day);
+    bool isDue(LearningWord word) {
+      if (word.lastLearningDate == null) return true; // 全新词未在当前算法下学习过
+
+      // FSRS 逻辑：上次学习日期 + 计划天数 <= 今天
+      final nextReviewDate = DateTime(
+        word.lastLearningDate!.year,
+        word.lastLearningDate!.month,
+        word.lastLearningDate!.day,
+      ).add(Duration(days: word.scheduledDays ?? 0));
+
+      return nextReviewDate.isBefore(today) || DateUtils.isSameDay(nextReviewDate, today);
+    }
+
+    final List<LearningWord> dueWords = candidateWords.where(isDue).toList();
+
+    // 到期单词内部排序逻辑：
+    // - 处于 Review 状态的优先于新词，稳定性越低的单词越需要优先复习
+    dueWords.sort((a, b) {
+      if ((a.stability ?? 0.0) != (b.stability ?? 0.0)) {
+        return (a.stability ?? 0.0).compareTo(b.stability ?? 0.0);
       }
-    }
+      return a.addTime.compareTo(b.addTime);
+    });
 
-    int todayDayNumber = 1;
-    if (latestWord != null) {
-      if (DateUtils.isSameDay(latestWord.addTime, now)) {
-        todayDayNumber = latestWord.addDay;
-      } else {
-        todayDayNumber = latestWord.addDay + 1;
-      }
-    }
-
-    // 产生批次 ID：若今天还没生成过单词，批次为 1；否则为当前最大批次 + 1
+    // 产生批次 ID
     int maxBatchId = 0;
     if (todayLearningWords.isNotEmpty) {
       for (var w in todayLearningWords) {
@@ -185,94 +192,44 @@ class LearningService {
     }
     int targetBatchId = maxBatchId == 0 ? 1 : maxBatchId + 1;
 
-    // 如果需要，添加新单词到learning words
-    final newLearningWords = await addNewLearningWords(userId, allLearningWords, todayDayNumber);
-    debugLog('[genTodayWords] 从词书新抓取单词数: ${newLearningWords.length}');
-    candidateWords.addAll(newLearningWords);
-
-    // 取{ 0, 1, 3, 6, 14 }天之前加入的单词
-    final fetchDays = [0, 1, 3, 6, 14];
-    for (int day in fetchDays) {
-      final learningWordsOfADay = getLearningWordsAddedAtDay(todayDayNumber - day, candidateWords);
-      if (learningWordsOfADay.isNotEmpty) {
-        debugLog('[genTodayWords] 尝试从 $day 天前的单词中提取: ${learningWordsOfADay.length} 个可用');
-      }
-
-      for (var word in learningWordsOfADay) {
-        if (!todayLearningWords.any((w) => w.userId == word.userId && w.wordId == word.wordId)) {
-          // 给今日学习单词分配批次
-          todayLearningWords.add(word.copyWith(batchId: Value(targetBatchId)));
-          candidateWords.removeWhere((w) => w.userId == word.userId && w.wordId == word.wordId);
-
-          // 按照后端逻辑：达到数量就立即返回
-          if (todayLearningWords.length >= user.wordsPerDay) {
-            debugLog('[genTodayWords] 已达到目标数量 ${user.wordsPerDay}，通过记忆曲线逻辑完成');
-            await updateTodayLearningWords(todayLearningWords, now);
-            return todayLearningWords;
-          }
-        }
-      }
-    }
-
-    // 如果没有取到足够单词，则从最早的单词往前取
-    int countBeforeOldest = todayLearningWords.length;
-    while (todayLearningWords.length < user.wordsPerDay) {
-      final oldestWord = getOldestLearningWord(candidateWords);
-
-      // 取不到更多单词了，单词书中单词耗尽
-      if (oldestWord == null) {
-        Global.logger.d('[genTodayWords] 无法从候选池获取更多单词，停止。');
+    // 2. 将到期单词加入今日计划，直到达到用户设定的每日目标
+    for (var word in dueWords) {
+      if (todayLearningWords.length >= user.wordsPerDay) {
+        debugLog('[genTodayWords] 已达到目标数量 ${user.wordsPerDay}，通过 FSRS 到期筛选完成');
         break;
       }
+      todayLearningWords.add(word.copyWith(batchId: Value(targetBatchId)));
+    }
 
-      if (!todayLearningWords.any((w) => w.userId == oldestWord.userId && w.wordId == oldestWord.wordId)) {
-        // 给补足的单词分配批次
-        todayLearningWords.add(oldestWord.copyWith(batchId: Value(targetBatchId)));
-        candidateWords.removeWhere((w) => w.userId == oldestWord.userId && w.wordId == oldestWord.wordId);
+    // 3. 如果依然没取够，则从词书按顺序抓取绝对的新词来补足以撑起今日计划
+    if (todayLearningWords.length < user.wordsPerDay) {
+      // 确定 addDay 序号
+      LearningWord? latestWord;
+      for (var word in allLearningWords) {
+        if (latestWord == null || word.addTime.isAfter(latestWord.addTime)) {
+          latestWord = word;
+        }
+      }
+      int todayDayNumber = 1;
+      if (latestWord != null) {
+        todayDayNumber = DateUtils.isSameDay(latestWord.addTime, now) ? latestWord.addDay : latestWord.addDay + 1;
+      }
+
+      int needNewCount = user.wordsPerDay - todayLearningWords.length;
+      debugLog('[genTodayWords] 复习词不足，从词书新抓取 $needNewCount 个词');
+
+      final newWords = await fetchNewWordsToLearn(userId, todayDayNumber, needNewCount);
+      for (var word in newWords) {
+        todayLearningWords.add(word.copyWith(batchId: Value(targetBatchId)));
       }
     }
-    Global.logger.d('[genTodayWords] 保底逻辑抓取了 ${todayLearningWords.length - countBeforeOldest} 个单词');
 
-    // 将今日的学习单词更新到数据库
+    // 将今日的学习单词分配好顺序并更新到数据库
     await updateTodayLearningWords(todayLearningWords, now);
 
     return todayLearningWords;
   }
 
-  /// 获取指定的天数以前的那一天加入的learning words
-  static List<LearningWord> getLearningWordsAddedAtDay(int addDay, List<LearningWord> allLearningWords) {
-    List<LearningWord> learningWords = [];
-
-    // 获取该天添加的所有单词
-    for (var learningWord in allLearningWords) {
-      if (learningWord.addDay == addDay) {
-        learningWords.add(learningWord);
-      }
-    }
-
-    // 对该天的单词进行排序，掌握度小的排在前面，以便被优先选为本日学习单词
-    learningWords.sort((a, b) => (a.stability ?? 0.0).compareTo(b.stability ?? 0.0));
-
-    return learningWords;
-  }
-
-  /// 获取最早加入的那些单词
-  static LearningWord? getOldestLearningWord(List<LearningWord> allLearningWords) {
-    if (allLearningWords.isEmpty) {
-      return null;
-    }
-
-    LearningWord? oldestWord;
-    for (var learningWord in allLearningWords) {
-      if (oldestWord == null ||
-          (DateUtils.isSameDay(learningWord.addTime, oldestWord.addTime) && (learningWord.stability ?? 0.0) < (oldestWord.stability ?? 0.0)) ||
-          (learningWord.addTime.isBefore(oldestWord.addTime) && !DateUtils.isSameDay(learningWord.addTime, oldestWord.addTime))) {
-        oldestWord = learningWord;
-      }
-    }
-
-    return oldestWord;
-  }
 
   /// 削减今日学习单词（当用户调低每日单词量时）
   static Future<List<LearningWord>> shrinkTodayWords(String userId, List<LearningWord> todayWords, int targetCount) async {
@@ -391,40 +348,7 @@ class LearningService {
     }
   }
 
-  /// 添加新单词到正在学习的单词列表
-  static Future<List<LearningWord>> addNewLearningWords(String userId, List<LearningWord> currentLearningWords, int todayDayNumber) async {
-    final db = MyDatabase.instance;
-    final user = await db.usersDao.getUserById(userId);
 
-    if (user == null) {
-      throw Exception('用户不存在');
-    }
-
-    // 计算目前所有的learning words的总“剩余待学值”
-    double currentGapValue = 0;
-    for (var word in currentLearningWords) {
-      currentGapValue += (masteredStability - (word.stability ?? 0.0));
-    }
-
-    // 计算期望的总“剩余待学值”
-    // 原逻辑是 user.wordsPerDay * 29 ~/ 5，其中 5 是 masteredMasteryLevel
-    // 换算到 stability (180)，比例是 180 / 5 = 36
-    final expectedTotalGapValue = user.wordsPerDay * 29.0 * (masteredStability / 5.0) / 5.0;
-    debugLog('[addNewLearningWords] 当前总剩余待学值: $currentGapValue, 期望值: $expectedTotalGapValue');
-
-    // 计算需要添加的新单词数量
-    int newWordCount = (expectedTotalGapValue - currentGapValue).ceil() ~/ (masteredStability - initialStability);
-    debugLog('[addNewLearningWords] 计算需添加新词数: $newWordCount');
-
-    // 按照后端逻辑：限制不超过每日单词数
-    int wordsPerDay = user.wordsPerDay;
-    newWordCount = newWordCount <= wordsPerDay ? newWordCount : wordsPerDay;
-
-    // 从词书取新词
-    List<LearningWord> newLearningWords = await fetchNewWordsToLearn(userId, todayDayNumber, newWordCount);
-
-    return newLearningWords;
-  }
 
   /// 从词书取新词（支持优先级和已掌握过滤）
   static Future<List<LearningWord>> fetchNewWordsToLearn(String userId, int todayDayNumber, int countToFetch) async {
