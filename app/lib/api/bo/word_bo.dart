@@ -448,7 +448,7 @@ class WordBo {
     }
     try {
       final query = db.select(db.learningWords)
-        ..where((tbl) => tbl.userId.equals(userId) & tbl.stability.isSmallerThanValue(Constants.graduationStability))
+        ..where((tbl) => tbl.userId.equals(userId))
         ..orderBy(
             [(tbl) => OrderingTerm(expression: tbl.addTime), (tbl) => OrderingTerm.asc(tbl.stability), (tbl) => OrderingTerm(expression: tbl.wordId)])
         ..limit(pageSize, offset: fromIndex);
@@ -456,8 +456,7 @@ class WordBo {
 
       final countQuery = db.selectOnly(db.learningWords)
         ..addColumns([countAll()])
-        ..where(db.learningWords.userId.equals(userId))
-        ..where(db.learningWords.stability.isSmallerThanValue(Constants.graduationStability));
+        ..where(db.learningWords.userId.equals(userId));
       final countResult = await countQuery.getSingle();
       final total = countResult.read(countAll()) ?? 0;
       List<LearningWordVo> learningWordVos = [];
@@ -1427,11 +1426,11 @@ class WordBo {
         ..where(db.learningWords.batchId.isBiggerThanValue(0));
       final totalWordsCount = await todayWordsQuery.getSingle();
       wordLists.add(WordList("今日单词", totalWordsCount.read(countAll()) ?? 0));
-      // 获取全局学习中的单词数量（生命值大于0的所有单词）
+      // 获取全局学习中的单词数量
       final learningWordsCountQuery = db.selectOnly(db.learningWords)
         ..addColumns([countAll()])
-        ..where(db.learningWords.userId.equals(user.id))
-        ..where(db.learningWords.stability.isSmallerThanValue(Constants.graduationStability));
+        ..where(db.learningWords.userId.equals(user.id));
+      
       final learningWordsCountResult = await learningWordsCountQuery.getSingle();
       wordLists.add(WordList("学习中", learningWordsCountResult.read(countAll()) ?? 0));
 
