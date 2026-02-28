@@ -895,7 +895,7 @@ class _MePageState extends State<MePage> {
                                   text: "${studyProgress!.masteredWordsCount}",
                                   style: TextStyle(color: numberColor, fontWeight: FontWeight.normal),
                                 ),
-                                const TextSpan(text: " | 超过了: "),
+                                const TextSpan(text: "\n超过了: "),
                                 if (studyProgress!.userOrder! < 0)
                                   const TextSpan(text: '暂无')
                                 else ...[
