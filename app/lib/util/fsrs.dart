@@ -19,6 +19,8 @@ class FSRS {
   /// 初始状态转换 (New -> Learning/Review)
   /// @param rating 1: Again, 2: Hard, 3: Good, 4: Easy
   FSRSItem init(int rating) {
+    assert(rating >= 1 && rating <= 4, 'FSRS init: rating 必须在 1-4 之间, 当前为 $rating');
+    
     double stability = w[rating - 1];
     double difficulty = w[4] - (rating - 1) * w[5];
     difficulty = difficulty.clamp(1.0, 10.0);
@@ -39,6 +41,12 @@ class FSRS {
   /// @param rating 1: Again, 2: Hard, 3: Good, 4: Easy
   /// @param elapsedDays 自上次复习以来经过的天数
   FSRSItem next(FSRSItem lastItem, int rating, int elapsedDays) {
+    // 根因定位辅助断言
+    assert(lastItem.stability > 0 && lastItem.stability.isFinite, 'FSRS next: 输入的 stability 异常: ${lastItem.stability}');
+    assert(lastItem.difficulty >= 1 && lastItem.difficulty <= 10 && lastItem.difficulty.isFinite, 'FSRS next: 输入的 difficulty 异常: ${lastItem.difficulty}');
+    assert(rating >= 1 && rating <= 4, 'FSRS next: rating 必须在 1-4 之间, 当前为 $rating');
+    assert(elapsedDays >= 0, 'FSRS next: elapsedDays 不能为负数: $elapsedDays');
+
     double s = lastItem.stability;
     double d = lastItem.difficulty;
     double r = pow(0.9, elapsedDays / s).toDouble(); // Retrievability
@@ -75,6 +83,9 @@ class FSRS {
   }
 
   int _calculateInterval(double stability) {
+    assert(stability.isFinite, 'FSRS _calculateInterval: stability 为无穷大或 NaN');
+    assert(requestRetention > 0 && requestRetention < 1, 'FSRS: requestRetention 必须在 (0, 1) 之间');
+    
     // interval = S * (ln(retention) / ln(0.9))
     // 对于默认 retention=0.9, interval = S
     double interval = stability * (log(requestRetention) / log(0.9));
