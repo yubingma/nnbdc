@@ -2296,8 +2296,7 @@ class WordListPageState extends State<WordListPage>
           '已掌握',
           style: TextStyle(
             color: Color(0xFF4CAF50),
-            fontSize: 10,
-            fontWeight: FontWeight.w600,
+            fontSize: 9,
           ),
         ),
       );
@@ -2317,8 +2316,7 @@ class WordListPageState extends State<WordListPage>
           '学习中',
           style: TextStyle(
             color: Color(0xFF2196F3),
-            fontSize: 10,
-            fontWeight: FontWeight.w600,
+            fontSize: 9,
           ),
         ),
       );
@@ -2339,37 +2337,30 @@ class WordListPageState extends State<WordListPage>
             word.word.mergedPronounce.length > 25;
 
         if (shouldWrap && word.word.mergedPronounce.isNotEmpty) {
-          // 换行显示：单词一行，音标一行，右侧始终有状态标签
+          // 换行显示：单词一行，音标一行，其后紧跟状态标签
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 单词行（右侧固定状态标签）
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      word.word.spell,
-                      textScaler: TextScaler.linear(1.0),
-                      style: TextStyle(
-                        color: isBookmarked
-                            ? const Color(0xFF0097A7)
-                            : (isDarkMode
-                                ? Colors.white
-                                : const Color(0xFF1F2937)),
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                        height: 1.3,
-                        letterSpacing: 0.3,
-                      ),
-                    ),
-                  ),
-                  if (statusTag != null) statusTag,
-                ],
+              // 单词行
+              Text(
+                word.word.spell,
+                textScaler: TextScaler.linear(1.0),
+                style: TextStyle(
+                  color: isBookmarked
+                      ? const Color(0xFF0097A7)
+                      : (isDarkMode ? Colors.white : const Color(0xFF1F2937)),
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  height: 1.3,
+                  letterSpacing: 0.3,
+                ),
               ),
-              // 音标行
+              const SizedBox(height: 4),
+              // 音标+标签行
               Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Expanded(
+                  Flexible(
                     child: Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 4),
@@ -2395,70 +2386,58 @@ class WordListPageState extends State<WordListPage>
                       ),
                     ),
                   ),
+                  if (statusTag != null) statusTag,
                 ],
               ),
             ],
           );
         } else {
-          // 同行显示：单词和音标占满左侧空间，状态标签固定在右侧
+          // 同行显示：单词、音标和状态标签依次排列
           return Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              // 单词和音标占满剩余空间
-              Expanded(
-                child: Row(
-                  children: [
-                    Flexible(
-                      child: Text(
-                        word.word.spell,
-                        textScaler: TextScaler.linear(1.0),
-                        style: TextStyle(
-                          color: isBookmarked
-                              ? const Color(0xFF0097A7)
-                              : (isDarkMode
-                                  ? Colors.white
-                                  : const Color(0xFF1F2937)),
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                          height: 1.3,
-                          letterSpacing: 0.3,
-                        ),
-                      ),
-                    ),
-                    if (word.word.mergedPronounce.isNotEmpty) ...[
-                      const SizedBox(width: 8),
-                      Flexible(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: (isDarkMode
-                                    ? Colors.grey[700]
-                                    : Colors.grey[200])
-                                ?.withValues(alpha: 0.7),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            '[${word.word.mergedPronounce}]',
-                            textScaler: TextScaler.linear(1.0),
-                            style: TextStyle(
-                              color: isDarkMode
-                                  ? Colors.grey[300]
-                                  : Colors.grey[600],
-                              fontSize: 12,
-                              fontFamily: 'NotoSans',
-                              fontWeight: FontWeight.w500,
-                              height: 1.3,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 1,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
+              Flexible(
+                child: Text(
+                  word.word.spell,
+                  textScaler: TextScaler.linear(1.0),
+                  style: TextStyle(
+                    color: isBookmarked
+                        ? const Color(0xFF0097A7)
+                        : (isDarkMode ? Colors.white : const Color(0xFF1F2937)),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    height: 1.3,
+                    letterSpacing: 0.3,
+                  ),
                 ),
               ),
-              // 右侧固定状态标签
+              if (word.word.mergedPronounce.isNotEmpty) ...[
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: (isDarkMode ? Colors.grey[700] : Colors.grey[200])
+                          ?.withValues(alpha: 0.7),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      '[${word.word.mergedPronounce}]',
+                      textScaler: TextScaler.linear(1.0),
+                      style: TextStyle(
+                        color: isDarkMode ? Colors.grey[300] : Colors.grey[600],
+                        fontSize: 12,
+                        fontFamily: 'NotoSans',
+                        fontWeight: FontWeight.w500,
+                        height: 1.3,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
+                  ),
+                ),
+              ],
               if (statusTag != null) statusTag,
             ],
           );
