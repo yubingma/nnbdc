@@ -1185,21 +1185,18 @@ class _MePageState extends State<MePage> {
                   _buildProgressItem(
                     '打卡天数',
                     studyProgress!.dakaDayCount.toString(),
-                    Icons.calendar_today,
-                    const Color(0xFF3498DB),
+                    Icons.calendar_today_rounded,
                   ),
                   _buildProgressItem(
                     '打卡率',
                     '${(studyProgress!.dakaRatio! * 100).toStringAsFixed(1)}%',
-                    Icons.analytics,
-                    const Color(0xFF9B59B6),
+                    Icons.analytics_rounded,
                   ),
                   _buildProgressItem(
                     '魔法泡泡',
                     studyProgress!.cowDung.toString(),
-                    Icons.water_drop,
-                    const Color(0xFFE67E22),
-                    rotationAngle: 3.14159, // 180度 = π 弧度
+                    Icons.water_drop_rounded,
+                    rotationAngle: 3.14159,
                   ),
                 ],
               ),
@@ -2163,10 +2160,14 @@ class _MePageState extends State<MePage> {
 
 
   // 进度项组件
-  Widget _buildProgressItem(String title, String value, IconData icon, Color color, {double? rotationAngle}) {
+  Widget _buildProgressItem(String title, String value, IconData icon, {double? rotationAngle, Color? color}) {
     final isDarkModeEnabled = context.watch<DarkMode>().isDarkMode;
+    final textColor = isDarkModeEnabled ? Colors.white : const Color(0xFF2C3E50);
+    final subtitleColor = isDarkModeEnabled ? Colors.white70 : const Color(0xFF7F8C8D);
+    final iconColor = isDarkModeEnabled ? Colors.white70 : const Color(0xFF95A5A6);
+    final accentColor = AppTheme.primaryColor;
 
-    Widget iconWidget = Icon(icon, color: color, size: 24);
+    Widget iconWidget = Icon(icon, color: color ?? iconColor, size: 22);
     if (rotationAngle != null) {
       iconWidget = Transform.rotate(
         angle: rotationAngle,
@@ -2176,22 +2177,32 @@ class _MePageState extends State<MePage> {
 
     return Column(
       children: [
-        iconWidget,
-        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: isDarkModeEnabled ? Colors.white.withValues(alpha: 0.05) : accentColor.withValues(alpha: 0.05),
+            shape: BoxShape.circle,
+          ),
+          child: iconWidget,
+        ),
+        const SizedBox(height: 10),
         Text(
           value,
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
-            color: color,
+            color: textColor,
+            fontFamily: 'RobotoCondensed',
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 2),
         Text(
           title,
           style: TextStyle(
-            fontSize: 12,
-            color: isDarkModeEnabled ? Colors.grey[400] : const Color(0xFF7F8C8D),
+            fontSize: 10,
+            color: subtitleColor,
+            fontWeight: FontWeight.w400,
+            letterSpacing: 0.5,
           ),
         ),
       ],
