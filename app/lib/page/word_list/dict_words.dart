@@ -31,6 +31,9 @@ class DictWordsProvider with WordsProvider implements WordModifier {
   String? get targetDictId => dict.id;
 
   @override
+  bool get keepWordsOnMaster => true;
+
+  @override
   Future<bool> addWord(String wordId) async {
     final result = await WordBo().addWordToCustomDict(dict.id, wordId);
     if (result.success) {
@@ -87,11 +90,6 @@ class DictWordsProvider with WordsProvider implements WordModifier {
       if (userId == null) return false;
 
       await WordBo().setLearningWordAsMastered(userId, wordWrapper.word.id!, true);
-      
-      // 如果是自定义词书（如生词本），掌握后从原词书中移除
-      if (dict.name == '生词本' || (dict.editable == true)) {
-        await _db.dictWordsDao.deleteDictWordWithCleanup(dict.id, wordWrapper.word.id!, userId, true);
-      }
       
       ThrottledDbSyncService().requestSync();
       SoundUtil.playAssetSoundConcurrent('bubble-pop.mp3', 1.0, 0.5);

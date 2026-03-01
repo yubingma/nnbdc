@@ -53,6 +53,9 @@ mixin WordsProvider {
 
   /// 获取单词的学习状态：null=未学习, true=已掌握, false=学习中
   Future<bool?> getWordLearningStatus(String wordId) async => null;
+
+  /// 当单词被标记为“掌握”时，是否保留在当前UI列表中（不自动移除）
+  bool get keepWordsOnMaster => false;
 }
 
 abstract class WordModifier {
@@ -1713,7 +1716,8 @@ class WordListPageState extends State<WordListPage>
         final bool todayStudyStarted =
             Global.getLoggedInUser()?.todayStudyStarted ?? false;
 
-        if (todayStudyStarted && isTodayTask) {
+        if ((todayStudyStarted && isTodayTask) ||
+            args.wordsProvider.keepWordsOnMaster) {
           // 仅更新状态，不从UI移除
           setState(() {
             if (word.word.id != null) {
