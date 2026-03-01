@@ -211,7 +211,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: (isDarkMode ? Colors.black : AppTheme.primaryColor).withValues(alpha: 0.08),
+            color: Colors.black.withValues(alpha: isDarkMode ? 0.3 : 0.05),
             blurRadius: 24,
             offset: const Offset(0, 10),
           ),
@@ -259,11 +259,11 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
             padding: const EdgeInsets.symmetric(horizontal: 12),
             child: Row(
               children: [
-                _buildStatItem('今日单词', todayWordCount!, Icons.library_books_rounded, AppTheme.primaryColor,
+                _buildStatItem('今日单词', todayWordCount!, Icons.library_books_rounded, 
                     () => toTodayWordsListPage(true)?.then((v) => loadData())),
-                _buildStatItem('新词', newWordCount!, Icons.fiber_new_rounded, const Color(0xFF4CAF50),
+                _buildStatItem('新词', newWordCount!, Icons.fiber_new_rounded, 
                     () => toTodayNewWordsListPage(true)?.then((v) => loadData())),
-                _buildStatItem('旧词', oldWordCount!, Icons.refresh_rounded, const Color(0xFFFF9800),
+                _buildStatItem('旧词', oldWordCount!, Icons.refresh_rounded, 
                     () => toTodayOldWordsListPage(true)?.then((v) => loadData())),
               ],
             ),
@@ -276,23 +276,24 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
               child: Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFF9800).withValues(alpha: 0.1),
+                  color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : AppTheme.primaryColor.withValues(alpha: 0.03),
                   borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: isDarkMode ? Colors.white.withValues(alpha: 0.1) : AppTheme.primaryColor.withValues(alpha: 0.1)),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.info_outline, color: Color(0xFFFF9800), size: 18),
+                    Icon(Icons.info_outline, color: isDarkMode ? Colors.white70 : AppTheme.primaryColor, size: 18),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         '任务量不足，建议点击旁边按钮补充',
-                        style: TextStyle(color: const Color(0xFFE65100), fontSize: 12, fontWeight: FontWeight.w500),
+                        style: TextStyle(color: isDarkMode ? Colors.white70 : AppTheme.primaryColor, fontSize: 12, fontWeight: FontWeight.w500),
                       ),
                     ),
                     TextButton(
                       style: TextButton.styleFrom(
-                        backgroundColor: const Color(0xFFFF9800),
-                        foregroundColor: Colors.white,
+                        backgroundColor: isDarkMode ? Colors.white.withValues(alpha: 0.1) : AppTheme.primaryColor.withValues(alpha: 0.1),
+                        foregroundColor: isDarkMode ? Colors.white : AppTheme.primaryColor,
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       ),
@@ -318,8 +319,12 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
     );
   }
 
-  Widget _buildStatItem(String label, int count, IconData icon, Color color, VoidCallback onTap) {
+  Widget _buildStatItem(String label, int count, IconData icon, VoidCallback onTap) {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
+    final textColor = isDarkMode ? Colors.white : const Color(0xFF2C3E50);
+    final subtitleColor = isDarkMode ? Colors.white70 : const Color(0xFF7F8C8D);
+    final accentColor = AppTheme.primaryColor;
+
     return Expanded(
       child: GestureDetector(
         onTap: onTap,
@@ -327,23 +332,23 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
           margin: const EdgeInsets.symmetric(horizontal: 6),
           padding: const EdgeInsets.symmetric(vertical: 16),
           decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.05),
+            color: isDarkMode ? Colors.white.withValues(alpha: 0.03) : accentColor.withValues(alpha: 0.03),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: color.withValues(alpha: 0.1)),
+            border: Border.all(color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : accentColor.withValues(alpha: 0.05)),
           ),
           child: Column(
             children: [
-              Icon(icon, color: color, size: 20),
+              Icon(icon, color: isDarkMode ? Colors.white70 : accentColor.withValues(alpha: 0.6), size: 20),
               const SizedBox(height: 8),
               Text(
                 '$count',
-                style: TextStyle(color: color, fontSize: 24, fontWeight: FontWeight.bold, height: 1.1),
+                style: TextStyle(color: textColor, fontSize: 24, fontWeight: FontWeight.bold, height: 1.1),
               ),
               const SizedBox(height: 2),
               Text(
                 label,
                 style: TextStyle(
-                  color: isDarkMode ? Colors.white54 : Colors.black54,
+                  color: subtitleColor,
                   fontSize: 12,
                   fontFamily: 'NotoSansSC',
                 ),
@@ -493,37 +498,46 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
   }
 
   Widget renderErrorActions() {
+    final isDarkMode = context.watch<DarkMode>().isDarkMode;
+    final accentColor = AppTheme.primaryColor;
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFEBEE),
+        color: isDarkMode ? Colors.white.withValues(alpha: 0.03) : accentColor.withValues(alpha: 0.03),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFFFCDD2), width: 1),
+        border: Border.all(color: isDarkMode ? Colors.white.withValues(alpha: 0.1) : accentColor.withValues(alpha: 0.1), width: 1),
       ),
       child: Column(
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.warning_rounded, color: Color(0xFFFF5252), size: 24),
-              SizedBox(width: 12),
-              Text('没有取到足够单词', style: TextStyle(color: Color(0xFFFF5252), fontSize: 16, fontWeight: FontWeight.bold)),
+              Icon(Icons.warning_rounded, color: isDarkMode ? Colors.white70 : accentColor, size: 24),
+              const SizedBox(width: 12),
+              Text('没有取到足够单词',
+                  style: TextStyle(color: isDarkMode ? Colors.white : accentColor, fontSize: 16, fontWeight: FontWeight.bold)),
             ],
           ),
           const SizedBox(height: 16),
           IntrinsicHeight(
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch, // 确保子组件填满高度
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Expanded(
                   child: ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF4CAF50),
-                      minimumSize: const Size(0, 48), // 设置最小高度
+                      backgroundColor: isDarkMode ? Colors.white.withValues(alpha: 0.05) : accentColor.withValues(alpha: 0.05),
+                      foregroundColor: isDarkMode ? Colors.white : accentColor,
+                      minimumSize: const Size(0, 48),
                       padding: const EdgeInsets.symmetric(horizontal: 8),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(color: isDarkMode ? Colors.white.withValues(alpha: 0.1) : accentColor.withValues(alpha: 0.15)),
+                      ),
+                      elevation: 0,
                     ),
-                    icon: const Icon(Icons.library_books, color: Colors.white, size: 18),
-                    label: const Text('选择词书', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
+                    icon: Icon(Icons.library_books, color: isDarkMode ? Colors.white70 : accentColor, size: 18),
+                    label: const Text('选择词书', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
                     onPressed: () {
                       Get.toNamed('/select_book')?.then((v) {
                         if (mounted) {
@@ -539,17 +553,22 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
                   Expanded(
                     child: ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFF9800),
-                        minimumSize: const Size(0, 48), // 设置最小高度
+                        backgroundColor: isDarkMode ? Colors.white.withValues(alpha: 0.05) : accentColor.withValues(alpha: 0.05),
+                        foregroundColor: isDarkMode ? Colors.white : accentColor,
+                        minimumSize: const Size(0, 48),
                         padding: const EdgeInsets.symmetric(horizontal: 8),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          side: BorderSide(color: isDarkMode ? Colors.white.withValues(alpha: 0.1) : accentColor.withValues(alpha: 0.15)),
+                        ),
+                        elevation: 0,
                       ),
-                      icon: const Icon(Icons.play_arrow, color: Colors.white, size: 18),
+                      icon: Icon(Icons.play_arrow, color: isDarkMode ? Colors.white70 : accentColor, size: 18),
                       label: const Text(
                         '就这样吧\n去学习',
                         textAlign: TextAlign.center,
                         maxLines: 2,
-                        style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold, height: 1.2),
+                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, height: 1.2),
                       ),
                       onPressed: () => Get.toNamed('/bdc'),
                     ),
@@ -570,12 +589,14 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
       key: ValueKey(step),
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        color: isActive
-            ? AppTheme.primaryColor.withValues(alpha: 0.05)
-            : (isDarkMode ? Colors.white.withValues(alpha: 0.02) : Colors.black.withValues(alpha: 0.02)),
+        color: isDarkMode
+            ? Colors.white.withValues(alpha: isActive ? 0.05 : 0.02)
+            : Colors.black.withValues(alpha: isActive ? 0.05 : 0.02),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isActive ? AppTheme.primaryColor.withValues(alpha: 0.2) : Colors.transparent,
+          color: isDarkMode
+              ? Colors.white.withValues(alpha: isActive ? 0.1 : 0.0)
+              : Colors.black.withValues(alpha: isActive ? 0.1 : 0.0),
           width: 1.5,
         ),
       ),
@@ -595,7 +616,9 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
               children: [
                 Icon(
                   isActive ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
-                  color: isActive ? AppTheme.primaryColor : (isDarkMode ? Colors.white24 : Colors.black26),
+                  color: isDarkMode
+                      ? (isActive ? Colors.white : Colors.white24)
+                      : (isActive ? Colors.black87 : Colors.black26),
                   size: 22,
                 ),
                 const SizedBox(width: 12),
@@ -603,7 +626,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
                   child: Text(
                     StudyStepExt.fromString(step.studyStep).description,
                     style: TextStyle(
-                      color: isActive ? AppTheme.primaryColor : (isDarkMode ? Colors.white70 : Colors.black87),
+                      color: isDarkMode ? Colors.white : Colors.black87,
                       fontSize: 16,
                       fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
                     ),
@@ -686,23 +709,6 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
     return Scaffold(
       backgroundColor: backgroundColor,
       body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: isDarkMode
-                ? [
-                    const Color(0xFF121212),
-                    const Color(0xFF1A1A1A),
-                    const Color(0xFF121212),
-                  ]
-                : [
-                    const Color(0xFFF8F9FA),
-                    const Color(0xFFE9ECEF),
-                    const Color(0xFFF8F9FA),
-                  ],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
         child: CustomScrollView(
           slivers: [
             // 美化的AppBar
@@ -719,13 +725,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
                     )
                   : null,
               flexibleSpace: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [AppTheme.gradientStartColor, AppTheme.gradientEndColor],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                ),
+                color: AppTheme.primaryColor,
               ),
               title: const Text(
                 '今日学习计划',
