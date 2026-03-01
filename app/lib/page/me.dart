@@ -2525,7 +2525,7 @@ class _DictCardState extends State<DictCard> {
                             widget.dictInfo.name.replaceAll('.dict', ''),
                             style: TextStyle(
                               color: textColor,
-                              fontSize: 18,
+                              fontSize: 16,
                               fontWeight: FontWeight.bold,
                               letterSpacing: 0.5,
                             ),
