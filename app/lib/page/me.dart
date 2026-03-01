@@ -2335,12 +2335,6 @@ class _MePageState extends State<MePage> {
     return Container(
       width: 80,
       height: 60,
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: containerColor.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: textColor.withValues(alpha: 0.1), width: 1),
-      ),
       child: Column(
         children: [
           Expanded(
