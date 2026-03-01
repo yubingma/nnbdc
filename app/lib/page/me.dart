@@ -1077,18 +1077,23 @@ class _MePageState extends State<MePage> {
                       )
                     : ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(
-                          foregroundColor: Colors.white,
-                          backgroundColor: AppTheme.primaryColor,
+                          foregroundColor: isDarkModeEnabled ? Colors.white : AppTheme.primaryColor,
+                          backgroundColor: isDarkModeEnabled ? Colors.white.withValues(alpha: 0.05) : AppTheme.primaryColor.withValues(alpha: 0.05),
                           padding: const EdgeInsets.symmetric(vertical: 18),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
+                            side: BorderSide(
+                              color: isDarkModeEnabled ? Colors.white.withValues(alpha: 0.1) : AppTheme.primaryColor.withValues(alpha: 0.15),
+                              width: 1.5,
+                            ),
                           ),
                           elevation: 0,
                         ),
-                        icon: const Icon(Icons.school, color: Colors.white, size: 20),
+                        icon: Icon(Icons.school, color: isDarkModeEnabled ? Colors.white : AppTheme.primaryColor, size: 20),
                         label: Text(
                           '开始学习',
-                          style: const TextStyle(
+                          style: TextStyle(
+                            color: isDarkModeEnabled ? Colors.white : AppTheme.primaryColor,
                             fontSize: 18,
                             fontWeight: FontWeight.w700,
                             height: 1.2,
