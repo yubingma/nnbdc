@@ -11,7 +11,6 @@ import 'package:provider/provider.dart';
 
 import '../api/vo.dart';
 import '../state.dart';
-import '../theme/app_theme.dart';
 
 class WordListsPage extends StatefulWidget {
   const WordListsPage({super.key});
@@ -225,108 +224,36 @@ class _WordListsPageState extends State<WordListsPage> {
 
     return Scaffold(
       backgroundColor: backgroundColor,
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: isDarkMode
-                ? [
-                    const Color(0xFF121212),
-                    const Color(0xFF1A1A1A),
-                    const Color(0xFF121212),
-                  ]
-                : [
-                    const Color(0xFFF5F7FA),
-                    const Color(0xFFE8ECF1),
-                    const Color(0xFFF5F7FA),
-                  ],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: CustomScrollView(
-          slivers: [
-            // 美化的AppBar
-            SliverAppBar(
-              expandedHeight: 88,
-              floating: false,
-              pinned: true,
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              automaticallyImplyLeading: false,
-              flexibleSpace: FlexibleSpaceBar(
-                background: Container(
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [
-                        AppTheme.gradientStartColor,
-                        AppTheme.gradientEndColor,
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppTheme.primaryColor.withValues(alpha: 0.3),
-                        blurRadius: 12,
-                        offset: const Offset(0, 6),
-                      ),
-                    ],
-                  ),
-                  child: SafeArea(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.2),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Icon(
-                                Icons.library_books,
-                                color: Colors.white,
-                                size: 28,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  '词表管理',
-                                  textScaler: TextScaler.linear(1.0),
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w400,
-                                    height: 1.5,
-                                    letterSpacing: 1.5,
-                                  ),
-                                ),
-                                Text(
-                                  '复习巩固你的学习成果',
-                                  textScaler: TextScaler.linear(1.0),
-                                  style: TextStyle(
-                                    color: Colors.white.withValues(alpha: 0.9),
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w300,
-                                    height: 1.5,
-                                    letterSpacing: 0.8,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
+      body: CustomScrollView(
+        slivers: [
+          // 美化的AppBar
+          SliverAppBar(
+            pinned: true,
+            backgroundColor: backgroundColor,
+            elevation: 0,
+            centerTitle: false,
+            automaticallyImplyLeading: false,
+            title: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.library_books_rounded,
+                  color: (isDarkMode ? Colors.white : const Color(0xFF2C3E50)).withValues(alpha: 0.8),
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '词表管理',
+                  style: TextStyle(
+                    color: isDarkMode ? Colors.white : const Color(0xFF2C3E50),
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 1.2,
                   ),
                 ),
-              ),
+              ],
             ),
+          ),
 
             // 内容区域
             SliverToBoxAdapter(
@@ -367,8 +294,7 @@ class _WordListsPageState extends State<WordListsPage> {
                       ),
                     ),
             ),
-          ],
-        ),
+        ],
       ),
     );
   }
