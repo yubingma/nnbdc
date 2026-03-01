@@ -2448,22 +2448,27 @@ class _DictCardState extends State<DictCard> {
 
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
     
+    final cardBgColor = isDarkMode ? const Color(0xFF2C2C2E) : Colors.white;
+    final accentColor = AppTheme.primaryColor;
+    final textColor = isDarkMode ? Colors.white : const Color(0xFF1F2937);
+    final subtitleColor = isDarkMode ? Colors.white70 : const Color(0xFF6B7280);
+
     return Stack(
       children: [
         Container(
           margin: const EdgeInsets.only(bottom: 16),
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Color(0xFF6366F1), Color(0xFF4F46E5)], // 统一使用靛青蓝
-            ),
+            color: cardBgColor,
             borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: accentColor.withValues(alpha: isDarkMode ? 0.3 : 0.15),
+              width: 1.5,
+            ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: isDarkMode ? 0.3 : 0.15),
-                blurRadius: 10,
+                color: Colors.black.withValues(alpha: isDarkMode ? 0.3 : 0.03),
+                blurRadius: 12,
                 offset: const Offset(0, 4),
               ),
             ],
@@ -2482,15 +2487,15 @@ class _DictCardState extends State<DictCard> {
                         radius: 25.0,
                         lineWidth: 4.0,
                         percent: progress,
-                        backgroundColor: Colors.white.withValues(alpha: 0.2),
-                        progressColor: Colors.white,
+                        backgroundColor: isDarkMode ? Colors.white.withValues(alpha: 0.1) : accentColor.withValues(alpha: 0.1),
+                        progressColor: accentColor,
                         circularStrokeCap: CircularStrokeCap.round,
                       ),
                       Text(
                         '$progressPercent%',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
-                          color: Colors.white,
+                          color: isDarkMode ? Colors.white : accentColor,
                           fontWeight: FontWeight.bold,
                           height: 1.1,
                         ),
@@ -2503,27 +2508,27 @@ class _DictCardState extends State<DictCard> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          widget.dictInfo.name.replaceAll('.dict', ''),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 0.5,
+                          Text(
+                            widget.dictInfo.name.replaceAll('.dict', ''),
+                            style: TextStyle(
+                              color: textColor,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 0.5,
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          widget.dictInfo.name == '生词本'
-                              ? '$masteredCount / ${actualWordCount ?? 0} 词'
-                              : '$masteredCount / ${widget.dictInfo.wordCount} 词',
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.8),
-                            fontSize: 13,
-                            fontWeight: FontWeight.w400,
+                          const SizedBox(height: 4),
+                          Text(
+                            widget.dictInfo.name == '生词本'
+                                ? '$masteredCount / ${actualWordCount ?? 0} 词'
+                                : '$masteredCount / ${widget.dictInfo.wordCount} 词',
+                            style: TextStyle(
+                              color: subtitleColor,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w400,
+                            ),
                           ),
-                        ),
                       ],
                     ),
                   ),
@@ -2838,7 +2843,6 @@ class _DictCardState extends State<DictCard> {
     }
   }
 
-  // 词书操作按钮组件
   Widget _buildDictActionButton({
     required IconData icon,
     required String label,
@@ -2846,15 +2850,30 @@ class _DictCardState extends State<DictCard> {
     required VoidCallback onTap,
     bool isDestructive = false,
   }) {
+    final isDarkMode = context.read<DarkMode>().isDarkMode;
+    final accentColor = AppTheme.primaryColor;
+    
+    final bgColor = isDarkMode 
+        ? (isDestructive ? Colors.red.withValues(alpha: 0.1) : Colors.white.withValues(alpha: 0.05))
+        : (isDestructive ? Colors.red.withValues(alpha: 0.05) : accentColor.withValues(alpha: 0.05));
+    
+    final borderColor = isDarkMode
+        ? (isDestructive ? Colors.red.withValues(alpha: 0.3) : Colors.white.withValues(alpha: 0.1))
+        : (isDestructive ? Colors.red.withValues(alpha: 0.2) : accentColor.withValues(alpha: 0.2));
+        
+    final contentColor = isDarkMode
+        ? (isDestructive ? (Colors.red[300] ?? Colors.red) : Colors.white70)
+        : (isDestructive ? (Colors.red[700] ?? Colors.red) : accentColor);
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.1),
+          color: bgColor,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: Colors.white.withValues(alpha: 0.3),
+            color: borderColor,
           ),
         ),
         child: Column(
@@ -2862,19 +2881,18 @@ class _DictCardState extends State<DictCard> {
           children: [
             Icon(
               icon,
-              color: isActive ? (isDestructive ? Colors.red[300] : Colors.white) : Colors.white.withValues(alpha: 0.6),
+              color: isActive ? contentColor : contentColor.withValues(alpha: 0.4),
               size: 20,
             ),
             const SizedBox(height: 4),
             Text(
               label,
               style: TextStyle(
-                color: isActive ? Colors.white : Colors.white.withValues(alpha: 0.6),
+                color: isActive ? contentColor : contentColor.withValues(alpha: 0.4),
                 fontSize: 13,
-                fontWeight: FontWeight.w300,
+                fontWeight: FontWeight.w500,
                 height: 1.5,
                 letterSpacing: 0.6,
-                fontFamily: null,
               ),
               textScaler: const TextScaler.linear(1.0),
             ),
@@ -2884,21 +2902,27 @@ class _DictCardState extends State<DictCard> {
     );
   }
 
-  // 词书复选框组件
   Widget _buildDictCheckbox({
     required String label,
     required bool value,
     required ValueChanged<bool?> onChanged,
   }) {
+    final isDarkMode = context.read<DarkMode>().isDarkMode;
+    final accentColor = AppTheme.primaryColor;
+    
+    final bgColor = isDarkMode ? Colors.white.withValues(alpha: 0.05) : accentColor.withValues(alpha: 0.05);
+    final borderColor = isDarkMode ? Colors.white.withValues(alpha: 0.1) : accentColor.withValues(alpha: 0.2);
+    final textColor = isDarkMode ? Colors.white70 : accentColor;
+
     return GestureDetector(
       onTap: () => onChanged(!value),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.1),
+          color: bgColor,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: Colors.white.withValues(alpha: 0.3),
+            color: borderColor,
           ),
         ),
         child: Column(
@@ -2907,10 +2931,10 @@ class _DictCardState extends State<DictCard> {
             Checkbox(
               value: value,
               onChanged: onChanged,
-              activeColor: Colors.white,
-              checkColor: const Color(0xFF0097A7),
+              activeColor: accentColor,
+              checkColor: Colors.white,
               side: BorderSide(
-                color: Colors.white.withValues(alpha: 0.6),
+                color: textColor.withValues(alpha: 0.6),
                 width: 1.5,
               ),
               materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -2920,12 +2944,11 @@ class _DictCardState extends State<DictCard> {
             Text(
               label,
               style: TextStyle(
-                color: Colors.white,
+                color: textColor,
                 fontSize: 13,
-                fontWeight: FontWeight.w300,
+                fontWeight: FontWeight.w500,
                 height: 1.5,
                 letterSpacing: 0.6,
-                fontFamily: null,
               ),
               textScaler: const TextScaler.linear(1.0),
             ),
