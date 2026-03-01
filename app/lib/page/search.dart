@@ -317,27 +317,8 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
       backgroundColor: backgroundColor,
       appBar: AppBar(
         toolbarHeight: 88,
-        backgroundColor: Colors.transparent,
+        backgroundColor: backgroundColor,
         elevation: 0,
-        flexibleSpace: Container(
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [
-                AppTheme.gradientStartColor,
-                AppTheme.gradientEndColor,
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: AppTheme.primaryColor.withValues(alpha: 0.3),
-                blurRadius: 12,
-                offset: const Offset(0, 6),
-              ),
-            ],
-          ),
-        ),
         titleSpacing: 0,
         automaticallyImplyLeading: false,
         title: Row(
@@ -345,14 +326,14 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
             if (Get.currentRoute != '/index')
               IconButton(
                 onPressed: () => Navigator.pop(context),
-                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                icon: Icon(Icons.arrow_back, color: isDarkMode ? Colors.white : const Color(0xFF2C3E50)),
               ),
             Expanded(
               child: Container(
                 height: 48,
                 margin: const EdgeInsets.fromLTRB(16, 12, 16, 12),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.15),
+                  color: isDarkMode ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
                   borderRadius: BorderRadius.circular(24),
                 ),
                 clipBehavior: Clip.antiAlias,
@@ -362,8 +343,8 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
                   onChanged: (value) {
                     onSearchTextChanged(value);
                   },
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: isDarkMode ? Colors.white : const Color(0xFF2C3E50),
                     fontSize: 16,
                     fontFamily: 'NotoSansSC',
                     height: 1.0,
@@ -372,7 +353,7 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
                   decoration: InputDecoration(
                     hintText: '输入单词或中文释义',
                     hintStyle: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.7),
+                      color: (isDarkMode ? Colors.white : const Color(0xFF2C3E50)).withValues(alpha: 0.5),
                       fontSize: 16,
                       fontFamily: 'NotoSansSC',
                       height: 1.0,
@@ -386,22 +367,8 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
                     suffixIcon: Container(
                       margin: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            AppTheme.gradientStartColor,
-                            AppTheme.gradientEndColor,
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
+                        color: isDarkMode ? Colors.white.withValues(alpha: 0.1) : AppTheme.primaryColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(18),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppTheme.primaryColor.withValues(alpha: 0.3),
-                            blurRadius: 6,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
                       ),
                       child: InkWell(
                         borderRadius: BorderRadius.circular(18),
@@ -427,11 +394,11 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
                             ErrorHandler.handleDatabaseError(e, st, operation: '本地查词');
                           }
                         },
-                        child: const Padding(
-                          padding: EdgeInsets.all(10),
+                         child: Padding(
+                          padding: const EdgeInsets.all(10),
                           child: Icon(
                             Icons.search,
-                            color: Colors.white,
+                            color: isDarkMode ? Colors.white : AppTheme.primaryColor,
                             size: 20,
                           ),
                         ),
@@ -445,23 +412,6 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
         ),
       ),
       body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: isDarkMode
-                ? [
-                    const Color(0xFF121212),
-                    const Color(0xFF1A1A1A),
-                    const Color(0xFF121212),
-                  ]
-                : [
-                    const Color(0xFFF5F7FA),
-                    const Color(0xFFE8ECF1),
-                    const Color(0xFFF5F7FA),
-                  ],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
         child: SafeArea(
           child: matchedWords.isEmpty
               ? _buildEmptyState()

@@ -720,14 +720,25 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
               elevation: 0,
               centerTitle: false,
               automaticallyImplyLeading: false,
-              title: Text(
-                '今日学习计划',
-                style: TextStyle(
-                  color: isDarkMode ? Colors.white : const Color(0xFF2C3E50),
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 1.2,
-                ),
+              title: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.event_note_rounded,
+                    color: (isDarkMode ? Colors.white : const Color(0xFF2C3E50)).withValues(alpha: 0.8),
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '今日学习计划',
+                    style: TextStyle(
+                      color: isDarkMode ? Colors.white : const Color(0xFF2C3E50),
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                ],
               ),
             ),
 
