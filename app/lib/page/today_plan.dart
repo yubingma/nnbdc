@@ -338,7 +338,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
           ),
           child: Column(
             children: [
-              Icon(icon, color: isDarkMode ? Colors.white70 : accentColor.withValues(alpha: 0.6), size: 20),
+              Icon(icon, color: subtitleColor, size: 20),
               const SizedBox(height: 8),
               Text(
                 '$count',
