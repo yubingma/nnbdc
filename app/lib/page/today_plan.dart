@@ -716,15 +716,8 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
               pinned: true,
               backgroundColor: backgroundColor,
               elevation: 0,
-              centerTitle: true,
-              automaticallyImplyLeading: Get.currentRoute != '/index',
-              leading: Get.currentRoute != '/index'
-                  ? IconButton(
-                      icon: Icon(Icons.arrow_back_ios_new_rounded,
-                          color: isDarkMode ? Colors.white : const Color(0xFF2C3E50), size: 20),
-                      onPressed: () => Get.back(),
-                    )
-                  : null,
+              centerTitle: false,
+              automaticallyImplyLeading: false,
               title: Text(
                 '今日学习计划',
                 style: TextStyle(
