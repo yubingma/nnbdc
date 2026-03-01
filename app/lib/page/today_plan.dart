@@ -714,23 +714,21 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
             // 美化的AppBar
             SliverAppBar(
               pinned: true,
-              backgroundColor: Colors.transparent,
+              backgroundColor: backgroundColor,
               elevation: 0,
               centerTitle: true,
               automaticallyImplyLeading: Get.currentRoute != '/index',
               leading: Get.currentRoute != '/index'
                   ? IconButton(
-                      icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
+                      icon: Icon(Icons.arrow_back_ios_new_rounded,
+                          color: isDarkMode ? Colors.white : const Color(0xFF2C3E50), size: 20),
                       onPressed: () => Get.back(),
                     )
                   : null,
-              flexibleSpace: Container(
-                color: AppTheme.primaryColor,
-              ),
-              title: const Text(
+              title: Text(
                 '今日学习计划',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: isDarkMode ? Colors.white : const Color(0xFF2C3E50),
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
                   letterSpacing: 1.2,
