@@ -6,6 +6,8 @@ import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/api/bo/user_bo.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:provider/provider.dart';
+import '../state.dart';
 
 /// 订阅页面
 class SubscriptionPage extends StatefulWidget {
@@ -298,6 +300,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
   @override
   Widget build(BuildContext context) {
     final isPremium = SubscriptionUtil.isPremium();
+    final isDarkMode = context.watch<DarkMode>().isDarkMode;
 
     return Scaffold(
       appBar: AppBar(
@@ -332,7 +335,9 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                               end: Alignment.bottomRight,
                             )
                           : LinearGradient(
-                              colors: [Colors.grey.shade300, Colors.grey.shade400],
+                              colors: isDarkMode
+                                  ? [Colors.grey.shade800, Colors.grey.shade900]
+                                  : [Colors.grey.shade300, Colors.grey.shade400],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             ),
@@ -406,7 +411,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
 
                   // 说明文字
                   Card(
-                    color: Colors.grey[100],
+                    color: isDarkMode ? Colors.grey[900] : Colors.grey[100],
                     child: Padding(
                       padding: const EdgeInsets.all(16),
                       child: Column(
@@ -416,21 +421,26 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                             '订阅说明',
                             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                   fontWeight: FontWeight.bold,
+                                  color: isDarkMode ? Colors.white : Colors.black,
                                 ),
                           ),
                           const SizedBox(height: 8),
-                          const Text(
+                          Text(
                             '• 订阅周期：1个月（月度订阅）或1年（年度订阅）。\n'
                             '• 付款：用户确认购买并付款后计入iTunes账户。\n'
                             '• 续订：苹果iTunes账户会在到期前24小时内扣费，扣费成功后订阅周期顺延一个订阅周期。\n'
                             '• 取消续订：如需取消续订，请在当前订阅周期到期前24小时以前，手动在iTunes/Apple ID设置管理中关闭自动续订功能。\n'
                             '• 恢复购买：如果您之前已购买过，可以点击右上角的“恢复购买”按钮。',
-                            style: TextStyle(fontSize: 12, color: Colors.grey, height: 1.5),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: isDarkMode ? Colors.white70 : Colors.grey,
+                              height: 1.5,
+                            ),
                           ),
                           const SizedBox(height: 12),
-                          const Text(
+                          Text(
                             '购买即视为您同意以下条款：',
-                            style: TextStyle(fontSize: 12, color: Colors.grey),
+                            style: TextStyle(fontSize: 12, color: isDarkMode ? Colors.white60 : Colors.grey),
                           ),
                           const SizedBox(height: 8),
                           Wrap(
@@ -494,6 +504,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
 
   /// 构建产品卡片
   Widget _buildProductCard(ProductDetails product) {
+    final isDarkMode = context.read<DarkMode>().isDarkMode;
     final isMonthly = product.id.contains('monthly');
     final isAnnual = product.id.contains('yearly') || product.id.contains('annual');
     final isRecommended = isAnnual; // 推荐年度订阅
@@ -507,7 +518,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
       elevation: isRecommended ? 4 : 2,
       margin: const EdgeInsets.only(bottom: 16),
       // 当前订阅使用绿色背景
-      color: isCurrentSubscription ? Colors.green.shade50 : null,
+      color: isCurrentSubscription ? (isDarkMode ? Colors.green.withValues(alpha: 0.2) : Colors.green.shade50) : (isDarkMode ? Colors.grey[850] : null),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: isCurrentSubscription
@@ -532,6 +543,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                             isMonthly ? '月度订阅 (1个月)' : '年度订阅 (1年)',
                             style: Theme.of(context).textTheme.titleLarge?.copyWith(
                                   fontWeight: FontWeight.bold,
+                                  color: isDarkMode ? Colors.white : Colors.black87,
                                 ),
                           ),
                           if (isRecommended) ...[
@@ -561,8 +573,9 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                       Text(
                         product.price,
                         style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                              color: Theme.of(context).primaryColor,
+                              color: isDarkMode ? const Color(0xFFFFB300) : Theme.of(context).primaryColor,
                               fontWeight: FontWeight.bold,
+                              fontSize: 26,
                             ),
                       ),
                       if (isAnnual) ...[
@@ -570,7 +583,8 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                         Text(
                           '平均每月仅需 ${_calculateMonthlyPrice(product.price)}',
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: Colors.green,
+                                color: isDarkMode ? const Color(0xFF81C784) : Colors.green[700],
+                                fontWeight: FontWeight.w500,
                               ),
                         ),
                       ],
@@ -590,14 +604,14 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                   borderRadius: BorderRadius.circular(4),
                   border: Border.all(color: Colors.green),
                 ),
-                child: const Row(
+                child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.check_circle, color: Colors.green, size: 16),
-                    SizedBox(width: 6),
+                    const Icon(Icons.check_circle, color: Colors.green, size: 16),
+                    const SizedBox(width: 6),
                     Text(
                       '当前订阅',
-                      style: TextStyle(color: Colors.green, fontSize: 12, fontWeight: FontWeight.bold),
+                      style: TextStyle(color: isDarkMode ? Colors.green[200] : Colors.green, fontSize: 12, fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),
@@ -609,9 +623,9 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.blue[50],
+                color: isDarkMode ? Colors.blue.withValues(alpha: 0.15) : Colors.blue[50],
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.blue[200]!),
+                border: Border.all(color: isDarkMode ? Colors.blue.withValues(alpha: 0.4) : Colors.blue[200]!),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -621,14 +635,18 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: Colors.blue[700],
+                      color: isDarkMode ? Colors.blue[200] : Colors.blue[700],
                     ),
                   ),
                   const SizedBox(height: 6),
-                  const Text(
+                  Text(
                     '• 解除每日20的单词上限, 上限提升至500\n'
                     '• 可自定义单词书\n',
-                    style: TextStyle(fontSize: 12, height: 1.4),
+                    style: TextStyle(
+                      fontSize: 12,
+                      height: 1.4,
+                      color: isDarkMode ? Colors.white70 : Colors.black87,
+                    ),
                   ),
                 ],
               ),
