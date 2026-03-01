@@ -477,7 +477,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
             if (mounted && !_isLoadingData) loadData();
           });
         },
-        child: const Text('准备好了，开始学习', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+        child: Text(user?.todayStudyStarted == true ? '继续学习' : '准备好了，开始学习', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
       ),
     );
   }
