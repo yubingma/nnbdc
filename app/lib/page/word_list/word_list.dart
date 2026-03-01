@@ -1881,7 +1881,9 @@ class WordListPageState extends State<WordListPage>
         mainAxisSize: MainAxisSize.min,
         children: [
           // 编辑单词释义
-          if (args.canEditWord && args.wordsProvider is WordModifier)
+          if (args.canEditWord &&
+              args.wordsProvider is WordModifier &&
+              args.appBarTitle != '已掌握')
             _buildHintButton(Icons.edit, const Color(0xFF4CAF50),
                 () => _showEditMeaningDialog(word)),
 
