@@ -1906,8 +1906,7 @@ class WordListPageState extends State<WordListPage>
                 Icons.refresh, const Color(0xFF9E9E9E), () => clearHint(word)),
 
           // 掌握按钮 (针对所有词表, 除了 已掌握 和 系统学习列表, 系统学习列表已用 ActionButton 显示掌握)
-          if (args.showDelBtn &&
-              args.appBarTitle != '已掌握' &&
+          if (args.appBarTitle != '已掌握' &&
               ![
                 '学习中',
                 '单词列表',
@@ -1918,8 +1917,16 @@ class WordListPageState extends State<WordListPage>
               ].contains(args.appBarTitle))
             _buildMasterButton(word, i, learningStatus: learningStatus),
 
-          // 删除按钮
-          if (args.showDelBtn)
+          // 删除按钮 或 核心学习列表的“掌握”按钮
+          if (args.showDelBtn ||
+              [
+                '学习中',
+                '单词列表',
+                '今日错词',
+                '今日新词',
+                '今日旧词',
+                '今日单词'
+              ].contains(args.appBarTitle))
             _buildActionButton(word, i, learningStatus: learningStatus),
         ],
       ),
@@ -2646,13 +2653,20 @@ class WordListPageState extends State<WordListPage>
 
           /// 按钮区
           if (args.showDelBtn ||
+              (args.appBarTitle != '已掌握' &&
+                  ![
+                    '学习中',
+                    '单词列表',
+                    '今日错词',
+                    '今日新词',
+                    '今日旧词',
+                    '今日单词'
+                  ].contains(args.appBarTitle)) ||
               ((studyMode == WordListStudyMode.dictation ||
                       studyMode == WordListStudyMode.speakChinese ||
                       studyMode == WordListStudyMode.speakEnglish) &&
                   isBookmarked) ||
-              (args.canEditWord &&
-                  args.wordsProvider
-                      is WordModifier)) // Added condition for edit button
+              (args.canEditWord && args.wordsProvider is WordModifier))
             _buildWordActionButtons(word, i, isBookmarked,
                 learningStatus: learningStatus),
         ],
