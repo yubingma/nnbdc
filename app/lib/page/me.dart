@@ -512,7 +512,6 @@ class _MePageState extends State<MePage> {
     final textColor = isDarkModeEnabled ? Colors.white : const Color(0xFF2C3E50);
     final subtitleColor = isDarkModeEnabled ? Colors.white70 : const Color(0xFF7F8C8D);
     final numberColor = isDarkModeEnabled ? Colors.amber : const Color(0xFFE67E22);
-    final highlightColor = isDarkModeEnabled ? Colors.greenAccent : const Color(0xFF27AE60);
     final iconColor = isDarkModeEnabled ? Colors.white70 : const Color(0xFF95A5A6);
     final cardColor = isDarkModeEnabled ? const Color(0xFF2D2D2D) : Colors.white;
 
@@ -1276,20 +1275,21 @@ class _MePageState extends State<MePage> {
                   ),
                   TextButton.icon(
                     key: const Key('me_choose_book_btn'),
-                    icon: Icon(Icons.add_circle_outline, color: AppTheme.primaryColor, size: 18),
+                    icon: Icon(Icons.add_circle_outline, color: subtitleColor, size: 18),
                     label: Text(
                       '选择词书',
                       style: TextStyle(
-                        color: AppTheme.primaryColor, 
+                        color: subtitleColor, 
                         fontSize: 14, 
                         fontWeight: FontWeight.bold,
                         fontFamily: 'NotoSansSC',
                       ),
                     ),
                     style: TextButton.styleFrom(
-                      backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.1),
+                      backgroundColor: innerCardBgColor,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(color: innerCardBorderColor),
                       ),
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     ),
@@ -2491,15 +2491,15 @@ class _DictCardState extends State<DictCard> {
                         radius: 25.0,
                         lineWidth: 4.0,
                         percent: progress,
-                        backgroundColor: isDarkMode ? Colors.white.withValues(alpha: 0.1) : accentColor.withValues(alpha: 0.1),
-                        progressColor: accentColor,
+                        backgroundColor: isDarkMode ? Colors.white.withValues(alpha: 0.1) : subtitleColor.withValues(alpha: 0.1),
+                        progressColor: isDarkMode ? Colors.white70 : subtitleColor,
                         circularStrokeCap: CircularStrokeCap.round,
                       ),
                       Text(
                         '$progressPercent%',
                         style: TextStyle(
                           fontSize: 12,
-                          color: isDarkMode ? Colors.white : accentColor,
+                          color: isDarkMode ? Colors.white : subtitleColor,
                           fontWeight: FontWeight.bold,
                           height: 1.1,
                         ),
@@ -2855,7 +2855,6 @@ class _DictCardState extends State<DictCard> {
     bool isDestructive = false,
   }) {
     final isDarkMode = context.read<DarkMode>().isDarkMode;
-    final accentColor = AppTheme.primaryColor;
     
     final bgColor = isDarkMode 
         ? (isDestructive ? Colors.red.withValues(alpha: 0.1) : Colors.white.withValues(alpha: 0.05))
