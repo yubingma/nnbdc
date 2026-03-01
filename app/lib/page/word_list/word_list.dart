@@ -2730,6 +2730,8 @@ class WordListPageState extends State<WordListPage>
   Widget _buildMasterButton(WordWrapper word, int index,
       {bool? learningStatus}) {
     final bool isMastered = learningStatus == true;
+    if (isMastered) return const SizedBox.shrink();
+
     Color color = const Color(0xFF4CAF50); // 绿色
 
     return Container(
@@ -2790,10 +2792,9 @@ class WordListPageState extends State<WordListPage>
       '今日单词'
     ].contains(args.appBarTitle);
 
-    // 如果单词已掌握且是"掌握"按钮场景，显示"已掌握"状态
+    // 如果单词已掌握且是"掌握"按钮场景，直接不显示按钮
     if (isMastered && showMasterButton) {
-      buttonText = '掌握';
-      color = const Color(0xFF9E9E9E); // 灰色，表示已掌握
+      return const SizedBox.shrink();
     } else {
       switch (args.appBarTitle) {
         case '已掌握':
