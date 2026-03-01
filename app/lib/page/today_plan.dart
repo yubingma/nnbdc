@@ -259,12 +259,9 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
             padding: const EdgeInsets.symmetric(horizontal: 12),
             child: Row(
               children: [
-                _buildStatItem('今日单词', todayWordCount!, Icons.library_books_rounded, 
-                    () => toTodayWordsListPage(true)?.then((v) => loadData())),
-                _buildStatItem('新词', newWordCount!, Icons.fiber_new_rounded, 
-                    () => toTodayNewWordsListPage(true)?.then((v) => loadData())),
-                _buildStatItem('旧词', oldWordCount!, Icons.refresh_rounded, 
-                    () => toTodayOldWordsListPage(true)?.then((v) => loadData())),
+                _buildStatItem('今日单词', todayWordCount!, Icons.library_books_rounded, () => toTodayWordsListPage(true)?.then((v) => loadData())),
+                _buildStatItem('新词', newWordCount!, Icons.fiber_new_rounded, () => toTodayNewWordsListPage(true)?.then((v) => loadData())),
+                _buildStatItem('旧词', oldWordCount!, Icons.refresh_rounded, () => toTodayOldWordsListPage(true)?.then((v) => loadData())),
               ],
             ),
           ),
@@ -470,9 +467,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
           backgroundColor: buttonBgColor,
           foregroundColor: buttonTextColor,
           padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-              side: BorderSide(color: buttonBorderColor, width: 1.5)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: buttonBorderColor, width: 1.5)),
           elevation: 0,
         ),
         onPressed: () async {
@@ -492,7 +487,8 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
             if (mounted && !_isLoadingData) loadData();
           });
         },
-        child: Text(user?.todayStudyStarted == true ? '继续学习' : '准备好了，开始学习', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+        child: Text(user?.todayStudyStarted == true ? '继续学习' : '准备好了，开始学习',
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
       ),
     );
   }
@@ -501,21 +497,33 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
     final accentColor = AppTheme.primaryColor;
 
+    final warningBaseColor = Colors.amber;
+    final warningTextColor = isDarkMode ? Colors.amber.shade200 : Colors.amber.shade900;
+
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDarkMode ? Colors.white.withValues(alpha: 0.03) : accentColor.withValues(alpha: 0.03),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: isDarkMode ? Colors.white.withValues(alpha: 0.1) : accentColor.withValues(alpha: 0.1), width: 1),
+        color: warningBaseColor.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: warningBaseColor.withValues(alpha: 0.2), width: 1),
       ),
       child: Column(
         children: [
           Row(
             children: [
-              Icon(Icons.warning_rounded, color: isDarkMode ? Colors.white70 : accentColor, size: 24),
-              const SizedBox(width: 12),
-              Text('没有取到足够单词',
-                  style: TextStyle(color: isDarkMode ? Colors.white : accentColor, fontSize: 16, fontWeight: FontWeight.bold)),
+              Icon(Icons.info_outline_rounded, color: warningTextColor, size: 22),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  '词书单词量不足',
+                  style: TextStyle(
+                    color: warningTextColor,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    fontFamily: 'NotoSansSC',
+                  ),
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 16),
@@ -589,14 +597,10 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
       key: ValueKey(step),
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        color: isDarkMode
-            ? Colors.white.withValues(alpha: isActive ? 0.05 : 0.02)
-            : Colors.black.withValues(alpha: isActive ? 0.05 : 0.02),
+        color: isDarkMode ? Colors.white.withValues(alpha: isActive ? 0.05 : 0.02) : Colors.black.withValues(alpha: isActive ? 0.05 : 0.02),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isDarkMode
-              ? Colors.white.withValues(alpha: isActive ? 0.1 : 0.0)
-              : Colors.black.withValues(alpha: isActive ? 0.1 : 0.0),
+          color: isDarkMode ? Colors.white.withValues(alpha: isActive ? 0.1 : 0.0) : Colors.black.withValues(alpha: isActive ? 0.1 : 0.0),
           width: 1.5,
         ),
       ),
@@ -616,9 +620,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
               children: [
                 Icon(
                   isActive ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
-                  color: isDarkMode
-                      ? (isActive ? Colors.white : Colors.white24)
-                      : (isActive ? Colors.black87 : Colors.black26),
+                  color: isDarkMode ? (isActive ? Colors.white : Colors.white24) : (isActive ? Colors.black87 : Colors.black26),
                   size: 22,
                 ),
                 const SizedBox(width: 12),
