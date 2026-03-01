@@ -1901,8 +1901,17 @@ class WordListPageState extends State<WordListPage>
             _buildHintButton(
                 Icons.refresh, const Color(0xFF9E9E9E), () => clearHint(word)),
 
-          // 掌握按钮 (针对生词本特别添加)
-          if (args.showDelBtn && args.appBarTitle == '生词本')
+          // 掌握按钮 (针对所有词表, 除了 已掌握 和 系统学习列表, 系统学习列表已用 ActionButton 显示掌握)
+          if (args.showDelBtn &&
+              args.appBarTitle != '已掌握' &&
+              ![
+                '学习中',
+                '单词列表',
+                '今日错词',
+                '今日新词',
+                '今日旧词',
+                '今日单词'
+              ].contains(args.appBarTitle))
             _buildMasterButton(word, i, learningStatus: learningStatus),
 
           // 删除按钮
