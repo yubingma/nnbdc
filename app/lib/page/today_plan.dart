@@ -629,8 +629,8 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
                     StudyStepExt.fromString(step.studyStep).description,
                     style: TextStyle(
                       color: isDarkMode ? Colors.white : Colors.black87,
-                      fontSize: 16,
-                      fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+                      fontSize: 14,
+                      fontWeight: FontWeight.normal,
                     ),
                   ),
                 ),
