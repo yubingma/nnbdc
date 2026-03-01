@@ -511,7 +511,6 @@ class _MePageState extends State<MePage> {
     final isDarkModeEnabled = context.watch<DarkMode>().isDarkMode;
     final textColor = isDarkModeEnabled ? Colors.white : const Color(0xFF2C3E50);
     final subtitleColor = isDarkModeEnabled ? Colors.white70 : const Color(0xFF7F8C8D);
-    final numberColor = isDarkModeEnabled ? Colors.amber : const Color(0xFFE67E22);
     final iconColor = isDarkModeEnabled ? Colors.white70 : const Color(0xFF95A5A6);
     final cardColor = isDarkModeEnabled ? const Color(0xFF2D2D2D) : Colors.white;
 
@@ -769,7 +768,7 @@ class _MePageState extends State<MePage> {
                                   Text(
                                     studyProgress!.existDays.toString(),
                                     style: TextStyle(
-                                      color: numberColor,
+                                      color: textColor,
                                       fontSize: 20,
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -804,7 +803,7 @@ class _MePageState extends State<MePage> {
                             Text(
                               studyProgress!.masteredWordsCount.toString(),
                               style: TextStyle(
-                                color: numberColor,
+                                color: textColor,
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -843,7 +842,7 @@ class _MePageState extends State<MePage> {
                             Text(
                               (studyProgress!.totalLearningSeconds / 3600.0).toStringAsFixed(1),
                               style: TextStyle(
-                                color: numberColor,
+                                color: textColor,
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -896,7 +895,7 @@ class _MePageState extends State<MePage> {
                                 const TextSpan(text: "掌握单词: "),
                                 TextSpan(
                                   text: "${studyProgress!.masteredWordsCount}",
-                                  style: TextStyle(color: numberColor, fontWeight: FontWeight.normal),
+                                  style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
                                 ),
                                 const TextSpan(text: "\n超过了: "),
                                 if (studyProgress!.userOrder! < 0)
@@ -904,7 +903,7 @@ class _MePageState extends State<MePage> {
                                 else ...[
                                   TextSpan(
                                     text: "${studyProgress!.userOrder!.toStringAsFixed(2)}%",
-                                    style: TextStyle(color: numberColor, fontWeight: FontWeight.normal),
+                                    style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
                                   ),
                                   const TextSpan(text: "的用户"),
                                 ],
@@ -922,7 +921,7 @@ class _MePageState extends State<MePage> {
                       ),
                     ),
                     const SizedBox(width: 12),
-                    _buildVisualRanking(studyProgress!.userOrder ?? -1, numberColor, starContainerColor, textColor),
+                    _buildVisualRanking(studyProgress!.userOrder ?? -1, AppTheme.primaryColor, starContainerColor, textColor),
                   ],
                 ),
               ),
