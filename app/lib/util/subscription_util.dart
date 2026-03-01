@@ -440,6 +440,11 @@ class SubscriptionUtil {
       return false;
     }
 
+    // 管理员视为会员
+    if (user.isAdmin == true || user.isSuperAdmin == true) {
+      return true;
+    }
+
     return _isPremiumEffective(user);
   }
 
