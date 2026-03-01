@@ -2261,34 +2261,42 @@ class WordListPageState extends State<WordListPage>
     if (learningStatus == true) {
       statusTag = Container(
         margin: const EdgeInsets.only(left: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
         decoration: BoxDecoration(
-          color: const Color(0xFF4CAF50),
+          color: const Color(0xFF4CAF50).withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(4),
+          border: Border.all(
+            color: const Color(0xFF4CAF50).withValues(alpha: 0.3),
+            width: 0.5,
+          ),
         ),
         child: const Text(
           '已掌握',
           style: TextStyle(
-            color: Colors.white,
+            color: Color(0xFF4CAF50),
             fontSize: 10,
-            fontWeight: FontWeight.w500,
+            fontWeight: FontWeight.w600,
           ),
         ),
       );
     } else if (learningStatus == false) {
       statusTag = Container(
         margin: const EdgeInsets.only(left: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
         decoration: BoxDecoration(
-          color: const Color(0xFF2196F3),
+          color: const Color(0xFF2196F3).withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(4),
+          border: Border.all(
+            color: const Color(0xFF2196F3).withValues(alpha: 0.3),
+            width: 0.5,
+          ),
         ),
         child: const Text(
           '学习中',
           style: TextStyle(
-            color: Colors.white,
+            color: Color(0xFF2196F3),
             fontSize: 10,
-            fontWeight: FontWeight.w500,
+            fontWeight: FontWeight.w600,
           ),
         ),
       );
