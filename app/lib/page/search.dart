@@ -321,94 +321,83 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
         elevation: 0,
         titleSpacing: 0,
         automaticallyImplyLeading: false,
-        title: Row(
-          children: [
-            if (Get.currentRoute != '/index')
-              IconButton(
-                onPressed: () => Navigator.pop(context),
-                icon: Icon(Icons.arrow_back, color: isDarkMode ? Colors.white : const Color(0xFF2C3E50)),
+        title: Container(
+          height: 48,
+          margin: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+          decoration: BoxDecoration(
+            color: isDarkMode ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(24),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: TextField(
+            controller: spell,
+            focusNode: _focusNode,
+            onChanged: (value) {
+              onSearchTextChanged(value);
+            },
+            style: TextStyle(
+              color: isDarkMode ? Colors.white : const Color(0xFF2C3E50),
+              fontSize: 16,
+              fontFamily: 'NotoSansSC',
+              height: 1.0,
+              fontWeight: FontWeight.w500,
+            ),
+            decoration: InputDecoration(
+              hintText: '输入单词或中文释义',
+              hintStyle: TextStyle(
+                color: (isDarkMode ? Colors.white : const Color(0xFF2C3E50)).withValues(alpha: 0.5),
+                fontSize: 16,
+                fontFamily: 'NotoSansSC',
+                height: 1.0,
+                fontWeight: FontWeight.w400,
               ),
-            Expanded(
-              child: Container(
-                height: 48,
-                margin: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              border: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              disabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+              suffixIcon: Container(
+                margin: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: isDarkMode ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
-                  borderRadius: BorderRadius.circular(24),
+                  color: isDarkMode ? Colors.white.withValues(alpha: 0.1) : AppTheme.primaryColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(18),
                 ),
-                clipBehavior: Clip.antiAlias,
-                child: TextField(
-                  controller: spell,
-                  focusNode: _focusNode,
-                  onChanged: (value) {
-                    onSearchTextChanged(value);
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(18),
+                  onTap: () async {
+                    if (spell.text.trim().isEmpty) return;
+                    try {
+                      // 先通过spell查找单词ID，然后使用新的查词方法
+                      var result = await WordBo().searchWordLocalOnly(spell.text);
+                      if (result.word == null) {
+                        ToastUtil.error("单词 ${spell.text} 不存在");
+                      } else {
+                        // 使用新的根据ID查词方法，用户ID为空表示查词模式
+                        var fullResult = await WordBo().searchWordById(result.word!.id!, null);
+                        if (fullResult.word != null) {
+                          Get.toNamed('/word_detail',
+                              arguments: WordDetailPageArgs(fullResult.word!, false, null, false), preventDuplicates: false);
+                        } else {
+                          Get.toNamed('/word_detail',
+                              arguments: WordDetailPageArgs(result.word!, false, null, false), preventDuplicates: false);
+                        }
+                      }
+                    } catch (e, st) {
+                      ErrorHandler.handleDatabaseError(e, st, operation: '本地查词');
+                    }
                   },
-                  style: TextStyle(
-                    color: isDarkMode ? Colors.white : const Color(0xFF2C3E50),
-                    fontSize: 16,
-                    fontFamily: 'NotoSansSC',
-                    height: 1.0,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  decoration: InputDecoration(
-                    hintText: '输入单词或中文释义',
-                    hintStyle: TextStyle(
-                      color: (isDarkMode ? Colors.white : const Color(0xFF2C3E50)).withValues(alpha: 0.5),
-                      fontSize: 16,
-                      fontFamily: 'NotoSansSC',
-                      height: 1.0,
-                      fontWeight: FontWeight.w400,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    disabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                    suffixIcon: Container(
-                      margin: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: isDarkMode ? Colors.white.withValues(alpha: 0.1) : AppTheme.primaryColor.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(18),
-                      ),
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(18),
-                        onTap: () async {
-                          if (spell.text.trim().isEmpty) return;
-                          try {
-                            // 先通过spell查找单词ID，然后使用新的查词方法
-                            var result = await WordBo().searchWordLocalOnly(spell.text);
-                            if (result.word == null) {
-                              ToastUtil.error("单词 ${spell.text} 不存在");
-                            } else {
-                              // 使用新的根据ID查词方法，用户ID为空表示查词模式
-                              var fullResult = await WordBo().searchWordById(result.word!.id!, null);
-                              if (fullResult.word != null) {
-                                Get.toNamed('/word_detail',
-                                    arguments: WordDetailPageArgs(fullResult.word!, false, null, false), preventDuplicates: false);
-                              } else {
-                                Get.toNamed('/word_detail',
-                                    arguments: WordDetailPageArgs(result.word!, false, null, false), preventDuplicates: false);
-                              }
-                            }
-                          } catch (e, st) {
-                            ErrorHandler.handleDatabaseError(e, st, operation: '本地查词');
-                          }
-                        },
-                         child: Padding(
-                          padding: const EdgeInsets.all(10),
-                          child: Icon(
-                            Icons.search,
-                            color: isDarkMode ? Colors.white : AppTheme.primaryColor,
-                            size: 20,
-                          ),
-                        ),
-                      ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(10),
+                    child: Icon(
+                      Icons.search,
+                      color: isDarkMode ? Colors.white : AppTheme.primaryColor,
+                      size: 20,
                     ),
                   ),
                 ),
               ),
             ),
-          ],
+          ),
         ),
       ),
       body: Container(
