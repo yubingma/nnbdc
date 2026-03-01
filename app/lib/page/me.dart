@@ -2339,18 +2339,6 @@ class _MePageState extends State<MePage> {
               ),
             ),
           ),
-          if (percentile >= 0)
-            Padding(
-              padding: const EdgeInsets.only(top: 2),
-              child: Text(
-                percentile > 99.9 ? "Top Rank" : (percentile > 50 ? "Top ${(100 - percentile).toStringAsFixed(0)}%" : "第${(100 - percentile).toStringAsFixed(0)}%"),
-                style: TextStyle(
-                  color: textColor.withValues(alpha: 0.6),
-                  fontSize: 7,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
         ],
       ),
     );
