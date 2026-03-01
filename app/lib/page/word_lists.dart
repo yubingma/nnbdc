@@ -94,7 +94,7 @@ class _WordListsPageState extends State<WordListsPage> {
     final icon = iconByIndex(index);
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
@@ -128,7 +128,7 @@ class _WordListsPageState extends State<WordListsPage> {
             }
           },
           child: Container(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: gradientColors,
@@ -145,11 +145,11 @@ class _WordListsPageState extends State<WordListsPage> {
               children: [
                 // 图标容器
                 Container(
-                  width: 50,
-                  height: 50,
+                  width: 40,
+                  height: 40,
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(10),
                     border: Border.all(
                       color: Colors.white.withValues(alpha: 0.3),
                       width: 1,
@@ -158,7 +158,7 @@ class _WordListsPageState extends State<WordListsPage> {
                   child: Icon(
                     icon,
                     color: Colors.white,
-                    size: 26,
+                    size: 22,
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -175,11 +175,11 @@ class _WordListsPageState extends State<WordListsPage> {
                           color: Colors.white,
                           fontSize: 18,
                           fontWeight: FontWeight.w400,
-                          height: 1.6,
+                          height: 1.3,
                           letterSpacing: 1.5,
                         ),
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 4),
                       Text(
                         '${wordList.wordCount} 个单词',
                         textScaler: TextScaler.linear(1.0),
