@@ -430,35 +430,45 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
   }
 
   Widget renderStartButton() {
+    final isDarkMode = context.watch<DarkMode>().isDarkMode;
+    final accentColor = AppTheme.primaryColor;
+
     if (hasDakaToday) {
+      final greenColor = isDarkMode ? Colors.greenAccent : const Color(0xFF27AE60);
       return Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 16),
         decoration: BoxDecoration(
-          color: Colors.green.withValues(alpha: 0.1),
+          color: greenColor.withValues(alpha: 0.05),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.green.withValues(alpha: 0.2)),
+          border: Border.all(color: greenColor.withValues(alpha: 0.15)),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.check_circle_rounded, color: Colors.green, size: 24),
+            Icon(Icons.check_circle_rounded, color: greenColor, size: 24),
             const SizedBox(width: 8),
-            const Text('今日已打卡', style: TextStyle(color: Colors.green, fontSize: 18, fontWeight: FontWeight.bold)),
+            Text('今日已打卡', style: TextStyle(color: greenColor, fontSize: 18, fontWeight: FontWeight.bold)),
           ],
         ),
       );
     }
 
+    final buttonBgColor = isDarkMode ? Colors.white.withValues(alpha: 0.05) : accentColor.withValues(alpha: 0.05);
+    final buttonBorderColor = isDarkMode ? Colors.white.withValues(alpha: 0.1) : accentColor.withValues(alpha: 0.15);
+    final buttonTextColor = isDarkMode ? Colors.white : accentColor;
+
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppTheme.primaryColor,
-          foregroundColor: Colors.white,
+          backgroundColor: buttonBgColor,
+          foregroundColor: buttonTextColor,
           padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          elevation: 2,
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+              side: BorderSide(color: buttonBorderColor, width: 1.5)),
+          elevation: 0,
         ),
         onPressed: () async {
           if (selectedSteps().isEmpty) {
