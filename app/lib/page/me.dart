@@ -1091,7 +1091,7 @@ class _MePageState extends State<MePage> {
                         ),
                         icon: Icon(Icons.school, color: isDarkModeEnabled ? Colors.white : AppTheme.primaryColor, size: 20),
                         label: Text(
-                          '开始学习',
+                          loggedInUser?.todayStudyStarted == true ? '继续学习' : '开始学习',
                           style: TextStyle(
                             color: isDarkModeEnabled ? Colors.white : AppTheme.primaryColor,
                             fontSize: 18,
