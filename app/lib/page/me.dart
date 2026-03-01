@@ -555,24 +555,28 @@ class _MePageState extends State<MePage> {
               // 1. 头像和昵称行
               Row(
                 children: [
-                  // 头像
                   GestureDetector(
                     onTap: () => Get.toNamed('/login'),
                     child: Container(
-                      padding: const EdgeInsets.all(2), // 边框间距
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: LevelUtil.getTitleColor(studyProgress!.level.level ?? 1),
+                        border: Border.all(
+                          color: textColor.withValues(alpha: 0.5),
+                          width: 2,
+                        ),
                       ),
-                      child: CircleAvatar(
-                        radius: MediaQuery.of(context).size.width > 600 ? 32 : 28,
-                        backgroundColor: const Color(0xFF1A1A2E),
-                        backgroundImage: (loggedInUser?.wechatAvatar != null && loggedInUser!.wechatAvatar!.isNotEmpty)
-                            ? CachedNetworkImageProvider(loggedInUser!.wechatAvatar!)
-                            : null,
-                        child: (loggedInUser?.wechatAvatar == null || loggedInUser!.wechatAvatar!.isEmpty)
-                            ? Icon(Icons.person, color: iconColor, size: 30)
-                            : null,
+                      child: Padding(
+                        padding: const EdgeInsets.all(2), // 保持一点间距
+                        child: CircleAvatar(
+                          radius: MediaQuery.of(context).size.width > 600 ? 32 : 28,
+                          backgroundColor: const Color(0xFF1A1A2E),
+                          backgroundImage: (loggedInUser?.wechatAvatar != null && loggedInUser!.wechatAvatar!.isNotEmpty)
+                              ? CachedNetworkImageProvider(loggedInUser!.wechatAvatar!)
+                              : null,
+                          child: (loggedInUser?.wechatAvatar == null || loggedInUser!.wechatAvatar!.isEmpty)
+                              ? Icon(Icons.person, color: iconColor, size: 30)
+                              : null,
+                        ),
                       ),
                     ),
                   ),
@@ -692,7 +696,7 @@ class _MePageState extends State<MePage> {
                   Text(
                     '已掌握 ${((studyProgress!.rawWordCount > 0 ? studyProgress!.masteredWordsInSelectedDictsCount / studyProgress!.rawWordCount : 0.0) * 100).toStringAsFixed(1)}%',
                     style: TextStyle(
-                      color: highlightColor,
+                      color: textColor,
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
                     ),
