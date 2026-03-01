@@ -400,21 +400,19 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
           ),
         ),
       ),
-      body: Container(
-        child: SafeArea(
-          child: matchedWords.isEmpty
-              ? _buildEmptyState()
-              : ListView.builder(
-                  controller: _scrollController,
-                  padding: const EdgeInsets.fromLTRB(12, 16, 16, 0),
-                  itemCount: matchedWords.length,
-                  itemBuilder: (context, index) => renderWord(index),
-                  // 性能优化设置
-                  cacheExtent: 1000, // 预缓存范围
-                  addAutomaticKeepAlives: false, // 不自动保持状态
-                  addRepaintBoundaries: true, // 添加重绘边界
-                ),
-        ),
+      body: SafeArea(
+        child: matchedWords.isEmpty
+            ? _buildEmptyState()
+            : ListView.builder(
+                controller: _scrollController,
+                padding: const EdgeInsets.fromLTRB(12, 16, 16, 0),
+                itemCount: matchedWords.length,
+                itemBuilder: (context, index) => renderWord(index),
+                // 性能优化设置
+                cacheExtent: 1000, // 预缓存范围
+                addAutomaticKeepAlives: false, // 不自动保持状态
+                addRepaintBoundaries: true, // 添加重绘边界
+              ),
       ),
     );
   }

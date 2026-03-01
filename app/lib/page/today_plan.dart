@@ -710,74 +710,72 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
 
     return Scaffold(
       backgroundColor: backgroundColor,
-      body: Container(
-        child: CustomScrollView(
-          slivers: [
-            // 美化的AppBar
-            SliverAppBar(
-              pinned: true,
-              backgroundColor: backgroundColor,
-              elevation: 0,
-              centerTitle: false,
-              automaticallyImplyLeading: false,
-              title: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.event_note_rounded,
-                    color: (isDarkMode ? Colors.white : const Color(0xFF2C3E50)).withValues(alpha: 0.8),
-                    size: 20,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    '今日学习计划',
-                    style: TextStyle(
-                      color: isDarkMode ? Colors.white : const Color(0xFF2C3E50),
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 1.2,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // 内容区域
-            SliverToBoxAdapter(
-              child: Container(
-                constraints: BoxConstraints(
-                  minHeight: MediaQuery.of(context).size.height - 80 - MediaQuery.of(context).padding.bottom,
+      body: CustomScrollView(
+        slivers: [
+          // 美化的AppBar
+          SliverAppBar(
+            pinned: true,
+            backgroundColor: backgroundColor,
+            elevation: 0,
+            centerTitle: false,
+            automaticallyImplyLeading: false,
+            title: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.event_note_rounded,
+                  color: (isDarkMode ? Colors.white : const Color(0xFF2C3E50)).withValues(alpha: 0.8),
+                  size: 20,
                 ),
-                child: (!dataLoaded)
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            CircularProgressIndicator(
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                const Color(0xFF0097A7),
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              '正在加载学习计划...',
-                              textScaler: TextScaler.linear(1.0),
-                              style: TextStyle(
-                                color: (isDarkMode ? Colors.white : const Color(0xFF2C3E50)).withValues(alpha: 0.7),
-                                fontSize: 16,
-                                fontWeight: FontWeight.w400,
-                                height: 1.3,
-                                letterSpacing: 0.3,
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                    : renderPage(),
-              ),
+                const SizedBox(width: 8),
+                Text(
+                  '今日学习计划',
+                  style: TextStyle(
+                    color: isDarkMode ? Colors.white : const Color(0xFF2C3E50),
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+      
+          // 内容区域
+          SliverToBoxAdapter(
+            child: Container(
+              constraints: BoxConstraints(
+                minHeight: MediaQuery.of(context).size.height - 80 - MediaQuery.of(context).padding.bottom,
+              ),
+              child: (!dataLoaded)
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              const Color(0xFF0097A7),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            '正在加载学习计划...',
+                            textScaler: TextScaler.linear(1.0),
+                            style: TextStyle(
+                              color: (isDarkMode ? Colors.white : const Color(0xFF2C3E50)).withValues(alpha: 0.7),
+                              fontSize: 16,
+                              fontWeight: FontWeight.w400,
+                              height: 1.3,
+                              letterSpacing: 0.3,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : renderPage(),
+            ),
+          ),
+        ],
       ),
     );
   }

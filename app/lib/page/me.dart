@@ -2337,7 +2337,7 @@ class _MePageState extends State<MePage> {
   }
 
   Widget _buildVisualRanking(double percentile, Color markerColor, Color containerColor, Color textColor) {
-    return Container(
+    return SizedBox(
       width: 80,
       height: 60,
       child: Column(
