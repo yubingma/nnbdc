@@ -2859,15 +2859,15 @@ class _DictCardState extends State<DictCard> {
     
     final bgColor = isDarkMode 
         ? (isDestructive ? Colors.red.withValues(alpha: 0.1) : Colors.white.withValues(alpha: 0.05))
-        : (isDestructive ? Colors.red.withValues(alpha: 0.05) : accentColor.withValues(alpha: 0.05));
+        : (isDestructive ? Colors.red.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03));
     
     final borderColor = isDarkMode
         ? (isDestructive ? Colors.red.withValues(alpha: 0.3) : Colors.white.withValues(alpha: 0.1))
-        : (isDestructive ? Colors.red.withValues(alpha: 0.2) : accentColor.withValues(alpha: 0.2));
+        : (isDestructive ? Colors.red.withValues(alpha: 0.2) : Colors.black.withValues(alpha: 0.05));
         
     final contentColor = isDarkMode
         ? (isDestructive ? (Colors.red[300] ?? Colors.red) : Colors.white70)
-        : (isDestructive ? (Colors.red[700] ?? Colors.red) : accentColor);
+        : (isDestructive ? (Colors.red[700] ?? Colors.red) : const Color(0xFF6B7280));
 
     return GestureDetector(
       onTap: onTap,
@@ -2914,9 +2914,9 @@ class _DictCardState extends State<DictCard> {
     final isDarkMode = context.read<DarkMode>().isDarkMode;
     final accentColor = AppTheme.primaryColor;
     
-    final bgColor = isDarkMode ? Colors.white.withValues(alpha: 0.05) : accentColor.withValues(alpha: 0.05);
-    final borderColor = isDarkMode ? Colors.white.withValues(alpha: 0.1) : accentColor.withValues(alpha: 0.2);
-    final textColor = isDarkMode ? Colors.white70 : accentColor;
+    final bgColor = isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03);
+    final borderColor = isDarkMode ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05);
+    final contentColor = isDarkMode ? Colors.white70 : const Color(0xFF6B7280);
 
     return GestureDetector(
       onTap: () => onChanged(!value),
@@ -2938,7 +2938,7 @@ class _DictCardState extends State<DictCard> {
               activeColor: accentColor,
               checkColor: Colors.white,
               side: BorderSide(
-                color: textColor.withValues(alpha: 0.6),
+                color: contentColor.withValues(alpha: 0.6),
                 width: 1.5,
               ),
               materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -2948,7 +2948,7 @@ class _DictCardState extends State<DictCard> {
             Text(
               label,
               style: TextStyle(
-                color: textColor,
+                color: contentColor,
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
                 height: 1.5,
