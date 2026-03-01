@@ -602,91 +602,6 @@ class _GamePageState extends State<GamePage> with TickerProviderStateMixin {
     );
   }
 
-  // 构建AppBar图标
-  Widget _buildAppBarIcon() {
-    return Container(
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: const Icon(
-        Icons.sports_esports,
-        color: Colors.white,
-        size: 28,
-      ),
-    );
-  }
-
-  // 构建AppBar标题
-  Widget _buildAppBarTitle() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          '单词PK大厅',
-          textScaler: TextScaler.linear(1.0),
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.w400,
-            height: 1.5,
-            letterSpacing: 1.5,
-          ),
-        ),
-        Text(
-          '挑战你的词汇极限',
-          textScaler: TextScaler.linear(1.0),
-          style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.9),
-            fontSize: 13,
-            fontWeight: FontWeight.w300,
-            height: 1.5,
-            letterSpacing: 0.8,
-          ),
-        ),
-      ],
-    );
-  }
-
-  // 构建AppBar背景
-  Widget _buildAppBarBackground() {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [
-            Color(0xFF4A90E2),
-            Color(0xFF357ABD),
-            Color(0xFF2E5F8A),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF4A90E2).withValues(alpha: 0.3),
-            blurRadius: 12,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _buildAppBarIcon(),
-                const SizedBox(width: 12),
-                _buildAppBarTitle(),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   // 构建加载指示器
   Widget _buildLoadingIndicator(Color textColor) {
@@ -721,9 +636,39 @@ class _GamePageState extends State<GamePage> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = context.watch<DarkMode>().isDarkMode;
+    final backgroundColor = isDarkMode ? const Color(0xFF121212) : const Color(0xFFF0F2F5);
+    final textColor = isDarkMode ? Colors.white : const Color(0xFF2C3E50);
+
     if (Global.isGuest) {
       return Scaffold(
-        appBar: AppTheme.createGradientAppBar(title: '比赛大厅'),
+        backgroundColor: isDarkMode ? const Color(0xFF121212) : const Color(0xFFF0F2F5),
+        appBar: AppBar(
+          backgroundColor: isDarkMode ? const Color(0xFF121212) : const Color(0xFFF0F2F5),
+          elevation: 0,
+          centerTitle: false,
+          automaticallyImplyLeading: false,
+          title: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.sports_esports_rounded,
+                color: (isDarkMode ? Colors.white : const Color(0xFF2C3E50)).withValues(alpha: 0.8),
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '单词PK大厅',
+                style: TextStyle(
+                  color: isDarkMode ? Colors.white : const Color(0xFF2C3E50),
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 1.2,
+                ),
+              ),
+            ],
+          ),
+        ),
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -751,53 +696,47 @@ class _GamePageState extends State<GamePage> with TickerProviderStateMixin {
       );
     }
 
-    final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    final backgroundColor = isDarkMode ? const Color(0xFF121212) : const Color(0xFFF0F2F5);
-    final textColor = isDarkMode ? Colors.white : const Color(0xFF2C3E50);
 
     return Scaffold(
       backgroundColor: backgroundColor,
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: isDarkMode
-                ? [
-                    const Color(0xFF121212),
-                    const Color(0xFF1A1A1A),
-                    const Color(0xFF121212),
-                  ]
-                : [
-                    const Color(0xFFF0F2F5),
-                    const Color(0xFFE8ECF1),
-                    const Color(0xFFF0F2F5),
-                  ],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            pinned: true,
+            backgroundColor: backgroundColor,
+            elevation: 0,
+            centerTitle: false,
+            automaticallyImplyLeading: false,
+            title: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.sports_esports_rounded,
+                  color: (isDarkMode ? Colors.white : const Color(0xFF2C3E50)).withValues(alpha: 0.8),
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '单词PK大厅',
+                  style: TextStyle(
+                    color: isDarkMode ? Colors.white : const Color(0xFF2C3E50),
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-        child: CustomScrollView(
-          slivers: [
-            SliverAppBar(
-              expandedHeight: 88,
-              floating: false,
-              pinned: true,
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              automaticallyImplyLeading: false,
-              flexibleSpace: FlexibleSpaceBar(
-                background: _buildAppBarBackground(),
-              ),
-            ),
-            SliverToBoxAdapter(
-              child: gameHallDataResult == null
-                  ? _buildLoadingIndicator(textColor)
-                  : Padding(
-                      padding: const EdgeInsets.fromLTRB(leftPadding, 24, rightPadding, 24),
-                      child: renderHallGroups(),
-                    ),
-            ),
-          ],
-        ),
+          SliverToBoxAdapter(
+            child: gameHallDataResult == null
+                ? _buildLoadingIndicator(textColor)
+                : Padding(
+                    padding: const EdgeInsets.fromLTRB(leftPadding, 24, rightPadding, 24),
+                    child: renderHallGroups(),
+                  ),
+          ),
+        ],
       ),
     );
   }
