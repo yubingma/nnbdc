@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
@@ -12,19 +13,13 @@ import 'package:nnbdc/api/result.dart';
 import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/global.dart';
-import 'package:nnbdc/page/word_list/today_new_words.dart';
-import 'package:nnbdc/page/word_list/today_old_words.dart';
-import 'package:nnbdc/page/word_list/today_words.dart';
 import 'package:nnbdc/state.dart';
-
 import 'package:nnbdc/util/error_handler.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:provider/provider.dart';
-
 import 'package:nnbdc/services/throttled_sync_service.dart';
 import 'package:nnbdc/util/subscription_util.dart';
 
-import '../theme/app_theme.dart';
 import 'bdc.dart';
 
 class BeforeBdcPage extends StatefulWidget {
@@ -46,34 +41,11 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
   bool hasDakaToday = false;
   Result<List<int>>? prepareResult;
   bool _hasTriedSupplement = false;
-
-  static const double leftPadding = 16;
-  static const double rightPadding = 16;
-
-  void reorderData(int oldIndex, int newIndex) {
-    if (!mounted) return;
-    setState(() {
-      if (newIndex > oldIndex) {
-        newIndex -= 1;
-      }
-      final items = studySteps!.removeAt(oldIndex);
-      studySteps!.insert(newIndex, items);
-
-      // 重新计算每个study step的顺序号
-      for (var i = 0; i < studySteps!.length; i++) {
-        studySteps![i].seq = i;
-      }
-
-      saveStudyStep();
-    });
-  }
-
   bool _isLoadingData = false;
 
   @override
   void initState() {
     super.initState();
-    // 使用Timer.run确保完全异步执行，避免阻塞UI
     Timer.run(() {
       if (mounted) {
         loadData();
@@ -84,7 +56,6 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // 使用Timer.run确保完全异步执行，避免阻塞UI
     if (mounted && !dataLoaded && !_isLoadingData) {
       Timer.run(() {
         if (mounted && !dataLoaded && !_isLoadingData) {
@@ -95,23 +66,16 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
   }
 
   Future<void> loadData({bool forceSupplement = false}) async {
-    // 如果不是强制补充模式，重置“已尝试补充”标记
     if (!forceSupplement) {
       _hasTriedSupplement = false;
     }
-
-    // 防止重复加载
     if (_isLoadingData) return;
     _isLoadingData = true;
 
-    // 禁用 loading 提示
     Api.setLoadingDisabled(true);
-
-    // 添加一个短暂延迟，确保加载动画能够显示
-    await Future.delayed(const Duration(milliseconds: 500));
+    await Future.delayed(const Duration(milliseconds: 300));
 
     try {
-      // 获取用户基本信息
       var result0 = await UserBo().getLoggedInUser();
       if (result0.success) {
         user = result0.data;
@@ -120,13 +84,11 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
         return;
       }
 
-      // 获取用户的学习步骤
       var result = await StudyBo().getUserStudySteps();
       if (result.success) {
         studySteps = [];
         List<UserStudyStepVo> userStudySteps = result.data!;
         for (UserStudyStepVo step in userStudySteps) {
-          // 在UI设置中隐藏“单词列表”阶段，让它成为一个隐形的固定环节
           if (step.studyStep != 'List') {
             studySteps!.add(step);
           }
@@ -136,10 +98,9 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
         return;
       }
 
-      // 生成（或获取）用户的今日单词
       try {
         prepareResult = await StudyBo().prepareForStudy(forceSupplement);
-        if (prepareResult!.success || prepareResult!.code == "NNBDC-0012" /*未取到足够单词*/) {
+        if (prepareResult!.success || prepareResult!.code == "NNBDC-0012") {
           if (forceSupplement) {
             _hasTriedSupplement = true;
           }
@@ -156,72 +117,124 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
         return;
       }
 
-      // 获取用户的今日打卡状态
       hasDakaToday = (await UserBo().hasDakaToday(user!.id!)).data!;
 
-      // 检查页面是否仍然挂载，避免在 dispose 后调用 setState
       if (mounted) {
         setState(() {
           dataLoaded = true;
         });
       }
     } finally {
-      // 重新启用 loading 提示
       Api.setLoadingDisabled(false);
       _isLoadingData = false;
     }
   }
 
-  List<UserStudyStepVo> selectedSteps() {
-    List<UserStudyStepVo> steps = [];
-    for (var step in studySteps!) {
-      if (step.state == StudyStepState.active.json) {
-        steps.add(step);
+  void reorderData(int oldIndex, int newIndex) {
+    if (!mounted) return;
+    setState(() {
+      if (newIndex > oldIndex) {
+        newIndex -= 1;
       }
-    }
-    return steps;
+      final items = studySteps!.removeAt(oldIndex);
+      studySteps!.insert(newIndex, items);
+      for (var i = 0; i < studySteps!.length; i++) {
+        studySteps![i].seq = i;
+      }
+      saveStudyStep();
+    });
   }
 
-  Widget renderPage() {
-    return SingleChildScrollView(
-      physics: const BouncingScrollPhysics(),
-      child: Column(
-        children: [
-          // 1. 学习步骤/模式设置
-          renderStudySteps(),
+  List<UserStudyStepVo> selectedSteps() {
+    return studySteps?.where((s) => s.state == StudyStepState.active.json).toList() ?? [];
+  }
 
-          // 2. 今日核心任务卡片 (目标设置 + 单词统计)
-          renderMissionCard(),
+  @override
+  Widget build(BuildContext context) {
+    final isDarkMode = context.watch<DarkMode>().isDarkMode;
+    final backgroundColor = isDarkMode ? const Color(0xFF121212) : const Color(0xFFF8F9FA);
 
-          // 底部间距
-          const SizedBox(height: 40),
-        ],
-      ),
+    return Scaffold(
+      backgroundColor: backgroundColor,
+      body: (!dataLoaded)
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const SizedBox(
+                    width: 40,
+                    height: 40,
+                    child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.grey)),
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    'LOADING PLAN...',
+                    style: TextStyle(
+                      color: isDarkMode ? Colors.white38 : Colors.black26,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 2.0,
+                    ),
+                  ),
+                ],
+              ),
+            )
+          : CustomScrollView(
+              physics: const BouncingScrollPhysics(),
+              slivers: [
+                SliverAppBar(
+                  pinned: true,
+                  backgroundColor: backgroundColor,
+                  elevation: 0,
+                  automaticallyImplyLeading: false,
+                  centerTitle: true,
+                  title: Text(
+                    '今日学习计划',
+                    style: TextStyle(
+                      color: isDarkMode ? Colors.white : const Color(0xFF1A1A1A),
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 1.0,
+                    ),
+                  ),
+                ),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 8),
+                        renderMissionCard(),
+                        const SizedBox(height: 24),
+                        renderStudySteps(),
+                        const SizedBox(height: 40),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
     );
   }
 
   Widget renderMissionCard() {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    final cardColor = isDarkMode ? const Color(0xFF1E1E1E) : Colors.white;
+    final cardBg = isDarkMode ? const Color(0xFF1E1E1E) : Colors.white;
 
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(28),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDarkMode ? 0.3 : 0.05),
-            blurRadius: 24,
-            offset: const Offset(0, 10),
-          ),
-        ],
+        color: cardBg,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
+          width: 1,
+        ),
       ),
       child: Column(
         children: [
-          // 顶部：目标设置
+          // Header: Goal Setting
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+            padding: const EdgeInsets.all(20),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -230,21 +243,17 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
                     Text(
                       '今日目标',
                       style: TextStyle(
-                        color: isDarkMode ? Colors.white70 : Colors.black87,
-                        fontSize: 16,
+                        color: isDarkMode ? Colors.white70 : const Color(0xFF666666),
+                        fontSize: 15,
                         fontWeight: FontWeight.w600,
-                        fontFamily: 'NotoSansSC',
                       ),
                     ),
                     if (user?.todayStudyStarted == true) ...[
                       const SizedBox(width: 8),
-                      GestureDetector(
-                        onTap: () => ToastUtil.info('今日学习已开始，无法修改计划数量'),
-                        child: Icon(
-                          Icons.lock_outline_rounded,
-                          color: isDarkMode ? Colors.white30 : Colors.black26,
-                          size: 16,
-                        ),
+                      Icon(
+                        Icons.lock_outline_rounded,
+                        color: isDarkMode ? Colors.white24 : Colors.black12,
+                        size: 14,
                       ),
                     ],
                   ],
@@ -254,59 +263,56 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
             ),
           ),
 
-          // 中间：核心数据
+          // Stats Grid
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(
               children: [
-                _buildStatItem('今日单词', todayWordCount!, Icons.library_books_rounded, () => toTodayWordsListPage(true)?.then((v) => loadData())),
-                _buildStatItem('新词', newWordCount!, Icons.fiber_new_rounded, () => toTodayNewWordsListPage(true)?.then((v) => loadData())),
-                _buildStatItem('旧词', oldWordCount!, Icons.refresh_rounded, () => toTodayOldWordsListPage(true)?.then((v) => loadData())),
+                _buildStatItem('今日总词', todayWordCount!, Icons.all_inclusive_rounded),
+                const SizedBox(width: 12),
+                _buildStatItem('新词', newWordCount!, Icons.fiber_new_rounded),
+                const SizedBox(width: 12),
+                _buildStatItem('复习', oldWordCount!, Icons.history_rounded),
               ],
             ),
           ),
 
-          // 单词不足补充提醒
+          // Supplement Hint
           if (prepareResult!.success && todayWordCount! < user!.wordsPerDay! && !(user!.todayStudyStarted ?? false) && !_hasTriedSupplement)
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
               child: Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
-                  color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : AppTheme.primaryColor.withValues(alpha: 0.03),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: isDarkMode ? Colors.white.withValues(alpha: 0.1) : AppTheme.primaryColor.withValues(alpha: 0.1)),
+                  color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF8F9FA),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.info_outline, color: isDarkMode ? Colors.white70 : AppTheme.primaryColor, size: 18),
+                    Icon(Icons.info_outline, color: isDarkMode ? Colors.white38 : Colors.grey, size: 16),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        '任务量不足，建议点击旁边按钮补充',
-                        style: TextStyle(color: isDarkMode ? Colors.white70 : AppTheme.primaryColor, fontSize: 12, fontWeight: FontWeight.w500),
+                        '任务量不足，建议补充',
+                        style: TextStyle(color: isDarkMode ? Colors.white70 : Colors.grey, fontSize: 13),
                       ),
                     ),
                     TextButton(
                       style: TextButton.styleFrom(
-                        backgroundColor: isDarkMode ? Colors.white.withValues(alpha: 0.1) : AppTheme.primaryColor.withValues(alpha: 0.1),
-                        foregroundColor: isDarkMode ? Colors.white : AppTheme.primaryColor,
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        visualDensity: VisualDensity.compact,
+                        foregroundColor: isDarkMode ? Colors.white : Colors.black,
                       ),
-                      onPressed: () async {
-                        loadData(forceSupplement: true);
-                      },
-                      child: const Text('补充', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                      onPressed: () => loadData(forceSupplement: true),
+                      child: const Text('补充', style: TextStyle(fontWeight: FontWeight.bold)),
                     ),
                   ],
                 ),
               ),
             ),
 
-          // 底部：开始按钮 或 错误处理区域
+          // Action Button
           Padding(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(16),
             child: (prepareResult?.code == "NNBDC-0012" || (_hasTriedSupplement && todayWordCount! < (user?.wordsPerDay ?? 0)))
                 ? renderErrorActions()
                 : renderStartButton(),
@@ -316,42 +322,36 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
     );
   }
 
-  Widget _buildStatItem(String label, int count, IconData icon, VoidCallback onTap) {
+  Widget _buildStatItem(String label, int count, IconData icon) {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    final textColor = isDarkMode ? Colors.white : const Color(0xFF2C3E50);
-    final subtitleColor = isDarkMode ? Colors.white70 : const Color(0xFF7F8C8D);
-    final accentColor = AppTheme.primaryColor;
-
     return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 6),
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          decoration: BoxDecoration(
-            color: isDarkMode ? Colors.white.withValues(alpha: 0.03) : accentColor.withValues(alpha: 0.03),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : accentColor.withValues(alpha: 0.05)),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        decoration: BoxDecoration(
+          color: isDarkMode ? Colors.white.withValues(alpha: 0.03) : const Color(0xFFF8F9FA),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.02),
+            width: 1,
           ),
-          child: Column(
-            children: [
-              Icon(icon, color: subtitleColor, size: 20),
-              const SizedBox(height: 8),
-              Text(
-                '$count',
-                style: TextStyle(color: textColor, fontSize: 24, fontWeight: FontWeight.bold, height: 1.1),
+        ),
+        child: Column(
+          children: [
+            Text(
+              '$count',
+              style: TextStyle(
+                color: isDarkMode ? Colors.white : const Color(0xFF1A1A1A),
+                fontSize: 26,
+                fontWeight: FontWeight.w900,
+                fontFamily: 'Roboto',
               ),
-              const SizedBox(height: 2),
-              Text(
-                label,
-                style: TextStyle(
-                  color: subtitleColor,
-                  fontSize: 12,
-                  fontFamily: 'NotoSansSC',
-                ),
-              ),
-            ],
-          ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(color: isDarkMode ? Colors.white38 : Colors.grey, fontSize: 11, fontWeight: FontWeight.bold),
+            ),
+          ],
         ),
       ),
     );
@@ -361,71 +361,62 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
     final bool isStarted = user?.todayStudyStarted == true;
 
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: isStarted ? () => ToastUtil.info('今日学习已开始，无法修改计划数量') : null,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-        decoration: BoxDecoration(
-          color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: IgnorePointer(
-          ignoring: isStarted,
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<int>(
-              value: (() {
-                final isPremium = SubscriptionUtil.isPremium();
-                final raw = user?.wordsPerDay ?? 20;
-                if (!isPremium && raw > 20) return 20;
-                return raw;
-              })(),
-              isDense: true,
-              icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 18),
-              dropdownColor: isDarkMode ? const Color(0xFF2D2D2D) : Colors.white,
-              style: TextStyle(
-                color: isDarkMode ? Colors.white : Colors.black,
-                fontSize: 15,
-                fontWeight: FontWeight.bold,
-              ),
-              onChanged: isStarted
-                  ? null
-                  : (value) async {
-                      if (value == null) return;
-                      if (!SubscriptionUtil.isPremium() && value > 20) {
-                        ToastUtil.info('开通会员可选择更多单词数量');
-                        return;
-                      }
-                      setState(() {
-                        user!.wordsPerDay = value;
-                        dataLoaded = false;
-                      });
-                      await MyDatabase.instance.usersDao.updateWordsPerDay(user!.id!, value);
-                      await Global.loadUserFromDb();
-                      ThrottledDbSyncService().requestSync();
-                      loadData(forceSupplement: false);
-                    },
-              items: (() {
-                final isPremium = SubscriptionUtil.isPremium();
-                return [10, 20, 30, 50, 75, 100, 150, 200, 300, 400, 500].map((v) {
-                  final isRestricted = !isPremium && v > 20;
-                  return DropdownMenuItem<int>(
-                    value: v,
-                    enabled: !isRestricted,
-                    child: Row(
-                      children: [
-                        Text('$v'),
-                        if (isRestricted) ...[
-                          const SizedBox(width: 4),
-                          const Icon(Icons.workspace_premium, color: Colors.amber, size: 14),
-                        ]
-                      ],
-                    ),
-                  );
-                }).toList();
-              })(),
-            ),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+      decoration: BoxDecoration(
+        color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF8F9FA),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<int>(
+          value: (() {
+            final isPremium = SubscriptionUtil.isPremium();
+            final raw = user?.wordsPerDay ?? 20;
+            if (!isPremium && raw > 20) return 20;
+            return raw;
+          })(),
+          isDense: true,
+          icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 16),
+          dropdownColor: isDarkMode ? const Color(0xFF2D2D2D) : Colors.white,
+          style: TextStyle(
+            color: isDarkMode ? Colors.white : Colors.black,
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
           ),
+          onChanged: isStarted
+              ? null
+              : (value) async {
+                  if (value == null) return;
+                  if (!SubscriptionUtil.isPremium() && value > 20) {
+                    ToastUtil.info('开通会员可选择更多单词数量');
+                    return;
+                  }
+                  setState(() {
+                    user!.wordsPerDay = value;
+                    dataLoaded = false;
+                  });
+                  await MyDatabase.instance.usersDao.updateWordsPerDay(user!.id!, value);
+                  await Global.loadUserFromDb();
+                  ThrottledDbSyncService().requestSync();
+                  loadData(forceSupplement: false);
+                },
+          items: [10, 20, 30, 50, 75, 100, 150, 200, 300, 400, 500].map((v) {
+            final isPremium = SubscriptionUtil.isPremium();
+            final isRestricted = !isPremium && v > 20;
+            return DropdownMenuItem<int>(
+              value: v,
+              enabled: !isRestricted,
+              child: Row(
+                children: [
+                  Text('$v'),
+                  if (isRestricted) ...[
+                    const SizedBox(width: 4),
+                    const Icon(Icons.workspace_premium, color: Colors.amber, size: 12),
+                  ]
+                ],
+              ),
+            );
+          }).toList(),
         ),
       ),
     );
@@ -433,50 +424,46 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
 
   Widget renderStartButton() {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    final accentColor = AppTheme.primaryColor;
 
     if (hasDakaToday) {
-      final greenColor = isDarkMode ? Colors.greenAccent : const Color(0xFF27AE60);
       return Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 16),
         decoration: BoxDecoration(
-          color: greenColor.withValues(alpha: 0.05),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: greenColor.withValues(alpha: 0.15)),
+          color: isDarkMode ? Colors.greenAccent.withValues(alpha: 0.1) : const Color(0xFFE8F5E9),
+          borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.check_circle_rounded, color: greenColor, size: 24),
+            Icon(Icons.check_circle_rounded, color: isDarkMode ? Colors.greenAccent : Colors.green.shade700, size: 20),
             const SizedBox(width: 8),
-            Text('今日已打卡', style: TextStyle(color: greenColor, fontSize: 18, fontWeight: FontWeight.bold)),
+            Text(
+              '今日学习已达成',
+              style: TextStyle(color: isDarkMode ? Colors.greenAccent : Colors.green.shade700, fontSize: 16, fontWeight: FontWeight.bold),
+            ),
           ],
         ),
       );
     }
 
-    final buttonBgColor = isDarkMode ? Colors.white.withValues(alpha: 0.05) : accentColor.withValues(alpha: 0.05);
-    final buttonBorderColor = isDarkMode ? Colors.white.withValues(alpha: 0.1) : accentColor.withValues(alpha: 0.15);
-    final buttonTextColor = isDarkMode ? Colors.white : accentColor;
-
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
-          backgroundColor: buttonBgColor,
-          foregroundColor: buttonTextColor,
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: buttonBorderColor, width: 1.5)),
+          backgroundColor: isDarkMode ? Colors.white : const Color(0xFF1A1A1A),
+          foregroundColor: isDarkMode ? Colors.black : Colors.white,
+          padding: const EdgeInsets.symmetric(vertical: 18),
           elevation: 0,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         ),
         onPressed: () async {
           if (selectedSteps().isEmpty) {
-            ToastUtil.error('请至少选择一个学习方式');
+            ToastUtil.error('请选择至少一种学习模式');
             return;
           }
           if (user != null) {
-            await MyDatabase.instance.userOpersDao.recordStartLearn(user!.id!, remark: "用户开始学习");
+            await MyDatabase.instance.userOpersDao.recordStartLearn(user!.id!, remark: "开始学习");
             await (MyDatabase.instance.update(MyDatabase.instance.users)..where((u) => u.id.equals(user!.id!))).write(UsersCompanion(
               todayStudyStarted: const drift.Value(true),
             ));
@@ -487,158 +474,164 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
             if (mounted && !_isLoadingData) loadData();
           });
         },
-        child: Text(user?.todayStudyStarted == true ? '继续学习' : '准备好了，开始学习',
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+        child: Text(
+          user?.todayStudyStarted == true ? '继续学习' : '开始学习',
+          style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900, letterSpacing: 1.5),
+        ),
       ),
     );
   }
 
   Widget renderErrorActions() {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    final accentColor = AppTheme.primaryColor;
-
-    final warningBaseColor = Colors.amber;
-    final warningTextColor = isDarkMode ? Colors.amber.shade200 : Colors.amber.shade900;
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: warningBaseColor.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: warningBaseColor.withValues(alpha: 0.2), width: 1),
-      ),
-      child: Column(
-        children: [
-          Row(
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.amber.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
             children: [
-              Icon(Icons.info_outline_rounded, color: warningTextColor, size: 22),
+              const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 18),
               const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  '词书单词量不足',
-                  style: TextStyle(
-                    color: warningTextColor,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    fontFamily: 'NotoSansSC',
-                  ),
-                ),
+              const Expanded(
+                child: Text('词书单词量不足', style: TextStyle(color: Colors.orange, fontSize: 13, fontWeight: FontWeight.bold)),
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: isDarkMode ? Colors.white.withValues(alpha: 0.05) : accentColor.withValues(alpha: 0.05),
-                      foregroundColor: isDarkMode ? Colors.white : accentColor,
-                      minimumSize: const Size(0, 48),
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        side: BorderSide(color: isDarkMode ? Colors.white.withValues(alpha: 0.1) : accentColor.withValues(alpha: 0.15)),
-                      ),
-                      elevation: 0,
-                    ),
-                    icon: Icon(Icons.library_books, color: isDarkMode ? Colors.white70 : accentColor, size: 18),
-                    label: const Text('选择词书', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
-                    onPressed: () {
-                      Get.toNamed('/select_book')?.then((v) {
-                        if (mounted) {
-                          setState(() => _hasTriedSupplement = false);
-                          loadData(forceSupplement: true);
-                        }
-                      });
-                    },
-                  ),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: isDarkMode ? Colors.white : Colors.black,
+                  side: BorderSide(color: isDarkMode ? Colors.white24 : Colors.black12),
+                  padding: const EdgeInsets.symmetric(vertical: 15),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                if (todayWordCount! > 0) ...[
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: isDarkMode ? Colors.white.withValues(alpha: 0.05) : accentColor.withValues(alpha: 0.05),
-                        foregroundColor: isDarkMode ? Colors.white : accentColor,
-                        minimumSize: const Size(0, 48),
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          side: BorderSide(color: isDarkMode ? Colors.white.withValues(alpha: 0.1) : accentColor.withValues(alpha: 0.15)),
-                        ),
-                        elevation: 0,
-                      ),
-                      icon: Icon(Icons.play_arrow, color: isDarkMode ? Colors.white70 : accentColor, size: 18),
-                      label: const Text(
-                        '就这样吧\n去学习',
-                        textAlign: TextAlign.center,
-                        maxLines: 2,
-                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, height: 1.2),
-                      ),
-                      onPressed: () => Get.toNamed('/bdc'),
-                    ),
-                  ),
-                ],
-              ],
+                onPressed: () => Get.toNamed('/select_book')?.then((v) {
+                  if (mounted) loadData(forceSupplement: true);
+                }),
+                child: const Text('更换词书', style: TextStyle(fontWeight: FontWeight.bold)),
+              ),
             ),
-          ),
-        ],
-      ),
+            if (todayWordCount! > 0) ...[
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: isDarkMode ? Colors.white : const Color(0xFF1A1A1A),
+                    foregroundColor: isDarkMode ? Colors.black : Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 15),
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: () => Get.toNamed('/bdc'),
+                  child: const Text('就这样吧', style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ],
     );
   }
 
-  Widget _buildStepTile(step) {
+  Widget renderStudySteps() {
+    final isDarkMode = context.watch<DarkMode>().isDarkMode;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 12),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '学习模式',
+                style: TextStyle(
+                  color: isDarkMode ? Colors.white70 : const Color(0xFF666666),
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              Text(
+                '长按拖动排序',
+                style: TextStyle(color: isDarkMode ? Colors.white24 : Colors.black26, fontSize: 11),
+              ),
+            ],
+          ),
+        ),
+        ReorderableListView(
+          buildDefaultDragHandles: false,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          onReorder: reorderData,
+          children: [
+            for (int i = 0; i < studySteps!.length; i++)
+              ReorderableDragStartListener(
+                key: ValueKey(studySteps![i].studyStep),
+                index: i,
+                child: _buildStepTile(studySteps![i]),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStepTile(UserStudyStepVo step) {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
     final isActive = step.state == StudyStepState.active.json;
+
     return Container(
       key: ValueKey(step),
-      margin: const EdgeInsets.only(bottom: 10),
+      margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: isDarkMode ? Colors.white.withValues(alpha: isActive ? 0.05 : 0.02) : Colors.black.withValues(alpha: isActive ? 0.05 : 0.02),
-        borderRadius: BorderRadius.circular(16),
+        color: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isDarkMode ? Colors.white.withValues(alpha: isActive ? 0.1 : 0.0) : Colors.black.withValues(alpha: isActive ? 0.1 : 0.0),
-          width: 1.5,
+          color: isActive
+              ? (isDarkMode ? Colors.white30 : Colors.black87)
+              : (isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.05)),
+          width: 1,
         ),
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(16),
           onTap: () {
             setState(() {
               step.state = isActive ? StudyStepState.inactive.json : StudyStepState.active.json;
               saveStudyStep();
             });
           },
+          borderRadius: BorderRadius.circular(12),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             child: Row(
               children: [
                 Icon(
                   isActive ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
-                  color: isDarkMode ? (isActive ? Colors.white : Colors.white24) : (isActive ? Colors.black87 : Colors.black26),
-                  size: 22,
+                  color: isActive ? (isDarkMode ? Colors.white : Colors.black) : Colors.grey.shade400,
+                  size: 20,
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     StudyStepExt.fromString(step.studyStep).description,
                     style: TextStyle(
-                      color: isDarkMode ? Colors.white : Colors.black87,
+                      color: isActive ? (isDarkMode ? Colors.white : Colors.black) : Colors.grey,
                       fontSize: 14,
-                      fontWeight: FontWeight.normal,
+                      fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
                     ),
                   ),
                 ),
-                Icon(
-                  Icons.drag_indicator_rounded,
-                  color: isDarkMode ? Colors.white10 : Colors.black12,
-                  size: 20,
-                ),
+                Icon(Icons.drag_indicator_rounded, color: Colors.grey.withValues(alpha: 0.3), size: 18),
               ],
             ),
           ),
@@ -647,136 +640,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
     );
   }
 
-  Widget renderStudySteps() {
-    final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text(
-                '学习步骤',
-                style: TextStyle(
-                  color: isDarkMode ? Colors.white70 : Colors.black87,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  fontFamily: 'NotoSansSC',
-                ),
-              ),
-              const Spacer(),
-              Text(
-                '长按可调整顺序',
-                style: TextStyle(
-                  color: isDarkMode ? Colors.white24 : Colors.black26,
-                  fontSize: 12,
-                  fontFamily: 'NotoSansSC',
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          ReorderableListView(
-            buildDefaultDragHandles: false,
-            onReorder: reorderData,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            children: [
-              for (int i = 0; i < studySteps!.length; i++)
-                ReorderableDragStartListener(
-                  key: ValueKey(studySteps![i].studyStep),
-                  index: i,
-                  child: _buildStepTile(studySteps![i]),
-                ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
   Future<void> saveStudyStep() async {
-    var result = await StudyBo().saveUserStudySteps(studySteps!);
-    if (!result.success) {
-      ToastUtil.error(result.msg!);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    final backgroundColor = isDarkMode ? const Color(0xFF121212) : const Color(0xFFF8F9FA);
-
-    return Scaffold(
-      backgroundColor: backgroundColor,
-      body: CustomScrollView(
-        slivers: [
-          // 美化的AppBar
-          SliverAppBar(
-            pinned: true,
-            backgroundColor: backgroundColor,
-            elevation: 0,
-            centerTitle: false,
-            automaticallyImplyLeading: false,
-            title: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.event_note_rounded,
-                  color: (isDarkMode ? Colors.white : const Color(0xFF2C3E50)).withValues(alpha: 0.8),
-                  size: 20,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  '今日学习计划',
-                  style: TextStyle(
-                    color: isDarkMode ? Colors.white : const Color(0xFF2C3E50),
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 1.2,
-                  ),
-                ),
-              ],
-            ),
-          ),
-      
-          // 内容区域
-          SliverToBoxAdapter(
-            child: Container(
-              constraints: BoxConstraints(
-                minHeight: MediaQuery.of(context).size.height - 80 - MediaQuery.of(context).padding.bottom,
-              ),
-              child: (!dataLoaded)
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              const Color(0xFF0097A7),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            '正在加载学习计划...',
-                            textScaler: TextScaler.linear(1.0),
-                            style: TextStyle(
-                              color: (isDarkMode ? Colors.white : const Color(0xFF2C3E50)).withValues(alpha: 0.7),
-                              fontSize: 16,
-                              fontWeight: FontWeight.w400,
-                              height: 1.3,
-                              letterSpacing: 0.3,
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                  : renderPage(),
-            ),
-          ),
-        ],
-      ),
-    );
+    await StudyBo().saveUserStudySteps(studySteps!);
   }
 }
