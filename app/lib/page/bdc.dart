@@ -2059,11 +2059,12 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       right: rightPadding,
       child: Container(
         decoration: BoxDecoration(
-          color: context.watch<DarkMode>().isDarkMode ? const Color(0xFF1E1E1E) : const Color(0xFFF8F9FA),
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-          border: Border.all(
-            color: context.watch<DarkMode>().isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
-            width: 1,
+          color: context.watch<DarkMode>().isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
+          border: Border(
+            top: BorderSide(
+              color: context.watch<DarkMode>().isDarkMode ? Colors.white10 : Colors.grey.shade200,
+              width: 0.5,
+            ),
           ),
         ),
         child: TabBar(
@@ -3212,8 +3213,12 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       margin: const EdgeInsets.only(top: 16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: context.watch<DarkMode>().isDarkMode ? const Color(0xFF1E1E1E) : Colors.white.withValues(alpha: 0.95),
+        color: context.watch<DarkMode>().isDarkMode ? const Color(0xFF1E1E1E) : const Color(0xFFF8F9FA),
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: context.watch<DarkMode>().isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.03),
+          width: 1,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
