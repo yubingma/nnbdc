@@ -169,7 +169,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
                   Text(
                     'LOADING PLAN...',
                     style: TextStyle(
-                      color: isDarkMode ? Colors.white38 : Colors.black26,
+                      color: isDarkMode ? Colors.white54 : Colors.black26,
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
                       letterSpacing: 2.0,
@@ -249,11 +249,11 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
                     ),
                     if (user?.todayStudyStarted == true) ...[
                       const SizedBox(width: 8),
-                      Icon(
-                        Icons.lock_outline_rounded,
-                        color: isDarkMode ? Colors.white24 : Colors.black12,
-                        size: 14,
-                      ),
+                    Icon(
+                      Icons.lock_outline_rounded,
+                      color: isDarkMode ? Colors.white38 : Colors.black12,
+                      size: 14,
+                    ),
                     ],
                   ],
                 ),
@@ -288,12 +288,12 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.info_outline, color: isDarkMode ? Colors.white38 : Colors.grey, size: 16),
+                    Icon(Icons.info_outline, color: isDarkMode ? Colors.white54 : Colors.grey, size: 16),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         '任务量不足，建议补充',
-                        style: TextStyle(color: isDarkMode ? Colors.white70 : Colors.grey, fontSize: 13),
+                        style: TextStyle(color: isDarkMode ? Colors.white54 : Colors.grey, fontSize: 13),
                       ),
                     ),
                     TextButton(
@@ -348,7 +348,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
             const SizedBox(height: 4),
             Text(
               label,
-              style: TextStyle(color: isDarkMode ? Colors.white38 : Colors.grey, fontSize: 11, fontWeight: FontWeight.bold),
+              style: TextStyle(color: isDarkMode ? Colors.white54 : Colors.grey, fontSize: 11, fontWeight: FontWeight.bold),
             ),
           ],
         ),
@@ -624,7 +624,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
                   child: Text(
                     StudyStepExt.fromString(step.studyStep).description,
                     style: TextStyle(
-                      color: isActive ? (isDarkMode ? Colors.white : Colors.black) : Colors.grey,
+                      color: isActive ? (isDarkMode ? Colors.white : Colors.black) : (isDarkMode ? Colors.white54 : Colors.grey),
                       fontSize: 14,
                       fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
                     ),
