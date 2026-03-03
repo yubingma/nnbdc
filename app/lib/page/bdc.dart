@@ -38,7 +38,6 @@ import '../util/asr_util.dart';
 import '../constants.dart';
 import '../util/utils.dart';
 import '../db/user_extensions.dart';
-import '../theme/app_theme.dart';
 import '../util/error_handler.dart';
 
 class BdcPageArgs {
@@ -2641,7 +2640,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         style: TextStyle(
           fontSize: 20,
           fontWeight: FontWeight.w700,
-          color: AppTheme.primaryColor,
+          color: context.watch<DarkMode>().isDarkMode ? Colors.white : const Color(0xFF1A1A1A),
           fontFamily: 'Roboto',
           letterSpacing: 1.2,
         ),
@@ -2666,7 +2665,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
-            color: const Color(0xFF4A90E2),
+            color: context.watch<DarkMode>().isDarkMode ? Colors.white70 : const Color(0xFF1A1A1A),
             fontFamily: 'Roboto',
           ),
         );
@@ -3276,7 +3275,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                   children: [
                     Container(
                       decoration: BoxDecoration(
-                        color: const Color(0xFF4A90E2).withValues(alpha: 0.1),
+                        color: context.watch<DarkMode>().isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Material(
@@ -3290,14 +3289,14 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.emoji_objects_rounded, color: const Color(0xFF4A90E2), size: 16),
+                                Icon(Icons.emoji_objects_rounded, color: context.watch<DarkMode>().isDarkMode ? Colors.white70 : const Color(0xFF333333), size: 14),
                                 const SizedBox(width: 4),
-                                const Text(
+                                Text(
                                   '提示',
                                   style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w600,
-                                    color: Color(0xFF4A90E2),
+                                    color: context.watch<DarkMode>().isDarkMode ? Colors.white70 : const Color(0xFF333333),
                                   ),
                                 ),
                               ],
@@ -3309,7 +3308,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                     const SizedBox(width: 6),
                     Container(
                       decoration: BoxDecoration(
-                        color: Colors.grey.withValues(alpha: 0.1),
+                        color: context.watch<DarkMode>().isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Material(
@@ -3322,14 +3321,14 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.refresh, color: Colors.grey[600], size: 16),
+                                Icon(Icons.refresh, color: context.watch<DarkMode>().isDarkMode ? Colors.white70 : const Color(0xFF333333), size: 14),
                                 const SizedBox(width: 4),
                                 Text(
                                   '清除',
                                   style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w600,
-                                    color: Colors.grey[600],
+                                    color: context.watch<DarkMode>().isDarkMode ? Colors.white70 : const Color(0xFF333333),
                                   ),
                                 ),
                               ],

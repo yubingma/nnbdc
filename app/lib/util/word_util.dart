@@ -132,11 +132,11 @@ List<Widget> renderMeaningItemParts(String meaning, int meaningIndex, int hintLe
     if (asrMatchedMeaningItemParts.contains(Pair(meaningIndex, i))) {
       var widget = Text(
         part,
-        style: const TextStyle(color: Colors.green, fontSize: 12),
+        style: const TextStyle(color: Color(0xFF4A5568), fontSize: 12),
       );
       partWidgets.add(widget);
     }
-    // 释义项尚未被用户答对
+    // 释义项尚未被用户答对一会儿没事
     else {
       // 根据"给点提示"的数字，展现相应数量的汉字释义
       var displayText = part.replaceAll(RegExp(r"[\u4e00-\u9fa5]"), '^'); // 每个汉字用一个^代替
