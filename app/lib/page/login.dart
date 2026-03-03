@@ -92,19 +92,10 @@ class LoginPageState extends State<LoginPage> with WidgetsBindingObserver {
     return Container(
       width: double.infinity,
       height: double.infinity,
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            AppTheme.gradientStartColor,
-            AppTheme.gradientEndColor,
-          ],
-        ),
-      ),
+      color: Colors.white,
       child: Column(
         children: [
-          SizedBox(height: MediaQuery.of(context).size.height * 0.25),
+          SizedBox(height: MediaQuery.of(context).size.height * 0.22),
           Column(
             children: [
               GestureDetector(
@@ -121,21 +112,35 @@ class LoginPageState extends State<LoginPage> with WidgetsBindingObserver {
                     _lastTapTime = now;
                   }
                 },
-                child: Image.asset(
-                  'assets/images/logo.png',
-                  width: 80,
-                  height: 80,
-                  fit: BoxFit.contain,
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.05),
+                        blurRadius: 20,
+                        offset: const Offset(0, 10),
+                      ),
+                    ],
+                  ),
+                  child: Image.asset(
+                    'assets/images/logo.png',
+                    width: 72,
+                    height: 72,
+                    fit: BoxFit.contain,
+                  ),
                 ),
               ),
-              const SizedBox(height: 20),
-              Text(
+              const SizedBox(height: 24),
+              const Text(
                 '泡泡单词',
                 style: TextStyle(
-                  color: Colors.white,
-                  fontSize: MediaQuery.of(context).size.width > 600 ? 24 : 18,
-                  fontWeight: FontWeight.w500,
-                  letterSpacing: 0.3,
+                  color: Color(0xFF2D2D2D),
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.2,
                 ),
               ),
               const SizedBox(height: 12),
@@ -143,11 +148,12 @@ class LoginPageState extends State<LoginPage> with WidgetsBindingObserver {
                 'Progress, not perfection\n进步而非完美',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.8),
+                  color: const Color(0xFF666666),
                   fontSize: 14,
-                  fontWeight: FontWeight.w300,
-                  height: 1.4,
+                  fontWeight: FontWeight.w400,
+                  height: 1.5,
                   fontFamily: 'NotoSansSC',
+                  letterSpacing: 0.5,
                 ),
               ),
             ],
@@ -164,76 +170,69 @@ class LoginPageState extends State<LoginPage> with WidgetsBindingObserver {
       child: Container(
         color: Colors.transparent,
         padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).size.width > 600 ? 10 : 5,
+          bottom: MediaQuery.of(context).viewPadding.bottom + 20,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // 占据一点空间
-            SizedBox(height: MediaQuery.of(context).size.height * 0.05),
-
-            // 微信登录按钮 (仅手机端插件支持)
+            // 微信登录按钮
             if (PlatformUtils.isIOS || PlatformUtils.isAndroid)
-            Container(
-              width: double.infinity,
-              margin: EdgeInsets.symmetric(
-                horizontal: 20,
-                vertical: MediaQuery.of(context).size.width > 600 ? 10 : 5,
-              ),
-              child: ElevatedButton.icon(
-                onPressed: _isWechatLoading ? null : wechatLoginPressed,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF09BB07), // 微信绿色
-                  padding: EdgeInsets.symmetric(
-                    vertical: MediaQuery.of(context).size.width > 600 ? 15 : 12,
+              Container(
+                width: double.infinity,
+                margin: const EdgeInsets.symmetric(horizontal: 40, vertical: 8),
+                child: ElevatedButton.icon(
+                  onPressed: _isWechatLoading ? null : wechatLoginPressed,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF07C160), // 微信标准绿
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(28),
+                    ),
+                    elevation: 0,
                   ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                ),
-                icon: const Icon(Icons.wechat, color: Colors.white, size: 24),
-                label: Text(
-                  _isWechatLoading ? '登录中…' : '微信登录',
-                  style: TextStyle(
-                    fontSize: MediaQuery.of(context).size.width > 600 ? 18 : 14,
-                    color: Colors.white,
+                  icon: const Icon(Icons.wechat, color: Colors.white, size: 22),
+                  label: Text(
+                    _isWechatLoading ? '登录中…' : '微信登录',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ),
-            ),
 
             // 作为游客体验
             Container(
-              margin: EdgeInsets.only(
-                top: MediaQuery.of(context).size.width > 600 ? 10 : 5,
-                bottom: MediaQuery.of(context).size.width > 600 ? 10 : 5,
-              ),
+              width: double.infinity,
+              margin: const EdgeInsets.symmetric(horizontal: 40, vertical: 8),
               child: ElevatedButton(
                 onPressed: () async {
                   await Global.loginAsGuest();
-                  // 游客身份进入时也尝试恢复之前的购买状态
                   await SubscriptionUtil.restorePurchases(showToast: false);
                   Get.offAllNamed('/index');
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryDarkColor,
-                  padding: EdgeInsets.symmetric(
-                    vertical: MediaQuery.of(context).size.width > 600 ? 8 : 6,
-                    horizontal: MediaQuery.of(context).size.width > 600 ? 32 : 24,
-                  ),
+                  backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.1),
+                  foregroundColor: AppTheme.primaryColor,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(28),
                   ),
+                  elevation: 0,
                 ),
-                child: Text(
-                  '我是游客',
+                child: const Text(
+                  '先去逛逛',
                   style: TextStyle(
-                    color: Colors.white,
-                    fontSize: MediaQuery.of(context).size.width > 600 ? 14 : 12,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
             ),
+
+            const SizedBox(height: 16),
+
             // 其他登录方式：邮箱登录
             TextButton(
               onPressed: () {
@@ -242,81 +241,77 @@ class LoginPageState extends State<LoginPage> with WidgetsBindingObserver {
               child: Text(
                 '使用邮箱登录',
                 style: TextStyle(
-                  color: Colors.white70,
-                  fontSize: MediaQuery.of(context).size.width > 600 ? 14 : 12,
-                  decoration: TextDecoration.underline,
+                  color: Colors.grey.shade600,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w400,
                 ),
               ),
             ),
-            SizedBox(height: MediaQuery.of(context).size.width > 600 ? 10 : 5),
+
+            const SizedBox(height: 24),
+
             // 隐私政策
-            Container(
-              margin: EdgeInsets.symmetric(
-                horizontal: 20,
-                vertical: MediaQuery.of(context).size.width > 600 ? 10 : 5,
-              ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Checkbox(
-                    key: const Key('login_agree_checkbox'),
-                    value: _approved,
-                    onChanged: (value) {
-                      setState(() {
-                        _approved = value ?? false;
-                      });
-                    },
-                    activeColor: Colors.white,
-                    checkColor: AppTheme.primaryColor,
-                    side: const BorderSide(color: Colors.white, width: 1.5),
+                  SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: Checkbox(
+                      key: const Key('login_agree_checkbox'),
+                      value: _approved,
+                      onChanged: (value) {
+                        setState(() {
+                          _approved = value ?? false;
+                        });
+                      },
+                      activeColor: AppTheme.primaryColor,
+                      shape: const CircleBorder(),
+                      side: BorderSide(color: Colors.grey.shade300, width: 1.5),
+                    ),
                   ),
+                  const SizedBox(width: 8),
                   Text(
                     '我已阅读并同意',
                     style: TextStyle(
-                      color: Colors.white,
-                      fontSize: MediaQuery.of(context).size.width > 600 ? 12 : 10,
+                      color: Colors.grey.shade500,
+                      fontSize: 12,
                     ),
                   ),
                   GestureDetector(
-                    onTap: () {
-                      showProtocolPage();
-                    },
+                    onTap: showProtocolPage,
                     child: Text(
                       ' 用户协议',
                       style: TextStyle(
-                        color: Colors.white,
-                        fontSize: MediaQuery.of(context).size.width > 600 ? 12 : 10,
-                        fontWeight: FontWeight.bold,
-                        decoration: TextDecoration.underline,
-                        decorationColor: Colors.white,
+                        color: AppTheme.primaryColor,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
                   Text(
                     ' 和 ',
                     style: TextStyle(
-                      color: Colors.white,
-                      fontSize: MediaQuery.of(context).size.width > 600 ? 12 : 10,
+                      color: Colors.grey.shade500,
+                      fontSize: 12,
                     ),
                   ),
                   GestureDetector(
-                    onTap: () {
-                      showPrivacyPage();
-                    },
+                    onTap: showPrivacyPage,
                     child: Text(
                       '隐私政策',
                       style: TextStyle(
-                        color: Colors.white,
-                        fontSize: MediaQuery.of(context).size.width > 600 ? 12 : 10,
-                        fontWeight: FontWeight.bold,
-                        decoration: TextDecoration.underline,
-                        decorationColor: Colors.white,
+                        color: AppTheme.primaryColor,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
                 ],
               ),
             ),
-            SizedBox(height: MediaQuery.of(context).size.width > 600 ? 10 : 5),
           ],
         ),
       ),
