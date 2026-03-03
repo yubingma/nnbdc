@@ -138,6 +138,18 @@ class LoginPageState extends State<LoginPage> with WidgetsBindingObserver {
                   letterSpacing: 0.3,
                 ),
               ),
+              const SizedBox(height: 12),
+              Text(
+                'Progress, not perfection\n进步而非完美',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.8),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w300,
+                  height: 1.4,
+                  fontFamily: 'NotoSansSC',
+                ),
+              ),
             ],
           ),
           const Spacer(),
