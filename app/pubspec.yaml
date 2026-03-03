@@ -170,7 +170,7 @@ flutter:
 # dart run flutter_native_splash:create
 # 原生闪屏页配置：logo + slogan 合成图
 flutter_native_splash:
-  color: "#42a5f5"
+  color: "#ffffff"
   image: "assets/images/splash_v2.png"
   android: true
   ios: true
