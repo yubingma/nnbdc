@@ -69,9 +69,12 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
   // 动态闪屏：动画控制与数据
   late AnimationController _splashController;
   late List<_Bubble> _bubbles;
-  final String _splashText = "听说读写玩，背词不再难";
+  final String _splashText = "Progress, not perfection\n进步而非完美";
 
   void checkNewVersion() async {
+    // 调试用：增加 10 秒延迟看闪屏效果
+    await Future.delayed(const Duration(seconds: 10));
+    
     // 检查新版本/自动升级
     if (PlatformUtils.isAndroid || PlatformUtils.isWindows || PlatformUtils.isLinux) {
       setState(() {
@@ -1399,7 +1402,7 @@ endlocal
     for (int i = 0; i < 24; i++) {
       final double radius = 6 + rnd.nextDouble() * 18;
       final double speed = 0.0006 + rnd.nextDouble() * 0.0016; // 每帧上升速度（相对高度）
-      final Color color = Colors.white.withValues(alpha: 0.10 + rnd.nextDouble() * 0.18);
+      final Color color = Colors.blue.withValues(alpha: 0.05 + rnd.nextDouble() * 0.10);
       _bubbles.add(_Bubble(rnd.nextDouble(), rnd.nextDouble(), radius, speed, color));
     }
 
@@ -1432,7 +1435,7 @@ endlocal
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        backgroundColor: Colors.lightBlue, // 设置Scaffold的背景色
+        backgroundColor: Colors.white, // 设置Scaffold的背景色为白色
         body: Center(
           ///正在下载或安装
           child: downloading || downloadSuccess || installing
@@ -1525,11 +1528,7 @@ endlocal
                       width: w,
                       height: h,
                       decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [Color(0xFF4A90E2), Color(0xFF357ABD), Color(0xFF2E5F8A)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
+                        color: Colors.white,
                       ),
                       child: Stack(
                         fit: StackFit.expand,
@@ -1553,12 +1552,15 @@ endlocal
                                 const SizedBox(height: 16),
                                 Text(
                                   shownText,
+                                  textAlign: TextAlign.center,
                                   textScaler: const TextScaler.linear(1.0),
                                   style: TextStyle(
-                                    color: Colors.white.withValues(alpha: 0.95),
-                                    fontSize: 18,
+                                    color: const Color(0xFF424242),
+                                    fontSize: 16,
                                     fontWeight: FontWeight.w400,
-                                    letterSpacing: 4,
+                                    letterSpacing: 1.2,
+                                    height: 1.5,
+                                    fontFamily: 'NotoSansSC',
                                   ),
                                 ),
                                 const SizedBox(height: 24),
@@ -1567,8 +1569,8 @@ endlocal
                                   '版本 ${_versionName ?? Global.version}${_buildNumber != null ? '($_buildNumber)' : ''} (${Config.profileName})',
                                   textScaler: const TextScaler.linear(1.0),
                                   style: TextStyle(
-                                    color: Colors.white.withValues(alpha: 0.7),
-                                    fontSize: 12,
+                                    color: Colors.grey.shade400,
+                                    fontSize: 10,
                                     fontWeight: FontWeight.w300,
                                   ),
                                 ),
@@ -1591,14 +1593,14 @@ endlocal
                                               width: 16,
                                               height: 16,
                                               child: hasError
-                                                  ? Icon(
+                                                  ? const Icon(
                                                       Icons.error_outline,
                                                       size: 18,
-                                                      color: Colors.red.shade100,
+                                                      color: Colors.red,
                                                     )
                                                   : const CircularProgressIndicator(
                                                       strokeWidth: 2,
-                                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                                      valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4A90E2)),
                                                     ),
                                             ),
                                             const SizedBox(width: 8),
@@ -1606,8 +1608,8 @@ endlocal
                                               _preparingMessage,
                                               textScaler: const TextScaler.linear(1.0),
                                               style: TextStyle(
-                                                color: Colors.white.withValues(alpha: 0.9),
-                                                fontSize: 14,
+                                                color: Colors.grey.shade600,
+                                                fontSize: 13,
                                                 fontWeight: FontWeight.w300,
                                               ),
                                             ),
