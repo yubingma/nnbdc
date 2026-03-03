@@ -14,9 +14,7 @@ import 'package:nnbdc/api/bo/user_bo.dart';
 import 'package:nnbdc/api/enum.dart';
 import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/db/db.dart';
-import 'package:nnbdc/page/admin/exception_log_viewer.dart';
 import 'package:nnbdc/page/admin/health_check.dart';
-import 'package:nnbdc/page/admin/page_viewer.dart';
 import 'package:nnbdc/page/admin/sync_log_viewer.dart';
 import 'package:nnbdc/page/feature_request_wall.dart';
 import 'package:nnbdc/page/level_path_page.dart';
@@ -515,37 +513,21 @@ class _MePageState extends State<MePage> {
     final cardColor = isDarkModeEnabled ? const Color(0xFF2D2D2D) : Colors.white;
 
     final borderColor = isDarkModeEnabled 
-        ? Colors.white.withValues(alpha: 0.15) 
+        ? Colors.white.withValues(alpha: 0.1) 
         : Colors.black.withValues(alpha: 0.05);
-
-    final innerCardBgColor = isDarkModeEnabled
-        ? Colors.white.withValues(alpha: 0.05)
-        : Colors.black.withValues(alpha: 0.03);
-
-    final innerCardBorderColor = isDarkModeEnabled
-        ? Colors.white.withValues(alpha: 0.1)
-        : Colors.black.withValues(alpha: 0.05);
-
-    final progressTrackColor = isDarkModeEnabled
-        ? Colors.white.withValues(alpha: 0.1)
-        : Colors.black.withValues(alpha: 0.05);
-
-    final starContainerColor = isDarkModeEnabled
-        ? Colors.purpleAccent.withValues(alpha: 0.2)
-        : Colors.orange.withValues(alpha: 0.1);
 
     return Column(
       children: [
-        // 玻璃拟物化学习成就卡片 (Glassmorphism Achievement Card)
+        // 学习成就卡片 (Achievement Card)
         Container(
           margin: EdgeInsets.symmetric(
             vertical: MediaQuery.of(context).size.width > 600 ? 16 : 12,
           ),
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: isDarkModeEnabled ? const Color(0xFF2D2D2D) : const Color(0xFFF8F9FA),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: borderColor, width: 1.5),
+            color: isDarkModeEnabled ? const Color(0xFF1E1E1E) : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: borderColor, width: 1.0),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -555,27 +537,15 @@ class _MePageState extends State<MePage> {
                 children: [
                   GestureDetector(
                     onTap: () => Get.toNamed('/login'),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: textColor.withValues(alpha: 0.5),
-                          width: 2,
-                        ),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(2), // 保持一点间距
-                        child: CircleAvatar(
-                          radius: MediaQuery.of(context).size.width > 600 ? 32 : 28,
-                          backgroundColor: const Color(0xFF1A1A2E),
-                          backgroundImage: (loggedInUser?.wechatAvatar != null && loggedInUser!.wechatAvatar!.isNotEmpty)
-                              ? CachedNetworkImageProvider(loggedInUser!.wechatAvatar!)
-                              : null,
-                          child: (loggedInUser?.wechatAvatar == null || loggedInUser!.wechatAvatar!.isEmpty)
-                              ? Icon(Icons.person, color: iconColor, size: 30)
-                              : null,
-                        ),
-                      ),
+                    child: CircleAvatar(
+                      radius: MediaQuery.of(context).size.width > 600 ? 32 : 28,
+                      backgroundColor: isDarkModeEnabled ? Colors.white10 : const Color(0xFFF0F2F5),
+                      backgroundImage: (loggedInUser?.wechatAvatar != null && loggedInUser!.wechatAvatar!.isNotEmpty)
+                          ? CachedNetworkImageProvider(loggedInUser!.wechatAvatar!)
+                          : null,
+                      child: (loggedInUser?.wechatAvatar == null || loggedInUser!.wechatAvatar!.isEmpty)
+                          ? Icon(Icons.person, color: iconColor, size: 30)
+                          : null,
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -592,8 +562,9 @@ class _MePageState extends State<MePage> {
                                 style: TextStyle(
                                   color: textColor,
                                   fontSize: 20,
-                                  fontWeight: FontWeight.bold,
+                                  fontWeight: FontWeight.w900,
                                   letterSpacing: 0.5,
+                                  fontFamily: 'NotoSansSC',
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -626,11 +597,10 @@ class _MePageState extends State<MePage> {
                       Get.to(() => LevelPathPage(currentLevel: studyProgress!.level.level ?? 1));
                     },
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: innerCardBgColor,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: innerCardBorderColor, width: 1),
+                        color: isDarkModeEnabled ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF8F9FA),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -687,14 +657,14 @@ class _MePageState extends State<MePage> {
                     style: TextStyle(
                       color: textColor,
                       fontSize: 12,
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w600,
                       letterSpacing: 1.2,
                     ),
                   ),
                   Text(
-                    '已掌握 ${((studyProgress!.rawWordCount > 0 ? studyProgress!.masteredWordsInSelectedDictsCount / studyProgress!.rawWordCount : 0.0) * 100).toStringAsFixed(1)}%',
+                    '${((studyProgress!.rawWordCount > 0 ? studyProgress!.masteredWordsInSelectedDictsCount / studyProgress!.rawWordCount : 0.0) * 100).toStringAsFixed(1)}%',
                     style: TextStyle(
-                      color: textColor,
+                      color: subtitleColor,
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
                     ),
@@ -702,14 +672,14 @@ class _MePageState extends State<MePage> {
                 ],
               ),
               const SizedBox(height: 8),
-              // 发光进度条
+              // 高对比度进度条
               Container(
-                height: 8,
+                height: 6,
                 width: double.infinity,
                 alignment: Alignment.centerLeft,
                 decoration: BoxDecoration(
-                  color: progressTrackColor,
-                  borderRadius: BorderRadius.circular(4),
+                  color: isDarkModeEnabled ? Colors.white10 : const Color(0xFFF0F2F5),
+                  borderRadius: BorderRadius.circular(3),
                 ),
                 child: LayoutBuilder(
                   builder: (context, constraints) {
@@ -720,8 +690,8 @@ class _MePageState extends State<MePage> {
                     return Container(
                       width: constraints.maxWidth * clampedProgress,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFF007F),
-                        borderRadius: BorderRadius.circular(4),
+                        color: isDarkModeEnabled ? Colors.white : const Color(0xFF1A1A1A),
+                        borderRadius: BorderRadius.circular(3),
                       ),
                     );
                   },
@@ -729,149 +699,41 @@ class _MePageState extends State<MePage> {
               ),
               const SizedBox(height: 24),
 
-              // 3. 数据小卡片行 (Glass Cards)
+              // 3. 数据小卡片行 (Data Cards)
               Row(
                 children: [
-                  // 卡片 1: DAY Circle
-                  Expanded(
-                    flex: 1,
-                    child: AspectRatio(
-                      aspectRatio: 1.0,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: innerCardBgColor,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: innerCardBorderColor),
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Container(
-                              width: 70,
-                              height: 70,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(color: textColor.withValues(alpha: 0.5), width: 2),
-                              ),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    "学习天数",
-                                    style: TextStyle(
-                                      color: textColor,
-                                      fontSize: 9,
-                                      fontWeight: FontWeight.normal,
-                                    ),
-                                    textScaler: const TextScaler.linear(1.0),
-                                  ),
-                                  Text(
-                                    studyProgress!.existDays.toString(),
-                                    style: TextStyle(
-                                      color: textColor,
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                    textScaler: const TextScaler.linear(1.0),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
+                  // 卡片 1: 学习天数
+                  _buildStatBox(
+                    isDarkModeEnabled,
+                    "学习天数",
+                    studyProgress!.existDays.toString(),
                   ),
                   const SizedBox(width: 12),
-                  // 卡片 2: Words Learned
-                  Expanded(
-                    flex: 1,
-                    child: AspectRatio(
-                      aspectRatio: 1.0,
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: innerCardBgColor,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: innerCardBorderColor),
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.check_box_outlined, color: textColor, size: 24),
-                            const SizedBox(height: 2),
-                            Text(
-                              studyProgress!.masteredWordsCount.toString(),
-                              style: TextStyle(
-                                color: textColor,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              textScaler: const TextScaler.linear(1.0),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              "已掌握\n单词",
-                              textAlign: TextAlign.center,
-                              style: TextStyle(color: subtitleColor, fontSize: 9, height: 1.1),
-                              textScaler: const TextScaler.linear(1.0),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
+                  // 卡片 2: 已掌握
+                  _buildStatBox(
+                    isDarkModeEnabled,
+                    "已掌握",
+                    studyProgress!.masteredWordsCount.toString(),
                   ),
                   const SizedBox(width: 12),
-                  // 卡片 3: Learning Duration
-                  Expanded(
-                    flex: 1,
-                    child: AspectRatio(
-                      aspectRatio: 1.0,
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: innerCardBgColor,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: innerCardBorderColor),
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.schedule, color: textColor, size: 24),
-                            const SizedBox(height: 2),
-                            Text(
-                              (studyProgress!.totalLearningSeconds / 3600.0).toStringAsFixed(1),
-                              style: TextStyle(
-                                color: textColor,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              textScaler: const TextScaler.linear(1.0),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              "学习总\n时长(时)",
-                              textAlign: TextAlign.center,
-                              style: TextStyle(color: subtitleColor, fontSize: 9, height: 1.1),
-                              textScaler: const TextScaler.linear(1.0),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
+                  // 卡片 3: 学习时长
+                  _buildStatBox(
+                    isDarkModeEnabled,
+                    "学习小时",
+                    (studyProgress!.totalLearningSeconds / 3600.0).toStringAsFixed(1),
                   ),
                 ],
               ),
               const SizedBox(height: 20),
 
-              // 4. Milestone Achieved Banner (Glassmorphism)
+              // 4. Vocabulary Ranking Banner
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: innerCardBgColor,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: innerCardBorderColor),
+                  color: isDarkModeEnabled ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF8F9FA),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: isDarkModeEnabled ? Colors.white10 : Colors.black.withValues(alpha: 0.02)),
                 ),
                 child: Row(
                   children: [
@@ -884,7 +746,7 @@ class _MePageState extends State<MePage> {
                             style: TextStyle(
                               color: textColor,
                               fontSize: 12,
-                              fontWeight: FontWeight.w800,
+                              fontWeight: FontWeight.w700,
                               letterSpacing: 1.2,
                             ),
                           ),
@@ -895,24 +757,23 @@ class _MePageState extends State<MePage> {
                                 const TextSpan(text: "掌握单词: "),
                                 TextSpan(
                                   text: "${studyProgress!.masteredWordsCount}",
-                                  style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
+                                  style: TextStyle(color: textColor, fontWeight: FontWeight.w900, fontFamily: 'Roboto'),
                                 ),
-                                const TextSpan(text: "\n超过了: "),
+                                const TextSpan(text: "\n击败了: "),
                                 if (studyProgress!.userOrder! < 0)
-                                  const TextSpan(text: '暂无')
+                                  const TextSpan(text: '分析中...')
                                 else ...[
                                   TextSpan(
-                                    text: "${studyProgress!.userOrder!.toStringAsFixed(2)}%",
-                                    style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
+                                    text: "${studyProgress!.userOrder!.toStringAsFixed(1)}%",
+                                    style: TextStyle(color: textColor, fontWeight: FontWeight.w900, fontFamily: 'Roboto'),
                                   ),
-                                  const TextSpan(text: "的用户"),
+                                  const TextSpan(text: " 的用户"),
                                 ],
                               ],
                             ),
                             style: TextStyle(
-                              color: textColor,
+                              color: subtitleColor,
                               fontSize: 12,
-                              fontWeight: FontWeight.normal,
                               height: 1.4,
                               fontFamily: 'NotoSansSC',
                             ),
@@ -921,7 +782,7 @@ class _MePageState extends State<MePage> {
                       ),
                     ),
                     const SizedBox(width: 12),
-                    _buildVisualRanking(studyProgress!.userOrder ?? -1, AppTheme.primaryColor, starContainerColor, textColor),
+                    _buildVisualRanking(studyProgress!.userOrder ?? -1, isDarkModeEnabled ? Colors.white : const Color(0xFF1A1A1A), isDarkModeEnabled ? Colors.white12 : Colors.black.withValues(alpha: 0.05), textColor),
                   ],
                 ),
               ),
@@ -1051,59 +912,38 @@ class _MePageState extends State<MePage> {
               // 学习按钮
               SizedBox(
                 width: double.infinity,
-                child: last30DaysDakaStatus![29] == UserDayStatus.dakaed.json
-                    ? GestureDetector(
-                        onTap: () {},
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          decoration: BoxDecoration(
-                            color: Colors.green.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
-                          ),
-                          child: Text(
-                            '✓ 今日已打卡',
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              color: Colors.green,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                              height: 1.2,
-                              fontFamily: 'NotoSansSC',
-                            ),
-                            textScaler: const TextScaler.linear(1.0),
+                child: (last30DaysDakaStatus?.isNotEmpty == true && last30DaysDakaStatus![29] == UserDayStatus.dakaed.json)
+                    ? Container(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        decoration: BoxDecoration(
+                          color: isDarkModeEnabled ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF8F9FA),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: isDarkModeEnabled ? Colors.white12 : Colors.black.withValues(alpha: 0.05)),
+                        ),
+                        child: Text(
+                          '✓ 今日已打卡',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: isDarkModeEnabled ? Colors.white54 : Colors.black38,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'NotoSansSC',
                           ),
                         ),
                       )
-                    : ElevatedButton.icon(
+                    : ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          foregroundColor: isDarkModeEnabled ? Colors.white : AppTheme.primaryColor,
-                          backgroundColor: isDarkModeEnabled ? Colors.white.withValues(alpha: 0.05) : AppTheme.primaryColor.withValues(alpha: 0.05),
-                          padding: const EdgeInsets.symmetric(vertical: 18),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            side: BorderSide(
-                              color: isDarkModeEnabled ? Colors.white.withValues(alpha: 0.1) : AppTheme.primaryColor.withValues(alpha: 0.15),
-                              width: 1.5,
-                            ),
-                          ),
+                          foregroundColor: isDarkModeEnabled ? Colors.black : Colors.white,
+                          backgroundColor: isDarkModeEnabled ? Colors.white : const Color(0xFF1A1A1A),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           elevation: 0,
                         ),
-                        icon: Icon(Icons.school, color: isDarkModeEnabled ? Colors.white : AppTheme.primaryColor, size: 20),
-                        label: Text(
+                        child: Text(
                           loggedInUser?.todayStudyStarted == true ? '继续学习' : '开始学习',
-                          style: TextStyle(
-                            color: isDarkModeEnabled ? Colors.white : AppTheme.primaryColor,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            height: 1.2,
-                            fontFamily: 'NotoSansSC',
-                          ),
-                          textScaler: const TextScaler.linear(1.0),
+                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, fontFamily: 'NotoSansSC'),
                         ),
-                        onPressed: () {
-                          Get.toNamed('/before_bdc');
-                        },
+                        onPressed: () => Get.toNamed('/before_bdc'),
                       ),
               ),
             ],
@@ -1162,11 +1002,12 @@ class _MePageState extends State<MePage> {
 
         // 打卡统计卡片
         Container(
-          margin: const EdgeInsets.symmetric(vertical: 8),
-          padding: const EdgeInsets.all(16),
+          margin: const EdgeInsets.symmetric(vertical: 6),
+          padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             color: cardColor,
             borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: borderColor, width: 1.0),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1175,14 +1016,12 @@ class _MePageState extends State<MePage> {
                 '打卡统计',
                 style: TextStyle(
                   fontSize: 18,
-                  fontWeight: FontWeight.w500,
+                  fontWeight: FontWeight.w900,
                   color: textColor,
-                  height: 1.2,
                   fontFamily: 'NotoSansSC',
                 ),
-                textScaler: const TextScaler.linear(1.0),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
@@ -1210,11 +1049,12 @@ class _MePageState extends State<MePage> {
 
         // 最近30天打卡情况卡片
         Container(
-          margin: const EdgeInsets.symmetric(vertical: 8),
-          padding: const EdgeInsets.all(16),
+          margin: const EdgeInsets.symmetric(vertical: 6),
+          padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             color: cardColor,
             borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: borderColor, width: 1.0),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1223,16 +1063,14 @@ class _MePageState extends State<MePage> {
                 '最近30天学习情况',
                 style: TextStyle(
                   fontSize: 18,
-                  fontWeight: FontWeight.w500,
+                  fontWeight: FontWeight.w900,
                   color: textColor,
-                  height: 1.2,
                   fontFamily: 'NotoSansSC',
                 ),
-                textScaler: const TextScaler.linear(1.0),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
               renderLast30DaysDakaStatus(),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
               // 图例
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -1250,13 +1088,12 @@ class _MePageState extends State<MePage> {
 
         // 词书管理卡片
         Container(
-          margin: const EdgeInsets.symmetric(vertical: 8),
+          margin: const EdgeInsets.symmetric(vertical: 6),
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: isDarkModeEnabled 
-                ? const Color(0xFF2C2C2E) 
-                : const Color(0xFFF2F2F7),
-            borderRadius: BorderRadius.circular(24),
+            color: cardColor,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: borderColor, width: 1.0),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1267,38 +1104,42 @@ class _MePageState extends State<MePage> {
                   Text(
                     '我的书桌',
                     style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
                       color: textColor,
                       fontFamily: 'NotoSansSC',
                     ),
-                    textScaler: const TextScaler.linear(1.0),
                   ),
-                  TextButton.icon(
+                  GestureDetector(
                     key: const Key('me_choose_book_btn'),
-                    icon: Icon(Icons.add_circle_outline, color: subtitleColor, size: 18),
-                    label: Text(
-                      '选择词书',
-                      style: TextStyle(
-                        color: subtitleColor, 
-                        fontSize: 14, 
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'NotoSansSC',
-                      ),
-                    ),
-                    style: TextButton.styleFrom(
-                      backgroundColor: innerCardBgColor,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        side: BorderSide(color: innerCardBorderColor),
-                      ),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    ),
-                    onPressed: () {
+                    onTap: () {
                       Get.toNamed("/select_book")!.then((value) {
                         loadData();
                       });
                     },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: isDarkModeEnabled ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF8F9FA),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.add_circle_outline, color: subtitleColor, size: 14),
+                          const SizedBox(width: 4),
+                          Text(
+                            '选择词书',
+                            style: TextStyle(
+                              color: subtitleColor,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'NotoSansSC',
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -1307,22 +1148,22 @@ class _MePageState extends State<MePage> {
                 future: renderLearningDicts(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator(color: Colors.white));
+                    return Center(child: CircularProgressIndicator(color: isDarkModeEnabled ? Colors.white24 : Colors.black12));
                   }
                   if (snapshot.hasError) {
                     return Center(
                       child: Text(
-                        'Error: ${snapshot.error}',
-                        style: const TextStyle(color: Colors.white70),
+                        '加载失败',
+                        style: TextStyle(color: subtitleColor),
                       ),
                     );
                   }
                   return snapshot.data ??
                       Container(
                         padding: const EdgeInsets.all(16),
-                        child: const Text(
-                          '暂无词书，点击上方按钮添加',
-                          style: TextStyle(color: Colors.white70, fontSize: 14),
+                        child: Text(
+                          '暂无词书',
+                          style: TextStyle(color: subtitleColor, fontSize: 14),
                           textAlign: TextAlign.center,
                         ),
                       );
@@ -1334,11 +1175,12 @@ class _MePageState extends State<MePage> {
 
         // 账户管理卡片
         Container(
-          margin: const EdgeInsets.symmetric(vertical: 8),
-          padding: const EdgeInsets.all(16),
+          margin: const EdgeInsets.symmetric(vertical: 6),
+          padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             color: cardColor,
             borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: borderColor, width: 1.0),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1347,29 +1189,30 @@ class _MePageState extends State<MePage> {
                 '账户管理',
                 style: TextStyle(
                   fontSize: 18,
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w900,
                   color: textColor,
+                  fontFamily: 'NotoSansSC',
                 ),
               ),
               const SizedBox(height: 16),
               _buildMenuTile(
-                icon: Icons.person,
+                icon: Icons.person_outline_rounded,
                 title: '个人信息',
                 onTap: () => showUpdateUserInfoDlg(),
               ),
               _buildMenuTile(
-                icon: Icons.feedback,
+                icon: Icons.chat_bubble_outline_rounded,
                 title: '意见建议',
                 trailing: msgCount > 0
                     ? Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: unreadMsgCount == 0 ? Colors.grey : Colors.red,
+                          color: unreadMsgCount == 0 ? Colors.grey : Colors.redAccent,
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Text(
                           unreadMsgCount == 0 ? msgCount.toString() : unreadMsgCount.toString(),
-                          style: const TextStyle(color: Colors.white, fontSize: 12),
+                          style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
                         ),
                       )
                     : null,
@@ -1380,7 +1223,7 @@ class _MePageState extends State<MePage> {
               // 我的小天地 - 仅管理员可见
               if (loggedInUser?.isAdmin == true)
                 _buildMenuTile(
-                  icon: Icons.eco,
+                  icon: Icons.eco_outlined,
                   title: '我的小天地',
                   onTap: () {
                     Get.toNamed('/farm');
@@ -1389,14 +1232,14 @@ class _MePageState extends State<MePage> {
               // AI 助教 - 仅管理员可见
               if (loggedInUser?.isAdmin == true)
                 _buildMenuTile(
-                  icon: Icons.psychology,
+                  icon: Icons.psychology_outlined,
                   title: 'AI 助教',
                   onTap: () {
                     Get.toNamed('/ai_activation');
                   },
                 ),
               _buildMenuTile(
-                icon: Icons.rate_review,
+                icon: Icons.edit_note_rounded,
                 title: '需求墙',
                 onTap: () {
                   Navigator.push(
@@ -1406,53 +1249,37 @@ class _MePageState extends State<MePage> {
                 },
               ),
               _buildMenuTile(
-                icon: Icons.swap_horiz,
+                icon: Icons.logout_rounded,
                 title: '切换账号',
                 onTap: () => Get.toNamed('/login'),
               ),
               _buildMenuTile(
-                icon: Icons.delete_forever,
+                icon: Icons.no_accounts_outlined,
                 title: '注销账号',
                 onTap: () => showUnRegisterDlg(),
                 isDestructive: true,
               ),
 
-              // 杂项
-              Builder(
-                builder: (context) {
-                  final isDarkModeEnabled = context.watch<DarkMode>().isDarkMode;
-                  return Divider(
-                    color: isDarkModeEnabled ? Colors.grey[700] : Colors.grey[300],
-                    height: 32,
-                    thickness: 1,
-                  );
-                },
+              const SizedBox(height: 12),
+              Text(
+                '系统',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w900,
+                  color: subtitleColor,
+                  fontFamily: 'NotoSansSC',
+                ),
               ),
-              Builder(
-                builder: (context) {
-                  final isDarkModeEnabled = context.watch<DarkMode>().isDarkMode;
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8.0),
-                    child: Text(
-                      '杂项',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: isDarkModeEnabled ? Colors.grey[400] : const Color(0xFF7F8C8D),
-                      ),
-                    ),
-                  );
-                },
-              ),
+              const SizedBox(height: 8),
               _buildMenuTile(
-                icon: Icons.health_and_safety,
+                icon: Icons.health_and_safety_outlined,
                 title: '健康检查',
                 onTap: () => _navigateToDataDiagnostic(),
               ),
               _buildMenuTile(
-                icon: Icons.cloud_sync,
+                icon: Icons.cloud_sync_outlined,
                 title: '云同步${_isLastSyncFailed ? "(失败)" : ""}',
-                iconColor: _isLastSyncFailed ? Colors.red : null,
+                iconColor: _isLastSyncFailed ? Colors.redAccent : null,
                 onTap: () {
                   Navigator.push(
                     context,
@@ -1466,7 +1293,7 @@ class _MePageState extends State<MePage> {
                 },
               ),
               _buildMenuTile(
-                icon: Icons.cleaning_services,
+                icon: Icons.cleaning_services_outlined,
                 title: '清空本地数据',
                 onTap: () => _showWipeLocalDataDialog(),
                 isDestructive: true,
@@ -1475,38 +1302,14 @@ class _MePageState extends State<MePage> {
               if (loggedInUser?.isAdmin == true) ...[
                 const Divider(),
                 _buildMenuTile(
-                  icon: Icons.admin_panel_settings,
+                  icon: Icons.admin_panel_settings_outlined,
                   title: '系统管理',
                   onTap: () => Get.toNamed('/admin'),
                 ),
                 _buildMenuTile(
-                  icon: Icons.storage,
-                  title: '数据库查看器(版本:${MyDatabase.instance.schemaVersion})',
+                  icon: Icons.storage_rounded,
+                  title: '数据库查看器',
                   onTap: () => _openDbViewPage(),
-                ),
-                _buildMenuTile(
-                  icon: Icons.pageview,
-                  title: '页面查看器',
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const PageViewerPage(),
-                      ),
-                    );
-                  },
-                ),
-                _buildMenuTile(
-                  icon: Icons.bug_report,
-                  title: '异常日志',
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const ExceptionLogViewerPage(),
-                      ),
-                    );
-                  },
                 ),
               ],
             ],
@@ -2164,6 +1967,40 @@ class _MePageState extends State<MePage> {
 
 
   // 进度项组件
+  Widget _buildStatBox(bool isDarkMode, String label, String value) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        decoration: BoxDecoration(
+          color: isDarkMode ? Colors.white.withValues(alpha: 0.03) : const Color(0xFFF8F9FA),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.02),
+            width: 1,
+          ),
+        ),
+        child: Column(
+          children: [
+            Text(
+              value,
+              style: TextStyle(
+                color: isDarkMode ? Colors.white : const Color(0xFF1A1A1A),
+                fontSize: 26,
+                fontWeight: FontWeight.w900,
+                fontFamily: 'Roboto',
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(color: isDarkMode ? Colors.white38 : Colors.grey, fontSize: 11, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildProgressItem(String title, String value, IconData icon, {double? rotationAngle, Color? color}) {
     final isDarkModeEnabled = context.watch<DarkMode>().isDarkMode;
     final textColor = isDarkModeEnabled ? Colors.white : const Color(0xFF2C3E50);
@@ -2246,27 +2083,34 @@ class _MePageState extends State<MePage> {
     Color? iconColor,
   }) {
     final isDarkModeEnabled = context.watch<DarkMode>().isDarkMode;
-    final textColor = isDarkModeEnabled ? Colors.white : const Color(0xFF2C3E50);
+    final textColor = isDarkModeEnabled ? Colors.white : const Color(0xFF1A1A1A);
+    final secondaryColor = isDarkModeEnabled ? Colors.white54 : Colors.black26;
 
     return ListTile(
       leading: Icon(
         icon,
-        color: iconColor ?? (isDestructive ? Colors.red : const Color(0xFF3498DB)),
+        color: iconColor ?? (isDestructive ? Colors.redAccent : (isDarkModeEnabled ? Colors.white70 : Colors.black87)),
+        size: 22,
       ),
       title: Text(
         title,
         style: TextStyle(
-          color: isDestructive ? Colors.red : textColor,
-          fontWeight: FontWeight.w500,
+          color: isDestructive ? Colors.redAccent : textColor,
+          fontWeight: FontWeight.w600,
+          fontSize: 15,
+          fontFamily: 'NotoSansSC',
         ),
       ),
       trailing: trailing ??
           Icon(
-            Icons.chevron_right,
-            color: isDarkModeEnabled ? Colors.grey[400] : const Color(0xFF7F8C8D),
+            Icons.chevron_right_rounded,
+            color: secondaryColor,
+            size: 20,
           ),
       onTap: onTap,
-      contentPadding: EdgeInsets.zero,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+      dense: true,
+      visualDensity: VisualDensity.compact,
     );
   }
 
@@ -2314,7 +2158,7 @@ class _MePageState extends State<MePage> {
   @override
   Widget build(BuildContext context) {
     final isDarkModeEnabled = context.watch<DarkMode>().isDarkMode;
-    final backgroundColor = isDarkModeEnabled ? const Color(0xFF1A1A1A) : const Color(0xFFF5F5F5);
+    final backgroundColor = isDarkModeEnabled ? const Color(0xFF121212) : const Color(0xFFF8F9FA);
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -2461,32 +2305,20 @@ class _DictCardState extends State<DictCard> {
 
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
     
-    final cardBgColor = isDarkMode ? const Color(0xFF2C2C2E) : Colors.white;
-    final accentColor = AppTheme.primaryColor;
-    final textColor = isDarkMode ? Colors.white : const Color(0xFF1F2937);
-    final subtitleColor = isDarkMode ? Colors.white70 : const Color(0xFF6B7280);
+    final cardBgColor = isDarkMode ? const Color(0xFF1E1E1E) : Colors.white;
+    final textColor = isDarkMode ? Colors.white : const Color(0xFF1A1A1A);
+    final subtitleColor = isDarkMode ? Colors.white54 : Colors.black26;
+    final borderColor = isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.05);
 
-    return Stack(
-      children: [
-        Container(
-          margin: const EdgeInsets.only(bottom: 16),
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: cardBgColor,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: accentColor.withValues(alpha: isDarkMode ? 0.3 : 0.15),
-              width: 1.5,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: isDarkMode ? 0.3 : 0.03),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          clipBehavior: Clip.antiAlias,
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: cardBgColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: borderColor, width: 1.0),
+      ),
+      clipBehavior: Clip.antiAlias,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -2609,9 +2441,7 @@ class _DictCardState extends State<DictCard> {
               ),
             ],
           ),
-        ),
-      ],
-    );
+        );
   }
 
   /// 统一处理词书数据操作（清空单词或删除词书）
