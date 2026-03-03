@@ -104,9 +104,21 @@ List<Widget> renderAsrMeaningItems(WordWrapper word) {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if ((meaningItem.ciXing ?? '').isNotEmpty)
-          Text(
-            meaningItem.ciXing!,
-            style: const TextStyle(fontSize: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+            margin: const EdgeInsets.only(bottom: 2),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF7FAFC),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Text(
+              meaningItem.ciXing!,
+              style: const TextStyle(
+                fontSize: 10,
+                color: Color(0xFF94A3B8),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ),
         Wrap(
           crossAxisAlignment: WrapCrossAlignment.end,

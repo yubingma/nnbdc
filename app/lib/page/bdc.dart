@@ -3112,17 +3112,20 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
               children: [
                 // 词性部分 - 带背景的容器
                 Container(
-                  width: 45, // 固定宽度，确保所有词性对齐
+                  width: 45,
                   margin: const EdgeInsets.only(right: 4),
                   padding: const EdgeInsets.symmetric(vertical: 0, horizontal: 4),
-                  decoration: null,
+                  decoration: BoxDecoration(
+                    color: isDarkMode ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFF7FAFC),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
                   child: Center(
                     child: Text(
                       ciXing,
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w400,
-                        color: isDarkMode ? Colors.white38 : Colors.grey.shade400,
+                        color: isDarkMode ? Colors.white38 : const Color(0xFF94A3B8),
                       ),
                     ),
                   ),
@@ -3187,8 +3190,12 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
               width: double.infinity,
               child: Container(
                 decoration: BoxDecoration(
-                  color: context.watch<DarkMode>().isDarkMode ? const Color(0xFF2A2A3E) : Colors.white,
+                  color: context.watch<DarkMode>().isDarkMode ? const Color(0xFF2C2C2C) : const Color(0xFFF8F9FA),
                   borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: context.watch<DarkMode>().isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
+                    width: 1,
+                  ),
                 ),
                 child: Material(
                   color: Colors.transparent,
