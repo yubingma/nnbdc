@@ -40,7 +40,6 @@ import '../util/utils.dart';
 import '../db/user_extensions.dart';
 import '../theme/app_theme.dart';
 import '../util/error_handler.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
 class BdcPageArgs {
   /// 从哪个页面进入本页面
@@ -2055,27 +2054,31 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       right: rightPadding,
       child: Container(
         decoration: BoxDecoration(
-          color: context.watch<DarkMode>().isDarkMode ? const Color(0xFF2A2A3E) : Colors.white,
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(12),
-            topRight: Radius.circular(12),
+          color: context.watch<DarkMode>().isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
+          border: Border(
+            top: BorderSide(
+              color: context.watch<DarkMode>().isDarkMode ? Colors.white10 : Colors.grey.shade200,
+              width: 0.5,
+            ),
           ),
         ),
         child: TabBar(
           controller: _tabController,
-          indicatorColor: AppTheme.primaryColor,
+          indicatorColor: Colors.black,
+          indicatorWeight: 2,
           dividerColor: Colors.transparent,
           dividerHeight: 0,
           overlayColor: WidgetStateProperty.all(Colors.transparent),
           splashFactory: NoSplash.splashFactory,
-          labelColor: AppTheme.primaryColor,
-          unselectedLabelColor: context.watch<DarkMode>().isDarkMode ? Colors.white70 : Colors.grey[600],
+          labelColor: Colors.black,
+          unselectedLabelColor: context.watch<DarkMode>().isDarkMode ? Colors.white54 : Colors.grey.shade400,
           labelStyle: const TextStyle(
-            fontSize: 14,
+            fontSize: 13,
             fontWeight: FontWeight.w600,
+            letterSpacing: 0.5,
           ),
           unselectedLabelStyle: const TextStyle(
-            fontSize: 14,
+            fontSize: 13,
             fontWeight: FontWeight.w400,
           ),
           tabs: _dynamicTabs,
@@ -2095,10 +2098,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Container(
             height: 6,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(3),
-              color: context.watch<DarkMode>().isDarkMode ? const Color(0xFF2A2A3E) : const Color(0xFFE8F1FF),
-            ),
+            color: context.watch<DarkMode>().isDarkMode ? const Color(0xFF2C2C2C) : const Color(0xFFF0F2F5),
             child: _currentGetWordResult?.progress != null
                 ? LayoutBuilder(
                     builder: (context, constraints) {
@@ -2305,47 +2305,47 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                 )
               : null,
         ),
-        padding: const EdgeInsets.all(8),
+        padding: const EdgeInsets.symmetric(vertical: 20),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             if (_showAnswerButtons || _studyStep == StudyStep.en2Ch.json)
-              ElevatedButton.icon(
+              OutlinedButton(
                 key: const Key('bdc_not_know_btn'),
-                icon: const Icon(Icons.close, size: 20.0, color: Colors.white),
-                style: ElevatedButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  backgroundColor: Colors.red,
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFF666666),
+                  side: BorderSide(color: Colors.grey.shade300),
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                label: const Text('不认识'),
                 onPressed: () => showWordDetail(_word, true, fsrsRating: FsrsRating.again),
+                child: const Text('不认识', style: TextStyle(fontWeight: FontWeight.w500)),
               ),
             if (_showAnswerButtons || _studyStep == StudyStep.en2Ch.json)
-              ElevatedButton.icon(
+              ElevatedButton(
                 key: const Key('bdc_study_again'),
-                icon: const Icon(Icons.refresh, size: 20.0, color: Colors.white),
                 style: ElevatedButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  backgroundColor: Colors.green,
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  backgroundColor: const Color(0xFFF5F5F5),
+                  foregroundColor: const Color(0xFF333333),
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                label: const Text('再学学'),
                 onPressed: () => showWordDetail(_word, false, fsrsRating: FsrsRating.good),
+                child: const Text('再学学', style: TextStyle(fontWeight: FontWeight.w500)),
               ),
             if (_canLeaveCurrWord)
-              ElevatedButton.icon(
+              ElevatedButton(
                 key: const Key('bdc_next_word_btn'),
-                icon: const Icon(Icons.navigate_next, size: 20.0, color: Colors.white),
                 style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF1A1A1A),
                   foregroundColor: Colors.white,
-                  backgroundColor: Colors.blue,
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                label: const Text('下一词'),
-                onPressed: () {
-                  getNextWord(true);
-                },
+                onPressed: () => getNextWord(true),
+                child: const Text('下一词', style: TextStyle(fontWeight: FontWeight.bold)),
               ),
           ],
         ),
@@ -2829,7 +2829,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       margin: const EdgeInsets.only(left: 8),
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: _playingStates['word']! ? Colors.teal[300] : Colors.grey[200],
+        color: _playingStates['word']! ? const Color(0xFF1A1A1A) : Colors.grey[200],
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.1),
@@ -3214,13 +3214,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                 decoration: BoxDecoration(
                   color: context.watch<DarkMode>().isDarkMode ? const Color(0xFF2A2A3E) : Colors.white,
                   borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: context.watch<DarkMode>().isDarkMode ? Colors.black.withValues(alpha: 0.2) : Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 6,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
                 ),
                 child: Material(
                   color: Colors.transparent,
@@ -3416,7 +3409,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: context.watch<DarkMode>().isDarkMode ? const Color(0xFF2A2A3E).withValues(alpha: 0.5) : const Color(0xFFF0F8FF),
+        color: context.watch<DarkMode>().isDarkMode ? const Color(0xFF2C2C2C) : const Color(0xFFF8F9FB),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -3512,30 +3505,20 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         crossAxisAlignment: CrossAxisAlignment.center,
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
-            decoration: BoxDecoration(
-              color: context.watch<DarkMode>().isDarkMode
-                  ? const Color(0xFF2A2A3E).withValues(alpha: 0.8)
-                  : const Color(0xFFF8FAFF).withValues(alpha: 0.9),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(16),
-                topRight: Radius.circular(16),
-              ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _getStepIcon(_studyStep!),
-                const SizedBox(width: 6),
-                Text(
-                  key: const Key('learning_mode_text'),
-                  '英→中',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppTheme.primaryColor),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                '英→中',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w400,
+                  color: Colors.grey.shade500,
+                  letterSpacing: 1.2,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
           Padding(
             padding: const EdgeInsets.all(16),
@@ -3550,7 +3533,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                     style: TextStyle(
                       fontWeight: FontWeight.w900,
                       fontSize: 36,
-                      color: AppTheme.primaryColor,
+                      color: const Color(0xFF1A1A1A),
                       fontFamily: 'Roboto',
                       letterSpacing: 1.5,
                     ),
@@ -3646,28 +3629,20 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         crossAxisAlignment: CrossAxisAlignment.center,
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
-          // 学习模式标题
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
-            decoration: BoxDecoration(
-              color: context.watch<DarkMode>().isDarkMode
-                  ? const Color(0xFF2A2A3E).withValues(alpha: 0.8)
-                  : const Color(0xFFF8FAFF).withValues(alpha: 0.9),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(16),
-                topRight: Radius.circular(16),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                '中→英',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w400,
+                  color: Colors.grey.shade500,
+                  letterSpacing: 1.2,
+                ),
               ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _getStepIcon(_studyStep!),
-                const SizedBox(width: 6),
-                const Text(
-                    key: Key('learning_mode_text'), '中→英', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF4A90E2))),
-              ],
-            ),
+            ],
           ),
           // 释义/图片/配图按钮
           Padding(
@@ -3686,12 +3661,12 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                           width: 50,
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF4A90E2).withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(8),
+                            color: const Color(0xFFF5F5F5),
+                            borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
                             _currentGetWordResult!.learningWord!.word.getMergedMeaningItems()[i].ciXing ?? '',
-                            style: const TextStyle(color: Color(0xFF4A90E2), fontSize: 12, fontWeight: FontWeight.w500),
+                            style: const TextStyle(color: Color(0xFF999999), fontSize: 11, fontWeight: FontWeight.w600),
                             textAlign: TextAlign.center,
                           ),
                         ),
@@ -3766,26 +3741,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     );
   }
 
-  Widget _getStepIcon(String studyStep) {
-    switch (studyStep) {
-      case 'En2Ch':
-        // 英→中模式：使用外国人形象
-        return SvgPicture.asset(
-          'assets/images/chinese-person.svg',
-          width: 20,
-          height: 20,
-        );
-      case 'Ch2En':
-        // 中→英模式：使用中国人形象
-        return SvgPicture.asset(
-          'assets/images/foreign-person.svg',
-          width: 20,
-          height: 20,
-        );
-      default:
-        return const Icon(Icons.school, size: 16);
-    }
-  }
 
   /// 隐藏括号内的内容，避免在"中→英"模式下暴露答案
   String _hideParenthesesContent(String text) {
@@ -3851,23 +3806,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         resizeToAvoidBottomInset: true,
         appBar: null,
         body: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: context.watch<DarkMode>().isDarkMode
-                  ? [
-                      const Color(0xFF1A1A2E),
-                      const Color(0xFF16213E),
-                      const Color(0xFF0F3460),
-                    ]
-                  : [
-                      const Color(0xFFF8FAFF),
-                      const Color(0xFFE8F4FD),
-                      const Color(0xFFF0F8FF),
-                    ],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-            ),
-          ),
+          color: context.watch<DarkMode>().isDarkMode ? const Color(0xFF121212) : Colors.white,
           child: pageContent,
         ),
       ),
