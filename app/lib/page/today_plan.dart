@@ -251,7 +251,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
                       const SizedBox(width: 8),
                     Icon(
                       Icons.lock_outline_rounded,
-                      color: isDarkMode ? Colors.white38 : Colors.black12,
+                      color: isDarkMode ? Colors.white54 : Colors.black26,
                       size: 14,
                     ),
                     ],
@@ -378,7 +378,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
           icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 16),
           dropdownColor: isDarkMode ? const Color(0xFF2D2D2D) : Colors.white,
           style: TextStyle(
-            color: isDarkMode ? Colors.white : Colors.black,
+            color: isDarkMode ? (isStarted ? Colors.white54 : Colors.white) : (isStarted ? Colors.black26 : Colors.black),
             fontSize: 14,
             fontWeight: FontWeight.bold,
           ),
