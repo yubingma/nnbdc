@@ -2899,11 +2899,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   Widget _buildTopActionButton({
     required IconData icon,
     String? label,
-    Color? color,
     required VoidCallback onTap,
   }) {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    final buttonColor = color ?? (isDarkMode ? Colors.white : const Color(0xFF4A90E2));
 
     return Container(
       height: 32, // 恢复原高度
@@ -2913,19 +2911,12 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         vertical: 4,
       ),
       decoration: BoxDecoration(
-        color: isDarkMode ? const Color(0xFF2A2A3E) : Colors.white,
-        borderRadius: BorderRadius.circular(label != null ? 16 : 16), // 对于无标签按钮使用圆形
+        color: isDarkMode ? const Color(0xFF2C2C2C) : const Color(0xFFF8F9FA),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: buttonColor.withValues(alpha: 0.3),
+          color: isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
           width: 1,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: isDarkMode ? Colors.black.withValues(alpha: 0.3) : Colors.black.withValues(alpha: 0.1),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
       ),
       child: Material(
         color: Colors.transparent,
@@ -2938,8 +2929,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
             children: [
               Icon(
                 icon,
-                color: buttonColor,
-                size: 14, // 恢复原大小
+                color: isDarkMode ? Colors.white70 : const Color(0xFF333333),
+                size: 14,
               ),
               if (label != null) ...[
                 const SizedBox(width: 3),
@@ -2947,9 +2938,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                   label,
                   textScaler: const TextScaler.linear(1.0),
                   style: TextStyle(
-                    fontSize: 10, // 恢复原字号
-                    fontWeight: FontWeight.w400, // 减轻权重，避免小字号模糊
-                    color: buttonColor,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w400,
+                    color: isDarkMode ? Colors.white70 : const Color(0xFF333333),
                   ),
                 ),
               ],
@@ -2974,19 +2965,12 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         height: 32,
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
         decoration: BoxDecoration(
-          color: isDarkMode ? const Color(0xFF2A2A3E) : Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          color: isDarkMode ? const Color(0xFF2C2C2C) : const Color(0xFFF8F9FA),
+          borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: (isDarkMode ? Colors.white : const Color(0xFF4A90E2)).withValues(alpha: 0.3),
+            color: isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
             width: 1,
           ),
-          boxShadow: [
-            BoxShadow(
-              color: isDarkMode ? Colors.black.withValues(alpha: 0.3) : Colors.black.withValues(alpha: 0.1),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            ),
-          ],
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -2995,7 +2979,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
             Icon(
               Icons.edit,
               size: 12,
-              color: isDarkMode ? Colors.white : const Color(0xFF4A90E2),
+              color: isDarkMode ? Colors.white70 : const Color(0xFF333333),
             ),
             // Switch - 禁用点击，只用作视觉指示器
             SizedBox(
@@ -3005,11 +2989,11 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                 child: IgnorePointer(
                   child: Switch(
                     value: _isEditMode,
-                    onChanged: (_) {}, // 空回调而不是null，保持Switch启用状态
-                    activeThumbColor: const Color(0xFF4A90E2),
+                    onChanged: (_) {},
+                    activeThumbColor: isDarkMode ? Colors.white : const Color(0xFF1A1A1A),
                     inactiveThumbColor: Colors.grey[400],
-                    inactiveTrackColor: Colors.grey[300],
-                    activeTrackColor: const Color(0xFF4A90E2).withValues(alpha: 0.5),
+                    inactiveTrackColor: isDarkMode ? Colors.white10 : Colors.grey[200],
+                    activeTrackColor: isDarkMode ? Colors.white24 : Colors.black12,
                     materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
                 ),
@@ -3032,15 +3016,12 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: context.watch<DarkMode>().isDarkMode ? const Color(0xFF2A2A3E) : Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: context.watch<DarkMode>().isDarkMode ? Colors.black.withValues(alpha: 0.3) : Colors.black.withValues(alpha: 0.1),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+              color: context.watch<DarkMode>().isDarkMode ? const Color(0xFF2C2C2C) : const Color(0xFFF8F9FA),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: context.watch<DarkMode>().isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
+                width: 1,
+              ),
             ),
             child: Material(
               color: Colors.transparent,
@@ -3049,8 +3030,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                 onTap: () => Navigator.pop(context),
                 child: Icon(
                   Icons.arrow_back_ios_new,
-                  color: context.watch<DarkMode>().isDarkMode ? Colors.white : AppTheme.primaryColor,
-                  size: 20,
+                  color: context.watch<DarkMode>().isDarkMode ? Colors.white70 : const Color(0xFF333333),
+                  size: 18,
                 ),
               ),
             ),
@@ -3066,7 +3047,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                 _buildTopActionButton(
                   icon: Icons.check_circle_outline,
                   label: '掌握',
-                  color: const Color(0xFF10B981),
                   onTap: () {
                     _isAnswerCorrect = true;
                     _isWordMastered = true;
@@ -3082,7 +3062,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                 _buildTopActionButton(
                   icon: Icons.report_problem_outlined,
                   label: '报错',
-                  color: const Color(0xFFF59E0B),
                   onTap: () => showErrorReportDlg(),
                 ),
 
