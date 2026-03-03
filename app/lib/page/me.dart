@@ -1028,18 +1028,14 @@ class _MePageState extends State<MePage> {
                   _buildProgressItem(
                     '打卡天数',
                     studyProgress!.dakaDayCount.toString(),
-                    Icons.calendar_today_rounded,
                   ),
                   _buildProgressItem(
                     '打卡率',
                     '${(studyProgress!.dakaRatio! * 100).toStringAsFixed(1)}%',
-                    Icons.analytics_rounded,
                   ),
                   _buildProgressItem(
                     '魔法泡泡',
                     studyProgress!.cowDung.toString(),
-                    Icons.water_drop_rounded,
-                    rotationAngle: 3.14159,
                   ),
                 ],
               ),
@@ -2001,49 +1997,30 @@ class _MePageState extends State<MePage> {
     );
   }
 
-  Widget _buildProgressItem(String title, String value, IconData icon, {double? rotationAngle, Color? color}) {
+  Widget _buildProgressItem(String title, String value) {
     final isDarkModeEnabled = context.watch<DarkMode>().isDarkMode;
-    final textColor = isDarkModeEnabled ? Colors.white : const Color(0xFF2C3E50);
-    final subtitleColor = isDarkModeEnabled ? Colors.white70 : const Color(0xFF7F8C8D);
-    final iconColor = isDarkModeEnabled ? Colors.white70 : const Color(0xFF95A5A6);
-    final accentColor = AppTheme.primaryColor;
-
-    Widget iconWidget = Icon(icon, color: color ?? iconColor, size: 22);
-    if (rotationAngle != null) {
-      iconWidget = Transform.rotate(
-        angle: rotationAngle,
-        child: iconWidget,
-      );
-    }
+    final textColor = isDarkModeEnabled ? Colors.white : const Color(0xFF1A1A1A);
+    final subtitleColor = isDarkModeEnabled ? Colors.white38 : Colors.black26;
 
     return Column(
       children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: isDarkModeEnabled ? Colors.white.withValues(alpha: 0.05) : accentColor.withValues(alpha: 0.05),
-            shape: BoxShape.circle,
-          ),
-          child: iconWidget,
-        ),
-        const SizedBox(height: 10),
         Text(
           value,
           style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
+            fontSize: 20,
+            fontWeight: FontWeight.w900,
             color: textColor,
-            fontFamily: 'RobotoCondensed',
+            fontFamily: 'Roboto',
           ),
         ),
-        const SizedBox(height: 2),
+        const SizedBox(height: 4),
         Text(
           title,
           style: TextStyle(
-            fontSize: 10,
+            fontSize: 11,
             color: subtitleColor,
-            fontWeight: FontWeight.w400,
-            letterSpacing: 0.5,
+            fontWeight: FontWeight.bold,
+            fontFamily: 'NotoSansSC',
           ),
         ),
       ],
