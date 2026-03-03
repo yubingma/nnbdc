@@ -3457,7 +3457,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   Widget _buildWordStepCard() {
     return Container(
       decoration: BoxDecoration(
-        color: context.watch<DarkMode>().isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
+        color: context.watch<DarkMode>().isDarkMode ? const Color(0xFF1E1E1E) : const Color(0xFFF8F9FA),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -3581,7 +3581,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   Widget _buildMeaningStepCard() {
     return Container(
       decoration: BoxDecoration(
-        color: context.watch<DarkMode>().isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
+        color: context.watch<DarkMode>().isDarkMode ? const Color(0xFF1E1E1E) : const Color(0xFFF8F9FA),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
