@@ -2096,7 +2096,7 @@ class _MePageState extends State<MePage> {
         title,
         style: TextStyle(
           color: isDestructive ? Colors.redAccent : textColor,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.normal,
           fontSize: 15,
           fontFamily: 'NotoSansSC',
         ),
