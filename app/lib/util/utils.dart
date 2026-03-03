@@ -120,6 +120,65 @@ class Util {
     return meaningStr;
   }
 
+  static String translateCiXing(String ciXing) {
+    if (ciXing.isEmpty) return "";
+    var lower = ciXing.toLowerCase().replaceAll('.', '').trim();
+    String translated;
+    switch (lower) {
+      case 'n':
+        translated = '名';
+        break;
+      case 'v':
+        translated = '动';
+        break;
+      case 'adj':
+        translated = '形';
+        break;
+      case 'adv':
+        translated = '副';
+        break;
+      case 'prep':
+        translated = '介';
+        break;
+      case 'conj':
+        translated = '连';
+        break;
+      case 'pron':
+        translated = '代';
+        break;
+      case 'num':
+        translated = '数';
+        break;
+      case 'art':
+        translated = '冠';
+        break;
+      case 'int':
+        translated = '叹';
+        break;
+      case 'vt':
+        translated = '及物';
+        break;
+      case 'vi':
+        translated = '不及物';
+        break;
+      case 'phrase':
+        translated = '短语';
+        break;
+      case 'aux':
+        translated = '助';
+        break;
+      case 'pref':
+        translated = '前缀';
+        break;
+      case 'suff':
+        translated = '后缀';
+        break;
+      default:
+        translated = ciXing.replaceAll('.', '');
+    }
+    return '[$translated]';
+  }
+
   static String pureSentenceChinese(String sentenceChinese) {
     return sentenceChinese.replaceAll("<b>", "").replaceAll("</b>", "");
   }

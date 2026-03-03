@@ -3105,44 +3105,24 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         String meaning = line.substring(match.end);
 
         widgets.add(
-          IntrinsicHeight(
-            // 让所有子组件具有相同的高度
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          Text.rich(
+            TextSpan(
               children: [
-                // 词性部分 - 带背景的容器
-                Container(
-                  width: 45,
-                  margin: const EdgeInsets.only(right: 4),
-                  padding: const EdgeInsets.symmetric(vertical: 0, horizontal: 4),
-                  decoration: BoxDecoration(
-                    color: isDarkMode ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFF7FAFC),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Center(
-                    child: Text(
-                      ciXing,
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w400,
-                        color: isDarkMode ? Colors.white38 : const Color(0xFF94A3B8),
-                      ),
-                    ),
+                TextSpan(
+                  text: '${Util.translateCiXing(ciXing)} ',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: isDarkMode ? Colors.white38 : const Color(0xFF94A3B8),
                   ),
                 ),
-                // 释义部分
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 2), // 与词性容器相同的垂直内边距
-                    child: Text(
-                      _hideAnswerLeakContent(meaning),
-                      style: TextStyle(
-                        fontFamily: "NotoSansSC",
-                        fontSize: 14,
-                        fontWeight: FontWeight.w400,
-                        color: isDarkMode ? Colors.white : const Color(0xFF2D3748),
-                      ),
-                    ),
+                TextSpan(
+                  text: _hideAnswerLeakContent(meaning),
+                  style: TextStyle(
+                    fontFamily: "NotoSansSC",
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                    color: isDarkMode ? Colors.white : const Color(0xFF2D3748),
                   ),
                 ),
               ],

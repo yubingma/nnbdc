@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:nnbdc/util/pinyin.dart';
 
 import '../api/vo.dart';
+import 'utils.dart';
 
 class WordWrapper {
   /// 实际的单词相关对象，比如MasteredWord, LearningWord ...
@@ -100,30 +101,22 @@ List<Widget> renderAsrMeaningItems(WordWrapper word) {
   List<MeaningItemVo> meaningItems = word.word.getMergedMeaningItems();
   for (var i = 0; i < meaningItems.length; i++) {
     var meaningItem = meaningItems[i];
-    items.add(Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    items.add(Wrap(
+      crossAxisAlignment: WrapCrossAlignment.end,
       children: [
         if ((meaningItem.ciXing ?? '').isNotEmpty)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-            margin: const EdgeInsets.only(bottom: 2),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF7FAFC),
-              borderRadius: BorderRadius.circular(4),
-            ),
+          Padding(
+            padding: const EdgeInsets.only(right: 6),
             child: Text(
-              meaningItem.ciXing!,
+              Util.translateCiXing(meaningItem.ciXing!),
               style: const TextStyle(
-                fontSize: 10,
+                fontSize: 12,
                 color: Color(0xFF94A3B8),
                 fontWeight: FontWeight.w500,
               ),
             ),
           ),
-        Wrap(
-          crossAxisAlignment: WrapCrossAlignment.end,
-          children: renderMeaningItemParts(meaningItem.meaning!, i, word.hintLetterCount, word.asrMatchedMeaningItemParts),
-        ),
+        ...renderMeaningItemParts(meaningItem.meaning!, i, word.hintLetterCount, word.asrMatchedMeaningItemParts),
       ],
     ));
   }
