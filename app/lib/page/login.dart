@@ -27,8 +27,6 @@ class LoginPage extends StatefulWidget {
 class LoginPageState extends State<LoginPage> with WidgetsBindingObserver {
   bool _approved = false;
   bool _isWechatLoading = false;
-  DateTime? _lastTapTime;
-  static const Duration _doubleTapTimeout = Duration(milliseconds: 300);
 
   @override
   void dispose() {
@@ -55,11 +53,10 @@ class LoginPageState extends State<LoginPage> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed && _isWechatLoading) {
+      // 重置登录状态，防止死锁
       Future.delayed(const Duration(seconds: 2), () {
         if (mounted && _isWechatLoading) {
-          setState(() {
-            _isWechatLoading = false;
-          });
+          setState(() => _isWechatLoading = false);
         }
       });
     }
@@ -271,25 +268,27 @@ class LoginPageState extends State<LoginPage> with WidgetsBindingObserver {
             children: [
               Text('版本: ${packageInfo.version} (${packageInfo.buildNumber})'),
               const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('环境: ${Config.profileName}'),
-                  TextButton(
-                    onPressed: () {
-                      setState(() {
-                        Config.profileName = (Config.profileName == 'dev' ? 'prod' : 'dev');
-                        Api.useProdUrl = (Config.profileName == 'prod');
-                      });
-                      Api.resetClient();
-                      SocketIoClient.instance.reset();
-                      Navigator.pop(context);
-                      ToastUtil.success('已切换到 ${Config.profileName}');
-                    },
-                    child: const Text('切换'),
-                  ),
-                ],
-              ),
+              StatefulBuilder(builder: (context, setState) {
+                return Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('环境: ${Config.profileName}'),
+                    TextButton(
+                      onPressed: () {
+                        setState(() {
+                          Config.profileName = (Config.profileName == 'dev' ? 'prod' : 'dev');
+                          Api.useProdUrl = (Config.profileName == 'prod');
+                        });
+                        Api.resetClient();
+                        SocketIoClient.instance.reset();
+                        Navigator.pop(context);
+                        ToastUtil.success('已切换到 ${Config.profileName}');
+                      },
+                      child: const Text('切换'),
+                    ),
+                  ],
+                );
+              }),
               const SizedBox(height: 8),
               Text('数据库版本: $dbVersion'),
             ],

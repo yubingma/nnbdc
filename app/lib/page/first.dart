@@ -72,8 +72,6 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
   final String _splashText = "Progress, not perfection\n进步而非完美";
 
   void checkNewVersion() async {
-    // 调试用：增加 10 秒延迟看闪屏效果
-    await Future.delayed(const Duration(seconds: 10));
     
     // 检查新版本/自动升级
     if (PlatformUtils.isAndroid || PlatformUtils.isWindows || PlatformUtils.isLinux) {
