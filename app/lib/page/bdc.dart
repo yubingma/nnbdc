@@ -2114,7 +2114,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                       // 修改：所有批次都使用最后一个批次的颜色（绿色）
                       Color getBatchBaseColor(int batchIndex, int totalBatches) {
                         // 始终使用最后一个批次的颜色（绿色）
-                        return const Color(0xFF43A047);
+                        return const Color(0xFF1A1A1A);
                       }
 
                       Color getBatchColor(int batchIndex, int totalBatches) {
@@ -2728,8 +2728,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   showWordDetail(var word, bool isAnswerWrong, {FsrsRating? fsrsRating}) {
     var bottomBtn = Container(
       decoration: BoxDecoration(
-        color: Colors.blue,
-        borderRadius: BorderRadius.circular(8),
+        color: const Color(0xFF1A1A1A),
+        borderRadius: BorderRadius.circular(12),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       child: InkWell(
@@ -3136,18 +3136,15 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                 Container(
                   width: 45, // 固定宽度，确保所有词性对齐
                   margin: const EdgeInsets.only(right: 4),
-                  padding: const EdgeInsets.symmetric(vertical: 0, horizontal: 4), // 减少上下内边距
-                  decoration: BoxDecoration(
-                    color: isDarkMode ? const Color(0xFF4A4A5E).withValues(alpha: 0.3) : const Color(0xFFF1F5F9),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 0, horizontal: 4),
+                  decoration: null,
                   child: Center(
                     child: Text(
                       ciXing,
                       style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: isDarkMode ? const Color(0xFFE5E7EB) : const Color(0xFF374151),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w400,
+                        color: isDarkMode ? Colors.white38 : Colors.grey.shade400,
                       ),
                     ),
                   ),
@@ -3246,13 +3243,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       decoration: BoxDecoration(
         color: context.watch<DarkMode>().isDarkMode ? const Color(0xFF2A2A3E).withValues(alpha: 0.8) : Colors.white.withValues(alpha: 0.95),
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: context.watch<DarkMode>().isDarkMode ? Colors.black.withValues(alpha: 0.3) : Colors.black.withValues(alpha: 0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -3263,11 +3253,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               margin: const EdgeInsets.only(bottom: 16),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF4A90E2), Color(0xFF6BA3E8)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
+                color: context.watch<DarkMode>().isDarkMode ? const Color(0xFF2C2C2C) : const Color(0xFFF5F5F7),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
@@ -3588,7 +3574,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                                   _playingStates['sentence']!
                                       ? (_sentenceSoundController.value < 0.5 ? Icons.volume_up : Icons.volume_down)
                                       : Icons.volume_up,
-                                  color: _playingStates['sentence']! ? Colors.teal[300] : Colors.grey[500],
+                                  color: _playingStates['sentence']! ? const Color(0xFF1A1A1A) : Colors.grey[500],
                                   size: 24,
                                 ),
                               );
@@ -3660,10 +3646,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                         Container(
                           width: 50,
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF5F5F5),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
+                          decoration: null,
                           child: Text(
                             _currentGetWordResult!.learningWord!.word.getMergedMeaningItems()[i].ciXing ?? '',
                             style: const TextStyle(color: Color(0xFF999999), fontSize: 11, fontWeight: FontWeight.w600),
@@ -3691,13 +3674,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                     children: [
                       if (_currentGetWordResult!.images!.isNotEmpty && _studyStep != StudyStep.ch2En.json)
                         Container(
-                          padding: const EdgeInsets.all(8),
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           margin: const EdgeInsets.only(bottom: 8),
-                          decoration: BoxDecoration(
-                            color: Colors.blue.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text('图片数量: ${_currentGetWordResult!.images!.length}', style: const TextStyle(fontSize: 12, color: Colors.blue)),
+                          child: Text('图片: ${_currentGetWordResult!.images!.length}', style: TextStyle(fontSize: 11, color: Colors.grey.shade400)),
                         ),
                       WordImagesWidget(
                         images: _currentGetWordResult!.images!,
@@ -3720,8 +3699,13 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                       margin: const EdgeInsets.fromLTRB(0, 16, 0, 0),
                       child: ElevatedButton.icon(
                         icon: const Icon(Icons.add, size: 24.0),
-                        style: ElevatedButton.styleFrom(foregroundColor: Colors.white, backgroundColor: Colors.teal[300]),
-                        label: const Text('配图'),
+                        style: ElevatedButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          backgroundColor: const Color(0xFF1A1A1A),
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        label: const Text('添加配图'),
                         onPressed: () {
                           if (_currentGetWordResult?.learningWord?.word.id != null) {
                             Get.toNamed('/pic_search',
