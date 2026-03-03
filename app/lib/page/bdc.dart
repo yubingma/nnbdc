@@ -2059,11 +2059,11 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       right: rightPadding,
       child: Container(
         decoration: BoxDecoration(
-          color: context.watch<DarkMode>().isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
+          color: context.watch<DarkMode>().isDarkMode ? const Color(0xFF1E1E1E) : const Color(0xFFF8F9FA),
           border: Border(
             top: BorderSide(
-              color: context.watch<DarkMode>().isDarkMode ? Colors.white10 : Colors.grey.shade200,
-              width: 0.5,
+              color: context.watch<DarkMode>().isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
+              width: 1,
             ),
           ),
         ),
