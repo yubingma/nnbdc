@@ -2118,8 +2118,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                       // 获取批次的基础颜色（不透明度）
                       // 修改：所有批次都使用最后一个批次的颜色（绿色）
                       Color getBatchBaseColor(int batchIndex, int totalBatches) {
-                        // 始终使用最后一个批次的颜色（绿色）
-                        return const Color(0xFF1A1A1A);
+                        return isDarkMode ? Colors.white : const Color(0xFF1A1A1A);
                       }
 
                       Color getBatchColor(int batchIndex, int totalBatches) {
