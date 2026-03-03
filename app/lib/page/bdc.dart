@@ -2315,11 +2315,12 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             if (_showAnswerButtons || _studyStep == StudyStep.en2Ch.json)
-              OutlinedButton(
+              ElevatedButton(
                 key: const Key('bdc_not_know_btn'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFF666666),
-                  side: BorderSide(color: Colors.grey.shade300),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: context.watch<DarkMode>().isDarkMode ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFF5F5F5),
+                  foregroundColor: context.watch<DarkMode>().isDarkMode ? Colors.white70 : const Color(0xFF666666),
+                  elevation: 0,
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
@@ -2330,8 +2331,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
               ElevatedButton(
                 key: const Key('bdc_study_again'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFF5F5F5),
-                  foregroundColor: const Color(0xFF333333),
+                  backgroundColor: context.watch<DarkMode>().isDarkMode ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFF5F5F5),
+                  foregroundColor: context.watch<DarkMode>().isDarkMode ? Colors.white70 : const Color(0xFF666666),
                   elevation: 0,
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -2343,8 +2344,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
               ElevatedButton(
                 key: const Key('bdc_next_word_btn'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1A1A1A),
-                  foregroundColor: Colors.white,
+                  backgroundColor: context.watch<DarkMode>().isDarkMode ? Colors.white : const Color(0xFF1A1A1A),
+                  foregroundColor: context.watch<DarkMode>().isDarkMode ? Colors.black : Colors.white,
                   elevation: 0,
                   padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -2733,7 +2734,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   showWordDetail(var word, bool isAnswerWrong, {FsrsRating? fsrsRating}) {
     var bottomBtn = Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A1A),
+        color: context.watch<DarkMode>().isDarkMode ? Colors.white : const Color(0xFF1A1A1A),
         borderRadius: BorderRadius.circular(12),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -2743,18 +2744,18 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
           getNextWord(true, fsrsRating: fsrsRating);
         },
         borderRadius: BorderRadius.circular(8),
-        child: const Row(
+        child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
               '下一词 ',
               style: TextStyle(
-                color: Colors.white,
+                color: context.watch<DarkMode>().isDarkMode ? Colors.black : Colors.white,
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
               ),
             ),
-            Icon(Icons.arrow_forward, color: Colors.white, size: 20),
+            Icon(Icons.arrow_forward, color: context.watch<DarkMode>().isDarkMode ? Colors.black : Colors.white, size: 20),
           ],
         ),
       ),
