@@ -244,14 +244,14 @@ class EmailLoginPageState extends State<EmailLoginPage> {
                 child: const Icon(
                   Icons.email_outlined,
                   size: 64,
-                  color: AppTheme.primaryColor,
+                  color: Color(0xFF1A1A1A),
                 ),
               ),
               const SizedBox(height: 24),
               const Text(
                 '邮箱登录',
                 style: TextStyle(
-                  color: Color(0xFF2D2D2D),
+                  color: Color(0xFF1A1A1A),
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 1.0,
