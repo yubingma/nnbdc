@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math';
 
 import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
@@ -561,7 +560,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
               ),
               Text(
                 '长按拖动排序',
-                style: TextStyle(color: isDarkMode ? Colors.white24 : Colors.black26, fontSize: 11),
+                style: TextStyle(color: isDarkMode ? Colors.white54 : Colors.black26, fontSize: 11),
               ),
             ],
           ),
