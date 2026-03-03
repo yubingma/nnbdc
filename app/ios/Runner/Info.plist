@@ -51,49 +51,49 @@
 		<string>需要麦克风权限来进行语音识别和发音练习</string>
 		<key>NSCameraUsageDescription</key>
 		<string>需要相机权限来扫描并识别书本上的单词</string>
-	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>需要语音识别权限来进行发音练习和单词识别</string>
-	<key>CFBundleURLTypes</key>
-	<array>
-		<dict>
-			<key>CFBundleTypeRole</key>
-			<string>Editor</string>
-			<key>CFBundleURLName</key>
+		<key>NSSpeechRecognitionUsageDescription</key>
+		<string>需要语音识别权限来进行发音练习和单词识别</string>
+		<key>CFBundleURLTypes</key>
+		<array>
+			<dict>
+				<key>CFBundleTypeRole</key>
+				<string>Editor</string>
+				<key>CFBundleURLName</key>
+				<string>weixin</string>
+				<key>CFBundleURLSchemes</key>
+				<array>
+					<string>wx42e6014d1927e5f0</string>
+				</array>
+			</dict>
+		</array>
+		<key>LSApplicationQueriesSchemes</key>
+		<array>
 			<string>weixin</string>
-			<key>CFBundleURLSchemes</key>
-			<array>
-				<string>wx42e6014d1927e5f0</string>
-			</array>
-		</dict>
-	</array>
-	<key>LSApplicationQueriesSchemes</key>
-	<array>
-		<string>weixin</string>
-		<string>weixinULAPI</string>
-		<string>weixinURLParamsAPI</string>
-	</array>
-	<key>NSAppTransportSecurity</key>
-	<dict>
-		<!--
+			<string>weixinULAPI</string>
+			<string>weixinURLParamsAPI</string>
+		</array>
+		<key>NSAppTransportSecurity</key>
+		<dict>
+			<!--
 		  ATS 策略（上线前收敛）：
 		  - 允许本地网络（开发环境可能直连局域网 IP）
 		  - 仅对 www.nnbdc.com 开放 HTTP（CDN/静态资源当前为 HTTP only）
 		  - 其他请求默认要求 HTTPS
 		-->
-		<key>NSAllowsLocalNetworking</key>
-		<true/>
-		<key>NSExceptionDomains</key>
-		<dict>
-			<key>www.nnbdc.com</key>
+			<key>NSAllowsLocalNetworking</key>
+			<true/>
+			<key>NSExceptionDomains</key>
 			<dict>
-				<key>NSIncludesSubdomains</key>
-				<true/>
-				<key>NSExceptionAllowsInsecureHTTPLoads</key>
-				<true/>
+				<key>www.nnbdc.com</key>
+				<dict>
+					<key>NSIncludesSubdomains</key>
+					<true/>
+					<key>NSExceptionAllowsInsecureHTTPLoads</key>
+					<true/>
+				</dict>
 			</dict>
 		</dict>
+		<key>ITSAppUsesNonExemptEncryption</key>
+		<false/>
 	</dict>
-	<key>ITSAppUsesNonExemptEncryption</key>
-	<false/>
-</dict>
 </plist>

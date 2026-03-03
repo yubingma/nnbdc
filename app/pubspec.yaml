@@ -168,10 +168,10 @@ flutter:
 
 # 插件说明： https://pub.dev/packages/flutter_native_splash
 # dart run flutter_native_splash:create
-# 原生闪屏页配置：只使用纯logo图片，不包含文字，便于维护
+# 原生闪屏页配置：logo + slogan 合成图
 flutter_native_splash:
   color: "#42a5f5"
-  image: "assets/images/logo.png"
+  image: "assets/images/splash_v2.png"
   android: true
   ios: true
   web: false
