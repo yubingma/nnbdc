@@ -633,7 +633,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
                     ),
                   ),
                 ),
-                Icon(Icons.drag_indicator_rounded, color: Colors.grey.withValues(alpha: 0.3), size: 18),
+                Icon(Icons.drag_indicator_rounded, color: isDarkMode ? Colors.white54 : Colors.black26, size: 18),
               ],
             ),
           ),
