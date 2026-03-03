@@ -3275,7 +3275,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                   children: [
                     Container(
                       decoration: BoxDecoration(
-                        color: context.watch<DarkMode>().isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05),
+                        border: Border.all(
+                          color: context.watch<DarkMode>().isDarkMode ? Colors.white.withValues(alpha: 0.1) : Colors.black12,
+                        ),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Material(
@@ -3289,14 +3291,14 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.emoji_objects_rounded, color: context.watch<DarkMode>().isDarkMode ? Colors.white70 : const Color(0xFF333333), size: 14),
+                                Icon(Icons.emoji_objects_rounded, color: context.watch<DarkMode>().isDarkMode ? Colors.white54 : Colors.grey[500], size: 14),
                                 const SizedBox(width: 4),
                                 Text(
                                   '提示',
                                   style: TextStyle(
                                     fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                    color: context.watch<DarkMode>().isDarkMode ? Colors.white70 : const Color(0xFF333333),
+                                    fontWeight: FontWeight.w400,
+                                    color: context.watch<DarkMode>().isDarkMode ? Colors.white54 : Colors.grey[500],
                                   ),
                                 ),
                               ],
@@ -3308,7 +3310,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                     const SizedBox(width: 6),
                     Container(
                       decoration: BoxDecoration(
-                        color: context.watch<DarkMode>().isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05),
+                        border: Border.all(
+                          color: context.watch<DarkMode>().isDarkMode ? Colors.white.withValues(alpha: 0.1) : Colors.black12,
+                        ),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Material(
@@ -3321,14 +3325,14 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.refresh, color: context.watch<DarkMode>().isDarkMode ? Colors.white70 : const Color(0xFF333333), size: 14),
+                                Icon(Icons.refresh, color: context.watch<DarkMode>().isDarkMode ? Colors.white54 : Colors.grey[500], size: 14),
                                 const SizedBox(width: 4),
                                 Text(
                                   '清除',
                                   style: TextStyle(
                                     fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                    color: context.watch<DarkMode>().isDarkMode ? Colors.white70 : const Color(0xFF333333),
+                                    fontWeight: FontWeight.w400,
+                                    color: context.watch<DarkMode>().isDarkMode ? Colors.white54 : Colors.grey[500],
                                   ),
                                 ),
                               ],
