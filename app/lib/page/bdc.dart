@@ -302,7 +302,10 @@ class _ChineseAsrInputWidgetState extends State<ChineseAsrInputWidget> {
                     ? "请输入释义"
                     : "请等待播音结束......",
           ),
-          style: const TextStyle(fontSize: 12, color: Colors.grey),
+          style: TextStyle(
+            fontSize: 12,
+            color: context.watch<DarkMode>().isDarkMode ? Colors.white54 : Colors.grey,
+          ),
           onChanged: (value) {},
         ),
       ],
@@ -350,7 +353,10 @@ class _EnglishAsrInputWidgetState extends State<EnglishAsrInputWidget> {
                     ? "请输入英文单词"
                     : "请等待播音结束...",
           ),
-          style: const TextStyle(fontSize: 12, color: Colors.grey),
+          style: TextStyle(
+            fontSize: 12,
+            color: context.watch<DarkMode>().isDarkMode ? Colors.white54 : Colors.grey,
+          ),
           onChanged: (value) {},
         ),
         if (widget.score != null && widget.score! > 0)
@@ -2063,13 +2069,13 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         ),
         child: TabBar(
           controller: _tabController,
-          indicatorColor: Colors.black,
+          indicatorColor: context.watch<DarkMode>().isDarkMode ? Colors.white : Colors.black,
           indicatorWeight: 2,
           dividerColor: Colors.transparent,
           dividerHeight: 0,
           overlayColor: WidgetStateProperty.all(Colors.transparent),
           splashFactory: NoSplash.splashFactory,
-          labelColor: Colors.black,
+          labelColor: context.watch<DarkMode>().isDarkMode ? Colors.white : Colors.black,
           unselectedLabelColor: context.watch<DarkMode>().isDarkMode ? Colors.white54 : Colors.grey.shade400,
           labelStyle: const TextStyle(
             fontSize: 13,
@@ -2676,7 +2682,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
-            color: context.watch<DarkMode>().isDarkMode ? Colors.white30 : Colors.grey[400],
+            color: context.watch<DarkMode>().isDarkMode ? Colors.white.withValues(alpha: 0.03) : Colors.grey[200],
             fontFamily: 'Roboto',
           ),
         );
@@ -2868,7 +2874,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: context.watch<DarkMode>().isDarkMode ? const Color(0xFF2A2A3E).withValues(alpha: 0.5) : const Color(0xFFF0F0F0).withValues(alpha: 0.8),
+        color: context.watch<DarkMode>().isDarkMode ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFF0F0F0).withValues(alpha: 0.8),
         borderRadius: BorderRadius.circular(6),
       ),
       child: InkWell(
@@ -3112,8 +3118,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                   text: '${Util.translateCiXing(ciXing)} ',
                   style: TextStyle(
                     fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: isDarkMode ? Colors.white38 : const Color(0xFF94A3B8),
+                    fontWeight: FontWeight.w600,
+                    color: isDarkMode ? Colors.white60 : const Color(0xFF64748B),
                   ),
                 ),
                 TextSpan(
@@ -3206,7 +3212,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       margin: const EdgeInsets.only(top: 16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: context.watch<DarkMode>().isDarkMode ? const Color(0xFF2A2A3E).withValues(alpha: 0.8) : Colors.white.withValues(alpha: 0.95),
+        color: context.watch<DarkMode>().isDarkMode ? const Color(0xFF1E1E1E) : Colors.white.withValues(alpha: 0.95),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -3223,8 +3229,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
               ),
               child: Text(
                 _studyStep == StudyStep.en2Ch.json ? _word!.spell : _word!.getMergedMeaningItems().map((e) => e.meaning).join('; '),
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: context.watch<DarkMode>().isDarkMode ? Colors.white : Colors.white,
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 1.2,
@@ -3240,7 +3246,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: _studyStep == StudyStep.en2Ch.json
-                        ? renderAsrMeaningItems(_wordWrapper!)
+                        ? renderAsrMeaningItems(_wordWrapper!, isDarkMode: context.read<DarkMode>().isDarkMode)
                         : [
                             Text(
                               '请说出单词发音：',
@@ -3398,7 +3404,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: context.watch<DarkMode>().isDarkMode ? const Color(0xFF2A2A3E).withValues(alpha: 0.3) : const Color(0xFFF8FAFF),
+        color: context.watch<DarkMode>().isDarkMode ? Colors.white.withValues(alpha: 0.03) : const Color(0xFFF8FAFF),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -3409,7 +3415,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
             margin: const EdgeInsets.only(right: 8, top: 2),
             decoration: BoxDecoration(
               color: context.watch<DarkMode>().isDarkMode
-                  ? const Color(0xFF2A2A3E).withValues(alpha: 0.5)
+                  ? const Color(0xFF1E1E1E).withValues(alpha: 0.5)
                   : const Color(0xFFF0F0F0).withValues(alpha: 0.8),
               borderRadius: BorderRadius.circular(6),
             ),
@@ -3446,13 +3452,13 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   Widget _buildWordStepCard() {
     return Container(
       decoration: BoxDecoration(
-        color: context.watch<DarkMode>().isDarkMode ? const Color(0xFF2A2A3E) : Colors.white,
+        color: context.watch<DarkMode>().isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: context.watch<DarkMode>().isDarkMode ? Colors.black.withValues(alpha: 0.3) : Colors.black.withValues(alpha: 0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
+            color: context.watch<DarkMode>().isDarkMode ? Colors.black.withValues(alpha: 0.4) : Colors.black.withValues(alpha: 0.05),
+            blurRadius: 15,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -3488,7 +3494,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                     style: TextStyle(
                       fontWeight: FontWeight.w900,
                       fontSize: 36,
-                      color: const Color(0xFF1A1A1A),
+                      color: context.watch<DarkMode>().isDarkMode ? Colors.white : const Color(0xFF1A1A1A),
                       fontFamily: 'Roboto',
                       letterSpacing: 1.5,
                     ),
@@ -3528,7 +3534,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                         margin: const EdgeInsets.only(left: 8, top: 2),
                         decoration: BoxDecoration(
                           color: context.watch<DarkMode>().isDarkMode
-                              ? const Color(0xFF2A2A3E).withValues(alpha: 0.5)
+                              ? Colors.white.withValues(alpha: 0.08)
                               : const Color(0xFFF0F0F0).withValues(alpha: 0.8),
                           borderRadius: BorderRadius.circular(6),
                         ),
@@ -3543,7 +3549,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                                   _playingStates['sentence']!
                                       ? (_sentenceSoundController.value < 0.5 ? Icons.volume_up : Icons.volume_down)
                                       : Icons.volume_up,
-                                  color: _playingStates['sentence']! ? const Color(0xFF1A1A1A) : Colors.grey[500],
+                                  color: _playingStates['sentence']! ? (context.watch<DarkMode>().isDarkMode ? Colors.white : const Color(0xFF1A1A1A)) : Colors.grey[500],
                                   size: 24,
                                 ),
                               );
@@ -3570,13 +3576,13 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   Widget _buildMeaningStepCard() {
     return Container(
       decoration: BoxDecoration(
-        color: context.watch<DarkMode>().isDarkMode ? const Color(0xFF2A2A3E) : Colors.white,
+        color: context.watch<DarkMode>().isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: context.watch<DarkMode>().isDarkMode ? Colors.black.withValues(alpha: 0.3) : Colors.black.withValues(alpha: 0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
+            color: context.watch<DarkMode>().isDarkMode ? Colors.black.withValues(alpha: 0.4) : Colors.black.withValues(alpha: 0.05),
+            blurRadius: 15,
+            offset: const Offset(0, 4),
           ),
         ],
       ),

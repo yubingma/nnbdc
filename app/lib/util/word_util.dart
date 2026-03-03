@@ -96,7 +96,7 @@ bool _isWholeBracketed(String s) {
   return false;
 }
 
-List<Widget> renderAsrMeaningItems(WordWrapper word) {
+List<Widget> renderAsrMeaningItems(WordWrapper word, {bool isDarkMode = false}) {
   List<Widget> items = [];
   List<MeaningItemVo> meaningItems = word.word.getMergedMeaningItems();
   for (var i = 0; i < meaningItems.length; i++) {
@@ -109,14 +109,14 @@ List<Widget> renderAsrMeaningItems(WordWrapper word) {
             padding: const EdgeInsets.only(right: 6),
             child: Text(
               Util.translateCiXing(meaningItem.ciXing!),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
-                color: Color(0xFF94A3B8),
-                fontWeight: FontWeight.w500,
+                color: isDarkMode ? Colors.white60 : const Color(0xFF64748B),
+                fontWeight: FontWeight.w600,
               ),
             ),
           ),
-        ...renderMeaningItemParts(meaningItem.meaning!, i, word.hintLetterCount, word.asrMatchedMeaningItemParts),
+        ...renderMeaningItemParts(meaningItem.meaning!, i, word.hintLetterCount, word.asrMatchedMeaningItemParts, isDarkMode: isDarkMode),
       ],
     ));
   }
@@ -124,7 +124,8 @@ List<Widget> renderAsrMeaningItems(WordWrapper word) {
 }
 
 /// 渲染一个释义项的子项
-List<Widget> renderMeaningItemParts(String meaning, int meaningIndex, int hintLetterCount, List<Pair<int, int>> asrMatchedMeaningItemParts) {
+List<Widget> renderMeaningItemParts(String meaning, int meaningIndex, int hintLetterCount, List<Pair<int, int>> asrMatchedMeaningItemParts,
+    {bool isDarkMode = false}) {
   // 把释义拆分为子项
   var partWidgets = <Widget>[];
   var parts = splitMeaning2Parts(meaning);
@@ -137,7 +138,7 @@ List<Widget> renderMeaningItemParts(String meaning, int meaningIndex, int hintLe
     if (asrMatchedMeaningItemParts.contains(Pair(meaningIndex, i))) {
       var widget = Text(
         part,
-        style: const TextStyle(color: Color(0xFF4A5568), fontSize: 12),
+        style: TextStyle(color: isDarkMode ? Colors.grey[300] : const Color(0xFF4A5568), fontSize: 12),
       );
       partWidgets.add(widget);
     }
