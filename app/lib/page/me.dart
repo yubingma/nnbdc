@@ -532,6 +532,7 @@ class _MePageState extends State<MePage> {
             children: [
               // 1. 头像和昵称行
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   GestureDetector(
                     onTap: () => Get.toNamed('/login'),
@@ -589,6 +590,7 @@ class _MePageState extends State<MePage> {
                       ],
                     ),
                   ),
+                  const SizedBox(width: 8),
                   // 右上角浮动气泡/等级
                   GestureDetector(
                     onTap: () {
