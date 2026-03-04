@@ -1463,6 +1463,7 @@ class WordListPageState extends State<WordListPage>
           title: const Text('添加单词'),
           content: TextField(
             controller: controller,
+            keyboardType: TextInputType.emailAddress,
             decoration: const InputDecoration(
               hintText: '输入单词拼写',
               labelText: '单词',
