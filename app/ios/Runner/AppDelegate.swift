@@ -104,6 +104,10 @@ import StoreKit
         if let registrar = self.registrar(forPlugin: "AiInferenceChannel") {
             AiInferenceChannel.register(with: registrar)
         }
+        
+        // Register OCR channel
+        OcrChannel.register(with: controller.binaryMessenger)
+        
         return super.application(application, didFinishLaunchingWithOptions: launchOptions)
     }
     

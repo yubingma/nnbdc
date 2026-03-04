@@ -94,6 +94,7 @@ dependencies:
   uuid: any
   app_settings: ^6.1.1
   flutter_markdown: ^0.7.7+1
+  image_picker: ^1.1.2              # 拍照/选图
 dev_dependencies:
   analyzer: ^7.7.1
   flutter_test:

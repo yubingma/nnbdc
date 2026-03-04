@@ -19,6 +19,7 @@
 		74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74858FAE1ED2DC5600515810 /* AppDelegate.swift */; };
 		7616A5990A317460584566A4 /* libllama.a in Frameworks */ = {isa = PBXBuildFile; fileRef = FF64F86DEE2CF5464E598FB0 /* libllama.a */; };
 		7E406E9F368B82D7FB311147 /* AiInferenceChannel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DFE9E7C229D54E3590BDC09 /* AiInferenceChannel.swift */; };
+		8A1B2C3D4E5F6A7B8C9D0E1F /* OcrChannel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6A7B8C9D0E1F2 /* OcrChannel.swift */; };
 		95D4A40BFA3F636605C69555 /* LlamaCppBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B7D8873488EBC4B5253D079 /* LlamaCppBridge.swift */; };
 		97C146FC1CF9000F007C117D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FA1CF9000F007C117D /* Main.storyboard */; };
 		97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FD1CF9000F007C117D /* Assets.xcassets */; };
@@ -69,6 +70,7 @@
 		97C147001CF9000F007C117D /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		97C147021CF9000F007C117D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		9DFE9E7C229D54E3590BDC09 /* AiInferenceChannel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AiInferenceChannel.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F6A7B8C9D0E1F2 /* OcrChannel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OcrChannel.swift; sourceTree = "<group>"; };
 		A713B8ED006D1760F8AACF08 /* libggml-metal.a */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = archive.ar; path = "libggml-metal.a"; sourceTree = "<group>"; };
 		BB105D8C998E2A412D8F8930 /* Pods-Runner.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.profile.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.profile.xcconfig"; sourceTree = "<group>"; };
 		C9DABC75FEBA4A8EE073D5EF /* libggml.a */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = archive.ar; path = libggml.a; sourceTree = "<group>"; };
@@ -150,6 +152,7 @@
 				74858FAE1ED2DC5600515810 /* AppDelegate.swift */,
 				74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */,
 				9DFE9E7C229D54E3590BDC09 /* AiInferenceChannel.swift */,
+				A1B2C3D4E5F6A7B8C9D0E1F2 /* OcrChannel.swift */,
 				0B7D8873488EBC4B5253D079 /* LlamaCppBridge.swift */,
 				BC8160B6E4E5D06E156ED368 /* LlamaCpp */,
 			);
@@ -389,6 +392,7 @@
 				74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */,
 				1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */,
 				7E406E9F368B82D7FB311147 /* AiInferenceChannel.swift in Sources */,
+				8A1B2C3D4E5F6A7B8C9D0E1F /* OcrChannel.swift in Sources */,
 				95D4A40BFA3F636605C69555 /* LlamaCppBridge.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
