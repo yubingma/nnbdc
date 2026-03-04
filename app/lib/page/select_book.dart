@@ -1423,6 +1423,7 @@ class SelectBookPageState extends State<SelectBookPage> {
 
     return DefaultTabController(
       length: dictGroups!.length + 1,
+      initialIndex: (dictGroups?.isNotEmpty ?? false) ? 1 : 0,
       child: Scaffold(
         backgroundColor: backgroundColor,
         appBar: AppBar(

@@ -460,7 +460,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
             const SizedBox(width: 8),
             Text(
               '今日学习已达成',
-              style: TextStyle(color: isDarkMode ? Colors.greenAccent : Colors.green.shade700, fontSize: 16, fontWeight: FontWeight.bold),
+              style: TextStyle(color: isDarkMode ? Colors.greenAccent : Colors.green.shade700, fontSize: 16),
             ),
           ],
         ),
@@ -584,7 +584,6 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
                 style: TextStyle(
                   color: isDarkMode ? Colors.white54 : Colors.grey,
                   fontSize: 11,
-                  fontWeight: FontWeight.bold,
                 ),
               ),
             ],
