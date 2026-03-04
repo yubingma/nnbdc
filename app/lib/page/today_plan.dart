@@ -536,7 +536,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
                 onPressed: () => Get.toNamed('/select_book')?.then((v) {
                   if (mounted) loadData(forceSupplement: true);
                 }),
-                child: const Text('更换词书'),
+                child: const Text('选择词书'),
               ),
             ),
             if (todayWordCount! > 0) ...[
