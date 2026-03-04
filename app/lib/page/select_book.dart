@@ -36,7 +36,7 @@ class SelectBookPage extends StatefulWidget {
   }
 }
 
-class SelectBookPageState extends State<SelectBookPage> {
+class SelectBookPageState extends State<SelectBookPage> with TickerProviderStateMixin {
   // E2E集成测试时可将其设置为true以跳过下载步骤
   static bool skipDownloadInTest = false;
   List<DictGroupVo>? dictGroups;
@@ -50,6 +50,8 @@ class SelectBookPageState extends State<SelectBookPage> {
   int totalBytes = 0;
   bool _isLoading = false;
   bool _hasUserMadeChanges = false; // 用户是否进行了选择动作
+  TabController? _tabController;
+  int _currentTabIndex = -1; // 记录当前 Tab 索引
 
   bool isDictSelected(DictVo dict) {
     return selectedDictVos!.contains(dict);
@@ -68,6 +70,41 @@ class SelectBookPageState extends State<SelectBookPage> {
     customDicts = [];
     _hasUserMadeChanges = false;
     Future.microtask(() => loadData());
+  }
+
+  @override
+  void dispose() {
+    _tabController?.dispose();
+    super.dispose();
+  }
+
+  void _initTabController() {
+    final tabsCount = (dictGroups?.length ?? 0) + 1;
+    if (_tabController == null || _tabController!.length != tabsCount) {
+      _tabController?.dispose();
+
+      // 如果还没有记录过索引，则根据之前的逻辑设置初始值（默认第二个Tab，即系统词书第一组）
+      if (_currentTabIndex == -1) {
+        _currentTabIndex = (dictGroups?.isNotEmpty ?? false) ? 1 : 0;
+      }
+
+      // 确保索引不越界
+      if (_currentTabIndex >= tabsCount) {
+        _currentTabIndex = 0;
+      }
+
+      _tabController = TabController(
+        length: tabsCount,
+        vsync: this,
+        initialIndex: _currentTabIndex,
+      );
+
+      _tabController!.addListener(() {
+        if (!_tabController!.indexIsChanging) {
+          _currentTabIndex = _tabController!.index;
+        }
+      });
+    }
   }
 
   void loadData({bool keepSelection = false}) async {
@@ -1421,9 +1458,10 @@ class SelectBookPageState extends State<SelectBookPage> {
     final selectedCount =
         dictGroups!.fold<int>(0, (sum, group) => sum + getSelectedDictsOfGroup(group).length) + customDicts!.where((d) => isDictSelected(d)).length;
 
+    _initTabController();
+
     return DefaultTabController(
       length: dictGroups!.length + 1,
-      initialIndex: (dictGroups?.isNotEmpty ?? false) ? 1 : 0,
       child: Scaffold(
         backgroundColor: backgroundColor,
         appBar: AppBar(
@@ -1477,6 +1515,7 @@ class SelectBookPageState extends State<SelectBookPage> {
               height: 1.4,
               letterSpacing: 0.3,
             ),
+            controller: _tabController,
             tabs: renderTabs(),
           ),
         ),
@@ -1484,6 +1523,7 @@ class SelectBookPageState extends State<SelectBookPage> {
           children: [
             Expanded(
               child: TabBarView(
+                controller: _tabController,
                 children: renderTabContents(),
               ),
             ),
