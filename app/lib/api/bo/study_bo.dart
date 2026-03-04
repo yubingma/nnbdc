@@ -1063,6 +1063,38 @@ class StudyBo {
           }
         }
 
+        // 4. 如果仍然找不到足够的混淆单词（例如整个库中只有一个单词），从全局单词表随机补足
+        if (otherWords.length < 2) {
+          final needed = 2 - otherWords.length;
+          final excludeIds = selectedWordIds.toList()..add(targetWordLearningData.wordId);
+
+          // 注意：ORDER BY RANDOM() 在 SQLite 中是标准用法，Drift 支持 OrderingTerm.random()
+          final wordsQuery = db.select(db.words)
+            ..where((tbl) => tbl.id.isNotIn(excludeIds))
+            ..orderBy([(t) => OrderingTerm.random()])
+            ..limit(needed);
+
+          final globalWords = await wordsQuery.get();
+
+          for (final wordDetails in globalWords) {
+            final otherWordVo = WordVo.c2(wordDetails.spell);
+            otherWordVo.id = wordDetails.id;
+            otherWordVo.shortDesc = wordDetails.shortDesc;
+            otherWordVo.longDesc = wordDetails.longDesc;
+            otherWordVo.pronounce = wordDetails.pronounce;
+            otherWordVo.americaPronounce = wordDetails.americaPronounce;
+            otherWordVo.britishPronounce = wordDetails.britishPronounce;
+            otherWordVo.popularity = wordDetails.popularity;
+
+            // 获取基本释义项
+            final meaningItems = await WordBo().getWordMeaningItems(wordDetails.id, targetWordLearningData.userId);
+            otherWordVo.meaningItems = meaningItems.take(3).map((e) => MeaningItemVo(e.id, e.ciXing, e.meaning, null, null, null)).toList();
+
+            otherWords.add(otherWordVo);
+            selectedWordIds.add(wordDetails.id);
+          }
+        }
+
         Global.logger.d('Generated ${otherWords.length} otherWords for target ${targetWordLearningData.wordId}.');
       }
       return otherWords;
