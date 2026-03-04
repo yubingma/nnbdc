@@ -283,17 +283,21 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
-                  color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF8F9FA),
+                  color: Colors.amber.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.amber.withValues(alpha: 0.2)),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.info_outline, color: isDarkMode ? Colors.white54 : Colors.grey, size: 16),
-                    const SizedBox(width: 8),
+                    const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 18),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: Text(
                         '任务量不足，建议补充',
-                        style: TextStyle(color: isDarkMode ? Colors.white54 : Colors.grey, fontSize: 13),
+                        style: TextStyle(
+                          color: isDarkMode ? Colors.orange.shade300 : Colors.orange.shade900,
+                          fontSize: 13,
+                        ),
                       ),
                     ),
                     TextButton(
@@ -302,7 +306,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
                         foregroundColor: isDarkMode ? Colors.white : Colors.black,
                       ),
                       onPressed: () => loadData(forceSupplement: true),
-                      child: const Text('补充', style: TextStyle(fontWeight: FontWeight.bold)),
+                      child: const Text('补充'),
                     ),
                   ],
                 ),
@@ -499,7 +503,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
               const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 18),
               const SizedBox(width: 10),
               const Expanded(
-                child: Text('词书单词量不足', style: TextStyle(color: Colors.orange, fontSize: 13, fontWeight: FontWeight.bold)),
+                child: Text('词书单词量不足', style: TextStyle(color: Colors.orange, fontSize: 13)),
               ),
             ],
           ),
@@ -518,7 +522,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
                 onPressed: () => Get.toNamed('/select_book')?.then((v) {
                   if (mounted) loadData(forceSupplement: true);
                 }),
-                child: const Text('更换词书', style: TextStyle(fontWeight: FontWeight.bold)),
+                child: const Text('更换词书'),
               ),
             ),
             if (todayWordCount! > 0) ...[
@@ -533,7 +537,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   onPressed: () => Get.toNamed('/bdc'),
-                  child: const Text('就这样吧', style: TextStyle(fontWeight: FontWeight.bold)),
+                  child: const Text('就这样吧'),
                 ),
               ),
             ],
