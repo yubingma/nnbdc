@@ -668,7 +668,12 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-    _args = BdcPageArgs.fromJson(GetStorage().read<String>("BdcPageArgs")!);
+    final argsJson = GetStorage().read<String>("BdcPageArgs");
+    if (argsJson != null) {
+      _args = BdcPageArgs.fromJson(argsJson);
+    } else {
+      _args = BdcPageArgs('unknown');
+    }
 
     // 初始化两个动画控制器
     _wordSoundController = AnimationController(

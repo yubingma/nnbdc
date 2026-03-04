@@ -550,7 +550,10 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
                     elevation: 0,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                  onPressed: () => Get.toNamed('/bdc'),
+                  onPressed: () async {
+                    await GetStorage().write("BdcPageArgs", BdcPageArgs('before_bdc').toJson());
+                    Get.toNamed('/bdc');
+                  },
                   child: const Text('就这样吧'),
                 ),
               ),

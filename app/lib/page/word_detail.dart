@@ -14,6 +14,8 @@ import 'package:nnbdc/util/toast_util.dart';
 import 'package:provider/provider.dart';
 import 'package:nnbdc/config.dart';
 import 'package:nnbdc/services/ai_service.dart';
+import 'package:get_storage/get_storage.dart';
+import 'bdc.dart';
 
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:http/http.dart' as http;
@@ -140,8 +142,9 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
 
   Future<bool> checkArgs() async {
     if (Get.arguments == null) {
-      Future.delayed(Duration.zero, () {
+      Future.delayed(Duration.zero, () async {
         // 延迟到下一个tick执行，避免导航冲突
+        await GetStorage().write("BdcPageArgs", BdcPageArgs('word_detail').toJson());
         Get.toNamed('/bdc');
       });
       return false;
