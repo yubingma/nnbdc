@@ -505,7 +505,13 @@ class SelectBookPageState extends State<SelectBookPage> {
                         color: Colors.transparent,
                         child: InkWell(
                           borderRadius: BorderRadius.circular(12),
-                          onTap: () => toggleDictSelectedStatus(dict),
+                          onTap: () {
+                            if (PlatformUtils.isIOS && !SubscriptionUtil.isPremium() && dict.name != '生词本' && !isSelected) {
+                              _showPremiumPrompt();
+                              return;
+                            }
+                            toggleDictSelectedStatus(dict);
+                          },
                           child: Padding(
                             padding: const EdgeInsets.all(16),
                             child: Row(
@@ -528,9 +534,17 @@ class SelectBookPageState extends State<SelectBookPage> {
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Text(
-                                        dict.name ?? '未命名',
-                                        style: TextStyle(color: textColor, fontSize: 17, fontWeight: FontWeight.w500),
+                                      Row(
+                                        children: [
+                                          Text(
+                                            dict.name ?? '未命名',
+                                            style: TextStyle(color: textColor, fontSize: 17, fontWeight: FontWeight.w500),
+                                          ),
+                                          if (PlatformUtils.isIOS && !SubscriptionUtil.isPremium() && dict.name != '生词本') ...[
+                                            const SizedBox(width: 6),
+                                            const Icon(Icons.lock_outline, size: 14, color: Colors.grey),
+                                          ],
+                                        ],
                                       ),
                                       const SizedBox(height: 4),
                                       Text('${dict.wordCount} 词', style: TextStyle(color: subtitleColor, fontSize: 14)),
@@ -538,9 +552,11 @@ class SelectBookPageState extends State<SelectBookPage> {
                                   ),
                                 ),
                                 IconButton(
-                                  icon: Icon(Icons.edit_note, size: 24, color: (PlatformUtils.isIOS && !SubscriptionUtil.isPremium()) ? Colors.grey : AppTheme.primaryColor),
+                                  icon: Icon(Icons.edit_note,
+                                      size: 24,
+                                      color: (PlatformUtils.isIOS && !SubscriptionUtil.isPremium() && dict.name != '生词本') ? Colors.grey : AppTheme.primaryColor),
                                   onPressed: () async {
-                                    if (PlatformUtils.isIOS && !SubscriptionUtil.isPremium()) {
+                                    if (PlatformUtils.isIOS && !SubscriptionUtil.isPremium() && dict.name != '生词本') {
                                       _showPremiumPrompt();
                                       return;
                                     }
