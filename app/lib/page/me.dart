@@ -939,7 +939,7 @@ class _MePageState extends State<MePage> {
                           elevation: 0,
                         ),
                         child: Text(
-                          loggedInUser?.todayStudyStarted == true ? '继续学习' : '开始学习',
+                          studyProgress?.todayLearningFinished == true ? '今日任务已完成' : (loggedInUser?.todayStudyStarted == true ? '继续学习' : '开始学习'),
                           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, fontFamily: 'NotoSansSC'),
                         ),
                         onPressed: () => Get.toNamed('/before_bdc'),

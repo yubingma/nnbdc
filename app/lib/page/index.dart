@@ -108,9 +108,11 @@ class _IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
             _navigationViews![actualCurrentIndex].controller.reverse();
             _currentIndex = index;
             _navigationViews![actualNewIndex].controller.forward();
-            // 特殊处理学习页面，每次都创建新实例
+            // 特殊处理学习页面和“我”页面，每次选择时都创建新实例以刷新数据
             if (index == 0) {
               _currentPage = BeforeBdcPage();
+            } else if (index == 4) {
+              _currentPage = const MePage();
             } else {
               _currentPage = _pageList![actualNewIndex];
             }
