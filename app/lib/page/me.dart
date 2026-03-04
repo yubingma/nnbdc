@@ -205,7 +205,7 @@ class _MePageState extends State<MePage> {
       // 获取所有已掌握单词数量
       var allMasteredWordIdSet = await db.masteredWordsDao.getMasteredWordIdSet(user.id);
       var globalMasteredWordsCount = allMasteredWordIdSet.length;
-      
+
       // 只统计当前所选词书中的已掌握单词，用于计算词书进度百分比
       var masteredWordIdsInSelectedDicts = allMasteredWordIdSet.intersection(uniqueWordIdsInDicts);
       var masteredWordsInSelectedDictsCount = masteredWordIdsInSelectedDicts.length;
@@ -512,9 +512,7 @@ class _MePageState extends State<MePage> {
     final iconColor = isDarkModeEnabled ? Colors.white70 : const Color(0xFF95A5A6);
     final cardColor = isDarkModeEnabled ? const Color(0xFF2D2D2D) : Colors.white;
 
-    final borderColor = isDarkModeEnabled 
-        ? Colors.white.withValues(alpha: 0.1) 
-        : Colors.black.withValues(alpha: 0.05);
+    final borderColor = isDarkModeEnabled ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05);
 
     return Column(
       children: [
@@ -683,9 +681,8 @@ class _MePageState extends State<MePage> {
                 ),
                 child: LayoutBuilder(
                   builder: (context, constraints) {
-                    final progress = studyProgress!.rawWordCount > 0
-                        ? studyProgress!.masteredWordsInSelectedDictsCount / studyProgress!.rawWordCount
-                        : 0.0;
+                    final progress =
+                        studyProgress!.rawWordCount > 0 ? studyProgress!.masteredWordsInSelectedDictsCount / studyProgress!.rawWordCount : 0.0;
                     final clampedProgress = progress > 1.0 ? 1.0 : progress;
                     return Container(
                       width: constraints.maxWidth * clampedProgress,
@@ -754,12 +751,13 @@ class _MePageState extends State<MePage> {
                           Text.rich(
                             TextSpan(
                               children: [
-                                const TextSpan(text: "掌握单词: "),
+                                const TextSpan(text: "掌握: "),
                                 TextSpan(
                                   text: "${studyProgress!.masteredWordsCount}",
                                   style: TextStyle(color: textColor, fontWeight: FontWeight.w900, fontFamily: 'Roboto'),
                                 ),
-                                const TextSpan(text: "\n击败了: "),
+                                const TextSpan(text: " 词"),
+                                const TextSpan(text: "\n领先: "),
                                 if (studyProgress!.userOrder! < 0)
                                   const TextSpan(text: '分析中...')
                                 else ...[
@@ -782,7 +780,8 @@ class _MePageState extends State<MePage> {
                       ),
                     ),
                     const SizedBox(width: 12),
-                    _buildVisualRanking(studyProgress!.userOrder ?? -1, isDarkModeEnabled ? Colors.white : const Color(0xFF1A1A1A), isDarkModeEnabled ? Colors.white12 : Colors.black.withValues(alpha: 0.05), textColor),
+                    _buildVisualRanking(studyProgress!.userOrder ?? -1, isDarkModeEnabled ? Colors.white : const Color(0xFF1A1A1A),
+                        isDarkModeEnabled ? Colors.white12 : Colors.black.withValues(alpha: 0.05), textColor),
                   ],
                 ),
               ),
@@ -998,7 +997,6 @@ class _MePageState extends State<MePage> {
         ),
 
         // 订阅入口已移动到“学习设置/今日单词”上方
-
 
         // 打卡统计卡片
         Container(
@@ -1371,10 +1369,10 @@ class _MePageState extends State<MePage> {
               child: Container(
                 width: MediaQuery.of(context).size.width * 0.95,
                 margin: const EdgeInsets.symmetric(horizontal: 0),
-                  decoration: BoxDecoration(
-                    color: backgroundColor,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
+                decoration: BoxDecoration(
+                  color: backgroundColor,
+                  borderRadius: BorderRadius.circular(20),
+                ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -1453,41 +1451,43 @@ class _MePageState extends State<MePage> {
                                           ),
                                           padding: const EdgeInsets.symmetric(horizontal: 12),
                                         ),
-                                        onPressed: (cooldown > 0 || isSendingCode) ? null : () async {
-                                          if (!EmailValidator.validate(email.text)) {
-                                            ToastUtil.error("请输入有效的邮箱地址");
-                                            return;
-                                          }
-                                          setDialogState(() {
-                                            isSendingCode = true;
-                                          });
-                                          var result = await Api.client.sendEmailCode(email.text, "BIND_EMAIL");
-                                          if (result.success) {
-                                            ToastUtil.info("验证码已发送");
-                                            setDialogState(() {
-                                              cooldown = 60;
-                                              isSendingCode = false;
-                                            });
-                                            timer = Timer.periodic(const Duration(seconds: 1), (t) {
-                                              setDialogState(() {
-                                                if (cooldown > 0) {
-                                                  cooldown--;
-                                                } else {
-                                                  timer?.cancel();
-                                                  timer = null;
+                                        onPressed: (cooldown > 0 || isSendingCode)
+                                            ? null
+                                            : () async {
+                                                if (!EmailValidator.validate(email.text)) {
+                                                  ToastUtil.error("请输入有效的邮箱地址");
+                                                  return;
                                                 }
-                                              });
-                                            });
-                                          } else {
-                                            ToastUtil.error(result.msg!);
-                                            setDialogState(() {
-                                              isSendingCode = false;
-                                            });
-                                          }
-                                        },
-                                        child: isSendingCode ? 
-                                              const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : 
-                                              Text(cooldown > 0 ? '${cooldown}s' : '获取验证码'),
+                                                setDialogState(() {
+                                                  isSendingCode = true;
+                                                });
+                                                var result = await Api.client.sendEmailCode(email.text, "BIND_EMAIL");
+                                                if (result.success) {
+                                                  ToastUtil.info("验证码已发送");
+                                                  setDialogState(() {
+                                                    cooldown = 60;
+                                                    isSendingCode = false;
+                                                  });
+                                                  timer = Timer.periodic(const Duration(seconds: 1), (t) {
+                                                    setDialogState(() {
+                                                      if (cooldown > 0) {
+                                                        cooldown--;
+                                                      } else {
+                                                        timer?.cancel();
+                                                        timer = null;
+                                                      }
+                                                    });
+                                                  });
+                                                } else {
+                                                  ToastUtil.error(result.msg!);
+                                                  setDialogState(() {
+                                                    isSendingCode = false;
+                                                  });
+                                                }
+                                              },
+                                        child: isSendingCode
+                                            ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                                            : Text(cooldown > 0 ? '${cooldown}s' : '获取验证码'),
                                       ),
                                     ),
                                   ],
@@ -1549,14 +1549,14 @@ class _MePageState extends State<MePage> {
                                           Api.setLoadingDisabled(false);
                                           var result = await Api.client.verifyEmailCode(email.text, codeController.text, "BIND_EMAIL");
                                           Api.setLoadingDisabled(true);
-                                          
+
                                           if (!context.mounted) return;
                                           if (!result.success) {
                                             ToastUtil.error(result.msg ?? "验证码错误");
                                             return;
                                           }
                                         }
-                                        
+
                                         timer?.cancel();
                                         Navigator.pop(context, true);
                                       },
@@ -1961,7 +1961,6 @@ class _MePageState extends State<MePage> {
     }
   }
 
-
   // 进度项组件
   Widget _buildStatBox(bool isDarkMode, String label, String value) {
     return Expanded(
@@ -2143,7 +2142,6 @@ class _MePageState extends State<MePage> {
           ? const Center(child: CircularProgressIndicator())
           : CustomScrollView(
               slivers: [
-
                 SliverPadding(
                   padding: EdgeInsets.fromLTRB(16, MediaQuery.of(context).padding.top + 16, 16, 0),
                   sliver: SliverList(
@@ -2231,7 +2229,9 @@ class _DictCardState extends State<DictCard> {
     final wordIds = dictWords.map((dw) => dw.wordId).toSet();
 
     // 获取学习中的单词（stability < graduationStability）
-    final learningWords = await (db.select(db.learningWords)..where((lw) => lw.userId.equals(userId) & lw.stability.isSmallerThanValue(Constants.graduationStability))).get();
+    final learningWords = await (db.select(db.learningWords)
+          ..where((lw) => lw.userId.equals(userId) & lw.stability.isSmallerThanValue(Constants.graduationStability)))
+        .get();
     final learningWordIds = learningWords.map((w) => w.wordId).toSet();
 
     // 获取已掌握的单词
@@ -2281,7 +2281,7 @@ class _DictCardState extends State<DictCard> {
     final progressPercent = (progress * 100).toInt();
 
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    
+
     final cardBgColor = isDarkMode ? const Color(0xFF1E1E1E) : Colors.white;
     final textColor = isDarkMode ? Colors.white : const Color(0xFF1A1A1A);
     final subtitleColor = isDarkMode ? Colors.white54 : Colors.black26;
@@ -2296,129 +2296,129 @@ class _DictCardState extends State<DictCard> {
         border: Border.all(color: borderColor, width: 1.0),
       ),
       clipBehavior: Clip.antiAlias,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              Row(
+              // 圆形进度指示器
+              Stack(
+                alignment: Alignment.center,
                 children: [
-                  // 圆形进度指示器
-                  Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      CircularPercentIndicator(
-                        radius: 25.0,
-                        lineWidth: 4.0,
-                        percent: progress,
-                        backgroundColor: isDarkMode ? Colors.white.withValues(alpha: 0.1) : subtitleColor.withValues(alpha: 0.1),
-                        progressColor: isDarkMode ? Colors.white70 : subtitleColor,
-                        circularStrokeCap: CircularStrokeCap.round,
-                      ),
-                      Text(
-                        '$progressPercent%',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: isDarkMode ? Colors.white : subtitleColor,
-                          fontWeight: FontWeight.bold,
-                          height: 1.1,
-                        ),
-                      ),
-                    ],
+                  CircularPercentIndicator(
+                    radius: 25.0,
+                    lineWidth: 4.0,
+                    percent: progress,
+                    backgroundColor: isDarkMode ? Colors.white.withValues(alpha: 0.1) : subtitleColor.withValues(alpha: 0.1),
+                    progressColor: isDarkMode ? Colors.white70 : subtitleColor,
+                    circularStrokeCap: CircularStrokeCap.round,
                   ),
-                  const SizedBox(width: 16),
-                  // 词书信息
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                          Text(
-                            widget.dictInfo.name.replaceAll('.dict', ''),
-                            style: TextStyle(
-                              color: textColor,
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 0.5,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            widget.dictInfo.name == '生词本'
-                                ? '$masteredCount / ${actualWordCount ?? 0} 词'
-                                : '$masteredCount / ${widget.dictInfo.wordCount} 词',
-                            style: TextStyle(
-                              color: subtitleColor,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w400,
-                            ),
-                          ),
-                      ],
+                  Text(
+                    '$progressPercent%',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isDarkMode ? Colors.white : subtitleColor,
+                      fontWeight: FontWeight.bold,
+                      height: 1.1,
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
-              // 操作按钮
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _buildDictCheckbox(
-                    label: '优先取词',
-                    value: currentLearningDict.isPrivileged,
-                    onChanged: (bool? value) async {
-                      if (value != null) {
-                        try {
-                          final newPrivilegedStatus =
-                              await MyDatabase.instance.learningDictsDao.togglePrivileged(currentLearningDict.userId, currentLearningDict.dictId, true);
-    
-                          if (mounted) {
-                            setState(() {
-                              currentLearningDict = LearningDict(
-                                userId: currentLearningDict.userId,
-                                dictId: currentLearningDict.dictId,
-                                isPrivileged: newPrivilegedStatus,
-                                fetchMastered: currentLearningDict.fetchMastered,
-                                createTime: currentLearningDict.createTime,
-                                updateTime: currentLearningDict.updateTime,
-                              );
-                            });
-                          }
-    
-                          // 触发同步
-                          ThrottledDbSyncService().requestSync();
-                        } catch (error) {
-                          Global.logger.d('切换优先取词状态失败: $error');
-                          ToastUtil.error('操作失败，请重试');
-                        }
-                      }
-                    },
-                  ),
-                  const SizedBox(width: 8),
-                  _buildDictActionButton(
-                    icon: Icons.list_alt,
-                    label: '单词列表',
-                    isActive: true,
-                    onTap: () async {
-                      try {
-                        await toDictWordsListPage(currentLearningDict.dictId, false);
-                        widget.onDictChanged();
-                      } catch (e) {
-                        ToastUtil.error("无法打开词书");
-                      }
-                    },
-                  ),
-                  const SizedBox(width: 8),
-                  _buildDictActionButton(
-                    icon: Icons.pause_circle_outline,
-                    label: '停止学习',
-                    isActive: true,
-                    isDestructive: false,
-                    onTap: () => _handleDictDataAction(),
-                  ),
-                ],
+              const SizedBox(width: 16),
+              // 词书信息
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.dictInfo.name.replaceAll('.dict', ''),
+                      style: TextStyle(
+                        color: textColor,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      widget.dictInfo.name == '生词本'
+                          ? '$masteredCount / ${actualWordCount ?? 0} 词'
+                          : '$masteredCount / ${widget.dictInfo.wordCount} 词',
+                      style: TextStyle(
+                        color: subtitleColor,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
-        );
+          const SizedBox(height: 20),
+          // 操作按钮
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildDictCheckbox(
+                label: '优先取词',
+                value: currentLearningDict.isPrivileged,
+                onChanged: (bool? value) async {
+                  if (value != null) {
+                    try {
+                      final newPrivilegedStatus =
+                          await MyDatabase.instance.learningDictsDao.togglePrivileged(currentLearningDict.userId, currentLearningDict.dictId, true);
+
+                      if (mounted) {
+                        setState(() {
+                          currentLearningDict = LearningDict(
+                            userId: currentLearningDict.userId,
+                            dictId: currentLearningDict.dictId,
+                            isPrivileged: newPrivilegedStatus,
+                            fetchMastered: currentLearningDict.fetchMastered,
+                            createTime: currentLearningDict.createTime,
+                            updateTime: currentLearningDict.updateTime,
+                          );
+                        });
+                      }
+
+                      // 触发同步
+                      ThrottledDbSyncService().requestSync();
+                    } catch (error) {
+                      Global.logger.d('切换优先取词状态失败: $error');
+                      ToastUtil.error('操作失败，请重试');
+                    }
+                  }
+                },
+              ),
+              const SizedBox(width: 8),
+              _buildDictActionButton(
+                icon: Icons.list_alt,
+                label: '单词列表',
+                isActive: true,
+                onTap: () async {
+                  try {
+                    await toDictWordsListPage(currentLearningDict.dictId, false);
+                    widget.onDictChanged();
+                  } catch (e) {
+                    ToastUtil.error("无法打开词书");
+                  }
+                },
+              ),
+              const SizedBox(width: 8),
+              _buildDictActionButton(
+                icon: Icons.pause_circle_outline,
+                label: '停止学习',
+                isActive: true,
+                isDestructive: false,
+                onTap: () => _handleDictDataAction(),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 
   /// 统一处理词书数据操作（清空单词或删除词书）
@@ -2432,13 +2432,15 @@ class _DictCardState extends State<DictCard> {
     final wordIdsInDict = dictWords.map((dw) => dw.wordId).toSet();
 
     // 2. 查询用户所有学习中的单词（stability < graduationStability）
-    final learningWords = await (db.select(db.learningWords)..where((lw) => lw.userId.equals(user.id) & lw.stability.isSmallerThanValue(Constants.graduationStability))).get();
+    final learningWords = await (db.select(db.learningWords)
+          ..where((lw) => lw.userId.equals(user.id) & lw.stability.isSmallerThanValue(Constants.graduationStability)))
+        .get();
 
     if (!mounted) return;
 
     // 3. 获取用户书桌上的所有其他词书 ID
-    final otherLearningDicts = await (db.select(db.learningDicts)..where((ld) => ld.userId.equals(user.id) & ld.dictId.isNotValue(currentLearningDict.dictId)))
-        .get();
+    final otherLearningDicts =
+        await (db.select(db.learningDicts)..where((ld) => ld.userId.equals(user.id) & ld.dictId.isNotValue(currentLearningDict.dictId))).get();
     final otherDictIds = otherLearningDicts.map((ld) => ld.dictId).toSet();
 
     if (!mounted) return;
@@ -2671,15 +2673,15 @@ class _DictCardState extends State<DictCard> {
     bool isDestructive = false,
   }) {
     final isDarkMode = context.read<DarkMode>().isDarkMode;
-    
-    final bgColor = isDarkMode 
+
+    final bgColor = isDarkMode
         ? (isDestructive ? Colors.red.withValues(alpha: 0.1) : Colors.white.withValues(alpha: 0.05))
         : (isDestructive ? Colors.red.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03));
-    
+
     final borderColor = isDarkMode
         ? (isDestructive ? Colors.red.withValues(alpha: 0.3) : Colors.white.withValues(alpha: 0.1))
         : (isDestructive ? Colors.red.withValues(alpha: 0.2) : Colors.black.withValues(alpha: 0.05));
-        
+
     final contentColor = isDarkMode
         ? (isDestructive ? (Colors.red[300] ?? Colors.red) : Colors.white70)
         : (isDestructive ? (Colors.red[700] ?? Colors.red) : const Color(0xFF6B7280));
@@ -2728,7 +2730,7 @@ class _DictCardState extends State<DictCard> {
   }) {
     final isDarkMode = context.read<DarkMode>().isDarkMode;
     final accentColor = AppTheme.primaryColor;
-    
+
     final bgColor = isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03);
     final borderColor = isDarkMode ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05);
     final contentColor = isDarkMode ? Colors.white70 : const Color(0xFF6B7280);
@@ -2776,7 +2778,6 @@ class _DictCardState extends State<DictCard> {
       ),
     );
   }
-
 }
 
 class RankingPainter extends CustomPainter {
@@ -2856,26 +2857,26 @@ class RankingPainter extends CustomPainter {
       double x = xFrac * w;
       double yVal = getCurveValue(xFrac);
       double y = h - (yVal * h * 0.85);
-      
+
       // Approximate slope using a small delta
       double nextXFrac = xFrac + 0.01;
       double nextX = nextXFrac * w;
       double nextYVal = getCurveValue(nextXFrac);
       double nextY = h - (nextYVal * h * 0.85);
-      
+
       double angle = math.atan2(nextY - y, nextX - x);
-      
+
       canvas.save();
       canvas.translate(x, y);
       canvas.rotate(angle);
-      
+
       // Draw arrow head ">"
       final arrowPath = Path();
       arrowPath.moveTo(-3, -3);
       arrowPath.lineTo(0, 0);
       arrowPath.lineTo(-3, 3);
       canvas.drawPath(arrowPath, arrowPaint);
-      
+
       canvas.restore();
     }
 
@@ -2883,7 +2884,7 @@ class RankingPainter extends CustomPainter {
     const flagXFrac = 0.95;
     final fX = flagXFrac * w;
     final fY = h - (getCurveValue(flagXFrac) * h * 0.85);
-    
+
     final flagPaint = Paint()
       ..color = curveColor.withValues(alpha: 0.6)
       ..strokeWidth = 1.2;
@@ -2913,13 +2914,12 @@ class RankingPainter extends CustomPainter {
       final glowPaint = Paint()..color = markerColor.withValues(alpha: 0.2);
       canvas.drawCircle(Offset(xPos, yPos), 7, glowPaint);
       canvas.drawCircle(Offset(xPos, yPos), 4, Paint()..color = markerColor);
-      
+
       // Add a tiny white dot in center for "eye-catching" effect
       canvas.drawCircle(Offset(xPos, yPos), 1.5, Paint()..color = Colors.white.withValues(alpha: 0.8));
     }
   }
 
   @override
-  bool shouldRepaint(covariant RankingPainter oldDelegate) =>
-      oldDelegate.percentile != percentile || oldDelegate.markerColor != markerColor;
+  bool shouldRepaint(covariant RankingPainter oldDelegate) => oldDelegate.percentile != percentile || oldDelegate.markerColor != markerColor;
 }
