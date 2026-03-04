@@ -581,7 +581,11 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
               ),
               Text(
                 '长按拖动排序',
-                style: TextStyle(color: isDarkMode ? Colors.white54 : Colors.black26, fontSize: 11),
+                style: TextStyle(
+                  color: isDarkMode ? Colors.white54 : Colors.grey,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ],
           ),
