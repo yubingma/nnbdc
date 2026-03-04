@@ -20,6 +20,9 @@ import 'package:nnbdc/services/throttled_sync_service.dart';
 import 'package:nnbdc/util/subscription_util.dart';
 
 import 'bdc.dart';
+import 'package:nnbdc/page/word_list/today_words.dart';
+import 'package:nnbdc/page/word_list/today_new_words.dart';
+import 'package:nnbdc/page/word_list/today_old_words.dart';
 
 class BeforeBdcPage extends StatefulWidget {
   const BeforeBdcPage({super.key});
@@ -328,33 +331,44 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
   Widget _buildStatItem(String label, int count, IconData icon) {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
     return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 20),
-        decoration: BoxDecoration(
-          color: isDarkMode ? Colors.white.withValues(alpha: 0.03) : const Color(0xFFF8F9FA),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.02),
-            width: 1,
+      child: GestureDetector(
+        onTap: () {
+          if (label == '今日总词') {
+            toTodayWordsListPage(true)?.then((_) => loadData());
+          } else if (label == '新词') {
+            toTodayNewWordsListPage(true)?.then((_) => loadData());
+          } else if (label == '复习') {
+            toTodayOldWordsListPage(true)?.then((_) => loadData());
+          }
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          decoration: BoxDecoration(
+            color: isDarkMode ? Colors.white.withValues(alpha: 0.03) : const Color(0xFFF8F9FA),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.02),
+              width: 1,
+            ),
           ),
-        ),
-        child: Column(
-          children: [
-            Text(
-              '$count',
-              style: TextStyle(
-                color: isDarkMode ? Colors.white : const Color(0xFF1A1A1A),
-                fontSize: 26,
-                fontWeight: FontWeight.w900,
-                fontFamily: 'Roboto',
+          child: Column(
+            children: [
+              Text(
+                '$count',
+                style: TextStyle(
+                  color: isDarkMode ? Colors.white : const Color(0xFF1A1A1A),
+                  fontSize: 26,
+                  fontWeight: FontWeight.w900,
+                  fontFamily: 'Roboto',
+                ),
               ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(color: isDarkMode ? Colors.white54 : Colors.grey, fontSize: 11, fontWeight: FontWeight.bold),
-            ),
-          ],
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: TextStyle(color: isDarkMode ? Colors.white54 : Colors.grey, fontSize: 11, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
         ),
       ),
     );
