@@ -301,10 +301,15 @@ class _ChineseAsrInputWidgetState extends State<ChineseAsrInputWidget> {
                 : widget.isKeyboardVisible
                     ? "请输入释义"
                     : "请等待播音结束......",
+            hintStyle: TextStyle(
+              color: context.watch<DarkMode>().isDarkMode ? Colors.white38 : Colors.black26,
+              fontSize: 16,
+            ),
           ),
           style: TextStyle(
-            fontSize: 12,
-            color: context.watch<DarkMode>().isDarkMode ? Colors.white54 : Colors.grey,
+            fontSize: 18, // 增大字号
+            fontWeight: FontWeight.bold,
+            color: context.watch<DarkMode>().isDarkMode ? Colors.white : const Color(0xFF1A1A1A), // 使用正常/深色提升可见性
           ),
           onChanged: (value) {},
         ),
@@ -352,10 +357,15 @@ class _EnglishAsrInputWidgetState extends State<EnglishAsrInputWidget> {
                 : widget.isKeyboardVisible
                     ? "请输入英文单词"
                     : "请等待播音结束...",
+            hintStyle: TextStyle(
+              color: context.watch<DarkMode>().isDarkMode ? Colors.white38 : Colors.black26,
+              fontSize: 16,
+            ),
           ),
           style: TextStyle(
-            fontSize: 12,
-            color: context.watch<DarkMode>().isDarkMode ? Colors.white54 : Colors.grey,
+            fontSize: 18, // 增大字号
+            fontWeight: FontWeight.bold,
+            color: context.watch<DarkMode>().isDarkMode ? Colors.white : const Color(0xFF1A1A1A), // 使用正常/深色提升可见性
           ),
           onChanged: (value) {},
         ),
@@ -3262,7 +3272,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w500,
-                                color: context.watch<DarkMode>().isDarkMode ? Colors.white70 : Colors.grey[700],
+                                color: context.watch<DarkMode>().isDarkMode ? const Color(0xFFD1D5DB) : const Color(0xFF4B5563),
                               ),
                             ),
                             const SizedBox(height: 8),
@@ -3293,14 +3303,14 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.emoji_objects_rounded, color: context.watch<DarkMode>().isDarkMode ? Colors.white54 : Colors.grey[500], size: 14),
+                                Icon(Icons.emoji_objects_rounded, color: context.watch<DarkMode>().isDarkMode ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280), size: 14),
                                 const SizedBox(width: 4),
                                 Text(
                                   '提示',
                                   style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w400,
-                                    color: context.watch<DarkMode>().isDarkMode ? Colors.white54 : Colors.grey[500],
+                                    color: context.watch<DarkMode>().isDarkMode ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
                                   ),
                                 ),
                               ],
@@ -3327,14 +3337,14 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.refresh, color: context.watch<DarkMode>().isDarkMode ? Colors.white54 : Colors.grey[500], size: 14),
+                                Icon(Icons.refresh, color: context.watch<DarkMode>().isDarkMode ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280), size: 14),
                                 const SizedBox(width: 4),
                                 Text(
                                   '清除',
                                   style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w400,
-                                    color: context.watch<DarkMode>().isDarkMode ? Colors.white54 : Colors.grey[500],
+                                    color: context.watch<DarkMode>().isDarkMode ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
                                   ),
                                 ),
                               ],
@@ -3392,7 +3402,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                   ? ''
                   : '[${Util.getWordDefaultPronounce(_currentGetWordResult!.learningWord!.word)}]',
               style: TextStyle(
-                color: context.watch<DarkMode>().isDarkMode ? Colors.white70 : Colors.grey[600],
+                color: context.watch<DarkMode>().isDarkMode ? const Color(0xFFD1D5DB) : const Color(0xFF4B5563),
                 fontFamily: "NotoSans",
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
@@ -3484,7 +3494,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w400,
-                  color: Colors.grey.shade500,
+                  color: context.watch<DarkMode>().isDarkMode ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
                   letterSpacing: 1.2,
                 ),
               ),
@@ -3519,7 +3529,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                           ? ''
                           : '[${Util.getWordDefaultPronounce(_currentGetWordResult!.learningWord!.word)}]',
                       style: TextStyle(
-                        color: context.watch<DarkMode>().isDarkMode ? Colors.white70 : Colors.grey[600],
+                        color: context.watch<DarkMode>().isDarkMode ? const Color(0xFFD1D5DB) : const Color(0xFF4B5563),
                         fontFamily: "NotoSans",
                         fontSize: 16,
                         fontWeight: FontWeight.w500,
@@ -3608,7 +3618,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w400,
-                  color: Colors.grey.shade500,
+                  color: context.watch<DarkMode>().isDarkMode ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
                   letterSpacing: 1.2,
                 ),
               ),

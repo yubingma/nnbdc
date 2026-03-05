@@ -111,7 +111,7 @@ List<Widget> renderAsrMeaningItems(WordWrapper word, {bool isDarkMode = false}) 
               Util.translateCiXing(meaningItem.ciXing!),
               style: TextStyle(
                 fontSize: 12,
-                color: isDarkMode ? Colors.white60 : const Color(0xFF64748B),
+                color: isDarkMode ? const Color(0xFFD1D5DB) : const Color(0xFF4B5563),
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -138,7 +138,7 @@ List<Widget> renderMeaningItemParts(String meaning, int meaningIndex, int hintLe
     if (asrMatchedMeaningItemParts.contains(Pair(meaningIndex, i))) {
       var widget = Text(
         part,
-        style: TextStyle(color: isDarkMode ? Colors.grey[300] : const Color(0xFF4A5568), fontSize: 12),
+        style: TextStyle(color: isDarkMode ? const Color(0xFFD1D5DB) : const Color(0xFF374151), fontSize: 12),
       );
       partWidgets.add(widget);
     }
@@ -163,7 +163,7 @@ List<Widget> renderMeaningItemParts(String meaning, int meaningIndex, int hintLe
             width: 14, // 固定宽度，大约等于一个汉字的宽度
             child: Text(
               '＿',
-              style: const TextStyle(fontSize: 12),
+              style: TextStyle(fontSize: 12, color: isDarkMode ? Colors.white54 : Colors.black38),
               textAlign: TextAlign.center,
             ),
           ));
@@ -171,7 +171,7 @@ List<Widget> renderMeaningItemParts(String meaning, int meaningIndex, int hintLe
           // 已显示的汉字或其他字符
           finalWidgets.add(Text(
             displayText[i],
-            style: const TextStyle(fontSize: 12),
+            style: TextStyle(fontSize: 12, color: isDarkMode ? Colors.white : const Color(0xFF1A1A1A)),
           ));
         }
       }
@@ -184,9 +184,9 @@ List<Widget> renderMeaningItemParts(String meaning, int meaningIndex, int hintLe
 
     // 显示释义项分隔符
     if (i != parts.length - 1) {
-      partWidgets.add(const Text(
+      partWidgets.add(Text(
         "；",
-        style: TextStyle(fontSize: 12),
+        style: TextStyle(fontSize: 12, color: isDarkMode ? Colors.white54 : Colors.black38),
       ));
     }
   }
