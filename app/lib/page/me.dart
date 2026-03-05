@@ -1114,7 +1114,7 @@ class _MePageState extends State<MePage> {
                       });
                     },
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                       decoration: BoxDecoration(
                         color: isDarkModeEnabled ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF8F9FA),
                         borderRadius: BorderRadius.circular(8),
@@ -1129,7 +1129,7 @@ class _MePageState extends State<MePage> {
                             style: TextStyle(
                               color: subtitleColor,
                               fontSize: 12,
-                              fontWeight: FontWeight.bold,
+                              fontWeight: FontWeight.w500,
                               fontFamily: 'NotoSansSC',
                             ),
                           ),
