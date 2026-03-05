@@ -508,7 +508,7 @@ class _MePageState extends State<MePage> {
   Widget renderStudyProgress() {
     final isDarkModeEnabled = context.watch<DarkMode>().isDarkMode;
     final textColor = isDarkModeEnabled ? Colors.white : const Color(0xFF2C3E50);
-    final subtitleColor = isDarkModeEnabled ? const Color(0xFFD1D5DB) : const Color(0xFF4B5563);
+    final subtitleColor = isDarkModeEnabled ? const Color(0xFFE2E8F0) : const Color(0xFF374151);
     final iconColor = isDarkModeEnabled ? Colors.white70 : const Color(0xFF95A5A6);
     final cardColor = isDarkModeEnabled ? const Color(0xFF2D2D2D) : Colors.white;
 
@@ -1990,7 +1990,7 @@ class _MePageState extends State<MePage> {
             const SizedBox(height: 4),
             Text(
               label,
-              style: TextStyle(color: isDarkMode ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280), fontSize: 11, fontWeight: FontWeight.bold),
+              style: TextStyle(color: isDarkMode ? const Color(0xFF9CA3AF) : const Color(0xFF4B5563), fontSize: 11, fontWeight: FontWeight.w500),
             ),
           ],
         ),
@@ -2286,7 +2286,7 @@ class _DictCardState extends State<DictCard> {
 
     final cardBgColor = isDarkMode ? const Color(0xFF1E1E1E) : Colors.white;
     final textColor = isDarkMode ? Colors.white : const Color(0xFF1A1A1A);
-    final subtitleColor = isDarkMode ? const Color(0xFFD1D5DB) : const Color(0xFF4B5563);
+    final subtitleColor = isDarkMode ? const Color(0xFFE2E8F0) : const Color(0xFF374151);
     final borderColor = isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.05);
 
     return Container(
@@ -2350,7 +2350,7 @@ class _DictCardState extends State<DictCard> {
                       style: TextStyle(
                         color: subtitleColor,
                         fontSize: 13,
-                        fontWeight: FontWeight.w400,
+                        fontWeight: FontWeight.w500, // 稍微加粗一点
                       ),
                     ),
                   ],
