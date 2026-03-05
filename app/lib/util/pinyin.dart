@@ -5,7 +5,7 @@ import 'cartesian_product.dart';
 import 'clock_like_adder.dart';
 
 /// 认为两个发音匹配的最小相似度
-const minSimularityForMatch = 0.667;
+const minSimularityForMatch = 0.7;
 
 /// 声母相似度在整个拼音相似度中所占权重（略降权）
 const shengmuSimilarityWeight = 0.35;

@@ -138,7 +138,11 @@ List<Widget> renderMeaningItemParts(String meaning, int meaningIndex, int hintLe
     if (asrMatchedMeaningItemParts.contains(Pair(meaningIndex, i))) {
       var widget = Text(
         part,
-        style: TextStyle(color: isDarkMode ? const Color(0xFFD1D5DB) : const Color(0xFF374151), fontSize: 12),
+        style: TextStyle(
+          color: isDarkMode ? const Color(0xFF4ADE80) : const Color(0xFF16A34A), // 绿色高亮
+          fontSize: 13, // 稍微加大一些，更清晰
+          fontWeight: FontWeight.w400,
+        ),
       );
       partWidgets.add(widget);
     }

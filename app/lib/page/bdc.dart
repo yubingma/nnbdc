@@ -39,6 +39,7 @@ import '../constants.dart';
 import '../util/utils.dart';
 import '../db/user_extensions.dart';
 import '../util/error_handler.dart';
+import '../theme/app_theme.dart';
 
 class BdcPageArgs {
   /// 从哪个页面进入本页面
@@ -284,36 +285,94 @@ class ChineseAsrInputWidget extends StatefulWidget {
   State<ChineseAsrInputWidget> createState() => _ChineseAsrInputWidgetState();
 }
 
-class _ChineseAsrInputWidgetState extends State<ChineseAsrInputWidget> {
+class _ChineseAsrInputWidgetState extends State<ChineseAsrInputWidget> with SingleTickerProviderStateMixin {
+  late AnimationController _waveController;
+
+  @override
+  void initState() {
+    super.initState();
+    _waveController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _waveController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        TextField(
-          textAlign: TextAlign.center,
-          controller: widget.controller,
-          focusNode: widget.focusNode,
-          keyboardType: TextInputType.text,
-          decoration: InputDecoration(
-            hintText: widget.asrState == AsrState.started
-                ? "请说出或输入释义"
-                : widget.isKeyboardVisible
-                    ? "请输入释义"
-                    : "请等待播音结束......",
-            hintStyle: TextStyle(
-              color: context.watch<DarkMode>().isDarkMode ? Colors.white38 : Colors.black26,
-              fontSize: 16,
+    final isDarkMode = context.watch<DarkMode>().isDarkMode;
+    final accentColor = AppTheme.primaryColor;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          if (widget.asrState == AsrState.started) ...[
+            // 波纹动画反馈
+            SizedBox(
+              height: 32, // 减小高度
+              child: AnimatedBuilder(
+                animation: _waveController,
+                builder: (context, child) {
+                  return Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(8, (index) {
+                      final double value = sin((_waveController.value + (index * 0.125)) * pi * 2);
+                      final double height = 8 + (20 * (value + 1) / 2); // 减小高度范围
+                      return Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 2),
+                        width: 3,
+                        height: height,
+                        decoration: BoxDecoration(
+                          color: accentColor.withValues(alpha: 0.4 + (0.6 * (value + 1) / 2)),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      );
+                    }),
+                  );
+                },
+              ),
             ),
-          ),
-          style: TextStyle(
-            fontSize: 18, // 增大字号
-            fontWeight: FontWeight.bold,
-            color: context.watch<DarkMode>().isDarkMode ? Colors.white : const Color(0xFF1A1A1A), // 使用正常/深色提升可见性
-          ),
-          onChanged: (value) {},
-        ),
-      ],
+            const SizedBox(height: 4),
+            Text(
+              "正在倾听...",
+              style: TextStyle(
+                fontSize: 12, // 减小字号
+                color: isDarkMode ? Colors.white70 : const Color(0xFF4B5563),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ] else ...[
+            // 未开始或等待状态
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  widget.asrState == AsrState.initialized ? Icons.mic : Icons.hourglass_top,
+                  color: isDarkMode ? Colors.white24 : Colors.black12,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  widget.asrState == AsrState.initialized ? "准备就绪" : "正在处理中...",
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isDarkMode ? Colors.white24 : Colors.black26,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
     );
   }
 }
@@ -352,20 +411,26 @@ class _EnglishAsrInputWidgetState extends State<EnglishAsrInputWidget> {
           focusNode: widget.focusNode,
           keyboardType: TextInputType.text,
           decoration: InputDecoration(
+            isDense: true, // 使输入框更紧凑
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             hintText: widget.asrState == AsrState.started
-                ? "请说出或输入英文单词"
-                : widget.isKeyboardVisible
-                    ? "请输入英文单词"
-                    : "请等待播音结束...",
+                ? "请说出或输入单词"
+                : "等待播音...",
             hintStyle: TextStyle(
               color: context.watch<DarkMode>().isDarkMode ? Colors.white38 : Colors.black26,
-              fontSize: 16,
+              fontSize: 14,
             ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+            filled: true,
+            fillColor: context.watch<DarkMode>().isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
           ),
           style: TextStyle(
-            fontSize: 18, // 增大字号
+            fontSize: 16, // 稍微减小字号以适应紧凑顶栏
             fontWeight: FontWeight.bold,
-            color: context.watch<DarkMode>().isDarkMode ? Colors.white : const Color(0xFF1A1A1A), // 使用正常/深色提升可见性
+            color: context.watch<DarkMode>().isDarkMode ? Colors.white : const Color(0xFF1A1A1A),
           ),
           onChanged: (value) {},
         ),
@@ -570,13 +635,10 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
     if (_shouldShowSpeakTab) {
       // 说意/说英tab
-      children.add(SingleChildScrollView(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-            _buildSpeakPanel(),
-          ],
-        ),
+      children.add(Column(
+        children: [
+          Expanded(child: _buildSpeakPanel()),
+        ],
       ));
     }
 
@@ -2268,14 +2330,11 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                                 controller: _tabController,
                                 children: _dynamicTabBarViewChildren,
                               )
-                            : SingleChildScrollView(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.start,
-                                  children: [
-                                    _buildChoiceList(),
-                                    _buildSpeakPanel(),
-                                  ],
-                                ),
+                            : Column(
+                                children: [
+                                  _buildChoiceList(),
+                                  Expanded(child: _buildSpeakPanel()),
+                                ],
                               ),
                       ),
                     ],
@@ -3223,159 +3282,151 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       return const SizedBox.shrink();
     }
 
-    return Container(
-      margin: const EdgeInsets.only(top: 16),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: context.watch<DarkMode>().isDarkMode ? const Color(0xFF1E1E1E) : const Color(0xFFF8F9FA),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: context.watch<DarkMode>().isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.03),
-          width: 1,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: [
-          if (_isKeyboardVisible)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              margin: const EdgeInsets.only(bottom: 16),
-              decoration: BoxDecoration(
-                color: context.watch<DarkMode>().isDarkMode ? const Color(0xFF2C2C2C) : const Color(0xFFF5F5F7),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                _studyStep == StudyStep.en2Ch.json ? _word!.spell : _word!.getMergedMeaningItems().map((e) => e.meaning).join('; '),
-                style: TextStyle(
-                  color: context.watch<DarkMode>().isDarkMode ? Colors.white : Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1.2,
-                ),
-              ),
+    return Column(
+      children: [
+        // 1. 顶栏：音频波纹 + 提示/清除按钮 (固定浮动在上方)
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: context.watch<DarkMode>().isDarkMode ? const Color(0xFF1E1E1E) : const Color(0xFFF8F9FA),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+            border: Border.all(
+              color: context.watch<DarkMode>().isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.03),
+              width: 1,
             ),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
+              // 语音波形反馈
               Expanded(
-                child: Container(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: _studyStep == StudyStep.en2Ch.json
-                        ? renderAsrMeaningItems(_wordWrapper!, isDarkMode: context.read<DarkMode>().isDarkMode)
-                        : [
-                            Text(
-                              '请说出单词发音：',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                                color: context.watch<DarkMode>().isDarkMode ? const Color(0xFFD1D5DB) : const Color(0xFF4B5563),
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            _buildWordSpellingHint(_wordWrapper!, _isAnswerCorrect),
-                          ],
-                  ),
-                ),
+                child: _studyStep == StudyStep.en2Ch.json
+                    ? ChineseAsrInputWidget(
+                        controller: _meaningController,
+                        asrState: asr.state,
+                        onStartAsr: (language) => asr.startAsr(language),
+                        isKeyboardVisible: _isKeyboardVisible,
+                        focusNode: _meaningFocusNode,
+                      )
+                    : EnglishAsrInputWidget(
+                        controller: _meaningController,
+                        asrState: asr.state,
+                        onStartAsr: (language) => asr.startAsr(language),
+                        isKeyboardVisible: _isKeyboardVisible,
+                        focusNode: _meaningFocusNode,
+                        score: _currentScore,
+                      ),
               ),
-              Container(
-                margin: const EdgeInsets.only(left: 8),
-                child: Row(
-                  children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: context.watch<DarkMode>().isDarkMode ? Colors.white.withValues(alpha: 0.1) : Colors.black12,
-                        ),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(8),
-                          onTap: () => giveALittleHint(_wordWrapper!),
-                          onLongPress: () => giveFullHint(_wordWrapper!),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.emoji_objects_rounded, color: context.watch<DarkMode>().isDarkMode ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280), size: 14),
-                                const SizedBox(width: 4),
-                                Text(
-                                  '提示',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w400,
-                                    color: context.watch<DarkMode>().isDarkMode ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Container(
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: context.watch<DarkMode>().isDarkMode ? Colors.white.withValues(alpha: 0.1) : Colors.black12,
-                        ),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(8),
-                          onTap: () => clearHint(_wordWrapper!),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.refresh, color: context.watch<DarkMode>().isDarkMode ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280), size: 14),
-                                const SizedBox(width: 4),
-                                Text(
-                                  '清除',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w400,
-                                    color: context.watch<DarkMode>().isDarkMode ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+
+              const SizedBox(width: 8),
+
+              // 功能按钮区
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildPanelButton(
+                    icon: Icons.emoji_objects_rounded,
+                    label: '提示',
+                    onTap: () => giveALittleHint(_wordWrapper!),
+                    onLongPress: () => giveFullHint(_wordWrapper!),
+                  ),
+                  const SizedBox(width: 6),
+                  _buildPanelButton(
+                    icon: Icons.refresh,
+                    label: '清除',
+                    onTap: () => clearHint(_wordWrapper!),
+                  ),
+                ],
               ),
             ],
           ),
-          const SizedBox(height: 4),
-          _studyStep == StudyStep.en2Ch.json
-              ? ChineseAsrInputWidget(
-                  controller: _meaningController,
-                  asrState: asr.state,
-                  onStartAsr: (language) => asr.startAsr(language),
-                  isKeyboardVisible: _isKeyboardVisible,
-                  focusNode: _meaningFocusNode,
-                )
-              : EnglishAsrInputWidget(
-                  controller: _meaningController,
-                  asrState: asr.state,
-                  onStartAsr: (language) => asr.startAsr(language),
-                  isKeyboardVisible: _isKeyboardVisible,
-                  focusNode: _meaningFocusNode,
-                  score: _currentScore,
+        ),
+
+        // 2. 滚动区域：中文释义 / 拼写提示
+        Expanded(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            decoration: BoxDecoration(
+              color: context.watch<DarkMode>().isDarkMode ? const Color(0xFF1E1E1E).withValues(alpha: 0.8) : const Color(0xFFF8F9FA).withValues(alpha: 0.8),
+              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
+              border: Border(
+                left: BorderSide(color: context.watch<DarkMode>().isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.03)),
+                right: BorderSide(color: context.watch<DarkMode>().isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.03)),
+                bottom: BorderSide(color: context.watch<DarkMode>().isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.03)),
+              ),
+            ),
+            child: SingleChildScrollView(
+              padding: EdgeInsets.zero,
+              child: _studyStep == StudyStep.en2Ch.json
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: renderAsrMeaningItems(_wordWrapper!, isDarkMode: context.read<DarkMode>().isDarkMode),
+                    )
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '请说出单词发音：',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: context.watch<DarkMode>().isDarkMode ? const Color(0xFFD1D5DB) : const Color(0xFF4B5563),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        _buildWordSpellingHint(_wordWrapper!, _isAnswerCorrect),
+                      ],
+                    ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPanelButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    VoidCallback? onLongPress,
+  }) {
+    final isDarkMode = context.watch<DarkMode>().isDarkMode;
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(
+          color: isDarkMode ? Colors.white.withValues(alpha: 0.1) : Colors.black12,
+        ),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(8),
+          onTap: onTap,
+          onLongPress: onLongPress,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  icon,
+                  color: isDarkMode ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
+                  size: 16,
                 ),
-        ],
+                const SizedBox(width: 4),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: isDarkMode ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
