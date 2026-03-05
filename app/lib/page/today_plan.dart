@@ -381,7 +381,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
     return GestureDetector(
       onTap: isStarted ? () => ToastUtil.info('今日学习已开始，无法修改计划数量') : null,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
           color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF8F9FA),
           borderRadius: BorderRadius.circular(8),
