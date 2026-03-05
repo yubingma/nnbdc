@@ -2001,7 +2001,7 @@ class _MePageState extends State<MePage> {
   Widget _buildProgressItem(String title, String value) {
     final isDarkModeEnabled = context.watch<DarkMode>().isDarkMode;
     final textColor = isDarkModeEnabled ? Colors.white : const Color(0xFF1A1A1A);
-    final subtitleColor = isDarkModeEnabled ? const Color(0xFFD1D5DB) : const Color(0xFF4B5563);
+    final subtitleColor = isDarkModeEnabled ? const Color(0xFFE2E8F0) : const Color(0xFF374151);
 
     return Column(
       children: [
@@ -2020,7 +2020,7 @@ class _MePageState extends State<MePage> {
           style: TextStyle(
             fontSize: 11,
             color: subtitleColor,
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w500,
             fontFamily: 'NotoSansSC',
           ),
         ),
@@ -2685,8 +2685,8 @@ class _DictCardState extends State<DictCard> {
         : (isDestructive ? Colors.red.withValues(alpha: 0.2) : Colors.black.withValues(alpha: 0.05));
 
     final contentColor = isDarkMode
-        ? (isDestructive ? (Colors.red[300] ?? Colors.red) : Colors.white70)
-        : (isDestructive ? (Colors.red[700] ?? Colors.red) : const Color(0xFF6B7280));
+        ? (isDestructive ? (Colors.red[300] ?? Colors.red) : const Color(0xFFE2E8F0))
+        : (isDestructive ? (Colors.red[700] ?? Colors.red) : const Color(0xFF374151));
 
     return GestureDetector(
       onTap: onTap,
@@ -2735,7 +2735,7 @@ class _DictCardState extends State<DictCard> {
 
     final bgColor = isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03);
     final borderColor = isDarkMode ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05);
-    final contentColor = isDarkMode ? Colors.white70 : const Color(0xFF6B7280);
+    final contentColor = isDarkMode ? const Color(0xFFE2E8F0) : const Color(0xFF374151);
 
     return GestureDetector(
       onTap: () => onChanged(!value),
