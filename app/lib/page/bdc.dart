@@ -3132,7 +3132,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                 TextSpan(
                   text: '${Util.translateCiXing(ciXing)} ',
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: 13, // 增大字号
                     fontWeight: FontWeight.w600,
                     color: isDarkMode ? Colors.white60 : const Color(0xFF64748B),
                   ),
@@ -3643,7 +3643,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                           decoration: null,
                           child: Text(
                             _currentGetWordResult!.learningWord!.word.getMergedMeaningItems()[i].ciXing ?? '',
-                            style: const TextStyle(color: Color(0xFF999999), fontSize: 11, fontWeight: FontWeight.w600),
+                            style: const TextStyle(color: Color(0xFF999999), fontSize: 13, fontWeight: FontWeight.w600),
                             textAlign: TextAlign.center,
                           ),
                         ),

@@ -110,7 +110,7 @@ List<Widget> renderAsrMeaningItems(WordWrapper word, {bool isDarkMode = false}) 
             child: Text(
               Util.translateCiXing(meaningItem.ciXing!),
               style: TextStyle(
-                fontSize: 12,
+                fontSize: 13,
                 color: isDarkMode ? const Color(0xFFD1D5DB) : const Color(0xFF4B5563),
                 fontWeight: FontWeight.w600,
               ),
