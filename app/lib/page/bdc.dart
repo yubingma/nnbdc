@@ -3270,7 +3270,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                             Text(
                               '请说出单词发音：',
                               style: TextStyle(
-                                fontSize: 16,
+                                fontSize: 14,
                                 fontWeight: FontWeight.w500,
                                 color: context.watch<DarkMode>().isDarkMode ? const Color(0xFFD1D5DB) : const Color(0xFF4B5563),
                               ),
