@@ -287,6 +287,9 @@ class ChineseAsrInputWidget extends StatefulWidget {
 
 class _ChineseAsrInputWidgetState extends State<ChineseAsrInputWidget> with SingleTickerProviderStateMixin {
   late AnimationController _waveController;
+  StreamSubscription<double>? _meterSubscription;
+  double _currentLevel = 0.0;
+  final _random = Random();
 
   @override
   void initState() {
@@ -295,11 +298,20 @@ class _ChineseAsrInputWidgetState extends State<ChineseAsrInputWidget> with Sing
       vsync: this,
       duration: const Duration(milliseconds: 1500),
     )..repeat();
+
+    _meterSubscription = Asr().meterStream().listen((level) {
+      if (mounted) {
+        setState(() {
+          _currentLevel = level;
+        });
+      }
+    });
   }
 
   @override
   void dispose() {
     _waveController.dispose();
+    _meterSubscription?.cancel();
     super.dispose();
   }
 
@@ -315,62 +327,60 @@ class _ChineseAsrInputWidgetState extends State<ChineseAsrInputWidget> with Sing
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          if (widget.asrState == AsrState.started) ...[
-            // 波纹动画反馈
-            SizedBox(
-              height: 20, // 进一步减小高度
-              child: AnimatedBuilder(
-                animation: _waveController,
-                builder: (context, child) {
-                  return Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(8, (index) {
+          // 波纹动画反馈 (始终显示以保持布局稳定)
+          SizedBox(
+            height: 20,
+            child: AnimatedBuilder(
+              animation: _waveController,
+              builder: (context, child) {
+                final bool isListening = widget.asrState == AsrState.started;
+                return Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(8, (index) {
+                    double height;
+                    double alpha;
+                    
+                    if (isListening && _currentLevel > 0.05) {
+                      // 正在说话：动感波形
+                      final randomFactor = 0.6 + _random.nextDouble() * 0.8;
+                      height = 4 + (20 * _currentLevel * randomFactor);
+                      if (height > 20) height = 20;
+                      alpha = 0.5 + (0.5 * _currentLevel);
+                    } else {
+                      // 等待或静音：固定呼吸波纹 (扫描)
                       final double value = sin((_waveController.value + (index * 0.125)) * pi * 2);
-                      final double height = 4 + (12 * (value + 1) / 2); // 进一步缩小波动范围
-                      return Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 1.5),
-                        width: 2.5, // 细化波段
-                        height: height,
-                        decoration: BoxDecoration(
-                          color: accentColor.withValues(alpha: 0.4 + (0.6 * (value + 1) / 2)),
-                          borderRadius: BorderRadius.circular(1.5),
-                        ),
-                      );
-                    }),
-                  );
-                },
-              ),
+                      height = 4 + (8 * (value + 1) / 2);
+                      // 如果没在听，波形变淡
+                      alpha = isListening ? 0.3 + (0.3 * (value + 1) / 2) : 0.1 + (0.1 * (value + 1) / 2);
+                    }
+
+                    return Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 1.5),
+                      width: 2.5,
+                      height: height,
+                      decoration: BoxDecoration(
+                        color: accentColor.withValues(alpha: alpha),
+                        borderRadius: BorderRadius.circular(1.5),
+                      ),
+                    );
+                  }),
+                );
+              },
             ),
-            const SizedBox(height: 2),
-            Text(
-              "正在倾听...",
-              style: TextStyle(
-                fontSize: 10, // 进一步减小字号
-                color: isDarkMode ? Colors.white54 : const Color(0xFF6B7280),
-                fontWeight: FontWeight.w500,
-              ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            widget.asrState == AsrState.started
+                ? "正在倾听..."
+                : (widget.asrState == AsrState.initialized || widget.asrState == AsrState.stopped)
+                    ? "准备就绪"
+                    : "正在处理中...",
+            style: TextStyle(
+              fontSize: 10,
+              color: isDarkMode ? Colors.white38 : Colors.black26,
+              fontWeight: FontWeight.w500,
             ),
-          ] else ...[
-            // 未开始或等待状态
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  widget.asrState == AsrState.initialized ? Icons.mic : Icons.hourglass_top,
-                  color: isDarkMode ? Colors.white24 : Colors.black12,
-                  size: 20,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  widget.asrState == AsrState.initialized ? "准备就绪" : "正在处理中...",
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: isDarkMode ? Colors.white24 : Colors.black26,
-                  ),
-                ),
-              ],
-            ),
-          ],
+          ),
         ],
       ),
     );
@@ -399,12 +409,80 @@ class EnglishAsrInputWidget extends StatefulWidget {
   State<EnglishAsrInputWidget> createState() => _EnglishAsrInputWidgetState();
 }
 
-class _EnglishAsrInputWidgetState extends State<EnglishAsrInputWidget> {
+class _EnglishAsrInputWidgetState extends State<EnglishAsrInputWidget> with SingleTickerProviderStateMixin {
+  late AnimationController _waveController;
+  StreamSubscription<double>? _meterSubscription;
+  double _currentLevel = 0.0;
+  final _random = Random();
+
+  @override
+  void initState() {
+    super.initState();
+    _waveController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat();
+
+    _meterSubscription = Asr().meterStream().listen((level) {
+      if (mounted) {
+        setState(() {
+          _currentLevel = level;
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _waveController.dispose();
+    _meterSubscription?.cancel();
+    super.dispose();
+  }
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = context.watch<DarkMode>().isDarkMode;
+    final accentColor = AppTheme.primaryColor;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: SizedBox(
+            height: 16,
+            child: AnimatedBuilder(
+              animation: _waveController,
+              builder: (context, child) {
+                final bool isListening = widget.asrState == AsrState.started;
+                return Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(6, (index) {
+                    double height;
+                    double alpha;
+                    if (isListening && _currentLevel > 0.05) {
+                      final randomFactor = 0.7 + _random.nextDouble() * 0.6;
+                      height = 3 + (13 * _currentLevel * randomFactor);
+                      alpha = isDarkMode ? 0.8 : 0.6;
+                    } else {
+                      final double value = sin((_waveController.value + (index * 0.15)) * pi * 2);
+                      height = 3 + (5 * (value + 1) / 2);
+                      alpha = isListening ? (isDarkMode ? 0.5 : 0.3) : (isDarkMode ? 0.2 : 0.1);
+                    }
+                    return Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 1.2),
+                      width: 2.0,
+                      height: height,
+                      decoration: BoxDecoration(
+                        color: accentColor.withValues(alpha: alpha),
+                        borderRadius: BorderRadius.circular(1),
+                      ),
+                    );
+                  }),
+                );
+              },
+            ),
+          ),
+        ),
         TextField(
           textAlign: TextAlign.center,
           controller: widget.controller,

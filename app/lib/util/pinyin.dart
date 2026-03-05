@@ -345,7 +345,7 @@ bool fuzzyPinyinContains(String pinyin1, String pinyin2) {
 
   var sim = maxSimSum / parts2.length;
 
-  // 对于短句（3个字及以下），提高匹配门槛，防止被“的”等常用字干扰
+  // 对于短句（3个字及以下），提高匹配门槛，防止被“的”等常用字干扰 
   double finalThreshold = parts2.length <= 3 ? 0.75 : minSimularityForMatch;
   var contains = sim > finalThreshold;
   return contains;
