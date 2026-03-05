@@ -238,12 +238,19 @@ class EmailLoginPageState extends State<EmailLoginPage> {
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                  color: Colors.white,
                   shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
                 ),
                 child: const Icon(
                   Icons.email_outlined,
-                  size: 64,
+                  size: 56,
                   color: Color(0xFF1A1A1A),
                 ),
               ),
@@ -416,27 +423,27 @@ class EmailLoginPageState extends State<EmailLoginPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   SizedBox(
-                    width: 20,
-                    height: 20,
+                    width: 18,
+                    height: 18,
                     child: Checkbox(
                       key: const Key('email_login_agree_checkbox'),
                       value: _approved,
                       onChanged: (value) => setState(() => _approved = value ?? false),
-                      activeColor: AppTheme.primaryColor,
+                      activeColor: const Color(0xFF1A1A1A),
                       shape: const CircleBorder(),
-                      side: BorderSide(color: Colors.grey.shade300, width: 1.5),
+                      side: BorderSide(color: Colors.grey.shade300, width: 1.2),
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Text('同意', style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
+                  const Text('同意 ', style: TextStyle(color: Color(0xFFBBBBBB), fontSize: 11)),
                   GestureDetector(
                     onTap: showProtocolPage,
-                    child: const Text(' 用户协议 ', style: TextStyle(color: AppTheme.primaryColor, fontSize: 12, fontWeight: FontWeight.bold)),
+                    child: const Text('《用户协议》', style: TextStyle(color: Color(0xFF999999), fontSize: 11, fontWeight: FontWeight.w500)),
                   ),
-                  Text('与', style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
+                  const Text(' 与 ', style: TextStyle(color: Color(0xFFBBBBBB), fontSize: 11)),
                   GestureDetector(
                     onTap: showPrivacyPage,
-                    child: const Text(' 隐私政策', style: TextStyle(color: AppTheme.primaryColor, fontSize: 12, fontWeight: FontWeight.bold)),
+                    child: const Text('《隐私政策》', style: TextStyle(color: Color(0xFF999999), fontSize: 11, fontWeight: FontWeight.w500)),
                   ),
                 ],
               ),
