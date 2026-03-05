@@ -78,7 +78,7 @@ class AppTheme {
       // 底部导航栏主题
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
         selectedItemColor: primaryColor,
-        unselectedItemColor: Colors.grey,
+        unselectedItemColor: Color(0xFF6B7280), // 更深一些的灰色，提升可见性
       ),
     );
   }
@@ -144,7 +144,7 @@ class AppTheme {
       // 底部导航栏主题
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
         selectedItemColor: primaryColor,
-        unselectedItemColor: Colors.grey,
+        unselectedItemColor: Color(0xFF9CA3AF), // 亮一些的灰色，提升暗深色背景下的可见性
       ),
     );
   }

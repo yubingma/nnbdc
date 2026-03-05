@@ -2018,7 +2018,7 @@ class WordListPageState extends State<WordListPage>
               textScaler: TextScaler.linear(1.0),
               style: TextStyle(
                 fontSize: 14,
-                color: isDarkMode ? Colors.white54 : Colors.grey[600],
+                color: isDarkMode ? Colors.white70 : const Color(0xFF4B5563),
                 height: 1.2,
                 letterSpacing: 0.5,
               ),
@@ -2269,7 +2269,7 @@ class WordListPageState extends State<WordListPage>
         style: TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w400,
-          color: isDarkMode ? Colors.grey[300] : Colors.grey[700],
+          color: isDarkMode ? const Color(0xFFD1D5DB) : const Color(0xFF374151),
           height: 1.5,
           letterSpacing: 0.3,
         ),
@@ -2376,7 +2376,7 @@ class WordListPageState extends State<WordListPage>
                         textScaler: TextScaler.linear(1.0),
                         style: TextStyle(
                           color:
-                              isDarkMode ? Colors.grey[300] : Colors.grey[600],
+                              isDarkMode ? const Color(0xFFE5E7EB) : const Color(0xFF4B5563),
                           fontSize: 12,
                           fontFamily: 'NotoSans',
                           fontWeight: FontWeight.w500,
@@ -2427,7 +2427,7 @@ class WordListPageState extends State<WordListPage>
                       '[${word.word.mergedPronounce}]',
                       textScaler: TextScaler.linear(1.0),
                       style: TextStyle(
-                        color: isDarkMode ? Colors.grey[300] : Colors.grey[600],
+                        color: isDarkMode ? const Color(0xFFE5E7EB) : const Color(0xFF4B5563),
                         fontSize: 12,
                         fontFamily: 'NotoSans',
                         fontWeight: FontWeight.w500,

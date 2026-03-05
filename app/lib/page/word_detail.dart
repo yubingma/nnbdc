@@ -626,7 +626,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                             children: [
                               IconButton(
                                 onPressed: () => Navigator.pop(context),
-                                icon: Icon(Icons.arrow_back, color: isDarkMode ? Colors.grey[400] : Colors.grey[600]),
+                                icon: Icon(Icons.arrow_back, color: isDarkMode ? Colors.grey[200] : Colors.grey[700]),
                               ),
                               Container(),
                             ],
@@ -640,7 +640,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                           children: [
                             if (Util.getWordDefaultPronounce(args.word).isNotEmpty)
                               Text('[${Util.getWordDefaultPronounce(args.word)}]',
-                                  style: TextStyle(color: isDarkMode ? Colors.grey[400] : Colors.grey[600], fontSize: 16, fontFamily: 'NotoSans')),
+                                  style: TextStyle(color: isDarkMode ? Colors.grey[200] : Colors.grey[700], fontSize: 16, fontFamily: 'NotoSans')),
                             Transform.translate(
                               offset: const Offset(6.0, 2.0),
                               child: InkWell(
@@ -716,7 +716,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                     style: TextStyle(
                                       fontSize: 14,
                                       height: 1.4,
-                                      color: isDarkMode ? Colors.grey[300] : Colors.grey[800],
+                                      color: isDarkMode ? const Color(0xFFD1D5DB) : const Color(0xFF374151),
                                     ),
                                   ),
                                 ),
@@ -770,7 +770,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                           fontWeight: FontWeight.normal,
                         ),
                         labelColor: isDarkMode ? Colors.white : Colors.black,
-                        unselectedLabelColor: isDarkMode ? Colors.grey[500] : Colors.grey[600],
+                        unselectedLabelColor: isDarkMode ? Colors.grey[300] : const Color(0xFF4B5563),
                         indicatorColor: AppTheme.primaryColor,
                         indicatorWeight: 2,
                         tabs: [

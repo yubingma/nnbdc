@@ -172,7 +172,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
                   Text(
                     'LOADING PLAN...',
                     style: TextStyle(
-                      color: isDarkMode ? Colors.white54 : Colors.black26,
+                      color: isDarkMode ? Colors.white70 : Colors.black45,
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
                       letterSpacing: 2.0,
@@ -254,7 +254,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
                       const SizedBox(width: 8),
                     Icon(
                       Icons.lock_outline_rounded,
-                      color: isDarkMode ? Colors.white54 : Colors.black26,
+                      color: isDarkMode ? const Color(0xFF9CA3AF) : Colors.black45,
                       size: 14,
                     ),
                     ],
@@ -365,7 +365,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
               const SizedBox(height: 4),
               Text(
                 label,
-                style: TextStyle(color: isDarkMode ? Colors.white54 : Colors.grey, fontSize: 11, fontWeight: FontWeight.bold),
+                style: TextStyle(color: isDarkMode ? const Color(0xFFD1D5DB) : const Color(0xFF6B7280), fontSize: 11, fontWeight: FontWeight.bold),
               ),
             ],
           ),
@@ -585,7 +585,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
               Text(
                 '长按拖动排序',
                 style: TextStyle(
-                  color: isDarkMode ? Colors.white54 : Colors.grey,
+                  color: isDarkMode ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
                   fontSize: 11,
                 ),
               ),
@@ -657,7 +657,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
                     ),
                   ),
                 ),
-                Icon(Icons.drag_indicator_rounded, color: isDarkMode ? Colors.white54 : Colors.black26, size: 18),
+                Icon(Icons.drag_indicator_rounded, color: isDarkMode ? const Color(0xFF9CA3AF) : Colors.black26, size: 18),
               ],
             ),
           ),
