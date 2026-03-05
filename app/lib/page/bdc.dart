@@ -318,7 +318,7 @@ class _ChineseAsrInputWidgetState extends State<ChineseAsrInputWidget> with Sing
           if (widget.asrState == AsrState.started) ...[
             // 波纹动画反馈
             SizedBox(
-              height: 32, // 减小高度
+              height: 20, // 进一步减小高度
               child: AnimatedBuilder(
                 animation: _waveController,
                 builder: (context, child) {
@@ -326,14 +326,14 @@ class _ChineseAsrInputWidgetState extends State<ChineseAsrInputWidget> with Sing
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: List.generate(8, (index) {
                       final double value = sin((_waveController.value + (index * 0.125)) * pi * 2);
-                      final double height = 8 + (20 * (value + 1) / 2); // 减小高度范围
+                      final double height = 4 + (12 * (value + 1) / 2); // 进一步缩小波动范围
                       return Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 2),
-                        width: 3,
+                        margin: const EdgeInsets.symmetric(horizontal: 1.5),
+                        width: 2.5, // 细化波段
                         height: height,
                         decoration: BoxDecoration(
                           color: accentColor.withValues(alpha: 0.4 + (0.6 * (value + 1) / 2)),
-                          borderRadius: BorderRadius.circular(2),
+                          borderRadius: BorderRadius.circular(1.5),
                         ),
                       );
                     }),
@@ -341,13 +341,13 @@ class _ChineseAsrInputWidgetState extends State<ChineseAsrInputWidget> with Sing
                 },
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 2),
             Text(
               "正在倾听...",
               style: TextStyle(
-                fontSize: 12, // 减小字号
-                color: isDarkMode ? Colors.white70 : const Color(0xFF4B5563),
-                fontWeight: FontWeight.w600,
+                fontSize: 10, // 进一步减小字号
+                color: isDarkMode ? Colors.white54 : const Color(0xFF6B7280),
+                fontWeight: FontWeight.w500,
               ),
             ),
           ] else ...[
