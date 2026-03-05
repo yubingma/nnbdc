@@ -636,6 +636,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     if (_shouldShowSpeakTab) {
       // 说意/说英tab
       children.add(Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Expanded(child: _buildSpeakPanel()),
         ],
@@ -2331,6 +2332,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                                 children: _dynamicTabBarViewChildren,
                               )
                             : Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
                                   _buildChoiceList(),
                                   Expanded(child: _buildSpeakPanel()),
@@ -3283,6 +3285,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     }
 
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         // 1. 顶栏：音频波纹 + 提示/清除按钮 (固定浮动在上方)
         Container(
@@ -3345,7 +3348,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         // 2. 滚动区域：中文释义 / 拼写提示
         Expanded(
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             decoration: BoxDecoration(
               color: context.watch<DarkMode>().isDarkMode ? const Color(0xFF1E1E1E).withValues(alpha: 0.8) : const Color(0xFFF8F9FA).withValues(alpha: 0.8),
               borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
