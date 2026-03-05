@@ -3130,7 +3130,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
             TextSpan(
               children: [
                 TextSpan(
-                  text: '${Util.translateCiXing(ciXing)} ',
+                  text: '$ciXing ',
                   style: TextStyle(
                     fontSize: 13, // 增大字号
                     fontWeight: FontWeight.w600,

@@ -108,7 +108,7 @@ List<Widget> renderAsrMeaningItems(WordWrapper word, {bool isDarkMode = false}) 
           Padding(
             padding: const EdgeInsets.only(right: 6),
             child: Text(
-              Util.translateCiXing(meaningItem.ciXing!),
+              meaningItem.ciXing!,
               style: TextStyle(
                 fontSize: 13,
                 color: isDarkMode ? const Color(0xFFD1D5DB) : const Color(0xFF4B5563),
