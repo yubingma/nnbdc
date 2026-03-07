@@ -2373,20 +2373,20 @@ class _DictCardState extends State<DictCard> {
     final subtitleColor = isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
     final accentColor = isDarkMode ? const Color(0xFF22D3EE) : const Color(0xFF0EA5E9);
     final cardBgColor = isDarkMode ? const Color(0xFF1E293B) : Colors.white;
-    final borderColor = isDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.03);
+    final borderColor = isDarkMode ? Colors.white.withValues(alpha: 0.15) : Colors.black.withValues(alpha: 0.08);
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: cardBgColor,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: borderColor, width: 1.0),
+        border: Border.all(color: borderColor, width: 1.2),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: isDarkMode ? 0.2 : 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: Colors.black.withValues(alpha: isDarkMode ? 0.3 : 0.06),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
