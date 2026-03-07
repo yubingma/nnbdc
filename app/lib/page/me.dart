@@ -1224,7 +1224,7 @@ class _MePageState extends State<MePage> {
                 '账户管理',
                 style: TextStyle(
                   fontSize: 18,
-                  fontWeight: FontWeight.w900,
+                  fontWeight: FontWeight.w800,
                   color: textColor,
                   fontFamily: 'NotoSansSC',
                 ),
@@ -1233,13 +1233,11 @@ class _MePageState extends State<MePage> {
               _buildMenuTile(
                 icon: Icons.person_outline_rounded,
                 title: '个人信息',
-                iconColor: const Color(0xFF3B82F6), // Blue
                 onTap: () => showUpdateUserInfoDlg(),
               ),
               _buildMenuTile(
                 icon: Icons.chat_bubble_outline_rounded,
                 title: '意见建议',
-                iconColor: const Color(0xFF06B6D4), // Cyan
                 trailing: msgCount > 0
                     ? Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -1262,7 +1260,6 @@ class _MePageState extends State<MePage> {
                 _buildMenuTile(
                   icon: Icons.eco_outlined,
                   title: '我的小天地',
-                  iconColor: const Color(0xFF10B981), // Emerald
                   onTap: () {
                     Get.toNamed('/farm');
                   },
@@ -1272,7 +1269,6 @@ class _MePageState extends State<MePage> {
                 _buildMenuTile(
                   icon: Icons.psychology_outlined,
                   title: 'AI 助教',
-                  iconColor: const Color(0xFF8B5CF6), // Purple
                   onTap: () {
                     Get.toNamed('/ai_activation');
                   },
@@ -1280,7 +1276,6 @@ class _MePageState extends State<MePage> {
               _buildMenuTile(
                 icon: Icons.edit_note_rounded,
                 title: '需求墙',
-                iconColor: const Color(0xFFF59E0B), // Amber
                 onTap: () {
                   Navigator.push(
                     context,
@@ -1291,7 +1286,6 @@ class _MePageState extends State<MePage> {
               _buildMenuTile(
                 icon: Icons.logout_rounded,
                 title: '切换账号',
-                iconColor: const Color(0xFF6366F1), // Indigo
                 onTap: () => Get.toNamed('/login'),
               ),
               _buildMenuTile(
@@ -1306,7 +1300,7 @@ class _MePageState extends State<MePage> {
                 '系统',
                 style: TextStyle(
                   fontSize: 13,
-                  fontWeight: FontWeight.w900,
+                  fontWeight: FontWeight.w800,
                   color: subtitleColor,
                   fontFamily: 'NotoSansSC',
                 ),
@@ -1315,13 +1309,11 @@ class _MePageState extends State<MePage> {
               _buildMenuTile(
                 icon: Icons.health_and_safety_outlined,
                 title: '健康检查',
-                iconColor: const Color(0xFF2DD4BF), // Teal
                 onTap: () => _navigateToDataDiagnostic(),
               ),
               _buildMenuTile(
                 icon: Icons.cloud_sync_outlined,
                 title: '云同步${_isLastSyncFailed ? "(失败)" : ""}',
-                iconColor: _isLastSyncFailed ? Colors.redAccent : const Color(0xFF0EA5E9), // Light Blue
                 onTap: () {
                   Navigator.push(
                     context,
@@ -1346,13 +1338,11 @@ class _MePageState extends State<MePage> {
                 _buildMenuTile(
                   icon: Icons.admin_panel_settings_outlined,
                   title: '系统管理',
-                  iconColor: const Color(0xFF4F46E5), // Indigo
                   onTap: () => Get.toNamed('/admin'),
                 ),
                 _buildMenuTile(
                   icon: Icons.storage_rounded,
                   title: '数据库查看器',
-                  iconColor: const Color(0xFFF97316), // Orange
                   onTap: () => _openDbViewPage(),
                 ),
               ],
@@ -2105,7 +2095,7 @@ class _MePageState extends State<MePage> {
   }
 
   // 菜单项组件
-  Widget _buildMenuTile({
+   Widget _buildMenuTile({
     required IconData icon,
     required String title,
     Widget? trailing,
@@ -2115,37 +2105,42 @@ class _MePageState extends State<MePage> {
   }) {
     final isDarkModeEnabled = context.watch<DarkMode>().isDarkMode;
     final textColor = isDarkModeEnabled ? Colors.white : const Color(0xFF1E293B);
+    final subtitleColor = isDarkModeEnabled ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
     final accentColor = isDarkModeEnabled ? const Color(0xFF22D3EE) : const Color(0xFF0EA5E9);
+
+    // 如果没有指定颜色，则使用一个更克制的次级文字颜色，避免“花花绿绿”
+    final effectiveIconColor = iconColor ?? (isDestructive ? Colors.redAccent : subtitleColor);
 
     return ListTile(
       leading: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: (iconColor ?? (isDestructive ? Colors.redAccent : accentColor)).withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(10),
+          color: effectiveIconColor.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(12),
         ),
         child: Icon(
           icon,
-          color: isDestructive ? Colors.redAccent : (iconColor ?? accentColor),
-          size: 20,
+          color: effectiveIconColor,
+          size: 22, // 略微调大图标，提升精致感
         ),
       ),
       title: Text(
         title,
         style: TextStyle(
           color: isDestructive ? Colors.redAccent : textColor,
-          fontWeight: FontWeight.w700,
+          fontWeight: FontWeight.w500, // 降低字重，避免过重
           fontSize: 15,
+          fontFamily: 'NotoSansSC',
         ),
       ),
       trailing: trailing ??
           Icon(
-            Icons.arrow_forward_ios_rounded,
+            Icons.chevron_right_rounded,
             color: isDarkModeEnabled ? Colors.white24 : Colors.black26,
-            size: 14,
+            size: 18,
           ),
       onTap: onTap,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 0, vertical: 2),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
     );
   }
 
