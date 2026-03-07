@@ -164,21 +164,14 @@ class LoginPageState extends State<LoginPage> with WidgetsBindingObserver {
                               fontFamily: 'NotoSansSC',
                             ),
                           ),
-                          const SizedBox(height: 12),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF0EA5E9).withValues(alpha: 0.06),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: const Text(
-                              'Progress, not perfection',
-                              style: TextStyle(
-                                color: Color(0xFF0EA5E9),
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                letterSpacing: 0.5,
-                              ),
+                          const Text(
+                            '进步而非完美',
+                            style: TextStyle(
+                              color: Color(0xFF64748B), // Slate-500
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              letterSpacing: 1.2,
+                              fontFamily: 'NotoSansSC',
                             ),
                           ),
                         ],
