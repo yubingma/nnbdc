@@ -792,7 +792,7 @@ class _MePageState extends State<MePage> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    "词汇量总进度",
+                    "词书学习总进度",
                     style: TextStyle(
                       color: textColor,
                       fontSize: 12,
