@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:nnbdc/util/pinyin.dart';
 
 import '../api/vo.dart';
-import 'utils.dart';
 
 class WordWrapper {
   /// 实际的单词相关对象，比如MasteredWord, LearningWord ...
