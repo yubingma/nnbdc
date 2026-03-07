@@ -5,6 +5,7 @@ import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/theme/app_theme.dart';
 import 'package:nnbdc/util/loading_utils.dart';
+import 'package:nnbdc/util/toast_util.dart';
 import 'package:provider/provider.dart';
 import 'package:nnbdc/state.dart';
 
@@ -261,12 +262,20 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          message.fromUser.nickName ?? message.fromUserNickName ?? message.fromUserName ?? '未知用户',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: textColor,
-                          ),
+                        Row(
+                          children: [
+                            Text(
+                              message.fromUser.nickName ?? message.fromUserNickName ?? message.fromUserName ?? '未知用户',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: textColor,
+                              ),
+                            ),
+                            if (message.fromUser.premiumOverrideEnabled == true) ...[
+                              const SizedBox(width: 4),
+                              const Icon(Icons.verified, size: 16, color: Color(0xFF2196F3)),
+                            ],
+                          ],
                         ),
                         Row(
                           children: [
@@ -323,6 +332,21 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
+                   TextButton.icon(
+                    onPressed: () => _setAsPermanentMemberForUser(message.fromUser),
+                    icon: Icon(
+                      message.fromUser.premiumOverrideEnabled == true ? Icons.star : Icons.star_border,
+                      size: 16,
+                      color: message.fromUser.premiumOverrideEnabled == true ? const Color(0xFF2196F3) : Colors.grey[600],
+                    ),
+                    label: Text(
+                      message.fromUser.premiumOverrideEnabled == true ? '已是会员' : '设为会员',
+                      style: TextStyle(
+                        color: message.fromUser.premiumOverrideEnabled == true ? const Color(0xFF2196F3) : Colors.grey[600],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
                   TextButton.icon(
                     onPressed: () async {
                       if (!message.viewed) {
@@ -351,6 +375,48 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
       context: context,
       builder: (context) => _ReplyDialog(message: message),
     );
+  }
+
+  Future<void> _setAsPermanentMemberForUser(UserVo user) async {
+    final bool isAlreadyPremium = user.premiumOverrideEnabled == true;
+
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(isAlreadyPremium ? '取消永久会员' : '设为永久会员'),
+        content: Text('确定要将用户 ${user.nickName ?? user.userName} ${isAlreadyPremium ? '取消' : '设为'}永久会员吗？'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('取消')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(isAlreadyPremium ? '确定取消' : '确定设置', style: TextStyle(color: isAlreadyPremium ? Colors.red : Colors.blue)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    try {
+      final result = await Api.client.updatePremiumOverride(
+        user.id ?? '',
+        !isAlreadyPremium,
+        '管理员在意见反馈页手动设置',
+        null, // null 表示永久
+      );
+
+      if (result.success && mounted) {
+        ToastUtil.success('操作成功');
+        setState(() {
+          user.premiumOverrideEnabled = !isAlreadyPremium;
+          user.premiumOverrideDuration = null;
+        });
+      } else {
+        ToastUtil.error(result.msg ?? '操作失败');
+      }
+    } catch (e) {
+      ToastUtil.error('操作失败: $e');
+    }
   }
 
   Widget _buildClientTypeStats() {
@@ -547,6 +613,7 @@ class _ReplyDialogState extends State<_ReplyDialog> {
   List<MsgVo> _conversationHistory = [];
   bool _isLoading = true;
   bool _isSending = false;
+  bool _isSettingPremium = false;
   bool _isMarkingViewed = false;
 
   @override
@@ -626,6 +693,62 @@ class _ReplyDialogState extends State<_ReplyDialog> {
     }
   }
 
+  Future<void> _setAsPermanentMember() async {
+    final user = widget.message.fromUser;
+    final bool isAlreadyPremium = user.premiumOverrideEnabled == true;
+
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(isAlreadyPremium ? '取消永久会员' : '设为永久会员'),
+        content: Text('确定要将用户 ${user.nickName ?? user.userName} ${isAlreadyPremium ? '取消' : '设为'}永久会员吗？'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('取消')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(isAlreadyPremium ? '确定取消' : '确定设置', style: TextStyle(color: isAlreadyPremium ? Colors.red : Colors.blue)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    setState(() {
+      _isSettingPremium = true;
+    });
+
+    try {
+      final result = await Api.client.updatePremiumOverride(
+        user.id ?? '',
+        !isAlreadyPremium,
+        '管理员在意见反馈页手动设置',
+        null, // null 表示永久
+      );
+
+      if (result.success && mounted) {
+        ToastUtil.success('操作成功');
+        setState(() {
+          user.premiumOverrideEnabled = !isAlreadyPremium;
+          user.premiumOverrideDuration = null;
+        });
+        // 刷新父页面消息列表，确保同步状态
+        final parentState = context.findAncestorStateOfType<_FeedbackManagementWidgetState>();
+        parentState?._loadMessages();
+      } else {
+        ToastUtil.error(result.msg ?? '操作失败');
+      }
+    } catch (e) {
+      ToastUtil.error('操作失败: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSettingPremium = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
@@ -656,6 +779,24 @@ class _ReplyDialogState extends State<_ReplyDialog> {
             ),
           ],
         ),
+        actions: [
+          if (_isSettingPremium)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.only(right: 16),
+                child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+              ),
+            )
+          else
+            IconButton(
+              onPressed: _setAsPermanentMember,
+              icon: Icon(
+                widget.message.fromUser.premiumOverrideEnabled == true ? Icons.verified : Icons.verified_outlined,
+                color: widget.message.fromUser.premiumOverrideEnabled == true ? const Color(0xFF2196F3) : null,
+              ),
+              tooltip: widget.message.fromUser.premiumOverrideEnabled == true ? '已是永久会员' : '设为永久会员',
+            ),
+        ],
       ),
       body: Column(
         children: [
