@@ -683,6 +683,67 @@ class _MePageState extends State<MePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // 词书总进度 - 移动到此处
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    "词汇量总进度",
+                    style: TextStyle(
+                      color: textColor,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.5,
+                      fontFamily: 'NotoSansSC',
+                    ),
+                  ),
+                  Text(
+                    '${((studyProgress!.rawWordCount > 0 ? studyProgress!.masteredWordsInSelectedDictsCount / studyProgress!.rawWordCount : 0.0) * 100).toStringAsFixed(1)}%',
+                    style: TextStyle(
+                      color: accentColor,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w900,
+                      fontFamily: 'Roboto',
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Container(
+                height: 8,
+                width: double.infinity,
+                alignment: Alignment.centerLeft,
+                decoration: BoxDecoration(
+                  color: isDarkModeEnabled ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final progress = studyProgress!.rawWordCount > 0
+                        ? studyProgress!.masteredWordsInSelectedDictsCount / studyProgress!.rawWordCount
+                        : 0.0;
+                    final clampedProgress = progress > 1.0 ? 1.0 : progress;
+                    return Container(
+                      width: constraints.maxWidth * clampedProgress,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [accentColor, accentColor.withValues(alpha: 0.6)],
+                        ),
+                        borderRadius: BorderRadius.circular(4),
+                        boxShadow: [
+                          BoxShadow(
+                            color: accentColor.withValues(alpha: 0.3),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 24),
+
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -758,133 +819,10 @@ class _MePageState extends State<MePage> {
           ),
         ),
 
-        // 3. 学习设置卡片 (开始学习按钮)
-        Container(
-          margin: EdgeInsets.symmetric(
-            vertical: MediaQuery.of(context).size.width > 600 ? 8 : 6,
-          ),
-          padding: EdgeInsets.all(MediaQuery.of(context).size.width > 600 ? 16 : 12),
-          decoration: BoxDecoration(
-            color: cardColor,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 学习按钮
-              SizedBox(
-                width: double.infinity,
-                child: (last30DaysDakaStatus?.isNotEmpty == true && last30DaysDakaStatus![29] == UserDayStatus.dakaed.json)
-                    ? Container(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        decoration: BoxDecoration(
-                          color: isDarkModeEnabled ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF8F9FA),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: isDarkModeEnabled ? Colors.white12 : Colors.black.withValues(alpha: 0.05)),
-                        ),
-                        child: Text(
-                          '✓ 今日已打卡',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: isDarkModeEnabled ? Colors.white54 : Colors.black38,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'NotoSansSC',
-                          ),
-                        ),
-                      )
-                    : GestureDetector(
-                        onTap: () => Get.toNamed('/before_bdc'),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [accentColor, accentColor.withValues(alpha: 0.8)],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                color: accentColor.withValues(alpha: 0.3),
-                                blurRadius: 12,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: Text(
-                            studyProgress?.todayLearningFinished == true
-                                ? '今日任务已完成'
-                                : (loggedInUser?.todayStudyStarted == true ? '继续学习' : '开始学习'),
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w900,
-                              fontFamily: 'NotoSansSC',
-                              letterSpacing: 1.0,
-                            ),
-                          ),
-                        ),
-                      ),
-              ),
-            ],
-          ),
-        ),
-
-        // 夜间模式切换卡片
-        Container(
-          margin: EdgeInsets.symmetric(
-            vertical: MediaQuery.of(context).size.width > 600 ? 8 : 6,
-          ),
-          padding: EdgeInsets.all(MediaQuery.of(context).size.width > 600 ? 16 : 12),
-          decoration: BoxDecoration(
-            color: cardColor,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    isDarkModeEnabled ? Icons.dark_mode : Icons.light_mode,
-                    color: AppTheme.primaryColor,
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    '夜间模式',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      color: textColor,
-                      height: 1.2,
-                      fontFamily: 'NotoSansSC',
-                    ),
-                    textScaler: const TextScaler.linear(1.0),
-                  ),
-                ],
-              ),
-              DayNightSwitcherIcon(
-                isDarkModeEnabled: isDarkMode,
-                onStateChanged: (isDarkModeEnabled) {
-                  setState(() {
-                    isDarkMode = isDarkModeEnabled;
-                  });
-                  MyDatabase.instance.localParamsDao.saveIsDarkMode(isDarkModeEnabled);
-                  context.read<DarkMode>().setIsDarkMode(isDarkModeEnabled);
-                },
-              ),
-            ],
-          ),
-        ),
-
-        // 订阅入口已移动到“学习设置/今日单词”上方
-
-        // 打卡统计卡片
+        // 3. 夜间模式切换 (简化并移动到账户管理附近更合适，但此处先按逻辑保留一个纯净的控制项)
         Container(
           margin: const EdgeInsets.symmetric(vertical: 6),
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           decoration: BoxDecoration(
             color: cardColor,
             borderRadius: BorderRadius.circular(24),
@@ -897,368 +835,25 @@ class _MePageState extends State<MePage> {
               ),
             ],
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 2. DAILY MILESTONE 进度条标题
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    "词书总进度",
-                    style: TextStyle(
-                      color: textColor,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 1.2,
-                    ),
-                  ),
-                  Text(
-                    '${((studyProgress!.rawWordCount > 0 ? studyProgress!.masteredWordsInSelectedDictsCount / studyProgress!.rawWordCount : 0.0) * 100).toStringAsFixed(1)}%',
-                    style: TextStyle(
-                      color: accentColor,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              // 高对比度进度条
-              Container(
-                height: 6,
-                width: double.infinity,
-                alignment: Alignment.centerLeft,
-                decoration: BoxDecoration(
-                  color: isDarkModeEnabled ? Colors.white10 : const Color(0xFFF0F2F5),
-                  borderRadius: BorderRadius.circular(3),
-                ),
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final progress =
-                        studyProgress!.rawWordCount > 0 ? studyProgress!.masteredWordsInSelectedDictsCount / studyProgress!.rawWordCount : 0.0;
-                    final clampedProgress = progress > 1.0 ? 1.0 : progress;
-                    return Container(
-                      width: constraints.maxWidth * clampedProgress,
-                      decoration: BoxDecoration(
-                        color: accentColor,
-                        borderRadius: BorderRadius.circular(3),
-                      ),
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // 3. 数据小卡片行 (Data Cards)
-              Row(
-                children: [
-                  // 卡片 1: 学习天数
-                  _buildStatBox(
-                    isDarkModeEnabled,
-                    "学习天数",
-                    studyProgress!.existDays.toString(),
-                    Icons.event_available_rounded,
-                    const Color(0xFF0EA5E9),
-                  ),
-                  const SizedBox(width: 12),
-                  // 卡片 2: 已掌握
-                  _buildStatBox(
-                    isDarkModeEnabled,
-                    "已掌握",
-                    studyProgress!.masteredWordsCount.toString(),
-                    Icons.task_alt_rounded,
-                    const Color(0xFF10B981),
-                  ),
-                  const SizedBox(width: 12),
-                  // 卡片 3: 学习时长
-                  _buildStatBox(
-                    isDarkModeEnabled,
-                    "学习小时",
-                    (studyProgress!.totalLearningSeconds / 3600.0).toStringAsFixed(1),
-                    Icons.timer_outlined,
-                    const Color(0xFF8B5CF6),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-
-              // 4. Vocabulary Ranking Banner
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: isDarkModeEnabled ? Colors.white.withValues(alpha: 0.03) : const Color(0xFFF8FAFC),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: isDarkModeEnabled ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.02)),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "词汇量排名",
-                            style: TextStyle(
-                              color: textColor,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 1.2,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text.rich(
-                            TextSpan(
-                              children: [
-                                const TextSpan(text: "掌握: "),
-                                TextSpan(
-                                  text: "${studyProgress!.masteredWordsCount}",
-                                  style: TextStyle(color: textColor, fontWeight: FontWeight.w900, fontFamily: 'Roboto'),
-                                ),
-                                const TextSpan(text: " 词"),
-                                const TextSpan(text: "\n领先: "),
-                                if (studyProgress!.userOrder! < 0)
-                                  const TextSpan(text: '分析中...')
-                                else ...[
-                                  TextSpan(
-                                    text: "${studyProgress!.userOrder!.toStringAsFixed(1)}%",
-                                    style: TextStyle(color: accentColor, fontWeight: FontWeight.w900, fontFamily: 'Roboto'),
-                                  ),
-                                  const TextSpan(text: " 的用户"),
-                                ],
-                              ],
-                            ),
-                            style: TextStyle(
-                              color: subtitleColor,
-                              fontSize: 12,
-                              height: 1.4,
-                              fontFamily: 'NotoSansSC',
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    _buildVisualRanking(studyProgress!.userOrder ?? -1, accentColor,
-                        isDarkModeEnabled ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.02), accentColor),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // 5. 会员状况/订阅入口 (放在卡片内底部)
-              Builder(builder: (context) {
-                final isPremium = SubscriptionUtil.isPremium();
-                String? premiumInfoText;
-                if (isPremium) {
-                  final type = SubscriptionUtil.getSubscriptionType();
-                  final expire = SubscriptionUtil.getExpireDate();
-                  final isOverride = loggedInUser?.premiumOverrideEnabled == true && (loggedInUser?.isPremiumIos != true);
-
-                  if (type != null && type.isNotEmpty) {
-                    final typeText = type == 'monthly' ? '月度会员' : '年度会员';
-                    if (expire != null) {
-                      premiumInfoText = '$typeText，有效期至：${expire.year}年${expire.month}月${expire.day}日';
-                    } else {
-                      premiumInfoText = typeText;
-                    }
-                  } else if (isOverride) {
-                    final updateTime = loggedInUser?.premiumOverrideUpdateTime;
-                    final duration = loggedInUser?.premiumOverrideDuration;
-                    if (duration == null) {
-                      premiumInfoText = '会员（永久）';
-                    } else if (updateTime != null) {
-                      final ms = _parseDurationMillis(duration);
-                      if (ms != null && ms > 0) {
-                        final expireTime = updateTime.add(Duration(milliseconds: ms));
-                        premiumInfoText = '会员，有效期至：${expireTime.year}年${expireTime.month}月${expireTime.day}日';
-                      } else {
-                        premiumInfoText = '会员';
-                      }
-                    } else {
-                      premiumInfoText = '会员';
-                    }
-                  } else {
-                    premiumInfoText = '会员';
-                  }
-                }
-
-                if (!isPremium && PlatformUtils.isIOS) {
-                  return GestureDetector(
-                    onTap: () {
-                      Navigator.of(context).push(MaterialPageRoute(builder: (context) => const SubscriptionPage())).then((_) {
-                        loadData();
-                      });
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        color: isDarkModeEnabled ? Colors.white.withValues(alpha: 0.03) : Colors.black.withValues(alpha: 0.02),
-                        border: Border.all(color: Colors.amber.shade300.withValues(alpha: 0.5)),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(Icons.stars_rounded, color: Colors.amber.shade700, size: 18),
-                              const SizedBox(width: 8),
-                              Text(
-                                '解锁每日单词上限及更多专属特权',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.normal,
-                                  color: isDarkModeEnabled ? Colors.amber.shade200 : Colors.amber.shade900,
-                                  fontFamily: 'NotoSansSC',
-                                ),
-                              ),
-                            ],
-                          ),
-                          Icon(Icons.chevron_right, color: Colors.amber.shade700, size: 16),
-                        ],
-                      ),
-                    ),
-                  );
-                }
-
-                if (isPremium && premiumInfoText != null && PlatformUtils.isIOS) {
-                  return Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      color: Colors.blue.withValues(alpha: 0.05),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.verified_user_rounded, color: Colors.blue, size: 16),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            premiumInfoText,
-                            style: const TextStyle(
-                              color: Colors.blue,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                              fontFamily: 'NotoSansSC',
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-                return const SizedBox.shrink();
-              }),
-            ],
-          ),
-        ),
-
-        // 学习设置卡片
-        Container(
-          margin: EdgeInsets.symmetric(
-            vertical: MediaQuery.of(context).size.width > 600 ? 8 : 6,
-          ),
-          padding: EdgeInsets.all(MediaQuery.of(context).size.width > 600 ? 16 : 12),
-          decoration: BoxDecoration(
-            color: cardColor,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 学习按钮
-              SizedBox(
-                width: double.infinity,
-                child: (last30DaysDakaStatus?.isNotEmpty == true && last30DaysDakaStatus![29] == UserDayStatus.dakaed.json)
-                    ? Container(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        decoration: BoxDecoration(
-                          color: isDarkModeEnabled ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF8F9FA),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: isDarkModeEnabled ? Colors.white12 : Colors.black.withValues(alpha: 0.05)),
-                        ),
-                        child: Text(
-                          '✓ 今日已打卡',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: isDarkModeEnabled ? Colors.white54 : Colors.black38,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'NotoSansSC',
-                          ),
-                        ),
-                      )
-                    : GestureDetector(
-                        onTap: () => Get.toNamed('/before_bdc'),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [accentColor, accentColor.withValues(alpha: 0.8)],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                color: accentColor.withValues(alpha: 0.3),
-                                blurRadius: 12,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: Text(
-                            studyProgress?.todayLearningFinished == true
-                                ? '今日任务已完成'
-                                : (loggedInUser?.todayStudyStarted == true ? '继续学习' : '开始学习'),
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w900,
-                              fontFamily: 'NotoSansSC',
-                              letterSpacing: 1.0,
-                            ),
-                          ),
-                        ),
-                      ),
-              ),
-            ],
-          ),
-        ),
-
-        // 夜间模式切换卡片
-        Container(
-          margin: EdgeInsets.symmetric(
-            vertical: MediaQuery.of(context).size.width > 600 ? 8 : 6,
-          ),
-          padding: EdgeInsets.all(MediaQuery.of(context).size.width > 600 ? 16 : 12),
-          decoration: BoxDecoration(
-            color: cardColor,
-            borderRadius: BorderRadius.circular(16),
-          ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Row(
                 children: [
                   Icon(
-                    isDarkModeEnabled ? Icons.dark_mode : Icons.light_mode,
-                    color: AppTheme.primaryColor,
+                    isDarkModeEnabled ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+                    color: accentColor,
+                    size: 20,
                   ),
                   const SizedBox(width: 12),
                   Text(
                     '夜间模式',
                     style: TextStyle(
                       fontSize: 16,
-                      fontWeight: FontWeight.w500,
+                      fontWeight: FontWeight.w700,
                       color: textColor,
-                      height: 1.2,
                       fontFamily: 'NotoSansSC',
                     ),
-                    textScaler: const TextScaler.linear(1.0),
                   ),
                 ],
               ),
@@ -1275,8 +870,6 @@ class _MePageState extends State<MePage> {
             ],
           ),
         ),
-
-        // 订阅入口已移动到“学习设置/今日单词”上方
 
         // 打卡统计卡片
         Container(
