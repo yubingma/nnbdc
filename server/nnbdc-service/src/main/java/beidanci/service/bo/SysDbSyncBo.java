@@ -285,7 +285,7 @@ public class SysDbSyncBo extends BaseBo<SysDbLog> {
 
     private List<SysDbLogDto> generateDictLogs(int version) {
         // 只生成系统词典的日志
-        String sql = "SELECT id, name, owner_id, is_shared, is_ready, visible, word_count, popularity_limit, create_time, update_time FROM dict WHERE owner_id='15118'";
+        String sql = "SELECT id, name, owner_id, is_shared, is_ready, visible, word_count, popularity_limit, create_time, update_time, editable, deletable FROM dict WHERE owner_id='15118'";
         List<Object[]> results = namedParameterJdbcTemplate.getJdbcTemplate().query(sql, (rs, rowNum) -> new Object[] {
                 rs.getString("id"),
                 rs.getString("name"),
@@ -296,7 +296,9 @@ public class SysDbSyncBo extends BaseBo<SysDbLog> {
                 rs.getObject("word_count"),
                 rs.getObject("popularity_limit"),
                 rs.getTimestamp("create_time"),
-                rs.getTimestamp("update_time")
+                rs.getTimestamp("update_time"),
+                rs.getObject("editable"),
+                rs.getObject("deletable")
         });
 
         // 用于格式化日期为ISO-8601格式
@@ -326,6 +328,8 @@ public class SysDbSyncBo extends BaseBo<SysDbLog> {
             record.put("visible", tuple[5]);
             record.put("wordCount", tuple[6]);
             record.put("popularityLimit", tuple[7]);
+            record.put("editable", tuple[10] != null ? tuple[10] : false);
+            record.put("deletable", tuple[11] != null ? tuple[11] : true);
             record.put("createTime", createTimeStr);
             record.put("updateTime", updateTimeStr);
             log.setRecord(JsonUtils.toJson(record));

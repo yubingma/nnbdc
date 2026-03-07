@@ -206,7 +206,7 @@ public class SentenceBo extends BaseBo<Sentence> {
             String updateTimeStr = sentence.getUpdateTime() != null ? isoFormat.format(sentence.getUpdateTime()) : "";
 
             return String.format(
-                    "{\"id\":\"%s\",\"english\":\"%s\",\"chinese\":\"%s\",\"englishDigest\":\"%s\",\"theType\":\"%s\",\"handCount\":%d,\"footCount\":%d,\"author\":\"%s\",\"meaningItemId\":\"%s\",\"wordMeaning\":\"%s\",\"createTime\":\"%s\",\"updateTime\":\"%s\"}",
+                    "{\"id\":\"%s\",\"english\":\"%s\",\"chinese\":\"%s\",\"englishDigest\":\"%s\",\"theType\":\"%s\",\"handCount\":%d,\"footCount\":%d,\"authorId\":\"%s\",\"meaningItemId\":\"%s\",\"wordMeaning\":\"%s\",\"createTime\":\"%s\",\"updateTime\":\"%s\"}",
                     sentence.getId(),
                     sentence.getEnglish() != null ? sentence.getEnglish().replace("\"", "\\\"") : "",
                     sentence.getChinese() != null ? sentence.getChinese().replace("\"", "\\\"") : "",
