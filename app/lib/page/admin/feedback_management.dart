@@ -19,14 +19,23 @@ class FeedbackManagementWidget extends StatefulWidget {
 
 class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
   List<MsgVo> _messages = [];
+  String _searchQuery = "";
+  final TextEditingController _searchController = TextEditingController();
   bool _isLoading = true;
   Map<String, int> _clientTypeStats = {};
   bool _isMarkingViewed = false;
+  bool _isSearching = false;
 
   @override
   void initState() {
     super.initState();
     _loadMessages();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadMessages() async {
@@ -155,6 +164,19 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
         ),
         actions: [
           IconButton(
+            onPressed: () {
+              setState(() {
+                _isSearching = !_isSearching;
+                if (!_isSearching) {
+                  _searchQuery = "";
+                  _searchController.clear();
+                }
+              });
+            },
+            icon: Icon(_isSearching ? Icons.close : Icons.search, color: Colors.white),
+            tooltip: '搜索',
+          ),
+          IconButton(
             onPressed: _loadMessages,
             icon: const Icon(Icons.refresh, color: Colors.white),
             tooltip: '刷新',
@@ -188,21 +210,94 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
                 )
               : Column(
                   children: [
+                    // 搜索栏
+                    if (_isSearching) _buildSearchBar(),
                     // 客户端类型统计
-                    if (_clientTypeStats.isNotEmpty) _buildClientTypeStats(),
+                    if (_clientTypeStats.isNotEmpty && !_isSearching) _buildClientTypeStats(),
                     // 消息列表
                     Expanded(
-                      child: ListView.builder(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: _messages.length,
-                        itemBuilder: (context, index) {
-                          final message = _messages[index];
-                          return _buildMessageCard(message);
-                        },
-                      ),
+                      child: _buildMessageList(),
                     ),
                   ],
                 ),
+    );
+  }
+
+  Widget _buildSearchBar() {
+    final isDarkMode = context.watch<DarkMode>().isDarkMode;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      color: AppTheme.primaryColor.withValues(alpha: 0.1),
+      child: TextField(
+        controller: _searchController,
+        autofocus: true,
+        style: TextStyle(color: isDarkMode ? Colors.white : Colors.black87),
+        decoration: InputDecoration(
+          hintText: '搜索昵称、用户、内容...',
+          hintStyle: TextStyle(color: isDarkMode ? Colors.grey[400] : Colors.grey[600]),
+          prefixIcon: Icon(Icons.search, color: AppTheme.primaryColor),
+          suffixIcon: _searchQuery.isNotEmpty
+              ? IconButton(
+                  icon: const Icon(Icons.clear),
+                  onPressed: () {
+                    setState(() {
+                      _searchController.clear();
+                      _searchQuery = "";
+                    });
+                  },
+                )
+              : null,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          filled: true,
+          fillColor: isDarkMode ? const Color(0xFF2D2D2D) : Colors.white,
+          contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+        ),
+        onChanged: (value) {
+          setState(() {
+            _searchQuery = value.toLowerCase();
+          });
+        },
+      ),
+    );
+  }
+
+  Widget _buildMessageList() {
+    final filtered = _messages.where((m) {
+      if (_searchQuery.isEmpty) return true;
+      final content = m.content.toLowerCase();
+      final nickName = (m.fromUser.nickName ?? "").toLowerCase();
+      final userName = (m.fromUser.userName ?? "").toLowerCase();
+      final email = (m.fromUser.email ?? "").toLowerCase();
+      final fromNick = (m.fromUserNickName ?? "").toLowerCase();
+      final fromUser = (m.fromUserName ?? "").toLowerCase();
+
+      return content.contains(_searchQuery) ||
+          nickName.contains(_searchQuery) ||
+          userName.contains(_searchQuery) ||
+          email.contains(_searchQuery) ||
+          fromNick.contains(_searchQuery) ||
+          fromUser.contains(_searchQuery);
+    }).toList();
+
+    if (filtered.isEmpty && _searchQuery.isNotEmpty) {
+      return Center(
+        child: Text(
+          '未找到匹配的内容',
+          style: TextStyle(color: Colors.grey[600]),
+        ),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: filtered.length,
+      itemBuilder: (context, index) {
+        final message = filtered[index];
+        return _buildMessageCard(message);
+      },
     );
   }
 
