@@ -25,6 +25,7 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
   Map<String, int> _clientTypeStats = {};
   bool _isMarkingViewed = false;
   bool _isSearching = false;
+  String _membershipFilter = "all"; // all, premium, normal
 
   @override
   void initState() {
@@ -212,14 +213,73 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
                   children: [
                     // 搜索栏
                     if (_isSearching) _buildSearchBar(),
+                    // 筛选栏（会员/非会员）
+                    _buildFilterTabs(),
                     // 客户端类型统计
-                    if (_clientTypeStats.isNotEmpty && !_isSearching) _buildClientTypeStats(),
+                    if (_clientTypeStats.isNotEmpty && !_isSearching && _membershipFilter == "all") _buildClientTypeStats(),
                     // 消息列表
                     Expanded(
                       child: _buildMessageList(),
                     ),
                   ],
                 ),
+    );
+  }
+
+  Widget _buildFilterTabs() {
+    final isDarkMode = context.watch<DarkMode>().isDarkMode;
+    final backgroundColor = isDarkMode ? const Color(0xFF1E1E1E) : Colors.white;
+
+    return Container(
+      width: double.infinity,
+      color: backgroundColor,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            _buildFilterChip('全部', 'all'),
+            const SizedBox(width: 8),
+            _buildFilterChip('永久会员', 'premium'),
+            const SizedBox(width: 8),
+            _buildFilterChip('普通用户', 'normal'),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFilterChip(String label, String value) {
+    final isSelected = _membershipFilter == value;
+    final isDarkMode = context.watch<DarkMode>().isDarkMode;
+
+    return FilterChip(
+      label: Text(
+        label,
+        style: TextStyle(
+          color: isSelected ? Colors.white : (isDarkMode ? Colors.white70 : Colors.black87),
+          fontSize: 13,
+          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+        ),
+      ),
+      selected: isSelected,
+      onSelected: (selected) {
+        setState(() {
+          _membershipFilter = value;
+        });
+      },
+      selectedColor: AppTheme.primaryColor,
+      backgroundColor: isDarkMode ? Colors.grey[800] : Colors.grey[100],
+      checkmarkColor: Colors.white,
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(
+          color: isSelected ? AppTheme.primaryColor : (isDarkMode ? Colors.grey[700]! : Colors.grey[300]!),
+          width: 0.5,
+        ),
+      ),
     );
   }
 
@@ -266,20 +326,40 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
 
   Widget _buildMessageList() {
     final filtered = _messages.where((m) {
-      if (_searchQuery.isEmpty) return true;
-      final content = m.content.toLowerCase();
-      final nickName = (m.fromUser.nickName ?? "").toLowerCase();
-      final userName = (m.fromUser.userName ?? "").toLowerCase();
-      final email = (m.fromUser.email ?? "").toLowerCase();
-      final fromNick = (m.fromUserNickName ?? "").toLowerCase();
-      final fromUser = (m.fromUserName ?? "").toLowerCase();
+      // 1. 会员状态筛选
+      if (_membershipFilter != 'all') {
+        final bool isPremium = m.fromUser.premiumOverrideEnabled == true;
+        if (_membershipFilter == 'premium' && !isPremium) return false;
+        if (_membershipFilter == 'normal' && isPremium) return false;
+      }
 
-      return content.contains(_searchQuery) ||
-          nickName.contains(_searchQuery) ||
-          userName.contains(_searchQuery) ||
-          email.contains(_searchQuery) ||
-          fromNick.contains(_searchQuery) ||
-          fromUser.contains(_searchQuery);
+      // 2. 全文搜索筛选
+      if (_searchQuery.isEmpty) return true;
+
+      // 准备所有可见字段的搜索字符串
+      final visibleStrings = <String>[];
+      visibleStrings.add(m.content);
+      visibleStrings.add(m.fromUser.nickName ?? "");
+      visibleStrings.add(m.fromUser.userName ?? "");
+      visibleStrings.add(m.fromUser.email ?? "");
+      visibleStrings.add(m.fromUserNickName ?? "");
+      visibleStrings.add(m.fromUserName ?? "");
+
+      // 加上可见的客户端类型名
+      if (m.clientType != null) {
+        visibleStrings.add(_getClientTypeDisplayName(m.clientType!));
+      }
+
+      // 加上可见的状态名
+      visibleStrings.add(m.viewed ? '已读' : '未读');
+
+      // 加上日期字符串
+      visibleStrings.add(DateFormat('yyyy-MM-dd HH:mm').format(m.createTime));
+
+      // 拼接成一个大字符串，检查是否包含搜索词
+      final fullText = visibleStrings.join(' ').toLowerCase();
+
+      return fullText.contains(_searchQuery);
     }).toList();
 
     if (filtered.isEmpty && _searchQuery.isNotEmpty) {
