@@ -109,7 +109,7 @@ List<Widget> renderAsrMeaningItems(WordWrapper word, {bool isDarkMode = false}) 
             child: Text(
               meaningItem.ciXing!,
               style: TextStyle(
-                fontSize: 13,
+                fontSize: 15,
                 color: isDarkMode ? const Color(0xFFD1D5DB) : const Color(0xFF4B5563),
                 fontWeight: FontWeight.w600,
               ),
@@ -139,7 +139,7 @@ List<Widget> renderMeaningItemParts(String meaning, int meaningIndex, int hintLe
         part,
         style: TextStyle(
           color: isDarkMode ? const Color(0xFF4ADE80) : const Color(0xFF16A34A), // 绿色高亮
-          fontSize: 13, // 稍微加大一些，更清晰
+          fontSize: 15, // 稍微加大一些，更清晰
           fontWeight: FontWeight.w400,
         ),
       );
@@ -163,10 +163,10 @@ List<Widget> renderMeaningItemParts(String meaning, int meaningIndex, int hintLe
         if (displayText[i] == '^') {
           // 未显示的汉字用固定宽度的占位符
           finalWidgets.add(SizedBox(
-            width: 14, // 固定宽度，大约等于一个汉字的宽度
+            width: 16, // 固定宽度，大约等于一个汉字的宽度
             child: Text(
               '＿',
-              style: TextStyle(fontSize: 12, color: isDarkMode ? Colors.white54 : Colors.black38),
+              style: TextStyle(fontSize: 15, color: isDarkMode ? Colors.white54 : Colors.black38),
               textAlign: TextAlign.center,
             ),
           ));
@@ -174,7 +174,7 @@ List<Widget> renderMeaningItemParts(String meaning, int meaningIndex, int hintLe
           // 已显示的汉字或其他字符
           finalWidgets.add(Text(
             displayText[i],
-            style: TextStyle(fontSize: 12, color: isDarkMode ? Colors.white : const Color(0xFF1A1A1A)),
+            style: TextStyle(fontSize: 15, color: isDarkMode ? Colors.white : const Color(0xFF1A1A1A)),
           ));
         }
       }
@@ -189,7 +189,7 @@ List<Widget> renderMeaningItemParts(String meaning, int meaningIndex, int hintLe
     if (i != parts.length - 1) {
       partWidgets.add(Text(
         "；",
-        style: TextStyle(fontSize: 12, color: isDarkMode ? Colors.white54 : Colors.black38),
+        style: TextStyle(fontSize: 15, color: isDarkMode ? Colors.white54 : Colors.black38),
       ));
     }
   }

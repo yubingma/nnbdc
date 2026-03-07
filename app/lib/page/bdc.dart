@@ -3271,7 +3271,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                 TextSpan(
                   text: '$ciXing ',
                   style: TextStyle(
-                    fontSize: 13, // 增大字号
+                    fontSize: 15, // 增大字号
                     fontWeight: FontWeight.w600,
                     color: isDarkMode ? Colors.white60 : const Color(0xFF64748B),
                   ),
@@ -3280,7 +3280,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                   text: _hideAnswerLeakContent(meaning),
                   style: TextStyle(
                     fontFamily: "NotoSansSC",
-                    fontSize: 14,
+                    fontSize: 16,
                     fontWeight: FontWeight.w400,
                     color: isDarkMode ? Colors.white : const Color(0xFF2D3748),
                   ),
@@ -3296,7 +3296,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
             line,
             style: TextStyle(
               fontFamily: "NotoSansSC",
-              fontSize: 14,
+              fontSize: 16,
               fontWeight: FontWeight.w400,
               color: isDarkMode ? Colors.white : const Color(0xFF2D3748),
             ),
