@@ -462,7 +462,9 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
         if (!message.viewed) {
           await _markMsgsAsViewed([message.id]);
         }
-        _replyToMessage(message);
+        if (mounted) {
+          _replyToMessage(message);
+        }
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
@@ -596,7 +598,9 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
                       if (!message.viewed) {
                         await _markMsgsAsViewed([message.id]);
                       }
-                      _replyToMessage(message);
+                      if (mounted) {
+                        _replyToMessage(message);
+                      }
                     },
                     icon: const Icon(Icons.reply, size: 16),
                     label: const Text('回复'),
@@ -1205,8 +1209,10 @@ class _ReplyDialogState extends State<_ReplyDialog> {
       if (result.success && mounted) {
         _replyController.clear();
         await _loadConversationHistory();
-        final parentState = context.findAncestorStateOfType<_FeedbackManagementWidgetState>();
-        parentState?._loadMessages();
+        if (mounted) {
+          final parentState = context.findAncestorStateOfType<_FeedbackManagementWidgetState>();
+          parentState?._loadMessages();
+        }
       } else {
         ToastUtil.error(result.msg ?? '回复失败');
       }
