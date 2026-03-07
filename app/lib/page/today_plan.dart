@@ -23,6 +23,7 @@ import 'bdc.dart';
 import 'package:nnbdc/page/word_list/today_words.dart';
 import 'package:nnbdc/page/word_list/today_new_words.dart';
 import 'package:nnbdc/page/word_list/today_old_words.dart';
+import 'package:nnbdc/util/learning_service.dart';
 
 class BeforeBdcPage extends StatefulWidget {
   const BeforeBdcPage({super.key});
@@ -44,6 +45,8 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
   Result<List<int>>? prepareResult;
   bool _hasTriedSupplement = false;
   bool _isLoadingData = false;
+  int _completedStepCount = 0;
+  int _totalStepCount = 0;
 
   @override
   void initState() {
@@ -121,6 +124,15 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
 
       hasDakaToday = (await UserBo().hasDakaToday(user!.id!)).data!;
 
+      // Calculate progress
+      final activeStepsCount = selectedSteps().length;
+      final todayWords = await LearningService.getTodayLearningWordsFromDb(user!.id!);
+      _totalStepCount = (todayWords.length * activeStepsCount).toInt();
+      _completedStepCount = 0;
+      for (final word in todayWords) {
+        _completedStepCount += (word.todayLearnedTimes > activeStepsCount) ? activeStepsCount : word.todayLearnedTimes;
+      }
+
       if (mounted) {
         setState(() {
           dataLoaded = true;
@@ -154,7 +166,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
   @override
   Widget build(BuildContext context) {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    final backgroundColor = isDarkMode ? const Color(0xFF121212) : const Color(0xFFF8F9FA);
+    final backgroundColor = isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9);
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -163,19 +175,24 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const SizedBox(
-                    width: 40,
-                    height: 40,
-                    child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.grey)),
+                  SizedBox(
+                    width: 48,
+                    height: 48,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 3, 
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        isDarkMode ? const Color(0xFF22D3EE) : const Color(0xFF0EA5E9)
+                      )
+                    ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 32),
                   Text(
-                    'LOADING PLAN...',
+                    'LOADING PLAN',
                     style: TextStyle(
-                      color: isDarkMode ? Colors.white70 : Colors.black45,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 2.0,
+                      color: isDarkMode ? Colors.white54 : const Color(0xFF64748B),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 3.0,
                     ),
                   ),
                 ],
@@ -187,25 +204,34 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
                 SliverAppBar(
                   pinned: true,
                   backgroundColor: backgroundColor,
+                  surfaceTintColor: Colors.transparent,
                   elevation: 0,
                   automaticallyImplyLeading: false,
                   centerTitle: true,
+                  toolbarHeight: 70,
                   title: Text(
-                    '今日学习计划',
+                    'Today\'s Plan',
                     style: TextStyle(
-                      color: isDarkMode ? Colors.white : const Color(0xFF1A1A1A),
-                      fontSize: 18,
+                      color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
+                      fontSize: 22,
                       fontWeight: FontWeight.w900,
-                      letterSpacing: 1.0,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  bottom: PreferredSize(
+                    preferredSize: const Size.fromHeight(1),
+                    child: Container(
+                      color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05),
+                      height: 1,
                     ),
                   ),
                 ),
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: Column(
                       children: [
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 24),
                         renderMissionCard(),
                         const SizedBox(height: 24),
                         renderStudySteps(),
@@ -221,43 +247,67 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
 
   Widget renderMissionCard() {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    final cardBg = isDarkMode ? const Color(0xFF1E1E1E) : Colors.white;
+    final cardBg = isDarkMode ? const Color(0xFF1E293B) : Colors.white;
+    final progress = _totalStepCount > 0 ? (_completedStepCount / _totalStepCount) : 0.0;
 
     return Container(
       decoration: BoxDecoration(
         color: cardBg,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDarkMode ? 0.3 : 0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
         border: Border.all(
-          color: isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
+          color: isDarkMode ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
           width: 1,
         ),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header: Goal Setting
           Padding(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       '今日目标',
                       style: TextStyle(
-                        color: isDarkMode ? Colors.white70 : const Color(0xFF666666),
-                        fontSize: 15,
+                        color: isDarkMode ? Colors.white70 : const Color(0xFF64748B),
+                        fontSize: 14,
                         fontWeight: FontWeight.w600,
+                        letterSpacing: 0.5,
                       ),
                     ),
-                    if (user?.todayStudyStarted == true) ...[
-                      const SizedBox(width: 8),
-                    Icon(
-                      Icons.lock_outline_rounded,
-                      color: isDarkMode ? const Color(0xFF9CA3AF) : Colors.black45,
-                      size: 14,
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Text(
+                          '${user?.wordsPerDay ?? 0} 个单词',
+                          style: TextStyle(
+                            color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
+                            fontSize: 20,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        if (user?.todayStudyStarted == true) ...[
+                          const SizedBox(width: 6),
+                          Icon(
+                            Icons.lock_outline_rounded,
+                            color: isDarkMode ? Colors.white38 : Colors.black26,
+                            size: 16,
+                          ),
+                        ],
+                      ],
                     ),
-                    ],
                   ],
                 ),
                 renderGoalDropdown(),
@@ -265,48 +315,94 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
             ),
           ),
 
+          // Progress Section
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '进度: $_completedStepCount / $_totalStepCount',
+                      style: TextStyle(
+                        color: isDarkMode ? Colors.white60 : const Color(0xFF94A3B8),
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      '${(progress * 100).toInt()}%',
+                      style: TextStyle(
+                        color: isDarkMode ? const Color(0xFF22D3EE) : const Color(0xFF0891B2),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: LinearProgressIndicator(
+                    value: progress,
+                    minHeight: 10,
+                    backgroundColor: isDarkMode ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF1F5F9),
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      isDarkMode ? const Color(0xFF06B6D4) : const Color(0xFF0891B2),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
           // Stats Grid
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
             child: Row(
               children: [
-                _buildStatItem('今日总词', todayWordCount!, Icons.all_inclusive_rounded),
-                const SizedBox(width: 12),
-                _buildStatItem('新词', newWordCount!, Icons.fiber_new_rounded),
-                const SizedBox(width: 12),
-                _buildStatItem('复习', oldWordCount!, Icons.history_rounded),
+                _buildStatItem('今日总词', todayWordCount ?? 0, Icons.auto_awesome_rounded, const Color(0xFF0EA5E9)),
+                const SizedBox(width: 8),
+                _buildStatItem('新词', newWordCount ?? 0, Icons.fiber_new_rounded, const Color(0xFF8B5CF6)),
+                const SizedBox(width: 8),
+                _buildStatItem('复习', oldWordCount ?? 0, Icons.history_rounded, const Color(0xFF10B981)),
               ],
             ),
           ),
 
           // Supplement Hint
-          if (prepareResult!.success && todayWordCount! < user!.wordsPerDay! && !(user!.todayStudyStarted ?? false) && !_hasTriedSupplement)
+          if (prepareResult != null && prepareResult!.success && (todayWordCount ?? 0) < (user?.wordsPerDay ?? 20) && !(user?.todayStudyStarted ?? false) && !_hasTriedSupplement)
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+              padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                margin: const EdgeInsets.only(top: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
                   color: Colors.amber.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: Colors.amber.withValues(alpha: 0.2)),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 18),
-                    const SizedBox(width: 10),
+                    const Icon(Icons.info_outline_rounded, color: Colors.orange, size: 20),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        '任务量不足，建议补充',
+                        '任务量不足，建议补充单词',
                         style: TextStyle(
                           color: isDarkMode ? Colors.orange.shade300 : Colors.orange.shade900,
                           fontSize: 13,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
                     TextButton(
                       style: TextButton.styleFrom(
                         visualDensity: VisualDensity.compact,
+                        backgroundColor: isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05),
                         foregroundColor: isDarkMode ? Colors.white : Colors.black,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       ),
                       onPressed: () => loadData(forceSupplement: true),
                       child: const Text('补充'),
@@ -318,8 +414,8 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
 
           // Action Button
           Padding(
-            padding: const EdgeInsets.all(16),
-            child: (prepareResult?.code == "NNBDC-0012" || (_hasTriedSupplement && todayWordCount! < (user?.wordsPerDay ?? 0)))
+            padding: const EdgeInsets.all(20),
+            child: (prepareResult?.code == "NNBDC-0012" || (_hasTriedSupplement && (todayWordCount ?? 0) < (user?.wordsPerDay ?? 0)))
                 ? renderErrorActions()
                 : renderStartButton(),
           ),
@@ -328,7 +424,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
     );
   }
 
-  Widget _buildStatItem(String label, int count, IconData icon) {
+  Widget _buildStatItem(String label, int count, IconData icon, Color accentColor) {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
     return Expanded(
       child: GestureDetector(
@@ -342,30 +438,35 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
           }
         },
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 20),
+          padding: const EdgeInsets.symmetric(vertical: 16),
           decoration: BoxDecoration(
-            color: isDarkMode ? Colors.white.withValues(alpha: 0.03) : const Color(0xFFF8F9FA),
-            borderRadius: BorderRadius.circular(16),
+            color: isDarkMode ? Colors.white.withValues(alpha: 0.02) : const Color(0xFFF8FAFC),
+            borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.02),
+              color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.02),
               width: 1,
             ),
           ),
           child: Column(
             children: [
+              Icon(icon, size: 18, color: accentColor.withValues(alpha: 0.8)),
+              const SizedBox(height: 8),
               Text(
                 '$count',
                 style: TextStyle(
-                  color: isDarkMode ? Colors.white : const Color(0xFF1A1A1A),
-                  fontSize: 26,
+                  color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
+                  fontSize: 22,
                   fontWeight: FontWeight.w900,
-                  fontFamily: 'Roboto',
                 ),
               ),
               const SizedBox(height: 4),
               Text(
                 label,
-                style: TextStyle(color: isDarkMode ? const Color(0xFFD1D5DB) : const Color(0xFF6B7280), fontSize: 11, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ],
           ),
@@ -381,10 +482,10 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
     return GestureDetector(
       onTap: isStarted ? () => ToastUtil.info('今日学习已开始，无法修改计划数量') : null,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF8F9FA),
-          borderRadius: BorderRadius.circular(8),
+          color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF1F5F9),
+          borderRadius: BorderRadius.circular(12),
         ),
         child: DropdownButtonHideUnderline(
           child: DropdownButton<int>(
@@ -395,12 +496,13 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
               return raw;
             })(),
             isDense: true,
-            icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 16),
-            dropdownColor: isDarkMode ? const Color(0xFF2D2D2D) : Colors.white,
+            icon: const Icon(Icons.arrow_drop_down_rounded, size: 20),
+            dropdownColor: isDarkMode ? const Color(0xFF1E293B) : Colors.white,
+            borderRadius: BorderRadius.circular(16),
             style: TextStyle(
-              color: isDarkMode ? (isStarted ? Colors.white54 : Colors.white) : (isStarted ? Colors.black26 : Colors.black),
+              color: isDarkMode ? (isStarted ? Colors.white54 : Colors.white) : (isStarted ? Colors.black26 : const Color(0xFF1E293B)),
               fontSize: 14,
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w900,
             ),
             onChanged: isStarted
                 ? null
@@ -429,13 +531,8 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
                   children: [
                     Text('$v'),
                     if (isRestricted) ...[
-                      const SizedBox(width: 4),
-                      const Icon(Icons.workspace_premium, color: Colors.amber, size: 12),
-                      const SizedBox(width: 2),
-                      const Text(
-                        '会员',
-                        style: TextStyle(color: Colors.amber, fontSize: 10, fontWeight: FontWeight.bold),
-                      ),
+                      const SizedBox(width: 6),
+                      const Icon(Icons.workspace_premium_rounded, color: Colors.amber, size: 14),
                     ]
                   ],
                 ),
@@ -453,34 +550,52 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
     if (hasDakaToday) {
       return Container(
         width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 16),
+        padding: const EdgeInsets.symmetric(vertical: 18),
         decoration: BoxDecoration(
-          color: isDarkMode ? Colors.greenAccent.withValues(alpha: 0.1) : const Color(0xFFE8F5E9),
-          borderRadius: BorderRadius.circular(12),
+          color: isDarkMode ? const Color(0xFF064E3B) : const Color(0xFFDCFCE7),
+          borderRadius: BorderRadius.circular(20),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.check_circle_rounded, color: isDarkMode ? Colors.greenAccent : Colors.green.shade700, size: 20),
-            const SizedBox(width: 8),
+            Icon(Icons.stars_rounded, color: isDarkMode ? const Color(0xFF34D399) : const Color(0xFF059669), size: 24),
+            const SizedBox(width: 12),
             Text(
-              '今日学习已达成',
-              style: TextStyle(color: isDarkMode ? Colors.greenAccent : Colors.green.shade700, fontSize: 16),
+              '今日任务已圆满达成',
+              style: TextStyle(
+                color: isDarkMode ? const Color(0xFF34D399) : const Color(0xFF059669),
+                fontSize: 16,
+                fontWeight: FontWeight.w900,
+              ),
             ),
           ],
         ),
       );
     }
 
-    return SizedBox(
+    return Container(
       width: double.infinity,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        gradient: LinearGradient(
+          colors: isDarkMode 
+            ? [const Color(0xFF0891B2), const Color(0xFF0EA5E9)] 
+            : [const Color(0xFF06B6D4), const Color(0xFF0EA5E9)],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0EA5E9).withValues(alpha: 0.3),
+            blurRadius: 15,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
-          backgroundColor: isDarkMode ? Colors.white : const Color(0xFF1A1A1A),
-          foregroundColor: isDarkMode ? Colors.black : Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 18),
-          elevation: 0,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          backgroundColor: Colors.transparent,
+          shadowColor: Colors.transparent,
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         ),
         onPressed: () async {
           if (selectedSteps().isEmpty) {
@@ -501,7 +616,12 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
         },
         child: Text(
           user?.todayStudyStarted == true ? '继续学习' : '开始学习',
-          style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900, letterSpacing: 1.5),
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 2.0,
+          ),
         ),
       ),
     );
@@ -575,23 +695,32 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 12),
+          padding: const EdgeInsets.only(left: 4, bottom: 16),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
                 '学习模式',
                 style: TextStyle(
-                  color: isDarkMode ? Colors.white70 : const Color(0xFF666666),
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
+                  color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
+                  fontSize: 16,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 0.5,
                 ),
               ),
-              Text(
-                '长按拖动排序',
-                style: TextStyle(
-                  color: isDarkMode ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
-                  fontSize: 11,
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  '长按排序',
+                  style: TextStyle(
+                    color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ],
@@ -621,15 +750,23 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
 
     return Container(
       key: ValueKey(step),
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        color: isDarkMode ? const Color(0xFF1E293B) : Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          if (isActive)
+            BoxShadow(
+              color: const Color(0xFF0EA5E9).withValues(alpha: isDarkMode ? 0.1 : 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+        ],
         border: Border.all(
           color: isActive
-              ? (isDarkMode ? Colors.white30 : Colors.black87)
-              : (isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.05)),
-          width: 1,
+              ? (isDarkMode ? const Color(0xFF0EA5E9).withValues(alpha: 0.5) : const Color(0xFF0EA5E9).withValues(alpha: 0.3))
+              : (isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05)),
+          width: 2,
         ),
       ),
       child: Material(
@@ -639,30 +776,43 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
             setState(() {
               step.state = isActive ? StudyStepState.inactive.json : StudyStepState.active.json;
               saveStudyStep();
+              // Re-calculate progress since steps changed
+              final activeStepsCount = selectedSteps().length;
+              _totalStepCount = (todayWordCount ?? 0) * activeStepsCount;
+              loadData(); // Re-fetch to be safe
             });
           },
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(20),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            padding: const EdgeInsets.all(18),
             child: Row(
               children: [
-                Icon(
-                  isActive ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
-                  color: isActive ? (isDarkMode ? Colors.white : Colors.black) : Colors.grey.shade400,
-                  size: 20,
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: isActive 
+                      ? (isDarkMode ? const Color(0xFF0EA5E9).withValues(alpha: 0.2) : const Color(0xFFE0F2FE))
+                      : Colors.transparent,
+                  ),
+                  child: Icon(
+                    isActive ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+                    color: isActive ? const Color(0xFF0EA5E9) : (isDarkMode ? Colors.white24 : Colors.black12),
+                    size: 24,
+                  ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 16),
                 Expanded(
                   child: Text(
                     StudyStepExt.fromString(step.studyStep).description,
                     style: TextStyle(
-                      color: isActive ? (isDarkMode ? Colors.white : Colors.black) : (isDarkMode ? Colors.white54 : Colors.grey),
-                      fontSize: 14,
-                      fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+                      color: isActive ? (isDarkMode ? Colors.white : const Color(0xFF1E293B)) : (isDarkMode ? Colors.white38 : Colors.black26),
+                      fontSize: 16,
+                      fontWeight: isActive ? FontWeight.w800 : FontWeight.w600,
                     ),
                   ),
                 ),
-                Icon(Icons.drag_indicator_rounded, color: isDarkMode ? const Color(0xFF9CA3AF) : Colors.black26, size: 18),
+                Icon(Icons.drag_indicator_rounded, color: isDarkMode ? Colors.white12 : Colors.black12, size: 22),
               ],
             ),
           ),
