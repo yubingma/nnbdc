@@ -200,39 +200,41 @@ class _FeatureRequestManagementWidgetState extends State<FeatureRequestManagemen
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(),
-            )
-          : _requests.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.rate_review_outlined,
-                        size: 64,
-                        color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        '暂无需求',
-                        style: TextStyle(
-                          fontSize: 18,
+      body: SelectionArea(
+        child: _isLoading
+            ? const Center(
+                child: CircularProgressIndicator(),
+              )
+            : _requests.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.rate_review_outlined,
+                          size: 64,
                           color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 16),
+                        Text(
+                          '暂无需求',
+                          style: TextStyle(
+                            fontSize: 18,
+                            color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: _requests.length,
+                    itemBuilder: (context, index) {
+                      final request = _requests[index];
+                      return _buildRequestCard(request);
+                    },
                   ),
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: _requests.length,
-                  itemBuilder: (context, index) {
-                    final request = _requests[index];
-                    return _buildRequestCard(request);
-                  },
-                ),
+      ),
     );
   }
 

@@ -570,37 +570,39 @@ class _FeatureRequestWallPageState extends State<FeatureRequestWallPage> with Si
         backgroundColor: AppTheme.primaryColor,
         child: const Icon(Icons.add, color: Colors.white),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : filteredRequests.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.rate_review_outlined,
-                        size: 64,
-                        color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        '暂无需求',
-                        style: TextStyle(
-                          fontSize: 18,
+      body: SelectionArea(
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : filteredRequests.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.rate_review_outlined,
+                          size: 64,
                           color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 16),
+                        Text(
+                          '暂无需求',
+                          style: TextStyle(
+                            fontSize: 18,
+                            color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: filteredRequests.length,
+                    itemBuilder: (context, index) {
+                      final request = filteredRequests[index];
+                      return _buildRequestCard(request);
+                    },
                   ),
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: filteredRequests.length,
-                  itemBuilder: (context, index) {
-                    final request = filteredRequests[index];
-                    return _buildRequestCard(request);
-                  },
-                ),
+      ),
     );
   }
 
