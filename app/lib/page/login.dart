@@ -195,9 +195,14 @@ class LoginPageState extends State<LoginPage> with WidgetsBindingObserver {
                             width: double.infinity,
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(20),
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFF07C160), Color(0xFF06AD56)],
+                                begin: Alignment.centerLeft,
+                                end: Alignment.centerRight,
+                              ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: const Color(0xFF07C160).withValues(alpha: 0.1),
+                                  color: const Color(0xFF07C160).withValues(alpha: 0.25),
                                   blurRadius: 20,
                                   offset: const Offset(0, 8),
                                 ),
@@ -206,22 +211,22 @@ class LoginPageState extends State<LoginPage> with WidgetsBindingObserver {
                             child: ElevatedButton.icon(
                               onPressed: _isWechatLoading ? null : wechatLoginPressed,
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.white,
-                                foregroundColor: const Color(0xFF1E293B),
+                                backgroundColor: Colors.transparent,
+                                foregroundColor: Colors.white,
                                 padding: const EdgeInsets.symmetric(vertical: 18),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(20),
-                                  side: BorderSide(color: Colors.black.withValues(alpha: 0.03), width: 1),
                                 ),
-                                elevation: 0.5,
+                                elevation: 0,
+                                shadowColor: Colors.transparent,
                                 splashFactory: InkSparkle.splashFactory,
                               ),
-                              icon: const Icon(Icons.wechat, color: Color(0xFF07C160), size: 26),
+                              icon: const Icon(Icons.wechat, color: Colors.white, size: 26),
                               label: Text(
                                 _isWechatLoading ? '正在连接...' : '微信一键登录',
                                 style: const TextStyle(
                                   fontSize: 16, 
-                                  fontWeight: FontWeight.w800,
+                                  fontWeight: FontWeight.w900,
                                   letterSpacing: 0.5,
                                   fontFamily: 'NotoSansSC',
                                 ),
@@ -265,9 +270,9 @@ class LoginPageState extends State<LoginPage> with WidgetsBindingObserver {
                                   height: 20,
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
-                                    color: _approved ? const Color(0xFF0F172A) : Colors.transparent,
+                                    color: _approved ? const Color(0xFF0EA5E9) : Colors.transparent,
                                     border: Border.all(
-                                      color: _approved ? const Color(0xFF0F172A) : const Color(0xFFCBD5E1),
+                                      color: _approved ? const Color(0xFF0EA5E9) : const Color(0xFFCBD5E1),
                                       width: 1.5,
                                     ),
                                   ),
