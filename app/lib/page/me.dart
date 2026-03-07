@@ -507,12 +507,11 @@ class _MePageState extends State<MePage> {
 
   Widget renderStudyProgress() {
     final isDarkModeEnabled = context.watch<DarkMode>().isDarkMode;
-    final textColor = isDarkModeEnabled ? Colors.white : const Color(0xFF2C3E50);
-    final subtitleColor = isDarkModeEnabled ? const Color(0xFFE2E8F0) : const Color(0xFF374151);
-    final iconColor = isDarkModeEnabled ? Colors.white70 : const Color(0xFF95A5A6);
-    final cardColor = isDarkModeEnabled ? const Color(0xFF2D2D2D) : Colors.white;
-
-    final borderColor = isDarkModeEnabled ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05);
+    final textColor = isDarkModeEnabled ? Colors.white : const Color(0xFF1E293B);
+    final subtitleColor = isDarkModeEnabled ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+    final accentColor = isDarkModeEnabled ? const Color(0xFF22D3EE) : const Color(0xFF0EA5E9);
+    final cardColor = isDarkModeEnabled ? const Color(0xFF1E293B) : Colors.white;
+    final borderColor = isDarkModeEnabled ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.02);
 
     return Column(
       children: [
@@ -523,8 +522,15 @@ class _MePageState extends State<MePage> {
           ),
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: isDarkModeEnabled ? const Color(0xFF1E1E1E) : Colors.white,
-            borderRadius: BorderRadius.circular(16),
+            color: cardColor,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDarkModeEnabled ? 0.3 : 0.05),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
+            ],
             border: Border.all(color: borderColor, width: 1.0),
           ),
           child: Column(
@@ -536,15 +542,22 @@ class _MePageState extends State<MePage> {
                 children: [
                   GestureDetector(
                     onTap: () => Get.toNamed('/login'),
-                    child: CircleAvatar(
-                      radius: MediaQuery.of(context).size.width > 600 ? 32 : 28,
-                      backgroundColor: isDarkModeEnabled ? Colors.white10 : const Color(0xFFF0F2F5),
-                      backgroundImage: (loggedInUser?.wechatAvatar != null && loggedInUser!.wechatAvatar!.isNotEmpty)
-                          ? CachedNetworkImageProvider(loggedInUser!.wechatAvatar!)
-                          : null,
-                      child: (loggedInUser?.wechatAvatar == null || loggedInUser!.wechatAvatar!.isEmpty)
-                          ? Icon(Icons.person, color: iconColor, size: 30)
-                          : null,
+                    child: Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: accentColor.withValues(alpha: 0.3), width: 2),
+                      ),
+                      child: CircleAvatar(
+                        radius: MediaQuery.of(context).size.width > 600 ? 32 : 28,
+                        backgroundColor: isDarkModeEnabled ? Colors.white10 : const Color(0xFFF1F5F9),
+                        backgroundImage: (loggedInUser?.wechatAvatar != null && loggedInUser!.wechatAvatar!.isNotEmpty)
+                            ? CachedNetworkImageProvider(loggedInUser!.wechatAvatar!)
+                            : null,
+                        child: (loggedInUser?.wechatAvatar == null || loggedInUser!.wechatAvatar!.isEmpty)
+                            ? Icon(Icons.person_rounded, color: subtitleColor, size: 30)
+                            : null,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -599,7 +612,7 @@ class _MePageState extends State<MePage> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: isDarkModeEnabled ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF8F9FA),
+                        color: accentColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Row(
@@ -613,9 +626,9 @@ class _MePageState extends State<MePage> {
                           Text(
                             studyProgress!.level.name!,
                             style: TextStyle(
-                              color: textColor,
+                              color: accentColor,
                               fontSize: 12,
-                              fontWeight: FontWeight.bold,
+                              fontWeight: FontWeight.w900,
                             ),
                           ),
                         ],
@@ -635,7 +648,7 @@ class _MePageState extends State<MePage> {
                       height: 12,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(iconColor),
+                        valueColor: AlwaysStoppedAnimation<Color>(accentColor),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -664,9 +677,9 @@ class _MePageState extends State<MePage> {
                   Text(
                     '${((studyProgress!.rawWordCount > 0 ? studyProgress!.masteredWordsInSelectedDictsCount / studyProgress!.rawWordCount : 0.0) * 100).toStringAsFixed(1)}%',
                     style: TextStyle(
-                      color: subtitleColor,
+                      color: accentColor,
                       fontSize: 11,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w900,
                     ),
                   ),
                 ],
@@ -689,7 +702,7 @@ class _MePageState extends State<MePage> {
                     return Container(
                       width: constraints.maxWidth * clampedProgress,
                       decoration: BoxDecoration(
-                        color: isDarkModeEnabled ? Colors.white : const Color(0xFF1A1A1A),
+                        color: accentColor,
                         borderRadius: BorderRadius.circular(3),
                       ),
                     );
@@ -706,6 +719,8 @@ class _MePageState extends State<MePage> {
                     isDarkModeEnabled,
                     "学习天数",
                     studyProgress!.existDays.toString(),
+                    Icons.event_available_rounded,
+                    const Color(0xFF0EA5E9),
                   ),
                   const SizedBox(width: 12),
                   // 卡片 2: 已掌握
@@ -713,6 +728,8 @@ class _MePageState extends State<MePage> {
                     isDarkModeEnabled,
                     "已掌握",
                     studyProgress!.masteredWordsCount.toString(),
+                    Icons.task_alt_rounded,
+                    const Color(0xFF10B981),
                   ),
                   const SizedBox(width: 12),
                   // 卡片 3: 学习时长
@@ -720,6 +737,8 @@ class _MePageState extends State<MePage> {
                     isDarkModeEnabled,
                     "学习小时",
                     (studyProgress!.totalLearningSeconds / 3600.0).toStringAsFixed(1),
+                    Icons.timer_outlined,
+                    const Color(0xFF8B5CF6),
                   ),
                 ],
               ),
@@ -730,9 +749,9 @@ class _MePageState extends State<MePage> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: isDarkModeEnabled ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF8F9FA),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: isDarkModeEnabled ? Colors.white10 : Colors.black.withValues(alpha: 0.02)),
+                  color: isDarkModeEnabled ? Colors.white.withValues(alpha: 0.03) : const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: isDarkModeEnabled ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.02)),
                 ),
                 child: Row(
                   children: [
@@ -765,7 +784,7 @@ class _MePageState extends State<MePage> {
                                 else ...[
                                   TextSpan(
                                     text: "${studyProgress!.userOrder!.toStringAsFixed(1)}%",
-                                    style: TextStyle(color: textColor, fontWeight: FontWeight.w900, fontFamily: 'Roboto'),
+                                    style: TextStyle(color: accentColor, fontWeight: FontWeight.w900, fontFamily: 'Roboto'),
                                   ),
                                   const TextSpan(text: " 的用户"),
                                 ],
@@ -782,8 +801,8 @@ class _MePageState extends State<MePage> {
                       ),
                     ),
                     const SizedBox(width: 12),
-                    _buildVisualRanking(studyProgress!.userOrder ?? -1, isDarkModeEnabled ? Colors.white : const Color(0xFF1A1A1A),
-                        isDarkModeEnabled ? Colors.white12 : Colors.black.withValues(alpha: 0.05), textColor),
+                    _buildVisualRanking(studyProgress!.userOrder ?? -1, accentColor,
+                        isDarkModeEnabled ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.02), accentColor),
                   ],
                 ),
               ),
@@ -918,7 +937,7 @@ class _MePageState extends State<MePage> {
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         decoration: BoxDecoration(
                           color: isDarkModeEnabled ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF8F9FA),
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(16),
                           border: Border.all(color: isDarkModeEnabled ? Colors.white12 : Colors.black.withValues(alpha: 0.05)),
                         ),
                         child: Text(
@@ -932,19 +951,39 @@ class _MePageState extends State<MePage> {
                           ),
                         ),
                       )
-                    : ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          foregroundColor: isDarkModeEnabled ? Colors.black : Colors.white,
-                          backgroundColor: isDarkModeEnabled ? Colors.white : const Color(0xFF1A1A1A),
+                    : GestureDetector(
+                        onTap: () => Get.toNamed('/before_bdc'),
+                        child: Container(
                           padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          elevation: 0,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [accentColor, accentColor.withValues(alpha: 0.8)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: accentColor.withValues(alpha: 0.3),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Text(
+                            studyProgress?.todayLearningFinished == true
+                                ? '今日任务已完成'
+                                : (loggedInUser?.todayStudyStarted == true ? '继续学习' : '开始学习'),
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w900,
+                              fontFamily: 'NotoSansSC',
+                              letterSpacing: 1.0,
+                            ),
+                          ),
                         ),
-                        child: Text(
-                          studyProgress?.todayLearningFinished == true ? '今日任务已完成' : (loggedInUser?.todayStudyStarted == true ? '继续学习' : '开始学习'),
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, fontFamily: 'NotoSansSC'),
-                        ),
-                        onPressed: () => Get.toNamed('/before_bdc'),
                       ),
               ),
             ],
@@ -1006,8 +1045,15 @@ class _MePageState extends State<MePage> {
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             color: cardColor,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(24),
             border: Border.all(color: borderColor, width: 1.0),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDarkModeEnabled ? 0.2 : 0.02),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1049,8 +1095,15 @@ class _MePageState extends State<MePage> {
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             color: cardColor,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(24),
             border: Border.all(color: borderColor, width: 1.0),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDarkModeEnabled ? 0.2 : 0.02),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1088,8 +1141,15 @@ class _MePageState extends State<MePage> {
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             color: cardColor,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(24),
             border: Border.all(color: borderColor, width: 1.0),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDarkModeEnabled ? 0.2 : 0.02),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1127,9 +1187,9 @@ class _MePageState extends State<MePage> {
                           Text(
                             '选择词书',
                             style: TextStyle(
-                              color: subtitleColor,
+                              color: accentColor,
                               fontSize: 12,
-                              fontWeight: FontWeight.w500,
+                              fontWeight: FontWeight.w900,
                               fontFamily: 'NotoSansSC',
                             ),
                           ),
@@ -1175,8 +1235,15 @@ class _MePageState extends State<MePage> {
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             color: cardColor,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(24),
             border: Border.all(color: borderColor, width: 1.0),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDarkModeEnabled ? 0.2 : 0.02),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1320,6 +1387,7 @@ class _MePageState extends State<MePage> {
   // 图例项组件
   Widget _buildLegendItem(String label, Color color) {
     final isDarkModeEnabled = context.watch<DarkMode>().isDarkMode;
+    final subtitleColor = isDarkModeEnabled ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
 
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -1329,18 +1397,16 @@ class _MePageState extends State<MePage> {
           height: 12,
           decoration: BoxDecoration(
             color: color,
-            borderRadius: BorderRadius.circular(2),
+            borderRadius: BorderRadius.circular(4),
           ),
         ),
-        const SizedBox(width: 4),
+        const SizedBox(width: 6),
         Text(
           label,
           style: TextStyle(
             fontSize: 12,
-            color: isDarkModeEnabled ? Colors.grey[400] : const Color(0xFF7F8C8D),
-            height: 1.3,
-            letterSpacing: 0.3,
-            fontWeight: FontWeight.w400,
+            color: subtitleColor,
+            fontWeight: FontWeight.bold,
             fontFamily: 'NotoSansSC',
           ),
         ),
@@ -1964,33 +2030,39 @@ class _MePageState extends State<MePage> {
   }
 
   // 进度项组件
-  Widget _buildStatBox(bool isDarkMode, String label, String value) {
+  Widget _buildStatBox(bool isDarkMode, String label, String value, IconData icon, Color color) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 20),
+        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 8),
         decoration: BoxDecoration(
-          color: isDarkMode ? Colors.white.withValues(alpha: 0.03) : const Color(0xFFF8F9FA),
-          borderRadius: BorderRadius.circular(16),
+          color: isDarkMode ? Colors.white.withValues(alpha: 0.02) : const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.02),
-            width: 1,
+            color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.02),
           ),
         ),
         child: Column(
           children: [
+            Icon(icon, size: 20, color: color.withValues(alpha: 0.8)),
+            const SizedBox(height: 12),
             Text(
               value,
               style: TextStyle(
-                color: isDarkMode ? Colors.white : const Color(0xFF1A1A1A),
-                fontSize: 26,
+                color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
+                fontSize: 20,
                 fontWeight: FontWeight.w900,
-                fontFamily: 'Roboto',
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 4),
             Text(
               label,
-              style: TextStyle(color: isDarkMode ? const Color(0xFF9CA3AF) : const Color(0xFF4B5563), fontSize: 11, fontWeight: FontWeight.w500),
+              style: TextStyle(
+                color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ],
         ),
@@ -2000,15 +2072,15 @@ class _MePageState extends State<MePage> {
 
   Widget _buildProgressItem(String title, String value) {
     final isDarkModeEnabled = context.watch<DarkMode>().isDarkMode;
-    final textColor = isDarkModeEnabled ? Colors.white : const Color(0xFF1A1A1A);
-    final subtitleColor = isDarkModeEnabled ? const Color(0xFFE2E8F0) : const Color(0xFF374151);
+    final textColor = isDarkModeEnabled ? Colors.white : const Color(0xFF1E293B);
+    final subtitleColor = isDarkModeEnabled ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
 
     return Column(
       children: [
         Text(
           value,
           style: TextStyle(
-            fontSize: 20,
+            fontSize: 22,
             fontWeight: FontWeight.w900,
             color: textColor,
             fontFamily: 'Roboto',
@@ -2018,9 +2090,9 @@ class _MePageState extends State<MePage> {
         Text(
           title,
           style: TextStyle(
-            fontSize: 11,
+            fontSize: 12,
             color: subtitleColor,
-            fontWeight: FontWeight.w500,
+            fontWeight: FontWeight.bold,
             fontFamily: 'NotoSansSC',
           ),
         ),
@@ -2061,34 +2133,38 @@ class _MePageState extends State<MePage> {
     Color? iconColor,
   }) {
     final isDarkModeEnabled = context.watch<DarkMode>().isDarkMode;
-    final textColor = isDarkModeEnabled ? Colors.white : const Color(0xFF1A1A1A);
-    final secondaryColor = isDarkModeEnabled ? Colors.white54 : Colors.black26;
+    final textColor = isDarkModeEnabled ? Colors.white : const Color(0xFF1E293B);
+    final accentColor = isDarkModeEnabled ? const Color(0xFF22D3EE) : const Color(0xFF0EA5E9);
 
     return ListTile(
-      leading: Icon(
-        icon,
-        color: iconColor ?? (isDestructive ? Colors.redAccent : (isDarkModeEnabled ? Colors.white70 : Colors.black87)),
-        size: 22,
+      leading: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: (iconColor ?? (isDestructive ? Colors.redAccent : accentColor)).withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Icon(
+          icon,
+          color: isDestructive ? Colors.redAccent : (iconColor ?? accentColor),
+          size: 20,
+        ),
       ),
       title: Text(
         title,
         style: TextStyle(
           color: isDestructive ? Colors.redAccent : textColor,
-          fontWeight: FontWeight.normal,
+          fontWeight: FontWeight.w700,
           fontSize: 15,
-          fontFamily: 'NotoSansSC',
         ),
       ),
       trailing: trailing ??
           Icon(
-            Icons.chevron_right_rounded,
-            color: secondaryColor,
-            size: 20,
+            Icons.arrow_forward_ios_rounded,
+            color: isDarkModeEnabled ? Colors.white24 : Colors.black26,
+            size: 14,
           ),
       onTap: onTap,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 4),
-      dense: true,
-      visualDensity: VisualDensity.compact,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 0, vertical: 2),
     );
   }
 
@@ -2136,7 +2212,7 @@ class _MePageState extends State<MePage> {
   @override
   Widget build(BuildContext context) {
     final isDarkModeEnabled = context.watch<DarkMode>().isDarkMode;
-    final backgroundColor = isDarkModeEnabled ? const Color(0xFF121212) : const Color(0xFFF8F9FA);
+    final backgroundColor = isDarkModeEnabled ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9);
 
     return Scaffold(
       backgroundColor: backgroundColor,
