@@ -1261,11 +1261,13 @@ class _MePageState extends State<MePage> {
               _buildMenuTile(
                 icon: Icons.person_outline_rounded,
                 title: '个人信息',
+                iconColor: const Color(0xFF3B82F6), // Blue
                 onTap: () => showUpdateUserInfoDlg(),
               ),
               _buildMenuTile(
                 icon: Icons.chat_bubble_outline_rounded,
                 title: '意见建议',
+                iconColor: const Color(0xFF06B6D4), // Cyan
                 trailing: msgCount > 0
                     ? Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -1288,6 +1290,7 @@ class _MePageState extends State<MePage> {
                 _buildMenuTile(
                   icon: Icons.eco_outlined,
                   title: '我的小天地',
+                  iconColor: const Color(0xFF10B981), // Emerald
                   onTap: () {
                     Get.toNamed('/farm');
                   },
@@ -1297,6 +1300,7 @@ class _MePageState extends State<MePage> {
                 _buildMenuTile(
                   icon: Icons.psychology_outlined,
                   title: 'AI 助教',
+                  iconColor: const Color(0xFF8B5CF6), // Purple
                   onTap: () {
                     Get.toNamed('/ai_activation');
                   },
@@ -1304,6 +1308,7 @@ class _MePageState extends State<MePage> {
               _buildMenuTile(
                 icon: Icons.edit_note_rounded,
                 title: '需求墙',
+                iconColor: const Color(0xFFF59E0B), // Amber
                 onTap: () {
                   Navigator.push(
                     context,
@@ -1314,6 +1319,7 @@ class _MePageState extends State<MePage> {
               _buildMenuTile(
                 icon: Icons.logout_rounded,
                 title: '切换账号',
+                iconColor: const Color(0xFF6366F1), // Indigo
                 onTap: () => Get.toNamed('/login'),
               ),
               _buildMenuTile(
@@ -1337,12 +1343,13 @@ class _MePageState extends State<MePage> {
               _buildMenuTile(
                 icon: Icons.health_and_safety_outlined,
                 title: '健康检查',
+                iconColor: const Color(0xFF2DD4BF), // Teal
                 onTap: () => _navigateToDataDiagnostic(),
               ),
               _buildMenuTile(
                 icon: Icons.cloud_sync_outlined,
                 title: '云同步${_isLastSyncFailed ? "(失败)" : ""}',
-                iconColor: _isLastSyncFailed ? Colors.redAccent : null,
+                iconColor: _isLastSyncFailed ? Colors.redAccent : const Color(0xFF0EA5E9), // Light Blue
                 onTap: () {
                   Navigator.push(
                     context,
@@ -1367,11 +1374,13 @@ class _MePageState extends State<MePage> {
                 _buildMenuTile(
                   icon: Icons.admin_panel_settings_outlined,
                   title: '系统管理',
+                  iconColor: const Color(0xFF4F46E5), // Indigo
                   onTap: () => Get.toNamed('/admin'),
                 ),
                 _buildMenuTile(
                   icon: Icons.storage_rounded,
                   title: '数据库查看器',
+                  iconColor: const Color(0xFFF97316), // Orange
                   onTap: () => _openDbViewPage(),
                 ),
               ],
@@ -1927,11 +1936,11 @@ class _MePageState extends State<MePage> {
 
   Color dakaStatus2Color(String dakaStatus) {
     if (dakaStatus == UserDayStatus.dakaed.json) {
-      return Colors.lightGreen;
+      return const Color(0xFF10B981); // Emerald Green
     } else if (dakaStatus == UserDayStatus.studied.json) {
-      return const Color(0xccff6347);
+      return const Color(0xFFFACC15); // Amber/Yellow
     } else {
-      return const Color(0x77777777);
+      return const Color(0xFF94A3B8).withValues(alpha: 0.3); // Slate Grey
     }
   }
 
@@ -2360,18 +2369,26 @@ class _DictCardState extends State<DictCard> {
 
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
 
-    final cardBgColor = isDarkMode ? const Color(0xFF1E1E1E) : Colors.white;
-    final textColor = isDarkMode ? Colors.white : const Color(0xFF1A1A1A);
-    final subtitleColor = isDarkMode ? const Color(0xFFE2E8F0) : const Color(0xFF374151);
-    final borderColor = isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.05);
+    final textColor = isDarkMode ? Colors.white : const Color(0xFF1E293B);
+    final subtitleColor = isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+    final accentColor = isDarkMode ? const Color(0xFF22D3EE) : const Color(0xFF0EA5E9);
+    final cardBgColor = isDarkMode ? const Color(0xFF1E293B) : Colors.white;
+    final borderColor = isDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.03);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: cardBgColor,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: borderColor, width: 1.0),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDarkMode ? 0.2 : 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(
@@ -2384,20 +2401,26 @@ class _DictCardState extends State<DictCard> {
                 alignment: Alignment.center,
                 children: [
                   CircularPercentIndicator(
-                    radius: 25.0,
-                    lineWidth: 4.0,
+                    radius: 26.0,
+                    lineWidth: 5.0,
                     percent: progress,
-                    backgroundColor: isDarkMode ? Colors.white.withValues(alpha: 0.1) : subtitleColor.withValues(alpha: 0.1),
-                    progressColor: isDarkMode ? Colors.white70 : subtitleColor,
+                    backgroundColor: accentColor.withValues(alpha: 0.1),
+                    linearGradient: LinearGradient(
+                      colors: [accentColor, accentColor.withValues(alpha: 0.6)],
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                    ),
                     circularStrokeCap: CircularStrokeCap.round,
+                    animation: true,
+                    animationDuration: 1000,
                   ),
                   Text(
                     '$progressPercent%',
                     style: TextStyle(
-                      fontSize: 12,
-                      color: isDarkMode ? Colors.white : const Color(0xFF1A1A1A), // 进度百分比文字在亮色模式下使用深色
-                      fontWeight: FontWeight.bold,
-                      height: 1.1,
+                      fontSize: 10,
+                      color: accentColor,
+                      fontWeight: FontWeight.w900,
+                      fontFamily: 'Roboto',
                     ),
                   ),
                 ],
@@ -2413,8 +2436,9 @@ class _DictCardState extends State<DictCard> {
                       style: TextStyle(
                         color: textColor,
                         fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w900,
                         letterSpacing: 0.5,
+                        fontFamily: 'NotoSansSC',
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -2472,9 +2496,10 @@ class _DictCardState extends State<DictCard> {
               ),
               const SizedBox(width: 8),
               _buildDictActionButton(
-                icon: Icons.list_alt,
+                icon: Icons.list_alt_rounded,
                 label: '单词列表',
                 isActive: true,
+                color: const Color(0xFF3B82F6),
                 onTap: () async {
                   try {
                     await toDictWordsListPage(currentLearningDict.dictId, false);
@@ -2486,10 +2511,11 @@ class _DictCardState extends State<DictCard> {
               ),
               const SizedBox(width: 8),
               _buildDictActionButton(
-                icon: Icons.pause_circle_outline,
+                icon: Icons.pause_circle_outline_rounded,
                 label: '停止学习',
                 isActive: true,
                 isDestructive: false,
+                color: const Color(0xFFF59E0B),
                 onTap: () => _handleDictDataAction(),
               ),
             ],
@@ -2749,20 +2775,21 @@ class _DictCardState extends State<DictCard> {
     required bool isActive,
     required VoidCallback onTap,
     bool isDestructive = false,
+    Color? color,
   }) {
     final isDarkMode = context.read<DarkMode>().isDarkMode;
 
     final bgColor = isDarkMode
-        ? (isDestructive ? Colors.red.withValues(alpha: 0.1) : Colors.white.withValues(alpha: 0.05))
-        : (isDestructive ? Colors.red.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03));
+        ? (isDestructive ? Colors.red.withValues(alpha: 0.12) : const Color(0xFF334155))
+        : (isDestructive ? Colors.red.withValues(alpha: 0.08) : const Color(0xFFF1F5F9));
 
     final borderColor = isDarkMode
         ? (isDestructive ? Colors.red.withValues(alpha: 0.3) : Colors.white.withValues(alpha: 0.1))
-        : (isDestructive ? Colors.red.withValues(alpha: 0.2) : Colors.black.withValues(alpha: 0.05));
+        : (isDestructive ? Colors.red.withValues(alpha: 0.15) : Colors.black.withValues(alpha: 0.05));
 
     final contentColor = isDarkMode
-        ? (isDestructive ? (Colors.red[300] ?? Colors.red) : const Color(0xFFE2E8F0))
-        : (isDestructive ? (Colors.red[700] ?? Colors.red) : const Color(0xFF374151));
+        ? (isDestructive ? Colors.redAccent : (color ?? const Color(0xFFF1F5F9)))
+        : (isDestructive ? Colors.red[700]! : (color ?? const Color(0xFF334155)));
 
     return GestureDetector(
       onTap: onTap,
@@ -2807,11 +2834,11 @@ class _DictCardState extends State<DictCard> {
     required ValueChanged<bool?> onChanged,
   }) {
     final isDarkMode = context.read<DarkMode>().isDarkMode;
-    final accentColor = AppTheme.primaryColor;
+    final accentColor = isDarkMode ? const Color(0xFF22D3EE) : const Color(0xFF0EA5E9);
 
-    final bgColor = isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03);
+    final bgColor = isDarkMode ? const Color(0xFF334155) : const Color(0xFFF1F5F9);
     final borderColor = isDarkMode ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05);
-    final contentColor = isDarkMode ? const Color(0xFFE2E8F0) : const Color(0xFF374151);
+    final contentColor = isDarkMode ? const Color(0xFFF1F5F9) : const Color(0xFF334155);
 
     return GestureDetector(
       onTap: () => onChanged(!value),
