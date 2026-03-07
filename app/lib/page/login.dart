@@ -71,49 +71,49 @@ class LoginPageState extends State<LoginPage> with WidgetsBindingObserver {
         height: double.infinity,
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
             colors: [
-              const Color(0xFFF8FAFC),
-              const Color(0xFFF1F5F9),
-              Colors.white,
-              const Color(0xFFECFEFF), // Cyan-50 hint
+              const Color(0xFF0EA5E9), // Sky-500
+              const Color(0xFF0284C7), // Sky-600
+              const Color(0xFF0369A1), // Sky-700
+              const Color(0xFF075985), // Sky-800
             ],
-            stops: const [0.0, 0.4, 0.8, 1.0],
+            stops: const [0.0, 0.3, 0.7, 1.0],
           ),
         ),
         child: Stack(
           children: [
             // Decorative background elements
             Positioned(
-              top: -100,
-              right: -100,
+              top: -80,
+              right: -60,
               child: Container(
-                width: 300,
-                height: 300,
+                width: 280,
+                height: 280,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
                     colors: [
-                      const Color(0xFF22D3EE).withValues(alpha: 0.08),
-                      const Color(0xFF22D3EE).withValues(alpha: 0),
+                      const Color(0xFF7DD3FC).withValues(alpha: 0.15),
+                      const Color(0xFF7DD3FC).withValues(alpha: 0),
                     ],
                   ),
                 ),
               ),
             ),
             Positioned(
-              bottom: -50,
-              left: -50,
+              bottom: 100,
+              left: -80,
               child: Container(
-                width: 250,
-                height: 250,
+                width: 320,
+                height: 320,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
                     colors: [
-                      const Color(0xFF0EA5E9).withValues(alpha: 0.05),
-                      const Color(0xFF0EA5E9).withValues(alpha: 0),
+                      const Color(0xFF38BDF8).withValues(alpha: 0.12),
+                      const Color(0xFF38BDF8).withValues(alpha: 0),
                     ],
                   ),
                 ),
@@ -157,20 +157,28 @@ class LoginPageState extends State<LoginPage> with WidgetsBindingObserver {
                           const Text(
                             '泡泡单词',
                             style: TextStyle(
-                              color: Color(0xFF0F172A), // Slate-900
+                              color: Colors.white,
                               fontSize: 32,
                               fontWeight: FontWeight.w900,
-                              letterSpacing: 3.0,
+                              letterSpacing: 4.0,
                               fontFamily: 'NotoSansSC',
+                              shadows: [
+                                Shadow(
+                                  color: Colors.black26,
+                                  offset: Offset(0, 4),
+                                  blurRadius: 10,
+                                ),
+                              ],
                             ),
                           ),
+                          const SizedBox(height: 8),
                           const Text(
                             '进步而非完美',
                             style: TextStyle(
-                              color: Color(0xFF64748B), // Slate-500
-                              fontSize: 14,
+                              color: Color(0xFFBAE6FD), // Sky-200
+                              fontSize: 15,
                               fontWeight: FontWeight.w500,
-                              letterSpacing: 1.2,
+                              letterSpacing: 2.0,
                               fontFamily: 'NotoSansSC',
                             ),
                           ),
@@ -236,7 +244,7 @@ class LoginPageState extends State<LoginPage> with WidgetsBindingObserver {
                               width: 1,
                               height: 14,
                               margin: const EdgeInsets.symmetric(horizontal: 8),
-                              color: const Color(0xFFCBD5E1),
+                              color: Colors.white24,
                             ),
                             _buildMinorButton('先去逛逛', () async {
                               await Global.loginAsGuest();
@@ -263,25 +271,25 @@ class LoginPageState extends State<LoginPage> with WidgetsBindingObserver {
                                   height: 20,
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
-                                    color: _approved ? const Color(0xFF0EA5E9) : Colors.transparent,
+                                    color: _approved ? Colors.white : Colors.white.withValues(alpha: 0.1),
                                     border: Border.all(
-                                      color: _approved ? const Color(0xFF0EA5E9) : const Color(0xFFCBD5E1),
+                                      color: _approved ? Colors.white : Colors.white.withValues(alpha: 0.4),
                                       width: 1.5,
                                     ),
                                   ),
                                   child: _approved 
-                                    ? const Icon(Icons.check, color: Colors.white, size: 12) 
+                                    ? const Icon(Icons.check, color: Color(0xFF0284C7), size: 12) 
                                     : null,
                                 ),
                                 const SizedBox(width: 10),
                                 const Text(
                                   '同意 ', 
-                                  style: TextStyle(color: Color(0xFF64748B), fontSize: 12, fontWeight: FontWeight.w500)
+                                  style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w500)
                                 ),
                                 _buildLink('《用户协议》', showProtocolPage),
                                 const Text(
                                   ' 与 ', 
-                                  style: TextStyle(color: Color(0xFF64748B), fontSize: 12, fontWeight: FontWeight.w500)
+                                  style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w500)
                                 ),
                                 _buildLink('《隐私政策》', showPrivacyPage),
                               ],
@@ -305,7 +313,7 @@ class LoginPageState extends State<LoginPage> with WidgetsBindingObserver {
     return TextButton(
       onPressed: onTap,
       style: TextButton.styleFrom(minimumSize: Size.zero, padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
-      child: Text(text, style: const TextStyle(color: Color(0xFF666666), fontSize: 13, fontWeight: FontWeight.w400)),
+      child: Text(text, style: const TextStyle(color: Color(0xFFE0F2FE), fontSize: 13, fontWeight: FontWeight.w500)),
     );
   }
 
@@ -315,10 +323,12 @@ class LoginPageState extends State<LoginPage> with WidgetsBindingObserver {
       child: Text(
         text,
         style: const TextStyle(
-          color: Color(0xFF0EA5E9),
+          color: Color(0xFF7DD3FC), // Sky-300
           fontSize: 12,
-          fontWeight: FontWeight.w700,
+          fontWeight: FontWeight.w800,
           fontFamily: 'NotoSansSC',
+          decoration: TextDecoration.underline,
+          decorationColor: Color(0xFF7DD3FC),
         ),
       ),
     );
