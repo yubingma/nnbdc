@@ -475,23 +475,6 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
   Future<void> _setAsPermanentMemberForUser(UserVo user) async {
     final bool isAlreadyPremium = user.premiumOverrideEnabled == true;
 
-    final bool? confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(isAlreadyPremium ? '取消永久会员' : '设为永久会员'),
-        content: Text('确定要将用户 ${user.nickName ?? user.userName} ${isAlreadyPremium ? '取消' : '设为'}永久会员吗？'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('取消')),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(isAlreadyPremium ? '确定取消' : '确定设置', style: TextStyle(color: isAlreadyPremium ? Colors.red : Colors.blue)),
-          ),
-        ],
-      ),
-    );
-
-    if (confirm != true) return;
-
     try {
       final result = await Api.client.updatePremiumOverride(
         user.id ?? '',
@@ -791,23 +774,6 @@ class _ReplyDialogState extends State<_ReplyDialog> {
   Future<void> _setAsPermanentMember() async {
     final user = widget.message.fromUser;
     final bool isAlreadyPremium = user.premiumOverrideEnabled == true;
-
-    final bool? confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(isAlreadyPremium ? '取消永久会员' : '设为永久会员'),
-        content: Text('确定要将用户 ${user.nickName ?? user.userName} ${isAlreadyPremium ? '取消' : '设为'}永久会员吗？'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('取消')),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(isAlreadyPremium ? '确定取消' : '确定设置', style: TextStyle(color: isAlreadyPremium ? Colors.red : Colors.blue)),
-          ),
-        ],
-      ),
-    );
-
-    if (confirm != true) return;
 
     setState(() {
       _isSettingPremium = true;
