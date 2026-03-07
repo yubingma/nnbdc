@@ -1400,7 +1400,7 @@ endlocal
     for (int i = 0; i < 24; i++) {
       final double radius = 6 + rnd.nextDouble() * 18;
       final double speed = 0.0006 + rnd.nextDouble() * 0.0016; // 每帧上升速度（相对高度）
-      final Color color = Colors.blue.withValues(alpha: 0.05 + rnd.nextDouble() * 0.10);
+      final Color color = Colors.white.withValues(alpha: 0.05 + rnd.nextDouble() * 0.10);
       _bubbles.add(_Bubble(rnd.nextDouble(), rnd.nextDouble(), radius, speed, color));
     }
 
@@ -1433,7 +1433,7 @@ endlocal
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        backgroundColor: Colors.white, // 设置Scaffold的背景色为白色
+        backgroundColor: const Color(0xFF0EA5E9),
         body: Center(
           ///正在下载或安装
           child: downloading || downloadSuccess || installing
@@ -1468,7 +1468,7 @@ endlocal
                             ? Text(
                                 "${((downloadedBytes ?? 0) / 1024).round()}k\n${((totalBytes ?? 1024) / 1024).round()}k",
                                 textAlign: TextAlign.center,
-                                style: const TextStyle(fontSize: 11),
+                                style: const TextStyle(fontSize: 11, color: Colors.white),
                               )
                             : installing
                                 ? Column(
@@ -1493,7 +1493,7 @@ endlocal
                                 : const Text(
                                     "下载完成",
                                     textAlign: TextAlign.center,
-                                    style: TextStyle(fontSize: 14),
+                                    style: TextStyle(fontSize: 14, color: Colors.white),
                                   ),
                         progressColor: downloading
                             ? Colors.green
@@ -1526,11 +1526,56 @@ endlocal
                       width: w,
                       height: h,
                       decoration: const BoxDecoration(
-                        color: Colors.white,
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Color(0xFF0EA5E9), // Sky-500
+                            Color(0xFF0284C7), // Sky-600
+                            Color(0xFF0369A1), // Sky-700
+                            Color(0xFF075985), // Sky-800
+                          ],
+                          stops: [0.0, 0.3, 0.7, 1.0],
+                        ),
                       ),
                       child: Stack(
                         fit: StackFit.expand,
                         children: [
+                          // Decorative glows
+                          Positioned(
+                            top: -80,
+                            right: -60,
+                            child: Container(
+                              width: 280,
+                              height: 280,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                gradient: RadialGradient(
+                                  colors: [
+                                    const Color(0xFF7DD3FC).withValues(alpha: 0.15),
+                                    const Color(0xFF7DD3FC).withValues(alpha: 0),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            bottom: 100,
+                            left: -80,
+                            child: Container(
+                              width: 320,
+                              height: 320,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                gradient: RadialGradient(
+                                  colors: [
+                                    const Color(0xFF38BDF8).withValues(alpha: 0.12),
+                                    const Color(0xFF38BDF8).withValues(alpha: 0),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
                           // 泡泡层
                           CustomPaint(painter: _BubblesPainter(_bubbles)),
                           // 居中LOGO与文字
@@ -1552,8 +1597,8 @@ endlocal
                                   shownText,
                                   textAlign: TextAlign.center,
                                   textScaler: const TextScaler.linear(1.0),
-                                  style: TextStyle(
-                                    color: const Color(0xFF424242),
+                                  style: const TextStyle(
+                                    color: Colors.white,
                                     fontSize: 16,
                                     fontWeight: FontWeight.w400,
                                     letterSpacing: 1.2,
@@ -1566,8 +1611,8 @@ endlocal
                                 Text(
                                   '版本 ${_versionName ?? Global.version}${_buildNumber != null ? '($_buildNumber)' : ''} (${Config.profileName})',
                                   textScaler: const TextScaler.linear(1.0),
-                                  style: TextStyle(
-                                    color: Colors.grey.shade400,
+                                  style: const TextStyle(
+                                    color: Color(0xFFBAE6FD), // Sky-200
                                     fontSize: 10,
                                     fontWeight: FontWeight.w300,
                                   ),
@@ -1605,8 +1650,8 @@ endlocal
                                             Text(
                                               _preparingMessage,
                                               textScaler: const TextScaler.linear(1.0),
-                                              style: TextStyle(
-                                                color: Colors.grey.shade600,
+                                              style: const TextStyle(
+                                                color: Colors.white70,
                                                 fontSize: 13,
                                                 fontWeight: FontWeight.w300,
                                               ),
