@@ -134,24 +134,19 @@ class LoginPageState extends State<LoginPage> with WidgetsBindingObserver {
                       child: Column(
                         children: [
                           Container(
-                            padding: const EdgeInsets.all(20),
+                            padding: const EdgeInsets.all(4),
                             decoration: BoxDecoration(
                               color: Colors.white,
                               shape: BoxShape.circle,
                               boxShadow: [
                                 BoxShadow(
-                                  color: const Color(0xFF22D3EE).withValues(alpha: 0.15),
-                                  blurRadius: 30,
-                                  offset: const Offset(0, 10),
-                                ),
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.03),
+                                  color: Colors.black.withValues(alpha: 0.1),
                                   blurRadius: 10,
                                   offset: const Offset(0, 4),
                                 ),
                               ],
                             ),
-                            child: Image.asset('assets/images/logo.png', width: 84, height: 84),
+                            child: Image.asset('assets/images/logo.png', width: 56, height: 56),
                           ),
                           const SizedBox(height: 32),
                           const Text(
