@@ -66,118 +66,235 @@ class LoginPageState extends State<LoginPage> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SizedBox.expand(
-        child: Column(
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              const Color(0xFFF8FAFC),
+              const Color(0xFFF1F5F9),
+              Colors.white,
+              const Color(0xFFECFEFF), // Cyan-50 hint
+            ],
+            stops: const [0.0, 0.4, 0.8, 1.0],
+          ),
+        ),
+        child: Stack(
           children: [
-            const Spacer(flex: 3),
-            // Logo & Title Section
-            GestureDetector(
-              onDoubleTap: _showVersionAndProfileDialog,
-              child: Column(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.05),
-                          blurRadius: 20,
-                          offset: const Offset(0, 10),
-                        ),
-                      ],
-                    ),
-                    child: Image.asset('assets/images/logo.png', width: 72, height: 72),
+            // Decorative background elements
+            Positioned(
+              top: -100,
+              right: -100,
+              child: Container(
+                width: 300,
+                height: 300,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [
+                      const Color(0xFF22D3EE).withValues(alpha: 0.08),
+                      const Color(0xFF22D3EE).withValues(alpha: 0),
+                    ],
                   ),
-                  const SizedBox(height: 24),
-                  const Text(
-                    '泡泡单词',
-                    style: TextStyle(
-                      color: Color(0xFF1A1A1A),
-                      fontSize: 28,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 2.0,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Progress, not perfection',
-                    style: TextStyle(
-                      color: Color(0xFF999999),
-                      fontSize: 14,
-                      fontWeight: FontWeight.w400,
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
-            const Spacer(flex: 4),
-            // Action Section
-            Padding(
-              padding: EdgeInsets.only(
-                left: 48,
-                right: 48,
-                bottom: MediaQuery.of(context).viewPadding.bottom + 40,
+            Positioned(
+              bottom: -50,
+              left: -50,
+              child: Container(
+                width: 250,
+                height: 250,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [
+                      const Color(0xFF0EA5E9).withValues(alpha: 0.05),
+                      const Color(0xFF0EA5E9).withValues(alpha: 0),
+                    ],
+                  ),
+                ),
               ),
-              child: Column(
-                children: [
-                  if (PlatformUtils.isIOS || PlatformUtils.isAndroid)
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: _isWechatLoading ? null : wechatLoginPressed,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFF5F5F5),
-                          foregroundColor: const Color(0xFF1A1A1A),
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                          elevation: 0,
-                        ),
-                        icon: const Icon(Icons.wechat, color: Color(0xFF07C160), size: 24),
-                        label: Text(
-                          _isWechatLoading ? '正在连接...' : '微信一键登录',
-                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-                        ),
+            ),
+            
+            // Main Content
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 40),
+                child: Column(
+                  children: [
+                    const Spacer(flex: 3),
+                    
+                    // Logo & Title Section
+                    GestureDetector(
+                      onDoubleTap: _showVersionAndProfileDialog,
+                      child: Column(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFF22D3EE).withValues(alpha: 0.15),
+                                  blurRadius: 30,
+                                  offset: const Offset(0, 10),
+                                ),
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.03),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Image.asset('assets/images/logo.png', width: 84, height: 84),
+                          ),
+                          const SizedBox(height: 32),
+                          const Text(
+                            '泡泡单词',
+                            style: TextStyle(
+                              color: Color(0xFF0F172A), // Slate-900
+                              fontSize: 32,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 3.0,
+                              fontFamily: 'NotoSansSC',
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF0EA5E9).withValues(alpha: 0.06),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: const Text(
+                              'Progress, not perfection',
+                              style: TextStyle(
+                                color: Color(0xFF0EA5E9),
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _buildMinorButton('邮箱登录', () => Navigator.of(context).pushNamed('/email_login')),
-                      _buildDivider(),
-                      _buildMinorButton('先去逛逛', () async {
-                        await Global.loginAsGuest();
-                        await SubscriptionUtil.restorePurchases(showToast: false);
-                        Get.offAllNamed('/index');
-                      }),
-                    ],
-                  ),
-                  const SizedBox(height: 48),
-                  // Agreement Section
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: Checkbox(
-                          value: _approved,
-                          onChanged: (v) => setState(() => _approved = v ?? false),
-                          activeColor: const Color(0xFF1A1A1A),
-                          shape: const CircleBorder(),
-                          side: BorderSide(color: Colors.grey.shade300, width: 1.2),
+                    
+                    const Spacer(flex: 4),
+                    
+                    // Action Section
+                    Column(
+                      children: [
+                        if (PlatformUtils.isIOS || PlatformUtils.isAndroid)
+                          Container(
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFF07C160).withValues(alpha: 0.1),
+                                  blurRadius: 20,
+                                  offset: const Offset(0, 8),
+                                ),
+                              ],
+                            ),
+                            child: ElevatedButton.icon(
+                              onPressed: _isWechatLoading ? null : wechatLoginPressed,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                foregroundColor: const Color(0xFF1E293B),
+                                padding: const EdgeInsets.symmetric(vertical: 18),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                  side: BorderSide(color: Colors.black.withValues(alpha: 0.03), width: 1),
+                                ),
+                                elevation: 0.5,
+                                splashFactory: InkSparkle.splashFactory,
+                              ),
+                              icon: const Icon(Icons.wechat, color: Color(0xFF07C160), size: 26),
+                              label: Text(
+                                _isWechatLoading ? '正在连接...' : '微信一键登录',
+                                style: const TextStyle(
+                                  fontSize: 16, 
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 0.5,
+                                  fontFamily: 'NotoSansSC',
+                                ),
+                              ),
+                            ),
+                          ),
+                        const SizedBox(height: 20),
+                        
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            _buildMinorButton('邮箱登录', () => Navigator.of(context).pushNamed('/email_login')),
+                            Container(
+                              width: 1,
+                              height: 14,
+                              margin: const EdgeInsets.symmetric(horizontal: 8),
+                              color: const Color(0xFFCBD5E1),
+                            ),
+                            _buildMinorButton('先去逛逛', () async {
+                              await Global.loginAsGuest();
+                              await SubscriptionUtil.restorePurchases(showToast: false);
+                              Get.offAllNamed('/index');
+                            }),
+                          ],
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      const Text('同意 ', style: TextStyle(color: Color(0xFFBBBBBB), fontSize: 11)),
-                      _buildLink('《用户协议》', showProtocolPage),
-                      const Text(' 与 ', style: TextStyle(color: Color(0xFFBBBBBB), fontSize: 11)),
-                      _buildLink('《隐私政策》', showPrivacyPage),
-                    ],
-                  ),
-                ],
+                        
+                        const SizedBox(height: 40),
+                        
+                        // Agreement Section
+                        GestureDetector(
+                          onTap: () => setState(() => _approved = !_approved),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            color: Colors.transparent, // Expand tap area
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                AnimatedContainer(
+                                  duration: const Duration(milliseconds: 200),
+                                  width: 20,
+                                  height: 20,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: _approved ? const Color(0xFF0F172A) : Colors.transparent,
+                                    border: Border.all(
+                                      color: _approved ? const Color(0xFF0F172A) : const Color(0xFFCBD5E1),
+                                      width: 1.5,
+                                    ),
+                                  ),
+                                  child: _approved 
+                                    ? const Icon(Icons.check, color: Colors.white, size: 12) 
+                                    : null,
+                                ),
+                                const SizedBox(width: 10),
+                                const Text(
+                                  '同意 ', 
+                                  style: TextStyle(color: Color(0xFF64748B), fontSize: 12, fontWeight: FontWeight.w500)
+                                ),
+                                _buildLink('《用户协议》', showProtocolPage),
+                                const Text(
+                                  ' 与 ', 
+                                  style: TextStyle(color: Color(0xFF64748B), fontSize: 12, fontWeight: FontWeight.w500)
+                                ),
+                                _buildLink('《隐私政策》', showPrivacyPage),
+                              ],
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: MediaQuery.of(context).padding.bottom + 20),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
@@ -194,14 +311,18 @@ class LoginPageState extends State<LoginPage> with WidgetsBindingObserver {
     );
   }
 
-  Widget _buildDivider() {
-    return Container(width: 1, height: 12, color: Colors.grey.withValues(alpha: 0.2));
-  }
-
   Widget _buildLink(String text, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
-      child: Text(text, style: const TextStyle(color: Color(0xFF999999), fontSize: 11, fontWeight: FontWeight.w500)),
+      child: Text(
+        text,
+        style: const TextStyle(
+          color: Color(0xFF0EA5E9),
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+          fontFamily: 'NotoSansSC',
+        ),
+      ),
     );
   }
 

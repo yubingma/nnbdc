@@ -2106,7 +2106,6 @@ class _MePageState extends State<MePage> {
     final isDarkModeEnabled = context.watch<DarkMode>().isDarkMode;
     final textColor = isDarkModeEnabled ? Colors.white : const Color(0xFF1E293B);
     final subtitleColor = isDarkModeEnabled ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
-    final accentColor = isDarkModeEnabled ? const Color(0xFF22D3EE) : const Color(0xFF0EA5E9);
 
     // 如果没有指定颜色，则使用一个更克制的次级文字颜色，避免“花花绿绿”
     final effectiveIconColor = iconColor ?? (isDestructive ? Colors.redAccent : subtitleColor);

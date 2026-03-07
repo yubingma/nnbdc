@@ -8,7 +8,6 @@ import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/util/app_clock.dart';
 import 'package:drift/drift.dart' as drift hide Column;
-import 'package:nnbdc/theme/app_theme.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/util/subscription_util.dart';
 import 'package:nnbdc/util/error_handler.dart';
@@ -229,44 +228,80 @@ class EmailLoginPageState extends State<EmailLoginPage> {
     return Container(
       width: double.infinity,
       height: double.infinity,
-      color: Colors.white,
-      child: Column(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            const Color(0xFFF8FAFC),
+            const Color(0xFFF1F5F9),
+            Colors.white,
+            const Color(0xFFECFEFF),
+          ],
+          stops: const [0.0, 0.4, 0.8, 1.0],
+        ),
+      ),
+      child: Stack(
         children: [
-          SizedBox(height: MediaQuery.of(context).size.height * 0.15),
-          Column(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 20,
-                      offset: const Offset(0, 10),
+          Positioned(
+            top: -50,
+            right: -50,
+            child: Container(
+              width: 200,
+              height: 200,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    const Color(0xFF22D3EE).withValues(alpha: 0.1),
+                    const Color(0xFF22D3EE).withValues(alpha: 0),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          SizedBox(
+            width: double.infinity,
+            child: Column(
+              children: [
+                SizedBox(height: MediaQuery.of(context).size.height * 0.12),
+                Column(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF22D3EE).withValues(alpha: 0.1),
+                            blurRadius: 30,
+                            offset: const Offset(0, 10),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.email_rounded,
+                        size: 48,
+                        color: Color(0xFF0EA5E9),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    const Text(
+                      '邮箱登录',
+                      style: TextStyle(
+                        color: Color(0xFF0F172A),
+                        fontSize: 28,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1.5,
+                        fontFamily: 'NotoSansSC',
+                      ),
                     ),
                   ],
                 ),
-                child: const Icon(
-                  Icons.email_outlined,
-                  size: 56,
-                  color: Color(0xFF1A1A1A),
-                ),
-              ),
-              const SizedBox(height: 24),
-              const Text(
-                '邮箱登录',
-                style: TextStyle(
-                  color: Color(0xFF1A1A1A),
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.0,
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
-          const Spacer(),
         ],
       ),
     );
@@ -276,179 +311,226 @@ class EmailLoginPageState extends State<EmailLoginPage> {
     final bottomPadding = MediaQuery.of(context).viewPadding.bottom;
     return Align(
       alignment: Alignment.bottomCenter,
-      child: Container(
-        color: Colors.transparent,
-        padding: EdgeInsets.only(bottom: bottomPadding + 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // 返回按钮 (左上角浮动感)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Row(
-                children: [
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.arrow_back_ios_new, color: Color(0xFF2D2D2D), size: 20),
-                  ),
-                ],
-              ),
-            ),
-            
-            // 输入区域容器
-            Container(
-              width: double.infinity,
-              margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(28),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 30,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // 邮箱输入
-                  TextFormField(
-                    key: const Key('email_login_email_field'),
-                    controller: email,
-                    keyboardType: TextInputType.emailAddress,
-                    style: const TextStyle(color: Color(0xFF2D2D2D), fontSize: 16),
-                    decoration: InputDecoration(
-                      labelText: '电子邮箱',
-                      prefixIcon: const Icon(Icons.email_outlined, size: 20),
-                      suffixIcon: _isCheckingLocal
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: Padding(
-                                padding: EdgeInsets.all(14.0),
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              ),
-                            )
-                          : (_localEmails.isNotEmpty
-                              ? IconButton(
-                                  icon: const Icon(Icons.unfold_more_rounded, color: Colors.grey),
-                                  onPressed: _showEmailPicker,
-                                )
-                              : null),
-                    ),
-                  ),
-                  
-                  // 验证码输入（分行或保持现状，但优化样式）
-                  if (_emailExistsInLocal != true) ...[
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextFormField(
-                            key: const Key('email_login_verification_code_field'),
-                            controller: verificationCode,
-                            focusNode: _verificationCodeFocusNode,
-                            keyboardType: TextInputType.number,
-                            maxLength: 6,
-                            style: const TextStyle(color: Color(0xFF2D2D2D), fontSize: 16, letterSpacing: 4),
-                            decoration: const InputDecoration(
-                              labelText: '验证码',
-                              prefixIcon: Icon(Icons.shield_outlined, size: 20),
-                              counterText: '',
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        TextButton(
-                          onPressed: (_countdown > 0 || _isSendingCode) ? null : sendVerificationCode,
-                          style: TextButton.styleFrom(
-                            foregroundColor: AppTheme.primaryColor,
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                          ),
-                          child: Text(
-                            _isSendingCode ? '发送中...' : (_countdown > 0 ? '$_countdown s' : '获取验证码'),
-                            style: const TextStyle(fontWeight: FontWeight.w600),
-                          ),
-                        ),
-                      ],
+      child: SingleChildScrollView(
+        child: Container(
+          padding: EdgeInsets.only(bottom: bottomPadding + 30),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 输入区域容器
+              Container(
+                width: double.infinity,
+                margin: const EdgeInsets.symmetric(horizontal: 32),
+                padding: const EdgeInsets.all(32),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(32),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.04),
+                      blurRadius: 40,
+                      offset: const Offset(0, 12),
                     ),
                   ],
-                  
-                  const SizedBox(height: 24),
-
-                  // 登录按钮
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: _isLoading ? null : loginBtnPressed,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primaryColor,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      ),
-                      child: Text(
-                        _isLoading ? '登录中…' : '登录',
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  border: Border.all(color: Colors.black.withValues(alpha: 0.02), width: 1),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // 邮箱输入
+                    TextFormField(
+                      key: const Key('email_login_email_field'),
+                      controller: email,
+                      keyboardType: TextInputType.emailAddress,
+                      style: const TextStyle(color: Color(0xFF1E293B), fontSize: 16, fontWeight: FontWeight.w600),
+                      decoration: InputDecoration(
+                        labelText: '电子邮箱',
+                        labelStyle: const TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+                        prefixIcon: const Icon(Icons.alternate_email_rounded, size: 20, color: Color(0xFF0EA5E9)),
+                        filled: true,
+                        fillColor: const Color(0xFFF8FAFC),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide.none,
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide.none,
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: const BorderSide(color: Color(0xFF0EA5E9), width: 1.5),
+                        ),
+                        suffixIcon: _isCheckingLocal
+                            ? const UnconstrainedBox(
+                                child: SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation(Color(0xFF0EA5E9))),
+                                ),
+                              )
+                            : (_localEmails.isNotEmpty
+                                ? IconButton(
+                                    icon: const Icon(Icons.expand_more_rounded, color: Color(0xFF94A3B8)),
+                                    onPressed: _showEmailPicker,
+                                  )
+                                : null),
                       ),
                     ),
-                  ),
-                ],
+                    
+                    if (_emailExistsInLocal != true) ...[
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextFormField(
+                              key: const Key('email_login_verification_code_field'),
+                              controller: verificationCode,
+                              focusNode: _verificationCodeFocusNode,
+                              keyboardType: TextInputType.number,
+                              maxLength: 6,
+                              style: const TextStyle(color: Color(0xFF1E293B), fontSize: 20, fontWeight: FontWeight.bold, letterSpacing: 8),
+                              decoration: InputDecoration(
+                                labelText: '验证码',
+                                labelStyle: const TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w500, letterSpacing: 0),
+                                prefixIcon: const Icon(Icons.verified_user_outlined, size: 20, color: Color(0xFF0EA5E9)),
+                                counterText: '',
+                                filled: true,
+                                fillColor: const Color(0xFFF8FAFC),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                  borderSide: BorderSide.none,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          TextButton(
+                            onPressed: (_countdown > 0 || _isSendingCode) ? null : sendVerificationCode,
+                            style: TextButton.styleFrom(
+                              foregroundColor: const Color(0xFF0EA5E9),
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                              backgroundColor: const Color(0xFF0EA5E9).withValues(alpha: 0.1),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            ),
+                            child: Text(
+                              _isSendingCode ? '...' : (_countdown > 0 ? '${_countdown}s' : '获取'),
+                              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                    
+                    const SizedBox(height: 32),
+
+                    // 登录按钮
+                    Container(
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20),
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF0EA5E9), Color(0xFF22D3EE)],
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF0EA5E9).withValues(alpha: 0.3),
+                            blurRadius: 20,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      child: ElevatedButton(
+                        onPressed: _isLoading ? null : loginBtnPressed,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.transparent,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 18),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                          elevation: 0,
+                          shadowColor: Colors.transparent,
+                        ),
+                        child: Text(
+                          _isLoading ? '登录中...' : '登录',
+                          style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900, letterSpacing: 2, fontFamily: 'NotoSansSC'),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
 
-            const SizedBox(height: 20),
+              const SizedBox(height: 24),
 
-            // 游客按钮 (轻量级)
-            TextButton(
-              onPressed: () async {
-                await Global.loginAsGuest();
-                await SubscriptionUtil.restorePurchases(showToast: false);
-                Get.offAllNamed('/index');
-              },
-              child: Text(
-                '暂不登录，先去逛逛',
-                style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+              // 返回
+              TextButton.icon(
+                onPressed: () => Navigator.pop(context),
+                icon: const Icon(Icons.arrow_back_rounded, size: 18),
+                label: const Text('返回其他登录方式'),
+                style: TextButton.styleFrom(
+                  foregroundColor: const Color(0xFF64748B),
+                  textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                ),
               ),
-            ),
 
-            const SizedBox(height: 16),
+              const SizedBox(height: 12),
 
-            // 隐私政策
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: Checkbox(
-                      key: const Key('email_login_agree_checkbox'),
-                      value: _approved,
-                      onChanged: (value) => setState(() => _approved = value ?? false),
-                      activeColor: const Color(0xFF1A1A1A),
-                      shape: const CircleBorder(),
-                      side: BorderSide(color: Colors.grey.shade300, width: 1.2),
+              // 协议
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 40),
+                child: GestureDetector(
+                  onTap: () => setState(() => _approved = !_approved),
+                  child: Container(
+                    color: Colors.transparent,
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          width: 18,
+                          height: 18,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: _approved ? const Color(0xFF0EA5E9) : Colors.transparent,
+                            border: Border.all(
+                              color: _approved ? const Color(0xFF0EA5E9) : const Color(0xFFCBD5E1),
+                              width: 1.5,
+                            ),
+                          ),
+                          child: _approved 
+                            ? const Icon(Icons.check, color: Colors.white, size: 11) 
+                            : null,
+                        ),
+                        const SizedBox(width: 8),
+                        const Text('同意 ', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11)),
+                        _buildLinkText('《用户协议》', showProtocolPage),
+                        const Text(' 与 ', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11)),
+                        _buildLinkText('《隐私政策》', showPrivacyPage),
+                      ],
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  const Text('同意 ', style: TextStyle(color: Color(0xFFBBBBBB), fontSize: 11)),
-                  GestureDetector(
-                    onTap: showProtocolPage,
-                    child: const Text('《用户协议》', style: TextStyle(color: Color(0xFF999999), fontSize: 11, fontWeight: FontWeight.w500)),
-                  ),
-                  const Text(' 与 ', style: TextStyle(color: Color(0xFFBBBBBB), fontSize: 11)),
-                  GestureDetector(
-                    onTap: showPrivacyPage,
-                    child: const Text('《隐私政策》', style: TextStyle(color: Color(0xFF999999), fontSize: 11, fontWeight: FontWeight.w500)),
-                  ),
-                ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLinkText(String text, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Text(
+        text,
+        style: const TextStyle(
+          color: Color(0xFF0EA5E9),
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+          fontFamily: 'NotoSansSC',
         ),
       ),
     );
