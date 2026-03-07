@@ -24,13 +24,15 @@ class LoginPage extends StatefulWidget {
   LoginPageState createState() => LoginPageState();
 }
 
-class LoginPageState extends State<LoginPage> with WidgetsBindingObserver {
+class LoginPageState extends State<LoginPage> with WidgetsBindingObserver, SingleTickerProviderStateMixin {
+  late AnimationController _bubbleController;
   bool _approved = false;
   bool _isWechatLoading = false;
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _bubbleController.dispose();
     super.dispose();
   }
 
@@ -47,6 +49,12 @@ class LoginPageState extends State<LoginPage> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    
+    _bubbleController = AnimationController(
+      duration: const Duration(seconds: 10),
+      vsync: this,
+    )..repeat();
+
     loadData();
   }
 
@@ -118,6 +126,23 @@ class LoginPageState extends State<LoginPage> with WidgetsBindingObserver {
                   ),
                 ),
               ),
+            ),
+            
+            // Animated Bubbles
+            AnimatedBuilder(
+              animation: _bubbleController,
+              builder: (context, child) {
+                return Stack(
+                  children: [
+                    _buildFloatingBubble(0.2, 0.8, 40, 0.08, offset: 0.1),
+                    _buildFloatingBubble(0.7, 0.6, 24, 0.05, offset: 0.4),
+                    _buildFloatingBubble(0.1, 0.2, 32, 0.04, offset: 0.7),
+                    _buildFloatingBubble(0.8, 0.1, 16, 0.06, offset: 0.2),
+                    _buildFloatingBubble(0.5, 0.5, 20, 0.03, offset: 0.9),
+                    _buildFloatingBubble(0.3, 0.9, 28, 0.05, offset: 0.5),
+                  ],
+                );
+              },
             ),
             
             // Main Content
@@ -309,6 +334,35 @@ class LoginPageState extends State<LoginPage> with WidgetsBindingObserver {
       onPressed: onTap,
       style: TextButton.styleFrom(minimumSize: Size.zero, padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
       child: Text(text, style: const TextStyle(color: Color(0xFFE0F2FE), fontSize: 13, fontWeight: FontWeight.w500)),
+    );
+  }
+
+  Widget _buildFloatingBubble(double leftPercent, double startBottomPercent, double size, double opacity, {required double offset}) {
+    double progress = (_bubbleController.value + offset) % 1.0;
+    double bottom = (startBottomPercent + (1.0 - startBottomPercent) * progress) * MediaQuery.of(context).size.height;
+    
+    // Fade out as it goes up
+    double currentOpacity = opacity * (1.0 - progress * 0.5);
+
+    return Positioned(
+      left: leftPercent * MediaQuery.of(context).size.width,
+      bottom: bottom,
+      child: _buildBubble(size, currentOpacity),
+    );
+  }
+
+  Widget _buildBubble(double size, double opacity) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: Colors.white.withValues(alpha: opacity),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: opacity * 1.5),
+          width: 0.8,
+        ),
+      ),
     );
   }
 
