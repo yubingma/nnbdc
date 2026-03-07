@@ -319,4 +319,20 @@ public class MsgBo extends BaseBo<Msg> {
         
         return msgs;
     }
+    /**
+     * 清理指定天数以前的意见建议消息
+     *
+     * @param daysAge 天数
+     * @return 删除的记录数
+     */
+    public int cleanupOldAdvice(int daysAge) {
+        Date threshold = new Date(System.currentTimeMillis() - (long) daysAge * 24 * 60 * 60 * 1000);
+        String sql = "DELETE FROM msg WHERE msg_type = :msgType AND create_time < :threshold";
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        params.addValue("msgType", MsgType.Advice.toString());
+        params.addValue("threshold", threshold);
+        int deletedCount = namedParameterJdbcTemplate.update(sql, params);
+        logger.info("清理了 {} 条 {} 天前的意见建议消息", deletedCount, daysAge);
+        return deletedCount;
+    }
 }

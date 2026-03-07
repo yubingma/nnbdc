@@ -39,6 +39,66 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
     super.dispose();
   }
 
+  Future<void> _cleanupOldAdvice() async {
+    final TextEditingController daysController = TextEditingController(text: "30");
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('清理旧反馈'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('确定要删除指定天数以前的意见建议吗？此操作不可撤销。'),
+            const SizedBox(height: 16),
+            TextField(
+              controller: daysController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: '删除多少天以前的？',
+                suffixText: '天',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('确定删除'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      final int? days = int.tryParse(daysController.text);
+      if (days == null || days <= 0) {
+        ToastUtil.error('请输入有效的正整数');
+        return;
+      }
+
+      try {
+        final userId = Global.getLoggedInUser()?.id ?? "";
+        final result = await Api.client.cleanupOldAdvice(days, userId);
+
+        if (result.success) {
+          ToastUtil.success('成功清理了 ${result.data} 条旧反馈');
+          _loadMessages();
+        } else {
+          ToastUtil.error(result.msg ?? '清理失败');
+        }
+      } catch (e) {
+        ToastUtil.error('清理过程中出现错误: $e');
+      }
+    }
+  }
+
   Future<void> _loadMessages() async {
     try {
       // 禁用API的自动loading，使用页面自己的loading
@@ -69,9 +129,11 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
         _isLoading = false;
       });
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -178,6 +240,11 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
             tooltip: '搜索',
           ),
           IconButton(
+            onPressed: _cleanupOldAdvice,
+            icon: const Icon(Icons.delete_sweep, color: Colors.white),
+            tooltip: '清理旧反馈',
+          ),
+          IconButton(
             onPressed: _loadMessages,
             icon: const Icon(Icons.refresh, color: Colors.white),
             tooltip: '刷新',
@@ -209,19 +276,21 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
                     ],
                   ),
                 )
-              : Column(
-                  children: [
-                    // 搜索栏
-                    if (_isSearching) _buildSearchBar(),
-                    // 筛选栏（会员/非会员）
-                    _buildFilterTabs(),
-                    // 客户端类型统计
-                    if (_clientTypeStats.isNotEmpty && !_isSearching && _membershipFilter == "all") _buildClientTypeStats(),
-                    // 消息列表
-                    Expanded(
-                      child: _buildMessageList(),
-                    ),
-                  ],
+              : SelectionArea(
+                  child: Column(
+                    children: [
+                      // 搜索栏
+                      if (_isSearching) _buildSearchBar(),
+                      // 筛选栏（会员/非会员）
+                      _buildFilterTabs(),
+                      // 客户端类型统计
+                      if (_clientTypeStats.isNotEmpty && !_isSearching && _membershipFilter == "all") _buildClientTypeStats(),
+                      // 消息列表
+                      Expanded(
+                        child: _buildMessageList(),
+                      ),
+                    ],
+                  ),
                 ),
     );
   }
@@ -545,7 +614,6 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
   }
 
   void _replyToMessage(MsgVo message) {
-    // 实现回复功能
     showDialog(
       context: context,
       builder: (context) => _ReplyDialog(message: message),
@@ -789,26 +857,35 @@ class _ReplyDialogState extends State<_ReplyDialog> {
   Future<void> _loadConversationHistory() async {
     try {
       // 获取该用户与系统的所有消息历史
-      final messages = await Api.client.getLastestMsgsBetweenUserAndSys(widget.message.fromUser.id ?? '', 50 // 获取最近50条消息
-          );
+      final messages = await Api.client.getLastestMsgsBetweenUserAndSys(widget.message.fromUser.id ?? '', 50);
 
-      setState(() {
-        _conversationHistory = messages;
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _conversationHistory = messages;
+          _isLoading = false;
+        });
+      }
 
-      // 对话加载后：将发给系统用户的“建议”消息标记为已读
+      // 将相关的未读消息标记为已读
       await _markConversationAdviceAsViewed(messages);
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
   Future<void> _markConversationAdviceAsViewed(List<MsgVo> messages) async {
     if (_isMarkingViewed) return;
-    final ids = messages.where((m) => m.toUser.id == Global.sysUserId && !m.viewed).map((m) => m.id).toList();
+    
+    // 找出所有发给系统的未读消息
+    final ids = messages
+        .where((m) => m.toUser.id == Global.sysUserId && !m.viewed)
+        .map((m) => m.id)
+        .toList();
+        
     if (ids.isEmpty) return;
 
     setState(() {
@@ -819,25 +896,26 @@ class _ReplyDialogState extends State<_ReplyDialog> {
       await Api.client.setMsgsAsViewed(ids, Global.sysUserId);
       if (mounted) {
         setState(() {
-          _conversationHistory = _conversationHistory
-              .map((m) => (ids.contains(m.id))
-                  ? MsgVo(
-                      m.id,
-                      m.fromUserName,
-                      m.fromUserNickName,
-                      m.toUserName,
-                      m.toUserNickName,
-                      m.content,
-                      m.createTimeForDisplay,
-                      m.msgType,
-                      m.clientType,
-                      m.fromUser,
-                      m.toUser,
-                      m.createTime,
-                      true,
-                    )
-                  : m)
-              .toList();
+          _conversationHistory = _conversationHistory.map((m) {
+            if (ids.contains(m.id)) {
+              return MsgVo(
+                m.id,
+                m.fromUserName,
+                m.fromUserNickName,
+                m.toUserName,
+                m.toUserNickName,
+                m.content,
+                m.createTimeForDisplay,
+                m.msgType,
+                m.clientType,
+                m.fromUser,
+                m.toUser,
+                m.createTime,
+                true,
+              );
+            }
+            return m;
+          }).toList();
         });
       }
     } catch (_) {
@@ -939,214 +1017,179 @@ class _ReplyDialogState extends State<_ReplyDialog> {
             ),
         ],
       ),
-      body: Column(
-        children: [
-          // 聊天记录区域
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : ListView.builder(
-                    reverse: false, // 最新的消息在顶部
-                    padding: const EdgeInsets.all(16),
-                    itemCount: _conversationHistory.length,
-                    itemBuilder: (context, index) {
-                      final msg = _conversationHistory[index];
-                      // 判断是否为管理员消息：消息类型为adviceReply（管理员回复）
-                      final isAdminMessage = msg.msgType == 'AdviceReply';
+      body: SelectionArea(
+        child: Column(
+          children: [
+            // 聊天记录区域
+            Expanded(
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: _conversationHistory.length,
+                      itemBuilder: (context, index) {
+                        final msg = _conversationHistory[index];
+                        final isAdminMessage = msg.msgType == 'AdviceReply';
 
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4),
-                        child: Row(
-                          mainAxisAlignment: isAdminMessage ? MainAxisAlignment.end : MainAxisAlignment.start,
-                          children: [
-                            if (!isAdminMessage) ...[
-                              // 用户头像
-                              CircleAvatar(
-                                radius: 16,
-                                backgroundColor: AppTheme.primaryColor,
-                                child: Text(
-                                  _getUserInitial(msg),
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          child: Row(
+                            mainAxisAlignment: isAdminMessage ? MainAxisAlignment.end : MainAxisAlignment.start,
+                            children: [
+                              if (!isAdminMessage) ...[
+                                // 用户头像
+                                CircleAvatar(
+                                  radius: 16,
+                                  backgroundColor: AppTheme.primaryColor,
+                                  child: Text(
+                                    _getUserInitial(msg),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                 ),
-                              ),
-                              const SizedBox(width: 8),
-                              // 用户消息气泡
-                              Flexible(
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 8,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: isDarkMode ? Colors.grey[800] : Colors.grey[200],
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        msg.content,
-                                        style: TextStyle(
-                                          color: textColor,
-                                          fontSize: 14,
+                                const SizedBox(width: 8),
+                                // 用户消息气泡
+                                Flexible(
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                    decoration: BoxDecoration(
+                                      color: isDarkMode ? Colors.grey[800] : Colors.grey[200],
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          msg.content,
+                                          style: TextStyle(color: textColor, fontSize: 14),
                                         ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        DateFormat('yyyy-MM-dd HH:mm').format(msg.createTime),
-                                        style: TextStyle(
-                                          color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                                          fontSize: 10,
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          DateFormat('yyyy-MM-dd HH:mm').format(msg.createTime),
+                                          style: TextStyle(
+                                            color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                                            fontSize: 10,
+                                          ),
                                         ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ] else ...[
-                              // 管理员消息气泡
-                              Flexible(
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 8,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: AppTheme.primaryColor,
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.end,
-                                    children: [
-                                      Text(
-                                        msg.content,
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 14,
+                              ] else ...[
+                                // 管理员消息气泡
+                                Flexible(
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                    decoration: BoxDecoration(
+                                      color: AppTheme.primaryColor,
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.end,
+                                      children: [
+                                        Text(
+                                          msg.content,
+                                          style: const TextStyle(color: Colors.white, fontSize: 14),
                                         ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        DateFormat('yyyy-MM-dd HH:mm').format(msg.createTime),
-                                        style: const TextStyle(
-                                          color: Colors.white70,
-                                          fontSize: 10,
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          DateFormat('yyyy-MM-dd HH:mm').format(msg.createTime),
+                                          style: const TextStyle(color: Colors.white70, fontSize: 10),
                                         ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
                                 ),
-                              ),
-                              const SizedBox(width: 8),
-                              // 管理员头像
-                              CircleAvatar(
-                                radius: 16,
-                                backgroundColor: Colors.grey[600],
-                                child: const Icon(
-                                  Icons.admin_panel_settings,
-                                  color: Colors.white,
-                                  size: 16,
+                                const SizedBox(width: 8),
+                                // 管理员头像
+                                CircleAvatar(
+                                  radius: 16,
+                                  backgroundColor: Colors.grey[600],
+                                  child: const Icon(Icons.admin_panel_settings, color: Colors.white, size: 16),
                                 ),
-                              ),
+                              ],
                             ],
-                          ],
-                        ),
-                      );
-                    },
+                          ),
+                        );
+                      },
+                    ),
+            ),
+            // 输入区域
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: isDarkMode ? const Color(0xFF2D2D2D) : Colors.white,
+                border: Border(
+                  top: BorderSide(
+                    color: isDarkMode ? Colors.grey[700]! : Colors.grey[300]!,
+                    width: 0.5,
                   ),
-          ),
-          // 输入区域
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: isDarkMode ? const Color(0xFF2D2D2D) : Colors.white,
-              border: Border(
-                top: BorderSide(
-                  color: isDarkMode ? Colors.grey[700]! : Colors.grey[300]!,
-                  width: 0.5,
                 ),
               ),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _replyController,
-                    maxLines: 3,
-                    minLines: 1,
-                    style: TextStyle(color: textColor),
-                    decoration: InputDecoration(
-                      hintText: '输入回复内容...',
-                      hintStyle: TextStyle(
-                        color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(24),
-                        borderSide: BorderSide(
-                          color: isDarkMode ? Colors.grey[600]! : Colors.grey[300]!,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _replyController,
+                      maxLines: 3,
+                      minLines: 1,
+                      style: TextStyle(color: textColor),
+                      decoration: InputDecoration(
+                        hintText: '输入回复内容...',
+                        hintStyle: TextStyle(color: isDarkMode ? Colors.grey[400] : Colors.grey[600]),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(24),
+                          borderSide: BorderSide(
+                            color: isDarkMode ? Colors.grey[600]! : Colors.grey[300]!,
+                          ),
                         ),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Container(
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [
-                        AppTheme.gradientStartColor,
-                        AppTheme.gradientEndColor,
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(24),
-                      onTap: _isSending ? null : _sendReply,
-                      child: Container(
-                        width: 48,
-                        height: 48,
-                        alignment: Alignment.center,
-                        child: _isSending
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Icon(
-                                Icons.send_rounded,
-                                color: Colors.white,
-                                size: 24,
+                  const SizedBox(width: 12),
+                  _isSending
+                      ? const SizedBox(
+                          width: 48,
+                          height: 48,
+                          child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                        )
+                      : Container(
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [AppTheme.gradientStartColor, AppTheme.gradientEndColor],
+                            ),
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(24),
+                              onTap: _sendReply,
+                              child: Container(
+                                width: 48,
+                                height: 48,
+                                alignment: Alignment.center,
+                                child: const Icon(Icons.send_rounded, color: Colors.white, size: 24),
                               ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+                            ),
+                          ),
+                        ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
   Future<void> _sendReply() async {
-    if (_replyController.text.trim().isEmpty) return;
+    final text = _replyController.text.trim();
+    if (text.isEmpty) return;
 
     setState(() {
       _isSending = true;
@@ -1154,28 +1197,21 @@ class _ReplyDialogState extends State<_ReplyDialog> {
 
     try {
       final result = await Api.client.replyAdvice(
-        _replyController.text.trim(),
+        text,
         widget.message.fromUser.id ?? '',
         Global.getLoggedInUser()?.id ?? '',
       );
 
       if (result.success && mounted) {
         _replyController.clear();
-        // 重新加载对话历史
         await _loadConversationHistory();
-        // 通知父组件刷新
-        if (mounted) {
-          final parentState = context.findAncestorStateOfType<_FeedbackManagementWidgetState>();
-          parentState?._loadMessages();
-        }
+        final parentState = context.findAncestorStateOfType<_FeedbackManagementWidgetState>();
+        parentState?._loadMessages();
+      } else {
+        ToastUtil.error(result.msg ?? '回复失败');
       }
     } catch (e) {
-      // 处理错误
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('回复失败: $e')),
-        );
-      }
+      ToastUtil.error('回复失败: $e');
     } finally {
       if (mounted) {
         setState(() {

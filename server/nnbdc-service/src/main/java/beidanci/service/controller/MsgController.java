@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.DeleteMapping;
 
 import beidanci.api.Result;
 import beidanci.api.model.MsgCountVo;
@@ -143,5 +144,24 @@ public class MsgController {
         
         msgBo.replyAdvice(content, toUser, userBo);
         return Result.success(null);
+    }
+
+    /**
+     * 清理旧的意见建议（管理员功能）
+     *
+     * @param daysAge 天数
+     * @param adminUserId 管理员ID
+     * @return 删除的记录数
+     */
+    @DeleteMapping("/cleanupOldAdvice.do")
+    public Result<Integer> cleanupOldAdvice(@RequestParam(name = "daysAge") int daysAge,
+                                         @RequestParam(name = "adminUserId") String adminUserId) {
+        User adminUser = userBo.findById(adminUserId);
+        if (adminUser == null || !adminUser.getIsAdmin()) {
+            return Result.fail("管理员权限不足");
+        }
+
+        int deletedCount = msgBo.cleanupOldAdvice(daysAge);
+        return Result.success(deletedCount);
     }
 }

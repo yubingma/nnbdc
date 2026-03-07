@@ -459,6 +459,9 @@ abstract class RestClient {
   @GET("/getAllAdviceMessages.do")
   Future<List<MsgVo>> getAllAdviceMessages();
 
+  @DELETE("/cleanupOldAdvice.do")
+  Future<Result<int>> cleanupOldAdvice(@Query("daysAge") int daysAge, @Query("adminUserId") String adminUserId);
+
   @POST("/replyAdvice.do")
   @FormUrlEncoded()
   Future<Result> replyAdvice(@Field("content") String content, @Field("toUserId") String toUserId, @Field("adminUserId") String adminUserId);
