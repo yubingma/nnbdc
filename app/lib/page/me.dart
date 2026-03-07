@@ -638,7 +638,6 @@ class _MePageState extends State<MePage> {
                 ],
               ),
               const SizedBox(height: 24),
-
               // 同步状态指示器
               if (_isSyncing) ...[
                 Row(
@@ -660,6 +659,111 @@ class _MePageState extends State<MePage> {
                 ),
                 const SizedBox(height: 12),
               ],
+
+              // 2. 会员状况/订阅入口 (移动至此处)
+              Builder(builder: (context) {
+                final isPremium = SubscriptionUtil.isPremium();
+                String? premiumInfoText;
+                if (isPremium) {
+                  final type = SubscriptionUtil.getSubscriptionType();
+                  final expire = SubscriptionUtil.getExpireDate();
+                  final isOverride = loggedInUser?.premiumOverrideEnabled == true && (loggedInUser?.isPremiumIos != true);
+
+                  if (type != null && type.isNotEmpty) {
+                    final typeText = type == 'monthly' ? '月度会员' : '年度会员';
+                    if (expire != null) {
+                      premiumInfoText = '$typeText，有效期至：${expire.year}年${expire.month}月${expire.day}日';
+                    } else {
+                      premiumInfoText = typeText;
+                    }
+                  } else if (isOverride) {
+                    final updateTime = loggedInUser?.premiumOverrideUpdateTime;
+                    final duration = loggedInUser?.premiumOverrideDuration;
+                    if (duration == null) {
+                      premiumInfoText = '会员（永久）';
+                    } else if (updateTime != null) {
+                      final ms = _parseDurationMillis(duration);
+                      if (ms != null && ms > 0) {
+                        final expireTime = updateTime.add(Duration(milliseconds: ms));
+                        premiumInfoText = '会员，有效期至：${expireTime.year}年${expireTime.month}月${expireTime.day}日';
+                      } else {
+                        premiumInfoText = '会员';
+                      }
+                    } else {
+                      premiumInfoText = '会员';
+                    }
+                  } else {
+                    premiumInfoText = '会员';
+                  }
+                }
+
+                if (!isPremium && PlatformUtils.isIOS) {
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.of(context).push(MaterialPageRoute(builder: (context) => const SubscriptionPage())).then((_) {
+                        loadData();
+                      });
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        color: isDarkModeEnabled ? Colors.white.withValues(alpha: 0.03) : Colors.black.withValues(alpha: 0.02),
+                        border: Border.all(color: Colors.amber.shade300.withValues(alpha: 0.5)),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(Icons.stars_rounded, color: Colors.amber.shade700, size: 18),
+                              const SizedBox(width: 8),
+                              Text(
+                                '解锁每日单词上限及更多特权',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.normal,
+                                  color: isDarkModeEnabled ? Colors.amber.shade200 : Colors.amber.shade900,
+                                  fontFamily: 'NotoSansSC',
+                                ),
+                              ),
+                            ],
+                          ),
+                          Icon(Icons.chevron_right, color: Colors.amber.shade700, size: 16),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+
+                if (isPremium && premiumInfoText != null && PlatformUtils.isIOS) {
+                  return Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      color: Colors.blue.withValues(alpha: 0.05),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.verified_user_rounded, color: Colors.blue, size: 16),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            premiumInfoText,
+                            style: const TextStyle(
+                              color: Colors.blue,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              fontFamily: 'NotoSansSC',
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+                return const SizedBox.shrink();
+              }),
             ],
           ),
         ),
@@ -1092,111 +1196,7 @@ class _MePageState extends State<MePage> {
                 ),
               ),
               const SizedBox(height: 16),
-
-              // 会员状况/订阅入口 (移动至此处)
-              Builder(builder: (context) {
-                final isPremium = SubscriptionUtil.isPremium();
-                String? premiumInfoText;
-                if (isPremium) {
-                  final type = SubscriptionUtil.getSubscriptionType();
-                  final expire = SubscriptionUtil.getExpireDate();
-                  final isOverride = loggedInUser?.premiumOverrideEnabled == true && (loggedInUser?.isPremiumIos != true);
-
-                  if (type != null && type.isNotEmpty) {
-                    final typeText = type == 'monthly' ? '月度会员' : '年度会员';
-                    if (expire != null) {
-                      premiumInfoText = '$typeText，有效期至：${expire.year}年${expire.month}月${expire.day}日';
-                    } else {
-                      premiumInfoText = typeText;
-                    }
-                  } else if (isOverride) {
-                    final updateTime = loggedInUser?.premiumOverrideUpdateTime;
-                    final duration = loggedInUser?.premiumOverrideDuration;
-                    if (duration == null) {
-                      premiumInfoText = '会员（永久）';
-                    } else if (updateTime != null) {
-                      final ms = _parseDurationMillis(duration);
-                      if (ms != null && ms > 0) {
-                        final expireTime = updateTime.add(Duration(milliseconds: ms));
-                        premiumInfoText = '会员，有效期至：${expireTime.year}年${expireTime.month}月${expireTime.day}日';
-                      } else {
-                        premiumInfoText = '会员';
-                      }
-                    } else {
-                      premiumInfoText = '会员';
-                    }
-                  } else {
-                    premiumInfoText = '会员';
-                  }
-                }
-
-                if (!isPremium && PlatformUtils.isIOS) {
-                  return GestureDetector(
-                    onTap: () {
-                      Navigator.of(context).push(MaterialPageRoute(builder: (context) => const SubscriptionPage())).then((_) {
-                        loadData();
-                      });
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        color: isDarkModeEnabled ? Colors.white.withValues(alpha: 0.03) : Colors.black.withValues(alpha: 0.02),
-                        border: Border.all(color: Colors.amber.shade300.withValues(alpha: 0.5)),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(Icons.stars_rounded, color: Colors.amber.shade700, size: 18),
-                              const SizedBox(width: 8),
-                              Text(
-                                '解锁每日单词上限及更多专属特权',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.normal,
-                                  color: isDarkModeEnabled ? Colors.amber.shade200 : Colors.amber.shade900,
-                                  fontFamily: 'NotoSansSC',
-                                ),
-                              ),
-                            ],
-                          ),
-                          Icon(Icons.chevron_right, color: Colors.amber.shade700, size: 16),
-                        ],
-                      ),
-                    ),
-                  );
-                }
-
-                if (isPremium && premiumInfoText != null && PlatformUtils.isIOS) {
-                  return Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      color: Colors.blue.withValues(alpha: 0.05),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.verified_user_rounded, color: Colors.blue, size: 16),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            premiumInfoText,
-                            style: const TextStyle(
-                              color: Colors.blue,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                              fontFamily: 'NotoSansSC',
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-                return const SizedBox.shrink();
-              }),
+              const SizedBox(height: 16),
             ],
           ),
         ),
