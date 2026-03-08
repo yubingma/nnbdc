@@ -4020,7 +4020,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
     showGeneralDialog(
       context: context,
-      barrierDismissible: true,
+      barrierDismissible: false,
       barrierLabel: "Debug",
       transitionDuration: const Duration(milliseconds: 300),
       pageBuilder: (context, anim1, anim2) {
