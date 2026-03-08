@@ -352,7 +352,7 @@ bool fuzzyPinyinContains(String pinyin1, String pinyin2) {
 }
 
 /// 判断汉字字符串(或列表)chinese1是否大致包含（发音大致相似）汉字字符串chinese2
-/// 如果chinese1是List<String>，则只要其中任一元素包含chinese2，即返回true
+/// 如果chinese1是List，则只要其中任一元素包含chinese2，即返回true
 /// 注：chinese2内容可能含有逗号，此时，chinese2被视为含有n个子串，只要chinese1包含其中一个子串，就认为chinese1包含chinese2
 bool fuzzyChineseContains(Object chinese1, String chinese2) {
   if (chinese1 is List<String>) {
