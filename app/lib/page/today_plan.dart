@@ -533,6 +533,15 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
                     if (isRestricted) ...[
                       const SizedBox(width: 6),
                       const Icon(Icons.workspace_premium_rounded, color: Colors.amber, size: 14),
+                      const SizedBox(width: 2),
+                      const Text(
+                        '会员',
+                        style: TextStyle(
+                          color: Colors.amber,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ]
                   ],
                 ),
