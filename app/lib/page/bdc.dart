@@ -2938,7 +2938,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       getNextWord(true, fsrsRating: rating);
     } else {
       //不认识或答案错误（错误提示音不需要等待，因为不会跳转到下一个单词）
-      SoundUtil.playAssetSoundConcurrent('cow2.mp3', 1.5, 0.2);
+      SoundUtil.playAssetSoundConcurrent('failed.mp3', 1.5, 0.2);
       showWordDetail(_word!, true, fsrsRating: FsrsRating.again); // 传递true表示本次回答错误
     }
   }

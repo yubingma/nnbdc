@@ -10,6 +10,7 @@ import 'package:nnbdc/page/admin/feature_request_report_management.dart';
 import 'package:nnbdc/page/admin/feedback_management.dart';
 import 'package:nnbdc/page/admin/system_health_check.dart';
 import 'package:nnbdc/page/admin/user_management.dart';
+import 'package:nnbdc/page/admin/word_management.dart';
 import 'package:nnbdc/state.dart';
 import 'package:nnbdc/theme/app_theme.dart';
 import 'package:nnbdc/util/loading_utils.dart';
@@ -53,6 +54,12 @@ class _AdminPageState extends State<AdminPage> {
         icon: Icons.book,
         color: const Color(0xFF2196F3),
         onTap: () => _navigateToDictionary(),
+      ),
+      _buildManagementCard(
+        title: '查词功能',
+        icon: Icons.search,
+        color: const Color(0xFF673AB7),
+        onTap: () => _navigateToWordManagement(),
       ),
       _buildManagementCard(
         title: '系统健康检查',
@@ -402,6 +409,15 @@ class _AdminPageState extends State<AdminPage> {
       context,
       MaterialPageRoute(
         builder: (context) => const FeatureRequestManagementWidget(),
+      ),
+    );
+  }
+
+  void _navigateToWordManagement() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const WordManagementWidget(),
       ),
     );
   }
