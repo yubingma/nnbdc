@@ -63,10 +63,8 @@ import StoreKit
             binaryMessenger: controller.binaryMessenger
         )
         self.asrStreamHandler = SimpleStreamHandler(onListen: { [weak self] events in
-            print("IOS: Setting up ASR EventChannel")
             self?.eventSink = events
         }, onCancel: { [weak self] in
-            print("IOS: Cancelling ASR EventChannel")
             self?.eventSink = nil
         })
         eventChannel.setStreamHandler(self.asrStreamHandler)
@@ -77,10 +75,8 @@ import StoreKit
             binaryMessenger: controller.binaryMessenger
         )
         self.meterStreamHandler = SimpleStreamHandler(onListen: { [weak self] events in
-            print("IOS: Setting up ASR Meter EventChannel")
             self?.meterEventSink = events
         }, onCancel: { [weak self] in
-            print("IOS: Cancelling ASR Meter EventChannel")
             self?.meterEventSink = nil
         })
         meterChannel.setStreamHandler(self.meterStreamHandler)
@@ -100,17 +96,13 @@ import StoreKit
             binaryMessenger: controller.binaryMessenger
         )
         self.ttsStreamHandler = SimpleStreamHandler(onListen: { [weak self] events in
-            print("IOS: Setting up TTS EventChannel")
             self?.ttsEventSink = events
             let event: [String: Any] = ["type": "initStatus", "data": 0]
-            print("IOS: TTS sending init event: \(event)")
             events(event)
         }, onCancel: { [weak self] in
-            print("IOS: Cancelling TTS EventChannel")
             self?.ttsEventSink = nil
         })
         ttsEventChannel.setStreamHandler(self.ttsStreamHandler)
-        print("IOS: TTS EventChannel 设置完成: nnbdc/tts_events")
         
         // 设置应用评分 MethodChannel
         let reviewChannel = FlutterMethodChannel(
@@ -158,12 +150,9 @@ import StoreKit
         speechRecognizer = recognizer
         if currentLocale.lowercased().contains("zh") {
             speechRecognizer?.defaultTaskHint = .dictation // 中文短语更依赖语言模型
-            print("IOS: Speech recognizer configured for Chinese (dictation mode)")
         } else {
             speechRecognizer?.defaultTaskHint = .dictation
-            print("IOS: Speech recognizer configured for English (dictation mode)")
         }
-        print("IOS: Speech recognizer setup completed for: \(currentLocale), available: \(recognizer.isAvailable)")
     }
     
     // MARK: - Method Call Handler
@@ -222,13 +211,11 @@ import StoreKit
 
     private func setContextualStrings(phrases: [String]) {
         contextualPhrases = phrases
-        print("IOS: Contextual phrases updated: count=\(phrases.count)")
     }
     
     // MARK: - ASR Methods
     
     private func setLanguage(locale: String, result: @escaping FlutterResult) {
-        print("IOS: Setting ASR language to: \(locale)")
         currentLocale = locale
         
         // 重新初始化语音识别器
@@ -236,7 +223,6 @@ import StoreKit
         
         // 如果正在识别，需要完全停止并重新开始
         if !isAsrStopped && isRecording {
-            print("IOS: Completely restarting ASR with new language: \(locale)")
             // 完全停止ASR
             stopSpeechRecognition()
             teardownAudioEngine()
@@ -247,7 +233,6 @@ import StoreKit
             }
         }
         
-        print("IOS: ASR language set successfully to: \(locale)")
         result(nil)
     }
     
@@ -257,9 +242,6 @@ import StoreKit
         
         let speechGranted = speechAuthStatus == .authorized
         let microphoneGranted = microphoneAuthStatus == .granted
-        
-        print("IOS: Permission check - Speech: \(speechAuthStatus.rawValue), Microphone: \(microphoneAuthStatus.rawValue)")
-        print("IOS: Permissions granted - Speech: \(speechGranted), Microphone: \(microphoneGranted)")
         
         result(speechGranted && microphoneGranted)
     }
@@ -287,19 +269,16 @@ import StoreKit
     
     private func startMicrophone(result: @escaping FlutterResult) {
         guard !isRecording else {
-            print("IOS: Already recording, skipping startMicrophone")
             result(nil)
             return
         }
         
-        print("IOS: Starting microphone...")
         
         // 检查权限状态
         let speechAuthStatus = SFSpeechRecognizer.authorizationStatus()
         let microphoneAuthStatus = AVAudioSession.sharedInstance().recordPermission
         
         guard speechAuthStatus == .authorized && microphoneAuthStatus == .granted else {
-            print("IOS: Permission denied - Speech: \(speechAuthStatus.rawValue), Microphone: \(microphoneAuthStatus.rawValue)")
             result(FlutterError(
                 code: "PERMISSION_DENIED",
                 message: "需要麦克风和语音识别权限",
@@ -308,16 +287,13 @@ import StoreKit
             return
         }
         
-        print("IOS: Permissions granted, setting up audio session...")
         setupAudioSession()
         isRecording = true
-        print("IOS: Microphone started successfully")
         result(nil)
     }
     
     private func startAsr(result: @escaping FlutterResult) {
         guard isRecording else {
-            print("IOS: Microphone not started, cannot begin ASR")
             result(FlutterError(
                 code: "NOT_RECORDING",
                 message: "Microphone not started",
@@ -326,40 +302,33 @@ import StoreKit
             return
         }
         
-        print("IOS: Beginning ASR (was paused: \(isAsrStopped))...")
         isAsrStopped = false
         
         startSpeechRecognition()
-        print("IOS: ASR started successfully")
         result(nil)
     }
     
     private func stopAsr(result: @escaping FlutterResult) {
-        print("IOS: Stopping ASR...")
         stopSpeechRecognition()
         teardownAudioEngine()
         isRecording = false
         isAsrStopped = true
-        print("IOS: ASR stopped successfully")
         result(nil)
     }
     
     private func reset(result: @escaping FlutterResult) {
-        print("IOS: Resetting ASR state...")
         
         // 暂停 ASR 状态
         isAsrStopped = true
         
         // 清理识别任务
         if recognitionTask != nil {
-            print("IOS: Cancelling recognition task during reset")
             recognitionTask?.cancel()
             recognitionTask = nil
         }
         
         // 清理识别请求
         if recognitionRequest != nil {
-            print("IOS: Ending recognition request during reset")
             recognitionRequest?.endAudio()
             recognitionRequest = nil
         }
@@ -369,7 +338,6 @@ import StoreKit
         partialResultTimer?.invalidate()
         partialResultTimer = nil
         
-        print("IOS: ASR reset completed")
         result(nil)
     }
     
@@ -384,19 +352,15 @@ import StoreKit
                 options: [.defaultToSpeaker, .mixWithOthers, .allowBluetooth]
             )
             try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
-            print("IOS: Audio session configured - Sample rate: \(audioSession.sampleRate), Channels: \(audioSession.inputNumberOfChannels)")
         } catch {
-            print("Failed to setup audio session: \(error)")
         }
     }
     
     private func initializeAudioEngine() {
         guard !isAudioEngineInitialized else {
-            print("IOS: Audio engine already initialized")
             return
         }
         
-        print("IOS: Initializing audio engine...")
         
         // 确保音频会话已正确配置
         setupAudioSession()
@@ -404,39 +368,30 @@ import StoreKit
         // 验证音频会话配置
         let audioSession = AVAudioSession.sharedInstance()
         guard audioSession.sampleRate > 0 && audioSession.inputNumberOfChannels > 0 else {
-            print("Invalid audio session configuration")
             return
         }
         
-        print("IOS: Audio session - Sample rate: \(audioSession.sampleRate), Input channels: \(audioSession.inputNumberOfChannels)")
         
         // 配置音频引擎
         let inputNode = audioEngine.inputNode
-        print("IOS: Input node created")
         
         // 准备音频引擎
         audioEngine.prepare()
-        print("IOS: Audio engine prepared")
         
         // 启动音频引擎
         do {
             try audioEngine.start()
-            print("IOS: Audio engine started successfully")
         } catch {
-            print("Audio engine couldn't start: \(error)")
             return
         }
         
         // 获取硬件格式
         let hardwareFormat = inputNode.outputFormat(forBus: 0)
-        print("IOS: Hardware format retrieved")
-        print("IOS: Hardware format details - Sample rate: \(hardwareFormat.sampleRate), Channels: \(hardwareFormat.channelCount)")
         
         // 使用已知有效的格式
         let format: AVAudioFormat
         if hardwareFormat.sampleRate > 0 && hardwareFormat.channelCount > 0 {
             format = hardwareFormat
-            print("IOS: Using hardware format")
         } else {
             // 使用音频会话的格式
             let sessionFormat = AVAudioFormat(
@@ -445,15 +400,12 @@ import StoreKit
             )
             if let sessionFormat = sessionFormat {
                 format = sessionFormat
-                print("IOS: Using session format - Sample rate: \(format.sampleRate), Channels: \(format.channelCount)")
             } else {
                 // 最后备选：使用标准格式
                 guard let standardFormat = AVAudioFormat(standardFormatWithSampleRate: 48000, channels: 1) else {
-                    print("IOS: Failed to create any valid format")
                     return
                 }
                 format = standardFormat
-                print("IOS: Using fallback format - Sample rate: \(format.sampleRate), Channels: \(format.channelCount)")
             }
         }
         
@@ -462,14 +414,11 @@ import StoreKit
         if format.channelCount > 1 {
             // 如果是立体声，转换为单声道
             guard let monoFormat = AVAudioFormat(standardFormatWithSampleRate: format.sampleRate, channels: 1) else {
-                print("IOS: Failed to create mono format")
                 return
             }
             finalFormat = monoFormat
-            print("IOS: Converting to mono format - Sample rate: \(finalFormat.sampleRate), Channels: \(finalFormat.channelCount)")
         } else {
             finalFormat = format
-            print("IOS: Using original format - Sample rate: \(finalFormat.sampleRate), Channels: \(finalFormat.channelCount)")
         }
         
         // 安装 tap
@@ -644,8 +593,8 @@ import StoreKit
             speechRecognizer.defaultTaskHint = .dictation
             print("IOS: Speech recognizer configured for Chinese (dictation mode)")
         } else {
-            speechRecognizer.defaultTaskHint = .search
-            print("IOS: Speech recognizer configured for English (search mode)")
+            speechRecognizer.defaultTaskHint = .dictation
+            print("IOS: Speech recognizer configured for English (dictation mode)")
         }
         
         // 先创建新的识别请求
@@ -662,8 +611,8 @@ import StoreKit
             recognitionRequest.taskHint = .dictation
             print("IOS: Recognition request configured for Chinese (dictation mode)")
         } else {
-            recognitionRequest.taskHint = .search
-            print("IOS: Recognition request configured for English (search mode)")
+            recognitionRequest.taskHint = .dictation
+            print("IOS: Recognition request configured for English (dictation mode)")
         }
         if #available(iOS 13.0, *) {
             recognitionRequest.requiresOnDeviceRecognition = true
@@ -870,35 +819,8 @@ import StoreKit
 
     // 基于 contextualPhrases 对候选进行轻量级重排
     private func selectTranscription(using result: SFSpeechRecognitionResult) -> String {
-        let best = result.bestTranscription.formattedString
-        if contextualPhrases.isEmpty { return best }
-        let lowerPhrases = Set(contextualPhrases.map { $0.lowercased() })
-        
-        // 先做"完全相等"优先
-        for t in result.transcriptions {
-            let s = t.formattedString
-            if lowerPhrases.contains(s.lowercased()) {
-                print("IOS: Selected exact match: '\(s)'")
-                return s
-            }
-        }
-        
-        // 再做"包含关系"的偏置
-        for t in result.transcriptions {
-            let s = t.formattedString
-            let l = s.lowercased()
-            for p in lowerPhrases {
-                if l.contains(p) {
-                    print("IOS: Selected partial match: '\(s)' contains '\(p)'")
-                    return s
-                }
-            }
-        }
-        
-        // 对于英文单词，让Flutter层处理发音相似的逻辑
-        // 这里只做基本的候选结果选择，智能匹配交给应用层处理
-        
-        return best
+        // 直接返回最可能的识别结果，不进行额外的人为偏置，以响应用户“听它听到什么输出什么”的需求
+        return result.bestTranscription.formattedString
     }
     
 

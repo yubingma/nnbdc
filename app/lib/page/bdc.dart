@@ -956,34 +956,17 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
   /// 设置ASR上下文短语（当前单词的释义子项(说中文)或当前单词的拼写(说英文)）
   void _setAsrContextualPhrases() {
+    // 禁止下发上下文短语，以满足用户“无判断、无偏见”的原始识别需求
+    /*
     try {
       WordVo? word = _currentGetWordResult?.learningWord?.word;
       if (word != null) {
-        List<String> allowPhrases = [];
-      if (_studyStep == StudyStep.ch2En.json) {
-        // 如果是短语，拆分成单独的单词作为热词，防止 iOS 语音识别过度联想（只说一两个词就补全整个短语）
-        if (word.spell.contains(' ') || word.spell.contains('-')) {
-          allowPhrases = word.spell.split(RegExp(r'[\s\-]+'));
-        } else {
-          allowPhrases = [word.spell];
-        }
-      } else if (_studyStep == StudyStep.en2Ch.json) {
-          allowPhrases = AsrUtil.extractContextualPhrases(
-            _currentGetWordResult!.learningWord!.word.getMergedMeaningItems(),
-          );
-        }
-
-        if (allowPhrases.isNotEmpty) {
-          AsrUtil.setContextualStrings(
-            allowPhrases,
-            asr.asrMethodChannel,
-            asr.permissionGranted,
-          );
-        }
+        ...
       }
     } catch (e) {
       Global.logger.d('设置ASR上下文短语失败: $e');
     }
+    */
   }
 
   /// 启动ASR并播放提示音
@@ -1089,15 +1072,15 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
              Global.logger.d('ASR: _word is null, caching raw candidate: "$processedResult"');
           }
         } else {
-          // 其他模式：直接使用最佳候选结果，然后进行相应预处理
+          // 其他模式：直接使用最佳候选结果，不进行多候选比对，以保证最高响应速度
           processedResult = bestCandidate;
           // 清空评分
           _currentScore = null;
 
           if (_studyStep == StudyStep.en2Ch.json) {
-            // 英→中模式：使用中文预处理
+            // 英→中模式：仅进行基础展示预处理（如数字转中文）
             processedResult = AsrUtil.preprocess(processedResult);
-            Global.logger.d('ASR: Chinese processed result: $processedResult');
+            Global.logger.d('ASR [en2Ch]: Raw result: $processedResult');
           } else {
             Global.logger.d('ASR: Using best candidate: $processedResult');
           }

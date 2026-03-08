@@ -728,16 +728,13 @@ class WordListPageState extends State<WordListPage>
         processedEvent = AsrUtil.preprocessEnglish(processedEvent, target);
       } else {
         // ===== 其他模式 (背中文等) =====
-        String bestCandidate;
+        // 直接使用最高排名的候选词，追求极致响应速度，不做二次筛选
         if (resultData != null && resultData.containsKey('candidates')) {
           List<dynamic> candidates = resultData['candidates'];
-          List<String> candidateStrings =
-              candidates.map((e) => e.toString()).toList();
-          bestCandidate = resultData['best'] ?? candidateStrings.first;
+          processedEvent = resultData['best'] ?? candidates.first.toString();
         } else {
-          bestCandidate = event;
+          processedEvent = event;
         }
-        processedEvent = bestCandidate;
       }
     } catch (e) {
       Global.logger.e("语音识别结果处理错误: $e");
@@ -965,39 +962,7 @@ class WordListPageState extends State<WordListPage>
   /// 设置ASR上下文短语（热词机制）
   /// 必须在 startAsr 之前调用，否则只能等到下一次 startAsr 生效
   void _setAsrContextualPhrases() {
-    try {
-      final curr = getBookMarkUiPosition();
-      if (curr >= 0 && curr < words.length) {
-        // 根据模式提取上下文短语
-        List<String> allowPhrases;
-        if (studyMode == WordListStudyMode.speakEnglish) {
-          // 背英文模式：如果为短语，拆分成单词提供热词，防止iOS联想补全
-          final spell = words[curr].word.spell;
-          if (spell.contains(' ') || spell.contains('-')) {
-            allowPhrases = spell.split(RegExp(r'[\s\-]+'));
-          } else {
-            allowPhrases = [spell];
-          }
-        } else {
-          // 背中文模式：热词为中文释义
-          allowPhrases = AsrUtil.extractContextualPhrases(
-            words[curr].word.getMergedMeaningItems(),
-          );
-        }
-
-        if (allowPhrases.isNotEmpty) {
-          // 注意：setContextualStrings 只是把热词存到 Native 的 pendingHotwords
-          // 真正生效是在 asr.startAsr() -> Native startMicrophone -> createStreamWithHotwords 时
-          AsrUtil.setContextualStrings(
-            allowPhrases,
-            asr.asrMethodChannel,
-            asr.permissionGranted,
-          );
-        }
-      }
-    } catch (e, stackTrace) {
-      Global.logger.w('设置ASR上下文短语失败', error: e, stackTrace: stackTrace);
-    }
+    // 禁止下发上下文短语，以满足用户“无判断、无偏见”的原始识别需求
   }
 
   doInit() {

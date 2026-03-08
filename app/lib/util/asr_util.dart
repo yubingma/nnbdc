@@ -1,9 +1,9 @@
 import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/constants.dart';
 import 'package:nnbdc/global.dart';
-import 'package:nnbdc/util/platform_util.dart';
-import 'package:nnbdc/util/phoneme_util.dart';
 import 'package:nnbdc/util/edit_distance.dart';
+import 'package:nnbdc/util/phoneme_util.dart';
+import 'package:nnbdc/util/platform_util.dart';
 
 /// ASR 候选结果及其匹配分数
 class AsrCandidateResult {
@@ -16,24 +16,6 @@ class AsrCandidateResult {
 /// 语音识别结果预处理工具类
 /// 主要用于处理发音相似的中英文替换问题
 class AsrUtil {
-  /// 发音相似的中英文映射表
-  /// 格式: {英文识别结果: 正确的中文}
-  static const Map<String, String> _pronunciationMap = {
-    'baby': '卑鄙',
-    'hello': '哈喽',
-  };
-
-  /// 发音相似的英文单词映射表（仅用于特殊情况）
-  /// 格式: {错误识别结果: 正确单词}
-  /// 注意：这个映射表只用于处理一些特殊的发音相似情况
-  /// 大部分情况会通过编辑距离算法自动处理
-  static const Map<String, String> _englishPronunciationMap = {
-    // 可以在这里添加一些特殊的映射，但大部分情况不需要
-    'suece': 'swiss',
-    'swis': 'swiss',
-    'mail': 'male',
-  };
-
   /// 将阿拉伯数字转换为中文数字（支持0-9999）
   /// 例如：12 -> 十二，123 -> 一百二十三
   static String _convertArabicToChinese(int num) {
@@ -97,15 +79,10 @@ class AsrUtil {
   static String preprocess(String result) {
     if (result.isEmpty) return result;
 
-    // 转换为小写进行匹配
+    // 转换为小写并去除首尾空格
     String lowerResult = result.toLowerCase().trim();
 
-    // 检查是否包含发音相似的词
-    for (String english in _pronunciationMap.keys) {
-      lowerResult = lowerResult.replaceAll(english, _pronunciationMap[english]!);
-    }
-
-    // 将阿拉伯数字转换为中文数字
+    // 1. 将阿拉伯数字转换为中文数字
     // 使用正则表达式匹配所有数字（包括多位数）
     lowerResult = lowerResult.replaceAllMapped(RegExp(r'\d+'), (match) {
       final numStr = match.group(0);
@@ -121,16 +98,12 @@ class AsrUtil {
       return match.group(0) ?? '';
     });
 
-    // 仅提取汉字，聚焦中文匹配，避免英文/符号噪声影响
-    String chineseOnly = lowerResult.replaceAll(RegExp(r"[^\u4e00-\u9fa5]"), '');
+    // 2. 移除常见的末尾标点符号，保持文本简洁
+    lowerResult = lowerResult.replaceAll(RegExp(r'[。，！？、,!?]$'), '');
 
-    // 只保留最后 10 个汉字，控制后续相似度计算复杂度
-    if (chineseOnly.length > 10) {
-      chineseOnly = chineseOnly.substring(chineseOnly.length - 10);
-    }
-
-    // 如果没有中文，回退到降噪后的原结果
-    return chineseOnly.isEmpty ? lowerResult : chineseOnly;
+    // 注意：不再移除非汉字字符（如英文、数字等），以满足用户“听听到什么就输出什么”的需求
+    // 但内部匹配逻辑（如 fuzzyChineseContains）会自行处理 pinyin 转换
+    return lowerResult;
   }
 
   /// 预处理英文语音识别结果, 使识别结果尽量往目标单词靠拢
@@ -142,39 +115,11 @@ class AsrUtil {
     if (result.isEmpty) return result;
 
     String lowerResult = result.toLowerCase().trim();
-    String lowerTarget = targetWord.toLowerCase().trim();
+    // String lowerTarget = targetWord.toLowerCase().trim(); // 不再强行替换
 
-    // 1. 完全匹配
-    if (lowerResult == lowerTarget) {
-      Global.logger.d('ASR MATCH [EXACT]: "$lowerResult" == "$lowerTarget"');
-      return lowerTarget;
-    }
-
-    // 2. 特殊映射表
-    if (_englishPronunciationMap.containsKey(lowerResult)) {
-      String corrected = _englishPronunciationMap[lowerResult]!;
-      if (corrected == lowerTarget) {
-        Global.logger.d('ASR MATCH [MAP_RESCUE]: "$lowerResult" -> "$lowerTarget"');
-        return lowerTarget;
-      }
-    }
-
-    // 3. 编辑距离匹配 (收紧阈值，配合 66M 模型)
-    int distance = EditDistance.forStrings(lowerResult, lowerTarget);
-    int maxLength = [lowerResult.length, lowerTarget.length].reduce((a, b) => a > b ? a : b);
-
-    // 编辑距离容错匹配
-    if (maxLength > 0 && distance <= (maxLength * Constants.editDistanceTolerance).floor()) {
-      Global.logger.d('ASR MATCH [EDIT_DIST]: "$lowerResult" -> "$lowerTarget" (dist: $distance, max: $maxLength)');
-      return lowerTarget;
-    }
-
-    // 4. 重叠度匹配
-    if (_hasSignificantOverlap(lowerResult, lowerTarget)) {
-      Global.logger.d('ASR MATCH [OVERLAP]: "$lowerResult" -> "$lowerTarget"');
-      return lowerTarget;
-    }
-
+    // 之前这里会进行一系列匹配并返回 lowerTarget
+    // 现在直接返回 lowerResult，以满足用户“听到什么就输出什么”的需求
+    // 匹配判定将交给 checkAsrResult 中的 score 逻辑
     return lowerResult;
   }
 
@@ -201,20 +146,10 @@ class AsrUtil {
     if (candidates.isEmpty) return AsrCandidateResult('', 0);
     final lowerTarget = targetWord.toLowerCase().trim();
 
-    // 完全匹配优先
-    for (final c in candidates) {
-      if (c.toLowerCase().trim() == lowerTarget) {
-        Global.logger.d('ASR MATCH [NBEST_EXACT]: "$c" == "$lowerTarget"');
-        return AsrCandidateResult(targetWord, 100);
-      }
-    }
+    // 记录所有候选选手中综合评分最高的那个
+    String best = candidates.first;
+    int bestScore = -1;
 
-    // 先用现有算法选一遍作为基准 (拼写最佳)
-    final baseline = selectBestCandidate(candidates, targetWord);
-    int bestScore = await calculateOverallSimilarity(baseline, lowerTarget);
-    String best = baseline;
-
-    // 遍历所有候选，寻找综合分最高的
     for (final c in candidates) {
       final s = await calculateOverallSimilarity(c, lowerTarget);
       if (s > bestScore) {
@@ -223,13 +158,9 @@ class AsrUtil {
       }
     }
 
-    // 判定：综合相似度 ≥ 阈值则视为目标词
-    if (bestScore >= Constants.phonemeMatchThreshold) {
-      Global.logger.d('ASR MATCH [PHONETIC/HYBRID]: Best candidate "$best" matches target "$lowerTarget" (score: $bestScore >= ${Constants.phonemeMatchThreshold})');
-      return AsrCandidateResult(targetWord, bestScore);
-    }
-
-    Global.logger.d('ASR MATCH [PHONETIC/HYBRID]: FAILED. Best candidate "$best" score ($bestScore) < threshold (${Constants.phonemeMatchThreshold})');
+    // 注意：不再返回 targetWord，而是返回实际的最佳候选文本
+    // 这样 UI 就能显示“实际听到”的最接近词，而不是强行修正
+    Global.logger.d('ASR SELECTION: Best candidate is "$best" with score $bestScore (target: "$lowerTarget")');
     return AsrCandidateResult(best, bestScore);
   }
 
@@ -248,13 +179,6 @@ class AsrUtil {
 
     String lowerTarget = targetWord.toLowerCase().trim();
 
-    // 首先检查完全匹配
-    for (String candidate in candidates) {
-      if (candidate.toLowerCase().trim() == lowerTarget) {
-        return targetWord;
-      }
-    }
-
     // 使用智能算法选择最佳候选
     String bestCandidate = candidates.first;
     int bestScore = _calculateSimilarityScore(candidates.first, lowerTarget);
@@ -267,11 +191,7 @@ class AsrUtil {
       }
     }
 
-    // 如果最佳候选的拼写相似度足够高，返回目标单词
-    if (bestScore >= Constants.spellingMatchThreshold) {
-      return targetWord;
-    }
-
+    // 不再返回 targetWord，直接返回候选原文
     return bestCandidate;
   }
 
@@ -343,54 +263,6 @@ class AsrUtil {
     return (maxOverlap * 100 / minLength).clamp(0, 100).round();
   }
 
-  /// 检查两个单词是否有显著的重叠部分
-static bool _hasSignificantOverlap(String word1, String word2) {
-  int minLength = [word1.length, word2.length].reduce((a, b) => a < b ? a : b);
-  int maxLength = [word1.length, word2.length].reduce((a, b) => a > b ? a : b);
-  if (minLength < 3) return false; // 太短的单词不检查重叠
-
-  // 如果是短语，要求更严格的重叠比例 (80%)，单个单词要求 60%
-  bool isPhrase = word1.contains(' ') || word2.contains(' ');
-  double ratio = isPhrase ? 0.8 : 0.6;
-  
-  // 长度差异过大时不判定为重叠
-  if (minLength < maxLength * ratio) return false;
-
-  // 动态计算需要匹配的重叠字符数
-  int overlapLength = (maxLength * ratio).floor();
-  if (overlapLength < 3) overlapLength = 3;
-  if (minLength < overlapLength) return false;
-
-  // 检查前缀重叠
-  for (int i = overlapLength; i <= minLength; i++) {
-    String prefix1 = word1.substring(0, i);
-    String prefix2 = word2.substring(0, i);
-    if (prefix1 == prefix2) {
-      return true;
-    }
-  }
-
-  // 检查后缀重叠
-  for (int i = overlapLength; i <= minLength; i++) {
-    String suffix1 = word1.substring(word1.length - i);
-    String suffix2 = word2.substring(word2.length - i);
-    if (suffix1 == suffix2) {
-      return true;
-    }
-  }
-
-  // 检查中间部分重叠（对于复合词很有用）
-  if (minLength >= overlapLength) {
-    for (int i = 0; i <= word1.length - overlapLength; i++) {
-      String substring1 = word1.substring(i, i + overlapLength);
-      if (word2.contains(substring1)) {
-        return true;
-      }
-    }
-  }
-
-  return false;
-}
 
   /// 计算两个字符串的编辑距离（Levenshtein距离）
   // 移除本地实现，统一使用 EditDistance
