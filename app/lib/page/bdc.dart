@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:core';
 import 'dart:math';
+import 'dart:ui' show ImageFilter;
 
 import 'package:day_night_switcher/day_night_switcher.dart';
 import 'package:drift/drift.dart' as drift;
@@ -40,6 +41,7 @@ import '../util/utils.dart';
 import '../db/user_extensions.dart';
 import '../util/error_handler.dart';
 import '../theme/app_theme.dart';
+import '../util/learning_service.dart';
 
 class BdcPageArgs {
   /// 从哪个页面进入本页面
@@ -648,6 +650,10 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   /// 学习时长计时器
   Timer? _learningTimer;
   int _accumulatedSeconds = 0;
+
+  /// 进度条连击计数，用于触发调试浮窗
+  int _progressBarTapCount = 0;
+  Timer? _progressBarTapTimer;
 
   /// 当前单词学习的开始时间
   DateTime? _wordStartTime;
@@ -2284,15 +2290,38 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // 顶部学习进度条
-        Container(
-          margin: EdgeInsets.fromLTRB(0, MediaQuery.of(context).padding.top + 8, 0, 0),
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+        GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () {
+            _progressBarTapCount++;
+            _progressBarTapTimer?.cancel();
+            
+            // 添加震动反馈
+            HapticFeedback.lightImpact();
+            
+            if (_progressBarTapCount >= 5) {
+              _progressBarTapCount = 0;
+              _showDebugOverlay();
+            } else {
+              // 提示还差几次
+              _progressBarTapTimer = Timer(const Duration(milliseconds: 3000), () {
+                _progressBarTapCount = 0;
+              });
+            }
+          },
           child: Container(
-            height: 6,
-            color: context.watch<DarkMode>().isDarkMode ? const Color(0xFF2C2C2C) : const Color(0xFFF0F2F5),
-            child: _currentGetWordResult?.progress != null
-                ? LayoutBuilder(
-                    builder: (context, constraints) {
+            margin: EdgeInsets.fromLTRB(0, MediaQuery.of(context).padding.top + 8, 0, 0),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20), // 增加到 20 像素，垂直总高度约 46px
+            child: Container(
+              height: 6,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(3),
+                color: context.watch<DarkMode>().isDarkMode ? const Color(0xFF2C2C2C) : const Color(0xFFF0F2F5),
+              ),
+              child: _currentGetWordResult?.progress != null
+                  ? LayoutBuilder(
+                      builder: (context, constraints) {
                       final maxValue = _currentGetWordResult!.progress![1].toDouble();
                       final width = constraints.maxWidth;
 
@@ -2358,7 +2387,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                               );
                             }),
                           ),
-                          // 进度条层
                           FAProgressBar(
                             borderRadius: const BorderRadius.all(Radius.circular(3)),
                             currentValue: currentProgress,
@@ -2394,6 +2422,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                     },
                   )
                 : const SizedBox.shrink(),
+            ),
           ),
         ),
 
@@ -3923,6 +3952,286 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     result = result.replaceAll(RegExp(r'[,，]\s*[,，]'), '，');
 
     return result;
+  }
+
+  /// 显示调试浮窗，查看今日取词状态
+  void _showDebugOverlay() async {
+    final user = Global.getLoggedInUser();
+    if (user == null) return;
+
+    // 获取今日所有学习单词及其状态
+    final words = await LearningService.getTodayLearningWordsFromDb(user.id);
+    final activeSteps = activeUserStudySteps;
+
+    // 获取单词的拼写
+    final Map<String, String> spellings = {};
+    for (var w in words) {
+      if (!spellings.containsKey(w.wordId)) {
+        final wordData = await MyDatabase.instance.wordsDao.getWordById(w.wordId);
+        spellings[w.wordId] = wordData?.spell ?? w.wordId;
+      }
+    }
+
+    if (!mounted) return;
+
+    // 分批次并按照学习序号排序
+    words.sort((a, b) {
+      if (a.batchId != b.batchId) return (a.batchId ?? 0).compareTo(b.batchId ?? 0);
+      return a.learningOrder.compareTo(b.learningOrder);
+    });
+
+    final Map<int, List<dynamic>> batches = {};
+    for (var w in words) {
+      final bid = w.batchId ?? 0;
+      batches.putIfAbsent(bid, () => []).add(w);
+    }
+
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: "Debug",
+      transitionDuration: const Duration(milliseconds: 300),
+      pageBuilder: (context, anim1, anim2) {
+        return const SizedBox.shrink();
+      },
+      transitionBuilder: (context, anim1, anim2, child) {
+        final bool isDark = context.watch<DarkMode>().isDarkMode;
+        final Color textColor = isDark ? Colors.white : Colors.black87;
+        final Color subTextColor = isDark ? Colors.white70 : Colors.black54;
+
+        Widget buildLegendItem(bool done, bool mastered, String label) {
+          return Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 12,
+                height: 12,
+                decoration: BoxDecoration(
+                  color: done ? Colors.green : (isDark ? Colors.white24 : Colors.grey.withValues(alpha: 0.3)),
+                  borderRadius: mastered ? BorderRadius.circular(2) : BorderRadius.circular(6),
+                ),
+              ),
+              const SizedBox(width: 4),
+              Text(label, style: TextStyle(fontSize: 10, color: subTextColor)),
+            ],
+          );
+        }
+
+        return BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 5 * anim1.value, sigmaY: 5 * anim1.value),
+          child: FadeTransition(
+            opacity: anim1,
+            child: ScaleTransition(
+              scale: CurvedAnimation(parent: anim1, curve: Curves.easeOutBack),
+              child: AlertDialog(
+                backgroundColor: isDark
+                    ? const Color(0xFF1E1E1E).withValues(alpha: 0.85)
+                    : Colors.white.withValues(alpha: 0.9),
+                elevation: 24,
+                shadowColor: Colors.black54,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24),
+                  side: BorderSide(
+                    color: isDark ? Colors.white12 : Colors.black12,
+                    width: 0.5,
+                  ),
+                ),
+                titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
+                title: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.blueAccent.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(Icons.analytics_outlined, color: Colors.blueAccent, size: 24),
+                        ),
+                        const SizedBox(width: 12),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '今日取词流水线',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: textColor,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                            Text(
+                              '实时调度状态可视化',
+                              style: TextStyle(fontSize: 12, color: subTextColor, fontWeight: FontWeight.normal),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        buildLegendItem(true, false, '学过'),
+                        const SizedBox(width: 16),
+                        buildLegendItem(false, false, '未学'),
+                        const SizedBox(width: 16),
+                        buildLegendItem(true, true, '已掌握'),
+                      ],
+                    ),
+                    const Divider(height: 24, thickness: 0.5),
+                  ],
+                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                content: SizedBox(
+                  width: 400,
+                  height: 520,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: words.isEmpty
+                        ? Center(
+                            child: Text(
+                              '今日还没有学习单词',
+                              style: TextStyle(color: subTextColor),
+                            ),
+                          )
+                        : ListView.builder(
+                            itemCount: batches.keys.length,
+                            physics: const BouncingScrollPhysics(),
+                            itemBuilder: (ctx, index) {
+                              int batchId = batches.keys.elementAt(index);
+                              final batchWords = batches[batchId]!;
+
+                              return Container(
+                                margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.02),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: isDark ? Colors.white12 : Colors.black12),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Batch $batchId',
+                                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: textColor),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    SingleChildScrollView(
+                                      scrollDirection: Axis.horizontal,
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          // Word Headers
+                                          Row(
+                                            children: [
+                                              const SizedBox(width: 60), // Space for step names
+                                              ...batchWords.map((w) {
+                                                final isCurrentWord = _currentGetWordResult?.learningWord?.word.id == w.wordId;
+                                                return Tooltip(
+                                                  message: spellings[w.wordId] ?? w.wordId,
+                                                  child: Container(
+                                                    width: 30,
+                                                    alignment: Alignment.bottomCenter,
+                                                    height: 70, // Room for rotated text
+                                                    child: RotatedBox(
+                                                      quarterTurns: 3, // text going up
+                                                      child: Text(
+                                                        spellings[w.wordId] ?? w.wordId,
+                                                        style: TextStyle(
+                                                          fontSize: 11,
+                                                          color: isCurrentWord ? Colors.blueAccent : textColor,
+                                                          fontWeight: isCurrentWord ? FontWeight.bold : FontWeight.normal,
+                                                        ),
+                                                        maxLines: 1,
+                                                        overflow: TextOverflow.ellipsis,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                );
+                                              }),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 8),
+                                          // Data Rows (Steps)
+                                          ...List.generate(activeSteps.length, (sIndex) {
+                                            final stepInfo = activeSteps[sIndex];
+                                            return Padding(
+                                              padding: const EdgeInsets.symmetric(vertical: 4),
+                                              child: Row(
+                                                mainAxisAlignment: MainAxisAlignment.start,
+                                                children: [
+                                                  SizedBox(
+                                                    width: 60,
+                                                    child: Text(
+                                                      '${sIndex + 1}: ${stepInfo.studyStep}',
+                                                      style: TextStyle(fontSize: 10, color: subTextColor),
+                                                      maxLines: 1,
+                                                      overflow: TextOverflow.ellipsis,
+                                                    ),
+                                                  ),
+                                                  ...batchWords.map((w) {
+                                                    // Is the user learning this exact word in this exact step right now?
+                                                    final isCurrentStep = _currentGetWordResult?.learningWord?.word.id == w.wordId && w.todayLearnedTimes == sIndex;
+                                                    // From user's perspective, if I've passed this step, or I am currently on it, it's green.
+                                                    final isStepCompleted = w.todayLearnedTimes > sIndex || isCurrentStep;
+
+                                                    final isWordFinished = w.todayLearnedTimes >= activeSteps.length;
+
+                                                    return Container(
+                                                      width: 30,
+                                                      alignment: Alignment.center,
+                                                      child: Container(
+                                                        width: 14,
+                                                        height: 14,
+                                                        decoration: BoxDecoration(
+                                                          color: isStepCompleted ? Colors.green : (isDark ? Colors.white24 : Colors.grey.withValues(alpha: 0.3)),
+                                                          borderRadius: isWordFinished ? BorderRadius.circular(3) : BorderRadius.circular(7), // 矩形(圆角3)/圆形(圆角7)
+                                                          border: isCurrentStep ? Border.all(color: Colors.blueAccent, width: 2) : null,
+                                                        ),
+                                                      ),
+                                                    );
+                                                  }),
+                                                ],
+                                              ),
+                                            );
+                                          }),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                  ),
+                ),
+                actions: [
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blueAccent,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      child: const Text('我知道了', style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 
   @override
