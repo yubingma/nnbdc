@@ -34,7 +34,6 @@ import 'package:nnbdc/util/user_helper.dart';
 import 'package:nnbdc/util/utils.dart';
 import 'package:nnbdc/widget/dict_download_dialog.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:convert';
 
 import "package:percent_indicator/percent_indicator.dart";
 import 'package:provider/provider.dart';
@@ -105,21 +104,25 @@ class _MePageState extends State<MePage> {
     if (source != null) {
       final XFile? image = await picker.pickImage(
         source: source,
-        maxWidth: 512,
-        maxHeight: 512,
-        imageQuality: 80,
+        maxWidth: 300,
+        maxHeight: 300,
+        imageQuality: 50,
       );
 
       if (image != null) {
         try {
           final bytes = await image.readAsBytes();
-          final base64String = base64Encode(bytes);
+          Global.logger.d('🖼️ 准备上传头像, 原始文件名: ${image.name}, 压缩后大小: ${(bytes.length / 1024).toStringAsFixed(2)} KB');
           final userId = loggedInUser?.id;
 
           if (userId != null) {
+            if (bytes.length > 1024 * 1024) {
+              ToastUtil.error('图片文件过大，请选择较小的图片');
+              return;
+            }
             ToastUtil.info('正在上传头像...');
-            // 使用专用的 uploadImg 接口上传图片
-            final result = await Api.client.uploadImg(base64String, userId);
+            // 使用专用的 uploadImg 接口上传图片 (MultiPart)
+            final result = await Api.client.uploadImg(bytes, userId, image.name);
             
             if (result.success && result.data != null) {
               final newAvatarFilename = result.data!;

@@ -412,8 +412,9 @@ abstract class RestClient {
       @Field("wordId") String wordId, @Field("imgBase64String") String imgBase64String, @Field("userId") String userId);
 
   @POST("/uploadImg.do")
-  @FormUrlEncoded()
-  Future<Result<String>> uploadImg(@Field("imgBase64String") String imgBase64String, @Field("userId") String userId);
+  @http.MultiPart()
+  Future<Result<String>> uploadImg(
+      @http.Part(name: "file") List<int> file, @http.Part(name: "userId") String userId, @http.Part(name: "fileName") String fileName);
 
   @POST("/saveErrorReport.do")
   @FormUrlEncoded()

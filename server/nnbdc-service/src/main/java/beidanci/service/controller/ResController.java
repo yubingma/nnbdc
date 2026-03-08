@@ -40,12 +40,9 @@ import beidanci.service.po.User;
 import beidanci.service.util.MyImage;
 import beidanci.service.util.SysParamUtil;
 import beidanci.util.Constants;
-import javax.xml.bind.DatatypeConverter;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
-import java.io.BufferedOutputStream;
-import java.io.FileOutputStream;
-import java.io.OutputStream;
 
 @RestController
 public class ResController {
@@ -318,24 +315,27 @@ public class ResController {
     }
 
     @PostMapping(value = "/uploadImg.do")
-    public Result<String> uploadImg(String imgBase64String, String userId) throws Exception {
+    public Result<String> uploadImg(@RequestParam("file") MultipartFile file, @RequestParam("userId") String userId) throws Exception {
+        logger.info("收到图片上传请求, userId: {}, 文件名: {}, 大小: {}", userId, file.getOriginalFilename(), file.getSize());
+
+        if (file.getSize() > 1024 * 1024) {
+            return Result.fail("图片大小不能超过 1MB");
+        }
+
         User user = userBo.findById(userId);
         if (user == null) {
             return Result.fail("游客不能上传图片");
         }
 
-        // 图片文件上传
-        String fileName;
-        File targetFile;
-
         // 生成唯一文件名
         String baseName = "u_" + userId + "_" + System.currentTimeMillis();
         File tempTargetFile = new File(sysParamUtil.getImageBaseDir() + "/tmp/tmp_" + baseName);
-
-        byte[] data = DatatypeConverter.parseBase64Binary(imgBase64String);
-        try (OutputStream outputStream = new BufferedOutputStream(new FileOutputStream(tempTargetFile))) {
-            outputStream.write(data);
+        if (!tempTargetFile.getParentFile().exists()) {
+            tempTargetFile.getParentFile().mkdirs();
         }
+
+        file.transferTo(tempTargetFile);
+
         // 探测真实格式并决定目标文件名
         String fmt = null;
         try {
@@ -345,8 +345,8 @@ public class ResController {
             }
         } catch (IOException ignore) { }
         String ext = MyImage.normalizeExtByFormat(fmt);
-        fileName = baseName + "." + ext;
-        targetFile = new File(sysParamUtil.getImageBaseDir() + "/word/" + fileName);
+        String fileName = baseName + "." + ext;
+        File targetFile = new File(sysParamUtil.getImageBaseDir() + "/word/" + fileName);
 
         // 通过图像缩放生成大图
         int targetWidth = 200;

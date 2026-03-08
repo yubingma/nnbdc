@@ -8,7 +8,9 @@ spring:
     auto: true
   servlet:
     multipart:
-      enabled: false # 禁用spring boot对 multipart 预处理，否则会导致老的上传代码不能工作
+      enabled: true # 启用 multipart 支持以使用 MultipartFile
+      max-file-size: 1MB
+      max-request-size: 1MB
   http:
     encoding:
       force: true
@@ -41,7 +43,8 @@ server:
   port: ${port:5200}
   tomcat:
     maxThreads: 20 # tomcat可并发处理的请求数
-    connection-timeout: 5000 # 连接超时时间 
+    connection-timeout: 30000 # 连接超时时间增加到30秒
+    max-http-post-size: 20MB # 增加POST请求体限制，处理较大的Base64图片
   compression:
     enabled: false
     mime-types: application/json, application/xml, text/html, text/plain
