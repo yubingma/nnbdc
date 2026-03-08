@@ -542,10 +542,12 @@ class StudyBo {
           return effA.compareTo(effB);
         }
         // 次数相同时，练习最后学习时间较早的单词
-        if (a.lastLearningDate == null && b.lastLearningDate == null) return 0;
+        if (a.lastLearningDate == null && b.lastLearningDate == null) return a.learningOrder.compareTo(b.learningOrder);
         if (a.lastLearningDate == null) return -1;
         if (b.lastLearningDate == null) return 1;
-        return a.lastLearningDate!.compareTo(b.lastLearningDate!);
+        final int dateComp = a.lastLearningDate!.compareTo(b.lastLearningDate!);
+        if (dateComp != 0) return dateComp;
+        return a.learningOrder.compareTo(b.learningOrder);
       });
 
       final currentWordForPos = sortedBatchWords.first;
@@ -641,7 +643,9 @@ class StudyBo {
         if (a.lastLearningDate == null && b.lastLearningDate == null) return a.learningOrder.compareTo(b.learningOrder);
         if (a.lastLearningDate == null) return -1;
         if (b.lastLearningDate == null) return 1;
-        return a.lastLearningDate!.compareTo(b.lastLearningDate!);
+        final int dateComp = a.lastLearningDate!.compareTo(b.lastLearningDate!);
+        if (dateComp != 0) return dateComp;
+        return a.learningOrder.compareTo(b.learningOrder);
       });
 
       final nextWordForPos = nextBatchWords.first;
