@@ -1460,7 +1460,7 @@ endlocal
                         radius: 60.0,
                         lineWidth: 5.0,
                         percent: downloading
-                            ? (downloadedBytes ?? 0) / (totalBytes ?? 1024)
+                            ? ((downloadedBytes ?? 0) / (totalBytes != null && totalBytes! > 0 ? totalBytes! : 1024)).clamp(0.0, 1.0)
                             : installing
                                 ? 1.0
                                 : 1.0,

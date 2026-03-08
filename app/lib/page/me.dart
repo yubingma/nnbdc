@@ -34,6 +34,7 @@ import 'package:nnbdc/util/user_helper.dart';
 import 'package:nnbdc/util/utils.dart';
 import 'package:nnbdc/widget/dict_download_dialog.dart';
 import 'package:image_picker/image_picker.dart';
+import 'dart:ui' as ui;
 
 import "package:percent_indicator/percent_indicator.dart";
 import 'package:provider/provider.dart';
@@ -102,17 +103,54 @@ class _MePageState extends State<MePage> {
     );
 
     if (source != null) {
-      final XFile? image = await picker.pickImage(
+      final XFile? pickedFile = await picker.pickImage(
         source: source,
-        maxWidth: 300,
-        maxHeight: 300,
-        imageQuality: 50,
       );
 
-      if (image != null) {
+      if (pickedFile != null) {
         try {
-          final bytes = await image.readAsBytes();
-          Global.logger.d('🖼️ 准备上传头像, 原始文件名: ${image.name}, 压缩后大小: ${(bytes.length / 1024).toStringAsFixed(2)} KB');
+          Uint8List bytes = await pickedFile.readAsBytes();
+          
+          // 如果文件较大或者为了节省带宽，手动进行二次压缩和缩放
+          // 目标：300x300, 质量 70%, 强制 JPEG
+          try {
+            final ui.Codec codec = await ui.instantiateImageCodec(bytes);
+            final ui.FrameInfo fi = await codec.getNextFrame();
+            final ui.Image image = fi.image;
+            
+            // 计算等比例缩放后的尺寸
+            double targetWidth = 300;
+            double targetHeight = 300;
+            double ratio = image.width / image.height;
+            if (image.width > image.height) {
+              targetHeight = targetWidth / ratio;
+            } else {
+              targetWidth = targetHeight * ratio;
+            }
+
+            final ui.PictureRecorder recorder = ui.PictureRecorder();
+            final ui.Canvas canvas = ui.Canvas(recorder);
+            final ui.Paint paint = ui.Paint()..filterQuality = ui.FilterQuality.high;
+            
+            canvas.drawImageRect(
+              image,
+              ui.Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()),
+              ui.Rect.fromLTWH(0, 0, targetWidth, targetHeight),
+              paint,
+            );
+            
+            final ui.Picture picture = recorder.endRecording();
+            final ui.Image resizedImage = await picture.toImage(targetWidth.toInt(), targetHeight.toInt());
+            final ByteData? byteData = await resizedImage.toByteData(format: ui.ImageByteFormat.png); 
+            
+            if (byteData != null) {
+              bytes = byteData.buffer.asUint8List();
+            }
+          } catch (e) {
+            Global.logger.w('手动压缩失败，使用原始文件: $e');
+          }
+
+          Global.logger.d('🖼️ 准备上传头像, 原始文件名: ${pickedFile.name}, 压缩后大小: ${(bytes.length / 1024).toStringAsFixed(2)} KB');
           final userId = loggedInUser?.id;
 
           if (userId != null) {
@@ -122,7 +160,7 @@ class _MePageState extends State<MePage> {
             }
             ToastUtil.info('正在上传头像...');
             // 使用专用的 uploadImg 接口上传图片 (MultiPart)
-            final result = await Api.client.uploadImg(bytes, userId, image.name);
+            final result = await Api.client.uploadImg(bytes, userId, pickedFile.name);
             
             if (result.success && result.data != null) {
               final newAvatarFilename = result.data!;
@@ -2443,7 +2481,7 @@ class _DictCardState extends State<DictCard> {
   Widget build(BuildContext context) {
     final totalWords = widget.dictInfo.name == '生词本' ? (actualWordCount ?? 0) : widget.dictInfo.wordCount;
     final learnedWords = masteredCount;
-    final progress = totalWords > 0 ? learnedWords / totalWords : 0.0;
+    final progress = (totalWords > 0 ? learnedWords / totalWords : 0.0).clamp(0.0, 1.0);
     final progressPercent = (progress * 100).toInt();
 
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
