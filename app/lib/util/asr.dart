@@ -339,8 +339,12 @@ class Asr {
 
         _eventSubscription = stream.listen(
           (event) {
+            final receiveTime = DateTime.now();
+            Global.logger.d('ASR: [Event] Received result from platform at ${receiveTime.toIso8601String()}');
             try {
               savedListener(event);
+              final processTime = DateTime.now();
+              Global.logger.d('ASR: [Event] Listener callback finished at ${processTime.toIso8601String()} (duration: ${processTime.difference(receiveTime).inMilliseconds}ms)');
             } catch (e, stackTrace) {
               Global.logger.e('ASR: 执行监听器回调时出错: $e', stackTrace: stackTrace);
             }
@@ -381,6 +385,12 @@ class Asr {
       return;
     }
 
+    // 如果正在停止中，需要等待停止后再尝试启动，或者直接忽略此次请求
+    if (state == AsrState.stopping) {
+      Global.logger.w('ASR: ASR 正在停止中，忽略 startAsr 请求 (instance: $hashCode)');
+      return;
+    }
+
     if (state == AsrState.started) {
       Global.logger.w('ASR: ASR 已经处于 started 状态 (instance: $hashCode)');
       return;
@@ -399,10 +409,12 @@ class Asr {
           await asrMethodChannel.invokeMethod('startMicrophone').timeout(const Duration(seconds: 5));
 
           Global.logger.i('ASR: Starting ASR... (instance: $hashCode)');
+          final startTime = DateTime.now();
           await asrMethodChannel.invokeMethod('startAsr').timeout(const Duration(seconds: 5));
+          final endTime = DateTime.now();
 
           setState(AsrState.started);
-          Global.logger.i('ASR: ASR started successfully (instance: $hashCode)');
+          Global.logger.i('ASR: ASR started successfully (instance: $hashCode, duration: ${endTime.difference(startTime).inMilliseconds}ms)');
         } on PlatformException catch (e) {
           Global.logger.e('ASR: Exception during start: ${e.message} (instance: $hashCode)');
           if (e.code == 'PERMISSION_DENIED') {
@@ -429,10 +441,12 @@ class Asr {
     }
 
     setState(AsrState.stopping);
+    final startTime = DateTime.now();
     try {
       await asrMethodChannel.invokeMethod('stopAsr');
+      final endTime = DateTime.now();
       setState(AsrState.stopped);
-      Global.logger.i('ASR: ASR stopped successfully (instance: $hashCode)');
+      Global.logger.i('ASR: ASR stopped successfully (instance: $hashCode, duration: ${endTime.difference(startTime).inMilliseconds}ms)');
     } on PlatformException catch (e) {
       Global.logger.e('ASR: Exception during stop: ${e.message} (instance: $hashCode)');
       setState(AsrState.stopped);

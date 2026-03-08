@@ -1269,6 +1269,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         // 播放正确提示音
         final soundFuture = SoundUtil.playAssetSoundConcurrent('correct.mp3', 1.5, 0.2);
         soundFuture.whenComplete(() async {
+          // 停止ASR，避免与后续发音冲突
+          await asr.stopAsr();
           // 播放一遍单词的标准发音
           await SoundUtil.playPronounceSound2(_word!, _audioPlayer);
           getNextWord(true, fsrsRating: rating);
@@ -1481,15 +1483,25 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     final savedWordId = _word?.id;
 
     // 播音开始时停止ASR
-    asr.stopAsr();
+    await asr.stopAsr();
+    
+    // 判断是否真的有音频要播，如果什么都不播（比如中英模式），需要给 finally 知道直接启动 ASR
+    bool willPlayWord = _studyStep == StudyStep.en2Ch.json && (user.autoPlayWord! || forcePlayWord);
+    bool willPlaySentence = _studyStep == StudyStep.en2Ch.json && user.autoPlaySentence!;
+    
+    // 如果不需要播放音频，为了保证流程顺畅且不受到 await ASR.stopAsr() 的延迟影响
+    // 直接进入 finally 块的判断，快速拉起 ASR
+    if (!willPlayWord && !willPlaySentence) {
+       Global.logger.d('BDC: 由于无需播放音频，继续走到 finally 快速启动 ASR');
+    }
 
     try {
       // 在英→中模式下，播放单词发音
-      if (_studyStep == StudyStep.en2Ch.json && (user.autoPlayWord! || forcePlayWord)) {
+      if (willPlayWord) {
         await SoundUtil.playPronounceSound2(_word!, _audioPlayer);
       }
       // 在英→中模式下，播放例句发音
-      if (_studyStep == StudyStep.en2Ch.json && user.autoPlaySentence!) {
+      if (willPlaySentence) {
         await playFirstSentence();
       }
     } finally {

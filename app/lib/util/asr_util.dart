@@ -225,10 +225,11 @@ class AsrUtil {
 
     // 判定：综合相似度 ≥ 阈值则视为目标词
     if (bestScore >= Constants.phonemeMatchThreshold) {
-      Global.logger.d('ASR MATCH [PHONETIC/HYBRID]: "$best" -> "$lowerTarget" (score: $bestScore)');
+      Global.logger.d('ASR MATCH [PHONETIC/HYBRID]: Best candidate "$best" matches target "$lowerTarget" (score: $bestScore >= ${Constants.phonemeMatchThreshold})');
       return AsrCandidateResult(targetWord, bestScore);
     }
 
+    Global.logger.d('ASR MATCH [PHONETIC/HYBRID]: FAILED. Best candidate "$best" score ($bestScore) < threshold (${Constants.phonemeMatchThreshold})');
     return AsrCandidateResult(best, bestScore);
   }
 
@@ -299,7 +300,9 @@ class AsrUtil {
     // 综合拼写相似度（使用配置的权重）
     int finalScore = (editSimilarity * Constants.spellingEditDistanceWeight + overlapSimilarity * Constants.spellingOverlapWeight).round();
 
-    return finalScore.clamp(0, 100);
+    final clampedScore = finalScore.clamp(0, 100);
+    Global.logger.d('ASR: Calculated spelling similarity for "$lowerCandidate" vs "$lowerTarget": $clampedScore (edit_sim: $editSimilarity, overlap_sim: $overlapSimilarity)');
+    return clampedScore;
   }
 
   /// 计算重叠相似度
