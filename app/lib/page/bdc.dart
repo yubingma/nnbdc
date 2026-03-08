@@ -1482,9 +1482,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     final savedStudyStep = _studyStep;
     final savedWordId = _word?.id;
 
-    // 播音开始时停止ASR
-    await asr.stopAsr();
-    
     // 判断是否真的有音频要播，如果什么都不播（比如中英模式），需要给 finally 知道直接启动 ASR
     bool willPlayWord = _studyStep == StudyStep.en2Ch.json && (user.autoPlayWord! || forcePlayWord);
     bool willPlaySentence = _studyStep == StudyStep.en2Ch.json && user.autoPlaySentence!;
@@ -1493,6 +1490,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     // 直接进入 finally 块的判断，快速拉起 ASR
     if (!willPlayWord && !willPlaySentence) {
        Global.logger.d('BDC: 由于无需播放音频，继续走到 finally 快速启动 ASR');
+    } else {
+       // 需要播放的话，确保停止 ASR
+       await asr.stopAsr();
     }
 
     try {
