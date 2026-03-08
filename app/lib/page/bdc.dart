@@ -4201,85 +4201,88 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                                     const SizedBox(height: 12),
                                     SingleChildScrollView(
                                       scrollDirection: Axis.horizontal,
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          // Word Headers
-                                          Row(
-                                            children: [
-                                              const SizedBox(width: 60), // Space for step names
-                                              ...batchWords.map((w) {
-                                                final isCurrentWord = _currentGetWordResult?.learningWord?.word.id == w.wordId;
-                                                return Tooltip(
-                                                  message: spellings[w.wordId] ?? w.wordId,
-                                                  child: Container(
-                                                    width: 30,
-                                                    alignment: Alignment.bottomCenter,
-                                                    height: 70, // Room for rotated text
-                                                    child: RotatedBox(
-                                                      quarterTurns: 3, // text going up
-                                                      child: Text(
-                                                        spellings[w.wordId] ?? w.wordId,
-                                                        style: TextStyle(
-                                                          fontSize: 11,
-                                                          color: isCurrentWord ? Colors.blueAccent : textColor,
-                                                          fontWeight: isCurrentWord ? FontWeight.bold : FontWeight.normal,
+                                      child: Padding(
+                                        padding: const EdgeInsets.only(right: 16.0), // 防止右侧边缘被截断
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            // Word Headers
+                                            Row(
+                                              children: [
+                                                const SizedBox(width: 60), // Space for step names
+                                                ...batchWords.map((w) {
+                                                  final isCurrentWord = _currentGetWordResult?.learningWord?.word.id == w.wordId;
+                                                  return Tooltip(
+                                                    message: spellings[w.wordId] ?? w.wordId,
+                                                    child: Container(
+                                                      width: 30,
+                                                      alignment: Alignment.bottomCenter,
+                                                      height: 70, // Room for rotated text
+                                                      child: RotatedBox(
+                                                        quarterTurns: 3, // text going up
+                                                        child: Text(
+                                                          spellings[w.wordId] ?? w.wordId,
+                                                          style: TextStyle(
+                                                            fontSize: 11,
+                                                            color: isCurrentWord ? Colors.blueAccent : textColor,
+                                                            fontWeight: isCurrentWord ? FontWeight.bold : FontWeight.normal,
+                                                          ),
+                                                          maxLines: 1,
+                                                          overflow: TextOverflow.ellipsis,
                                                         ),
+                                                      ),
+                                                    ),
+                                                  );
+                                                }),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 8),
+                                            // Data Rows (Steps)
+                                            ...List.generate(activeSteps.length, (sIndex) {
+                                              final stepInfo = activeSteps[sIndex];
+                                              return Padding(
+                                                padding: const EdgeInsets.symmetric(vertical: 4),
+                                                child: Row(
+                                                  mainAxisAlignment: MainAxisAlignment.start,
+                                                  children: [
+                                                    SizedBox(
+                                                      width: 60,
+                                                      child: Text(
+                                                        '${sIndex + 1}: ${stepInfo.studyStep}',
+                                                        style: TextStyle(fontSize: 10, color: subTextColor),
                                                         maxLines: 1,
                                                         overflow: TextOverflow.ellipsis,
                                                       ),
                                                     ),
-                                                  ),
-                                                );
-                                              }),
-                                            ],
-                                          ),
-                                          const SizedBox(height: 8),
-                                          // Data Rows (Steps)
-                                          ...List.generate(activeSteps.length, (sIndex) {
-                                            final stepInfo = activeSteps[sIndex];
-                                            return Padding(
-                                              padding: const EdgeInsets.symmetric(vertical: 4),
-                                              child: Row(
-                                                mainAxisAlignment: MainAxisAlignment.start,
-                                                children: [
-                                                  SizedBox(
-                                                    width: 60,
-                                                    child: Text(
-                                                      '${sIndex + 1}: ${stepInfo.studyStep}',
-                                                      style: TextStyle(fontSize: 10, color: subTextColor),
-                                                      maxLines: 1,
-                                                      overflow: TextOverflow.ellipsis,
-                                                    ),
-                                                  ),
-                                                  ...batchWords.map((w) {
-                                                    // Is the user learning this exact word in this exact step right now?
-                                                    final isCurrentStep = _currentGetWordResult?.learningWord?.word.id == w.wordId && w.todayLearnedTimes == sIndex;
-                                                    final isNextStep = nextWordId == w.wordId && nextStepIndex == sIndex;
-                                                    // From user's perspective, if I've passed this step, or I am currently on it, it's green.
-                                                    final isStepCompleted = w.todayLearnedTimes > sIndex || isCurrentStep;
+                                                    ...batchWords.map((w) {
+                                                      // Is the user learning this exact word in this exact step right now?
+                                                      final isCurrentStep = _currentGetWordResult?.learningWord?.word.id == w.wordId && w.todayLearnedTimes == sIndex;
+                                                      final isNextStep = nextWordId == w.wordId && nextStepIndex == sIndex;
+                                                      // From user's perspective, if I've passed this step, or I am currently on it, it's green.
+                                                      final isStepCompleted = w.todayLearnedTimes > sIndex || isCurrentStep;
 
-                                                    final isWordFinished = w.todayLearnedTimes >= activeSteps.length;
+                                                      final isWordFinished = w.todayLearnedTimes >= activeSteps.length;
 
-                                                    return Container(
-                                                      width: 30,
-                                                      alignment: Alignment.center,
-                                                      child: Container(
-                                                        width: 14,
-                                                        height: 14,
-                                                        decoration: BoxDecoration(
-                                                          color: isStepCompleted ? Colors.green : (isDark ? Colors.white24 : Colors.grey.withValues(alpha: 0.3)),
-                                                          borderRadius: isWordFinished ? BorderRadius.circular(3) : BorderRadius.circular(7), // 矩形(圆角3)/圆形(圆角7)
-                                                          border: isCurrentStep ? Border.all(color: Colors.blueAccent, width: 2) : (isNextStep ? Border.all(color: Colors.orange, width: 2) : null),
+                                                      return Container(
+                                                        width: 30,
+                                                        alignment: Alignment.center,
+                                                        child: Container(
+                                                          width: 14,
+                                                          height: 14,
+                                                          decoration: BoxDecoration(
+                                                            color: isStepCompleted ? Colors.green : (isDark ? Colors.white24 : Colors.grey.withValues(alpha: 0.3)),
+                                                            borderRadius: isWordFinished ? BorderRadius.circular(3) : BorderRadius.circular(7), // 矩形(圆角3)/圆形(圆角7)
+                                                            border: isCurrentStep ? Border.all(color: Colors.blueAccent, width: 2) : (isNextStep ? Border.all(color: Colors.orange, width: 2) : null),
+                                                          ),
                                                         ),
-                                                      ),
-                                                    );
-                                                  }),
-                                                ],
-                                              ),
-                                            );
-                                          }),
-                                        ],
+                                                      );
+                                                    }),
+                                                  ],
+                                                ),
+                                              );
+                                            }),
+                                          ],
+                                        ),
                                       ),
                                     ),
                                   ],
