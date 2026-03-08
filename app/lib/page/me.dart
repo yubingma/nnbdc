@@ -2580,60 +2580,65 @@ class _DictCardState extends State<DictCard> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _buildDictCheckbox(
-                label: '优先取词',
-                value: currentLearningDict.isPrivileged,
-                onChanged: (bool? value) async {
-                  if (value != null) {
-                    try {
-                      final newPrivilegedStatus =
-                          await MyDatabase.instance.learningDictsDao.togglePrivileged(currentLearningDict.userId, currentLearningDict.dictId, true);
+              Expanded(
+                child: _buildDictCheckbox(
+                  label: '优先取词',
+                  value: currentLearningDict.isPrivileged,
+                  onChanged: (bool? value) async {
+                    if (value != null) {
+                      try {
+                        final newPrivilegedStatus = await MyDatabase.instance.learningDictsDao.togglePrivileged(currentLearningDict.userId, currentLearningDict.dictId, true);
 
-                      if (mounted) {
-                        setState(() {
-                          currentLearningDict = LearningDict(
-                            userId: currentLearningDict.userId,
-                            dictId: currentLearningDict.dictId,
-                            isPrivileged: newPrivilegedStatus,
-                            fetchMastered: currentLearningDict.fetchMastered,
-                            createTime: currentLearningDict.createTime,
-                            updateTime: currentLearningDict.updateTime,
-                          );
-                        });
+                        if (mounted) {
+                          setState(() {
+                            currentLearningDict = LearningDict(
+                              userId: currentLearningDict.userId,
+                              dictId: currentLearningDict.dictId,
+                              isPrivileged: newPrivilegedStatus,
+                              fetchMastered: currentLearningDict.fetchMastered,
+                              createTime: currentLearningDict.createTime,
+                              updateTime: currentLearningDict.updateTime,
+                            );
+                          });
+                        }
+
+                        // 触发同步
+                        ThrottledDbSyncService().requestSync();
+                      } catch (error) {
+                        Global.logger.d('切换优先取词状态失败: $error');
+                        ToastUtil.error('操作失败，请重试');
                       }
-
-                      // 触发同步
-                      ThrottledDbSyncService().requestSync();
-                    } catch (error) {
-                      Global.logger.d('切换优先取词状态失败: $error');
-                      ToastUtil.error('操作失败，请重试');
                     }
-                  }
-                },
+                  },
+                ),
               ),
               const SizedBox(width: 8),
-              _buildDictActionButton(
-                icon: Icons.list_alt_rounded,
-                label: '单词列表',
-                isActive: true,
-                color: const Color(0xFF3B82F6),
-                onTap: () async {
-                  try {
-                    await toDictWordsListPage(currentLearningDict.dictId, false);
-                    widget.onDictChanged();
-                  } catch (e) {
-                    ToastUtil.error("无法打开词书");
-                  }
-                },
+              Expanded(
+                child: _buildDictActionButton(
+                  icon: Icons.list_alt_rounded,
+                  label: '单词列表',
+                  isActive: true,
+                  color: const Color(0xFF3B82F6),
+                  onTap: () async {
+                    try {
+                      await toDictWordsListPage(currentLearningDict.dictId, false);
+                      widget.onDictChanged();
+                    } catch (e) {
+                      ToastUtil.error("无法打开词书");
+                    }
+                  },
+                ),
               ),
               const SizedBox(width: 8),
-              _buildDictActionButton(
-                icon: Icons.pause_circle_outline_rounded,
-                label: '停止学习',
-                isActive: true,
-                isDestructive: false,
-                color: const Color(0xFFF59E0B),
-                onTap: () => _handleDictDataAction(),
+              Expanded(
+                child: _buildDictActionButton(
+                  icon: Icons.pause_circle_outline_rounded,
+                  label: '停止学习',
+                  isActive: true,
+                  isDestructive: false,
+                  color: const Color(0xFFF59E0B),
+                  onTap: () => _handleDictDataAction(),
+                ),
               ),
             ],
           ),
