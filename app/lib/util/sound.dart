@@ -70,6 +70,14 @@ class SoundUtil {
             },
           ),
         ));
+      } else if (PlatformUtils.isAndroid) {
+        await player.setAudioContext(AudioContext(
+          android: AudioContextAndroid(
+            usageType: AndroidUsageType.media,
+            contentType: AndroidContentType.speech,
+            audioFocus: AndroidAudioFocus.gainTransientMayDuck,
+          ),
+        ));
       }
       await player.setVolume(1.0);
 
@@ -159,6 +167,14 @@ class SoundUtil {
               AVAudioSessionOptions.mixWithOthers,
               AVAudioSessionOptions.allowBluetooth,
             },
+          ),
+        ));
+      } else if (PlatformUtils.isAndroid) {
+        await player.setAudioContext(AudioContext(
+          android: AudioContextAndroid(
+            usageType: AndroidUsageType.media,
+            contentType: AndroidContentType.speech,
+            audioFocus: AndroidAudioFocus.gainTransientMayDuck,
           ),
         ));
       }
