@@ -71,6 +71,7 @@ class WordImagesWidget extends StatefulWidget {
   final bool isEditMode;
   final Function(WordImageVo) onImageTap;
   final String? highlightedWordImg;
+  final int maxImages;
 
   const WordImagesWidget({
     super.key,
@@ -78,6 +79,7 @@ class WordImagesWidget extends StatefulWidget {
     required this.isEditMode,
     required this.onImageTap,
     this.highlightedWordImg,
+    this.maxImages = 4,
   });
 
   @override
@@ -111,7 +113,7 @@ class _WordImagesWidgetState extends State<WordImagesWidget> {
             spacing: spacing, 
             runSpacing: 12.0, // 行间距
             children: [
-              for (var image in widget.images.take(4)) // 改为一共取4张
+              for (var image in widget.images.take(widget.maxImages))
                 GestureDetector(
                   behavior: HitTestBehavior.opaque,
                   onTap: () {
@@ -3836,6 +3838,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                         images: _currentGetWordResult!.images!,
                         isEditMode: _isEditMode,
                         highlightedWordImg: _highlightedWordImg,
+                        maxImages: 2,
                         onImageTap: (image) {
                           Global.logger.d('show dialog for image: ${image.imageFile}');
                           _showImagePreviewWithContext(context, image, onDeleted: () {
