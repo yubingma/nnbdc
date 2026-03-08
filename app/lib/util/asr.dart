@@ -262,16 +262,20 @@ class Asr {
     return result ?? false;
   }
 
+  Stream<double>? _meterStreamCache;
+
   /// 获取音量计数据流，使用单例模式避免重复订阅
   /// 每次调用都会返回同一个流订阅，避免 iOS 端出现 "No active stream to cancel" 错误
   Stream<double> meterStream() {
     // 如果已经有订阅，直接返回现有的流（通过检查订阅是否存在）
     // 注意：这里无法直接返回已存在的 Stream，所以采用延迟初始化的方式
     // 调用方应该只调用一次 meterStream() 并保存订阅
-    return asrMeterChannel
+    _meterStreamCache ??= asrMeterChannel
         .receiveBroadcastStream('nnbdc/asr_meter')
         .map((event) => (event as num).toDouble())
-        .handleError((e) => Global.logger.i('ASR meter error: $e'));
+        .handleError((e) => Global.logger.i('ASR meter error: $e'))
+        .asBroadcastStream(); // 确保它作为广播流可以被多次监听
+    return _meterStreamCache!;
   }
 
   /// 获取或创建 meter 订阅，确保全局只有一个有效的 meter 订阅
