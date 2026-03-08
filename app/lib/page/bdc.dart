@@ -603,6 +603,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   /// 当前单词及其他备选单词
   List<WordVo>? _words;
 
+  /// 缓存 ASR 通过规则，避免在处理过程频繁查库导致性能问题和死锁挂起
+  String _asrPassRuleCache = 'ONE';
+
   late bool _showAnswerButtons;
 
   late StreamSubscription _keyboardSubscription;
@@ -1128,7 +1131,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       return;
     }
     // 如果 ASR 未启动，且键盘也未弹出，且没有焦点，说明可能是 ASR 停止后的残留结果，跳过处理并清空
-    if (asr.state != AsrState.started && !_isKeyboardVisible && !_meaningFocusNode.hasFocus) {
+    // 允许 initialized 状态，因为在 startAsr 的 await 过程中可能就已经有结果回来了
+    if (asr.state != AsrState.started && asr.state != AsrState.initialized && !_isKeyboardVisible && !_meaningFocusNode.hasFocus) {
       Global.logger.w('收到归属于旧会话的语音识别结果(${_meaningController.text})，但ASR未启动且无输入焦点，跳过处理');
       if (mounted) {
         _meaningController.text = '';
@@ -1137,6 +1141,13 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         });
       }
       return;
+    }
+
+    if (_studyStep == StudyStep.en2Ch.json) {
+      if (_wordWrapper == null) {
+        Global.logger.w('checkAsrResult: _wordWrapper 为空，跳过处理');
+        return; // 在 _wordWrapper 加载完成前，不消耗此次 ASR 结果
+      }
     }
 
     // 如果输入框中的文本与正在处理的文本相同，则直接返回, 避免无谓的性能损耗
@@ -1160,7 +1171,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       if (_firstMatchTime == null && matched >= 1) {
         _firstMatchTime = DateTime.now();
       }
-      _isAnswerCorrect = await _isAsrPass(total, matched);
+      _isAnswerCorrect = _isAsrPassSync(total, matched);
 
       // 如果本次有新增匹配，播放音效并设置状态
       if (result.newMatchCount > 0) {
@@ -1185,8 +1196,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                   if (_hintUsed) {
                     rating = FsrsRating.again;
                   } else if (_wordStartTime != null) {
-                    final asrPassRule = await MyDatabase.instance.localParamsDao.getAsrPassRule();
-                    final timeToUse = (asrPassRule == 'ALL' && _firstMatchTime != null) ? _firstMatchTime! : DateTime.now();
+                    final timeToUse = (_asrPassRuleCache == 'ALL' && _firstMatchTime != null) ? _firstMatchTime! : DateTime.now();
                     final responseTime = timeToUse.difference(_wordStartTime!).inSeconds;
                     if (responseTime < 8) {
                       rating = FsrsRating.easy; // Easy
@@ -1240,12 +1250,11 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     }
   }
 
-  Future<bool> _isAsrPass(int totalParts, int matchedParts) async {
-    final asrPassRule = await MyDatabase.instance.localParamsDao.getAsrPassRule();
-    Global.logger.d('_isAsrPass: asrPassRule=$asrPassRule, totalParts=$totalParts, matchedParts=$matchedParts');
+  bool _isAsrPassSync(int totalParts, int matchedParts) {
+    Global.logger.d('_isAsrPass: asrPassRule=$_asrPassRuleCache, totalParts=$totalParts, matchedParts=$matchedParts');
 
     bool result;
-    switch (asrPassRule) {
+    switch (_asrPassRuleCache) {
       case 'ALL':
         result = matchedParts >= totalParts && totalParts > 0;
         break;
@@ -1257,7 +1266,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         result = matchedParts >= 1;
         break;
     }
-    Global.logger.d('_isAsrPass result: $result');
+    Global.logger.d('_isAsrPassSync result: $result');
     return result;
   }
 
@@ -1475,6 +1484,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   }
 
   void handleWord(final GetWordResult? getWordResult, {bool isFromBatchWordList = false}) async {
+    // 异步拉取最新 ASR 规则并缓存，避免后续同步处理挂起
+    MyDatabase.instance.localParamsDao.getAsrPassRule().then((val) => _asrPassRuleCache = val);
+
     try {
       if (getWordResult == null) {
         Global.logger.d('getWordResult 为空');
@@ -1649,6 +1661,12 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         _wordStartTime = DateTime.now();
       }
     });
+    
+    // 如果在数据加载期间（如等待数据库查询）已经有语音结果提前到达，手动触发一次校验
+    if (_meaningController.text.isNotEmpty && _handlingChinese.isEmpty) {
+      Global.logger.i('BDC: 单词加载完成，发现加载期间缓存的语音结果，主动触发校验');
+      checkAsrResult();
+    }
   }
 
   /// 初始化选择题数据
