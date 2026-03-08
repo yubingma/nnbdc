@@ -4166,8 +4166,13 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                             itemCount: batches.keys.length,
                             physics: const BouncingScrollPhysics(),
                             itemBuilder: (ctx, index) {
-                              int batchId = batches.keys.elementAt(index);
+                              // 确保批次 ID 按顺序排列
+                              final sortedBatchIds = batches.keys.toList()..sort();
+                              int batchId = sortedBatchIds[index];
                               final batchWords = batches[batchId]!;
+                              
+                              // 判断是否为当前批次
+                              final bool isCurrentBatch = batchWords.any((w) => w.wordId == currentWordId);
 
                               return Container(
                                 margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -4175,7 +4180,12 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                                 decoration: BoxDecoration(
                                   color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.02),
                                   borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: isDark ? Colors.white12 : Colors.black12),
+                                  border: Border.all(
+                                    color: isCurrentBatch 
+                                        ? Colors.blueAccent 
+                                        : (isDark ? Colors.white12 : Colors.black12),
+                                    width: isCurrentBatch ? 2.0 : 1.0,
+                                  ),
                                 ),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
