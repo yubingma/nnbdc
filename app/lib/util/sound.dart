@@ -59,6 +59,20 @@ class SoundUtil {
 
   static Future<void> playSoundByUrl(String soundUrl, AudioPlayer player, bool disposeWhenFinish, {int loadTimeoutMs = 3000, int playTimeoutMs = 10000}) async {
     try {
+      if (PlatformUtils.isIOS) {
+        await player.setAudioContext(AudioContext(
+          iOS: AudioContextIOS(
+            category: AVAudioSessionCategory.playAndRecord,
+            options: {
+              AVAudioSessionOptions.defaultToSpeaker,
+              AVAudioSessionOptions.mixWithOthers,
+              AVAudioSessionOptions.allowBluetooth,
+            },
+          ),
+        ));
+      }
+      await player.setVolume(1.0);
+
       // player 为 AudioPlayerFactory.create() 产物（真实或 Mock），无需判空
       if (PlatformUtils.isWeb) {
         await _ensureWebAudioUnlocked();
@@ -143,10 +157,12 @@ class SoundUtil {
             options: {
               AVAudioSessionOptions.defaultToSpeaker,
               AVAudioSessionOptions.mixWithOthers,
+              AVAudioSessionOptions.allowBluetooth,
             },
           ),
         ));
       }
+      await player.setVolume(1.0);
 
       // 使用独立播放器，不需要停止其他播放
 
