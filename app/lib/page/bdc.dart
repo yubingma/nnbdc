@@ -2943,7 +2943,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     }
   }
 
-  showWordDetail(var word, bool isAnswerWrong, {FsrsRating? fsrsRating}) {
+  showWordDetail(var word, bool isAnswerWrong, {FsrsRating? fsrsRating}) async {
     var bottomBtn = Container(
       decoration: BoxDecoration(
         color: context.read<DarkMode>().isDarkMode ? Colors.white : AppTheme.primaryColor,
@@ -2972,7 +2972,12 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         ),
       ),
     );
-    Get.toNamed('/word_detail', arguments: WordDetailPageArgs(word, false, bottomBtn, isAnswerWrong));
+    await Get.toNamed('/word_detail', arguments: WordDetailPageArgs(word, false, bottomBtn, isAnswerWrong));
+
+    // 从详情页返回后，自动恢复 ASR 状态
+    if (mounted) {
+      _handleTabChangeForAsr();
+    }
   }
 
   reloadWord() async {
