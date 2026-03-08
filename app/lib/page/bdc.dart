@@ -2556,7 +2556,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
               ElevatedButton(
                 key: const Key('bdc_next_word_btn'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: context.watch<DarkMode>().isDarkMode ? Colors.white : const Color(0xFF1A1A1A),
+                  backgroundColor: context.watch<DarkMode>().isDarkMode ? Colors.white : AppTheme.primaryColor,
                   foregroundColor: context.watch<DarkMode>().isDarkMode ? Colors.black : Colors.white,
                   elevation: 0,
                   padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
@@ -2946,7 +2946,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   showWordDetail(var word, bool isAnswerWrong, {FsrsRating? fsrsRating}) {
     var bottomBtn = Container(
       decoration: BoxDecoration(
-        color: context.read<DarkMode>().isDarkMode ? Colors.white : const Color(0xFF1A1A1A),
+        color: context.read<DarkMode>().isDarkMode ? Colors.white : AppTheme.primaryColor,
         borderRadius: BorderRadius.circular(12),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -3274,7 +3274,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                 ),
 
                 // 编辑开关 - 仅在meaning模式下且非Web平台显示
-                if (_studyStep == StudyStep.ch2En.json && !PlatformUtils.isWeb) _buildEditToggle(),
+                // if (_studyStep == StudyStep.ch2En.json && !PlatformUtils.isWeb) _buildEditToggle(),
 
                 // 报错按钮
                 _buildTopActionButton(
@@ -3886,8 +3886,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                       child: ElevatedButton.icon(
                         icon: const Icon(Icons.add, size: 24.0),
                         style: ElevatedButton.styleFrom(
-                          foregroundColor: Colors.white,
-                          backgroundColor: const Color(0xFF1A1A1A),
+                          foregroundColor: context.watch<DarkMode>().isDarkMode ? Colors.black : Colors.white,
+                          backgroundColor: context.watch<DarkMode>().isDarkMode ? Colors.white : AppTheme.primaryColor,
                           elevation: 0,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
