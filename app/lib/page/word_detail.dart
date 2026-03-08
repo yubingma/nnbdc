@@ -16,6 +16,8 @@ import 'package:nnbdc/config.dart';
 import 'package:nnbdc/services/ai_service.dart';
 import 'package:get_storage/get_storage.dart';
 import 'bdc.dart';
+import '../util/asr.dart';
+
 
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:http/http.dart' as http;
@@ -112,7 +114,11 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
       duration: const Duration(milliseconds: 700),
       vsync: this,
     );
+    // 进入详情页时立即主动关闭 ASR，避免在前一页面正在倾听时进入此页导致 ASR 逻辑错误
+    Asr().stopAsr();
+
     loadData();
+
   }
 
   @override
