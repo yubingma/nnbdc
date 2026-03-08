@@ -1066,16 +1066,23 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         Global.logger.d('ASR: Multiple candidates received: $candidateStrings');
         Global.logger.d('ASR: Best candidate: $bestCandidate');
 
-        if (_studyStep == StudyStep.ch2En.json && _word != null) {
-          // 中→英模式：结合拼写相似度和音素相似度的智能选择
-          final result = await AsrUtil.selectBestCandidateWithPhonemeAndScore(candidateStrings, _word!.spell);
+        if (_studyStep == StudyStep.ch2En.json) {
+          if (_word != null) {
+            // 中→英模式：结合拼写相似度和音素相似度的智能选择
+            final result = await AsrUtil.selectBestCandidateWithPhonemeAndScore(candidateStrings, _word!.spell);
 
-          // 记录评分
-          _currentScore = result.score;
+            // 记录评分
+            _currentScore = result.score;
 
-          // 进一步进行英文预处理（如去除前缀噪音、模糊匹配等）
-          processedResult = AsrUtil.preprocessEnglish(result.text, _word!.spell);
-          Global.logger.d('ASR: Selected & Preprocessed: "$processedResult" (原始选择: "${result.text}", 目标: ${_word!.spell}, 分数: ${result.score})');
+            // 进一步进行英文预处理（如去除前缀噪音、模糊匹配等）
+            processedResult = AsrUtil.preprocessEnglish(result.text, _word!.spell);
+            Global.logger.d('ASR: Selected & Preprocessed: "$processedResult" (原始选择: "${result.text}", 目标: ${_word!.spell}, 分数: ${result.score})');
+          } else {
+             // _word 还未加载好时，直接保留获取的最佳候选结果
+             processedResult = bestCandidate;
+             _currentScore = null;
+             Global.logger.d('ASR: _word is null, caching raw candidate: "$processedResult"');
+          }
         } else {
           // 其他模式：直接使用最佳候选结果，然后进行相应预处理
           processedResult = bestCandidate;
@@ -1092,14 +1099,21 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         }
       } else {
         // 单个结果处理
-        if (_studyStep == StudyStep.ch2En.json && _word != null) {
-          // 中→英模式：英文预处理（单个结果场景下也尝试音素匹配）
-          final pre = AsrUtil.preprocessEnglish(event, _word!.spell);
-          // 也获取分数
-          final result = await AsrUtil.selectBestCandidateWithPhonemeAndScore([pre], _word!.spell);
-          processedResult = result.text;
-          _currentScore = result.score;
-          Global.logger.d('ASR: Single result processed: "$event" -> "$processedResult" (target: ${_word!.spell}, score: $_currentScore)');
+        if (_studyStep == StudyStep.ch2En.json) {
+          if (_word != null) {
+             // 中→英模式：英文预处理（单个结果场景下也尝试音素匹配）
+             final pre = AsrUtil.preprocessEnglish(event, _word!.spell);
+             // 也获取分数
+             final result = await AsrUtil.selectBestCandidateWithPhonemeAndScore([pre], _word!.spell);
+             processedResult = result.text;
+             _currentScore = result.score;
+             Global.logger.d('ASR: Single result processed: "$event" -> "$processedResult" (target: ${_word!.spell}, score: $_currentScore)');
+          } else {
+             // 还没加载完的情况，先原样保存
+             processedResult = event;
+             _currentScore = null;
+             Global.logger.d('ASR: Single result early fallback: "$event"');
+          }
         } else {
           // 其他模式：中文预处理
           processedResult = AsrUtil.preprocess(event);
@@ -1143,9 +1157,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       return;
     }
 
-    if (_studyStep == StudyStep.en2Ch.json) {
-      if (_wordWrapper == null) {
-        Global.logger.w('checkAsrResult: _wordWrapper 为空，跳过处理');
+    if (_studyStep == StudyStep.en2Ch.json || _studyStep == StudyStep.ch2En.json) {
+      if (_wordWrapper == null || _word == null) {
+        Global.logger.w('checkAsrResult: _wordWrapper 或 _word 为空，跳过处理');
         return; // 在 _wordWrapper 加载完成前，不消耗此次 ASR 结果
       }
     }
