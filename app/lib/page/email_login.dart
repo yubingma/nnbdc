@@ -342,7 +342,7 @@ class EmailLoginPageState extends State<EmailLoginPage> {
                     TextFormField(
                       key: const Key('email_login_email_field'),
                       controller: email,
-                      keyboardType: TextInputType.emailAddress,
+                      keyboardType: TextInputType.visiblePassword,
                       inputFormatters: [
                         FilteringTextInputFormatter.deny(RegExp(r'[\s\u2006\u200B]')),
                       ],

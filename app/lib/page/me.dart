@@ -1574,6 +1574,7 @@ class _MePageState extends State<MePage> {
                                       inputFormatters: [
                                         FilteringTextInputFormatter.deny(RegExp(r'[\s\u2006\u200B]')),
                                       ],
+                                      keyboardType: TextInputType.visiblePassword,
                                     ),
                                   ),
                                   if (emailChanged) ...[
@@ -1756,6 +1757,7 @@ class _MePageState extends State<MePage> {
     required Color textColor,
     void Function(String)? onChanged,
     List<TextInputFormatter>? inputFormatters,
+    TextInputType? keyboardType,
   }) {
     return Container(
       decoration: BoxDecoration(
@@ -1769,6 +1771,7 @@ class _MePageState extends State<MePage> {
       child: TextFormField(
         controller: controller,
         obscureText: obscureText,
+        keyboardType: keyboardType,
         validator: validator,
         onChanged: onChanged,
         inputFormatters: inputFormatters,
