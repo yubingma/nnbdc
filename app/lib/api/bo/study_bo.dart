@@ -445,17 +445,16 @@ class StudyBo {
 
   /// 获取下一个学习单词
   ///
-  /// [isAnswerCorrect] 当前单词的回答是否正确
   /// [isWordMastered] 当前单词是否已掌握
-  /// [shouldEnterNextBatch] 是否应该进入下一个学习批次（从批次列表返回时使用）
   /// [gotoNext] 是否跳转到下一个单词/学习模式
   ///   - true: 会推进学习进度，移动到下一个单词或下一个学习模式，并更新用户的学习位置
   ///   - false: 仅刷新当前单词，不改变学习位置（用于初始加载、从批次列表返回后刷新等场景）
+  /// [fsrsRating] 当前单词的学习评分（来自 FSRS 算法），用于计算未来的复习时间
   ///
   /// 返回下一个单词的学习信息，包括单词详情、学习模式、混淆项等
-  Future<Result<GetWordResult>> getWord(bool isWordMastered, bool isAnswerCorrect, bool gotoNext, {FsrsRating? fsrsRating}) async {
+  Future<Result<GetWordResult>> getWord(bool isWordMastered, bool gotoNext, {FsrsRating? fsrsRating}) async {
     try {
-      Global.logger.d('开始获取单词: isAnswerCorrect=$isAnswerCorrect, isWordMastered=$isWordMastered, gotoNext=$gotoNext, fsrsRating=$fsrsRating');
+      Global.logger.d('开始获取单词: isWordMastered=$isWordMastered, gotoNext=$gotoNext, fsrsRating=$fsrsRating');
       final db = MyDatabase.instance;
 
       // 获取当前登录用户
@@ -565,7 +564,6 @@ class StudyBo {
           user: user,
           now: now,
           db: db,
-          isAnswerCorrect: isAnswerCorrect,
           allStepsCompletedForWord: allStepsCompletedForWord,
           fsrsRating: fsrsRating,
         );
@@ -574,15 +572,12 @@ class StudyBo {
         todayWords = List.from(todayWords); // 确保列表可变
         if (isWordMastered) {
           masteredWordIds.add(currWord.wordId);
-        } else if (isAnswerCorrect) {
+        } else {
+          // 无论对错，只要用户主动进入下一步，todayLearnedTimes 就该加 1
           todayWords[currentWordIndex] = currWord.copyWith(
             lastLearningDate: Value(now),
             learnedTimes: currWord.learnedTimes + 1,
             todayLearnedTimes: currWord.todayLearnedTimes + 1,
-          );
-        } else {
-          todayWords[currentWordIndex] = currWord.copyWith(
-            lastLearningDate: Value(now),
           );
         }
       }
@@ -731,7 +726,6 @@ class StudyBo {
     required User user,
     required DateTime now,
     required MyDatabase db,
-    required bool isAnswerCorrect,
     required bool allStepsCompletedForWord,
     FsrsRating? fsrsRating,
   }) async {
@@ -751,8 +745,8 @@ class StudyBo {
       return;
     }
 
-    if (!isAnswerCorrect) {
-      // 若回答错误, 则保存错词
+    if (fsrsRating == FsrsRating.again) {
+      // 若评分是 Again (答错), 则保存错词
       await saveWrongWord(currWord, db, user, now);
     }
 
@@ -811,18 +805,13 @@ class StudyBo {
       return;
     }
 
-    if (!isAnswerCorrect) {
-      // 若回答错误, 则保存错词
-      await saveWrongWord(currWord, db, user, now);
-    }
-
     // 更新学习状态
     Global.logger.d('Word ${currWord.wordId}. Updating FSRS and learnedTimes.');
     await db.learningWordsDao.saveEntity(
         currWord.copyWith(
           lastLearningDate: Value(learningTime),
           learnedTimes: (currWord.learnedTimes) + 1,
-          todayLearnedTimes: isAnswerCorrect ? (currWord.todayLearnedTimes) + 1 : currWord.todayLearnedTimes,
+          todayLearnedTimes: (currWord.todayLearnedTimes) + 1, // 无论对错，进度都要加1
           stability: nextFsrs != null ? Value(nextFsrs.stability) : const Value.absent(),
           difficulty: nextFsrs != null ? Value(nextFsrs.difficulty) : const Value.absent(),
           elapsedDays: nextFsrs != null ? Value(nextFsrs.elapsedDays) : const Value.absent(),

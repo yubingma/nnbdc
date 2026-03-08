@@ -1362,7 +1362,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       // 循环读取，直到获取到非“已掌握”单词（如果是 gotoNext=true，服务端可能会自动跳过已掌握词，但前端也要防御）
       int triedCount = 0;
       while (true) {
-        final result = await StudyBo().getWord(_isWordMastered, _isAnswerCorrect, triedCount == 0 ? gotoNext : true, fsrsRating: fsrsRating);
+        bool actualGotoNext = triedCount == 0 ? gotoNext : true;
+        final result = await StudyBo().getWord(_isWordMastered, actualGotoNext, fsrsRating: fsrsRating);
         triedCount++;
 
         if (!result.success) {
@@ -1395,7 +1396,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
         // 如果单词已掌握，重置状态并继续获取下一个单词
         if (_currentGetWordResult!.wordMastered) {
-          _isAnswerCorrect = true;
           _isWordMastered = false;
           fsrsRating = null; // 后续跳词不需要评分
           continue;
