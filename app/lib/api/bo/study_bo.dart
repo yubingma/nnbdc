@@ -519,6 +519,14 @@ class StudyBo {
         batchWords.add(todayWords[i]);
       }
 
+      // 添加批次状态日志
+      Global.logger.d('~~~~~BDC_BATCH: startIdx=$batchStartIndex, batchSize=${batchWords.length}, activeStepCount=$activeStepCount');
+      for (var w in batchWords) {
+        final bool isMastered = _isEffectivelyMastered(w, masteredWordIds);
+        final bool isFinished = isMastered || w.todayLearnedTimes >= activeStepCount;
+        Global.logger.d('  - [${w.wordId}] todayTimes=${w.todayLearnedTimes}, isMastered=$isMastered, isFinished=$isFinished');
+      }
+
       // 在当前批次内，推导当前单词和环节
       List<LearningWord> sortedBatchWords = List.from(batchWords);
       sortedBatchWords.sort((a, b) {
