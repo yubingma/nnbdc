@@ -458,7 +458,9 @@ class LearningWords extends Table {
   DateTimeColumn get lastLearningDate => dateTime().nullable()();
   IntColumn get learningOrder => integer()();
 
-  /// 批次ID，今日计划选中的单词会被分配批次，未选中的为 NULL
+  /// 取词批次ID (Select Batch ID)
+  /// 注意：这是在每天学习前"准备今日学习计划"时取词的批次标记，
+  /// 用于标识单词是同一次被拉取进入计划的，并非用户开始学习后每 10 个词一组的"学习小批次(Learning Batch/Chunk)"！
   /// nullable() to handle legacy data where batch_id might be NULL
   IntColumn get batchId => integer().nullable()();
 

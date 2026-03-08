@@ -3980,10 +3980,14 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       return a.learningOrder.compareTo(b.learningOrder);
     });
 
+    // 分组：底层调度系统固定是 10 个词为一个学习循环（也就是一个 Batch）
+    const int batchSize = 10;
     final Map<int, List<dynamic>> batches = {};
-    for (var w in words) {
-      final bid = w.batchId ?? 0;
-      batches.putIfAbsent(bid, () => []).add(w);
+    for (int i = 0; i < words.length; i++) {
+      final w = words[i];
+      // 计算其实际属于第几个调度轮次 (从 1 开始)
+      final chunkId = (i ~/ batchSize) + 1;
+      batches.putIfAbsent(chunkId, () => []).add(w);
     }
 
     // 计算即将到来的待办单元格 sequence
