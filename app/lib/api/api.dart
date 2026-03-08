@@ -411,6 +411,10 @@ abstract class RestClient {
   Future<Result<WordImageDto>> uploadWordImg(
       @Field("wordId") String wordId, @Field("imgBase64String") String imgBase64String, @Field("userId") String userId);
 
+  @POST("/uploadImg.do")
+  @FormUrlEncoded()
+  Future<Result<String>> uploadImg(@Field("imgBase64String") String imgBase64String, @Field("userId") String userId);
+
   @POST("/saveErrorReport.do")
   @FormUrlEncoded()
   Future<Result<String>> saveErrorReport(

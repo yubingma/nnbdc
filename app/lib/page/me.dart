@@ -118,11 +118,11 @@ class _MePageState extends State<MePage> {
 
           if (userId != null) {
             ToastUtil.info('正在上传头像...');
-            // 使用通用的 uploadWordImg 接口上传头像，wordId 为特殊标识 __AVATAR__
-            final result = await Api.client.uploadWordImg('__AVATAR__', base64String, userId);
+            // 使用专用的 uploadImg 接口上传图片
+            final result = await Api.client.uploadImg(base64String, userId);
             
             if (result.success && result.data != null) {
-              final newAvatarFilename = result.data!.imageFile;
+              final newAvatarFilename = result.data!;
               // 目前后端存储的是相对路径或完整URL。如果是 filename，则拼接 CDN 路径
               // 这里我们直接更新用户信息的 avatar 字段
               final db = MyDatabase.instance;

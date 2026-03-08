@@ -34,8 +34,18 @@ import beidanci.service.bo.DictWordBo;
 import beidanci.service.bo.MeaningItemBo;
 import beidanci.service.bo.SentenceBo;
 import beidanci.service.bo.SynonymBo;
+import beidanci.service.bo.UserBo;
 import beidanci.service.bo.WordBo;
+import beidanci.service.po.User;
+import beidanci.service.util.MyImage;
+import beidanci.service.util.SysParamUtil;
 import beidanci.util.Constants;
+import javax.xml.bind.DatatypeConverter;
+import org.springframework.web.bind.annotation.PostMapping;
+import java.io.File;
+import java.io.BufferedOutputStream;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
 
 @RestController
 public class ResController {
@@ -68,6 +78,12 @@ public class ResController {
 
     @Autowired
     DictWordBo dictWordBo;
+
+    @Autowired
+    UserBo userBo;
+
+    @Autowired
+    SysParamUtil sysParamUtil;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -299,5 +315,57 @@ public class ResController {
             // 如果MD5失败，使用简单格式
             return "\"dict-" + dictId + "-" + updateTime.getTime() + "\"";
         }
+    }
+
+    @PostMapping(value = "/uploadImg.do")
+    public Result<String> uploadImg(String imgBase64String, String userId) throws Exception {
+        User user = userBo.findById(userId);
+        if (user == null) {
+            return Result.fail("游客不能上传图片");
+        }
+
+        // 图片文件上传
+        String fileName;
+        File targetFile;
+
+        // 生成唯一文件名
+        String baseName = "u_" + userId + "_" + System.currentTimeMillis();
+        File tempTargetFile = new File(sysParamUtil.getImageBaseDir() + "/tmp/tmp_" + baseName);
+
+        byte[] data = DatatypeConverter.parseBase64Binary(imgBase64String);
+        try (OutputStream outputStream = new BufferedOutputStream(new FileOutputStream(tempTargetFile))) {
+            outputStream.write(data);
+        }
+        // 探测真实格式并决定目标文件名
+        String fmt = null;
+        try {
+            fmt = MyImage.getImageFormat(tempTargetFile);
+            if (fmt == null) {
+                fmt = MyImage.detectFormat(tempTargetFile);
+            }
+        } catch (IOException ignore) { }
+        String ext = MyImage.normalizeExtByFormat(fmt);
+        fileName = baseName + "." + ext;
+        targetFile = new File(sysParamUtil.getImageBaseDir() + "/word/" + fileName);
+
+        // 通过图像缩放生成大图
+        int targetWidth = 200;
+        int targetHeight = 200;
+        try {
+            if (fmt != null && MyImage.canWriteFormat(fmt)) {
+                MyImage.resizeImage(tempTargetFile, targetFile, targetWidth, targetHeight, fmt, true);
+            } else {
+                org.apache.commons.io.FileUtils.copyFile(tempTargetFile, targetFile);
+            }
+        } catch (IOException ex) {
+            org.apache.commons.io.FileUtils.copyFile(tempTargetFile, targetFile);
+        }
+
+        // 删除临时文件
+        if (!tempTargetFile.delete()) {
+            tempTargetFile.deleteOnExit();
+        }
+
+        return Result.success(fileName);
     }
 }
