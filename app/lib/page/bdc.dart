@@ -91,22 +91,27 @@ class _WordImagesWidgetState extends State<WordImagesWidget> {
       builder: (context, constraints) {
         // 使用实际可用宽度而不是屏幕宽度
         final availableWidth = constraints.maxWidth;
-        final imageWidth = PlatformUtils.isWeb ? 160.0 : 80.0;
-        final imageCount = 4; // 每行显示4张图片
-        final horizontalPadding = 16.0 * 2; // 左右内边距
-        final spacing = (availableWidth - imageWidth * imageCount - horizontalPadding) / (imageCount - 1);
+        final imageCount = 2; // 每行显示2张图片
+        final spacing = 12.0; // 固定间距
+        
+        // 动态计算较大图片的宽度，同时在Web上限制最大尺寸
+        double imageWidth = (availableWidth - spacing) / imageCount - 0.1;
+        if (PlatformUtils.isWeb && imageWidth > 320.0) {
+          imageWidth = 320.0;
+        }
+        final imageHeight = imageWidth * 0.75; // 4:3比例计算高度
 
         return Container(
           margin: const EdgeInsets.fromLTRB(0, 12, 0, 12),
           width: availableWidth,
           alignment: Alignment.center,
           child: Wrap(
-            alignment: WrapAlignment.start,
+            alignment: WrapAlignment.center, // 居中对齐
             crossAxisAlignment: WrapCrossAlignment.center,
-            spacing: spacing > 0 ? spacing : 4, // 确保间距不为负数
-            runSpacing: 4,
+            spacing: spacing, 
+            runSpacing: 12.0, // 行间距
             children: [
-              for (var image in widget.images.take(8))
+              for (var image in widget.images.take(4)) // 改为一共取4张
                 GestureDetector(
                   behavior: HitTestBehavior.opaque,
                   onTap: () {
@@ -120,7 +125,7 @@ class _WordImagesWidgetState extends State<WordImagesWidget> {
                       child: Image.network(
                         '${Config.wordImageBaseUrl}${image.imageFile}',
                         width: imageWidth,
-                        height: PlatformUtils.isWeb ? 120 : 60,
+                        height: imageHeight,
                         fit: BoxFit.contain,
                         loadingBuilder: (context, child, loadingProgress) {
                           if (loadingProgress == null) return child;
@@ -1136,6 +1141,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   }
 
   checkAsrResult() async {
+    Global.logger.d('BDC CHECK_ASR: Start. _meaningController.text=${_meaningController.text}, _handlingChinese=$_handlingChinese, _studyStep=$_studyStep, asr.state=${asr.state}, _isKeyboardVisible=$_isKeyboardVisible, _meaningFocusNode.hasFocus=${_meaningFocusNode.hasFocus}, _wordWrapper=${_wordWrapper != null}, _word=${_word != null}');
+
     if (_meaningController.text.isEmpty) {
       if (_currentScore != null) {
         setState(() {
@@ -1159,15 +1166,17 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
     if (_studyStep == StudyStep.en2Ch.json || _studyStep == StudyStep.ch2En.json) {
       if (_wordWrapper == null || _word == null) {
-        Global.logger.w('checkAsrResult: _wordWrapper 或 _word 为空，跳过处理');
+        Global.logger.w('checkAsrResult: _wordWrapper 或 _word 为空，跳过处理。目前 _wordWrapper=${_wordWrapper != null}, _word=${_word != null}');
         return; // 在 _wordWrapper 加载完成前，不消耗此次 ASR 结果
       }
     }
 
     // 如果输入框中的文本与正在处理的文本相同，则直接返回, 避免无谓的性能损耗
     if (_meaningController.text != _handlingChinese) {
+      Global.logger.d('BDC CHECK_ASR: Update _handlingChinese from "$_handlingChinese" to "${_meaningController.text}"');
       _handlingChinese = _meaningController.text;
     } else {
+      Global.logger.d('BDC CHECK_ASR: _handlingChinese hasn\'t changed ("$_handlingChinese"), returning early.');
       return;
     }
 
@@ -1186,6 +1195,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         _firstMatchTime = DateTime.now();
       }
       _isAnswerCorrect = _isAsrPassSync(total, matched);
+      
+      Global.logger.d('BDC CHECK_ASR [en2Ch]: result(total=$total, matched=$matched, newMatchCount=${result.newMatchCount}), _isAnswerCorrect=$_isAnswerCorrect, requires pass rule: $_asrPassRuleCache');
 
       // 如果本次有新增匹配，播放音效并设置状态
       if (result.newMatchCount > 0) {
@@ -1232,12 +1243,14 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       // 1. 精确拼写匹配（preprocessEnglish 已做过编辑距离/映射表救援）
       // 2. 音素相似度达到阈值（兜底同音词场景，如 mail vs male）
       bool isMatch = inputText == correctSpell;
+      Global.logger.d('BDC CHECK_ASR [ch2En]: inputText="$inputText", correctSpell="$correctSpell", basic_match=$isMatch, _currentScore=$_currentScore');
       if (!isMatch && _currentScore != null && _currentScore! >= Constants.phonemeMatchThreshold) {
         Global.logger.d('Ch2En: 拼写不匹配("$inputText" != "$correctSpell")，但音素相似度($_currentScore)达到阈值(${Constants.phonemeMatchThreshold})，判定通过');
         isMatch = true;
       }
 
       if (isMatch) {
+        Global.logger.d('BDC CHECK_ASR [ch2En]: Match SUCCESS!');
         _isAnswerCorrect = true;
 
         // 计算 FSRS 评分

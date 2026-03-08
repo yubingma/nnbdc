@@ -24,6 +24,11 @@ import StoreKit
     private var skippedBufferCount = 0 // 跟踪跳过的缓冲区数量
     private var contextualPhrases: [String] = [] // 上下文短语，用于 bias
     
+    // Stream handlers
+    private var asrStreamHandler: SimpleStreamHandler?
+    private var meterStreamHandler: SimpleStreamHandler?
+    private var ttsStreamHandler: SimpleStreamHandler?
+    
     // TTS 相关属性
     private var ttsEventSink: FlutterEventSink?
     private var synthesizer = AVSpeechSynthesizer()
@@ -57,14 +62,28 @@ import StoreKit
             name: "nnbdc/asr_events",
             binaryMessenger: controller.binaryMessenger
         )
-        eventChannel.setStreamHandler(self)
+        self.asrStreamHandler = SimpleStreamHandler(onListen: { [weak self] events in
+            print("IOS: Setting up ASR EventChannel")
+            self?.eventSink = events
+        }, onCancel: { [weak self] in
+            print("IOS: Cancelling ASR EventChannel")
+            self?.eventSink = nil
+        })
+        eventChannel.setStreamHandler(self.asrStreamHandler)
 
         // 设置 ASR Meter EventChannel（音量/波形强度）
         let meterChannel = FlutterEventChannel(
             name: "nnbdc/asr_meter",
             binaryMessenger: controller.binaryMessenger
         )
-        meterChannel.setStreamHandler(self)
+        self.meterStreamHandler = SimpleStreamHandler(onListen: { [weak self] events in
+            print("IOS: Setting up ASR Meter EventChannel")
+            self?.meterEventSink = events
+        }, onCancel: { [weak self] in
+            print("IOS: Cancelling ASR Meter EventChannel")
+            self?.meterEventSink = nil
+        })
+        meterChannel.setStreamHandler(self.meterStreamHandler)
         
         // 设置 TTS MethodChannel
         let ttsMethodChannel = FlutterMethodChannel(
@@ -80,7 +99,17 @@ import StoreKit
             name: "nnbdc/tts_events",
             binaryMessenger: controller.binaryMessenger
         )
-        ttsEventChannel.setStreamHandler(self)
+        self.ttsStreamHandler = SimpleStreamHandler(onListen: { [weak self] events in
+            print("IOS: Setting up TTS EventChannel")
+            self?.ttsEventSink = events
+            let event: [String: Any] = ["type": "initStatus", "data": 0]
+            print("IOS: TTS sending init event: \(event)")
+            events(event)
+        }, onCancel: { [weak self] in
+            print("IOS: Cancelling TTS EventChannel")
+            self?.ttsEventSink = nil
+        })
+        ttsEventChannel.setStreamHandler(self.ttsStreamHandler)
         print("IOS: TTS EventChannel 设置完成: nnbdc/tts_events")
         
         // 设置应用评分 MethodChannel
@@ -898,59 +927,7 @@ import StoreKit
     }
 }
 
-// MARK: - FlutterStreamHandler
-
-extension AppDelegate: FlutterStreamHandler {
-    func onListen(withArguments arguments: Any?, eventSink events: @escaping FlutterEventSink) -> FlutterError? {
-        print("IOS: EventChannel onListen: arguments=\(arguments ?? "nil")")
-        
-        // 检查是哪个 EventChannel
-        if let channelName = arguments as? String, channelName == "nnbdc/tts_events" {
-            print("IOS: Setting up TTS EventChannel")
-            self.ttsEventSink = events
-            // 发送初始化状态
-            let event: [String: Any] = ["type": "initStatus", "data": 0]
-            print("IOS: TTS sending init event: \(event)")
-            events(event)
-        } else if let channelName = arguments as? String, channelName == "nnbdc/asr_meter" {
-            print("IOS: Setting up ASR Meter EventChannel")
-            self.meterEventSink = events
-        } else {
-            print("IOS: Setting up ASR EventChannel")
-            self.eventSink = events
-        }
-        return nil
-    }
-    
-    func onCancel(withArguments arguments: Any?) -> FlutterError? {
-        print("IOS: EventChannel onCancel: arguments=\(arguments ?? "nil")")
-        
-        // 检查是哪个 EventChannel
-        if let channelName = arguments as? String, channelName == "nnbdc/tts_events" {
-            print("IOS: Cancelling TTS EventChannel")
-            self.ttsEventSink = nil
-        } else if let channelName = arguments as? String, channelName == "nnbdc/asr_meter" {
-            print("IOS: Cancelling ASR Meter EventChannel")
-            // 仅在非 nil 时清空，避免重复取消
-            if self.meterEventSink != nil {
-                self.meterEventSink = nil
-                print("IOS: ASR Meter EventChannel cancelled successfully")
-            } else {
-                print("IOS: ASR Meter EventChannel already cancelled (no active stream)")
-            }
-        } else {
-            print("IOS: Cancelling ASR EventChannel")
-            // 仅在非 nil 时清空，避免重复取消
-            if self.eventSink != nil {
-                self.eventSink = nil
-                print("IOS: ASR EventChannel cancelled successfully")
-            } else {
-                print("IOS: ASR EventChannel already cancelled (no active stream)")
-            }
-        }
-        return nil
-    }
-}
+// 由于使用了独立的 SimpleStreamHandler，不再需要在此处作为 FlutterStreamHandler
 
 // MARK: - TTS Methods
 
@@ -1078,5 +1055,25 @@ extension AppDelegate {
         }
         
         result(nil)
+    }
+}
+
+class SimpleStreamHandler: NSObject, FlutterStreamHandler {
+    let onListenHandler: (@escaping FlutterEventSink) -> Void
+    let onCancelHandler: () -> Void
+    
+    init(onListen: @escaping (@escaping FlutterEventSink) -> Void, onCancel: @escaping () -> Void) {
+        self.onListenHandler = onListen
+        self.onCancelHandler = onCancel
+    }
+    
+    func onListen(withArguments arguments: Any?, eventSink events: @escaping FlutterEventSink) -> FlutterError? {
+        onListenHandler(events)
+        return nil
+    }
+    
+    func onCancel(withArguments arguments: Any?) -> FlutterError? {
+        onCancelHandler()
+        return nil
     }
 }
