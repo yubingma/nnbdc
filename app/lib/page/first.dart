@@ -1752,7 +1752,7 @@ endlocal
         return;
       }
 
-      if (user != null && user.email != null) {
+      if (user != null) {
         _setPreparingMessage('正在加载用户信息…');
 
         // 更新最后登录时间
