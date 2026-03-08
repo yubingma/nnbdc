@@ -2946,7 +2946,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   showWordDetail(var word, bool isAnswerWrong, {FsrsRating? fsrsRating}) {
     var bottomBtn = Container(
       decoration: BoxDecoration(
-        color: context.watch<DarkMode>().isDarkMode ? Colors.white : const Color(0xFF1A1A1A),
+        color: context.read<DarkMode>().isDarkMode ? Colors.white : const Color(0xFF1A1A1A),
         borderRadius: BorderRadius.circular(12),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -2962,12 +2962,12 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
             Text(
               '下一词 ',
               style: TextStyle(
-                color: context.watch<DarkMode>().isDarkMode ? Colors.black : Colors.white,
+                color: context.read<DarkMode>().isDarkMode ? Colors.black : Colors.white,
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
               ),
             ),
-            Icon(Icons.arrow_forward, color: context.watch<DarkMode>().isDarkMode ? Colors.black : Colors.white, size: 20),
+            Icon(Icons.arrow_forward, color: context.read<DarkMode>().isDarkMode ? Colors.black : Colors.white, size: 20),
           ],
         ),
       ),
