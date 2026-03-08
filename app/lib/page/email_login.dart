@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:email_validator/email_validator.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:nnbdc/api/api.dart';
 import 'package:nnbdc/api/bo/user_bo.dart';
@@ -147,7 +148,7 @@ class EmailLoginPageState extends State<EmailLoginPage> {
 
   // 检查本地是否有该邮箱
   Future<void> _checkLocalEmail() async {
-    final trimmedEmail = email.text.trim();
+    final trimmedEmail = email.text.replaceAll(RegExp(r'[\s\u2006\u200B]'), '');
     if (trimmedEmail.isEmpty || !EmailValidator.validate(trimmedEmail)) {
       setState(() {
         _emailExistsInLocal = null;
@@ -158,7 +159,7 @@ class EmailLoginPageState extends State<EmailLoginPage> {
 
     // 防抖：延迟500ms后检查
     await Future.delayed(const Duration(milliseconds: 500));
-    final trimmedEmailAfterDelay = email.text.trim();
+    final trimmedEmailAfterDelay = email.text.replaceAll(RegExp(r'[\s\u2006\u200B]'), '');
     if (trimmedEmailAfterDelay.isEmpty || !EmailValidator.validate(trimmedEmailAfterDelay)) {
       return;
     }
@@ -342,6 +343,9 @@ class EmailLoginPageState extends State<EmailLoginPage> {
                       key: const Key('email_login_email_field'),
                       controller: email,
                       keyboardType: TextInputType.emailAddress,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.deny(RegExp(r'[\s\u2006\u200B]')),
+                      ],
                       style: const TextStyle(color: Color(0xFF1E293B), fontSize: 16, fontWeight: FontWeight.w600),
                       decoration: InputDecoration(
                         labelText: '电子邮箱',
@@ -546,9 +550,15 @@ class EmailLoginPageState extends State<EmailLoginPage> {
 
   // 发送验证码
   Future<void> sendVerificationCode() async {
-    final trimmedEmail = email.text.trim();
+    final trimmedEmail = email.text.replaceAll(RegExp(r'[\s\u2006\u200B]'), '');
     if (trimmedEmail.isEmpty) {
       ToastUtil.error('请输入邮箱');
+      return;
+    }
+
+    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    if (!emailRegex.hasMatch(trimmedEmail)) {
+      ToastUtil.error('邮箱格式不正确，请检查');
       return;
     }
 
@@ -595,9 +605,20 @@ class EmailLoginPageState extends State<EmailLoginPage> {
 
   // 登录
   Future<void> doLogin() async {
-    final trimmedEmail = email.text.trim();
+    final trimmedEmail = email.text.replaceAll(RegExp(r'[\s\u2006\u200B]'), '');
     if (trimmedEmail.isEmpty) {
       ToastUtil.error('请输入邮箱');
+      return;
+    }
+
+    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    if (!emailRegex.hasMatch(trimmedEmail)) {
+      ToastUtil.error('邮箱格式不正确，请检查');
+      return;
+    }
+
+    if (!EmailValidator.validate(trimmedEmail)) {
+      ToastUtil.error('请输入有效的邮箱地址');
       return;
     }
 
@@ -665,7 +686,7 @@ class EmailLoginPageState extends State<EmailLoginPage> {
   // 验证码登录
   Future<void> _doCodeLogin() async {
     // 使用验证码登录（会验证验证码，然后进行登录或注册）
-    final trimmedEmail = email.text.trim();
+    final trimmedEmail = email.text.replaceAll(RegExp(r'[\s\u2006\u200B]'), '');
     final codeResult = await Api.client.loginByEmailCode(
       trimmedEmail,
       verificationCode.text,

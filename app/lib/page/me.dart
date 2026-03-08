@@ -7,6 +7,7 @@ import 'package:drift/drift.dart' as drift;
 import 'package:drift_db_viewer/drift_db_viewer.dart';
 import 'package:email_validator/email_validator.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:nnbdc/api/api.dart';
@@ -32,6 +33,8 @@ import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/util/user_helper.dart';
 import 'package:nnbdc/util/utils.dart';
 import 'package:nnbdc/widget/dict_download_dialog.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:convert';
 
 import "package:percent_indicator/percent_indicator.dart";
 import 'package:provider/provider.dart';
@@ -41,6 +44,7 @@ import '../state.dart';
 import '../theme/app_theme.dart';
 import '../util/level_util.dart';
 import '../constants.dart';
+import '../config.dart';
 
 class MePage extends StatefulWidget {
   const MePage({super.key});
@@ -71,6 +75,90 @@ class _MePageState extends State<MePage> {
 
   /// 最近一次同步是否失败
   bool _isLastSyncFailed = false;
+
+  Future<void> _pickAndUploadAvatar() async {
+    final picker = ImagePicker();
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      backgroundColor: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SafeArea(
+        child: Wrap(
+          children: [
+            ListTile(
+              leading: Icon(Icons.camera_alt_rounded, color: AppTheme.primaryColor),
+              title: const Text('拍照', style: TextStyle(fontFamily: 'NotoSansSC')),
+              onTap: () => Navigator.pop(context, ImageSource.camera),
+            ),
+            ListTile(
+              leading: Icon(Icons.photo_library_rounded, color: AppTheme.primaryColor),
+              title: const Text('从相册选择', style: TextStyle(fontFamily: 'NotoSansSC')),
+              onTap: () => Navigator.pop(context, ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (source != null) {
+      final XFile? image = await picker.pickImage(
+        source: source,
+        maxWidth: 512,
+        maxHeight: 512,
+        imageQuality: 80,
+      );
+
+      if (image != null) {
+        try {
+          final bytes = await image.readAsBytes();
+          final base64String = base64Encode(bytes);
+          final userId = loggedInUser?.id;
+
+          if (userId != null) {
+            ToastUtil.info('正在上传头像...');
+            // 使用通用的 uploadWordImg 接口上传头像，wordId 为特殊标识 __AVATAR__
+            final result = await Api.client.uploadWordImg('__AVATAR__', base64String, userId);
+            
+            if (result.success && result.data != null) {
+              final newAvatarFilename = result.data!.imageFile;
+              // 目前后端存储的是相对路径或完整URL。如果是 filename，则拼接 CDN 路径
+              // 这里我们直接更新用户信息的 avatar 字段
+              final db = MyDatabase.instance;
+              final user = await db.usersDao.getUserById(userId);
+              if (user != null) {
+                // 如果后端返回的是 filename，这里可以尝试补全 URL，
+                // 但为了保持一致性（VO转化逻辑会处理或读取），我们根据当前已有的 avatar 格式处理
+                String finalAvatar = newAvatarFilename;
+                if (!newAvatarFilename.startsWith('http')) {
+                  finalAvatar = Config.wordImageBaseUrl + newAvatarFilename;
+                }
+
+                final updatedUser = user.copyWith(wechatAvatar: drift.Value(finalAvatar));
+                await db.usersDao.saveUser(updatedUser, true);
+                
+                // 刷新本地缓存并更新 UI
+                final updatedUserInfo = await Global.refreshLoggedInUser();
+                setState(() {
+                  loggedInUser = updatedUserInfo;
+                });
+                
+                ToastUtil.success('头像更新成功');
+                // 触发同步
+                ThrottledDbSyncService().requestSync();
+              }
+            } else {
+              ToastUtil.error('头像上传失败: ${result.msg}');
+            }
+          }
+        } catch (e, stackTrace) {
+          ErrorHandler.handleError(e, stackTrace, logPrefix: '上传头像失败');
+          ToastUtil.error('上传过程中发生异常');
+        }
+      }
+    }
+  }
 
   @override
   void initState() {
@@ -541,7 +629,13 @@ class _MePageState extends State<MePage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   GestureDetector(
-                    onTap: () => Get.toNamed('/login'),
+                    onTap: () {
+                      if (loggedInUser != null) {
+                        _pickAndUploadAvatar();
+                      } else {
+                        Get.toNamed('/login');
+                      }
+                    },
                     child: Container(
                       padding: const EdgeInsets.all(2),
                       decoration: BoxDecoration(
@@ -1477,6 +1571,9 @@ class _MePageState extends State<MePage> {
                                       onChanged: (value) {
                                         setDialogState(() {});
                                       },
+                                      inputFormatters: [
+                                        FilteringTextInputFormatter.deny(RegExp(r'[\s\u2006\u200B]')),
+                                      ],
                                     ),
                                   ),
                                   if (emailChanged) ...[
@@ -1493,14 +1590,20 @@ class _MePageState extends State<MePage> {
                                         onPressed: (cooldown > 0 || isSendingCode)
                                             ? null
                                             : () async {
-                                                if (!EmailValidator.validate(email.text)) {
-                                                  ToastUtil.error("请输入有效的邮箱地址");
+                                                final cleanedEmail = email.text.replaceAll(RegExp(r'[\s\u2006\u200B]'), '');
+                                                final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                                                if (!emailRegex.hasMatch(cleanedEmail)) {
+                                                  ToastUtil.error('邮箱格式不正确，请检查');
+                                                  return;
+                                                }
+                                                if (!EmailValidator.validate(cleanedEmail)) {
+                                                  ToastUtil.error('请输入有效的邮箱地址');
                                                   return;
                                                 }
                                                 setDialogState(() {
                                                   isSendingCode = true;
                                                 });
-                                                var result = await Api.client.sendEmailCode(email.text, "BIND_EMAIL");
+                                                var result = await Api.client.sendEmailCode(cleanedEmail, "BIND_EMAIL");
                                                 if (result.success) {
                                                   ToastUtil.info("验证码已发送");
                                                   setDialogState(() {
@@ -1586,7 +1689,8 @@ class _MePageState extends State<MePage> {
 
                                         if (emailChanged) {
                                           Api.setLoadingDisabled(false);
-                                          var result = await Api.client.verifyEmailCode(email.text, codeController.text, "BIND_EMAIL");
+                                          final cleanedEmail = email.text.replaceAll(RegExp(r'[\s\u2006\u200B]'), '');
+                                          var result = await Api.client.verifyEmailCode(cleanedEmail, codeController.text, "BIND_EMAIL");
                                           Api.setLoadingDisabled(true);
 
                                           if (!context.mounted) return;
@@ -1618,8 +1722,9 @@ class _MePageState extends State<MePage> {
         });
 
     if (choice ?? false) {
+      final cleanedEmail = email.text.replaceAll(RegExp(r'[\s\u2006\u200B]'), '');
       // 密码被取消后，传入原来的密码 (这里用空字符串，后端/UserBo里处理空字符串就不修改密码)
-      UserBo().updateUserInfo(email.text, nickname.text, '', '', Global.getLoggedInUser()!.id).then((value) async {
+      UserBo().updateUserInfo(cleanedEmail, nickname.text, '', '', Global.getLoggedInUser()!.id).then((value) async {
         if (value.success) {
           ToastUtil.info("修改成功");
           // 重新加载用户信息并刷新界面
@@ -1650,6 +1755,7 @@ class _MePageState extends State<MePage> {
     required Color cardColor,
     required Color textColor,
     void Function(String)? onChanged,
+    List<TextInputFormatter>? inputFormatters,
   }) {
     return Container(
       decoration: BoxDecoration(
@@ -1665,6 +1771,7 @@ class _MePageState extends State<MePage> {
         obscureText: obscureText,
         validator: validator,
         onChanged: onChanged,
+        inputFormatters: inputFormatters,
         style: TextStyle(
           color: textColor,
           fontSize: 15,
