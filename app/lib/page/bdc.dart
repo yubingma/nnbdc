@@ -3986,6 +3986,38 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       batches.putIfAbsent(bid, () => []).add(w);
     }
 
+    // 计算即将到来的待办单元格 sequence
+    List<Map<String, dynamic>> pendingCells = [];
+    for (var batchId in batches.keys) {
+      final batchWords = batches[batchId]!;
+      for (int sIndex = 0; sIndex < activeSteps.length; sIndex++) {
+        for (var w in batchWords) {
+          if (w.todayLearnedTimes == sIndex) {
+            pendingCells.add({'wordId': w.wordId, 'sIndex': sIndex});
+          }
+        }
+      }
+    }
+    
+    String? nextWordId;
+    int? nextStepIndex;
+    String? currentWordId = _currentGetWordResult?.learningWord?.word.id;
+    
+    if (pendingCells.isNotEmpty) {
+      int currentIndex = -1;
+      if (currentWordId != null) {
+        currentIndex = pendingCells.indexWhere((cell) => cell['wordId'] == currentWordId);
+      }
+      
+      if (currentIndex != -1 && currentIndex + 1 < pendingCells.length) {
+        nextWordId = pendingCells[currentIndex + 1]['wordId'];
+        nextStepIndex = pendingCells[currentIndex + 1]['sIndex'];
+      } else if (currentIndex == -1) {
+        nextWordId = pendingCells[0]['wordId'];
+        nextStepIndex = pendingCells[0]['sIndex'];
+      }
+    }
+
     showGeneralDialog(
       context: context,
       barrierDismissible: true,
@@ -4072,14 +4104,46 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                    Wrap(
+                      alignment: WrapAlignment.center,
+                      spacing: 12,
+                      runSpacing: 8,
                       children: [
                         buildLegendItem(true, false, '学过'),
-                        const SizedBox(width: 16),
                         buildLegendItem(false, false, '未学'),
-                        const SizedBox(width: 16),
                         buildLegendItem(true, true, '已掌握'),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 12,
+                              height: 12,
+                              decoration: BoxDecoration(
+                                color: Colors.green,
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(color: Colors.blueAccent, width: 1.5),
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Text('当前', style: TextStyle(fontSize: 10, color: subTextColor)),
+                          ],
+                        ),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 12,
+                              height: 12,
+                              decoration: BoxDecoration(
+                                color: isDark ? Colors.white24 : Colors.grey.withValues(alpha: 0.3),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(color: Colors.orange, width: 1.5),
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Text('下一个', style: TextStyle(fontSize: 10, color: subTextColor)),
+                          ],
+                        ),
                       ],
                     ),
                     const Divider(height: 24, thickness: 0.5),
@@ -4177,6 +4241,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                                                   ...batchWords.map((w) {
                                                     // Is the user learning this exact word in this exact step right now?
                                                     final isCurrentStep = _currentGetWordResult?.learningWord?.word.id == w.wordId && w.todayLearnedTimes == sIndex;
+                                                    final isNextStep = nextWordId == w.wordId && nextStepIndex == sIndex;
                                                     // From user's perspective, if I've passed this step, or I am currently on it, it's green.
                                                     final isStepCompleted = w.todayLearnedTimes > sIndex || isCurrentStep;
 
@@ -4191,7 +4256,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                                                         decoration: BoxDecoration(
                                                           color: isStepCompleted ? Colors.green : (isDark ? Colors.white24 : Colors.grey.withValues(alpha: 0.3)),
                                                           borderRadius: isWordFinished ? BorderRadius.circular(3) : BorderRadius.circular(7), // 矩形(圆角3)/圆形(圆角7)
-                                                          border: isCurrentStep ? Border.all(color: Colors.blueAccent, width: 2) : null,
+                                                          border: isCurrentStep ? Border.all(color: Colors.blueAccent, width: 2) : (isNextStep ? Border.all(color: Colors.orange, width: 2) : null),
                                                         ),
                                                       ),
                                                     );
