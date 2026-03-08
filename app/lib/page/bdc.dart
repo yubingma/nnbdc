@@ -448,38 +448,46 @@ class _EnglishAsrInputWidgetState extends State<EnglishAsrInputWidget> with Sing
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
     final accentColor = AppTheme.primaryColor;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(bottom: 8),
-          child: SizedBox(
-            height: 16,
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // 波纹动画反馈
+          SizedBox(
+            height: 20,
             child: AnimatedBuilder(
               animation: _waveController,
               builder: (context, child) {
                 final bool isListening = widget.asrState == AsrState.started;
                 return Row(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(6, (index) {
+                  children: List.generate(8, (index) {
                     double height;
                     double alpha;
+                    
                     if (isListening && _currentLevel > 0.05) {
-                      final randomFactor = 0.7 + _random.nextDouble() * 0.6;
-                      height = 3 + (13 * _currentLevel * randomFactor);
-                      alpha = isDarkMode ? 0.8 : 0.6;
+                      // 正在说话：动感波形
+                      final randomFactor = 0.6 + _random.nextDouble() * 0.8;
+                      height = 4 + (20 * _currentLevel * randomFactor);
+                      if (height > 20) height = 20;
+                      alpha = 0.5 + (0.5 * _currentLevel);
                     } else {
-                      final double value = sin((_waveController.value + (index * 0.15)) * pi * 2);
-                      height = 3 + (5 * (value + 1) / 2);
-                      alpha = isListening ? (isDarkMode ? 0.5 : 0.3) : (isDarkMode ? 0.2 : 0.1);
+                      // 等待或静音：固定呼吸波纹
+                      final double value = sin((_waveController.value + (index * 0.125)) * pi * 2);
+                      height = 4 + (8 * (value + 1) / 2);
+                      alpha = isListening ? 0.3 + (0.3 * (value + 1) / 2) : 0.1 + (0.1 * (value + 1) / 2);
                     }
+
                     return Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 1.2),
-                      width: 2.0,
+                      margin: const EdgeInsets.symmetric(horizontal: 1.5),
+                      width: 2.5,
                       height: height,
                       decoration: BoxDecoration(
                         color: accentColor.withValues(alpha: alpha),
-                        borderRadius: BorderRadius.circular(1),
+                        borderRadius: BorderRadius.circular(1.5),
                       ),
                     );
                   }),
@@ -487,60 +495,44 @@ class _EnglishAsrInputWidgetState extends State<EnglishAsrInputWidget> with Sing
               },
             ),
           ),
-        ),
-        TextField(
-          textAlign: TextAlign.center,
-          controller: widget.controller,
-          focusNode: widget.focusNode,
-          keyboardType: TextInputType.text,
-          decoration: InputDecoration(
-            isDense: true, // 使输入框更紧凑
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-            hintText: widget.asrState == AsrState.started
-                ? "请说出或输入单词"
-                : "等待播音...",
-            hintStyle: TextStyle(
-              color: context.watch<DarkMode>().isDarkMode ? Colors.white38 : Colors.black26,
-              fontSize: 14,
+          const SizedBox(height: 2),
+          Text(
+            widget.asrState == AsrState.started
+                ? "正在倾听..."
+                : (widget.asrState == AsrState.initialized || widget.asrState == AsrState.stopped)
+                    ? "准备就绪"
+                    : "正在处理中...",
+            style: TextStyle(
+              fontSize: 10,
+              color: isDarkMode ? Colors.white38 : Colors.black26,
+              fontWeight: FontWeight.w500,
             ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide.none,
-            ),
-            filled: true,
-            fillColor: context.watch<DarkMode>().isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
           ),
-          style: TextStyle(
-            fontSize: 16, // 稍微减小字号以适应紧凑顶栏
-            fontWeight: FontWeight.bold,
-            color: context.watch<DarkMode>().isDarkMode ? Colors.white : const Color(0xFF1A1A1A),
-          ),
-          onChanged: (value) {},
-        ),
-        if (widget.score != null && widget.score! > 0)
-          Padding(
-            padding: const EdgeInsets.only(top: 4),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                color: widget.score! >= 60 ? Colors.green.withValues(alpha: 0.1) : Colors.orange.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: widget.score! >= 60 ? Colors.green.withValues(alpha: 0.5) : Colors.orange.withValues(alpha: 0.5),
-                  width: 1,
+          if (widget.score != null && widget.score! > 0)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: widget.score! >= 60 ? Colors.green.withValues(alpha: 0.1) : Colors.orange.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: widget.score! >= 60 ? Colors.green.withValues(alpha: 0.5) : Colors.orange.withValues(alpha: 0.5),
+                    width: 1,
+                  ),
                 ),
-              ),
-              child: Text(
-                '发音评分: ${widget.score}',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: widget.score! >= 60 ? Colors.green : Colors.orange,
+                child: Text(
+                  '发音评分: ${widget.score}',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: widget.score! >= 60 ? Colors.green : Colors.orange,
+                  ),
                 ),
               ),
             ),
-          ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -647,6 +639,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
   /// 当前正在播放的所有提示音 Future 列表，用于等待所有提示音播放完成
   final List<Future<void>> _playingCorrectSounds = [];
+
+  /// 当前 ASR 会议返回的所有候选结果，用于在英→中模式下进行多重探测
+  List<String> _currentAsrCandidates = [];
 
   /// 学习时长计时器
   Timer? _learningTimer;
@@ -1045,77 +1040,56 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         resultData = null;
       }
 
-      if (resultData != null && resultData.containsKey('candidates')) {
+    if (resultData != null && resultData.containsKey('candidates')) {
         // 处理多个候选结果
         List<dynamic> candidates = resultData['candidates'];
         List<String> candidateStrings = candidates.map((e) => e.toString()).toList();
         String bestCandidate = resultData['best'] ?? candidateStrings.first;
 
-        Global.logger.d('ASR: Multiple candidates received: $candidateStrings');
-        Global.logger.d('ASR: Best candidate: $bestCandidate');
+        _currentAsrCandidates = candidateStrings;
 
         if (_studyStep == StudyStep.ch2En.json) {
           if (_word != null) {
             // 中→英模式：结合拼写相似度和音素相似度的智能选择
             final result = await AsrUtil.selectBestCandidateWithPhonemeAndScore(candidateStrings, _word!.spell);
-
-            // 记录评分
             _currentScore = result.score;
-
-            // 进一步进行英文预处理（如去除前缀噪音、模糊匹配等）
             processedResult = AsrUtil.preprocessEnglish(result.text, _word!.spell);
-            Global.logger.d('ASR: Selected & Preprocessed: "$processedResult" (原始选择: "${result.text}", 目标: ${_word!.spell}, 分数: ${result.score})');
+            Global.logger.d('ASR: Selected & Preprocessed: "$processedResult" (score: ${result.score})');
           } else {
-             // _word 还未加载好时，直接保留获取的最佳候选结果
              processedResult = bestCandidate;
              _currentScore = null;
-             Global.logger.d('ASR: _word is null, caching raw candidate: "$processedResult"');
           }
+        } else if (_studyStep == StudyStep.en2Ch.json) {
+           // 英→中模式：UI 显示最佳候选，但背后匹配逻辑会遍历所有 _currentAsrCandidates
+           processedResult = AsrUtil.preprocess(bestCandidate);
+           _currentScore = null;
+           Global.logger.d('ASR [en2Ch]: Stored ${candidateStrings.length} candidates, showing best: $processedResult');
         } else {
-          // 其他模式：直接使用最佳候选结果，不进行多候选比对，以保证最高响应速度
           processedResult = bestCandidate;
-          // 清空评分
           _currentScore = null;
-
-          if (_studyStep == StudyStep.en2Ch.json) {
-            // 英→中模式：仅进行基础展示预处理（如数字转中文）
-            processedResult = AsrUtil.preprocess(processedResult);
-            Global.logger.d('ASR [en2Ch]: Raw result: $processedResult');
-          } else {
-            Global.logger.d('ASR: Using best candidate: $processedResult');
-          }
         }
       } else {
         // 单个结果处理
+        _currentAsrCandidates = [event.toString()];
         if (_studyStep == StudyStep.ch2En.json) {
           if (_word != null) {
-             // 中→英模式：英文预处理（单个结果场景下也尝试音素匹配）
              final pre = AsrUtil.preprocessEnglish(event, _word!.spell);
-             // 也获取分数
              final result = await AsrUtil.selectBestCandidateWithPhonemeAndScore([pre], _word!.spell);
              processedResult = result.text;
              _currentScore = result.score;
-             Global.logger.d('ASR: Single result processed: "$event" -> "$processedResult" (target: ${_word!.spell}, score: $_currentScore)');
           } else {
-             // 还没加载完的情况，先原样保存
              processedResult = event;
              _currentScore = null;
-             Global.logger.d('ASR: Single result early fallback: "$event"');
           }
         } else {
-          // 其他模式：中文预处理
           processedResult = AsrUtil.preprocess(event);
           Global.logger.d('ASR: Chinese processed result: $processedResult');
         }
       }
     } catch (e) {
       Global.logger.e('ASR: Error processing result: $e');
-      // 出错时使用原始结果进行基本预处理
-      if (_studyStep == StudyStep.ch2En.json && _word != null) {
-        processedResult = AsrUtil.preprocessEnglish(event, _word!.spell);
-      } else {
-        processedResult = AsrUtil.preprocess(event);
-      }
+      processedResult = AsrUtil.preprocess(event.toString());
+      _currentAsrCandidates = [event.toString()];
     }
 
     if (mounted) {
@@ -1166,9 +1140,16 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     if (_studyStep == StudyStep.en2Ch.json) {
       // 英→中：验证中文释义
       late MeaningMatchResult result;
+      
+      // 核心改动：如果当前输入框内容匹配上一刻 ASR 处理出的 processedResult，说明它是通过 ASR 触发的，
+      // 此时我们使用记录下的 _currentAsrCandidates 列表进行多重探测。
+      // 否则（如用户手动编辑键盘输入），我们只使用输入框当前文本。
+      final isFromAsr = _meaningController.text == _handlingChinese;
+      final inputs = isFromAsr ? _currentAsrCandidates : [_handlingChinese];
+      
       result = matchInputChineseWithMeaningItems(
         _wordWrapper!,
-        _handlingChinese,
+        inputs,
       );
 
       // 检查用户说出的正确释义数量是否达到要求
@@ -1336,6 +1317,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       asr.reset();
       _meaningController.text = '';
       _handlingChinese = '';
+      _currentAsrCandidates = [];
       _firstMatchTime = null;
       _hintUsed = false;
       _highlightedWordImg = null;

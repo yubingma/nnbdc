@@ -48,11 +48,15 @@ List<String> splitMeaning2Parts(String meaning) {
   return parts.where((part) => part.isNotEmpty).toList();
 }
 
-/// 在单词的所有释义项子项，以及给定的中文内容之间进行匹配，返回释义项子项总数量/匹配上的释义项子项数量/本次新增匹配数量
-MeaningMatchResult matchInputChineseWithMeaningItems(WordWrapper wordWrapper, String asrResult) {
+/// 在单词的所有释义项子项，以及给定的中文内容(或多候选列表)之间进行匹配，返回释义项子项总数量/匹配上的释义项子项数量/本次新增匹配数量
+MeaningMatchResult matchInputChineseWithMeaningItems(WordWrapper wordWrapper, Object asrInput) {
   var count = 0; // 所有释义项子项数量
   var newMatchCount = 0; //本次匹配新匹配上的释义项数量
   var meaningItems = wordWrapper.word.getMergedMeaningItems();
+
+  // 统一转为列表处理
+  final List<String> inputs = asrInput is List<String> ? asrInput : [asrInput.toString()];
+
   for (var i = 0; i < meaningItems.length; i++) {
     // 每个元素对应一个词性
     var meaningItem = meaningItems[i];
@@ -65,7 +69,16 @@ MeaningMatchResult matchInputChineseWithMeaningItems(WordWrapper wordWrapper, St
       }
       count++;
       if (!wordWrapper.asrMatchedMeaningItemParts.contains(Pair(i, j))) {
-        if (fuzzyChineseContains(asrResult, part)) {
+        // 只要任一候选匹配上，就认为该释义项被答对
+        bool isMatched = false;
+        for (final input in inputs) {
+          if (fuzzyChineseContains(input, part)) {
+            isMatched = true;
+            break;
+          }
+        }
+
+        if (isMatched) {
           newMatchCount++;
           wordWrapper.asrMatchedMeaningItemParts.add(Pair(i, j));
         }

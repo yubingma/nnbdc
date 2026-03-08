@@ -351,10 +351,20 @@ bool fuzzyPinyinContains(String pinyin1, String pinyin2) {
   return contains;
 }
 
-/// 判断汉字字符串chinese1是否大致包含（发音大致相似）汉字字符串chinese2
+/// 判断汉字字符串(或列表)chinese1是否大致包含（发音大致相似）汉字字符串chinese2
+/// 如果chinese1是List<String>，则只要其中任一元素包含chinese2，即返回true
 /// 注：chinese2内容可能含有逗号，此时，chinese2被视为含有n个子串，只要chinese1包含其中一个子串，就认为chinese1包含chinese2
-bool fuzzyChineseContains(String chinese1, String chinese2) {
-  var pinyin = chineseToPinyin2(chinese1.replaceAll("  ", " "), true);
+bool fuzzyChineseContains(Object chinese1, String chinese2) {
+  if (chinese1 is List<String>) {
+    for (final item in chinese1) {
+      if (fuzzyChineseContains(item, chinese2)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  var pinyin = chineseToPinyin2(chinese1.toString().replaceAll("  ", " "), true);
 
   var meaning = chinese2;
   meaning = meaning.replaceAll(RegExp("[（|\\(].*[）|\\)]"), "").replaceAll(RegExp("[\\[].*[\\]]"), ""); //去掉释义中包含在括号中的内容
