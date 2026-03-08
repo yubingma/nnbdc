@@ -75,6 +75,7 @@ class _MePageState extends State<MePage> {
 
   /// 最近一次同步是否失败
   bool _isLastSyncFailed = false;
+  Future<Widget>? _learningDictsFuture;
 
   Future<void> _pickAndUploadAvatar() async {
     final picker = ImagePicker();
@@ -211,9 +212,13 @@ class _MePageState extends State<MePage> {
     // 保存监听器引用以便在dispose中移除
     _socketEventListener = (event, args) {
       if (event == 'persistentMsgCount' && mounted) {
-        unreadMsgCount = args[0];
-        msgCount = args[1];
-        setState(() {});
+        int newUnread = args[0];
+        int newMsg = args[1];
+        if (newUnread != unreadMsgCount || newMsg != msgCount) {
+          unreadMsgCount = newUnread;
+          msgCount = newMsg;
+          setState(() {});
+        }
       }
     };
 
@@ -253,197 +258,137 @@ class _MePageState extends State<MePage> {
     Api.setLoadingDisabled(true);
 
     try {
-      isDarkMode = await MyDatabase.instance.localParamsDao.getIsDarkMode();
+      final isDarkModeVal = await MyDatabase.instance.localParamsDao.getIsDarkMode();
+      final isLastSyncFailedVal = await SyncLogService().isLastSyncFailed();
 
-      // 检查最近一次同步状态
-      _isLastSyncFailed = await SyncLogService().isLastSyncFailed();
+      UserVo? loggedInUserVal;
+      List<String>? last30DaysDakaStatusVal;
+      int msgCountVal = 0;
+      int unreadMsgCountVal = 0;
+      StudyProgress? studyProgressVal;
 
       if (Global.isGuest) {
-        // 访客模式：直接使用本地用户信息
         final user = Global.getLoggedInUser();
-        loggedInUser = user != null ? UserVo.fromUser(user) : null;
-        if (mounted) {
-          setState(() {
-            email.text = '未登录';
-            password.text = '';
-            password2.text = '';
-            nickname.text = loggedInUser?.displayNickName ?? '游客';
-          });
-        }
-        // 访客不进行同步
+        loggedInUserVal = user != null ? UserVo.fromUser(user) : null;
       } else {
         var result0 = await UserBo().getLoggedInUser();
         if (result0.success) {
-          if (mounted) {
-            setState(() {
-              loggedInUser = result0.data;
-              email.text = loggedInUser!.email ?? '';
-              password.text = '';
-              password2.text = '';
-              nickname.text = loggedInUser!.displayNickName!;
-            });
-          }
+          loggedInUserVal = result0.data;
         } else {
           ToastUtil.error(result0.msg!);
           return;
         }
 
-        // 检查并强制执行会员限制（非会员每日单词限额 20）
+        // 检查并强制执行会员限制
         await SubscriptionUtil.checkAndEnforceMemberLimits();
-
-        // 同步数据库并下载词书
-        // 使用异步方式，不阻塞页面加载，同步完成后自动显示下载进度对话框
         _syncAndDownloadDicts();
       }
 
-      // 访客模式：直接检查并下载本地不存在的词书（异步，不阻塞页面）
       if (Global.isGuest) {
         _checkAndDownloadDicts();
       }
 
-      // 从本地数据库获取用户学习进度
       final db = MyDatabase.instance;
-      User? user = await db.usersDao.getUserById(loggedInUser!.id!);
-      if (user == null) {
-        Global.logger.d('User not found in local database for id: ${loggedInUser!.id}');
-        return;
+      User? user = await db.usersDao.getUserById(loggedInUserVal!.id!);
+      if (user != null) {
+        var learningDicts = await MyDatabase.instance.learningDictsDao.getLearningDictsOfUser(user.id);
+        var totalLearningWords = await (db.select(db.learningWords)
+              ..where((lw) => lw.userId.equals(user.id))
+              ..where((lw) => lw.stability.isSmallerThanValue(Constants.graduationStability)))
+            .get();
+        var globalLearningWordsCount = totalLearningWords.length;
+
+        var dictWordIds = await (db.selectOnly(db.dictWords)
+              ..addColumns([db.dictWords.wordId])
+              ..where(db.dictWords.dictId.isIn(learningDicts.map((d) => d.dictId).toList())))
+            .get();
+        var uniqueWordIdsInDicts = dictWordIds.map((row) => row.read(db.dictWords.wordId)!).toSet();
+        var rawWordCount = uniqueWordIdsInDicts.length;
+
+        var learningWordIds = totalLearningWords.map((w) => w.wordId).toSet();
+        var learningWordsInSelectedDictsCount = learningWordIds.intersection(uniqueWordIdsInDicts).length;
+
+        var allMasteredWordIdSet = await db.masteredWordsDao.getMasteredWordIdSet(user.id);
+        var globalMasteredWordsCount = allMasteredWordIdSet.length;
+
+        var masteredWordIdsInSelectedDicts = allMasteredWordIdSet.intersection(uniqueWordIdsInDicts);
+        var masteredWordsInSelectedDictsCount = masteredWordIdsInSelectedDicts.length;
+
+        var allDictsFinished = (learningWordsInSelectedDictsCount + masteredWordsInSelectedDictsCount) >= rawWordCount;
+        LevelVo levelVo = LevelUtil.getLevelVoByWordCount(globalMasteredWordsCount);
+
+        studyProgressVal = StudyProgress(
+          user.learnedDays,
+          user.dakaDayCount,
+          user.dakaRatio ?? 0.0,
+          UserHelper.calculateTotalScore(user.gameScore, user.dakaScore),
+          -1.0,
+          rawWordCount,
+          user.cowDung,
+          levelVo,
+          globalMasteredWordsCount,
+          globalLearningWordsCount,
+          masteredWordsInSelectedDictsCount,
+          learningWordsInSelectedDictsCount,
+          user.wordsPerDay,
+          user.continuousDakaDayCount,
+          user.throwDiceChance,
+          allDictsFinished,
+          UserHelper.isTodayLearningFinishedFromUser(user),
+          learningDicts,
+          totalLearningSeconds: user.totalLearningSeconds ?? 0,
+          todayLearningSeconds: user.todayLearningSeconds ?? 0,
+        );
+
+        // 获取个人排名
+        if (!Global.isGuest) {
+          var result4 = await Api.client.getUserRank(loggedInUserVal.id!);
+          if (result4.success) {
+            studyProgressVal.userOrder = result4.data;
+          }
+        }
       }
 
-      // 获取所有词书的学习状态
-      var learningDicts = await MyDatabase.instance.learningDictsDao.getLearningDictsOfUser(user.id);
-
-      // 获取学习中的单词数量（只统计掌握度小于5的单词）
-      var totalLearningWords = await (db.select(db.learningWords)
-            ..where((lw) => lw.userId.equals(user.id))
-            ..where((lw) => lw.stability.isSmallerThanValue(Constants.graduationStability)))
-          .get();
-      var globalLearningWordsCount = totalLearningWords.length;
-
-      // 获取词书中的唯一单词总数
-      var dictWordIds = await (db.selectOnly(db.dictWords)
-            ..addColumns([db.dictWords.wordId])
-            ..where(db.dictWords.dictId.isIn(learningDicts.map((d) => d.dictId).toList())))
-          .get();
-      var uniqueWordIdsInDicts = dictWordIds.map((row) => row.read(db.dictWords.wordId)!).toSet();
-      var rawWordCount = uniqueWordIdsInDicts.length;
-
-      // 统计当前所选词书中的学习中单词数量
-      var learningWordIds = totalLearningWords.map((w) => w.wordId).toSet();
-      var learningWordsInSelectedDictsCount = learningWordIds.intersection(uniqueWordIdsInDicts).length;
-
-      // 获取所有已掌握单词数量
-      var allMasteredWordIdSet = await db.masteredWordsDao.getMasteredWordIdSet(user.id);
-      var globalMasteredWordsCount = allMasteredWordIdSet.length;
-
-      // 只统计当前所选词书中的已掌握单词，用于计算词书进度百分比
-      var masteredWordIdsInSelectedDicts = allMasteredWordIdSet.intersection(uniqueWordIdsInDicts);
-      var masteredWordsInSelectedDictsCount = masteredWordIdsInSelectedDicts.length;
-
-      // 判断是否所有词书都已学完(已经取不出词进入学习中单词池了)：学习中+已掌握 >= 总单词数
-      // 这里的口径是“当前勾选的词书”
-      var allDictsFinished = (learningWordsInSelectedDictsCount + masteredWordsInSelectedDictsCount) >= rawWordCount;
-
-      // 使用LevelUtil根据 全局 掌握单词数计算等级（成就感不应因为取消勾选词书而下降）
-      LevelVo levelVo = LevelUtil.getLevelVoByWordCount(globalMasteredWordsCount);
-
-      if (mounted) {
-        setState(() {
-          studyProgress = StudyProgress(
-            user.learnedDays,
-            user.dakaDayCount,
-            user.dakaRatio ?? 0.0,
-            UserHelper.calculateTotalScore(user.gameScore, user.dakaScore),
-            -1.0, // 排名信息通过API获取，初始化为-1表示未获取
-            rawWordCount,
-            user.cowDung,
-            levelVo,
-            globalMasteredWordsCount,
-            globalLearningWordsCount,
-            masteredWordsInSelectedDictsCount,
-            learningWordsInSelectedDictsCount,
-            user.wordsPerDay,
-            user.continuousDakaDayCount,
-            user.throwDiceChance,
-            allDictsFinished,
-            UserHelper.isTodayLearningFinishedFromUser(user),
-            learningDicts,
-            totalLearningSeconds: user.totalLearningSeconds ?? 0,
-            todayLearningSeconds: user.todayLearningSeconds ?? 0,
-          );
-        });
-      }
-
-      // 访客和登录用户统一从本地数据库查询打卡状态
       var result2 = await UserBo().getDayStatuses(30);
       if (result2.success) {
-        if (mounted) {
-          setState(() {
-            last30DaysDakaStatus = result2.data!;
-          });
-        }
+        last30DaysDakaStatusVal = result2.data!;
       } else {
-        // 查询失败时回退为默认状态
-        if (mounted) {
-          setState(() {
-            last30DaysDakaStatus = List.filled(30, UserDayStatus.notLogin.json);
-          });
-        }
+        last30DaysDakaStatusVal = List.filled(30, UserDayStatus.notLogin.json);
       }
 
       if (!Global.isGuest) {
-        var result3 = await Api.client.getMsgCounts(loggedInUser!.id!);
+        var result3 = await Api.client.getMsgCounts(loggedInUserVal.id!);
         if (result3.success) {
-          if (mounted) {
-            setState(() {
-              msgCount = result3.data!.first;
-              unreadMsgCount = result3.data!.second;
-            });
-          }
-        } else {
-          ToastUtil.error(result3.msg!);
+          msgCountVal = result3.data!.first;
+          unreadMsgCountVal = result3.data!.second;
         }
+      }
 
-        // 获取用户排名
-        var result4 = await Api.client.getUserRank(loggedInUser!.id!);
-        if (result4.success && studyProgress != null) {
-          if (mounted) {
-            setState(() {
-              studyProgress!.userOrder = result4.data;
-            });
+      if (mounted) {
+        setState(() {
+          isDarkMode = isDarkModeVal;
+          _isLastSyncFailed = isLastSyncFailedVal;
+          loggedInUser = loggedInUserVal;
+          if (loggedInUser != null) {
+            email.text = loggedInUser!.email ?? (Global.isGuest ? '未登录' : '');
+            nickname.text = loggedInUser!.displayNickName ?? (Global.isGuest ? '游客' : '');
           }
-        } else if (!result4.success) {
-          Global.logger.w("获取用户排名失败: ${result4.msg}");
-        }
-      } else {
-        // 访客模式：初始化消息数为0
-        if (mounted) {
-          setState(() {
-            msgCount = 0;
-            unreadMsgCount = 0;
-          });
-        }
+          studyProgress = studyProgressVal;
+          last30DaysDakaStatus = last30DaysDakaStatusVal;
+          msgCount = msgCountVal;
+          unreadMsgCount = unreadMsgCountVal;
+          
+          // 更新 Future 以触发 FutureBuilder 重新加载
+          _learningDictsFuture = renderLearningDicts();
+        });
       }
     } catch (e, stackTrace) {
-      // 区分网络异常和其他异常，给用户更明确的提示
       if (ErrorHandler.isNetworkError(e)) {
-        ErrorHandler.handleNetworkError(
-          e,
-          stackTrace,
-          api: 'loadData',
-          showToast: true,
-        );
+        ErrorHandler.handleNetworkError(e, stackTrace, api: 'loadData', showToast: true);
       } else {
-        // 非网络异常，使用通用错误处理
-        ErrorHandler.handleError(
-          e,
-          stackTrace,
-          userMessage: '加载数据失败，请刷新重试',
-          logPrefix: '加载数据失败',
-          showToast: true,
-        );
+        ErrorHandler.handleError(e, stackTrace, userMessage: '加载数据失败，请刷新重试', logPrefix: '加载数据失败', showToast: true);
       }
     } finally {
-      // 重新启用loading提示
       Api.setLoadingDisabled(false);
     }
   }
@@ -1030,7 +975,7 @@ class _MePageState extends State<MePage> {
               ),
               const SizedBox(height: 16),
               FutureBuilder<Widget>(
-                future: renderLearningDicts(),
+                future: _learningDictsFuture,
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return Center(child: CircularProgressIndicator(color: isDarkModeEnabled ? Colors.white24 : Colors.black12));
@@ -2916,7 +2861,7 @@ class _DictCardState extends State<DictCard> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
         decoration: BoxDecoration(
           color: bgColor,
           borderRadius: BorderRadius.circular(8),
@@ -2937,10 +2882,10 @@ class _DictCardState extends State<DictCard> {
               label,
               style: TextStyle(
                 color: isActive ? contentColor : contentColor.withValues(alpha: 0.4),
-                fontSize: 13,
+                fontSize: 12,
                 fontWeight: FontWeight.w500,
-                height: 1.5,
-                letterSpacing: 0.6,
+                height: 1.3,
+                letterSpacing: 0,
               ),
               textScaler: const TextScaler.linear(1.0),
             ),
@@ -2965,7 +2910,7 @@ class _DictCardState extends State<DictCard> {
     return GestureDetector(
       onTap: () => onChanged(!value),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
         decoration: BoxDecoration(
           color: bgColor,
           borderRadius: BorderRadius.circular(8),
@@ -2993,10 +2938,10 @@ class _DictCardState extends State<DictCard> {
               label,
               style: TextStyle(
                 color: contentColor,
-                fontSize: 13,
+                fontSize: 12,
                 fontWeight: FontWeight.w500,
-                height: 1.5,
-                letterSpacing: 0.6,
+                height: 1.3,
+                letterSpacing: 0,
               ),
               textScaler: const TextScaler.linear(1.0),
             ),

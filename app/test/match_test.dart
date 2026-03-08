@@ -4,10 +4,29 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('Test fuzzyChineseContains', () {
-    String asrResult = "你";
-    String meaning = "n. 捏";
+    String asrResult = "以右";
+    String meaning = "n. 引诱";
     
     bool match = fuzzyChineseContains(asrResult, meaning);
     debugPrint('asrResult: $asrResult, meaning: $meaning, match: $match');
+    expect(match, isTrue);
+  });
+
+  test('Test fuzzyChineseContains - 引用', () {
+    String asrResult = "引用";
+    String meaning = "n. 引诱";
+    
+    bool match = fuzzyChineseContains(asrResult, meaning);
+    debugPrint('asrResult: $asrResult, meaning: $meaning, match: $match');
+    expect(match, isTrue);
+  });
+
+  test('Test fuzzyChineseContainsiong - iu', () {
+    String asrResult = "无穷";
+    String meaning = "无球"; // Not a real word, but testing the phonetic match
+    
+    bool match = fuzzyChineseContains(asrResult, meaning);
+    debugPrint('asrResult: $asrResult, meaning: $meaning, match: $match');
+    expect(match, isTrue);
   });
 }

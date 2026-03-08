@@ -2629,6 +2629,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
   /// 放大单词配图对话框
   Future<void> showEditPicDlg(BuildContext context, WordImageVo wordImage) async {
+    Future<bool>? voteFuture;
     showGeneralDialog(
         context: context,
         barrierDismissible: true,
@@ -2640,7 +2641,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
               child: child);
         },
         pageBuilder: (context, animation, secondaryAnimation) {
-          return StatefulBuilder(builder: (context, setState) {
+          return StatefulBuilder(builder: (context, dialogSetState) {
+            voteFuture ??= wordImageHasBeenVoted(wordImage);
             return Align(
               alignment: const Alignment(0, 0),
               child: Container(
@@ -2692,7 +2694,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                         ),
                       ),
                       FutureBuilder<bool>(
-                          future: wordImageHasBeenVoted(wordImage),
+                          future: voteFuture,
                           builder: (BuildContext context, AsyncSnapshot<bool> snapshot) {
                             if (snapshot.connectionState == ConnectionState.done) {
                               return Row(
@@ -2723,8 +2725,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                                               VotedWordImage(userId: Global.getLoggedInUser()!.id, imageId: wordImage.id, vote: 'HAND'));
                                           wordImage.hand += 1;
                                           _wordImageEdited = true;
+                                          voteFuture = Future.value(true);
                                           if (mounted) {
-                                            setState(() {});
+                                            dialogSetState(() {});
                                           }
                                         } else {
                                           ToastUtil.error(result.msg!);
@@ -2758,8 +2761,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                                               VotedWordImage(userId: Global.getLoggedInUser()!.id, imageId: wordImage.id, vote: 'FOOT'));
                                           wordImage.foot += 1;
                                           _wordImageEdited = true;
+                                          voteFuture = Future.value(true);
                                           if (mounted) {
-                                            setState(() {});
+                                            dialogSetState(() {});
                                           }
                                         } else {
                                           ToastUtil.error(result.msg!);
@@ -3174,59 +3178,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildEditToggle() {
-    final isDarkMode = context.watch<DarkMode>().isDarkMode;
-
-    return InkWell(
-      borderRadius: BorderRadius.circular(16),
-      onTap: () {
-        setState(() {
-          _isEditMode = !_isEditMode;
-        });
-      },
-      child: Container(
-        height: 32,
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
-        decoration: BoxDecoration(
-          color: isDarkMode ? const Color(0xFF2C2C2C) : const Color(0xFFF8F9FA),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
-            width: 1,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // 图标
-            Icon(
-              Icons.edit,
-              size: 12,
-              color: isDarkMode ? Colors.white70 : const Color(0xFF333333),
-            ),
-            // Switch - 禁用点击，只用作视觉指示器
-            SizedBox(
-              width: 28,
-              child: Transform.scale(
-                scale: 0.5,
-                child: IgnorePointer(
-                  child: Switch(
-                    value: _isEditMode,
-                    onChanged: (_) {},
-                    activeThumbColor: isDarkMode ? Colors.white : const Color(0xFF1A1A1A),
-                    inactiveThumbColor: Colors.grey[400],
-                    inactiveTrackColor: isDarkMode ? Colors.white10 : Colors.grey[200],
-                    activeTrackColor: isDarkMode ? Colors.white24 : Colors.black12,
-                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   Widget _buildTopButtonsRow() {
     return Container(
@@ -3279,7 +3230,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                 ),
 
                 // 编辑开关 - 仅在meaning模式下且非Web平台显示
-                // if (_studyStep == StudyStep.ch2En.json && !PlatformUtils.isWeb) _buildEditToggle(),
+
 
                 // 报错按钮
                 _buildTopActionButton(

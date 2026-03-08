@@ -8,13 +8,13 @@ import 'clock_like_adder.dart';
 const minSimularityForMatch = 0.7;
 
 /// 声母相似度在整个拼音相似度中所占权重（略降权）
-const shengmuSimilarityWeight = 0.35;
+const shengmuSimilarityWeight = 0.4;
 
 /// 韵母相似度在整个拼音相似度中所占权重（略升权，中文感知更依赖韵母）
 const yunmuSimilarityWeight = 0.5;
 
 /// 声调相似度在整个拼音相似度中所占权重（降权，容错更强）
-const toneSimilarityWeight = 0.15;
+const toneSimilarityWeight = 0.1;
 
 /// 声母相似度对照表（基于发音部位/方式与常见混淆）
 Map<String, double> shengMuSimularityMap = {
@@ -73,7 +73,7 @@ Map<String, double> yunMuSimularityMap = {
   "o-e": 0.35,
   "o-u": 0.50,
   "e-u": 0.35,
-  "i-v": 0.50, // i ~ ü
+  "i-v": 0.70, // i ~ ü
   "v-u": 0.40,
   "i-ie": 0.70,
 
@@ -83,7 +83,6 @@ Map<String, double> yunMuSimularityMap = {
   "ei-ui": 0.45,
   "ao-ou": 0.65,
   "ao-iu": 0.35,
-  "ou-iu": 0.45,
   "ie-ve": 0.70,
 
   // 省略音节等价（书写差异）
@@ -98,7 +97,9 @@ Map<String, double> yunMuSimularityMap = {
   "en-in": 0.40,
   "en-vn": 0.40,
   "in-un": 0.35,
-  "in-vn": 0.45,
+  "in-vn": 0.80,
+  "in-i": 0.85,
+  "in-v": 0.80,
   "un-vn": 0.60,
 
   // 后鼻音群
@@ -109,12 +110,18 @@ Map<String, double> yunMuSimularityMap = {
   "eng-ong": 0.55,
   "ing-ong": 0.45,
   "iong-ong": 0.60,
+  "ong-ou": 0.60,
+  "iong-iu": 0.60,
 
   // 近邻/插入元音差异
   "an-ang": 0.55,
   "en-eng": 0.55,
   "in-ing": 0.85,
   "u-ou": 0.50,
+  "u-iu": 0.60,
+  "v-iu": 0.70,
+  "ou-iu": 0.75,
+  "ou-v": 0.75,
   "a-ua": 0.65,
   "uo-o": 0.70,
   "ua-a": 0.65,
@@ -126,6 +133,10 @@ Map<String, double> yunMuSimularityMap = {
   "ian-uan": 0.70,
   "iao-ao": 0.60,
   "uan-an": 0.50,
+
+  "i-yi": 0.95,
+  "u-wu": 0.95,
+  "v-yu": 0.95,
 
   // 低相似示例（保留以区分）
   "an-ai": 0.30,
@@ -151,7 +162,7 @@ class PinyinParser {
   /// a ai an ang ao e ê ei en eng er o ou
   ///
   /// @since 0.1.1
-  static final List<String> zeroShengMuList = ["a", "ai", "an", "ang", "ao", "e", "ê", "ei", "en", "eng", "er", "o", "ou"];
+  static final List<String> zeroShengMuList = ["a", "ai", "an", "ang", "ao", "e", "ê", "ei", "en", "eng", "er", "o", "ou", "yi", "wu", "yu", "ye", "yue", "yuan", "yin", "yun", "ying"];
 
   /// 双字母的声母
   /// zh
@@ -167,16 +178,52 @@ class PinyinParser {
     tone = int.parse(pinyinWithTone.substring(pinyinWithTone.length - 1));
 
     // 解析声母
-    if (isZeroShengMu(pinyinNormal)) {
-      shengMu = "";
-    } else {
-      final String prefixDouble = pinyinNormal.substring(0, 2);
-      if (doubleShengMuList.contains(prefixDouble)) {
-        shengMu = prefixDouble;
-      } else {
-        // 返回第一个音节
-        shengMu = pinyinNormal.substring(0, 1);
+    shengMu = "";
+    for (var zero in zeroShengMuList) {
+      if (pinyinNormal.startsWith(zero)) {
+        // 特殊处理 yi, wu, yu 等，它们本质上是 i, u, v 的零声母形式
+        if (zero == "yi") {
+          yunMu = "i" + pinyinNormal.substring(2);
+          return;
+        } else if (zero == "wu") {
+          yunMu = "u" + pinyinNormal.substring(2);
+          return;
+        } else if (zero == "yu") {
+          yunMu = "v" + pinyinNormal.substring(2);
+          return;
+        } else if (zero == "yin") {
+          yunMu = "in" + pinyinNormal.substring(3);
+          return;
+        } else if (zero == "yun") {
+          yunMu = "vn" + pinyinNormal.substring(3);
+          return;
+        } else if (zero == "ying") {
+          yunMu = "ing" + pinyinNormal.substring(4);
+          return;
+        } else if (zero == "yuan") {
+          yunMu = "van" + pinyinNormal.substring(4);
+          return;
+        } else if (zero == "yue") {
+          yunMu = "ve" + pinyinNormal.substring(3);
+          return;
+        } else if (zero == "ye") {
+          yunMu = "ie" + pinyinNormal.substring(2);
+          return;
+        }
+        
+        // 其他情况，只要在 zeroShengMuList 中，shengMu 就是 ""
+        shengMu = "";
+        yunMu = pinyinNormal;
+        return;
       }
+    }
+
+    final String prefixDouble = pinyinNormal.substring(0, 2);
+    if (doubleShengMuList.contains(prefixDouble)) {
+      shengMu = prefixDouble;
+    } else {
+      // 返回第一个音节
+      shengMu = pinyinNormal.substring(0, 1);
     }
 
     // 解析韵母
@@ -346,7 +393,7 @@ bool fuzzyPinyinContains(String pinyin1, String pinyin2) {
   var sim = maxSimSum / parts2.length;
 
   // 对于短句（3个字及以下），提高匹配门槛，防止被“的”等常用字干扰 
-  double finalThreshold = parts2.length <= 3 ? 0.75 : minSimularityForMatch;
+  double finalThreshold = parts2.length <= 3 ? 0.60 : minSimularityForMatch;
   var contains = sim > finalThreshold;
   return contains;
 }

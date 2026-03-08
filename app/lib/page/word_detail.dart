@@ -74,6 +74,11 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
   bool dataLoaded = false;
   bool hasError = false;
   String? errorMessage;
+  final Map<String, Future<bool>> _voteFutures = {};
+
+  Future<bool> _getVoteFuture(SentenceVo sentence) {
+    return _voteFutures.putIfAbsent(sentence.id, () => sentenceHasBeenVoted(sentence));
+  }
   bool isWrongWord = false; // 是否是错词
   static const double leftPadding = 16;
   static const double rightPadding = 16;
@@ -1544,7 +1549,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
         child: Container(
       margin: const EdgeInsets.fromLTRB(0, 0, 0, 0),
       child: FutureBuilder<bool>(
-          future: sentenceHasBeenVoted(sentence),
+          future: _getVoteFuture(sentence),
           builder: (BuildContext context, AsyncSnapshot<bool> snapshot) {
             if (snapshot.connectionState == ConnectionState.done) {
               return InkWell(
@@ -1559,6 +1564,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                         .createEntity(VotedSentence(userId: Global.getLoggedInUser()!.id, sentenceId: sentence.id, vote: 'HAND'));
                     sentence.handCount += 1;
                     await MyDatabase.instance.sentencesDao.updateHandCount(sentence.id, sentence.handCount);
+                    _voteFutures[sentence.id] = Future.value(true);
                     setState(() {});
                   } else {
                     ToastUtil.error(result.msg!);
@@ -1586,7 +1592,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
         child: Container(
       margin: const EdgeInsets.fromLTRB(8, 0, 0, 0),
       child: FutureBuilder<bool>(
-          future: sentenceHasBeenVoted(sentence),
+          future: _getVoteFuture(sentence),
           builder: (BuildContext context, AsyncSnapshot<bool> snapshot) {
             if (snapshot.connectionState == ConnectionState.done) {
               return InkWell(
@@ -1601,6 +1607,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                         .createEntity(VotedSentence(userId: Global.getLoggedInUser()!.id, sentenceId: sentence.id, vote: 'FOOT'));
                     sentence.footCount += 1;
                     await MyDatabase.instance.sentencesDao.updateFootCount(sentence.id, sentence.footCount);
+                    _voteFutures[sentence.id] = Future.value(true);
                     setState(() {});
                   } else {
                     ToastUtil.error(result.msg!);
