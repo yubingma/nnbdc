@@ -1204,6 +1204,11 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
           _canLeaveCurrWord = true;
         });
 
+        // 核心修复：如果已完全答对（满足通过规则），在播放提示音前立即停止 ASR，释放音频通道以杜绝反馈音颤抖
+        if (_isAnswerCorrect) {
+          await asr.stopAsr();
+        }
+
         // 并发播放提示音，支持多个提示音同时播放，互不干扰
         // 将提示音 Future 添加到列表中，用于后续等待所有提示音播放完成
         final soundFuture = SoundUtil.playAssetSoundConcurrent('correct.mp3', 1.5, 0.2);
@@ -1265,12 +1270,13 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
             rating = FsrsRating.hard; // Hard
           }
         }
+        
+        // 核心修复：全对后立即停止 ASR 引擎释放音频录制通道，否则 correct.mp3 音效会发卡、颤抖
+        await asr.stopAsr();
 
         // 播放正确提示音
         final soundFuture = SoundUtil.playAssetSoundConcurrent('correct.mp3', 1.5, 0.2);
         soundFuture.whenComplete(() async {
-          // 停止ASR，避免与后续发音冲突
-          await asr.stopAsr();
           // 播放一遍单词的标准发音
           await SoundUtil.playPronounceSound2(_word!, _audioPlayer);
           getNextWord(true, fsrsRating: rating);
