@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('Test fuzzyChineseContains', () {
-    String asrResult = "以右";
+    String asrResult = "牛以就发奖金右然"; // 核心字: 以, 右
     String meaning = "n. 引诱";
     
     bool match = fuzzyChineseContains(asrResult, meaning);

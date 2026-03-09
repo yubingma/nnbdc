@@ -8,8 +8,8 @@ DELETE FROM learning_dict WHERE dict_id = 'hbs_2027_zx';
 DELETE FROM meaning_item WHERE dict_id = 'hbs_2027_zx';
 DELETE FROM dict WHERE id = 'hbs_2027_zx';
 
-INSERT INTO dict (id, name, owner_id, is_ready, is_shared, visible, deletable, editable, word_count, create_time, update_time) 
-VALUES ('hbs_2027_zx', '2027考研英语红宝书（正序版）', '15118', true, false, true, true, true, 6550, NOW(), NOW());
+INSERT INTO dict (id, name, owner_id, is_ready, is_shared, visible, deletable, editable, popularity_limit, word_count, create_time, update_time) 
+VALUES ('hbs_2027_zx', '2027考研英语红宝书（正序版）', '15118', true, false, true, true, true, 5, 6550, NOW(), NOW());
 
 CREATE TEMP TABLE tmp_raw (spell text, raw_meaning text, seq int);
 CREATE TEMP TABLE tmp_split (spell text, ci_xing text, meaning text);
@@ -17739,6 +17739,8 @@ AND NOT EXISTS (SELECT 1 FROM meaning_item mi WHERE mi.word_id = w.id AND mi.mea
 
 INSERT INTO dict_word (dict_id, word_id, seq, create_time, update_time) 
 SELECT 'hbs_2027_zx', w.id, MIN(t.seq), NOW(), NOW() FROM tmp_raw t JOIN word w ON t.spell = w.spell GROUP BY w.id;
+
+UPDATE dict SET word_count = (SELECT COUNT(*) FROM dict_word WHERE dict_id = 'hbs_2027_zx') WHERE id = 'hbs_2027_zx';
 
 INSERT INTO group_and_dict_link (group_id, dict_id) SELECT id, 'hbs_2027_zx' FROM dict_group WHERE name = '考研';
 

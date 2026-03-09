@@ -281,11 +281,15 @@ class _MePageState extends State<MePage> {
 
         // 检查并强制执行会员限制
         await SubscriptionUtil.checkAndEnforceMemberLimits();
-        _syncAndDownloadDicts();
+        if (loggedInUserVal?.id != null) {
+          _syncAndDownloadDicts(loggedInUserVal!.id!);
+        }
       }
 
       if (Global.isGuest) {
-        _checkAndDownloadDicts();
+        if (loggedInUserVal?.id != null) {
+          _checkAndDownloadDicts(loggedInUserVal!.id!);
+        }
       }
 
       final db = MyDatabase.instance;
@@ -411,13 +415,13 @@ class _MePageState extends State<MePage> {
 
   /// 同步数据库并下载词书
   /// 同步完成后自动检查并下载本地缺失的词书，显示下载进度对话框
-  Future<void> _syncAndDownloadDicts() async {
+  Future<void> _syncAndDownloadDicts(String userId) async {
     try {
       // 等待同步完成
       await ThrottledDbSyncService().requestSyncAndWait(immediate: true);
 
       // 同步完成后，检查并下载词书
-      await _checkAndDownloadDicts();
+      await _checkAndDownloadDicts(userId);
     } catch (e) {
       Global.logger.e("同步或下载词书失败: $e");
       // 同步失败不影响页面显示，静默处理
@@ -426,7 +430,7 @@ class _MePageState extends State<MePage> {
 
   /// 检查并下载本地缺失的词书
   /// 先检查通用词典，再检查用户选择的词书
-  Future<void> _checkAndDownloadDicts() async {
+  Future<void> _checkAndDownloadDicts(String userId) async {
     if (!mounted) return;
 
     try {
@@ -459,7 +463,7 @@ class _MePageState extends State<MePage> {
 
       // 再下载用户选择的词书
       // 注意：必须重新查询learningDicts，因为上面的同步可能已经从服务器获取了用户的词书数据
-      List<LearningDict> learningDicts = await MyDatabase.instance.learningDictsDao.getLearningDictsOfUser(loggedInUser!.id!);
+      List<LearningDict> learningDicts = await MyDatabase.instance.learningDictsDao.getLearningDictsOfUser(userId);
       List<DictVo> dictsToDownload = [];
 
       // 收集需要下载的词书

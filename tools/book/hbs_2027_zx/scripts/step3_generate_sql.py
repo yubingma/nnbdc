@@ -63,8 +63,8 @@ def generate():
         f.write(f"DELETE FROM dict WHERE id = {e_id};\n\n")
 
         # Dictionary
-        f.write(f"INSERT INTO dict (id, name, owner_id, is_ready, is_shared, visible, deletable, editable, word_count, create_time, update_time) \n")
-        f.write(f"VALUES ({e_id}, {escape_sql(DICT_NAME)}, {escape_sql(OWNER_ID)}, true, false, true, true, true, {len(lines)}, NOW(), NOW());\n\n")
+        f.write(f"INSERT INTO dict (id, name, owner_id, is_ready, is_shared, visible, deletable, editable, popularity_limit, word_count, create_time, update_time) \n")
+        f.write(f"VALUES ({e_id}, {escape_sql(DICT_NAME)}, {escape_sql(OWNER_ID)}, true, false, true, true, true, 5, {len(lines)}, NOW(), NOW());\n\n")
 
         # Temp Tables
         f.write("CREATE TEMP TABLE tmp_raw (spell text, raw_meaning text, seq int);\n")
@@ -105,6 +105,9 @@ def generate():
         # Final Linking
         f.write(f"INSERT INTO dict_word (dict_id, word_id, seq, create_time, update_time) \n")
         f.write(f"SELECT {e_id}, w.id, MIN(t.seq), NOW(), NOW() FROM tmp_raw t JOIN word w ON t.spell = w.spell GROUP BY w.id;\n\n")
+        
+        # Ensure accurate word count after deduplication
+        f.write(f"UPDATE dict SET word_count = (SELECT COUNT(*) FROM dict_word WHERE dict_id = {e_id}) WHERE id = {e_id};\n\n")
         
         f.write(f"INSERT INTO group_and_dict_link (group_id, dict_id) SELECT id, {e_id} FROM dict_group WHERE name = '考研';\n\n")
         
