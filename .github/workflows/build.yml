@@ -180,6 +180,16 @@ jobs:
           echo "KEY_PASSWORD is set: $([ -n "$KEY_PASSWORD" ] && echo "✅ Yes" || echo "❌ No")"
           echo "注意：出于安全考虑，不会显示密码值"
 
+      # 更新 CocoaPods 仓库并尝试更新 sqlite3 (解决 sqlite3 等依赖版本过旧导致构建失败的问题)
+      - name: Update CocoaPods
+        if: matrix.platform == 'macos'
+        run: |
+          cd app/macos
+          # 仅在 pod install 报错时执行更新，或直接强制更新 sqlite3
+          pod repo update
+          pod update sqlite3
+        shell: bash
+
       # 构建
       - name: Flutter Build
         run: |
