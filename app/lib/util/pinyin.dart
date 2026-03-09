@@ -183,31 +183,31 @@ class PinyinParser {
       if (pinyinNormal.startsWith(zero)) {
         // 特殊处理 yi, wu, yu 等，它们本质上是 i, u, v 的零声母形式
         if (zero == "yi") {
-          yunMu = "i" + pinyinNormal.substring(2);
+          yunMu = "i${pinyinNormal.substring(2)}";
           return;
         } else if (zero == "wu") {
-          yunMu = "u" + pinyinNormal.substring(2);
+          yunMu = "u${pinyinNormal.substring(2)}";
           return;
         } else if (zero == "yu") {
-          yunMu = "v" + pinyinNormal.substring(2);
+          yunMu = "v${pinyinNormal.substring(2)}";
           return;
         } else if (zero == "yin") {
-          yunMu = "in" + pinyinNormal.substring(3);
+          yunMu = "in${pinyinNormal.substring(3)}";
           return;
         } else if (zero == "yun") {
-          yunMu = "vn" + pinyinNormal.substring(3);
+          yunMu = "vn${pinyinNormal.substring(3)}";
           return;
         } else if (zero == "ying") {
-          yunMu = "ing" + pinyinNormal.substring(4);
+          yunMu = "ing${pinyinNormal.substring(4)}";
           return;
         } else if (zero == "yuan") {
-          yunMu = "van" + pinyinNormal.substring(4);
+          yunMu = "van${pinyinNormal.substring(4)}";
           return;
         } else if (zero == "yue") {
-          yunMu = "ve" + pinyinNormal.substring(3);
+          yunMu = "ve${pinyinNormal.substring(3)}";
           return;
         } else if (zero == "ye") {
-          yunMu = "ie" + pinyinNormal.substring(2);
+          yunMu = "ie${pinyinNormal.substring(2)}";
           return;
         }
         

@@ -624,7 +624,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
   var _isDarkMode = false;
 
-  var _isEditMode = false;
+  final _isEditMode = false;
 
   String? _highlightedWordImg;
 
