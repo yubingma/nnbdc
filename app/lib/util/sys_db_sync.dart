@@ -136,9 +136,26 @@ Future<void> _applySysDbLogs(List<SysDbLogDto> logs) async {
             DictWord entity = DictWord.fromJson(entityJson);
             await db.dictWordsDao.insertEntity(entity, false);
           }
+        } else if (log.tblName == 'word') {
+          // 单词主体
+          if (log.operate == 'DELETE') {
+            await (db.delete(db.words)..where((t) => t.id.equals(log.recordId))).go();
+          } else {
+            Word entity = Word.fromJson(entityJson);
+            await db.wordsDao.insertEntity(entity);
+          }
+        } else if (log.tblName == 'meaning_item') {
+          // 单词释义
+          if (log.operate == 'DELETE') {
+            await (db.delete(db.meaningItems)..where((t) => t.id.equals(log.recordId))).go();
+          } else {
+            MeaningItem entity = MeaningItem.fromJson(entityJson);
+            await db.meaningItemsDao.insertEntity(entity, false);
+          }
+        }
 
-          // === UGC内容表 ===
-        } else if (log.tblName == 'sentence') {
+        // === UGC内容表 ===
+        else if (log.tblName == 'sentence') {
           // 例句
           if (log.operate == 'DELETE') {
             await (db.delete(db.sentences)..where((t) => t.id.equals(log.recordId))).go();

@@ -11,7 +11,9 @@ DELETE FROM dict WHERE id = 'hbs_2027_zx';
 INSERT INTO dict (id, name, owner_id, is_ready, is_shared, visible, deletable, editable, popularity_limit, word_count, create_time, update_time) 
 VALUES ('hbs_2027_zx', '2027考研英语红宝书（正序版）', '15118', true, false, true, true, true, 5, 6550, NOW(), NOW());
 
+DROP TABLE IF EXISTS tmp_raw;
 CREATE TEMP TABLE tmp_raw (spell text, raw_meaning text, seq int);
+DROP TABLE IF EXISTS tmp_split;
 CREATE TEMP TABLE tmp_split (spell text, ci_xing text, meaning text);
 
 INSERT INTO tmp_raw (spell, raw_meaning, seq) VALUES
@@ -17734,14 +17736,77 @@ INSERT INTO meaning_item (id, word_id, dict_id, ci_xing, meaning, is_updating, c
 SELECT nextval('temp_m_id_seq')::text, w.id, '0', s.ci_xing, s.meaning, false, NOW(), NOW(), 0 
 FROM (SELECT DISTINCT spell, ci_xing, meaning FROM tmp_split) s 
 JOIN word w ON s.spell = w.spell 
-WHERE w.id ~ '^[0-9]+$' AND w.id::bigint >= 60000 
+WHERE w.id ~ '^[0-9]+$' AND w.id::bigint >= 50000 
 AND NOT EXISTS (SELECT 1 FROM meaning_item mi WHERE mi.word_id = w.id AND mi.meaning = s.meaning);
 
 INSERT INTO dict_word (dict_id, word_id, seq, create_time, update_time) 
 SELECT 'hbs_2027_zx', w.id, MIN(t.seq), NOW(), NOW() FROM tmp_raw t JOIN word w ON t.spell = w.spell GROUP BY w.id;
 
+INSERT INTO dict_word (dict_id, word_id, seq, create_time, update_time) 
+SELECT '0', w.id, 99999, NOW(), NOW() FROM tmp_raw t JOIN word w ON t.spell = w.spell WHERE NOT EXISTS (SELECT 1 FROM dict_word dw WHERE dw.dict_id='0' AND dw.word_id=w.id) GROUP BY w.id;
+
 UPDATE dict SET word_count = (SELECT COUNT(*) FROM dict_word WHERE dict_id = 'hbs_2027_zx') WHERE id = 'hbs_2027_zx';
 
+UPDATE dict SET word_count = (SELECT COUNT(*) FROM dict_word WHERE dict_id = '0') WHERE id = '0';
+
+DO $$
+DECLARE
+    next_v INTEGER;
+    has_changes BOOLEAN := FALSE;
+BEGIN
+    -- 1. Check if there are any new items that need logging
+    IF EXISTS (
+        SELECT 1 FROM word w WHERE w.id ~ '^[0-9]+$' AND w.id::bigint >= 50000 AND w.spell IN (SELECT spell FROM tmp_raw)
+        AND NOT EXISTS (SELECT 1 FROM sys_db_log WHERE tbl_name = 'word' AND record_id = w.id)
+    ) OR EXISTS (
+        SELECT 1 FROM meaning_item mi JOIN word w ON mi.word_id = w.id WHERE mi.id ~ '^[0-9]+$' AND mi.id::bigint >= 1000000
+        AND w.spell IN (SELECT spell FROM tmp_raw)
+        AND NOT EXISTS (SELECT 1 FROM sys_db_log WHERE tbl_name = 'meaning_item' AND record_id = mi.id)
+    ) OR EXISTS (
+        SELECT 1 FROM dict_word dw JOIN word w ON dw.word_id = w.id WHERE dw.dict_id = '0' AND w.id ~ '^[0-9]+$' AND w.id::bigint >= 50000
+        AND w.spell IN (SELECT spell FROM tmp_raw)
+        AND NOT EXISTS (SELECT 1 FROM sys_db_log WHERE tbl_name = 'dict_word' AND record_id = dw.dict_id || '_' || dw.word_id)
+    ) THEN
+        has_changes := TRUE;
+    END IF;
+
+    IF has_changes THEN
+        SELECT version + 1 INTO next_v FROM sys_db_version WHERE id = 'singleton';
+        UPDATE sys_db_version SET version = next_v, update_time = NOW() WHERE id = 'singleton';
+        RAISE NOTICE 'New version triggered: %', next_v;
+
+        -- Log new words
+        INSERT INTO sys_db_log (id, version, operate, tbl_name, record_id, record, create_time, update_time)
+        SELECT md5(w.id || 'word' || next_v::text), next_v, 'INSERT', 'word', w.id, 
+               json_build_object('id', w.id, 'spell', w.spell, 'popularity', w.popularity, 'createTime', to_char(w.create_time, 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'), 'updateTime', to_char(w.update_time, 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'))::text,
+               NOW(), NOW()
+        FROM word w WHERE w.id ~ '^[0-9]+$' AND w.id::bigint >= 50000 AND w.id::bigint < 3000000
+          AND w.spell IN (SELECT spell FROM tmp_raw)
+          AND NOT EXISTS (SELECT 1 FROM sys_db_log WHERE tbl_name = 'word' AND record_id = w.id);
+
+        -- Log new meaning items
+        INSERT INTO sys_db_log (id, version, operate, tbl_name, record_id, record, create_time, update_time)
+        SELECT md5(mi.id || 'meaning_item' || next_v::text), next_v, 'INSERT', 'meaning_item', mi.id, 
+               json_build_object('id', mi.id, 'wordId', mi.word_id, 'dictId', mi.dict_id, 'ciXing', mi.ci_xing, 'meaning', mi.meaning, 'popularity', mi.popularity, 'createTime', to_char(mi.create_time, 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'), 'updateTime', to_char(mi.update_time, 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'))::text,
+               NOW(), NOW()
+        FROM meaning_item mi JOIN word w ON mi.word_id = w.id
+        WHERE mi.id ~ '^[0-9]+$' AND mi.id::bigint >= 1000000
+          AND w.spell IN (SELECT spell FROM tmp_raw)
+          AND NOT EXISTS (SELECT 1 FROM sys_db_log WHERE tbl_name = 'meaning_item' AND record_id = mi.id);
+
+        -- Log new dict_word links
+        INSERT INTO sys_db_log (id, version, operate, tbl_name, record_id, record, create_time, update_time)
+        SELECT md5(dw.dict_id || '_' || dw.word_id || 'dict_word' || next_v::text), next_v, 'INSERT', 'dict_word', dw.dict_id || '_' || dw.word_id, 
+               json_build_object('dictId', dw.dict_id, 'wordId', dw.word_id, 'seq', dw.seq, 'createTime', to_char(dw.create_time, 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'), 'updateTime', to_char(dw.update_time, 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'))::text,
+               NOW(), NOW()
+        FROM dict_word dw JOIN word w ON dw.word_id = w.id
+        WHERE dw.dict_id = '0' AND w.id ~ '^[0-9]+$' AND w.id::bigint >= 50000
+          AND w.spell IN (SELECT spell FROM tmp_raw)
+          AND NOT EXISTS (SELECT 1 FROM sys_db_log WHERE tbl_name = 'dict_word' AND record_id = dw.dict_id || '_' || dw.word_id);
+    ELSE
+        RAISE NOTICE 'No new items to log. Skipping version bump.';
+    END IF;
+END $$;
 INSERT INTO group_and_dict_link (group_id, dict_id) SELECT id, 'hbs_2027_zx' FROM dict_group WHERE name = '考研';
 
 COMMIT;
