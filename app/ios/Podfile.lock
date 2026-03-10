@@ -76,6 +76,18 @@ PODS:
     - sqlite3/perf-threadsafe
     - sqlite3/rtree
     - sqlite3/session
+  - UMAPM (2.0.7):
+    - UMCommon
+  - UMCommon (7.5.8):
+    - UMDevice
+  - UMDevice (3.5.0)
+  - umeng_apm_sdk (0.0.1):
+    - Flutter
+    - UMAPM
+  - umeng_common_sdk (0.0.1):
+    - Flutter
+    - UMCommon
+    - UMDevice
   - url_launcher_ios (0.0.1):
     - Flutter
   - video_player_avfoundation (0.0.1):
@@ -107,6 +119,8 @@ DEPENDENCIES:
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
   - sqflite_darwin (from `.symlinks/plugins/sqflite_darwin/darwin`)
   - sqlite3_flutter_libs (from `.symlinks/plugins/sqlite3_flutter_libs/darwin`)
+  - umeng_apm_sdk (from `.symlinks/plugins/umeng_apm_sdk/ios`)
+  - umeng_common_sdk (from `.symlinks/plugins/umeng_common_sdk/ios`)
   - url_launcher_ios (from `.symlinks/plugins/url_launcher_ios/ios`)
   - video_player_avfoundation (from `.symlinks/plugins/video_player_avfoundation/darwin`)
   - webview_flutter_wkwebview (from `.symlinks/plugins/webview_flutter_wkwebview/darwin`)
@@ -115,6 +129,9 @@ SPEC REPOS:
   trunk:
     - OrderedSet
     - sqlite3
+    - UMAPM
+    - UMCommon
+    - UMDevice
     - WechatOpenSDK-XCFramework
 
 EXTERNAL SOURCES:
@@ -158,6 +175,10 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/sqflite_darwin/darwin"
   sqlite3_flutter_libs:
     :path: ".symlinks/plugins/sqlite3_flutter_libs/darwin"
+  umeng_apm_sdk:
+    :path: ".symlinks/plugins/umeng_apm_sdk/ios"
+  umeng_common_sdk:
+    :path: ".symlinks/plugins/umeng_common_sdk/ios"
   url_launcher_ios:
     :path: ".symlinks/plugins/url_launcher_ios/ios"
   video_player_avfoundation:
@@ -188,6 +209,11 @@ SPEC CHECKSUMS:
   sqflite_darwin: 20b2a3a3b70e43edae938624ce550a3cbf66a3d0
   sqlite3: a51c07cf16e023d6c48abd5e5791a61a47354921
   sqlite3_flutter_libs: b3e120efe9a82017e5552a620f696589ed4f62ab
+  UMAPM: ba9fbebe8dd2048b251c332ab0afc86e1ba5ea63
+  UMCommon: 963893dfc8307f744ea24f497972f1d896d0a59a
+  UMDevice: bfb480e21a43c8a9a9479e7a8b43b1c4994149c2
+  umeng_apm_sdk: 62096406fedba420191f284da145e63d64a3ffcb
+  umeng_common_sdk: 095b63e6f83b71548725a7c03a6c17b23be6674b
   url_launcher_ios: 7a95fa5b60cc718a708b8f2966718e93db0cef1b
   video_player_avfoundation: dd410b52df6d2466a42d28550e33e4146928280a
   webview_flutter_wkwebview: 8ebf4fded22593026f7dbff1fbff31ea98573c8d
