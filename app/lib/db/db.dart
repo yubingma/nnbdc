@@ -44,6 +44,7 @@ part 'db.g.dart';
   SysDbVersion,
   WordShortDescChineses,
   LocalExceptions,
+  LearningLogs,
 ], daos: [
   UsersDao,
   LocalParamsDao,
@@ -76,6 +77,7 @@ part 'db.g.dart';
   SysDbVersionDao,
   WordShortDescChinesesDao,
   LocalExceptionsDao,
+  LearningLogsDao,
 ])
 class MyDatabase extends _$MyDatabase {
   MyDatabase(super.e);
@@ -207,7 +209,7 @@ class MyDatabase extends _$MyDatabase {
   // you should bump this number whenever you change or add a table definition. Migrations
   // are covered later in this readme.
   @override
-  int get schemaVersion => 24;
+  int get schemaVersion => 25;
 
   @override
   MigrationStrategy get migration {
@@ -293,6 +295,9 @@ class MyDatabase extends _$MyDatabase {
           }
           if (from < 24) {
             await _migrateFromV23ToV24(m);
+          }
+          if (from < 25) {
+            await _migrateFromV24ToV25(m);
           }
         } catch (e, stackTrace) {
           // 升级失败，记录错误日志
@@ -663,6 +668,12 @@ class MyDatabase extends _$MyDatabase {
         rethrow;
       }
     });
+  }
+
+  /// 从版本 24 升级到版本 25：添加 LearningLogs 表
+  Future<void> _migrateFromV24ToV25(Migrator m) async {
+    await m.createTable(learningLogs);
+    Global.logger.i('✅ 创建 learning_logs 表完成');
   }
 
   /// 从版本 15 升级到版本 16

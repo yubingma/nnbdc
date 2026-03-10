@@ -264,6 +264,19 @@ extension FsrsRatingExt on FsrsRating {
     }
   }
 
+  String get label {
+    switch (this) {
+      case FsrsRating.again:
+        return "重来";
+      case FsrsRating.hard:
+        return "困难";
+      case FsrsRating.good:
+        return "一般";
+      case FsrsRating.easy:
+        return "简单";
+    }
+  }
+
   static FsrsRating fromInt(int value) {
     switch (value) {
       case 1:

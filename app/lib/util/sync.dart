@@ -174,6 +174,8 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
           return 5;
         case 'meaningItems':
           return 5;
+        case 'learningLogs':
+          return 5;
         default:
           throw Exception('Unknown table name: $tableName');
       }
@@ -337,6 +339,11 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
               } else if (log.operate == 'DELETE') {
                 await db.meaningItemsDao.deleteEntity(entity.id, false);
               }
+            } else if (log.tblName == 'learningLogs') {
+              LearningLog entity = LearningLog.fromJson(entityJson);
+              if (log.operate == 'INSERT' || log.operate == 'UPDATE') {
+                await db.learningLogsDao.saveEntity(entity, false);
+              }
             } else if (log.tblName != 'users' &&
                 log.tblName != 'dicts' &&
                 log.tblName != 'words' &&
@@ -350,7 +357,8 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
                 log.tblName != 'bookMarks' &&
                 log.tblName != 'userStudySteps' &&
                 log.tblName != 'userCowDungLogs' &&
-                log.tblName != 'meaningItems') {
+                log.tblName != 'meaningItems' &&
+                log.tblName != 'learningLogs') {
               Global.logger.w("⚠️ 不支持的表: ${log.tblName}");
               // 不弹出错误提示，只记录日志
             }
@@ -490,6 +498,9 @@ Future<void> _handleBatchDeleteUserRecords(UserDbLog log, String userId) async {
         break;
       case 'userCowDungLogs':
         await db.userCowDungLogsDao.batchDeleteUserRecords(userId, filters: filters);
+        break;
+      case 'learningLogs':
+        await db.learningLogsDao.batchDeleteUserRecords(userId, filters: filters);
         break;
       default:
         Global.logger.w('⚠️ 不支持批量删除用户的数据的表: $table');

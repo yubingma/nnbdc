@@ -28,6 +28,7 @@ import beidanci.api.model.DictDto;
 import beidanci.api.model.DictWordDto;
 import beidanci.api.model.LearningDictDto;
 import beidanci.api.model.LearningWordDto;
+import beidanci.api.model.LearningLogDto;
 import beidanci.api.model.MeaningItemDto;
 import beidanci.api.model.UserCowDungLogDto;
 import beidanci.api.model.UserDbLogDto;
@@ -44,6 +45,7 @@ import beidanci.service.po.Dict;
 import beidanci.service.po.DictWord;
 import beidanci.service.po.LearningDict;
 import beidanci.service.po.LearningWord;
+import beidanci.service.po.LearningLog;
 import beidanci.service.po.User;
 import beidanci.service.po.UserCowDungLog;
 import beidanci.service.po.UserDbLog;
@@ -110,6 +112,9 @@ public class UserDbSyncBo {
 
     @Autowired
     private UserDbLogBo userDbLogBo;
+
+    @Autowired
+    private LearningLogBo learningLogBo;
 
     @Autowired
     private MeaningItemBo meaningItemBo;
@@ -290,6 +295,7 @@ public class UserDbSyncBo {
             }
             case "user_cow_dung_log" -> processUserCowDungLogSync(userId, recordJson, operation);
             case "meaning_item" -> processMeaningItemSync(userId, recordJson, operation);
+            case "learning_log" -> processLearningLogSync(userId, recordJson, operation);
             default -> {
                 String errorMsg = String.format("不支持的表同步: %s, 记录ID: %s, 操作: %s", tableName, log.getRecordId(),
                         operation);
@@ -799,6 +805,39 @@ public class UserDbSyncBo {
     }
 
     /**
+     * 处理记忆历史日志同步
+     */
+    private void processLearningLogSync(String userId, String recordJson, String operation) throws IllegalAccessException {
+        if ("BATCH_DELETE".equals(operation)) {
+            learningLogBo.batchDeleteUserRecords(userId, recordJson);
+        } else {
+            LearningLogDto dto = JsonUtils.makeObject(recordJson, LearningLogDto.class);
+            LearningLog log = LearningLog.fromDto(dto);
+            if ("INSERT".equals(operation)) {
+                LearningLog existing = learningLogBo.findById(log.getId());
+                if (existing == null) {
+                    learningLogBo.createEntity(log);
+                } else {
+                    logger.info("learning_log 已存在，忽略重复 INSERT: id={}", log.getId());
+                }
+            } else if ("UPDATE".equals(operation)) {
+                LearningLog existing = learningLogBo.findById(log.getId());
+                if (existing == null) {
+                    learningLogBo.createEntity(log);
+                } else {
+                    learningLogBo.updateEntity(log);
+                }
+            } else if ("DELETE".equals(operation)) {
+                learningLogBo.deleteEntity(log);
+            } else {
+                String errorMsg = String.format("不支持的 learning_log日志表操作: %s", operation);
+                logger.error(errorMsg);
+                throw new IllegalArgumentException(errorMsg);
+            }
+        }
+    }
+
+    /**
      * 验证和完成同步（使用 CAS 原子更新版本号）
      * 
      * 重要改进：使用 CAS (Compare-And-Swap) 来更新版本号，确保原子性
@@ -1110,6 +1149,22 @@ public class UserDbSyncBo {
                 logs.add(log);
             }
 
+            // 生成用户的记忆历史全量日志
+            List<LearningLogDto> learningLogDtos = learningLogBo.getLearningLogDtosOfUser(userId);
+            for (LearningLogDto dto : learningLogDtos) {
+                UserDbLogDto log = new UserDbLogDto(
+                        Util.uuid(),
+                        userId,
+                        userDbVersion,
+                        "INSERT",
+                        "learning_log",
+                        dto.getId(),
+                        JsonUtils.toJson(dto),
+                        dto.getCreateTime(),
+                        dto.getUpdateTime());
+                logs.add(log);
+            }
+
             // 打印全量同步日志分类统计（便于定位日志量过大的原因）
             // 注意：tblName 需要与客户端同步消费的表名保持一致
             Map<String, Integer> counts = new HashMap<>();
@@ -1133,6 +1188,7 @@ public class UserDbSyncBo {
             ordered.put("dict_word", counts.getOrDefault("dict_word", 0));
             ordered.put("meaning_item", counts.getOrDefault("meaning_item", 0));
             ordered.put("user_cow_dung_log", counts.getOrDefault("user_cow_dung_log", 0));
+            ordered.put("learning_log", counts.getOrDefault("learning_log", 0));
 
             // 输出未在固定列表中的表名（如果有）
             Map<String, Integer> extra = new LinkedHashMap<>();

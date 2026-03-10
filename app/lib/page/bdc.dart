@@ -3749,19 +3749,136 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12),
-      child: Column(
+      child: Stack(
+        alignment: Alignment.centerRight,
         children: [
-          Row(
-            children: [
-              _buildTimelineNode('上次', prevDays > 0 ? '$prevDays天' : '初学', isDarkMode, false),
-              _buildTimelineLine(isDarkMode, true),
-              _buildTimelineNode('今天', '现在', isDarkMode, true),
-              _buildTimelineLine(isDarkMode, false),
-              _buildTimelineNode('下次', '$nextDays天后', isDarkMode, false),
-            ],
+          Padding(
+            padding: const EdgeInsets.only(right: 40),
+            child: Row(
+              children: [
+                _buildTimelineNode('上次', prevDays > 0 ? '$prevDays天' : '初学', isDarkMode, false),
+                _buildTimelineLine(isDarkMode, true),
+                _buildTimelineNode('今天', '现在', isDarkMode, true),
+                _buildTimelineLine(isDarkMode, false),
+                _buildTimelineNode('下次', '$nextDays天后', isDarkMode, false),
+              ],
+            ),
+          ),
+          Positioned(
+            right: 0,
+            child: IconButton(
+              onPressed: _showLearningHistoryDialog,
+              icon: Icon(Icons.history_rounded, size: 22, color: isDarkMode ? Colors.white38 : Colors.black26),
+              tooltip: '记忆历史',
+              visualDensity: VisualDensity.compact,
+            ),
           ),
         ],
       ),
+    );
+  }
+
+  void _showLearningHistoryDialog() async {
+    final wordId = _wordWrapper?.word.id;
+    if (wordId == null) return;
+
+    final history = await MyDatabase.instance.learningLogsDao.getHistory(Global.getLoggedInUser()!.id, wordId);
+
+    if (!mounted) return;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        final isDarkMode = context.watch<DarkMode>().isDarkMode;
+        final bgColor = isDarkMode ? const Color(0xFF1E1E1E) : Colors.white;
+        final textColor = isDarkMode ? Colors.white70 : Colors.black87;
+
+        return AlertDialog(
+          backgroundColor: bgColor,
+          title: Text('记忆历史', style: TextStyle(color: textColor, fontSize: 18, fontWeight: FontWeight.bold)),
+          content: history.isEmpty
+              ? Text('暂无记忆历史', style: TextStyle(color: textColor.withValues(alpha: 0.6)))
+              : SizedBox(
+                  width: double.maxFinite,
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: history.length,
+                    itemBuilder: (context, index) {
+                      final log = history[index];
+                      final rating = FsrsRatingExt.fromInt(log.rating);
+                      final timeStr =
+                          '${log.createTime.year}-${log.createTime.month.toString().padLeft(2, '0')}-${log.createTime.day.toString().padLeft(2, '0')} ${log.createTime.hour.toString().padLeft(2, '0')}:${log.createTime.minute.toString().padLeft(2, '0')}';
+
+                      Color ratingColor;
+                      switch (rating) {
+                        case FsrsRating.again:
+                          ratingColor = Colors.redAccent;
+                          break;
+                        case FsrsRating.hard:
+                          ratingColor = Colors.orangeAccent;
+                          break;
+                        case FsrsRating.good:
+                          ratingColor = AppTheme.primaryColor;
+                          break;
+                        case FsrsRating.easy:
+                          ratingColor = Colors.greenAccent;
+                          break;
+                      }
+
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: isDarkMode ? Colors.white.withValues(alpha: 0.03) : Colors.black.withValues(alpha: 0.02),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: ratingColor.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(color: ratingColor.withValues(alpha: 0.2)),
+                              ),
+                              child: Text(
+                                rating.label,
+                                style: TextStyle(color: ratingColor, fontSize: 12, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '下次复习: ${log.scheduledDays}天后',
+                                    style: TextStyle(color: textColor, fontSize: 13, fontWeight: FontWeight.w500),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    timeStr,
+                                    style: TextStyle(color: textColor.withValues(alpha: 0.5), fontSize: 11),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Icon(Icons.chevron_right_rounded, size: 16, color: textColor.withValues(alpha: 0.3)),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('关闭', style: TextStyle(color: AppTheme.primaryColor)),
+            ),
+          ],
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        );
+      },
     );
   }
 

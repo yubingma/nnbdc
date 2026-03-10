@@ -4,6 +4,8 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_downloader/flutter_downloader.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:nnbdc/api/api.dart';
@@ -56,6 +58,15 @@ void main() async {
       // 确保Flutter绑定已初始化（在同一个zone中）
       WidgetsFlutterBinding.ensureInitialized();
 
+      // 初始化 Firebase
+      try {
+        await Firebase.initializeApp();
+        // 只有在非调试模式下才启用崩溃收集（可选，通常建议开启以测试集成）
+        // await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(!kDebugMode);
+      } catch (e) {
+        debugPrint('Firebase initialization failed: $e');
+      }
+
       // 捕获Flutter框架层的错误（同步错误）
       FlutterError.onError = (FlutterErrorDetails details) {
         // 检查是否为图像相关的错误（非致命错误，不需要在控制台显示）
@@ -88,6 +99,9 @@ void main() async {
 
           // 在debug模式下，也输出到控制台
           FlutterError.presentError(details);
+
+          // 上报到 Crashlytics
+          FirebaseCrashlytics.instance.recordFlutterError(details);
         }
       };
 
@@ -98,6 +112,10 @@ void main() async {
           error: error,
           stackTrace: stack,
         );
+
+        // 上报到 Crashlytics
+        FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+
         return true; // 返回true表示错误已处理
       };
 
@@ -164,6 +182,9 @@ void main() async {
         error: error,
         stackTrace: stack,
       );
+
+      // 上报到 Crashlytics
+      FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
     },
   );
 }

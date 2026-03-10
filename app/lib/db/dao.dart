@@ -2043,3 +2043,43 @@ class LocalExceptionsDao extends DatabaseAccessor<MyDatabase> with _$LocalExcept
     return result.read(localExceptions.id.count()) ?? 0;
   }
 }
+
+@DriftAccessor(tables: [LearningLogs])
+class LearningLogsDao extends DatabaseAccessor<MyDatabase> with _$LearningLogsDaoMixin {
+  LearningLogsDao(super.db);
+
+  Future<void> saveEntity(LearningLog entity, bool genLog) async {
+    await into(learningLogs).insertOnConflictUpdate(entity);
+    if (genLog) {
+      await DbLogUtil.logOperation(entity.userId, 'INSERT', 'learningLogs', entity.id, entity);
+    }
+  }
+
+  Future<List<LearningLog>> getHistory(String userId, String wordId) {
+    return (select(learningLogs)
+          ..where((l) => l.userId.equals(userId) & l.wordId.equals(wordId))
+          ..orderBy([(l) => OrderingTerm(expression: l.createTime, mode: OrderingMode.desc)]))
+        .get();
+  }
+
+  Future<void> batchDeleteUserRecords(String userId, {Map<String, dynamic>? filters}) async {
+    var query = delete(learningLogs)..where((l) => l.userId.equals(userId));
+
+    if (filters != null && filters.isNotEmpty) {
+      for (final entry in filters.entries) {
+        final fieldName = entry.key;
+        final fieldValue = entry.value;
+
+        switch (fieldName) {
+          case 'wordId':
+            query = query..where((l) => l.wordId.equals(fieldValue.toString()));
+            break;
+          default:
+            Global.logger.w('⚠️ LearningLogsDao不支持过滤字段: $fieldName');
+        }
+      }
+    }
+
+    await query.go();
+  }
+}

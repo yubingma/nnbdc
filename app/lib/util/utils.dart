@@ -907,6 +907,7 @@ class Util {
       'dictWords': 'dict_word',
       'dicts': 'dict',
       'meaningItems': 'meaning_item',
+      'learningLogs': 'learning_log',
     };
 
     if (tableNameMapping.containsKey(localTableName)) {
@@ -932,6 +933,7 @@ class Util {
       'dict_word': 'dictWords',
       'dict': 'dicts',
       'meaning_item': 'meaningItems',
+      'learning_log': 'learningLogs',
     };
 
     if (specialMappings.containsKey(remoteTableName)) {

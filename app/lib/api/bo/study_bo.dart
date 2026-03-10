@@ -15,6 +15,7 @@ import 'package:nnbdc/util/fsrs.dart';
 import 'package:nnbdc/util/app_clock.dart';
 import 'word_bo.dart';
 import 'package:nnbdc/util/date_utils.dart';
+import 'package:nnbdc/util/utils.dart';
 import 'package:nnbdc/constants.dart';
 
 /// 业务对象（BO）：承载本地实现逻辑
@@ -824,6 +825,26 @@ class StudyBo {
 
     // 更新学习状态
     Global.logger.d('Word ${currWord.wordId}. Updating FSRS and learnedTimes.');
+
+    // 保存学习记录
+    if (fsrsRating != null && nextFsrs != null) {
+      await db.learningLogsDao.saveEntity(
+        LearningLog(
+          id: Util.uuid(),
+          userId: user.id,
+          wordId: currWord.wordId,
+          rating: fsrsRating.value,
+          stability: nextFsrs.stability,
+          difficulty: nextFsrs.difficulty,
+          elapsedDays: nextFsrs.elapsedDays,
+          scheduledDays: nextFsrs.scheduledDays,
+          createTime: now,
+          updateTime: now,
+        ),
+        true,
+      );
+    }
+
     await db.learningWordsDao.saveEntity(
         currWord.copyWith(
           lastLearningDate: Value(learningTime),

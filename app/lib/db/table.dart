@@ -624,3 +624,20 @@ class LocalExceptions extends Table {
   @override
   Set<Column> get primaryKey => {id};
 }
+
+/// 学习历史记录表
+class LearningLogs extends Table {
+  TextColumn get id => text()();
+  TextColumn get userId => text()();
+  TextColumn get wordId => text()();
+  IntColumn get rating => integer()(); // 1: Again, 2: Hard, 3: Good, 4: Easy
+  RealColumn get stability => real()();
+  RealColumn get difficulty => real()();
+  IntColumn get elapsedDays => integer()();
+  IntColumn get scheduledDays => integer()();
+  DateTimeColumn get createTime => dateTime()();
+  DateTimeColumn get updateTime => dateTime().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
