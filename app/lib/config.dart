@@ -57,8 +57,8 @@ class Config {
   static String get wordImageBaseUrl => profile["wordImageBaseUrl"];
   
   // Umeng Configuration
-  static const String umengAndroidAppKey = '67cf3952994406260a9f5d1b';
-  static const String umengIosAppKey = '67cf3bc1db76587fcf1e7552';
+  static const String umengAndroidAppKey = '69b011176f259537c773e1f0';
+  static const String umengIosAppKey = '69b013cf6f259537c773e237';
   static const String umengChannel = 'AppStore';
 
   // Configuration for ThrottledDbSyncService
