@@ -8,7 +8,8 @@ import 'package:drift_db_viewer/drift_db_viewer.dart';
 import 'package:email_validator/email_validator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:get/get.dart';
+import 'package:get/get.dart' hide MultipartFile, FormData;
+import 'package:dio/dio.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:nnbdc/api/api.dart';
 import 'package:nnbdc/api/bo/user_bo.dart';
@@ -160,8 +161,13 @@ class _MePageState extends State<MePage> {
               return;
             }
             ToastUtil.info('正在上传头像...');
-            // 使用专用的 uploadImg 接口上传图片 (MultiPart)
-            final result = await Api.client.uploadImg(bytes, userId, pickedFile.name);
+            // 使用专用的 uploadImg 接口上传图片 (FormData 方式，永久解决 Retrofit 生成代码缺少文件名的问题)
+            final formData = FormData.fromMap({
+              'file': MultipartFile.fromBytes(bytes, filename: pickedFile.name),
+              'userId': userId,
+              'fileName': pickedFile.name,
+            });
+            final result = await Api.client.uploadImg(formData);
             
             if (result.success && result.data != null) {
               final newAvatarFilename = result.data!;
