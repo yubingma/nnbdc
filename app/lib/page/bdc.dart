@@ -42,6 +42,7 @@ import '../db/user_extensions.dart';
 import '../util/error_handler.dart';
 import '../theme/app_theme.dart';
 import '../util/learning_service.dart';
+import '../widget/handwriting_board.dart';
 
 class BdcPageArgs {
   /// 从哪个页面进入本页面
@@ -666,6 +667,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   /// 记住当前选中的tab索引，避免总是切回"说"tab
   int _currentTabIndex = 0; // 默认选择"说"tab
 
+  /// 是否显示手写板
+  bool _showHandwritingBoard = false;
+
   /// 判断当前是否在"说"tab
   bool get _isInSpeakTab {
     if (!_shouldShowSpeakTab) return false;
@@ -1117,9 +1121,11 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       return;
     }
     // 如果 ASR 未启动，且键盘也未弹出，且没有焦点，说明可能是 ASR 停止后的残留结果，跳过处理并清空
-    // 允许 initialized 状态，因为在 startAsr 的 await 过程中可能就已经有结果回来了
-    if (asr.state != AsrState.started && asr.state != AsrState.initialized && !_isKeyboardVisible && !_meaningFocusNode.hasFocus) {
-      Global.logger.w('收到归属于旧会话的语音识别结果(${_meaningController.text})，但ASR未启动且无输入焦点，跳过处理');
+    // 如果是在手写模式下，或者是键盘弹出的情况下，允许通过检查
+    bool isHandwritingOrKeyboard = _showHandwritingBoard || _isKeyboardVisible || _meaningFocusNode.hasFocus;
+    
+    if (asr.state != AsrState.started && asr.state != AsrState.initialized && !isHandwritingOrKeyboard) {
+      Global.logger.w('收到归属于旧会话的结果(${_meaningController.text})，但当前无活跃输入途径，跳过处理');
       if (mounted) {
         _meaningController.text = '';
         setState(() {
@@ -3471,45 +3477,102 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                           ),
                         ),
                         const SizedBox(height: 12),
-                        // 文本输入框
+                        // 文本输入框与手写切换
                         if (!_isAnswerCorrect)
-                          Container(
-                            margin: const EdgeInsets.only(bottom: 16),
-                            child: TextField(
-                              controller: _meaningController,
-                              focusNode: _meaningFocusNode,
-                              autofocus: false,
-                              keyboardType: TextInputType.visiblePassword,
-                              autocorrect: false,
-                              enableSuggestions: false,
-                              textAlign: TextAlign.start,
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: AppTheme.primaryColor,
+                          Column(
+                            children: [
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: TextField(
+                                      controller: _meaningController,
+                                      focusNode: _meaningFocusNode,
+                                      autofocus: false,
+                                      keyboardType: TextInputType.visiblePassword,
+                                      autocorrect: false,
+                                      enableSuggestions: false,
+                                      textAlign: TextAlign.start,
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: AppTheme.primaryColor,
+                                      ),
+                                      decoration: InputDecoration(
+                                        hintText: '在此拼写单词...',
+                                        hintStyle: TextStyle(
+                                          fontSize: 14,
+                                          color: Colors.grey.withValues(alpha: 0.5),
+                                          fontWeight: FontWeight.normal,
+                                        ),
+                                        prefixIcon: Icon(Icons.edit_note, color: AppTheme.primaryColor.withValues(alpha: 0.5)),
+                                        isDense: true,
+                                        contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 0),
+                                        enabledBorder: UnderlineInputBorder(
+                                          borderSide: BorderSide(
+                                              color: context.watch<DarkMode>().isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.05)),
+                                        ),
+                                        focusedBorder: UnderlineInputBorder(
+                                          borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
+                                        ),
+                                      ),
+                                      textInputAction: TextInputAction.done,
+                                      onSubmitted: (value) {
+                                        checkAsrResult();
+                                      },
+                                      onChanged: (value) {
+                                        // 监听输入，实时检查以获得更好的交互体验
+                                        if (value.isNotEmpty && _word?.spell != null) {
+                                          if (Util.equalsIgnoreCase(value, _word!.spell)) {
+                                            checkAsrResult();
+                                          }
+                                        }
+                                      },
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  // 手写按钮
+                                  IconButton(
+                                    icon: Icon(
+                                      _showHandwritingBoard ? Icons.keyboard : Icons.gesture,
+                                      color: _showHandwritingBoard ? AppTheme.primaryColor : Colors.grey,
+                                    ),
+                                    onPressed: () {
+                                      setState(() {
+                                        _showHandwritingBoard = !_showHandwritingBoard;
+                                        if (_showHandwritingBoard) {
+                                          Util.closeIme();
+                                        } else {
+                                          _meaningFocusNode.requestFocus();
+                                        }
+                                      });
+                                    },
+                                    tooltip: '手写识别',
+                                  ),
+                                ],
                               ),
-                              decoration: InputDecoration(
-                                hintText: '在此拼写单词...',
-                                hintStyle: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey.withValues(alpha: 0.5),
-                                  fontWeight: FontWeight.normal,
+                              if (_showHandwritingBoard)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 16),
+                                  child: SizedBox(
+                                    height: 300,
+                                    child: HandwritingBoard(
+                                      onRecognized: (text) {
+                                        setState(() {
+                                          _meaningController.text = text;
+                                          _showHandwritingBoard = false;
+                                        });
+                                        checkAsrResult();
+                                      },
+                                      onCancel: () {
+                                        setState(() {
+                                          _showHandwritingBoard = false;
+                                        });
+                                      },
+                                    ),
+                                  ),
                                 ),
-                                prefixIcon: Icon(Icons.edit_note, color: AppTheme.primaryColor.withValues(alpha: 0.5)),
-                                isDense: true,
-                                contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 0),
-                                enabledBorder: UnderlineInputBorder(
-                                  borderSide: BorderSide(color: context.watch<DarkMode>().isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.05)),
-                                ),
-                                focusedBorder: UnderlineInputBorder(
-                                  borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
-                                ),
-                              ),
-                              textInputAction: TextInputAction.done,
-                              onSubmitted: (value) {
-                                checkAsrResult();
-                              },
-                            ),
+                              const SizedBox(height: 16),
+                            ],
                           ),
                         _buildWordSpellingHint(_wordWrapper!, _isAnswerCorrect),
                       ],
