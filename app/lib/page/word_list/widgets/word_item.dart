@@ -5,13 +5,15 @@ import 'package:provider/provider.dart';
 import '../../../api/enum.dart';
 import '../../../state.dart';
 import '../../../util/word_util.dart';
+import '../../../util/utils.dart';
+import '../../../widget/handwriting_board.dart';
 
 abstract class WordProgressProvider {
   double getWordProgress(dynamic wordTag);
   double getWordProgressMax(dynamic wordTag);
 }
 
-class WordItem extends StatelessWidget {
+class WordItem extends StatefulWidget {
   final WordWrapper word;
   final int index;
   final int baseIndex;
@@ -21,8 +23,8 @@ class WordItem extends StatelessWidget {
   final WordProgressProvider wordProgressProvider;
   final WordListStudyMode studyMode;
   final bool showDelBtn;
-  final String appBarTitle;
   final dynamic asrResult;
+  final String appBarTitle;
   final Widget? audioLevelBar;
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
@@ -54,37 +56,39 @@ class WordItem extends StatelessWidget {
   });
 
   @override
+  State<WordItem> createState() => _WordItemState();
+}
+
+class _WordItemState extends State<WordItem> {
+  bool _showHandwritingBoard = false;
+
+  @override
   Widget build(BuildContext context) {
     final isDarkMode = context.read<DarkMode>().isDarkMode;
 
     return Container(
-      margin: EdgeInsets.only(
-        left: 4,
-        right: 4,
-        top: 4,
-        bottom: 4, // Will be adjusted by parent
-      ),
+      margin: const EdgeInsets.all(4),
       decoration: _buildDecoration(isDarkMode),
       child: Row(
         children: [
           Expanded(
             child: InkWell(
               focusColor: Colors.transparent,
-              onTap: onTap,
-              onLongPress: onLongPress,
+              onTap: widget.onTap,
+              onLongPress: widget.onLongPress,
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Row(
                   children: [
                     _buildNumberColumn(isDarkMode),
                     const SizedBox(width: 12),
-                    Expanded(child: _buildWordContent(isDarkMode)),
+                    Expanded(child: _buildWordContent(context, isDarkMode)),
                   ],
                 ),
               ),
             ),
           ),
-          if (showDelBtn || _shouldShowActionButtons()) _buildActionButtons(isDarkMode),
+          if (widget.showDelBtn || _shouldShowActionButtons()) _buildActionButtons(isDarkMode),
         ],
       ),
     );
@@ -92,7 +96,7 @@ class WordItem extends StatelessWidget {
 
   BoxDecoration _buildDecoration(bool isDarkMode) {
     return BoxDecoration(
-      gradient: isBookmarked
+      gradient: widget.isBookmarked
           ? LinearGradient(
               colors: [
                 const Color(0xFF0097A7).withValues(alpha: 0.08),
@@ -102,13 +106,13 @@ class WordItem extends StatelessWidget {
               end: Alignment.bottomRight,
             )
           : null,
-      color: isBookmarked
+      color: widget.isBookmarked
           ? null
           : isDarkMode
               ? const Color(0xFF1E1E1E).withValues(alpha: 0.6)
               : Colors.white.withValues(alpha: 0.8),
       borderRadius: BorderRadius.circular(12),
-      border: isBookmarked
+      border: widget.isBookmarked
           ? Border.all(
               width: 2,
               color: const Color(0xFF0097A7).withValues(alpha: 0.3),
@@ -119,9 +123,9 @@ class WordItem extends StatelessWidget {
             ),
       boxShadow: [
         BoxShadow(
-          color: isBookmarked ? const Color(0xFF0097A7).withValues(alpha: 0.2) : (isDarkMode ? Colors.black : Colors.grey).withValues(alpha: 0.1),
-          blurRadius: isBookmarked ? 8 : 4,
-          offset: Offset(0, isBookmarked ? 4 : 2),
+          color: widget.isBookmarked ? const Color(0xFF0097A7) : (isDarkMode ? Colors.black : Colors.grey).withValues(alpha: 0.1),
+          blurRadius: widget.isBookmarked ? 8 : 4,
+          offset: Offset(0, widget.isBookmarked ? 4 : 2),
         ),
       ],
     );
@@ -135,14 +139,14 @@ class WordItem extends StatelessWidget {
           height: 32,
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: isBookmarked ? [const Color(0xFF0097A7), const Color(0xFF00ACC1)] : [const Color(0xFF9CA3AF), const Color(0xFF6B7280)],
+              colors: widget.isBookmarked ? [const Color(0xFF0097A7), const Color(0xFF00ACC1)] : [const Color(0xFF9CA3AF), const Color(0xFF6B7280)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.circular(8),
             boxShadow: [
               BoxShadow(
-                color: (isBookmarked ? const Color(0xFF0097A7) : Colors.grey).withValues(alpha: 0.3),
+                color: (widget.isBookmarked ? const Color(0xFF0097A7) : Colors.grey).withValues(alpha: 0.3),
                 blurRadius: 4,
                 offset: const Offset(0, 2),
               ),
@@ -150,7 +154,7 @@ class WordItem extends StatelessWidget {
           ),
           child: Center(
             child: Text(
-              '${(baseIndex + index + 1) > 0 ? (baseIndex + index + 1) : 1}',
+              '${(widget.baseIndex + widget.index + 1) > 0 ? (widget.baseIndex + widget.index + 1) : 1}',
               textScaler: TextScaler.linear(1.0),
               style: const TextStyle(
                 color: Colors.white,
@@ -162,15 +166,15 @@ class WordItem extends StatelessWidget {
             ),
           ),
         ),
-        if (showWordProgress)
+        if (widget.showWordProgress)
           Container(
             width: 32,
             height: 4,
             margin: const EdgeInsets.only(top: 4),
             child: FAProgressBar(
               borderRadius: const BorderRadius.all(Radius.circular(2)),
-              currentValue: wordProgressProvider.getWordProgress(word.tag),
-              maxValue: wordProgressProvider.getWordProgressMax(word.tag),
+              currentValue: widget.wordProgressProvider.getWordProgress(widget.word.tag),
+              maxValue: widget.wordProgressProvider.getWordProgressMax(widget.word.tag),
               displayText: '',
               direction: Axis.horizontal,
               displayTextStyle: const TextStyle(color: Color(0x00000000)),
@@ -179,28 +183,28 @@ class WordItem extends StatelessWidget {
               animatedDuration: const Duration(milliseconds: 200),
             ),
           ),
-        if ((studyMode == WordListStudyMode.speakChinese || studyMode == WordListStudyMode.speakEnglish) && isBookmarked)
+        if ((widget.studyMode == WordListStudyMode.speakChinese || widget.studyMode == WordListStudyMode.speakEnglish) && widget.isBookmarked)
           Container(
             width: 32,
             height: 12,
             margin: const EdgeInsets.only(top: 3),
-            child: audioLevelBar ?? const SizedBox(),
+            child: widget.audioLevelBar ?? const SizedBox(),
           )
-        else if (word.pronunciationScore != null && word.pronunciationScore! > 0)
+        else if (widget.word.pronunciationScore != null && widget.word.pronunciationScore! > 0)
           Container(
             width: 32,
             height: 12,
             margin: const EdgeInsets.only(top: 3),
             alignment: Alignment.center,
             child: Text(
-              '${word.pronunciationScore}',
+              '${widget.word.pronunciationScore}',
               textScaler: TextScaler.linear(1.0),
               style: TextStyle(
                 fontSize: 9,
                 height: 1.1,
                 fontWeight: FontWeight.w900,
                 fontFamily: 'RobotoCondensed',
-                color: word.pronunciationScore! >= 60 ? Colors.green : Colors.orange,
+                color: widget.word.pronunciationScore! >= 60 ? Colors.green : Colors.orange,
               ),
             ),
           ),
@@ -208,43 +212,117 @@ class WordItem extends StatelessWidget {
     );
   }
 
-  Widget _buildWordContent(bool isDarkMode) {
+  Widget _buildWordContent(BuildContext context, bool isDarkMode) {
+    bool isWide = MediaQuery.of(context).size.width > 600;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (studyMode != WordListStudyMode.dictation && studyMode != WordListStudyMode.speakEnglish) _buildWordAndPronounce(isDarkMode),
-        if (studyMode == WordListStudyMode.list || studyMode == WordListStudyMode.dictation || studyMode == WordListStudyMode.speakEnglish)
+        if (widget.studyMode != WordListStudyMode.dictation && widget.studyMode != WordListStudyMode.speakEnglish) _buildWordAndPronounce(isDarkMode),
+        if (widget.studyMode == WordListStudyMode.list ||
+            widget.studyMode == WordListStudyMode.dictation ||
+            widget.studyMode == WordListStudyMode.speakEnglish)
           Padding(
             padding: const EdgeInsets.only(top: 8),
-            child: Text(
-              word.word.getMeaningStr(),
-              textScaler: TextScaler.linear(1.0),
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w400,
-                color: isDarkMode ? Colors.grey[300] : Colors.grey[700],
-                height: 1.5,
-                letterSpacing: 0.3,
-              ),
-            ),
+            child: isWide && widget.studyMode == WordListStudyMode.dictation
+                ? Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        flex: 2,
+                        child: Text(
+                          widget.word.word.getMeaningStr(),
+                          textScaler: TextScaler.linear(1.0),
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w400,
+                            color: isDarkMode ? Colors.grey[300] : Colors.grey[700],
+                            height: 1.5,
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        flex: 3,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildDictationInput(isDarkMode),
+                            if (_showHandwritingBoard) ...[
+                              const SizedBox(height: 16),
+                              SizedBox(
+                                height: 260,
+                                child: HandwritingBoard(
+                                  onRecognized: (text) {
+                                    setState(() {
+                                      widget.word.spellController.text = text;
+                                      _showHandwritingBoard = false;
+                                    });
+                                  },
+                                  onCancel: () {
+                                    setState(() {
+                                      _showHandwritingBoard = false;
+                                    });
+                                  },
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ],
+                  )
+                : Text(
+                    widget.word.word.getMeaningStr(),
+                    textScaler: TextScaler.linear(1.0),
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w400,
+                      color: isDarkMode ? Colors.grey[300] : Colors.grey[700],
+                      height: 1.5,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
           ),
-        if (studyMode == WordListStudyMode.dictation && isBookmarked)
+        if (widget.studyMode == WordListStudyMode.dictation && widget.isBookmarked && !isWide)
           Padding(
             padding: const EdgeInsets.fromLTRB(0, 4, 0, 0),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(word.word.spell.substring(0, word.hintLetterCount)),
+                Text(widget.word.word.spell.substring(0, widget.word.hintLetterCount)),
               ],
             ),
           ),
-        if (studyMode == WordListStudyMode.dictation) _buildDictationInput(isDarkMode),
-        if (studyMode == WordListStudyMode.speakChinese)
+        if (widget.studyMode == WordListStudyMode.dictation && !isWide) ...[
+          _buildDictationInput(isDarkMode),
+          if (_showHandwritingBoard) ...[
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 260,
+              child: HandwritingBoard(
+                onRecognized: (text) {
+                  setState(() {
+                    widget.word.spellController.text = text;
+                    _showHandwritingBoard = false;
+                  });
+                },
+                onCancel: () {
+                  setState(() {
+                    _showHandwritingBoard = false;
+                  });
+                },
+              ),
+            ),
+          ],
+        ],
+        if (widget.studyMode == WordListStudyMode.speakChinese)
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: _buildAsrMeaningItems(),
           ),
-        if (studyMode == WordListStudyMode.speakEnglish) _buildSpeakEnglishContent(isDarkMode),
+        if (widget.studyMode == WordListStudyMode.speakEnglish) _buildSpeakEnglishContent(isDarkMode),
       ],
     );
   }
@@ -252,20 +330,20 @@ class WordItem extends StatelessWidget {
   Widget _buildWordAndPronounce(bool isDarkMode) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final spellWidth = word.word.spell.length * 11.0;
-        final pronounceWidth = word.word.mergedPronounce.isNotEmpty ? (word.word.mergedPronounce.length * 7.0 + 24.0) : 0.0;
+        final spellWidth = widget.word.word.spell.length * 11.0;
+        final pronounceWidth = widget.word.word.mergedPronounce.isNotEmpty ? (widget.word.word.mergedPronounce.length * 7.0 + 24.0) : 0.0;
         final totalWidth = spellWidth + pronounceWidth + 16.0;
-        final shouldWrap = totalWidth > constraints.maxWidth || word.word.mergedPronounce.length > 25;
+        final shouldWrap = totalWidth > constraints.maxWidth || widget.word.word.mergedPronounce.length > 25;
 
-        if (shouldWrap && word.word.mergedPronounce.isNotEmpty) {
+        if (shouldWrap && widget.word.word.mergedPronounce.isNotEmpty) {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                word.word.spell,
+                widget.word.word.spell,
                 textScaler: TextScaler.linear(1.0),
                 style: TextStyle(
-                  color: isBookmarked ? const Color(0xFF0097A7) : (isDarkMode ? Colors.white : const Color(0xFF1F2937)),
+                  color: widget.isBookmarked ? const Color(0xFF0097A7) : (isDarkMode ? Colors.white : const Color(0xFF1F2937)),
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
                   height: 1.3,
@@ -281,7 +359,7 @@ class WordItem extends StatelessWidget {
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
-                    '[${word.word.mergedPronounce}]',
+                    '[${widget.word.word.mergedPronounce}]',
                     textScaler: TextScaler.linear(1.0),
                     style: TextStyle(
                       color: isDarkMode ? Colors.grey[300] : Colors.grey[600],
@@ -302,10 +380,10 @@ class WordItem extends StatelessWidget {
             children: [
               Flexible(
                 child: Text(
-                  word.word.spell,
+                  widget.word.word.spell,
                   textScaler: TextScaler.linear(1.0),
                   style: TextStyle(
-                    color: isBookmarked ? const Color(0xFF0097A7) : (isDarkMode ? Colors.white : const Color(0xFF1F2937)),
+                    color: widget.isBookmarked ? const Color(0xFF0097A7) : (isDarkMode ? Colors.white : const Color(0xFF1F2937)),
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
                     height: 1.3,
@@ -313,7 +391,7 @@ class WordItem extends StatelessWidget {
                   ),
                 ),
               ),
-              if (word.word.mergedPronounce.isNotEmpty) ...[
+              if (widget.word.word.mergedPronounce.isNotEmpty) ...[
                 const SizedBox(width: 8),
                 Flexible(
                   child: Container(
@@ -323,7 +401,7 @@ class WordItem extends StatelessWidget {
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
-                      '[${word.word.mergedPronounce}]',
+                      '[${widget.word.word.mergedPronounce}]',
                       textScaler: TextScaler.linear(1.0),
                       style: TextStyle(
                         color: isDarkMode ? Colors.grey[300] : Colors.grey[600],
@@ -345,33 +423,56 @@ class WordItem extends StatelessWidget {
     );
   }
 
+  // 辅助转换
+  WordListStudyMode get studyMode => widget.studyMode;
+  bool get isBookmarked => widget.isBookmarked;
+  WordWrapper get word => widget.word;
+
   Widget _buildDictationInput(bool isDarkMode) {
     return AnimatedBuilder(
-      animation: word.focusNode,
+      animation: widget.word.focusNode,
       builder: (context, child) {
-        final hasFocus = word.focusNode.hasFocus;
+        final hasFocus = widget.word.focusNode.hasFocus;
         final fontSize = hasFocus ? 22.0 : 16.0;
-        return TextField(
-          controller: word.spellController,
-          focusNode: word.focusNode,
-          keyboardType: TextInputType.visiblePassword,
-          decoration: const InputDecoration(
-            isCollapsed: true,
-            border: UnderlineInputBorder(
-              borderSide: BorderSide(color: Colors.grey),
+        return Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: widget.word.spellController,
+                focusNode: widget.word.focusNode,
+                keyboardType: TextInputType.visiblePassword,
+                decoration: const InputDecoration(
+                  isCollapsed: true,
+                  border: UnderlineInputBorder(
+                    borderSide: BorderSide(color: Colors.grey),
+                  ),
+                  enabledBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: Colors.grey),
+                  ),
+                  focusedBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: Color(0xFF0097A7)),
+                  ),
+                  contentPadding: EdgeInsets.zero,
+                ),
+                style: TextStyle(
+                  fontSize: fontSize,
+                  color: _getInputTextColor(),
+                ),
+              ),
             ),
-            enabledBorder: UnderlineInputBorder(
-              borderSide: BorderSide(color: Colors.grey),
+            IconButton(
+              icon: Icon(
+                _showHandwritingBoard ? Icons.keyboard : Icons.gesture,
+                color: _showHandwritingBoard ? const Color(0xFF0097A7) : Colors.grey,
+                size: 20,
+              ),
+              onPressed: () {
+                setState(() {
+                  _showHandwritingBoard = !_showHandwritingBoard;
+                });
+              },
             ),
-            focusedBorder: UnderlineInputBorder(
-              borderSide: BorderSide(color: Color(0xFF0097A7)),
-            ),
-            contentPadding: EdgeInsets.zero,
-          ),
-          style: TextStyle(
-            fontSize: fontSize,
-            color: _getInputTextColor(),
-          ),
+          ],
         );
       },
     );
@@ -382,7 +483,7 @@ class WordItem extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 8),
-        if (!word.speakEnglishPassed) ...[
+        if (!widget.word.speakEnglishPassed) ...[
           Padding(
             padding: const EdgeInsets.only(top: 2),
             child: Container(
@@ -396,29 +497,15 @@ class WordItem extends StatelessWidget {
                   ),
                 ),
               ),
-              child: Text(
-                isBookmarked
-                    ? (word.hintLetterCount > 0
-                        ? word.word.spell.substring(0, word.hintLetterCount)
-                        : ((asrResult is String && (asrResult as String).isNotEmpty) ? (asrResult as String) : '请说出单词发音'))
-                    : '',
-                textScaler: TextScaler.linear(1.0),
-                style: TextStyle(
-                  fontSize: 14,
-                  color: isDarkMode ? Colors.white54 : Colors.grey[600],
-                  height: 1.2,
-                  letterSpacing: 0.5,
-                ),
-              ),
             ),
           ),
-          if (isBookmarked && word.pronunciationScore != null && word.pronunciationScore! > 0)
+          if (widget.isBookmarked && widget.word.pronunciationScore != null && widget.word.pronunciationScore! > 0)
             Padding(
               padding: const EdgeInsets.only(top: 6),
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: word.pronunciationScore! >= 60 ? Colors.green.withValues(alpha: 0.1) : Colors.orange.withValues(alpha: 0.1),
+                  color: widget.word.pronunciationScore! >= 60 ? Colors.green.withValues(alpha: 0.1) : Colors.orange.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Row(
@@ -427,15 +514,15 @@ class WordItem extends StatelessWidget {
                     Icon(
                       Icons.record_voice_over,
                       size: 14,
-                      color: word.pronunciationScore! >= 60 ? Colors.green : Colors.orange,
+                      color: widget.word.pronunciationScore! >= 60 ? Colors.green : Colors.orange,
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      '发音: ${word.pronunciationScore}',
+                      '发音: ${widget.word.pronunciationScore}',
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
-                        color: word.pronunciationScore! >= 60 ? Colors.green : Colors.orange,
+                        color: widget.word.pronunciationScore! >= 60 ? Colors.green : Colors.orange,
                       ),
                     ),
                   ],
@@ -452,21 +539,22 @@ class WordItem extends StatelessWidget {
   Widget _buildPassedWordAndPronounce(bool isDarkMode) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final spellWidth = word.word.spell.length * 11.0;
-        final pronounceWidth = word.word.mergedPronounce.isNotEmpty ? (word.word.mergedPronounce.length * 7.0 + 24.0) : 0.0;
+        final spellWidth = widget.word.word.spell.length * 11.0;
+        final pronounceWidth = widget.word.word.mergedPronounce.isNotEmpty ? (widget.word.word.mergedPronounce.length * 7.0 + 24.0) : 0.0;
         final totalWidth = spellWidth + pronounceWidth + 8.0;
-        final shouldWrap = totalWidth > constraints.maxWidth || (word.word.mergedPronounce.isNotEmpty && word.word.mergedPronounce.length > 25);
+        final shouldWrap =
+            totalWidth > constraints.maxWidth || (widget.word.word.mergedPronounce.isNotEmpty && widget.word.word.mergedPronounce.length > 25);
 
-        if (shouldWrap && word.word.mergedPronounce.isNotEmpty) {
+        if (shouldWrap && widget.word.word.mergedPronounce.isNotEmpty) {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                word.word.spell,
+                widget.word.word.spell,
                 textScaler: TextScaler.linear(1.0),
                 style: TextStyle(
-                  color: isBookmarked ? const Color(0xFF0097A7) : (isDarkMode ? Colors.white : const Color(0xFF1F2937)),
+                  color: widget.isBookmarked ? const Color(0xFF0097A7) : (isDarkMode ? Colors.white : const Color(0xFF1F2937)),
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
                   letterSpacing: 0.6,
@@ -481,7 +569,7 @@ class WordItem extends StatelessWidget {
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
-                    '[${word.word.mergedPronounce}]',
+                    '[${widget.word.word.mergedPronounce}]',
                     textScaler: TextScaler.linear(1.0),
                     style: TextStyle(
                       color: isDarkMode ? Colors.grey[300] : Colors.grey[600],
@@ -503,10 +591,10 @@ class WordItem extends StatelessWidget {
             children: [
               Flexible(
                 child: Text(
-                  word.word.spell,
+                  widget.word.word.spell,
                   textScaler: TextScaler.linear(1.0),
                   style: TextStyle(
-                    color: isBookmarked ? const Color(0xFF0097A7) : (isDarkMode ? Colors.white : const Color(0xFF1F2937)),
+                    color: widget.isBookmarked ? const Color(0xFF0097A7) : (isDarkMode ? Colors.white : const Color(0xFF1F2937)),
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
                     letterSpacing: 0.6,
@@ -515,7 +603,7 @@ class WordItem extends StatelessWidget {
                   maxLines: 1,
                 ),
               ),
-              if (word.word.mergedPronounce.isNotEmpty) ...[
+              if (widget.word.word.mergedPronounce.isNotEmpty) ...[
                 const SizedBox(width: 8),
                 Flexible(
                   child: Container(
@@ -525,7 +613,7 @@ class WordItem extends StatelessWidget {
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
-                      '[${word.word.mergedPronounce}]',
+                      '[${widget.word.word.mergedPronounce}]',
                       textScaler: TextScaler.linear(1.0),
                       style: TextStyle(
                         color: isDarkMode ? Colors.grey[300] : Colors.grey[600],
@@ -556,35 +644,35 @@ class WordItem extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (_shouldShowActionButtons()) ...[
-            if (onHintTap != null)
+            if (widget.onHintTap != null)
               _buildActionButton(
                 icon: Icons.lightbulb,
                 color: const Color(0xFFFFA726),
-                onTap: onHintTap!,
+                onTap: widget.onHintTap!,
               ),
-            if (onClearHintTap != null) ...[
+            if (widget.onClearHintTap != null) ...[
               const SizedBox(height: 6),
               _buildActionButton(
                 icon: Icons.lightbulb_outline,
                 color: const Color(0xFF9E9E9E),
-                onTap: onClearHintTap!,
+                onTap: widget.onClearHintTap!,
               ),
             ],
           ],
-          if (onMasterTap != null) ...[
+          if (widget.onMasterTap != null) ...[
             if (_shouldShowActionButtons()) const SizedBox(height: 6),
             _buildActionButton(
               icon: Icons.check,
               color: const Color(0xFF4CAF50),
-              onTap: onMasterTap!,
+              onTap: widget.onMasterTap!,
             ),
           ],
-          if (showDelBtn && onDeleteTap != null) ...[
-            if (_shouldShowActionButtons() || onMasterTap != null) const SizedBox(height: 6),
+          if (widget.showDelBtn && widget.onDeleteTap != null) ...[
+            if (_shouldShowActionButtons() || widget.onMasterTap != null) const SizedBox(height: 6),
             _buildActionButton(
               icon: _getActionIcon(),
               color: _getActionColor(),
-              onTap: onDeleteTap!,
+              onTap: widget.onDeleteTap!,
             ),
           ],
         ],
@@ -626,17 +714,18 @@ class WordItem extends StatelessWidget {
   }
 
   List<Widget> _buildAsrMeaningItems() {
-    // This would need to be implemented based on the original renderAsrMeaningItems method
     return [];
   }
 
   bool _shouldShowActionButtons() {
-    return (studyMode == WordListStudyMode.dictation || studyMode == WordListStudyMode.speakChinese || studyMode == WordListStudyMode.speakEnglish) &&
-        isBookmarked;
+    return (widget.studyMode == WordListStudyMode.dictation ||
+            widget.studyMode == WordListStudyMode.speakChinese ||
+            widget.studyMode == WordListStudyMode.speakEnglish) &&
+        widget.isBookmarked;
   }
 
   Color _getProgressColor() {
-    double ratio = wordProgressProvider.getWordProgress(word.tag) / wordProgressProvider.getWordProgressMax(word.tag);
+    double ratio = widget.wordProgressProvider.getWordProgress(widget.word.tag) / widget.wordProgressProvider.getWordProgressMax(widget.word.tag);
     if (ratio < 0.4) return Colors.red;
     if (ratio < 0.6) return Colors.orange;
     if (ratio < 0.8) return Colors.blueGrey;
@@ -645,13 +734,11 @@ class WordItem extends StatelessWidget {
   }
 
   Color _getInputTextColor() {
-    // This would need access to Util.equalsIgnoreCase and word.spellController.text
-    // For now, return a default color
-    return Colors.red;
+    return Util.equalsIgnoreCase(widget.word.word.spell, widget.word.spellController.text) ? Colors.green : Colors.red;
   }
 
   IconData _getActionIcon() {
-    switch (appBarTitle) {
+    switch (widget.appBarTitle) {
       case '已掌握':
         return Icons.refresh;
       case '学习中':
@@ -668,7 +755,7 @@ class WordItem extends StatelessWidget {
   }
 
   Color _getActionColor() {
-    switch (appBarTitle) {
+    switch (widget.appBarTitle) {
       case '已掌握':
         return const Color(0xFF2196F3);
       case '学习中':
