@@ -88,17 +88,25 @@ Future<void> _runImport({
       return;
     }
 
-    // 兼容 gzip / plain
-    Uint8List jsonBytes;
-    if (raw.length >= 2 && raw[0] == 0x1f && raw[1] == 0x8b) {
-      final decoded = GZipCodec().decode(raw);
-      jsonBytes = Uint8List.fromList(decoded);
-    } else {
-      jsonBytes = raw;
+    String? jsonStr;
+    try {
+      if (raw.length >= 2 && raw[0] == 0x1f && raw[1] == 0x8b) {
+        final decoded = GZipCodec().decode(raw);
+        jsonStr = utf8.decode(decoded, allowMalformed: true);
+      } else {
+        jsonStr = utf8.decode(raw, allowMalformed: true);
+      }
+    } finally {
+      raw = Uint8List(0); // FREE early
     }
 
-    final String jsonStr = utf8.decode(jsonBytes, allowMalformed: true);
-    final Object decodedJson = jsonDecode(jsonStr);
+    Object? decodedJson;
+    try {
+      decodedJson = jsonDecode(jsonStr);
+    } finally {
+      jsonStr = null; // FREE early
+    }
+    
     if (decodedJson is! Map<String, dynamic>) {
       sendError('词典资源 JSON 顶层结构非对象');
       return;

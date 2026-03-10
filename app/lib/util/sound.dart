@@ -71,13 +71,18 @@ class SoundUtil {
           ),
         ));
       } else if (PlatformUtils.isAndroid) {
-        await player.setAudioContext(AudioContext(
-          android: AudioContextAndroid(
-            usageType: AndroidUsageType.media,
-            contentType: AndroidContentType.speech,
-            audioFocus: AndroidAudioFocus.gainTransientMayDuck,
-          ),
-        ));
+        try {
+          await player.setAudioContext(AudioContext(
+            android: AudioContextAndroid(
+              usageType: AndroidUsageType.media,
+              contentType: AndroidContentType.speech,
+              // 使用 none 而不是 gainTransientMayDuck，防止抢占 ASR 麦克风音频焦点导致底层崩溃闪退
+              audioFocus: AndroidAudioFocus.none, 
+            ),
+          ));
+        } catch (e, st) {
+          Global.logger.e('Android setAudioContext 异常', error: e, stackTrace: st);
+        }
       }
       await player.setVolume(1.0);
 
@@ -170,13 +175,18 @@ class SoundUtil {
           ),
         ));
       } else if (PlatformUtils.isAndroid) {
-        await player.setAudioContext(AudioContext(
-          android: AudioContextAndroid(
-            usageType: AndroidUsageType.media,
-            contentType: AndroidContentType.speech,
-            audioFocus: AndroidAudioFocus.gainTransientMayDuck,
-          ),
-        ));
+        try {
+          await player.setAudioContext(AudioContext(
+            android: AudioContextAndroid(
+              usageType: AndroidUsageType.media,
+              contentType: AndroidContentType.speech,
+              // 使用 none 而不是 gainTransientMayDuck，防止抢占 ASR 麦克风音频焦点导致底层崩溃闪退
+              audioFocus: AndroidAudioFocus.none, 
+            ),
+          ));
+        } catch (e, st) {
+          Global.logger.e('Android setAudioContext 异常', error: e, stackTrace: st);
+        }
       }
       await player.setVolume(1.0);
 
