@@ -4,8 +4,8 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_downloader/flutter_downloader.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:umeng_common_sdk/umeng_common_sdk.dart';
+
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:nnbdc/api/api.dart';
@@ -49,6 +49,7 @@ import 'package:toastification/toastification.dart';
 import 'package:nnbdc/page/admin/golden_master_tool.dart';
 import 'package:nnbdc/util/subscription_util.dart';
 
+import 'config.dart';
 import 'local_word_cache.dart';
 
 void main() async {
@@ -57,14 +58,28 @@ void main() async {
     () async {
       // 确保Flutter绑定已初始化（在同一个zone中）
       WidgetsFlutterBinding.ensureInitialized();
+      
+      // 初始化存储（必须在检查隐私版本前）
+      await GetStorage.init();
 
-      // 初始化 Firebase
-      try {
-        await Firebase.initializeApp();
-        // 只有在非调试模式下才启用崩溃收集（可选，通常建议开启以测试集成）
-        // await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(!kDebugMode);
-      } catch (e) {
-        debugPrint('Firebase initialization failed: $e');
+      // 隐私政策版本检查
+      const int currentPrivacyVersion = 20260310;
+      int acceptedVersion = GetStorage().read<int>('accepted_privacy_version') ?? 0;
+      bool hasApprovedRecentPrivacy = (acceptedVersion >= currentPrivacyVersion);
+
+      // 只有在 Android 或 iOS 上处理 Umeng
+      if (PlatformUtils.isAndroid || PlatformUtils.isIOS) {
+        try {
+          // 如果用户已经同意过最新版本的隐私协议，则进行正式初始化
+          if (hasApprovedRecentPrivacy) {
+            UmengCommonSdk.initCommon(Config.umengAndroidAppKey, Config.umengIosAppKey, Config.umengChannel);
+            debugPrint('Umeng fully initialized (Privacy Approved)');
+          } else {
+            debugPrint('Umeng initialization skipped (Pending Privacy Approval)');
+          }
+        } catch (e) {
+          debugPrint('Umeng setup failed: $e');
+        }
       }
 
       // 捕获Flutter框架层的错误（同步错误）
@@ -100,8 +115,13 @@ void main() async {
           // 在debug模式下，也输出到控制台
           FlutterError.presentError(details);
 
-          // 上报到 Crashlytics
-          FirebaseCrashlytics.instance.recordFlutterError(details);
+          // 上报到 Umeng Analytics (仅限移动端)
+          if (PlatformUtils.isAndroid || PlatformUtils.isIOS) {
+            UmengCommonSdk.onEvent('flutter_error', {
+              'exception': details.exceptionAsString(),
+              'stack': details.stack?.toString() ?? ''
+            });
+          }
         }
       };
 
@@ -113,8 +133,13 @@ void main() async {
           stackTrace: stack,
         );
 
-        // 上报到 Crashlytics
-        FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+        // 上报到 Umeng Analytics (仅限移动端)
+        if (PlatformUtils.isAndroid || PlatformUtils.isIOS) {
+          UmengCommonSdk.onEvent('flutter_async_error', {
+            'error': error.toString(),
+            'stack': stack.toString()
+          });
+        }
 
         return true; // 返回true表示错误已处理
       };
@@ -132,10 +157,9 @@ void main() async {
         ),
       );
 
-      // 延迟加载初始化操作
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         try {
-          await GetStorage.init();
+          // 这里不再需要再次 init() 了，main() 顶部已经做过了
 
           if (PlatformUtils.isAndroid) {
             await FlutterDownloader.initialize(debug: true);
@@ -183,8 +207,13 @@ void main() async {
         stackTrace: stack,
       );
 
-      // 上报到 Crashlytics
-      FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+      // 上报到 Umeng Analytics (仅限移动端)
+      if (PlatformUtils.isAndroid || PlatformUtils.isIOS) {
+        UmengCommonSdk.onEvent('zone_error', {
+          'error': error.toString(),
+          'stack': stack.toString()
+        });
+      }
     },
   );
 }

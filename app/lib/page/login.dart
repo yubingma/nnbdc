@@ -1,21 +1,25 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:fluwx/fluwx.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:nnbdc/api/api.dart';
 import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/util/app_clock.dart';
-import 'package:nnbdc/util/toast_util.dart';
-import 'package:nnbdc/util/subscription_util.dart';
 import 'package:nnbdc/util/error_handler.dart';
+import 'package:nnbdc/util/platform_util.dart';
+import 'package:nnbdc/util/subscription_util.dart';
+import 'package:nnbdc/util/toast_util.dart';
+import 'package:nnbdc/util/wechat_util.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:umeng_common_sdk/umeng_common_sdk.dart';
+
 import '../config.dart';
 import '../global.dart';
 import '../socket_io.dart';
 import '../util/client_type.dart';
-import 'package:fluwx/fluwx.dart';
-import 'package:nnbdc/util/wechat_util.dart';
-import 'package:nnbdc/util/platform_util.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -39,9 +43,14 @@ class LoginPageState extends State<LoginPage> with WidgetsBindingObserver, Singl
   loadData() async {
     var user = await MyDatabase.instance.usersDao.getLastLoggedInUser();
     if (user != null) {
-      setState(() {
-        _approved = true;
-      });
+      // 检查隐私政策版本
+      const int currentPrivacyVersion = 20260310;
+      int acceptedVersion = GetStorage().read<int>('accepted_privacy_version') ?? 0;
+      if (acceptedVersion >= currentPrivacyVersion) {
+        setState(() {
+          _approved = true;
+        });
+      }
     }
   }
 
@@ -259,7 +268,13 @@ class LoginPageState extends State<LoginPage> with WidgetsBindingObserver, Singl
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            _buildMinorButton('邮箱登录', () => Navigator.of(context).pushNamed('/email_login')),
+                            _buildMinorButton('邮箱登录', () {
+                              if (!_approved) {
+                                ToastUtil.error("请先同意[使用协议]和[隐私政策]");
+                                return;
+                              }
+                              Navigator.of(context).pushNamed('/email_login');
+                            }),
                             Container(
                               width: 1,
                               height: 14,
@@ -267,7 +282,23 @@ class LoginPageState extends State<LoginPage> with WidgetsBindingObserver, Singl
                               color: Colors.white24,
                             ),
                             _buildMinorButton('先去逛逛', () async {
+                              if (!_approved) {
+                                ToastUtil.error("请先同意[使用协议]和[隐私政策]");
+                                return;
+                              }
                               await Global.loginAsGuest();
+                              // 记录同意了当前隐私政策版本
+                              GetStorage().write('accepted_privacy_version', 20260310);
+                              
+                              // 访客登录后初始化统计 SDK (如果是 Android/iOS)
+                              if (PlatformUtils.isAndroid || PlatformUtils.isIOS) {
+                                try {
+                  UmengCommonSdk.initCommon(Config.umengAndroidAppKey, Config.umengIosAppKey, Config.umengChannel);
+                                } catch (e) {
+                                  debugPrint('Umeng init error: $e');
+                                }
+                              }
+                              
                               await SubscriptionUtil.restorePurchases(showToast: false);
                               Get.offAllNamed('/index');
                             }),
@@ -407,6 +438,19 @@ class LoginPageState extends State<LoginPage> with WidgetsBindingObserver, Singl
               userVo.lastLoginTime = AppClock.now();
               await MyDatabase.instance.usersDao.saveUser(userVo2User(userVo), false);
               await Global.setLoggedInUser(userVo);
+              
+              // 记录同意了当前隐私政策版本
+              GetStorage().write('accepted_privacy_version', 20260310);
+              
+              // 登录成功后初始化统计 SDK (如果是 Android/iOS)
+              if (PlatformUtils.isAndroid || PlatformUtils.isIOS) {
+                try {
+                  UmengCommonSdk.initCommon(Config.umengAndroidAppKey, Config.umengIosAppKey, Config.umengChannel);
+                } catch (e) {
+                  debugPrint('Umeng init error: $e');
+                }
+              }
+
               SubscriptionUtil.restorePurchases(showToast: false);
               Get.offAllNamed('/index');
               return;

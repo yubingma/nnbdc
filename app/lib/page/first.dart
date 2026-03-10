@@ -1733,9 +1733,19 @@ endlocal
 
     try {
       var user = await MyDatabase.instance.usersDao.getLastLoggedInUser();
+      
+      // 隐私政策版本检查
+      const int currentPrivacyVersion = 20260310;
+      int acceptedVersion = GetStorage().read<int>('accepted_privacy_version') ?? 0;
+      bool privacyOutdated = (acceptedVersion < currentPrivacyVersion);
 
       // 检查是否为访客用户
       if (user != null && user.id == Global.guestId) {
+        if (privacyOutdated) {
+          _setPreparingMessage('隐私政策已更新，正在跳转登录页…');
+          Get.offNamed("/login");
+          return;
+        }
         final guestVo = UserVo.fromUser(user);
         await Global.setLoggedInUser(guestVo);
         // 游客自动登录也尝试恢复购买状态
@@ -1745,6 +1755,13 @@ endlocal
       }
 
       if (user != null) {
+        // 如果隐私政策版本过低，强制跳转到登录页重新确认
+        if (privacyOutdated) {
+          _setPreparingMessage('隐私政策已更新，正在跳转登录页…');
+          Get.offNamed("/login");
+          return;
+        }
+
         _setPreparingMessage('正在加载用户信息…');
 
         // 更新最后登录时间

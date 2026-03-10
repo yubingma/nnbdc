@@ -12,6 +12,10 @@ import 'package:drift/drift.dart' as drift hide Column;
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/util/subscription_util.dart';
 import 'package:nnbdc/util/error_handler.dart';
+import 'package:get_storage/get_storage.dart';
+import 'package:umeng_common_sdk/umeng_common_sdk.dart';
+import 'package:nnbdc/util/platform_util.dart';
+import '../config.dart';
 import '../global.dart';
 import '../util/client_type.dart';
 
@@ -642,6 +646,16 @@ class EmailLoginPageState extends State<EmailLoginPage> {
           final result = await UserBo().getLoggedInUser();
           if (result.success && result.data != null) {
             await Global.setLoggedInUser(result.data!);
+            // 登录成功后更新隐私版本并初始化统计 SDK
+            GetStorage().write('accepted_privacy_version', 20260310);
+            if (PlatformUtils.isAndroid || PlatformUtils.isIOS) {
+              try {
+                UmengCommonSdk.initCommon(Config.umengAndroidAppKey, Config.umengIosAppKey, Config.umengChannel);
+              } catch (e) {
+                debugPrint('Umeng init error: $e');
+              }
+            }
+
             // 登录成功后自动触发静默恢复购买
             SubscriptionUtil.restorePurchases(showToast: false);
             Get.offAllNamed('/index');
@@ -712,6 +726,16 @@ class EmailLoginPageState extends State<EmailLoginPage> {
           _emailExistsInLocal = true;
         });
       }
+      // 登录成功后更新隐私版本并初始化统计 SDK
+      GetStorage().write('accepted_privacy_version', 20260310);
+      if (PlatformUtils.isAndroid || PlatformUtils.isIOS) {
+        try {
+          UmengCommonSdk.initCommon(Config.umengAndroidAppKey, Config.umengIosAppKey, Config.umengChannel);
+        } catch (e) {
+          debugPrint('Umeng init error: $e');
+        }
+      }
+
       // 登录成功后自动触发静默恢复购买
       SubscriptionUtil.restorePurchases(showToast: false);
       Get.offAllNamed('/index');

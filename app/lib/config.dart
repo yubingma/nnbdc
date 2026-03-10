@@ -55,6 +55,11 @@ class Config {
   static String get linuxUrl => profile["linuxUrl"];
   static String get aiModelUrl => profile["aiModelUrl"];
   static String get wordImageBaseUrl => profile["wordImageBaseUrl"];
+  
+  // Umeng Configuration
+  static const String umengAndroidAppKey = '67cf3952994406260a9f5d1b';
+  static const String umengIosAppKey = '67cf3bc1db76587fcf1e7552';
+  static const String umengChannel = 'AppStore';
 
   // Configuration for ThrottledDbSyncService
   static const Duration dbSyncThrottleInterval = Duration(seconds: 300);
