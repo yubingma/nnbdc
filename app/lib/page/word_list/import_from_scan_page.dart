@@ -85,7 +85,7 @@ class _ImportFromScanPageState extends State<ImportFromScanPage>
     }
   }
 
-  /// OCR 识别图片中的文字并提取单词（使用 iOS Vision 框架）
+  /// OCR 识别图片中的文字并提取单词（iOS 使用 Vision 框架，Android 使用 Google ML Kit）
   Future<void> _recognizeImage(String imagePath) async {
     setState(() {
       _isRecognizing = true;

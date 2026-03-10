@@ -9,6 +9,7 @@ class MainActivity : FlutterActivity() {
     private lateinit var asr: Sherpa
     private lateinit var tts: Tts
     private lateinit var aiInference: AndroidAiInference
+    private lateinit var ocr: OcrChannel
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -16,6 +17,7 @@ class MainActivity : FlutterActivity() {
         asr = Sherpa(this)
         tts = Tts(this)
         aiInference = AndroidAiInference(this)
+        ocr = OcrChannel(this)
         
         asr.initModel()
     }
@@ -27,10 +29,12 @@ class MainActivity : FlutterActivity() {
         if (!::asr.isInitialized) asr = Sherpa(this)
         if (!::tts.isInitialized) tts = Tts(this)
         if (!::aiInference.isInitialized) aiInference = AndroidAiInference(this)
+        if (!::ocr.isInitialized) ocr = OcrChannel(this)
 
         asr.initChannel(flutterEngine)
         tts.initChannel(flutterEngine)
         aiInference.initChannel(flutterEngine)
+        ocr.initChannel(flutterEngine)
     }
 
     override fun onDestroy() {
