@@ -1323,6 +1323,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     try {
       asr.stopAsr();
       asr.reset();
+      _meaningFocusNode.unfocus();
       _meaningController.text = '';
       _handlingChinese = '';
       _currentAsrCandidates = [];
@@ -3462,14 +3463,54 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '请说出单词发音：',
+                          '说出单词发音 或 直接拼写：',
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
                             color: context.watch<DarkMode>().isDarkMode ? const Color(0xFFD1D5DB) : const Color(0xFF4B5563),
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 12),
+                        // 文本输入框
+                        if (!_isAnswerCorrect)
+                          Container(
+                            margin: const EdgeInsets.only(bottom: 16),
+                            child: TextField(
+                              controller: _meaningController,
+                              focusNode: _meaningFocusNode,
+                              autofocus: false,
+                              keyboardType: TextInputType.visiblePassword,
+                              autocorrect: false,
+                              enableSuggestions: false,
+                              textAlign: TextAlign.start,
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.primaryColor,
+                              ),
+                              decoration: InputDecoration(
+                                hintText: '在此拼写单词...',
+                                hintStyle: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey.withValues(alpha: 0.5),
+                                  fontWeight: FontWeight.normal,
+                                ),
+                                prefixIcon: Icon(Icons.edit_note, color: AppTheme.primaryColor.withValues(alpha: 0.5)),
+                                isDense: true,
+                                contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 0),
+                                enabledBorder: UnderlineInputBorder(
+                                  borderSide: BorderSide(color: context.watch<DarkMode>().isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.05)),
+                                ),
+                                focusedBorder: UnderlineInputBorder(
+                                  borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
+                                ),
+                              ),
+                              textInputAction: TextInputAction.done,
+                              onSubmitted: (value) {
+                                checkAsrResult();
+                              },
+                            ),
+                          ),
                         _buildWordSpellingHint(_wordWrapper!, _isAnswerCorrect),
                       ],
                     ),
