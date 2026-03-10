@@ -97,5 +97,11 @@
 		</dict>
 		<key>ITSAppUsesNonExemptEncryption</key>
 		<false/>
+		<key>NSLocalNetworkUsageDescription</key>
+		<string>需要本地网络权限用于调试</string>
+		<key>NSBonjourServices</key>
+		<array>
+			<string>_dartdevtools._tcp</string>
+		</array>
 	</dict>
 </plist>

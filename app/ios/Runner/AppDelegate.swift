@@ -46,6 +46,16 @@ import StoreKit
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
     ) -> Bool {
+        // Umeng U-APM: Ensure NSURLProtocol is registered before U-APM initialization
+        // This is required when using both U-APM network module and NSURLProtocol
+        if let umURLProtocolClass = NSClassFromString("UMURLProtocol") as? AnyClass {
+            URLProtocol.registerClass(umURLProtocolClass)
+        }
+        
+        let apmConfig = UMAPMConfig.default()
+        apmConfig.networkEnable = true
+        UMCrashConfigure.setAPMConfig(apmConfig)
+
         let controller = window?.rootViewController as! FlutterViewController
         
         // 设置 ASR MethodChannel
@@ -201,6 +211,9 @@ import StoreKit
         case "stopAsr":
             stopAsr(result: result)
             
+        case "stopMicrophone":
+            stopMicrophone(result: result)
+            
         case "reset":
             reset(result: result)
             
@@ -309,10 +322,19 @@ import StoreKit
     }
     
     private func stopAsr(result: @escaping FlutterResult) {
+        print("IOS: stopAsr (Hot Stop) requested")
+        // 只停止识别流水线，保留音频引擎运行
+        isAsrStopped = true
+        stopSpeechRecognition()
+        result(nil)
+    }
+    
+    private func stopMicrophone(result: @escaping FlutterResult) {
+        print("IOS: stopMicrophone (Cold Stop) requested")
+        isAsrStopped = true
         stopSpeechRecognition()
         teardownAudioEngine()
         isRecording = false
-        isAsrStopped = true
         result(nil)
     }
     
@@ -346,13 +368,16 @@ import StoreKit
     private func setupAudioSession() {
         do {
             let audioSession = AVAudioSession.sharedInstance()
+            // 模式改为 .default 以匹配 audioplayers，减少切换模式产生的咔哒声
+            // 选项增加 .allowBluetoothA2DP 以支持更高质量的蓝牙音频
             try audioSession.setCategory(
                 .playAndRecord,
-                mode: .measurement,
-                options: [.defaultToSpeaker, .mixWithOthers, .allowBluetooth]
+                mode: .default,
+                options: [.defaultToSpeaker, .mixWithOthers, .allowBluetooth, .allowBluetoothA2DP]
             )
             try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
         } catch {
+            print("IOS: setupAudioSession error: \(error)")
         }
     }
     
@@ -453,7 +478,9 @@ import StoreKit
                     let now = Date().timeIntervalSince1970
                     if now - self.lastMeterSentAt >= (1.0 / 30.0) {
                         let level = self.calculateLevel(from: buffer)
-                        sink(level)
+                        DispatchQueue.main.async {
+                            sink(level)
+                        }
                         self.lastMeterSentAt = now
                     }
                 }
@@ -530,30 +557,25 @@ import StoreKit
             var bufferCount = 0
             inputNode.installTap(onBus: 0, bufferSize: 512, format: finalFormat) { [weak self] (buffer, when) in
                 guard let self = self else { return }
-                bufferCount += 1
                 
-                if self.isAsrStopped {
-                    self.pausedLogCounter += 1
-                    if self.pausedLogCounter % 200 == 0 {
-                        print("IOS: Tap callback: ASR is paused, skipping buffer #\(self.pausedLogCounter)")
-                    }
-                    return
-                }
-                
-                if self.recognitionRequest == nil {
-                    print("IOS: Tap callback: recognitionRequest is nil, skipping buffer #\(bufferCount)")
-                    return
-                }
-                
-                self.recognitionRequest?.append(buffer)
+                // 核心修复：始终推送分贝数据，确保波形图在任何状态下都活跃
                 if let sink = self.meterEventSink {
                     let now = Date().timeIntervalSince1970
                     if now - self.lastMeterSentAt >= (1.0 / 30.0) {
                         let level = self.calculateLevel(from: buffer)
-                        sink(level)
+                        DispatchQueue.main.async {
+                            sink(level)
+                        }
                         self.lastMeterSentAt = now
                     }
                 }
+
+                // 如果处于暂停状态或请求为空，不喂数据给识别器
+                if self.isAsrStopped || self.recognitionRequest == nil {
+                    return
+                }
+                
+                self.recognitionRequest?.append(buffer)
             }
             print("IOS: Audio tap installed successfully")
         } catch {
@@ -562,18 +584,25 @@ import StoreKit
     }
     
     private func startSpeechRecognition() {
-        print("IOS: Starting speech recognition, isAsrStopped: \(isAsrStopped)")
+        print("IOS: startSpeechRecognition called, engine.isRunning: \(audioEngine.isRunning)")
         
-        // 重置音频引擎和 tap
-        print("IOS: Resetting audio engine and tap")
-        resetAudioEngineAndTap()
-        // 启动音频引擎
-        do {
-            try audioEngine.start()
-            print("IOS: Audio engine started successfully")
-        } catch {
-            print("Audio engine couldn't start: \(error)")
-            return
+        // 1. 先确保停止旧任务，并暂时阻断数据喂入
+        stopSpeechRecognition()
+        isAsrStopped = true
+        
+        // 2. 优化引擎启停：如果已在运行，跳过物理重置以消除咔哒声
+        if !audioEngine.isRunning {
+            print("IOS: Audio engine not running, performing full reset")
+            resetAudioEngineAndTap()
+            do {
+                try audioEngine.start()
+                print("IOS: Audio engine started successfully")
+            } catch {
+                print("IOS: Audio engine couldn't start: \(error)")
+                return
+            }
+        } else {
+            print("IOS: Audio engine already running, skipping physical reset")
         }
         
         // 确保使用当前设置的语言创建识别器
@@ -789,9 +818,8 @@ import StoreKit
                 }
             }
             print("IOS: Speech recognition task started successfully")
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                print("IOS: Recognition task established, ready for audio")
-            }
+            self.isAsrStopped = false
+            print("IOS: Recognition task established, ready for audio")
         }
     }
     
@@ -847,6 +875,8 @@ import StoreKit
         pausedLogCounter = 0
         print("IOS: Audio engine torn down")
     }
+
+
 }
 
 // 由于使用了独立的 SimpleStreamHandler，不再需要在此处作为 FlutterStreamHandler

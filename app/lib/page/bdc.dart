@@ -874,8 +874,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     _keyboardSubscription = keyboardVisibilityController.onChange.listen((bool visible) {
       _isKeyboardVisible = visible;
       if (_isKeyboardVisible) {
-        // 键盘弹出时，统一停止ASR
-        asr.stopAsr();
+        // 键盘弹出时，彻底停止ASR并关闭麦克风
+        asr.stopMicrophone();
       } else {
         // 键盘隐藏时，复用与Tab切换一致的ASR启动/停止逻辑
         if (_isInSpeakTab) {
@@ -1000,8 +1000,10 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     try {
       await asr.startAsr(language);
       Global.logger.d('BDC: ASR启动成功，播放提示音并计时');
+      // startAsr 后立即播放提示音：mixWithOthers 保证录音和播放可共存
+      // 注意：不在此处先 stopAsr 再播再 startAsr，那样会多两次音频会话切换产生额外噪音
       await SoundUtil.playAsrReadyHintSound();
-      _wordStartTime = DateTime.now(); // ASR 准备就绪且提示音播放完成，开始计时
+      _wordStartTime = DateTime.now();
     } catch (e, stackTrace) {
       Global.logger.e('BDC: ASR启动失败', error: e, stackTrace: stackTrace);
       // 即使启动抛出异常，如果 ASR 状态已经是 started（iOS 上会抛异常但实际已启动），
@@ -1009,7 +1011,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       if (asr.state == AsrState.started) {
         Global.logger.d('BDC: ASR状态为started，播放提示音并计时');
         await SoundUtil.playAsrReadyHintSound();
-        _wordStartTime = DateTime.now(); // ASR 准备就绪且提示音播放完成，开始计时
+        _wordStartTime = DateTime.now();
       }
     } finally {}
   }
@@ -1025,7 +1027,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       }
     });
     asr.dispose();
-    asr.stopAsr();
+    asr.stopMicrophone();
     _keyboardSubscription.cancel();
     _tabController?.dispose();
     _meaningFocusNode.dispose();
@@ -1155,7 +1157,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       }
     }
 
-    // 核心修复：全对后立即停止 ASR 引擎释放音频录制通道，否则 correct.mp3 音效会发卡、颤抖
+    // 停止当前 ASR 任务（Hot Stop），消除硬件切换产生的杂音
     await asr.stopAsr();
     _lastFsrsRating = rating;
 
@@ -1200,6 +1202,11 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     // 如果是在手写模式下，或者是键盘弹出的情况下，允许通过检查
     bool isHandwritingOrKeyboard = _showHandwritingBoard || _isKeyboardVisible || _meaningFocusNode.hasFocus;
     
+    if (_isAnswerCorrect) {
+      Global.logger.d('checkAsrResult: 单词已回答正确，跳过后续结果处理');
+      return;
+    }
+
     if (asr.state != AsrState.started && asr.state != AsrState.initialized && !isHandwritingOrKeyboard) {
       Global.logger.w('收到归属于旧会话的结果(${_meaningController.text})，但当前无活跃输入途径，跳过处理');
       if (mounted) {
@@ -1260,7 +1267,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
         // 核心修复：如果已完全答对（满足通过规则），在播放提示音前立即停止 ASR，释放音频通道以杜绝反馈音颤抖
         if (_isAnswerCorrect) {
-          await asr.stopAsr();
+          // 仅重置 ASR（停止识别但保持引擎运行），消除硬件切换产生的杂音
+          await asr.reset();
         }
 
         // 并发播放提示音，支持多个提示音同时播放，互不干扰
@@ -1272,24 +1280,76 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         // 等待音频播放完成，然后再等待短暂延迟后执行后续逻辑
         // 这样用户有机会说出下一个释义, 用户体验会更好一点
         soundFuture.whenComplete(() {
-          Future.delayed(Duration(milliseconds: 150)).then((_) async {
+          Future.delayed(const Duration(milliseconds: 150)).then((_) async {
             _playingCorrectSounds.remove(soundFuture);
-                if (_playingCorrectSounds.isEmpty && _isAnswerCorrect) {
-                  // 计算 FSRS 评分
-                  FsrsRating rating = FsrsRating.good; // 默认 Good
-                  if (_hintUsed) {
-                    rating = FsrsRating.again;
-                  } else if (_wordStartTime != null) {
-                    final timeToUse = (_asrPassRuleCache == 'ALL' && _firstMatchTime != null) ? _firstMatchTime! : DateTime.now();
-                    final responseTime = timeToUse.difference(_wordStartTime!).inSeconds;
-                    if (responseTime < 8) {
-                      rating = FsrsRating.easy; // Easy
-                    } else if (responseTime >= 18) {
-                      rating = FsrsRating.hard; // Hard
+            if (_playingCorrectSounds.isEmpty && _isAnswerCorrect) {
+              // 计算 FSRS 评分
+              FsrsRating rating = FsrsRating.good; // 默认 Good
+              if (_hintUsed) {
+                rating = FsrsRating.again;
+              } else if (_wordStartTime != null) {
+                final timeToUse = (_asrPassRuleCache == 'ALL' && _firstMatchTime != null) ? _firstMatchTime! : DateTime.now();
+                final responseTime = timeToUse.difference(_wordStartTime!).inSeconds;
+                if (responseTime < 8) {
+                  rating = FsrsRating.easy;
+                } else if (responseTime >= 18) {
+                  rating = FsrsRating.hard;
+                }
+              }
+
+              // ⚠️ 注意：此处不调用 _onAnswerCorrect，因为 correct.mp3 在上方已播过。
+              // _onAnswerCorrect 内部会再次播放 correct.mp3 + 单词发音，导致重复。
+              // 直接执行后半段逻辑：更新 FSRS 状态 + 跳转。
+              _isAnswerCorrect = true;
+              _lastFsrsRating = rating;
+
+              // 计算 FSRS 预览结果
+              final lw = _currentGetWordResult?.learningWord;
+              if (lw != null) {
+                final fsrs = FSRS();
+                _daysSinceLastReview = 0;
+                if (lw.lastLearningDate != null) {
+                  final lastDate = DateTime(lw.lastLearningDate!.year, lw.lastLearningDate!.month, lw.lastLearningDate!.day);
+                  final now = DateTime.now();
+                  final todayDate = DateTime(now.year, now.month, now.day);
+                  _daysSinceLastReview = todayDate.difference(lastDate).inDays;
+                }
+                if (lw.stability == null || lw.stability == 0.0) {
+                  _fsrsItem = fsrs.init(rating);
+                } else {
+                  final prevItem = FSRSItem(
+                    stability: lw.stability!,
+                    difficulty: lw.difficulty!,
+                    elapsedDays: _daysSinceLastReview ?? 0,
+                    scheduledDays: lw.scheduledDays ?? 0,
+                    reps: lw.reps ?? 0,
+                    lapses: lw.lapses ?? 0,
+                    state: FsrsStateExt.fromInt(lw.state),
+                  );
+                  _fsrsItem = fsrs.next(prevItem, rating, _daysSinceLastReview ?? 0);
+                }
+              }
+
+              if (_autoJumpAfterCorrect) {
+                // en2Ch 模式：correct.mp3 已播，直接跳下一个单词
+                // 不重复播放当前单词发音（用户开头已听过），保持原始行为
+                await getNextWord(true, fsrsRating: rating);
+              } else {
+                // 不自动跳转：显示所有释义，等待用户手动操作
+                if (_wordWrapper != null) {
+                  final meaningItems = _wordWrapper!.word.getMergedMeaningItems();
+                  for (var i = 0; i < meaningItems.length; i++) {
+                    var parts = splitMeaning2Parts(meaningItems[i].meaning!);
+                    for (var j = 0; j < parts.length; j++) {
+                      if (!_wordWrapper!.asrMatchedMeaningItemParts.contains(Pair(i, j))) {
+                        _wordWrapper!.asrMatchedMeaningItemParts.add(Pair(i, j));
+                      }
                     }
                   }
-                  _onAnswerCorrect(rating);
                 }
+                if (mounted) setState(() {});
+              }
+            }
           });
         });
       }
@@ -1325,9 +1385,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
           }
         }
         
-        // 核心修复：全对后立即停止 ASR 引擎释放音频录制通道，否则 correct.mp3 音效会发卡、颤抖
-        await asr.stopAsr();
-
+        // _onAnswerCorrect 内部已有 stopAsr，无需在此重复调用（双重 stop 会导致 iOS 音频会话状态混乱，引发破音）
         _onAnswerCorrect(rating);
       }
     }
@@ -1394,12 +1452,10 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     }
   }
 
-  /// 获取下一个单词
-  /// @param gotoNext true: 取下一个位置的单词 false: 获取当前位置 of the单词
   getNextWord(bool gotoNext, {FsrsRating? fsrsRating}) async {
     try {
-      asr.stopAsr();
-      asr.reset();
+      // 停止当前 ASR 任务并确保状态同步（Hot Stop 会在 Native 层处理，此处需保证状态为 Stopped）
+      await asr.stopAsr();
       _meaningFocusNode.unfocus();
       _meaningController.text = '';
       _handlingChinese = '';
@@ -1548,7 +1604,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     if (!willPlayWord && !willPlaySentence) {
        Global.logger.d('BDC: 由于无需播放音频，继续走到 finally 快速启动 ASR');
     } else {
-       // 需要播放的话，确保停止 ASR
+       // 需要播放的话，确保停止 ASR 任务（Hot Stop）
        await asr.stopAsr();
     }
 
@@ -1637,6 +1693,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
             await getNextWord(false);
           },
         );
+        // 在获取下一个单词前，停止 ASR 任务（Hot Stop）
         await asr.stopAsr();
         await asr.reset();
         if (!mounted) return;
@@ -1653,15 +1710,21 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
       _isWordMastered = false;
 
-      // 记录旧的学习模式，用于检测模式切换（英→中 / 中→英）
       String? oldStudyStep = _studyStep;
       _studyStep = activeUserStudySteps[getWordResult.stepIndex].studyStep;
+      
+      // 极端防御：如果在渲染新单词时 ASR 状态依然是 started（通常是异步时序导致），强制同步一次状态
+      // 确保 _handleTabChangeForAsr 能够触发新的 _startAsr() 而不是认为已经启动
+      if (asr.state == AsrState.started && oldStudyStep == _studyStep) {
+        Global.logger.w('BDC: 检测到 ASR 残留状态，准备通过 stopAsr 确保下一环节能正常启动');
+        await asr.stopAsr();
+      }
 
       // 只有在模式真正改变时，才重新初始化 ASR（防止在相同模式下刷新导致 ASR 意外停止）
+      // 注意：getNextWord 已经执行过 stopAsr + reset，此处无需重复，否则会触发额外的
+      // iOS Audio Engine tear-down，产生听感噪音。
       if (oldStudyStep == null || oldStudyStep != _studyStep) {
         Global.logger.i('BDC: 学习模式从 $oldStudyStep 切换到 $_studyStep，初始化 ASR 监听');
-        await asr.stopAsr();
-        await asr.reset();
         await asr.initAsr(onAsrResult);
       }
 
@@ -3089,8 +3152,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     final controller = audioType == 'word' ? _wordSoundController : _sentenceSoundController;
     controller.repeat();
 
-    // 播音开始时停止ASR
-    asr.stopAsr();
+    // 播音开始前停止 ASR 任务（Hot Stop），消除硬件切换产生的杂音
+    await asr.stopAsr();
 
     try {
       await playSound();

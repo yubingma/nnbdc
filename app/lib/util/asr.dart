@@ -452,6 +452,23 @@ class Asr {
       setState(AsrState.stopped);
     }
   }
+  
+  /// 完全停止麦克风和 ASR 引擎（彻底关闭音频引擎）
+  Future<void> stopMicrophone() async {
+    if (PlatformUtils.isWeb || PlatformUtils.isWindows || PlatformUtils.isMacOS) {
+      return;
+    }
+
+    setState(AsrState.stopping);
+    try {
+      await asrMethodChannel.invokeMethod('stopMicrophone');
+      setState(AsrState.stopped);
+      Global.logger.i('ASR: Microphone and engine stopped successfully');
+    } on PlatformException catch (e) {
+      Global.logger.e('ASR: Exception during stopMicrophone: ${e.message}');
+      setState(AsrState.stopped);
+    }
+  }
 
   /// 清空模型中当前的采样数据
   Future<void> reset() async {

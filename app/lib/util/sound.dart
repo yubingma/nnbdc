@@ -14,6 +14,41 @@ class SoundUtil {
   static AudioPlayer? _pronouncePlayer;
   static bool _webAudioUnlocked = false;
   static bool _webUnlockInProgress = false;
+  static bool _audioSessionConfigured = false;
+
+  /// 配置全局音频会话
+  static Future<void> configureAudioSession() async {
+    if (_audioSessionConfigured) return;
+
+    try {
+      final player = AudioPlayer();
+      if (PlatformUtils.isIOS) {
+        await player.setAudioContext(AudioContext(
+          iOS: AudioContextIOS(
+            category: AVAudioSessionCategory.playAndRecord,
+            options: {
+              AVAudioSessionOptions.defaultToSpeaker,
+              AVAudioSessionOptions.mixWithOthers,
+              AVAudioSessionOptions.allowBluetooth,
+            },
+          ),
+        ));
+      } else if (PlatformUtils.isAndroid) {
+        await player.setAudioContext(AudioContext(
+          android: AudioContextAndroid(
+            usageType: AndroidUsageType.media,
+            contentType: AndroidContentType.speech,
+            audioFocus: AndroidAudioFocus.none,
+          ),
+        ));
+      }
+      await player.dispose();
+      _audioSessionConfigured = true;
+      Global.logger.i('SoundUtil: 全局音频会话配置完成');
+    } catch (e) {
+      Global.logger.e('SoundUtil: 配置全局音频会话失败: $e');
+    }
+  }
 
   /// 获取单词发音播放器实例
   static AudioPlayer get pronouncePlayer {
@@ -59,31 +94,11 @@ class SoundUtil {
 
   static Future<void> playSoundByUrl(String soundUrl, AudioPlayer player, bool disposeWhenFinish, {int loadTimeoutMs = 3000, int playTimeoutMs = 10000}) async {
     try {
-      if (PlatformUtils.isIOS) {
-        await player.setAudioContext(AudioContext(
-          iOS: AudioContextIOS(
-            category: AVAudioSessionCategory.playAndRecord,
-            options: {
-              AVAudioSessionOptions.defaultToSpeaker,
-              AVAudioSessionOptions.mixWithOthers,
-              AVAudioSessionOptions.allowBluetooth,
-            },
-          ),
-        ));
-      } else if (PlatformUtils.isAndroid) {
-        try {
-          await player.setAudioContext(AudioContext(
-            android: AudioContextAndroid(
-              usageType: AndroidUsageType.media,
-              contentType: AndroidContentType.speech,
-              // 使用 none 而不是 gainTransientMayDuck，防止抢占 ASR 麦克风音频焦点导致底层崩溃闪退
-              audioFocus: AndroidAudioFocus.none, 
-            ),
-          ));
-        } catch (e, st) {
-          Global.logger.e('Android setAudioContext 异常', error: e, stackTrace: st);
-        }
+      // 核心优化：仅配置一次音频会话，避免频繁切换导致的咔哒噪音（由随身听反馈发现）
+      if (!_audioSessionConfigured) {
+        await configureAudioSession();
       }
+
       await player.setVolume(1.0);
 
       // player 为 AudioPlayerFactory.create() 产物（真实或 Mock），无需判空
@@ -117,7 +132,7 @@ class SoundUtil {
         await player.play(UrlSource(soundUrl)).timeout(Duration(milliseconds: loadTimeoutMs));
       } else {
         var file = await DefaultCacheManager().getSingleFile(soundUrl).timeout(Duration(milliseconds: loadTimeoutMs));
-        await player.play(DeviceFileSource(file.path)).timeout(const Duration(milliseconds: 1000));
+        await player.play(DeviceFileSource(file.path)).timeout(const Duration(milliseconds: 3000));
       }
 
       // 等待播放完成
@@ -196,7 +211,7 @@ class SoundUtil {
         await player.play(UrlSource(soundUrl)).timeout(const Duration(milliseconds: 3000));
       } else {
         var file = await DefaultCacheManager().getSingleFile(soundUrl).timeout(const Duration(milliseconds: 3000));
-        await player.play(DeviceFileSource(file.path)).timeout(const Duration(milliseconds: 1000));
+        await player.play(DeviceFileSource(file.path)).timeout(const Duration(milliseconds: 3000));
       }
 
       // 等待播放完成
@@ -234,11 +249,11 @@ class SoundUtil {
                 },
               ),
             ))
-            .timeout(const Duration(milliseconds: 1000));
+            .timeout(const Duration(milliseconds: 5000));
       }
 
-      await player.setPlaybackRate(speed).timeout(const Duration(milliseconds: 1001)); // 故意把超时时间设置的有点区别, 这样当发生超时异常的时候, 就可以通过日志快速看出异常发生在哪里
-      await player.setVolume(volume).timeout(const Duration(milliseconds: 1002));
+      await player.setPlaybackRate(speed).timeout(const Duration(milliseconds: 5001)); // 故意把超时时间设置的有点区别
+      await player.setVolume(volume).timeout(const Duration(milliseconds: 5002));
 
       // 添加播放状态监听
       player.onPlayerStateChanged.listen((state) {
@@ -246,7 +261,7 @@ class SoundUtil {
       });
 
       // 修复路径问题：audioplayers 会自动添加 assets/ 前缀，所以只需要 audio/ 路径
-      await player.play(AssetSource('audio/$soundFileName')).timeout(const Duration(milliseconds: 1000));
+      await player.play(AssetSource('audio/$soundFileName')).timeout(const Duration(milliseconds: 3000));
 
       // 等待播放完成，避免立即释放播放器
       await player.onPlayerComplete.first.timeout(Duration(milliseconds: timeoutInMilliSeconds));
@@ -282,10 +297,11 @@ class SoundUtil {
     double volume,
   ) async {
     try {
-      // iOS 上不设置 AudioContext，保持原有行为以确保正常工作
-      // Android 上也不设置 AudioContext，与 playAssetSound 保持一致，确保能正常播放
-      // 虽然理论上 Android 在录音时需要 AudioContext 才能在录音时播放音效，
-      // 但实际测试发现设置 AudioContext 会导致音频无法播放，而不设置反而能正常工作
+      // iOS / Android 均不设置 AudioContext：
+      // - 设置 AudioContext 会在 player.dispose() 时重置全局 AVAudioSession（iOS）或
+      //   重置 AudioFocus（Android），引发音频会话切换噪音。
+      // - 不设置则复用当前已有的 session 配置（由 ASR 或其他播放器维持），更静默。
+      // 注意：此函数由 playAssetSoundConcurrent 调用，用于 correct.mp3 等短提示音。
 
       await player.setPlaybackRate(speed);
       await player.setVolume(volume);
@@ -424,8 +440,9 @@ class SoundUtil {
 
   /// 播放ASR启动提示音
   static Future<void> playAsrReadyHintSound() async {
-    await SoundUtil.playAssetSound('asr_ready_hint.mp3', 1.3, 1.0, 2000, 0).catchError((e) {
-      Global.logger.i('播放ASR启动提示音失败或超时: $e');
+    // 使用 playAssetSoundConcurrent 避免设置/重置 AudioContext 导致的切换噪音
+    await SoundUtil.playAssetSoundConcurrent('asr_ready_hint.mp3', 1.3, 1.0).catchError((e) {
+      Global.logger.i('播放ASR启动提示音失败: $e');
     });
     Global.logger.d('🔔 提示音播放完成，用户可以开始说话');
   }
