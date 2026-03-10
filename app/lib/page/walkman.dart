@@ -77,6 +77,7 @@ class WalkmanPageState extends State<WalkmanPage> {
   int waitedTime = maxIntValue;
   bool inited = false;
   bool isLandscape = false;
+  int _playSessionId = 0;
 
   Future<bool> checkArgs() async {
     if (Get.arguments == null) {
@@ -234,6 +235,7 @@ class WalkmanPageState extends State<WalkmanPage> {
   }
 
   Future<void> doPlayWord() async {
+    final int expectedSession = _playSessionId;
     try {
       currentWordPlayShouldStop = false;
       currentWordPlayingStopped = false;
@@ -255,14 +257,14 @@ class WalkmanPageState extends State<WalkmanPage> {
         }
 
         // 检查是否被停止，避免获取例句期间状态变化
-        if (currentWordPlayShouldStop) {
-          currentWordPlayingStopped = true;
+        if (currentWordPlayShouldStop || expectedSession != _playSessionId) {
+          if (expectedSession == _playSessionId) currentWordPlayingStopped = true;
           return;
         }
 
-        for (var i = 0; i < repeatCount && !currentWordPlayShouldStop; i++) {
+        for (var i = 0; i < repeatCount && !currentWordPlayShouldStop && expectedSession == _playSessionId; i++) {
           // 检查停止信号
-          if (currentWordPlayShouldStop) break;
+          if (currentWordPlayShouldStop || expectedSession != _playSessionId) break;
 
           if (playPronounce && !_audioPlayerDisposed) {
             currentPlayStep = 'pronounce';
@@ -276,17 +278,17 @@ class WalkmanPageState extends State<WalkmanPage> {
           }
 
           // 检查停止信号
-          if (currentWordPlayShouldStop) break;
+          if (currentWordPlayShouldStop || expectedSession != _playSessionId) break;
 
           if (playMeaning && PlatformUtils.isTtsSupported()) {
             // 播放释义前，休眠一会儿，以便用户可以回想一下
             var sleepTime = 0;
-            while (!currentWordPlayShouldStop && sleepTime < playInterval * 0.5) {
+            while (!currentWordPlayShouldStop && expectedSession == _playSessionId && sleepTime < playInterval * 0.5) {
               await Future.delayed(const Duration(milliseconds: 10), () {}); // 减少检查间隔
               sleepTime += 10;
             }
 
-            if (!currentWordPlayShouldStop) {
+            if (!currentWordPlayShouldStop && expectedSession == _playSessionId) {
               currentPlayStep = 'meaning';
               if (PlatformUtils.isAndroid || PlatformUtils.isIOS) {
                 await tts?.speak(Util.pureMeaningStr(word.word));
@@ -296,11 +298,11 @@ class WalkmanPageState extends State<WalkmanPage> {
           }
 
           // 检查停止信号
-          if (currentWordPlayShouldStop) break;
+          if (currentWordPlayShouldStop || expectedSession != _playSessionId) break;
 
           // 播放已预先获取的例句
           if (sentences.isNotEmpty) {
-            if (playSentence && !currentWordPlayShouldStop && !_audioPlayerDisposed) {
+            if (playSentence && !currentWordPlayShouldStop && expectedSession == _playSessionId && !_audioPlayerDisposed) {
               currentPlayStep = 'sentence';
               try {
                 await SoundUtil.playSentenceSound2(sentences[0].englishDigest!, audioPlayer);
@@ -312,9 +314,9 @@ class WalkmanPageState extends State<WalkmanPage> {
             }
 
             // 检查停止信号
-            if (currentWordPlayShouldStop) break;
+            if (currentWordPlayShouldStop || expectedSession != _playSessionId) break;
 
-            if (playChinese && !currentWordPlayShouldStop) {
+            if (playChinese && !currentWordPlayShouldStop && expectedSession == _playSessionId) {
               currentPlayStep = 'chinese';
               await tts?.speak(Util.pureSentenceChinese(sentences[0].chinese!));
               currentPlayStep = '';
@@ -324,22 +326,28 @@ class WalkmanPageState extends State<WalkmanPage> {
           // 重复播放下一个单词前，等待一段时间
           if (i < repeatCount - 1) {
             var sleepTime = 0;
-            while (!currentWordPlayShouldStop && sleepTime < playInterval) {
+            while (!currentWordPlayShouldStop && expectedSession == _playSessionId && sleepTime < playInterval) {
               await Future.delayed(const Duration(milliseconds: 10), () {}); // 减少检查间隔
               sleepTime += 10;
             }
           }
         }
 
-        nextWordIndex = currWordIndex + 1 < allWords.length ? currWordIndex + 1 : 0;
+        if (expectedSession == _playSessionId) {
+          nextWordIndex = currWordIndex + 1 < allWords.length ? currWordIndex + 1 : 0;
+        }
       }
-      currentWordPlayingStopped = true;
+      if (expectedSession == _playSessionId) {
+        currentWordPlayingStopped = true;
+      }
     } catch (e) {
       // 即使出错也要更新nextWordIndex和播放状态，确保播放能继续到下一个单词
-      if (mounted && allWords.isNotEmpty) {
+      if (mounted && allWords.isNotEmpty && expectedSession == _playSessionId) {
         nextWordIndex = currWordIndex + 1 < allWords.length ? currWordIndex + 1 : 0;
       }
-      currentWordPlayingStopped = true;
+      if (expectedSession == _playSessionId) {
+        currentWordPlayingStopped = true;
+      }
       ToastUtil.error("播放异常");
     }
   }
@@ -838,6 +846,7 @@ class WalkmanPageState extends State<WalkmanPage> {
 
   // 完全重置播放状态，确保可以重新开始播放
   void resetPlayState() {
+    _playSessionId++; // 每次重置时递增，强行阻断旧的休眠或播放异步等待
     // 重置状态标志
     currentWordPlayingStopped = true;
     currentWordPlayShouldStop = false;

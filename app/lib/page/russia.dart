@@ -483,7 +483,7 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
 
   MyGame(this.gameHall, this.exceptRoom, this.context, this.pageState)
       : screenWidth = MediaQuery.of(context).size.width,
-        uiScale = max(1.0, min(MediaQuery.of(context).size.width / 390.0, 2.0));
+        uiScale = max(1.0, min(MediaQuery.of(context).size.width / 390.0, min(MediaQuery.of(context).size.height / 844.0, 2.0)));
 
   // 背景切换逻辑已移除
 
