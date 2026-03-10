@@ -24,6 +24,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:drift/drift.dart' as drift hide Column;
+import 'package:umeng_common_sdk/umeng_common_sdk.dart';
 
 import '../config.dart';
 import '../global.dart';
@@ -1411,7 +1412,98 @@ endlocal
         }
       })
       ..repeat();
-    _initVersionInfo().then((_) => checkNewVersion());
+
+    // 隐私合规第一位：检查是否需要展示隐私弹窗
+    _checkPrivacyAndProceed();
+  }
+
+  /// 检查隐私协议，同意后才继续启动流程
+  void _checkPrivacyAndProceed() async {
+    const int currentPrivacyVersion = 20260310;
+    int acceptedVersion = GetStorage().read<int>('accepted_privacy_version') ?? 0;
+
+    if (acceptedVersion < currentPrivacyVersion) {
+      // 需要展示隐私政策弹窗
+      if (mounted) {
+        _showPrivacyDialog();
+      }
+    } else {
+      // 已过最新协议，继续原有流程
+      _initVersionInfo().then((_) => checkNewVersion());
+    }
+  }
+
+  /// 展示隐私政策弹窗（启动页专用）
+  void _showPrivacyDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return PopScope(
+          canPop: false, // 禁止手动返回关闭
+          child: AlertDialog(
+            title: const Text('服务协议与隐私政策'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    '欢迎使用泡泡单词！在您开始使用前，请务必仔细阅读并理解',
+                    style: TextStyle(fontSize: 14),
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      TextButton(
+                        onPressed: () => Get.toNamed('/protocol'),
+                        child: const Text('《用户协议》', style: TextStyle(color: Colors.blue)),
+                      ),
+                      const Text('和'),
+                      TextButton(
+                        onPressed: () => Get.toNamed('/privacy'),
+                        child: const Text('《隐私政策》', style: TextStyle(color: Colors.blue)),
+                      ),
+                    ],
+                  ),
+                  const Text(
+                    '我们非常重视您的隐私保护，您点击“同意”即代表您已阅读并接受前述协议的全部内容。我们仅在您授权后才会收集必要信息并初始化友盟等第三方SDK以提供崩溃监测等服务。',
+                    style: TextStyle(fontSize: 14, color: Colors.grey),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => exit(0), // 不同意直接退出应用（合规要求）
+                child: const Text('不同意并退出', style: TextStyle(color: Colors.grey)),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: Colors.white),
+                onPressed: () async {
+                  // 1. 记录同意状态
+                  await GetStorage().write('accepted_privacy_version', 20260310);
+                  // 2. 立即正式初始化友盟（不再推迟到登录页）
+                  if (PlatformUtils.isAndroid || PlatformUtils.isIOS) {
+                    try {
+                      UmengCommonSdk.initCommon(Config.umengAndroidAppKey, Config.umengIosAppKey, Config.umengChannel);
+                      debugPrint('Umeng initialized immediately after privacy approval on splash');
+                    } catch (e) {
+                      debugPrint('Umeng init failed: $e');
+                    }
+                  }
+                  // 3. 关闭弹窗并继续原有流程
+                  if (context.mounted) {
+                    Navigator.of(context).pop();
+                    _initVersionInfo().then((_) => checkNewVersion());
+                  }
+                },
+                child: const Text('同意并继续'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override
