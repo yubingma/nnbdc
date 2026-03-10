@@ -1413,8 +1413,10 @@ endlocal
       })
       ..repeat();
 
-    // 隐私合规第一位：检查是否需要展示隐私弹窗
-    _checkPrivacyAndProceed();
+    // 隐私合规第一位：需在首帧渲染后才能调用 showDialog
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkPrivacyAndProceed();
+    });
   }
 
   /// 检查隐私协议，同意后才继续启动流程
