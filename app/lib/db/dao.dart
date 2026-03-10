@@ -147,6 +147,34 @@ class LocalParamsDao extends DatabaseAccessor<MyDatabase> with _$LocalParamsDaoM
     }
   }
 
+  /// 获取极速模式开关状态（答对是否自动跳转）
+  Future<bool> getAutoJumpAfterCorrect() async {
+    try {
+      var param = await (select(localParams)..where((e) => e.name.equals('autoJumpAfterCorrect'))).getSingleOrNull();
+      // 默认为开启
+      return param?.value != 'false';
+    } catch (e, stackTrace) {
+      ErrorHandler.handleDatabaseError(e, stackTrace, db: this, operation: 'getAutoJumpAfterCorrect', showToast: false);
+      return true;
+    }
+  }
+
+  /// 设置极速模式开关状态
+  Future<void> setAutoJumpAfterCorrect(bool value) async {
+    try {
+      final existing = await (select(localParams)..where((e) => e.name.equals('autoJumpAfterCorrect'))).getSingleOrNull();
+      final strValue = value ? 'true' : 'false';
+      if (existing == null) {
+        await into(localParams).insert(LocalParamsCompanion.insert(name: 'autoJumpAfterCorrect', value: strValue));
+      } else {
+        await (update(localParams)..where((e) => e.name.equals('autoJumpAfterCorrect'))).write(LocalParamsCompanion(value: Value(strValue)));
+      }
+    } catch (e, stackTrace) {
+      ErrorHandler.handleDatabaseError(e, stackTrace, db: this, operation: 'setAutoJumpAfterCorrect', showToast: false);
+      rethrow;
+    }
+  }
+
   /// 获取是否已显示过单词列表新手引导
   Future<bool> getWordListGuideShown() async {
     try {

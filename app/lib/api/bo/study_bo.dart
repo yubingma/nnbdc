@@ -564,9 +564,10 @@ class StudyBo {
       // allStepsCompletedForWord 需要在后面的批次边界逻辑中也用到
       bool allStepsCompletedForWord = currentStepIndex >= steps.length - 1;
 
-      // 仅在推进进度时更新当前单词状态（gotoNext=true）
-      // gotoNext=false 表示初始加载或刷新，不应修改学习进度
-      if (gotoNext) {
+      // 仅在推进进度或提供评分时更新当前单词状态
+      // fsrsRating != null 或 isWordMastered = true 时，说明用户已经完成了一次对该词的有效评价，需要保存
+      bool shouldSave = gotoNext || fsrsRating != null || isWordMastered;
+      if (shouldSave) {
         final currWord = todayWords[currentWordIndex];
         await updateCurrWord(
           isWordMastered: isWordMastered,
@@ -578,17 +579,21 @@ class StudyBo {
           fsrsRating: fsrsRating,
         );
 
-        // 同步内存状态，以便准确推导下一个单词
-        todayWords = List.from(todayWords); // 确保列表可变
-        if (isWordMastered) {
-          masteredWordIds.add(currWord.wordId);
-        } else {
-          // 无论对错，只要用户主动进入下一步，todayLearnedTimes 就该加 1
-          todayWords[currentWordIndex] = currWord.copyWith(
-            lastLearningDate: Value(now),
-            learnedTimes: currWord.learnedTimes + 1,
-            todayLearnedTimes: currWord.todayLearnedTimes + 1,
-          );
+        // 同步内存状态
+        // 注意：只有当 gotoNext=true 时，后端才认为应该开始推导“下一个”位置
+        // 如果 gotoNext=false，说明我们要留在当前，不再重复更新内存导致“假性推进”
+        if (gotoNext) {
+          todayWords = List.from(todayWords); // 确保列表可变
+          if (isWordMastered) {
+            masteredWordIds.add(currWord.wordId);
+          } else {
+            // 只要推进了进度，todayLearnedTimes 就加 1
+            todayWords[currentWordIndex] = currWord.copyWith(
+              lastLearningDate: Value(now),
+              learnedTimes: currWord.learnedTimes + 1,
+              todayLearnedTimes: currWord.todayLearnedTimes + 1,
+            );
+          }
         }
       }
 

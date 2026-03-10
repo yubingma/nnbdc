@@ -42,6 +42,7 @@ import '../db/user_extensions.dart';
 import '../util/error_handler.dart';
 import '../theme/app_theme.dart';
 import '../util/learning_service.dart';
+import '../util/fsrs.dart';
 import '../widget/handwriting_board.dart';
 
 class BdcPageArgs {
@@ -637,6 +638,18 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   // 当前发音评分
   int? _currentScore;
 
+  /// 答对后是否自动跳转到下一个单词 (极速模式)
+  bool _autoJumpAfterCorrect = true;
+
+  /// 当前单词的 FSRS 预览结果
+  FSRSItem? _fsrsItem;
+
+  /// 距离上次复习的天数
+  int? _daysSinceLastReview;
+
+  /// 记录当前单词的评分，延后到点击“下一个”或自动跳转时保存
+  FsrsRating? _lastFsrsRating;
+
   final Map<String, bool> _playingStates = {
     'word': false, // 单词发音
     'sentence': false, // 例句发音
@@ -1109,6 +1122,69 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     }
   }
 
+  void _onAnswerCorrect(FsrsRating rating) async {
+    _isAnswerCorrect = true;
+
+    // 计算 FSRS 预览结果
+    final lw = _currentGetWordResult?.learningWord;
+    if (lw != null) {
+      final fsrs = FSRS();
+      
+      // 计算距离上次复习的天数
+      _daysSinceLastReview = 0;
+      if (lw.lastLearningDate != null) {
+        final lastDate = DateTime(lw.lastLearningDate!.year, lw.lastLearningDate!.month, lw.lastLearningDate!.day);
+        final now = DateTime.now();
+        final todayDate = DateTime(now.year, now.month, now.day);
+        _daysSinceLastReview = todayDate.difference(lastDate).inDays;
+      }
+
+      if (lw.stability == null || lw.stability == 0.0) {
+        _fsrsItem = fsrs.init(rating);
+      } else {
+        final prevItem = FSRSItem(
+          stability: lw.stability!,
+          difficulty: lw.difficulty!,
+          elapsedDays: _daysSinceLastReview ?? 0,
+          scheduledDays: lw.scheduledDays ?? 0,
+          reps: lw.reps ?? 0,
+          lapses: lw.lapses ?? 0,
+          state: FsrsStateExt.fromInt(lw.state),
+        );
+        _fsrsItem = fsrs.next(prevItem, rating, _daysSinceLastReview ?? 0);
+      }
+    }
+
+    // 核心修复：全对后立即停止 ASR 引擎释放音频录制通道，否则 correct.mp3 音效会发卡、颤抖
+    await asr.stopAsr();
+    _lastFsrsRating = rating;
+
+    // 播放正确提示音
+    final soundFuture = SoundUtil.playAssetSoundConcurrent('correct.mp3', 1.5, 0.2);
+    soundFuture.whenComplete(() async {
+      // 播放一遍单词的标准发音
+      await SoundUtil.playPronounceSound2(_word!, _audioPlayer);
+
+      if (_autoJumpAfterCorrect) {
+        getNextWord(true, fsrsRating: rating);
+      } else {
+        // 展示所有释义（通过将 asrMatchedMeaningItemParts 填满）
+        if (_wordWrapper != null) {
+          final meaningItems = _wordWrapper!.word.getMergedMeaningItems();
+          for (var i = 0; i < meaningItems.length; i++) {
+            var parts = splitMeaning2Parts(meaningItems[i].meaning!);
+            for (var j = 0; j < parts.length; j++) {
+              if (!_wordWrapper!.asrMatchedMeaningItemParts.contains(Pair(i, j))) {
+                _wordWrapper!.asrMatchedMeaningItemParts.add(Pair(i, j));
+              }
+            }
+          }
+        }
+        setState(() {});
+      }
+    });
+  }
+
   checkAsrResult() async {
     Global.logger.d('BDC CHECK_ASR: Start. _meaningController.text=${_meaningController.text}, _handlingChinese=$_handlingChinese, _studyStep=$_studyStep, asr.state=${asr.state}, _isKeyboardVisible=$_isKeyboardVisible, _meaningFocusNode.hasFocus=${_meaningFocusNode.hasFocus}, _wordWrapper=${_wordWrapper != null}, _word=${_word != null}');
 
@@ -1212,7 +1288,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                       rating = FsrsRating.hard; // Hard
                     }
                   }
-                  getNextWord(true, fsrsRating: rating);
+                  _onAnswerCorrect(rating);
                 }
           });
         });
@@ -1252,13 +1328,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         // 核心修复：全对后立即停止 ASR 引擎释放音频录制通道，否则 correct.mp3 音效会发卡、颤抖
         await asr.stopAsr();
 
-        // 播放正确提示音
-        final soundFuture = SoundUtil.playAssetSoundConcurrent('correct.mp3', 1.5, 0.2);
-        soundFuture.whenComplete(() async {
-          // 播放一遍单词的标准发音
-          await SoundUtil.playPronounceSound2(_word!, _audioPlayer);
-          getNextWord(true, fsrsRating: rating);
-        });
+        _onAnswerCorrect(rating);
       }
     }
   }
@@ -1286,6 +1356,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   Future<void> loadData() async {
     try {
       _isDarkMode = await MyDatabase.instance.localParamsDao.getIsDarkMode();
+      _autoJumpAfterCorrect = await MyDatabase.instance.localParamsDao.getAutoJumpAfterCorrect();
 
       // 获取用户的学习步骤配置（已激活的学习步骤)
       var stepsResult = await StudyBo().getActiveUserStudySteps();
@@ -1511,6 +1582,11 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   void handleWord(final GetWordResult? getWordResult, {bool isFromBatchWordList = false}) async {
     // 异步拉取最新 ASR 规则并缓存，避免后续同步处理挂起
     MyDatabase.instance.localParamsDao.getAsrPassRule().then((val) => _asrPassRuleCache = val);
+
+    setState(() {
+      _fsrsItem = null;
+      _lastFsrsRating = null;
+    });
 
     try {
       if (getWordResult == null) {
@@ -1841,6 +1917,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     var localShowAnswersDirectly = currentUser?.showAnswersDirectly ?? false;
     var localEnableAllWrong = currentUser?.enableAllWrong ?? false;
     var localAsrPassRule = await MyDatabase.instance.localParamsDao.getAsrPassRule();
+    var localAutoJumpAfterCorrect = _autoJumpAfterCorrect;
 
     if (!mounted) return;
 
@@ -1965,6 +2042,15 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                                     });
                                   },
                                 ),
+                                _buildSettingItem(
+                                  '答对后自动跳转(极速模式)',
+                                  localAutoJumpAfterCorrect,
+                                  (value) {
+                                    setState(() {
+                                      localAutoJumpAfterCorrect = value;
+                                    });
+                                  },
+                                ),
                               ];
 
                               if (!useTwoColumns) {
@@ -2026,8 +2112,13 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                           }
                           // 保存asrPassRule设置
                           await MyDatabase.instance.localParamsDao.setAsrPassRule(localAsrPassRule);
+                          // 保存极速模式开关设置
+                          await MyDatabase.instance.localParamsDao.setAutoJumpAfterCorrect(localAutoJumpAfterCorrect);
+                          
                           // 在异步操作后检查context是否仍然有效
                           if (context.mounted) {
+                            _asrPassRuleCache = localAsrPassRule;
+                            _autoJumpAfterCorrect = localAutoJumpAfterCorrect;
                             Navigator.pop(context, true);
                           }
                         },
@@ -2940,13 +3031,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         }
       }
 
-      // 并发播放提示音，将 Future 添加到列表中用于后续等待
-      final soundFuture = SoundUtil.playAssetSoundConcurrent('correct.mp3', 1.5, 0.2);
-      _playingCorrectSounds.add(soundFuture);
-      soundFuture.whenComplete(() {
-        _playingCorrectSounds.remove(soundFuture);
-      });
-      getNextWord(true, fsrsRating: rating);
+      _onAnswerCorrect(rating);
     } else {
       //不认识或答案错误（错误提示音不需要等待，因为不会跳转到下一个单词）
       SoundUtil.playAssetSoundConcurrent('failed.mp3', 1.5, 0.2);
@@ -3463,7 +3548,10 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
               child: _studyStep == StudyStep.en2Ch.json
                   ? Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: renderAsrMeaningItems(_wordWrapper!, isDarkMode: context.read<DarkMode>().isDarkMode),
+                      children: [
+                        ...renderAsrMeaningItems(_wordWrapper!, isDarkMode: context.read<DarkMode>().isDarkMode),
+                        if (_isAnswerCorrect && !_autoJumpAfterCorrect) _buildFsrsResultPanel(),
+                      ],
                     )
                   : Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -3575,9 +3663,221 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                             ],
                           ),
                         _buildWordSpellingHint(_wordWrapper!, _isAnswerCorrect),
+                        if (_isAnswerCorrect && !_autoJumpAfterCorrect) _buildFsrsResultPanel(),
                       ],
                     ),
             ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFsrsResultPanel() {
+    if (_fsrsItem == null) return const SizedBox();
+    final isDarkMode = context.watch<DarkMode>().isDarkMode;
+
+    return Container(
+      margin: const EdgeInsets.only(top: 24),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF0F7FF),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.primaryColor.withValues(alpha: 0.2), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDarkMode ? 0.2 : 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildFsrsInfoItem(
+                'FSRS 难度',
+                _fsrsItem!.difficulty.toStringAsFixed(1),
+                Icons.psychology_outlined,
+                isDarkMode,
+              ),
+              Container(width: 1, height: 30, color: isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.1)),
+              _buildFsrsInfoItem(
+                '下次复习',
+                '${_fsrsItem!.scheduledDays} 天后',
+                Icons.event_note_outlined,
+                isDarkMode,
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          _buildFsrsTimeline(isDarkMode),
+          const SizedBox(height: 28),
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: ElevatedButton(
+              onPressed: () => getNextWord(true, fsrsRating: _lastFsrsRating),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryColor,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text('查看下一个单词', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1)),
+                  SizedBox(width: 8),
+                  Icon(Icons.arrow_forward_rounded, size: 20),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFsrsTimeline(bool isDarkMode) {
+    if (_fsrsItem == null) return const SizedBox();
+
+    final prevDays = _daysSinceLastReview ?? 0;
+    final nextDays = _fsrsItem!.scheduledDays;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              _buildTimelineNode('上次', prevDays > 0 ? '$prevDays天' : '初学', isDarkMode, false),
+              _buildTimelineLine(isDarkMode, true),
+              _buildTimelineNode('今天', '现在', isDarkMode, true),
+              _buildTimelineLine(isDarkMode, false),
+              _buildTimelineNode('下次', '$nextDays天后', isDarkMode, false),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTimelineNode(String label, String timeStr, bool isDarkMode, bool isHighlight) {
+    final color = isHighlight ? AppTheme.primaryColor : (isDarkMode ? Colors.white54 : Colors.black38);
+    final dotColor = isHighlight ? AppTheme.primaryColor : (isDarkMode ? Colors.white38 : Colors.black26);
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          height: 14,
+          child: Text(
+            timeStr,
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: isHighlight ? FontWeight.bold : FontWeight.normal,
+              color: isHighlight ? AppTheme.primaryColor : (isDarkMode ? Colors.white70 : Colors.black87),
+            ),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Container(
+          height: 12,
+          alignment: Alignment.center,
+          child: Container(
+            width: isHighlight ? 12 : 8,
+            height: isHighlight ? 12 : 8,
+            decoration: BoxDecoration(
+              color: dotColor,
+              shape: BoxShape.circle,
+              border: isHighlight ? Border.all(color: Colors.white, width: 2) : null,
+              boxShadow: isHighlight
+                  ? [
+                      BoxShadow(
+                        color: AppTheme.primaryColor.withValues(alpha: 0.4),
+                        blurRadius: 6,
+                        spreadRadius: 2,
+                      )
+                    ]
+                  : null,
+            ),
+          ),
+        ),
+        const SizedBox(height: 6),
+        SizedBox(
+          height: 16,
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              color: color,
+              fontWeight: isHighlight ? FontWeight.bold : FontWeight.normal,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTimelineLine(bool isDarkMode, bool isPast) {
+    return Expanded(
+      child: Column(
+        children: [
+          const SizedBox(height: 14 + 6), // 对应 timeStr + gap
+          Container(
+            height: 12,
+            alignment: Alignment.center,
+            child: Container(
+              height: 2,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: isPast
+                      ? [
+                          isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
+                          AppTheme.primaryColor.withValues(alpha: 0.5),
+                        ]
+                      : [
+                          AppTheme.primaryColor.withValues(alpha: 0.5),
+                          isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
+                        ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 6 + 16), // 对应 gap + label
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFsrsInfoItem(String label, String value, IconData icon, bool isDarkMode) {
+    return Column(
+      children: [
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 14, color: isDarkMode ? Colors.white60 : Colors.black54),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                color: isDarkMode ? Colors.white60 : Colors.black54,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 18,
+            color: isDarkMode ? Colors.white : AppTheme.primaryColor,
+            fontWeight: FontWeight.bold,
           ),
         ),
       ],
