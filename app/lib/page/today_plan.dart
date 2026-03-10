@@ -724,7 +724,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  '长按排序',
+                  '拖动 ⠿ 排序',
                   style: TextStyle(
                     color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                     fontSize: 10,
@@ -742,23 +742,19 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
           onReorder: reorderData,
           children: [
             for (int i = 0; i < studySteps!.length; i++)
-              ReorderableDragStartListener(
-                key: ValueKey(studySteps![i].studyStep),
-                index: i,
-                child: _buildStepTile(studySteps![i]),
-              ),
+              _buildStepTile(studySteps![i], i),
           ],
         ),
       ],
     );
   }
 
-  Widget _buildStepTile(UserStudyStepVo step) {
+  Widget _buildStepTile(UserStudyStepVo step, int index) {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
     final isActive = step.state == StudyStepState.active.json;
 
     return Container(
-      key: ValueKey(step),
+      key: ValueKey(step.studyStep),
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: isDarkMode ? const Color(0xFF1E293B) : Colors.white,
@@ -821,7 +817,14 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
                     ),
                   ),
                 ),
-                Icon(Icons.drag_indicator_rounded, color: isDarkMode ? Colors.white12 : Colors.black12, size: 22),
+                ReorderableDragStartListener(
+                  index: index,
+                  child: Icon(
+                    Icons.drag_indicator_rounded,
+                    color: isDarkMode ? Colors.white38 : Colors.black26,
+                    size: 22,
+                  ),
+                ),
               ],
             ),
           ),
