@@ -570,11 +570,7 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
       var result = await OpenFile.open(savePath, type: "application/vnd.android.package-archive");
       if (result.type == ResultType.done) {
         setState(() {
-          installingMessage = '安装程序已启动，请按照提示完成安装';
-        });
-        // 延迟退出，让用户看到提示
-        Future.delayed(Duration(seconds: 2), () {
-          SystemNavigator.pop();
+          installingMessage = '安装程序已启动，请按照提示完成安装\n(如果未弹出安装界面，请在通知栏或下载中找安装包)';
         });
       } else {
         setState(() {
@@ -734,10 +730,6 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
           });
           // 提示用户安装新版本
           ToastUtil.success("安装包已下载，请按照提示安装新版本");
-          // 延迟退出，让用户看到提示
-          Future.delayed(Duration(seconds: 2), () {
-            SystemNavigator.pop();
-          });
         } else {
           setState(() {
             installing = false;
