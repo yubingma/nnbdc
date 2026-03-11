@@ -871,6 +871,18 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       checkAsrResult();
     });
 
+    // 监听输入框焦点，进入沉浸式文本输入模式
+    _meaningFocusNode.addListener(() {
+      if (_meaningFocusNode.hasFocus) {
+        // 停止 ASR
+        Global.logger.d('BDC: 输入框获取焦点，停止 ASR');
+        asr.stopMicrophone(); // 彻底停止 ASR
+        setState(() {}); // 触发进入沉浸式模式
+      } else {
+        setState(() {}); // 触发退出沉浸式模式
+      }
+    });
+
     // 监听输入法键盘弹出和隐藏
     var keyboardVisibilityController = KeyboardVisibilityController();
     _isKeyboardVisible = keyboardVisibilityController.isVisible;
@@ -2357,8 +2369,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       return Container();
     }
 
-    if (_showHandwritingBoard) {
-      return _buildFullscreenHandwritingMode();
+    if (_showHandwritingBoard || _meaningFocusNode.hasFocus) {
+      return _buildFullscreenImmersiveInputMode();
     }
 
     return Column(
@@ -2371,8 +2383,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     );
   }
 
-  /// 构建全屏手写模式
-  Widget _buildFullscreenHandwritingMode() {
+  /// 构建全屏沉浸式输入模式（支持手写和键盘）
+  Widget _buildFullscreenImmersiveInputMode() {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
     
     // 获取合并后的所有释义项
@@ -2424,6 +2436,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                 IconButton(
                   icon: const Icon(Icons.close),
                   onPressed: () {
+                    _meaningFocusNode.unfocus();
                     setState(() {
                       _showHandwritingBoard = false;
                     });
@@ -2432,23 +2445,76 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
               ],
             ),
           ),
-          // 全屏手写板
+          // 全屏输入区：打字与手写结合
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: HandwritingBoard(
-                onRecognized: (text) {
-                  setState(() {
-                    _meaningController.text = text;
-                    _showHandwritingBoard = false;
-                  });
-                  checkAsrResult();
-                },
-                onCancel: () {
-                  setState(() {
-                    _showHandwritingBoard = false;
-                  });
-                },
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Column(
+                children: [
+                  // 1. 手写板区域
+                  Expanded(
+                    child: HandwritingBoard(
+                      onRecognized: (text) {
+                        setState(() {
+                          _meaningController.text = text;
+                        });
+                        checkAsrResult();
+                      },
+                      onCancel: () {
+                        _meaningFocusNode.unfocus();
+                        setState(() {
+                          _showHandwritingBoard = false;
+                        });
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  // 2. 打字输入框
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: isDarkMode ? const Color(0xFF1E1E1E) : const Color(0xFFF8F9FA),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: _meaningFocusNode.hasFocus ? AppTheme.primaryColor.withValues(alpha: 0.3) : Colors.transparent,
+                        width: 1,
+                      ),
+                    ),
+                    child: TextField(
+                      controller: _meaningController,
+                      focusNode: _meaningFocusNode,
+                      autofocus: true,
+                      keyboardType: TextInputType.visiblePassword,
+                      autocorrect: false,
+                      enableSuggestions: false,
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.primaryColor,
+                      ),
+                      decoration: const InputDecoration(
+                        hintText: '在此键入单词...',
+                        border: InputBorder.none,
+                      ),
+                      textInputAction: TextInputAction.done,
+                      onSubmitted: (value) {
+                        _meaningFocusNode.unfocus();
+                        checkAsrResult();
+                      },
+                    ),
+                  ),
+                  // 底部提示
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Text(
+                      '支持键盘输入与手写混合使用',
+                      style: TextStyle(
+                        color: isDarkMode ? Colors.white.withValues(alpha: 0.24) : Colors.black.withValues(alpha: 0.24),
+                        fontSize: 10,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -3542,7 +3608,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                 TextSpan(
                   text: '$ciXing ',
                   style: TextStyle(
-                    fontSize: 15, // 增大字号
+                    fontSize: 15,
                     fontWeight: FontWeight.w600,
                     color: isDarkMode ? Colors.white60 : const Color(0xFF64748B),
                   ),
@@ -3561,7 +3627,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
           ),
         );
       } else {
-        // 如果不是以词性开头，直接添加整行
         widgets.add(
           Text(
             line,
@@ -3782,25 +3847,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                                         }
                                       },
                                     ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  // 手写按钮
-                                  IconButton(
-                                    icon: Icon(
-                                      _showHandwritingBoard ? Icons.keyboard : Icons.gesture,
-                                      color: _showHandwritingBoard ? AppTheme.primaryColor : Colors.grey,
-                                    ),
-                                    onPressed: () {
-                                      setState(() {
-                                        _showHandwritingBoard = !_showHandwritingBoard;
-                                        if (_showHandwritingBoard) {
-                                          Util.closeIme();
-                                        } else {
-                                          _meaningFocusNode.requestFocus();
-                                        }
-                                      });
-                                    },
-                                    tooltip: '手写识别',
                                   ),
                                 ],
                               ),
