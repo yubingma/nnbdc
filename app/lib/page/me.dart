@@ -826,7 +826,7 @@ class _MePageState extends State<MePage> {
                   );
                 }
 
-                if (isPremium && premiumInfoText != null && PlatformUtils.isIOS) {
+                if (isPremium && premiumInfoText != null) { 
                   return Container(
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                     decoration: BoxDecoration(

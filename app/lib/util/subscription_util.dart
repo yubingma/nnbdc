@@ -476,7 +476,7 @@ class SubscriptionUtil {
   static bool _isPremiumEffective(User user) {
     final now = DateTime.now();
 
-    // 非ios平台, 暂时都视为会员
+    // 非ios平台, 暂时都视为会员 
     if (!Platform.isIOS) {
       return true;
     }
