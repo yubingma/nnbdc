@@ -635,8 +635,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              IconButton(
-                                onPressed: () => Navigator.pop(context),
+                              IconButton( 
+                                onPressed: () => Get.back(),
                                 icon: Icon(Icons.arrow_back, color: isDarkMode ? Colors.grey[200] : Colors.grey[700]),
                               ),
                               Container(),
@@ -1962,7 +1962,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
         appBar: AppBar(
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Get.back(),
           ),
           title: const Text('加载失败'),
         ),
@@ -1978,7 +1978,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   ElevatedButton(
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: () => Get.back(),
                     child: const Text('返回'),
                   ),
                   const SizedBox(width: 12),
@@ -2003,9 +2003,12 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
 
     return Scaffold(
       appBar: null,
-      body: Container(
-        padding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
-        child: (!dataLoaded) ? const Center(child: CircularProgressIndicator()) : renderPage(),
+      body: SafeArea(
+        bottom: false,
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
+          child: (!dataLoaded) ? const Center(child: CircularProgressIndicator()) : renderPage(),
+        ),
       ),
     );
   }
