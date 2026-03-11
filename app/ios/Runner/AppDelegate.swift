@@ -301,6 +301,9 @@ import StoreKit
         }
         
         setupAudioSession()
+        // 核心优化：在 startMicrophone 时即初始化并启动音频引擎（Pre-warm），
+        // 避免在后续 startAsr 时临时启动引擎产生的音频切换回声或杂音（尤其解决第一个单词的问题）
+        initializeAudioEngine()
         isRecording = true
         result(nil)
     }

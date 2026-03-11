@@ -431,6 +431,25 @@ class Asr {
     }
   }
 
+  /// 仅启动麦克风和音频引擎（Pre-warm），不启动 ASR 识别任务。
+  /// 用于在进入学习页面时提前启动硬件，消除后续识别任务启动时的切换噪音。
+  Future<void> startMicrophone() async {
+    if (!PlatformUtils.isAsrSupported()) return;
+
+    try {
+      if (!permissionGranted) {
+        await _checkAndRequestPermissions();
+      }
+
+      if (permissionGranted) {
+        Global.logger.i('ASR: Pre-warming microphone... (instance: $hashCode)');
+        await asrMethodChannel.invokeMethod('startMicrophone').timeout(const Duration(seconds: 5));
+      }
+    } catch (e) {
+      Global.logger.e('ASR: Pre-warm microphone failed: $e (instance: $hashCode)');
+    }
+  }
+
   Future<void> stopAsr() async {
     Global.logger.i('ASR: stopAsr() called (instance: $hashCode)');
     if (!PlatformUtils.isAsrSupported()) return;

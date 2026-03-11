@@ -1724,8 +1724,14 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       // 注意：getNextWord 已经执行过 stopAsr + reset，此处无需重复，否则会触发额外的
       // iOS Audio Engine tear-down，产生听感噪音。
       if (oldStudyStep == null || oldStudyStep != _studyStep) {
-        Global.logger.i('BDC: 学习模式从 $oldStudyStep 切换到 $_studyStep，初始化 ASR 监听');
+        Global.logger.i('BDC: 学习模式从 $oldStudyStep 切换到 $_studyStep，初始化 ASR 监听并预热麦克风');
         await asr.initAsr(onAsrResult);
+        
+        // 核心优化：在进入页面或切换模式时提前“预热”麦克风和音频引擎
+        // 这样可以解决第一个单词播完后切换到录音状态时由引擎启动产生的回声/杂音问题
+        if (_shouldShowSpeakTab) {
+          unawaited(asr.startMicrophone());
+        }
       }
 
       // 重新初始化TabController以适应动态tabs
