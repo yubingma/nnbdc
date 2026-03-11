@@ -2633,6 +2633,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                         child: (_studyStep == StudyStep.en2Ch.json || _studyStep == StudyStep.ch2En.json)
                             ? TabBarView(
                                 controller: _tabController,
+                                physics: const NeverScrollableScrollPhysics(),
                                 children: _dynamicTabBarViewChildren,
                               )
                             : Column(
@@ -3613,6 +3614,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
               ),
             ),
             child: SingleChildScrollView(
+              physics: _showHandwritingBoard ? const NeverScrollableScrollPhysics() : null,
               padding: EdgeInsets.zero,
               child: _studyStep == StudyStep.en2Ch.json
                   ? Column(

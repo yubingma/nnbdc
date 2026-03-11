@@ -186,6 +186,7 @@ class _HandwritingBoardState extends State<HandwritingBoard> {
           // 画布区域
           Expanded(
             child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
               onPanStart: (details) {
                 if (_isRecognizing) return;
                 setState(() {
