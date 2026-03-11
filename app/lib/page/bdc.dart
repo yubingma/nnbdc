@@ -568,6 +568,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   final FocusNode _meaningFocusNode = FocusNode();
 
   final AudioPlayer _audioPlayer = AudioPlayer();
+  
+  /// 说意/英拼写面板的滚动控制
+  final ScrollController _speakPanelScrollController = ScrollController();
 
   /// AudioPlayer 是否已被释放的标志
   bool _audioPlayerDisposed = false;
@@ -1031,6 +1034,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     _keyboardSubscription.cancel();
     _tabController?.dispose();
     _meaningFocusNode.dispose();
+    _speakPanelScrollController.dispose();
     _soundController.dispose();
     _wordSoundController.dispose();
     _sentenceSoundController.dispose();
@@ -2353,6 +2357,10 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       return Container();
     }
 
+    if (_showHandwritingBoard) {
+      return _buildFullscreenHandwritingMode();
+    }
+
     return Column(
       children: [
         Expanded(
@@ -2360,6 +2368,92 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         ),
         _buildBottomButtons(),
       ],
+    );
+  }
+
+  /// 构建全屏手写模式
+  Widget _buildFullscreenHandwritingMode() {
+    final isDarkMode = context.watch<DarkMode>().isDarkMode;
+    
+    // 获取合并后的所有释义项
+    final meaningItems = _word?.getMergedMeaningItems() ?? [];
+    final combinedMeaning = meaningItems.map((m) => "${m.ciXing ?? ''} ${m.meaning ?? ''}").join("; ");
+
+    return Container(
+      color: isDarkMode ? const Color(0xFF121212) : Colors.white,
+      child: Column(
+        children: [
+          // 顶部显示一行中文释义
+          Container(
+            padding: EdgeInsets.fromLTRB(16, MediaQuery.of(context).padding.top + 8, 8, 8),
+            decoration: BoxDecoration(
+              border: Border(
+                bottom: BorderSide(
+                  color: isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
+                  width: 1,
+                ),
+              ),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        '请拼写单词：',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isDarkMode ? Colors.white38 : Colors.black38,
+                        ),
+                      ),
+                      Text(
+                        combinedMeaning,
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: isDarkMode ? Colors.white : Colors.black,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () {
+                    setState(() {
+                      _showHandwritingBoard = false;
+                    });
+                  },
+                ),
+              ],
+            ),
+          ),
+          // 全屏手写板
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: HandwritingBoard(
+                onRecognized: (text) {
+                  setState(() {
+                    _meaningController.text = text;
+                    _showHandwritingBoard = false;
+                  });
+                  checkAsrResult();
+                },
+                onCancel: () {
+                  setState(() {
+                    _showHandwritingBoard = false;
+                  });
+                },
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -3614,6 +3708,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
               ),
             ),
             child: SingleChildScrollView(
+              controller: _speakPanelScrollController,
               physics: _showHandwritingBoard ? const NeverScrollableScrollPhysics() : null,
               padding: EdgeInsets.zero,
               child: _studyStep == StudyStep.en2Ch.json
