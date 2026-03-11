@@ -2452,17 +2452,20 @@ class WordListPageState extends State<WordListPage>
       width: 32,
       height: 4,
       margin: const EdgeInsets.only(top: 4),
-      child: FAProgressBar(
+      child: ClipRRect(
         borderRadius: const BorderRadius.all(Radius.circular(2)),
-        currentValue: args.wordProgressProvider.getWordProgress(word.tag),
-        maxValue: args.wordProgressProvider.getWordProgressMax(word.tag),
-        displayText: '',
-        direction: Axis.horizontal,
-        displayTextStyle: const TextStyle(color: Color(0x00000000)),
-        backgroundColor:
-            isDarkMode ? const Color(0xFF404040) : const Color(0xFFE5E7EB),
-        progressColor: progressColor(word),
-        animatedDuration: const Duration(milliseconds: 200),
+        child: FAProgressBar(
+          borderRadius: const BorderRadius.all(Radius.circular(2)),
+          currentValue: args.wordProgressProvider.getWordProgress(word.tag),
+          maxValue: args.wordProgressProvider.getWordProgressMax(word.tag),
+          displayText: '',
+          direction: Axis.horizontal,
+          displayTextStyle: const TextStyle(color: Color(0x00000000), fontSize: 0),
+          backgroundColor:
+              isDarkMode ? const Color(0xFF404040) : const Color(0xFFE5E7EB),
+          progressColor: progressColor(word),
+          animatedDuration: const Duration(milliseconds: 200),
+        ),
       ),
     );
   }

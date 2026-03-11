@@ -2714,16 +2714,19 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                               );
                             }),
                           ),
-                          FAProgressBar(
+                          ClipRRect(
                             borderRadius: const BorderRadius.all(Radius.circular(3)),
-                            currentValue: currentProgress,
-                            maxValue: maxValue,
-                            displayText: '',
-                            direction: Axis.horizontal,
-                            displayTextStyle: const TextStyle(color: Color(0x00000000)),
-                            backgroundColor: Colors.transparent,
-                            progressColor: progressColor,
-                            animatedDuration: const Duration(milliseconds: 300),
+                            child: FAProgressBar(
+                              borderRadius: const BorderRadius.all(Radius.circular(3)),
+                              currentValue: currentProgress,
+                              maxValue: maxValue,
+                              displayText: '',
+                              direction: Axis.horizontal,
+                              displayTextStyle: const TextStyle(color: Color(0x00000000), fontSize: 0),
+                              backgroundColor: Colors.transparent,
+                              progressColor: progressColor,
+                              animatedDuration: const Duration(milliseconds: 300),
+                            ),
                           ),
                           // 批次分隔线（只在批次边界处显示）
                           if (totalBatches > 1)

@@ -171,16 +171,19 @@ class _WordItemState extends State<WordItem> {
             width: 32,
             height: 4,
             margin: const EdgeInsets.only(top: 4),
-            child: FAProgressBar(
+            child: ClipRRect(
               borderRadius: const BorderRadius.all(Radius.circular(2)),
-              currentValue: widget.wordProgressProvider.getWordProgress(widget.word.tag),
-              maxValue: widget.wordProgressProvider.getWordProgressMax(widget.word.tag),
-              displayText: '',
-              direction: Axis.horizontal,
-              displayTextStyle: const TextStyle(color: Color(0x00000000)),
-              backgroundColor: isDarkMode ? const Color(0xFF404040) : const Color(0xFFE5E7EB),
-              progressColor: _getProgressColor(),
-              animatedDuration: const Duration(milliseconds: 200),
+              child: FAProgressBar(
+                borderRadius: const BorderRadius.all(Radius.circular(2)),
+                currentValue: widget.wordProgressProvider.getWordProgress(widget.word.tag),
+                maxValue: widget.wordProgressProvider.getWordProgressMax(widget.word.tag),
+                displayText: '',
+                direction: Axis.horizontal,
+                displayTextStyle: const TextStyle(color: Color(0x00000000), fontSize: 0),
+                backgroundColor: isDarkMode ? const Color(0xFF404040) : const Color(0xFFE5E7EB),
+                progressColor: _getProgressColor(),
+                animatedDuration: const Duration(milliseconds: 200),
+              ),
             ),
           ),
         if ((widget.studyMode == WordListStudyMode.speakChinese || widget.studyMode == WordListStudyMode.speakEnglish) && widget.isBookmarked)
