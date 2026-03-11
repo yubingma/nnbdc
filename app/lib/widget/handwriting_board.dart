@@ -75,8 +75,8 @@ class _HandwritingBoardState extends State<HandwritingBoard> {
       // 清理临时文件
       if (await file.exists()) await file.delete();
 
-      // 提取有效的英文单词（去除空格等）
-      String result = text.replaceAll(RegExp(r'[^a-zA-Z]'), '').trim();
+      // 提取有效的英文单词或短语（保留字母和空格）
+      String result = text.replaceAll(RegExp(r'[^a-zA-Z\s]'), '').replaceAll(RegExp(r'\s+'), ' ').trim();
       
       if (result.isEmpty) {
         ToastUtil.info('未能识别到单词');
