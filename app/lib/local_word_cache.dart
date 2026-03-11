@@ -231,42 +231,40 @@ class LocalWordCache {
       }
 
       for (final meaning in commonMeanings) {
-        // 只有当该单词没有用户词书定制释义时，才使用通用释义
         if (!wordMeanings.containsKey(meaning.wordId)) {
           wordMeanings[meaning.wordId] = [];
         }
-        if (wordMeanings[meaning.wordId]!.isEmpty) {
-          // 检查是否需要过滤通用释义
-          bool shouldInclude = true;
 
-          // 如果有词书配置了popularityLimit，需要检查
-          if (dictPopularityLimits.isNotEmpty) {
-            // 检查是否有任何一个词书设置了popularityLimit
-            final anyLimit = dictPopularityLimits.values.where((limit) => limit != null).isNotEmpty;
-            if (anyLimit) {
-              // 获取popularity值，如果为null则使用999作为默认值
-              final int popularity = meaning.popularity;
+        // 检查是否已存在内容完全相同的释义（避免不同词典间的重复）
+        bool isDuplicate = wordMeanings[meaning.wordId]!
+            .any((m) => m.ciXing == meaning.ciXing && m.meaning == meaning.meaning);
+        if (isDuplicate) {
+          continue;
+        }
 
-              // 检查是否所有词书的popularityLimit都允许该释义
-              // 如果有任何一个词书的limit允许该释义，则包含
-              shouldInclude = false;
-              for (final limit in dictPopularityLimits.values) {
-                if (limit == null) {
-                  // null表示不限制，允许显示
-                  shouldInclude = true;
-                  break;
-                } else if (popularity <= limit) {
-                  // popularity <= limit 表示允许显示
-                  shouldInclude = true;
-                  break;
-                }
+        // 检查是否需要过滤通用释义
+        bool shouldInclude = true;
+
+        // 如果有词书配置了popularityLimit，需要检查
+        if (dictPopularityLimits.isNotEmpty) {
+          // 检查是否有任何一个词书设置了popularityLimit
+          final anyLimit = dictPopularityLimits.values.any((limit) => limit != null);
+          if (anyLimit) {
+            final int popularity = meaning.popularity;
+
+            // 检查是否任一词书许可该释义
+            shouldInclude = false;
+            for (final limit in dictPopularityLimits.values) {
+              if (limit == null || popularity <= limit) {
+                shouldInclude = true;
+                break;
               }
             }
           }
+        }
 
-          if (shouldInclude) {
-            wordMeanings[meaning.wordId]!.add(meaning);
-          }
+        if (shouldInclude) {
+          wordMeanings[meaning.wordId]!.add(meaning);
         }
       }
 
