@@ -118,26 +118,45 @@ class LocalWordCache {
       }
 
       // 3. 中文释义匹配搜索（如果是中文搜索且结果不足）
-      if (!isEnglish && allWords.length < 30) {
-        final meaningQuery = db.select(db.meaningItems)
-          ..where((mi) => mi.meaning.like('%$content%'))
-          ..orderBy([(mi) => OrderingTerm(expression: mi.popularity)])
-          ..limit(30 - allWords.length);
+      if (!isEnglish && allWords.length < 50) { 
+        final List<String> meaningMatchPatterns = [
+          content.trim(), // 精确匹配
+          '${content.trim()}%', // 以...开头
+          '%${content.trim()}%', // 包含
+        ];
 
-        final meaningItems = await meaningQuery.get();
-        final meaningWordIds = meaningItems.map((mi) => mi.wordId).toSet();
+        for (final pattern in meaningMatchPatterns) {
+          if (allWords.length >= 50) break;
 
-        if (meaningWordIds.isNotEmpty) {
-          final wordsQuery = db.select(db.words)
-            ..where((w) => w.id.isIn(meaningWordIds.toList()))
-            ..orderBy([(w) => OrderingTerm(expression: w.spell)]);
+          final meaningQuery = db.select(db.meaningItems)
+            ..where((mi) {
+              if (pattern.contains('%')) {
+                return mi.meaning.like(pattern);
+              } else {
+                return mi.meaning.equals(pattern);
+              }
+            })
+            ..orderBy([(mi) => OrderingTerm(expression: mi.popularity)])
+            ..limit(50 - allWords.length);
 
-          final wordsFromMeaning = await wordsQuery.get();
-          for (final word in wordsFromMeaning) {
-            if (!allWords.containsKey(word.id)) {
-              allWords[word.id] = word;
-              orderedWordIds.add(word.id);
-              if (allWords.length >= 30) break;
+          final meaningItems = await meaningQuery.get();
+          final meaningWordIds = meaningItems.map((mi) => mi.wordId).toList();
+
+          if (meaningWordIds.isNotEmpty) {
+            // 批量获取词
+            final wordsQuery = db.select(db.words)..where((w) => w.id.isIn(meaningWordIds));
+            final wordsFromMeaning = await wordsQuery.get();
+            
+            // 保持 meaningItems 的顺序（按权重排序）
+            final Map<String, Word> wordMap = {for (var w in wordsFromMeaning) w.id: w};
+            
+            for (final wordId in meaningWordIds) {
+              final word = wordMap[wordId];
+              if (word != null && !allWords.containsKey(word.id)) {
+                allWords[word.id] = word;
+                orderedWordIds.add(word.id);
+                if (allWords.length >= 50) break;
+              }
             }
           }
         }
