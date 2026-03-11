@@ -14,9 +14,10 @@ class LocalWordCache {
 
   LocalWordCache();
 
-  bool _isTargetSpell(String spell) {
+  bool _isTargetSpell(String spell, String query) {
     final s = spell.toLowerCase().trim();
-    return s == 'in (the) light of';
+    final q = query.toLowerCase().trim();
+    return s == q;
   }
 
   /// 单词与内容（中文或英文）的模糊匹配
@@ -50,22 +51,36 @@ class LocalWordCache {
       final currentUser = Global.getLoggedInUser();
 
       // 如果搜索内容为空，返回空列表
-      if (content.trim().isEmpty) {
+      final searchContent = content.toLowerCase().trim();
+      final isEnglish = Util.isEnglish(content);
+
+      // 如果搜索内容为空，返回空列表
+      if (searchContent.isEmpty) {
         return [];
       }
-
-      final searchContent = content.toLowerCase();
-      final isEnglish = Util.isEnglish(content);
 
       // 收集所有匹配的单词ID和对应的Word对象
       final Map<String, Word> allWords = {};
       final List<String> orderedWordIds = [];
 
-      // 1. 拼写匹配搜索（以输入内容开头） - 优先级最高
+      // 1. 精确匹配搜索 - 优先级最高
+      final exactQuery = db.select(db.words)
+        ..where((w) => w.spell.equals(content.trim()) | w.spell.equals(searchContent))
+        ..limit(5);
+
+      final exactWords = await exactQuery.get();
+      for (final word in exactWords) {
+        if (!allWords.containsKey(word.id)) {
+          allWords[word.id] = word;
+          orderedWordIds.add(word.id);
+        }
+      }
+
+      // 2. 拼写匹配搜索（以输入内容开头） - 优先级次之
       final startWithQuery = db.select(db.words)
         ..where((w) => w.spell.like('$searchContent%'))
         ..orderBy([(w) => OrderingTerm(expression: w.spell)])
-        ..limit(20);
+        ..limit(25);
 
       final startWithWords = await startWithQuery.get();
       for (final word in startWithWords) {
@@ -93,9 +108,9 @@ class LocalWordCache {
 
       // 目标词调试：是否进入候选集
       try {
-        final hit = allWords.values.any((w) => _isTargetSpell(w.spell));
+        final hit = allWords.values.any((w) => _isTargetSpell(w.spell, searchContent));
         if (hit) {
-          Global.logger.d('[LocalWordCache] 搜索命中目标词，候选数=${allWords.length}, orderedWordIds=${orderedWordIds.length}');
+          Global.logger.d('[LocalWordCache] 搜索命中目标词 ($searchContent)，候选数=${allWords.length}, orderedWordIds=${orderedWordIds.length}');
         }
       } catch (e, stackTrace) {
         // 搜索命中检测失败不影响搜索结果，但需要记录
@@ -155,13 +170,6 @@ class LocalWordCache {
         selectedDictIds = learningDicts.map((d) => d.dictId).toList();
       }
 
-      // 目标词调试：记录构建前的上下文
-      for (final w in wordsMap.values) {
-        if (_isTargetSpell(w.spell)) {
-          Global.logger.d('[LocalWordCache] 构建VO，目标词 wordId=${w.id}, spell=${w.spell}, selectedDictIds=$selectedDictIds');
-          break;
-        }
-      }
 
       // 批量查询所有相关的释义项
       Map<String, List<MeaningItem>> wordMeanings = {};
@@ -243,23 +251,6 @@ class LocalWordCache {
         }
       }
 
-      // 目标词调试：记录该词的释义来源与数量
-      for (final w in wordsMap.values) {
-        if (_isTargetSpell(w.spell)) {
-          final wm = wordMeanings[w.id] ?? const <MeaningItem>[];
-          final int fromUserDict = wm.where((m) => m.dictId != Global.commonDictId).length;
-          final int fromCommon = wm.where((m) => m.dictId == Global.commonDictId).length;
-          Global.logger.d('[LocalWordCache] 目标词释义统计 wordId=${w.id}, 总=${wm.length}, 通用=$fromCommon, 用户词书=$fromUserDict');
-          if (wm.isNotEmpty) {
-            final first = wm.first;
-            final String cixing = first.ciXing;
-            final String meaning = first.meaning;
-            final String dictId = first.dictId ?? '';
-            Global.logger.d('[LocalWordCache] 目标词首条释义: ciXing=$cixing, meaning=$meaning, dictId=$dictId');
-          }
-          break;
-        }
-      }
 
       // 不再使用任意词典兜底：仅允许通用词典（dictId = '0'）作为兜底
 
