@@ -77,6 +77,15 @@
             "flutterMode": "debug"
         },
         {
+            "name": "App-ipad-old",
+            "request": "launch",
+            "type": "dart",
+            "program": "${workspaceFolder}/app/lib/main.dart",
+            "deviceId": "00008020-00193CD43E21402E",
+            "args": [],
+            "flutterMode": "debug"
+        },
+        {
             "name": "App-Windows",
             "request": "launch",
             "type": "dart",

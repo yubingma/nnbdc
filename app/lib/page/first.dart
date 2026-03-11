@@ -1453,8 +1453,9 @@ endlocal
                     '欢迎使用泡泡单词！在您开始使用前，请务必仔细阅读并理解',
                     style: TextStyle(fontSize: 14),
                   ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
                       TextButton(
                         onPressed: () => Get.toNamed('/protocol'),

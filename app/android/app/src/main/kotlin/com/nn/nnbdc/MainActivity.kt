@@ -14,6 +14,9 @@ class MainActivity : FlutterActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
+        // 友盟预初始化 (合规要求)
+        com.umeng.commonsdk.UMConfigure.preInit(this, "69b011176f259537c773e1f0", "AppStore")
+        
         asr = Sherpa(this)
         tts = Tts(this)
         aiInference = AndroidAiInference(this)
