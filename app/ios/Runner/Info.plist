@@ -101,7 +101,9 @@
 		<string>需要本地网络权限用于调试</string>
 		<key>NSBonjourServices</key>
 		<array>
+			<string>_dartobservatory._tcp</string>
 			<string>_dartdevtools._tcp</string>
+			<string>_http._tcp</string>
 		</array>
 	</dict>
 </plist>

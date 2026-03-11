@@ -853,6 +853,27 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
     }
   }
 
+  void _updateGameResultTexts(bool? isWon) {
+    if (isExercise) {
+      gameResultHint1.text = '练习结束！';
+      gameResultHint2.text = '回答错误的单词，已被自动加入到生词本';
+      gameResultHint1.textRenderer = textRenderOfGameResultHint(null);
+      gameResultHint2.textRenderer = textRenderOfGameResultHint(null);
+    } else {
+      if (isWon == null) {
+        gameResultHint1.text = '游戏结束！';
+        gameResultHint2.text = '回答错误的单词，已被自动加入到生词本';
+      } else {
+        gameResultHint1.text = isWon ? '胜利啦！' : '失败了，别灰心，继续努力！';
+        String scoreStr = playerA.scoreAdjust >= 0 ? "+${playerA.scoreAdjust}" : "${playerA.scoreAdjust}";
+        String cowDungStr = playerA.cowdungAdjust >= 0 ? "+${playerA.cowdungAdjust}" : "${playerA.cowdungAdjust}";
+        gameResultHint2.text = '积分 $scoreStr, 魔法泡泡 $cowDungStr';
+      }
+      gameResultHint1.textRenderer = textRenderOfGameResultHint(isWon);
+      gameResultHint2.textRenderer = textRenderOfGameResultHint(isWon);
+    }
+  }
+
   void onAnswerClicked(btnIndex) {
     if (!isPlaying) {
       return;
@@ -1161,27 +1182,18 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
         }
       }
 
+      // 设置文案与视觉反馈
+      _updateGameResultTexts(playerA.isWonInLastGame);
+
       if (aIsLoser || user == Global.getLoggedInUser()!.id) {
-        if (isExercise) {
-          isExercise = false;
-          gameResultHint1.text = '游戏结束！';
-          gameResultHint2.text = '回答错误的单词，已被自动加入到生词本';
-          gameResultHint1.textRenderer = textRenderOfGameResultHint(null);
-          gameResultHint2.textRenderer = textRenderOfGameResultHint(null);
-        } else {
-          gameResultHint1.text = '失败了，别灰心，继续努力！';
-          gameResultHint2.text = '回答错误的单词，已被自动加入到生词本';
-          gameResultHint1.textRenderer = textRenderOfGameResultHint(false);
-          gameResultHint2.textRenderer = textRenderOfGameResultHint(false);
+        if (!isExercise) {
           appendMsg(0, '牛牛', '失败了，别灰心，继续努力！');
         }
         SoundUtil.playAssetSound('failed.mp3', 1, 1, 2000, 0);
       } else {
-        gameResultHint1.text = '胜利啦！';
-        gameResultHint2.text = '回答错误的单词，已被自动加入到生词本';
-        gameResultHint1.textRenderer = textRenderOfGameResultHint(true);
-        gameResultHint2.textRenderer = textRenderOfGameResultHint(true);
-        appendMsg(0, '牛牛', '胜利啦！');
+        if (!isExercise) {
+          appendMsg(0, '牛牛', '胜利啦！');
+        }
         SoundUtil.playAssetSound('victory.mp3', 1, 1, 2000, 0);
       }
     });
@@ -1245,6 +1257,11 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
 
       playerA.scoreAdjust = scoreAdjust;
       playerA.cowdungAdjust = cowDungAdjust;
+
+      // 如果正在结算画面，更新结算文案
+      if (isShowingResult) {
+        _updateGameResultTexts(playerA.isWonInLastGame);
+      }
 
       // 更新本地数据库（前端优先架构）
       try {
@@ -1344,6 +1361,10 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
     isPlaying = true;
     playerA.isWonInLastGame = null;
     playerB.isWonInLastGame = null;
+    playerA.scoreAdjust = 0;
+    playerA.cowdungAdjust = 0;
+    playerB.scoreAdjust = 0;
+    playerB.cowdungAdjust = 0;
     resetProps();
     initGameForPlayer(playerA);
     initGameForPlayer(playerB);
