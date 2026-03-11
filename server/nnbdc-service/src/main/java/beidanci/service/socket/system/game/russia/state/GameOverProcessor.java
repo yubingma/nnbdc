@@ -81,12 +81,14 @@ public class GameOverProcessor {
     public static int calculateWinerScoreAdjustment(int winerScore, int loserScore) {
         int adjustment;
         int delta = loserScore - winerScore;
-        if (delta >= 1000) {
-            adjustment = 100;
-        } else if (delta <= -1000) {
-            adjustment = 1;
+        // 调整：将分差影响范围从 ±1000 扩大到 ±1500，缩小奖励波动区间 [10, 60]
+        if (delta >= 1500) {
+            adjustment = 60;
+        } else if (delta <= -1500) {
+            adjustment = 10;
         } else {
-            adjustment = 1 + (delta + 1000) * 99 / 2000;
+            // 平滑过渡公式：10 + (delta + 1500) * (60 - 10) / 3000
+            adjustment = 10 + (delta + 1500) * 50 / 3000;
         }
         return adjustment;
     }
