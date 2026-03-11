@@ -112,18 +112,17 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
         return Transform.translate(
           offset: Offset(0, 20 * (1 - _fadeAnimation.value)),
           child: Opacity(
-            opacity: _fadeAnimation.value,
+            opacity: _fadeAnimation.value, 
             child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+              margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
               decoration: BoxDecoration(
                 color: cardColor,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: isDarkMode ? Colors.black.withValues(alpha: 0.4) : Colors.grey.withValues(alpha: 0.15),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                    spreadRadius: 0,
+                    color: isDarkMode ? Colors.black.withValues(alpha: 0.3) : Colors.grey.withValues(alpha: 0.1),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
                   ),
                 ],
                 border: Border.all(
@@ -134,10 +133,9 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
               child: Material(
                 color: Colors.transparent,
                 child: InkWell(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(12),
                   onTap: () async {
                     try {
-                      // 使用新的根据ID查词方法，用户ID为空表示查词模式
                       var result = await WordBo().searchWordById(word.id!, null);
                       if (result.word != null) {
                         Get.toNamed('/word_detail', arguments: WordDetailPageArgs(result.word!, false, null, false), preventDuplicates: false);
@@ -149,12 +147,11 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
                       Get.toNamed('/word_detail', arguments: WordDetailPageArgs(word, true, null, false), preventDuplicates: false);
                     }
                   },
-                  child: Container(
-                    padding: const EdgeInsets.all(20),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        /// 单词英文和音标
                         Row(
                           children: [
                             Expanded(
@@ -162,37 +159,26 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
                                 word.spell,
                                 style: TextStyle(
                                   color: AppTheme.primaryColor,
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.w700,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w600,
                                   fontFamily: 'NotoSansSC',
-                                  height: 1.3,
-                                  letterSpacing: 0.5,
+                                  height: 1.2,
                                 ),
                                 textScaler: const TextScaler.linear(1.0),
                               ),
                             ),
                             if (word.mergedPronounce.isNotEmpty)
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                 decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: isDarkMode ? [Colors.grey[800]!, Colors.grey[700]!] : [Colors.grey[100]!, Colors.grey[200]!],
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                  ),
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(
-                                    color: isDarkMode ? Colors.grey[700]!.withValues(alpha: 0.5) : Colors.grey[300]!.withValues(alpha: 0.5),
-                                    width: 1,
-                                  ),
+                                  color: isDarkMode ? Colors.grey[800] : Colors.grey[100],
+                                  borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: Text(
                                   word.mergedPronounce,
                                   style: TextStyle(
                                     color: subtitleColor,
-                                    fontSize: 13,
-                                    fontFamily: 'NotoSansSC',
-                                    height: 1.3,
+                                    fontSize: 12,
                                     fontWeight: FontWeight.w500,
                                   ),
                                   textScaler: const TextScaler.linear(1.0),
@@ -200,30 +186,23 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
                               ),
                           ],
                         ),
-
-                        const SizedBox(height: 12),
-
-                        /// 单词释义
+                        const SizedBox(height: 8),
                         Container(
-                          padding: const EdgeInsets.all(12),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                          width: double.infinity,
                           decoration: BoxDecoration(
-                            color: isDarkMode ? Colors.grey[800]!.withValues(alpha: 0.3) : Colors.grey[50]!.withValues(alpha: 0.8),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                              color: isDarkMode ? Colors.grey[700]!.withValues(alpha: 0.2) : Colors.grey[200]!.withValues(alpha: 0.3),
-                              width: 1,
-                            ),
+                            color: isDarkMode ? Colors.grey[900]!.withValues(alpha: 0.3) : Colors.grey[50],
+                            borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
                             word.getMeaningStr(),
                             style: TextStyle(
                               color: textColor,
-                              fontSize: 15,
-                              fontFamily: 'NotoSansSC',
-                              height: 1.5,
-                              letterSpacing: 0.3,
-                              fontWeight: FontWeight.w400,
+                              fontSize: 14,
+                              height: 1.4,
                             ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                             textScaler: const TextScaler.linear(1.0),
                           ),
                         ),
