@@ -252,7 +252,7 @@ class LocalWordCache {
           if (anyLimit) {
             final int popularity = meaning.popularity;
 
-            // 检查是否任一词书许可该释义
+            // 检查是否任一词书许可该释义  
             shouldInclude = false;
             for (final limit in dictPopularityLimits.values) {
               if (limit == null || popularity <= limit) {
