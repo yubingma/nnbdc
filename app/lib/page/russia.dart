@@ -45,8 +45,11 @@ class RussiaPage extends StatefulWidget {
   }
 }
 
-class RussiaPageState extends State<RussiaPage> {
+class RussiaPageState extends State<RussiaPage> with AutomaticKeepAliveClientMixin {
   bool dataLoaded = false;
+ 
+  @override
+  bool get wantKeepAlive => true;
 
   static const double leftPadding = 16;
   static const double rightPadding = 16;
@@ -117,6 +120,9 @@ class RussiaPageState extends State<RussiaPage> {
     if (!await checkArgs()) {
       return;
     }
+    gameHall = Get.arguments[0];
+    exceptRoom = Get.arguments[1];
+    myGame = MyGame(gameHall, exceptRoom, context, this);
     setState(() {
       dataLoaded = true;
     });
@@ -148,39 +154,88 @@ class RussiaPageState extends State<RussiaPage> {
     loadData();
   }
 
-  Widget renderPage() {
-    return const Column();
-  }
+  int _buildCount = 0;
+  DateTime _lastBuildReport = DateTime.now();
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // AutomaticKeepAliveClientMixin requirement
     if (!dataLoaded) {
       return const Center(child: Text('waiting...'));
     }
+ 
+    _buildCount++;
+    final now = DateTime.now();
+    if (now.difference(_lastBuildReport).inSeconds >= 5) {
+      Global.logger.d('[Perf] RussiaPage build called $_buildCount times in the last 5s');
+      _buildCount = 0;
+      _lastBuildReport = now;
+    }
+ 
     screenWidth = MediaQuery.of(context).size.width;
-    myGame = MyGame(gameHall, exceptRoom, context, this);
+    // 确保 GameWidget 使用稳定的 key，减少 Flutter 侧的卸载/挂载开销
     return GameWidget(
+      key: const ValueKey('RussiaGameWidget'),
       game: myGame,
     );
+  }
+}
+ 
+/// 全局缓存，避免在游戏过程中重复进行昂贵的文字排版测量
+class GameLayoutCache {
+  static double? standardWordHeight;
+  static double? standardFontSize;
+  static double lastUIScale = -1;
+  static double lastPlaygroundH = -1;
+ 
+  static void ensureInitialized(double uiScale, double playgroundH) {
+    if (standardWordHeight != null && lastUIScale == uiScale && lastPlaygroundH == playgroundH) {
+      return;
+    }
+ 
+    lastUIScale = uiScale;
+    lastPlaygroundH = playgroundH;
+ 
+    final TextStyle base = const TextStyle(
+      fontSize: 22,
+      fontWeight: FontWeight.w500,
+      fontFamily: 'NotoSansSC',
+    );
+ 
+    double computeFontSizeForLines(double availableHeight, int lines) {
+      double low = 8.0;
+      double high = 64.0;
+      for (int i = 0; i < 15; i++) { // 减少迭代次数，15次足够精准
+        final double mid = (low + high) / 2.0;
+        final testPaint = TextPaint(style: base.copyWith(fontSize: mid));
+        final double lineH = testPaint.getLineMetrics('Hg').height;
+        if (lineH * lines <= availableHeight) {
+          low = mid;
+        } else {
+          high = mid;
+        }
+      }
+      return low;
+    }
+ 
+    final double available = playgroundH * uiScale - 4;
+    standardFontSize = computeFontSizeForLines(available, 10);
+    final TextPaint paint = TextPaint(style: base.copyWith(fontSize: standardFontSize));
+    standardWordHeight = paint.getLineMetrics('Hg').height;
+ 
+    Global.logger.d('[Perf] GameLayoutCache initialized: FontSize=${standardFontSize?.toStringAsFixed(1)}, WordHeight=${standardWordHeight?.toStringAsFixed(1)}');
   }
 }
 
 class BottomJet extends PositionComponent {
   late Sprite brickImg;
-
-  // 缓存 Paint 和 Shader
-  final Paint _bgPaint = Paint();
-  final Paint _highlightPaint = Paint();
-  final Paint _borderPaint = Paint()
-    ..style = PaintingStyle.stroke
-    ..strokeWidth = 1.5;
-  final Paint _brickPaint = Paint()
-    ..style = PaintingStyle.stroke
-    ..strokeWidth = 0.25;
+  bool _brickImgLoaded = false;
   Rect? _lastRect;
+  ui.Image? _cachedImage;
+  bool _isBaking = false;
 
   BottomJet() {
-    add(RectangleHitbox());
+    add(RectangleHitbox()..collisionType = CollisionType.passive);
   }
 
   @override
@@ -188,48 +243,36 @@ class BottomJet extends PositionComponent {
     super.onLoad();
     size.setValues(width, bottomJetInitHeight);
     anchor = Anchor.topLeft;
-    var image = await Flame.images.load('brick.png');
-    brickImg = Sprite(image);
+    // 异步加载图片，加载完成后标记并尝试重新烘焙
+    Flame.images.load('brick.png').then((img) {
+      brickImg = Sprite(img);
+      _brickImgLoaded = true;
+      if (_lastRect != null) _bake(); // 如果已经有尺寸，则重新烘焙
+    });
   }
 
   @override
-  void render(Canvas canvas) {
-    Rect rect = size.toRect();
+  void onRemove() {
+    _cachedImage?.dispose();
+    super.onRemove();
+  }
 
-    // 仅在尺寸变化时更新 Shader
-    if (_lastRect != rect) {
-      _lastRect = rect;
-      _bgPaint.shader = LinearGradient(
-        colors: [
-          const Color(0xFF4A90E2),
-          const Color(0xFF357ABD),
-          const Color(0xFF2E5F8A),
-        ],
+  Future<void> _bake() async {
+    if (_isBaking || width <= 0 || height <= 0) return;
+    _isBaking = true;
+
+    final recorder = ui.PictureRecorder();
+    final canvas = Canvas(recorder);
+    final rect = size.toRect();
+
+    // 1. 背景渐变
+    final paint = Paint()
+      ..shader = LinearGradient(
+        colors: [const Color(0xFF4A90E2), const Color(0xFF357ABD), const Color(0xFF2E5F8A)],
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
       ).createShader(rect);
 
-      const double fixedHighlightHeight = 6.0;
-      final Rect highlightArea = Rect.fromLTWH(
-        rect.left + 1,
-        rect.top + 1,
-        rect.width - 2,
-        fixedHighlightHeight,
-      );
-      _highlightPaint.shader = LinearGradient(
-        colors: [
-          Colors.white.withValues(alpha: 0.4),
-          Colors.white.withValues(alpha: 0.2),
-          Colors.transparent,
-        ],
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-      ).createShader(highlightArea);
-
-      _borderPaint.color = const Color(0xFF5BA3F5);
-    }
-
-    // 顶部圆角、底部直角
     final RRect roundedRect = RRect.fromRectAndCorners(
       rect,
       topLeft: const Radius.circular(6),
@@ -237,39 +280,73 @@ class BottomJet extends PositionComponent {
       bottomLeft: const Radius.circular(0),
       bottomRight: const Radius.circular(0),
     );
-    canvas.drawRRect(roundedRect, _bgPaint);
+    canvas.drawRRect(roundedRect, paint);
 
-    // 绘制顶部高光
-    const double fixedHighlightHeight = 6.0;
-    final Rect highlightArea = Rect.fromLTWH(
-      rect.left + 1,
-      rect.top + 1,
-      rect.width - 2,
-      fixedHighlightHeight,
-    );
-    RRect highlightRect = RRect.fromRectAndRadius(
-      highlightArea,
-      const Radius.circular(5),
-    );
-    canvas.drawRRect(highlightRect, _highlightPaint);
+    // 2. 顶部高光
+    final highlightPaint = Paint()
+      ..shader = LinearGradient(
+        colors: [Colors.white.withValues(alpha: 0.4), Colors.white.withValues(alpha: 0.2), Colors.transparent],
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+      ).createShader(Rect.fromLTWH(rect.left + 1, rect.top + 1, rect.width - 2, 6.0));
+    canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(rect.left + 1, rect.top + 1, rect.width - 2, 6.0), const Radius.circular(5)), highlightPaint);
 
-    // 绘制边框
-    canvas.drawRRect(roundedRect, _borderPaint);
+    // 3. 边框
+    final borderPaint = Paint()
+      ..color = const Color(0xFF5BA3F5)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5;
+    canvas.drawRRect(roundedRect, borderPaint);
 
-    // 绘制砖块纹理
-    const currentBrickWidth = 32.0; // 改名避免冲突
-    _brickPaint.color = Colors.white.withValues(alpha: 0.05);
+    // 4. 砖块纹理
+    if (_brickImgLoaded) {
+      final brickWidth = (brickImg.image.width.toDouble() / 2.0); // 缩小一点显示更精致
+      final actualBrickHeight = (brickImg.srcSize.y * (brickWidth / brickImg.srcSize.x));
 
-    for (var i = 1; i * brickHeight <= height; i++) {
-      for (var j = 1; j * currentBrickWidth <= width; j++) {
-        Rect currentBrickRect = Rect.fromLTWH(
-          (j - 1) * currentBrickWidth,
-          (i - 1) * brickHeight + 1,
-          currentBrickWidth,
-          brickHeight,
-        );
-        canvas.drawRect(currentBrickRect, _brickPaint);
+      for (double y = 0; y < height; y += actualBrickHeight) {
+        for (double x = 0; x < width; x += brickWidth) {
+          brickImg.render(
+            canvas,
+            position: Vector2(x, y),
+            size: Vector2(brickWidth, actualBrickHeight),
+            overridePaint: Paint()..color = Colors.white.withValues(alpha: 0.1), // 增加一点透明度融合背景
+          );
+        }
       }
+    } else {
+      // 回退逻辑：手动绘制线条
+      final brickPaint = Paint()
+        ..color = Colors.white.withValues(alpha: 0.05)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 0.25;
+      const currentBrickWidth = 32.0;
+      for (var i = 1; i * brickHeight <= height; i++) {
+        for (var j = 1; j * currentBrickWidth <= width; j++) {
+          canvas.drawRect(Rect.fromLTWH((j - 1) * currentBrickWidth, (i - 1) * brickHeight + 1, currentBrickWidth, brickHeight), brickPaint);
+        }
+      }
+    }
+
+    final picture = recorder.endRecording();
+    final img = await picture.toImage(width.toInt(), height.toInt());
+    _cachedImage = img;
+    _isBaking = false;
+  }
+
+  @override
+  void render(Canvas canvas) {
+    if (width <= 0 || height <= 0) return;
+
+    if (_lastRect != size.toRect()) {
+      _lastRect = size.toRect();
+      _bake();
+    }
+
+    if (_cachedImage != null) {
+      canvas.drawImage(_cachedImage!, Offset.zero, Paint());
+    } else {
+      // 降级绘制：如果尚未烘焙完成，画个纯色占位
+      canvas.drawRect(size.toRect(), Paint()..color = const Color(0xFF357ABD));
     }
   }
 }
@@ -281,6 +358,7 @@ class PlayGround extends PositionComponent {
   static Paint red = BasicPalette.red.paint();
   static Paint blue = BasicPalette.blue.paint();
   static Paint green = BasicPalette.green.paint();
+  Rect? _lastRect;
 
   @override
   Future<void> onLoad() async {
@@ -289,63 +367,100 @@ class PlayGround extends PositionComponent {
     anchor = Anchor.topLeft;
   }
 
-  // 缓存 Paint 和 Shader
-  final Paint _bgPaint = Paint();
-  final Paint _borderPaint = Paint()
-    ..style = PaintingStyle.stroke
-    ..strokeWidth = 2;
-  final Paint _gridPaint = Paint()..strokeWidth = 1;
-  Rect? _lastRect;
+  ui.Image? _cachedImage;
+  bool _isBaking = false;
 
   @override
-  void render(Canvas canvas) {
-    Rect rect = size.toRect();
+  void onRemove() {
+    _cachedImage?.dispose();
+    super.onRemove();
+  }
 
-    if (_lastRect != rect) {
-      _lastRect = rect;
-      _bgPaint.shader = LinearGradient(
-        colors: [
-          const Color(0xFF1A1A2E).withValues(alpha: 0.7),
-          const Color(0xFF16213E).withValues(alpha: 0.7),
-          const Color(0xFF0F3460).withValues(alpha: 0.7),
-        ],
+  Future<void> _bake() async {
+    if (_isBaking || width <= 0 || height <= 0) return;
+    _isBaking = true;
+
+    final recorder = ui.PictureRecorder();
+    final canvas = Canvas(recorder);
+    final rect = size.toRect();
+
+    // 1. 背景
+    final bgPaint = Paint()
+      ..shader = LinearGradient(
+        colors: [const Color(0xFF1A1A2E).withValues(alpha: 0.7), const Color(0xFF16213E).withValues(alpha: 0.7), const Color(0xFF0F3460).withValues(alpha: 0.7)],
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
       ).createShader(rect);
+    final RRect roundedRect = RRect.fromRectAndCorners(rect, topLeft: const Radius.circular(8), topRight: const Radius.circular(8));
+    canvas.drawRRect(roundedRect, bgPaint);
 
-      _borderPaint.color = const Color(0xFF4A90E2).withValues(alpha: 0.7);
-      _gridPaint.color = const Color(0xFF4A90E2).withValues(alpha: 0.15);
-    }
+    // 2. 边框
+    final borderPaint = Paint()
+      ..color = const Color(0xFF4A90E2).withValues(alpha: 0.7)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2;
+    canvas.drawRRect(roundedRect, borderPaint);
 
-    // 顶部圆角、底部直角
-    RRect roundedRect = RRect.fromRectAndCorners(
-      rect,
-      topLeft: const Radius.circular(8),
-      topRight: const Radius.circular(8),
-      bottomLeft: const Radius.circular(0),
-      bottomRight: const Radius.circular(0),
-    );
-    canvas.drawRRect(roundedRect, _bgPaint);
-
-    // 绘制边框
-    canvas.drawRRect(roundedRect, _borderPaint);
-
-    // 垂直网格线
+    // 3. 网格
+    final gridPaint = Paint()
+      ..color = const Color(0xFF4A90E2).withValues(alpha: 0.15)
+      ..strokeWidth = 1;
     for (double x = 20; x < width; x += 20) {
-      canvas.drawLine(
-        Offset(x, 0),
-        Offset(x, height),
-        _gridPaint,
-      );
+      canvas.drawLine(Offset(x, 0), Offset(x, height), gridPaint);
+    }
+    for (double y = 20; y < height; y += 20) {
+      canvas.drawLine(Offset(0, y), Offset(width, y), gridPaint);
     }
 
-    // 水平网格线
-    for (double y = 20; y < height; y += 20) {
-      canvas.drawLine(
-        Offset(0, y),
-        Offset(width, y),
-        _gridPaint,
-      );
+    final picture = recorder.endRecording();
+    final img = await picture.toImage(width.toInt(), height.toInt());
+    _cachedImage = img;
+    _isBaking = false;
+  }
+
+  @override
+  void render(Canvas canvas) {
+    if (width <= 0 || height <= 0) return;
+
+    if (_lastRect != size.toRect()) {
+      _lastRect = size.toRect();
+      _bake();
+    }
+
+    if (_cachedImage != null) {
+      canvas.drawImage(_cachedImage!, Offset.zero, Paint());
+    }
+  }
+}
+
+class GamePerformanceTracker {
+  int frameCount = 0;
+  double totalUpdateTime = 0;
+  double totalRenderTime = 0;
+  double maxUpdateTime = 0;
+  double maxRenderTime = 0;
+  DateTime lastReportTime = DateTime.now();
+
+  void report(int componentCount, int deadWordsA, int deadWordsB, bool isPlaying) {
+    if (!isPlaying) return; // 仅在游戏进行中记录，减少闲置日志
+    final now = DateTime.now();
+    final duration = now.difference(lastReportTime).inMilliseconds;
+    if (duration >= 2000) {
+      final fps = frameCount * 1000 / duration;
+      final avgUpdate = totalUpdateTime / frameCount;
+      final avgRender = totalRenderTime / frameCount;
+
+      Global.logger.d('[Perf] FPS: ${fps.toStringAsFixed(1)}, Components: $componentCount, '
+          'DeadWords: A($deadWordsA) B($deadWordsB), '
+          'Update(avg/max): ${avgUpdate.toStringAsFixed(2)}/${maxUpdateTime.toStringAsFixed(2)}ms, '
+          'Render(avg/max): ${avgRender.toStringAsFixed(2)}/${maxRenderTime.toStringAsFixed(2)}ms');
+
+      frameCount = 0;
+      totalUpdateTime = 0;
+      totalRenderTime = 0;
+      maxUpdateTime = 0;
+      maxRenderTime = 0;
+      lastReportTime = now;
     }
   }
 }
@@ -383,43 +498,17 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
   final playerA = Player('A');
   final playerB = Player('B');
   final RussiaPageState pageState;
+  final _perfTracker = GamePerformanceTracker();
 
   // 断连检测相关
   bool _isDisconnected = false;
   late TextComponent _disconnectHint;
   Timer? _disconnectTimer;
 
-  /// 计算单词的标准高度（基于字体信息）
+  /// 计算单词的标准高度（使用缓存）
   static double calculateWordHeight(double uiScale) {
-    // 使用与DroppingWordSprite相同的字体计算逻辑
-    final TextStyle base = TextStyle(
-      fontSize: 22 * uiScale,
-      fontWeight: FontWeight.w500,
-      fontFamily: 'NotoSansSC',
-    );
-
-    // 计算10行目标下的字体大小
-    final double available = playGroundHeight * uiScale - 4;
-
-    double computeFontSizeForLines(double availableHeight, int lines) {
-      double low = 8.0;
-      double high = 64.0;
-      for (int i = 0; i < 18; i++) {
-        final double mid = (low + high) / 2.0;
-        final testPaint = TextPaint(style: base.copyWith(fontSize: mid));
-        final double lineH = testPaint.getLineMetrics('Hg').height;
-        if (lineH * lines <= availableHeight) {
-          low = mid; // 可以更大
-        } else {
-          high = mid; // 太大，缩小
-        }
-      }
-      return low;
-    }
-
-    final double fontSize = computeFontSizeForLines(available, 10);
-    final TextPaint paint = TextPaint(style: base.copyWith(fontSize: fontSize));
-    return paint.getLineMetrics('Hg').height;
+    GameLayoutCache.ensureInitialized(uiScale, playGroundHeight);
+    return GameLayoutCache.standardWordHeight!;
   }
 
   late SpriteComponent plusBtn;
@@ -959,7 +1048,6 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
       // 手动完成一次落地堆叠
       sprite.isDead = true;
       // 立即切换为红色样式，并清空轨迹，避免残留绿边
-      sprite._trailYs.clear();
       final TextStyle base = DroppingWordSprite.makeDeadPaint().style;
       sprite.textRenderer = TextPaint(style: base.copyWith(fontSize: sprite._fixedFontSize));
       sprite.text = sprite.text;
@@ -1697,12 +1785,28 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
 
   @override
   void render(Canvas canvas) {
+    final sw = Stopwatch()..start();
     super.render(canvas);
+    final elapsed = sw.elapsedMicroseconds / 1000.0;
+    _perfTracker.totalRenderTime += elapsed;
+    if (elapsed > _perfTracker.maxRenderTime) _perfTracker.maxRenderTime = elapsed;
+
+    _perfTracker.frameCount++;
+    _perfTracker.report(
+      children.length,
+      playerA.deadWords.length,
+      playerB.deadWords.length,
+      isPlaying,
+    );
   }
 
   @override
   void update(double dt) {
+    final sw = Stopwatch()..start();
     super.update(dt);
+    final elapsed = sw.elapsedMicroseconds / 1000.0;
+    _perfTracker.totalUpdateTime += elapsed;
+    if (elapsed > _perfTracker.maxUpdateTime) _perfTracker.maxUpdateTime = elapsed;
 
     // 不再周期上报B侧ETA；改为在收到新wordB时上报一次
 
@@ -1744,6 +1848,7 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
         !_buttonSizeInitialized;
 
     if (shouldRebuildButtons) {
+      final swButtons = Stopwatch()..start();
       _lastGameState = gameState;
       _lastIsPlaying = isPlaying;
       _lastIsShowingResult = isShowingResult;
@@ -1859,17 +1964,17 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
         btn.x = nextBtnX;
         btn.y = nextBtnY;
         btn.size.setValues(targetBtnWidth, finalBtnHeight);
-
-        // 核心修正：除了设置子组件 size，还要显式调用它们的 render 准备逻辑（如有）
+ 
         btnUp.size.setFrom(btn.size);
         btnDown.size.setFrom(btn.size);
-
+ 
         nextBtnY += finalBtnHeight + btnGap;
       }
       _buttonSizeInitialized = true;
+      Global.logger.d('[Perf] Rebuilding buttons took ${swButtons.elapsedMicroseconds / 1000.0}ms');
     }
-
-    // 显示/隐藏玩家信息：仅在必要时操作组件树
+ 
+    // 显示/隐藏玩家信息：已优化，仅在状态变化时操作
     final bool shouldShowPanelA = !isPlaying && playerA.userGameInfo != null;
     if (shouldShowPanelA) {
       if (playerA.userInfoPanel.parent == null) add(playerA.userInfoPanel);
@@ -1908,9 +2013,7 @@ class SpiralGalaxyBackground extends PositionComponent {
 
   // 缓存 Paint 和 Shader
   final Paint _spacePaint = Paint();
-  final Paint _corePaint = Paint();
   Rect? _lastRect;
-  Offset? _lastCoreCenter;
 
   // 烘焙缓存
   ui.Image? _cachedGalaxyTexture;
@@ -1951,6 +2054,15 @@ class SpiralGalaxyBackground extends PositionComponent {
     canvas.save();
     canvas.translate(center.dx, center.dy);
     canvas.rotate(angleOffset);
+
+    // 核心光晕：也烘焙进来，避免每帧绘制
+    final glowPaint = Paint()
+      ..shader = ui.Gradient.radial(
+        Offset.zero,
+        140,
+        [const Color(0xFFFFF59D).withValues(alpha: 0.18), Colors.transparent],
+      );
+    canvas.drawCircle(Offset.zero, 140, glowPaint);
 
     final Random rand = Random(angleOffset == 0.0 ? 42 : 24);
 
@@ -1997,47 +2109,36 @@ class SpiralGalaxyBackground extends PositionComponent {
     height = size.y;
   }
 
+  final Paint _noFilterPaint = Paint()..filterQuality = ui.FilterQuality.none;
+  Offset? _cachedDrawOffset;
+
   @override
   void render(Canvas canvas) {
     if (width <= 0 || height <= 0) return;
 
     final rect = Rect.fromLTWH(0, 0, width, height);
 
-    // 绘制深空底色
+    // 1. 绘制深空底色
     if (_lastRect != rect) {
       _lastRect = rect;
-      _spacePaint.shader = RadialGradient(
-        center: const Alignment(0.0, -0.2),
-        radius: 1.2,
-        colors: const [Color(0xFF05070E), Color(0xFF0A0F1E), Color(0xFF0E1630)],
-        stops: const [0.0, 0.6, 1.0],
-      ).createShader(rect);
-
-      // 尺寸改变，触发重新烘焙
+      _spacePaint.shader = ui.Gradient.radial(
+        const Offset(0.5, 0.3), // 简化 Alignment
+        1.2 * max(width, height),
+        const [Color(0xFF05070E), Color(0xFF0A0F1E), Color(0xFF0E1630)],
+        [0.0, 0.6, 1.0],
+      );
       _bakeGalaxy(width, height);
     }
     canvas.drawRect(rect, _spacePaint);
 
-    final center = Offset(width / 2, height / 2 * 0.9);
-
-    // 核心光晕
-    if (_lastCoreCenter != center) {
-      _lastCoreCenter = center;
-      _corePaint.shader = RadialGradient(
-        colors: [const Color(0xFFFFF59D).withValues(alpha: 0.18), Colors.transparent],
-      ).createShader(Rect.fromCircle(center: center, radius: 140));
-    }
-    canvas.drawCircle(center, 140, _corePaint);
-
-    // 绘制烘焙好的星系图层，只需一次旋转绘制
+    // 2. 绘制烘焙好的星系图层
     if (_cachedGalaxyTexture != null) {
+      _cachedDrawOffset ??= Offset(-_cachedGalaxyTexture!.width / 2, -_cachedGalaxyTexture!.height / 2);
       canvas.save();
       canvas.translate(width / 2, height / 2);
       canvas.rotate(t);
-      // 拉伸绘制，覆盖全屏
       canvas.scale(width / _cachedGalaxyTexture!.width, height / _cachedGalaxyTexture!.height);
-      canvas.drawImage(_cachedGalaxyTexture!, Offset(-_cachedGalaxyTexture!.width / 2, -_cachedGalaxyTexture!.height / 2),
-          Paint()..filterQuality = ui.FilterQuality.none);
+      canvas.drawImage(_cachedGalaxyTexture!, _cachedDrawOffset!, _noFilterPaint);
       canvas.restore();
     }
   }
@@ -2392,6 +2493,7 @@ class UserInfoPanel extends PositionComponent with HasGameReference<MyGame> {
         _lastNickName = rawNick;
         final String baseNick = '昵　称： $rawNick';
         final double maxWidth = player.playGround.width - 32;
+        // 缓存 ellipsize 结果，避免每帧重复计算
         nickName.text = _ellipsize(baseNick, (nickName.textRenderer as TextPaint), maxWidth);
       }
 
@@ -2465,20 +2567,30 @@ class UserInfoPanel extends PositionComponent with HasGameReference<MyGame> {
   }
 
   String _ellipsize(String text, TextPaint renderer, double maxWidth) {
-    // 快速通过：宽度已在范围内
+    // 增加简易缓存：如果同样的输入和约束，直接返回
+    if (_lastEllipsizeInput == text && _lastEllipsizeWidth == maxWidth) return _lastEllipsizeResult!;
+    
+    _lastEllipsizeInput = text;
+    _lastEllipsizeWidth = maxWidth;
+
     if (renderer.getLineMetrics(text).width <= maxWidth) {
+      _lastEllipsizeResult = text;
       return text;
     }
     // 逐步裁剪并添加省略号
     String t = text;
     const String dots = '...';
-    // 预留省略号宽度
     final double dotsW = renderer.getLineMetrics(dots).width;
     while (t.isNotEmpty && renderer.getLineMetrics(t).width + dotsW > maxWidth) {
       t = t.substring(0, t.length - 1);
     }
-    return t.isEmpty ? dots : '$t$dots';
+    _lastEllipsizeResult = t.isEmpty ? dots : '$t$dots';
+    return _lastEllipsizeResult!;
   }
+  
+  String? _lastEllipsizeInput;
+  double? _lastEllipsizeWidth;
+  String? _lastEllipsizeResult;
 
   @override
   void render(Canvas canvas) {
@@ -2567,15 +2679,11 @@ class DroppingWordSprite extends TextComponent with HasGameReference<MyGame>, Co
   late Player player;
   double _fixedFontSize = 16.0;
   // 拖曳与摆动效果
-  final List<double> _trailYs = <double>[];
-  static const int _trailMax = 6;
-  double _trailSampleAcc = 0.0;
-  static const double _trailSampleInterval = 0.03; // seconds
   double _t = 0.0;
   late double _baseX;
 
   DroppingWordSprite(String text, this.player) : super(text: text, textRenderer: _alivePaint) {
-    add(RectangleHitbox());
+    add(RectangleHitbox()..collisionType = CollisionType.active);
   }
 
   static final TextPaint _alivePaint = makeAlivePaint();
@@ -2611,28 +2719,16 @@ class DroppingWordSprite extends TextComponent with HasGameReference<MyGame>, Co
 
   @override
   void update(double dt) {
+    if (isDead) return; // 关键优化：死亡单词完全停止逻辑计算
     super.update(dt);
-    if (!isDead) {
-      // 按屏幕缩放比例调整下落速度，保证不同屏幕用时一致
-      y += 20 * game.uiScale * dt;
-      // 轻微左右摆动
-      _t += dt;
-      final double amp = 4.0 * (game.uiScale);
-      final double freq = 2.2;
-      x = _baseX + sin(_t * freq) * amp;
-      // 记录轨迹用于拖曳效果
-      _trailSampleAcc += dt;
-      if (_trailSampleAcc >= _trailSampleInterval) {
-        _trailSampleAcc = 0.0;
-        _trailYs.add(y);
-        if (_trailYs.length > _trailMax) _trailYs.removeAt(0);
-      }
-    } else {
-      if ((textRenderer as TextPaint).style.color != const Color(0xFFFF0000)) {
-        final TextStyle base = _deadPaint.style;
-        textRenderer = TextPaint(style: base.copyWith(fontSize: _fixedFontSize));
-      }
-    }
+
+    // 按屏幕缩放比例调整下落速度，保证不同屏幕用时一致
+    y += 20 * game.uiScale * dt;
+    // 轻微左右摆动
+    _t += dt;
+    final double amp = 4.0 * (game.uiScale);
+    final double freq = 2.2;
+    x = _baseX + sin(_t * freq) * amp;
   }
 
   // 不覆写 render，使用父类默认实现
@@ -2650,7 +2746,13 @@ class DroppingWordSprite extends TextComponent with HasGameReference<MyGame>, Co
       }
       hasLanded = true;
       isDead = true;
-      _trailYs.clear();
+ 
+      // 优化：死亡后变为被动碰撞体，减少检测开销
+      final hitbox = children.query<RectangleHitbox>().firstOrNull;
+      if (hitbox != null) {
+        hitbox.collisionType = CollisionType.passive;
+      }
+ 
       // 即刻切换到红色文本，刷新文本内容以触发重绘
       final TextStyle base = DroppingWordSprite.makeDeadPaint().style;
       textRenderer = TextPaint(style: base.copyWith(fontSize: _fixedFontSize));
@@ -2720,6 +2822,7 @@ class MyButtonTextComponent extends PositionComponent {
   bool _clickEffectActive = false;
   double _clickEffectT = 0.0; // seconds
   static const double _clickEffectDuration = 0.28; // seconds
+  Vector2? _cachedTextPos;
 
   MyButtonTextComponent(this.text, this.textRenderer, this.backColor, this.borderColor, this.myGame, this.verticalPadding,
       {this.isPressed = false, this.opacity = 0.8})
@@ -2862,10 +2965,14 @@ class MyButtonTextComponent extends PositionComponent {
       _cachedTextH = activeTextPaint.getLineMetrics(displayExText).height;
     }
 
+    // 缓存渲染坐标，避免每帧分配 Vector2
+    _cachedTextPos ??= Vector2.zero();
+    _cachedTextPos!.setValues((size.x - _cachedTextW!) / 2, (size.y - _cachedTextH!) / 2 - 1);
+
     activeTextPaint.render(
       canvas,
       _cachedDisplayExText!,
-      Vector2((size.x - _cachedTextW!) / 2, (size.y - _cachedTextH!) / 2 - 1),
+      _cachedTextPos!,
     );
   }
 
@@ -2951,9 +3058,10 @@ class _MyButtonTapArea extends PositionComponent with TapCallbacks {
   @override
   void update(double dt) {
     super.update(dt);
-    // 同步覆盖整个按钮区域
-    size = ownerButton.size;
-    position = Vector2.zero();
+    // 仅在尺寸不一致时同步，减少属性设置开销
+    if (size != ownerButton.size) {
+      size.setFrom(ownerButton.size);
+    }
   }
 
   @override
