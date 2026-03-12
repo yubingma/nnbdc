@@ -501,7 +501,7 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
   late double scaledPlayGroundY;
   late double scaledBottomJetInitY;
 
-  // 背景图层
+  // 背景图层 
   PositionComponent? backgroundLayer;
 
   MyGame(this.gameHall, this.exceptRoom, this.context, this.pageState)
@@ -1906,6 +1906,8 @@ class SpiralGalaxyBackground extends PositionComponent {
   final Paint _haloPaint = Paint();
   final Paint _starPaint = Paint();
   Rect? _lastRect;
+  Offset? _lastCoreCenter;
+  final Map<int, Shader> _fogShaderCache = {};
 
   @override
   void update(double dt) {
@@ -1938,14 +1940,16 @@ class SpiralGalaxyBackground extends PositionComponent {
 
     final center = Offset(rect.center.dx, rect.center.dy * 0.9);
 
-    // 核心光晕 Shader 会随中心点变化，但在这里我们稍微简化逻辑
-    // 实际上 center 在 gameResize 后通常不变，所以也可以缓存
-    _corePaint.shader = RadialGradient(
-      colors: [
-        const Color(0xFFFFF59D).withValues(alpha: 0.18),
-        Colors.transparent,
-      ],
-    ).createShader(Rect.fromCircle(center: center, radius: 140));
+    // 核心光晕 Shader: 缓存以避免每帧创建
+    if (_lastCoreCenter != center) {
+        _lastCoreCenter = center;
+        _corePaint.shader = RadialGradient(
+          colors: [
+            const Color(0xFFFFF59D).withValues(alpha: 0.18),
+            Colors.transparent,
+          ],
+        ).createShader(Rect.fromCircle(center: center, radius: 140));
+    }
     canvas.drawCircle(center, 140, _corePaint);
 
     _drawSpiralArm(canvas, center, baseHue: const Color(0xFF80D8FF), angleOffset: 0.0);
@@ -1968,17 +1972,21 @@ class SpiralGalaxyBackground extends PositionComponent {
       final fade = (1.0 - r / armLen).clamp(0.0, 1.0);
       final radius = 60 * fade + 20;
 
-      // 避免每帧创建上百个 Shader。由于 fog 跟随旋转坐标系，其中心始终是 (x, y)
-      // 在 rotate/translate 后的坐标系中，我们可以减负
-      _fogPaint.shader = RadialGradient(
-        colors: [
-          baseHue.withValues(alpha: 0.18 * fade),
-          baseHue.withValues(alpha: 0.0),
-        ],
-      ).createShader(Rect.fromCircle(center: Offset(x, y), radius: radius));
+      final stepSeed = (r * 97).toInt() + (angleOffset == 0.0 ? 17 : 37);
+      
+      // 缓存 Fog Shader: 基于Hue和消散阶数缓存
+      final int fogCacheKey = (baseHue.value ^ (r.toInt() << 8));
+      if (!_fogShaderCache.containsKey(fogCacheKey)) {
+          _fogShaderCache[fogCacheKey] = RadialGradient(
+            colors: [
+              baseHue.withValues(alpha: 0.18 * fade),
+              baseHue.withValues(alpha: 0.0),
+            ],
+          ).createShader(Rect.fromCircle(center: Offset(x, y), radius: radius));
+      }
+      _fogPaint.shader = _fogShaderCache[fogCacheKey];
       canvas.drawCircle(Offset(x, y), radius, _fogPaint);
 
-      final stepSeed = (r * 97).toInt() + (angleOffset == 0.0 ? 17 : 37);
       final rand = Random(stepSeed);
       final starCount = 3 + rand.nextInt(7);
       for (int i = 0; i < starCount; i++) {
@@ -2067,20 +2075,31 @@ class GalaxyBackground extends PositionComponent {
     _drawStars(canvas, rect, count: 60, sizeMin: 1.2, sizeMax: 2.0, speed: 0.03, twinkle: 0.8);
   }
 
+  // 缓存星云 Shader
+  final Map<int, Shader> _nebulaShaderCache = {};
+  final Map<int, Offset> _nebulaLastCenterCache = {};
+
   void _drawNebula(Canvas canvas, Rect rect, Color color, double ax, double ay, double radius, double alpha) {
-    final cx = rect.center.dx + rect.width * ax * (0.6 + 0.4 * sin(t * 0.1 + ax));
-    final cy = rect.center.dy + rect.height * ay * (0.6 + 0.4 * cos(t * 0.1 + ay));
+    final double timeOffset = t * 0.1;
+    final cx = rect.center.dx + rect.width * ax * (0.6 + 0.4 * sin(timeOffset + ax));
+    final cy = rect.center.dy + rect.height * ay * (0.6 + 0.4 * cos(timeOffset + ay));
     final r = radius * (0.9 + 0.1 * sin(t * 0.2 + ax + ay));
+    final center = Offset(cx, cy);
 
-    _nebulaPaint.shader = RadialGradient(
-      colors: [
-        color.withValues(alpha: alpha * 0.45),
-        color.withValues(alpha: 0.0),
-      ],
-      stops: const [0.0, 1.0],
-    ).createShader(Rect.fromCircle(center: Offset(cx, cy), radius: r));
+    final int cacheKey = color.value ^ (radius.toInt() << 16);
+    if (_nebulaLastCenterCache[cacheKey] != center) {
+        _nebulaLastCenterCache[cacheKey] = center;
+        _nebulaShaderCache[cacheKey] = RadialGradient(
+          colors: [
+            color.withValues(alpha: alpha * 0.45),
+            color.withValues(alpha: 0.0),
+          ],
+          stops: const [0.0, 1.0],
+        ).createShader(Rect.fromCircle(center: center, radius: r));
+    }
 
-    canvas.drawCircle(Offset(cx, cy), r, _nebulaPaint);
+    _nebulaPaint.shader = _nebulaShaderCache[cacheKey];
+    canvas.drawCircle(center, r, _nebulaPaint);
   }
 
   void _drawStars(Canvas canvas, Rect rect,
@@ -2697,6 +2716,14 @@ class MyButtonTextComponent extends PositionComponent {
   double? _lastTextOpacity;
   TextRenderer? _lastOriginalRenderer;
 
+  // 截断文本相关缓存
+  String? _cachedDisplayExText;
+  double? _cachedTextW;
+  double? _cachedTextH;
+  String? _lastInputText;
+  double? _lastConstraintWidth;
+  TextPaint? _lastActiveTextPaint;
+
   @override
   void update(double dt) {
     super.update(dt);
@@ -2789,22 +2816,39 @@ class MyButtonTextComponent extends PositionComponent {
       _cachedOpacityPaint = TextPaint(style: ts.copyWith(color: scaledColor, shadows: scaledShadows));
     }
 
-    // 手动居中绘制文本，带截断功能
+    // 手动居中绘制文本，带截断功能 (增加缓存逻辑以提升性能)
     final TextPaint activeTextPaint = _cachedOpacityPaint!;
-    String displayExText = text;
-    double textW = activeTextPaint.getLineMetrics(displayExText).width;
     final double maxTextW = size.x - 32;
 
-    if (textW > maxTextW) {
-      while (textW > maxTextW && displayExText.length > 3) {
-        displayExText = displayExText.substring(0, displayExText.length - 1);
-        textW = activeTextPaint.getLineMetrics('$displayExText...').width;
+    if (_cachedDisplayExText == null ||
+        _lastInputText != text ||
+        _lastConstraintWidth != maxTextW ||
+        _lastActiveTextPaint != activeTextPaint) {
+      
+      _lastInputText = text;
+      _lastConstraintWidth = maxTextW;
+      _lastActiveTextPaint = activeTextPaint;
+
+      String displayExText = text;
+      double textW = activeTextPaint.getLineMetrics(displayExText).width;
+
+      if (textW > maxTextW) {
+        while (textW > maxTextW && displayExText.length > 3) {
+          displayExText = displayExText.substring(0, displayExText.length - 1);
+          textW = activeTextPaint.getLineMetrics('$displayExText...').width;
+        }
+        displayExText = '$displayExText...';
       }
-      displayExText = '$displayExText...';
+      _cachedDisplayExText = displayExText;
+      _cachedTextW = textW;
+      _cachedTextH = activeTextPaint.getLineMetrics(displayExText).height;
     }
 
-    final double textH = activeTextPaint.getLineMetrics(displayExText).height;
-    activeTextPaint.render(canvas, displayExText, Vector2((size.x - textW) / 2, (size.y - textH) / 2 - 1));
+    activeTextPaint.render(
+      canvas,
+      _cachedDisplayExText!,
+      Vector2((size.x - _cachedTextW!) / 2, (size.y - _cachedTextH!) / 2 - 1),
+    );
   }
 
   // 由外部在点击时调用，启动动效
