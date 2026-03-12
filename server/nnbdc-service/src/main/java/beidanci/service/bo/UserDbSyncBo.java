@@ -510,7 +510,12 @@ public class UserDbSyncBo {
                 case "DELETE" -> {
                     Dict dict = dictBo.findById(dictDto.getId());
                     if (dict != null) {
-                        dictBo.deleteEntity(dict);
+                        if (!isOwner) {
+                            String errorMsg = String.format("用户%s尝试删除不属于自己的词书: dictId=%s", userId, dictDto.getId());
+                            logger.warn(errorMsg);
+                            throw new IllegalArgumentException(errorMsg);
+                        }
+                        dictBo.deleteDictSafely(dict.getId());
                         logger.debug("同步删除词书成功: dictId={}", dictDto.getId());
                     }
                 }
