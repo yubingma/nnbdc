@@ -65,6 +65,17 @@ public class MeaningItem extends UuidPo {
     @Column(name = "dict_id")
     private Dict dict;
 
+    /**
+     * 释义的所有者（用户）。
+     * 1. 性能优化：在拉取单词释义时，可直接通过 owner_id 过滤（公共资源 + 我的私有资源），避免通过词书表进行复杂的跨表 JOIN。
+     * 2. UGC 隔离：支持用户在公共词书下记录仅自己可见的私有解释或笔记。
+     * 归属规则：
+     * - 系统/共享资源：归属于系统管理员 (Constants.SYS_USER_SYS_ID，即 "15118")。
+     * - 用户私有资源：归属于该特定的学习用户。
+     */
+    @Column(name = "owner_id", nullable = false)
+    private User owner;
+
     public MeaningItem() {
 
     }
@@ -139,5 +150,13 @@ public class MeaningItem extends UuidPo {
 
     public void setPopularity(Integer popularity) {
         this.popularity = popularity;
+    }
+
+    public User getOwner() {
+        return owner;
+    }
+
+    public void setOwner(User owner) {
+        this.owner = owner;
     }
 }

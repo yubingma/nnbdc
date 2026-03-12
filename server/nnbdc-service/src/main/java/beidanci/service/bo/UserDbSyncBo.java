@@ -1263,7 +1263,7 @@ public class UserDbSyncBo {
                 String wordId = (String) data.get("wordId");
                 @SuppressWarnings("unchecked")
                 List<Map<String, String>> meanings = (List<Map<String, String>>) data.get("meanings");
-                meaningItemBo.updateMeanings(dictId, wordId, meanings);
+                meaningItemBo.updateMeanings(dictId, wordId, meanings, userId);
                 logger.info("同步更新单词释义成功: userId={}, dictId={}, wordId={}", userId, dictId, wordId);
             }
             case "INSERT" ->                 {

@@ -66,4 +66,12 @@ public class JsonUtils {
             throw new RuntimeException(e);
         }
     }
+
+    @SuppressWarnings("unchecked")
+    public static java.util.Map<String, Object> parseMap(String json) {
+        if (StringUtils.isBlank(json)) {
+            return new java.util.HashMap<>();
+        }
+        return makeObject(json, java.util.Map.class);
+    }
 }

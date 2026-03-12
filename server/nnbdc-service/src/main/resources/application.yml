@@ -74,6 +74,11 @@ aliyun:
     template-ids:
       verification-code: 417522
       get-password: 417523
+  ai:
+    api-key: ${dashscope_api_key}
+    text-model: qwen-max
+    tts-model: cosyvoice-v1
+    voice: longxiaochun
 
 # 短信验证码配置
 sms:

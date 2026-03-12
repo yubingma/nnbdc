@@ -22,6 +22,15 @@ public class MeaningItemVo extends UuidVo {
     private DictVo dict;
     private List<SynonymVo> synonyms;
     private List<SentenceVo> sentences = new ArrayList<>();
+    private String ownerId;
+
+    public String getOwnerId() {
+        return ownerId;
+    }
+
+    public void setOwnerId(String ownerId) {
+        this.ownerId = ownerId;
+    }
 
     public MeaningItemVo() {
 

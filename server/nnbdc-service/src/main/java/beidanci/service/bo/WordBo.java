@@ -23,9 +23,11 @@ import beidanci.service.exception.EmptySpellException;
 import beidanci.service.exception.InvalidMeaningFormatException;
 import beidanci.service.exception.ParseException;
 import beidanci.service.po.MeaningItem;
+import beidanci.service.po.User;
 import beidanci.service.po.Word;
 import beidanci.service.store.WordCache;
 import beidanci.service.util.SysParamUtil;
+import beidanci.util.Constants;
 import beidanci.util.Utils;
 @Service
 @Transactional(rollbackFor = Throwable.class)
@@ -142,6 +144,12 @@ public class WordBo extends BaseBo<Word> {
                 item.setCiXing(itemVo.getCiXing());
                 item.setMeaning(itemVo.getMeaning());
                 item.setWord(word);
+                
+                // 设置所有者：优先使用 Vo 传入的，否则默认为系统管理员
+                User owner = new User();
+                owner.setId(itemVo.getOwnerId() != null ? itemVo.getOwnerId() : Constants.SYS_USER_SYS_ID);
+                item.setOwner(owner);
+                
                 meaningItemBo.createEntity(item);
                 word.getMeaningItems().add(item);
             }

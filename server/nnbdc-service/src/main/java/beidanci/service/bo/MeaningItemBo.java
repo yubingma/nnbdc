@@ -35,7 +35,7 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
     /** 获取指定词书的所有单词释义项，通用词典ID为'0' */
     public List<MeaningItemDto> getMeaningItemsOfDict(String dictId) {
         // 通用词典现在是数据库中的实际记录，统一查询
-        String sql = "SELECT id, ci_xing, meaning, word_id, dict_id, popularity, create_time, update_time FROM meaning_item WHERE dict_id = :dictId";
+        String sql = "SELECT id, ci_xing, meaning, word_id, dict_id, owner_id, popularity, create_time, update_time FROM meaning_item WHERE dict_id = :dictId";
         MapSqlParameterSource params = new MapSqlParameterSource("dictId", dictId);
 
         return namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> {
@@ -50,6 +50,7 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
             meaningItemDto.setPopularity(popularity != null ? popularity : 999);
             meaningItemDto.setCreateTime(rs.getTimestamp("create_time"));
             meaningItemDto.setUpdateTime(rs.getTimestamp("update_time"));
+            meaningItemDto.setOwnerId(rs.getString("owner_id"));
             return meaningItemDto;
         });
     }
@@ -63,7 +64,7 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
         }
 
         // 使用原生SQL一次性取回所有候选，再在内存中按 word 聚合取第一条
-        String sql = "SELECT id, ci_xing, meaning, word_id, dict_id, popularity, create_time, update_time FROM meaning_item "
+        String sql = "SELECT id, ci_xing, meaning, word_id, dict_id, owner_id, popularity, create_time, update_time FROM meaning_item "
                 +
                 "WHERE dict_id IS NOT NULL AND word_id IN (:ids) ORDER BY update_time DESC";
         MapSqlParameterSource params = new MapSqlParameterSource("ids", wordIds);
@@ -78,6 +79,7 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
             dto.setPopularity(popularity != null ? popularity : 999);
             dto.setCreateTime(rs.getTimestamp("create_time"));
             dto.setUpdateTime(rs.getTimestamp("update_time"));
+            dto.setOwnerId(rs.getString("owner_id"));
             return dto;
         });
 
@@ -106,6 +108,7 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
             dto.setPopularity(popularityValue != null ? popularityValue : 999);
             dto.setCreateTime((Timestamp) tuple[6]);
             dto.setUpdateTime((Timestamp) tuple[7]);
+            dto.setOwnerId((String) tuple[8]);
             picked.add(dto);
             seen.add(wordId);
             if (seen.size() == wordIds.size()) {
@@ -123,9 +126,9 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
      * 返回插入的行数。
      */
     public int supplementCommonMeanings() {
-        String sql = "INSERT INTO meaning_item (id, ci_xing, meaning, word_id, dict_id, popularity, create_time, update_time) "
+        String sql = "INSERT INTO meaning_item (id, ci_xing, meaning, word_id, dict_id, owner_id, popularity, create_time, update_time) "
                 +
-                "SELECT REPLACE(gen_random_uuid()::text, '-', ''), mi.ci_xing, mi.meaning, mi.word_id, '0', mi.popularity, NOW(), NOW() "
+                "SELECT REPLACE(gen_random_uuid()::text, '-', ''), mi.ci_xing, mi.meaning, mi.word_id, '0', '15118', mi.popularity, NOW(), NOW() "
                 +
                 "FROM meaning_item mi " +
                 "LEFT JOIN meaning_item cm ON cm.word_id = mi.word_id AND cm.dict_id = '0' " +
@@ -156,7 +159,7 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
     /**
      * 更新自定义词典中的单词释义（先删除该词在该词典下的所有现有释义，再插入新的）
      */
-    public void updateMeanings(String dictId, String wordId, List<Map<String, String>> meanings) {
+    public void updateMeanings(String dictId, String wordId, List<Map<String, String>> meanings, String ownerId) {
         // 1. 删除现有定制释义
         String deleteSql = "DELETE FROM meaning_item WHERE word_id = :wordId AND dict_id = :dictId";
         MapSqlParameterSource params = new MapSqlParameterSource();
@@ -166,9 +169,9 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
 
         // 2. 插入新释义
         if (meanings != null) {
-            String insertSql = "INSERT INTO meaning_item (id, word_id, dict_id, ci_xing, meaning, popularity, create_time, update_time, is_updating) "
+            String insertSql = "INSERT INTO meaning_item (id, word_id, dict_id, owner_id, ci_xing, meaning, popularity, create_time, update_time, is_updating) "
                     +
-                    "VALUES (:id, :wordId, :dictId, :ciXing, :meaning, :popularity, :createTime, :updateTime, false)";
+                    "VALUES (:id, :wordId, :dictId, :ownerId, :ciXing, :meaning, :popularity, :createTime, :updateTime, false)";
             Timestamp now = new Timestamp(System.currentTimeMillis());
             for (int i = 0; i < meanings.size(); i++) {
                 Map<String, String> meaning = meanings.get(i);
@@ -176,6 +179,7 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
                 insertParams.addValue("id", Util.uuid());
                 insertParams.addValue("wordId", wordId);
                 insertParams.addValue("dictId", dictId);
+                insertParams.addValue("ownerId", ownerId != null ? ownerId : "15118"); 
                 insertParams.addValue("ciXing", meaning.get("cixing") != null ? meaning.get("cixing") : "");
                 insertParams.addValue("meaning", meaning.get("meaning") != null ? meaning.get("meaning") : "");
                 insertParams.addValue("popularity", i + 1);
@@ -187,13 +191,14 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
     }
 
     public void createMeaningItem(MeaningItemDto dto) {
-        String insertSql = "INSERT INTO meaning_item (id, word_id, dict_id, ci_xing, meaning, popularity, create_time, update_time, is_updating) "
+        String insertSql = "INSERT INTO meaning_item (id, word_id, dict_id, owner_id, ci_xing, meaning, popularity, create_time, update_time, is_updating) "
                 +
-                "VALUES (:id, :wordId, :dictId, :ciXing, :meaning, :popularity, :createTime, :updateTime, false)";
+                "VALUES (:id, :wordId, :dictId, :ownerId, :ciXing, :meaning, :popularity, :createTime, :updateTime, false)";
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("id", dto.getId());
         params.addValue("wordId", dto.getWordId());
         params.addValue("dictId", dto.getDictId());
+        params.addValue("ownerId", dto.getOwnerId() != null ? dto.getOwnerId() : "15118");
         params.addValue("ciXing", dto.getCiXing() != null ? dto.getCiXing() : "");
         params.addValue("meaning", dto.getMeaning() != null ? dto.getMeaning() : "");
         params.addValue("popularity", dto.getPopularity());

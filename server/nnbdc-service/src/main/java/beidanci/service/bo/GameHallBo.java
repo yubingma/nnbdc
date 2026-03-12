@@ -82,7 +82,7 @@ public class GameHallBo extends BaseBo<GameHall> {
         Map<String, List<MeaningItemVo>> meaningItemsByWordId = new HashMap<>();
         if (!wordIds.isEmpty()) {
             // 优先查询通用词典的释义项（dictId = '0'）
-            String meaningSql = "SELECT id, ci_xing, meaning, word_id, dict_id, popularity, create_time, update_time FROM meaning_item " +
+            String meaningSql = "SELECT id, ci_xing, meaning, word_id, dict_id, owner_id, popularity, create_time, update_time FROM meaning_item " +
                     "WHERE word_id IN (:wordIds) AND dict_id = '0' ORDER BY popularity ASC";
             MapSqlParameterSource meaningParams = new MapSqlParameterSource("wordIds", wordIds);
             List<MeaningItemDto> commonMeaningItems = namedParameterJdbcTemplate.query(meaningSql, meaningParams, (rs, rowNum) -> {
@@ -96,6 +96,7 @@ public class GameHallBo extends BaseBo<GameHall> {
                 dto.setPopularity(popularity != null ? popularity : 999);
                 dto.setCreateTime(rs.getTimestamp("create_time"));
                 dto.setUpdateTime(rs.getTimestamp("update_time"));
+                dto.setOwnerId(rs.getString("owner_id"));
                 return dto;
             });
             
@@ -105,6 +106,7 @@ public class GameHallBo extends BaseBo<GameHall> {
                 vo.setId(dto.getId());
                 vo.setCiXing(dto.getCiXing());
                 vo.setMeaning(dto.getMeaning());
+                vo.setOwnerId(dto.getOwnerId());
                 meaningItemsByWordId.computeIfAbsent(dto.getWordId(), k -> new ArrayList<>()).add(vo);
             }
             
@@ -120,6 +122,7 @@ public class GameHallBo extends BaseBo<GameHall> {
                     vo.setId(dto.getId());
                     vo.setCiXing(dto.getCiXing());
                     vo.setMeaning(dto.getMeaning());
+                    vo.setOwnerId(dto.getOwnerId());
                     meaningItemsByWordId.computeIfAbsent(dto.getWordId(), k -> new ArrayList<>()).add(vo);
                 }
             }

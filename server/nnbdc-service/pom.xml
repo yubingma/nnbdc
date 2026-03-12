@@ -137,6 +137,16 @@
             <groupId>com.aliyun</groupId>
             <artifactId>aliyun-java-sdk-cdn</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>dashscope-sdk-java</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-simple</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
 
         <!-- OkHttp - 用于微信登录API调用 -->
         <dependency>
