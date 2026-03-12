@@ -208,7 +208,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
                   elevation: 0,
                   automaticallyImplyLeading: false,
                   centerTitle: true,
-                  toolbarHeight: 70,
+                  toolbarHeight: 56,
                   title: Text(
                     'Today\'s Plan',
                     style: TextStyle(
@@ -228,14 +228,14 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
                 ),
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Column(
                       children: [
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 16),
                         renderMissionCard(),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 16),
                         renderStudySteps(),
-                        const SizedBox(height: 40),
+                        const SizedBox(height: 24),
                       ],
                     ),
                   ),
@@ -271,7 +271,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
         children: [
           // Header: Goal Setting
           Padding(
-            padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -287,7 +287,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
                         letterSpacing: 0.5,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 2),
                     Row(
                       children: [
                         Text(
@@ -317,7 +317,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
 
           // Progress Section
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             child: Column(
               children: [
                 Row(
@@ -341,7 +341,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
                     ),
                   ],
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 6),
                 ClipRRect(
                   borderRadius: BorderRadius.circular(8),
                   child: LinearProgressIndicator(
@@ -359,7 +359,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
 
           // Stats Grid
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
             child: Row(
               children: [
                 _buildStatItem('今日总词', todayWordCount ?? 0, Icons.auto_awesome_rounded, const Color(0xFF0EA5E9)),
@@ -414,7 +414,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
 
           // Action Button
           Padding(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
             child: (prepareResult?.code == "NNBDC-0012" || (_hasTriedSupplement && (todayWordCount ?? 0) < (user?.wordsPerDay ?? 0)))
                 ? renderErrorActions()
                 : renderStartButton(),
@@ -438,7 +438,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
           }
         },
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 16),
+          padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
             color: isDarkMode ? Colors.white.withValues(alpha: 0.02) : const Color(0xFFF8FAFC),
             borderRadius: BorderRadius.circular(20),
@@ -450,7 +450,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
           child: Column(
             children: [
               Icon(icon, size: 18, color: accentColor.withValues(alpha: 0.8)),
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
               Text(
                 '$count',
                 style: TextStyle(
@@ -603,7 +603,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.transparent,
           shadowColor: Colors.transparent,
-          padding: const EdgeInsets.symmetric(vertical: 20),
+          padding: const EdgeInsets.symmetric(vertical: 14),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         ),
         onPressed: () async {
@@ -704,7 +704,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 16),
+          padding: const EdgeInsets.only(left: 4, bottom: 8),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -755,7 +755,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
 
     return Container(
       key: ValueKey(step.studyStep),
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
         color: isDarkMode ? const Color(0xFF1E293B) : Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -789,7 +789,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
           },
           borderRadius: BorderRadius.circular(20),
           child: Padding(
-            padding: const EdgeInsets.all(18),
+            padding: const EdgeInsets.all(14),
             child: Row(
               children: [
                 Container(
