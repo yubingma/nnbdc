@@ -167,6 +167,17 @@ class RussiaPageState extends State<RussiaPage> {
 class BottomJet extends PositionComponent {
   late Sprite brickImg;
 
+  // 缓存 Paint 和 Shader
+  final Paint _bgPaint = Paint();
+  final Paint _highlightPaint = Paint();
+  final Paint _borderPaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 1.5;
+  final Paint _brickPaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 0.25;
+  Rect? _lastRect;
+
   BottomJet() {
     add(RectangleHitbox());
   }
@@ -181,12 +192,13 @@ class BottomJet extends PositionComponent {
   }
 
   @override
-  Future<void> render(Canvas canvas) async {
+  void render(Canvas canvas) {
     Rect rect = size.toRect();
 
-    // 绘制渐变背景
-    Paint backgroundPaint = Paint()
-      ..shader = LinearGradient(
+    // 仅在尺寸变化时更新 Shader
+    if (_lastRect != rect) {
+      _lastRect = rect;
+      _bgPaint.shader = LinearGradient(
         colors: [
           const Color(0xFF4A90E2),
           const Color(0xFF357ABD),
@@ -196,27 +208,14 @@ class BottomJet extends PositionComponent {
         end: Alignment.bottomCenter,
       ).createShader(rect);
 
-    // 顶部圆角、底部直角
-    final RRect roundedRect = RRect.fromRectAndCorners(
-      rect,
-      topLeft: const Radius.circular(6),
-      topRight: const Radius.circular(6),
-      bottomLeft: const Radius.circular(0),
-      bottomRight: const Radius.circular(0),
-    );
-    canvas.drawRRect(roundedRect, backgroundPaint);
-
-    // 绘制顶部高光（固定高度，不随千斤顶高度变化）
-    const double fixedHighlightHeight = 6.0; // 固定高光高度
-    final Rect highlightArea = Rect.fromLTWH(
-      rect.left + 1,
-      rect.top + 1,
-      rect.width - 2,
-      fixedHighlightHeight,
-    );
-
-    Paint highlightPaint = Paint()
-      ..shader = LinearGradient(
+      const double fixedHighlightHeight = 6.0;
+      final Rect highlightArea = Rect.fromLTWH(
+        rect.left + 1,
+        rect.top + 1,
+        rect.width - 2,
+        fixedHighlightHeight,
+      );
+      _highlightPaint.shader = LinearGradient(
         colors: [
           Colors.white.withValues(alpha: 0.4),
           Colors.white.withValues(alpha: 0.2),
@@ -226,35 +225,49 @@ class BottomJet extends PositionComponent {
         end: Alignment.bottomCenter,
       ).createShader(highlightArea);
 
+      _borderPaint.color = const Color(0xFF5BA3F5);
+    }
+
+    // 顶部圆角、底部直角
+    final RRect roundedRect = RRect.fromRectAndCorners(
+      rect,
+      topLeft: const Radius.circular(6),
+      topRight: const Radius.circular(6),
+      bottomLeft: const Radius.circular(0),
+      bottomRight: const Radius.circular(0),
+    );
+    canvas.drawRRect(roundedRect, _bgPaint);
+
+    // 绘制顶部高光
+    const double fixedHighlightHeight = 6.0;
+    final Rect highlightArea = Rect.fromLTWH(
+      rect.left + 1,
+      rect.top + 1,
+      rect.width - 2,
+      fixedHighlightHeight,
+    );
     RRect highlightRect = RRect.fromRectAndRadius(
       highlightArea,
       const Radius.circular(5),
     );
-    canvas.drawRRect(highlightRect, highlightPaint);
+    canvas.drawRRect(highlightRect, _highlightPaint);
 
     // 绘制边框
-    Paint borderPaint = Paint()
-      ..color = const Color(0xFF5BA3F5)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5;
-    canvas.drawRRect(roundedRect, borderPaint);
+    canvas.drawRRect(roundedRect, _borderPaint);
 
     // 绘制砖块纹理
-    const brickWidth = 32.0;
-    Paint brickPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.05)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 0.25;
+    const currentBrickWidth = 32.0; // 改名避免冲突
+    _brickPaint.color = Colors.white.withValues(alpha: 0.05);
 
     for (var i = 1; i * brickHeight <= height; i++) {
-      for (var j = 1; j * brickWidth <= width; j++) {
-        Rect brickRect = Rect.fromLTWH(
-          (j - 1) * brickWidth,
+      for (var j = 1; j * currentBrickWidth <= width; j++) {
+        Rect currentBrickRect = Rect.fromLTWH(
+          (j - 1) * currentBrickWidth,
           (i - 1) * brickHeight + 1,
-          brickWidth,
+          currentBrickWidth,
           brickHeight,
         );
-        canvas.drawRect(brickRect, brickPaint);
+        canvas.drawRect(currentBrickRect, _brickPaint);
       }
     }
   }
@@ -269,12 +282,27 @@ class PlayGround extends PositionComponent {
   static Paint green = BasicPalette.green.paint();
 
   @override
+  Future<void> onLoad() async {
+    super.onLoad();
+    size.setValues(width, height);
+    anchor = Anchor.topLeft;
+  }
+
+  // 缓存 Paint 和 Shader
+  final Paint _bgPaint = Paint();
+  final Paint _borderPaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 2;
+  final Paint _gridPaint = Paint()..strokeWidth = 1;
+  Rect? _lastRect;
+
+  @override
   void render(Canvas canvas) {
     Rect rect = size.toRect();
 
-    // 绘制渐变背景（半透明 0.7）
-    Paint backgroundPaint = Paint()
-      ..shader = LinearGradient(
+    if (_lastRect != rect) {
+      _lastRect = rect;
+      _bgPaint.shader = LinearGradient(
         colors: [
           const Color(0xFF1A1A2E).withValues(alpha: 0.7),
           const Color(0xFF16213E).withValues(alpha: 0.7),
@@ -284,6 +312,10 @@ class PlayGround extends PositionComponent {
         end: Alignment.bottomRight,
       ).createShader(rect);
 
+      _borderPaint.color = const Color(0xFF4A90E2).withValues(alpha: 0.7);
+      _gridPaint.color = const Color(0xFF4A90E2).withValues(alpha: 0.15);
+    }
+
     // 顶部圆角、底部直角
     RRect roundedRect = RRect.fromRectAndCorners(
       rect,
@@ -292,26 +324,17 @@ class PlayGround extends PositionComponent {
       bottomLeft: const Radius.circular(0),
       bottomRight: const Radius.circular(0),
     );
-    canvas.drawRRect(roundedRect, backgroundPaint);
+    canvas.drawRRect(roundedRect, _bgPaint);
 
-    // 绘制边框（半透明 0.7）
-    Paint borderPaint = Paint()
-      ..color = const Color(0xFF4A90E2).withValues(alpha: 0.7)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2;
-    canvas.drawRRect(roundedRect, borderPaint);
-
-    // 绘制网格线
-    Paint gridPaint = Paint()
-      ..color = const Color(0xFF4A90E2).withValues(alpha: 0.15)
-      ..strokeWidth = 1;
+    // 绘制边框
+    canvas.drawRRect(roundedRect, _borderPaint);
 
     // 垂直网格线
     for (double x = 20; x < width; x += 20) {
       canvas.drawLine(
         Offset(x, 0),
         Offset(x, height),
-        gridPaint,
+        _gridPaint,
       );
     }
 
@@ -320,16 +343,9 @@ class PlayGround extends PositionComponent {
       canvas.drawLine(
         Offset(0, y),
         Offset(width, y),
-        gridPaint,
+        _gridPaint,
       );
     }
-  }
-
-  @override
-  Future<void> onLoad() async {
-    super.onLoad();
-    size.setValues(width, height);
-    anchor = Anchor.topLeft;
   }
 }
 
@@ -444,6 +460,13 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
   final double uiScale;
   // 按钮尺寸固定：渲染时仅计算一次，后续不再改变
   bool _buttonSizeInitialized = false;
+  // 状态记录，用于在 update 中判定是否需要刷新按钮布局
+  String? _lastGameState;
+  bool? _lastIsPlaying;
+  bool? _lastIsShowingResult;
+  bool? _lastIsExercise;
+  int? _lastWordCount;
+  bool? _lastCountdownSeconds; // 这里存的是 (countdownSeconds > 0)
   // 标记是否已为当前wordB上报过ETA
   bool _reportedFallBForCurrentWord = false;
 
@@ -1688,212 +1711,171 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
 
     // 不再周期上报B侧ETA；改为在收到新wordB时上报一次
 
-    // 显示/隐藏 道具数量
+    // 显示/隐藏 道具数量：仅在必要时操作组件树
     if (playerA.props[0] > 0) {
       plusPropsCount.text = '${playerA.props[0]}';
-      if (plusPropsCount.parent == null) {
-        add(plusPropsCount);
-      }
+      if (plusPropsCount.parent == null) add(plusPropsCount);
     } else {
-      if (plusPropsCount.parent != null) {
-        plusPropsCount.removeFromParent();
-      }
+      if (plusPropsCount.parent != null) plusPropsCount.removeFromParent();
     }
+
     if (playerA.props[1] > 0) {
       minusPropsCount.text = '${playerA.props[1]}';
-      if (minusPropsCount.parent == null) {
-        add(minusPropsCount);
-      }
+      if (minusPropsCount.parent == null) add(minusPropsCount);
     } else {
-      if (minusPropsCount.parent != null) {
-        minusPropsCount.removeFromParent();
+      if (minusPropsCount.parent != null) minusPropsCount.removeFromParent();
+    }
+
+    // 状态记录，用于跳过每一帧的冗余计算
+    final bool shouldRebuildButtons = _lastGameState != gameState ||
+        _lastIsPlaying != isPlaying ||
+        _lastIsShowingResult != isShowingResult ||
+        _lastIsExercise != isExercise ||
+        _lastWordCount != (isPlaying ? playerA.otherWordMeanings.length : 0) ||
+        _lastCountdownSeconds != (countdownSeconds > 0) ||
+        !_buttonSizeInitialized;
+
+    if (shouldRebuildButtons) {
+      _lastGameState = gameState;
+      _lastIsPlaying = isPlaying;
+      _lastIsShowingResult = isShowingResult;
+      _lastIsExercise = isExercise;
+      _lastWordCount = isPlaying ? playerA.otherWordMeanings.length : 0;
+      _lastCountdownSeconds = (countdownSeconds > 0);
+
+      var visibleButtons = <MyButton>[];
+
+      if (gameState == 'ready' && !playerA.started && !isPlaying && !isShowingResult) {
+        visibleButtons.add(startGameBtn);
       }
-    }
 
-    var visibleButtons = <MyButton>[];
+      bool isPrivateRoom = Get.arguments != null &&
+          (Get.arguments is List && Get.arguments.length > 2) &&
+          (((Get.arguments[2] as Map?)?.containsKey('mode') == true && (Get.arguments[2] as Map)['mode'] == 'createPrivate') ||
+              ((Get.arguments[2] as Map?)?.containsKey('joinRoomId') == true));
 
-    if (gameState == 'ready' && !playerA.started && !isPlaying && !isShowingResult) {
-      visibleButtons.add(startGameBtn);
-    }
-
-    // 判断是否为私房模式
-    bool isPrivateRoom = Get.arguments != null &&
-        (Get.arguments is List && Get.arguments.length > 2) &&
-        (((Get.arguments[2] as Map?)?.containsKey('mode') == true && (Get.arguments[2] as Map)['mode'] == 'createPrivate') ||
-            ((Get.arguments[2] as Map?)?.containsKey('joinRoomId') == true));
-
-    // 在非游戏状态且非私房模式下显示换房间按钮
-    if (!isPlaying && !isShowingResult && !isPrivateRoom) {
-      visibleButtons.add(changeRoomBtn);
-    }
-
-    if (!isPlaying && !isShowingResult) {
-      visibleButtons.add(exerciseBtn);
-    }
-
-    // 在非游戏状态时显示离开按钮，但在倒计时期间不显示
-    if (!isPlaying && countdownSeconds == 0) {
-      visibleButtons.add(exitBtn);
-    }
-
-    // 背景切换已移除
-
-    if (isPlaying && playerA.otherWordMeanings.isNotEmpty) {
-      visibleButtons.add(answer1Btn);
-      visibleButtons.add(answer2Btn);
-      visibleButtons.add(answer3Btn);
-    }
-
-    if (isPlaying && isExercise) {
-      visibleButtons.add(answer4Btn);
-      visibleButtons.add(answer5Btn);
-    }
-
-    // 隐藏不应显示的按钮
-    for (var btn in allButtons) {
-      if (!visibleButtons.contains(btn) && contains(btn)) {
-        btn.removeFromParent();
+      if (!isPlaying && !isShowingResult && !isPrivateRoom) {
+        visibleButtons.add(changeRoomBtn);
       }
-    }
 
-    // 显示应当显示的按钮
-    var nextBtnX = 8.0;
-    // 起始位置：以"道具图标底部+间距"为准，确保不遮挡道具
-    final double propsBottom = max(
-      minusBtn.y + minusBtn.height,
-      plusBtn.y + plusBtn.height,
-    );
-    var nextBtnY = max(
-      // 操场底部 + 道具图标高度(48) + 基础间距
-      playerA.playGround.y + playerA.playGround.height + 16.0 + 48.0 + 12.0 * uiScale,
-      // 道具底部 + 间距
-      propsBottom + 12.0 * uiScale,
-    );
-    final double btnGap = 12.0 * uiScale; // 按钮之间的间隔
-    final double answersExtraScale = isPlaying && playerA.otherWordMeanings.isNotEmpty ? 1.1 : 1.0;
+      if (!isPlaying && !isShowingResult) {
+        visibleButtons.add(exerciseBtn);
+      }
 
-    // 预计算每个按钮的基础行高与内边距，并估算总高度
-    final List<double> baseLineHeights = [];
-    final List<double> basePaddings = [];
-    final int n = visibleButtons.length;
-    double totalBaseHeight = 0.0;
-    for (var btn in visibleButtons) {
-      final MyButtonTextComponent btnUp = btn.button! as MyButtonTextComponent;
-      final bool isAnswerBtn = btn == answer1Btn || btn == answer2Btn || btn == answer3Btn || btn == answer4Btn || btn == answer5Btn;
-      final double textHeight = (btnUp.textRenderer as TextPaint).getLineMetrics(btnUp.text).height;
-      final double basePadding = (isAnswerBtn ? 1.1 : 1.0) * max(16.0, textHeight * 1.1) * answersExtraScale;
-      final double visualHeight = textHeight + basePadding + 16.0;
-      baseLineHeights.add(textHeight);
-      basePaddings.add(basePadding);
-      totalBaseHeight += visualHeight;
-    }
-    if (n > 0) {
-      totalBaseHeight += btnGap * (n - 1);
-    }
-    final double availableHeight = size.y - nextBtnY - 16.0;
-    double scaleS = 1.0;
-    if (!_buttonSizeInitialized && totalBaseHeight > availableHeight && totalBaseHeight > 0) {
-      scaleS = (availableHeight / totalBaseHeight).clamp(0.4, 1.0);
-    }
+      if (!isPlaying && countdownSeconds == 0) {
+        visibleButtons.add(exitBtn);
+      }
 
-    // 计算参考字号：优先使用已添加到场景中的任意一个按钮的字号，确保后续新出现按钮与之保持一致
-    double referenceFontSize = 15.0 * uiScale;
-    for (final b in visibleButtons) {
-      if (contains(b)) {
-        final MyButtonTextComponent up = b.button! as MyButtonTextComponent;
-        final double? fs = (up.textRenderer as TextPaint).style.fontSize;
-        if (fs != null) {
-          referenceFontSize = fs;
-          break;
+      if (isPlaying && playerA.otherWordMeanings.isNotEmpty) {
+        visibleButtons.add(answer1Btn);
+        visibleButtons.add(answer2Btn);
+        visibleButtons.add(answer3Btn);
+      }
+
+      if (isPlaying && isExercise) {
+        visibleButtons.add(answer4Btn);
+        visibleButtons.add(answer5Btn);
+      }
+
+      // 批量处理按钮的添加/移除
+      for (var btn in allButtons) {
+        final bool shouldVisible = visibleButtons.contains(btn);
+        if (shouldVisible) {
+          if (!contains(btn)) add(btn);
+        } else {
+          if (contains(btn)) btn.removeFromParent();
         }
       }
-    }
 
-    // 应用缩放并布局
-    for (int i = 0; i < visibleButtons.length; i++) {
-      final btn = visibleButtons[i];
-      btn
-        ..x = nextBtnX
-        ..y = nextBtnY;
+      // 计算布局位置（仅在状态变化时执行一次）
+      var nextBtnX = 8.0;
+      final double propsBottom = max(
+        minusBtn.y + minusBtn.height,
+        plusBtn.y + plusBtn.height,
+      );
+      var nextBtnY = max(
+        playerA.playGround.y + playerA.playGround.height + 16.0 + 48.0 + 12.0 * uiScale,
+        propsBottom + 12.0 * uiScale,
+      );
+      final double btnGap = 12.0 * uiScale;
+      final double answersExtraScale = isPlaying && playerA.otherWordMeanings.isNotEmpty ? 1.1 : 1.0;
 
-      final MyButtonTextComponent btnUp = btn.button! as MyButtonTextComponent;
-      final MyButtonTextComponent btnDown = btn.buttonDown! as MyButtonTextComponent;
+      final double availableHeight = size.y - nextBtnY - 16.0;
 
-      // 字号按需缩放，但不小于12；仅在首次全局布局时计算
-      if (!_buttonSizeInitialized) {
+      // 这里的 16.0 是 advance 里的偏移，不是按钮自身高度。
+      // 为计算 scaleS，我们估算总高度需求
+      double totalNeededHeight = 0.0;
+      final List<double> textHeights = [];
+      final List<double> targetPaddings = [];
+
+      for (var btn in visibleButtons) {
+        final MyButtonTextComponent btnUp = btn.button! as MyButtonTextComponent;
+        final bool isAnswerBtn = btn == answer1Btn || btn == answer2Btn || btn == answer3Btn || btn == answer4Btn || btn == answer5Btn;
+
+        final double textHeight = (btnUp.textRenderer as TextPaint).getLineMetrics(btnUp.text).height;
+        // 增加基础内边距，使其看起来更丰满（接近原 44 的体感）
+        final double basePadding = (isAnswerBtn ? 1.1 : 1.0) * max(24.0, textHeight * 1.5) * answersExtraScale;
+
+        textHeights.add(textHeight);
+        targetPaddings.add(basePadding);
+        totalNeededHeight += (textHeight + basePadding + 16.0); // 16 为 advance 预留
+      }
+      if (visibleButtons.isNotEmpty) {
+        totalNeededHeight += btnGap * (visibleButtons.length - 1);
+      }
+
+      double scaleS = (availableHeight < totalNeededHeight && totalNeededHeight > 0) ? (availableHeight / totalNeededHeight).clamp(0.4, 1.0) : 1.0;
+
+      for (int i = 0; i < visibleButtons.length; i++) {
+        final btn = visibleButtons[i];
+        final MyButtonTextComponent btnUp = btn.button! as MyButtonTextComponent;
+        final MyButtonTextComponent btnDown = btn.buttonDown! as MyButtonTextComponent;
+
+        // 每次重建状态时都重新应用缩放和 Padding，确保新加入的按钮能正确同步
         TextStyle tsUp = (btnUp.textRenderer as TextPaint).style;
-        TextStyle tsDown = (btnDown.textRenderer as TextPaint).style;
-        final double origFontSize = (tsUp.fontSize ?? 15 * uiScale);
+        final double origFontSize = 15 * uiScale;
         final double targetFontSize = max(12.0, origFontSize * scaleS);
-        if (targetFontSize != origFontSize) {
-          btnUp.textRenderer = TextPaint(style: tsUp.copyWith(fontSize: targetFontSize));
-          btnDown.textRenderer = TextPaint(style: tsDown.copyWith(fontSize: targetFontSize));
-        }
-      } else if (!contains(btn)) {
-        // 全局已初始化，但该按钮是首次显示：按参考字号归一化其字体大小
-        TextStyle tsUp = (btnUp.textRenderer as TextPaint).style;
-        TextStyle tsDown = (btnDown.textRenderer as TextPaint).style;
-        final double origFontSize = (tsUp.fontSize ?? 15 * uiScale);
-        final double targetFontSize = max(12.0, referenceFontSize);
-        if ((tsUp.fontSize ?? origFontSize) != targetFontSize) {
-          btnUp.textRenderer = TextPaint(style: tsUp.copyWith(fontSize: targetFontSize));
-        }
-        if ((tsDown.fontSize ?? origFontSize) != targetFontSize) {
-          btnDown.textRenderer = TextPaint(style: tsDown.copyWith(fontSize: targetFontSize));
-        }
-      }
 
-      // 重新测量行高并计算内边距
-      final double lineHeight = (btnUp.textRenderer as TextPaint).getLineMetrics(btnUp.text).height;
-      final double basePadding = basePaddings[i];
-      // 仅在首次全局布局时计算内边距；若为后续首次出现的按钮，则按参考字号比例归一化其内边距
-      final double newPadding = _buttonSizeInitialized ? btnUp.verticalPadding : max(16.0, basePadding * scaleS);
-      if (!_buttonSizeInitialized) {
+        if (tsUp.fontSize != targetFontSize) {
+          final newTR = TextPaint(style: tsUp.copyWith(fontSize: targetFontSize));
+          btnUp.textRenderer = newTR;
+          btnDown.textRenderer = newTR;
+        }
+
+        // 应用计算后的 Padding
+        final double newPadding = max(16.0, targetPaddings[i] * scaleS);
         btnUp.verticalPadding = newPadding;
         btnDown.verticalPadding = newPadding;
-      } else if (!contains(btn)) {
-        // 参考字号与原始字号的比例，复用到 padding 上，确保高度一致
-        final double origFontSize = 15.0 * uiScale;
-        final double s = (referenceFontSize / origFontSize).clamp(0.4, 1.5);
-        final double normalizedPadding = max(16.0, basePadding * s);
-        btnUp.verticalPadding = normalizedPadding;
-        btnDown.verticalPadding = normalizedPadding;
-      }
 
-      if (!contains(btn)) {
-        add(btn);
-      }
+        // 重新测量以获得准确高度
+        final double lineHeight = (btnUp.textRenderer as TextPaint).getLineMetrics(btnUp.text).height;
 
-      // 同步 HudButtonComponent 的命中区域到背景尺寸，确保整块可点
-      final double btnWidth = screenWidth - 16;
-      final Size compSize = Size(btnWidth, lineHeight + newPadding);
-      btn.size = Vector2(compSize.width, compSize.height);
-      nextBtnY += compSize.height + 16.0 + btnGap; // 16 为顶部偏移补偿
+        btn.x = nextBtnX;
+        btn.y = nextBtnY;
+        btn.size = Vector2(screenWidth - 16, lineHeight + newPadding);
+
+        // advance 位置：按钮高度 + 16.0 固定偏移 + 按钮间距
+        nextBtnY += btn.size.y + 16.0 + btnGap;
+      }
+      _buttonSizeInitialized = true;
     }
-    _buttonSizeInitialized = true;
 
-    // 显示/隐藏玩家信息
-    if (!isPlaying && playerA.userGameInfo != null) {
-      if (playerA.userInfoPanel.parent == null) {
-        add(playerA.userInfoPanel);
-      }
+    // 显示/隐藏玩家信息：仅在必要时操作组件树
+    final bool shouldShowPanelA = !isPlaying && playerA.userGameInfo != null;
+    if (shouldShowPanelA) {
+      if (playerA.userInfoPanel.parent == null) add(playerA.userInfoPanel);
     } else {
-      if (playerA.userInfoPanel.parent != null) {
-        remove(playerA.userInfoPanel);
-      }
-    }
-    // B玩家信息面板显示逻辑：有用户信息时显示，或者在等待状态下显示（用于显示等待提示）
-    if (!isPlaying && (playerB.userGameInfo != null || gameState == 'waiting')) {
-      if (playerB.userInfoPanel.parent == null) {
-        add(playerB.userInfoPanel);
-      }
-    } else {
-      if (playerB.userInfoPanel.parent != null) {
-        remove(playerB.userInfoPanel);
-      }
+      if (playerA.userInfoPanel.parent != null) remove(playerA.userInfoPanel);
     }
 
-    // 显示/隐藏比赛结果提示
+    final bool shouldShowPanelB = !isPlaying && (playerB.userGameInfo != null || gameState == 'waiting');
+    if (shouldShowPanelB) {
+      if (playerB.userInfoPanel.parent == null) add(playerB.userInfoPanel);
+    } else {
+      if (playerB.userInfoPanel.parent != null) remove(playerB.userInfoPanel);
+    }
+
+    // 显示/隐藏比赛结果提示：仅在必要时操作组件树
     if (isShowingResult) {
       if (gameResultHint1.parent == null) {
         add(gameResultHint1);
@@ -1915,10 +1897,18 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
 class SpiralGalaxyBackground extends PositionComponent {
   double t = 0;
 
+  // 缓存 Paint 和 Shader
+  final Paint _spacePaint = Paint();
+  final Paint _corePaint = Paint();
+  final Paint _fogPaint = Paint();
+  final Paint _haloPaint = Paint();
+  final Paint _starPaint = Paint();
+  Rect? _lastRect;
+
   @override
   void update(double dt) {
     super.update(dt);
-    t += dt * 0.05; // 更慢的旋转速度（原来的一半）
+    t += dt * 0.05;
   }
 
   @override
@@ -1932,59 +1922,63 @@ class SpiralGalaxyBackground extends PositionComponent {
   void render(Canvas canvas) {
     final rect = Rect.fromLTWH(0, 0, width, height);
 
-    // 深色空间底色
-    final space = RadialGradient(
-      center: Alignment(0.0, -0.2),
-      radius: 1.2,
-      colors: const [Color(0xFF05070E), Color(0xFF0A0F1E), Color(0xFF0E1630)],
-      stops: const [0.0, 0.6, 1.0],
-    ).createShader(rect);
-    canvas.drawRect(rect, Paint()..shader = space);
+    if (_lastRect != rect) {
+      _lastRect = rect;
+      _spacePaint.shader = RadialGradient(
+        center: Alignment(0.0, -0.2),
+        radius: 1.2,
+        colors: const [Color(0xFF05070E), Color(0xFF0A0F1E), Color(0xFF0E1630)],
+        stops: const [0.0, 0.6, 1.0],
+      ).createShader(rect);
+    }
 
-    // 旋转的星系臂
+    canvas.drawRect(rect, _spacePaint);
+
     final center = Offset(rect.center.dx, rect.center.dy * 0.9);
-    _drawSpiralArm(canvas, center, baseHue: const Color(0xFF80D8FF), angleOffset: 0.0);
-    _drawSpiralArm(canvas, center, baseHue: const Color(0xFFFF80AB), angleOffset: pi);
 
-    // 核心光晕
-    final core = RadialGradient(
+    // 核心光晕 Shader 会随中心点变化，但在这里我们稍微简化逻辑
+    // 实际上 center 在 gameResize 后通常不变，所以也可以缓存
+    _corePaint.shader = RadialGradient(
       colors: [
         const Color(0xFFFFF59D).withValues(alpha: 0.18),
         Colors.transparent,
       ],
     ).createShader(Rect.fromCircle(center: center, radius: 140));
-    canvas.drawCircle(center, 140, Paint()..shader = core);
+    canvas.drawCircle(center, 140, _corePaint);
+
+    _drawSpiralArm(canvas, center, baseHue: const Color(0xFF80D8FF), angleOffset: 0.0);
+    _drawSpiralArm(canvas, center, baseHue: const Color(0xFFFF80AB), angleOffset: pi);
   }
 
   void _drawSpiralArm(Canvas canvas, Offset center, {required Color baseHue, required double angleOffset}) {
-    final starPaint = Paint()..color = Colors.white;
     final armLen = max(width, height) * 0.9;
-    final turns = 2.2; // 螺旋圈数
+    final turns = 2.2;
 
     canvas.save();
     canvas.translate(center.dx, center.dy);
     canvas.rotate(t + angleOffset);
 
-    // 多次沿半径方向绘制薄雾与星点
     for (double r = 40; r < armLen; r += 24) {
       final theta = r / armLen * turns * 2 * pi;
       final x = r * cos(theta);
-      final y = r * sin(theta) * 0.5; // 拉伸让臂更收拢
+      final y = r * sin(theta) * 0.5;
 
-      // 臂上薄雾
       final fade = (1.0 - r / armLen).clamp(0.0, 1.0);
-      final fog = RadialGradient(
+      final radius = 60 * fade + 20;
+
+      // 避免每帧创建上百个 Shader。由于 fog 跟随旋转坐标系，其中心始终是 (x, y)
+      // 在 rotate/translate 后的坐标系中，我们可以减负
+      _fogPaint.shader = RadialGradient(
         colors: [
           baseHue.withValues(alpha: 0.18 * fade),
           baseHue.withValues(alpha: 0.0),
         ],
-      ).createShader(Rect.fromCircle(center: Offset(x, y), radius: 60 * fade + 20));
-      canvas.drawCircle(Offset(x, y), 60 * fade + 20, Paint()..shader = fog);
+      ).createShader(Rect.fromCircle(center: Offset(x, y), radius: radius));
+      canvas.drawCircle(Offset(x, y), radius, _fogPaint);
 
-      // 星点：每个簇内星点数量与属性随机（稳定随机，避免闪烁跳变）
       final stepSeed = (r * 97).toInt() + (angleOffset == 0.0 ? 17 : 37);
       final rand = Random(stepSeed);
-      final starCount = 3 + rand.nextInt(7); // 3..9个
+      final starCount = 3 + rand.nextInt(7);
       for (int i = 0; i < starCount; i++) {
         final jitterX = (rand.nextDouble() - 0.5) * 20;
         final jitterY = (rand.nextDouble() - 0.5) * 16;
@@ -1992,37 +1986,26 @@ class SpiralGalaxyBackground extends PositionComponent {
         final sy = y + jitterY;
         final size = 0.6 + rand.nextDouble() * 0.8;
 
-        // 随机但稳定的星点颜色
         const palette = [
-          Color(0xFFFFF59D), // warm yellow
-          Color(0xFF80D8FF), // cyan
-          Color(0xFFB388FF), // lilac
-          Color(0xFFFF8A80), // soft red
-          Color(0xFFA5D6A7), // mint
+          Color(0xFFFFF59D),
+          Color(0xFF80D8FF),
+          Color(0xFFB388FF),
+          Color(0xFFFF8A80),
+          Color(0xFFA5D6A7),
         ];
         final starColor = palette[rand.nextInt(palette.length)];
-
-        // 轻微闪烁
         final twinkle = (0.85 + 0.15 * sin(t * 1.3 + sx * 0.02 + sy * 0.03)).clamp(0.0, 1.0);
 
-        // 光晕（径向渐变）- 弱化
         final haloRadius = 4 + size * 2;
-        final haloShader = RadialGradient(
-          colors: [
-            starColor.withValues(alpha: 0.12 * twinkle),
-            starColor.withValues(alpha: 0.0),
-          ],
-          stops: const [0.0, 1.0],
-        ).createShader(Rect.fromCircle(center: Offset(sx, sy), radius: haloRadius));
-        canvas.drawCircle(Offset(sx, sy), haloRadius, Paint()..shader = haloShader);
+        // 只有星点核心光晕是必须的，且数量巨大。
+        // 为了极致性能，我们可以考虑将小星点的 Halo 简化为普通 drawCircle
+        _haloPaint.color = starColor.withValues(alpha: 0.12 * twinkle);
+        canvas.drawCircle(Offset(sx, sy), haloRadius, _haloPaint);
 
-        // 核心星点
-        starPaint.color = starColor.withValues(alpha: 0.85 * twinkle);
-        canvas.drawCircle(Offset(sx, sy), size, starPaint);
+        _starPaint.color = starColor.withValues(alpha: 0.85 * twinkle);
+        canvas.drawCircle(Offset(sx, sy), size, _starPaint);
 
-        // 高光点
-        final highlightAlpha = (0.5 + 0.5 * twinkle).clamp(0.0, 1.0);
-        canvas.drawCircle(Offset(sx, sy), size * 0.35, Paint()..color = Colors.white.withValues(alpha: highlightAlpha));
+        canvas.drawCircle(Offset(sx, sy), size * 0.35, _starPaint..color = Colors.white.withValues(alpha: (0.5 + 0.5 * twinkle).clamp(0.0, 1.0)));
       }
     }
 
@@ -2032,6 +2015,12 @@ class SpiralGalaxyBackground extends PositionComponent {
 
 class GalaxyBackground extends PositionComponent {
   double t = 0;
+
+  // 缓存 Paint 和 Shader
+  final Paint _spacePaint = Paint();
+  final Paint _nebulaPaint = Paint();
+  final Paint _starPaint = Paint()..color = Colors.white;
+  Rect? _lastRect;
 
   @override
   void update(double dt) {
@@ -2050,18 +2039,21 @@ class GalaxyBackground extends PositionComponent {
   void render(Canvas canvas) {
     final rect = Rect.fromLTWH(0, 0, width, height);
 
-    // 宇宙底色
-    final space = RadialGradient(
-      center: Alignment(0.0, -0.2),
-      radius: 1.2,
-      colors: const [
-        Color(0xFF060912),
-        Color(0xFF0A0F1E),
-        Color(0xFF0E1630),
-      ],
-      stops: const [0.0, 0.6, 1.0],
-    ).createShader(rect);
-    canvas.drawRect(rect, Paint()..shader = space);
+    if (_lastRect != rect) {
+      _lastRect = rect;
+      _spacePaint.shader = RadialGradient(
+        center: Alignment(0.0, -0.2),
+        radius: 1.2,
+        colors: const [
+          Color(0xFF060912),
+          Color(0xFF0A0F1E),
+          Color(0xFF0E1630),
+        ],
+        stops: const [0.0, 0.6, 1.0],
+      ).createShader(rect);
+    }
+
+    canvas.drawRect(rect, _spacePaint);
 
     // 星云光晕
     _drawNebula(canvas, rect, const Color(0xFF5C6BC0), 0.35, 0.25, 220, 0.35);
@@ -2077,27 +2069,29 @@ class GalaxyBackground extends PositionComponent {
     final cx = rect.center.dx + rect.width * ax * (0.6 + 0.4 * sin(t * 0.1 + ax));
     final cy = rect.center.dy + rect.height * ay * (0.6 + 0.4 * cos(t * 0.1 + ay));
     final r = radius * (0.9 + 0.1 * sin(t * 0.2 + ax + ay));
-    final shader = RadialGradient(
+
+    _nebulaPaint.shader = RadialGradient(
       colors: [
         color.withValues(alpha: alpha * 0.45),
         color.withValues(alpha: 0.0),
       ],
       stops: const [0.0, 1.0],
     ).createShader(Rect.fromCircle(center: Offset(cx, cy), radius: r));
-    canvas.drawCircle(Offset(cx, cy), r, Paint()..shader = shader);
+
+    canvas.drawCircle(Offset(cx, cy), r, _nebulaPaint);
   }
 
   void _drawStars(Canvas canvas, Rect rect,
       {required int count, required double sizeMin, required double sizeMax, required double speed, required double twinkle}) {
-    final rand = Random(4242 + (t * 1000).floor());
-    final paint = Paint()..color = Colors.white;
+    // 使用固定种子以保持星星位置稳定，仅随时间平移
+    final rand = Random(4242);
     for (int i = 0; i < count; i++) {
       final x = rand.nextDouble() * rect.width;
       final y = (rand.nextDouble() * rect.height + t * speed * rect.height) % rect.height;
       final s = sizeMin + rand.nextDouble() * (sizeMax - sizeMin);
       final a = 0.3 + 0.7 * (0.5 + 0.5 * sin((i * 12.9898 + t * (2.0 + speed))));
-      paint.color = Colors.white.withValues(alpha: (a * twinkle).clamp(0.2, 1.0));
-      canvas.drawCircle(Offset(x, y), s, paint);
+      _starPaint.color = Colors.white.withValues(alpha: (a * twinkle).clamp(0.2, 1.0));
+      canvas.drawCircle(Offset(x, y), s, _starPaint);
     }
   }
 }
@@ -2448,29 +2442,19 @@ class UserInfoPanel extends PositionComponent with HasGameReference<MyGame> {
     super.render(canvas);
     Rect rect = size.toRect();
 
-    // 渐变背景（上圆下直角，半透明 0.7）
-    final bgShader = LinearGradient(
-      colors: [
-        const Color(0xFF2D2D2D).withValues(alpha: 0.7),
-        const Color(0xFF1A1A1A).withValues(alpha: 0.7),
-        const Color(0xFF0D0D0D).withValues(alpha: 0.7),
-      ],
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
-    ).createShader(rect);
-    final bgPaint = Paint()..shader = bgShader;
-    final panelShape = RRect.fromRectAndCorners(
-      rect,
-      topLeft: const Radius.circular(12),
-      topRight: const Radius.circular(12),
-      bottomLeft: const Radius.circular(0),
-      bottomRight: const Radius.circular(0),
-    );
-    canvas.drawRRect(panelShape, bgPaint);
+    if (_lastRect != rect) {
+      _lastRect = rect;
+      _bgPaint.shader = LinearGradient(
+        colors: [
+          const Color(0xFF2D2D2D).withValues(alpha: 0.7),
+          const Color(0xFF1A1A1A).withValues(alpha: 0.7),
+          const Color(0xFF0D0D0D).withValues(alpha: 0.7),
+        ],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ).createShader(rect);
 
-    // 边框（上圆下直角，半透明 0.7）
-    final borderPaint = Paint()
-      ..shader = LinearGradient(
+      _borderPaint.shader = LinearGradient(
         colors: [
           const Color(0xFF4A90E2).withValues(alpha: 0.7),
           const Color(0xFF357ABD).withValues(alpha: 0.7),
@@ -2478,14 +2462,9 @@ class UserInfoPanel extends PositionComponent with HasGameReference<MyGame> {
         ],
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
-      ).createShader(rect)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2;
-    canvas.drawRRect(panelShape, borderPaint);
+      ).createShader(rect);
 
-    // 内部光泽（仅顶部区域）
-    final glossPaint = Paint()
-      ..shader = LinearGradient(
+      _glossPaint.shader = LinearGradient(
         colors: [
           Colors.white.withValues(alpha: 0.1),
           Colors.white.withValues(alpha: 0.05),
@@ -2494,6 +2473,21 @@ class UserInfoPanel extends PositionComponent with HasGameReference<MyGame> {
         begin: Alignment.topCenter,
         end: Alignment.center,
       ).createShader(rect);
+    }
+
+    final panelShape = RRect.fromRectAndCorners(
+      rect,
+      topLeft: const Radius.circular(12),
+      topRight: const Radius.circular(12),
+      bottomLeft: const Radius.circular(0),
+      bottomRight: const Radius.circular(0),
+    );
+    canvas.drawRRect(panelShape, _bgPaint);
+
+    // 边框
+    canvas.drawRRect(panelShape, _borderPaint);
+
+    // 内部光泽
     final glossRect = RRect.fromRectAndCorners(
       Rect.fromLTWH(rect.left + 2, rect.top + 2, rect.width - 4, rect.height * 0.3),
       topLeft: const Radius.circular(10),
@@ -2501,8 +2495,16 @@ class UserInfoPanel extends PositionComponent with HasGameReference<MyGame> {
       bottomLeft: const Radius.circular(0),
       bottomRight: const Radius.circular(0),
     );
-    canvas.drawRRect(glossRect, glossPaint);
+    canvas.drawRRect(glossRect, _glossPaint);
   }
+
+  // 缓存 Paint 和 Shader
+  final Paint _bgPaint = Paint();
+  final Paint _borderPaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 2;
+  final Paint _glossPaint = Paint();
+  Rect? _lastRect;
 }
 
 class DroppingWordSprite extends TextComponent with HasGameReference<MyGame>, CollisionCallbacks {
@@ -2529,9 +2531,12 @@ class DroppingWordSprite extends TextComponent with HasGameReference<MyGame>, Co
   double _t = 0.0;
   late double _baseX;
 
-  DroppingWordSprite(String text, this.player) : super(text: text, textRenderer: makeAlivePaint()) {
+  DroppingWordSprite(String text, this.player) : super(text: text, textRenderer: _alivePaint) {
     add(RectangleHitbox());
   }
+
+  static final TextPaint _alivePaint = makeAlivePaint();
+  static final TextPaint _deadPaint = makeDeadPaint();
 
   @override
   Future<void> onLoad() async {
@@ -2580,8 +2585,10 @@ class DroppingWordSprite extends TextComponent with HasGameReference<MyGame>, Co
         if (_trailYs.length > _trailMax) _trailYs.removeAt(0);
       }
     } else {
-      final TextStyle base = makeDeadPaint().style;
-      textRenderer = TextPaint(style: base.copyWith(fontSize: _fixedFontSize));
+      if ((textRenderer as TextPaint).style.color != const Color(0xFFFF0000)) {
+        final TextStyle base = _deadPaint.style;
+        textRenderer = TextPaint(style: base.copyWith(fontSize: _fixedFontSize));
+      }
     }
   }
 
@@ -2672,8 +2679,16 @@ class MyButtonTextComponent extends TextComponent {
       {this.isPressed = false, this.opacity = 0.8})
       : super(text: '  $text', textRenderer: textRenderer, position: Vector2.zero());
 
+  String? _lastText;
+  double? _lastWidth;
+
   void _computeSize() {
     final double btnWidth = myGame.screenWidth - 16;
+    if (_lastText == text && _lastWidth == btnWidth) return;
+
+    _lastText = text;
+    _lastWidth = btnWidth;
+
     final double textW = textRenderer.getLineMetrics(text).width;
     if (textW > btnWidth) {
       while (textRenderer.getLineMetrics('$text... ').width > btnWidth && text.isNotEmpty) {
@@ -2713,37 +2728,44 @@ class MyButtonTextComponent extends TextComponent {
     final double bgHeight = size.y;
     Rect rect = Rect.fromLTWH(0, 0, size.x, size.y);
 
-    Color scaleAlpha(Color c, double scale) {
-      final double a = ((c.a) * scale).clamp(0.0, 1.0);
-      return c.withValues(alpha: a);
-    }
+    if (_lastRect != rect || _lastOpacity != opacity || _lastIsPressed != isPressed) {
+      _lastRect = rect;
+      _lastOpacity = opacity;
+      _lastIsPressed = isPressed;
 
-    // 绘制渐变背景
-    Paint backgroundPaint = Paint();
-    if (isPressed) {
-      backgroundPaint.shader = LinearGradient(
-        colors: [
-          scaleAlpha(const Color(0xFF2E5F8A), opacity),
-          scaleAlpha(const Color(0xFF357ABD), opacity),
-        ],
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-      ).createShader(rect);
-    } else {
-      backgroundPaint.shader = LinearGradient(
-        colors: [
-          scaleAlpha(const Color(0xFF4A90E2), opacity),
-          scaleAlpha(const Color(0xFF357ABD), opacity),
-          scaleAlpha(const Color(0xFF2E5F8A), opacity),
-        ],
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-      ).createShader(rect);
+      Color scaleAlpha(Color c, double scale) {
+        final double a = ((c.a) * scale).clamp(0.0, 1.0);
+        return c.withValues(alpha: a);
+      }
+
+      if (isPressed) {
+        _bgPaint.shader = LinearGradient(
+          colors: [
+            scaleAlpha(const Color(0xFF2E5F8A), opacity),
+            scaleAlpha(const Color(0xFF357ABD), opacity),
+          ],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ).createShader(rect);
+        _borderPaint.color = const Color(0xFF4A90E2).withValues(alpha: opacity);
+      } else {
+        _bgPaint.shader = LinearGradient(
+          colors: [
+            scaleAlpha(const Color(0xFF4A90E2), opacity),
+            scaleAlpha(const Color(0xFF357ABD), opacity),
+            scaleAlpha(const Color(0xFF2E5F8A), opacity),
+          ],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ).createShader(rect);
+        _borderPaint.color = const Color(0xFF5BA3F5).withValues(alpha: opacity);
+      }
     }
 
     // 绘制圆角背景
     RRect roundedRect = RRect.fromRectAndRadius(rect, const Radius.circular(12));
-    canvas.drawRRect(roundedRect, backgroundPaint);
+    canvas.drawRRect(roundedRect, _bgPaint);
+
     // 点击动效：整块按钮区域的淡入淡出遮罩（无中心高光）
     if (_clickEffectActive) {
       final double p = (_clickEffectT / _clickEffectDuration).clamp(0.0, 1.0);
@@ -2753,29 +2775,30 @@ class MyButtonTextComponent extends TextComponent {
       canvas.drawRRect(roundedRect, overlay);
     }
 
-    // 绘制边框
-    Paint borderPaint = Paint()
-      ..color = (isPressed ? const Color(0xFF4A90E2) : const Color(0xFF5BA3F5)).withValues(alpha: opacity)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2;
-    canvas.drawRRect(roundedRect, borderPaint);
+    // 绘制边框  
+    canvas.drawRRect(roundedRect, _borderPaint);
 
-    // 绘制内部光泽效果
-    // 去除顶部高光
+    // 缓存已应用透明度的 TextPaint
+    if (_cachedOpacityPaint == null || _lastTextOpacity != opacity || _lastOriginalRenderer != textRenderer) {
+      _lastTextOpacity = opacity;
+      _lastOriginalRenderer = textRenderer;
 
-    // 半透明文本（仅调透明度），并将文本垂直居中绘制
+      final originalRenderer = textRenderer;
+      final originalTextPaint = originalRenderer is TextPaint ? originalRenderer : TextPaint(style: const TextStyle());
+      final ts = originalTextPaint.style;
+      final scaledColor = (ts.color ?? Colors.white).withValues(alpha: (ts.color?.a ?? 1.0) * opacity);
+      final scaledShadows = ts.shadows
+          ?.map((s) => Shadow(
+                color: s.color.withValues(alpha: s.color.a * opacity),
+                offset: s.offset,
+                blurRadius: s.blurRadius,
+              ))
+          .toList();
+      _cachedOpacityPaint = TextPaint(style: ts.copyWith(color: scaledColor, shadows: scaledShadows));
+    }
+
     final originalRenderer = textRenderer;
-    final originalTextPaint = originalRenderer is TextPaint ? originalRenderer : TextPaint(style: const TextStyle());
-    final ts = originalTextPaint.style;
-    final scaledColor = (ts.color ?? Colors.white).withValues(alpha: (ts.color?.a ?? 1.0) * opacity);
-    final scaledShadows = ts.shadows
-        ?.map((s) => Shadow(
-              color: s.color.withValues(alpha: s.color.a * opacity),
-              offset: s.offset,
-              blurRadius: s.blurRadius,
-            ))
-        .toList();
-    textRenderer = TextPaint(style: ts.copyWith(color: scaledColor, shadows: scaledShadows));
+    textRenderer = _cachedOpacityPaint!;
 
     final double offsetY = (bgHeight - textHeight) / 2;
     canvas.save();
@@ -2784,6 +2807,19 @@ class MyButtonTextComponent extends TextComponent {
     canvas.restore();
     textRenderer = originalRenderer;
   }
+
+  // 缓存绘制资源
+  final Paint _bgPaint = Paint();
+  final Paint _borderPaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 2;
+  Rect? _lastRect;
+  double? _lastOpacity;
+  bool? _lastIsPressed;
+
+  TextPaint? _cachedOpacityPaint;
+  double? _lastTextOpacity;
+  TextRenderer? _lastOriginalRenderer;
 
   // 不覆盖 containsLocalPoint，让父组件统一处理点击区域
 
