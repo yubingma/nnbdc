@@ -97,7 +97,7 @@ public class EmailUtil {
                 request.putQueryParameter("FromAlias", fromAlias);
             }
             request.putQueryParameter("AddressType", "1"); // 1表示发信地址
-            request.putQueryParameter("ToAddress", toEmail);
+            request.putQueryParameter("ToAddress", toEmail != null ? toEmail.trim() : "");
             request.putQueryParameter("Subject", subject);
             request.putQueryParameter("HtmlBody", content);
             request.putQueryParameter("ReplyToAddress", "false");
@@ -219,11 +219,10 @@ public class EmailUtil {
                 request.putQueryParameter("FromAlias", fromAlias);
             }
             request.putQueryParameter("AddressType", "1"); // 1表示发信地址
-            request.putQueryParameter("ToAddress", toEmail);
+            request.putQueryParameter("ToAddress", toEmail != null ? toEmail.trim() : "");
             request.putQueryParameter("Subject", finalSubject);
             
-            // 根据阿里云 API 文档，使用模板发送邮件时，应该使用 Template 对象
-            // Template 对象包含 TemplateId 和 TemplateData
+            // 使用模板发送邮件时，恢复之前的 Template JSON 结构
             try {
                 Map<String, Object> templateMap = new HashMap<>();
                 templateMap.put("TemplateId", templateId);

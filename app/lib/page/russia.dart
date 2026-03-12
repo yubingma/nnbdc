@@ -1,5 +1,6 @@
 import 'dart:async' as async;
 import 'dart:math';
+import 'dart:ui' as ui;
 
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
@@ -470,6 +471,10 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
   double? _lastSizeX;
   bool _reportedFallBForCurrentWord = false;
 
+  // 状态记录，减少 redundant 更新
+  int _lastProps0 = -1;
+  int _lastProps1 = -1;
+
   // 串行化每侧的落地处理，避免并发导致重复入栈
   bool _landingAInProgress = false;
   bool _landingBInProgress = false;
@@ -501,7 +506,7 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
   late double scaledPlayGroundY;
   late double scaledBottomJetInitY;
 
-  // 背景图层 
+  // 背景图层
   PositionComponent? backgroundLayer;
 
   MyGame(this.gameHall, this.exceptRoom, this.context, this.pageState)
@@ -1693,16 +1698,6 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
   @override
   void render(Canvas canvas) {
     super.render(canvas);
-    if (playerA.props[0] > 0) {
-      plusBtn.setAlpha(255);
-    } else {
-      plusBtn.setAlpha(50);
-    }
-    if (playerA.props[1] > 0) {
-      minusBtn.setAlpha(255);
-    } else {
-      minusBtn.setAlpha(50);
-    }
   }
 
   @override
@@ -1711,19 +1706,31 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
 
     // 不再周期上报B侧ETA；改为在收到新wordB时上报一次
 
-    // 显示/隐藏 道具数量：仅在必要时操作组件树
+    // 状态记录，减少 redundant 更新
     if (playerA.props[0] > 0) {
-      plusPropsCount.text = '${playerA.props[0]}';
+      if (_lastProps0 != playerA.props[0]) {
+        _lastProps0 = playerA.props[0];
+        plusPropsCount.text = '$_lastProps0';
+      }
       if (plusPropsCount.parent == null) add(plusPropsCount);
+      plusBtn.setAlpha(255);
     } else {
       if (plusPropsCount.parent != null) plusPropsCount.removeFromParent();
+      _lastProps0 = -1;
+      plusBtn.setAlpha(50);
     }
 
     if (playerA.props[1] > 0) {
-      minusPropsCount.text = '${playerA.props[1]}';
+      if (_lastProps1 != playerA.props[1]) {
+        _lastProps1 = playerA.props[1];
+        minusPropsCount.text = '$_lastProps1';
+      }
       if (minusPropsCount.parent == null) add(minusPropsCount);
+      minusBtn.setAlpha(255);
     } else {
       if (minusPropsCount.parent != null) minusPropsCount.removeFromParent();
+      _lastProps1 = -1;
+      minusBtn.setAlpha(50);
     }
 
     // 状态记录，或屏幕尺寸改变时，跳过每一帧的冗余计算
@@ -1902,12 +1909,80 @@ class SpiralGalaxyBackground extends PositionComponent {
   // 缓存 Paint 和 Shader
   final Paint _spacePaint = Paint();
   final Paint _corePaint = Paint();
-  final Paint _fogPaint = Paint();
-  final Paint _haloPaint = Paint();
-  final Paint _starPaint = Paint();
   Rect? _lastRect;
   Offset? _lastCoreCenter;
-  final Map<int, Shader> _fogShaderCache = {};
+
+  // 烘焙缓存
+  ui.Image? _cachedGalaxyTexture;
+  bool _isBaking = false;
+
+  @override
+  void onRemove() {
+    _cachedGalaxyTexture?.dispose();
+    super.onRemove();
+  }
+
+  Future<void> _bakeGalaxy(double w, double h) async {
+    if (_isBaking) return;
+    _isBaking = true;
+
+    // 手机端关键优化：不要烘焙全分辨率图像，尤其是 2K/4K 屏幕。
+    // 使用固定的适中分辨率进行烘焙，然后渲染时拉伸，视觉效果几乎无损但性能翻倍。
+    const double bakeW = 512.0;
+    final double bakeH = (h / w) * bakeW;
+
+    final recorder = ui.PictureRecorder();
+    final canvas = Canvas(recorder);
+    final center = Offset(bakeW / 2, bakeH / 2);
+
+    _drawSpiralArmStatic(canvas, center, bakeW, bakeH, baseHue: const Color(0xFF80D8FF), angleOffset: 0.0);
+    _drawSpiralArmStatic(canvas, center, bakeW, bakeH, baseHue: const Color(0xFFFF80AB), angleOffset: pi);
+
+    final picture = recorder.endRecording();
+    final img = await picture.toImage(bakeW.toInt(), bakeH.toInt());
+    _cachedGalaxyTexture = img;
+    _isBaking = false;
+  }
+
+  void _drawSpiralArmStatic(Canvas canvas, Offset center, double w, double h, {required Color baseHue, required double angleOffset}) {
+    final armLen = max(w, h) * 0.9;
+    final turns = 2.2;
+
+    canvas.save();
+    canvas.translate(center.dx, center.dy);
+    canvas.rotate(angleOffset);
+
+    final Random rand = Random(angleOffset == 0.0 ? 42 : 24);
+
+    for (double r = 40; r < armLen; r += 24) {
+      final theta = r / armLen * turns * 2 * pi;
+      final x = r * cos(theta);
+      final y = r * sin(theta) * 0.5;
+      final fade = (1.0 - r / armLen).clamp(0.0, 1.0);
+      final radius = 60 * fade + 20;
+
+      final fogPaint = Paint()
+        ..shader = RadialGradient(
+          colors: [baseHue.withValues(alpha: 0.15 * fade), baseHue.withValues(alpha: 0.0)],
+        ).createShader(Rect.fromCircle(center: Offset(x, y), radius: radius));
+
+      canvas.drawCircle(Offset(x, y), radius, fogPaint);
+
+      final starCount = 4 + rand.nextInt(6);
+      for (int i = 0; i < starCount; i++) {
+        final sx = x + (rand.nextDouble() - 0.5) * 20;
+        final sy = y + (rand.nextDouble() - 0.5) * 16;
+        final size = 0.6 + rand.nextDouble() * 0.8;
+
+        const palette = [Color(0xFFFFF59D), Color(0xFF80D8FF), Color(0xFFB388FF), Color(0xFFFF8A80)];
+        final starColor = palette[rand.nextInt(palette.length)];
+
+        canvas.drawCircle(Offset(sx, sy), 4 + size * 2, Paint()..color = starColor.withValues(alpha: 0.08));
+        canvas.drawCircle(Offset(sx, sy), size, Paint()..color = starColor.withValues(alpha: 0.7));
+      }
+    }
+    canvas.restore();
+  }
 
   @override
   void update(double dt) {
@@ -1924,102 +1999,47 @@ class SpiralGalaxyBackground extends PositionComponent {
 
   @override
   void render(Canvas canvas) {
+    if (width <= 0 || height <= 0) return;
+
     final rect = Rect.fromLTWH(0, 0, width, height);
 
+    // 绘制深空底色
     if (_lastRect != rect) {
       _lastRect = rect;
       _spacePaint.shader = RadialGradient(
-        center: Alignment(0.0, -0.2),
+        center: const Alignment(0.0, -0.2),
         radius: 1.2,
         colors: const [Color(0xFF05070E), Color(0xFF0A0F1E), Color(0xFF0E1630)],
         stops: const [0.0, 0.6, 1.0],
       ).createShader(rect);
-    }
 
+      // 尺寸改变，触发重新烘焙
+      _bakeGalaxy(width, height);
+    }
     canvas.drawRect(rect, _spacePaint);
 
-    final center = Offset(rect.center.dx, rect.center.dy * 0.9);
+    final center = Offset(width / 2, height / 2 * 0.9);
 
-    // 核心光晕 Shader: 缓存以避免每帧创建
+    // 核心光晕
     if (_lastCoreCenter != center) {
-        _lastCoreCenter = center;
-        _corePaint.shader = RadialGradient(
-          colors: [
-            const Color(0xFFFFF59D).withValues(alpha: 0.18),
-            Colors.transparent,
-          ],
-        ).createShader(Rect.fromCircle(center: center, radius: 140));
+      _lastCoreCenter = center;
+      _corePaint.shader = RadialGradient(
+        colors: [const Color(0xFFFFF59D).withValues(alpha: 0.18), Colors.transparent],
+      ).createShader(Rect.fromCircle(center: center, radius: 140));
     }
     canvas.drawCircle(center, 140, _corePaint);
 
-    _drawSpiralArm(canvas, center, baseHue: const Color(0xFF80D8FF), angleOffset: 0.0);
-    _drawSpiralArm(canvas, center, baseHue: const Color(0xFFFF80AB), angleOffset: pi);
-  }
-
-  void _drawSpiralArm(Canvas canvas, Offset center, {required Color baseHue, required double angleOffset}) {
-    final armLen = max(width, height) * 0.9;
-    final turns = 2.2;
-
-    canvas.save();
-    canvas.translate(center.dx, center.dy);
-    canvas.rotate(t + angleOffset);
-
-    for (double r = 40; r < armLen; r += 24) {
-      final theta = r / armLen * turns * 2 * pi;
-      final x = r * cos(theta);
-      final y = r * sin(theta) * 0.5;
-
-      final fade = (1.0 - r / armLen).clamp(0.0, 1.0);
-      final radius = 60 * fade + 20;
-
-      final stepSeed = (r * 97).toInt() + (angleOffset == 0.0 ? 17 : 37);
-      
-      // 缓存 Fog Shader: 基于Hue和消散阶数缓存
-      final int fogCacheKey = (baseHue.value ^ (r.toInt() << 8));
-      if (!_fogShaderCache.containsKey(fogCacheKey)) {
-          _fogShaderCache[fogCacheKey] = RadialGradient(
-            colors: [
-              baseHue.withValues(alpha: 0.18 * fade),
-              baseHue.withValues(alpha: 0.0),
-            ],
-          ).createShader(Rect.fromCircle(center: Offset(x, y), radius: radius));
-      }
-      _fogPaint.shader = _fogShaderCache[fogCacheKey];
-      canvas.drawCircle(Offset(x, y), radius, _fogPaint);
-
-      final rand = Random(stepSeed);
-      final starCount = 3 + rand.nextInt(7);
-      for (int i = 0; i < starCount; i++) {
-        final jitterX = (rand.nextDouble() - 0.5) * 20;
-        final jitterY = (rand.nextDouble() - 0.5) * 16;
-        final sx = x + jitterX;
-        final sy = y + jitterY;
-        final size = 0.6 + rand.nextDouble() * 0.8;
-
-        const palette = [
-          Color(0xFFFFF59D),
-          Color(0xFF80D8FF),
-          Color(0xFFB388FF),
-          Color(0xFFFF8A80),
-          Color(0xFFA5D6A7),
-        ];
-        final starColor = palette[rand.nextInt(palette.length)];
-        final twinkle = (0.85 + 0.15 * sin(t * 1.3 + sx * 0.02 + sy * 0.03)).clamp(0.0, 1.0);
-
-        final haloRadius = 4 + size * 2;
-        // 只有星点核心光晕是必须的，且数量巨大。
-        // 为了极致性能，我们可以考虑将小星点的 Halo 简化为普通 drawCircle
-        _haloPaint.color = starColor.withValues(alpha: 0.12 * twinkle);
-        canvas.drawCircle(Offset(sx, sy), haloRadius, _haloPaint);
-
-        _starPaint.color = starColor.withValues(alpha: 0.85 * twinkle);
-        canvas.drawCircle(Offset(sx, sy), size, _starPaint);
-
-        canvas.drawCircle(Offset(sx, sy), size * 0.35, _starPaint..color = Colors.white.withValues(alpha: (0.5 + 0.5 * twinkle).clamp(0.0, 1.0)));
-      }
+    // 绘制烘焙好的星系图层，只需一次旋转绘制
+    if (_cachedGalaxyTexture != null) {
+      canvas.save();
+      canvas.translate(width / 2, height / 2);
+      canvas.rotate(t);
+      // 拉伸绘制，覆盖全屏
+      canvas.scale(width / _cachedGalaxyTexture!.width, height / _cachedGalaxyTexture!.height);
+      canvas.drawImage(_cachedGalaxyTexture!, Offset(-_cachedGalaxyTexture!.width / 2, -_cachedGalaxyTexture!.height / 2),
+          Paint()..filterQuality = ui.FilterQuality.none);
+      canvas.restore();
     }
-
-    canvas.restore();
   }
 }
 
@@ -2088,14 +2108,14 @@ class GalaxyBackground extends PositionComponent {
 
     final int cacheKey = color.value ^ (radius.toInt() << 16);
     if (_nebulaLastCenterCache[cacheKey] != center) {
-        _nebulaLastCenterCache[cacheKey] = center;
-        _nebulaShaderCache[cacheKey] = RadialGradient(
-          colors: [
-            color.withValues(alpha: alpha * 0.45),
-            color.withValues(alpha: 0.0),
-          ],
-          stops: const [0.0, 1.0],
-        ).createShader(Rect.fromCircle(center: center, radius: r));
+      _nebulaLastCenterCache[cacheKey] = center;
+      _nebulaShaderCache[cacheKey] = RadialGradient(
+        colors: [
+          color.withValues(alpha: alpha * 0.45),
+          color.withValues(alpha: 0.0),
+        ],
+        stops: const [0.0, 1.0],
+      ).createShader(Rect.fromCircle(center: center, radius: r));
     }
 
     _nebulaPaint.shader = _nebulaShaderCache[cacheKey];
@@ -2140,7 +2160,31 @@ class UserInfoPanel extends PositionComponent with HasGameReference<MyGame> {
   // 熟人约战提示组件
   late TextComponent friendlyMatchHint;
 
-  UserInfoPanel(this.player) : super(priority: 2);
+  // 缓存状态：减少 update 循环中的 redundant 更新
+  String? _lastNickName;
+  int? _lastScore;
+  int? _lastCowDung;
+  String? _lastWinLost;
+  String? _lastRatio;
+  bool? _lastIsWon;
+  int? _lastScoreAdj;
+  int? _lastCowAdj;
+  bool? _lastStarted;
+  int? _lastMsgRoomId;
+
+  late final TextPaint _winPaint;
+  late final TextPaint _losePaint;
+
+  UserInfoPanel(this.player) : super(priority: 2) {
+    _winPaint = TextPaint(
+        style: const TextStyle(color: Color(0xFF4CAF50), fontSize: 15, fontWeight: FontWeight.w500, fontFamily: 'NotoSansSC', shadows: [
+      Shadow(color: Colors.black54, offset: Offset(1, 1), blurRadius: 2),
+    ]));
+    _losePaint = TextPaint(
+        style: const TextStyle(color: Color(0xFFF44336), fontSize: 15, fontWeight: FontWeight.w500, fontFamily: 'NotoSansSC', shadows: [
+      Shadow(color: Colors.black54, offset: Offset(1, 1), blurRadius: 2),
+    ]));
+  }
 
   @override
   Future<void> onLoad() async {
@@ -2296,43 +2340,38 @@ class UserInfoPanel extends PositionComponent with HasGameReference<MyGame> {
     super.update(dt);
 
     // 检查是否为B玩家且没有对手
-    bool isBPlayerWithoutOpponent = player.type == 'B' && !game.isPlaying && game.playerB.userGameInfo == null && game.gameState == 'waiting';
+    final bool isBWithoutOpponent = player.type == 'B' && !game.isPlaying && game.playerB.userGameInfo == null && game.gameState == 'waiting';
 
-    bool isPrivateRoom = Get.arguments != null &&
+    final bool isPrivateMode = Get.arguments != null &&
         (Get.arguments is List && Get.arguments.length > 2) &&
         (((Get.arguments[2] as Map?)?.containsKey('mode') == true && (Get.arguments[2] as Map)['mode'] == 'createPrivate') ||
             ((Get.arguments[2] as Map?)?.containsKey('joinRoomId') == true));
 
-    if (isBPlayerWithoutOpponent) {
-      // 只有通过"开房间"进入时才显示熟人约战提示
-      if (isPrivateRoom &&
+    if (isBWithoutOpponent) {
+      if (isPrivateMode &&
           Get.arguments != null &&
           Get.arguments is List &&
           Get.arguments.length > 2 &&
           (Get.arguments[2] as Map?)?.containsKey('mode') == true &&
           (Get.arguments[2] as Map)['mode'] == 'createPrivate') {
-        if (friendlyMatchHint.parent == null) {
-          add(friendlyMatchHint);
-        }
+        if (friendlyMatchHint.parent == null) add(friendlyMatchHint);
       } else {
         friendlyMatchHint.removeFromParent();
       }
 
-      if (waitingHint.parent == null) {
-        add(waitingHint);
-      }
+      if (waitingHint.parent == null) add(waitingHint);
 
-      // 如果是私房模式，显示私房提示
-      if (isPrivateRoom) {
-        if (privateRoomHint.parent == null) {
+      if (isPrivateMode) {
+        if (privateRoomHint.parent == null || _lastMsgRoomId != game.roomId) {
+          _lastMsgRoomId = game.roomId;
           privateRoomHint.text = '房间号：${game.roomId}';
-          add(privateRoomHint);
+          if (privateRoomHint.parent == null) add(privateRoomHint);
         }
       } else {
         privateRoomHint.removeFromParent();
+        _lastMsgRoomId = null;
       }
 
-      // 隐藏其他信息组件
       nickName.removeFromParent();
       score.removeFromParent();
       cowDung.removeFromParent();
@@ -2341,81 +2380,64 @@ class UserInfoPanel extends PositionComponent with HasGameReference<MyGame> {
       scoreAdjust.removeFromParent();
       cowDungAdjust.removeFromParent();
       startedStatus.removeFromParent();
+      _lastNickName = null;
     } else if (!game.isPlaying && player.userGameInfo != null) {
-      // 隐藏等待提示、熟人约战提示和私房提示
       waitingHint.removeFromParent();
       friendlyMatchHint.removeFromParent();
       privateRoomHint.removeFromParent();
 
-      // 昵称单独一行，限制宽度不超过playground，超出使用省略号
-      final String baseNick = '昵　称： ${player.userGameInfo!.nickName}';
-      final double maxWidth = player.playGround.width - 32; // 左右各16px内边距
-      nickName.text = _ellipsize(baseNick, (nickName.textRenderer as TextPaint), maxWidth);
-      score.text = '游戏分： ${player.userGameInfo!.score}';
-      cowDung.text = '魔法泡泡： ${player.userGameInfo!.cowDung}';
-      contest.text = '胜　负： ${player.userGameInfo!.winCount} | ${player.userGameInfo!.lostCount}';
-
-      if (player.userGameInfo!.winCount + player.userGameInfo!.lostCount == 0) {
-        winRatio.text = '胜　率： -';
-      } else {
-        winRatio.text = '胜　率： ${player.userGameInfo!.winCount * 100.0 ~/ (player.userGameInfo!.winCount + player.userGameInfo!.lostCount)}%';
+      final info = player.userGameInfo!;
+      final String rawNick = info.nickName;
+      if (_lastNickName != rawNick) {
+        _lastNickName = rawNick;
+        final String baseNick = '昵　称： $rawNick';
+        final double maxWidth = player.playGround.width - 32;
+        nickName.text = _ellipsize(baseNick, (nickName.textRenderer as TextPaint), maxWidth);
       }
 
-      // 只有在有上一局游戏结果时才显示积分/魔法泡泡调整信息
+      if (_lastScore != info.score) {
+        _lastScore = info.score;
+        score.text = '游戏分： $_lastScore';
+      }
+
+      if (_lastCowDung != info.cowDung) {
+        _lastCowDung = info.cowDung;
+        cowDung.text = '魔法泡泡： $_lastCowDung';
+      }
+
+      final String winLostStr = '${info.winCount} | ${info.lostCount}';
+      if (_lastWinLost != winLostStr) {
+        _lastWinLost = winLostStr;
+        contest.text = '胜　负： $_lastWinLost';
+      }
+
+      final totalCount = info.winCount + info.lostCount;
+      final String ratioStr = totalCount == 0 ? '-' : '${info.winCount * 100 ~/ totalCount}%';
+      if (_lastRatio != ratioStr) {
+        _lastRatio = ratioStr;
+        winRatio.text = '胜　率： $_lastRatio';
+      }
+
       if (player.isWonInLastGame != null) {
-        if (player.isWonInLastGame!) {
-          scoreAdjust.textRenderer = TextPaint(
-              style: const TextStyle(color: Color(0xFF4CAF50), fontSize: 15, fontWeight: FontWeight.w500, fontFamily: 'NotoSansSC', shadows: [
-            Shadow(
-              color: Colors.black54,
-              offset: Offset(1, 1),
-              blurRadius: 2,
-            ),
-          ]));
-          cowDungAdjust.textRenderer = TextPaint(
-              style: const TextStyle(color: Color(0xFF4CAF50), fontSize: 15, fontWeight: FontWeight.w500, fontFamily: 'NotoSansSC', shadows: [
-            Shadow(
-              color: Colors.black54,
-              offset: Offset(1, 1),
-              blurRadius: 2,
-            ),
-          ]));
-          scoreAdjust.text = '积分 +${player.scoreAdjust}';
-          cowDungAdjust.text = '魔法泡泡 +${player.cowdungAdjust}';
-        } else {
-          scoreAdjust.textRenderer = TextPaint(
-              style: const TextStyle(color: Color(0xFFF44336), fontSize: 15, fontWeight: FontWeight.w500, fontFamily: 'NotoSansSC', shadows: [
-            Shadow(
-              color: Colors.black54,
-              offset: Offset(1, 1),
-              blurRadius: 2,
-            ),
-          ]));
-          cowDungAdjust.textRenderer = TextPaint(
-              style: const TextStyle(color: Color(0xFFF44336), fontSize: 15, fontWeight: FontWeight.w500, fontFamily: 'NotoSansSC', shadows: [
-            Shadow(
-              color: Colors.black54,
-              offset: Offset(1, 1),
-              blurRadius: 2,
-            ),
-          ]));
-          scoreAdjust.text = '积分 -${player.scoreAdjust.abs()}';
-          cowDungAdjust.text = '魔法泡泡 -${player.cowdungAdjust.abs()}';
+        if (_lastIsWon != player.isWonInLastGame || _lastScoreAdj != player.scoreAdjust || _lastCowAdj != player.cowdungAdjust) {
+          _lastIsWon = player.isWonInLastGame;
+          _lastScoreAdj = player.scoreAdjust;
+          _lastCowAdj = player.cowdungAdjust;
+          final bool won = _lastIsWon!;
+          scoreAdjust.textRenderer = won ? _winPaint : _losePaint;
+          cowDungAdjust.textRenderer = won ? _winPaint : _losePaint;
+          final String prefix = won ? '+' : '-';
+          scoreAdjust.text = '积分 $prefix${_lastScoreAdj!.abs()}';
+          cowDungAdjust.text = '魔法泡泡 $prefix${_lastCowAdj!.abs()}';
         }
-        // 有游戏结果时才添加积分/魔法泡泡调整组件
-        if (scoreAdjust.parent == null) {
-          add(scoreAdjust);
-        }
-        if (cowDungAdjust.parent == null) {
-          add(cowDungAdjust);
-        }
+        if (scoreAdjust.parent == null) add(scoreAdjust);
+        if (cowDungAdjust.parent == null) add(cowDungAdjust);
       } else {
-        // 没有游戏结果时，移除积分/魔法泡泡调整组件
         scoreAdjust.removeFromParent();
         cowDungAdjust.removeFromParent();
+        _lastIsWon = null;
       }
 
-      // 添加基本信息组件
       if (nickName.parent == null) {
         add(nickName);
         add(score);
@@ -2423,13 +2445,13 @@ class UserInfoPanel extends PositionComponent with HasGameReference<MyGame> {
         add(contest);
         add(winRatio);
       }
-      // 更新并显示开始状态（底部居中，不显示“状态”二字）
-      startedStatus.text = player.started ? '已开始' : '未开始...';
-      if (startedStatus.parent == null) {
-        add(startedStatus);
+
+      if (_lastStarted != player.started) {
+        _lastStarted = player.started;
+        startedStatus.text = _lastStarted! ? '已开始' : '未开始...';
       }
+      if (startedStatus.parent == null) add(startedStatus);
     } else {
-      // 隐藏所有组件
       waitingHint.removeFromParent();
       nickName.removeFromParent();
       score.removeFromParent();
@@ -2820,11 +2842,7 @@ class MyButtonTextComponent extends PositionComponent {
     final TextPaint activeTextPaint = _cachedOpacityPaint!;
     final double maxTextW = size.x - 32;
 
-    if (_cachedDisplayExText == null ||
-        _lastInputText != text ||
-        _lastConstraintWidth != maxTextW ||
-        _lastActiveTextPaint != activeTextPaint) {
-      
+    if (_cachedDisplayExText == null || _lastInputText != text || _lastConstraintWidth != maxTextW || _lastActiveTextPaint != activeTextPaint) {
       _lastInputText = text;
       _lastConstraintWidth = maxTextW;
       _lastActiveTextPaint = activeTextPaint;

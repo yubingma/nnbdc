@@ -43,6 +43,10 @@ public class EmailVerificationController {
             return Result.fail("无效的验证码类型");
         }
 
+        if (email == null || !email.trim().matches("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}$")) {
+            return Result.fail("邮箱格式不正确");
+        }
+
         if (codeType == EmailCodeType.BIND_EMAIL) {
             List<User> users = userBo.findByEmail(email);
             if (users != null && !users.isEmpty()) {
