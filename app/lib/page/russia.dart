@@ -164,19 +164,14 @@ class RussiaPageState extends State<RussiaPage> with AutomaticKeepAliveClientMix
       return const Center(child: Text('waiting...'));
     }
  
-    _buildCount++;
-    final now = DateTime.now();
-    if (now.difference(_lastBuildReport).inSeconds >= 5) {
-      Global.logger.d('[Perf] RussiaPage build called $_buildCount times in the last 5s');
-      _buildCount = 0;
-      _lastBuildReport = now;
-    }
- 
     screenWidth = MediaQuery.of(context).size.width;
-    // 确保 GameWidget 使用稳定的 key，减少 Flutter 侧的卸载/挂载开销
-    return GameWidget(
-      key: const ValueKey('RussiaGameWidget'),
-      game: myGame,
+    // 核心优化：使用 RepaintBoundary 隔离 Flutter 渲染与游戏渲染，
+    // 并使用稳定的 Key 确保 Widget 不会被重新卸载挂载。
+    return RepaintBoundary(
+      child: GameWidget(
+        key: const ValueKey('RussiaGameWidget'),
+        game: myGame,
+      ),
     );
   }
 }
@@ -433,38 +428,6 @@ class PlayGround extends PositionComponent {
   }
 }
 
-class GamePerformanceTracker {
-  int frameCount = 0;
-  double totalUpdateTime = 0;
-  double totalRenderTime = 0;
-  double maxUpdateTime = 0;
-  double maxRenderTime = 0;
-  DateTime lastReportTime = DateTime.now();
-
-  void report(int componentCount, int deadWordsA, int deadWordsB, bool isPlaying) {
-    if (!isPlaying) return; // 仅在游戏进行中记录，减少闲置日志
-    final now = DateTime.now();
-    final duration = now.difference(lastReportTime).inMilliseconds;
-    if (duration >= 2000) {
-      final fps = frameCount * 1000 / duration;
-      final avgUpdate = totalUpdateTime / frameCount;
-      final avgRender = totalRenderTime / frameCount;
-
-      Global.logger.d('[Perf] FPS: ${fps.toStringAsFixed(1)}, Components: $componentCount, '
-          'DeadWords: A($deadWordsA) B($deadWordsB), '
-          'Update(avg/max): ${avgUpdate.toStringAsFixed(2)}/${maxUpdateTime.toStringAsFixed(2)}ms, '
-          'Render(avg/max): ${avgRender.toStringAsFixed(2)}/${maxRenderTime.toStringAsFixed(2)}ms');
-
-      frameCount = 0;
-      totalUpdateTime = 0;
-      totalRenderTime = 0;
-      maxUpdateTime = 0;
-      maxRenderTime = 0;
-      lastReportTime = now;
-    }
-  }
-}
-
 class Player {
   late String type;
   bool started = false;
@@ -498,7 +461,6 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
   final playerA = Player('A');
   final playerB = Player('B');
   final RussiaPageState pageState;
-  final _perfTracker = GamePerformanceTracker();
 
   // 断连检测相关
   bool _isDisconnected = false;
@@ -1785,19 +1747,7 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
 
   @override
   void render(Canvas canvas) {
-    final sw = Stopwatch()..start();
     super.render(canvas);
-    final elapsed = sw.elapsedMicroseconds / 1000.0;
-    _perfTracker.totalRenderTime += elapsed;
-    if (elapsed > _perfTracker.maxRenderTime) _perfTracker.maxRenderTime = elapsed;
-
-    _perfTracker.frameCount++;
-    _perfTracker.report(
-      children.length,
-      playerA.deadWords.length,
-      playerB.deadWords.length,
-      isPlaying,
-    );
   }
 
   @override
@@ -1848,7 +1798,6 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
         !_buttonSizeInitialized;
 
     if (shouldRebuildButtons) {
-      final swButtons = Stopwatch()..start();
       _lastGameState = gameState;
       _lastIsPlaying = isPlaying;
       _lastIsShowingResult = isShowingResult;
@@ -1971,7 +1920,6 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
         nextBtnY += finalBtnHeight + btnGap;
       }
       _buttonSizeInitialized = true;
-      Global.logger.d('[Perf] Rebuilding buttons took ${swButtons.elapsedMicroseconds / 1000.0}ms');
     }
  
     // 显示/隐藏玩家信息：已优化，仅在状态变化时操作
@@ -2240,6 +2188,10 @@ class GalaxyBackground extends PositionComponent {
 
 class UserInfoPanel extends PositionComponent with HasGameReference<MyGame> {
   Player player;
+  
+  // 缓存常见的文字渲染器，避免重新分配
+  static final Map<double, TextPaint> _nickRendererCache = {};
+  
   late TextComponent nickName;
   late TextComponent score;
   late TextComponent cowDung;
@@ -2740,40 +2692,29 @@ class DroppingWordSprite extends TextComponent with HasGameReference<MyGame>, Co
       return;
     }
     if ((other is BottomJet || other is DroppingWordSprite) && !isDead) {
-      // 串行化：如该侧已有落地处理在进行，忽略本次碰撞
-      if (!game.tryBeginLanding(player)) {
-        return;
-      }
+      if (!game.tryBeginLanding(player)) return;
       hasLanded = true;
       isDead = true;
  
-      // 优化：死亡后变为被动碰撞体，减少检测开销
-      final hitbox = children.query<RectangleHitbox>().firstOrNull;
-      if (hitbox != null) {
-        hitbox.collisionType = CollisionType.passive;
-      }
+      // 优化：死亡后变为被动且停止参与物理计算
+      _hitbox?.collisionType = CollisionType.passive;
  
-      // 即刻切换到红色文本，刷新文本内容以触发重绘
-      final TextStyle base = DroppingWordSprite.makeDeadPaint().style;
-      textRenderer = TextPaint(style: base.copyWith(fontSize: _fixedFontSize));
+      // 样式切换
+      textRenderer = TextPaint(style: DroppingWordSprite.makeDeadPaint().style.copyWith(fontSize: _fixedFontSize));
       text = text;
+ 
       if (player == game.playerA) {
-        // 第一块贴紧地板，后续在其之上逐行堆叠，确保 7 行布局对齐
         y = game.getDeadWordsTopY(game.playerA) - height;
         if (!game.playerA.deadWords.contains(this)) {
           game.playerA.deadWords.add(this);
         }
-        if (game.playerA.droppingWordSprite == this) {
-          game.playerA.droppingWordSprite = null;
-        }
+        if (game.playerA.droppingWordSprite == this) game.playerA.droppingWordSprite = null;
       } else {
         y = game.getDeadWordsTopY(game.playerB) - height;
         if (!game.playerB.deadWords.contains(this)) {
           game.playerB.deadWords.add(this);
         }
-        if (game.playerB.droppingWordSprite == this) {
-          game.playerB.droppingWordSprite = null;
-        }
+        if (game.playerB.droppingWordSprite == this) game.playerB.droppingWordSprite = null;
       }
 
       // 播放落地音效：B方音量为A方的1/4
@@ -2867,113 +2808,74 @@ class MyButtonTextComponent extends PositionComponent {
     _clickEffectT = 0.0;
   }
 
+  // 烘焙缓存：按钮背景一旦渲染过就不再每一帧都进行绘图计算
+  static ui.Image? _cachedNormalBg;
+  static ui.Image? _cachedPressedBg;
+  static double _lastBakeW = -1;
+  static double _lastBakeH = -1;
+
   @override
   void render(Canvas canvas) {
     if (size.x <= 0 || size.y <= 0) return;
 
     final Rect rect = Rect.fromLTWH(0, 0, size.x, size.y);
 
-    // 状态变化时更新 Paint/Shader
-    if (_lastRect != rect || _lastOpacity != opacity || _lastIsPressed != isPressed) {
-      _lastRect = rect;
-      _lastOpacity = opacity;
-      _lastIsPressed = isPressed;
-
-      Color scaleAlpha(Color c, double scale) {
-        final double a = ((c.a) * scale).clamp(0.0, 1.0);
-        return c.withValues(alpha: a);
-      }
-
-      if (isPressed) {
-        _bgPaint.shader = LinearGradient(
-          colors: [
-            scaleAlpha(const Color(0xFF2E5F8A), opacity),
-            scaleAlpha(const Color(0xFF357ABD), opacity),
-          ],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ).createShader(rect);
-        _borderPaint.color = const Color(0xFF4A90E2).withValues(alpha: opacity);
-      } else {
-        _bgPaint.shader = LinearGradient(
-          colors: [
-            scaleAlpha(const Color(0xFF4A90E2), opacity),
-            scaleAlpha(const Color(0xFF357ABD), opacity),
-            scaleAlpha(const Color(0xFF2E5F8A), opacity),
-          ],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ).createShader(rect);
-        _borderPaint.color = const Color(0xFF5BA3F5).withValues(alpha: opacity);
-      }
+    // 如果尺寸变化，清理背景缓存进行重新烘焙
+    if (_lastBakeW != size.x || _lastBakeH != size.y) {
+      _lastBakeW = size.x;
+      _lastBakeH = size.y;
+      _cachedNormalBg?.dispose();
+      _cachedPressedBg?.dispose();
+      _cachedNormalBg = null;
+      _cachedPressedBg = null;
     }
 
-    // 绘制圆角背景：恢复 12px 圆角，避免胶囊外观过于臃肿
-    final RRect roundedRect = RRect.fromRectAndRadius(rect, const Radius.circular(12));
-    canvas.drawRRect(roundedRect, _bgPaint);
+    // 按需烘焙背景
+    if (isPressed) {
+      _cachedPressedBg ??= _bakeBg(rect, true);
+    } else {
+      _cachedNormalBg ??= _bakeBg(rect, false);
+    }
+
+    final ui.Image bg = isPressed ? _cachedPressedBg! : _cachedNormalBg!;
+    canvas.drawImage(bg, Offset.zero, Paint());
 
     // 点击动效遮罩
     if (_clickEffectActive) {
       final double p = (_clickEffectT / _clickEffectDuration).clamp(0.0, 1.0);
-      final double ease = 1 - pow(1 - p, 3).toDouble();
-      final double a = (0.18 * (1 - ease)).clamp(0.0, 0.18);
-      final Paint overlay = Paint()..color = Colors.black.withValues(alpha: a);
-      canvas.drawRRect(roundedRect, overlay);
+      canvas.drawRRect(RRect.fromRectAndRadius(rect, const Radius.circular(12)), Paint()..color = Colors.black.withValues(alpha: 0.18 * (1 - p)));
     }
 
-    // 绘制边框
-    canvas.drawRRect(roundedRect, _borderPaint);
-
-    // 缓存并应用透明度到 TextPaint
-    if (_cachedOpacityPaint == null || _lastTextOpacity != opacity || _lastOriginalRenderer != textRenderer) {
-      _lastTextOpacity = opacity;
-      _lastOriginalRenderer = textRenderer;
-      final originalTextPaint = (textRenderer is TextPaint) ? textRenderer as TextPaint : TextPaint(style: const TextStyle());
-      final ts = originalTextPaint.style;
-      final scaledColor = (ts.color ?? Colors.white).withValues(alpha: (ts.color?.a ?? 1.0) * opacity);
-      final scaledShadows = ts.shadows
-          ?.map((s) => Shadow(
-                color: s.color.withValues(alpha: s.color.a * opacity),
-                offset: s.offset,
-                blurRadius: s.blurRadius,
-              ))
-          .toList();
-      _cachedOpacityPaint = TextPaint(style: ts.copyWith(color: scaledColor, shadows: scaledShadows));
-    }
-
-    // 手动居中绘制文本，带截断功能 (增加缓存逻辑以提升性能)
-    final TextPaint activeTextPaint = _cachedOpacityPaint!;
-    final double maxTextW = size.x - 32;
-
-    if (_cachedDisplayExText == null || _lastInputText != text || _lastConstraintWidth != maxTextW || _lastActiveTextPaint != activeTextPaint) {
-      _lastInputText = text;
-      _lastConstraintWidth = maxTextW;
-      _lastActiveTextPaint = activeTextPaint;
-
-      String displayExText = text;
-      double textW = activeTextPaint.getLineMetrics(displayExText).width;
-
-      if (textW > maxTextW) {
-        while (textW > maxTextW && displayExText.length > 3) {
-          displayExText = displayExText.substring(0, displayExText.length - 1);
-          textW = activeTextPaint.getLineMetrics('$displayExText...').width;
-        }
-        displayExText = '$displayExText...';
-      }
-      _cachedDisplayExText = displayExText;
-      _cachedTextW = textW;
-      _cachedTextH = activeTextPaint.getLineMetrics(displayExText).height;
-    }
-
-    // 缓存渲染坐标，避免每帧分配 Vector2
+    // 绘制文本
     _cachedTextPos ??= Vector2.zero();
     _cachedTextPos!.setValues((size.x - _cachedTextW!) / 2, (size.y - _cachedTextH!) / 2 - 1);
+    _cachedOpacityPaint!.render(canvas, _cachedDisplayExText!, _cachedTextPos!);
+  }
 
-    activeTextPaint.render(
-      canvas,
-      _cachedDisplayExText!,
-      _cachedTextPos!,
-    );
+  ui.Image _bakeBg(Rect rect, bool pressed) {
+    final recorder = ui.PictureRecorder();
+    final canvas = Canvas(recorder);
+    final paint = Paint();
+    
+    // 背景渐变
+    paint.shader = LinearGradient(
+      colors: pressed 
+        ? [const Color(0xFF2E5F8A).withValues(alpha: opacity), const Color(0xFF357ABD).withValues(alpha: opacity)]
+        : [const Color(0xFF4A90E2).withValues(alpha: opacity), const Color(0xFF357ABD).withValues(alpha: opacity), const Color(0xFF2E5F8A).withValues(alpha: opacity)],
+      begin: Alignment.topCenter, end: Alignment.bottomCenter,
+    ).createShader(rect);
+    
+    final RRect rrect = RRect.fromRectAndRadius(rect, const Radius.circular(12));
+    canvas.drawRRect(rrect, paint);
+    
+    // 边框
+    final borderPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2
+      ..color = (pressed ? const Color(0xFF4A90E2) : const Color(0xFF5BA3F5)).withValues(alpha: opacity);
+    canvas.drawRRect(rrect, borderPaint);
+
+    return recorder.endRecording().toImageSync(rect.width.toInt(), rect.height.toInt());
   }
 
   // 由外部在点击时调用，启动动效
