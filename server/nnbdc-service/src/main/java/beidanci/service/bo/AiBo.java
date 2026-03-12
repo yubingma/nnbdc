@@ -37,6 +37,12 @@ public class AiBo {
      * @return AI 生成的文本
      */
     public String generateText(String systemPrompt, String userPrompt) {
+        String apiKey = aiProperties.getApiKey();
+        if (apiKey == null || apiKey.isEmpty() || apiKey.startsWith("${")) {
+            logger.error("阿里云 AI 调用失败: API Key 未设置或未正确解析 (当前值为: {})", apiKey);
+            throw new RuntimeException("AI 调用失败: 请在环境变量或配置文件中设置 dashscope_api_key");
+        }
+
         try {
             Generation gen = new Generation();
             Message systemMsg = Message.builder()
@@ -48,7 +54,7 @@ public class AiBo {
                     .content(userPrompt)
                     .build();
             GenerationParam param = GenerationParam.builder()
-                    .apiKey(aiProperties.getApiKey())
+                    .apiKey(apiKey)
                     .model(aiProperties.getTextModel())
                     .messages(Arrays.asList(systemMsg, userMsg))
                     .resultFormat(GenerationParam.ResultFormat.MESSAGE)
