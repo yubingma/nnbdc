@@ -467,7 +467,7 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
   bool? _lastIsExercise;
   int? _lastWordCount;
   bool? _lastCountdownSeconds; // 这里存的是 (countdownSeconds > 0)
-  // 标记是否已为当前wordB上报过ETA
+  double? _lastSizeX;
   bool _reportedFallBForCurrentWord = false;
 
   // 串行化每侧的落地处理，避免并发导致重复入栈
@@ -1726,13 +1726,14 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
       if (minusPropsCount.parent != null) minusPropsCount.removeFromParent();
     }
 
-    // 状态记录，用于跳过每一帧的冗余计算
+    // 状态记录，或屏幕尺寸改变时，跳过每一帧的冗余计算
     final bool shouldRebuildButtons = _lastGameState != gameState ||
         _lastIsPlaying != isPlaying ||
         _lastIsShowingResult != isShowingResult ||
         _lastIsExercise != isExercise ||
         _lastWordCount != (isPlaying ? playerA.otherWordMeanings.length : 0) ||
         _lastCountdownSeconds != (countdownSeconds > 0) ||
+        _lastSizeX != size.x ||
         !_buttonSizeInitialized;
 
     if (shouldRebuildButtons) {
@@ -1742,6 +1743,7 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
       _lastIsExercise = isExercise;
       _lastWordCount = isPlaying ? playerA.otherWordMeanings.length : 0;
       _lastCountdownSeconds = (countdownSeconds > 0);
+      _lastSizeX = size.x;
 
       var visibleButtons = <MyButton>[];
 
@@ -1787,8 +1789,6 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
         }
       }
 
-      // 计算布局位置（仅在状态变化时执行一次）
-      var nextBtnX = 8.0;
       final double propsBottom = max(
         minusBtn.y + minusBtn.height,
         plusBtn.y + plusBtn.height,
@@ -1800,12 +1800,14 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
       final double btnGap = 12.0 * uiScale;
       final double answersExtraScale = isPlaying && playerA.otherWordMeanings.isNotEmpty ? 1.1 : 1.0;
 
-      final double availableHeight = size.y - nextBtnY - 16.0;
+      final double gWidth = (size.x > 0) ? size.x : screenWidth;
+      final double targetBtnWidth = (gWidth > 600) ? 460.0 : gWidth - 32;
+      final double nextBtnX = (gWidth - targetBtnWidth) / 2;
 
-      // 这里的 16.0 是 advance 里的偏移，不是按钮自身高度。
-      // 为计算 scaleS，我们估算总高度需求
+      final double gHeight = size.y > 0 ? size.y : 800.0;
+      final double availableHeight = gHeight - nextBtnY - 32.0;
+
       double totalNeededHeight = 0.0;
-      final List<double> textHeights = [];
       final List<double> targetPaddings = [];
 
       for (var btn in visibleButtons) {
@@ -1813,13 +1815,12 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
         final bool isAnswerBtn = btn == answer1Btn || btn == answer2Btn || btn == answer3Btn || btn == answer4Btn || btn == answer5Btn;
 
         final double textHeight = (btnUp.textRenderer as TextPaint).getLineMetrics(btnUp.text).height;
-        // 增加基础内边距，使其看起来更丰满（接近原 44 的体感）
-        final double basePadding = (isAnswerBtn ? 1.1 : 1.0) * max(24.0, textHeight * 1.5) * answersExtraScale;
-
-        textHeights.add(textHeight);
+        // 调整内边距：从 56 降至 36，使高度更紧凑
+        final double basePadding = (isAnswerBtn ? 1.5 : 1.3) * (36.0 * answersExtraScale);
         targetPaddings.add(basePadding);
-        totalNeededHeight += (textHeight + basePadding + 16.0); // 16 为 advance 预留
+        totalNeededHeight += (textHeight + basePadding + 8.0);
       }
+
       if (visibleButtons.isNotEmpty) {
         totalNeededHeight += btnGap * (visibleButtons.length - 1);
       }
@@ -1831,10 +1832,9 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
         final MyButtonTextComponent btnUp = btn.button! as MyButtonTextComponent;
         final MyButtonTextComponent btnDown = btn.buttonDown! as MyButtonTextComponent;
 
-        // 每次重建状态时都重新应用缩放和 Padding，确保新加入的按钮能正确同步
         TextStyle tsUp = (btnUp.textRenderer as TextPaint).style;
         final double origFontSize = 15 * uiScale;
-        final double targetFontSize = max(12.0, origFontSize * scaleS);
+        final double targetFontSize = max(14.0, origFontSize * scaleS);
 
         if (tsUp.fontSize != targetFontSize) {
           final newTR = TextPaint(style: tsUp.copyWith(fontSize: targetFontSize));
@@ -1842,20 +1842,22 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
           btnDown.textRenderer = newTR;
         }
 
-        // 应用计算后的 Padding
-        final double newPadding = max(16.0, targetPaddings[i] * scaleS);
+        final double newPadding = max(24.0, targetPaddings[i] * scaleS);
         btnUp.verticalPadding = newPadding;
         btnDown.verticalPadding = newPadding;
 
-        // 重新测量以获得准确高度
         final double lineHeight = (btnUp.textRenderer as TextPaint).getLineMetrics(btnUp.text).height;
-
+        // 调整高度，从 72 降至 54
+        final double finalBtnHeight = max(54.0, (lineHeight + newPadding));
         btn.x = nextBtnX;
         btn.y = nextBtnY;
-        btn.size = Vector2(screenWidth - 16, lineHeight + newPadding);
+        btn.size.setValues(targetBtnWidth, finalBtnHeight);
 
-        // advance 位置：按钮高度 + 16.0 固定偏移 + 按钮间距
-        nextBtnY += btn.size.y + 16.0 + btnGap;
+        // 核心修正：除了设置子组件 size，还要显式调用它们的 render 准备逻辑（如有）
+        btnUp.size.setFrom(btn.size);
+        btnDown.size.setFrom(btn.size);
+
+        nextBtnY += finalBtnHeight + btnGap;
       }
       _buttonSizeInitialized = true;
     }
@@ -2663,48 +2665,41 @@ class DroppingWordSprite extends TextComponent with HasGameReference<MyGame>, Co
   }
 }
 
-class MyButtonTextComponent extends TextComponent {
+class MyButtonTextComponent extends PositionComponent {
+  late String text;
+  late TextRenderer textRenderer;
   late Color borderColor;
   late Color backColor;
   late MyGame myGame;
   late bool isPressed;
   final double opacity; // 0.0 ~ 1.0 半透明系数
-  double verticalPadding; // 竖向内边距，影响按钮整体高度
+  double verticalPadding; // 竖向内边距影响按钮整体高度（目前布局引擎主控高度）
+
   // 点击动效状态
   bool _clickEffectActive = false;
   double _clickEffectT = 0.0; // seconds
   static const double _clickEffectDuration = 0.28; // seconds
 
-  MyButtonTextComponent(String text, TextPaint textRenderer, this.backColor, this.borderColor, this.myGame, this.verticalPadding,
+  MyButtonTextComponent(this.text, this.textRenderer, this.backColor, this.borderColor, this.myGame, this.verticalPadding,
       {this.isPressed = false, this.opacity = 0.8})
-      : super(text: '  $text', textRenderer: textRenderer, position: Vector2.zero());
+      : super(position: Vector2.zero());
 
-  String? _lastText;
-  double? _lastWidth;
+  // 缓存绘制资源
+  final Paint _bgPaint = Paint();
+  final Paint _borderPaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 2;
+  Rect? _lastRect;
+  double? _lastOpacity;
+  bool? _lastIsPressed;
 
-  void _computeSize() {
-    final double btnWidth = myGame.screenWidth - 16;
-    if (_lastText == text && _lastWidth == btnWidth) return;
-
-    _lastText = text;
-    _lastWidth = btnWidth;
-
-    final double textW = textRenderer.getLineMetrics(text).width;
-    if (textW > btnWidth) {
-      while (textRenderer.getLineMetrics('$text... ').width > btnWidth && text.isNotEmpty) {
-        super.text = text.substring(0, text.length - 2);
-      }
-      super.text = '$text...';
-    }
-    final double textHeight = textRenderer.getLineMetrics(text).height;
-    final double bgHeight = textHeight + verticalPadding;
-    size = Vector2(btnWidth, bgHeight);
-  }
+  TextPaint? _cachedOpacityPaint;
+  double? _lastTextOpacity;
+  TextRenderer? _lastOriginalRenderer;
 
   @override
   void update(double dt) {
     super.update(dt);
-    _computeSize();
     // 更新点击动效时间轴
     if (_clickEffectActive) {
       _clickEffectT += dt;
@@ -2715,19 +2710,18 @@ class MyButtonTextComponent extends TextComponent {
     }
   }
 
-  @override
-  set text(String text) {
-    super.text = '  $text';
+  void triggerClickEffect() {
+    _clickEffectActive = true;
+    _clickEffectT = 0.0;
   }
 
   @override
   void render(Canvas canvas) {
-    // 背景与点击区域：使用 update 中计算的 size
-    _computeSize();
-    final double textHeight = textRenderer.getLineMetrics(text).height;
-    final double bgHeight = size.y;
-    Rect rect = Rect.fromLTWH(0, 0, size.x, size.y);
+    if (size.x <= 0 || size.y <= 0) return;
 
+    final Rect rect = Rect.fromLTWH(0, 0, size.x, size.y);
+
+    // 状态变化时更新 Paint/Shader
     if (_lastRect != rect || _lastOpacity != opacity || _lastIsPressed != isPressed) {
       _lastRect = rect;
       _lastOpacity = opacity;
@@ -2762,29 +2756,27 @@ class MyButtonTextComponent extends TextComponent {
       }
     }
 
-    // 绘制圆角背景
-    RRect roundedRect = RRect.fromRectAndRadius(rect, const Radius.circular(12));
+    // 绘制圆角背景：恢复 12px 圆角，避免胶囊外观过于臃肿
+    final RRect roundedRect = RRect.fromRectAndRadius(rect, const Radius.circular(12));
     canvas.drawRRect(roundedRect, _bgPaint);
 
-    // 点击动效：整块按钮区域的淡入淡出遮罩（无中心高光）
+    // 点击动效遮罩
     if (_clickEffectActive) {
       final double p = (_clickEffectT / _clickEffectDuration).clamp(0.0, 1.0);
-      final double ease = 1 - pow(1 - p, 3).toDouble(); // ease-out
+      final double ease = 1 - pow(1 - p, 3).toDouble();
       final double a = (0.18 * (1 - ease)).clamp(0.0, 0.18);
       final Paint overlay = Paint()..color = Colors.black.withValues(alpha: a);
       canvas.drawRRect(roundedRect, overlay);
     }
 
-    // 绘制边框  
+    // 绘制边框
     canvas.drawRRect(roundedRect, _borderPaint);
 
-    // 缓存已应用透明度的 TextPaint
+    // 缓存并应用透明度到 TextPaint
     if (_cachedOpacityPaint == null || _lastTextOpacity != opacity || _lastOriginalRenderer != textRenderer) {
       _lastTextOpacity = opacity;
       _lastOriginalRenderer = textRenderer;
-
-      final originalRenderer = textRenderer;
-      final originalTextPaint = originalRenderer is TextPaint ? originalRenderer : TextPaint(style: const TextStyle());
+      final originalTextPaint = (textRenderer is TextPaint) ? textRenderer as TextPaint : TextPaint(style: const TextStyle());
       final ts = originalTextPaint.style;
       final scaledColor = (ts.color ?? Colors.white).withValues(alpha: (ts.color?.a ?? 1.0) * opacity);
       final scaledShadows = ts.shadows
@@ -2797,38 +2789,28 @@ class MyButtonTextComponent extends TextComponent {
       _cachedOpacityPaint = TextPaint(style: ts.copyWith(color: scaledColor, shadows: scaledShadows));
     }
 
-    final originalRenderer = textRenderer;
-    textRenderer = _cachedOpacityPaint!;
+    // 手动居中绘制文本，带截断功能
+    final TextPaint activeTextPaint = _cachedOpacityPaint!;
+    String displayExText = text;
+    double textW = activeTextPaint.getLineMetrics(displayExText).width;
+    final double maxTextW = size.x - 32;
 
-    final double offsetY = (bgHeight - textHeight) / 2;
-    canvas.save();
-    canvas.translate(0, offsetY);
-    super.render(canvas);
-    canvas.restore();
-    textRenderer = originalRenderer;
+    if (textW > maxTextW) {
+      while (textW > maxTextW && displayExText.length > 3) {
+        displayExText = displayExText.substring(0, displayExText.length - 1);
+        textW = activeTextPaint.getLineMetrics('$displayExText...').width;
+      }
+      displayExText = '$displayExText...';
+    }
+
+    final double textH = activeTextPaint.getLineMetrics(displayExText).height;
+    activeTextPaint.render(canvas, displayExText, Vector2((size.x - textW) / 2, (size.y - textH) / 2 - 1));
   }
-
-  // 缓存绘制资源
-  final Paint _bgPaint = Paint();
-  final Paint _borderPaint = Paint()
-    ..style = PaintingStyle.stroke
-    ..strokeWidth = 2;
-  Rect? _lastRect;
-  double? _lastOpacity;
-  bool? _lastIsPressed;
-
-  TextPaint? _cachedOpacityPaint;
-  double? _lastTextOpacity;
-  TextRenderer? _lastOriginalRenderer;
-
-  // 不覆盖 containsLocalPoint，让父组件统一处理点击区域
 
   // 由外部在点击时调用，启动动效
   void startClickEffect() {
     _clickEffectActive = true;
     _clickEffectT = 0.0;
-    // 同时将整块按钮标记为按下态，命中区域一致
-    isPressed = true;
   }
 }
 
