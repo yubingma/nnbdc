@@ -179,11 +179,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
                     width: 48,
                     height: 48,
                     child: CircularProgressIndicator(
-                      strokeWidth: 3, 
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        isDarkMode ? const Color(0xFF22D3EE) : const Color(0xFF0EA5E9)
-                      )
-                    ),
+                        strokeWidth: 3, valueColor: AlwaysStoppedAnimation<Color>(isDarkMode ? const Color(0xFF22D3EE) : const Color(0xFF0EA5E9))),
                   ),
                   const SizedBox(height: 32),
                   Text(
@@ -372,7 +368,11 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
           ),
 
           // Supplement Hint
-          if (prepareResult != null && prepareResult!.success && (todayWordCount ?? 0) < (user?.wordsPerDay ?? 20) && !(user?.todayStudyStarted ?? false) && !_hasTriedSupplement)
+          if (prepareResult != null &&
+              prepareResult!.success &&
+              (todayWordCount ?? 0) < (user?.wordsPerDay ?? 20) &&
+              !(user?.todayStudyStarted ?? false) &&
+              !_hasTriedSupplement)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Container(
@@ -587,9 +587,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
         gradient: LinearGradient(
-          colors: isDarkMode 
-            ? [const Color(0xFF0891B2), const Color(0xFF0EA5E9)] 
-            : [const Color(0xFF06B6D4), const Color(0xFF0EA5E9)],
+          colors: isDarkMode ? [const Color(0xFF0891B2), const Color(0xFF0EA5E9)] : [const Color(0xFF06B6D4), const Color(0xFF0EA5E9)],
         ),
         boxShadow: [
           BoxShadow(
@@ -741,8 +739,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
           physics: const NeverScrollableScrollPhysics(),
           onReorder: reorderData,
           children: [
-            for (int i = 0; i < studySteps!.length; i++)
-              _buildStepTile(studySteps![i], i),
+            for (int i = 0; i < studySteps!.length; i++) _buildStepTile(studySteps![i], i),
           ],
         ),
       ],
@@ -796,9 +793,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: isActive 
-                      ? (isDarkMode ? const Color(0xFF0EA5E9).withValues(alpha: 0.2) : const Color(0xFFE0F2FE))
-                      : Colors.transparent,
+                    color: isActive ? (isDarkMode ? const Color(0xFF0EA5E9).withValues(alpha: 0.2) : const Color(0xFFE0F2FE)) : Colors.transparent,
                   ),
                   child: Icon(
                     isActive ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
