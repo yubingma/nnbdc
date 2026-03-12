@@ -119,15 +119,15 @@ class _IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
           });
         },
         child: Container(
-          height: 80,
+          height: 54, 
           decoration: BoxDecoration(
-            color: Colors.transparent,
+            color: Colors.transparent,  
           ),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center, 
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 12),
+                padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 12), 
                 decoration: BoxDecoration(
                   color: isSelected ? selectedColor.withValues(alpha: 0.1) : Colors.transparent,
                   borderRadius: BorderRadius.circular(12),
@@ -135,19 +135,19 @@ class _IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
                 child: Icon(
                   icon,
                   color: isSelected ? selectedColor : unselectedColor,
-                  size: isSelected ? 26 : 24,
+                  size: isSelected ? 24 : 22,
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 2),
               Text(
                 label,
                 style: TextStyle(
                   color: isSelected ? selectedColor : unselectedColor,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w400, // 保持一致的字体粗细，避免变糊
+                  fontSize: 11,
+                  fontWeight: FontWeight.w400,
                   fontFamily: 'NotoSansSC',
-                  height: 1.4,
-                  letterSpacing: 0.4, // 统一字间距
+                  height: 1.2,
+                  letterSpacing: 0.4,
                 ),
                 textScaler: const TextScaler.linear(1.0),
               ),
@@ -168,9 +168,7 @@ class _IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
     final backgroundColor = isDarkMode ? const Color(0xFF1A1A1A) : Colors.white;
 
-    /// 创建自定义的底部导航栏
     final customBottomNav = Container(
-      height: 65,
       decoration: BoxDecoration(
         color: backgroundColor,
         boxShadow: [
@@ -181,19 +179,25 @@ class _IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
           ),
         ],
       ),
-      child: MediaQuery(
-        data: MediaQuery.of(context).copyWith(
-          textScaler: const TextScaler.linear(1.0),
+      child: Container(
+        padding: EdgeInsets.only(
+          top: 2,
+          bottom: MediaQuery.of(context).padding.bottom > 0 ? MediaQuery.of(context).padding.bottom * 0.5 : 4,
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            _buildCustomNavItem(Icons.school, "学习", 0, actualCurrentIndex),
-            _buildCustomNavItem(Icons.library_books, "词表", 1, actualCurrentIndex),
-            _buildCustomNavItem(Icons.search_rounded, "查词", 2, actualCurrentIndex),
-            if (!Global.isGuest) _buildCustomNavItem(Icons.sports_esports, "比赛", 3, actualCurrentIndex),
-            _buildCustomNavItem(Icons.person_rounded, "我", 4, actualCurrentIndex),
-          ],
+        child: MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+            textScaler: const TextScaler.linear(1.0),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _buildCustomNavItem(Icons.school, "学习", 0, actualCurrentIndex),
+              _buildCustomNavItem(Icons.library_books, "词表", 1, actualCurrentIndex),
+              _buildCustomNavItem(Icons.search_rounded, "查词", 2, actualCurrentIndex),
+              if (!Global.isGuest) _buildCustomNavItem(Icons.sports_esports, "比赛", 3, actualCurrentIndex),
+              _buildCustomNavItem(Icons.person_rounded, "我", 4, actualCurrentIndex),
+            ],
+          ),
         ),
       ),
     );
