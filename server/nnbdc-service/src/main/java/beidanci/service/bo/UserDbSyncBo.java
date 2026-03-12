@@ -314,6 +314,7 @@ public class UserDbSyncBo {
             learningWordBo.batchDeleteUserRecords(userId, recordJson);
         } else {
             LearningWordDto learningWordDto = JsonUtils.makeObject(recordJson, LearningWordDto.class);
+            learningWordDto.setUserId(userId);
             LearningWord learningWord = LearningWord.fromDto(learningWordDto);
             switch (operation) {
                 case "INSERT" -> {
@@ -348,6 +349,7 @@ public class UserDbSyncBo {
             learningDictBo.batchDeleteUserRecords(userId, recordJson);
         } else {
             LearningDictDto learningDictDto = JsonUtils.makeObject(recordJson, LearningDictDto.class);
+            learningDictDto.setUserId(userId);
             LearningDict learningDict = LearningDict.fromDto(learningDictDto, wordBo, dictBo, userBo);
             switch (operation) {
                 case "INSERT" -> {
@@ -569,6 +571,7 @@ public class UserDbSyncBo {
             userStudyStepBo.batchDeleteUserRecords(userId, recordJson);
         } else {
             UserStudyStepDto stepDto = JsonUtils.makeObject(recordJson, UserStudyStepDto.class);
+            stepDto.setUserId(userId);
             UserStudyStepId id = new UserStudyStepId(userId, stepDto.getStudyStep());
             UserStudyStep studyStep = new UserStudyStep(id);
             studyStep.setSeq(stepDto.getSeq());
@@ -620,6 +623,7 @@ public class UserDbSyncBo {
         } else {
             try {
                 DakaDto dakaDto = JsonUtils.makeObject(recordJson, DakaDto.class);
+                dakaDto.setUserId(userId);
                 Daka daka = dakaBo.fromDto(dakaDto);
 
                 switch (operation) {
@@ -657,6 +661,7 @@ public class UserDbSyncBo {
             userOperBo.batchDeleteUserRecords(userId, recordJson);
         } else {
             UserOperDto operDto = JsonUtils.makeObject(recordJson, UserOperDto.class);
+            operDto.setUserId(userId);
             UserOper oper = userOperBo.fromDto(operDto);
             if ("INSERT".equals(operation)) {
                 // 检查记录是否已存在，避免主键冲突
@@ -683,6 +688,7 @@ public class UserDbSyncBo {
             wrongWordBo.batchDeleteUserRecords(userId, recordJson);
         } else {
             WrongWordDto wrongWordDto = JsonUtils.makeObject(recordJson, WrongWordDto.class);
+            wrongWordDto.setUserId(userId);
             WrongWord wrongWord = WrongWord.fromDto(wrongWordDto);
             switch (operation) {
                 case "INSERT" -> wrongWordBo.createIfAbsent(wrongWord);
@@ -783,6 +789,7 @@ public class UserDbSyncBo {
             userCowDungLogBo.batchDeleteUserRecords(userId, recordJson);
         } else {
             UserCowDungLogDto cowDungLogDto = JsonUtils.makeObject(recordJson, UserCowDungLogDto.class);
+            cowDungLogDto.setUserId(userId);
             UserCowDungLog cowDungLog = UserCowDungLog.fromDto(cowDungLogDto);
             User user = userBo.findById(cowDungLogDto.getUserId());
             if (user != null) {
@@ -817,6 +824,7 @@ public class UserDbSyncBo {
             learningLogBo.batchDeleteUserRecords(userId, recordJson);
         } else {
             LearningLogDto dto = JsonUtils.makeObject(recordJson, LearningLogDto.class);
+            dto.setUserId(userId);
             LearningLog log = LearningLog.fromDto(dto);
             if ("INSERT".equals(operation)) {
                 LearningLog existing = learningLogBo.findById(log.getId());
