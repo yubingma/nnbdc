@@ -49,6 +49,9 @@ public class DictImportBo {
     @Autowired
     private UserBo userBo;
 
+    @Autowired
+    private SynonymBo synonymBo;
+
     /**
      * 异步执行导入任务
      *
@@ -59,6 +62,7 @@ public class DictImportBo {
         ImportTask task = importTaskBo.findById(taskId);
         if (task == null) return;
 
+        TaskStatistics stats = new TaskStatistics();
         try {
             task.setStatus("RUNNING");
             importTaskBo.updateEntity(task);
@@ -76,19 +80,21 @@ public class DictImportBo {
             task.setTotalWords(total);
 
             if (isSystemImport) {
-                processSystemImport(task, dictId, rawWords, strategy);
+                processSystemImport(task, dictId, rawWords, strategy, stats);
             } else if (rawWords != null) {
-                processUserImportWordsOnly(task, dictId, rawWords, strategy);
+                processUserImportWordsOnly(task, dictId, rawWords, strategy, stats);
             } else {
-                processUserImportWithMeanings(task, dictId, wordsWithMeanings, strategy);
+                processUserImportWithMeanings(task, dictId, wordsWithMeanings, strategy, stats);
             }
 
             task = importTaskBo.findById(taskId); // 重新加载以防状态冲突
+            task.setResults(JsonUtils.toJson(stats));
             task.setStatus("COMPLETED");
             importTaskBo.updateEntity(task);
         } catch (Exception e) {
             logger.error("词典导入任务失败: " + taskId, e);
             task.setStatus("FAILED");
+            task.setResults(JsonUtils.toJson(stats));
             String errorMsg = e.getMessage() != null ? e.getMessage() : "未知错误";
             task.setLog((task.getLog() != null ? task.getLog() : "") + "\nERROR: " + errorMsg);
             try {
@@ -98,51 +104,54 @@ public class DictImportBo {
         }
     }
 
-    private void processSystemImport(ImportTask task, String dictId, List<String> words, String strategy) {
+    private void processSystemImport(ImportTask task, String dictId, List<String> words, String strategy, TaskStatistics stats) {
         User systemUser = userBo.findById(Constants.SYS_USER_SYS_ID);
         for (int i = 0; i < words.size(); i++) {
             String spell = words.get(i).trim();
             try {
-                processSingleWord(spell, null, true, systemUser, dictId, strategy);
+                processSingleWord(spell, null, true, systemUser, dictId, strategy, stats);
                 importTaskBo.updateProgress(task.getId(), i + 1, "Processed: " + spell);
             } catch (Exception e) {
                 logger.warn("处理单词失败: " + spell, e);
+                stats.errorCount++;
                 importTaskBo.updateProgress(task.getId(), i + 1, "Failed: " + spell + " (" + e.getMessage() + ")");
             }
         }
     }
 
-    private void processUserImportWordsOnly(ImportTask task, String dictId, List<String> words, String strategy) {
+    private void processUserImportWordsOnly(ImportTask task, String dictId, List<String> words, String strategy, TaskStatistics stats) {
         User owner = task.getOwner();
         for (int i = 0; i < words.size(); i++) {
             String spell = words.get(i).trim();
             try {
-                processSingleWord(spell, null, false, owner, dictId, strategy);
+                processSingleWord(spell, null, false, owner, dictId, strategy, stats);
                 importTaskBo.updateProgress(task.getId(), i + 1, "Processed: " + spell);
             } catch (Exception e) {
                 logger.warn("处理单词失败: " + spell, e);
+                stats.errorCount++;
                 importTaskBo.updateProgress(task.getId(), i + 1, "Failed: " + spell + " (" + e.getMessage() + ")");
             }
         }
     }
 
-    private void processUserImportWithMeanings(ImportTask task, String dictId, List<Map<String, String>> words, String strategy) {
+    private void processUserImportWithMeanings(ImportTask task, String dictId, List<Map<String, String>> words, String strategy, TaskStatistics stats) {
         User owner = task.getOwner();
         for (int i = 0; i < words.size(); i++) {
             Map<String, String> item = words.get(i);
             String spell = item.get("word").trim();
             String manualMeaning = item.get("meaning");
             try {
-                processSingleWord(spell, manualMeaning, false, owner, dictId, strategy);
+                processSingleWord(spell, manualMeaning, false, owner, dictId, strategy, stats);
                 importTaskBo.updateProgress(task.getId(), i + 1, "Processed: " + spell);
             } catch (Exception e) {
                 logger.warn("处理单词失败: " + spell, e);
+                stats.errorCount++;
                 importTaskBo.updateProgress(task.getId(), i + 1, "Failed: " + spell + " (" + e.getMessage() + ")");
             }
         }
     }
 
-    private void processSingleWord(String spell, String manualMeaning, boolean isSystem, User user, String dictId, String strategy) throws Exception {
+    private void processSingleWord(String spell, String manualMeaning, boolean isSystem, User user, String dictId, String strategy, TaskStatistics stats) throws Exception {
         Word word = wordBo.getWordBySpell(spell);
         boolean isNewWord = (word == null);
 
@@ -156,6 +165,8 @@ public class DictImportBo {
             word.setAmericaPronounce(aiResult.phonetic);
             word.setPronounce(aiResult.phonetic);
             wordBo.createEntity(word);
+            stats.addedWordCount++;
+            stats.addedAudioCount++; // 统计单词发音资源
         }
 
         if (word == null) {
@@ -167,25 +178,31 @@ public class DictImportBo {
         if (!existingMeaningsInDict.isEmpty()) {
             if ("SKIP".equalsIgnoreCase(strategy)) {
                 logger.info("单词 {} 在词典 {} 中已存在，跳过", spell, dictId);
+                stats.skippedCount++;
                 return;
             } else if ("RECREATE".equalsIgnoreCase(strategy)) {
                 logger.info("单词 {} 在词典 {} 中已存在，执行重刷（删除现有资源）", spell, dictId);
+                stats.recreatedCount++;
                 for (MeaningItemDto mi : existingMeaningsInDict) {
                     // 1. 删除例句并在必要时记录日志
+                    List<Sentence> sentences = sentenceBo.findByMeaningItem(mi.getId());
+                    stats.deletedSentenceCount += sentences.size();
                     if (Constants.COMMON_DICT_ID.equals(dictId)) {
-                        List<Sentence> sentences = sentenceBo.findByMeaningItem(mi.getId());
                         for (Sentence s : sentences) {
                             sysDbSyncBo.logOperation("DELETE", "sentence", s.getId(), "{}");
+                            stats.addSyncLog("DELETE", "sentence");
                         }
                     }
                     sentenceBo.deleteByMeaningItem(mi.getId());
                     
                     // 2. 删除释义项
                     meaningItemBo.deleteMeaningItem(mi.getId());
+                    stats.deletedMeaningCount++;
                     
                     // 3. 如果是系统词典，记录删除日志
                     if (Constants.COMMON_DICT_ID.equals(dictId)) {
                         sysDbSyncBo.logOperation("DELETE", "meaning_item", mi.getId(), "{}");
+                        stats.addSyncLog("DELETE", "meaning_item");
                     }
                 }
             }
@@ -201,13 +218,13 @@ public class DictImportBo {
             // 场景 1：加入通用词典
             // 此时 dictId 应该是 "0"
             AiResult aiResult = getAiResult(spell, null, contextMeanings);
-            saveExtrinsicResources(word, aiResult, Constants.SYS_USER_SYS_ID, Constants.COMMON_DICT_ID);
+            saveExtrinsicResources(word, aiResult, Constants.SYS_USER_SYS_ID, Constants.COMMON_DICT_ID, stats);
         } else {
             // 用户导入
             if (manualMeaning != null) {
                 // 场景 3：单词+外部释义 (私有)
                 AiResult aiResult = getAiResult(spell, manualMeaning, contextMeanings);
-                saveExtrinsicResources(word, aiResult, user.getId(), dictId);
+                saveExtrinsicResources(word, aiResult, user.getId(), dictId, stats);
             } else {
                 // 场景 2：仅单词
                 // 如果通用库已有，且不需要强制重刷，则由 DictWord 关联即可。
@@ -215,7 +232,7 @@ public class DictImportBo {
                 boolean hasCommonMeaning = allExistingMeanings.stream().anyMatch(m -> Constants.COMMON_DICT_ID.equals(m.getDictId()));
                 if (!hasCommonMeaning || "RECREATE".equalsIgnoreCase(strategy) || !Constants.COMMON_DICT_ID.equals(dictId)) {
                     AiResult aiResult = getAiResult(spell, null, contextMeanings);
-                    saveExtrinsicResources(word, aiResult, user.getId(), dictId);
+                    saveExtrinsicResources(word, aiResult, user.getId(), dictId, stats);
                 }
             }
         }
@@ -232,6 +249,7 @@ public class DictImportBo {
                 dw.setSeq(dictWordBo.getMaxSeqNo(dict) + 1);
                 dw.setCreateTime(new Date());
                 dictWordBo.createEntity(dw);
+                stats.addedDictWordCount++;
                 
                 // 更新词书单词计数
                 dict = dictWordBo.dictBo.findById(dictId);
@@ -241,7 +259,7 @@ public class DictImportBo {
         }
     }
 
-    private void saveExtrinsicResources(Word word, AiResult aiResult, String ownerId, String dictId) {
+    private void saveExtrinsicResources(Word word, AiResult aiResult, String ownerId, String dictId, TaskStatistics stats) {
         // 创建 MeaningItem
         MeaningItem meaning = new MeaningItem();
         meaning.setWord(word);
@@ -259,23 +277,48 @@ public class DictImportBo {
             meaning.setDict(dict);
         }
         meaningItemBo.createEntity(meaning);
+        stats.addedMeaningCount++;
 
         // 创建 Sentence
         Sentence sentence = new Sentence();
         sentence.setEnglish(aiResult.sentenceEn);
         sentence.setChinese(aiResult.sentenceCn);
         sentence.setMeaningItem(meaning);
+        sentence.setNeedTts(true); // 标记需要生成音频
+        sentence.setTheType("waitting_tts");
         if (ownerId != null) {
             User author = new User();
             author.setId(ownerId);
             sentence.setAuthor(author);
         }
         sentenceBo.createEntity(sentence);
+        stats.addedSentenceCount++;
+        stats.addedAudioCount++; // 统计例句音频资源
+
+        // 创建同义词
+        if (aiResult.synonyms != null && !aiResult.synonyms.isEmpty()) {
+            for (String synSpell : aiResult.synonyms) {
+                Word synWord = wordBo.getWordBySpell(synSpell);
+                if (synWord != null) {
+                    Synonym synonym = new Synonym();
+                    SynonymId sid = new SynonymId();
+                    sid.setMeaningItemId(meaning.getId());
+                    sid.setWordId(synWord.getId());
+                    synonym.setId(sid);
+                    synonym.setMeaningItem(meaning);
+                    synonym.setCreateTime(new Date());
+                    synonymBo.createEntity(synonym);
+                    stats.addedSynonymCount++;
+                }
+            }
+        }
 
         // 如果是记录到通用词典（属于系统管理员），则记录同步日志，以便各分布式节点同步
         if (Constants.SYS_USER_SYS_ID.equals(ownerId)) {
             sysDbSyncBo.logOperation("INSERT", "meaning_item", meaning.getId(), JsonUtils.toJson(meaningItemBo.toDto(meaning)));
+            stats.addSyncLog("INSERT", "meaning_item");
             sysDbSyncBo.logOperation("INSERT", "sentence", sentence.getId(), JsonUtils.toJson(sentenceBo.toDto(sentence)));
+            stats.addSyncLog("INSERT", "sentence");
         }
     }
 
@@ -289,11 +332,11 @@ public class DictImportBo {
         }
 
         if (manualMeaning == null) {
-            userPrompt.append("{'phonetic': '...', 'pos': '...', 'meaning': '...', 'popularity': 1-10, 'sentenceEn': '...', 'sentenceCn': '...'}. " +
-                    "Use <b> word </b> in sentences to highlight the word.");
+            userPrompt.append("{'phonetic': '...', 'pos': '...', 'meaning': '...', 'popularity': 1-10, 'synonyms': ['syn1', 'syn2'], 'sentenceEn': '...', 'sentenceCn': '...'}. " +
+                    "Use <b> word </b> in sentences to highlight the word. provide at most 3 common synonyms.");
         } else {
-            userPrompt.append(String.format("Given manual meaning '%s', generate phonetics and an example sentence. " +
-                    "Return: {'phonetic': '...', 'pos': '...', 'meaning': '%s', 'popularity': 5, 'sentenceEn': '...', 'sentenceCn': '...'}.", 
+            userPrompt.append(String.format("Given manual meaning '%s', generate phonetics, example sentence and synonyms. " +
+                    "Return: {'phonetic': '...', 'pos': '...', 'meaning': '%s', 'popularity': 5, 'synonyms': ['syn1', 'syn2'], 'sentenceEn': '...', 'sentenceCn': '...'}.", 
                     manualMeaning, manualMeaning));
         }
 
@@ -309,15 +352,38 @@ public class DictImportBo {
         res.popularity = (Integer) map.getOrDefault("popularity", 5);
         res.sentenceEn = (String) map.get("sentenceEn");
         res.sentenceCn = (String) map.get("sentenceCn");
+        res.synonyms = (List<String>) map.get("synonyms");
         return res;
     }
 
-    private static class AiResult {
+    public static class AiResult {
         String phonetic;
         String pos;
         String meaning;
         Integer popularity;
         String sentenceEn;
         String sentenceCn;
+        List<String> synonyms;
+    }
+
+    public static class TaskStatistics {
+        public int addedWordCount = 0;       // 新词入库
+        public int addedDictWordCount = 0;   // 词书关联
+        public int addedMeaningCount = 0;    // 释义项
+        public int addedSentenceCount = 0;   // 例句
+        public int deletedMeaningCount = 0;  // 删除释义
+        public int deletedSentenceCount = 0; // 删除例句
+        public int skippedCount = 0;         // 跳过已存在
+        public int recreatedCount = 0;      // 触发重刷
+        public int addedSynonymCount = 0;    // 同义词
+        public int addedAudioCount = 0;      // 音频资源 (TTS/发音)
+        public int addedImageCount = 0;      // 图像资源
+        public Map<String, Map<String, Integer>> syncLogCounts = new java.util.HashMap<>(); // 实体类型 -> 操作类型 -> 数量
+        public int errorCount = 0;           // 出错
+
+        public void addSyncLog(String operation, String entity) {
+            Map<String, Integer> opMap = syncLogCounts.computeIfAbsent(entity, k -> new java.util.HashMap<>());
+            opMap.put(operation, opMap.getOrDefault(operation, 0) + 1);
+        }
     }
 }

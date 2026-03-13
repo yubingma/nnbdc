@@ -32,7 +32,18 @@ public class ImportTask extends UuidPo {
     @Column(name = "owner_id")
     private User owner;
 
+    @Column(name = "results", columnDefinition = "TEXT")
+    private String results;
+
     public ImportTask() {
+    }
+
+    public String getResults() {
+        return results;
+    }
+
+    public void setResults(String results) {
+        this.results = results;
     }
 
     public String getStatus() {
