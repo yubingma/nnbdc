@@ -509,6 +509,23 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
   @override
   Future<void> onLoad() async {
     await super.onLoad();
+    
+    // 性能预热：字体引擎极致预热
+    // 仅仅 getLineMetrics 有时不足以触发 GPU 纹理上传，
+    // 我们创建一个隐形的 TextComponent 强制引擎完成完整的绘制路径。
+    final warmUpPaint = TextPaint(style: const TextStyle(fontSize: 24, fontFamily: 'NotoSansSC', color: Colors.transparent));
+    final warmUpText = TextComponent(
+      text: '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ确定取消返回积分等级奖励卡顿预热', 
+      textRenderer: warmUpPaint,
+      position: Vector2(-9999, -9999), // 画在屏幕外
+    );
+    add(warmUpText);
+    // 强制执行一次逻辑以触发内部缓存
+    warmUpPaint.getLineMetrics(warmUpText.text);
+
+    // 性能预热：提前配置音频会话
+    async.unawaited(SoundUtil.configureAudioSession());
+
     // 基于屏幕宽度计算缩放后的布局尺寸
     const basePlayGroundWidth = 160.0;
     scaledPlayGroundWidth = basePlayGroundWidth * uiScale;
@@ -1981,9 +1998,12 @@ class SpiralGalaxyBackground extends PositionComponent {
   double t = 0;
   ui.Picture? _bakedArm1;
   ui.Picture? _bakedArm2;
-  double? _lastWidth;
-  double? _lastHeight;
   Shader? _cachedSpaceShader;
+  
+  // 重用 Paint 对象以减少分配
+  final _starPaint = Paint()..color = Colors.white;
+  final _fogPaint = Paint();
+  final _haloPaint = Paint();
 
   @override
   void update(double dt) {
@@ -1997,9 +2017,10 @@ class SpiralGalaxyBackground extends PositionComponent {
     if (width != size.x || height != size.y) {
       width = size.x;
       height = size.y;
-      _bakedArm1 = null;
-      _bakedArm2 = null;
       _cachedSpaceShader = null;
+      // 核心优化：在尺寸确定时立即烘焙，消灭 200ms 渲染尖峰
+      // 使用 microtask 避免在此刻阻塞当前的 UI 排版决策
+      async.Future.microtask(() => _bake(width, height));
     }
   }
 
@@ -2021,7 +2042,8 @@ class SpiralGalaxyBackground extends PositionComponent {
         final fog = RadialGradient(
           colors: [baseHue.withValues(alpha: 0.18 * fade), baseHue.withValues(alpha: 0.0)],
         ).createShader(Rect.fromCircle(center: Offset(x, y), radius: 60 * fade + 20));
-        canvas.drawCircle(Offset(x, y), 60 * fade + 20, Paint()..shader = fog);
+        _fogPaint.shader = fog;
+        canvas.drawCircle(Offset(x, y), 60 * fade + 20, _fogPaint);
 
         final rand = Random((r * 97).toInt());
         final starCount = 3 + rand.nextInt(7);
@@ -2036,10 +2058,11 @@ class SpiralGalaxyBackground extends PositionComponent {
           final haloShader = RadialGradient(
             colors: [starColor.withValues(alpha: 0.12), starColor.withValues(alpha: 0.0)],
           ).createShader(Rect.fromCircle(center: Offset(sx, sy), radius: haloRadius));
-          canvas.drawCircle(Offset(sx, sy), haloRadius, Paint()..shader = haloShader);
+          _haloPaint.shader = haloShader;
+          canvas.drawCircle(Offset(sx, sy), haloRadius, _haloPaint);
           
-          starPaint.color = starColor.withValues(alpha: 0.85);
-          canvas.drawCircle(Offset(sx, sy), size, starPaint);
+          _starPaint.color = starColor.withValues(alpha: 0.85);
+          canvas.drawCircle(Offset(sx, sy), size, _starPaint);
           canvas.drawCircle(Offset(sx, sy), size * 0.35, Paint()..color = Colors.white.withValues(alpha: 0.8));
         }
       }
@@ -2048,19 +2071,15 @@ class SpiralGalaxyBackground extends PositionComponent {
 
     _bakedArm1 = bakeArm(const Color(0xFF80D8FF));
     _bakedArm2 = bakeArm(const Color(0xFFFF80AB));
-    _lastWidth = w;
-    _lastHeight = h;
   }
 
   @override
-  @override
   void render(Canvas canvas) {
     PerfMonitor.start('SpiralGalaxyBackground.render');
-    
     // 降级保护：如果由于某种原因（如尺寸改变）导致烘焙失效，
     // 在 render 中同步烘焙会导致 200ms 卡顿，但为了画面正确仍需保留，
     // 不过通过 cache 机制，这应该只发生一次。
-    if (_bakedArm1 == null || _lastWidth != width || _lastHeight != height) {
+    if (_bakedArm1 == null) {
       _bake(width, height);
     }
 
