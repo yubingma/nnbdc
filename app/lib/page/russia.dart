@@ -1670,8 +1670,10 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
   @override
   void render(Canvas canvas) {
     super.render(canvas);
+    PerfMonitor.start('MyGame.render');
     if (playerA.props[0] > 0) {
       plusBtn.setAlpha(255);
+    PerfMonitor.stop('MyGame.render');
     } else {
       plusBtn.setAlpha(50);
     }
@@ -1684,7 +1686,11 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
 
   @override
   void update(double dt) {
+    PerfMonitor.start('MyGame.update');
     super.update(dt);
+    PerfMonitor.extraInfo = 'DeadWords: A=${playerA.deadWords.length}, B=${playerB.deadWords.length}';
+    PerfMonitor.stop('MyGame.update');
+    PerfMonitor.report();
 
     // 不再周期上报B侧ETA；改为在收到新wordB时上报一次
 
@@ -1930,6 +1936,7 @@ class SpiralGalaxyBackground extends PositionComponent {
 
   @override
   void render(Canvas canvas) {
+    PerfMonitor.start('SpiralGalaxyBackground.render');
     final rect = Rect.fromLTWH(0, 0, width, height);
 
     // 深色空间底色
@@ -1954,6 +1961,7 @@ class SpiralGalaxyBackground extends PositionComponent {
       ],
     ).createShader(Rect.fromCircle(center: center, radius: 140));
     canvas.drawCircle(center, 140, Paint()..shader = core);
+    PerfMonitor.stop('SpiralGalaxyBackground.render');
   }
 
   void _drawSpiralArm(Canvas canvas, Offset center, {required Color baseHue, required double angleOffset}) {
@@ -2048,6 +2056,7 @@ class GalaxyBackground extends PositionComponent {
 
   @override
   void render(Canvas canvas) {
+    PerfMonitor.start('GalaxyBackground.render');
     final rect = Rect.fromLTWH(0, 0, width, height);
 
     // 宇宙底色
@@ -2071,6 +2080,7 @@ class GalaxyBackground extends PositionComponent {
     // 星空粒子层
     _drawStars(canvas, rect, count: 120, sizeMin: 0.6, sizeMax: 1.4, speed: 0.06, twinkle: 0.5);
     _drawStars(canvas, rect, count: 60, sizeMin: 1.2, sizeMax: 2.0, speed: 0.03, twinkle: 0.8);
+    PerfMonitor.stop('GalaxyBackground.render');
   }
 
   void _drawNebula(Canvas canvas, Rect rect, Color color, double ax, double ay, double radius, double alpha) {
@@ -2563,6 +2573,7 @@ class DroppingWordSprite extends TextComponent with HasGameReference<MyGame>, Co
 
   @override
   void update(double dt) {
+    PerfMonitor.start('DroppingWordSprite.update');
     super.update(dt);
     if (!isDead) {
       // 按屏幕缩放比例调整下落速度，保证不同屏幕用时一致
@@ -2583,6 +2594,7 @@ class DroppingWordSprite extends TextComponent with HasGameReference<MyGame>, Co
       final TextStyle base = makeDeadPaint().style;
       textRenderer = TextPaint(style: base.copyWith(fontSize: _fixedFontSize));
     }
+    PerfMonitor.stop('DroppingWordSprite.update');
   }
 
   // 不覆写 render，使用父类默认实现
@@ -2970,6 +2982,49 @@ class _DisconnectListener implements SocketStatusListener {
       } else {
         Global.logger.d('非比赛状态检测到断连，不显示提示');
       }
+    }
+  }
+}
+
+class PerfMonitor {
+  static final Map<String, List<double>> _metrics = {};
+  static final Map<String, Stopwatch> _stopwatches = {};
+  static DateTime _lastReportTime = DateTime.now();
+  static String? extraInfo;
+
+  static void start(String label) {
+    _stopwatches[label] = Stopwatch()..start();
+  }
+
+  static void stop(String label) {
+    final sw = _stopwatches[label];
+    if (sw != null) {
+      sw.stop();
+      final ms = sw.elapsedMicroseconds / 1000.0;
+      _metrics.putIfAbsent(label, () => []).add(ms);
+      sw.reset();
+    }
+  }
+
+  static void report() {
+    final now = DateTime.now();
+    if (now.difference(_lastReportTime).inSeconds >= 2) {
+      _lastReportTime = now;
+      if (_metrics.isEmpty) return;
+      
+      final sb = StringBuffer('\n[Perf] --- Performance Report ---\n');
+      if (extraInfo != null) {
+        sb.writeln('[Perf] Info: $extraInfo');
+      }
+      _metrics.forEach((label, values) {
+        if (values.isEmpty) return;
+        final count = values.length;
+        final avg = values.reduce((a, b) => a + b) / count; 
+        final maxVal = values.reduce((a, b) => a > b ? a : b);
+        sb.writeln('[Perf] $label: avg=${avg.toStringAsFixed(2)}ms, max=${maxVal.toStringAsFixed(2)}ms (samples: $count)');
+      });
+      Global.logger.d(sb.toString());
+      _metrics.clear();
     }
   }
 }
