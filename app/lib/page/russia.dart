@@ -2549,6 +2549,11 @@ class DroppingWordSprite extends TextComponent with HasGameReference<MyGame>, Co
   // 当通过代码强制落地时，跳过碰撞回调中的落地处理，避免重复落地
   bool skipCollision = false;
   late Player player;
+  
+  // 静态缓存字号计算结果，避免每个单词出现都进行 18 次二分查找
+  static double? _cachedFontSize;
+  static double? _cachedAvailableHeight;
+
   double _fixedFontSize = 16.0;
   // 拖曳与摆动效果
   final List<double> _trailYs = <double>[];
@@ -2565,27 +2570,34 @@ class DroppingWordSprite extends TextComponent with HasGameReference<MyGame>, Co
   @override
   Future<void> onLoad() async {
     await super.onLoad();
-    // 固定字号：按10行目标计算一次后保持不变
+    
     final double available = player.playGround.height - 4;
-    final TextStyle base = (textRenderer as TextPaint).style;
-
-    double computeFontSizeForLines(double availableHeight, int lines) {
+    
+    // 如果缓存有效，直接使用，不再进行昂贵的二分查找
+    if (_cachedFontSize != null && _cachedAvailableHeight == available) {
+      _fixedFontSize = _cachedFontSize!;
+    } else {
+      final TextStyle base = (textRenderer as TextPaint).style;
       double low = 8.0;
       double high = 64.0;
+      
+      // 仅在第一次或尺寸变化时计算一次
       for (int i = 0; i < 18; i++) {
         final double mid = (low + high) / 2.0;
         final testPaint = TextPaint(style: base.copyWith(fontSize: mid));
         final double lineH = testPaint.getLineMetrics('Hg').height;
-        if (lineH * lines <= availableHeight) {
-          low = mid; // 可以更大
+        if (lineH * 10 <= available) {
+          low = mid;
         } else {
-          high = mid; // 太大，缩小
+          high = mid;
         }
       }
-      return low;
+      _fixedFontSize = low;
+      _cachedFontSize = _fixedFontSize;
+      _cachedAvailableHeight = available;
     }
 
-    _fixedFontSize = computeFontSizeForLines(available, 10);
+    final TextStyle base = (textRenderer as TextPaint).style;
     textRenderer = TextPaint(style: base.copyWith(fontSize: _fixedFontSize));
     _baseX = x;
   }
