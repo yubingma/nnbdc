@@ -22,3 +22,8 @@ CREATE INDEX IF NOT EXISTS idx_meaning_owner ON meaning_item(owner_id);
 ALTER TABLE import_task ADD CONSTRAINT fk_import_task_owner FOREIGN KEY (owner_id) REFERENCES "user"(id);
 
 COMMENT ON TABLE import_task IS '单词导入任务表';
+
+-- 2026-03-13: Add results column to track detailed statistics for import tasks
+ALTER TABLE import_task ADD COLUMN results TEXT;
+
+
