@@ -182,7 +182,6 @@ class SoundUtil {
   static Future<void> playAssetSoundConcurrent(String soundFileName, double speed, double volume) async {
     final pool = _sfxPools.putIfAbsent(soundFileName, () => [AudioPlayer()]);
     AudioPlayer? player;
-    int playerIndex = -1;
     final now = DateTime.now();
 
     for (int i = 0; i < pool.length; i++) {
@@ -190,7 +189,6 @@ class SoundUtil {
       final busyUntil = _playerBusyUntil[p] ?? DateTime(0);
       if (p.state != PlayerState.playing && now.isAfter(busyUntil)) {
         player = p;
-        playerIndex = i;
         break;
       }
     }
@@ -198,13 +196,9 @@ class SoundUtil {
     if (player == null && pool.length < _maxPlayersPerSfx) {
       player = AudioPlayer();
       pool.add(player);
-      playerIndex = pool.length - 1;
     }
 
-    if (player == null) {
-      player = pool[0];
-      playerIndex = 0;
-    }
+    player ??= pool[0];
 
     // 锁定该播放器
     _playerBusyUntil[player] = now.add(const Duration(milliseconds: 300));
@@ -255,7 +249,6 @@ class SoundUtil {
   static Future<void> playAssetSoundCut(String soundFileName, double speed, double volume, Duration maxPlay) async {
     final pool = _sfxPools.putIfAbsent(soundFileName, () => [AudioPlayer()]);
     AudioPlayer? player;
-    int playerIndex = -1;
     final now = DateTime.now();
 
     for (int i = 0; i < pool.length; i++) {
@@ -270,13 +263,9 @@ class SoundUtil {
     if (player == null && pool.length < _maxPlayersPerSfx) {
       player = AudioPlayer();
       pool.add(player);
-      playerIndex = pool.length - 1;
     }
 
-    if (player == null) {
-      player = pool[0];
-      playerIndex = 0;
-    }
+    player ??= pool[0];
 
     // 锁定
     _playerBusyUntil[player] = now.add(const Duration(milliseconds: 400));

@@ -384,35 +384,9 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
 
   /// 计算单词的标准高度（基于字体信息）
   static double calculateWordHeight(double uiScale) {
-    // 使用与DroppingWordSprite相同的字体计算逻辑
-    final TextStyle base = TextStyle(
-      fontSize: 22 * uiScale,
-      fontWeight: FontWeight.w500,
-      fontFamily: 'NotoSansSC',
-    );
-
-    // 计算10行目标下的字体大小
-    final double available = playGroundHeight * uiScale - 4;
-
-    double computeFontSizeForLines(double availableHeight, int lines) {
-      double low = 8.0;
-      double high = 64.0;
-      for (int i = 0; i < 18; i++) {
-        final double mid = (low + high) / 2.0;
-        final testPaint = TextPaint(style: base.copyWith(fontSize: mid));
-        final double lineH = testPaint.getLineMetrics('Hg').height;
-        if (lineH * lines <= availableHeight) {
-          low = mid; // 可以更大
-        } else {
-          high = mid; // 太大，缩小
-        }
-      }
-      return low;
-    }
-
-    final double fontSize = computeFontSizeForLines(available, 10);
-    final TextPaint paint = TextPaint(style: base.copyWith(fontSize: fontSize));
-    return paint.getLineMetrics('Hg').height;
+    // 统一与 DroppingWordSprite.onLoad 逻辑：playground 高度的 1/10
+    final double scaledPH = playGroundHeight * uiScale;
+    return (scaledPH - 4) / 10.0;
   }
 
   late SpriteComponent plusBtn;
@@ -1565,12 +1539,18 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
     // B侧必须存在下落中的单词
     final curr = playerB.droppingWordSprite;
     if (!isPlaying || curr == null || curr.isDead) return;
-    // 估算至触底剩余时间：使用与reportFallEta相同的速度估计（20px/s），A/B同坐标系
+    // 估算至触底剩余时间：使用与下落速度严格一致的估计
     final dwTop = getDeadWordsTopY(playerB);
-    final remain = (dwTop - curr.height) - curr.y;
+    
+    // 核心优化：如果组件尚未 onLoad 完成（height 为 0），则使用标准行高预测
+    final double h = curr.height > 0 ? curr.height : calculateWordHeight(uiScale);
+    final remain = (dwTop - h) - curr.y;
+    
     final double v = 35.0 * uiScale; // px/s，与下落速度(DroppingWordSprite.update)保持严格一致
     final double etaSec = remain > 0 ? (remain / v) : 0.0;
-    final int etaMs = (etaSec * 1000).clamp(0, 60000).toInt();
+    // 转换毫秒，并引入较明显的网络补偿（如 120ms），抵消双向延迟
+    // 这对于高叠（各词生命周期极短）情况至关重要，能让 server 提前触发下一词下发
+    final int etaMs = (etaSec * 1000 - 120).clamp(0, 60000).toInt();
     sendUserCmd('REPORT_FALL_B', [etaMs]);
   }
 
@@ -2665,6 +2645,10 @@ class DroppingWordSprite extends TextComponent with HasGameReference<MyGame>, Co
       } else {
         if (player == game.playerA) {
           game.sendUserCmd('GET_NEXT_WORD', [game.playerA.wordIndex++, 'false', game.playerA.currWord!.spell]);
+        }
+        if (player == game.playerB) {
+          // B 侧(通常为机器人)在本地触底后，立即上报 ETA=0，强制 server 端结束等待并下发下一词，消除高叠时的延迟
+          game.sendUserCmd('REPORT_FALL_B', [0]);
         }
         game.endLanding(player);
       }
