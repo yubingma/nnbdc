@@ -112,11 +112,12 @@ class RussiaPageState extends State<RussiaPage> {
 
     super.dispose();
   }
-
   Future<void> loadData() async {
     if (!await checkArgs()) {
       return;
     }
+    if (dataLoaded) return;
+    myGame = MyGame(gameHall, exceptRoom, context, this);
     setState(() {
       dataLoaded = true;
     });
@@ -157,8 +158,6 @@ class RussiaPageState extends State<RussiaPage> {
     if (!dataLoaded) {
       return const Center(child: Text('waiting...'));
     }
-    screenWidth = MediaQuery.of(context).size.width;
-    myGame = MyGame(gameHall, exceptRoom, context, this);
     return GameWidget(
       game: myGame,
     );
@@ -181,13 +180,17 @@ class BottomJet extends PositionComponent {
     brickImg = Sprite(image);
   }
 
+  Shader? _cachedShader;
+  double? _lastHeight;
+
   @override
-  Future<void> render(Canvas canvas) async {
+  void render(Canvas canvas) {
     Rect rect = size.toRect();
 
     // 绘制渐变背景
-    Paint backgroundPaint = Paint()
-      ..shader = LinearGradient(
+    if (_cachedShader == null || _lastHeight != height) {
+      _lastHeight = height;
+      _cachedShader = LinearGradient(
         colors: [
           const Color(0xFF4A90E2),
           const Color(0xFF357ABD),
@@ -196,6 +199,8 @@ class BottomJet extends PositionComponent {
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
       ).createShader(rect);
+    }
+    Paint backgroundPaint = Paint()..shader = _cachedShader;
 
     // 顶部圆角、底部直角
     final RRect roundedRect = RRect.fromRectAndCorners(
@@ -269,21 +274,24 @@ class PlayGround extends PositionComponent {
   static Paint blue = BasicPalette.blue.paint();
   static Paint green = BasicPalette.green.paint();
 
+  Shader? _cachedShader;
+
   @override
   void render(Canvas canvas) {
     Rect rect = size.toRect();
 
     // 绘制渐变背景（半透明 0.7）
-    Paint backgroundPaint = Paint()
-      ..shader = LinearGradient(
-        colors: [
-          const Color(0xFF1A1A2E).withValues(alpha: 0.7),
-          const Color(0xFF16213E).withValues(alpha: 0.7),
-          const Color(0xFF0F3460).withValues(alpha: 0.7),
-        ],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      ).createShader(rect);
+    _cachedShader ??= LinearGradient(
+      colors: [
+        const Color(0xFF1A1A2E).withValues(alpha: 0.7),
+        const Color(0xFF16213E).withValues(alpha: 0.7),
+        const Color(0xFF0F3460).withValues(alpha: 0.7),
+      ],
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+    ).createShader(rect);
+
+    Paint backgroundPaint = Paint()..shader = _cachedShader;
 
     // 顶部圆角、底部直角
     RRect roundedRect = RRect.fromRectAndCorners(
@@ -452,6 +460,8 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
   bool _landingAInProgress = false;
   bool _landingBInProgress = false;
   // 说明：机器人道具使用逻辑由后端控制；前端不做本地自动触发
+  String _lastLayoutKey = '';
+  bool _needsButtonLayout = true;
 
   bool tryBeginLanding(Player player) {
     if (player == playerA) {
@@ -1051,7 +1061,9 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
 
     socket.off('wordA');
     socket.on('wordA', (data) {
+      PerfMonitor.start('Socket.wordA');
       if (!isPlaying) {
+        PerfMonitor.stop('Socket.wordA');
         return;
       }
 
@@ -1066,6 +1078,7 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
       newDroppingWord(playerA.currWord!, playerA.otherWordMeanings, playerA);
       // 已改为仅上报机器人(B侧)的ETA
       SoundUtil.playPronounceSound(playerA.currWord!);
+      PerfMonitor.stop('Socket.wordA');
     });
 
     // 服务端通知：生词已加入（无需等待同步，前端可直接提示）
@@ -1073,7 +1086,9 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
 
     socket.off('wordB');
     socket.on('wordB', (data) {
+      PerfMonitor.start('Socket.wordB');
       if (!isPlaying) {
+        PerfMonitor.stop('Socket.wordB');
         return;
       }
       if (isExercise) {
@@ -1111,6 +1126,7 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
         newDroppingWord(playerB.currWord!, playerB.otherWordMeanings, playerB);
         _reportFallEtaBOnce();
       }
+      PerfMonitor.stop('Socket.wordB');
     });
 
     socket.off('userGameInfo');
@@ -1495,6 +1511,7 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
   }
 
   void newDroppingWord(WordVo word, List otherWordMeanings, Player player) {
+    PerfMonitor.start('newDroppingWord');
     // 强制保证同一侧同一时间只有一个下落单词
     if (player.droppingWordSprite != null) {
       // 若前一颗尚未入栈，直接移除之，避免出现多个同时下落
@@ -1515,6 +1532,7 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
           : (playerA.correctIndex == 1 ? playerA.otherWordMeanings[0] : playerA.otherWordMeanings[1]);
       answer3Btn.text = playerA.correctIndex == 3 ? playerA.currWord!.getMeaningStr() : playerA.otherWordMeanings[1];
     }
+    PerfMonitor.stop('newDroppingWord');
   }
 
   double getDeadWordsTopY(Player player) {
@@ -1687,11 +1705,9 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
 
   @override
   void update(double dt) {
+    PerfMonitor.tick();
     PerfMonitor.start('MyGame.update');
     super.update(dt);
-    PerfMonitor.extraInfo = 'DeadWords: A=${playerA.deadWords.length}, B=${playerB.deadWords.length}';
-    PerfMonitor.stop('MyGame.update');
-    PerfMonitor.report();
 
     // 不再周期上报B侧ETA；改为在收到新wordB时上报一次
 
@@ -1717,167 +1733,173 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
       }
     }
 
-    var visibleButtons = <MyButton>[];
-
-    if (gameState == 'ready' && !playerA.started && !isPlaying && !isShowingResult) {
-      visibleButtons.add(startGameBtn);
+    final layoutKey = '$gameState|$isPlaying|$isShowingResult|${playerA.userGameInfo != null}|${playerB.userGameInfo != null}|${playerA.started}|${playerA.otherWordMeanings.length}|${countdownSeconds > 0}';
+    if (layoutKey != _lastLayoutKey) {
+      _lastLayoutKey = layoutKey;
+      _needsButtonLayout = true;
     }
 
-    // 判断是否为私房模式
-    bool isPrivateRoom = Get.arguments != null &&
-        (Get.arguments is List && Get.arguments.length > 2) &&
-        (((Get.arguments[2] as Map?)?.containsKey('mode') == true && (Get.arguments[2] as Map)['mode'] == 'createPrivate') ||
-            ((Get.arguments[2] as Map?)?.containsKey('joinRoomId') == true));
+    if (_needsButtonLayout) {
+      _needsButtonLayout = false;
+      var visibleButtons = <MyButton>[];
 
-    // 在非游戏状态且非私房模式下显示换房间按钮
-    if (!isPlaying && !isShowingResult && !isPrivateRoom) {
-      visibleButtons.add(changeRoomBtn);
-    }
-
-    if (!isPlaying && !isShowingResult) {
-      visibleButtons.add(exerciseBtn);
-    }
-
-    // 在非游戏状态时显示离开按钮，但在倒计时期间不显示
-    if (!isPlaying && countdownSeconds == 0) {
-      visibleButtons.add(exitBtn);
-    }
-
-    // 背景切换已移除
-
-    if (isPlaying && playerA.otherWordMeanings.isNotEmpty) {
-      visibleButtons.add(answer1Btn);
-      visibleButtons.add(answer2Btn);
-      visibleButtons.add(answer3Btn);
-    }
-
-    if (isPlaying && isExercise) {
-      visibleButtons.add(answer4Btn);
-      visibleButtons.add(answer5Btn);
-    }
-
-    // 隐藏不应显示的按钮
-    for (var btn in allButtons) {
-      if (!visibleButtons.contains(btn) && contains(btn)) {
-        btn.removeFromParent();
+      if (gameState == 'ready' && !playerA.started && !isPlaying && !isShowingResult) {
+        visibleButtons.add(startGameBtn);
       }
-    }
 
-    // 显示应当显示的按钮
-    var nextBtnX = 8.0;
-    // 起始位置：以"道具图标底部+间距"为准，确保不遮挡道具
-    final double propsBottom = max(
-      minusBtn.y + minusBtn.height,
-      plusBtn.y + plusBtn.height,
-    );
-    var nextBtnY = max(
-      // 操场底部 + 道具图标高度(48) + 基础间距
-      playerA.playGround.y + playerA.playGround.height + 16.0 + 48.0 + 12.0 * uiScale,
-      // 道具底部 + 间距
-      propsBottom + 12.0 * uiScale,
-    );
-    final double btnGap = 12.0 * uiScale; // 按钮之间的间隔
-    final double answersExtraScale = isPlaying && playerA.otherWordMeanings.isNotEmpty ? 1.1 : 1.0;
+      // 判断是否为私房模式
+      bool isPrivateRoom = Get.arguments != null &&
+          (Get.arguments is List && Get.arguments.length > 2) &&
+          (((Get.arguments[2] as Map?)?.containsKey('mode') == true && (Get.arguments[2] as Map)['mode'] == 'createPrivate') ||
+              ((Get.arguments[2] as Map?)?.containsKey('joinRoomId') == true));
 
-    // 预计算每个按钮的基础行高与内边距，并估算总高度
-    final List<double> baseLineHeights = [];
-    final List<double> basePaddings = [];
-    final int n = visibleButtons.length;
-    double totalBaseHeight = 0.0;
-    for (var btn in visibleButtons) {
-      final MyButtonTextComponent btnUp = btn.button! as MyButtonTextComponent;
-      final bool isAnswerBtn = btn == answer1Btn || btn == answer2Btn || btn == answer3Btn || btn == answer4Btn || btn == answer5Btn;
-      final double textHeight = (btnUp.textRenderer as TextPaint).getLineMetrics(btnUp.text).height;
-      final double basePadding = (isAnswerBtn ? 1.1 : 1.0) * max(16.0, textHeight * 1.1) * answersExtraScale;
-      final double visualHeight = textHeight + basePadding + 16.0;
-      baseLineHeights.add(textHeight);
-      basePaddings.add(basePadding);
-      totalBaseHeight += visualHeight;
-    }
-    if (n > 0) {
-      totalBaseHeight += btnGap * (n - 1);
-    }
-    final double availableHeight = size.y - nextBtnY - 16.0;
-    double scaleS = 1.0;
-    if (!_buttonSizeInitialized && totalBaseHeight > availableHeight && totalBaseHeight > 0) {
-      scaleS = (availableHeight / totalBaseHeight).clamp(0.4, 1.0);
-    }
-
-    // 计算参考字号：优先使用已添加到场景中的任意一个按钮的字号，确保后续新出现按钮与之保持一致
-    double referenceFontSize = 15.0 * uiScale;
-    for (final b in visibleButtons) {
-      if (contains(b)) {
-        final MyButtonTextComponent up = b.button! as MyButtonTextComponent;
-        final double? fs = (up.textRenderer as TextPaint).style.fontSize;
-        if (fs != null) {
-          referenceFontSize = fs;
-          break;
-        }
+      // 在非游戏状态且非私房模式下显示换房间按钮
+      if (!isPlaying && !isShowingResult && !isPrivateRoom) {
+        visibleButtons.add(changeRoomBtn);
       }
-    }
 
-    // 应用缩放并布局
-    for (int i = 0; i < visibleButtons.length; i++) {
-      final btn = visibleButtons[i];
-      btn
-        ..x = nextBtnX
-        ..y = nextBtnY;
+      if (!isPlaying && !isShowingResult) {
+        visibleButtons.add(exerciseBtn);
+      }
 
-      final MyButtonTextComponent btnUp = btn.button! as MyButtonTextComponent;
-      final MyButtonTextComponent btnDown = btn.buttonDown! as MyButtonTextComponent;
+      if (!isPlaying && countdownSeconds == 0) {
+        visibleButtons.add(exitBtn);
+      }
 
-      // 字号按需缩放，但不小于12；仅在首次全局布局时计算
-      if (!_buttonSizeInitialized) {
-        TextStyle tsUp = (btnUp.textRenderer as TextPaint).style;
-        TextStyle tsDown = (btnDown.textRenderer as TextPaint).style;
-        final double origFontSize = (tsUp.fontSize ?? 15 * uiScale);
-        final double targetFontSize = max(12.0, origFontSize * scaleS);
-        if (targetFontSize != origFontSize) {
-          btnUp.textRenderer = TextPaint(style: tsUp.copyWith(fontSize: targetFontSize));
-          btnDown.textRenderer = TextPaint(style: tsDown.copyWith(fontSize: targetFontSize));
-        }
-      } else if (!contains(btn)) {
-        // 全局已初始化，但该按钮是首次显示：按参考字号归一化其字体大小
-        TextStyle tsUp = (btnUp.textRenderer as TextPaint).style;
-        TextStyle tsDown = (btnDown.textRenderer as TextPaint).style;
-        final double origFontSize = (tsUp.fontSize ?? 15 * uiScale);
-        final double targetFontSize = max(12.0, referenceFontSize);
-        if ((tsUp.fontSize ?? origFontSize) != targetFontSize) {
-          btnUp.textRenderer = TextPaint(style: tsUp.copyWith(fontSize: targetFontSize));
-        }
-        if ((tsDown.fontSize ?? origFontSize) != targetFontSize) {
-          btnDown.textRenderer = TextPaint(style: tsDown.copyWith(fontSize: targetFontSize));
+      if (isPlaying && playerA.otherWordMeanings.isNotEmpty) {
+        visibleButtons.add(answer1Btn);
+        visibleButtons.add(answer2Btn);
+        visibleButtons.add(answer3Btn);
+      }
+
+      if (isPlaying && isExercise) {
+        visibleButtons.add(answer4Btn);
+        visibleButtons.add(answer5Btn);
+      }
+
+      // 隐藏不应显示的按钮
+      for (var btn in allButtons) {
+        if (!visibleButtons.contains(btn) && contains(btn)) {
+          btn.removeFromParent();
         }
       }
 
-      // 重新测量行高并计算内边距
-      final double lineHeight = (btnUp.textRenderer as TextPaint).getLineMetrics(btnUp.text).height;
-      final double basePadding = basePaddings[i];
-      // 仅在首次全局布局时计算内边距；若为后续首次出现的按钮，则按参考字号比例归一化其内边距
-      final double newPadding = _buttonSizeInitialized ? btnUp.verticalPadding : max(16.0, basePadding * scaleS);
-      if (!_buttonSizeInitialized) {
-        btnUp.verticalPadding = newPadding;
-        btnDown.verticalPadding = newPadding;
-      } else if (!contains(btn)) {
-        // 参考字号与原始字号的比例，复用到 padding 上，确保高度一致
-        final double origFontSize = 15.0 * uiScale;
-        final double s = (referenceFontSize / origFontSize).clamp(0.4, 1.5);
-        final double normalizedPadding = max(16.0, basePadding * s);
-        btnUp.verticalPadding = normalizedPadding;
-        btnDown.verticalPadding = normalizedPadding;
+      // 显示应当显示的按钮
+      var nextBtnX = 8.0;
+      // 起始位置：以"道具图标底部+间距"为准，确保不遮挡道具
+      final double propsBottom = max(
+        minusBtn.y + minusBtn.height,
+        plusBtn.y + plusBtn.height,
+      );
+      var nextBtnY = max(
+        // 操场底部 + 道具图标高度(48) + 基础间距
+        playerA.playGround.y + playerA.playGround.height + 16.0 + 48.0 + 12.0 * uiScale,
+        // 道具底部 + 间距
+        propsBottom + 12.0 * uiScale,
+      );
+      final double btnGap = 12.0 * uiScale; // 按钮之间的间隔
+      final double answersExtraScale = isPlaying && playerA.otherWordMeanings.isNotEmpty ? 1.1 : 1.0;
+
+      // 预计算每个按钮的基础行高与内边距，并估算总高度
+      final List<double> baseLineHeights = [];
+      final List<double> basePaddings = [];
+      final int n = visibleButtons.length;
+      double totalBaseHeight = 0.0;
+      for (var btn in visibleButtons) {
+        final MyButtonTextComponent btnUp = btn.button! as MyButtonTextComponent;
+        final bool isAnswerBtn = btn == answer1Btn || btn == answer2Btn || btn == answer3Btn || btn == answer4Btn || btn == answer5Btn;
+        final double textHeight = btnUp.textHeight;
+        final double basePadding = (isAnswerBtn ? 1.1 : 1.0) * max(16.0, textHeight * 1.1) * answersExtraScale;
+        final double visualHeight = textHeight + basePadding + 16.0;
+        baseLineHeights.add(textHeight);
+        basePaddings.add(basePadding);
+        totalBaseHeight += visualHeight;
+      }
+      if (n > 0) {
+        totalBaseHeight += btnGap * (n - 1);
+      }
+      final double availableHeight = size.y - nextBtnY - 16.0;
+      double scaleS = 1.0;
+      if (!_buttonSizeInitialized && totalBaseHeight > availableHeight && totalBaseHeight > 0) {
+        scaleS = (availableHeight / totalBaseHeight).clamp(0.4, 1.0);
       }
 
-      if (!contains(btn)) {
-        add(btn);
+      // 计算参考字号：优先使用已添加到场景中的任意一个按钮的字号，确保后续新出现按钮与之保持一致
+      double referenceFontSize = 15.0 * uiScale;
+      for (final b in visibleButtons) {
+        if (contains(b)) {
+          final MyButtonTextComponent up = b.button! as MyButtonTextComponent;
+          final double? fs = (up.textRenderer as TextPaint).style.fontSize;
+          if (fs != null) {
+            referenceFontSize = fs;
+            break;
+          }
+        }
       }
 
-      // 同步 HudButtonComponent 的命中区域到背景尺寸，确保整块可点
-      final double btnWidth = screenWidth - 16;
-      final Size compSize = Size(btnWidth, lineHeight + newPadding);
-      btn.size = Vector2(compSize.width, compSize.height);
-      nextBtnY += compSize.height + 16.0 + btnGap; // 16 为顶部偏移补偿
+      // 应用缩放并布局
+      for (int i = 0; i < visibleButtons.length; i++) {
+        final btn = visibleButtons[i];
+        btn
+          ..x = nextBtnX
+          ..y = nextBtnY;
+
+        final MyButtonTextComponent btnUp = btn.button! as MyButtonTextComponent;
+        final MyButtonTextComponent btnDown = btn.buttonDown! as MyButtonTextComponent;
+
+        // 字号按需缩放，但不小于12；仅在首次全局布局时计算
+        if (!_buttonSizeInitialized) {
+          TextStyle tsUp = (btnUp.textRenderer as TextPaint).style;
+          TextStyle tsDown = (btnDown.textRenderer as TextPaint).style;
+          final double origFontSize = (tsUp.fontSize ?? 15 * uiScale);
+          final double targetFontSize = max(12.0, origFontSize * scaleS);
+          if (targetFontSize != origFontSize) {
+            btnUp.textRenderer = TextPaint(style: tsUp.copyWith(fontSize: targetFontSize));
+            btnDown.textRenderer = TextPaint(style: tsDown.copyWith(fontSize: targetFontSize));
+          }
+        } else if (!contains(btn)) {
+          // 全局已初始化，但该按钮是首次显示：按参考字号归一化其字体大小
+          TextStyle tsUp = (btnUp.textRenderer as TextPaint).style;
+          TextStyle tsDown = (btnDown.textRenderer as TextPaint).style;
+          final double origFontSize = (tsUp.fontSize ?? 15 * uiScale);
+          final double targetFontSize = max(12.0, referenceFontSize);
+          if ((tsUp.fontSize ?? origFontSize) != targetFontSize) {
+            btnUp.textRenderer = TextPaint(style: tsUp.copyWith(fontSize: targetFontSize));
+          }
+          if ((tsDown.fontSize ?? origFontSize) != targetFontSize) {
+            btnDown.textRenderer = TextPaint(style: tsDown.copyWith(fontSize: targetFontSize));
+          }
+        }
+
+        // 重新测量行高并计算内边距
+        final double lineHeight = btnUp.textHeight;
+        final double basePadding = basePaddings[i];
+        // 仅在首次全局布局时计算内边距；若为后续首次出现的按钮，则按参考字号比例归一化其内边距
+        final double newPadding = _buttonSizeInitialized ? btnUp.verticalPadding : max(16.0, basePadding * scaleS);
+        if (!_buttonSizeInitialized) {
+          btnUp.verticalPadding = newPadding;
+          btnDown.verticalPadding = newPadding;
+        } else if (!contains(btn)) {
+          // 参考字号与原始字号的比例，复用到 padding 上，确保高度一致
+          final double origFontSize = 15.0 * uiScale;
+          final double s = (referenceFontSize / origFontSize).clamp(0.4, 1.5);
+          final double normalizedPadding = max(16.0, basePadding * s);
+          btnUp.verticalPadding = normalizedPadding;
+          btnDown.verticalPadding = normalizedPadding;
+        }
+
+        if (!contains(btn)) {
+          add(btn);
+        }
+
+        // 同步 HudButtonComponent 的命中区域到背景尺寸，确保整块可点
+        final double btnWidth = screenWidth - 16;
+        final Size compSize = Size(btnWidth, lineHeight + newPadding);
+        btn.size = Vector2(compSize.width, compSize.height);
+        nextBtnY += compSize.height + 16.0 + btnGap; // 16 为顶部偏移补偿
+      }
+      _buttonSizeInitialized = true;
     }
-    _buttonSizeInitialized = true;
 
     // 显示/隐藏玩家信息
     if (!isPlaying && playerA.userGameInfo != null) {
@@ -1914,6 +1936,9 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
         remove(countdownText);
       }
     }
+    PerfMonitor.extraInfo = 'DeadWords: A=${playerA.deadWords.length}, B=${playerB.deadWords.length}';
+    PerfMonitor.stop('MyGame.update');
+    PerfMonitor.report();
   }
 }
 
@@ -2127,6 +2152,19 @@ class UserInfoPanel extends PositionComponent with HasGameReference<MyGame> {
   // 熟人约战提示组件
   late TextComponent friendlyMatchHint;
 
+  // 缓存属性
+  String _lastNick = '';
+  int _lastScore = -1;
+  int _lastCowDung = -1;
+  String _lastWinLoss = '';
+  String _lastWinRatio = '';
+  bool? _lastIsWon;
+  int _lastScoreAdjust = -1;
+  int _lastCowDungAdjust = -1;
+
+  late TextPaint _successPaint;
+  late TextPaint _failPaint;
+
   UserInfoPanel(this.player) : super(priority: 2);
 
   @override
@@ -2276,6 +2314,23 @@ class UserInfoPanel extends PositionComponent with HasGameReference<MyGame> {
       ..anchor = Anchor.bottomCenter
       ..x = width / 2
       ..y = height - 8;
+
+    _successPaint = TextPaint(
+        style: TextStyle(color: const Color(0xFF4CAF50), fontSize: 15 * s, fontWeight: FontWeight.w500, fontFamily: 'NotoSansSC', shadows: const [
+      Shadow(
+        color: Colors.black54,
+        offset: Offset(1, 1),
+        blurRadius: 2,
+      ),
+    ]));
+    _failPaint = TextPaint(
+        style: TextStyle(color: const Color(0xFFF44336), fontSize: 15 * s, fontWeight: FontWeight.w500, fontFamily: 'NotoSansSC', shadows: const [
+      Shadow(
+        color: Colors.black54,
+        offset: Offset(1, 1),
+        blurRadius: 2,
+      ),
+    ]));
   }
 
   @override
@@ -2334,72 +2389,73 @@ class UserInfoPanel extends PositionComponent with HasGameReference<MyGame> {
       friendlyMatchHint.removeFromParent();
       privateRoomHint.removeFromParent();
 
-      // 昵称单独一行，限制宽度不超过playground，超出使用省略号
+      // 昵称单独一行，限制宽度不超过playground，超出使用省略号 
       final String baseNick = '昵　称： ${player.userGameInfo!.nickName}';
-      final double maxWidth = player.playGround.width - 32; // 左右各16px内边距
-      nickName.text = _ellipsize(baseNick, (nickName.textRenderer as TextPaint), maxWidth);
-      score.text = '游戏分： ${player.userGameInfo!.score}';
-      cowDung.text = '魔法泡泡： ${player.userGameInfo!.cowDung}';
-      contest.text = '胜　负： ${player.userGameInfo!.winCount} | ${player.userGameInfo!.lostCount}';
+      if (baseNick != _lastNick) {
+        _lastNick = baseNick;
+        final double maxWidth = player.playGround.width - 32;
+        nickName.text = _ellipsize(baseNick, (nickName.textRenderer as TextPaint), maxWidth);
+      }
 
+      if (player.userGameInfo!.score != _lastScore) {
+        _lastScore = player.userGameInfo!.score;
+        score.text = '游戏分： $_lastScore';
+      }
+
+      if (player.userGameInfo!.cowDung != _lastCowDung) {
+        _lastCowDung = player.userGameInfo!.cowDung;
+        cowDung.text = '魔法泡泡： $_lastCowDung';
+      }
+
+      final winLossStr = '${player.userGameInfo!.winCount} | ${player.userGameInfo!.lostCount}';
+      if (winLossStr != _lastWinLoss) {
+        _lastWinLoss = winLossStr;
+        contest.text = '胜　负： $_lastWinLoss';
+      }
+
+      String ratioStr;
       if (player.userGameInfo!.winCount + player.userGameInfo!.lostCount == 0) {
-        winRatio.text = '胜　率： -';
+        ratioStr = '胜　率： -';
       } else {
-        winRatio.text = '胜　率： ${player.userGameInfo!.winCount * 100.0 ~/ (player.userGameInfo!.winCount + player.userGameInfo!.lostCount)}%';
+        ratioStr = '胜　率： ${player.userGameInfo!.winCount * 100 ~/ (player.userGameInfo!.winCount + player.userGameInfo!.lostCount)}%';
+      }
+      if (ratioStr != _lastWinRatio) {
+        _lastWinRatio = ratioStr;
+        winRatio.text = _lastWinRatio;
       }
 
       // 只有在有上一局游戏结果时才显示积分/魔法泡泡调整信息 
-      if (player.isWonInLastGame != null) {
-        if (player.isWonInLastGame!) {
-          scoreAdjust.textRenderer = TextPaint(
-              style: const TextStyle(color: Color(0xFF4CAF50), fontSize: 15, fontWeight: FontWeight.w500, fontFamily: 'NotoSansSC', shadows: [
-            Shadow(
-              color: Colors.black54,
-              offset: Offset(1, 1),
-              blurRadius: 2,
-            ),
-          ]));
-          cowDungAdjust.textRenderer = TextPaint(
-              style: const TextStyle(color: Color(0xFF4CAF50), fontSize: 15, fontWeight: FontWeight.w500, fontFamily: 'NotoSansSC', shadows: [
-            Shadow(
-              color: Colors.black54,
-              offset: Offset(1, 1),
-              blurRadius: 2,
-            ),
-          ]));
-          scoreAdjust.text = '积分 +${player.scoreAdjust}';
-          cowDungAdjust.text = '魔法泡泡 +${player.cowdungAdjust}';
-        } else {
-          scoreAdjust.textRenderer = TextPaint(
-              style: const TextStyle(color: Color(0xFFF44336), fontSize: 15, fontWeight: FontWeight.w500, fontFamily: 'NotoSansSC', shadows: [
-            Shadow(
-              color: Colors.black54,
-              offset: Offset(1, 1),
-              blurRadius: 2,
-            ),
-          ]));
-          cowDungAdjust.textRenderer = TextPaint(
-              style: const TextStyle(color: Color(0xFFF44336), fontSize: 15, fontWeight: FontWeight.w500, fontFamily: 'NotoSansSC', shadows: [
-            Shadow(
-              color: Colors.black54,
-              offset: Offset(1, 1),
-              blurRadius: 2,
-            ),
-          ]));
-          scoreAdjust.text = '积分 -${player.scoreAdjust.abs()}';
-          cowDungAdjust.text = '魔法泡泡 -${player.cowdungAdjust.abs()}';
+      if (player.isWonInLastGame != _lastIsWon || player.scoreAdjust != _lastScoreAdjust || player.cowdungAdjust != _lastCowDungAdjust) {
+        _lastIsWon = player.isWonInLastGame;
+        _lastScoreAdjust = player.scoreAdjust;
+        _lastCowDungAdjust = player.cowdungAdjust;
+
+        if (_lastIsWon != null) {
+          if (_lastIsWon!) {
+            scoreAdjust.textRenderer = _successPaint;
+            cowDungAdjust.textRenderer = _successPaint;
+            scoreAdjust.text = '积分 +$_lastScoreAdjust';
+            cowDungAdjust.text = '魔法泡泡 +$_lastCowDungAdjust';
+          } else {
+            scoreAdjust.textRenderer = _failPaint;
+            cowDungAdjust.textRenderer = _failPaint;
+            scoreAdjust.text = '积分 -${_lastScoreAdjust.abs()}';
+            cowDungAdjust.text = '魔法泡泡 -${_lastCowDungAdjust.abs()}';
+          }
         }
+        
         // 有游戏结果时才添加积分/魔法泡泡调整组件
-        if (scoreAdjust.parent == null) {
-          add(scoreAdjust);
+        if (_lastIsWon != null) {
+          if (scoreAdjust.parent == null) {
+            add(scoreAdjust);
+          }
+          if (cowDungAdjust.parent == null) {
+            add(cowDungAdjust);
+          }
+        } else {
+          scoreAdjust.removeFromParent();
+          cowDungAdjust.removeFromParent();
         }
-        if (cowDungAdjust.parent == null) {
-          add(cowDungAdjust);
-        }
-      } else {
-        // 没有游戏结果时，移除积分/魔法泡泡调整组件
-        scoreAdjust.removeFromParent();
-        cowDungAdjust.removeFromParent();
       }
 
       // 添加基本信息组件
@@ -2669,6 +2725,9 @@ class MyButtonTextComponent extends TextComponent {
   double _clickEffectT = 0.0; // seconds
   static const double _clickEffectDuration = 0.28; // seconds
 
+  Shader? _cachedShader;
+  bool? _shaderWasPressed;
+
   MyButtonTextComponent(String text, TextPaint originalRenderer, this.backColor, this.borderColor, this.myGame, this.verticalPadding,
       {this.isPressed = false, this.opacity = 0.8})
       : super(text: '  $text', position: Vector2.zero()) {
@@ -2686,13 +2745,14 @@ class MyButtonTextComponent extends TextComponent {
     _computeSize();
   }
 
-  double _textHeight = 0;
+  double textHeight = 0;
 
   @override
   set text(String value) {
     if (super.text != value) {
       super.text = value;
       _computeSize();
+      _cachedShader = null; // 重置着色器
     }
   }
 
@@ -2706,8 +2766,8 @@ class MyButtonTextComponent extends TextComponent {
       }
       super.text = '$tempText...';
     }
-    _textHeight = textRenderer.getLineMetrics(text).height;
-    final double bgHeight = _textHeight + verticalPadding;
+    textHeight = textRenderer.getLineMetrics(text).height;
+    final double bgHeight = textHeight + verticalPadding;
     size = Vector2(btnWidth, bgHeight);
   }
 
@@ -2736,27 +2796,31 @@ class MyButtonTextComponent extends TextComponent {
     }
 
     // 绘制渐变背景
-    Paint backgroundPaint = Paint();
-    if (isPressed) {
-      backgroundPaint.shader = LinearGradient(
-        colors: [
-          scaleAlpha(const Color(0xFF2E5F8A), opacity),
-          scaleAlpha(const Color(0xFF357ABD), opacity),
-        ],
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-      ).createShader(rect);
-    } else {
-      backgroundPaint.shader = LinearGradient(
-        colors: [
-          scaleAlpha(const Color(0xFF4A90E2), opacity),
-          scaleAlpha(const Color(0xFF357ABD), opacity),
-          scaleAlpha(const Color(0xFF2E5F8A), opacity),
-        ],
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-      ).createShader(rect);
+    if (_cachedShader == null || _shaderWasPressed != isPressed) {
+      _shaderWasPressed = isPressed;
+      if (isPressed) {
+        _cachedShader = LinearGradient(
+          colors: [
+            scaleAlpha(const Color(0xFF2E5F8A), opacity),
+            scaleAlpha(const Color(0xFF357ABD), opacity),
+          ],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ).createShader(rect);
+      } else {
+        _cachedShader = LinearGradient(
+          colors: [
+            scaleAlpha(const Color(0xFF4A90E2), opacity),
+            scaleAlpha(const Color(0xFF357ABD), opacity),
+            scaleAlpha(const Color(0xFF2E5F8A), opacity),
+          ],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ).createShader(rect);
+      }
     }
+
+    Paint backgroundPaint = Paint()..shader = _cachedShader;
 
     // 绘制圆角背景
     RRect roundedRect = RRect.fromRectAndRadius(rect, const Radius.circular(12));
@@ -2781,7 +2845,7 @@ class MyButtonTextComponent extends TextComponent {
     // 去除顶部高光
 
     // 半透明文本（仅调透明度），并将文本垂直居中绘制
-    final double offsetY = (size.y - _textHeight) / 2;
+    final double offsetY = (size.y - textHeight) / 2;
     canvas.save();
     canvas.translate(0, offsetY);
     super.render(canvas);
@@ -2982,6 +3046,7 @@ class PerfMonitor {
   static final Map<String, Stopwatch> _stopwatches = {};
   static DateTime _lastReportTime = DateTime.now();
   static String? extraInfo;
+  static Stopwatch? _frameStopwatch;
 
   static void start(String label) {
     _stopwatches[label] = Stopwatch()..start();
@@ -2997,6 +3062,17 @@ class PerfMonitor {
     }
   }
 
+  static void tick() {
+    if (_frameStopwatch == null) {
+      _frameStopwatch = Stopwatch()..start();
+      return;
+    }
+    final ms = _frameStopwatch!.elapsedMicroseconds / 1000.0;
+    _metrics.putIfAbsent('FrameInterval', () => []).add(ms);
+    _frameStopwatch!.reset();
+    _frameStopwatch!.start();
+  }
+
   static void report() {
     final now = DateTime.now();
     if (now.difference(_lastReportTime).inSeconds >= 2) {
@@ -3010,7 +3086,7 @@ class PerfMonitor {
       _metrics.forEach((label, values) {
         if (values.isEmpty) return;
         final count = values.length;
-        final avg = values.reduce((a, b) => a + b) / count; 
+        final avg = values.reduce((a, b) => a + b) / count;
         final maxVal = values.reduce((a, b) => a > b ? a : b);
         sb.writeln('[Perf] $label: avg=${avg.toStringAsFixed(2)}ms, max=${maxVal.toStringAsFixed(2)}ms (samples: $count)');
       });

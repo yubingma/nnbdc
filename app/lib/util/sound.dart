@@ -93,7 +93,8 @@ class SoundUtil {
     await playSoundByUrl(soundUrl, player, false, loadTimeoutMs: 5000, playTimeoutMs: 15000);
   }
 
-  static Future<void> playSoundByUrl(String soundUrl, AudioPlayer player, bool disposeWhenFinish, {int loadTimeoutMs = 3000, int playTimeoutMs = 10000}) async {
+  static Future<void> playSoundByUrl(String soundUrl, AudioPlayer player, bool disposeWhenFinish,
+      {int loadTimeoutMs = 3000, int playTimeoutMs = 10000}) async {
     try {
       // 核心优化：仅配置一次音频会话，避免频繁切换导致的咔哒噪音（由随身听反馈发现）
       if (!_audioSessionConfigured) {
@@ -198,7 +199,7 @@ class SoundUtil {
               usageType: AndroidUsageType.media,
               contentType: AndroidContentType.speech,
               // 使用 none 而不是 gainTransientMayDuck，防止抢占 ASR 麦克风音频焦点导致底层崩溃闪退
-              audioFocus: AndroidAudioFocus.none, 
+              audioFocus: AndroidAudioFocus.none,
             ),
           ));
         } catch (e, st) {
@@ -354,19 +355,8 @@ class SoundUtil {
   static Future<void> playAssetSoundCut(String soundFileName, double speed, double volume, Duration maxPlay) async {
     var player = AudioPlayer();
     try {
-      if (PlatformUtils.isIOS) {
-        await player.setAudioContext(AudioContext(
-          iOS: AudioContextIOS(
-            category: AVAudioSessionCategory.playAndRecord,
-            options: {
-              AVAudioSessionOptions.defaultToSpeaker,
-              AVAudioSessionOptions.mixWithOthers,
-              AVAudioSessionOptions.allowBluetooth,
-              AVAudioSessionOptions.allowBluetoothA2DP,
-            },
-          ),
-        ));
-      }
+      // 不再每次播放都设置 AudioContext，改由全局配置或在必要时由 ASR 模块管理
+      // 避免 iOS 频繁切换会话导致线程阻塞和爆音
 
       await player.setPlaybackRate(speed);
       await player.setVolume(volume);
