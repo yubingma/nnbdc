@@ -209,7 +209,7 @@ class SoundUtil {
     // 锁定该播放器
     _playerBusyUntil[player] = now.add(const Duration(milliseconds: 300));
 
-    return _playAssetSoundInBackground(player, soundFileName, speed, volume, playerIndex).catchError((error, stackTrace) {
+    return _playAssetSoundInBackground(player, soundFileName, speed, volume).catchError((error, stackTrace) {
       ErrorHandler.handleError(error, stackTrace, logPrefix: '并发播放音效出错: $soundFileName', showToast: false);
     });
   }
@@ -219,7 +219,6 @@ class SoundUtil {
     String soundFileName,
     double speed,
     double volume,
-    int playerIndex,
   ) async {
     try {
       if (player.state == PlayerState.playing) {
@@ -264,7 +263,6 @@ class SoundUtil {
       final busyUntil = _playerBusyUntil[p] ?? DateTime(0);
       if (p.state != PlayerState.playing && now.isAfter(busyUntil)) {
         player = p;
-        playerIndex = i;
         break;
       }
     }

@@ -1082,9 +1082,7 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
 
     socket.off('wordA');
     socket.on('wordA', (data) {
-      PerfMonitor.start('Socket.wordA');
       if (!isPlaying) {
-        PerfMonitor.stop('Socket.wordA');
         return;
       }
 
@@ -1104,7 +1102,6 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
           SoundUtil.playPronounceSound(playerA.currWord!);
         }
       });
-      PerfMonitor.stop('Socket.wordA');
     });
 
     // 服务端通知：生词已加入（无需等待同步，前端可直接提示）
@@ -1112,9 +1109,7 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
 
     socket.off('wordB');
     socket.on('wordB', (data) {
-      PerfMonitor.start('Socket.wordB');
       if (!isPlaying) {
-        PerfMonitor.stop('Socket.wordB');
         return;
       }
       if (isExercise) {
@@ -1152,7 +1147,6 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
         newDroppingWord(playerB.currWord!, playerB.otherWordMeanings, playerB);
         _reportFallEtaBOnce();
       }
-      PerfMonitor.stop('Socket.wordB');
     });
 
     socket.off('userGameInfo');
@@ -1537,7 +1531,6 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
   }
 
   void newDroppingWord(WordVo word, List otherWordMeanings, Player player) {
-    PerfMonitor.start('newDroppingWord');
     // 强制保证同一侧同一时间只有一个下落单词
     if (player.droppingWordSprite != null) {
       // 若前一颗尚未入栈，直接移除之，避免出现多个同时下落
@@ -1558,7 +1551,6 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
           : (playerA.correctIndex == 1 ? playerA.otherWordMeanings[0] : playerA.otherWordMeanings[1]);
       answer3Btn.text = playerA.correctIndex == 3 ? playerA.currWord!.getMeaningStr() : playerA.otherWordMeanings[1];
     }
-    PerfMonitor.stop('newDroppingWord');
   }
 
   double getDeadWordsTopY(Player player) {
@@ -1714,7 +1706,6 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
 
   @override
   void render(Canvas canvas) {
-    PerfMonitor.start('MyGame.render');
     super.render(canvas);
     if (playerA.props[0] > 0) {
       plusBtn.setAlpha(255);
@@ -1726,13 +1717,10 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
     } else {
       minusBtn.setAlpha(50);
     }
-    PerfMonitor.stop('MyGame.render');
   }
 
   @override
   void update(double dt) {
-    PerfMonitor.tick();
-    PerfMonitor.start('MyGame.update');
     super.update(dt);
 
     // 不再周期上报B侧ETA；改为在收到新wordB时上报一次
@@ -1982,9 +1970,6 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
         remove(countdownText);
       }
     }
-    PerfMonitor.extraInfo = 'DeadWords: A=${playerA.deadWords.length}, B=${playerB.deadWords.length}';
-    PerfMonitor.stop('MyGame.update');
-    PerfMonitor.report();
   }
 }
 
@@ -2070,7 +2055,6 @@ class SpiralGalaxyBackground extends PositionComponent {
 
   @override
   void render(Canvas canvas) {
-    PerfMonitor.start('SpiralGalaxyBackground.render');
     // 降级保护：如果由于某种原因（如尺寸改变）导致烘焙失效，
     // 在 render 中同步烘焙会导致 200ms 卡顿，但为了画面正确仍需保留，
     // 不过通过 cache 机制，这应该只发生一次。
@@ -2112,8 +2096,6 @@ class SpiralGalaxyBackground extends PositionComponent {
       colors: [const Color(0xFFFFF59D).withValues(alpha: 0.18 * twinkle), Colors.transparent],
     ).createShader(Rect.fromCircle(center: center, radius: 140));
     canvas.drawCircle(center, 140, Paint()..shader = core);
-    
-    PerfMonitor.stop('SpiralGalaxyBackground.render');
   }
 }
 
@@ -2636,7 +2618,6 @@ class DroppingWordSprite extends TextComponent with HasGameReference<MyGame>, Co
 
   @override
   void update(double dt) {
-    PerfMonitor.start('DroppingWordSprite.update');
     super.update(dt);
     if (!isDead) {
       // 按屏幕缩放比例调整下落速度，保证不同屏幕用时一致
@@ -2656,7 +2637,6 @@ class DroppingWordSprite extends TextComponent with HasGameReference<MyGame>, Co
         if (_trailYs.length > _trailMax) _trailYs.removeAt(0);
       }
     }
-    PerfMonitor.stop('DroppingWordSprite.update');
   }
 
   // 不覆写 render，使用父类默认实现
@@ -3068,57 +3048,3 @@ class _DisconnectListener implements SocketStatusListener {
   }
 }
 
-class PerfMonitor {
-  static final Map<String, List<double>> _metrics = {};
-  static final Map<String, Stopwatch> _stopwatches = {};
-  static DateTime _lastReportTime = DateTime.now();
-  static String? extraInfo;
-  static Stopwatch? _frameStopwatch;
-
-  static void start(String label) {
-    _stopwatches[label] = Stopwatch()..start();
-  }
-
-  static void stop(String label) {
-    final sw = _stopwatches[label];
-    if (sw != null) {
-      sw.stop();
-      final ms = sw.elapsedMicroseconds / 1000.0;
-      _metrics.putIfAbsent(label, () => []).add(ms);
-      sw.reset();
-    }
-  }
-
-  static void tick() {
-    if (_frameStopwatch == null) {
-      _frameStopwatch = Stopwatch()..start();
-      return;
-    }
-    final ms = _frameStopwatch!.elapsedMicroseconds / 1000.0;
-    _metrics.putIfAbsent('FrameInterval', () => []).add(ms);
-    _frameStopwatch!.reset();
-    _frameStopwatch!.start();
-  }
-
-  static void report() {
-    final now = DateTime.now();
-    if (now.difference(_lastReportTime).inSeconds >= 2) {
-      _lastReportTime = now;
-      if (_metrics.isEmpty) return;
-      
-      final sb = StringBuffer('\n[Perf] --- Performance Report ---\n');
-      if (extraInfo != null) {
-        sb.writeln('[Perf] Info: $extraInfo');
-      }
-      _metrics.forEach((label, values) {
-        if (values.isEmpty) return;
-        final count = values.length;
-        final avg = values.reduce((a, b) => a + b) / count;
-        final maxVal = values.reduce((a, b) => a > b ? a : b);
-        sb.writeln('[Perf] $label: avg=${avg.toStringAsFixed(2)}ms, max=${maxVal.toStringAsFixed(2)}ms (samples: $count)');
-      });
-      Global.logger.d(sb.toString());
-      _metrics.clear();
-    }
-  }
-}
