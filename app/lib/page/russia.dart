@@ -1084,8 +1084,13 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
       playerA.correctIndex = correctIndex;
 
       newDroppingWord(playerA.currWord!, playerA.otherWordMeanings, playerA);
-      // 已改为仅上报机器人(B侧)的ETA
-      SoundUtil.playPronounceSound(playerA.currWord!);
+      // 核心优化： staggered 错峰执行。
+      // 新单词生成需要处理 UI 组件挂载，延迟 50ms 播放发音能避开瞬间 CPU 峰值。
+      Future.delayed(const Duration(milliseconds: 50), () {
+        if (isPlaying) {
+          SoundUtil.playPronounceSound(playerA.currWord!);
+        }
+      });
       PerfMonitor.stop('Socket.wordA');
     });
 
@@ -2048,39 +2053,52 @@ class SpiralGalaxyBackground extends PositionComponent {
   }
 
   @override
+  @override
   void render(Canvas canvas) {
     PerfMonitor.start('SpiralGalaxyBackground.render');
+    
+    // 降级保护：如果由于某种原因（如尺寸改变）导致烘焙失效，
+    // 在 render 中同步烘焙会导致 200ms 卡顿，但为了画面正确仍需保留，
+    // 不过通过 cache 机制，这应该只发生一次。
     if (_bakedArm1 == null || _lastWidth != width || _lastHeight != height) {
       _bake(width, height);
     }
 
     final rect = Rect.fromLTWH(0, 0, width, height);
     _cachedSpaceShader ??= RadialGradient(
-      center: Alignment(0.0, -0.2),
+      center: const Alignment(0.0, -0.2),
       radius: 1.2,
       colors: const [Color(0xFF05070E), Color(0xFF0A0F1E), Color(0xFF0E1630)],
       stops: const [0.0, 0.6, 1.0],
     ).createShader(rect);
-    canvas.drawRect(rect, Paint()..shader = _cachedSpaceShader);
+    
+    final bgPaint = Paint()..shader = _cachedSpaceShader;
+    canvas.drawRect(rect, bgPaint);
 
     final center = Offset(rect.center.dx, rect.center.dy * 0.9);
     final twinkle = (0.9 + 0.1 * sin(t * 1.3)).clamp(0.0, 1.0);
 
-    void drawBakedArm(ui.Picture arm, double angle) {
+    // 绘制预烘焙的星系臂
+    if (_bakedArm1 != null) {
       canvas.save();
       canvas.translate(center.dx, center.dy);
-      canvas.rotate(t + angle);
-      canvas.drawPicture(arm);
+      canvas.rotate(t);
+      canvas.drawPicture(_bakedArm1!);
       canvas.restore();
     }
-
-    drawBakedArm(_bakedArm1!, 0.0);
-    drawBakedArm(_bakedArm2!, pi);
+    if (_bakedArm2 != null) {
+      canvas.save();
+      canvas.translate(center.dx, center.dy);
+      canvas.rotate(t + pi);
+      canvas.drawPicture(_bakedArm2!);
+      canvas.restore();
+    }
 
     final core = RadialGradient(
       colors: [const Color(0xFFFFF59D).withValues(alpha: 0.18 * twinkle), Colors.transparent],
     ).createShader(Rect.fromCircle(center: center, radius: 140));
     canvas.drawCircle(center, 140, Paint()..shader = core);
+    
     PerfMonitor.stop('SpiralGalaxyBackground.render');
   }
 }
