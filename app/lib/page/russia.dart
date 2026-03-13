@@ -453,7 +453,7 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
   // 基于屏幕宽度计算的等比缩放系数（用于大屏设备，如 iPad）
   final double uiScale;
   // 按钮尺寸固定：渲染时仅计算一次，后续不再改变
-  bool _buttonSizeInitialized = false;
+
   // 标记是否已为当前wordB上报过ETA
   bool _reportedFallBForCurrentWord = false;
 
@@ -1835,17 +1835,21 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
       final double answersExtraScale = isPlaying && playerA.otherWordMeanings.isNotEmpty ? 1.1 : 1.0;
 
       // 预计算每个按钮的基础行高与内边距，并估算总高度
+      // 统一按钮文本高度，避免因内容不同（如括号、数字）导致按钮高度微小差异
+      double unifiedTextHeight = 0;
+      for (var btn in visibleButtons) {
+        unifiedTextHeight = max(unifiedTextHeight, (btn.button! as MyButtonTextComponent).textHeight);
+      }
+
       final List<double> baseLineHeights = [];
       final List<double> basePaddings = [];
       final int n = visibleButtons.length;
       double totalBaseHeight = 0.0;
       for (var btn in visibleButtons) {
-        final MyButtonTextComponent btnUp = btn.button! as MyButtonTextComponent;
         final bool isAnswerBtn = btn == answer1Btn || btn == answer2Btn || btn == answer3Btn || btn == answer4Btn || btn == answer5Btn;
-        final double textHeight = btnUp.textHeight;
-        final double basePadding = (isAnswerBtn ? 1.1 : 1.0) * max(16.0, textHeight * 1.1) * answersExtraScale;
-        final double visualHeight = textHeight + basePadding + 16.0;
-        baseLineHeights.add(textHeight);
+        final double basePadding = (isAnswerBtn ? 1.1 : 1.0) * max(16.0, unifiedTextHeight * 1.1) * answersExtraScale;
+        final double visualHeight = unifiedTextHeight + basePadding + 16.0;
+        baseLineHeights.add(unifiedTextHeight);
         basePaddings.add(basePadding);
         totalBaseHeight += visualHeight;
       }
@@ -1854,21 +1858,8 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
       }
       final double availableHeight = size.y - nextBtnY - 16.0;
       double scaleS = 1.0;
-      if (!_buttonSizeInitialized && totalBaseHeight > availableHeight && totalBaseHeight > 0) {
+      if (totalBaseHeight > availableHeight && totalBaseHeight > 0) {
         scaleS = (availableHeight / totalBaseHeight).clamp(0.4, 1.0);
-      }
-
-      // 计算参考字号：优先使用已添加到场景中的任意一个按钮的字号，确保后续新出现按钮与之保持一致
-      double referenceFontSize = 15.0 * uiScale;
-      for (final b in visibleButtons) {
-        if (contains(b)) {
-          final MyButtonTextComponent up = b.button! as MyButtonTextComponent;
-          final double? fs = (up.textRenderer as TextPaint).style.fontSize;
-          if (fs != null) {
-            referenceFontSize = fs;
-            break;
-          }
-        }
       }
 
       // 应用缩放并布局
@@ -1881,46 +1872,23 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
         final MyButtonTextComponent btnUp = btn.button! as MyButtonTextComponent;
         final MyButtonTextComponent btnDown = btn.buttonDown! as MyButtonTextComponent;
 
-        // 字号按需缩放，但不小于12；仅在首次全局布局时计算
-        if (!_buttonSizeInitialized) {
-          TextStyle tsUp = (btnUp.textRenderer as TextPaint).style;
+        // 统一计算目标字号与内边距
+        final double origFontSize = 15.0 * uiScale;
+        final double targetFontSize = max(12.0, origFontSize * scaleS);
+        final double basePadding = basePaddings[i];
+        final double newPadding = max(16.0, basePadding * scaleS);
+
+        // 应用字号（若不同）
+        TextStyle tsUp = (btnUp.textRenderer as TextPaint).style;
+        if ((tsUp.fontSize ?? 0) != targetFontSize) {
+          btnUp.textRenderer = TextPaint(style: tsUp.copyWith(fontSize: targetFontSize));
           TextStyle tsDown = (btnDown.textRenderer as TextPaint).style;
-          final double origFontSize = (tsUp.fontSize ?? 15 * uiScale);
-          final double targetFontSize = max(12.0, origFontSize * scaleS);
-          if (targetFontSize != origFontSize) {
-            btnUp.textRenderer = TextPaint(style: tsUp.copyWith(fontSize: targetFontSize));
-            btnDown.textRenderer = TextPaint(style: tsDown.copyWith(fontSize: targetFontSize));
-          }
-        } else if (!contains(btn)) {
-          // 全局已初始化，但该按钮是首次显示：按参考字号归一化其字体大小
-          TextStyle tsUp = (btnUp.textRenderer as TextPaint).style;
-          TextStyle tsDown = (btnDown.textRenderer as TextPaint).style;
-          final double origFontSize = (tsUp.fontSize ?? 15 * uiScale);
-          final double targetFontSize = max(12.0, referenceFontSize);
-          if ((tsUp.fontSize ?? origFontSize) != targetFontSize) {
-            btnUp.textRenderer = TextPaint(style: tsUp.copyWith(fontSize: targetFontSize));
-          }
-          if ((tsDown.fontSize ?? origFontSize) != targetFontSize) {
-            btnDown.textRenderer = TextPaint(style: tsDown.copyWith(fontSize: targetFontSize));
-          }
+          btnDown.textRenderer = TextPaint(style: tsDown.copyWith(fontSize: targetFontSize));
         }
 
-        // 重新测量行高并计算内边距
-        final double lineHeight = btnUp.textHeight;
-        final double basePadding = basePaddings[i];
-        // 仅在首次全局布局时计算内边距；若为后续首次出现的按钮，则按参考字号比例归一化其内边距
-        final double newPadding = _buttonSizeInitialized ? btnUp.verticalPadding : max(16.0, basePadding * scaleS);
-        if (!_buttonSizeInitialized) {
-          btnUp.verticalPadding = newPadding;
-          btnDown.verticalPadding = newPadding;
-        } else if (!contains(btn)) {
-          // 参考字号与原始字号的比例，复用到 padding 上，确保高度一致
-          final double origFontSize = 15.0 * uiScale;
-          final double s = (referenceFontSize / origFontSize).clamp(0.4, 1.5);
-          final double normalizedPadding = max(16.0, basePadding * s);
-          btnUp.verticalPadding = normalizedPadding;
-          btnDown.verticalPadding = normalizedPadding;
-        }
+        // 应用内边距（由于我们设置了 setter，它会自动更新组件 size）
+        btnUp.verticalPadding = newPadding;
+        btnDown.verticalPadding = newPadding;
 
         if (!contains(btn)) {
           add(btn);
@@ -1928,11 +1896,11 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
 
         // 同步 HudButtonComponent 的命中区域到背景尺寸，确保整块可点
         final double btnWidth = screenWidth - 16;
+        final double lineHeight = unifiedTextHeight;
         final Size compSize = Size(btnWidth, lineHeight + newPadding);
         btn.size = Vector2(compSize.width, compSize.height);
         nextBtnY += compSize.height + 16.0 + btnGap; // 16 为顶部偏移补偿
       }
-      _buttonSizeInitialized = true;
     }
 
     // 显示/隐藏玩家信息
@@ -2716,7 +2684,14 @@ class MyButtonTextComponent extends TextComponent {
   late MyGame myGame;
   late bool isPressed;
   final double opacity; // 0.0 ~ 1.0 半透明系数
-  double verticalPadding; // 竖向内边距，影响按钮整体高度
+  double _verticalPadding; // 竖向内边距，影响按钮整体高度
+  double get verticalPadding => _verticalPadding;
+  set verticalPadding(double value) {
+    if (_verticalPadding != value) {
+      _verticalPadding = value;
+      _computeSize();
+    }
+  }
   // 点击动效状态
   bool _clickEffectActive = false;
   double _clickEffectT = 0.0; // seconds
@@ -2725,9 +2700,10 @@ class MyButtonTextComponent extends TextComponent {
   Shader? _cachedShader;
   bool? _shaderWasPressed;
 
-  MyButtonTextComponent(String text, TextPaint originalRenderer, this.backColor, this.borderColor, this.myGame, this.verticalPadding,
+  MyButtonTextComponent(String text, TextPaint originalRenderer, this.backColor, this.borderColor, this.myGame, double initialVerticalPadding,
       {this.isPressed = false, this.opacity = 0.8})
-      : super(text: '  $text', position: Vector2.zero()) {
+      : _verticalPadding = initialVerticalPadding,
+        super(text: '  $text', position: Vector2.zero()) {
     // 预先缩放透明度
     final ts = originalRenderer.style;
     final scaledColor = (ts.color ?? Colors.white).withValues(alpha: (ts.color?.a ?? 1.0) * opacity);
