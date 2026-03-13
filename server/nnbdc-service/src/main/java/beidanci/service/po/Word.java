@@ -55,6 +55,9 @@ public class Word extends UuidPo {
     @Column(name = "long_desc", length = 1000)
     private String longDesc;
 
+    @Column(name = "is_updating", nullable = false)
+    private Boolean isUpdating = false;
+
     private  List<MeaningItem> meaningItems;
 
     private  List<WordImage> images;
@@ -240,5 +243,13 @@ public class Word extends UuidPo {
 
     public void setCigenWordLinks(List<CigenWordLink> cigenWordLinks) {
         this.cigenWordLinks = cigenWordLinks;
+    }
+
+    public Boolean getIsUpdating() {
+        return isUpdating;
+    }
+
+    public void setIsUpdating(Boolean isUpdating) {
+        this.isUpdating = isUpdating;
     }
 }

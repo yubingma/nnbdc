@@ -68,6 +68,9 @@ public class Sentence extends UuidPo {
     @Column(name = "part_of_speech", length = 10)
     private String partOfSpeech;
 
+    @Column(name = "is_updating", nullable = false)
+    private Boolean isUpdating = false;
+
     public String getSoundProducer() {
         return soundProducer;
     }
@@ -203,5 +206,13 @@ public class Sentence extends UuidPo {
 
     public void setPartOfSpeech(String partOfSpeech) {
         this.partOfSpeech = partOfSpeech;
+    }
+
+    public Boolean getIsUpdating() {
+        return isUpdating;
+    }
+
+    public void setIsUpdating(Boolean isUpdating) {
+        this.isUpdating = isUpdating;
     }
 }
