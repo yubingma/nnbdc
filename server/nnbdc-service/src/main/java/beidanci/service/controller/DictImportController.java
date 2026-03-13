@@ -9,6 +9,8 @@ import beidanci.service.bo.ImportTaskBo;
 import beidanci.service.po.ImportTask;
 import beidanci.service.po.User;
 
+import beidanci.service.util.JsonUtils;
+
 import java.util.Date;
 
 @RestController
@@ -39,6 +41,13 @@ public class DictImportController {
         task.setFileName(request.getFileName() != null ? request.getFileName() : "unnamed_import_" + System.currentTimeMillis());
         task.setCreateTime(new Date());
         task.setUpdateTime(new Date());
+
+        // 同步校验配置格式
+        try {
+            JsonUtils.parseMap(request.getConfig());
+        } catch (Exception e) {
+            return Result.fail("配置格式有误: " + e.getMessage());
+        }
 
         importTaskBo.createEntity(task);
         
