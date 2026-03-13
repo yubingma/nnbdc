@@ -1,4 +1,5 @@
 import 'dart:async' as async;
+import 'dart:ui' as ui;
 import 'dart:math';
 
 import 'package:flame/collisions.dart';
@@ -1669,11 +1670,10 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
 
   @override
   void render(Canvas canvas) {
-    super.render(canvas);
     PerfMonitor.start('MyGame.render');
+    super.render(canvas);
     if (playerA.props[0] > 0) {
       plusBtn.setAlpha(255);
-    PerfMonitor.stop('MyGame.render');
     } else {
       plusBtn.setAlpha(50);
     }
@@ -1682,6 +1682,7 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
     } else {
       minusBtn.setAlpha(50);
     }
+    PerfMonitor.stop('MyGame.render');
   }
 
   @override
@@ -1920,26 +1921,85 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
 
 class SpiralGalaxyBackground extends PositionComponent {
   double t = 0;
+  ui.Picture? _bakedArm1;
+  ui.Picture? _bakedArm2;
+  double? _lastWidth;
+  double? _lastHeight;
 
   @override
   void update(double dt) {
     super.update(dt);
-    t += dt * 0.05; // 更慢的旋转速度（原来的一半）
+    t += dt * 0.05;
   }
 
   @override
   void onGameResize(Vector2 size) {
     super.onGameResize(size);
-    width = size.x;
-    height = size.y;
+    if (width != size.x || height != size.y) {
+      width = size.x;
+      height = size.y;
+      _bakedArm1 = null;
+      _bakedArm2 = null;
+    }
+  }
+
+  void _bake(double w, double h) {
+    final armLen = max(w, h) * 0.9;
+    
+    ui.Picture bakeArm(Color baseHue) {
+      final recorder = ui.PictureRecorder();
+      final canvas = Canvas(recorder);
+      final starPaint = Paint()..color = Colors.white;
+      final turns = 2.2;
+
+      for (double r = 40; r < armLen; r += 24) {
+        final theta = r / armLen * turns * 2 * pi;
+        final x = r * cos(theta);
+        final y = r * sin(theta) * 0.5;
+        final fade = (1.0 - r / armLen).clamp(0.0, 1.0);
+        
+        final fog = RadialGradient(
+          colors: [baseHue.withValues(alpha: 0.18 * fade), baseHue.withValues(alpha: 0.0)],
+        ).createShader(Rect.fromCircle(center: Offset(x, y), radius: 60 * fade + 20));
+        canvas.drawCircle(Offset(x, y), 60 * fade + 20, Paint()..shader = fog);
+
+        final rand = Random((r * 97).toInt());
+        final starCount = 3 + rand.nextInt(7);
+        for (int i = 0; i < starCount; i++) {
+          final sx = x + (rand.nextDouble() - 0.5) * 20;
+          final sy = y + (rand.nextDouble() - 0.5) * 16;
+          final size = 0.6 + rand.nextDouble() * 0.8;
+          const palette = [Color(0xFFFFF59D), Color(0xFF80D8FF), Color(0xFFB388FF), Color(0xFFFF8A80), Color(0xFFA5D6A7)];
+          final starColor = palette[rand.nextInt(palette.length)];
+          
+          final haloRadius = 4 + size * 2;
+          final haloShader = RadialGradient(
+            colors: [starColor.withValues(alpha: 0.12), starColor.withValues(alpha: 0.0)],
+          ).createShader(Rect.fromCircle(center: Offset(sx, sy), radius: haloRadius));
+          canvas.drawCircle(Offset(sx, sy), haloRadius, Paint()..shader = haloShader);
+          
+          starPaint.color = starColor.withValues(alpha: 0.85);
+          canvas.drawCircle(Offset(sx, sy), size, starPaint);
+          canvas.drawCircle(Offset(sx, sy), size * 0.35, Paint()..color = Colors.white.withValues(alpha: 0.8));
+        }
+      }
+      return recorder.endRecording();
+    }
+
+    _bakedArm1 = bakeArm(const Color(0xFF80D8FF));
+    _bakedArm2 = bakeArm(const Color(0xFFFF80AB));
+    _lastWidth = w;
+    _lastHeight = h;
   }
 
   @override
   void render(Canvas canvas) {
     PerfMonitor.start('SpiralGalaxyBackground.render');
-    final rect = Rect.fromLTWH(0, 0, width, height);
+    if (_bakedArm1 == null || _lastWidth != width || _lastHeight != height) {
+      _bake(width, height);
+    }
 
-    // 深色空间底色
+    final rect = Rect.fromLTWH(0, 0, width, height);
     final space = RadialGradient(
       center: Alignment(0.0, -0.2),
       radius: 1.2,
@@ -1948,93 +2008,25 @@ class SpiralGalaxyBackground extends PositionComponent {
     ).createShader(rect);
     canvas.drawRect(rect, Paint()..shader = space);
 
-    // 旋转的星系臂
     final center = Offset(rect.center.dx, rect.center.dy * 0.9);
-    _drawSpiralArm(canvas, center, baseHue: const Color(0xFF80D8FF), angleOffset: 0.0);
-    _drawSpiralArm(canvas, center, baseHue: const Color(0xFFFF80AB), angleOffset: pi);
+    final twinkle = (0.9 + 0.1 * sin(t * 1.3)).clamp(0.0, 1.0);
 
-    // 核心光晕
+    void drawBakedArm(ui.Picture arm, double angle) {
+      canvas.save();
+      canvas.translate(center.dx, center.dy);
+      canvas.rotate(t + angle);
+      canvas.drawPicture(arm);
+      canvas.restore();
+    }
+
+    drawBakedArm(_bakedArm1!, 0.0);
+    drawBakedArm(_bakedArm2!, pi);
+
     final core = RadialGradient(
-      colors: [
-        const Color(0xFFFFF59D).withValues(alpha: 0.18),
-        Colors.transparent,
-      ],
+      colors: [const Color(0xFFFFF59D).withValues(alpha: 0.18 * twinkle), Colors.transparent],
     ).createShader(Rect.fromCircle(center: center, radius: 140));
     canvas.drawCircle(center, 140, Paint()..shader = core);
     PerfMonitor.stop('SpiralGalaxyBackground.render');
-  }
-
-  void _drawSpiralArm(Canvas canvas, Offset center, {required Color baseHue, required double angleOffset}) {
-    final starPaint = Paint()..color = Colors.white;
-    final armLen = max(width, height) * 0.9;
-    final turns = 2.2; // 螺旋圈数
-
-    canvas.save();
-    canvas.translate(center.dx, center.dy);
-    canvas.rotate(t + angleOffset);
-
-    // 多次沿半径方向绘制薄雾与星点
-    for (double r = 40; r < armLen; r += 24) {
-      final theta = r / armLen * turns * 2 * pi;
-      final x = r * cos(theta);
-      final y = r * sin(theta) * 0.5; // 拉伸让臂更收拢
-
-      // 臂上薄雾
-      final fade = (1.0 - r / armLen).clamp(0.0, 1.0);
-      final fog = RadialGradient(
-        colors: [
-          baseHue.withValues(alpha: 0.18 * fade),
-          baseHue.withValues(alpha: 0.0),
-        ],
-      ).createShader(Rect.fromCircle(center: Offset(x, y), radius: 60 * fade + 20));
-      canvas.drawCircle(Offset(x, y), 60 * fade + 20, Paint()..shader = fog);
-
-      // 星点：每个簇内星点数量与属性随机（稳定随机，避免闪烁跳变）
-      final stepSeed = (r * 97).toInt() + (angleOffset == 0.0 ? 17 : 37);
-      final rand = Random(stepSeed);
-      final starCount = 3 + rand.nextInt(7); // 3..9个
-      for (int i = 0; i < starCount; i++) {
-        final jitterX = (rand.nextDouble() - 0.5) * 20;
-        final jitterY = (rand.nextDouble() - 0.5) * 16;
-        final sx = x + jitterX;
-        final sy = y + jitterY;
-        final size = 0.6 + rand.nextDouble() * 0.8;
-
-        // 随机但稳定的星点颜色
-        const palette = [
-          Color(0xFFFFF59D), // warm yellow
-          Color(0xFF80D8FF), // cyan
-          Color(0xFFB388FF), // lilac
-          Color(0xFFFF8A80), // soft red
-          Color(0xFFA5D6A7), // mint
-        ];
-        final starColor = palette[rand.nextInt(palette.length)];
-
-        // 轻微闪烁
-        final twinkle = (0.85 + 0.15 * sin(t * 1.3 + sx * 0.02 + sy * 0.03)).clamp(0.0, 1.0);
-
-        // 光晕（径向渐变）- 弱化
-        final haloRadius = 4 + size * 2;
-        final haloShader = RadialGradient(
-          colors: [
-            starColor.withValues(alpha: 0.12 * twinkle),
-            starColor.withValues(alpha: 0.0),
-          ],
-          stops: const [0.0, 1.0],
-        ).createShader(Rect.fromCircle(center: Offset(sx, sy), radius: haloRadius));
-        canvas.drawCircle(Offset(sx, sy), haloRadius, Paint()..shader = haloShader);
-
-        // 核心星点
-        starPaint.color = starColor.withValues(alpha: 0.85 * twinkle);
-        canvas.drawCircle(Offset(sx, sy), size, starPaint);
-
-        // 高光点
-        final highlightAlpha = (0.5 + 0.5 * twinkle).clamp(0.0, 1.0);
-        canvas.drawCircle(Offset(sx, sy), size * 0.35, Paint()..color = Colors.white.withValues(alpha: highlightAlpha));
-      }
-    }
-
-    canvas.restore();
   }
 }
 
@@ -2356,7 +2348,7 @@ class UserInfoPanel extends PositionComponent with HasGameReference<MyGame> {
         winRatio.text = '胜　率： ${player.userGameInfo!.winCount * 100.0 ~/ (player.userGameInfo!.winCount + player.userGameInfo!.lostCount)}%';
       }
 
-      // 只有在有上一局游戏结果时才显示积分/魔法泡泡调整信息
+      // 只有在有上一局游戏结果时才显示积分/魔法泡泡调整信息 
       if (player.isWonInLastGame != null) {
         if (player.isWonInLastGame!) {
           scoreAdjust.textRenderer = TextPaint(
@@ -2590,9 +2582,6 @@ class DroppingWordSprite extends TextComponent with HasGameReference<MyGame>, Co
         _trailYs.add(y);
         if (_trailYs.length > _trailMax) _trailYs.removeAt(0);
       }
-    } else {
-      final TextStyle base = makeDeadPaint().style;
-      textRenderer = TextPaint(style: base.copyWith(fontSize: _fixedFontSize));
     }
     PerfMonitor.stop('DroppingWordSprite.update');
   }
@@ -2680,28 +2669,52 @@ class MyButtonTextComponent extends TextComponent {
   double _clickEffectT = 0.0; // seconds
   static const double _clickEffectDuration = 0.28; // seconds
 
-  MyButtonTextComponent(String text, TextPaint textRenderer, this.backColor, this.borderColor, this.myGame, this.verticalPadding,
+  MyButtonTextComponent(String text, TextPaint originalRenderer, this.backColor, this.borderColor, this.myGame, this.verticalPadding,
       {this.isPressed = false, this.opacity = 0.8})
-      : super(text: '  $text', textRenderer: textRenderer, position: Vector2.zero());
+      : super(text: '  $text', position: Vector2.zero()) {
+    // 预先缩放透明度
+    final ts = originalRenderer.style;
+    final scaledColor = (ts.color ?? Colors.white).withValues(alpha: (ts.color?.a ?? 1.0) * opacity);
+    final scaledShadows = ts.shadows
+        ?.map((s) => Shadow(
+              color: s.color.withValues(alpha: s.color.a * opacity),
+              offset: s.offset,
+              blurRadius: s.blurRadius,
+            ))
+        .toList();
+    textRenderer = TextPaint(style: ts.copyWith(color: scaledColor, shadows: scaledShadows));
+    _computeSize();
+  }
+
+  double _textHeight = 0;
+
+  @override
+  set text(String value) {
+    if (super.text != value) {
+      super.text = value;
+      _computeSize();
+    }
+  }
 
   void _computeSize() {
     final double btnWidth = myGame.screenWidth - 16;
     final double textW = textRenderer.getLineMetrics(text).width;
     if (textW > btnWidth) {
-      while (textRenderer.getLineMetrics('$text... ').width > btnWidth && text.isNotEmpty) {
-        super.text = text.substring(0, text.length - 2);
+      String tempText = text;
+      while (textRenderer.getLineMetrics('$tempText... ').width > btnWidth && tempText.isNotEmpty) {
+        tempText = tempText.substring(0, tempText.length - 2);
       }
-      super.text = '$text...';
+      super.text = '$tempText...';
     }
-    final double textHeight = textRenderer.getLineMetrics(text).height;
-    final double bgHeight = textHeight + verticalPadding;
+    _textHeight = textRenderer.getLineMetrics(text).height;
+    final double bgHeight = _textHeight + verticalPadding;
     size = Vector2(btnWidth, bgHeight);
   }
 
   @override
   void update(double dt) {
     super.update(dt);
-    _computeSize();
+    // 不再每帧调用 _computeSize()
     // 更新点击动效时间轴
     if (_clickEffectActive) {
       _clickEffectT += dt;
@@ -2713,16 +2726,8 @@ class MyButtonTextComponent extends TextComponent {
   }
 
   @override
-  set text(String text) {
-    super.text = '  $text';
-  }
-
-  @override
   void render(Canvas canvas) {
-    // 背景与点击区域：使用 update 中计算的 size
-    _computeSize();
-    final double textHeight = textRenderer.getLineMetrics(text).height;
-    final double bgHeight = size.y;
+    // 使用预先计算好的 size 和布局信息 
     Rect rect = Rect.fromLTWH(0, 0, size.x, size.y);
 
     Color scaleAlpha(Color c, double scale) {
@@ -2776,25 +2781,11 @@ class MyButtonTextComponent extends TextComponent {
     // 去除顶部高光
 
     // 半透明文本（仅调透明度），并将文本垂直居中绘制
-    final originalRenderer = textRenderer;
-    final originalTextPaint = originalRenderer is TextPaint ? originalRenderer : TextPaint(style: const TextStyle());
-    final ts = originalTextPaint.style;
-    final scaledColor = (ts.color ?? Colors.white).withValues(alpha: (ts.color?.a ?? 1.0) * opacity);
-    final scaledShadows = ts.shadows
-        ?.map((s) => Shadow(
-              color: s.color.withValues(alpha: s.color.a * opacity),
-              offset: s.offset,
-              blurRadius: s.blurRadius,
-            ))
-        .toList();
-    textRenderer = TextPaint(style: ts.copyWith(color: scaledColor, shadows: scaledShadows));
-
-    final double offsetY = (bgHeight - textHeight) / 2;
+    final double offsetY = (size.y - _textHeight) / 2;
     canvas.save();
     canvas.translate(0, offsetY);
     super.render(canvas);
     canvas.restore();
-    textRenderer = originalRenderer;
   }
 
   // 不覆盖 containsLocalPoint，让父组件统一处理点击区域
