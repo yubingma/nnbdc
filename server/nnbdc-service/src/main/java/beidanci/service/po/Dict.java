@@ -2,6 +2,7 @@ package beidanci.service.po;
 
 import java.util.List;
 import java.util.Objects;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -35,6 +36,7 @@ public class Dict extends UuidPo {
     @Column(name = "is_ready", nullable = false)
     private Boolean isReady;
 
+    @JsonIgnore
     private  List<DictWord> dictWords;
 
     /**
@@ -141,6 +143,9 @@ public class Dict extends UuidPo {
     }
 
     public String getShortName() {
+        if (name == null) {
+            return null;
+        }
         final int dotPos = name.lastIndexOf(".");
         return dotPos == -1 ? name : name.substring(0, dotPos);
     }

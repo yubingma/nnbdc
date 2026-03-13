@@ -2,6 +2,7 @@ package beidanci.service.po;
 
 import java.util.LinkedList;
 import java.util.List;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -58,16 +59,22 @@ public class Word extends UuidPo {
     @Column(name = "is_updating", nullable = false)
     private Boolean isUpdating = false;
 
+    @JsonIgnore
     private  List<MeaningItem> meaningItems;
 
+    @JsonIgnore
     private  List<WordImage> images;
 
+    @JsonIgnore
     private  List<WordShortDescChinese> wordShortDescChineses;
 
+    @JsonIgnore
     private  List<VerbTense> verbTences;
 
+    @JsonIgnore
     private  List<Word> similarWords;
 
+    @JsonIgnore
     private  List<CigenWordLink> cigenWordLinks;
 
     public List<VerbTense> getVerbTences() {
@@ -125,7 +132,7 @@ public class Word extends UuidPo {
     }
 
     public boolean isPhrase() {
-        return spell.trim().contains(" ");
+        return spell != null && spell.trim().contains(" ");
     }
 
     public boolean wordHasMeaning() {
