@@ -991,7 +991,7 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
       }
       // 播放落地音效（与碰撞保持一致的体验）
       final double thudVolume = (player == playerA) ? 1.0 : bSideSfxVolume;
-      final Future<void> thud = SoundUtil.playAssetSoundCut('thud.mp3', 1.0, thudVolume, const Duration(milliseconds: 350));
+      final Future<void> thud = SoundUtil.playAssetSoundCut('thud.mp3', 1.0, thudVolume, const Duration(milliseconds: 1000));
 
       // 触顶判负：单词落地后，操场剩余高度不足以再容纳一个单词
       final double playgroundTop = player.playGround.y;
@@ -1046,8 +1046,8 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
       ),
     );
     add(particle);
-    // 音效：使用 bubble-pop，时长与落地音效一致（350ms），播放完成后再继续
-    await SoundUtil.playAssetSoundCut('bubble-pop.mp3', 1.0, volume, const Duration(milliseconds: 350));
+    // 音效：使用 bubble-pop，增加时长到 1.5s 以确保播放完整
+    await SoundUtil.playAssetSoundCut('bubble-pop.mp3', 1.0, volume, const Duration(milliseconds: 1500));
   }
 
   void initSocket() {
@@ -2708,7 +2708,7 @@ class DroppingWordSprite extends TextComponent with HasGameReference<MyGame>, Co
 
       // 播放落地音效：B方音量为A方的1/4
       final double thudVolume = (player == game.playerA) ? 1.0 : bSideSfxVolume;
-      final Future<void> thud = SoundUtil.playAssetSoundCut('thud.mp3', 1.0, thudVolume, const Duration(milliseconds: 350));
+      final Future<void> thud = SoundUtil.playAssetSoundCut('thud.mp3', 1.0, thudVolume, const Duration(milliseconds: 1000));
 
       // 触顶条件：落地后剩余高度不足以再容纳一个单词
       final double playgroundTop = game.playerA.playGround.y; // 同侧均可用其 y 作为操场顶部
