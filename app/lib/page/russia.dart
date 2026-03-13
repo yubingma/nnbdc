@@ -700,16 +700,16 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
       ..width = screenWidth
       ..height = 50;
     allButtons.add(answer5Btn);
-    answer1Btn.onReleased = () {
+    answer1Btn.onPressed = () {
       onAnswerClicked(1);
     };
-    answer2Btn.onReleased = () {
+    answer2Btn.onPressed = () {
       onAnswerClicked(2);
     };
-    answer3Btn.onReleased = () {
+    answer3Btn.onPressed = () {
       onAnswerClicked(3);
     };
-    answer4Btn.onReleased = () {
+    answer4Btn.onPressed = () {
       onAnswerClicked(4);
     };
     answer5Btn.onReleased = () {
@@ -921,18 +921,18 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
       isPlaying = false;
       sendGameOverCmd('A');
     } else if (btnIndex == playerA.correctIndex) {
-      // 选对了
+      // 选对了：核心优化 - 立即抢先请求下一个单词，最大限度压缩网络往返感官延迟
+      if (isPlaying) {
+        sendUserCmd('GET_NEXT_WORD', [playerA.wordIndex++, 'true', playerA.currWord!.spell]);
+      }
+
       if (playerA.droppingWordSprite != null) {
-        // 爆炸特效与音效，音效结束后再取下一词
-        final Future<void> fx = playExplosionAtDropping(playerA.droppingWordSprite!, volume: 1.0);
+        // 爆炸特效与音效异步执行
+        async.unawaited(playExplosionAtDropping(playerA.droppingWordSprite!, volume: 1.0));
         playerA.droppingWordSprite?.removeFromParent();
         playerA.droppingWordSprite = null;
-        fx.then((_) {
-          sendUserCmd('GET_NEXT_WORD', [playerA.wordIndex++, 'true', playerA.currWord!.spell]);
-        });
-        return;
       }
-      sendUserCmd('GET_NEXT_WORD', [playerA.wordIndex++, 'true', playerA.currWord!.spell]);
+      return;
     } else {
       // 选错了
       // 本地加入生词本（由前端负责，随后由同步机制推送到后端）
@@ -991,7 +991,7 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
       }
       // 播放落地音效（与碰撞保持一致的体验）
       final double thudVolume = (player == playerA) ? 1.0 : bSideSfxVolume;
-      final Future<void> thud = SoundUtil.playAssetSoundCut('thud.mp3', 1.0, thudVolume, const Duration(milliseconds: 1500));
+      SoundUtil.playAssetSoundCut('thud.mp3', 1.0, thudVolume, const Duration(milliseconds: 1500));
 
       // 触顶判负：单词落地后，操场剩余高度不足以再容纳一个单词
       final double playgroundTop = player.playGround.y;
@@ -1003,16 +1003,11 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
         return;
       }
 
-      // A方落地后请求下一个单词（保持与碰撞分支一致的时序：待音效播放结束）
+      // A方落地后立即请求下一个单词，不再等待任何逻辑
       if (player == playerA) {
-        thud.then((_) {
-          sendUserCmd('GET_NEXT_WORD', [playerA.wordIndex++, 'false', playerA.currWord!.spell]);
-          endLanding(player);
-        });
-      } else {
-        // B方无需取词，也结束落地状态
-        thud.then((_) => endLanding(player));
+        sendUserCmd('GET_NEXT_WORD', [playerA.wordIndex++, 'false', playerA.currWord!.spell]);
       }
+      endLanding(player);
     } else {
       endLanding(player);
     }
@@ -1131,14 +1126,14 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
       if (answerResult == 'true') {
         final nextWord = WordVo.c2(data[1]);
         if (playerB.droppingWordSprite != null) {
-          final Future<void> fx = playExplosionAtDropping(playerB.droppingWordSprite!, volume: bSideSfxVolume);
+          // B方爆炸声也使用 unawaited，不再阻塞下一词出现
+          async.unawaited(playExplosionAtDropping(playerB.droppingWordSprite!, volume: bSideSfxVolume));
           playerB.droppingWordSprite?.removeFromParent();
           playerB.droppingWordSprite = null;
-          fx.then((_) {
-            playerB.currWord = nextWord;
-            newDroppingWord(playerB.currWord!, playerB.otherWordMeanings, playerB);
-            _reportFallEtaBOnce();
-          });
+          
+          playerB.currWord = nextWord;
+          newDroppingWord(playerB.currWord!, playerB.otherWordMeanings, playerB);
+          _reportFallEtaBOnce();
           return;
         }
         playerB.droppingWordSprite = null;
@@ -2645,7 +2640,9 @@ class DroppingWordSprite extends TextComponent with HasGameReference<MyGame>, Co
     super.update(dt);
     if (!isDead) {
       // 按屏幕缩放比例调整下落速度，保证不同屏幕用时一致
-      y += 20 * game.uiScale * dt;
+      // 提升基础下落速度（从 20 提升到 35），增加游戏紧凑感
+      final double speed = 35.0 * game.uiScale;
+      y += speed * dt;
       // 轻微左右摆动
       _t += dt;
       final double amp = 4.0 * (game.uiScale);
@@ -2708,7 +2705,7 @@ class DroppingWordSprite extends TextComponent with HasGameReference<MyGame>, Co
 
       // 播放落地音效：B方音量为A方的1/4
       final double thudVolume = (player == game.playerA) ? 1.0 : bSideSfxVolume;
-      final Future<void> thud = SoundUtil.playAssetSoundCut('thud.mp3', 1.0, thudVolume, const Duration(milliseconds: 1500));
+      SoundUtil.playAssetSoundCut('thud.mp3', 1.0, thudVolume, const Duration(milliseconds: 1500));
 
       // 触顶条件：落地后剩余高度不足以再容纳一个单词
       final double playgroundTop = game.playerA.playGround.y; // 同侧均可用其 y 作为操场顶部
@@ -2721,7 +2718,7 @@ class DroppingWordSprite extends TextComponent with HasGameReference<MyGame>, Co
         if (player == game.playerA) {
           game.sendUserCmd('GET_NEXT_WORD', [game.playerA.wordIndex++, 'false', game.playerA.currWord!.spell]);
         }
-        thud.then((_) => game.endLanding(player));
+        game.endLanding(player);
       }
     }
   }
@@ -2969,12 +2966,22 @@ class _MyButtonTapArea extends PositionComponent with TapCallbacks {
   }
 
   @override
-  void onTapUp(TapUpEvent event) {
-    // 启动点击特效
+  void onTapDown(TapDownEvent event) {
+    // 立即启动点击特效，提供触觉反馈
     (ownerButton.button as MyButtonTextComponent).startClickEffect();
-    // 在动画结束时复位按下态
-    Future.delayed(const Duration(milliseconds: 280), () {
-      (ownerButton.button as MyButtonTextComponent).isPressed = false;
+    (ownerButton.button as MyButtonTextComponent).isPressed = true;
+    
+    // 立即触发 onPressed 逻辑
+    ownerButton.onPressed?.call();
+  }
+
+  @override
+  void onTapUp(TapUpEvent event) {
+    // 在抬起时复位按下态
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (ownerButton.button != null) {
+        (ownerButton.button as MyButtonTextComponent).isPressed = false;
+      }
     });
     ownerButton.onReleased?.call();
   }
