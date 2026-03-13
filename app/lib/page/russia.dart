@@ -460,7 +460,15 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
   bool _landingAInProgress = false;
   bool _landingBInProgress = false;
   // 说明：机器人道具使用逻辑由后端控制；前端不做本地自动触发
-  String _lastLayoutKey = '';
+  // 布局缓存状态
+  String? _lastGameState;
+  bool? _lastIsPlaying;
+  bool? _lastShowingResult;
+  bool? _lastHasGameInfoA;
+  bool? _lastHasGameInfoB;
+  bool? _lastStarted;
+  int? _lastWordCountA;
+  bool? _lastHasCountdown;
   bool _needsButtonLayout = true;
 
   bool tryBeginLanding(Player player) {
@@ -1733,9 +1741,29 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
       }
     }
 
-    final layoutKey = '$gameState|$isPlaying|$isShowingResult|${playerA.userGameInfo != null}|${playerB.userGameInfo != null}|${playerA.started}|${playerA.otherWordMeanings.length}|${countdownSeconds > 0}';
-    if (layoutKey != _lastLayoutKey) {
-      _lastLayoutKey = layoutKey;
+    // 优化：仅在关键状态变化时更新布局，避免每帧进行复杂的字符串插值
+    bool hasGameInfoA = playerA.userGameInfo != null;
+    bool hasGameInfoB = playerB.userGameInfo != null;
+    int wordCountA = playerA.otherWordMeanings.length;
+    bool hasCountdown = countdownSeconds > 0;
+
+    if (gameState != _lastGameState ||
+        isPlaying != _lastIsPlaying ||
+        isShowingResult != _lastShowingResult ||
+        hasGameInfoA != _lastHasGameInfoA ||
+        hasGameInfoB != _lastHasGameInfoB ||
+        playerA.started != _lastStarted ||
+        wordCountA != _lastWordCountA ||
+        hasCountdown != _lastHasCountdown) {
+      
+      _lastGameState = gameState;
+      _lastIsPlaying = isPlaying;
+      _lastShowingResult = isShowingResult;
+      _lastHasGameInfoA = hasGameInfoA;
+      _lastHasGameInfoB = hasGameInfoB;
+      _lastStarted = playerA.started;
+      _lastWordCountA = wordCountA;
+      _lastHasCountdown = hasCountdown;
       _needsButtonLayout = true;
     }
 
@@ -1950,6 +1978,7 @@ class SpiralGalaxyBackground extends PositionComponent {
   ui.Picture? _bakedArm2;
   double? _lastWidth;
   double? _lastHeight;
+  Shader? _cachedSpaceShader;
 
   @override
   void update(double dt) {
@@ -1965,6 +1994,7 @@ class SpiralGalaxyBackground extends PositionComponent {
       height = size.y;
       _bakedArm1 = null;
       _bakedArm2 = null;
+      _cachedSpaceShader = null;
     }
   }
 
@@ -2025,13 +2055,13 @@ class SpiralGalaxyBackground extends PositionComponent {
     }
 
     final rect = Rect.fromLTWH(0, 0, width, height);
-    final space = RadialGradient(
+    _cachedSpaceShader ??= RadialGradient(
       center: Alignment(0.0, -0.2),
       radius: 1.2,
       colors: const [Color(0xFF05070E), Color(0xFF0A0F1E), Color(0xFF0E1630)],
       stops: const [0.0, 0.6, 1.0],
     ).createShader(rect);
-    canvas.drawRect(rect, Paint()..shader = space);
+    canvas.drawRect(rect, Paint()..shader = _cachedSpaceShader);
 
     final center = Offset(rect.center.dx, rect.center.dy * 0.9);
     final twinkle = (0.9 + 0.1 * sin(t * 1.3)).clamp(0.0, 1.0);
@@ -2055,79 +2085,6 @@ class SpiralGalaxyBackground extends PositionComponent {
   }
 }
 
-class GalaxyBackground extends PositionComponent {
-  double t = 0;
-
-  @override
-  void update(double dt) {
-    super.update(dt);
-    t += dt;
-  }
-
-  @override
-  void onGameResize(Vector2 size) {
-    super.onGameResize(size);
-    width = size.x;
-    height = size.y;
-  }
-
-  @override
-  void render(Canvas canvas) {
-    PerfMonitor.start('GalaxyBackground.render');
-    final rect = Rect.fromLTWH(0, 0, width, height);
-
-    // 宇宙底色
-    final space = RadialGradient(
-      center: Alignment(0.0, -0.2),
-      radius: 1.2,
-      colors: const [
-        Color(0xFF060912),
-        Color(0xFF0A0F1E),
-        Color(0xFF0E1630),
-      ],
-      stops: const [0.0, 0.6, 1.0],
-    ).createShader(rect);
-    canvas.drawRect(rect, Paint()..shader = space);
-
-    // 星云光晕
-    _drawNebula(canvas, rect, const Color(0xFF5C6BC0), 0.35, 0.25, 220, 0.35);
-    _drawNebula(canvas, rect, const Color(0xFF26C6DA), -0.25, -0.1, 180, 0.45);
-    _drawNebula(canvas, rect, const Color(0xFFAB47BC), 0.1, 0.4, 240, 0.3);
-
-    // 星空粒子层
-    _drawStars(canvas, rect, count: 120, sizeMin: 0.6, sizeMax: 1.4, speed: 0.06, twinkle: 0.5);
-    _drawStars(canvas, rect, count: 60, sizeMin: 1.2, sizeMax: 2.0, speed: 0.03, twinkle: 0.8);
-    PerfMonitor.stop('GalaxyBackground.render');
-  }
-
-  void _drawNebula(Canvas canvas, Rect rect, Color color, double ax, double ay, double radius, double alpha) {
-    final cx = rect.center.dx + rect.width * ax * (0.6 + 0.4 * sin(t * 0.1 + ax));
-    final cy = rect.center.dy + rect.height * ay * (0.6 + 0.4 * cos(t * 0.1 + ay));
-    final r = radius * (0.9 + 0.1 * sin(t * 0.2 + ax + ay));
-    final shader = RadialGradient(
-      colors: [
-        color.withValues(alpha: alpha * 0.45),
-        color.withValues(alpha: 0.0),
-      ],
-      stops: const [0.0, 1.0],
-    ).createShader(Rect.fromCircle(center: Offset(cx, cy), radius: r));
-    canvas.drawCircle(Offset(cx, cy), r, Paint()..shader = shader);
-  }
-
-  void _drawStars(Canvas canvas, Rect rect,
-      {required int count, required double sizeMin, required double sizeMax, required double speed, required double twinkle}) {
-    final rand = Random(4242 + (t * 1000).floor());
-    final paint = Paint()..color = Colors.white;
-    for (int i = 0; i < count; i++) {
-      final x = rand.nextDouble() * rect.width;
-      final y = (rand.nextDouble() * rect.height + t * speed * rect.height) % rect.height;
-      final s = sizeMin + rand.nextDouble() * (sizeMax - sizeMin);
-      final a = 0.3 + 0.7 * (0.5 + 0.5 * sin((i * 12.9898 + t * (2.0 + speed))));
-      paint.color = Colors.white.withValues(alpha: (a * twinkle).clamp(0.2, 1.0));
-      canvas.drawCircle(Offset(x, y), s, paint);
-    }
-  }
-}
 
 class UserInfoPanel extends PositionComponent with HasGameReference<MyGame> {
   Player player;
@@ -2164,6 +2121,10 @@ class UserInfoPanel extends PositionComponent with HasGameReference<MyGame> {
 
   late TextPaint _successPaint;
   late TextPaint _failPaint;
+
+  Shader? _cachedBgShader;
+  Shader? _cachedBorderShader;
+  Shader? _cachedGlossShader;
 
   UserInfoPanel(this.player) : super(priority: 2);
 
@@ -2507,7 +2468,7 @@ class UserInfoPanel extends PositionComponent with HasGameReference<MyGame> {
     Rect rect = size.toRect();
 
     // 渐变背景（上圆下直角，半透明 0.7）
-    final bgShader = LinearGradient(
+    _cachedBgShader ??= LinearGradient(
       colors: [
         const Color(0xFF2D2D2D).withValues(alpha: 0.7),
         const Color(0xFF1A1A1A).withValues(alpha: 0.7),
@@ -2516,7 +2477,7 @@ class UserInfoPanel extends PositionComponent with HasGameReference<MyGame> {
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
     ).createShader(rect);
-    final bgPaint = Paint()..shader = bgShader;
+    final bgPaint = Paint()..shader = _cachedBgShader;
     final panelShape = RRect.fromRectAndCorners(
       rect,
       topLeft: const Radius.circular(12),
@@ -2527,31 +2488,33 @@ class UserInfoPanel extends PositionComponent with HasGameReference<MyGame> {
     canvas.drawRRect(panelShape, bgPaint);
 
     // 边框（上圆下直角，半透明 0.7）
+    _cachedBorderShader ??= LinearGradient(
+      colors: [
+        const Color(0xFF4A90E2).withValues(alpha: 0.7),
+        const Color(0xFF357ABD).withValues(alpha: 0.7),
+        const Color(0xFF4A90E2).withValues(alpha: 0.7),
+      ],
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+    ).createShader(rect);
+
     final borderPaint = Paint()
-      ..shader = LinearGradient(
-        colors: [
-          const Color(0xFF4A90E2).withValues(alpha: 0.7),
-          const Color(0xFF357ABD).withValues(alpha: 0.7),
-          const Color(0xFF4A90E2).withValues(alpha: 0.7),
-        ],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      ).createShader(rect)
+      ..shader = _cachedBorderShader
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2;
     canvas.drawRRect(panelShape, borderPaint);
 
     // 内部光泽（仅顶部区域）
-    final glossPaint = Paint()
-      ..shader = LinearGradient(
-        colors: [
-          Colors.white.withValues(alpha: 0.1),
-          Colors.white.withValues(alpha: 0.05),
-          Colors.transparent,
-        ],
-        begin: Alignment.topCenter,
-        end: Alignment.center,
-      ).createShader(rect);
+    _cachedGlossShader ??= LinearGradient(
+      colors: [
+        Colors.white.withValues(alpha: 0.1),
+        Colors.white.withValues(alpha: 0.05),
+        Colors.transparent,
+      ],
+      begin: Alignment.topCenter,
+      end: Alignment.center,
+    ).createShader(rect);
+    final glossPaint = Paint()..shader = _cachedGlossShader;
     final glossRect = RRect.fromRectAndCorners(
       Rect.fromLTWH(rect.left + 2, rect.top + 2, rect.width - 4, rect.height * 0.3),
       topLeft: const Radius.circular(10),
@@ -2569,9 +2532,17 @@ class DroppingWordSprite extends TextComponent with HasGameReference<MyGame>, Co
     return TextPaint(style: TextStyle(color: color, fontSize: 22 * scale, fontWeight: weight, fontFamily: 'NotoSansSC'));
   }
 
-  // 即时生成，避免静态缓存旧样式
-  static TextPaint makeAlivePaint() => _buildTextPaint(const Color(0xFF4CAF50), weight: FontWeight.w500);
-  static TextPaint makeDeadPaint() => _buildTextPaint(const Color(0xFFFF0000), weight: FontWeight.w500);
+  static final Map<int, TextPaint> _paintCache = {};
+
+  static TextPaint makeAlivePaint() {
+    return _paintCache.putIfAbsent(0xFF4CAF50, 
+        () => _buildTextPaint(const Color(0xFF4CAF50), weight: FontWeight.w500));
+  }
+  
+  static TextPaint makeDeadPaint() {
+    return _paintCache.putIfAbsent(0xFFFF0000, 
+        () => _buildTextPaint(const Color(0xFFFF0000), weight: FontWeight.w500));
+  }
   var isDead = false;
   // 幂等控制：无论因碰撞或代码强制落地，都只处理一次
   bool hasLanded = false;
@@ -2588,7 +2559,7 @@ class DroppingWordSprite extends TextComponent with HasGameReference<MyGame>, Co
   late double _baseX;
 
   DroppingWordSprite(String text, this.player) : super(text: text, textRenderer: makeAlivePaint()) {
-    add(RectangleHitbox());
+    add(RectangleHitbox()..collisionType = CollisionType.active);
   }
 
   @override
@@ -2659,8 +2630,13 @@ class DroppingWordSprite extends TextComponent with HasGameReference<MyGame>, Co
       isDead = true;
       _trailYs.clear();
       // 即刻切换到红色文本，刷新文本内容以触发重绘
-      final TextStyle base = DroppingWordSprite.makeDeadPaint().style;
-      textRenderer = TextPaint(style: base.copyWith(fontSize: _fixedFontSize));
+      textRenderer = makeDeadPaint();
+      final style = (textRenderer as TextPaint).style;
+      textRenderer = TextPaint(style: style.copyWith(fontSize: _fixedFontSize));
+      
+      // 优化：落地后将碰撞体积设为 passive，减少碰撞计算量
+      children.query<RectangleHitbox>().forEach((h) => h.collisionType = CollisionType.passive);
+      
       text = text;
       if (player == game.playerA) {
         // 第一块贴紧地板，后续在其之上逐行堆叠，确保 7 行布局对齐
@@ -2694,14 +2670,9 @@ class DroppingWordSprite extends TextComponent with HasGameReference<MyGame>, Co
         game.endLanding(player);
       } else {
         if (player == game.playerA) {
-          // 等落地音效播放结束后再取下一个单词
-          thud.then((_) {
-            game.sendUserCmd('GET_NEXT_WORD', [game.playerA.wordIndex++, 'false', game.playerA.currWord!.spell]);
-            game.endLanding(player);
-          });
-        } else {
-          thud.then((_) => game.endLanding(player));
+          game.sendUserCmd('GET_NEXT_WORD', [game.playerA.wordIndex++, 'false', game.playerA.currWord!.spell]);
         }
+        thud.then((_) => game.endLanding(player));
       }
     }
   }

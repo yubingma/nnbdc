@@ -15,6 +15,7 @@ class SoundUtil {
   static bool _webAudioUnlocked = false;
   static bool _webUnlockInProgress = false;
   static bool _audioSessionConfigured = false;
+  static final Map<String, AudioPlayer> _sfxPlayers = {};
 
   /// 配置全局音频会话
   static Future<void> configureAudioSession() async {
@@ -46,8 +47,22 @@ class SoundUtil {
       await player.dispose();
       _audioSessionConfigured = true;
       Global.logger.i('SoundUtil: 全局音频会话配置完成');
+      
+      // 预热常用音效播放器，避免游戏过程中首次创建导致的 250ms 级卡顿
+      _prewarmSfx(['thud.mp3', 'correct.mp3', 'fail.mp3']);
     } catch (e) {
       Global.logger.e('SoundUtil: 配置全局音频会话失败: $e');
+    }
+  }
+
+  static void _prewarmSfx(List<String> files) {
+    for (var f in files) {
+      _sfxPlayers.putIfAbsent(f, () {
+        final p = AudioPlayer();
+        // 设置静态 Source 预加载（可选，取决于插件版本支持）
+        p.setSource(AssetSource('audio/$f')).catchError((_) {});
+        return p;
+      });
     }
   }
 
@@ -284,11 +299,9 @@ class SoundUtil {
   /// 音频会在后台播放完成并自动释放播放器
   /// 返回 Future，可用于跟踪播放状态
   static Future<void> playAssetSoundConcurrent(String soundFileName, double speed, double volume) {
-    var player = AudioPlayer();
-
-    // 在后台异步处理播放和释放，不阻塞调用者
+    final player = _sfxPlayers.putIfAbsent(soundFileName, () => AudioPlayer());
     return _playAssetSoundInBackground(player, soundFileName, speed, volume).catchError((error, stackTrace) {
-      ErrorHandler.handleError(error, stackTrace, logPrefix: '并发播放音效出错3', showToast: false);
+      ErrorHandler.handleError(error, stackTrace, logPrefix: '并发播放音效出错: $soundFileName', showToast: false);
     });
   }
 
@@ -300,19 +313,11 @@ class SoundUtil {
     double volume,
   ) async {
     try {
-      // iOS / Android 均不设置 AudioContext：
-      // - 设置 AudioContext 会在 player.dispose() 时重置全局 AVAudioSession（iOS）或
-      //   重置 AudioFocus（Android），引发音频会话切换噪音。
-      // - 不设置则复用当前已有的 session 配置（由 ASR 或其他播放器维持），更静默。
-      // 注意：此函数由 playAssetSoundConcurrent 调用，用于 correct.mp3 等短提示音。
-
-      await player.setPlaybackRate(speed);
-      await player.setVolume(volume);
-
-      // 添加播放状态监听
-      player.onPlayerStateChanged.listen((state) {
-        // 音效播放状态变化
-      });
+      if (player.state == PlayerState.playing) {
+        player.stop();
+      }
+      player.setPlaybackRate(speed);
+      player.setVolume(volume);
 
       // 修复路径问题：audioplayers 会自动添加 assets/ 前缀，所以只需要 audio/ 路径
       await player.play(AssetSource('audio/$soundFileName'));
@@ -345,25 +350,24 @@ class SoundUtil {
         await player.onPlayerComplete.first;
       }
     } on Exception catch (e, stackTrace) {
-      ErrorHandler.handleError(e, stackTrace, logPrefix: '播放音效出错4', showToast: false);
-    } finally {
-      player.dispose();
+      ErrorHandler.handleError(e, stackTrace, logPrefix: '播放后台音效出错: $soundFileName', showToast: false);
     }
   }
 
   /// 播放音效（限定最大奖励时长），用于跳过音效结尾的静音段
   static Future<void> playAssetSoundCut(String soundFileName, double speed, double volume, Duration maxPlay) async {
-    var player = AudioPlayer();
+    final player = _sfxPlayers.putIfAbsent(soundFileName, () => AudioPlayer());
     try {
-      // 不再每次播放都设置 AudioContext，改由全局配置或在必要时由 ASR 模块管理
-      // 避免 iOS 频繁切换会话导致线程阻塞和爆音
+      if (player.state == PlayerState.playing) {
+        player.stop();
+      }
 
-      await player.setPlaybackRate(speed);
-      await player.setVolume(volume);
+      player.setPlaybackRate(speed);
+      player.setVolume(volume);
 
-      player.onPlayerStateChanged.listen((state) {});
-
-      await player.play(AssetSource('audio/$soundFileName'));
+      // 非等待模式播放
+      // ignore: unawaited_futures
+      player.play(AssetSource('audio/$soundFileName'));
 
       // 仅等待到播放完成或达到限定时长
       await Future.any([
@@ -371,18 +375,12 @@ class SoundUtil {
         Future.delayed(maxPlay),
       ]);
 
-      // 若未完成则手动停止
-      try {
-        await player.stop();
-      } catch (e, stackTrace) {
-        // 停止播放器失败不影响流程，但需要记录
-        Global.logger.w('停止AudioPlayer失败', error: e, stackTrace: stackTrace);
+      if (player.state == PlayerState.playing) {
+        player.stop();
       }
-      await Future.delayed(Duration(milliseconds: 60));
+      await Future.delayed(const Duration(milliseconds: 20));
     } on Exception catch (e, stackTrace) {
-      ErrorHandler.handleError(e, stackTrace, logPrefix: '播放音效出错5', showToast: false);
-    } finally {
-      player.dispose();
+      ErrorHandler.handleError(e, stackTrace, logPrefix: '播放音效出错: $soundFileName', showToast: false);
     }
   }
 
