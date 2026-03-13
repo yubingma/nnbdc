@@ -352,7 +352,9 @@ public class DictImportBo {
         res.popularity = (Integer) map.getOrDefault("popularity", 5);
         res.sentenceEn = (String) map.get("sentenceEn");
         res.sentenceCn = (String) map.get("sentenceCn");
-        res.synonyms = (List<String>) map.get("synonyms");
+        @SuppressWarnings("unchecked")
+        List<String> synonyms = (List<String>) map.get("synonyms");
+        res.synonyms = synonyms;
         return res;
     }
 

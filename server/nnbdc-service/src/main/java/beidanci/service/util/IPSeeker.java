@@ -244,7 +244,7 @@ public class IPSeeker {
         String ipStr = Util.getIpStringFromBytes(ip);
         // 先检查cache中是否已经包含有这个ip的结果，没有再搜索文件
         if (ipCache.containsKey(ipStr)) {
-            IPLocation location = (IPLocation) ipCache.get(ipStr);
+            IPLocation location = ipCache.get(ipStr);
             return location.country;
         } else {
             IPLocation location = getIPLocation(ip);
@@ -277,7 +277,7 @@ public class IPSeeker {
         String ipStr = Util.getIpStringFromBytes(ip);
         // 先检查cache中是否已经包含有这个ip的结果，没有再搜索文件
         if (ipCache.containsKey(ipStr)) {
-            IPLocation location = (IPLocation) ipCache.get(ipStr);
+            IPLocation location = ipCache.get(ipStr);
             return location.area;
         } else {
             IPLocation location = getIPLocation(ip);

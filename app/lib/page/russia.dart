@@ -117,6 +117,7 @@ class RussiaPageState extends State<RussiaPage> {
       return;
     }
     if (dataLoaded) return;
+    if (!mounted) return;
     myGame = MyGame(gameHall, exceptRoom, context, this);
     setState(() {
       dataLoaded = true;
@@ -2030,7 +2031,6 @@ class SpiralGalaxyBackground extends PositionComponent {
     ui.Picture bakeArm(Color baseHue) {
       final recorder = ui.PictureRecorder();
       final canvas = Canvas(recorder);
-      final starPaint = Paint()..color = Colors.white;
       final turns = 2.2;
 
       for (double r = 40; r < armLen; r += 24) {

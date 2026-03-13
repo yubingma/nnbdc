@@ -1,6 +1,7 @@
 package beidanci.service.exception;
 
 public class NoEnoughWordException extends Exception {
+    private static final long serialVersionUID = 1L;
 
     /**
      *

@@ -15,7 +15,8 @@ class SoundUtil {
   static bool _webAudioUnlocked = false;
   static bool _webUnlockInProgress = false;
   static bool _audioSessionConfigured = false;
-  static final Map<String, AudioPlayer> _sfxPlayers = {};
+  static final Map<String, List<AudioPlayer>> _sfxPools = {};
+  static const int _maxPlayersPerSfx = 4; // 每个音效允许重叠播放的最大实例数
 
   /// 配置全局音频会话
   static Future<void> configureAudioSession() async {
@@ -57,11 +58,10 @@ class SoundUtil {
 
   static void _prewarmSfx(List<String> files) {
     for (var f in files) {
-      _sfxPlayers.putIfAbsent(f, () {
+      _sfxPools.putIfAbsent(f, () {
         final p = AudioPlayer();
-        // 设置静态 Source 预加载（可选，取决于插件版本支持）
         p.setSource(AssetSource('audio/$f')).catchError((_) {});
-        return p;
+        return [p];
       });
     }
   }
@@ -299,7 +299,22 @@ class SoundUtil {
   /// 音频会在后台播放完成并自动释放播放器
   /// 返回 Future，可用于跟踪播放状态
   static Future<void> playAssetSoundConcurrent(String soundFileName, double speed, double volume) {
-    final player = _sfxPlayers.putIfAbsent(soundFileName, () => AudioPlayer());
+    final pool = _sfxPools.putIfAbsent(soundFileName, () => [AudioPlayer()]);
+    AudioPlayer? player;
+    
+    for (var p in pool) {
+      if (p.state != PlayerState.playing) {
+        player = p;
+        break;
+      }
+    }
+
+    if (player == null && pool.length < _maxPlayersPerSfx) {
+      player = AudioPlayer();
+      pool.add(player);
+    }
+    player ??= pool[0];
+
     return _playAssetSoundInBackground(player, soundFileName, speed, volume).catchError((error, stackTrace) {
       ErrorHandler.handleError(error, stackTrace, logPrefix: '并发播放音效出错: $soundFileName', showToast: false);
     });
@@ -319,14 +334,9 @@ class SoundUtil {
       player.setPlaybackRate(speed);
       player.setVolume(volume);
 
-      // 修复路径问题：audioplayers 会自动添加 assets/ 前缀，所以只需要 audio/ 路径
       await player.play(AssetSource('audio/$soundFileName'));
 
-      // 等待播放完成，避免立即释放播放器
-      // 在 Android 上，如果 onPlayerComplete 不触发，使用播放状态监听 + 超时机制确保 Future 能够完成
       if (PlatformUtils.isAndroid) {
-        // 使用播放状态监听来判断是否完成，比单纯等待 onPlayerComplete 更可靠
-        // correct.mp3 通常播放时间很短（约 200-500 毫秒），设置 800 毫秒超时足够
         final completer = Completer<void>();
         late StreamSubscription stateSubscription;
 
@@ -338,11 +348,10 @@ class SoundUtil {
           }
         });
 
-        // 等待播放完成或超时
         await Future.any([
           player.onPlayerComplete.first,
           completer.future,
-          Future.delayed(Duration(milliseconds: 800)), // 800 毫秒超时
+          Future.delayed(const Duration(milliseconds: 800)),
         ]);
 
         await stateSubscription.cancel();
@@ -356,7 +365,22 @@ class SoundUtil {
 
   /// 播放音效（限定最大奖励时长），用于跳过音效结尾的静音段
   static Future<void> playAssetSoundCut(String soundFileName, double speed, double volume, Duration maxPlay) async {
-    final player = _sfxPlayers.putIfAbsent(soundFileName, () => AudioPlayer());
+    final pool = _sfxPools.putIfAbsent(soundFileName, () => [AudioPlayer()]);
+    AudioPlayer? player;
+    
+    for (var p in pool) {
+      if (p.state != PlayerState.playing) {
+        player = p;
+        break;
+      }
+    }
+    
+    if (player == null && pool.length < _maxPlayersPerSfx) {
+      player = AudioPlayer();
+      pool.add(player);
+    }
+    player ??= pool[0];
+
     try {
       if (player.state == PlayerState.playing) {
         player.stop();
@@ -365,11 +389,9 @@ class SoundUtil {
       player.setPlaybackRate(speed);
       player.setVolume(volume);
 
-      // 非等待模式播放
-      // ignore: unawaited_futures
-      player.play(AssetSource('audio/$soundFileName'));
+      unawaited(player.play(AssetSource('audio/$soundFileName')));
 
-      // 仅等待到播放完成或达到限定时长
+      // 关键：实现 "Cut" 逻辑，等待播放完成或达到限定时长
       await Future.any([
         player.onPlayerComplete.first,
         Future.delayed(maxPlay),
@@ -378,7 +400,6 @@ class SoundUtil {
       if (player.state == PlayerState.playing) {
         player.stop();
       }
-      await Future.delayed(const Duration(milliseconds: 20));
     } on Exception catch (e, stackTrace) {
       ErrorHandler.handleError(e, stackTrace, logPrefix: '播放音效出错: $soundFileName', showToast: false);
     }
@@ -402,10 +423,8 @@ class SoundUtil {
       try {
         await unlockPlayer.play(AssetSource('audio/bubble-pop.mp3'));
         // 等待最多 300ms，不阻塞主流程太久
-        await Future.any([
-          unlockPlayer.onPlayerComplete.first,
-          Future.delayed(const Duration(milliseconds: 300)),
-        ]);
+        unawaited(unlockPlayer.play(AssetSource('audio/thud.mp3')));
+        unawaited(Future.delayed(const Duration(milliseconds: 500)).then((_) => unlockPlayer.dispose()));
       } catch (e, st) {
         // 即使解锁失败也不阻断主流程
         Global.logger.w('Web audio unlock attempt failed', error: e, stackTrace: st);
