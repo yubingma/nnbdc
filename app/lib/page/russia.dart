@@ -1568,7 +1568,7 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
     // 估算至触底剩余时间：使用与reportFallEta相同的速度估计（20px/s），A/B同坐标系
     final dwTop = getDeadWordsTopY(playerB);
     final remain = (dwTop - curr.height) - curr.y;
-    final double v = 20.0 * uiScale; // px/s，与下落速度一致按比例缩放
+    final double v = 35.0 * uiScale; // px/s，与下落速度(DroppingWordSprite.update)保持严格一致
     final double etaSec = remain > 0 ? (remain / v) : 0.0;
     final int etaMs = (etaSec * 1000).clamp(0, 60000).toInt();
     sendUserCmd('REPORT_FALL_B', [etaMs]);
