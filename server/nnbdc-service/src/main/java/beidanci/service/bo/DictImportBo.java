@@ -240,8 +240,8 @@ public class DictImportBo {
 
         // 如果是记录到通用词典（属于系统管理员），则记录同步日志，以便各分布式节点同步
         if (Constants.SYS_USER_SYS_ID.equals(ownerId)) {
-            sysDbSyncBo.logOperation("INSERT", "meaning_item", meaning.getId(), JsonUtils.toJson(meaning));
-            sysDbSyncBo.logOperation("INSERT", "sentence", sentence.getId(), JsonUtils.toJson(sentence));
+            sysDbSyncBo.logOperation("INSERT", "meaning_item", meaning.getId(), JsonUtils.toJson(meaningItemBo.toDto(meaning)));
+            sysDbSyncBo.logOperation("INSERT", "sentence", sentence.getId(), JsonUtils.toJson(sentenceBo.toDto(sentence)));
         }
     }
 

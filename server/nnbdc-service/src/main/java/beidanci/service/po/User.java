@@ -14,7 +14,6 @@ import beidanci.api.model.UserDto;
 import beidanci.service.util.EmojiFilter;
 import beidanci.service.util.Util;
 import beidanci.util.Utils;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 @Table(name = "user", indexes = { @Index(name = "idx_userName", columnList = "user_name", unique = true) })
@@ -100,65 +99,48 @@ public class User extends UuidPo {
     private Boolean autoPlayWord = true;
 
     @OrderBy("dictId asc")
-    @JsonIgnore
     private  List<LearningDict> learningDicts;
 
-    @JsonIgnore
     private  List<MasteredWord> masteredWords;
-    @JsonIgnore
     private  List<LearningWord> learningWords;
 
-    @JsonIgnore
     private  List<Msg> sentMsgs;
 
-    @JsonIgnore
     private  List<Msg> recvedMsgs;
 
-    @JsonIgnore
     private List<UserGame> userGames;
 
-    @JsonIgnore
     private List<UserCowDungLog> userCowDungLogs;
 
-    @JsonIgnore
     private  List<Daka> dakas;
 
-    @JsonIgnore
     private  List<UserScoreLog> userScoreLogs;
     @OrderBy("theDate asc")
-    @JsonIgnore
     private  List<UserSnapshotDaily> userSnapshotDailys;
     @Column(name = "invited_by_id")
     private User invitedBy;
 
-    @JsonIgnore
     private  List<User> invitedUsers;
 
-    @JsonIgnore
     private  List<StudyGroup> studyGroups = new ArrayList<>();
 
-    @JsonIgnore
     private  List<StudyGroup> createdStudyGroups;
 
-    @JsonIgnore
     private  List<StudyGroup> managedStudyGroups;
 
     /**
      * ugc - 用户创建的例句
      */
-    @JsonIgnore
     private  List<Sentence> createdSentences;
 
     /**
      * ugc - 用户创建的单词笔记
      */
-    @JsonIgnore
     private  List<WordAdditionalInfo> createdWordNotes;
 
     /**
      * 缓存用户回答错误的单词
      */
-    @JsonIgnore
     private  List<Word> wrongWords;
 
     /**

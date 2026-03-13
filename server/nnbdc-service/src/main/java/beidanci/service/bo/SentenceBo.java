@@ -2,8 +2,6 @@ package beidanci.service.bo;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.TimeZone;
-
 import javax.annotation.PostConstruct;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +23,7 @@ import beidanci.service.po.User;
 import beidanci.service.po.WordSentence;
 import beidanci.service.po.WordSentenceId;
 import beidanci.service.store.SentenceCache;
+import beidanci.service.util.JsonUtils;
 import beidanci.service.util.Util;
 
 @Service
@@ -197,31 +196,27 @@ public class SentenceBo extends BaseBo<Sentence> {
      * 将Sentence转为JSON字符串用于日志
      */
     private String toJsonForLog(Sentence sentence) {
-        try {
-            // 用于格式化日期为ISO-8601格式
-            java.text.SimpleDateFormat isoFormat = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-            isoFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+        return JsonUtils.toJson(toDto(sentence));
+    }
 
-            String createTimeStr = sentence.getCreateTime() != null ? isoFormat.format(sentence.getCreateTime()) : "";
-            String updateTimeStr = sentence.getUpdateTime() != null ? isoFormat.format(sentence.getUpdateTime()) : "";
-
-            return String.format(
-                    "{\"id\":\"%s\",\"english\":\"%s\",\"chinese\":\"%s\",\"englishDigest\":\"%s\",\"theType\":\"%s\",\"handCount\":%d,\"footCount\":%d,\"authorId\":\"%s\",\"meaningItemId\":\"%s\",\"wordMeaning\":\"%s\",\"createTime\":\"%s\",\"updateTime\":\"%s\"}",
-                    sentence.getId(),
-                    sentence.getEnglish() != null ? sentence.getEnglish().replace("\"", "\\\"") : "",
-                    sentence.getChinese() != null ? sentence.getChinese().replace("\"", "\\\"") : "",
-                    sentence.getEnglishDigest() != null ? sentence.getEnglishDigest() : "",
-                    sentence.getTheType() != null ? sentence.getTheType() : "",
-                    sentence.getHandCount(),
-                    sentence.getFootCount(),
-                    sentence.getAuthor() != null ? sentence.getAuthor().getId() : "",
-                    sentence.getMeaningItem() != null ? sentence.getMeaningItem().getId() : "",
-                    sentence.getWordMeaning() != null ? sentence.getWordMeaning().replace("\"", "\\\"") : "",
-                    createTimeStr,
-                    updateTimeStr);
-        } catch (Exception e) {
-            return "{}";
-        }
+    public SentenceDto toDto(Sentence sentence) {
+        SentenceDto dto = new SentenceDto();
+        dto.setId(sentence.getId());
+        dto.setEnglish(sentence.getEnglish());
+        dto.setChinese(sentence.getChinese());
+        dto.setEnglishDigest(sentence.getEnglishDigest());
+        dto.setTheType(sentence.getTheType());
+        dto.setFootCount(sentence.getFootCount());
+        dto.setHandCount(sentence.getHandCount());
+        dto.setAuthorId(sentence.getAuthor() != null ? sentence.getAuthor().getId() : null);
+        dto.setMeaningItemId(sentence.getMeaningItem() != null ? sentence.getMeaningItem().getId() : null);
+        dto.setWordMeaning(sentence.getWordMeaning());
+        dto.setCreateTime(sentence.getCreateTime());
+        dto.setUpdateTime(sentence.getUpdateTime());
+        dto.setProducer(sentence.getSoundProducer());
+        dto.setNeedTts(sentence.getNeedTts());
+        dto.setLastDiyUpdateTime(sentence.getLastDiyUpdateTime());
+        return dto;
     }
 
     // ============================================

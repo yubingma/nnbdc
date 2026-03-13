@@ -3,7 +3,6 @@ package beidanci.service.po;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -55,7 +54,6 @@ public class MeaningItem extends UuidPo {
      */
     // @Fetch(FetchMode.SUBSELECT)  // JDBC 不支持
     // @Cache(region = "wordCache", usage = CacheConcurrencyStrategy.READ_WRITE)  // JDBC 不支持缓存
-    @JsonIgnore
     private List<Synonym> synonyms = new ArrayList<>();
 
     /**
@@ -63,7 +61,6 @@ public class MeaningItem extends UuidPo {
      */
     // @Fetch(FetchMode.SUBSELECT)  // JDBC 不支持
     // @Cache(region = "wordCache", usage = CacheConcurrencyStrategy.READ_WRITE)  // JDBC 不支持缓存
-    @JsonIgnore
     private List<Sentence> sentences = new ArrayList<>();
 
     @Column(name = "dict_id")

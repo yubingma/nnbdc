@@ -216,4 +216,20 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
         MapSqlParameterSource params = new MapSqlParameterSource("id", id);
         namedParameterJdbcTemplate.update(deleteSql, params);
     }
+
+    public MeaningItemDto toDto(MeaningItem meaningItem) {
+        MeaningItemDto dto = new MeaningItemDto();
+        dto.setId(meaningItem.getId());
+        dto.setCiXing(meaningItem.getCiXing());
+        dto.setMeaning(meaningItem.getMeaning());
+        dto.setPopularity(meaningItem.getPopularity() != null ? meaningItem.getPopularity() : 999);
+        dto.setWordId(meaningItem.getWord() != null ? meaningItem.getWord().getId() : null);
+        dto.setDictId(meaningItem.getDict() != null ? meaningItem.getDict().getId() : null);
+        dto.setOwnerId(meaningItem.getOwner() != null ? meaningItem.getOwner().getId() : null);
+        dto.setCreateTime(meaningItem.getCreateTime());
+        dto.setUpdateTime(meaningItem.getUpdateTime());
+        dto.setUpdating(meaningItem.getIsUpdating() != null ? meaningItem.getIsUpdating() : false);
+        dto.setUpdatingStartAt(meaningItem.getUpdatingStartAt());
+        return dto;
+    }
 }
