@@ -57,6 +57,52 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
         });
     }
 
+    public List<MeaningItemDto> findMeaningsByWord(String wordId) {
+        String sql = "SELECT id, ci_xing, meaning, word_id, dict_id, owner_id, popularity, create_time, update_time, is_updating, updating_start_at FROM meaning_item WHERE word_id = :wordId";
+        MapSqlParameterSource params = new MapSqlParameterSource("wordId", wordId);
+
+        return namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> {
+            MeaningItemDto dto = new MeaningItemDto();
+            dto.setId(rs.getString("id"));
+            dto.setCiXing(rs.getString("ci_xing"));
+            dto.setMeaning(rs.getString("meaning"));
+            dto.setWordId(rs.getString("word_id"));
+            dto.setDictId(rs.getString("dict_id"));
+            Integer popularity = rs.getObject("popularity", Integer.class);
+            dto.setPopularity(popularity != null ? popularity : 999);
+            dto.setCreateTime(rs.getTimestamp("create_time"));
+            dto.setUpdateTime(rs.getTimestamp("update_time"));
+            dto.setOwnerId(rs.getString("owner_id"));
+            dto.setUpdating(rs.getBoolean("is_updating"));
+            dto.setUpdatingStartAt(rs.getTimestamp("updating_start_at"));
+            return dto;
+        });
+    }
+
+    public List<MeaningItemDto> findMeaningsByWordAndDict(String wordId, String dictId) {
+        String sql = "SELECT id, ci_xing, meaning, word_id, dict_id, owner_id, popularity, create_time, update_time, is_updating, updating_start_at FROM meaning_item WHERE word_id = :wordId AND dict_id = :dictId";
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        params.addValue("wordId", wordId);
+        params.addValue("dictId", dictId);
+
+        return namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> {
+            MeaningItemDto dto = new MeaningItemDto();
+            dto.setId(rs.getString("id"));
+            dto.setCiXing(rs.getString("ci_xing"));
+            dto.setMeaning(rs.getString("meaning"));
+            dto.setWordId(rs.getString("word_id"));
+            dto.setDictId(rs.getString("dict_id"));
+            Integer popularity = rs.getObject("popularity", Integer.class);
+            dto.setPopularity(popularity != null ? popularity : 999);
+            dto.setCreateTime(rs.getTimestamp("create_time"));
+            dto.setUpdateTime(rs.getTimestamp("update_time"));
+            dto.setOwnerId(rs.getString("owner_id"));
+            dto.setUpdating(rs.getBoolean("is_updating"));
+            dto.setUpdatingStartAt(rs.getTimestamp("updating_start_at"));
+            return dto;
+        });
+    }
+
     /**
      * 为给定的 wordId 集合，从任意词典中各取一条释义作为兜底（仅当该词在通用词典中无释义时使用）。
      */

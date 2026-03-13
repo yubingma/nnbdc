@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import beidanci.api.model.MeaningItemDto;
 import beidanci.service.po.*;
 import beidanci.service.po.DictWordId;
 import beidanci.service.util.JsonUtils;
@@ -65,6 +66,7 @@ public class DictImportBo {
             Map<String, Object> config = JsonUtils.parseMap(task.getConfig());
             boolean isSystemImport = (boolean) config.getOrDefault("isSystemImport", false);
             String dictId = (String) config.get("dictId");
+            String strategy = (String) config.getOrDefault("strategy", "SKIP"); // SKIP, APPEND, RECREATE
             @SuppressWarnings("unchecked")
             List<String> rawWords = (List<String>) config.get("words"); // 场景2：仅单词
             @SuppressWarnings("unchecked")
@@ -74,11 +76,11 @@ public class DictImportBo {
             task.setTotalWords(total);
 
             if (isSystemImport) {
-                processSystemImport(task, dictId, rawWords);
+                processSystemImport(task, dictId, rawWords, strategy);
             } else if (rawWords != null) {
-                processUserImportWordsOnly(task, dictId, rawWords);
+                processUserImportWordsOnly(task, dictId, rawWords, strategy);
             } else {
-                processUserImportWithMeanings(task, dictId, wordsWithMeanings);
+                processUserImportWithMeanings(task, dictId, wordsWithMeanings, strategy);
             }
 
             task = importTaskBo.findById(taskId); // 重新加载以防状态冲突
@@ -96,12 +98,12 @@ public class DictImportBo {
         }
     }
 
-    private void processSystemImport(ImportTask task, String dictId, List<String> words) {
+    private void processSystemImport(ImportTask task, String dictId, List<String> words, String strategy) {
         User systemUser = userBo.findById(Constants.SYS_USER_SYS_ID);
         for (int i = 0; i < words.size(); i++) {
             String spell = words.get(i).trim();
             try {
-                processSingleWord(spell, null, true, systemUser, dictId);
+                processSingleWord(spell, null, true, systemUser, dictId, strategy);
                 importTaskBo.updateProgress(task.getId(), i + 1, "Processed: " + spell);
             } catch (Exception e) {
                 logger.warn("处理单词失败: " + spell, e);
@@ -110,12 +112,12 @@ public class DictImportBo {
         }
     }
 
-    private void processUserImportWordsOnly(ImportTask task, String dictId, List<String> words) {
+    private void processUserImportWordsOnly(ImportTask task, String dictId, List<String> words, String strategy) {
         User owner = task.getOwner();
         for (int i = 0; i < words.size(); i++) {
             String spell = words.get(i).trim();
             try {
-                processSingleWord(spell, null, false, owner, dictId);
+                processSingleWord(spell, null, false, owner, dictId, strategy);
                 importTaskBo.updateProgress(task.getId(), i + 1, "Processed: " + spell);
             } catch (Exception e) {
                 logger.warn("处理单词失败: " + spell, e);
@@ -124,14 +126,14 @@ public class DictImportBo {
         }
     }
 
-    private void processUserImportWithMeanings(ImportTask task, String dictId, List<Map<String, String>> words) {
+    private void processUserImportWithMeanings(ImportTask task, String dictId, List<Map<String, String>> words, String strategy) {
         User owner = task.getOwner();
         for (int i = 0; i < words.size(); i++) {
             Map<String, String> item = words.get(i);
             String spell = item.get("word").trim();
             String manualMeaning = item.get("meaning");
             try {
-                processSingleWord(spell, manualMeaning, false, owner, dictId);
+                processSingleWord(spell, manualMeaning, false, owner, dictId, strategy);
                 importTaskBo.updateProgress(task.getId(), i + 1, "Processed: " + spell);
             } catch (Exception e) {
                 logger.warn("处理单词失败: " + spell, e);
@@ -140,7 +142,7 @@ public class DictImportBo {
         }
     }
 
-    private void processSingleWord(String spell, String manualMeaning, boolean isSystem, User user, String dictId) throws Exception {
+    private void processSingleWord(String spell, String manualMeaning, boolean isSystem, User user, String dictId, String strategy) throws Exception {
         Word word = wordBo.getWordBySpell(spell);
         boolean isNewWord = (word == null);
 
@@ -149,7 +151,7 @@ public class DictImportBo {
             word.setSpell(spell);
             word.setPopularity(5); // 默认中等
             // 调用 AI 获取音标（及其它固有属性）
-            AiResult aiResult = getAiResult(spell, null);
+            AiResult aiResult = getAiResult(spell, null, null);
             word.setBritishPronounce(aiResult.phonetic);
             word.setAmericaPronounce(aiResult.phonetic);
             word.setPronounce(aiResult.phonetic);
@@ -160,29 +162,61 @@ public class DictImportBo {
             throw new RuntimeException("无法获取或创建单词对象: " + spell);
         }
 
-        // 检查通用词典中是否已经有释义
-        boolean hasCommonMeaning = word.wordHasMeaning();
+        // 查找该词在目标词典中的现有释义
+        List<MeaningItemDto> existingMeaningsInDict = meaningItemBo.findMeaningsByWordAndDict(word.getId(), dictId);
+        if (!existingMeaningsInDict.isEmpty()) {
+            if ("SKIP".equalsIgnoreCase(strategy)) {
+                logger.info("单词 {} 在词典 {} 中已存在，跳过", spell, dictId);
+                return;
+            } else if ("RECREATE".equalsIgnoreCase(strategy)) {
+                logger.info("单词 {} 在词典 {} 中已存在，执行重刷（删除现有资源）", spell, dictId);
+                for (MeaningItemDto mi : existingMeaningsInDict) {
+                    // 1. 删除例句并在必要时记录日志
+                    if (Constants.COMMON_DICT_ID.equals(dictId)) {
+                        List<Sentence> sentences = sentenceBo.findByMeaningItem(mi.getId());
+                        for (Sentence s : sentences) {
+                            sysDbSyncBo.logOperation("DELETE", "sentence", s.getId(), "{}");
+                        }
+                    }
+                    sentenceBo.deleteByMeaningItem(mi.getId());
+                    
+                    // 2. 删除释义项
+                    meaningItemBo.deleteMeaningItem(mi.getId());
+                    
+                    // 3. 如果是系统词典，记录删除日志
+                    if (Constants.COMMON_DICT_ID.equals(dictId)) {
+                        sysDbSyncBo.logOperation("DELETE", "meaning_item", mi.getId(), "{}");
+                    }
+                }
+            }
+        }
+
+        // 获取该词在所有词典中的现有释义（为了给 AI 提供上下文参考）
+        List<MeaningItemDto> allExistingMeanings = meaningItemBo.findMeaningsByWord(word.getId());
+        String contextMeanings = allExistingMeanings.stream()
+                .map(m -> (m.getCiXing() != null ? m.getCiXing() : "") + " " + m.getMeaning())
+                .collect(java.util.stream.Collectors.joining("; "));
 
         if (isSystem) {
             // 场景 1：加入通用词典
-            if (!hasCommonMeaning) {
-                AiResult aiResult = getAiResult(spell, null);
-                saveExtrinsicResources(word, aiResult, Constants.SYS_USER_SYS_ID, Constants.COMMON_DICT_ID);
-            }
+            // 此时 dictId 应该是 "0"
+            AiResult aiResult = getAiResult(spell, null, contextMeanings);
+            saveExtrinsicResources(word, aiResult, Constants.SYS_USER_SYS_ID, Constants.COMMON_DICT_ID);
         } else {
             // 用户导入
             if (manualMeaning != null) {
                 // 场景 3：单词+外部释义 (私有)
-                AiResult aiResult = getAiResult(spell, manualMeaning);
+                AiResult aiResult = getAiResult(spell, manualMeaning, contextMeanings);
                 saveExtrinsicResources(word, aiResult, user.getId(), dictId);
             } else {
                 // 场景 2：仅单词
-                if (!hasCommonMeaning) {
-                    // 通用库没，存私有
-                    AiResult aiResult = getAiResult(spell, null);
+                // 如果通用库已有，且不需要强制重刷，则由 DictWord 关联即可。
+                // 但如果 strategy 是 RECREATE 或指定了私有词库，我们倾向于生成资源。
+                boolean hasCommonMeaning = allExistingMeanings.stream().anyMatch(m -> Constants.COMMON_DICT_ID.equals(m.getDictId()));
+                if (!hasCommonMeaning || "RECREATE".equalsIgnoreCase(strategy) || !Constants.COMMON_DICT_ID.equals(dictId)) {
+                    AiResult aiResult = getAiResult(spell, null, contextMeanings);
                     saveExtrinsicResources(word, aiResult, user.getId(), dictId);
                 }
-                // 若通用库已有，由 DictWord 关联即可
             }
         }
 
@@ -245,20 +279,25 @@ public class DictImportBo {
         }
     }
 
-    private AiResult getAiResult(String spell, String manualMeaning) {
+    private AiResult getAiResult(String spell, String manualMeaning, String context) {
         String systemPrompt = "You are a professional English dictionary assistant. Return JSON only.";
-        String userPrompt;
-        if (manualMeaning == null) {
-            userPrompt = String.format("Generate dictionary data for word '%s': " +
-                    "{'phonetic': '...', 'pos': '...', 'meaning': '...', 'popularity': 1-10, 'sentenceEn': '...', 'sentenceCn': '...'}. " +
-                    "Use <b> word </b> in sentences to highlight the word.", spell);
-        } else {
-            userPrompt = String.format("Given word '%s' and meaning '%s', generate phonetics and an example sentence. " +
-                    "Return: {'phonetic': '...', 'pos': '...', 'meaning': '%s', 'popularity': 5, 'sentenceEn': '...', 'sentenceCn': '...'}.", 
-                    spell, manualMeaning, manualMeaning);
+        StringBuilder userPrompt = new StringBuilder();
+        userPrompt.append(String.format("Generating data for word '%s'. ", spell));
+        
+        if (context != null && !context.trim().isEmpty()) {
+            userPrompt.append(String.format("Existing meanings for reference: [%s]. Try to provide better or complementary info if needed. ", context));
         }
 
-        String rawJson = aiBo.generateText(systemPrompt, userPrompt);
+        if (manualMeaning == null) {
+            userPrompt.append("{'phonetic': '...', 'pos': '...', 'meaning': '...', 'popularity': 1-10, 'sentenceEn': '...', 'sentenceCn': '...'}. " +
+                    "Use <b> word </b> in sentences to highlight the word.");
+        } else {
+            userPrompt.append(String.format("Given manual meaning '%s', generate phonetics and an example sentence. " +
+                    "Return: {'phonetic': '...', 'pos': '...', 'meaning': '%s', 'popularity': 5, 'sentenceEn': '...', 'sentenceCn': '...'}.", 
+                    manualMeaning, manualMeaning));
+        }
+
+        String rawJson = aiBo.generateText(systemPrompt, userPrompt.toString());
         // 清理 AI 可能带的 Markdown 代码块标签
         rawJson = rawJson.replaceAll("```json", "").replaceAll("```", "").trim();
         Map<String, Object> map = JsonUtils.parseMap(rawJson);

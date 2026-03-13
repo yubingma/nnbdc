@@ -238,4 +238,15 @@ public class SentenceBo extends BaseBo<Sentence> {
         MapSqlParameterSource params = new MapSqlParameterSource("dictId", dictId);
         return namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> rs.getString("id"));
     }
+    public List<Sentence> findByMeaningItem(String meaningItemId) {
+        String sql = "SELECT * FROM sentence WHERE meaning_item_id = :meaningItemId";
+        MapSqlParameterSource params = new MapSqlParameterSource("meaningItemId", meaningItemId);
+        return namedParameterJdbcTemplate.query(sql, params, new beidanci.service.dao.EntityRowMapper<>(Sentence.class));
+    }
+
+    public void deleteByMeaningItem(String meaningItemId) {
+        String sql = "DELETE FROM sentence WHERE meaning_item_id = :meaningItemId";
+        MapSqlParameterSource params = new MapSqlParameterSource("meaningItemId", meaningItemId);
+        namedParameterJdbcTemplate.update(sql, params);
+    }
 }
