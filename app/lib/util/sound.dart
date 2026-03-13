@@ -179,9 +179,10 @@ class SoundUtil {
   }
 
   /// 并发播放音效
-  static Future<void> playAssetSoundConcurrent(String soundFileName, double speed, double volume) {
+  static Future<void> playAssetSoundConcurrent(String soundFileName, double speed, double volume) async {
     final pool = _sfxPools.putIfAbsent(soundFileName, () => [AudioPlayer()]);
     AudioPlayer? player;
+    int playerIndex = -1;
     final now = DateTime.now();
 
     for (int i = 0; i < pool.length; i++) {
@@ -189,6 +190,7 @@ class SoundUtil {
       final busyUntil = _playerBusyUntil[p] ?? DateTime(0);
       if (p.state != PlayerState.playing && now.isAfter(busyUntil)) {
         player = p;
+        playerIndex = i;
         break;
       }
     }
@@ -196,15 +198,22 @@ class SoundUtil {
     if (player == null && pool.length < _maxPlayersPerSfx) {
       player = AudioPlayer();
       pool.add(player);
+      playerIndex = pool.length - 1;
       Global.logger.d('🔊 [Audio] Pool expanded for $soundFileName: ${pool.length}');
     }
 
-    player ??= pool[0];
+    if (player == null) {
+      player = pool[0];
+      playerIndex = 0;
+      Global.logger.d('🔊 [Audio] Pool busy for $soundFileName, reusing player 0');
+    } else {
+      Global.logger.d('🔊 [Audio] Selected player $playerIndex for $soundFileName');
+    }
 
     // 锁定该播放器
     _playerBusyUntil[player] = now.add(const Duration(milliseconds: 300));
 
-    return _playAssetSoundInBackground(player, soundFileName, speed, volume).catchError((error, stackTrace) {
+    return _playAssetSoundInBackground(player, soundFileName, speed, volume, playerIndex).catchError((error, stackTrace) {
       ErrorHandler.handleError(error, stackTrace, logPrefix: '并发播放音效出错: $soundFileName', showToast: false);
     });
   }
@@ -214,15 +223,18 @@ class SoundUtil {
     String soundFileName,
     double speed,
     double volume,
+    int playerIndex,
   ) async {
     try {
       if (player.state == PlayerState.playing) {
+        Global.logger.d('🔊 [Audio] Force stopping player $playerIndex for $soundFileName');
         player.stop();
       }
       player.setPlaybackRate(speed);
       player.setVolume(volume);
 
       await player.play(AssetSource('audio/$soundFileName'));
+      Global.logger.d('🔊 [Audio] Playing $soundFileName on player $playerIndex');
 
       if (PlatformUtils.isAndroid) {
         final completer = Completer<void>();
@@ -241,6 +253,7 @@ class SoundUtil {
       } else {
         await player.onPlayerComplete.first;
       }
+      Global.logger.d('🔊 [Audio] Finished $soundFileName on player $playerIndex');
     } on Exception catch (e, stackTrace) {
       ErrorHandler.handleError(e, stackTrace, logPrefix: '播放后台音效出错: $soundFileName', showToast: false);
     }
@@ -250,6 +263,7 @@ class SoundUtil {
   static Future<void> playAssetSoundCut(String soundFileName, double speed, double volume, Duration maxPlay) async {
     final pool = _sfxPools.putIfAbsent(soundFileName, () => [AudioPlayer()]);
     AudioPlayer? player;
+    int playerIndex = -1;
     final now = DateTime.now();
 
     for (int i = 0; i < pool.length; i++) {
@@ -257,6 +271,7 @@ class SoundUtil {
       final busyUntil = _playerBusyUntil[p] ?? DateTime(0);
       if (p.state != PlayerState.playing && now.isAfter(busyUntil)) {
         player = p;
+        playerIndex = i;
         break;
       }
     }
@@ -264,26 +279,42 @@ class SoundUtil {
     if (player == null && pool.length < _maxPlayersPerSfx) {
       player = AudioPlayer();
       pool.add(player);
+      playerIndex = pool.length - 1;
+      Global.logger.d('🔊 [Audio] Pool expanded (Cut) for $soundFileName: ${pool.length}');
     }
 
-    player ??= pool[0];
+    if (player == null) {
+      player = pool[0];
+      playerIndex = 0;
+      Global.logger.d('🔊 [Audio] Pool busy (Cut) for $soundFileName, reusing player 0');
+    } else {
+      Global.logger.d('🔊 [Audio] Selected player $playerIndex (Cut) for $soundFileName');
+    }
 
     // 锁定
     _playerBusyUntil[player] = now.add(const Duration(milliseconds: 400));
 
     try {
       if (player.state == PlayerState.playing) {
+        Global.logger.d('🔊 [Audio] Force stopping player $playerIndex (Cut) for $soundFileName');
         player.stop();
       }
       player.setPlaybackRate(speed);
       player.setVolume(volume);
 
       unawaited(player.play(AssetSource('audio/$soundFileName')));
+      Global.logger.d('🔊 [Audio] Playing (Cut) $soundFileName on player $playerIndex');
 
       await Future.any([
         player.onPlayerComplete.first,
         Future.delayed(maxPlay),
-      ]);
+      ]).then((value) {
+        if (value == null) {
+          Global.logger.d('🔊 [Audio] Cut triggered (Timer) for $soundFileName on player $playerIndex');
+        } else {
+          Global.logger.d('🔊 [Audio] Naturally completed for $soundFileName on player $playerIndex');
+        }
+      });
 
       if (player.state == PlayerState.playing) {
         player.stop();
