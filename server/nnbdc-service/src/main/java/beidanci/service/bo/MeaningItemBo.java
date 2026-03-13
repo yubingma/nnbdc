@@ -35,7 +35,7 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
     /** 获取指定词书的所有单词释义项，通用词典ID为'0' */
     public List<MeaningItemDto> getMeaningItemsOfDict(String dictId) {
         // 通用词典现在是数据库中的实际记录，统一查询
-        String sql = "SELECT id, ci_xing, meaning, word_id, dict_id, owner_id, popularity, create_time, update_time FROM meaning_item WHERE dict_id = :dictId";
+        String sql = "SELECT id, ci_xing, meaning, word_id, dict_id, owner_id, popularity, create_time, update_time, is_updating, updating_start_at FROM meaning_item WHERE dict_id = :dictId";
         MapSqlParameterSource params = new MapSqlParameterSource("dictId", dictId);
 
         return namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> {
@@ -51,6 +51,8 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
             meaningItemDto.setCreateTime(rs.getTimestamp("create_time"));
             meaningItemDto.setUpdateTime(rs.getTimestamp("update_time"));
             meaningItemDto.setOwnerId(rs.getString("owner_id"));
+            meaningItemDto.setUpdating(rs.getBoolean("is_updating"));
+            meaningItemDto.setUpdatingStartAt(rs.getTimestamp("updating_start_at"));
             return meaningItemDto;
         });
     }
@@ -64,7 +66,7 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
         }
 
         // 使用原生SQL一次性取回所有候选，再在内存中按 word 聚合取第一条
-        String sql = "SELECT id, ci_xing, meaning, word_id, dict_id, owner_id, popularity, create_time, update_time FROM meaning_item "
+        String sql = "SELECT id, ci_xing, meaning, word_id, dict_id, owner_id, popularity, create_time, update_time, is_updating, updating_start_at FROM meaning_item "
                 +
                 "WHERE dict_id IS NOT NULL AND word_id IN (:ids) ORDER BY update_time DESC";
         MapSqlParameterSource params = new MapSqlParameterSource("ids", wordIds);
@@ -80,6 +82,8 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
             dto.setCreateTime(rs.getTimestamp("create_time"));
             dto.setUpdateTime(rs.getTimestamp("update_time"));
             dto.setOwnerId(rs.getString("owner_id"));
+            dto.setUpdating(rs.getBoolean("is_updating"));
+            dto.setUpdatingStartAt(rs.getTimestamp("updating_start_at"));
             return dto;
         });
 

@@ -5,7 +5,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import beidanci.service.po.*;
 import beidanci.service.po.DictWordId;
@@ -55,7 +54,6 @@ public class DictImportBo {
      * @param taskId 任务ID
      */
     @Async
-    @Transactional(rollbackFor = Throwable.class)
     public void executeImportTask(String taskId) {
         ImportTask task = importTaskBo.findById(taskId);
         if (task == null) return;

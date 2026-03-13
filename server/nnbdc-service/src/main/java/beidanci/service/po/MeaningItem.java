@@ -1,6 +1,7 @@
 package beidanci.service.po;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import javax.persistence.Column;
@@ -75,6 +76,18 @@ public class MeaningItem extends UuidPo {
      */
     @Column(name = "owner_id", nullable = false)
     private User owner;
+
+    /**
+     * 是否正在更新中（例如由 AI 异步补全中）
+     */
+    @Column(name = "is_updating", nullable = false)
+    private Boolean isUpdating = false;
+
+    /**
+     * 开始更新的时间
+     */
+    @Column(name = "updating_start_at")
+    private Date updatingStartAt;
 
     public MeaningItem() {
 
@@ -158,5 +171,21 @@ public class MeaningItem extends UuidPo {
 
     public void setOwner(User owner) {
         this.owner = owner;
+    }
+
+    public Boolean getIsUpdating() {
+        return isUpdating;
+    }
+
+    public void setIsUpdating(Boolean isUpdating) {
+        this.isUpdating = isUpdating;
+    }
+
+    public Date getUpdatingStartAt() {
+        return updatingStartAt;
+    }
+
+    public void setUpdatingStartAt(Date updatingStartAt) {
+        this.updatingStartAt = updatingStartAt;
     }
 }
