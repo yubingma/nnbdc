@@ -839,6 +839,24 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
     final isActive = step.state == StudyStepState.active.json;
 
+    String stepName = StudyStepExt.fromString(step.studyStep).description;
+    if (isActive) {
+      int activeIndex = 0;
+      for (var s in studySteps!) {
+        if (s.state == StudyStepState.active.json) {
+          if (s == step) {
+            if (activeIndex == 0) {
+              stepName += ' (测评)';
+            } else if (activeIndex == 1) {
+              stepName += ' (巩固)'; 
+            }
+            break;
+          }
+          activeIndex++;
+        }
+      }
+    }
+
     return Container(
       key: ValueKey(step.studyStep),
       margin: const EdgeInsets.only(bottom: 8),
@@ -893,7 +911,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
                 const SizedBox(width: 16),
                 Expanded(
                   child: Text(
-                    StudyStepExt.fromString(step.studyStep).description,
+                    stepName,
                     style: TextStyle(
                       color: isActive ? (isDarkMode ? Colors.white : const Color(0xFF1E293B)) : (isDarkMode ? Colors.white38 : Colors.black26),
                       fontSize: 16,
