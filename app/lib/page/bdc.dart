@@ -99,7 +99,7 @@ class _WordImagesWidgetState extends State<WordImagesWidget> {
         final availableWidth = constraints.maxWidth;
         final imageCount = 2; // 每行显示2张图片
         final spacing = 12.0; // 固定间距
-        
+
         // 动态计算较大图片的宽度，同时在Web上限制最大尺寸
         double imageWidth = (availableWidth - spacing) / imageCount - 0.1;
         if (PlatformUtils.isWeb && imageWidth > 320.0) {
@@ -114,7 +114,7 @@ class _WordImagesWidgetState extends State<WordImagesWidget> {
           child: Wrap(
             alignment: WrapAlignment.center, // 居中对齐
             crossAxisAlignment: WrapCrossAlignment.center,
-            spacing: spacing, 
+            spacing: spacing,
             runSpacing: 12.0, // 行间距
             children: [
               for (var image in widget.images.take(widget.maxImages))
@@ -350,7 +350,7 @@ class _ChineseAsrInputWidgetState extends State<ChineseAsrInputWidget> with Sing
                   children: List.generate(8, (index) {
                     double height;
                     double alpha;
-                    
+
                     if (isListening && _currentLevel > 0.05) {
                       // 正在说话：动感波形
                       final randomFactor = 0.6 + _random.nextDouble() * 0.8;
@@ -449,6 +449,7 @@ class _EnglishAsrInputWidgetState extends State<EnglishAsrInputWidget> with Sing
     _meterSubscription?.cancel();
     super.dispose();
   }
+
   @override
   Widget build(BuildContext context) {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
@@ -473,7 +474,7 @@ class _EnglishAsrInputWidgetState extends State<EnglishAsrInputWidget> with Sing
                   children: List.generate(8, (index) {
                     double height;
                     double alpha;
-                    
+
                     if (isListening && _currentLevel > 0.05) {
                       // 正在说话：动感波形
                       final randomFactor = 0.6 + _random.nextDouble() * 0.8;
@@ -568,7 +569,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   final FocusNode _meaningFocusNode = FocusNode();
 
   final AudioPlayer _audioPlayer = AudioPlayer();
-  
+
   /// 说意/英拼写面板的滚动控制
   final ScrollController _speakPanelScrollController = ScrollController();
 
@@ -953,22 +954,20 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         int todaySecs = dbUser.todayLearningSeconds ?? 0;
         if (dbUser.lastLearningDate != null) {
           final now = DateTime.now();
-          if (dbUser.lastLearningDate!.year != now.year ||
-              dbUser.lastLearningDate!.month != now.month ||
-              dbUser.lastLearningDate!.day != now.day) {
+          if (dbUser.lastLearningDate!.year != now.year || dbUser.lastLearningDate!.month != now.month || dbUser.lastLearningDate!.day != now.day) {
             todaySecs = 0;
           }
         }
 
         final newTotal = (dbUser.totalLearningSeconds ?? 0) + secsToSync;
         final newToday = todaySecs + secsToSync;
-        
+
         final updatedDbUser = dbUser.copyWith(
           totalLearningSeconds: drift.Value(newTotal),
           todayLearningSeconds: drift.Value(newToday),
           lastLearningDate: drift.Value(DateTime.now()),
         );
-        
+
         await dao.saveUser(updatedDbUser, true);
         Global.updateUserCache(updatedDbUser);
       }
@@ -1035,7 +1034,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   void dispose() {
     _learningTimer?.cancel();
     _syncLearningTimeToDb();
-    
+
     asr.removeStateListener((state) {
       if (mounted) {
         setState(() {});
@@ -1083,7 +1082,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         resultData = null;
       }
 
-    if (resultData != null && resultData.containsKey('candidates')) {
+      if (resultData != null && resultData.containsKey('candidates')) {
         // 处理多个候选结果
         List<dynamic> candidates = resultData['candidates'];
         List<String> candidateStrings = candidates.map((e) => e.toString()).toList();
@@ -1099,14 +1098,14 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
             processedResult = AsrUtil.preprocessEnglish(result.text, _word!.spell);
             Global.logger.d('ASR: Selected & Preprocessed: "$processedResult" (score: ${result.score})');
           } else {
-             processedResult = bestCandidate;
-             _currentScore = null;
+            processedResult = bestCandidate;
+            _currentScore = null;
           }
         } else if (_studyStep == StudyStep.en2Ch.json) {
-           // 英→中模式：UI 显示最佳候选，但背后匹配逻辑会遍历所有 _currentAsrCandidates
-           processedResult = AsrUtil.preprocess(bestCandidate);
-           _currentScore = null;
-           Global.logger.d('ASR [en2Ch]: Stored ${candidateStrings.length} candidates, showing best: $processedResult');
+          // 英→中模式：UI 显示最佳候选，但背后匹配逻辑会遍历所有 _currentAsrCandidates
+          processedResult = AsrUtil.preprocess(bestCandidate);
+          _currentScore = null;
+          Global.logger.d('ASR [en2Ch]: Stored ${candidateStrings.length} candidates, showing best: $processedResult');
         } else {
           processedResult = bestCandidate;
           _currentScore = null;
@@ -1116,13 +1115,13 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         _currentAsrCandidates = [event.toString()];
         if (_studyStep == StudyStep.ch2En.json) {
           if (_word != null) {
-             final pre = AsrUtil.preprocessEnglish(event, _word!.spell);
-             final result = await AsrUtil.selectBestCandidateWithPhonemeAndScore([pre], _word!.spell);
-             processedResult = result.text;
-             _currentScore = result.score;
+            final pre = AsrUtil.preprocessEnglish(event, _word!.spell);
+            final result = await AsrUtil.selectBestCandidateWithPhonemeAndScore([pre], _word!.spell);
+            processedResult = result.text;
+            _currentScore = result.score;
           } else {
-             processedResult = event;
-             _currentScore = null;
+            processedResult = event;
+            _currentScore = null;
           }
         } else {
           processedResult = AsrUtil.preprocess(event);
@@ -1147,7 +1146,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     final lw = _currentGetWordResult?.learningWord;
     if (lw != null) {
       final fsrs = FSRS();
-      
+
       // 计算距离上次复习的天数
       _daysSinceLastReview = 0;
       if (lw.lastLearningDate != null) {
@@ -1204,7 +1203,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   }
 
   checkAsrResult() async {
-    Global.logger.d('BDC CHECK_ASR: Start. _meaningController.text=${_meaningController.text}, _handlingChinese=$_handlingChinese, _studyStep=$_studyStep, asr.state=${asr.state}, _isKeyboardVisible=$_isKeyboardVisible, _meaningFocusNode.hasFocus=${_meaningFocusNode.hasFocus}, _wordWrapper=${_wordWrapper != null}, _word=${_word != null}');
+    Global.logger.d(
+        'BDC CHECK_ASR: Start. _meaningController.text=${_meaningController.text}, _handlingChinese=$_handlingChinese, _studyStep=$_studyStep, asr.state=${asr.state}, _isKeyboardVisible=$_isKeyboardVisible, _meaningFocusNode.hasFocus=${_meaningFocusNode.hasFocus}, _wordWrapper=${_wordWrapper != null}, _word=${_word != null}');
 
     if (_meaningController.text.isEmpty) {
       if (_currentScore != null) {
@@ -1217,7 +1217,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     // 如果 ASR 未启动，且键盘也未弹出，且没有焦点，说明可能是 ASR 停止后的残留结果，跳过处理并清空
     // 如果是在手写模式下，或者是键盘弹出的情况下，允许通过检查
     bool isHandwritingOrKeyboard = _showHandwritingBoard || _isKeyboardVisible || _meaningFocusNode.hasFocus;
-    
+
     if (_isAnswerCorrect) {
       Global.logger.d('checkAsrResult: 单词已回答正确，跳过后续结果处理');
       return;
@@ -1253,13 +1253,13 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     if (_studyStep == StudyStep.en2Ch.json) {
       // 英→中：验证中文释义
       late MeaningMatchResult result;
-      
+
       // 核心改动：如果当前输入框内容匹配上一刻 ASR 处理出的 processedResult，说明它是通过 ASR 触发的，
       // 此时我们使用记录下的 _currentAsrCandidates 列表进行多重探测。
       // 否则（如用户手动编辑键盘输入），我们只使用输入框当前文本。
       final isFromAsr = _meaningController.text == _handlingChinese;
       final inputs = isFromAsr ? _currentAsrCandidates : [_handlingChinese];
-      
+
       result = matchInputChineseWithMeaningItems(
         _wordWrapper!,
         inputs,
@@ -1272,8 +1272,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         _firstMatchTime = DateTime.now();
       }
       _isAnswerCorrect = _isAsrPassSync(total, matched);
-      
-      Global.logger.d('BDC CHECK_ASR [en2Ch]: result(total=$total, matched=$matched, newMatchCount=${result.newMatchCount}), _isAnswerCorrect=$_isAnswerCorrect, requires pass rule: $_asrPassRuleCache');
+
+      Global.logger.d(
+          'BDC CHECK_ASR [en2Ch]: result(total=$total, matched=$matched, newMatchCount=${result.newMatchCount}), _isAnswerCorrect=$_isAnswerCorrect, requires pass rule: $_asrPassRuleCache');
 
       // 如果本次有新增匹配，播放音效并设置状态
       if (result.newMatchCount > 0) {
@@ -1378,7 +1379,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       // 1. 精确拼写匹配（preprocessEnglish 已做过编辑距离/映射表救援）
       // 2. 音素相似度达到阈值（兜底同音词场景，如 mail vs male）
       bool isMatch = inputText == correctSpell;
-      Global.logger.d('BDC CHECK_ASR [ch2En]: inputText="$inputText", correctSpell="$correctSpell", basic_match=$isMatch, _currentScore=$_currentScore');
+      Global.logger
+          .d('BDC CHECK_ASR [ch2En]: inputText="$inputText", correctSpell="$correctSpell", basic_match=$isMatch, _currentScore=$_currentScore');
       if (!isMatch && _currentScore != null && _currentScore! >= Constants.phonemeMatchThreshold) {
         Global.logger.d('Ch2En: 拼写不匹配("$inputText" != "$correctSpell")，但音素相似度($_currentScore)达到阈值(${Constants.phonemeMatchThreshold})，判定通过');
         isMatch = true;
@@ -1400,7 +1402,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
             rating = FsrsRating.hard; // Hard
           }
         }
-        
+
         // _onAnswerCorrect 内部已有 stopAsr，无需在此重复调用（双重 stop 会导致 iOS 音频会话状态混乱，引发破音）
         _onAnswerCorrect(rating);
       }
@@ -1614,14 +1616,14 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     // 判断是否真的有音频要播，如果什么都不播（比如中英模式），需要给 finally 知道直接启动 ASR
     bool willPlayWord = _studyStep == StudyStep.en2Ch.json && (user.autoPlayWord! || forcePlayWord);
     bool willPlaySentence = _studyStep == StudyStep.en2Ch.json && user.autoPlaySentence!;
-    
+
     // 如果不需要播放音频，为了保证流程顺畅且不受到 await ASR.stopAsr() 的延迟影响
     // 直接进入 finally 块的判断，快速拉起 ASR
     if (!willPlayWord && !willPlaySentence) {
-       Global.logger.d('BDC: 由于无需播放音频，继续走到 finally 快速启动 ASR');
+      Global.logger.d('BDC: 由于无需播放音频，继续走到 finally 快速启动 ASR');
     } else {
-       // 需要播放的话，确保停止 ASR 任务（Hot Stop）
-       await asr.stopAsr();
+      // 需要播放的话，确保停止 ASR 任务（Hot Stop）
+      await asr.stopAsr();
     }
 
     try {
@@ -1728,7 +1730,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
       String? oldStudyStep = _studyStep;
       _studyStep = activeUserStudySteps[getWordResult.stepIndex].studyStep;
-      
+
       // 极端防御：如果在渲染新单词时 ASR 状态依然是 started（通常是异步时序导致），强制同步一次状态
       // 确保 _handleTabChangeForAsr 能够触发新的 _startAsr() 而不是认为已经启动
       if (asr.state == AsrState.started && oldStudyStep == _studyStep) {
@@ -1742,7 +1744,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       if (oldStudyStep == null || oldStudyStep != _studyStep) {
         Global.logger.i('BDC: 学习模式从 $oldStudyStep 切换到 $_studyStep，初始化 ASR 监听并预热麦克风');
         await asr.initAsr(onAsrResult);
-        
+
         // 核心优化：在进入页面或切换模式时提前“预热”麦克风和音频引擎
         // 这样可以解决第一个单词播完后切换到录音状态时由引擎启动产生的回声/杂音问题
         if (_shouldShowSpeakTab) {
@@ -1847,7 +1849,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         _wordStartTime = DateTime.now();
       }
     });
-    
+
     // 如果在数据加载期间（如等待数据库查询）已经有语音结果提前到达，手动触发一次校验
     if (_meaningController.text.isNotEmpty && _handlingChinese.isEmpty) {
       Global.logger.i('BDC: 单词加载完成，发现加载期间缓存的语音结果，主动触发校验');
@@ -2199,7 +2201,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                           await MyDatabase.instance.localParamsDao.setAsrPassRule(localAsrPassRule);
                           // 保存极速模式开关设置
                           await MyDatabase.instance.localParamsDao.setAutoJumpAfterCorrect(localAutoJumpAfterCorrect);
-                          
+
                           // 在异步操作后检查context是否仍然有效
                           if (context.mounted) {
                             _asrPassRuleCache = localAsrPassRule;
@@ -2386,7 +2388,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   /// 构建全屏沉浸式输入模式（支持手写和键盘）
   Widget _buildFullscreenImmersiveInputMode() {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    
+
     // 获取合并后的所有释义项
     final meaningItems = _word?.getMergedMeaningItems() ?? [];
     final combinedMeaning = meaningItems.map((m) => "${m.ciXing ?? ''} ${m.meaning ?? ''}").join("; ");
@@ -2454,6 +2456,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                   // 1. 手写板区域
                   Expanded(
                     child: HandwritingBoard(
+                      showCloseButton: false,
                       onRecognized: (text) {
                         setState(() {
                           _meaningController.text = text;
@@ -2622,10 +2625,10 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
           onTap: () {
             _progressBarTapCount++;
             _progressBarTapTimer?.cancel();
-            
+
             // 添加震动反馈
             HapticFeedback.lightImpact();
-            
+
             if (_progressBarTapCount >= 5) {
               _progressBarTapCount = 0;
               _showDebugOverlay();
@@ -2649,109 +2652,109 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
               child: _currentGetWordResult?.progress != null
                   ? LayoutBuilder(
                       builder: (context, constraints) {
-                      final maxValue = _currentGetWordResult!.progress![1].toDouble();
-                      final width = constraints.maxWidth;
+                        final maxValue = _currentGetWordResult!.progress![1].toDouble();
+                        final width = constraints.maxWidth;
 
-                      // 计算批次颜色：从红色(0) -> 蓝色(0.5) -> 绿色(1.0) 渐变
-                      // 根据白天/黑夜模式调整基础透明度
-                      final bool isDarkMode = context.watch<DarkMode>().isDarkMode;
-                      final double baseAlpha = isDarkMode ? 0.25 : 0.15; // 黑夜模式稍明显一点，白天模式更淡
+                        // 计算批次颜色：从红色(0) -> 蓝色(0.5) -> 绿色(1.0) 渐变
+                        // 根据白天/黑夜模式调整基础透明度
+                        final bool isDarkMode = context.watch<DarkMode>().isDarkMode;
+                        final double baseAlpha = isDarkMode ? 0.25 : 0.15; // 黑夜模式稍明显一点，白天模式更淡
 
-                      // 获取批次的基础颜色（不透明度）
-                      // 修改：所有批次都使用最后一个批次的颜色（绿色）
-                      Color getBatchBaseColor(int batchIndex, int totalBatches) {
-                        return isDarkMode ? Colors.white : const Color(0xFF1A1A1A);
-                      }
+                        // 获取批次的基础颜色（不透明度）
+                        // 修改：所有批次都使用最后一个批次的颜色（绿色）
+                        Color getBatchBaseColor(int batchIndex, int totalBatches) {
+                          return isDarkMode ? Colors.white : const Color(0xFF1A1A1A);
+                        }
 
-                      Color getBatchColor(int batchIndex, int totalBatches) {
-                        // 所有批次都使用统一的半透明绿色作为背景色
-                        return getBatchBaseColor(batchIndex, totalBatches).withValues(alpha: baseAlpha);
-                      }
+                        Color getBatchColor(int batchIndex, int totalBatches) {
+                          // 所有批次都使用统一的半透明绿色作为背景色
+                          return getBatchBaseColor(batchIndex, totalBatches).withValues(alpha: baseAlpha);
+                        }
 
-                      // 计算批次数量（基于单词数量，每批次10个单词）
-                      final modeCount = activeUserStudySteps.length;
+                        // 计算批次数量（基于单词数量，每批次10个单词）
+                        final modeCount = activeUserStudySteps.length;
 
-                      // 【根本原因修复】检查 modeCount 和 maxValue 是否有效
-                      // 如果学习步骤未配置或进度数据无效，不渲染进度条
-                      if (modeCount <= 0 || maxValue <= 0 || width <= 0) {
-                        return const SizedBox.shrink();
-                      }
+                        // 【根本原因修复】检查 modeCount 和 maxValue 是否有效
+                        // 如果学习步骤未配置或进度数据无效，不渲染进度条
+                        if (modeCount <= 0 || maxValue <= 0 || width <= 0) {
+                          return const SizedBox.shrink();
+                        }
 
-                      final wordCount = (maxValue / modeCount).ceil();
-                      final batchWordCount = 10;
-                      final totalBatches = max(1, (wordCount / batchWordCount).ceil());
+                        final wordCount = (maxValue / modeCount).ceil();
+                        final batchWordCount = 10;
+                        final totalBatches = max(1, (wordCount / batchWordCount).ceil());
 
-                      // 计算当前进度所在的批次索引
-                      final currentProgress = _currentGetWordResult!.progress![0].toDouble();
-                      // 当前步进对应的单词索引
-                      final currentWordIndex = min((currentProgress / modeCount).floor(), wordCount - 1);
-                      final currentBatchIndex = min((currentWordIndex / batchWordCount).floor(), totalBatches - 1);
-                      // 获取当前批次的鲜艳颜色作为进度条前景色
-                      final progressColor = getBatchBaseColor(currentBatchIndex, totalBatches);
+                        // 计算当前进度所在的批次索引
+                        final currentProgress = _currentGetWordResult!.progress![0].toDouble();
+                        // 当前步进对应的单词索引
+                        final currentWordIndex = min((currentProgress / modeCount).floor(), wordCount - 1);
+                        final currentBatchIndex = min((currentWordIndex / batchWordCount).floor(), totalBatches - 1);
+                        // 获取当前批次的鲜艳颜色作为进度条前景色
+                        final progressColor = getBatchBaseColor(currentBatchIndex, totalBatches);
 
-                      return Stack(
-                        children: [
-                          // 批次背景色层（基于单词批次）
-                          Row(
-                            children: List.generate(totalBatches, (index) {
-                              final isLastBatch = index == totalBatches - 1;
-                              // 计算该批次包含的单词数
-                              final startWordIndex = index * batchWordCount;
-                              final endWordIndex = min((index + 1) * batchWordCount, wordCount);
-                              final batchWords = endWordIndex - startWordIndex;
-                              // 转换为进度条宽度（乘以模式数）
-                              final batchSteps = batchWords * modeCount;
-                              final batchWidth = (batchSteps / maxValue) * width;
-                              return Container(
-                                width: batchWidth,
-                                decoration: BoxDecoration(
-                                  color: getBatchColor(index, totalBatches),
-                                  borderRadius: BorderRadius.horizontal(
-                                    left: index == 0 ? const Radius.circular(3) : Radius.zero,
-                                    right: isLastBatch ? const Radius.circular(3) : Radius.zero,
+                        return Stack(
+                          children: [
+                            // 批次背景色层（基于单词批次）
+                            Row(
+                              children: List.generate(totalBatches, (index) {
+                                final isLastBatch = index == totalBatches - 1;
+                                // 计算该批次包含的单词数
+                                final startWordIndex = index * batchWordCount;
+                                final endWordIndex = min((index + 1) * batchWordCount, wordCount);
+                                final batchWords = endWordIndex - startWordIndex;
+                                // 转换为进度条宽度（乘以模式数）
+                                final batchSteps = batchWords * modeCount;
+                                final batchWidth = (batchSteps / maxValue) * width;
+                                return Container(
+                                  width: batchWidth,
+                                  decoration: BoxDecoration(
+                                    color: getBatchColor(index, totalBatches),
+                                    borderRadius: BorderRadius.horizontal(
+                                      left: index == 0 ? const Radius.circular(3) : Radius.zero,
+                                      right: isLastBatch ? const Radius.circular(3) : Radius.zero,
+                                    ),
                                   ),
-                                ),
-                              );
-                            }),
-                          ),
-                          ClipRRect(
-                            borderRadius: const BorderRadius.all(Radius.circular(3)),
-                            child: FAProgressBar(
-                              borderRadius: const BorderRadius.all(Radius.circular(3)),
-                              currentValue: currentProgress,
-                              maxValue: maxValue,
-                              displayText: '',
-                              direction: Axis.horizontal,
-                              displayTextStyle: const TextStyle(color: Color(0x00000000), fontSize: 0),
-                              backgroundColor: Colors.transparent,
-                              progressColor: progressColor,
-                              animatedDuration: const Duration(milliseconds: 300),
+                                );
+                              }),
                             ),
-                          ),
-                          // 批次分隔线（只在批次边界处显示）
-                          if (totalBatches > 1)
-                            ...List.generate(totalBatches - 1, (index) {
-                              // 计算批次边界对应的进度位置
-                              final boundaryWordIndex = (index + 1) * batchWordCount;
-                              final boundaryStep = boundaryWordIndex * modeCount;
-                              final left = (boundaryStep / maxValue) * width;
-                              // 只有当计算出的位置在进度条范围内时才显示
-                              if (left <= 0 || left >= width) return const SizedBox.shrink();
-                              return Positioned(
-                                left: left,
-                                top: 0,
-                                bottom: 0,
-                                child: Container(
-                                  width: 1.5,
-                                  color: Colors.white.withValues(alpha: 0.7),
-                                ),
-                              );
-                            }),
-                        ],
-                      );
-                    },
-                  )
-                : const SizedBox.shrink(),
+                            ClipRRect(
+                              borderRadius: const BorderRadius.all(Radius.circular(3)),
+                              child: FAProgressBar(
+                                borderRadius: const BorderRadius.all(Radius.circular(3)),
+                                currentValue: currentProgress,
+                                maxValue: maxValue,
+                                displayText: '',
+                                direction: Axis.horizontal,
+                                displayTextStyle: const TextStyle(color: Color(0x00000000), fontSize: 0),
+                                backgroundColor: Colors.transparent,
+                                progressColor: progressColor,
+                                animatedDuration: const Duration(milliseconds: 300),
+                              ),
+                            ),
+                            // 批次分隔线（只在批次边界处显示）
+                            if (totalBatches > 1)
+                              ...List.generate(totalBatches - 1, (index) {
+                                // 计算批次边界对应的进度位置
+                                final boundaryWordIndex = (index + 1) * batchWordCount;
+                                final boundaryStep = boundaryWordIndex * modeCount;
+                                final left = (boundaryStep / maxValue) * width;
+                                // 只有当计算出的位置在进度条范围内时才显示
+                                if (left <= 0 || left >= width) return const SizedBox.shrink();
+                                return Positioned(
+                                  left: left,
+                                  top: 0,
+                                  bottom: 0,
+                                  child: Container(
+                                    width: 1.5,
+                                    color: Colors.white.withValues(alpha: 0.7),
+                                  ),
+                                );
+                              }),
+                          ],
+                        );
+                      },
+                    )
+                  : const SizedBox.shrink(),
             ),
           ),
         ),
@@ -3503,7 +3506,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     );
   }
 
-
   Widget _buildTopButtonsRow() {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
@@ -3555,7 +3557,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                 ),
 
                 // 编辑开关 - 仅在meaning模式下且非Web平台显示
-
 
                 // 报错按钮
                 _buildTopActionButton(
@@ -3767,7 +3768,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             decoration: BoxDecoration(
-              color: context.watch<DarkMode>().isDarkMode ? const Color(0xFF1E1E1E).withValues(alpha: 0.8) : const Color(0xFFF8F9FA).withValues(alpha: 0.8),
+              color: context.watch<DarkMode>().isDarkMode
+                  ? const Color(0xFF1E1E1E).withValues(alpha: 0.8)
+                  : const Color(0xFFF8F9FA).withValues(alpha: 0.8),
               borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
               border: Border(
                 left: BorderSide(color: context.watch<DarkMode>().isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.03)),
@@ -4451,7 +4454,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                                   _playingStates['sentence']!
                                       ? (_sentenceSoundController.value < 0.5 ? Icons.volume_up : Icons.volume_down)
                                       : Icons.volume_up,
-                                  color: _playingStates['sentence']! ? (context.watch<DarkMode>().isDarkMode ? Colors.white : const Color(0xFF1A1A1A)) : Colors.grey[500],
+                                  color: _playingStates['sentence']!
+                                      ? (context.watch<DarkMode>().isDarkMode ? Colors.white : const Color(0xFF1A1A1A))
+                                      : Colors.grey[500],
                                   size: 24,
                                 ),
                               );
@@ -4603,7 +4608,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     );
   }
 
-
   /// 隐藏括号内的内容，避免在"中→英"模式下暴露答案
   String _hideParenthesesContent(String text) {
     if (text.isEmpty) return text;
@@ -4694,17 +4698,17 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         }
       }
     }
-    
+
     String? nextWordId;
     int? nextStepIndex;
     String? currentWordId = _currentGetWordResult?.learningWord?.word.id;
-    
+
     if (pendingCells.isNotEmpty) {
       int currentIndex = -1;
       if (currentWordId != null) {
         currentIndex = pendingCells.indexWhere((cell) => cell['wordId'] == currentWordId);
       }
-      
+
       if (currentIndex != -1 && currentIndex + 1 < pendingCells.length) {
         nextWordId = pendingCells[currentIndex + 1]['wordId'];
         nextStepIndex = pendingCells[currentIndex + 1]['sIndex'];
@@ -4752,9 +4756,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
             child: ScaleTransition(
               scale: CurvedAnimation(parent: anim1, curve: Curves.easeOutBack),
               child: AlertDialog(
-                backgroundColor: isDark
-                    ? const Color(0xFF1E1E1E).withValues(alpha: 0.85)
-                    : Colors.white.withValues(alpha: 0.9),
+                backgroundColor: isDark ? const Color(0xFF1E1E1E).withValues(alpha: 0.85) : Colors.white.withValues(alpha: 0.9),
                 elevation: 24,
                 shadowColor: Colors.black54,
                 shape: RoundedRectangleBorder(
@@ -4866,7 +4868,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                               final sortedBatchIds = batches.keys.toList()..sort();
                               int batchId = sortedBatchIds[index];
                               final batchWords = batches[batchId]!;
-                              
+
                               // 判断是否为当前批次
                               final bool isCurrentBatch = batchWords.any((w) => w.wordId == currentWordId);
 
@@ -4877,9 +4879,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                                   color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.02),
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
-                                    color: isCurrentBatch 
-                                        ? Colors.blueAccent 
-                                        : (isDark ? Colors.white12 : Colors.black12),
+                                    color: isCurrentBatch ? Colors.blueAccent : (isDark ? Colors.white12 : Colors.black12),
                                     width: isCurrentBatch ? 2.0 : 1.0,
                                   ),
                                 ),
@@ -4947,7 +4947,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                                                   ),
                                                   ...batchWords.map((w) {
                                                     // Is the user learning this exact word in this exact step right now?
-                                                    final isCurrentStep = _currentGetWordResult?.learningWord?.word.id == w.wordId && w.todayLearnedTimes == sIndex;
+                                                    final isCurrentStep =
+                                                        _currentGetWordResult?.learningWord?.word.id == w.wordId && w.todayLearnedTimes == sIndex;
                                                     final isNextStep = nextWordId == w.wordId && nextStepIndex == sIndex;
                                                     // From user's perspective, if I've passed this step, or I am currently on it, it's green.
                                                     final isStepCompleted = w.todayLearnedTimes > sIndex || isCurrentStep;
@@ -4962,9 +4963,14 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                                                         width: 14,
                                                         height: 14,
                                                         decoration: BoxDecoration(
-                                                          color: isStepCompleted ? Colors.green : (isDark ? Colors.white24 : Colors.grey.withValues(alpha: 0.3)),
-                                                          borderRadius: isWordFinished ? BorderRadius.circular(3) : BorderRadius.circular(7), // 矩形(圆角3)/圆形(圆角7)
-                                                          border: isCurrentStep ? Border.all(color: Colors.blueAccent, width: 2) : (isNextStep ? Border.all(color: Colors.orange, width: 2) : null),
+                                                          color: isStepCompleted
+                                                              ? Colors.green
+                                                              : (isDark ? Colors.white24 : Colors.grey.withValues(alpha: 0.3)),
+                                                          borderRadius:
+                                                              isWordFinished ? BorderRadius.circular(3) : BorderRadius.circular(7), // 矩形(圆角3)/圆形(圆角7)
+                                                          border: isCurrentStep
+                                                              ? Border.all(color: Colors.blueAccent, width: 2)
+                                                              : (isNextStep ? Border.all(color: Colors.orange, width: 2) : null),
                                                         ),
                                                       ),
                                                     );

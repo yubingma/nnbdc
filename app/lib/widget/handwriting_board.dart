@@ -9,11 +9,13 @@ import '../theme/app_theme.dart';
 class HandwritingBoard extends StatefulWidget {
   final Function(String) onRecognized;
   final VoidCallback onCancel;
+  final bool showCloseButton;
 
   const HandwritingBoard({
     super.key,
     required this.onRecognized,
     required this.onCancel,
+    this.showCloseButton = true,
   });
 
   @override
@@ -71,13 +73,13 @@ class _HandwritingBoardState extends State<HandwritingBoard> {
 
       // 3. 调用 OCR 识别
       final text = await OcrService.recognizeText(file.path);
-      
+
       // 清理临时文件
       if (await file.exists()) await file.delete();
 
       // 提取有效的英文单词或短语（保留字母和空格）
       String result = text.replaceAll(RegExp(r'[^a-zA-Z\s]'), '').replaceAll(RegExp(r'\s+'), ' ').trim();
-      
+
       if (result.isEmpty) {
         ToastUtil.info('未能识别到单词');
       } else {
@@ -114,7 +116,7 @@ class _HandwritingBoardState extends State<HandwritingBoard> {
     const margin = 50.0;
     double contentWidth = maxX - minX;
     double contentHeight = maxY - minY;
-    
+
     // 如果内容太小，不进行大幅度缩放以免失真
     if (contentWidth < 10) contentWidth = 10;
     if (contentHeight < 10) contentHeight = 10;
@@ -175,14 +177,15 @@ class _HandwritingBoardState extends State<HandwritingBoard> {
                     child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primaryColor),
                   ),
                 const SizedBox(width: 12),
-                GestureDetector(
-                  onTap: widget.onCancel,
-                  child: const Icon(Icons.close, size: 20, color: Colors.grey),
-                ),
+                if (widget.showCloseButton)
+                  GestureDetector(
+                    onTap: widget.onCancel,
+                    child: const Icon(Icons.close, size: 20, color: Colors.grey),
+                  ),
               ],
             ),
           ),
-          
+
           // 画布区域
           Expanded(
             child: GestureDetector(
