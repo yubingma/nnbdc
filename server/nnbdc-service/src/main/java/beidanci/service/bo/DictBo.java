@@ -25,8 +25,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.DigestUtils;
 
-import beidanci.api.Result;
 import beidanci.api.model.DictDto;
+import beidanci.api.Result;
 import beidanci.api.model.DictVo;
 import beidanci.api.model.DictStatsVo;
 import beidanci.api.model.DictWordDto;
@@ -651,6 +651,25 @@ public class DictBo extends BaseBo<Dict> {
      * 安全删除词典（处理外键约束）
      * 在删除词典之前，先删除相关的记录，按照正确的顺序处理外键约束
      */
+    public DictDto toDto(Dict dict) {
+        if (dict == null) {
+            return null;
+        }
+        return new DictDto(
+                dict.getId(),
+                dict.getName(),
+                dict.getOwner().getId(),
+                dict.getIsShared(),
+                dict.getIsReady(),
+                dict.getVisible(),
+                dict.getWordCount(),
+                dict.getPopularityLimit(),
+                dict.getEditable(),
+                dict.getDeletable(),
+                dict.getCreateTime(),
+                dict.getUpdateTime());
+    }
+
     @Transactional
     public void deleteDictSafely(String dictId) {
         try {

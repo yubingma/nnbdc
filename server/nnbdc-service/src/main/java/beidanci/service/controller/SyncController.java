@@ -190,4 +190,15 @@ public class SyncController {
         }
     }
 
+    /**
+     * 手动触发用户基础数据修复（核心词书、学习步骤）
+     * 修复后会自动生成同步日志并递增数据库版本号，方便客户端通过立即同步恢复数据。
+     */
+    @PostMapping("/repairUserBaseData.do")
+    public Result<String> repairUserBaseData(@RequestParam("userId") String userId) {
+        log.info("🚀 [REPAIR_API] 收到用户数据修复请求: userId=[{}]", userId);
+        syncBo.repairUserBaseData(userId);
+        return Result.success("用户数据修复任务已执行，请发起同步以更新本地数据");
+    }
+
 }

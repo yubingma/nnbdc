@@ -70,6 +70,23 @@ public class LearningDictBo extends BaseBo<LearningDict> {
     }
 
     /**
+     * 将实体对象转换为DTO
+     */
+    public LearningDictDto toDto(LearningDict entity) {
+        if (entity == null) {
+            return null;
+        }
+        LearningDictDto dto = new LearningDictDto();
+        dto.setUserId(entity.getUser().getId());
+        dto.setDictId(entity.getDict().getId());
+        dto.setIsPrivileged(entity.getIsPrivileged());
+        dto.setFetchMastered(entity.getFetchMastered());
+        dto.setCreateTime(entity.getCreateTime());
+        dto.setUpdateTime(entity.getUpdateTime());
+        return dto;
+    }
+
+    /**
      * 批量删除用户的学习词典记录
      * @param userId 用户ID
      * @param filtersJson 过滤条件JSON字符串

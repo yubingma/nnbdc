@@ -142,6 +142,67 @@ public class UserDbSyncBo {
     private JdbcTemplate jdbcTemplate;
 
     /**
+     * 修复用户基础数据（生词本、已掌握、学习步骤），并生成同步日志，确保客户端能够增量同步。
+     */
+    @Transactional
+    public void repairUserBaseData(String userId) {
+        User user = userBo.findById(userId);
+        if (user == null) {
+            return;
+        }
+
+        List<UserDbLogDto> logs = new ArrayList<>();
+
+        // 1. 检查并修复“生词本”
+        Dict rawDict = dictBo.getRawWordDict(user);
+        if (rawDict == null) {
+            rawDict = dictBo.createRawWordDictForUser(user);
+            logs.add(new UserDbLogDto(null, userId, 0, "INSERT", "dict", rawDict.getId(),
+                    JsonUtils.toJson(dictBo.toDto(rawDict)), null, null));
+
+            LearningDict ld = learningDictBo.getLearningDictOfUser(user, "生词本");
+            if (ld != null) {
+                logs.add(new UserDbLogDto(null, userId, 0, "INSERT", "learning_dict", userId + "-" + rawDict.getId(),
+                        JsonUtils.toJson(learningDictBo.toDto(ld)), null, null));
+            }
+        }
+
+        // 2. 检查并修复“已掌握”词书
+        Dict masteredDict = dictBo.getMasteredWordDict(user);
+        if (masteredDict == null) {
+            masteredDict = dictBo.createMasteredWordDictForUser(user);
+            logs.add(new UserDbLogDto(null, userId, 0, "INSERT", "dict", masteredDict.getId(),
+                    JsonUtils.toJson(dictBo.toDto(masteredDict)), null, null));
+
+            LearningDict ld = learningDictBo.getLearningDictOfUser(user, "已掌握");
+            if (ld != null) {
+                logs.add(new UserDbLogDto(null, userId, 0, "INSERT", "learning_dict", userId + "-" + masteredDict.getId(),
+                        JsonUtils.toJson(learningDictBo.toDto(ld)), null, null));
+            }
+        }
+
+        // 3. 检查并修复“学习步骤”
+        List<UserStudyStep> stepsBefore = userStudyStepBo.getUserStudySteps(userId);
+        userStudyStepBo.initUserStudySteps(userId);
+        List<UserStudyStep> stepsAfter = userStudyStepBo.getUserStudySteps(userId);
+
+        for (UserStudyStep stepAfter : stepsAfter) {
+            boolean existed = stepsBefore.stream().anyMatch(s -> s.getStudyStep() == stepAfter.getStudyStep());
+            if (!existed) {
+                logs.add(new UserDbLogDto(null, userId, 0, "INSERT", "user_study_step",
+                        userId + "-" + stepAfter.getStudyStep(),
+                        JsonUtils.toJson(userStudyStepBo.toDto(stepAfter)), null, null));
+            }
+        }
+
+        // 如果发生了修复，记录同步日志并升级版本号
+        if (!logs.isEmpty()) {
+            logUserOperations(userId, logs);
+            logger.info("🛠️ [REPAIR] 用户[{}]的基础数据修复完成, 生成了 {} 条同步日志", user.getUserName(), logs.size());
+        }
+    }
+
+    /**
      * 服务端主动修改用户数据后，将变更写入 user_db_log 并递增 user_db_version，
      * 这样客户端下一次同步即可拿到最新数据。
      *
@@ -406,6 +467,15 @@ public class UserDbSyncBo {
             LearningDict learningDict = LearningDict.fromDto(learningDictDto, wordBo, dictBo, userBo);
             switch (operation) {
                 case "INSERT" -> {
+                    // 【校验一】禁止通过同步建立与核心/系统词典的关联
+                    Dict dict = dictBo.findById(learningDictDto.getDictId());
+                    if (dict != null) {
+                        String name = dict.getName();
+                        if ("生词本".equals(name) || "已掌握".equals(name) || beidanci.util.Constants.SYS_USER_SYS_ID.equals(dict.getOwner().getId())) {
+                            throw new IllegalArgumentException(String.format("禁止通过同步建立与核心/系统词典的关联: dictId=[%s], name=[%s]", dict.getId(), name));
+                        }
+                    }
+
                     // 检查记录是否已存在，避免主键冲突
                     LearningDict existing = learningDictBo.findById(learningDict.getId());
                     if (existing == null) {
@@ -527,14 +597,28 @@ public class UserDbSyncBo {
                         logger.error(errorMsg);
                         throw new IllegalArgumentException(errorMsg);
                     }
+
+                    // 【强制校验一】禁止通过同步接口创建核心或系统词书
+                    String name = dictDto.getName();
+                    String ownerId = dictDto.getOwnerId();
                     if (dict == null) {
-                        // 【强制校验】禁止通过同步接口创建核心或系统词书
-                        String name = dictDto.getName();
-                        String ownerId = dictDto.getOwnerId();
                         if ("生词本".equals(name) || "已掌握".equals(name) || beidanci.util.Constants.SYS_USER_SYS_ID.equals(ownerId)) {
                             throw new IllegalArgumentException(String.format("禁止通过同步创建核心/系统词书: name=[%s], ownerId=[%s]", name, ownerId));
                         }
+                    }
 
+                    // 【强制校验二】禁止通过同步接口修改核心或系统词书的基础配置 (如名称)
+                    if (dict != null) {
+                        String oldName = dict.getName();
+                        String oldOwnerId = dict.getOwner().getId();
+                        if ("生词本".equals(oldName) || "已掌握".equals(oldName) || beidanci.util.Constants.SYS_USER_SYS_ID.equals(oldOwnerId)) {
+                            if (!oldName.equals(name)) {
+                                throw new IllegalArgumentException(String.format("禁止通过同步修改核心/系统词书名称: oldName=[%s], newName=[%s]", oldName, name));
+                            }
+                        }
+                    }
+
+                    if (dict == null) {
                         // 创建新词书
                         dict = new Dict();
                         dict.setId(dictDto.getId());
@@ -646,14 +730,8 @@ public class UserDbSyncBo {
 
             switch (operation) {
                 case "INSERT" -> {
-                    // 检查记录是否已存在，避免主键冲突
-                    UserStudyStep existing = userStudyStepBo.findById(id);
-                    if (existing == null) {
-                        userStudyStepBo.createEntity(studyStep);
-                    } else {
-                        logger.info("user_study_step 已存在，忽略重复 INSERT: user_id={}, study_step={}",
-                                userId, stepDto.getStudyStep());
-                    }
+                    // 【校验三】禁止通过同步创建学习步骤
+                    throw new IllegalArgumentException(String.format("禁止通过同步创建学习步骤: userId=[%s], step=[%s]", userId, stepDto.getStudyStep()));
                 }
                 case "UPDATE" -> {
                     // 检查记录是否存在，不存在则创建

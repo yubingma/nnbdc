@@ -10,17 +10,12 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import beidanci.api.model.DictDto;
-import beidanci.api.model.LearningDictDto;
-import beidanci.api.model.UserDbLogDto;
 import beidanci.api.model.SystemHealthCheckResult;
 import beidanci.api.model.SystemHealthFixResult;
 import beidanci.api.model.SystemHealthIssue;
 import beidanci.service.dao.UserDbVersionDao;
 import beidanci.service.po.Dict;
-import beidanci.service.po.LearningDict;
 import beidanci.service.po.User;
-import beidanci.service.util.JsonUtils;
 import beidanci.util.Constants;
 
 /**
@@ -51,8 +46,6 @@ public class SystemHealthCheckBo {
     @Autowired
     private UserDbSyncBo userDbSyncBo;
 
-    @Autowired
-    private LearningDictBo learningDictBo;
 
     /**
      * 检查系统词典完整性
@@ -644,32 +637,21 @@ public class SystemHealthCheckBo {
     private int fixUserStudySteps(List<String> fixed) {
         int fixedCount = 0;
         try {
-            // 使用 SQL 批量插入缺失的学习步骤
-            // 1. 批量插入缺失的 En2Ch 步骤
-            String insertEn2ChSql = "INSERT INTO user_study_step (user_id, study_step, seq, state, create_time) " +
-                                   "SELECT u.id, 'En2Ch', 1, 'Active', CURRENT_TIMESTAMP " +
-                                   "FROM \"user\" u " +
-                                   "LEFT JOIN user_study_step uss ON u.id = uss.user_id AND uss.study_step = 'En2Ch' " +
-                                   "WHERE uss.user_id IS NULL";
+            // 获取所有缺失学习步骤的用户 ID
+            String findUsersSql = "SELECT DISTINCT id FROM \"user\" u " +
+                                 "WHERE NOT EXISTS (" +
+                                 "  SELECT 1 FROM user_study_step uss " +
+                                 "  WHERE uss.user_id = u.id AND uss.study_step IN ('En2Ch', 'Ch2En')" +
+                                 ")";
+            List<String> userIds = namedParameterJdbcTemplate.query(findUsersSql, new MapSqlParameterSource(), (rs, rowNum) -> rs.getString("id"));
             
-            int en2ChCount = namedParameterJdbcTemplate.update(insertEn2ChSql, new MapSqlParameterSource());
-            
-            // 2. 批量插入缺失的 Ch2En 步骤
-            String insertCh2EnSql = "INSERT INTO user_study_step (user_id, study_step, seq, state, create_time) " +
-                                   "SELECT u.id, 'Ch2En', 2, 'Active', CURRENT_TIMESTAMP " +
-                                   "FROM \"user\" u " +
-                                   "LEFT JOIN user_study_step uss ON u.id = uss.user_id AND uss.study_step = 'Ch2En' " +
-                                   "WHERE uss.user_id IS NULL";
-            
-            int ch2EnCount = namedParameterJdbcTemplate.update(insertCh2EnSql, new MapSqlParameterSource());
-            
-            fixedCount = en2ChCount + ch2EnCount;
-            
-            if (en2ChCount > 0) {
-                fixed.add(String.format("批量插入 %d 个用户的 En2Ch 学习步骤", en2ChCount));
+            for (String userId : userIds) {
+                userDbSyncBo.repairUserBaseData(userId);
+                fixedCount++;
             }
-            if (ch2EnCount > 0) {
-                fixed.add(String.format("批量插入 %d 个用户的 Ch2En 学习步骤", ch2EnCount));
+            
+            if (fixedCount > 0) {
+                fixed.add(String.format("为 %d 个缺失学习步骤的用户执行了基础数据修复及日志生成", fixedCount));
             }
             
         } catch (DataAccessException e) {
@@ -715,34 +697,8 @@ public class SystemHealthCheckBo {
                         continue;
                     }
                     
-                    Dict dict;
-                    if ("生词本".equals(missingDict)) {
-                        dict = dictBo.createRawWordDictForUser(user);
-                    } else {
-                        dict = dictBo.createMasteredWordDictForUser(user);
-                    }
-
-                    // 生成同步日志并升级用户数据库版本号，确保客户端能同步到这些修复后的词书
-                    List<UserDbLogDto> logs = new ArrayList<>();
-
-                    // 1. 词典 (dict) INSERT 日志
-                    DictDto dictDto = dictBo.getDictDto(dict.getId());
-                    logs.add(new UserDbLogDto(null, userId, 0, "INSERT", "dict", dict.getId(), JsonUtils.toJson(dictDto), null, null));
-
-                    // 2. 学习词典关联 (learning_dict) INSERT 日志
-                    LearningDict ld = learningDictBo.getLearningDictOfUser(user, missingDict);
-                    if (ld != null) {
-                        LearningDictDto ldDto = new LearningDictDto();
-                        ldDto.setUserId(user.getId());
-                        ldDto.setDictId(dict.getId());
-                        ldDto.setIsPrivileged(ld.getIsPrivileged());
-                        ldDto.setFetchMastered(ld.getFetchMastered());
-                        ldDto.setCreateTime(ld.getCreateTime());
-                        ldDto.setUpdateTime(ld.getUpdateTime());
-                        logs.add(new UserDbLogDto(null, userId, 0, "INSERT", "learning_dict", userId + "-" + dict.getId(), JsonUtils.toJson(ldDto), null, null));
-                    }
-
-                    userDbSyncBo.logUserOperations(userId, logs);
+                    // 使用统一的修复逻辑，涵盖词书创建、步骤创建、日志生成和版本升级
+                    userDbSyncBo.repairUserBaseData(userId);
                     
                     fixed.add(String.format("为用户 %s (%s, ID: %s) 创建%s", 
                             nickName != null ? nickName : userName, userName, userId, missingDict));
