@@ -3954,7 +3954,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     final textColor = isDarkMode ? Colors.white38 : Colors.black26;
 
     // 获取本次操作的评估标签和颜色
-    String ratingLabel = _lastFsrsRating?.label ?? '一般'; 
+    String ratingLabel = _lastFsrsRating?.label ?? '未知'; 
     Color ratingColor;
     
     switch (_lastFsrsRating) {

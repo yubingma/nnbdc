@@ -271,7 +271,7 @@ extension FsrsRatingExt on FsrsRating {
       case FsrsRating.hard:
         return "模糊";
       case FsrsRating.good:
-        return "正确";
+        return "尚可";
       case FsrsRating.easy:
         return "轻松";
     }

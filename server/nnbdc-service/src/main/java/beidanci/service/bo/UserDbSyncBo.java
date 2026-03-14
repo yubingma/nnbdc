@@ -500,6 +500,7 @@ public class UserDbSyncBo {
             UserDto userDto = JsonUtils.makeObject(recordJson, UserDto.class);
             User user = userBo.findById(userId);
             if (user != null) {
+                logger.info("收到用户同步请求: userId={}, recordJson={}", userId, recordJson);
                 User userFromClient = User.fromDto(userDto);
 
                 // 保护敏感字段：isAdmin、isSuperAdmin、isSysUser 只允许后端同步到前端

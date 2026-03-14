@@ -114,6 +114,11 @@ public class UserVo extends UuidVo {
     private String premiumOverrideDuration;
 
     /**
+     * 随身听配置 (JSON格式)
+     */
+    private String walkmanConfig;
+
+    /**
      * ASR答对判定规则：ONE/HALF/ALL
      */
     private String asrPassRule;
@@ -132,6 +137,14 @@ public class UserVo extends UuidVo {
 
     public void setAsrPassRule(String asrPassRule) {
         this.asrPassRule = asrPassRule;
+    }
+
+    public String getWalkmanConfig() {
+        return walkmanConfig;
+    }
+
+    public void setWalkmanConfig(String walkmanConfig) {
+        this.walkmanConfig = walkmanConfig;
     }
 
     public List<StudyGroupVo> getStudyGroups() {
