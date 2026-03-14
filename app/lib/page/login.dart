@@ -273,7 +273,7 @@ class LoginPageState extends State<LoginPage> with WidgetsBindingObserver, Singl
                                 ToastUtil.error("请先同意[使用协议]和[隐私政策]");
                                 return;
                               }
-                              Navigator.of(context).pushNamed('/email_login');
+                              Get.toNamed('/email_login', arguments: {'approved': _approved});
                             }),
                             Container(
                               width: 1,

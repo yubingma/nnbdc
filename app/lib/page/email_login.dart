@@ -36,7 +36,7 @@ class EmailLoginPageState extends State<EmailLoginPage> {
   int _countdown = 0; // 倒计时秒数
   Timer? _countdownTimer; // 倒计时定时器
   bool? _emailExistsInLocal; // 本地是否存在该邮箱，null表示未检查
-  bool _isCheckingLocal = false; // 是否正在检查本地
+  bool _isCheckingLocal = false; // 是否正在检查本地 
   List<String> _localEmails = []; // 本地保存的邮箱列表
 
   @override
@@ -48,12 +48,20 @@ class EmailLoginPageState extends State<EmailLoginPage> {
     super.dispose();
   }
 
-  // 从本地数据库读取用户名和邮箱列表
   loadData() async {
     var user = await MyDatabase.instance.usersDao.getLastLoggedInUser();
     if (user != null && user.email != null) {
       setState(() {
         email.text = user.email!;
+        _approved = true;
+      });
+    }
+
+    // 检查隐私政策版本
+    const int currentPrivacyVersion = 20260310;
+    int acceptedVersion = GetStorage().read<int>('accepted_privacy_version') ?? 0;
+    if (acceptedVersion >= currentPrivacyVersion) {
+      setState(() {
         _approved = true;
       });
     }
@@ -87,6 +95,13 @@ class EmailLoginPageState extends State<EmailLoginPage> {
   @override
   void initState() {
     super.initState();
+
+    // 尝试从路由参数中获取同意状态
+    final args = Get.arguments;
+    if (args is Map && args['approved'] == true) {
+      _approved = true;
+    }
+
     loadData();
     // 监听邮箱输入变化，检查本地是否有该邮箱
     email.addListener(_checkLocalEmail);
