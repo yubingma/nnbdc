@@ -59,151 +59,157 @@ public class ReadyState extends RoomState {
     // 机器人使用道具的延迟任务（避免立即反击, 显得更真实）
     private TimerTask botPropsDelayTask = null;
 
+    // 机器人主循环任务
+    private TimerTask botActionTask = null;
+    // 机器人当前单词索引
+    private int botWordIdx = 0;
+    // 机器人定时器
+    private Timer botTimer = null;
+    // 缓存机器人用户对象
+    private UserVo botUserObj = null;
+    // 缓存人类用户对象
+    private UserVo humanUserObj = null;
+
     /**
-     * 递归调度机器人动作（用道具 + 答题），避免局部 lambda 的捕获初始化问题。
+     * 触发机器人进行一次答题动作。
+     * 
+     * @param correct 是否回答正确。若为 null，则根据胜率随机决定。
      */
-    private void scheduleBotNext(Timer botTimer, long delayMs, UserVo botUser, UserVo humanUser, int[] idx) {
-        botTimer.schedule(new TimerTask() {
+    private void triggerBotAnswer(Boolean correct) {
+        if (!isPlaying || botUserObj == null) {
+            return;
+        }
+
+        try {
+            // 如果有待执行的常规思考任务，取消它
+            if (botActionTask != null) {
+                botActionTask.cancel();
+                botActionTask = null;
+            }
+
+            // 机器人所依附的“真实玩家”历史胜率（机器人昵称与胜率均来自该玩家）
+            double botWinRatio = 0.5;
+            try {
+                beidanci.api.model.UserGameVo gameVo = botUserObj.getGameByName("russia");
+                Integer winCountObj = gameVo.getWinCount();
+                Integer loseCountObj = gameVo.getLoseCount();
+                int w = winCountObj != null ? winCountObj : 0;
+                int l = loseCountObj != null ? loseCountObj : 0;
+                int total = Math.max(1, w + l);
+                botWinRatio = w * 1.0 / total;
+            } catch (Exception ignored2) {
+            }
+
+            // 正确率：人类越强，机器人越强 [0.45, 0.95]
+            double correctRate = Math.min(0.95, Math.max(0.45, 0.45 + botWinRatio * 0.5));
+            UserGameData botData = room.getUserPlayData(botUserObj);
+            int currentStackRows = botData.getStackRows();
+
+            // --- 自动使用道具（添加延迟，模拟人类反应时间） ---
+            final UserGameData currentBotData = botData;
+            
+            // 1. 进攻逻辑（加一行道具 - 索引0）：有就用，带点延迟
+            if (currentBotData.getPropsCounts()[0] > 0) {
+                long attackDelay = 200L + (long) (Math.random() * 800L);
+                fallTimer.schedule(new TimerTask() {
+                    @Override
+                    public void run() {
+                        try {
+                            if (!isPlaying) return;
+                            if (currentBotData.getPropsCounts()[0] > 0) {
+                                UserCmd propsCmd = new UserCmd(userBo);
+                                propsCmd.setUserId(botUserObj.getId());
+                                propsCmd.setSystem("russia");
+                                propsCmd.setCmd("USE_PROPS");
+                                propsCmd.setArgs(new String[] { "0" });
+                                room.processUserCmd(botUserObj, propsCmd);
+                                org.slf4j.LoggerFactory.getLogger(ReadyState.class).info("🤖 机器人使用了道具[加一行](攻击)");
+                            }
+                        } catch (Exception ignored) {}
+                    }
+                }, attackDelay);
+            }
+
+            // 2. 自救逻辑（减一行道具 - 索引1）：被攻击时使用
+            if (currentStackRows > botLastStackRows && currentBotData.getPropsCounts()[1] > 0 && botPropsDelayTask == null) {
+                long delayMs = 300L + (long) (Math.random() * 1700L);
+                botPropsDelayTask = new TimerTask() {
+                    @Override
+                    public void run() {
+                        try {
+                            if (!isPlaying) {
+                                cancel();
+                                return;
+                            }
+                            if (currentBotData.getPropsCounts()[1] > 0 && currentBotData.getStackRows() > 0) {
+                                UserCmd propsCmd = new UserCmd(userBo);
+                                propsCmd.setUserId(botUserObj.getId());
+                                propsCmd.setSystem("russia");
+                                propsCmd.setCmd("USE_PROPS");
+                                propsCmd.setArgs(new String[] { "1" });
+                                room.processUserCmd(botUserObj, propsCmd);
+                                org.slf4j.LoggerFactory.getLogger(ReadyState.class).info("🤖 机器人使用了道具[减一行](处突)");
+                            }
+                            botPropsDelayTask = null;
+                        } catch (Exception ignored) {
+                        }
+                    }
+                };
+                fallTimer.schedule(botPropsDelayTask, delayMs);
+            }
+            botLastStackRows = currentStackRows;
+
+            // 答题逻辑
+            boolean isCorrect = (correct != null) ? correct
+                    : (Math.random() < (correctRate + (Math.random() - 0.5) * 0.1));
+            UserCmd cmd = new UserCmd(userBo);
+            cmd.setUserId(botUserObj.getId());
+            cmd.setSystem("russia");
+            cmd.setCmd("GET_NEXT_WORD");
+            cmd.setArgs(new String[] { String.valueOf(botWordIdx++), isCorrect ? "true" : "false", "" });
+            room.processUserCmd(botUserObj, cmd);
+
+            // 调度下一次动作
+            long now = System.currentTimeMillis();
+            long sinceLastOp = now - room.getUserPlayData(humanUserObj).getLastOperationTime();
+            final long minDelay = 2000;
+            final long maxDelay = 4800;
+            long baseDelay = (long) (maxDelay - (correctRate - 0.45) / (0.95 - 0.45) * (maxDelay - minDelay));
+            long thinkDelay = Math.max(minDelay, Math.min(maxDelay, Math.max(baseDelay, sinceLastOp)));
+            long jitter = (long) ((Math.random() - 0.5) * 600);
+            long delay = Math.max(minDelay, Math.min(maxDelay, thinkDelay + jitter));
+
+            scheduleBotNext(delay);
+        } catch (Exception e) {
+            org.slf4j.LoggerFactory.getLogger(ReadyState.class).error("机器人执行动作失败", e);
+        }
+    }
+
+    private void scheduleBotNext(long delayMs) {
+        if (!isPlaying || botUserObj == null)
+            return;
+        botActionTask = new TimerTask() {
             @Override
             public void run() {
-                try {
-                    if (!isPlaying) {
-                        cancel();
-                        return;
-                    }
-
-                    // 机器人所依附的“真实玩家”历史胜率（机器人昵称与胜率均来自该玩家）
-                    double botWinRatio = 0.5;
-                    try {
-                        beidanci.api.model.UserGameVo gameVo = botUser.getGameByName("russia");
-                        Integer winCountObj = gameVo.getWinCount();
-                        Integer loseCountObj = gameVo.getLoseCount();
-                        int w = winCountObj != null ? winCountObj : 0;
-                        int l = loseCountObj != null ? loseCountObj : 0;
-                        int total = Math.max(1, w + l);
-                        botWinRatio = w * 1.0 / total;
-                    } catch (Exception ignored2) {
-                    }
-
-                    // 正确率：人类越强，机器人越强 [0.45, 0.95] - 保持原有正确率
-                    double correctRate = Math.min(0.95, Math.max(0.45, 0.45 + botWinRatio * 0.5));
-                    // 思考时间：正确率越低，思考时间越长，上界接近“单词落到底部”的时间
-                    long now = System.currentTimeMillis();
-                    long sinceLastOp = now - room.getUserPlayData(humanUser).getLastOperationTime();
-                    final long minDelay = 2000; // 提高机器人答题速度20%：从2500减少到2000
-                    final long maxDelay = 4800; // 提高机器人答题速度20%：从6000减少到4800
-                    long baseDelay = (long) (maxDelay - (correctRate - 0.45) / (0.95 - 0.45) * (maxDelay - minDelay));
-                    long thinkDelay = Math.max(minDelay, Math.min(maxDelay, Math.max(baseDelay, sinceLastOp)));
-                    long jitter = (long) ((Math.random() - 0.5) * 600); // 增加随机性
-                    thinkDelay = Math.max(minDelay, Math.min(maxDelay, thinkDelay + jitter));
-
-                    // --- 自动使用道具（添加延迟，模拟人类反应时间） ---
-                    UserGameData botData = room.getUserPlayData(botUser);
-                    int currentStackRows = botData.getStackRows();
-
-                    // 检测堆叠行数是否增加（说明被对手攻击了）
-                    if (currentStackRows > botLastStackRows && botData.getPropsCounts()[1] > 0
-                            && botPropsDelayTask == null) {
-                        // 堆叠行数增加了，延迟300ms-2秒后使用"减一行"道具，模拟人类反应时间
-                        long delayMs = 300L + (long) (Math.random() * 1700L);
-                        botPropsDelayTask = new TimerTask() {
-                            @Override
-                            public void run() {
-                                try {
-                                    if (!isPlaying) {
-                                        cancel();
-                                        return;
-                                    }
-                                    UserGameData currentBotData = room.getUserPlayData(botUser);
-                                    if (currentBotData.getPropsCounts()[1] > 0 && currentBotData.getStackRows() > 0) {
-                                        UserCmd propsCmd = new UserCmd(userBo);
-                                        propsCmd.setUserBo(userBo);
-                                        java.lang.reflect.Field fUserId2 = UserCmd.class.getDeclaredField("userId");
-                                        fUserId2.setAccessible(true);
-                                        fUserId2.set(propsCmd, botUser.getId());
-                                        java.lang.reflect.Field fSystem2 = UserCmd.class.getDeclaredField("system");
-                                        fSystem2.setAccessible(true);
-                                        fSystem2.set(propsCmd, "russia");
-                                        java.lang.reflect.Field fCmd2 = UserCmd.class.getDeclaredField("cmd");
-                                        fCmd2.setAccessible(true);
-                                        fCmd2.set(propsCmd, "USE_PROPS");
-                                        java.lang.reflect.Field fArgs2 = UserCmd.class.getDeclaredField("args");
-                                        fArgs2.setAccessible(true);
-                                        fArgs2.set(propsCmd, new String[] { "1" });
-                                        room.processUserCmd(botUser, propsCmd);
-                                        // 打印机器人使用"减一行"日志
-                                        org.slf4j.LoggerFactory.getLogger(ReadyState.class)
-                                                .info(String.format("机器人[%s] 延迟%.1f秒后使用了道具[减一行]，库存：加一行=%d，减一行=%d",
-                                                        Util.getNickNameOfUser(botUser),
-                                                        delayMs / 1000.0,
-                                                        currentBotData.getPropsCounts()[0],
-                                                        currentBotData.getPropsCounts()[1]));
-                                    }
-                                    botPropsDelayTask = null;
-                                } catch (Exception ignored) {
-                                }
-                            }
-                        };
-                        fallTimer.schedule(botPropsDelayTask, delayMs);
-                    }
-
-                    // 更新记录的堆叠行数
-                    botLastStackRows = currentStackRows;
-                    if (botData.getPropsCounts()[0] > 0) {
-                        UserCmd propsCmd2 = new UserCmd(userBo);
-                        propsCmd2.setUserBo(userBo);
-                        java.lang.reflect.Field fUserId3 = UserCmd.class.getDeclaredField("userId");
-                        fUserId3.setAccessible(true);
-                        fUserId3.set(propsCmd2, botUser.getId());
-                        java.lang.reflect.Field fSystem3 = UserCmd.class.getDeclaredField("system");
-                        fSystem3.setAccessible(true);
-                        fSystem3.set(propsCmd2, "russia");
-                        java.lang.reflect.Field fCmd3 = UserCmd.class.getDeclaredField("cmd");
-                        fCmd3.setAccessible(true);
-                        fCmd3.set(propsCmd2, "USE_PROPS");
-                        java.lang.reflect.Field fArgs3 = UserCmd.class.getDeclaredField("args");
-                        fArgs3.setAccessible(true);
-                        fArgs3.set(propsCmd2, new String[] { "0" });
-                        room.processUserCmd(botUser, propsCmd2);
-                    }
-
-                    // 答题：保持原有正确率，主要调整速度
-                    double jitterRate = (Math.random() - 0.5) * 0.1;
-                    boolean correct = Math.random() < Math.min(0.98, Math.max(0.02, correctRate + jitterRate));
-
-                    UserCmd cmd = new UserCmd(userBo);
-                    cmd.setUserBo(userBo);
-                    java.lang.reflect.Field fUserId = UserCmd.class.getDeclaredField("userId");
-                    fUserId.setAccessible(true);
-                    fUserId.set(cmd, botUser.getId());
-                    java.lang.reflect.Field fSystem = UserCmd.class.getDeclaredField("system");
-                    fSystem.setAccessible(true);
-                    fSystem.set(cmd, "russia");
-                    java.lang.reflect.Field fCmd = UserCmd.class.getDeclaredField("cmd");
-                    fCmd.setAccessible(true);
-                    fCmd.set(cmd, "GET_NEXT_WORD");
-                    java.lang.reflect.Field fArgs = UserCmd.class.getDeclaredField("args");
-                    fArgs.setAccessible(true);
-                    fArgs.set(cmd, new String[] { String.valueOf(idx[0]++), correct ? "true" : "false", "" });
-                    room.processUserCmd(botUser, cmd);
-
-                    // 下一次
-                    scheduleBotNext(botTimer, thinkDelay, botUser, humanUser, idx);
-                } catch (IllegalAccessException | IllegalArgumentException | NoSuchFieldException
-                        | SecurityException ignored) {
-                    cancel();
-                }
+                triggerBotAnswer(null);
             }
-        }, delayMs);
+        };
+        botTimer.schedule(botActionTask, delayMs);
     }
 
     private void scheduleFallTask(UserVo user, long etaMs) {
         // 取消旧任务
         cancelFallTask(user);
-        if (etaMs <= 0)
-            return;
+
         // 新词开始下落，重置“一次性+1”标记
         stackAddedOnce.put(user.getId(), Boolean.FALSE);
+
+        if (etaMs <= 0) {
+            // 立即处理触底
+            tryAddStackOnce(user, "立即触底上报");
+            return;
+        }
+
         TimerTask task = new TimerTask() {
             @Override
             public void run() {
@@ -213,14 +219,14 @@ public class ReadyState extends RoomState {
                         return;
                     }
                     // 若在ETA到达时该用户没有提交答题（近似判断：lastUserCmd不是GET_NEXT_WORD或时间未更新），则判定触底堆叠+1
-                    tryAddStackOnce(user, "触底");
+                    tryAddStackOnce(user, "触底周期完成");
                 } catch (Exception ignored) {
                     cancel();
                 }
             }
         };
         fallTasks.put(user.getId(), task);
-        fallTimer.schedule(task, Math.max(1, etaMs));
+        fallTimer.schedule(task, etaMs);
     }
 
     private void cancelFallTask(UserVo user) {
@@ -240,6 +246,11 @@ public class ReadyState extends RoomState {
         org.slf4j.LoggerFactory.getLogger(ReadyState.class)
                 .info(String.format("🧱 玩家[%s] %s，堆叠+1 => %d",
                         Util.getNickNameOfUser(user), reason, pd.getStackRows()));
+
+        // 如果是机器人触底，强制立即进行下一次答题动作（Force False），解决高叠时的同步延迟
+        if (botUserObj != null && user.getId().equals(botUserObj.getId())) {
+            triggerBotAnswer(false);
+        }
     }
 
     public ReadyState(RussiaRoom room, WordCache wordCache, WordBo wordBo, UserGameBo userGameBo, DictWordBo rawWordBo,
@@ -447,19 +458,17 @@ public class ReadyState extends RoomState {
             return;
         }
 
-
         // 设置用户的游戏状态为"开始"
         UserGameData userPlayData1 = room.getUserPlayData(user);
         userPlayData1.setMatchStarted(true);
         room.broadcastEvent("userStarted", user.getId());
 
-
         // 获取另一位玩家的游戏状态信息
         UserVo anotherUser = room.getAnotherUser(user);
         UserGameData userPlayData2 = room.getUserPlayData(anotherUser);
-        
+
         // 如果对手是机器人且机器人还未点击开始，延迟2-5秒后才设置机器人为已开始，让机器人显得更真实
-        if (anotherUser != null && anotherUser.getUserName() != null && anotherUser.getUserName().startsWith("bot_") 
+        if (anotherUser != null && anotherUser.getUserName() != null && anotherUser.getUserName().startsWith("bot_")
                 && !userPlayData2.isMatchStarted()) {
             // 随机延迟2-5秒（比之前更长，更像真人反应时间）
             long delayMs = 2000L + (long) (Math.random() * 3000L);
@@ -547,23 +556,20 @@ public class ReadyState extends RoomState {
 
         // 确定哪个是机器人，哪个是真人
         UserVo botUser = null;
-        UserVo humanUser = null;
         if (user1 != null && user1.getUserName() != null && user1.getUserName().startsWith("bot_")) {
             botUser = user1;
-            humanUser = user2;
         } else if (user2 != null && user2.getUserName() != null && user2.getUserName().startsWith("bot_")) {
             botUser = user2;
-            humanUser = user1;
         }
 
-        // 若存在机器人：
-        // 1) 根据对手历史胜率动态模拟答题：胜率越低，思考时间越长，并加入随机性
-        // 2) 同时根据局势自动使用道具（自救优先，其次进攻），使用与答题共享的调度器
+        // 若存在机器人：根据对手历史胜率动态模拟答题
         if (botUser != null) {
-            final Timer botTimer = new Timer(true);
-            final int[] idx = new int[] { 0 };
+            this.botUserObj = botUser;
+            this.humanUserObj = (user1 == botUser) ? user2 : user1;
+            this.botTimer = new Timer(true);
+            this.botWordIdx = 0;
             // 首次调度：设置合理的初始延迟，让机器人与人类基本同步开始
-            scheduleBotNext(botTimer, 800L, botUser, humanUser, idx);
+            scheduleBotNext(800L);
         }
 
         // 两位玩家各扣除若干魔法泡泡（按照系统配置）

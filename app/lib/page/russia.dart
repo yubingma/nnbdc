@@ -1825,9 +1825,9 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
       final List<double> basePaddings = [];
       final int n = visibleButtons.length;
       double totalBaseHeight = 0.0;
-      for (var btn in visibleButtons) {
+      for (var btn in visibleButtons) { 
         final bool isAnswerBtn = btn == answer1Btn || btn == answer2Btn || btn == answer3Btn || btn == answer4Btn || btn == answer5Btn;
-        final double basePadding = (isAnswerBtn ? 1.1 : 1.0) * max(16.0, unifiedTextHeight * 1.1) * answersExtraScale;
+        final double basePadding = (isAnswerBtn ? 1.35 : 1.0) * max(16.0, unifiedTextHeight * 1.1) * answersExtraScale;
         final double visualHeight = unifiedTextHeight + basePadding + 16.0;
         baseLineHeights.add(unifiedTextHeight);
         basePaddings.add(basePadding);
@@ -1845,6 +1845,7 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
       // 应用缩放并布局
       for (int i = 0; i < visibleButtons.length; i++) {
         final btn = visibleButtons[i];
+        final bool isAnswerBtn = btn == answer1Btn || btn == answer2Btn || btn == answer3Btn || btn == answer4Btn || btn == answer5Btn;
         btn
           ..x = nextBtnX
           ..y = nextBtnY;
@@ -1852,9 +1853,9 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
         final MyButtonTextComponent btnUp = btn.button! as MyButtonTextComponent;
         final MyButtonTextComponent btnDown = btn.buttonDown! as MyButtonTextComponent;
 
-        // 统一计算目标字号与内边距
-        final double origFontSize = 15.0 * uiScale;
-        final double targetFontSize = max(12.0, origFontSize * scaleS);
+        // 统一计算目标字号与内边距：提高基础字号(15->18.2)，并应用答案按钮的额外缩放
+        final double origFontSize = 18.2 * uiScale * (isAnswerBtn ? answersExtraScale : 1.0);
+        final double targetFontSize = max(15.0, origFontSize * scaleS);
         final double basePadding = basePaddings[i];
         final double newPadding = max(16.0, basePadding * scaleS);
 
