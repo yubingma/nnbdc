@@ -708,6 +708,20 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     return true;
   }
 
+  /// 获取拼写输入框的当前文字颜色（实时检查：拼写错误显红色）
+  Color _getSpellingTextColor() {
+    String input = _meaningController.text;
+    if (input.isEmpty) return AppTheme.primaryColor;
+    if (_word == null) return AppTheme.primaryColor;
+    String spell = _word!.spell;
+
+    // 如果当前输入不是正确单词的前缀（忽略大小写），则显示红色
+    if (spell.toLowerCase().startsWith(input.toLowerCase())) {
+      return AppTheme.primaryColor;
+    }
+    return Colors.red;
+  }
+
   /// 动态生成tabs列表
   List<Tab> get _dynamicTabs {
     List<Tab> tabs = [];
@@ -2500,13 +2514,26 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
-                        color: AppTheme.primaryColor,
+                        color: _getSpellingTextColor(),
                       ),
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         hintText: '在此键入单词...',
+                        hintStyle: TextStyle(
+                          fontSize: 18,
+                          color: (isDarkMode ? Colors.white : Colors.black).withValues(alpha: 0.2),
+                          fontWeight: FontWeight.normal,
+                        ),
                         border: InputBorder.none,
                       ),
                       textInputAction: TextInputAction.done,
+                      onChanged: (value) {
+                        setState(() {});
+                        if (value.isNotEmpty && _word?.spell != null) {
+                          if (Util.equalsIgnoreCase(value, _word!.spell)) {
+                            checkAsrResult();
+                          }
+                        }
+                      },
                       onSubmitted: (value) {
                         _meaningFocusNode.unfocus();
                         checkAsrResult();
@@ -3709,6 +3736,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     if (!((_studyStep == StudyStep.en2Ch.json || _studyStep == StudyStep.ch2En.json) && _word != null)) {
       return const SizedBox.shrink();
     }
+    final isDarkMode = context.watch<DarkMode>().isDarkMode;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -3749,12 +3777,12 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
               const SizedBox(width: 8),
 
-              // 功能按钮区
+              // 功能按钮区 
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   _buildPanelButton(
-                    icon: Icons.emoji_objects_rounded,
+                    icon: Icons.emoji_objects_rounded, 
                     label: '提示',
                     onTap: () => giveALittleHint(_wordWrapper!),
                     onLongPress: () => giveFullHint(_wordWrapper!),
@@ -3828,13 +3856,13 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                                       style: TextStyle(
                                         fontSize: 18,
                                         fontWeight: FontWeight.bold,
-                                        color: AppTheme.primaryColor,
+                                        color: _getSpellingTextColor(),
                                       ),
                                       decoration: InputDecoration(
                                         hintText: '在此拼写单词...',
                                         hintStyle: TextStyle(
                                           fontSize: 14,
-                                          color: Colors.grey.withValues(alpha: 0.5),
+                                          color: (isDarkMode ? Colors.white : Colors.black).withValues(alpha: 0.2),
                                           fontWeight: FontWeight.normal,
                                         ),
                                         prefixIcon: Icon(Icons.edit_note, color: AppTheme.primaryColor.withValues(alpha: 0.5)),
@@ -3853,6 +3881,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                                         checkAsrResult();
                                       },
                                       onChanged: (value) {
+                                        setState(() {});
                                         // 监听输入，实时检查以获得更好的交互体验
                                         if (value.isNotEmpty && _word?.spell != null) {
                                           if (Util.equalsIgnoreCase(value, _word!.spell)) {
