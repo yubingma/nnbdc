@@ -1149,7 +1149,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     }
 
     if (mounted) {
-      _meaningController.text = processedResult;
+      checkAsrResult(asrInput: processedResult);
     }
   }
 
@@ -1225,11 +1225,13 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     });
   }
 
-  checkAsrResult() async {
-    Global.logger.d(
-        'BDC CHECK_ASR: Start. _meaningController.text=${_meaningController.text}, _handlingChinese=$_handlingChinese, _studyStep=$_studyStep, asr.state=${asr.state}, _isKeyboardVisible=$_isKeyboardVisible, _meaningFocusNode.hasFocus=${_meaningFocusNode.hasFocus}, _wordWrapper=${_wordWrapper != null}, _word=${_word != null}');
+  checkAsrResult({String? asrInput}) async {
+    String inputText = asrInput ?? _meaningController.text;
 
-    if (_meaningController.text.isEmpty) {
+    Global.logger.d(
+        'BDC CHECK_ASR: Start. inputText=$inputText, _handlingChinese=$_handlingChinese, _studyStep=$_studyStep, asr.state=${asr.state}, _isKeyboardVisible=$_isKeyboardVisible, _meaningFocusNode.hasFocus=${_meaningFocusNode.hasFocus}, _wordWrapper=${_wordWrapper != null}, _word=${_word != null}');
+
+    if (inputText.isEmpty) {
       if (_currentScore != null) {
         setState(() {
           _currentScore = null;
@@ -1247,9 +1249,11 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     }
 
     if (asr.state != AsrState.started && asr.state != AsrState.initialized && !isHandwritingOrKeyboard) {
-      Global.logger.w('收到归属于旧会话的结果(${_meaningController.text})，但当前无活跃输入途径，跳过处理');
+      Global.logger.w('收到归属于旧会话的结果($inputText)，但当前无活跃输入途径，跳过处理');
       if (mounted) {
-        _meaningController.text = '';
+        if (asrInput == null) {
+          _meaningController.text = '';
+        }
         setState(() {
           _currentScore = null;
         });
@@ -1265,9 +1269,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     }
 
     // 如果输入框中的文本与正在处理的文本相同，则直接返回, 避免无谓的性能损耗
-    if (_meaningController.text != _handlingChinese) {
-      Global.logger.d('BDC CHECK_ASR: Update _handlingChinese from "$_handlingChinese" to "${_meaningController.text}"');
-      _handlingChinese = _meaningController.text;
+    if (inputText != _handlingChinese) {
+      Global.logger.d('BDC CHECK_ASR: Update _handlingChinese from "$_handlingChinese" to "$inputText"');
+      _handlingChinese = inputText;
     } else {
       Global.logger.d('BDC CHECK_ASR: _handlingChinese hasn\'t changed ("$_handlingChinese"), returning early.');
       return;
@@ -1280,7 +1284,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       // 核心改动：如果当前输入框内容匹配上一刻 ASR 处理出的 processedResult，说明它是通过 ASR 触发的，
       // 此时我们使用记录下的 _currentAsrCandidates 列表进行多重探测。
       // 否则（如用户手动编辑键盘输入），我们只使用输入框当前文本。
-      final isFromAsr = _meaningController.text == _handlingChinese;
+      final isFromAsr = asrInput != null || _meaningController.text == _handlingChinese;
       final inputs = isFromAsr ? _currentAsrCandidates : [_handlingChinese];
 
       result = matchInputChineseWithMeaningItems(
@@ -3885,7 +3889,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '说出单词发音 或 直接拼写：',
+                          '说出单词发音 或 直接拼写：', 
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
@@ -3894,55 +3898,62 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                         ),
                         const SizedBox(height: 12),
                         // 拼写练习按钮 (替代原来的 TextField)
-                        if (!_isAnswerCorrect)
-                          Column(
-                            children: [
-                              InkWell(
-                                onTap: () {
-                                  setState(() {
-                                    _showHandwritingBoard = true;
-                                  });
-                                },
-                                borderRadius: BorderRadius.circular(12),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 0),
-                                  decoration: BoxDecoration(
-                                    border: Border(
-                                      bottom: BorderSide(
-                                          color: context.watch<DarkMode>().isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.05)),
-                                    ),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Icon(Icons.edit_note, color: AppTheme.primaryColor.withValues(alpha: 0.5)),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: _meaningController.text.isEmpty
-                                            ? Text(
-                                                '拼写练习',
-                                                style: TextStyle(
-                                                  fontSize: 16,
-                                                  color: (isDarkMode ? Colors.white : Colors.black).withValues(alpha: 0.2),
-                                                  fontWeight: FontWeight.normal,
-                                                ),
-                                              )
-                                            : RichText(
-                                                text: SpellingTextEditingController.buildSpellingTextSpan(
-                                                  _meaningController.text,
-                                                  _word?.spell ?? "",
-                                                  isDarkMode ? Colors.white : Colors.black,
-                                                  const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                                                ),
-                                              ),
-                                      ),
-                                    ],
+                        Column(
+                          children: [
+                            InkWell(
+                              onTap: () {
+                                setState(() {
+                                  _showHandwritingBoard = true;
+                                });
+                              },
+                              borderRadius: BorderRadius.circular(12),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 0),
+                                decoration: BoxDecoration(
+                                  border: Border(
+                                    bottom: BorderSide(
+                                        color: context.watch<DarkMode>().isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.05)),
                                   ),
                                 ),
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.edit_note, color: AppTheme.primaryColor.withValues(alpha: 0.5)),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: _meaningController.text.isEmpty
+                                          ? Text(
+                                              '拼写练习',
+                                              style: TextStyle(
+                                                fontSize: 16,
+                                                color: (isDarkMode ? Colors.white : Colors.black).withValues(alpha: 0.2),
+                                                fontWeight: FontWeight.normal,
+                                              ),
+                                            )
+                                          : RichText(
+                                              text: SpellingTextEditingController.buildSpellingTextSpan(
+                                                _meaningController.text,
+                                                _word?.spell ?? "",
+                                                isDarkMode ? Colors.white : Colors.black,
+                                                const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                                              ),
+                                            ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                              const SizedBox(height: 16),
-                            ],
-                          ),
-                        _buildWordSpellingHint(_wordWrapper!, _isAnswerCorrect),
+                            ),
+                            const SizedBox(height: 16),
+                          ],
+                        ),
+                        GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () {
+                            setState(() {
+                              _showHandwritingBoard = true;
+                            });
+                          },
+                          child: _buildWordSpellingHint(_wordWrapper!, _isAnswerCorrect),
+                        ),
                       ],
                     ),
             ),
