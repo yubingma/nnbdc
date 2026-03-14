@@ -458,14 +458,24 @@ class DictsDao extends DatabaseAccessor<MyDatabase> with _$DictsDaoMixin {
     return (select(dicts)..where((d) => d.ownerId.equals(ownerId))).get();
   }
 
-  /// 查找指定用户的生词本
-  /// @param userId 用户ID
-  /// @return 用户的生词本，如果不存在则返回null
+  /// 查找指定用户的"生词本"词书
   Future<Dict?> findUserRawDict(String userId) async {
-    return (select(dicts)
-          ..where((d) => d.ownerId.equals(userId))
-          ..where((d) => d.name.equals('生词本')))
-        .getSingleOrNull();
+    try {
+      final query = select(dicts)
+        ..where((d) => d.ownerId.equals(userId))
+        ..where((d) => d.name.equals('生词本'));
+      final results = await query.get();
+
+      if (results.length > 1) {
+        final details = results.map((d) => 'ID: ${d.id}, 创建于: ${d.createTime}').join('\n  - ');
+        throw Exception('核心数据异常: 用户 [$userId] 拥有 ${results.length} 本"生词本"词书！\n  - $details');
+      }
+
+      return results.isEmpty ? null : results.first;
+    } catch (e, stackTrace) {
+      Global.logger.e('查询"生词本"词书时崩溃', error: e, stackTrace: stackTrace);
+      rethrow;
+    }
   }
 
   Future<Dict?> findUserMasteredDict(String userId) async {

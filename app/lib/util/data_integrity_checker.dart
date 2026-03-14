@@ -545,11 +545,16 @@ class DataIntegrityChecker {
       if (response.success && response.data != null) {
         final data = response.data!;
         
-        // 恢复词书
+        // 恢复词书 (检测冲突并立刻报错)
         if (data.rawDict != null) {
           final dictDto = data.rawDict!;
-          final existing = await _db.dictsDao.findById(dictDto.id);
-          if (existing == null) {
+          final existingById = await _db.dictsDao.findById(dictDto.id);
+          final existingByName = await _db.dictsDao.findUserRawDict(currentUserId);
+          
+          if (existingById == null) {
+            if (existingByName != null) {
+              throw Exception('数据完整性损坏: 本地已存在名为 "${dictDto.name}" 的词书但 ID 不匹配 (本地 ID: ${existingByName.id}, 服务端 ID: ${dictDto.id})');
+            }
             final dict = Dict(
               id: dictDto.id,
               name: dictDto.name,
@@ -570,8 +575,13 @@ class DataIntegrityChecker {
 
         if (data.masteredDict != null) {
           final dictDto = data.masteredDict!;
-          final existing = await _db.dictsDao.findById(dictDto.id);
-          if (existing == null) {
+          final existingById = await _db.dictsDao.findById(dictDto.id);
+          final existingByName = await _db.dictsDao.findUserMasteredDict(currentUserId);
+          
+          if (existingById == null) {
+            if (existingByName != null) {
+              throw Exception('数据完整性损坏: 本地已存在名为 "${dictDto.name}" 的词书但 ID 不匹配 (本地 ID: ${existingByName.id}, 服务端 ID: ${dictDto.id})');
+            }
             final dict = Dict(
               id: dictDto.id,
               name: dictDto.name,
