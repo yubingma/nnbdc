@@ -475,6 +475,13 @@ public class UserDbSyncBo {
                         throw new IllegalArgumentException(errorMsg);
                     }
                     if (dict == null) {
+                        // 【强制校验】禁止通过同步接口创建核心或系统词书
+                        String name = dictDto.getName();
+                        String ownerId = dictDto.getOwnerId();
+                        if ("生词本".equals(name) || "已掌握".equals(name) || beidanci.util.Constants.SYS_USER_SYS_ID.equals(ownerId)) {
+                            throw new IllegalArgumentException(String.format("禁止通过同步创建核心/系统词书: name=[%s], ownerId=[%s]", name, ownerId));
+                        }
+
                         // 创建新词书
                         dict = new Dict();
                         dict.setId(dictDto.getId());

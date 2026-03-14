@@ -204,8 +204,20 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
     // 对本地同步到后端的日志进行排序,确保：
     // - INSERT/UPDATE: 父表在子表之前（正序依赖）
     // - DELETE/BATCH_DELETE: 子表在父表之前（逆序依赖）
-    // 首先按创建时间排序,保持操作的时间顺序
-    // 当创建时间相同时,根据操作类型决定依赖排序方向
+    
+    // 【强制校验】严禁同步核心/系统词书的插入操作 (Fail-Fast)
+    for (final log in result.first) {
+      if (log['tblName'] == 'dicts' && log['operate'] == 'INSERT') {
+        final record = jsonDecode(log['record'] as String);
+        final name = record['name'];
+        final ownerId = record['ownerId'];
+        
+        if (name == '生词本' || name == '已掌握' || ownerId == Global.sysUserId) {
+          throw Exception('数据安全违规: 禁止通过同步创建核心/系统词书！名称=[$name], 拥有者=[$ownerId]。请检查本地数据生成逻辑。');
+        }
+      }
+    }
+
     result.first.sort((a, b) {
       // 这里的 a, b 是 Map<String, dynamic>，tblName 还是本地格式
       int timeCompare = (a['createTime'] as DateTime).compareTo(b['createTime'] as DateTime);
@@ -799,6 +811,12 @@ Future<void> _ensureParentDictsLogs(List<Map<String, dynamic>> logsToBackend, St
     try {
       final dict = await db.dictsDao.findById(dictId);
       if (dict != null && dict.ownerId == userId) {
+        // 【强制约束】拦截核心词书：生词本和已掌握禁止由客户端通过同步方式“补全”
+        // 这两本词书必须由后端在账户创建时初始化
+        if (dict.name == '生词本' || dict.name == '已掌握' || dict.ownerId == Global.sysUserId) {
+          continue;
+        }
+
         logsToBackend.add(<String, dynamic>{
           'id': Util.uuid(),
           'userId': dict.ownerId,

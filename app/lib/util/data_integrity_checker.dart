@@ -301,22 +301,28 @@ class DataIntegrityChecker {
     }
   }
 
-  /// 检查用户是否拥有必要的词书（生词本 和 已掌握）
+  /// 检查用户是否拥有必要的词书（生词本 和 已掌握），并验证唯一性
   Future<void> _checkUserDicts(IntegrityCheckResult result, String userId) async {
     try {
       // 获取用户拥有的所有词典
       final userDicts = await (_db.dictsDao.select(_db.dicts)..where((d) => d.ownerId.equals(userId))).get();
 
-      // 检查是否有生词本
-      final hasRawWordDict = userDicts.any((dict) => dict.name == '生词本');
-      if (!hasRawWordDict) {
+      // 1. 检查生词本
+      final rawDicts = userDicts.where((d) => d.name == '生词本').toList();
+      if (rawDicts.isEmpty) {
         result.addIssue('用户词书缺失', '用户缺少词书：生词本', 'missing_user_dict');
+      } else if (rawDicts.length > 1) {
+        final ids = rawDicts.map((d) => d.id).join(', ');
+        result.addIssue('用户词书冗余', '用户拥有 ${rawDicts.length} 本"生词本"词书 (IDs: $ids)', 'missing_user_dict');
       }
 
-      // 检查是否有已掌握词书
-      final hasMasteredDict = userDicts.any((dict) => dict.name == '已掌握');
-      if (!hasMasteredDict) {
+      // 2. 检查已掌握词书
+      final masteredDicts = userDicts.where((d) => d.name == '已掌握').toList();
+      if (masteredDicts.isEmpty) {
         result.addIssue('用户词书缺失', '用户缺少词书：已掌握', 'missing_user_dict');
+      } else if (masteredDicts.length > 1) {
+        final ids = masteredDicts.map((d) => d.id).join(', ');
+        result.addIssue('用户词书冗余', '用户拥有 ${masteredDicts.length} 本"已掌握"词书 (IDs: $ids)', 'missing_user_dict');
       }
     } catch (e) {
       result.addError('检查用户词书时出错: $e');
