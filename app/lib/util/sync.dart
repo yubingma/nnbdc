@@ -26,6 +26,24 @@ class DictWordOrderInvalidWarningException implements Exception {
   String toString() => message;
 }
 
+/// 同步核心业务异常基类，这类异常通常需要在 UI 上直接弹出提示
+abstract class SyncCoreException implements Exception {
+  final String message;
+  SyncCoreException(this.message);
+  @override
+  String toString() => message;
+}
+
+/// 核心数据丢失异常
+class CoreDataMissingException extends SyncCoreException {
+  CoreDataMissingException(super.message);
+}
+
+/// 同步语义/数据安全违规异常
+class SyncDataSecurityException extends SyncCoreException {
+  SyncDataSecurityException(super.message);
+}
+
 // 当前同步日志ID，用于记录同步统计信息
 String? _currentSyncLogId;
 int _uploadCount = 0;
@@ -109,13 +127,13 @@ Future<void> _validateCoreData(String userId) async {
   // 校验“生词本” (findUserRawDict 内部已包含多记录校验)
   final rawDict = await db.dictsDao.findUserRawDict(userId);
   if (rawDict == null) {
-    throw Exception('核心数据丢失: 用户 [$userId] 缺少 "生词本" 词书！');
+    throw CoreDataMissingException('核心数据丢失: 用户 [$userId] 缺少 "生词本" 词书！');
   }
 
   // 校验“已掌握” (findUserMasteredDict 内部已包含多记录校验)
   final masteredDict = await db.dictsDao.findUserMasteredDict(userId);
   if (masteredDict == null) {
-    throw Exception('核心数据丢失: 用户 [$userId] 缺少 "已掌握" 词书！');
+    throw CoreDataMissingException('核心数据丢失: 用户 [$userId] 缺少 "已掌握" 词书！');
   }
   
   Global.logger.d('✓ [IntegrityCheck] 核心数据验证通过: userId=$userId');
@@ -213,7 +231,7 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
         final ownerId = record['ownerId'];
         
         if (name == '生词本' || name == '已掌握' || ownerId == Global.sysUserId) {
-          throw Exception('数据安全违规: 禁止通过同步创建核心/系统词书！名称=[$name], 拥有者=[$ownerId]。请检查本地数据生成逻辑。');
+          throw SyncDataSecurityException('数据安全违规: 禁止通过同步创建核心/系统词书！名称=[$name], 拥有者=[$ownerId]。请检查本地数据生成逻辑。');
         }
       }
     }

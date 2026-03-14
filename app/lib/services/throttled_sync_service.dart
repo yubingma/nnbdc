@@ -4,6 +4,8 @@ import 'package:nnbdc/config.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/network_util.dart';
+import 'package:get/get.dart';
+import 'package:flutter/material.dart';
 
 class ThrottledDbSyncService {
   static final ThrottledDbSyncService _instance = ThrottledDbSyncService._internal();
@@ -116,6 +118,11 @@ class ThrottledDbSyncService {
       Global.logger.e('❌ 数据库同步操作失败，耗时: ${duration.inMilliseconds}ms, 错误: $e');
       Global.logger.e('错误堆栈: $stackTrace');
 
+      // 核心异常：弹出对话框提示用户
+      if (e is dbsync.SyncCoreException) {
+        _showCoreDataErrorDialog(e);
+      }
+
       // 同步失败后的重试策略
       _handleSyncFailure(e);
 
@@ -179,5 +186,44 @@ class ThrottledDbSyncService {
         errorStr.contains('timeout') ||
         errorStr.contains('socket') ||
         errorStr.contains('http');
+  }
+
+  /// 显示核心数据丢失对话框
+  void _showCoreDataErrorDialog(dbsync.SyncCoreException error) {
+    // 确保在主线程执行 UI 操作
+    Future.microtask(() {
+      Get.dialog(
+        AlertDialog(
+          title: Row(
+            children: [
+              Icon(Icons.error_outline, color: Colors.red),
+              SizedBox(width: 8),
+              Text('核心数据异常', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(error.message),
+              SizedBox(height: 16),
+              if (error is dbsync.CoreDataMissingException)
+                Text('这种情况通常意味着本地核心词书丢失，可能会导致同步失败。请尝试使用"我的" -> "健康检查"并执行自动修复。', 
+                  style: TextStyle(fontSize: 13, color: Colors.grey[700]))
+              else
+                Text('同步过程中检测到严重的数据一致性或安全问题。如果此问题持续出现，请尝试清空数据重新登录。',
+                  style: TextStyle(fontSize: 13, color: Colors.grey[700])),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Get.back(),
+              child: const Text('确定'),
+            ),
+          ],
+        ),
+        barrierDismissible: false,
+      );
+    });
   }
 }
