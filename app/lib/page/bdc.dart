@@ -1151,6 +1151,14 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   void _onAnswerCorrect(FsrsRating rating) async {
     _isAnswerCorrect = true;
 
+    if (!_autoJumpAfterCorrect) {
+      Global.logger.d('BDC: 非极速模式，拼写正确，准备关闭沉浸式输入界面. _showHandwritingBoard=false, unfocusing');
+      _meaningFocusNode.unfocus();
+      setState(() {
+        _showHandwritingBoard = false; // 立即关闭且回到主界面
+      });
+    }
+
     // 计算 FSRS 预览结果
     final lw = _currentGetWordResult?.learningWord;
     if (lw != null) {
@@ -1194,7 +1202,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       if (_autoJumpAfterCorrect) {
         getNextWord(true, fsrsRating: rating);
       } else {
-        _showHandwritingBoard = false; // 关闭当前输入界面回到当前单词
         // 展示所有释义（通过将 asrMatchedMeaningItemParts 填满）
         if (_wordWrapper != null) {
           final meaningItems = _wordWrapper!.word.getMergedMeaningItems();
@@ -1296,6 +1303,14 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         if (_isAnswerCorrect) {
           // 仅重置 ASR（停止识别但保持引擎运行），消除硬件切换产生的杂音
           await asr.reset();
+          
+          if (!_autoJumpAfterCorrect) {
+            Global.logger.d('BDC [en2Ch]: 非极速模式，拼写正确，准备关闭沉浸式输入界面. _showHandwritingBoard=false, unfocusing');
+            _meaningFocusNode.unfocus();
+            setState(() {
+              _showHandwritingBoard = false; // 立即关闭当前输入界面回到当前单词
+            });
+          }
         }
 
         // 并发播放提示音，支持多个提示音同时播放，互不干扰
@@ -1362,7 +1377,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                 // 不重复播放当前单词发音（用户开头已听过），保持原始行为
                 await getNextWord(true, fsrsRating: rating);
               } else {
-                _showHandwritingBoard = false; // 关闭当前输入界面回到当前单词
                 // 不自动跳转：显示所有释义，等待用户手动操作
                 if (_wordWrapper != null) {
                   final meaningItems = _wordWrapper!.word.getMergedMeaningItems();
