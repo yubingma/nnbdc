@@ -18,6 +18,7 @@ import 'package:nnbdc/util/toast_util.dart';
 import 'package:provider/provider.dart';
 import 'package:nnbdc/services/throttled_sync_service.dart';
 import 'package:nnbdc/util/subscription_util.dart';
+import 'package:nnbdc/widget/dict_download_dialog.dart';
 
 import 'bdc.dart';
 import 'package:nnbdc/page/word_list/today_words.dart';
@@ -148,6 +149,39 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
                 _isSyncingFromCloud = false;
               });
             }
+          }
+        }
+
+        // 检查是否缺少词书资源并下载
+        if (!Global.isGuest && user != null) {
+          final db = MyDatabase.instance;
+          List<LearningDict> learningDicts = await db.learningDictsDao.getLearningDictsOfUser(user!.id!);
+          List<DictVo> dictsToDownload = [];
+          for (var ld in learningDicts) {
+            Dict? existing = await db.dictsDao.findById(ld.dictId);
+            if (existing == null) {
+              dictsToDownload.add(DictVo.c2(ld.dictId));
+            } else if (existing.ownerId == "15118" && !(await db.dictWordsDao.hasDictWords(ld.dictId))) {
+              dictsToDownload.add(DictVo.c2(ld.dictId));
+            }
+          }
+
+          if (dictsToDownload.isNotEmpty && mounted) {
+            Global.logger.i('发现缺少的词书资源，准备下载: ${dictsToDownload.map((e) => e.id).toList()}');
+            await showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (dialogContext) => DictDownloadDialog(
+                dicts: dictsToDownload,
+                onComplete: () {
+                  if (dialogContext.mounted) {
+                    Navigator.of(dialogContext).pop();
+                  }
+                },
+              ),
+            );
+            // 下载完成后重新准备数据
+            prepareResult = await StudyBo().prepareForStudy(forceSupplement);
           }
         }
 
