@@ -204,10 +204,13 @@ class WalkmanPageState extends State<WalkmanPage> {
   }
 
   playWordTick() async {
+    final int session = _playSessionId;
     if (isShowingSettingPanel && !playEvenIfSettingPanelIsShowing) {
       // 设置面板显示且不播放时，只更新计时器
       playWordTimer = Timer(const Duration(milliseconds: 100), () {
-        playWordTick();
+        if (session == _playSessionId) {
+          playWordTick();
+        }
       });
     } else if (waitedTime >= playInterval && currentWordPlayingStopped) {
       // 重置等待时间
@@ -216,20 +219,29 @@ class WalkmanPageState extends State<WalkmanPage> {
       // 开始播放
       await doPlayWord();
 
+      // 如果在此期间 Session 发生了变化，说明已经启动了新的播放循环，当前旧循环应退出
+      if (session != _playSessionId) {
+        return;
+      }
+
       // 设置下一个计时器
       playWordTimer = Timer(const Duration(milliseconds: 100), () {
-        if (waitedTime <= maxIntValue - 100) {
-          waitedTime += 100;
+        if (session == _playSessionId) {
+          if (waitedTime <= maxIntValue - 100) {
+            waitedTime += 100;
+          }
+          playWordTick();
         }
-        playWordTick();
       });
     } else {
       // 更新等待时间并继续计时
       playWordTimer = Timer(const Duration(milliseconds: 100), () {
-        if (waitedTime <= maxIntValue - 100) {
-          waitedTime += 100;
+        if (session == _playSessionId) {
+          if (waitedTime <= maxIntValue - 100) {
+            waitedTime += 100;
+          }
+          playWordTick();
         }
-        playWordTick();
       });
     }
   }

@@ -11,6 +11,7 @@ allprojects {
             // 添加额外的 Maven 仓库以提高依赖解析成功率
             maven { url 'https://repo1.maven.org/maven2/' }
             maven { url 'https://maven.google.com' }
+            maven { url 'https://repo.umeng.com/repository/sdk' }
         } else {
             // 本地/国内环境：优先使用国内镜像以提高下载速度
             maven { url 'https://maven.aliyun.com/repository/google' }
@@ -24,6 +25,7 @@ allprojects {
             // 添加额外的 Maven 仓库以提高依赖解析成功率
             maven { url 'https://repo1.maven.org/maven2/' }
             maven { url 'https://maven.google.com' }
+            maven { url 'https://repo.umeng.com/repository/sdk' }
         }
     }
 }
