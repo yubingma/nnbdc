@@ -12,7 +12,7 @@ public class UserVo extends UuidVo {
     private String password;
     private Boolean hasDakaToday;
     private List<StudyGroupVo> studyGroups;
-    private List<UserGameVo> userGames;
+    private List<UserGameVo> userGames = new java.util.ArrayList<>();
     private Integer gameScore;
     /**
      * 打卡积分

@@ -139,11 +139,13 @@ public class GameOverProcessor {
             UserGameId ugId = new UserGameId(winer.getId(), "russia");
             UserGame ug = userGameBo.findById(ugId);
             if (ug == null) {
+                log.info(String.format("📝 [SCORE_DB] 为用户[%s]创建新游戏记录", winer.getUserName()));
                 ug = new UserGame(ugId, winer, 1, 0, adjustment);
                 userGameBo.createEntity(ug);
             } else {
                 ug.setWinCount(ug.getWinCount() + 1);
                 ug.setScore((ug.getScore() == null ? 0 : ug.getScore()) + adjustment);
+                log.info(String.format("📝 [SCORE_DB] 更新用户[%s]游戏记录: Win=%d", winer.getUserName(), ug.getWinCount()));
                 userGameBo.updateEntity(ug);
             }
 

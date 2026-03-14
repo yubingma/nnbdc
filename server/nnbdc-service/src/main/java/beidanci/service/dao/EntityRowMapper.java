@@ -32,7 +32,7 @@ public class EntityRowMapper<E extends Po> implements RowMapper<E> {
     private static final Logger logger = LoggerFactory.getLogger(EntityRowMapper.class);
     
     private final Class<E> entityClass;
-    private final Map<String, Field> columnToFieldMap;
+    private final Map<String, java.util.List<Field>> columnToFieldMap;
     
     public EntityRowMapper(Class<E> entityClass) {
         this.entityClass = entityClass;
@@ -42,8 +42,8 @@ public class EntityRowMapper<E extends Po> implements RowMapper<E> {
     /**
      * 构建列名到字段的映射
      */
-    private Map<String, Field> buildColumnToFieldMap(Class<E> entityClass) {
-        Map<String, Field> map = new HashMap<>();
+    private Map<String, java.util.List<Field>> buildColumnToFieldMap(Class<E> entityClass) {
+        Map<String, java.util.List<Field>> map = new HashMap<>();
         
         // 获取所有字段（包括父类）
         List<Field> fields = BeanUtils.getFields(entityClass, true);
@@ -76,8 +76,8 @@ public class EntityRowMapper<E extends Po> implements RowMapper<E> {
             // 优先使用 @Column 注解指定的列名，否则使用默认规则（字段名 + "Id"），并统一转为 snake_case
             if (Po.class.isAssignableFrom(field.getType()) && !field.getName().endsWith("Id")) {
                 // 关联对象字段：映射外键列名到字段
-                String foreignKeyColumnName = EntityTableInfo.getForeignKeyColumnName(field);
-                map.put(foreignKeyColumnName.toLowerCase(), field);
+                String foreignKeyColumnName = EntityTableInfo.getForeignKeyColumnName(field).toLowerCase();
+                map.computeIfAbsent(foreignKeyColumnName, k -> new java.util.ArrayList<>()).add(field);
                 continue;
             }
             
@@ -101,9 +101,9 @@ public class EntityRowMapper<E extends Po> implements RowMapper<E> {
                             continue;
                         }
                         
-                        String columnName = EntityTableInfo.getColumnName(keyField);
+                        String columnName = EntityTableInfo.getColumnName(keyField).toLowerCase();
                         // 将复合主键的组件列映射到复合主键字段
-                        map.put(columnName.toLowerCase(), field);
+                        map.computeIfAbsent(columnName, k -> new java.util.ArrayList<>()).add(field);
                     }
                 } catch (Exception e) {
                     logger.error("构建复合主键字段映射时出错: field={}", field.getName(), e);
@@ -111,8 +111,8 @@ public class EntityRowMapper<E extends Po> implements RowMapper<E> {
                 continue;
             }
             
-            String columnName = EntityTableInfo.getColumnName(field);
-            map.put(columnName.toLowerCase(), field);
+            String columnName = EntityTableInfo.getColumnName(field).toLowerCase();
+            map.computeIfAbsent(columnName, k -> new java.util.ArrayList<>()).add(field);
         }
         
         return map;
@@ -161,16 +161,17 @@ public class EntityRowMapper<E extends Po> implements RowMapper<E> {
             
             for (int i = 1; i <= columnCount; i++) {
                 String columnName = metaData.getColumnLabel(i).toLowerCase();
-                Field field = columnToFieldMap.get(columnName);
+                java.util.List<Field> fieldsForColumn = columnToFieldMap.get(columnName);
                 
-                if (field != null) {
+                if (fieldsForColumn != null && !fieldsForColumn.isEmpty()) {
                     Object value = rs.getObject(i);
-                    
-                    // 如果这个列属于复合主键的组件，收集值而不是直接设置
-                    if (compositeKeyField != null && field.equals(compositeKeyField)) {
-                        compositeKeyValues.put(columnName, value);
-                    } else if (value != null) {
-                        setFieldValue(entity, field, value);
+                    for (Field field : fieldsForColumn) {
+                        // 如果这个列属于复合主键的组件，收集值而不是直接设置
+                        if (compositeKeyField != null && field.equals(compositeKeyField)) {
+                            compositeKeyValues.put(columnName, value);
+                        } else if (value != null) {
+                            setFieldValue(entity, field, value);
+                        }
                     }
                 }
             }
