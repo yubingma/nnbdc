@@ -3947,7 +3947,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   Widget _buildFsrsResultPanel() {
     if (_fsrsItem == null) return const SizedBox();
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    final textColor = isDarkMode ? Colors.white60 : Colors.black54;
+    final textColor = isDarkMode ? Colors.white38 : Colors.black38;
 
     // 获取本次操作的评估标签和颜色
     String ratingLabel = _lastFsrsRating?.label ?? '未知';
@@ -3986,9 +3986,21 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
           ),
           Icon(Icons.event_note_outlined, size: 12, color: textColor),
           const SizedBox(width: 4),
-          Text(
-            '下次复习: ${_fsrsItem!.scheduledDays}天后',
-            style: TextStyle(fontSize: 11, color: textColor),
+          Text.rich(
+            TextSpan(
+              children: [
+                TextSpan(text: '下次复习: ', style: TextStyle(fontSize: 11, color: textColor)),
+                TextSpan(
+                  text: '${_fsrsItem!.scheduledDays}',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: isDarkMode ? Colors.white70 : Colors.black54,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                TextSpan(text: '天后', style: TextStyle(fontSize: 11, color: textColor)),
+              ],
+            ),
           ),
           if (_wordWrapper?.word.id != null)
             FutureBuilder(
@@ -4010,11 +4022,11 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.history_rounded, size: 14, color: textColor.withValues(alpha: 0.5)),
+                          Icon(Icons.history_rounded, size: 14, color: textColor.withValues(alpha: 0.75)),
                           const SizedBox(width: 2),
                           Text(
                             '$historyCount',
-                            style: TextStyle(fontSize: 11, color: textColor.withValues(alpha: 0.5), height: 1.1),
+                            style: TextStyle(fontSize: 11, color: textColor.withValues(alpha: 0.8), height: 1.1),
                           ),
                         ],
                       ),
@@ -4101,9 +4113,21 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
-                                    '下次复习: ${log.scheduledDays}天后',
-                                    style: TextStyle(color: textColor, fontSize: 13, fontWeight: FontWeight.w500),
+                                  Text.rich(
+                                    TextSpan(
+                                      children: [
+                                        TextSpan(text: '下次复习: ', style: TextStyle(color: textColor, fontSize: 13, fontWeight: FontWeight.w500)),
+                                        TextSpan(
+                                          text: '${log.scheduledDays}',
+                                          style: TextStyle(
+                                            color: isDarkMode ? Colors.white70 : Colors.black54,
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        TextSpan(text: '天后', style: TextStyle(color: textColor, fontSize: 13, fontWeight: FontWeight.w500)),
+                                      ],
+                                    ),
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
