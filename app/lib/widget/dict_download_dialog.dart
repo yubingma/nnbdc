@@ -217,7 +217,6 @@ class _DictDownloadDialogState extends State<DictDownloadDialog> {
           child: CircularProgressIndicator(strokeWidth: 2),
         );
       case DownloadStatus.pending:
-      default:
         return const Icon(Icons.hourglass_empty, color: Colors.grey, size: 18);
     }
   }

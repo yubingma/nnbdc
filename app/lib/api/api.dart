@@ -1,8 +1,10 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:nnbdc/global.dart';
 import 'package:cookie_jar/cookie_jar.dart';
 import 'package:dio/dio.dart';
+import 'package:dio/io.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:nnbdc/api/dto.dart';
@@ -56,7 +58,17 @@ class Api {
       dio = Dio(BaseOptions(
           connectTimeout: Duration(milliseconds: 5000),
           sendTimeout: Duration(milliseconds: 300000), // 5分钟
-          receiveTimeout: Duration(milliseconds: 300000))); // 由 Dio/底层库处理压缩
+          receiveTimeout: Duration(milliseconds: 300000))); // 由 Dio/底层库 handle 压缩
+
+      // 在非 Web 平台上绕过 SSL 证书校验，解决生产环境 HandshakeException
+      dio.httpClientAdapter = IOHttpClientAdapter(
+        createHttpClient: () {
+          final client = HttpClient();
+          client.badCertificateCallback = (X509Certificate cert, String host, int port) => true;
+          return client;
+        },
+      );
+
       var cookieJar = CookieJar();
       dio.interceptors.add(CookieManager(cookieJar));
     }
