@@ -166,6 +166,15 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
             }
           }
 
+          // 检查并下载通用词典 (ID 为 "0")
+          final commonDictId = Global.commonDictId;
+          Dict? commonDictExisting = await db.dictsDao.findById(commonDictId);
+          if (commonDictExisting == null) {
+            dictsToDownload.add(DictVo.c2(commonDictId));
+          } else if (!(await db.dictWordsDao.hasDictWords(commonDictId))) {
+            dictsToDownload.add(DictVo.c2(commonDictId));
+          }
+
           if (dictsToDownload.isNotEmpty && mounted) {
             Global.logger.i('发现缺少的词书资源，准备下载: ${dictsToDownload.map((e) => e.id).toList()}');
             await showDialog(
