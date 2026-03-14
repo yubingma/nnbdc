@@ -340,17 +340,18 @@ public class SystemHealthCheckBo {
             
             // 检查空词书
             if (dictWords.isEmpty()) {
-                // 系统用户的生词本（这是一个特殊的系统词书）允许为空
-                boolean isSystemUserRawDict = Constants.SYS_USER_SYS_ID.equals(ownerId) && "生词本".equals(dictName);
+                // 系统用户的生词本和已掌握词书（核心词书）允许为空
+                boolean isSystemUserCoreDict = Constants.SYS_USER_SYS_ID.equals(ownerId) && 
+                        ("生词本".equals(dictName) || "已掌握".equals(dictName));
                 
-                if (Constants.SYS_USER_SYS_ID.equals(ownerId) && !isSystemUserRawDict) {
+                if (Constants.SYS_USER_SYS_ID.equals(ownerId) && !isSystemUserCoreDict) {
                     // 其他系统词书如果为空，是异常情况
                     issues.add(new SystemHealthIssue(
                         "系统词书为空",
                         String.format("系统词书 %s 为空，需要删除", dictName),
                         "empty_system_dict"
                     ));
-                } else if (!isSystemUserRawDict) {
+                } else if (!isSystemUserCoreDict) {
                     // 如果词书为空但dict表记录的wordCount不为0，这也是个问题
                     if (expectedWordCount != null && expectedWordCount != 0) {
                         issues.add(new SystemHealthIssue(
@@ -360,7 +361,7 @@ public class SystemHealthCheckBo {
                         ));
                     }
                 }
-                // 系统用户的生词本允许为空，直接返回，不报告问题
+                // 系统用户的核心词书允许为空，直接返回，不报告问题
                 return;
             }
             
@@ -439,18 +440,18 @@ public class SystemHealthCheckBo {
             
             // 检查空词书
             if (dictWords.isEmpty()) {
-                // 系统用户的生词本（这是一个特殊的系统词书）允许为空
-                boolean isSystemUserRawDict = Constants.SYS_USER_SYS_ID.equals(dict.getOwner().getId()) 
-                        && "生词本".equals(dict.getName());
+                // 系统用户的生词本和已掌握词书（核心系统词书）允许为空
+                boolean isSystemUserCoreDict = Constants.SYS_USER_SYS_ID.equals(dict.getOwner().getId()) 
+                        && ("生词本".equals(dict.getName()) || "已掌握".equals(dict.getName()));
                 
-                if (Constants.SYS_USER_SYS_ID.equals(dict.getOwner().getId()) && !isSystemUserRawDict) {
+                if (Constants.SYS_USER_SYS_ID.equals(dict.getOwner().getId()) && !isSystemUserCoreDict) {
                     // 其他系统词书如果为空，是异常情况
                     issues.add(new SystemHealthIssue(
                         "系统词书为空",
                         String.format("系统词书 %s 为空，需要删除", dict.getName()),
                         "empty_system_dict"
                     ));
-                } else if (!isSystemUserRawDict) {
+                } else if (!isSystemUserCoreDict) {
                     // 如果词书为空但dict表记录的wordCount不为0，这也是个问题
                     if (dict.getWordCount() != 0) {
                         issues.add(new SystemHealthIssue(
@@ -460,7 +461,7 @@ public class SystemHealthCheckBo {
                         ));
                     }
                 }
-                // 系统用户的生词本允许为空，直接返回，不报告问题
+                // 系统用户的核心系统词书允许为空，直接返回，不报告问题
                 return;
             }
             
@@ -555,10 +556,14 @@ public class SystemHealthCheckBo {
                 // 检查是否为空词书
                 Long actualCount = dictBo.getDictWordCount(dictId);
                 if (actualCount == 0) {
-                    // 使用安全删除方法删除空的系统词书
-                    dictBo.deleteDictSafely(dictId);
-                    fixed.add("删除空的系统词书: " + dict.getName());
-                    fixedCount++;
+                    // 系统核心词书（生词本、已掌握）即使为空也不应删除
+                    boolean isSystemUserCoreDict = "生词本".equals(dict.getName()) || "已掌握".equals(dict.getName());
+                    if (!isSystemUserCoreDict) {
+                        // 使用安全删除方法删除空的系统词书
+                        dictBo.deleteDictSafely(dictId);
+                        fixed.add("删除空的系统词书: " + dict.getName());
+                        fixedCount++;
+                    }
                 } else {
                     // 修复序号
                     dictBo.fixDictWordSequence(dictId);
