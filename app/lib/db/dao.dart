@@ -151,11 +151,11 @@ class LocalParamsDao extends DatabaseAccessor<MyDatabase> with _$LocalParamsDaoM
   Future<bool> getAutoJumpAfterCorrect() async {
     try {
       var param = await (select(localParams)..where((e) => e.name.equals('autoJumpAfterCorrect'))).getSingleOrNull();
-      // 默认为开启
-      return param?.value != 'false';
+      // 默认为关闭
+      return param?.value == 'true';
     } catch (e, stackTrace) {
       ErrorHandler.handleDatabaseError(e, stackTrace, db: this, operation: 'getAutoJumpAfterCorrect', showToast: false);
-      return true;
+      return false;
     }
   }
 
@@ -171,6 +171,34 @@ class LocalParamsDao extends DatabaseAccessor<MyDatabase> with _$LocalParamsDaoM
       }
     } catch (e, stackTrace) {
       ErrorHandler.handleDatabaseError(e, stackTrace, db: this, operation: 'setAutoJumpAfterCorrect', showToast: false);
+      rethrow;
+    }
+  }
+
+  /// 获取图钉模式开关状态（是否保持在沉浸式拼写界面）
+  Future<bool> getPinImmersiveMode() async {
+    try {
+      var param = await (select(localParams)..where((e) => e.name.equals('pinImmersiveMode'))).getSingleOrNull();
+      // 默认为关闭
+      return param?.value == 'true';
+    } catch (e, stackTrace) {
+      ErrorHandler.handleDatabaseError(e, stackTrace, db: this, operation: 'getPinImmersiveMode', showToast: false);
+      return false;
+    }
+  }
+
+  /// 设置图钉模式开关状态
+  Future<void> setPinImmersiveMode(bool value) async {
+    try {
+      final existing = await (select(localParams)..where((e) => e.name.equals('pinImmersiveMode'))).getSingleOrNull();
+      final strValue = value ? 'true' : 'false';
+      if (existing == null) {
+        await into(localParams).insert(LocalParamsCompanion.insert(name: 'pinImmersiveMode', value: strValue));
+      } else {
+        await (update(localParams)..where((e) => e.name.equals('pinImmersiveMode'))).write(LocalParamsCompanion(value: Value(strValue)));
+      }
+    } catch (e, stackTrace) {
+      ErrorHandler.handleDatabaseError(e, stackTrace, db: this, operation: 'setPinImmersiveMode', showToast: false);
       rethrow;
     }
   }

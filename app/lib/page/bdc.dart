@@ -648,7 +648,10 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   int? _currentScore;
 
   /// 答对后是否自动跳转到下一个单词 (极速模式)
-  bool _autoJumpAfterCorrect = true;
+  bool _autoJumpAfterCorrect = false;
+
+  /// 是否保持在拼写输入界面 (图钉模式)
+  bool _pinImmersiveMode = false;
 
   /// 当前单词的 FSRS 预览结果
   FSRSItem? _fsrsItem;
@@ -1191,6 +1194,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       if (_autoJumpAfterCorrect) {
         getNextWord(true, fsrsRating: rating);
       } else {
+        _showHandwritingBoard = false; // 关闭当前输入界面回到当前单词
         // 展示所有释义（通过将 asrMatchedMeaningItemParts 填满）
         if (_wordWrapper != null) {
           final meaningItems = _wordWrapper!.word.getMergedMeaningItems();
@@ -1358,6 +1362,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                 // 不重复播放当前单词发音（用户开头已听过），保持原始行为
                 await getNextWord(true, fsrsRating: rating);
               } else {
+                _showHandwritingBoard = false; // 关闭当前输入界面回到当前单词
                 // 不自动跳转：显示所有释义，等待用户手动操作
                 if (_wordWrapper != null) {
                   final meaningItems = _wordWrapper!.word.getMergedMeaningItems();
@@ -1437,8 +1442,15 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
   Future<void> loadData() async {
     try {
-      _isDarkMode = await MyDatabase.instance.localParamsDao.getIsDarkMode();
-      _autoJumpAfterCorrect = await MyDatabase.instance.localParamsDao.getAutoJumpAfterCorrect();
+      final isDarkMode = await MyDatabase.instance.localParamsDao.getIsDarkMode();
+      final autoJump = await MyDatabase.instance.localParamsDao.getAutoJumpAfterCorrect();
+      final pin = await MyDatabase.instance.localParamsDao.getPinImmersiveMode();
+      
+      setState(() {
+        _isDarkMode = isDarkMode;
+        _autoJumpAfterCorrect = autoJump;
+        _pinImmersiveMode = pin;
+      });
 
       // 获取用户的学习步骤配置（已激活的学习步骤)
       var stepsResult = await StudyBo().getActiveUserStudySteps();
@@ -1481,6 +1493,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       // 停止当前 ASR 任务并确保状态同步（Hot Stop 会在 Native 层处理，此处需保证状态为 Stopped）
       await asr.stopAsr();
       _meaningFocusNode.unfocus();
+      if (!_pinImmersiveMode) {
+        _showHandwritingBoard = false;
+      }
       _meaningController.text = '';
       _handlingChinese = '';
       _currentAsrCandidates = [];
@@ -2447,6 +2462,34 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                       ),
                     ],
                   ),
+                ),
+                IconButton(
+                  icon: Icon(
+                    _pinImmersiveMode ? Icons.push_pin : Icons.push_pin_outlined,
+                    color: _pinImmersiveMode ? AppTheme.primaryColor : (isDarkMode ? Colors.white38 : Colors.black38),
+                    size: 20,
+                  ),
+                  tooltip: _pinImmersiveMode ? '已开启固定模式' : '已关闭固定模式',
+                  onPressed: () async {
+                    setState(() {
+                      _pinImmersiveMode = !_pinImmersiveMode;
+                    });
+                    await MyDatabase.instance.localParamsDao.setPinImmersiveMode(_pinImmersiveMode);
+                  },
+                ),
+                IconButton(
+                  icon: Icon(
+                    _autoJumpAfterCorrect ? Icons.bolt : Icons.bolt_outlined,
+                    color: _autoJumpAfterCorrect ? Colors.amber : (isDarkMode ? Colors.white38 : Colors.black38),
+                    size: 20,
+                  ),
+                  tooltip: _autoJumpAfterCorrect ? '极速模式：答对自动下个词' : '极速模式：答对停在当前词',
+                  onPressed: () async {
+                    setState(() {
+                      _autoJumpAfterCorrect = !_autoJumpAfterCorrect;
+                    });
+                    await MyDatabase.instance.localParamsDao.setAutoJumpAfterCorrect(_autoJumpAfterCorrect);
+                  },
                 ),
                 IconButton(
                   icon: const Icon(Icons.close),
