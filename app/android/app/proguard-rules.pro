@@ -32,3 +32,13 @@
 -dontwarn org.openjsse.javax.net.ssl.SSLParameters
 -dontwarn org.openjsse.javax.net.ssl.SSLSocket
 -dontwarn org.openjsse.net.ssl.OpenJSSE
+
+# 友盟 SDK 混淆配置
+-keep class com.umeng.** {*;}
+-keep class com.uc.** {*;}
+-keep class com.efs.** {*;}
+-keep class com.ut.** {*;}
+-keep class com.alibaba.** {*;}
+-dontwarn com.umeng.**
+-dontwarn com.efs.**
+-dontwarn com.ut.**

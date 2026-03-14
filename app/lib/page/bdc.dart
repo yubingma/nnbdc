@@ -1150,6 +1150,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
   void _onAnswerCorrect(FsrsRating rating) async {
     _isAnswerCorrect = true;
+    _canLeaveCurrWord = true;
 
     if (!_autoJumpAfterCorrect) {
       Global.logger.d('BDC: 非极速模式，拼写正确，准备关闭沉浸式输入界面. _showHandwritingBoard=false, unfocusing');

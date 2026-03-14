@@ -267,13 +267,13 @@ extension FsrsRatingExt on FsrsRating {
   String get label {
     switch (this) {
       case FsrsRating.again:
-        return "重来";
+        return "忘记";
       case FsrsRating.hard:
-        return "困难";
+        return "模糊";
       case FsrsRating.good:
-        return "一般";
+        return "正确";
       case FsrsRating.easy:
-        return "简单";
+        return "轻松";
     }
   }
 

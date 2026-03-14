@@ -146,4 +146,7 @@ dependencies {
 
     // Google ML Kit Text Recognition
     implementation 'com.google.mlkit:text-recognition:16.0.0'
+
+    // 友盟安全组件 (ASMS) - 解决 "SDK 初始化失败，请检查是否集成 umeng-asms-1.2.X.aar库" 错误
+    implementation 'com.umeng.umsdk:asms:1.8.0'
 }
