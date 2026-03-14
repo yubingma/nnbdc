@@ -176,7 +176,7 @@ class SoundUtil {
         // 播放完成后增加一小段静音缓冲时间，避免紧接着的音频切换导致的问题
         await Future.delayed(const Duration(milliseconds: 200));
       } finally {
-        await stateSubscription?.cancel();
+        await stateSubscription.cancel();
       }
     } on Exception catch (e, stackTrace) {
       ErrorHandler.handleAudioError(e, stackTrace, audioType: 'url:$soundUrl');

@@ -66,11 +66,9 @@ class BdcPageArgs {
   }
 
   factory BdcPageArgs.fromJson(String value) {
-    return BdcPageArgs.fromMap(json.decode(value)); 
+    return BdcPageArgs.fromMap(json.decode(value));
   }
 }
-
-
 
 class WordImagesWidget extends StatefulWidget {
   final List<WordImageVo> images;
@@ -716,7 +714,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     return true;
   }
 
-
   /// 动态生成tabs列表
   List<Tab> get _dynamicTabs {
     List<Tab> tabs = [];
@@ -1304,7 +1301,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         if (_isAnswerCorrect) {
           // 仅重置 ASR（停止识别但保持引擎运行），消除硬件切换产生的杂音
           await asr.reset();
-          
+
           if (!_autoJumpAfterCorrect) {
             Global.logger.d('BDC [en2Ch]: 非极速模式，拼写正确，准备关闭沉浸式输入界面. _showHandwritingBoard=false, unfocusing');
             _meaningFocusNode.unfocus();
@@ -1460,7 +1457,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       final isDarkMode = await MyDatabase.instance.localParamsDao.getIsDarkMode();
       final autoJump = await MyDatabase.instance.localParamsDao.getAutoJumpAfterCorrect();
       final pin = await MyDatabase.instance.localParamsDao.getPinImmersiveMode();
-      
+
       setState(() {
         _isDarkMode = isDarkMode;
         _autoJumpAfterCorrect = autoJump;
@@ -2823,7 +2820,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                                 final boundaryStep = boundaryWordIndex * modeCount;
                                 final left = (boundaryStep / maxValue) * width;
                                 // 只有当计算出的位置在进度条范围内时才显示
-                                if (left <= 0 || left >= width) return const SizedBox.shrink();
+                                if (left <= 0 || left >= width) {
+                                  return const SizedBox.shrink();
+                                }
                                 return Positioned(
                                   left: left,
                                   top: 0,
@@ -2930,8 +2929,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (_isAnswerCorrect && !_autoJumpAfterCorrect)
-            _buildFsrsResultPanel(),
+          if (_isAnswerCorrect && !_autoJumpAfterCorrect) _buildFsrsResultPanel(),
           Container(
             // 底部按钮区背景色 - 紫色调
             decoration: BoxDecoration(
@@ -2939,7 +2937,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
               border: _showBorders
                   ? Border.all(
                       color: context.watch<DarkMode>().isDarkMode
-                          ? const Color(0xFF9C27B0) // 深色模式：紫色边框 
+                          ? const Color(0xFF9C27B0) // 深色模式：紫色边框
                           : const Color(0xFF7B1FA2), // 浅色模式：深紫色边框
                       width: 2,
                     )
@@ -2997,9 +2995,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   }
 
   SizedBox spellExerciseTextField(String wordSpell) {
-    TextStyle textStyle = const TextStyle(
-        fontSize: 16,
-        fontWeight: FontWeight.bold);
+    TextStyle textStyle = const TextStyle(fontSize: 16, fontWeight: FontWeight.bold);
     double width = Util.getTextWidth(wordSpell, textStyle);
     return SizedBox(
       width: width * 1.3,
@@ -3829,12 +3825,12 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
               const SizedBox(width: 8),
 
-              // 功能按钮区 
+              // 功能按钮区
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   _buildPanelButton(
-                    icon: Icons.emoji_objects_rounded, 
+                    icon: Icons.emoji_objects_rounded,
                     label: '提示',
                     onTap: () => giveALittleHint(_wordWrapper!),
                     onLongPress: () => giveFullHint(_wordWrapper!),
@@ -3951,12 +3947,12 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   Widget _buildFsrsResultPanel() {
     if (_fsrsItem == null) return const SizedBox();
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    final textColor = isDarkMode ? Colors.white38 : Colors.black26;
+    final textColor = isDarkMode ? Colors.white60 : Colors.black54;
 
     // 获取本次操作的评估标签和颜色
-    String ratingLabel = _lastFsrsRating?.label ?? '未知'; 
+    String ratingLabel = _lastFsrsRating?.label ?? '未知';
     Color ratingColor;
-    
+
     switch (_lastFsrsRating) {
       case FsrsRating.again:
         ratingColor = isDarkMode ? Colors.redAccent : const Color(0xFFD32F2F); // 深红色
@@ -3967,7 +3963,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       case FsrsRating.easy:
         ratingColor = isDarkMode ? Colors.greenAccent : const Color(0xFF2E7D32); // 深绿色
         break;
-      case FsrsRating.good: 
+      case FsrsRating.good:
       default:
         ratingColor = isDarkMode ? AppTheme.primaryColor : AppTheme.primaryColor;
         break;
@@ -3978,10 +3974,10 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.check_circle_outline, size: 12, color: ratingColor), 
+          Icon(Icons.check_circle_outline, size: 12, color: ratingColor),
           const SizedBox(width: 4),
           Text(
-            '本次评分: $ratingLabel',
+            '今日评分: $ratingLabel',
             style: TextStyle(fontSize: 11, color: ratingColor),
           ),
           Padding(
@@ -3994,17 +3990,43 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
             '下次复习: ${_fsrsItem!.scheduledDays}天后',
             style: TextStyle(fontSize: 11, color: textColor),
           ),
-          const SizedBox(width: 4),
-          InkWell(
-            onTap: _showLearningHistoryDialog,
-            child: Icon(Icons.history_rounded, size: 14, color: textColor.withValues(alpha: 0.5)),
-          ),
+          if (_wordWrapper?.word.id != null)
+            FutureBuilder(
+              future: MyDatabase.instance.learningLogsDao.getHistory(Global.getLoggedInUser()!.id, _wordWrapper!.word.id!),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const SizedBox();
+                }
+                final historyCount = (snapshot.data as List?)?.length ?? 0;
+                if (historyCount == 0) {
+                  return const SizedBox();
+                }
+                return Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SizedBox(width: 4),
+                    InkWell(
+                      onTap: _showLearningHistoryDialog,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.history_rounded, size: 14, color: textColor.withValues(alpha: 0.5)),
+                          const SizedBox(width: 2),
+                          Text(
+                            '$historyCount',
+                            style: TextStyle(fontSize: 11, color: textColor.withValues(alpha: 0.5), height: 1.1),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
         ],
       ),
     );
   }
-
-
 
   void _showLearningHistoryDialog() async {
     final wordId = _wordWrapper?.word.id;
@@ -4109,8 +4131,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       },
     );
   }
-
-
 
   Widget _buildPanelButton({
     required IconData icon,
@@ -4565,7 +4585,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
     // 分批次并按照学习序号排序
     words.sort((a, b) {
-      if (a.batchId != b.batchId) return (a.batchId ?? 0).compareTo(b.batchId ?? 0);
+      if (a.batchId != b.batchId) {
+        return (a.batchId ?? 0).compareTo(b.batchId ?? 0);
+      }
       return a.learningOrder.compareTo(b.learningOrder);
     });
 
