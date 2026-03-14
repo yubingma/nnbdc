@@ -87,7 +87,7 @@ class ErrorHandler {
     _recordExceptionToDb(error, stackTrace, context: logPrefix);
 
     if (showToast) {
-      final displayMessage = userMessage ?? '操作失败，请稍后重试';
+      final displayMessage = userMessage != null ? '$userMessage ($error)' : '操作失败: $error';
       ToastUtil.error(displayMessage);
     }
   }
@@ -135,7 +135,7 @@ class ErrorHandler {
 
     // 5. 用户提示
     if (showToast) {
-      final userMessage = '数据操作失败，请稍后重试';
+      final userMessage = '数据操作失败: $error';
       ToastUtil.error(userMessage);
     }
   }

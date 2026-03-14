@@ -561,7 +561,7 @@ class _MePageState extends State<MePage> {
     } catch (e) {
       Global.logger.e("下载用户词书失败: $e");
       if (mounted) {
-        ToastUtil.error("部分词书下载失败，请重试");
+        ToastUtil.error("部分词书下载失败: $e");
       }
     }
   }

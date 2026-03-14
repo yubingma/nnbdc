@@ -232,7 +232,7 @@ class CustomInterceptors extends Interceptor {
         err.type == DioExceptionType.sendTimeout) {
       // 超时错误处理
       if (err.requestOptions.path.contains('getSysDictResById.do') || err.requestOptions.path.contains('getUserDictResById.do')) {
-        ToastUtil.error('词典数据下载超时，请检查网络连接或稍后重试');
+        ToastUtil.error('词典数据下载超时: ${err.message}');
         Global.logger.e('❌ 词典资源接口超时: ${err.message}');
         Global.logger.e('❌ 超时类型: ${err.type}');
         Global.logger.e('❌ 请求路径: ${err.requestOptions.path}');
@@ -241,7 +241,7 @@ class CustomInterceptors extends Interceptor {
         Global.logger.e('   - sendTimeout: ${err.requestOptions.sendTimeout?.inSeconds}秒');
         Global.logger.e('   - receiveTimeout: ${err.requestOptions.receiveTimeout?.inSeconds}秒');
       } else {
-        ToastUtil.error('请求超时，请检查网络连接');
+        ToastUtil.error('请求超时: ${err.message}');
       }
     } else {
       // 非超时/未授权的其他网络错误（如5xx），避免在拦截器里直接弹Toast，交由各调用方统一错误处理

@@ -93,7 +93,7 @@ class UserBo {
       return result;
     } catch (e, stackTrace) {
       ErrorHandler.handleNetworkError(e, stackTrace, api: 'checkUser');
-      final result = Result<UserVo>("ERROR", "登录失败，请稍后重试", false);
+      final result = Result<UserVo>("ERROR", "登录失败: $e", false);
       result.data = null;
       return result;
     }
@@ -149,7 +149,7 @@ class UserBo {
       return result;
     } catch (e, stackTrace) {
       ErrorHandler.handleError(e, stackTrace, logPrefix: 'getLoggedInUser', showToast: false);
-      final result = Result<UserVo>("ERROR", "获取用户信息失败，请稍后重试", false);
+      final result = Result<UserVo>("ERROR", "获取用户信息失败: $e", false);
       result.data = null;
       return result;
     }

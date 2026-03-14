@@ -57,7 +57,7 @@ class StudyBo {
       return result;
     } catch (e, stackTrace) {
       ErrorHandler.handleError(e, stackTrace, logPrefix: '获取学习步骤失败', showToast: false);
-      final result = Result<List<UserStudyStepVo>>("ERROR", "获取学习步骤失败，请稍后重试", false);
+      final result = Result<List<UserStudyStepVo>>("ERROR", "获取学习步骤失败: $e", false);
       result.data = null;
       return result;
     }
@@ -71,7 +71,7 @@ class StudyBo {
       return result;
     } catch (e, stackTrace) {
       ErrorHandler.handleError(e, stackTrace, logPrefix: '获取激活的学习步骤失败', showToast: false);
-      final result = Result<List<UserStudyStepVo>>("ERROR", "获取激活的学习步骤失败，请稍后重试", false);
+      final result = Result<List<UserStudyStepVo>>("ERROR", "获取激活的学习步骤失败: $e", false);
       result.data = null;
       return result;
     }
@@ -88,7 +88,7 @@ class StudyBo {
       return Result("SUCCESS", "保存成功", true);
     } catch (e, stackTrace) {
       ErrorHandler.handleError(e, stackTrace, logPrefix: '保存学习步骤失败', showToast: false);
-      return Result("ERROR", "保存学习步骤失败，请稍后重试", false);
+      return Result("ERROR", "保存学习步骤失败: $e", false);
     }
   }
 
@@ -440,7 +440,7 @@ class StudyBo {
       }
     } catch (e, stackTrace) {
       Global.logger.e('完成批次列表学习失败', error: e, stackTrace: stackTrace);
-      return Result("ERROR", "完成列表学习失败", false);
+      return Result("ERROR", "完成列表学习失败: $e", false);
     }
   }
 
