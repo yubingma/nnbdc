@@ -503,41 +503,49 @@ class _EnglishAsrInputWidgetState extends State<EnglishAsrInputWidget> with Sing
             ),
           ),
           const SizedBox(height: 2),
-          Text(
-            widget.asrState == AsrState.started
-                ? "正在倾听..."
-                : (widget.asrState == AsrState.initialized || widget.asrState == AsrState.stopped)
-                    ? "准备就绪"
-                    : "正在处理中...",
-            style: TextStyle(
-              fontSize: 10,
-              color: isDarkMode ? Colors.white38 : Colors.black26,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          if (widget.score != null && widget.score! > 0)
-            Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: widget.score! >= 60 ? Colors.green.withValues(alpha: 0.1) : Colors.orange.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: widget.score! >= 60 ? Colors.green.withValues(alpha: 0.5) : Colors.orange.withValues(alpha: 0.5),
-                    width: 1,
-                  ),
-                ),
-                child: Text(
-                  '发音评分: ${widget.score}',
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                    color: widget.score! >= 60 ? Colors.green : Colors.orange,
-                  ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                widget.asrState == AsrState.started
+                    ? "正在倾听..."
+                    : (widget.asrState == AsrState.initialized || widget.asrState == AsrState.stopped)
+                        ? "准备就绪"
+                        : "正在处理中...",
+                style: TextStyle(
+                  fontSize: 10,
+                  color: isDarkMode ? Colors.white38 : Colors.black26,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
-            ),
+              if (widget.score != null && widget.score! > 0) ...[
+                const SizedBox(width: 4),
+                Tooltip(
+                  message: '发音评分',
+                  triggerMode: TooltipTriggerMode.tap,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                    decoration: BoxDecoration(
+                      color: widget.score! >= 60 ? Colors.green.withValues(alpha: 0.1) : Colors.orange.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(
+                        color: widget.score! >= 60 ? Colors.green.withValues(alpha: 0.5) : Colors.orange.withValues(alpha: 0.5),
+                        width: 1,
+                      ),
+                    ),
+                    child: Text(
+                      '${widget.score}',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: widget.score! >= 60 ? Colors.green : Colors.orange,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
         ],
       ),
     );
