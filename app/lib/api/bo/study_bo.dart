@@ -733,8 +733,8 @@ class StudyBo {
           _isEffectivelyMastered(returnWord, masteredWordIds), // wordMastered
         );
     } catch (e, stackTrace) {
-      Global.logger.e('获取下一个单词失败: $e', stackTrace: stackTrace);
-      return Result("ERROR", "获取下一个单词失败: ${e.toString()}", false);
+      Global.logger.e('获取下一个单词失败 [StudyBo]: $e', stackTrace: stackTrace);
+      rethrow; // 直接抛出异常，不再包装成 Result，保留完整堆栈
     }
   }
 
