@@ -66,7 +66,7 @@ class BdcPageArgs {
   }
 
   factory BdcPageArgs.fromJson(String value) {
-    return BdcPageArgs.fromMap(json.decode(value));
+    return BdcPageArgs.fromMap(json.decode(value)); 
   }
 }
 
@@ -3825,82 +3825,52 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                           ),
                         ),
                         const SizedBox(height: 12),
-                        // 文本输入框与手写切换
+                        // 拼写练习按钮 (替代原来的 TextField)
                         if (!_isAnswerCorrect)
                           Column(
                             children: [
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: TextField(
-                                      controller: _meaningController,
-                                      focusNode: _meaningFocusNode,
-                                      autofocus: true,
-                                      keyboardType: TextInputType.visiblePassword,
-                                      autocorrect: false,
-                                      enableSuggestions: false,
-                                      textAlign: TextAlign.start,
-                                      style: TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                        // 移除这里的动态颜色设定，由 Controller 内部控制
-                                      ),
-                                      decoration: InputDecoration(
-                                        hintText: '在此拼写单词...',
-                                        hintStyle: TextStyle(
-                                          fontSize: 14,
-                                          color: (isDarkMode ? Colors.white : Colors.black).withValues(alpha: 0.2),
-                                          fontWeight: FontWeight.normal,
-                                        ),
-                                        prefixIcon: Icon(Icons.edit_note, color: AppTheme.primaryColor.withValues(alpha: 0.5)),
-                                        isDense: true,
-                                        contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 0),
-                                        enabledBorder: UnderlineInputBorder(
-                                          borderSide: BorderSide(
-                                              color: context.watch<DarkMode>().isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.05)),
-                                        ),
-                                        focusedBorder: UnderlineInputBorder(
-                                          borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
-                                        ),
-                                      ),
-                                      textInputAction: TextInputAction.done,
-                                      onSubmitted: (value) {
-                                        checkAsrResult();
-                                      },
-                                      onChanged: (value) {
-                                        setState(() {});
-                                        // 监听输入，实时检查以获得更好的交互体验
-                                        if (value.isNotEmpty && _word?.spell != null) {
-                                          if (Util.equalsIgnoreCase(value, _word!.spell)) {
-                                            checkAsrResult();
-                                          }
-                                        }
-                                      },
+                              InkWell(
+                                onTap: () {
+                                  setState(() {
+                                    _showHandwritingBoard = true;
+                                  });
+                                },
+                                borderRadius: BorderRadius.circular(12),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 0),
+                                  decoration: BoxDecoration(
+                                    border: Border(
+                                      bottom: BorderSide(
+                                          color: context.watch<DarkMode>().isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.05)),
                                     ),
                                   ),
-                                ],
-                              ),
-                              if (_showHandwritingBoard)
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 16),
-                                  child: SizedBox(
-                                    height: 300,
-                                    child: HandwritingBoard(
-                                      onRecognized: (text) {
-                                        setState(() {
-                                          _meaningController.text = text;
-                                          _showHandwritingBoard = false;
-                                        });
-                                        checkAsrResult();
-                                      },
-                                      onCancel: () {
-                                        setState(() {
-                                          _showHandwritingBoard = false;
-                                        });
-                                      },
-                                    ),
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.edit_note, color: AppTheme.primaryColor.withValues(alpha: 0.5)),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: _meaningController.text.isEmpty
+                                            ? Text(
+                                                '拼写练习',
+                                                style: TextStyle(
+                                                  fontSize: 16,
+                                                  color: (isDarkMode ? Colors.white : Colors.black).withValues(alpha: 0.2),
+                                                  fontWeight: FontWeight.normal,
+                                                ),
+                                              )
+                                            : RichText(
+                                                text: SpellingTextEditingController.buildSpellingTextSpan(
+                                                  _meaningController.text,
+                                                  _word?.spell ?? "",
+                                                  isDarkMode ? Colors.white : Colors.black,
+                                                  const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                                                ),
+                                              ),
+                                      ),
+                                    ],
                                   ),
                                 ),
+                              ),
                               const SizedBox(height: 16),
                             ],
                           ),

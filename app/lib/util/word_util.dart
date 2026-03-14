@@ -11,8 +11,11 @@ class SpellingTextEditingController extends TextEditingController {
 
   @override
   TextSpan buildTextSpan({required BuildContext context, TextStyle? style, required bool withComposing}) {
-    final String target = getTargetSpell() ?? "";
-    final String input = text;
+    return buildSpellingTextSpan(text, getTargetSpell() ?? "", baseColor, style);
+  }
+
+  /// 静态方法：生成带实时颜色反馈的 TextSpan
+  static TextSpan buildSpellingTextSpan(String input, String target, Color baseColor, TextStyle? style) {
     final List<TextSpan> children = [];
 
     for (int i = 0; i < input.length; i++) {
