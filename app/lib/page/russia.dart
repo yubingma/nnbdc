@@ -30,7 +30,7 @@ import 'index.dart';
 const brickHeight = 14.0;
 late double screenWidth;
 const playGroundHeight = 250.0;
-const playGroundY = 32.0;
+const playGroundY = 60.0;
 const bottomJetInitHeight = 2.0;
 const bottomJetInitY = playGroundHeight + playGroundY;
 // B方音效音量（相对于A方），统一从此处调整
@@ -1815,7 +1815,7 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
       final double answersExtraScale = isPlaying && playerA.otherWordMeanings.isNotEmpty ? 1.1 : 1.0;
 
       // 预计算每个按钮的基础行高与内边距，并估算总高度
-      // 统一按钮文本高度，避免因内容不同（如括号、数字）导致按钮高度微小差异
+      // 统一按钮文本高度，避免因内容不同（如括号、数字）导致按钮高度微小差异 
       double unifiedTextHeight = 0;
       for (var btn in visibleButtons) {
         unifiedTextHeight = max(unifiedTextHeight, (btn.button! as MyButtonTextComponent).textHeight);
