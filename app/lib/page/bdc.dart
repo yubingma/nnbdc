@@ -2926,64 +2926,71 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     return Container(
       key: _bottomButtonsKey,
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-      child: Container(
-        // 底部按钮区背景色 - 紫色调
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          border: _showBorders
-              ? Border.all(
-                  color: context.watch<DarkMode>().isDarkMode
-                      ? const Color(0xFF9C27B0) // 深色模式：紫色边框
-                      : const Color(0xFF7B1FA2), // 浅色模式：深紫色边框
-                  width: 2,
-                )
-              : null,
-        ),
-        padding: const EdgeInsets.symmetric(vertical: 20),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            if (_showAnswerButtons || _studyStep == StudyStep.en2Ch.json)
-              ElevatedButton(
-                key: const Key('bdc_not_know_btn'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: context.watch<DarkMode>().isDarkMode ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFF5F5F5),
-                  foregroundColor: context.watch<DarkMode>().isDarkMode ? Colors.white70 : const Color(0xFF666666),
-                  elevation: 0,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                onPressed: () => showWordDetail(_word, true, fsrsRating: FsrsRating.again),
-                child: const Text('不认识', style: TextStyle(fontWeight: FontWeight.w500)),
-              ),
-            if (_showAnswerButtons || _studyStep == StudyStep.en2Ch.json)
-              ElevatedButton(
-                key: const Key('bdc_study_again'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: context.watch<DarkMode>().isDarkMode ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFF5F5F5),
-                  foregroundColor: context.watch<DarkMode>().isDarkMode ? Colors.white70 : const Color(0xFF666666),
-                  elevation: 0,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                onPressed: () => showWordDetail(_word, false, fsrsRating: FsrsRating.good),
-                child: const Text('再学学', style: TextStyle(fontWeight: FontWeight.w500)),
-              ),
-            if (_canLeaveCurrWord)
-              ElevatedButton(
-                key: const Key('bdc_next_word_btn'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: context.watch<DarkMode>().isDarkMode ? Colors.white : AppTheme.primaryColor,
-                  foregroundColor: context.watch<DarkMode>().isDarkMode ? Colors.black : Colors.white,
-                  elevation: 0,
-                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                onPressed: () => getNextWord(true),
-                child: const Text('下一词', style: TextStyle(fontWeight: FontWeight.bold)),
-              ),
-          ],
-        ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (_isAnswerCorrect && !_autoJumpAfterCorrect)
+            _buildFsrsResultPanel(),
+          Container(
+            // 底部按钮区背景色 - 紫色调
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: _showBorders
+                  ? Border.all(
+                      color: context.watch<DarkMode>().isDarkMode
+                          ? const Color(0xFF9C27B0) // 深色模式：紫色边框 
+                          : const Color(0xFF7B1FA2), // 浅色模式：深紫色边框
+                      width: 2,
+                    )
+                  : null,
+            ),
+            padding: const EdgeInsets.symmetric(vertical: 20),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                if (_showAnswerButtons || _studyStep == StudyStep.en2Ch.json)
+                  ElevatedButton(
+                    key: const Key('bdc_not_know_btn'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: context.watch<DarkMode>().isDarkMode ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFF5F5F5),
+                      foregroundColor: context.watch<DarkMode>().isDarkMode ? Colors.white70 : const Color(0xFF666666),
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    onPressed: () => showWordDetail(_word, true, fsrsRating: FsrsRating.again),
+                    child: const Text('不认识', style: TextStyle(fontWeight: FontWeight.w500)),
+                  ),
+                if (_showAnswerButtons || _studyStep == StudyStep.en2Ch.json)
+                  ElevatedButton(
+                    key: const Key('bdc_study_again'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: context.watch<DarkMode>().isDarkMode ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFF5F5F5),
+                      foregroundColor: context.watch<DarkMode>().isDarkMode ? Colors.white70 : const Color(0xFF666666),
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    onPressed: () => showWordDetail(_word, false, fsrsRating: FsrsRating.good),
+                    child: const Text('再学学', style: TextStyle(fontWeight: FontWeight.w500)),
+                  ),
+                if (_canLeaveCurrWord)
+                  ElevatedButton(
+                    key: const Key('bdc_next_word_btn'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: context.watch<DarkMode>().isDarkMode ? Colors.white : AppTheme.primaryColor,
+                      foregroundColor: context.watch<DarkMode>().isDarkMode ? Colors.black : Colors.white,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    onPressed: () => getNextWord(true, fsrsRating: _lastFsrsRating),
+                    child: const Text('下一词', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -3867,7 +3874,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         ...renderAsrMeaningItems(_wordWrapper!, isDarkMode: context.read<DarkMode>().isDarkMode),
-                        if (_isAnswerCorrect && !_autoJumpAfterCorrect) _buildFsrsResultPanel(),
                       ],
                     )
                   : Column(
@@ -3932,7 +3938,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                             ],
                           ),
                         _buildWordSpellingHint(_wordWrapper!, _isAnswerCorrect),
-                        if (_isAnswerCorrect && !_autoJumpAfterCorrect) _buildFsrsResultPanel(),
                       ],
                     ),
             ),
@@ -3945,107 +3950,40 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   Widget _buildFsrsResultPanel() {
     if (_fsrsItem == null) return const SizedBox();
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
+    final textColor = isDarkMode ? Colors.white38 : Colors.black26;
 
     return Container(
-      margin: const EdgeInsets.only(top: 24),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF0F7FF),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.primaryColor.withValues(alpha: 0.2), width: 1.5),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDarkMode ? 0.2 : 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildFsrsInfoItem(
-                'FSRS 难度',
-                _fsrsItem!.difficulty.toStringAsFixed(1),
-                Icons.psychology_outlined,
-                isDarkMode,
-              ),
-              Container(width: 1, height: 30, color: isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.1)),
-              _buildFsrsInfoItem(
-                '下次复习',
-                '${_fsrsItem!.scheduledDays} 天后',
-                Icons.event_note_outlined,
-                isDarkMode,
-              ),
-            ],
+          Icon(Icons.psychology_outlined, size: 12, color: textColor),
+          const SizedBox(width: 4),
+          Text(
+            '难度: ${_fsrsItem!.difficulty.toStringAsFixed(1)}',
+            style: TextStyle(fontSize: 11, color: textColor),
           ),
-          const SizedBox(height: 24),
-          _buildFsrsTimeline(isDarkMode),
-          const SizedBox(height: 28),
-          SizedBox(
-            width: double.infinity,
-            height: 48,
-            child: ElevatedButton(
-              onPressed: () => getNextWord(true, fsrsRating: _lastFsrsRating),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryColor,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text('查看下一个单词', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1)),
-                  SizedBox(width: 8),
-                  Icon(Icons.arrow_forward_rounded, size: 20),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFsrsTimeline(bool isDarkMode) {
-    if (_fsrsItem == null) return const SizedBox();
-
-    final prevDays = _daysSinceLastReview ?? 0;
-    final nextDays = _fsrsItem!.scheduledDays;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      child: Stack(
-        alignment: Alignment.centerRight,
-        children: [
           Padding(
-            padding: const EdgeInsets.only(right: 40),
-            child: Row(
-              children: [
-                _buildTimelineNode('上次', prevDays > 0 ? '$prevDays天' : '初学', isDarkMode, false),
-                _buildTimelineLine(isDarkMode, true),
-                _buildTimelineNode('今天', '现在', isDarkMode, true),
-                _buildTimelineLine(isDarkMode, false),
-                _buildTimelineNode('下次', '$nextDays天后', isDarkMode, false),
-              ],
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Text('|', style: TextStyle(fontSize: 10, color: textColor.withValues(alpha: 0.3))),
           ),
-          Positioned(
-            right: 0,
-            child: IconButton(
-              onPressed: _showLearningHistoryDialog,
-              icon: Icon(Icons.history_rounded, size: 22, color: isDarkMode ? Colors.white38 : Colors.black26),
-              tooltip: '记忆历史',
-              visualDensity: VisualDensity.compact,
-            ),
+          Icon(Icons.event_note_outlined, size: 12, color: textColor),
+          const SizedBox(width: 4),
+          Text(
+            '下次复习: ${_fsrsItem!.scheduledDays}天后',
+            style: TextStyle(fontSize: 11, color: textColor),
+          ),
+          const SizedBox(width: 4),
+          InkWell(
+            onTap: _showLearningHistoryDialog,
+            child: Icon(Icons.history_rounded, size: 14, color: textColor.withValues(alpha: 0.5)),
           ),
         ],
       ),
     );
   }
+
+
 
   void _showLearningHistoryDialog() async {
     final wordId = _wordWrapper?.word.id;
@@ -4151,124 +4089,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildTimelineNode(String label, String timeStr, bool isDarkMode, bool isHighlight) {
-    final color = isHighlight ? AppTheme.primaryColor : (isDarkMode ? Colors.white54 : Colors.black38);
-    final dotColor = isHighlight ? AppTheme.primaryColor : (isDarkMode ? Colors.white38 : Colors.black26);
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        SizedBox(
-          height: 14,
-          child: Text(
-            timeStr,
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: isHighlight ? FontWeight.bold : FontWeight.normal,
-              color: isHighlight ? AppTheme.primaryColor : (isDarkMode ? Colors.white70 : Colors.black87),
-            ),
-          ),
-        ),
-        const SizedBox(height: 6),
-        Container(
-          height: 12,
-          alignment: Alignment.center,
-          child: Container(
-            width: isHighlight ? 12 : 8,
-            height: isHighlight ? 12 : 8,
-            decoration: BoxDecoration(
-              color: dotColor,
-              shape: BoxShape.circle,
-              border: isHighlight ? Border.all(color: Colors.white, width: 2) : null,
-              boxShadow: isHighlight
-                  ? [
-                      BoxShadow(
-                        color: AppTheme.primaryColor.withValues(alpha: 0.4),
-                        blurRadius: 6,
-                        spreadRadius: 2,
-                      )
-                    ]
-                  : null,
-            ),
-          ),
-        ),
-        const SizedBox(height: 6),
-        SizedBox(
-          height: 16,
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 11,
-              color: color,
-              fontWeight: isHighlight ? FontWeight.bold : FontWeight.normal,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTimelineLine(bool isDarkMode, bool isPast) {
-    return Expanded(
-      child: Column(
-        children: [
-          const SizedBox(height: 14 + 6), // 对应 timeStr + gap
-          Container(
-            height: 12,
-            alignment: Alignment.center,
-            child: Container(
-              height: 2,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: isPast
-                      ? [
-                          isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
-                          AppTheme.primaryColor.withValues(alpha: 0.5),
-                        ]
-                      : [
-                          AppTheme.primaryColor.withValues(alpha: 0.5),
-                          isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
-                        ],
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 6 + 16), // 对应 gap + label
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFsrsInfoItem(String label, String value, IconData icon, bool isDarkMode) {
-    return Column(
-      children: [
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 14, color: isDarkMode ? Colors.white60 : Colors.black54),
-            const SizedBox(width: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                color: isDarkMode ? Colors.white60 : Colors.black54,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 6),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 18,
-            color: isDarkMode ? Colors.white : AppTheme.primaryColor,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ],
-    );
-  }
 
   Widget _buildPanelButton({
     required IconData icon,
