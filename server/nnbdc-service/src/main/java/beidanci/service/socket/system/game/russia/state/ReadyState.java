@@ -88,17 +88,17 @@ public class ReadyState extends RoomState {
             }
 
             // 机器人所依附的“真实玩家”历史胜率（机器人昵称与胜率均来自该玩家）
-            double botWinRatio = 0.5;
+            double botWinRatio = 0.7;
             try {
                 beidanci.api.model.UserGameVo gameVo = botUserObj.getGameByName("russia");
                 int w = gameVo != null && gameVo.getWinCount() != null ? gameVo.getWinCount() : 0;
                 int l = gameVo != null && gameVo.getLoseCount() != null ? gameVo.getLoseCount() : 0;
                 int total = w + l;
-                // 胜率条件放开：如果总局数不足 3 局，则默认胜率为 50%，避免极少数局数导致的性能偏差
+                // 胜率条件放开：如果总局数不足 3 局，则默认胜率为 70%，避免极少数局数导致的性能偏差
                 if (total >= 3) {
                     botWinRatio = (double) w / total;
                 } else {
-                    botWinRatio = 0.5;
+                    botWinRatio = 0.7;
                 }
             } catch (Exception ignored2) {
             }

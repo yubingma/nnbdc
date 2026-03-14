@@ -51,6 +51,7 @@ import beidanci.service.po.SysParam;
 import beidanci.service.po.User;
 import beidanci.service.po.UserCowDungLog;
 import beidanci.service.po.UserDbLog;
+import beidanci.service.po.UserGame;
 import beidanci.service.po.UserStudyStep;
 import beidanci.service.util.BeanUtils;
 import beidanci.service.util.EmojiFilter;
@@ -94,6 +95,9 @@ public class UserBo extends BaseBo<User> {
 
     @Autowired
     UserDbLogBo userDbLogBo;
+    
+    @Autowired
+    UserGameBo userGameBo;
 
     @Autowired
     DictBo dictBo;
@@ -808,6 +812,17 @@ public class UserBo extends BaseBo<User> {
 
         UserVo userVo = BeanUtils.makeVo(user, UserVo.class, new String[] { "invitedBy", "StudyGroupVo.creator",
                 "StudyGroupVo.users", "StudyGroupVo.managers", "StudyGroupVo.studyGroupPosts", "UserGameVo.user" });
+
+        // 这里的 BeanUtils.makeVo 在 JDBC 模式下可能无法自动加载关联的 UserGame 列表，
+        // 我们需要手动从 UserGameBo 中加载并填充。
+        List<UserGame> userGames = userGameBo.getUserGamesOfUser(userId, false);
+        List<beidanci.api.model.UserGameVo> gameVos = new ArrayList<>();
+        if (userGames != null) {
+            for (UserGame ug : userGames) {
+                gameVos.add(new beidanci.api.model.UserGameVo(userVo, ug.getWinCount(), ug.getLoseCount(), ug.getScore(), ug.getGame()));
+            }
+        }
+        userVo.setUserGames(gameVos);
 
         return userVo;
     }
