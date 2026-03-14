@@ -108,7 +108,7 @@ class SoundUtil {
   /// 播放例句发音
   static Future<void> playSentenceSound2(String englishDigest, AudioPlayer player) async {
     var soundUrl = Util.getSentenceSoundUrl(englishDigest);
-    await playSoundByUrl(soundUrl, player, false, loadTimeoutMs: 5000, playTimeoutMs: 15000);
+    await playSoundByUrl(soundUrl, player, false, loadTimeoutMs: 7000, playTimeoutMs: 20000);
   }
 
   /// 播放 ASR 就绪提示音
@@ -133,8 +133,8 @@ class SoundUtil {
         try {
           final currentState = player.state;
           if (currentState != PlayerState.stopped && currentState != PlayerState.disposed) {
-            await player.stop().timeout(const Duration(milliseconds: 500), onTimeout: () => {});
-            await Future.delayed(const Duration(milliseconds: 50));
+            await player.stop().timeout(const Duration(milliseconds: 1000), onTimeout: () => {});
+            await Future.delayed(const Duration(milliseconds: 100));
           }
         } catch (stopError, stackTrace) {
           ErrorHandler.handleError(stopError, stackTrace, logPrefix: '停止音频播放时出错', showToast: false);
@@ -143,18 +143,41 @@ class SoundUtil {
 
       final completer = Completer<void>();
       subscription = player.onPlayerComplete.listen((_) {
-        if (!completer.isCompleted) completer.complete();
+        if (!completer.isCompleted) {
+          Global.logger.d('音频播放完成事件收到');
+          completer.complete();
+        }
       });
 
-      if (PlatformUtils.isWeb) {
-        await player.play(UrlSource(soundUrl)).timeout(Duration(milliseconds: loadTimeoutMs));
-      } else {
-        var file = await DefaultCacheManager().getSingleFile(soundUrl).timeout(Duration(milliseconds: loadTimeoutMs));
-        await player.play(DeviceFileSource(file.path)).timeout(Duration(milliseconds: loadTimeoutMs));
-      }
+      // 额外监听状态变化，作为补丁，防止有些平台上 onPlayerComplete 不可靠
+      StreamSubscription? stateSubscription;
+      stateSubscription = player.onPlayerStateChanged.listen((state) {
+        if (state == PlayerState.completed || state == PlayerState.stopped) {
+          if (!completer.isCompleted) {
+            Global.logger.d('音频播放状态变化为完成/停止: $state');
+            completer.complete();
+          }
+        }
+      });
 
-      // 等待播放完成
-      await completer.future.timeout(Duration(milliseconds: playTimeoutMs));
+      try {
+        if (PlatformUtils.isWeb) {
+          await player.play(UrlSource(soundUrl)).timeout(Duration(milliseconds: loadTimeoutMs));
+        } else {
+          var file = await DefaultCacheManager().getSingleFile(soundUrl).timeout(Duration(milliseconds: loadTimeoutMs));
+          // 加一点点延迟，确保文件系统同步完成（虽然理论上不需要，但在某些系统上可能有用）
+          await Future.delayed(const Duration(milliseconds: 50));
+          await player.play(DeviceFileSource(file.path)).timeout(Duration(milliseconds: loadTimeoutMs));
+        }
+
+        // 等待播放完成
+        await completer.future.timeout(Duration(milliseconds: playTimeoutMs));
+        
+        // 播放完成后增加一小段静音缓冲时间，避免紧接着的音频切换导致的问题
+        await Future.delayed(const Duration(milliseconds: 200));
+      } finally {
+        await stateSubscription?.cancel();
+      }
     } on Exception catch (e, stackTrace) {
       ErrorHandler.handleAudioError(e, stackTrace, audioType: 'url:$soundUrl');
     } finally {

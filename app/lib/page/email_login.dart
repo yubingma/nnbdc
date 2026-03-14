@@ -341,8 +341,8 @@ class EmailLoginPageState extends State<EmailLoginPage> {
               // 输入区域容器
               Container(
                 width: double.infinity,
-                margin: const EdgeInsets.symmetric(horizontal: 32),
-                padding: const EdgeInsets.all(32),
+                margin: const EdgeInsets.symmetric(horizontal: 20), 
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 32),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(32),
@@ -663,8 +663,8 @@ class EmailLoginPageState extends State<EmailLoginPage> {
           if (result.success && result.data != null) {
             await Global.setLoggedInUser(result.data!);
             
-            // 登录成功后立即触发同步，确保老用户在新设备上的数据（词书、进度）能尽快加载
-            ThrottledDbSyncService().requestSync(immediate: true);
+            // 登录成功后立即触发同步，确保老用户在新设备上的数据（词书、进度）能尽快加载 
+            await ThrottledDbSyncService().requestSyncAndWait(immediate: true);
             // 登录成功后更新隐私版本并初始化统计 SDK
             GetStorage().write('accepted_privacy_version', 20260310);
             if (PlatformUtils.isAndroid || PlatformUtils.isIOS) {
@@ -741,7 +741,7 @@ class EmailLoginPageState extends State<EmailLoginPage> {
         await Global.setLoggedInUser(userVo);
 
         // 登录成功后立即触发同步，确保老用户在新设备上的数据（词书、进度）能尽快加载
-        ThrottledDbSyncService().requestSync(immediate: true);
+        await ThrottledDbSyncService().requestSyncAndWait(immediate: true);
 
         // 更新本地检查状态
         setState(() {

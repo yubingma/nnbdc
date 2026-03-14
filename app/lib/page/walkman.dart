@@ -287,6 +287,8 @@ class WalkmanPageState extends State<WalkmanPage> {
               Global.logger.d("播放发音失败: $e");
             }
             currentPlayStep = '';
+            // 步骤之间增加微小延迟
+            await Future.delayed(const Duration(milliseconds: 100));
           }
 
           // 检查停止信号
@@ -306,6 +308,8 @@ class WalkmanPageState extends State<WalkmanPage> {
                 await tts?.speak(Util.pureMeaningStr(word.word));
               }
               currentPlayStep = '';
+              // 步骤之间增加微小延迟
+              await Future.delayed(const Duration(milliseconds: 100));
             }
           }
 
@@ -323,6 +327,8 @@ class WalkmanPageState extends State<WalkmanPage> {
                 Global.logger.d("播放例句失败: $e");
               }
               currentPlayStep = '';
+              // 步骤之间增加微小延迟
+              await Future.delayed(const Duration(milliseconds: 100));
             }
 
             // 检查停止信号
@@ -332,6 +338,8 @@ class WalkmanPageState extends State<WalkmanPage> {
               currentPlayStep = 'chinese';
               await tts?.speak(Util.pureSentenceChinese(sentences[0].chinese!));
               currentPlayStep = '';
+              // 步骤之间增加微小延迟
+              await Future.delayed(const Duration(milliseconds: 100));
             }
           }
 

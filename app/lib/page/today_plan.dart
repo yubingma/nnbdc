@@ -108,9 +108,9 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
       try {
         prepareResult = await StudyBo().prepareForStudy(forceSupplement);
         
-        // 如果准备数据失败（提示词书不足/没词书），且是正式用户，且还没尝试过同步
+        // 如果准备数据失败（提示词书不足/没词书）或者学习环节为空，且是正式用户，且还没尝试过同步
         // 这种情况通常发生在新安装 App 并登录后，后台同步尚未完成
-        if (prepareResult!.code == "NNBDC-0012" && !Global.isGuest && !_hasTriedSync) {
+        if ((prepareResult!.code == "NNBDC-0012" || (studySteps?.isEmpty ?? true)) && !Global.isGuest && !_hasTriedSync) {
           Global.logger.i('今日计划单词量不足且尚未同步，尝试从云端同步数据...');
           setState(() {
             _isSyncingFromCloud = true;
@@ -121,6 +121,23 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
             await ThrottledDbSyncService().requestSyncAndWait(immediate: true);
             _hasTriedSync = true;
             
+            // 同步完成后重试加载用户信息和学习步骤
+            var refreshUserResult = await UserBo().getLoggedInUser();
+            if (refreshUserResult.success) {
+              user = refreshUserResult.data;
+            }
+            
+            var refreshStepsResult = await StudyBo().getUserStudySteps();
+            if (refreshStepsResult.success) {
+              studySteps = [];
+              List<UserStudyStepVo> userStudySteps = refreshStepsResult.data!;
+              for (UserStudyStepVo step in userStudySteps) {
+                if (step.studyStep != 'List') {
+                  studySteps!.add(step);
+                }
+              }
+            }
+
             // 同步完成后重试准备逻辑
             prepareResult = await StudyBo().prepareForStudy(forceSupplement || true);
           } catch (e) {
