@@ -167,18 +167,12 @@ public class UserDbSyncBo {
             }
         }
 
-        // 2. 检查并修复“已掌握”词书
+        // 2. 检查并修复“已掌握”词书 (注：已掌握词书不需要也不允许出现在 learning_dict 中)
         Dict masteredDict = dictBo.getMasteredWordDict(user);
         if (masteredDict == null) {
             masteredDict = dictBo.createMasteredWordDictForUser(user);
             logs.add(new UserDbLogDto(null, userId, 0, "INSERT", "dict", masteredDict.getId(),
                     JsonUtils.toJson(dictBo.toDto(masteredDict)), null, null));
-
-            LearningDict ld = learningDictBo.getLearningDictOfUser(user, "已掌握");
-            if (ld != null) {
-                logs.add(new UserDbLogDto(null, userId, 0, "INSERT", "learning_dict", userId + "-" + masteredDict.getId(),
-                        JsonUtils.toJson(learningDictBo.toDto(ld)), null, null));
-            }
         }
 
         // 3. 检查并修复“学习步骤”
@@ -467,13 +461,10 @@ public class UserDbSyncBo {
             LearningDict learningDict = LearningDict.fromDto(learningDictDto, wordBo, dictBo, userBo);
             switch (operation) {
                 case "INSERT" -> {
-                    // 【校验一】禁止通过同步建立与核心/系统词典的关联
+                    // 【校验一】禁止将“已掌握”词书添加到学习计划中
                     Dict dict = dictBo.findById(learningDictDto.getDictId());
-                    if (dict != null) {
-                        String name = dict.getName();
-                        if ("生词本".equals(name) || "已掌握".equals(name) || beidanci.util.Constants.SYS_USER_SYS_ID.equals(dict.getOwner().getId())) {
-                            throw new IllegalArgumentException(String.format("禁止通过同步建立与核心/系统词典的关联: dictId=[%s], name=[%s]", dict.getId(), name));
-                        }
+                    if (dict != null && "已掌握".equals(dict.getName())) {
+                        throw new IllegalArgumentException("“已掌握”词书不允许作为学习计划同步");
                     }
 
                     // 检查记录是否已存在，避免主键冲突
