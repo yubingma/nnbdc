@@ -43,6 +43,8 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
   UserVo? user;
   bool hasDakaToday = false;
   Result<List<int>>? prepareResult;
+  bool _hasTriedSync = false;
+  bool _isSyncingFromCloud = false;
   bool _hasTriedSupplement = false;
   bool _isLoadingData = false;
   int _completedStepCount = 0;
@@ -105,6 +107,33 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
 
       try {
         prepareResult = await StudyBo().prepareForStudy(forceSupplement);
+        
+        // 如果准备数据失败（提示词书不足/没词书），且是正式用户，且还没尝试过同步
+        // 这种情况通常发生在新安装 App 并登录后，后台同步尚未完成
+        if (prepareResult!.code == "NNBDC-0012" && !Global.isGuest && !_hasTriedSync) {
+          Global.logger.i('今日计划单词量不足且尚未同步，尝试从云端同步数据...');
+          setState(() {
+            _isSyncingFromCloud = true;
+          });
+          
+          try {
+            // 立即触发一次同步并等待完成
+            await ThrottledDbSyncService().requestSyncAndWait(immediate: true);
+            _hasTriedSync = true;
+            
+            // 同步完成后重试准备逻辑
+            prepareResult = await StudyBo().prepareForStudy(forceSupplement || true);
+          } catch (e) {
+            Global.logger.e('尝试自动同步失败: $e');
+          } finally {
+            if (mounted) {
+              setState(() {
+                _isSyncingFromCloud = false;
+              });
+            }
+          }
+        }
+
         if (prepareResult!.success || prepareResult!.code == "NNBDC-0012") {
           if (forceSupplement) {
             _hasTriedSupplement = true;
@@ -183,12 +212,12 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
                   ),
                   const SizedBox(height: 32),
                   Text(
-                    'LOADING PLAN',
+                    _isSyncingFromCloud ? 'SYNCING FROM CLOUD...' : 'LOADING PLAN',
                     style: TextStyle(
                       color: isDarkMode ? Colors.white54 : const Color(0xFF64748B),
                       fontSize: 11,
                       fontWeight: FontWeight.w900,
-                      letterSpacing: 3.0,
+                      letterSpacing: 2.0,
                     ),
                   ),
                 ],

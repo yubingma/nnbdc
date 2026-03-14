@@ -15,6 +15,7 @@ import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/util/wechat_util.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:umeng_common_sdk/umeng_common_sdk.dart';
+import 'package:nnbdc/services/throttled_sync_service.dart';
 
 import '../config.dart';
 import '../global.dart';
@@ -287,6 +288,8 @@ class LoginPageState extends State<LoginPage> with WidgetsBindingObserver, Singl
                                 return;
                               }
                               await Global.loginAsGuest();
+                              // 访客也尝试同步（虽然目前 Global.isGuest 为真时 syncUserDb 会跳过，但 syncSysDb 仍有用）
+                              ThrottledDbSyncService().requestSync(immediate: true);
                               // 记录同意了当前隐私政策版本
                               GetStorage().write('accepted_privacy_version', 20260310);
                               
@@ -438,6 +441,9 @@ class LoginPageState extends State<LoginPage> with WidgetsBindingObserver, Singl
               userVo.lastLoginTime = AppClock.now();
               await MyDatabase.instance.usersDao.saveUser(userVo2User(userVo), false);
               await Global.setLoggedInUser(userVo);
+              
+              // 微信登录成功后立即触发同步
+              ThrottledDbSyncService().requestSync(immediate: true);
               
               // 记录同意了当前隐私政策版本
               GetStorage().write('accepted_privacy_version', 20260310);

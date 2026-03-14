@@ -119,6 +119,7 @@ class SoundUtil {
 
   static Future<void> playSoundByUrl(String soundUrl, AudioPlayer player, bool disposeWhenFinish,
       {int loadTimeoutMs = 3000, int playTimeoutMs = 10000}) async {
+    StreamSubscription? subscription;
     try {
       if (!_audioSessionConfigured) {
         await configureAudioSession();
@@ -127,6 +128,7 @@ class SoundUtil {
       if (PlatformUtils.isWeb) {
         await _ensureWebAudioUnlocked();
       }
+
       if (!disposeWhenFinish) {
         try {
           final currentState = player.state;
@@ -139,16 +141,24 @@ class SoundUtil {
         }
       }
 
+      final completer = Completer<void>();
+      subscription = player.onPlayerComplete.listen((_) {
+        if (!completer.isCompleted) completer.complete();
+      });
+
       if (PlatformUtils.isWeb) {
         await player.play(UrlSource(soundUrl)).timeout(Duration(milliseconds: loadTimeoutMs));
       } else {
         var file = await DefaultCacheManager().getSingleFile(soundUrl).timeout(Duration(milliseconds: loadTimeoutMs));
         await player.play(DeviceFileSource(file.path)).timeout(Duration(milliseconds: loadTimeoutMs));
       }
-      await player.onPlayerComplete.first.timeout(Duration(milliseconds: playTimeoutMs));
+
+      // 等待播放完成
+      await completer.future.timeout(Duration(milliseconds: playTimeoutMs));
     } on Exception catch (e, stackTrace) {
       ErrorHandler.handleAudioError(e, stackTrace, audioType: 'url:$soundUrl');
     } finally {
+      await subscription?.cancel();
       if (disposeWhenFinish) {
         try {
           await player.dispose();

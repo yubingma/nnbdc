@@ -200,7 +200,7 @@ class LearningService {
       todayLearningWords.add(word.copyWith(batchId: Value(targetBatchId)));
       dueAddedCount++;
     }
-    Global.logger.d('[FETCH-WORD] [genTodayWords] 本批次 (${targetBatchId}) 新增复习词: $dueAddedCount, 当前总数: ${todayLearningWords.length}');
+    Global.logger.d('[FETCH-WORD] [genTodayWords] 本批次 ($targetBatchId) 新增复习词: $dueAddedCount, 当前总数: ${todayLearningWords.length}');
 
     // 3. 如果依然没取够，则从词书按顺序抓取绝对的新词来补足以撑起今日计划
     if (todayLearningWords.length < user.wordsPerDay) {
@@ -243,7 +243,7 @@ class LearningService {
 
     // 如果即便把还没学的词全删了，剩下的词依然超过目标（说明用户今天已经学了很多了），那我们也无法强行删除已学的词
     if (learnedWords.length >= targetCount) {
-      Global.logger.d('[FETCH-WORD] [shrinkTodayWords] 无法削减！已学单词数 (${learnedWords.length}) 已 >= 目标 (${targetCount})');
+      Global.logger.d('[FETCH-WORD] [shrinkTodayWords] 无法削减！已学单词数 (${learnedWords.length}) 已 >= 目标 ($targetCount)');
       return todayWords; 
     }
 

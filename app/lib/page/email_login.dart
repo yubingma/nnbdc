@@ -12,6 +12,7 @@ import 'package:drift/drift.dart' as drift hide Column;
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/util/subscription_util.dart';
 import 'package:nnbdc/util/error_handler.dart';
+import 'package:nnbdc/services/throttled_sync_service.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:umeng_common_sdk/umeng_common_sdk.dart';
 import 'package:nnbdc/util/platform_util.dart';
@@ -661,6 +662,9 @@ class EmailLoginPageState extends State<EmailLoginPage> {
           final result = await UserBo().getLoggedInUser();
           if (result.success && result.data != null) {
             await Global.setLoggedInUser(result.data!);
+            
+            // 登录成功后立即触发同步，确保老用户在新设备上的数据（词书、进度）能尽快加载
+            ThrottledDbSyncService().requestSync(immediate: true);
             // 登录成功后更新隐私版本并初始化统计 SDK
             GetStorage().write('accepted_privacy_version', 20260310);
             if (PlatformUtils.isAndroid || PlatformUtils.isIOS) {
@@ -735,6 +739,9 @@ class EmailLoginPageState extends State<EmailLoginPage> {
 
         // 设置全局用户
         await Global.setLoggedInUser(userVo);
+
+        // 登录成功后立即触发同步，确保老用户在新设备上的数据（词书、进度）能尽快加载
+        ThrottledDbSyncService().requestSync(immediate: true);
 
         // 更新本地检查状态
         setState(() {

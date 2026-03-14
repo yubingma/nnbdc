@@ -5,7 +5,6 @@ import 'package:provider/provider.dart';
 import '../../../api/enum.dart';
 import '../../../state.dart';
 import '../../../util/word_util.dart';
-import '../../../util/utils.dart';
 import '../../../widget/handwriting_board.dart';
 
 abstract class WordProgressProvider {
