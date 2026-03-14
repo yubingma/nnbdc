@@ -685,12 +685,16 @@ void printFormattedChanges(String label, List<Map<String, dynamic>> changes) {
 Future<void> syncUserDb(String userId) async {
   final stopwatch = Stopwatch()..start();
   try {
-    // 同步开始前，首先验证核心数据完整性
-    await _validateCoreData(userId);
-
     // 获取本地数据库版本
     UserDbVersion? userDbVersion = await MyDatabase.instance.userDbVersionsDao.getUserDbVersionByUserId(userId);
     int localDbVersion = userDbVersion?.version ?? Global.localDbVersionForNewlyInstalled;
+
+    // 同步开始前验证核心数据完整性。
+    // 注意：如果是首次同步 (localDbVersion == 0)，由于本地尚无任何数据，校验必定失败，因此跳过。
+    // 此时应当直接进行同步，等同步完成后会再次调用 _validateCoreData 进行验证。
+    if (localDbVersion > 0) {
+      await _validateCoreData(userId);
+    }
 
     // 获取服务端数据库版本
     var remoteDbVersion = -1;
