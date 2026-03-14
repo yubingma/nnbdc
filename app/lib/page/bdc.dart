@@ -3958,17 +3958,17 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     
     switch (_lastFsrsRating) {
       case FsrsRating.again:
-        ratingColor = Colors.redAccent.withValues(alpha: 0.8);
+        ratingColor = isDarkMode ? Colors.redAccent : const Color(0xFFD32F2F); // 深红色
         break;
       case FsrsRating.hard:
-        ratingColor = Colors.orangeAccent.withValues(alpha: 0.8);
+        ratingColor = isDarkMode ? Colors.orangeAccent : const Color(0xFFF57C00); // 橘色
         break;
       case FsrsRating.easy:
-        ratingColor = Colors.greenAccent.withValues(alpha: 0.8);
+        ratingColor = isDarkMode ? Colors.greenAccent : const Color(0xFF2E7D32); // 深绿色
         break;
-      case FsrsRating.good:
+      case FsrsRating.good: 
       default:
-        ratingColor = AppTheme.primaryColor.withValues(alpha: 0.8);
+        ratingColor = isDarkMode ? AppTheme.primaryColor : AppTheme.primaryColor;
         break;
     }
 
@@ -3977,11 +3977,11 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.check_circle_outline, size: 12, color: ratingColor),
+          Icon(Icons.check_circle_outline, size: 12, color: ratingColor), 
           const SizedBox(width: 4),
           Text(
-            '本次操作: $ratingLabel',
-            style: TextStyle(fontSize: 11, color: ratingColor, fontWeight: FontWeight.bold),
+            '本次评分: $ratingLabel',
+            style: TextStyle(fontSize: 11, color: ratingColor),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8),
