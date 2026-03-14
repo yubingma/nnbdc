@@ -1850,6 +1850,13 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       }
     });
 
+    // 自动获取焦点，提升输入效率
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && !_isAnswerCorrect) {
+        _meaningFocusNode.requestFocus();
+      }
+    });
+
     // 如果在数据加载期间（如等待数据库查询）已经有语音结果提前到达，手动触发一次校验
     if (_meaningController.text.isNotEmpty && _handlingChinese.isEmpty) {
       Global.logger.i('BDC: 单词加载完成，发现加载期间缓存的语音结果，主动触发校验');
@@ -2922,6 +2929,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         textAlign: TextAlign.center,
         controller: _wordWrapper!.spellController,
         focusNode: _wordWrapper!.focusNode,
+        autofocus: true,
         // 仅保留下边框样式（听音选意模式专用）
         decoration: InputDecoration(
           isCollapsed: true,
@@ -3812,7 +3820,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                                     child: TextField(
                                       controller: _meaningController,
                                       focusNode: _meaningFocusNode,
-                                      autofocus: false,
+                                      autofocus: true,
                                       keyboardType: TextInputType.visiblePassword,
                                       autocorrect: false,
                                       enableSuggestions: false,
