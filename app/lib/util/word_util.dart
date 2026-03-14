@@ -1,7 +1,41 @@
 import 'package:flutter/material.dart';
 import 'package:nnbdc/util/pinyin.dart';
-
 import '../api/vo.dart';
+
+/// 自定义 TextEditingController，实现单个字符的实时颜色反馈
+class SpellingTextEditingController extends TextEditingController {
+  final String? Function() getTargetSpell;
+  final Color baseColor;
+
+  SpellingTextEditingController({required this.getTargetSpell, required this.baseColor});
+
+  @override
+  TextSpan buildTextSpan({required BuildContext context, TextStyle? style, required bool withComposing}) {
+    final String target = getTargetSpell() ?? "";
+    final String input = text;
+    final List<TextSpan> children = [];
+
+    for (int i = 0; i < input.length; i++) {
+      Color charColor = baseColor;
+      if (i < target.length) {
+        // 比较单个字符，忽略大小写
+        if (input[i].toLowerCase() != target[i].toLowerCase()) {
+          charColor = Colors.red;
+        }
+      } else {
+        // 超出目标长度的部分显示红色
+        charColor = Colors.red;
+      }
+
+      children.add(TextSpan(
+        text: input.substring(i, i + 1),
+        style: style?.copyWith(color: charColor),
+      ));
+    }
+
+    return TextSpan(style: style, children: children);
+  }
+}
 
 class WordWrapper {
   /// 实际的单词相关对象，比如MasteredWord, LearningWord ...
@@ -13,7 +47,10 @@ class WordWrapper {
   FocusNode focusNode = FocusNode();
 
   /// 默写英文输入框
-  TextEditingController spellController = TextEditingController();
+  late TextEditingController spellController = SpellingTextEditingController(
+    getTargetSpell: () => word.spell,
+    baseColor: const Color(0xFF0097A7),
+  );
 
   /// 提示字符数量
   int hintLetterCount = 0;

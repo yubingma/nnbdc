@@ -459,7 +459,6 @@ class _WordItemState extends State<WordItem> {
                 ),
                 style: TextStyle(
                   fontSize: fontSize,
-                  color: _getInputTextColor(),
                 ),
               ),
             ),
@@ -736,9 +735,7 @@ class _WordItemState extends State<WordItem> {
     return Colors.green;
   }
 
-  Color _getInputTextColor() {
-    return Util.equalsIgnoreCase(widget.word.word.spell, widget.word.spellController.text) ? Colors.green : Colors.red;
-  }
+
 
   IconData _getActionIcon() {
     switch (widget.appBarTitle) {

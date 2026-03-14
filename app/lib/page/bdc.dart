@@ -70,6 +70,8 @@ class BdcPageArgs {
   }
 }
 
+
+
 class WordImagesWidget extends StatefulWidget {
   final List<WordImageVo> images;
   final bool isEditMode;
@@ -563,7 +565,10 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   late Asr asr;
 
   /// 释义输入框
-  final TextEditingController _meaningController = TextEditingController();
+  late final SpellingTextEditingController _meaningController = SpellingTextEditingController(
+    getTargetSpell: () => _word?.spell,
+    baseColor: AppTheme.primaryColor,
+  );
 
   /// 释义输入框焦点控制
   final FocusNode _meaningFocusNode = FocusNode();
@@ -708,19 +713,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     return true;
   }
 
-  /// 获取拼写输入框的当前文字颜色（实时检查：拼写错误显红色）
-  Color _getSpellingTextColor() {
-    String input = _meaningController.text;
-    if (input.isEmpty) return AppTheme.primaryColor;
-    if (_word == null) return AppTheme.primaryColor;
-    String spell = _word!.spell;
-
-    // 如果当前输入不是正确单词的前缀（忽略大小写），则显示红色
-    if (spell.toLowerCase().startsWith(input.toLowerCase())) {
-      return AppTheme.primaryColor;
-    }
-    return Colors.red;
-  }
 
   /// 动态生成tabs列表
   List<Tab> get _dynamicTabs {
@@ -2514,7 +2506,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
-                        color: _getSpellingTextColor(),
+                        // 移除这里的动态颜色设定，由 Controller 内部控制
                       ),
                       decoration: InputDecoration(
                         hintText: '在此键入单词...',
@@ -2940,14 +2932,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   }
 
   SizedBox spellExerciseTextField(String wordSpell) {
-    TextStyle textStyle = TextStyle(
+    TextStyle textStyle = const TextStyle(
         fontSize: 16,
-        fontWeight: FontWeight.bold,
-        color: Util.equalsIgnoreCase(_word!.spell, _wordWrapper!.spellController.text)
-            ? _wordWrapper!.isAnswerProvidedBySystem
-                ? Colors.blue
-                : Colors.green
-            : Colors.red);
+        fontWeight: FontWeight.bold);
     double width = Util.getTextWidth(wordSpell, textStyle);
     return SizedBox(
       width: width * 1.3,
@@ -3856,7 +3843,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                                       style: TextStyle(
                                         fontSize: 18,
                                         fontWeight: FontWeight.bold,
-                                        color: _getSpellingTextColor(),
+                                        // 移除这里的动态颜色设定，由 Controller 内部控制
                                       ),
                                       decoration: InputDecoration(
                                         hintText: '在此拼写单词...',
