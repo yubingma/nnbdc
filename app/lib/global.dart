@@ -233,13 +233,14 @@ class _TimestampPrinter extends logger_pkg.LogPrinter {
     dateTimeFormat: logger_pkg.DateTimeFormat.none,
   );
 
-  // 其它级别（warning/error等）保持方法栈打印，便于排查问题
+  // 其它级别（warning/error等）保持方法栈打印，更加紧凑，禁用边框
   final logger_pkg.PrettyPrinter _printerOthers = logger_pkg.PrettyPrinter(
-    methodCount: 3,
-    errorMethodCount: 20,
-    lineLength: 120,
+    methodCount: 2, // 减少调用栈行数
+    errorMethodCount: 8, // 异常栈行数
+    lineLength: 80, // 标准行宽
     colors: false, // 关闭颜色避免 ANSI 转义序列
     printEmojis: true,
+    noBoxingByDefault: true, // 禁用边框，让日志更像 Java
     dateTimeFormat: logger_pkg.DateTimeFormat.none,
   );
 

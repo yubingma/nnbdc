@@ -468,14 +468,29 @@ class DictsDao extends DatabaseAccessor<MyDatabase> with _$DictsDaoMixin {
         .getSingleOrNull();
   }
 
-  /// 查找指定用户的"已掌握"词书
-  /// @param userId 用户ID
-  /// @return 用户的"已掌握"词书，如果不存在则返回null
   Future<Dict?> findUserMasteredDict(String userId) async {
-    return (select(dicts)
-          ..where((d) => d.ownerId.equals(userId))
-          ..where((d) => d.name.equals('已掌握')))
-        .getSingleOrNull();
+    try {
+      final query = select(dicts)
+        ..where((d) => d.ownerId.equals(userId))
+        ..where((d) => d.name.equals('已掌握'));
+      
+      final results = await query.get();
+      
+      if (results.length > 1) {
+        String msg = '核心数据异常: 用户 [$userId] 拥有 ${results.length} 本"已掌握"词书！';
+        Global.logger.e(msg);
+        for (var d in results) {
+          Global.logger.e('  - 冗余词书 ID: ${d.id}, 创建时间: ${d.createTime}');
+        }
+        // 快速失败：抛出明确异常，暴露数据一致性问题
+        throw Exception(msg);
+      }
+      
+      return results.isEmpty ? null : results.first;
+    } catch (e, stackTrace) {
+      Global.logger.e('查询"已掌握"词书时崩溃: $e', stackTrace: stackTrace);
+      rethrow;
+    }
   }
 
   /// 删除词典（支持日志）
