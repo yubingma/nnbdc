@@ -12,6 +12,9 @@ import beidanci.service.po.User;
 import beidanci.service.socket.UserCmd;
 import beidanci.service.socket.system.game.russia.RussiaRoom;
 import beidanci.service.socket.system.game.russia.UserGameData;
+import beidanci.service.bo.UserGameBo;
+import beidanci.service.po.UserGame;
+import beidanci.service.po.UserGameId;
 import beidanci.service.util.Util;
 
 public class GameOverProcessor {
@@ -27,11 +30,13 @@ public class GameOverProcessor {
     private final SysParamBo sysParamBo;
 
     UserBo userBo;
+    UserGameBo userGameBo;
 
-    public GameOverProcessor(RussiaRoom room, SysParamBo sysParamBo, UserBo userBo) {
+    public GameOverProcessor(RussiaRoom room, SysParamBo sysParamBo, UserBo userBo, UserGameBo userGameBo) {
         this.room = room;
         this.sysParamBo = sysParamBo;
         this.userBo = userBo;
+        this.userGameBo = userGameBo;
     }
 
     public void processGameOverCmd(UserVo user, UserCmd userCmd) throws IllegalAccessException {
@@ -102,54 +107,85 @@ public class GameOverProcessor {
      * @throws IllegalAccessException
      */
     public void adjustUserScore(UserVo winerVo, UserVo loserVo) throws IllegalAccessException {
+        // 加载/获取持久化对象
         User winer = userBo.findById(winerVo.getId(), true);
         User loser_ = userBo.findById(loserVo.getId(), true);
 
-        // 计算积分调整，优先使用实体分数；若为空（如机器人），退回到VO的显示分数
+        // 计算积分基础值
         final int winerScoreForCalc = (winer != null) ? winer.getGameScore() : winerVo.getGameScore();
         final int loserScoreForCalc = (loser_ != null) ? loser_.getGameScore() : loserVo.getGameScore();
         final int adjustment = calculateWinerScoreAdjustment(winerScoreForCalc, loserScoreForCalc);
 
-        // 获取魔法泡泡奖励/惩罚值
+        // 获取魔法泡泡基础值
         SysParam sysParam = sysParamBo.findById(SysParam.COW_DUNG_PER_GAME, true);
         int cowDungPerGame = Integer.parseInt(sysParam.getParamValue());
 
-        // 更新赢家VO的显示数据（用于实时展示，实际数据由前端更新后同步）
+        // --- 1. 处理赢家数据 ---
+        // 更新 VO 显示（供当前内存使用）
+        UserGameVo winerGameVo = winerVo.getGameByName("russia");
+        winerGameVo.setWinCount(winerGameVo.getWinCount() + 1);
+        winerGameVo.setScore(winerGameVo.getScore() + adjustment);
+        winerVo.setGameScore(winerVo.getGameScore() + adjustment);
+        winerVo.setCowDung(winerVo.getCowDung() + cowDungPerGame);
+
+        // 持久化更新
         if (winer != null) {
-            UserGameVo userGameVo = winerVo.getGameByName("russia");
-            userGameVo.setWinCount(userGameVo.getWinCount() + 1);
-            userGameVo.setScore(userGameVo.getScore() + adjustment);
-            winerVo.setGameScore(winerVo.getGameScore() + adjustment);
-            winerVo.setCowDung(winerVo.getCowDung() + cowDungPerGame);
-        } else {
-            // 机器人赢家：仅更新VO显示分数
-            UserGameVo userGameVo = winerVo.getGameByName("russia");
-            userGameVo.setWinCount(userGameVo.getWinCount() + 1);
-            userGameVo.setScore(userGameVo.getScore() + adjustment);
-            winerVo.setGameScore(winerVo.getGameScore() + adjustment);
+            // 更新 User 汇总积分与魔法泡泡
+            winer.setGameScore(winer.getGameScore() + adjustment);
+            userBo.updateEntity(winer);
+            userBo.adjustCowDung(winer, cowDungPerGame, "RussiaWin");
+
+            // 更新 UserGame 详细记录 (俄罗斯方块项)
+            UserGameId ugId = new UserGameId(winer.getId(), "russia");
+            UserGame ug = userGameBo.findById(ugId);
+            if (ug == null) {
+                ug = new UserGame(ugId, winer, 1, 0, adjustment);
+                userGameBo.createEntity(ug);
+            } else {
+                ug.setWinCount(ug.getWinCount() + 1);
+                ug.setScore((ug.getScore() == null ? 0 : ug.getScore()) + adjustment);
+                userGameBo.updateEntity(ug);
+            }
+
+            // 只有真实在线的人类玩家（而非带入真实ID的机器人）需要 log 以便同步
+            if (!winerVo.getUserName().startsWith("bot_")) {
+                userBo.logUserUpdateForSync(winer);
+            }
         }
 
-        // 计算输家的积分扣减（避免变成负数）
-        int loserScoreDelta;
-        if (loser_ != null) {
-            UserGameVo loserGameVo = loserVo.getGameByName("russia");
-            Integer currentScore = loserGameVo.getScore();
-            loserScoreDelta = Math.min(adjustment, currentScore == null ? 0 : currentScore);
-            
-            // 更新输家VO的显示数据
+        // --- 2. 处理输家数据 ---
+        int loserScoreDelta = Math.min(adjustment, Math.max(0, loser_ != null ? loser_.getGameScore() : loserVo.getGameScore()));
+        
+        // 更新 VO 显示
+        UserGameVo loserGameVo = loserVo.getGameByName("russia");
+        if (loserGameVo != null) {
             loserGameVo.setLoseCount(loserGameVo.getLoseCount() + 1);
-            loserGameVo.setScore((currentScore == null ? 0 : currentScore) - loserScoreDelta);
-            loserVo.setGameScore(loserVo.getGameScore() - loserScoreDelta);
-            loserVo.setCowDung(Math.max(0, loserVo.getCowDung() - cowDungPerGame));
-        } else {
-            // 机器人输家：仅更新VO显示分数
-            int loserVoScore = loserVo.getGameScore();
-            loserScoreDelta = Math.min(adjustment, Math.max(0, loserVoScore));
-            loserVo.setGameScore(loserVoScore - loserScoreDelta);
-            UserGameVo loserGameVo = loserVo.getGameByName("russia");
-            if (loserGameVo != null) {
-                loserGameVo.setLoseCount(loserGameVo.getLoseCount() + 1);
-                loserGameVo.setScore(Math.max(0, loserGameVo.getScore() - loserScoreDelta));
+            loserGameVo.setScore(Math.max(0, (loserGameVo.getScore() == null ? 0 : loserGameVo.getScore()) - loserScoreDelta));
+        }
+        loserVo.setGameScore(Math.max(0, loserVo.getGameScore() - loserScoreDelta));
+        loserVo.setCowDung(Math.max(0, loserVo.getCowDung() - cowDungPerGame));
+
+        // 持久化更新
+        if (loser_ != null) {
+            // 更新 User 汇总积分与魔法泡泡
+            loser_.setGameScore(Math.max(0, loser_.getGameScore() - loserScoreDelta));
+            userBo.updateEntity(loser_);
+            userBo.adjustCowDung(loser_, -cowDungPerGame, "RussiaLose");
+
+            // 更新 UserGame 详细记录
+            UserGameId ugId = new UserGameId(loser_.getId(), "russia");
+            UserGame ug = userGameBo.findById(ugId);
+            if (ug == null) {
+                ug = new UserGame(ugId, loser_, 0, 1, 0);
+                userGameBo.createEntity(ug);
+            } else {
+                ug.setLoseCount(ug.getLoseCount() + 1);
+                ug.setScore(Math.max(0, (ug.getScore() == null ? 0 : ug.getScore()) - loserScoreDelta));
+                userGameBo.updateEntity(ug);
+            }
+
+            if (!loserVo.getUserName().startsWith("bot_")) {
+                userBo.logUserUpdateForSync(loser_);
             }
         }
 

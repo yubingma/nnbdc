@@ -2688,7 +2688,7 @@ class MyButtonTextComponent extends TextComponent {
   MyButtonTextComponent(String text, TextPaint originalRenderer, this.backColor, this.borderColor, this.myGame, double initialVerticalPadding,
       {this.isPressed = false, this.opacity = 0.8})
       : _verticalPadding = initialVerticalPadding,
-        super(text: '  $text', position: Vector2.zero()) {
+        super(text: text, position: Vector2.zero()) {
     // 预先缩放透明度
     final ts = originalRenderer.style;
     final scaledColor = (ts.color ?? Colors.white).withValues(alpha: (ts.color?.a ?? 1.0) * opacity);
@@ -2704,6 +2704,7 @@ class MyButtonTextComponent extends TextComponent {
   }
 
   double textHeight = 0;
+  double textWidth = 0;
 
   @override
   set text(String value) {
@@ -2724,6 +2725,7 @@ class MyButtonTextComponent extends TextComponent {
       }
       super.text = '$tempText...';
     }
+    textWidth = textRenderer.getLineMetrics(text).width;
     textHeight = textRenderer.getLineMetrics(text).height;
     final double bgHeight = textHeight + verticalPadding;
     size = Vector2(btnWidth, bgHeight);
@@ -2802,10 +2804,11 @@ class MyButtonTextComponent extends TextComponent {
     // 绘制内部光泽效果
     // 去除顶部高光
 
-    // 半透明文本（仅调透明度），并将文本垂直居中绘制
+    // 半透明文本（仅调透明度），并将文本水平及垂直居中绘制
+    final double offsetX = (size.x - textWidth) / 2;
     final double offsetY = (size.y - textHeight) / 2;
     canvas.save();
-    canvas.translate(0, offsetY);
+    canvas.translate(offsetX, offsetY);
     super.render(canvas);
     canvas.restore();
   }

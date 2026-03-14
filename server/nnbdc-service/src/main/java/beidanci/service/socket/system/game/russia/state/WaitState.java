@@ -26,7 +26,7 @@ public class WaitState extends RoomState {
                      UserSorter userSorter, SysParamBo sysParamBo, UserBo userBo, DictBo dictBo) {
         super(room);
         getNextWordProcessor = new GetNextWordProcessor(room);
-        gameOverProcessor = new GameOverProcessor(room, sysParamBo, userBo);
+        gameOverProcessor = new GameOverProcessor(room, sysParamBo, userBo, userGameBo);
         startExerciseProcessor = new StartExerciseProcessor(room);
     }
 

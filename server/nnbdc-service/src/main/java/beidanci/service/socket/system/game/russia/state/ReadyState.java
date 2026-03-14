@@ -91,12 +91,15 @@ public class ReadyState extends RoomState {
             double botWinRatio = 0.5;
             try {
                 beidanci.api.model.UserGameVo gameVo = botUserObj.getGameByName("russia");
-                Integer winCountObj = gameVo.getWinCount();
-                Integer loseCountObj = gameVo.getLoseCount();
-                int w = winCountObj != null ? winCountObj : 0;
-                int l = loseCountObj != null ? loseCountObj : 0;
-                int total = Math.max(1, w + l);
-                botWinRatio = w * 1.0 / total;
+                int w = gameVo != null && gameVo.getWinCount() != null ? gameVo.getWinCount() : 0;
+                int l = gameVo != null && gameVo.getLoseCount() != null ? gameVo.getLoseCount() : 0;
+                int total = w + l;
+                // 胜率条件放开：如果总局数不足 3 局，则默认胜率为 50%，避免极少数局数导致的性能偏差
+                if (total >= 3) {
+                    botWinRatio = (double) w / total;
+                } else {
+                    botWinRatio = 0.5;
+                }
             } catch (Exception ignored2) {
             }
 
@@ -257,7 +260,7 @@ public class ReadyState extends RoomState {
             UserSorter userSorter, SysParamBo sysParamBo, UserBo userBo, DictBo dictBo) {
         super(room);
         getNextWordProcessor = new GetNextWordProcessor(room);
-        gameOverProcessor = new GameOverProcessor(room, sysParamBo, userBo);
+        gameOverProcessor = new GameOverProcessor(room, sysParamBo, userBo, userGameBo);
         startExerciseProcessor = new StartExerciseProcessor(room);
         this.sysParamBo = sysParamBo;
         this.userBo = userBo;

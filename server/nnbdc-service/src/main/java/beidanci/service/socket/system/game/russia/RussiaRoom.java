@@ -236,7 +236,7 @@ public class RussiaRoom {
         // 选取"超过一年未登录且玩过游戏"的真实用户作为机器人，比赛结果会反映到该用户账户
         beidanci.service.po.User real = null;
         try {
-            real = beidanci.service.Global.getUserBo().pickRandomInactiveGamer(365, 50);
+            real = beidanci.service.Global.getUserBo().pickRandomInactiveUser(365, 50);
         } catch (Exception e) {
             log.error("选取机器人失败", e);
         }

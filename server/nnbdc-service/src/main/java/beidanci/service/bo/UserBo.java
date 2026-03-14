@@ -442,15 +442,13 @@ public class UserBo extends BaseBo<User> {
     }
 
     /**
-     * 随机挑选一个“超过指定天数未登录”且“玩过游戏”的真实用户，用作机器人陪玩。
-     * 采用新会话查询，避免在无事务的socket线程中获取currentSession失败。
+     * 随机挑选一个“超过指定天数未登录”的真实用户，用作机器人陪玩。
+     * (已不再限制必须玩过该游戏，以便扩大机器人池)
      */
-    public User pickRandomInactiveGamer(int idleDays, int maxCandidates) {
-        // JDBC 不需要管理 Session
-        String sql = "SELECT DISTINCT u.* FROM user_game ug " +
-                "INNER JOIN \"user\" u ON ug.user_id = u.id " +
-                "WHERE u.is_sys_user = false AND u.last_login_time < ? " +
-                "LIMIT ?";
+    public User pickRandomInactiveUser(int idleDays, int maxCandidates) {
+        String sql = "SELECT * FROM \"user\" " +
+                "WHERE is_sys_user = false AND last_login_time < ? " +
+                "ORDER BY last_login_time DESC LIMIT ?";
         Date time = Utils.localDate2Date(LocalDate.now().plusDays(-idleDays));
         List<User> candidates = jdbcTemplate.query(sql,
                 new EntityRowMapper<>(User.class),
