@@ -2987,7 +2987,7 @@ class _DisconnectListener implements SocketStatusListener {
         if (pageState.mounted) {
           pageState.refreshPage();
         } else {
-          Global.logger.w('页面已销毁，跳过刷新操作');
+          Global.logger.w('页面已销毁，跳过刷新操作'); 
         }
       } else {
         Global.logger.d('非比赛状态网络连接已恢复，无需刷新页面');
