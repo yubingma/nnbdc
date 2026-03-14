@@ -20,6 +20,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionException;
 import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 
 import beidanci.api.model.BookMarkDto;
@@ -139,6 +140,58 @@ public class UserDbSyncBo {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
+
+    /**
+     * 服务端主动修改用户数据后，将变更写入 user_db_log 并递增 user_db_version，
+     * 这样客户端下一次同步即可拿到最新数据。
+     *
+     * @param userId 用户ID
+     * @param logs   变更日志列表（每个日志包含表名、操作类型、记录ID、以及 JSON 格式的记录内容）
+     */
+    @Transactional
+    public void logUserOperations(String userId, List<UserDbLogDto> logs) {
+        if (logs == null || logs.isEmpty()) {
+            return;
+        }
+
+        // 确保版本记录存在
+        userDbVersionDao.ensureUserDbVersionExists(jdbcTemplate, userId);
+
+        // 加锁读当前版本号
+        int currentVersion = userDbVersionDao.getUserDbVersionWithLock(jdbcTemplate, userId);
+        int nextVersion = currentVersion + 1;
+
+        Date now = new Date();
+        for (UserDbLogDto logDto : logs) {
+            UserDbLog log = new UserDbLog();
+            log.setUserId(userId);
+            log.setVersion(nextVersion);
+            log.setCreateTime(now);
+            log.setUpdateTime(now);
+            log.setTable(logDto.getTblName());
+            log.setOperate(logDto.getOperate());
+            log.setRecordId(logDto.getRecordId());
+            log.setRecord(logDto.getRecord());
+            userDbLogBo.createEntity(log);
+        }
+
+        // 使用 CAS 原子更新数据库版本（虽然已加锁，但使用 CAS 更安全）
+        boolean ok = userDbVersionDao.updateUserDbVersionCAS(jdbcTemplate, userId, currentVersion, nextVersion);
+        if (!ok) {
+            throw new RuntimeException("更新 user_db_version 失败（可能存在并发修改），userId=" + userId);
+        }
+    }
+
+    /**
+     * 服务端主动修改用户数据后，将单个变更写入 user_db_log。
+     */
+    @Transactional
+    public void logUserOperation(String userId, String tblName, String operate, String recordId, String recordJson) {
+        UserDbLogDto logDto = new UserDbLogDto(null, userId, 0, operate, tblName, recordId, recordJson, null, null);
+        List<UserDbLogDto> logs = new ArrayList<>();
+        logs.add(logDto);
+        logUserOperations(userId, logs);
+    }
 
     /**
      * 同步用户客户端数据库到服务端

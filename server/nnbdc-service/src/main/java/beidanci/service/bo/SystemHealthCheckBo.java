@@ -10,12 +10,17 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import beidanci.api.model.DictDto;
+import beidanci.api.model.LearningDictDto;
+import beidanci.api.model.UserDbLogDto;
 import beidanci.api.model.SystemHealthCheckResult;
 import beidanci.api.model.SystemHealthFixResult;
 import beidanci.api.model.SystemHealthIssue;
 import beidanci.service.dao.UserDbVersionDao;
 import beidanci.service.po.Dict;
+import beidanci.service.po.LearningDict;
 import beidanci.service.po.User;
+import beidanci.service.util.JsonUtils;
 import beidanci.util.Constants;
 
 /**
@@ -42,6 +47,12 @@ public class SystemHealthCheckBo {
     
     @Autowired
     private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
+
+    @Autowired
+    private UserDbSyncBo userDbSyncBo;
+
+    @Autowired
+    private LearningDictBo learningDictBo;
 
     /**
      * 检查系统词典完整性
@@ -704,11 +715,34 @@ public class SystemHealthCheckBo {
                         continue;
                     }
                     
+                    Dict dict;
                     if ("生词本".equals(missingDict)) {
-                        dictBo.createRawWordDictForUser(user);
+                        dict = dictBo.createRawWordDictForUser(user);
                     } else {
-                        dictBo.createMasteredWordDictForUser(user);
+                        dict = dictBo.createMasteredWordDictForUser(user);
                     }
+
+                    // 生成同步日志并升级用户数据库版本号，确保客户端能同步到这些修复后的词书
+                    List<UserDbLogDto> logs = new ArrayList<>();
+
+                    // 1. 词典 (dict) INSERT 日志
+                    DictDto dictDto = dictBo.getDictDto(dict.getId());
+                    logs.add(new UserDbLogDto(null, userId, 0, "INSERT", "dict", dict.getId(), JsonUtils.toJson(dictDto), null, null));
+
+                    // 2. 学习词典关联 (learning_dict) INSERT 日志
+                    LearningDict ld = learningDictBo.getLearningDictOfUser(user, missingDict);
+                    if (ld != null) {
+                        LearningDictDto ldDto = new LearningDictDto();
+                        ldDto.setUserId(user.getId());
+                        ldDto.setDictId(dict.getId());
+                        ldDto.setIsPrivileged(ld.getIsPrivileged());
+                        ldDto.setFetchMastered(ld.getFetchMastered());
+                        ldDto.setCreateTime(ld.getCreateTime());
+                        ldDto.setUpdateTime(ld.getUpdateTime());
+                        logs.add(new UserDbLogDto(null, userId, 0, "INSERT", "learning_dict", userId + "-" + dict.getId(), JsonUtils.toJson(ldDto), null, null));
+                    }
+
+                    userDbSyncBo.logUserOperations(userId, logs);
                     
                     fixed.add(String.format("为用户 %s (%s, ID: %s) 创建%s", 
                             nickName != null ? nickName : userName, userName, userId, missingDict));
