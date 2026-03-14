@@ -451,7 +451,7 @@ public class UserBo extends BaseBo<User> {
      */
     public User pickRandomInactiveUser(int idleDays, int maxCandidates) {
         String sql = "SELECT * FROM \"user\" " +
-                "WHERE is_sys_user = false AND last_login_time < ? " +
+                "WHERE is_sys_user = false AND user_name NOT LIKE 'guest%' AND user_name NOT LIKE 'guess%' AND user_name NOT LIKE '游客%' AND last_login_time < ? " +
                 "ORDER BY last_login_time DESC LIMIT ?";
         Date time = Utils.localDate2Date(LocalDate.now().plusDays(-idleDays));
         List<User> candidates = jdbcTemplate.query(sql,
