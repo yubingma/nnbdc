@@ -878,7 +878,7 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
         gameResultHint1.text = isWon ? '胜利啦！' : '失败了，别灰心，继续努力！';
         String scoreStr = playerA.scoreAdjust >= 0 ? "+${playerA.scoreAdjust}" : "${playerA.scoreAdjust}";
         String cowDungStr = playerA.cowdungAdjust >= 0 ? "+${playerA.cowdungAdjust}" : "${playerA.cowdungAdjust}";
-        gameResultHint2.text = '积分 $scoreStr, 魔法泡泡 $cowDungStr';
+        gameResultHint2.text = '游戏分 $scoreStr, 魔法泡泡 $cowDungStr';
       }
       gameResultHint1.textRenderer = textRenderOfGameResultHint(isWon);
       gameResultHint2.textRenderer = textRenderOfGameResultHint(isWon);
@@ -1309,7 +1309,7 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
           ThrottledDbSyncService().requestSync();
 
           Global.logger
-              .d('游戏积分和魔法泡泡已更新：积分${scoreAdjust > 0 ? "+$scoreAdjust" : scoreAdjust}, 魔法泡泡${cowDungAdjust > 0 ? "+$cowDungAdjust" : cowDungAdjust}');
+              .d('游戏积分和魔法泡泡已更新：游戏分${scoreAdjust > 0 ? "+$scoreAdjust" : scoreAdjust}, 魔法泡泡${cowDungAdjust > 0 ? "+$cowDungAdjust" : cowDungAdjust}');
         }
       } catch (e, stackTrace) {
         Global.logger.e('更新游戏积分和魔法泡泡失败: $e', stackTrace: stackTrace);
@@ -2358,12 +2358,12 @@ class UserInfoPanel extends PositionComponent with HasGameReference<MyGame> {
           if (_lastIsWon!) {
             scoreAdjust.textRenderer = _successPaint;
             cowDungAdjust.textRenderer = _successPaint;
-            scoreAdjust.text = '积分 +$_lastScoreAdjust';
+            scoreAdjust.text = '游戏分 +$_lastScoreAdjust';
             cowDungAdjust.text = '魔法泡泡 +$_lastCowDungAdjust';
           } else {
             scoreAdjust.textRenderer = _failPaint;
             cowDungAdjust.textRenderer = _failPaint;
-            scoreAdjust.text = '积分 -${_lastScoreAdjust.abs()}';
+            scoreAdjust.text = '游戏分 -${_lastScoreAdjust.abs()}';
             cowDungAdjust.text = '魔法泡泡 -${_lastCowDungAdjust.abs()}';
           }
         }
