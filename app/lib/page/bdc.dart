@@ -3952,16 +3952,36 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
     final textColor = isDarkMode ? Colors.white38 : Colors.black26;
 
+    // 获取本次操作的评估标签和颜色
+    String ratingLabel = _lastFsrsRating?.label ?? '一般'; 
+    Color ratingColor;
+    
+    switch (_lastFsrsRating) {
+      case FsrsRating.again:
+        ratingColor = Colors.redAccent.withValues(alpha: 0.8);
+        break;
+      case FsrsRating.hard:
+        ratingColor = Colors.orangeAccent.withValues(alpha: 0.8);
+        break;
+      case FsrsRating.easy:
+        ratingColor = Colors.greenAccent.withValues(alpha: 0.8);
+        break;
+      case FsrsRating.good:
+      default:
+        ratingColor = AppTheme.primaryColor.withValues(alpha: 0.8);
+        break;
+    }
+
     return Container(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.psychology_outlined, size: 12, color: textColor),
+          Icon(Icons.check_circle_outline, size: 12, color: ratingColor),
           const SizedBox(width: 4),
           Text(
-            '难度: ${_fsrsItem!.difficulty.toStringAsFixed(1)}',
-            style: TextStyle(fontSize: 11, color: textColor),
+            '本次操作: $ratingLabel',
+            style: TextStyle(fontSize: 11, color: ratingColor, fontWeight: FontWeight.bold),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8),
