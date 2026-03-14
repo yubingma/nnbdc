@@ -69,29 +69,26 @@ class LearningService {
 
       // 尝试从数据库中读取今日学习单词
       List<LearningWord> todayWords = await getTodayLearningWordsFromDb(user.id);
-      debugLog('[prepareTodayStudy] 从DB获取到今日单词数: ${todayWords.length}, 目标数: ${user.wordsPerDay}');
+      Global.logger.d('[FETCH-WORD] [prepareTodayStudy] 初始从DB获取到今日单词数: ${todayWords.length}, 目标计划: ${user.wordsPerDay}');
 
       // 生成(或补充)今日要学习的单词列表
       bool needAddNewWords = todayWords.isEmpty || (todayWords.length < (user.wordsPerDay) && addNewWordsIfNotEnough);
-      debugLog('[prepareTodayStudy] 是否需要补充单词: $needAddNewWords (todayWords.isEmpty: ${todayWords.isEmpty}, addNewWordsIfNotEnough: $addNewWordsIfNotEnough)');
+      Global.logger.d('[FETCH-WORD] [prepareTodayStudy] 是否需要补充单词: $needAddNewWords (todayWords.isEmpty: ${todayWords.isEmpty}, addNewWordsIfNotEnough: $addNewWordsIfNotEnough)');
       
       bool wordExhausted = false;
       if (needAddNewWords) {
         todayWords = await genTodayWords(user.id, AppClock.now(), todayWords);
         wordExhausted = todayWords.length < (user.wordsPerDay); 
-        debugLog('[prepareTodayStudy] genTodayWords后今日单词数: ${todayWords.length}, wordExhausted: $wordExhausted');
+        Global.logger.d('[FETCH-WORD] [prepareTodayStudy] genTodayWords执行后，内存中单词总数: ${todayWords.length}, 计划是否枯竭: $wordExhausted');
       }
 
-    // 重新获取今日学习单词
+    // 重新获取今日学习单词（确保获取的是当前DB中真实分配好batchId的数据）
     todayWords = await getTodayLearningWordsFromDb(user.id);
-    debugLog('[prepareTodayStudy] 最终确定今日单词数: ${todayWords.length}');
-    if (todayWords.isNotEmpty) {
-      debugLog('[prepareTodayStudy] 样词展示: ${todayWords.take(5).map((w) => w.wordId).toList()}');
-    }
+    Global.logger.d('[FETCH-WORD] [prepareTodayStudy] 重新从DB读取确认后的单词数: ${todayWords.length}');
 
       // 如果今日单词数量超过了设定的目标，需要削减（支持从计划页面调低数量）
       if (todayWords.length > user.wordsPerDay) {
-        Global.logger.d('今日单词数 (${todayWords.length}) 超过目标 (${user.wordsPerDay})，开始削减');
+        Global.logger.d('[FETCH-WORD] [prepareTodayStudy] 溢出报警！当前数 (${todayWords.length}) > 计划数 (${user.wordsPerDay})，准备进入削减逻辑');
         todayWords = await shrinkTodayWords(user.id, todayWords, user.wordsPerDay);
       }
 
@@ -130,8 +127,9 @@ class LearningService {
           (lw) => OrderingTerm(expression: lw.learningOrder),
         ]);
 
-      // 使用get()而不是getSingleOrNull()，因为我们需要所有匹配的记录
-      return await query.get();
+      final results = await query.get();
+      Global.logger.d('[FETCH-WORD] [getTodayLearningWordsFromDb] SQL查询返回条数: ${results.length}, 关联的BatchIDs: ${results.map((e) => e.batchId).toSet()}');
+      return results;
     } catch (e) {
       Global.logger.e('获取今日学习单词失败: $e');
       return [];
@@ -193,13 +191,16 @@ class LearningService {
     int targetBatchId = maxBatchId == 0 ? 1 : maxBatchId + 1;
 
     // 2. 将到期单词加入今日计划，直到达到用户设定的每日目标
+    int dueAddedCount = 0;
     for (var word in dueWords) {
       if (todayLearningWords.length >= user.wordsPerDay) {
-        debugLog('[genTodayWords] 已达到目标数量 ${user.wordsPerDay}，通过 FSRS 到期筛选完成');
+        Global.logger.d('[FETCH-WORD] [genTodayWords] 到期复习词已填满计划 (${user.wordsPerDay})');
         break;
       }
       todayLearningWords.add(word.copyWith(batchId: Value(targetBatchId)));
+      dueAddedCount++;
     }
+    Global.logger.d('[FETCH-WORD] [genTodayWords] 本批次 (${targetBatchId}) 新增复习词: $dueAddedCount, 当前总数: ${todayLearningWords.length}');
 
     // 3. 如果依然没取够，则从词书按顺序抓取绝对的新词来补足以撑起今日计划
     if (todayLearningWords.length < user.wordsPerDay) {
@@ -216,9 +217,10 @@ class LearningService {
       }
 
       int needNewCount = user.wordsPerDay - todayLearningWords.length;
-      debugLog('[genTodayWords] 复习词不足，从词书新抓取 $needNewCount 个词');
+      Global.logger.d('[FETCH-WORD] [genTodayWords] 计划未满，准备新抓取单词，缺额: $needNewCount');
 
       final newWords = await fetchNewWordsToLearn(userId, todayDayNumber, needNewCount);
+      Global.logger.d('[FETCH-WORD] [genTodayWords] 实际抓取到新词: ${newWords.length} 个');
       for (var word in newWords) {
         todayLearningWords.add(word.copyWith(batchId: Value(targetBatchId)));
       }
@@ -241,9 +243,11 @@ class LearningService {
 
     // 如果即便把还没学的词全删了，剩下的词依然超过目标（说明用户今天已经学了很多了），那我们也无法强行删除已学的词
     if (learnedWords.length >= targetCount) {
-      Global.logger.d('已学习单词数 (${learnedWords.length}) 已达到或超过目标，无法继续削减');
+      Global.logger.d('[FETCH-WORD] [shrinkTodayWords] 无法削减！已学单词数 (${learnedWords.length}) 已 >= 目标 (${targetCount})');
       return todayWords; 
     }
+
+    Global.logger.d('[FETCH-WORD] [shrinkTodayWords] 执行削减：当前 ${todayWords.length} -> 目标 $targetCount, 计划移除 ${todayWords.length - targetCount} 个未学单词');
 
     // 2. 计算需要移除的数量
     int needToRemove = todayWords.length - targetCount;
