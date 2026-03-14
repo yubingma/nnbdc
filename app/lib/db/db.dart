@@ -209,7 +209,7 @@ class MyDatabase extends _$MyDatabase {
   // you should bump this number whenever you change or add a table definition. Migrations
   // are covered later in this readme.
   @override
-  int get schemaVersion => 25;
+  int get schemaVersion => 26;
 
   @override
   MigrationStrategy get migration {
@@ -298,6 +298,9 @@ class MyDatabase extends _$MyDatabase {
           }
           if (from < 25) {
             await _migrateFromV24ToV25(m);
+          }
+          if (from < 26) {
+            await _migrateFromV25ToV26AddWalkmanConfig(m);
           }
         } catch (e, stackTrace) {
           // 升级失败，记录错误日志
@@ -674,6 +677,18 @@ class MyDatabase extends _$MyDatabase {
   Future<void> _migrateFromV24ToV25(Migrator m) async {
     await m.createTable(learningLogs);
     Global.logger.i('✅ 创建 learning_logs 表完成');
+  }
+
+  /// 从版本 25 升级到版本 26：添加“随身听配置”字段
+  Future<void> _migrateFromV25ToV26AddWalkmanConfig(Migrator m) async {
+    await transaction(() async {
+      try {
+        await customStatement('ALTER TABLE users ADD COLUMN walkman_config TEXT');
+        Global.logger.i('✅ 向 users 表添加 walkman_config 字段完成');
+      } catch (e) {
+        Global.logger.w('添加 walkman_config 字段失败: $e');
+      }
+    });
   }
 
   /// 从版本 15 升级到版本 16

@@ -66,6 +66,8 @@ public class UserDto {
     private String asrPassRule;
     private Date createTime;
     private Date updateTime;
+
+    private String walkmanConfig;
     
 
     public UserDto() {
@@ -456,5 +458,13 @@ public class UserDto {
 
     public void setUpdateTime(Date updateTime) {
         this.updateTime = updateTime;
+    }
+
+    public String getWalkmanConfig() {
+        return walkmanConfig;
+    }
+
+    public void setWalkmanConfig(String walkmanConfig) {
+        this.walkmanConfig = walkmanConfig;
     }
 }

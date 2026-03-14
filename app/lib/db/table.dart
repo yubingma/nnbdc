@@ -184,6 +184,9 @@ class Users extends Table {
 
   // 旧字段 passIfSpeakOutOneMeaning 已移除
 
+  /// 随身听配置 (JSON格式)
+  TextColumn get walkmanConfig => text().nullable()();
+
   @override
   Set<Column> get primaryKey => {id};
 }

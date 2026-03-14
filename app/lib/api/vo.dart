@@ -265,6 +265,9 @@ class UserVo {
   /// 强制会员状态延续时长（形如：10天/360秒/15分钟；null 表示永久）
   String? premiumOverrideDuration;
 
+  /// 随身听配置 (JSON格式)
+  String? walkmanConfig;
+
   UserVo(this.id, this.userName);
 
   UserVo.c2(this.id);
@@ -321,6 +324,7 @@ class UserVo {
     userVo.premiumOverrideUpdateTime = user.premiumOverrideUpdateTime;
     userVo.premiumOverrideReason = user.premiumOverrideReason;
     userVo.premiumOverrideDuration = user.premiumOverrideDuration;
+    userVo.walkmanConfig = user.walkmanConfig;
 
     userVo.password = user.password;
     userVo.lastLoginTime = user.lastLoginTime;
@@ -1250,7 +1254,8 @@ User userVo2User(UserVo userVo) {
       premiumOverrideEnabled: userVo.premiumOverrideEnabled ?? false,
       premiumOverrideUpdateTime: userVo.premiumOverrideUpdateTime,
       premiumOverrideReason: userVo.premiumOverrideReason,
-      premiumOverrideDuration: userVo.premiumOverrideDuration);
+      premiumOverrideDuration: userVo.premiumOverrideDuration,
+      walkmanConfig: userVo.walkmanConfig);
 
   return user;
 }

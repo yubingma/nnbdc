@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:convert';
+import 'package:drift/drift.dart' as drift;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -19,6 +21,52 @@ import '../state.dart';
 import '../util/sound.dart';
 import '../util/tts.dart';
 import 'index.dart';
+
+class WalkmanConfig { 
+  bool showSpell = true;
+  bool showPronounce = false;
+  bool showMeaning = false;
+  bool showSentence = false;
+  bool showChinese = false;
+  bool playPronounce = true;
+  bool playMeaning = false;
+  bool playSentence = false;
+  bool playChinese = false;
+  int repeatCount = 1;
+  int playInterval = 0;
+
+  WalkmanConfig();
+
+  factory WalkmanConfig.fromJson(Map<String, dynamic> json) {
+    var config = WalkmanConfig();
+    config.showSpell = json['showSpell'] ?? true;
+    config.showPronounce = json['showPronounce'] ?? false;
+    config.showMeaning = json['showMeaning'] ?? false;
+    config.showSentence = json['showSentence'] ?? false;
+    config.showChinese = json['showChinese'] ?? false;
+    config.playPronounce = json['playPronounce'] ?? true;
+    config.playMeaning = json['playMeaning'] ?? false;
+    config.playSentence = json['playSentence'] ?? false;
+    config.playChinese = json['playChinese'] ?? false;
+    config.repeatCount = json['repeatCount'] ?? 1;
+    config.playInterval = json['playInterval'] ?? 0;
+    return config;
+  }
+
+  Map<String, dynamic> toJson() => {
+        'showSpell': showSpell,
+        'showPronounce': showPronounce,
+        'showMeaning': showMeaning,
+        'showSentence': showSentence,
+        'showChinese': showChinese,
+        'playPronounce': playPronounce,
+        'playMeaning': playMeaning,
+        'playSentence': playSentence,
+        'playChinese': playChinese,
+        'repeatCount': repeatCount,
+        'playInterval': playInterval,
+      };
+}
 
 class WalkmanParams {
   WordsProvider wordsProvider;
@@ -120,10 +168,59 @@ class WalkmanPageState extends State<WalkmanPage> {
     playWordTick();
   }
 
+  Future<void> loadConfig() async {
+    User? user = Global.getLoggedInUser();
+    if (user != null && user.walkmanConfig != null) {
+      try {
+        final config = WalkmanConfig.fromJson(jsonDecode(user.walkmanConfig!));
+        setState(() {
+          showSpell = config.showSpell;
+          showPronounce = config.showPronounce;
+          showMeaning = config.showMeaning;
+          showSentence = config.showSentence;
+          showChinese = config.showChinese;
+          playPronounce = config.playPronounce;
+          playMeaning = config.playMeaning;
+          playSentence = config.playSentence;
+          playChinese = config.playChinese;
+          repeatCount = config.repeatCount;
+          playInterval = config.playInterval;
+        });
+      } catch (e) {
+        Global.logger.e('解析随身听配置失败: $e');
+      }
+    }
+  }
+
+  Future<void> saveConfig() async {
+    final config = WalkmanConfig()
+      ..showSpell = showSpell
+      ..showPronounce = showPronounce
+      ..showMeaning = showMeaning
+      ..showSentence = showSentence
+      ..showChinese = showChinese
+      ..playPronounce = playPronounce
+      ..playMeaning = playMeaning
+      ..playSentence = playSentence
+      ..playChinese = playChinese
+      ..repeatCount = repeatCount
+      ..playInterval = playInterval;
+
+    try {
+      User user = Global.getLoggedInUserNotNull();
+      final updatedUser = user.copyWith(walkmanConfig: drift.Value<String?>(jsonEncode(config.toJson())));
+      await MyDatabase.instance.usersDao.saveUser(updatedUser, true);
+      Global.updateUserCache(updatedUser);
+    } catch (e) {
+      Global.logger.e('保存随身听配置失败: $e');
+    }
+  }
+
   Future<void> loadData() async {
     if (!await checkArgs()) {
       return;
     }
+    await loadConfig();
     // 确保params已初始化
     if (params == null) {
       Global.logger.e('Walkman: params为空，无法加载数据');
@@ -577,6 +674,7 @@ class WalkmanPageState extends State<WalkmanPage> {
                       onTap: () {
                         setState(() {
                           showSpell = !showSpell;
+                          saveConfig();
                         });
                       },
                     ),
@@ -588,6 +686,7 @@ class WalkmanPageState extends State<WalkmanPage> {
                       onTap: () {
                         setState(() {
                           showPronounce = !showPronounce;
+                          saveConfig();
                         });
                       },
                     ),
@@ -599,6 +698,7 @@ class WalkmanPageState extends State<WalkmanPage> {
                       onTap: () {
                         setState(() {
                           showMeaning = !showMeaning;
+                          saveConfig();
                         });
                       },
                     ),
@@ -624,6 +724,7 @@ class WalkmanPageState extends State<WalkmanPage> {
                       onTap: () {
                         setState(() {
                           playPronounce = !playPronounce;
+                          saveConfig();
                         });
                       },
                     ),
@@ -636,6 +737,7 @@ class WalkmanPageState extends State<WalkmanPage> {
                         onTap: () {
                           setState(() {
                             playMeaning = !playMeaning;
+                            saveConfig();
                           });
                         },
                       ),
@@ -647,6 +749,7 @@ class WalkmanPageState extends State<WalkmanPage> {
                       onTap: () {
                         setState(() {
                           playSentence = !playSentence;
+                          saveConfig();
                         });
                       },
                     ),
@@ -659,6 +762,7 @@ class WalkmanPageState extends State<WalkmanPage> {
                         onTap: () {
                           setState(() {
                             playChinese = !playChinese;
+                            saveConfig();
                           });
                         },
                       ),
@@ -683,6 +787,7 @@ class WalkmanPageState extends State<WalkmanPage> {
                       onTap: () {
                         setState(() {
                           repeatCount = 1;
+                          saveConfig();
                         });
                       },
                     ),
@@ -694,6 +799,7 @@ class WalkmanPageState extends State<WalkmanPage> {
                       onTap: () {
                         setState(() {
                           repeatCount = 2;
+                          saveConfig();
                         });
                       },
                     ),
@@ -705,6 +811,7 @@ class WalkmanPageState extends State<WalkmanPage> {
                       onTap: () {
                         setState(() {
                           repeatCount = 3;
+                          saveConfig();
                         });
                       },
                     ),
@@ -716,6 +823,7 @@ class WalkmanPageState extends State<WalkmanPage> {
                       onTap: () {
                         setState(() {
                           repeatCount = 4;
+                          saveConfig();
                         });
                       },
                     ),
@@ -727,6 +835,7 @@ class WalkmanPageState extends State<WalkmanPage> {
                       onTap: () {
                         setState(() {
                           repeatCount = 5;
+                          saveConfig();
                         });
                       },
                     ),
@@ -750,6 +859,7 @@ class WalkmanPageState extends State<WalkmanPage> {
                       onTap: () {
                         setState(() {
                           playInterval = 0;
+                          saveConfig();
                         });
                       },
                     ),
@@ -761,6 +871,7 @@ class WalkmanPageState extends State<WalkmanPage> {
                       onTap: () {
                         setState(() {
                           playInterval = 1000;
+                          saveConfig();
                         });
                       },
                     ),
@@ -772,6 +883,7 @@ class WalkmanPageState extends State<WalkmanPage> {
                       onTap: () {
                         setState(() {
                           playInterval = 2000;
+                          saveConfig();
                         });
                       },
                     ),
@@ -783,6 +895,7 @@ class WalkmanPageState extends State<WalkmanPage> {
                       onTap: () {
                         setState(() {
                           playInterval = 3000;
+                          saveConfig();
                         });
                       },
                     ),
@@ -794,6 +907,7 @@ class WalkmanPageState extends State<WalkmanPage> {
                       onTap: () {
                         setState(() {
                           playInterval = maxIntValue;
+                          saveConfig();
                         });
                         ToastUtil.info('手指向左滑动，播放下一单词');
                       },

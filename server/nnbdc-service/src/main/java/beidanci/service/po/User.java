@@ -197,6 +197,12 @@ public class User extends UuidPo {
     @Column(name = "asr_pass_rule", length = 10)
     private String asrPassRule;
 
+    /**
+     * 随身听配置 (JSON格式)
+     */
+    @Column(name = "walkman_config", columnDefinition = "TEXT")
+    private String walkmanConfig;
+
     
     // iOS订阅字段
     /**
@@ -604,6 +610,14 @@ public class User extends UuidPo {
         this.asrPassRule = asrPassRule;
     }
 
+    public String getWalkmanConfig() {
+        return walkmanConfig;
+    }
+
+    public void setWalkmanConfig(String walkmanConfig) {
+        this.walkmanConfig = walkmanConfig;
+    }
+
     public void setCreatedSentences(List<Sentence> createdSentences) {
         this.createdSentences = createdSentences;
     }
@@ -924,6 +938,7 @@ public class User extends UuidPo {
         user.setTodayStudyStarted(todayStudyStarted != null ? todayStudyStarted : false);
 
         user.setAsrPassRule(dto.getAsrPassRule());
+        user.setWalkmanConfig(dto.getWalkmanConfig());
 
         // ========== 订阅/强制会员字段（客户端同步不一定包含，允许为 null） ==========
         user.setIsPremiumIos(Boolean.TRUE.equals(dto.getIsPremiumIos()));
@@ -990,6 +1005,7 @@ public class User extends UuidPo {
         dto.setEnableAllWrong(Boolean.TRUE.equals(this.getEnableAllWrong()));
         dto.setTodayStudyStarted(Boolean.TRUE.equals(this.getTodayStudyStarted()));
         dto.setAsrPassRule(this.getAsrPassRule());
+        dto.setWalkmanConfig(this.getWalkmanConfig());
 
 
         // ========== 订阅/强制会员字段 ==========
