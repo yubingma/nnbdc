@@ -1243,10 +1243,14 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     // 如果是在手写模式下，或者是键盘弹出的情况下，允许通过检查
     bool isHandwritingOrKeyboard = _showHandwritingBoard || _isKeyboardVisible || _meaningFocusNode.hasFocus;
 
-    if (_isAnswerCorrect) {
-      Global.logger.d('checkAsrResult: 单词已回答正确，跳过后续结果处理');
+    // 如果已经答对，且并未处于练习拼写的看板模式（或者看板是固定模式），则跳过处理。
+    // 这样做是为了允许用户在答对后，再次打开看板练习拼写，并能触发“拼写正确”的反馈（如自动关闭看板）。
+    if (_isAnswerCorrect && (!_showHandwritingBoard || _pinImmersiveMode)) {
+      Global.logger.d('checkAsrResult: 单词已回答正确且非看板练习模式，跳过后续结果处理');
       return;
     }
+
+    final bool wasAlreadyCorrect = _isAnswerCorrect;
 
     if (asr.state != AsrState.started && asr.state != AsrState.initialized && !isHandwritingOrKeyboard) {
       Global.logger.w('收到归属于旧会话的结果($inputText)，但当前无活跃输入途径，跳过处理');
@@ -1278,6 +1282,21 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     }
 
     if (_studyStep == StudyStep.en2Ch.json) {
+      // 额外检测：如果是正在进行拼写练习（打开了看板），则判定其英文拼写是否正确
+      if (_showHandwritingBoard && inputText.trim().toLowerCase() == _word!.spell.toLowerCase()) {
+        if (asrInput != null) {
+          _meaningController.text = _word!.spell;
+        }
+        if (!_pinImmersiveMode) {
+          _meaningFocusNode.unfocus();
+          setState(() {
+            _showHandwritingBoard = false;
+          });
+        }
+        SoundUtil.playAssetSoundConcurrent('correct.mp3', 1.5, 0.2);
+        return;
+      }
+
       // 英→中：验证中文释义
       late MeaningMatchResult result;
 
@@ -1339,6 +1358,11 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
           Future.delayed(const Duration(milliseconds: 150)).then((_) async {
             _playingCorrectSounds.remove(soundFuture);
             if (_playingCorrectSounds.isEmpty && _isAnswerCorrect) {
+              // 如果之前已经答对了，此时是二次匹配（可能是多义词匹配），则不需要重新计算 FSRS 和跳转
+              if (wasAlreadyCorrect) {
+                return;
+              }
+
               // 计算 FSRS 评分
               FsrsRating rating = FsrsRating.good; // 默认 Good
               if (_hintUsed) {
@@ -1430,6 +1454,19 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         if (asrInput != null) {
           _meaningController.text = _word!.spell;
         }
+
+        // 如果之前已经答对了，现在是在沉浸式面板里练习拼写，则仅处理 UI 关闭与音效
+        if (wasAlreadyCorrect) {
+          if (_showHandwritingBoard && !_pinImmersiveMode) {
+            _meaningFocusNode.unfocus();
+            setState(() {
+              _showHandwritingBoard = false;
+            });
+          }
+          SoundUtil.playAssetSoundConcurrent('correct.mp3', 1.5, 0.2);
+          return;
+        }
+
         _isAnswerCorrect = true;
 
         // 计算 FSRS 评分
