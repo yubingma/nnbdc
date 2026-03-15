@@ -1274,10 +1274,11 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     if (_isAnswerCorrect && !_showHandwritingBoard) {
       Global.logger.d('checkAsrResult: 单词已回答正确且非看板练习模式，跳过后续结果处理');
       if (asrInput != null && asrInput.trim().toLowerCase() == _word!.spell.toLowerCase()) {
-         SoundUtil.playAssetSoundConcurrent('correct.mp3', 1.5, 0.2);
+         await SoundUtil.playAssetSoundConcurrent('correct.mp3', 1.5, 0.2);
+         await SoundUtil.playPronounceSound2(_word!, _audioPlayer);
       }
       return;
-    }
+    } 
 
     final bool wasAlreadyCorrect = _isAnswerCorrect;
 
