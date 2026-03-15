@@ -264,34 +264,41 @@ class SoundUtil {
   ) async {
     try {
       if (player.state == PlayerState.playing) {
-        await player.stop();
+        await player.stop().timeout(const Duration(milliseconds: 1000), onTimeout: () => {});
       }
       await player.setPlaybackRate(speed);
       await player.setVolume(volume);
 
+      final Completer<void> playCompleter = Completer<void>();
+
+      player.onPlayerComplete.first.then((_) {
+        if (!playCompleter.isCompleted) playCompleter.complete();
+      });
+
       if (player.source == null) {
-        await player.play(AssetSource('audio/$soundFileName'));
+        await player.play(AssetSource('audio/$soundFileName')).timeout(const Duration(milliseconds: 3000));
       } else {
-        await player.seek(Duration.zero);
-        await player.resume();
+        await player.seek(Duration.zero).timeout(const Duration(milliseconds: 1000), onTimeout: () => {});
+        await player.resume().timeout(const Duration(milliseconds: 3000));
       }
 
       if (PlatformUtils.isAndroid) {
-        final completer = Completer<void>();
         late StreamSubscription stateSubscription;
         stateSubscription = player.onPlayerStateChanged.listen((state) {
           if (state == PlayerState.completed || state == PlayerState.stopped) {
-            if (!completer.isCompleted) completer.complete();
+            if (!playCompleter.isCompleted) playCompleter.complete();
           }
         });
         await Future.any([
-          player.onPlayerComplete.first,
-          completer.future,
+          playCompleter.future,
           Future.delayed(const Duration(milliseconds: 1500)),
         ]);
         await stateSubscription.cancel();
       } else {
-        await player.onPlayerComplete.first;
+        await Future.any([
+          playCompleter.future,
+          Future.delayed(const Duration(milliseconds: 1500)),
+        ]);
       }
     } on Exception catch (e, stackTrace) {
       ErrorHandler.handleError(e, stackTrace, logPrefix: '播放后台音效出错: $soundFileName', showToast: false);
