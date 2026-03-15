@@ -6,6 +6,8 @@ import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/network_util.dart';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'package:nnbdc/api/bo/user_bo.dart';
+import 'package:nnbdc/util/toast_util.dart';
 
 class ThrottledDbSyncService {
   static final ThrottledDbSyncService _instance = ThrottledDbSyncService._internal();
@@ -223,6 +225,27 @@ class ThrottledDbSyncService {
             ),
           ),
           actions: [
+            if (error is dbsync.SyncDataParseException)
+              TextButton(
+                onPressed: () async {
+                  try {
+                    ToastUtil.info('正在提交报错...');
+                    var result = await UserBo().saveErrorReport(
+                      '[SYNC_PARSE_ERR]', 
+                      error.message
+                    );
+                    if (result.success) {
+                      ToastUtil.success('一键报错成功！我们会尽快排查');
+                      Get.back();
+                    } else {
+                      ToastUtil.error(result.msg ?? '报错失败');
+                    }
+                  } catch (e) {
+                    ToastUtil.error('报错失败：$e');
+                  }
+                },
+                child: const Text('一键报错', style: TextStyle(color: Colors.red)),
+              ),
             TextButton(
               onPressed: () => Get.back(),
               child: const Text('确定'),

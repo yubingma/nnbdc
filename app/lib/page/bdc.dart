@@ -1274,9 +1274,22 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     // 这样做是为了允许用户在答对后，再次打开看板练习拼写，并能触发“拼写正确”的反馈（如自动关闭看板）。
     if (_isAnswerCorrect && !_showHandwritingBoard) {
       Global.logger.d('checkAsrResult: 单词已回答正确且非看板练习模式，跳过后续结果处理');
-      if (asrInput != null && asrInput.trim().toLowerCase() == _word!.spell.toLowerCase()) {
-         await SoundUtil.playAssetSoundConcurrent('correct.mp3', 1.5, 0.2);
-         await SoundUtil.playPronounceSound2(_word!, _audioPlayer);
+      if (asrInput != null) {
+        String inputLower = asrInput.trim().toLowerCase();
+        String spellLower = _word!.spell.toLowerCase();
+        bool isMatch = inputLower == spellLower;
+        if (!isMatch && _studyStep == StudyStep.ch2En.json && _currentScore != null && _currentScore! >= Constants.phonemeMatchThreshold) {
+          isMatch = true;
+        }
+
+        if (isMatch) {
+          _isUpdatingByHint = true;
+          setState(() {
+            _meaningController.text = _word!.spell;
+          });
+          await SoundUtil.playAssetSoundConcurrent('correct.mp3', 1.5, 0.2);
+          await SoundUtil.playPronounceSound2(_word!, _audioPlayer);
+        }
       }
       return;
     } 
@@ -3986,7 +3999,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                                               text: SpellingTextEditingController.buildSpellingTextSpan(
                                                 _meaningController.text,
                                                 _word?.spell ?? "",
-                                                isDarkMode ? Colors.white : Colors.black,
+                                                _meaningController.text.trim().toLowerCase() != (_word?.spell.toLowerCase() ?? "")
+                                                    ? Colors.red 
+                                                    : (isDarkMode ? Colors.white : Colors.black),
                                                 const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                                               ),
                                             ),
