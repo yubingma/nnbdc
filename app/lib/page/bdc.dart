@@ -1263,7 +1263,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     // 如果输入框中的文本与正在处理的文本相同，则直接返回, 避免无谓的性能损耗
     if (inputText != _handlingChinese) {
       Global.logger.d('BDC CHECK_ASR: Update _handlingChinese from "$_handlingChinese" to "$inputText"');
-      _handlingChinese = inputText;
+      _handlingChinese = inputText; 
+      if (mounted) setState(() {});
     } else {
       Global.logger.d('BDC CHECK_ASR: _handlingChinese hasn\'t changed ("$_handlingChinese"), returning early.');
       return;
