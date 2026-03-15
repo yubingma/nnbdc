@@ -2231,7 +2231,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                 ),
               ),
               content: SizedBox(
-                width: min(MediaQuery.of(context).size.width * 0.86, 420),
+                width: min(MediaQuery.of(context).size.width * 0.92, 540),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [

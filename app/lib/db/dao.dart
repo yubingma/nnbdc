@@ -147,7 +147,7 @@ class LocalParamsDao extends DatabaseAccessor<MyDatabase> with _$LocalParamsDaoM
     }
   }
 
-  /// 获取极速模式开关状态（中英模式，答对是否自动跳转）
+  /// 获取极速模式开关状态（中英模式，答对是否自动跳转） 
   Future<bool> getAutoJumpAfterCorrectCh2En() async {
     try {
       var param = await (select(localParams)..where((e) => e.name.equals('autoJumpAfterCorrectCh2En'))).getSingleOrNull();
