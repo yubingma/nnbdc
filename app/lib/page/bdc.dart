@@ -2011,19 +2011,15 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
   final email = TextEditingController();
   Widget _buildSettingItem(String title, bool value, Function(bool) onChanged, {Widget? customTrailing, String? subtitle}) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return ListTile(
-      dense: true,
-      tileColor: isDark ? const Color(0xFF1C1C1E) : Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 10),
-      visualDensity: const VisualDensity(horizontal: -2, vertical: -4),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+      visualDensity: const VisualDensity(horizontal: -4, vertical: -2),
       title: Text(
         title,
         textScaler: const TextScaler.linear(1.0),
         style: const TextStyle(
           fontFamily: "NotoSansSC",
-          fontSize: 13,
+          fontSize: 14,
           fontWeight: FontWeight.w500,
         ),
       ),
@@ -2033,14 +2029,14 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
               textScaler: const TextScaler.linear(1.0),
               style: TextStyle(
                 fontFamily: "NotoSansSC",
-                fontSize: 11,
-                color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.7),
+                fontSize: 12,
+                color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
               ),
             )
           : null,
       trailing: customTrailing ??
           Transform.scale(
-            scale: 0.8,
+            scale: 0.85,
             child: Switch.adaptive(
               value: value,
               onChanged: onChanged,
@@ -2063,19 +2059,15 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       'ALL': '说出全部意思',
     };
 
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return ListTile(
-      dense: true,
-      tileColor: isDark ? const Color(0xFF1C1C1E) : Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 10),
-      visualDensity: const VisualDensity(horizontal: -2, vertical: -4),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+      visualDensity: const VisualDensity(horizontal: -4, vertical: -2),
       title: Text(
         '语音识别通过规则',
         textScaler: const TextScaler.linear(1.0),
         style: const TextStyle(
           fontFamily: "NotoSansSC",
-          fontSize: 13,
+          fontSize: 14,
           fontWeight: FontWeight.w500,
         ),
       ),
@@ -2084,8 +2076,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         textScaler: const TextScaler.linear(1.0),
         style: TextStyle(
           fontFamily: "NotoSansSC",
-          fontSize: 11,
-          color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.7),
+          fontSize: 12,
+          color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
         ),
       ),
       trailing: PopupMenuButton<String>(
@@ -2178,13 +2170,17 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                       child: SingleChildScrollView(
                         child: Container(
                           decoration: BoxDecoration(
-                            color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF2C2C2E) : const Color(0xFFF2F2F7),
-                            borderRadius: BorderRadius.circular(12),
+                            color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF1C1C1E) : const Color(0xFFF9F9F9),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                                color: Theme.of(context).brightness == Brightness.dark
+                                    ? Colors.white.withValues(alpha: 0.05)
+                                    : Colors.black.withValues(alpha: 0.05),
+                                width: 0.5),
                           ),
-                          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                          padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 0),
                           child: LayoutBuilder(
                             builder: (context, constraints) {
-                              final bool useTwoColumns = constraints.maxWidth > 360;
                               final List<Widget> items = [
                                 _buildSettingItem(
                                   '深色模式',
@@ -2262,26 +2258,22 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                                 ),
                               ];
 
-                              if (!useTwoColumns) {
-                                return Column(
-                                  children: [
-                                    for (int i = 0; i < items.length; i++) ...[
-                                      if (i > 0) const SizedBox(height: 2),
-                                      items[i],
-                                    ]
-                                  ],
-                                );
-                              }
-
-                              return Wrap(
-                                spacing: 8,
-                                runSpacing: 4,
-                                children: items
-                                    .map((w) => SizedBox(
-                                          width: (constraints.maxWidth - 8) / 2,
-                                          child: w,
-                                        ))
-                                    .toList(),
+                              return Column(
+                                children: [
+                                  for (int i = 0; i < items.length; i++) ...[
+                                    if (i > 0)
+                                      Divider(
+                                        height: 1,
+                                        thickness: 0.5,
+                                        indent: 16,
+                                        endIndent: 16,
+                                        color: Theme.of(context).brightness == Brightness.dark
+                                            ? Colors.white.withValues(alpha: 0.08)
+                                            : Colors.grey.withValues(alpha: 0.2),
+                                      ),
+                                    items[i],
+                                  ]
+                                ],
                               );
                             },
                           ),
@@ -3334,11 +3326,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         _meaningController.text = spell.substring(0, word.hintLetterCount);
       }
     });
-
-    // 如果提示已经显示了完整的单词，则检查结果
-    if (_studyStep == StudyStep.ch2En.json && word.hintLetterCount >= word.word.spell.length) {
-      checkAsrResult();
-    }
   }
 
   void giveFullHint(WordWrapper word) {
@@ -3350,9 +3337,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         _meaningController.text = word.word.spell;
       }
     });
-    if (_studyStep == StudyStep.ch2En.json) {
-      checkAsrResult();
-    }
   }
 
   void clearHint(WordWrapper word) {
