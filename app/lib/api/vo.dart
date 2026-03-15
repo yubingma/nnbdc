@@ -4,6 +4,7 @@ import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:nnbdc/util/user_helper.dart';
 import 'package:nnbdc/util/level_util.dart';
+import 'package:nnbdc/util/subscription_util.dart';
 
 import '../db/db.dart';
 import '../util/custom_convert.dart';
@@ -349,6 +350,14 @@ class UserVo {
 
   bool isGuest() {
     return userName!.startsWith("guest_");
+  }
+
+  /// 获取实际生效的每日单词数（非会员最多20个）
+  int get effectiveWordsPerDay {
+    int raw = wordsPerDay ?? 0;
+    if (raw == 0) return 0;
+    if (!SubscriptionUtil.isPremium() && raw > 20) return 20;
+    return raw;
   }
 }
 

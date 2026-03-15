@@ -4,6 +4,7 @@ import 'package:nnbdc/api/vo.dart';
 
 import 'package:nnbdc/util/user_helper.dart';
 import 'package:nnbdc/util/level_util.dart';
+import 'package:nnbdc/util/subscription_util.dart';
 
 /// User类的扩展方法
 extension UserExtensions on User {
@@ -266,4 +267,12 @@ extension UserExtensions on User {
 
   /// 判断用户今天是否已经完成学习
   bool get isTodayLearningFinished => UserHelper.isTodayLearningFinishedFromUser(this);
+
+  /// 获取实际生效的每日单词数（非会员最多20个）
+  int get effectiveWordsPerDay {
+    int raw = wordsPerDay;
+    if (raw == 0) return 0;
+    if (!SubscriptionUtil.isPremium() && raw > 20) return 20;
+    return raw;
+  }
 }

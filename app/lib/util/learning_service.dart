@@ -6,6 +6,7 @@ import 'package:drift/drift.dart';
 import 'package:nnbdc/util/date_utils.dart';
 import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/constants.dart';
+import 'package:nnbdc/db/user_extensions.dart';
 
 class LearningService {
   static void debugLog(String msg) {
@@ -69,16 +70,16 @@ class LearningService {
 
       // 尝试从数据库中读取今日学习单词
       List<LearningWord> todayWords = await getTodayLearningWordsFromDb(user.id);
-      Global.logger.d('[FETCH-WORD] [prepareTodayStudy] 初始从DB获取到今日单词数: ${todayWords.length}, 目标计划: ${user.wordsPerDay}');
+      Global.logger.d('[FETCH-WORD] [prepareTodayStudy] 初始从DB获取到今日单词数: ${todayWords.length}, 目标计划: ${user.effectiveWordsPerDay}');
 
       // 生成(或补充)今日要学习的单词列表
-      bool needAddNewWords = todayWords.isEmpty || (todayWords.length < (user.wordsPerDay) && addNewWordsIfNotEnough);
+      bool needAddNewWords = todayWords.isEmpty || (todayWords.length < (user.effectiveWordsPerDay) && addNewWordsIfNotEnough);
       Global.logger.d('[FETCH-WORD] [prepareTodayStudy] 是否需要补充单词: $needAddNewWords (todayWords.isEmpty: ${todayWords.isEmpty}, addNewWordsIfNotEnough: $addNewWordsIfNotEnough)');
       
       bool wordExhausted = false;
       if (needAddNewWords) {
         todayWords = await genTodayWords(user.id, AppClock.now(), todayWords);
-        wordExhausted = todayWords.length < (user.wordsPerDay); 
+        wordExhausted = todayWords.length < (user.effectiveWordsPerDay); 
         Global.logger.d('[FETCH-WORD] [prepareTodayStudy] genTodayWords执行后，内存中单词总数: ${todayWords.length}, 计划是否枯竭: $wordExhausted');
       }
 
@@ -87,9 +88,9 @@ class LearningService {
     Global.logger.d('[FETCH-WORD] [prepareTodayStudy] 重新从DB读取确认后的单词数: ${todayWords.length}');
 
       // 如果今日单词数量超过了设定的目标，需要削减（支持从计划页面调低数量）
-      if (todayWords.length > user.wordsPerDay) {
-        Global.logger.d('[FETCH-WORD] [prepareTodayStudy] 溢出报警！当前数 (${todayWords.length}) > 计划数 (${user.wordsPerDay})，准备进入削减逻辑');
-        todayWords = await shrinkTodayWords(user.id, todayWords, user.wordsPerDay);
+      if (todayWords.length > user.effectiveWordsPerDay) {
+        Global.logger.d('[FETCH-WORD] [prepareTodayStudy] 溢出报警！当前数 (${todayWords.length}) > 计划数 (${user.effectiveWordsPerDay})，准备进入削减逻辑');
+        todayWords = await shrinkTodayWords(user.id, todayWords, user.effectiveWordsPerDay);
       }
 
       // 计算今日新词数
@@ -193,8 +194,8 @@ class LearningService {
     // 2. 将到期单词加入今日计划，直到达到用户设定的每日目标
     int dueAddedCount = 0;
     for (var word in dueWords) {
-      if (todayLearningWords.length >= user.wordsPerDay) {
-        Global.logger.d('[FETCH-WORD] [genTodayWords] 到期复习词已填满计划 (${user.wordsPerDay})');
+      if (todayLearningWords.length >= user.effectiveWordsPerDay) {
+        Global.logger.d('[FETCH-WORD] [genTodayWords] 到期复习词已填满计划 (${user.effectiveWordsPerDay})');
         break;
       }
       todayLearningWords.add(word.copyWith(batchId: Value(targetBatchId)));
@@ -203,7 +204,7 @@ class LearningService {
     Global.logger.d('[FETCH-WORD] [genTodayWords] 本批次 ($targetBatchId) 新增复习词: $dueAddedCount, 当前总数: ${todayLearningWords.length}');
 
     // 3. 如果依然没取够，则从词书按顺序抓取绝对的新词来补足以撑起今日计划
-    if (todayLearningWords.length < user.wordsPerDay) {
+    if (todayLearningWords.length < user.effectiveWordsPerDay) {
       // 确定 addDay 序号
       LearningWord? latestWord;
       for (var word in allLearningWords) {
@@ -216,7 +217,7 @@ class LearningService {
         todayDayNumber = DateUtils.isSameDay(latestWord.addTime, now) ? latestWord.addDay : latestWord.addDay + 1;
       }
 
-      int needNewCount = user.wordsPerDay - todayLearningWords.length;
+      int needNewCount = user.effectiveWordsPerDay - todayLearningWords.length;
       Global.logger.d('[FETCH-WORD] [genTodayWords] 计划未满，准备新抓取单词，缺额: $needNewCount');
 
       final newWords = await fetchNewWordsToLearn(userId, todayDayNumber, needNewCount);

@@ -376,7 +376,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
                     Row(
                       children: [
                         Text(
-                          '${user?.wordsPerDay ?? 0} 个单词',
+                          '${user?.effectiveWordsPerDay ?? 0} 个单词',
                           style: TextStyle(
                             color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
                             fontSize: 20,
@@ -459,7 +459,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
           // Supplement Hint
           if (prepareResult != null &&
               prepareResult!.success &&
-              (todayWordCount ?? 0) < (user?.wordsPerDay ?? 20) &&
+              (todayWordCount ?? 0) < (user?.effectiveWordsPerDay ?? 20) &&
               !(user?.todayStudyStarted ?? false) &&
               !_hasTriedSupplement)
             Padding(
@@ -504,7 +504,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
           // Action Button
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-            child: (prepareResult?.code == "NNBDC-0012" || (_hasTriedSupplement && (todayWordCount ?? 0) < (user?.wordsPerDay ?? 0)))
+            child: (prepareResult?.code == "NNBDC-0012" || (_hasTriedSupplement && (todayWordCount ?? 0) < (user?.effectiveWordsPerDay ?? 0)))
                 ? renderErrorActions()
                 : renderStartButton(),
           ),
@@ -578,12 +578,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
         ),
         child: DropdownButtonHideUnderline(
           child: DropdownButton<int>(
-            value: (() {
-              final isPremium = SubscriptionUtil.isPremium();
-              final raw = user?.wordsPerDay ?? 20;
-              if (!isPremium && raw > 20) return 20;
-              return raw;
-            })(),
+            value: user?.effectiveWordsPerDay ?? 20,
             isDense: true,
             icon: const Icon(Icons.arrow_drop_down_rounded, size: 20),
             dropdownColor: isDarkMode ? const Color(0xFF1E293B) : Colors.white,
