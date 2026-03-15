@@ -2088,8 +2088,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   final email = TextEditingController();
   Widget _buildSettingItem(String title, bool value, Function(bool) onChanged, {Widget? customTrailing, String? subtitle}) {
     return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-      visualDensity: const VisualDensity(horizontal: -4, vertical: -2),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+      visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
+      dense: true,
       title: Text(
         title,
         textScaler: const TextScaler.linear(1.0),
@@ -2132,13 +2133,14 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   Widget _buildAsrPassRuleSelector(String currentValue, Function(String) onChanged) {
     const Map<String, String> options = {
       'ONE': '说出一个意思即可',
-      'HALF': '说出半数意思',
+      'HALF': '说出半数意思', 
       'ALL': '说出全部意思',
     };
 
     return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-      visualDensity: const VisualDensity(horizontal: -4, vertical: -2),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+      visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
+      dense: true,
       title: Text(
         '语音识别通过规则',
         textScaler: const TextScaler.linear(1.0),
@@ -2214,10 +2216,10 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                 borderRadius: BorderRadius.circular(18),
               ),
               titlePadding: EdgeInsets.zero,
-              contentPadding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+              contentPadding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
               actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
               title: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 decoration: BoxDecoration(
                   color: Global.highlight.withValues(alpha: 0.1),
                   borderRadius: const BorderRadius.only(
@@ -2250,7 +2252,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 2),
                     ConstrainedBox(
                       constraints: BoxConstraints(
                         maxHeight: MediaQuery.of(context).size.height * 0.5,
@@ -2266,7 +2268,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                                     : Colors.black.withValues(alpha: 0.05),
                                 width: 0.5),
                           ),
-                          padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 0),
+                          padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 0),
                           child: LayoutBuilder(
                             builder: (context, constraints) {
                               final List<Widget> items = [
@@ -2281,7 +2283,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                                     context.read<DarkMode>().setIsDarkMode(value);
                                   },
                                   customTrailing: Transform.scale(
-                                    scale: 0.7,
+                                    scale: 0.9,
                                     alignment: Alignment.centerRight,
                                     child: DayNightSwitcherIcon(
                                       isDarkModeEnabled: _isDarkMode,
