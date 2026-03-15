@@ -28,7 +28,6 @@ extension UserExtensions on User {
     bool? isSuperAdmin,
     bool? isAdmin,
     bool? isInputor,
-    bool? autoPlaySentence,
     int? wordsPerDay,
     int? dakaDayCount,
     int? masteredWordsCount,
@@ -39,7 +38,6 @@ extension UserExtensions on User {
     int? maxContinuousDakaDayCount,
     DateTime? lastDakaDate,
     double? dakaRatio,
-    bool? enableAllWrong,
     // iOS订阅字段
     bool? isPremiumIos,
     DateTime? subscriptionExpireDateIos,
@@ -60,8 +58,6 @@ extension UserExtensions on User {
       gameScore: gameScore ?? this.gameScore,
       password: password ?? this.password,
       dakaScore: dakaScore ?? this.dakaScore,
-      showAnswersDirectly: showAnswersDirectly ?? this.showAnswersDirectly,
-      autoPlayWord: autoPlayWord ?? this.autoPlayWord,
       lastLoginTime: lastLoginTime ?? this.lastLoginTime,
       lastShareTime: lastShareTime ?? this.lastShareTime,
       email: email ?? this.email,
@@ -73,7 +69,6 @@ extension UserExtensions on User {
       isAdmin: isAdmin ?? this.isAdmin,
       isInputor: isInputor ?? this.isInputor,
 
-      autoPlaySentence: autoPlaySentence ?? this.autoPlaySentence,
       wordsPerDay: wordsPerDay ?? this.wordsPerDay,
       dakaDayCount: dakaDayCount ?? this.dakaDayCount,
       masteredWordsCount: masteredWordsCount ?? this.masteredWordsCount,
@@ -86,7 +81,6 @@ extension UserExtensions on User {
       lastDakaDate: lastDakaDate ?? this.lastDakaDate,
 
       dakaRatio: dakaRatio ?? this.dakaRatio,
-      enableAllWrong: enableAllWrong ?? this.enableAllWrong,
       // iOS订阅字段
       isPremiumIos: isPremiumIos ?? this.isPremiumIos,
       subscriptionExpireDateIos: subscriptionExpireDateIos ?? this.subscriptionExpireDateIos,
@@ -113,8 +107,6 @@ extension UserExtensions on User {
       gameScore: Value(gameScore),
       password: Value(password),
       dakaScore: Value(dakaScore),
-      showAnswersDirectly: Value(showAnswersDirectly),
-      autoPlayWord: Value(autoPlayWord),
       lastLoginTime: Value(lastLoginTime),
       lastShareTime: Value(lastShareTime),
       email: Value(email),
@@ -125,7 +117,6 @@ extension UserExtensions on User {
       isSuperAdmin: Value(isSuperAdmin),
       isAdmin: Value(isAdmin),
       isInputor: Value(isInputor),
-      autoPlaySentence: Value(autoPlaySentence),
       wordsPerDay: Value(wordsPerDay),
       dakaDayCount: Value(dakaDayCount),
       masteredWordsCount: Value(masteredWordsCount),
@@ -137,7 +128,6 @@ extension UserExtensions on User {
       maxContinuousDakaDayCount: Value(maxContinuousDakaDayCount),
       lastDakaDate: Value(lastDakaDate),
       dakaRatio: Value(dakaRatio),
-      enableAllWrong: Value(enableAllWrong),
       // iOS订阅字段
       isPremiumIos: Value(isPremiumIos),
       subscriptionExpireDateIos: Value(subscriptionExpireDateIos),
@@ -162,8 +152,6 @@ extension UserExtensions on User {
       gameScore: Value(gameScore),
       password: Value(password),
       dakaScore: Value(dakaScore),
-      showAnswersDirectly: Value(showAnswersDirectly),
-      autoPlayWord: Value(autoPlayWord),
       lastLoginTime: Value(lastLoginTime),
       lastShareTime: Value(lastShareTime),
       email: Value(email),
@@ -174,7 +162,6 @@ extension UserExtensions on User {
       isSuperAdmin: Value(isSuperAdmin),
       isAdmin: Value(isAdmin),
       isInputor: Value(isInputor),
-      autoPlaySentence: Value(autoPlaySentence),
       wordsPerDay: Value(wordsPerDay),
       dakaDayCount: Value(dakaDayCount),
       masteredWordsCount: Value(masteredWordsCount),
@@ -186,7 +173,6 @@ extension UserExtensions on User {
       maxContinuousDakaDayCount: Value(maxContinuousDakaDayCount),
       lastDakaDate: Value(lastDakaDate),
       dakaRatio: Value(dakaRatio),
-      enableAllWrong: Value(enableAllWrong),
       // iOS订阅字段
       isPremiumIos: Value(isPremiumIos),
       subscriptionExpireDateIos: Value(subscriptionExpireDateIos),
@@ -210,8 +196,6 @@ extension UserExtensions on User {
     userVo.gameScore = gameScore;
     userVo.password = password;
     userVo.dakaScore = dakaScore;
-    userVo.showAnswersDirectly = showAnswersDirectly;
-    userVo.autoPlayWord = autoPlayWord;
     userVo.lastLoginTime = lastLoginTime;
     userVo.lastShareTime = lastShareTime;
     userVo.email = email;
@@ -222,8 +206,6 @@ extension UserExtensions on User {
     userVo.isSuperAdmin = isSuperAdmin;
     userVo.isAdmin = isAdmin;
     userVo.isInputor = isInputor;
-    userVo.autoPlaySentence = autoPlaySentence;
-    userVo.wordsPerDay = wordsPerDay;
     userVo.dakaDayCount = dakaDayCount;
     userVo.masteredWordsCount = masteredWordsCount;
     // 魔法泡泡记录
@@ -245,7 +227,6 @@ extension UserExtensions on User {
     userVo.lastDakaDate = lastDakaDate;
 
     userVo.dakaRatio = dakaRatio;
-    userVo.enableAllWrong = enableAllWrong;
 
     // 订阅相关字段（iOS平台）
     userVo.isPremiumIos = isPremiumIos;

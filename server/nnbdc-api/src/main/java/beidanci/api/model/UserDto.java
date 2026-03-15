@@ -25,20 +25,16 @@ public class UserDto {
     private Boolean isAdmin;
     private Boolean isInputor;
     private Boolean isSysUser;
-    private Boolean autoPlaySentence;
     private Integer wordsPerDay;
     private Integer dakaDayCount;
     private Integer masteredWordsCount;
     private Integer cowDung;
     private Integer throwDiceChance;
     private Integer gameScore;
-    private Boolean showAnswersDirectly;
-    private Boolean autoPlayWord;
     private Integer continuousDakaDayCount;
     private Integer maxContinuousDakaDayCount;
     private Date lastDakaDate;
     private Integer dakaScore;
-    private Boolean enableAllWrong;
     private Boolean todayStudyStarted;
     private Integer totalLearningSeconds;
     private Integer todayLearningSeconds;
@@ -63,11 +59,10 @@ public class UserDto {
     private String premiumOverrideReason;
     private String premiumOverrideDuration;
 
-    private String asrPassRule;
     private Date createTime;
     private Date updateTime;
 
-    private String walkmanConfig;
+    private String studyConfig;
     
 
     public UserDto() {
@@ -227,13 +222,7 @@ public class UserDto {
         this.isSysUser = isSysUser;
     }
 
-    public Boolean getAutoPlaySentence() {
-        return autoPlaySentence;
-    }
 
-    public void setAutoPlaySentence(Boolean autoPlaySentence) {
-        this.autoPlaySentence = autoPlaySentence;
-    }
 
     public Integer getWordsPerDay() {
         return wordsPerDay;
@@ -283,21 +272,9 @@ public class UserDto {
         this.gameScore = gameScore;
     }
 
-    public Boolean getShowAnswersDirectly() {
-        return showAnswersDirectly;
-    }
 
-    public void setShowAnswersDirectly(Boolean showAnswersDirectly) {
-        this.showAnswersDirectly = showAnswersDirectly;
-    }
 
-    public Boolean getAutoPlayWord() {
-        return autoPlayWord;
-    }
 
-    public void setAutoPlayWord(Boolean autoPlayWord) {
-        this.autoPlayWord = autoPlayWord;
-    }
 
     public Integer getContinuousDakaDayCount() {
         return continuousDakaDayCount;
@@ -331,13 +308,7 @@ public class UserDto {
         this.dakaScore = dakaScore;
     }
 
-    public Boolean getEnableAllWrong() {
-        return enableAllWrong;
-    }
 
-    public void setEnableAllWrong(Boolean enableAllWrong) {
-        this.enableAllWrong = enableAllWrong;
-    }
 
     public Boolean getTodayStudyStarted() {
         return todayStudyStarted;
@@ -435,13 +406,7 @@ public class UserDto {
         this.premiumOverrideDuration = premiumOverrideDuration;
     }
 
-    public String getAsrPassRule() {
-        return asrPassRule;
-    }
 
-    public void setAsrPassRule(String asrPassRule) {
-        this.asrPassRule = asrPassRule;
-    }
 
 
     public Date getCreateTime() {
@@ -460,11 +425,11 @@ public class UserDto {
         this.updateTime = updateTime;
     }
 
-    public String getWalkmanConfig() {
-        return walkmanConfig;
+    public String getStudyConfig() {
+        return studyConfig;
     }
 
-    public void setWalkmanConfig(String walkmanConfig) {
-        this.walkmanConfig = walkmanConfig;
+    public void setStudyConfig(String studyConfig) {
+        this.studyConfig = studyConfig;
     }
 }

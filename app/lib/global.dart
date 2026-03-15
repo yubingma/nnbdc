@@ -114,13 +114,7 @@ class Global {
     guestVo.totalScore = 0;
 
     // 初始化其他必要字段，防止 userVo2User 转换时通过 ! 强转空值导致 crash
-    guestVo.autoPlaySentence = true;
-    guestVo.autoPlayWord = true;
-    guestVo.continuousDakaDayCount = 0;
     guestVo.cowDung = 0;
-    guestVo.dakaDayCount = 0;
-    guestVo.dakaScore = 0;
-    guestVo.enableAllWrong = false;
     guestVo.gameScore = 0;
     guestVo.inviteAwardTaken = false;
     guestVo.isAdmin = false;
@@ -131,7 +125,6 @@ class Global {
     guestVo.learningFinished = false;
     guestVo.masteredWordsCount = 0;
     guestVo.maxContinuousDakaDayCount = 0;
-    guestVo.showAnswersDirectly = false;
     guestVo.throwDiceChance = 0;
     guestVo.isPremiumIos = false;
     guestVo.premiumOverrideEnabled = false;

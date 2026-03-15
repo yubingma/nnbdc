@@ -79,12 +79,6 @@ class Users extends Table {
   /// 打卡积分-
   IntColumn get dakaScore => integer()();
 
-  /// 是否直接显示备选答案
-  BoolColumn get showAnswersDirectly => boolean().nullable().withDefault(const Constant(true))();
-
-  /// 是否自动朗读单词发音
-  BoolColumn get autoPlayWord => boolean().nullable().withDefault(const Constant(true))();
-
   DateTimeColumn get lastLoginTime => dateTime().nullable()();
 
   DateTimeColumn get lastShareTime => dateTime().nullable()();
@@ -116,8 +110,6 @@ class Users extends Table {
 
   BoolColumn get isInputor => boolean().nullable().withDefault(const Constant(false))();
 
-  BoolColumn get autoPlaySentence => boolean().nullable().withDefault(const Constant(false))();
-
   IntColumn get wordsPerDay => integer()();
 
   IntColumn get dakaDayCount => integer()();
@@ -140,8 +132,6 @@ class Users extends Table {
   DateTimeColumn get lastDakaDate => dateTime().nullable()();
 
   RealColumn get dakaRatio => real().nullable()();
-
-  BoolColumn get enableAllWrong => boolean().nullable().withDefault(const Constant(false))();
 
   /// 今日学习是否已经开始（点击了今日学习计划页面的“开始学习”按钮）
   BoolColumn get todayStudyStarted => boolean().withDefault(const Constant(false))();
@@ -184,8 +174,8 @@ class Users extends Table {
 
   // 旧字段 passIfSpeakOutOneMeaning 已移除
 
-  /// 随身听配置 (JSON格式)
-  TextColumn get walkmanConfig => text().nullable()();
+  /// 学习偏好配置 (JSON格式，目前主要用来包裹 walkman 配置及其他后续动态配置)
+  TextColumn get studyConfig => text().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};

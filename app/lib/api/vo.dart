@@ -163,12 +163,6 @@ class UserVo {
   /// 打卡积分
   int? dakaScore;
 
-  /// 是否直接显示备选答案
-  bool? showAnswersDirectly;
-
-  /// 是否自动朗读单词发音
-  bool? autoPlayWord;
-
   DateTime? lastLoginTime;
 
   DateTime? lastShareTime;
@@ -197,10 +191,7 @@ class UserVo {
   bool? isInputor;
 
   bool? isTodayLearningStarted;
-
   bool? isTodayLearningFinished;
-
-  bool? autoPlaySentence;
 
   int? wordsPerDay;
 
@@ -230,8 +221,6 @@ class UserVo {
   int? totalScore;
 
   double? dakaRatio;
-
-  bool? enableAllWrong;
 
   bool? todayStudyStarted;
 
@@ -267,7 +256,7 @@ class UserVo {
   String? premiumOverrideDuration;
 
   /// 随身听配置 (JSON格式)
-  String? walkmanConfig;
+  String? studyConfig;
 
   UserVo(this.id, this.userName);
 
@@ -281,8 +270,6 @@ class UserVo {
     userVo.gameScore = user.gameScore;
     userVo.password = user.password;
     userVo.dakaScore = user.dakaScore;
-    userVo.showAnswersDirectly = user.showAnswersDirectly;
-    userVo.autoPlayWord = user.autoPlayWord;
     userVo.lastLoginTime = user.lastLoginTime;
     userVo.lastShareTime = user.lastShareTime;
     userVo.email = user.email;
@@ -297,7 +284,6 @@ class UserVo {
     userVo.isSuperAdmin = user.isSuperAdmin;
     userVo.isAdmin = user.isAdmin;
     userVo.isInputor = user.isInputor;
-    userVo.autoPlaySentence = user.autoPlaySentence;
     userVo.wordsPerDay = user.wordsPerDay;
     userVo.dakaDayCount = user.dakaDayCount;
     userVo.masteredWordsCount = user.masteredWordsCount;
@@ -309,7 +295,6 @@ class UserVo {
     userVo.lastDakaDate = user.lastDakaDate;
     userVo.totalScore = UserHelper.calculateTotalScore(user.gameScore, user.dakaScore);
     userVo.dakaRatio = user.dakaRatio;
-    userVo.enableAllWrong = user.enableAllWrong;
     userVo.todayStudyStarted = user.todayStudyStarted;
     userVo.totalLearningSeconds = user.totalLearningSeconds;
     userVo.todayLearningSeconds = user.todayLearningSeconds;
@@ -325,7 +310,7 @@ class UserVo {
     userVo.premiumOverrideUpdateTime = user.premiumOverrideUpdateTime;
     userVo.premiumOverrideReason = user.premiumOverrideReason;
     userVo.premiumOverrideDuration = user.premiumOverrideDuration;
-    userVo.walkmanConfig = user.walkmanConfig;
+    userVo.studyConfig = user.studyConfig;
 
     userVo.password = user.password;
     userVo.lastLoginTime = user.lastLoginTime;
@@ -345,7 +330,7 @@ class UserVo {
 
   @override
   String toString() {
-    return 'UserVo{id: $id, userName: $userName, nickName: $nickName, hasDakaToday: $hasDakaToday, gameScore: $gameScore, password: $password, dakaScore: $dakaScore, showAnswersDirectly: $showAnswersDirectly, autoPlayWord: $autoPlayWord, lastLoginTime: $lastLoginTime, lastShareTime: $lastShareTime, email: $email, lastLearningDate: $lastLearningDate, learnedDays: $learnedDays, learningFinished: $learningFinished, inviteAwardTaken: $inviteAwardTaken, isSuperAdmin: $isSuperAdmin, isAdmin: $isAdmin, isInputor: $isInputor, isTodayLearningStarted: $isTodayLearningStarted, isTodayLearningFinished: $isTodayLearningFinished, autoPlaySentence: $autoPlaySentence, wordsPerDay: $wordsPerDay, dakaDayCount: $dakaDayCount, masteredWordsCount: $masteredWordsCount, cowDung: $cowDung, throwDiceChance: $throwDiceChance, displayNickName: $displayNickName, invitedBy: $invitedBy, level: $level, continuousDakaDayCount: $continuousDakaDayCount, maxContinuousDakaDayCount: $maxContinuousDakaDayCount, lastDakaDate: $lastDakaDate, totalScore: $totalScore, dakaRatio: $dakaRatio, enableAllWrong: $enableAllWrong}';
+    return 'UserVo{id: $id, userName: $userName, nickName: $nickName, hasDakaToday: $hasDakaToday, gameScore: $gameScore, password: $password, dakaScore: $dakaScore, lastLoginTime: $lastLoginTime, lastShareTime: $lastShareTime, email: $email, lastLearningDate: $lastLearningDate, learnedDays: $learnedDays, learningFinished: $learningFinished, inviteAwardTaken: $inviteAwardTaken, isSuperAdmin: $isSuperAdmin, isAdmin: $isAdmin, isInputor: $isInputor, isTodayLearningStarted: $isTodayLearningStarted, wordsPerDay: $wordsPerDay, dakaDayCount: $dakaDayCount, masteredWordsCount: $masteredWordsCount, cowDung: $cowDung, throwDiceChance: $throwDiceChance, displayNickName: $displayNickName, invitedBy: $invitedBy, level: $level, continuousDakaDayCount: $continuousDakaDayCount, maxContinuousDakaDayCount: $maxContinuousDakaDayCount, lastDakaDate: $lastDakaDate, totalScore: $totalScore, dakaRatio: $dakaRatio}';
   }
 
   bool isGuest() {
@@ -1218,13 +1203,10 @@ class GetWordResult {
 
 User userVo2User(UserVo userVo) {
   User user = User(
-      autoPlaySentence: userVo.autoPlaySentence!,
       continuousDakaDayCount: userVo.continuousDakaDayCount!,
-      autoPlayWord: userVo.autoPlayWord!,
       cowDung: userVo.cowDung!,
       dakaDayCount: userVo.dakaDayCount!,
       dakaScore: userVo.dakaScore!,
-      enableAllWrong: userVo.enableAllWrong!,
       todayStudyStarted: userVo.todayStudyStarted ?? false,
       gameScore: userVo.gameScore!,
       id: userVo.id!,
@@ -1236,7 +1218,6 @@ User userVo2User(UserVo userVo) {
       learningFinished: userVo.learningFinished!,
       masteredWordsCount: userVo.masteredWordsCount!,
       maxContinuousDakaDayCount: userVo.maxContinuousDakaDayCount!,
-      showAnswersDirectly: userVo.showAnswersDirectly!,
       throwDiceChance: userVo.throwDiceChance!,
       userName: userVo.userName!,
       wordsPerDay: userVo.wordsPerDay!,
@@ -1264,7 +1245,7 @@ User userVo2User(UserVo userVo) {
       premiumOverrideUpdateTime: userVo.premiumOverrideUpdateTime,
       premiumOverrideReason: userVo.premiumOverrideReason,
       premiumOverrideDuration: userVo.premiumOverrideDuration,
-      walkmanConfig: userVo.walkmanConfig);
+      studyConfig: userVo.studyConfig);
 
   return user;
 }

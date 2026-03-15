@@ -170,9 +170,11 @@ class WalkmanPageState extends State<WalkmanPage> {
 
   Future<void> loadConfig() async {
     User? user = Global.getLoggedInUser();
-    if (user != null && user.walkmanConfig != null) {
+    if (user != null && user.studyConfig != null) {
       try {
-        final config = WalkmanConfig.fromJson(jsonDecode(user.walkmanConfig!));
+        final studyConfigAll = jsonDecode(user.studyConfig!);
+        if (studyConfigAll['walkman'] != null) {
+          final config = WalkmanConfig.fromJson(studyConfigAll['walkman']);
         setState(() {
           showSpell = config.showSpell;
           showPronounce = config.showPronounce;
@@ -186,6 +188,7 @@ class WalkmanPageState extends State<WalkmanPage> {
           repeatCount = config.repeatCount;
           playInterval = config.playInterval;
         });
+        }
       } catch (e) {
         Global.logger.e('解析随身听配置失败: $e');
       }
@@ -208,7 +211,16 @@ class WalkmanPageState extends State<WalkmanPage> {
 
     try {
       User user = Global.getLoggedInUserNotNull();
-      final updatedUser = user.copyWith(walkmanConfig: drift.Value<String?>(jsonEncode(config.toJson())));
+      // 保留或新建其他 studyConfig 的配置
+      Map<String, dynamic> studyConfigAll = {};
+      if (user.studyConfig != null) {
+        try {
+          studyConfigAll = jsonDecode(user.studyConfig!);
+        } catch (_) {}
+      }
+      studyConfigAll['walkman'] = config.toJson();
+      
+      final updatedUser = user.copyWith(studyConfig: drift.Value<String?>(jsonEncode(studyConfigAll)));
       await MyDatabase.instance.usersDao.saveUser(updatedUser, true);
       Global.updateUserCache(updatedUser);
     } catch (e) {

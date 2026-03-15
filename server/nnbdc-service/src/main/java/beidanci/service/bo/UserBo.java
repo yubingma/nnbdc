@@ -909,16 +909,11 @@ public class UserBo extends BaseBo<User> {
         user.setIsAdmin(false);
         user.setIsInputor(false);
         user.setDakaDayCount(0);
-        user.setAutoPlaySentence(false);
-        user.setAutoPlayWord(true);
-        user.setShowAnswersDirectly(true);
         user.setContinuousDakaDayCount(0);
         user.setMaxContinuousDakaDayCount(0);
         user.setDakaScore(0);
         user.setGameScore(0);
-        user.setEnableAllWrong(false);
         user.setTodayStudyStarted(false);
-        user.setAsrPassRule("ONE");
         user.setIsSysUser(isSysUser);
         user.setIsPremiumIos(false);
         user.setPremiumOverrideEnabled(false);

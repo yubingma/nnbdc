@@ -44,6 +44,7 @@ import '../theme/app_theme.dart';
 import '../util/learning_service.dart';
 import '../util/fsrs.dart';
 import '../widget/handwriting_board.dart';
+import '../util/study_config.dart';
 
 class BdcPageArgs {
   /// 从哪个页面进入本页面
@@ -610,7 +611,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   /// 当前单词是否已经掌握
   bool _isWordMastered = false;
 
-  /// 当前正在学习的单词的第一个例句
+  /// 当前单词的第一个例句
   String? _englishDigestOfFirstSentence;
 
   String? _studyStep;
@@ -1573,14 +1574,30 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       // 保证音频会话配置已完成
       await SoundUtil.configureAudioSession();
 
-      final isDarkMode = await MyDatabase.instance.localParamsDao.getIsDarkMode();
-      final autoJumpCh2En = await MyDatabase.instance.localParamsDao.getAutoJumpAfterCorrectCh2En();
-      final autoJumpEn2Ch = await MyDatabase.instance.localParamsDao.getAutoJumpAfterCorrectEn2Ch();
+      MyDatabase.instance.localParamsDao.getIsDarkMode().then((value) {
+      if (mounted) {
+        setState(() {
+          _isDarkMode = value;
+        });
+      }
+    });
 
+    final studyConfig = StudyConfig.fromCurrentUser();
+    // _asrPassRuleCache = studyConfig.asrPassRule; // This will be an int (0-100)
+    if (mounted) {
+      if (studyConfig.asrPassRule == 100) { // Assuming 100 means ALL
+        _asrPassRuleCache = 'ALL';
+      } else if (studyConfig.asrPassRule == 60) { // Assuming 60 means ONE
+        _asrPassRuleCache = 'ONE';
+      } else if (studyConfig.asrPassRule == 80) { // Assuming 80 means HALF
+        _asrPassRuleCache = 'HALF';
+      }
+    }
       setState(() {
-        _isDarkMode = isDarkMode;
-        _autoJumpAfterCorrectCh2En = autoJumpCh2En;
-        _autoJumpAfterCorrectEn2Ch = autoJumpEn2Ch;
+        // _isDarkMode = isDarkMode; // This line is now handled by the .then() block above
+        // final studyConfig = StudyConfig.fromCurrentUser(); // Already defined above
+        _autoJumpAfterCorrectCh2En = studyConfig.autoJumpAfterCorrectCh2En;
+        _autoJumpAfterCorrectEn2Ch = studyConfig.autoJumpAfterCorrectEn2Ch;
       });
 
       // 获取用户的学习步骤配置（已激活的学习步骤)
@@ -1764,8 +1781,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     final savedWordId = _word?.id;
 
     // 判断是否真的有音频要播，如果什么都不播（比如中英模式），需要给 finally 知道直接启动 ASR
-    bool willPlayWord = _studyStep == StudyStep.en2Ch.json && (user.autoPlayWord! || forcePlayWord);
-    bool willPlaySentence = _studyStep == StudyStep.en2Ch.json && user.autoPlaySentence!;
+    final studyConfig = StudyConfig.fromCurrentUser();
+    bool willPlayWord = _studyStep == StudyStep.en2Ch.json && (studyConfig.autoPlayWord || forcePlayWord);
+    bool willPlaySentence = _studyStep == StudyStep.en2Ch.json && studyConfig.autoPlaySentence;
 
     // 如果不需要播放音频，为了保证流程顺畅且不受到 await ASR.stopAsr() 的延迟影响
     // 直接进入 finally 块的判断，快速拉起 ASR
@@ -1805,7 +1823,14 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
   void handleWord(final GetWordResult? getWordResult, {bool isFromBatchWordList = false}) async {
     // 异步拉取最新 ASR 规则并缓存，避免后续同步处理挂起
-    MyDatabase.instance.localParamsDao.getAsrPassRule().then((val) => _asrPassRuleCache = val);
+    final config = StudyConfig.fromCurrentUser();
+    if (config.asrPassRule == 100) {
+      _asrPassRuleCache = 'ALL';
+    } else if (config.asrPassRule == 80) {
+      _asrPassRuleCache = 'HALF';
+    } else {
+      _asrPassRuleCache = 'ONE';
+    }
 
     setState(() {
       _fsrsItem = null;
@@ -1990,7 +2015,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       return;
     }
 
-    _showAnswerButtons = Global.getLoggedInUser()!.showAnswersDirectly ?? false;
+    _showAnswerButtons = StudyConfig.fromCurrentUser().showAnswersDirectly;
 
     setState(() {
       dataLoaded = true;
@@ -2040,7 +2065,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
           }
         }
 
-        if (user.enableAllWrong ?? false) {
+        if (StudyConfig.fromCurrentUser().enableAllWrong) {
           // 备选答案中含[都不对]
           // 随机选择一个单词索引号（1～3），从数组中删除该单词
           var rnd = Random();
@@ -2179,13 +2204,19 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   Future<void> showSettingDlg() async {
     // 在StatefulBuilder外部初始化本地状态
     var currentUser = Global.getLoggedInUser();
-    var localAutoPlayWord = currentUser?.autoPlayWord ?? false;
-    var localAutoPlaySentence = currentUser?.autoPlaySentence ?? false;
-    var localShowAnswersDirectly = currentUser?.showAnswersDirectly ?? false;
-    var localEnableAllWrong = currentUser?.enableAllWrong ?? false;
-    var localAsrPassRule = await MyDatabase.instance.localParamsDao.getAsrPassRule();
-    var localAutoJumpAfterCorrectCh2En = _autoJumpAfterCorrectCh2En;
-    var localAutoJumpAfterCorrectEn2Ch = _autoJumpAfterCorrectEn2Ch;
+    var studyConfig = StudyConfig.fromCurrentUser();
+    var localAutoPlayWord = studyConfig.autoPlayWord;
+    var localAutoPlaySentence = studyConfig.autoPlaySentence;
+    var localShowAnswersDirectly = studyConfig.showAnswersDirectly;
+    var localEnableAllWrong = studyConfig.enableAllWrong;
+    var localAsrPassRule = 'ONE';
+    if (studyConfig.asrPassRule == 100) {
+      localAsrPassRule = 'ALL';
+    } else if (studyConfig.asrPassRule == 80) {
+      localAsrPassRule = 'HALF';
+    }
+    var localAutoJumpAfterCorrectCh2En = studyConfig.autoJumpAfterCorrectCh2En;
+    var localAutoJumpAfterCorrectEn2Ch = studyConfig.autoJumpAfterCorrectEn2Ch;
 
     if (!mounted) return;
 
@@ -2408,21 +2439,22 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                         onPressed: () async {
                           // 保存所有设置
                           if (currentUser != null) {
-                            var updatedUser = currentUser.copyWith(
-                              autoPlayWord: drift.Value<bool?>(localAutoPlayWord),
-                              autoPlaySentence: drift.Value<bool?>(localAutoPlaySentence),
-                              showAnswersDirectly: drift.Value<bool?>(localShowAnswersDirectly),
-                              enableAllWrong: drift.Value<bool?>(localEnableAllWrong),
-                            );
-                            await MyDatabase.instance.usersDao.saveUser(updatedUser, true);
-                            // 更新Global中的用户缓存
-                            Global.updateUserCache(updatedUser);
+                            var studyConfigToSave = StudyConfig.fromCurrentUser();
+                            studyConfigToSave.autoPlayWord = localAutoPlayWord;
+                            studyConfigToSave.autoPlaySentence = localAutoPlaySentence;
+                            studyConfigToSave.showAnswersDirectly = localShowAnswersDirectly;
+                            studyConfigToSave.enableAllWrong = localEnableAllWrong;
+                            studyConfigToSave.autoJumpAfterCorrectCh2En = localAutoJumpAfterCorrectCh2En;
+                            studyConfigToSave.autoJumpAfterCorrectEn2Ch = localAutoJumpAfterCorrectEn2Ch;
+                            if (localAsrPassRule == 'ALL') {
+                              studyConfigToSave.asrPassRule = 100;
+                            } else if (localAsrPassRule == 'HALF') {
+                              studyConfigToSave.asrPassRule = 80;
+                            } else {
+                              studyConfigToSave.asrPassRule = 60;
+                            }
+                            await studyConfigToSave.saveToCurrentUser();
                           }
-                          // 保存asrPassRule设置
-                          await MyDatabase.instance.localParamsDao.setAsrPassRule(localAsrPassRule);
-                          // 保存极速模式开关设置
-                          await MyDatabase.instance.localParamsDao.setAutoJumpAfterCorrectCh2En(localAutoJumpAfterCorrectCh2En);
-                          await MyDatabase.instance.localParamsDao.setAutoJumpAfterCorrectEn2Ch(localAutoJumpAfterCorrectEn2Ch);
 
                           // 在异步操作后检查context是否仍然有效
                           if (context.mounted) {
@@ -2652,9 +2684,13 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                       _autoJumpAfterCorrect = !_autoJumpAfterCorrect;
                     });
                     if (_studyStep == StudyStep.ch2En.json) {
-                      await MyDatabase.instance.localParamsDao.setAutoJumpAfterCorrectCh2En(_autoJumpAfterCorrect);
+                      var config = StudyConfig.fromCurrentUser();
+                      config.autoJumpAfterCorrectCh2En = _autoJumpAfterCorrect;
+                      await config.saveToCurrentUser();
                     } else {
-                      await MyDatabase.instance.localParamsDao.setAutoJumpAfterCorrectEn2Ch(_autoJumpAfterCorrect);
+                      var config = StudyConfig.fromCurrentUser();
+                      config.autoJumpAfterCorrectEn2Ch = _autoJumpAfterCorrect;
+                      await config.saveToCurrentUser();
                     }
                   },
                 ),

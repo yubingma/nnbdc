@@ -209,7 +209,7 @@ class MyDatabase extends _$MyDatabase {
   // you should bump this number whenever you change or add a table definition. Migrations
   // are covered later in this readme.
   @override
-  int get schemaVersion => 26;
+  int get schemaVersion => 27;
 
   @override
   MigrationStrategy get migration {
@@ -301,6 +301,9 @@ class MyDatabase extends _$MyDatabase {
           }
           if (from < 26) {
             await _migrateFromV25ToV26AddWalkmanConfig(m);
+          }
+          if (from < 27) {
+            await _migrateFromV26ToV27SwapWalkmanConfigToStudyConfig(m);
           }
         } catch (e, stackTrace) {
           // 升级失败，记录错误日志
@@ -687,6 +690,34 @@ class MyDatabase extends _$MyDatabase {
         Global.logger.i('✅ 向 users 表添加 walkman_config 字段完成');
       } catch (e) {
         Global.logger.w('添加 walkman_config 字段失败: $e');
+      }
+    });
+  }
+
+  /// 从版本 26 升级到版本 27：添加“综合学习配置”字段，将 walkman_config 迁移并抛弃
+  Future<void> _migrateFromV26ToV27SwapWalkmanConfigToStudyConfig(Migrator m) async {
+    await transaction(() async {
+      try {
+        await customStatement('ALTER TABLE users ADD COLUMN study_config TEXT');
+        
+        // 迁移旧数据
+        try {
+          await customStatement("UPDATE users SET study_config = json_object('walkman', json(walkman_config)) WHERE walkman_config IS NOT NULL");
+        } catch (e) {
+          // 在不支持 json_object 运算符的旧版 SQLite 处理
+          Global.logger.w('由于 SQLite 版本限制，无法通过 json_object 迁移 walkman_config，将使用老式字符串拼接：$e');
+          await customStatement("UPDATE users SET study_config = '{\"walkman\":' || walkman_config || '}' WHERE walkman_config IS NOT NULL");
+        }
+        
+        try {
+          await customStatement('ALTER TABLE users DROP COLUMN walkman_config');
+        } catch (dropE) {
+          Global.logger.w('DROP COLUMN walkman_config 失败（忽略，因字段不再使用）: $dropE');
+        }
+
+        Global.logger.i('✅ 升级 walkman_config 到 study_config 字段完成');
+      } catch (e) {
+        Global.logger.w('升级 study_config 字段发生异常: $e');
       }
     });
   }

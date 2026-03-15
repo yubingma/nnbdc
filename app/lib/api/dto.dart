@@ -452,7 +452,7 @@ class UserDto {
   bool? enableAllWrong;
   bool? isTodayLearningStarted;
   bool? isTodayLearningFinished;
-  String? walkmanConfig;
+  String? studyConfig;
   DateTime? createTime;
   DateTime? updateTime;
 

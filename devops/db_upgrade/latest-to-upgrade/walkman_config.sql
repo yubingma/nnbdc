@@ -1,1 +1,0 @@
-ALTER TABLE "user" ADD COLUMN walkman_config TEXT;

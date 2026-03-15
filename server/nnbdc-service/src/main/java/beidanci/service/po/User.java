@@ -63,8 +63,6 @@ public class User extends UuidPo {
     private Boolean isInputor = false;
     @Column(name = "is_sys_user", nullable = false)
     private Boolean isSysUser = false;
-    @Column(name = "auto_play_sentence", nullable = false)
-    private Boolean autoPlaySentence = false;
     @Column(name = "words_per_day", nullable = false)
     private Integer wordsPerDay;
     @Column(name = "daka_day_count", nullable = false)
@@ -86,17 +84,6 @@ public class User extends UuidPo {
 
     @Column(name = "game_score", nullable = false)
     private Integer gameScore;
-
-    /**
-     * 是否直接显示备选答案
-     */
-    @Column(name = "show_answers_directly", nullable = false)
-    private Boolean showAnswersDirectly = true;
-    /**
-     * 是否自动朗读单词发音
-     */
-    @Column(name = "auto_play_word", nullable = false)
-    private Boolean autoPlayWord = true;
 
     @OrderBy("dictId asc")
     private  List<LearningDict> learningDicts;
@@ -168,12 +155,6 @@ public class User extends UuidPo {
     private Integer dakaScore;
 
     /**
-     * 是否显示[都不对]的选项（增加选择题难度）
-     */
-    @Column(name = "enable_all_wrong", nullable = false)
-    private Boolean enableAllWrong = false;
-
-    /**
      * 今日学习是否已经开始（点击了“开始学习”按钮）
      */
     @Column(name = "today_study_started", nullable = false)
@@ -192,16 +173,10 @@ public class User extends UuidPo {
     private Integer todayLearningSeconds = 0;
 
     /**
-     * ASR答对判定规则：ONE/HALF/ALL
-     */
-    @Column(name = "asr_pass_rule", length = 10)
-    private String asrPassRule;
-
-    /**
      * 随身听配置 (JSON格式)
      */
     @Column(name = "walkman_config", columnDefinition = "TEXT")
-    private String walkmanConfig;
+    private String studyConfig;
 
     
     // iOS订阅字段
@@ -260,13 +235,7 @@ public class User extends UuidPo {
     @Column(name = "premium_override_duration", length = 50, nullable = true)
     private String premiumOverrideDuration;
 
-    public Boolean getEnableAllWrong() {
-        return enableAllWrong;
-    }
 
-    public void setEnableAllWrong(Boolean enableAllWrong) {
-        this.enableAllWrong = enableAllWrong;
-    }
 
     // iOS订阅字段的getter/setter
     public Boolean getIsPremiumIos() {
@@ -395,13 +364,7 @@ public class User extends UuidPo {
         isSysUser = sysUser;
     }
 
-    public Boolean getShowAnswersDirectly() {
-        return showAnswersDirectly;
-    }
 
-    public void setShowAnswersDirectly(Boolean showAnswersDirectly) {
-        this.showAnswersDirectly = showAnswersDirectly;
-    }
 
     public Integer getContinuousDakaDayCount() {
         return continuousDakaDayCount;
@@ -602,20 +565,14 @@ public class User extends UuidPo {
 
     
 
-    public String getAsrPassRule() {
-        return asrPassRule;
+
+
+    public String getStudyConfig() {
+        return studyConfig;
     }
 
-    public void setAsrPassRule(String asrPassRule) {
-        this.asrPassRule = asrPassRule;
-    }
-
-    public String getWalkmanConfig() {
-        return walkmanConfig;
-    }
-
-    public void setWalkmanConfig(String walkmanConfig) {
-        this.walkmanConfig = walkmanConfig;
+    public void setStudyConfig(String studyConfig) {
+        this.studyConfig = studyConfig;
     }
 
     public void setCreatedSentences(List<Sentence> createdSentences) {
@@ -696,13 +653,7 @@ public class User extends UuidPo {
         this.dakaDayCount = dakaDayCount;
     }
 
-    public Boolean getAutoPlaySentence() {
-        return autoPlaySentence;
-    }
 
-    public void setAutoPlaySentence(Boolean autoPlaySentence) {
-        this.autoPlaySentence = autoPlaySentence;
-    }
 
     public Date getLastLoginTime() {
         return lastLoginTime;
@@ -720,13 +671,7 @@ public class User extends UuidPo {
         this.lastShareTime = lastShareTime;
     }
 
-    public Boolean getAutoPlayWord() {
-        return autoPlayWord;
-    }
 
-    public void setAutoPlayWord(Boolean autoPlayWord) {
-        this.autoPlayWord = autoPlayWord;
-    }
 
     public Boolean getIsInputor() {
         return isInputor;
@@ -893,8 +838,6 @@ public class User extends UuidPo {
         Boolean isSysUser = dto.getIsSysUser();
         user.setIsSysUser(isSysUser != null ? isSysUser : false);
 
-        Boolean autoPlaySentence = dto.getAutoPlaySentence();
-        user.setAutoPlaySentence(autoPlaySentence != null ? autoPlaySentence : true);
 
         Integer wordsPerDay = dto.getWordsPerDay();
         user.setWordsPerDay(wordsPerDay != null ? wordsPerDay : 20);
@@ -914,11 +857,7 @@ public class User extends UuidPo {
         Integer gameScore = dto.getGameScore();
         user.setGameScore(gameScore != null ? gameScore : 0);
 
-        Boolean showAnswersDirectly = dto.getShowAnswersDirectly();
-        user.setShowAnswersDirectly(showAnswersDirectly != null ? showAnswersDirectly : false);
 
-        Boolean autoPlayWord = dto.getAutoPlayWord();
-        user.setAutoPlayWord(autoPlayWord != null ? autoPlayWord : true);
 
         Integer continuousDakaDayCount = dto.getContinuousDakaDayCount();
         user.setContinuousDakaDayCount(continuousDakaDayCount != null ? continuousDakaDayCount : 0);
@@ -931,14 +870,11 @@ public class User extends UuidPo {
         Integer dakaScore = dto.getDakaScore();
         user.setDakaScore(dakaScore != null ? dakaScore : 0);
 
-        Boolean enableAllWrong = dto.getEnableAllWrong();
-        user.setEnableAllWrong(enableAllWrong != null ? enableAllWrong : false);
 
         Boolean todayStudyStarted = dto.getTodayStudyStarted();
         user.setTodayStudyStarted(todayStudyStarted != null ? todayStudyStarted : false);
 
-        user.setAsrPassRule(dto.getAsrPassRule());
-        user.setWalkmanConfig(dto.getWalkmanConfig());
+        user.setStudyConfig(dto.getStudyConfig());
 
         // ========== 订阅/强制会员字段（客户端同步不一定包含，允许为 null） ==========
         user.setIsPremiumIos(Boolean.TRUE.equals(dto.getIsPremiumIos()));
@@ -989,23 +925,18 @@ public class User extends UuidPo {
         dto.setIsAdmin(Boolean.TRUE.equals(this.getIsAdmin()));
         dto.setIsInputor(Boolean.TRUE.equals(this.getIsInputor()));
         dto.setIsSysUser(Boolean.TRUE.equals(this.getIsSysUser()));
-        dto.setAutoPlaySentence(Boolean.TRUE.equals(this.getAutoPlaySentence()));
         dto.setWordsPerDay(this.getWordsPerDay());
         dto.setDakaDayCount(this.getDakaDayCount());
         dto.setMasteredWordsCount(this.getMasteredWordsCount());
         dto.setCowDung(this.getCowDung());
         dto.setThrowDiceChance(this.getThrowDiceChance());
         dto.setGameScore(this.getGameScore());
-        dto.setShowAnswersDirectly(Boolean.TRUE.equals(this.getShowAnswersDirectly()));
-        dto.setAutoPlayWord(Boolean.TRUE.equals(this.getAutoPlayWord()));
         dto.setContinuousDakaDayCount(this.getContinuousDakaDayCount());
         dto.setMaxContinuousDakaDayCount(this.getMaxContinuousDakaDayCount());
         dto.setLastDakaDate(this.getLastDakaDate());
         dto.setDakaScore(this.getDakaScore());
-        dto.setEnableAllWrong(Boolean.TRUE.equals(this.getEnableAllWrong()));
         dto.setTodayStudyStarted(Boolean.TRUE.equals(this.getTodayStudyStarted()));
-        dto.setAsrPassRule(this.getAsrPassRule());
-        dto.setWalkmanConfig(this.getWalkmanConfig());
+        dto.setStudyConfig(this.getStudyConfig());
 
 
         // ========== 订阅/强制会员字段 ==========

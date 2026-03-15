@@ -21,11 +21,9 @@ public class UserVo extends UuidVo {
     /**
      * 是否直接显示备选答案
      */
-    private Boolean showAnswersDirectly;
     /**
      * 是否自动朗读单词发音
      */
-    private Boolean autoPlayWord;
     private Date lastLoginTime;
     private Date lastShareTime;
     private String email;
@@ -42,7 +40,6 @@ public class UserVo extends UuidVo {
     private Boolean isInputor;
     private Boolean isTodayLearningStarted;
     private Boolean isTodayLearningFinished;
-    private Boolean autoPlaySentence;
     private Integer wordsPerDay;
     private Integer dakaDayCount;
     private Integer masteredWordsCount;
@@ -64,7 +61,6 @@ public class UserVo extends UuidVo {
     private Date lastDakaDate;
     private Integer totalScore;
     private Double dakaRatio;
-    private Boolean enableAllWrong;
 
     // 订阅相关字段（iOS平台）
     /**
@@ -116,12 +112,11 @@ public class UserVo extends UuidVo {
     /**
      * 随身听配置 (JSON格式)
      */
-    private String walkmanConfig;
+    private String studyConfig;
 
     /**
      * ASR答对判定规则：ONE/HALF/ALL
      */
-    private String asrPassRule;
 
     public Boolean getHasDakaToday() {
         return hasDakaToday;
@@ -131,20 +126,14 @@ public class UserVo extends UuidVo {
         this.hasDakaToday = hasDakaToday;
     }
 
-    public String getAsrPassRule() {
-        return asrPassRule;
+
+
+    public String getStudyConfig() {
+        return studyConfig;
     }
 
-    public void setAsrPassRule(String asrPassRule) {
-        this.asrPassRule = asrPassRule;
-    }
-
-    public String getWalkmanConfig() {
-        return walkmanConfig;
-    }
-
-    public void setWalkmanConfig(String walkmanConfig) {
-        this.walkmanConfig = walkmanConfig;
+    public void setStudyConfig(String studyConfig) {
+        this.studyConfig = studyConfig;
     }
 
     public List<StudyGroupVo> getStudyGroups() {
@@ -196,21 +185,9 @@ public class UserVo extends UuidVo {
         this.dakaScore = dakaScore;
     }
 
-    public Boolean getShowAnswersDirectly() {
-        return showAnswersDirectly;
-    }
 
-    public void setShowAnswersDirectly(Boolean showAnswersDirectly) {
-        this.showAnswersDirectly = showAnswersDirectly;
-    }
 
-    public Boolean getEnableAllWrong() {
-        return enableAllWrong;
-    }
 
-    public void setEnableAllWrong(Boolean enableAllWrong) {
-        this.enableAllWrong = enableAllWrong;
-    }
 
     public Boolean getIsPremiumIos() {
         return isPremiumIos;
@@ -440,13 +417,7 @@ public class UserVo extends UuidVo {
         this.isSuperAdmin = isSuperAdmin;
     }
 
-    public Boolean getAutoPlaySentence() {
-        return autoPlaySentence;
-    }
 
-    public void setAutoPlaySentence(Boolean autoPlaySentence) {
-        this.autoPlaySentence = autoPlaySentence;
-    }
 
     public Integer getWordsPerDay() {
         return wordsPerDay;
@@ -512,13 +483,7 @@ public class UserVo extends UuidVo {
         this.lastShareTime = lastShareTime;
     }
 
-    public Boolean getAutoPlayWord() {
-        return autoPlayWord;
-    }
 
-    public void setAutoPlayWord(Boolean autoPlayWord) {
-        this.autoPlayWord = autoPlayWord;
-    }
 
     public Boolean getIsAdmin() {
         return isAdmin;
