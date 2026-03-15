@@ -266,11 +266,10 @@ class LearningService {
     List<LearningWord> remainingUntaughtWords = untaughtWords.skip(needToRemove).toList();
 
     for (var word in wordsToRemove) {
-      // 通过将 batchId 设为 0 并清空 lastLearningDate，使其不再出现在今日列表中
+      // 仅通过将 batchId 设为 0 使其不再出现在今日列表中，绝对不能清空 lastLearningDate (会破坏 FSRS)
       await db.learningWordsDao.saveEntity(
         word.copyWith(
           batchId: const Value(0),
-          lastLearningDate: const Value(null),
           learningOrder: 0,
         ),
         true,

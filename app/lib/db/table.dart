@@ -464,6 +464,8 @@ class LearningWords extends Table {
   /// 取词批次ID (Select Batch ID)
   /// 注意：这是在每天学习前"准备今日学习计划"时取词的批次标记，
   /// 用于标识单词是同一次被拉取进入计划的，并非用户开始学习后每 10 个词一组的"学习小批次(Learning Batch/Chunk)"！
+  /// 唯一标识：判断该单词是否属于“今日待学/复习单词”的唯一依据。
+  /// 此字段 > 0 即代表该词被选中列入了今日计划。将其设为 0 即可将其移出今日特遣队而不影响其原有的 FSRS 历史。
   /// nullable() to handle legacy data where batch_id might be NULL
   IntColumn get batchId => integer().nullable()();
 
