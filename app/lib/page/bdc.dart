@@ -1314,6 +1314,10 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
           // 仅重置 ASR（停止识别但保持引擎运行），消除硬件切换产生的杂音
           await asr.reset();
 
+          if (asrInput != null) {
+            _meaningController.text = _word!.spell;
+          }
+
           if (!_autoJumpAfterCorrect) {
             Global.logger.d('BDC [en2Ch]: 非极速模式，拼写正确，准备关闭沉浸式输入界面. _showHandwritingBoard=false, unfocusing');
             _meaningFocusNode.unfocus();
@@ -1407,7 +1411,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       }
     } else if (_studyStep == StudyStep.ch2En.json) {
       // 中→英：验证英文单词拼写
-      String inputText = _handlingChinese.trim().toLowerCase();
+      String inputText = (asrInput ?? _meaningController.text).trim().toLowerCase();
       String correctSpell = _word!.spell.toLowerCase();
 
       // 判定通过条件：
@@ -1423,6 +1427,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
       if (isMatch) {
         Global.logger.d('BDC CHECK_ASR [ch2En]: Match SUCCESS!');
+        if (asrInput != null) {
+          _meaningController.text = _word!.spell;
+        }
         _isAnswerCorrect = true;
 
         // 计算 FSRS 评分
