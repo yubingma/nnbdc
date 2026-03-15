@@ -657,7 +657,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   bool _autoJumpAfterCorrect = false;
 
   /// 是否保持在拼写输入界面 (图钉模式)
-  bool _pinImmersiveMode = false;
+
 
   /// 当前单词的 FSRS 预览结果
   FSRSItem? _fsrsItem;
@@ -1245,7 +1245,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
     // 如果已经答对，且并未处于练习拼写的看板模式（或者看板是固定模式），则跳过处理。
     // 这样做是为了允许用户在答对后，再次打开看板练习拼写，并能触发“拼写正确”的反馈（如自动关闭看板）。
-    if (_isAnswerCorrect && (!_showHandwritingBoard || _pinImmersiveMode)) {
+    if (_isAnswerCorrect && !_showHandwritingBoard) {
       Global.logger.d('checkAsrResult: 单词已回答正确且非看板练习模式，跳过后续结果处理');
       return;
     }
@@ -1287,12 +1287,10 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         if (asrInput != null) {
           _meaningController.text = _word!.spell;
         }
-        if (!_pinImmersiveMode) {
-          _meaningFocusNode.unfocus();
-          setState(() {
-            _showHandwritingBoard = false;
-          });
-        }
+        _meaningFocusNode.unfocus();
+        setState(() {
+          _showHandwritingBoard = false;
+        });
         SoundUtil.playAssetSoundConcurrent('correct.mp3', 1.5, 0.2);
         return;
       }
@@ -1457,7 +1455,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
         // 如果之前已经答对了，现在是在沉浸式面板里练习拼写，则仅处理 UI 关闭与音效
         if (wasAlreadyCorrect) {
-          if (_showHandwritingBoard && !_pinImmersiveMode) {
+          if (_showHandwritingBoard) {
             _meaningFocusNode.unfocus();
             setState(() {
               _showHandwritingBoard = false;
@@ -1512,12 +1510,11 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     try {
       final isDarkMode = await MyDatabase.instance.localParamsDao.getIsDarkMode();
       final autoJump = await MyDatabase.instance.localParamsDao.getAutoJumpAfterCorrect();
-      final pin = await MyDatabase.instance.localParamsDao.getPinImmersiveMode();
+
 
       setState(() {
         _isDarkMode = isDarkMode;
         _autoJumpAfterCorrect = autoJump;
-        _pinImmersiveMode = pin;
       });
 
       // 获取用户的学习步骤配置（已激活的学习步骤)
@@ -1561,9 +1558,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       // 停止当前 ASR 任务并确保状态同步（Hot Stop 会在 Native 层处理，此处需保证状态为 Stopped）
       await asr.stopAsr();
       _meaningFocusNode.unfocus();
-      if (!_pinImmersiveMode) {
-        _showHandwritingBoard = false;
-      }
+      _showHandwritingBoard = false;
       _meaningController.text = '';
       _handlingChinese = '';
       _currentAsrCandidates = [];
@@ -2531,20 +2526,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                     ],
                   ),
                 ),
-                IconButton(
-                  icon: Icon(
-                    _pinImmersiveMode ? Icons.push_pin : Icons.push_pin_outlined,
-                    color: _pinImmersiveMode ? AppTheme.primaryColor : (isDarkMode ? Colors.white38 : Colors.black38),
-                    size: 20,
-                  ),
-                  tooltip: _pinImmersiveMode ? '已开启固定模式' : '已关闭固定模式',
-                  onPressed: () async {
-                    setState(() {
-                      _pinImmersiveMode = !_pinImmersiveMode;
-                    });
-                    await MyDatabase.instance.localParamsDao.setPinImmersiveMode(_pinImmersiveMode);
-                  },
-                ),
+
                 IconButton(
                   icon: Icon(
                     _autoJumpAfterCorrect ? Icons.bolt : Icons.bolt_outlined,

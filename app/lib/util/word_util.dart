@@ -44,7 +44,7 @@ class WordWrapper {
   /// 实际的单词相关对象，比如MasteredWord, LearningWord ...
   dynamic tag;
 
-  /// tag中的Word对象
+  /// tag中的Word对象 
   WordVo word;
 
   FocusNode focusNode = FocusNode();
