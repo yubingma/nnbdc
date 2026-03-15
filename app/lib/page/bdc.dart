@@ -1441,7 +1441,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       bool isMatch = inputText == correctSpell;
       Global.logger
           .d('BDC CHECK_ASR [ch2En]: inputText="$inputText", correctSpell="$correctSpell", basic_match=$isMatch, _currentScore=$_currentScore');
-      if (!isMatch && _currentScore != null && _currentScore! >= Constants.phonemeMatchThreshold) {
+      if (!isMatch && asrInput != null && _currentScore != null && _currentScore! >= Constants.phonemeMatchThreshold) {
         Global.logger.d('Ch2En: 拼写不匹配("$inputText" != "$correctSpell")，但音素相似度($_currentScore)达到阈值(${Constants.phonemeMatchThreshold})，判定通过');
         isMatch = true;
       }
@@ -2028,7 +2028,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
               subtitle,
               textScaler: const TextScaler.linear(1.0),
               style: TextStyle(
-                fontFamily: "NotoSansSC",
+                fontFamily: "NotoSansSC", 
                 fontSize: 12,
                 color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
               ),
