@@ -1205,8 +1205,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       }
     }
 
-    // 仅重置 ASR（停止识别但保持引擎运行），消除硬件切换产生的杂音
-    await asr.reset();
     _lastFsrsRating = rating;
 
     if (PlatformUtils.isIOS) {
@@ -1262,6 +1260,15 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     // 如果是在手写模式下，或者是键盘弹出的情况下，允许通过检查
     bool isHandwritingOrKeyboard = _showHandwritingBoard || _isKeyboardVisible || _meaningFocusNode.hasFocus;
 
+    // 如果输入框中的文本与正在处理的文本相同，则直接返回, 避免无谓的性能损耗
+    if (inputText != _handlingChinese) {
+      Global.logger.d('BDC CHECK_ASR: Update _handlingChinese from "$_handlingChinese" to "$inputText"');
+      _handlingChinese = inputText;
+    } else {
+      Global.logger.d('BDC CHECK_ASR: _handlingChinese hasn\'t changed ("$_handlingChinese"), returning early.');
+      return;
+    }
+
     // 如果已经答对，且并未处于练习拼写的看板模式（或者看板是固定模式），则跳过处理。
     // 这样做是为了允许用户在答对后，再次打开看板练习拼写，并能触发“拼写正确”的反馈（如自动关闭看板）。
     if (_isAnswerCorrect && !_showHandwritingBoard) {
@@ -1292,15 +1299,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         Global.logger.w('checkAsrResult: _wordWrapper 或 _word 为空，跳过处理。目前 _wordWrapper=${_wordWrapper != null}, _word=${_word != null}');
         return; // 在 _wordWrapper 加载完成前，不消耗此次 ASR 结果
       }
-    }
-
-    // 如果输入框中的文本与正在处理的文本相同，则直接返回, 避免无谓的性能损耗
-    if (inputText != _handlingChinese) {
-      Global.logger.d('BDC CHECK_ASR: Update _handlingChinese from "$_handlingChinese" to "$inputText"');
-      _handlingChinese = inputText;
-    } else {
-      Global.logger.d('BDC CHECK_ASR: _handlingChinese hasn\'t changed ("$_handlingChinese"), returning early.');
-      return;
     }
 
     if (_studyStep == StudyStep.en2Ch.json) {
