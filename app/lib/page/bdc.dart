@@ -2195,6 +2195,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         builder: (BuildContext context) {
           return StatefulBuilder(builder: (context, setState) {
             return AlertDialog(
+              insetPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(18),
               ),
@@ -2230,7 +2231,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                   ],
                 ),
               ),
-              content: SizedBox(
+              content: SizedBox( 
                 width: min(MediaQuery.of(context).size.width * 0.92, 540),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
