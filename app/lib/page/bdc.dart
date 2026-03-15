@@ -2610,7 +2610,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                       controller: _meaningController,
                       focusNode: _meaningFocusNode,
                       autofocus: true,
-                      keyboardType: TextInputType.text,
+                      keyboardType: TextInputType.visiblePassword,
                       autocorrect: false,
                       enableSuggestions: false,
                       style: TextStyle(
