@@ -445,13 +445,28 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
           // Stats Grid
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
-            child: Row(
+            child: Column(
               children: [
-                _buildStatItem('今日总词', todayWordCount ?? 0, Icons.auto_awesome_rounded, const Color(0xFF0EA5E9)),
-                const SizedBox(width: 8),
-                _buildStatItem('新词', newWordCount ?? 0, Icons.fiber_new_rounded, const Color(0xFF8B5CF6)),
-                const SizedBox(width: 8),
-                _buildStatItem('复习', oldWordCount ?? 0, Icons.history_rounded, const Color(0xFF10B981)),
+                Row(
+                  children: [
+                    _buildStatItem('今日总词', todayWordCount ?? 0, Icons.auto_awesome_rounded, const Color(0xFF0EA5E9)),
+                    const SizedBox(width: 8),
+                    _buildStatItem('新词', newWordCount ?? 0, Icons.fiber_new_rounded, const Color(0xFF8B5CF6)),
+                    const SizedBox(width: 8),
+                    _buildStatItem('复习', oldWordCount ?? 0, Icons.history_rounded, const Color(0xFF10B981)),
+                  ],
+                ),
+                if (!(user?.todayStudyStarted ?? false))
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Text(
+                      '未开始学习前，可点击上方数字调整单词',
+                      style: TextStyle(
+                        color: isDarkMode ? Colors.white54 : Colors.black45,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ), 
               ],
             ),
           ),
@@ -693,6 +708,31 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
             ToastUtil.error('请选择至少一种学习模式');
             return;
           }
+
+          if (!(user?.todayStudyStarted ?? false)) {
+            final shouldStart = await showDialog<bool>(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                title: const Text('准备开始今日学习'),
+                content: const Text('一旦开始学习，今日计划将无法修改。\n确认现在开始背单词吗？'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(ctx).pop(false),
+                    child: const Text('稍等修改'),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.of(ctx).pop(true),
+                    child: const Text('马上开始'),
+                  ),
+                ],
+              ),
+            );
+            
+            if (shouldStart != true) {
+              return;
+            }
+          }
+
           if (user != null) {
             await MyDatabase.instance.userOpersDao.recordStartLearn(user!.id!, remark: "开始学习");
             await (MyDatabase.instance.update(MyDatabase.instance.users)..where((u) => u.id.equals(user!.id!))).write(UsersCompanion(
