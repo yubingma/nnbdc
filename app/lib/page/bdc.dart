@@ -1252,7 +1252,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       Global.logger.w('收到归属于旧会话的结果($inputText)，但当前无活跃输入途径，跳过处理');
       if (mounted) {
         if (asrInput == null) {
-          _meaningController.text = '';
+          _meaningController.text = '';  
         }
         setState(() {
           _currentScore = null;
@@ -2578,7 +2578,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                       autocorrect: false,
                       enableSuggestions: false,
                       style: TextStyle(
-                        fontSize: 24,
+                        fontSize: 32,
                         fontWeight: FontWeight.bold,
                         // 移除这里的动态颜色设定，由 Controller 内部控制
                       ),
@@ -3297,7 +3297,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       return Text(
         _word!.spell,
         style: TextStyle(
-          fontSize: 20,
+          fontSize: 26,
           fontWeight: FontWeight.w700,
           color: context.watch<DarkMode>().isDarkMode ? Colors.white : const Color(0xFF1A1A1A),
           fontFamily: 'Roboto',
@@ -3322,7 +3322,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         letter = Text(
           spell[i],
           style: TextStyle(
-            fontSize: 18,
+            fontSize: 24,
             fontWeight: FontWeight.w600,
             color: context.watch<DarkMode>().isDarkMode ? Colors.white70 : const Color(0xFF1A1A1A),
             fontFamily: 'Roboto',
@@ -3333,7 +3333,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         letter = Text(
           '_',
           style: TextStyle(
-            fontSize: 18,
+            fontSize: 24,
             fontWeight: FontWeight.w600,
             color: context.watch<DarkMode>().isDarkMode ? Colors.white.withValues(alpha: 0.03) : Colors.grey[200],
             fontFamily: 'Roboto',
@@ -3909,6 +3909,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                           children: [
                             InkWell(
                               onTap: () {
+                                _meaningController.clear();
                                 setState(() {
                                   _showHandwritingBoard = true;
                                 });
@@ -3931,7 +3932,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                                           ? Text(
                                               '拼写练习',
                                               style: TextStyle(
-                                                fontSize: 16,
+                                                fontSize: 20,
                                                 color: (isDarkMode ? Colors.white : Colors.black).withValues(alpha: 0.2),
                                                 fontWeight: FontWeight.normal,
                                               ),
@@ -3941,7 +3942,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                                                 _meaningController.text,
                                                 _word?.spell ?? "",
                                                 isDarkMode ? Colors.white : Colors.black,
-                                                const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                                                const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                                               ),
                                             ),
                                     ),
@@ -3951,15 +3952,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                             ),
                             const SizedBox(height: 16),
                           ],
-                        ),
-                        GestureDetector(
-                          behavior: HitTestBehavior.opaque,
-                          onTap: () {
-                            setState(() {
-                              _showHandwritingBoard = true;
-                            });
-                          },
-                          child: _buildWordSpellingHint(_wordWrapper!, _isAnswerCorrect),
                         ),
                       ],
                     ),
