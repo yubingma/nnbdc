@@ -2036,11 +2036,12 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
           : null,
       trailing: customTrailing ??
           Transform.scale(
-            scale: 0.85,
+            scale: 0.5,
+            alignment: Alignment.centerRight, 
             child: Switch.adaptive(
               value: value,
               onChanged: onChanged,
-              activeColor: Global.highlight,
+              activeTrackColor: Global.highlight,
               materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
           ), 
@@ -2081,9 +2082,17 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         ),
       ),
       trailing: PopupMenuButton<String>(
-        icon: Icon(
-          Icons.arrow_drop_down,
-          color: Global.highlight,
+        padding: EdgeInsets.zero,
+        position: PopupMenuPosition.over,
+        child: SizedBox(
+          width: 48,
+          child: Align(
+            alignment: Alignment.centerRight,
+            child: Icon(
+              Icons.arrow_drop_down,
+              color: Global.highlight,
+            ),
+          ),
         ),
         onSelected: onChanged,
         itemBuilder: (BuildContext context) {
@@ -2192,15 +2201,19 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                                     MyDatabase.instance.localParamsDao.saveIsDarkMode(value);
                                     context.read<DarkMode>().setIsDarkMode(value);
                                   },
-                                  customTrailing: DayNightSwitcherIcon(
-                                    isDarkModeEnabled: _isDarkMode,
-                                    onStateChanged: (isDarkModeEnabled) {
-                                      setState(() {
-                                        _isDarkMode = isDarkModeEnabled;
-                                      });
-                                      MyDatabase.instance.localParamsDao.saveIsDarkMode(isDarkModeEnabled);
-                                      context.read<DarkMode>().setIsDarkMode(isDarkModeEnabled);
-                                    },
+                                  customTrailing: Transform.scale(
+                                    scale: 0.7,
+                                    alignment: Alignment.centerRight,
+                                    child: DayNightSwitcherIcon(
+                                      isDarkModeEnabled: _isDarkMode,
+                                      onStateChanged: (isDarkModeEnabled) {
+                                        setState(() {
+                                          _isDarkMode = isDarkModeEnabled;
+                                        });
+                                        MyDatabase.instance.localParamsDao.saveIsDarkMode(isDarkModeEnabled);
+                                        context.read<DarkMode>().setIsDarkMode(isDarkModeEnabled);
+                                      },
+                                    ),
                                   ),
                                 ),
                                 _buildAsrPassRuleSelector(
