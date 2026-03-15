@@ -435,21 +435,16 @@ class UserDto {
   bool? isAdmin;
   bool? isInputor;
   bool? isSysUser;
-  bool? autoPlaySentence;
   int? wordsPerDay;
   int? dakaDayCount;
   int? masteredWordsCount;
   int? cowDung;
   int? throwDiceChance;
   int? gameScore;
-  bool? showAnswersDirectly;
-  bool? autoPlayWord;
   int? continuousDakaDayCount;
   int? maxContinuousDakaDayCount;
   DateTime? lastDakaDate;
   int? dakaScore;
-
-  bool? enableAllWrong;
   bool? isTodayLearningStarted;
   bool? isTodayLearningFinished;
   String? studyConfig;

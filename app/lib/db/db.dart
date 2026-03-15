@@ -694,30 +694,37 @@ class MyDatabase extends _$MyDatabase {
     });
   }
 
-  /// 从版本 26 升级到版本 27：添加“综合学习配置”字段，将 walkman_config 迁移并抛弃
+  /// 从版本 26 升级到版本 27：添加“综合学习配置”字段，将 walkman_config 以及分散的配置字段迁移并抛弃
   Future<void> _migrateFromV26ToV27SwapWalkmanConfigToStudyConfig(Migrator m) async {
     await transaction(() async {
       try {
         await customStatement('ALTER TABLE users ADD COLUMN study_config TEXT');
-        
-        // 迁移旧数据
-        try {
-          await customStatement("UPDATE users SET study_config = json_object('walkman', json(walkman_config)) WHERE walkman_config IS NOT NULL");
-        } catch (e) {
-          // 在不支持 json_object 运算符的旧版 SQLite 处理
-          Global.logger.w('由于 SQLite 版本限制，无法通过 json_object 迁移 walkman_config，将使用老式字符串拼接：$e');
-          await customStatement("UPDATE users SET study_config = '{\"walkman\":' || walkman_config || '}' WHERE walkman_config IS NOT NULL");
-        }
-        
-        try {
-          await customStatement('ALTER TABLE users DROP COLUMN walkman_config');
-        } catch (dropE) {
-          Global.logger.w('DROP COLUMN walkman_config 失败（忽略，因字段不再使用）: $dropE');
+
+        // 迁移旧数据: 构造 JSON 字符串保存到 study_config
+        // SQLite 的 Boolean 存储为 1/0
+        await customStatement("""
+          UPDATE users SET study_config = '{' || 
+            '"autoPlayWord":' || CASE WHEN auto_play_word = 1 THEN 'true' ELSE 'false' END || ',' ||
+            '"autoPlaySentence":' || CASE WHEN auto_play_sentence = 1 THEN 'true' ELSE 'false' END || ',' ||
+            '"showAnswersDirectly":' || CASE WHEN show_answers_directly = 1 THEN 'true' ELSE 'false' END || ',' ||
+            '"enableAllWrong":' || CASE WHEN enable_all_wrong = 1 THEN 'true' ELSE 'false' END || 
+            CASE WHEN walkman_config IS NOT NULL AND walkman_config != '' THEN ',"walkman":' || walkman_config ELSE '' END ||
+          '}'
+        """);
+
+        // 删除旧字段 (SQLite 3.35.0+ 支持 DROP COLUMN)
+        final columns = ['walkman_config', 'auto_play_word', 'auto_play_sentence', 'show_answers_directly', 'enable_all_wrong'];
+        for (var col in columns) {
+          try {
+            await customStatement('ALTER TABLE users DROP COLUMN $col');
+          } catch (e) {
+            Global.logger.w('DROP COLUMN $col 失败: $e');
+          }
         }
 
-        Global.logger.i('✅ 升级 walkman_config 到 study_config 字段完成');
+        Global.logger.i('✅ 升级用户配置到 study_config 完成');
       } catch (e) {
-        Global.logger.w('升级 study_config 字段发生异常: $e');
+        Global.logger.w('升级 study_config 发生异常: $e');
       }
     });
   }
