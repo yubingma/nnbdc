@@ -863,6 +863,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+    unawaited(SoundUtil.configureAudioSession());
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     final argsJson = GetStorage().read<String>("BdcPageArgs");
     if (argsJson != null) {
@@ -2377,7 +2378,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       // 设置已在确定按钮中保存，这里刷新界面
       try {
         // 刷新界面，以体现最新配置
-        asr.stopAsr();
+        await asr.stopAsr();
         handleWord(_currentGetWordResult);
       } catch (e) {
         ToastUtil.error('刷新界面失败: $e');

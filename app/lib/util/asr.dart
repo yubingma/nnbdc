@@ -385,10 +385,18 @@ class Asr {
       return;
     }
 
-    // 如果正在停止中，需要等待停止后再尝试启动，或者直接忽略此次请求
+    // 如果正在停止中，需要等待停止后再尝试启动
     if (state == AsrState.stopping) {
-      Global.logger.w('ASR: ASR 正在停止中，忽略 startAsr 请求 (instance: $hashCode)');
-      return;
+      Global.logger.w('ASR: ASR 正在停止中，等待停止完成后重试 (instance: $hashCode)');
+      int waitCount = 0;
+      while (state == AsrState.stopping && waitCount < 20) {
+        await Future.delayed(const Duration(milliseconds: 100));
+        waitCount++;
+      }
+      if (state == AsrState.stopping) {
+        Global.logger.w('ASR: 等待 ASR 停止超时，放弃启动 (instance: $hashCode)');
+        return;
+      }
     }
 
     if (state == AsrState.started) {
