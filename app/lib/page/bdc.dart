@@ -2043,7 +2043,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
               activeColor: Global.highlight,
               materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
-          ),
+          ), 
       onTap: () {
         if (customTrailing == null) {
           onChanged(!value);
@@ -2203,6 +2203,14 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                                     },
                                   ),
                                 ),
+                                _buildAsrPassRuleSelector(
+                                  localAsrPassRule,
+                                  (value) {
+                                    setState(() {
+                                      localAsrPassRule = value;
+                                    });
+                                  },
+                                ),
                                 _buildSettingItem(
                                   '自动播放单词发音',
                                   localAutoPlayWord,
@@ -2236,14 +2244,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                                   (value) {
                                     setState(() {
                                       localEnableAllWrong = value;
-                                    });
-                                  },
-                                ),
-                                _buildAsrPassRuleSelector(
-                                  localAsrPassRule,
-                                  (value) {
-                                    setState(() {
-                                      localAsrPassRule = value;
                                     });
                                   },
                                 ),
