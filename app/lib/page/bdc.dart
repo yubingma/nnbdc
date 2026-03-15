@@ -1266,6 +1266,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     // 这样做是为了允许用户在答对后，再次打开看板练习拼写，并能触发“拼写正确”的反馈（如自动关闭看板）。
     if (_isAnswerCorrect && !_showHandwritingBoard) {
       Global.logger.d('checkAsrResult: 单词已回答正确且非看板练习模式，跳过后续结果处理');
+      if (asrInput != null && asrInput.trim().toLowerCase() == _word!.spell.toLowerCase()) {
+         SoundUtil.playAssetSoundConcurrent('correct.mp3', 1.5, 0.2);
+      }
       return;
     }
 
