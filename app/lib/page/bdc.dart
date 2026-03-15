@@ -1206,6 +1206,11 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     await asr.reset();
     _lastFsrsRating = rating;
 
+    if (PlatformUtils.isIOS) {
+      // 给 iOS 音频引擎短暂的 150ms 使缓冲队列刷新，避免 ASR 重置与立即起播发生抢占导致声音发抖发颤
+      await Future.delayed(const Duration(milliseconds: 150));
+    }
+
     // 播放正确提示音
     final soundFuture = SoundUtil.playAssetSoundConcurrent('correct.mp3', 1.5, 0.2);
     soundFuture.whenComplete(() async {
@@ -1353,6 +1358,11 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
         // 并发播放提示音，支持多个提示音同时播放，互不干扰
         // 将提示音 Future 添加到列表中，用于后续等待所有提示音播放完成
+
+        if (PlatformUtils.isIOS && _isAnswerCorrect) {
+          await Future.delayed(const Duration(milliseconds: 150));
+        }
+
         final soundFuture = SoundUtil.playAssetSoundConcurrent('correct.mp3', 1.5, 0.2);
         _playingCorrectSounds.add(soundFuture);
         debugPrint('checkAsrResult: 添加提示音到列表，当前有 ${_playingCorrectSounds.length} 个提示音正在播放');
