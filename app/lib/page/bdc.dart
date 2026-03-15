@@ -3968,6 +3968,65 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     );
   }
 
+  void _updateFsrsRating(FsrsRating newRating) {
+    setState(() {
+      _lastFsrsRating = newRating;
+      
+      // 重新计算 FSRS 预览结果 
+      final lw = _currentGetWordResult?.learningWord;
+      if (lw != null) {
+        final fsrs = FSRS();
+        _daysSinceLastReview = 0;
+        if (lw.lastLearningDate != null) {
+          final lastDate = DateTime(lw.lastLearningDate!.year, lw.lastLearningDate!.month, lw.lastLearningDate!.day);
+          final now = DateTime.now();
+          final todayDate = DateTime(now.year, now.month, now.day);
+          _daysSinceLastReview = todayDate.difference(lastDate).inDays;
+        }
+        if (lw.stability == null || lw.stability == 0.0) {
+          _fsrsItem = fsrs.init(newRating);
+        } else {
+          final prevItem = FSRSItem(
+            stability: lw.stability!,
+            difficulty: lw.difficulty!,
+            elapsedDays: _daysSinceLastReview ?? 0,
+            scheduledDays: lw.scheduledDays ?? 0,
+            reps: lw.reps ?? 0,
+            lapses: lw.lapses ?? 0,
+            state: FsrsStateExt.fromInt(lw.state),
+          );
+          _fsrsItem = fsrs.next(prevItem, newRating, _daysSinceLastReview ?? 0);
+        }
+      }
+    });
+  }
+
+  void _showRatingModifyDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Text('修改今日评分', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: FsrsRating.values.map((rating) {
+              return ListTile(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                title: Text(rating.label),
+                trailing: _lastFsrsRating == rating ? const Icon(Icons.check, color: AppTheme.primaryColor) : null,
+                onTap: () {
+                  Navigator.of(context).pop();
+                  _updateFsrsRating(rating);
+                },
+              );
+            }).toList(),
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildFsrsResultPanel() {
     if (_fsrsItem == null) return const SizedBox();
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
@@ -3998,11 +4057,27 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.check_circle_outline, size: 12, color: ratingColor),
-          const SizedBox(width: 4),
-          Text(
-            '今日评分: $ratingLabel',
-            style: TextStyle(fontSize: 11, color: ratingColor),
+          InkWell(
+            onTap: _showRatingModifyDialog,
+            borderRadius: BorderRadius.circular(4),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+              child: Row(
+                children: [
+                  Icon(Icons.edit_note, size: 14, color: ratingColor),
+                  const SizedBox(width: 4),
+                  Text(
+                    '今日评分: $ratingLabel',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: ratingColor,
+                      decoration: TextDecoration.underline,
+                      decorationStyle: TextDecorationStyle.dashed,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8),
