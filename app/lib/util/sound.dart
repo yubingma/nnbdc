@@ -264,7 +264,9 @@ class SoundUtil {
   ) async {
     try {
       if (player.state == PlayerState.playing) {
-        await player.stop().timeout(const Duration(milliseconds: 1000), onTimeout: () => {});
+        await player.stop().timeout(const Duration(milliseconds: 1000), onTimeout: () {
+          Global.logger.w('SoundUtil: stop() timeout for $soundFileName');
+        });
       }
       await player.setPlaybackRate(speed);
       await player.setVolume(volume);
@@ -276,10 +278,16 @@ class SoundUtil {
       });
 
       if (player.source == null) {
-        await player.play(AssetSource('audio/$soundFileName')).timeout(const Duration(milliseconds: 3000));
+        await player.play(AssetSource('audio/$soundFileName')).timeout(const Duration(milliseconds: 3000), onTimeout: () {
+          Global.logger.w('SoundUtil: play() timeout for $soundFileName');
+        });
       } else {
-        await player.seek(Duration.zero).timeout(const Duration(milliseconds: 1000), onTimeout: () => {});
-        await player.resume().timeout(const Duration(milliseconds: 3000));
+        await player.seek(Duration.zero).timeout(const Duration(milliseconds: 1000), onTimeout: () {
+          Global.logger.w('SoundUtil: seek() timeout for $soundFileName');
+        });
+        await player.resume().timeout(const Duration(milliseconds: 3000), onTimeout: () {
+          Global.logger.w('SoundUtil: resume() timeout for $soundFileName');
+        });
       }
 
       if (PlatformUtils.isAndroid) {
