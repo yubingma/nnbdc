@@ -2281,12 +2281,10 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                                     });
                                     MyDatabase.instance.localParamsDao.saveIsDarkMode(value);
                                     context.read<DarkMode>().setIsDarkMode(value);
-                                  },
-                                  customTrailing: Container(
-                                    width: 44,
-                                    padding: EdgeInsets.zero,
-                                    alignment: Alignment.centerRight,
-                                    child: Transform.scale(
+                                  }, 
+                                  customTrailing: Transform.translate(
+                                    offset: const Offset(20, 0),
+                                    child: Transform.scale( 
                                       scale: 1.8,
                                       alignment: Alignment.centerRight,
                                       child: DayNightSwitcherIcon(
