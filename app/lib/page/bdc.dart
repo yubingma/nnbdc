@@ -1245,7 +1245,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
     // 如果已经答对，且并未处于练习拼写的看板模式（或者看板是固定模式），则跳过处理。
     // 这样做是为了允许用户在答对后，再次打开看板练习拼写，并能触发“拼写正确”的反馈（如自动关闭看板）。
-    if (_isAnswerCorrect && !_showHandwritingBoard) {
+    if (_isAnswerCorrect && !_showHandwritingBoard) {  
       Global.logger.d('checkAsrResult: 单词已回答正确且非看板练习模式，跳过后续结果处理');
       return;
     }
@@ -3293,19 +3293,42 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     setState(() {
       _hintUsed = true;
       word.hintLetterCount++;
+      // 中英模式：拼写提示
+      if (_studyStep == StudyStep.ch2En.json) {
+        final spell = word.word.spell;
+        if (word.hintLetterCount > spell.length) {
+          word.hintLetterCount = spell.length;
+        }
+        _meaningController.text = spell.substring(0, word.hintLetterCount);
+      }
     });
+
+    // 如果提示已经显示了完整的单词，则检查结果
+    if (_studyStep == StudyStep.ch2En.json && word.hintLetterCount >= word.word.spell.length) {
+      checkAsrResult();
+    }
   }
 
   void giveFullHint(WordWrapper word) {
     setState(() {
       _hintUsed = true;
-      word.hintLetterCount = 999;
+      word.hintLetterCount = word.word.spell.length;
+      // 中英模式：拼写提示
+      if (_studyStep == StudyStep.ch2En.json) {
+        _meaningController.text = word.word.spell;
+      }
     });
+    if (_studyStep == StudyStep.ch2En.json) {
+      checkAsrResult();
+    }
   }
 
   void clearHint(WordWrapper word) {
     setState(() {
       word.hintLetterCount = 0;
+      if (_studyStep == StudyStep.ch2En.json) {
+        _meaningController.text = '';
+      }
     });
   }
 
@@ -3865,7 +3888,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                           children: [
                             InkWell(
                               onTap: () {
-                                _meaningController.clear();
+                                // 不再清除，保留提示出的字母
                                 setState(() {
                                   _showHandwritingBoard = true;
                                 });
