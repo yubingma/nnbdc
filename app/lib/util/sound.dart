@@ -255,12 +255,17 @@ class SoundUtil {
   ) async {
     try {
       if (player.state == PlayerState.playing) {
-        player.stop();
+        await player.stop();
       }
-      player.setPlaybackRate(speed);
-      player.setVolume(volume);
+      await player.setPlaybackRate(speed);
+      await player.setVolume(volume);
 
-      await player.play(AssetSource('audio/$soundFileName'));
+      if (player.source == null) {
+        await player.play(AssetSource('audio/$soundFileName'));
+      } else {
+        await player.seek(Duration.zero);
+        await player.resume();
+      }
 
       if (PlatformUtils.isAndroid) {
         final completer = Completer<void>();

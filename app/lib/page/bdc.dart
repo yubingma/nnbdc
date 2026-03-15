@@ -1029,6 +1029,10 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       Global.logger.d('BDC: ASR启动成功，播放提示音并计时');
       // startAsr 后立即播放提示音：mixWithOthers 保证录音和播放可共存
       // 注意：不在此处先 stopAsr 再播再 startAsr，那样会多两次音频会话切换产生额外噪音
+      if (PlatformUtils.isIOS) {
+        // iOS上AVAudioEngine启动后需要一小段缓冲时间，否则紧接着播放音频会产生发颤或杂音
+        await Future.delayed(const Duration(milliseconds: 150));
+      }
       await SoundUtil.playAsrReadyHintSound();
       _wordStartTime = DateTime.now();
     } catch (e, stackTrace) {
@@ -1037,6 +1041,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       // 仍然需要播放提示音，提示用户可以开始说话
       if (asr.state == AsrState.started) {
         Global.logger.d('BDC: ASR状态为started，播放提示音并计时');
+        if (PlatformUtils.isIOS) {
+          await Future.delayed(const Duration(milliseconds: 150));
+        }
         await SoundUtil.playAsrReadyHintSound();
         _wordStartTime = DateTime.now();
       }
