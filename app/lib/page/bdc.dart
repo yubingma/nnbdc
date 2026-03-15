@@ -1255,7 +1255,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     if (asr.state != AsrState.started && asr.state != AsrState.initialized && !isHandwritingOrKeyboard) {
       Global.logger.w('收到归属于旧会话的结果($inputText)，但当前无活跃输入途径，跳过处理');
       if (mounted) {
-        if (asrInput == null) {
+        if (asrInput == null) { 
           _meaningController.text = '';  
         }
         setState(() {
@@ -2622,7 +2622,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                       decoration: InputDecoration(
                         hintText: '在此键入单词...',
                         hintStyle: TextStyle(
-                          fontSize: 18,
+                          fontSize: 32,
                           color: (isDarkMode ? Colors.white : Colors.black).withValues(alpha: 0.2),
                           fontWeight: FontWeight.normal,
                         ),
@@ -3327,70 +3327,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     });
   }
 
-  /// 构建单词拼写提示（用于"说出单词发音"模式）
-  Widget _buildWordSpellingHint(WordWrapper wordWrapper, bool isAnswerCorrect) {
-    if (isAnswerCorrect) {
-      // 答对后显示完整单词
-      return Text(
-        _word!.spell,
-        style: TextStyle(
-          fontSize: 26,
-          fontWeight: FontWeight.w700,
-          color: context.watch<DarkMode>().isDarkMode ? Colors.white : const Color(0xFF1A1A1A),
-          fontFamily: 'Roboto',
-          letterSpacing: 1.2,
-        ),
-      );
-    }
 
-    // 答题中，根据hintLetterCount显示提示
-    if (wordWrapper.hintLetterCount == 0) {
-      return const SizedBox.shrink();
-    }
-
-    String spell = _word!.spell;
-    int hintCount = wordWrapper.hintLetterCount;
-    List<Widget> letterWidgets = [];
-
-    for (int i = 0; i < spell.length; i++) {
-      Widget letter;
-      if (i < hintCount) {
-        // 显示提示字母
-        letter = Text(
-          spell[i],
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.w600,
-            color: context.watch<DarkMode>().isDarkMode ? Colors.white70 : const Color(0xFF1A1A1A),
-            fontFamily: 'Roboto',
-          ),
-        );
-      } else {
-        // 显示下划线占位符
-        letter = Text(
-          '_',
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.w600,
-            color: context.watch<DarkMode>().isDarkMode ? Colors.white.withValues(alpha: 0.03) : Colors.grey[200],
-            fontFamily: 'Roboto',
-          ),
-        );
-      }
-
-      // 将字母包装在容器中以添加右边距
-      letterWidgets.add(Container(
-        margin: const EdgeInsets.only(right: 3),
-        child: letter,
-      ));
-    }
-
-    return Wrap(
-      spacing: 2,
-      runSpacing: 4,
-      children: letterWidgets,
-    );
-  }
 
   onAnswerClicked(var selectedAnswerIndex) async {
     _isAnswerCorrect = selectedAnswerIndex == _correctAnswerIndex;
