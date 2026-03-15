@@ -2089,7 +2089,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   Widget _buildSettingItem(String title, bool value, Function(bool) onChanged, {Widget? customTrailing, String? subtitle}) {
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-      visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
+      visualDensity: const VisualDensity(horizontal: -4, vertical: -4),  
       dense: true,
       title: Text(
         title,
@@ -2283,7 +2283,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                                     context.read<DarkMode>().setIsDarkMode(value);
                                   },
                                   customTrailing: Transform.scale(
-                                    scale: 0.9,
+                                    scale: 2.0,
                                     alignment: Alignment.centerRight,
                                     child: DayNightSwitcherIcon(
                                       isDarkModeEnabled: _isDarkMode,
