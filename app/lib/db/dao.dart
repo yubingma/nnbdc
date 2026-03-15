@@ -147,30 +147,58 @@ class LocalParamsDao extends DatabaseAccessor<MyDatabase> with _$LocalParamsDaoM
     }
   }
 
-  /// 获取极速模式开关状态（答对是否自动跳转）
-  Future<bool> getAutoJumpAfterCorrect() async {
+  /// 获取极速模式开关状态（中英模式，答对是否自动跳转）
+  Future<bool> getAutoJumpAfterCorrectCh2En() async {
     try {
-      var param = await (select(localParams)..where((e) => e.name.equals('autoJumpAfterCorrect'))).getSingleOrNull();
-      // 默认为关闭
-      return param?.value == 'true';
+      var param = await (select(localParams)..where((e) => e.name.equals('autoJumpAfterCorrectCh2En'))).getSingleOrNull();
+      // 中英模式默认为开启（极速模式）
+      return param == null ? true : param.value == 'true';
     } catch (e, stackTrace) {
-      ErrorHandler.handleDatabaseError(e, stackTrace, db: this, operation: 'getAutoJumpAfterCorrect', showToast: false);
+      ErrorHandler.handleDatabaseError(e, stackTrace, db: this, operation: 'getAutoJumpAfterCorrectCh2En', showToast: false);
+      return true;
+    }
+  }
+
+  /// 设置极速模式开关状态（中英模式）
+  Future<void> setAutoJumpAfterCorrectCh2En(bool value) async {
+    try {
+      final existing = await (select(localParams)..where((e) => e.name.equals('autoJumpAfterCorrectCh2En'))).getSingleOrNull();
+      final strValue = value ? 'true' : 'false';
+      if (existing == null) {
+        await into(localParams).insert(LocalParamsCompanion.insert(name: 'autoJumpAfterCorrectCh2En', value: strValue));
+      } else {
+        await (update(localParams)..where((e) => e.name.equals('autoJumpAfterCorrectCh2En'))).write(LocalParamsCompanion(value: Value(strValue)));
+      }
+    } catch (e, stackTrace) {
+      ErrorHandler.handleDatabaseError(e, stackTrace, db: this, operation: 'setAutoJumpAfterCorrectCh2En', showToast: false);
+      rethrow;
+    }
+  }
+
+  /// 获取极速模式开关状态（英中模式，答对是否自动跳转）
+  Future<bool> getAutoJumpAfterCorrectEn2Ch() async {
+    try {
+      var param = await (select(localParams)..where((e) => e.name.equals('autoJumpAfterCorrectEn2Ch'))).getSingleOrNull();
+      // 英中模式默认为关闭（非极速模式）
+      return param == null ? false : param.value == 'true';
+    } catch (e, stackTrace) {
+      ErrorHandler.handleDatabaseError(e, stackTrace, db: this, operation: 'getAutoJumpAfterCorrectEn2Ch', showToast: false);
       return false;
     }
   }
 
-  /// 设置极速模式开关状态
-  Future<void> setAutoJumpAfterCorrect(bool value) async {
+  /// 设置极速模式开关状态（英中模式）
+  Future<void> setAutoJumpAfterCorrectEn2Ch(bool value) async {
     try {
-      final existing = await (select(localParams)..where((e) => e.name.equals('autoJumpAfterCorrect'))).getSingleOrNull();
+      final existing = await (select(localParams)..where((e) => e.name.equals('autoJumpAfterCorrectEn2Ch'))).getSingleOrNull();
       final strValue = value ? 'true' : 'false';
       if (existing == null) {
-        await into(localParams).insert(LocalParamsCompanion.insert(name: 'autoJumpAfterCorrect', value: strValue));
+        await into(localParams).insert(LocalParamsCompanion.insert(name: 'autoJumpAfterCorrectEn2Ch', value: strValue));
       } else {
-        await (update(localParams)..where((e) => e.name.equals('autoJumpAfterCorrect'))).write(LocalParamsCompanion(value: Value(strValue)));
+        await (update(localParams)..where((e) => e.name.equals('autoJumpAfterCorrectEn2Ch'))).write(LocalParamsCompanion(value: Value(strValue)));
       }
     } catch (e, stackTrace) {
-      ErrorHandler.handleDatabaseError(e, stackTrace, db: this, operation: 'setAutoJumpAfterCorrect', showToast: false);
+      ErrorHandler.handleDatabaseError(e, stackTrace, db: this, operation: 'setAutoJumpAfterCorrectEn2Ch', showToast: false);
       rethrow;
     }
   }

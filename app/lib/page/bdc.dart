@@ -656,8 +656,24 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   // 当前发音评分
   int? _currentScore;
 
-  /// 答对后是否自动跳转到下一个单词 (极速模式)
-  bool _autoJumpAfterCorrect = false;
+  /// 答对后是否自动跳转到下一个单词 (极速模式) 
+  bool _autoJumpAfterCorrectCh2En = true;
+  bool _autoJumpAfterCorrectEn2Ch = false;
+
+  bool get _autoJumpAfterCorrect {
+    if (_studyStep == StudyStep.ch2En.json) {
+      return _autoJumpAfterCorrectCh2En; 
+    }
+    return _autoJumpAfterCorrectEn2Ch;
+  }
+
+  set _autoJumpAfterCorrect(bool value) {
+    if (_studyStep == StudyStep.ch2En.json) {
+      _autoJumpAfterCorrectCh2En = value;
+    } else {
+      _autoJumpAfterCorrectEn2Ch = value;
+    }
+  }
 
   /// 是否保持在拼写输入界面 (图钉模式)
 
@@ -1558,11 +1574,13 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       await SoundUtil.configureAudioSession();
 
       final isDarkMode = await MyDatabase.instance.localParamsDao.getIsDarkMode();
-      final autoJump = await MyDatabase.instance.localParamsDao.getAutoJumpAfterCorrect();
+      final autoJumpCh2En = await MyDatabase.instance.localParamsDao.getAutoJumpAfterCorrectCh2En();
+      final autoJumpEn2Ch = await MyDatabase.instance.localParamsDao.getAutoJumpAfterCorrectEn2Ch();
 
       setState(() {
         _isDarkMode = isDarkMode;
-        _autoJumpAfterCorrect = autoJump;
+        _autoJumpAfterCorrectCh2En = autoJumpCh2En;
+        _autoJumpAfterCorrectEn2Ch = autoJumpEn2Ch;
       });
 
       // 获取用户的学习步骤配置（已激活的学习步骤)
@@ -2166,7 +2184,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     var localShowAnswersDirectly = currentUser?.showAnswersDirectly ?? false;
     var localEnableAllWrong = currentUser?.enableAllWrong ?? false;
     var localAsrPassRule = await MyDatabase.instance.localParamsDao.getAsrPassRule();
-    var localAutoJumpAfterCorrect = _autoJumpAfterCorrect;
+    var localAutoJumpAfterCorrectCh2En = _autoJumpAfterCorrectCh2En;
+    var localAutoJumpAfterCorrectEn2Ch = _autoJumpAfterCorrectEn2Ch;
 
     if (!mounted) return;
 
@@ -2306,11 +2325,20 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                                   },
                                 ),
                                 _buildSettingItem(
-                                  '答对后自动跳转(极速模式)',
-                                  localAutoJumpAfterCorrect,
+                                  '答对自动跳转(中英极速模式)',
+                                  localAutoJumpAfterCorrectCh2En,
                                   (value) {
                                     setState(() {
-                                      localAutoJumpAfterCorrect = value;
+                                      localAutoJumpAfterCorrectCh2En = value;
+                                    });
+                                  },
+                                ),
+                                _buildSettingItem(
+                                  '答对自动跳转(英中极速模式)',
+                                  localAutoJumpAfterCorrectEn2Ch,
+                                  (value) {
+                                    setState(() {
+                                      localAutoJumpAfterCorrectEn2Ch = value;
                                     });
                                   },
                                 ),
@@ -2392,12 +2420,14 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                           // 保存asrPassRule设置
                           await MyDatabase.instance.localParamsDao.setAsrPassRule(localAsrPassRule);
                           // 保存极速模式开关设置
-                          await MyDatabase.instance.localParamsDao.setAutoJumpAfterCorrect(localAutoJumpAfterCorrect);
+                          await MyDatabase.instance.localParamsDao.setAutoJumpAfterCorrectCh2En(localAutoJumpAfterCorrectCh2En);
+                          await MyDatabase.instance.localParamsDao.setAutoJumpAfterCorrectEn2Ch(localAutoJumpAfterCorrectEn2Ch);
 
                           // 在异步操作后检查context是否仍然有效
                           if (context.mounted) {
                             _asrPassRuleCache = localAsrPassRule;
-                            _autoJumpAfterCorrect = localAutoJumpAfterCorrect;
+                            _autoJumpAfterCorrectCh2En = localAutoJumpAfterCorrectCh2En;
+                            _autoJumpAfterCorrectEn2Ch = localAutoJumpAfterCorrectEn2Ch;
                             Navigator.pop(context, true);
                           }
                         },
@@ -2620,7 +2650,11 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                     setState(() {
                       _autoJumpAfterCorrect = !_autoJumpAfterCorrect;
                     });
-                    await MyDatabase.instance.localParamsDao.setAutoJumpAfterCorrect(_autoJumpAfterCorrect);
+                    if (_studyStep == StudyStep.ch2En.json) {
+                      await MyDatabase.instance.localParamsDao.setAutoJumpAfterCorrectCh2En(_autoJumpAfterCorrect);
+                    } else {
+                      await MyDatabase.instance.localParamsDao.setAutoJumpAfterCorrectEn2Ch(_autoJumpAfterCorrect);
+                    }
                   },
                 ),
                 IconButton(
