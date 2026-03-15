@@ -714,7 +714,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
               context: context,
               builder: (ctx) => AlertDialog(
                 title: const Text('准备开始今日学习'),
-                content: const Text('一旦开始学习，今日计划将无法修改。\n确认现在开始背单词吗？'),
+                content: const Text('一旦开始，今日计划将无法修改。\n确认现在开始背单词吗？'),
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.of(ctx).pop(false),
