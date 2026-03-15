@@ -1256,7 +1256,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       Global.logger.w('收到归属于旧会话的结果($inputText)，但当前无活跃输入途径，跳过处理');
       if (mounted) {
         if (asrInput == null) { 
-          _meaningController.text = '';  
+          _meaningController.text = '';   
         }
         setState(() {
           _currentScore = null;
@@ -2598,7 +2598,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                   const SizedBox(height: 12),
                   // 2. 打字输入框
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     decoration: BoxDecoration(
                       color: isDarkMode ? const Color(0xFF1E1E1E) : const Color(0xFFF8F9FA),
                       borderRadius: BorderRadius.circular(16),
@@ -2611,7 +2610,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                       controller: _meaningController,
                       focusNode: _meaningFocusNode,
                       autofocus: true,
-                      keyboardType: TextInputType.visiblePassword,
+                      keyboardType: TextInputType.text,
                       autocorrect: false,
                       enableSuggestions: false,
                       style: TextStyle(
@@ -2627,6 +2626,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                           fontWeight: FontWeight.normal,
                         ),
                         border: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       ),
                       textInputAction: TextInputAction.done,
                       onChanged: (value) {
