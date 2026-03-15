@@ -282,9 +282,9 @@ class SoundUtil {
           Global.logger.w('SoundUtil: play() timeout for $soundFileName');
         });
       } else {
-        await player.seek(Duration.zero).timeout(const Duration(milliseconds: 1000), onTimeout: () {
-          Global.logger.w('SoundUtil: seek() timeout for $soundFileName');
-        });
+        // iOS 引擎状态激烈切换时，AVPlayer 的 seek completionHandler 有可能被吞掉导致死锁。
+        // 因为音频已经在队列且必定从 0 开始，所以可以直接 fire-and-forget，无需 await 它。
+        unawaited(player.seek(Duration.zero).catchError((_) {}));
         await player.resume().timeout(const Duration(milliseconds: 3000), onTimeout: () {
           Global.logger.w('SoundUtil: resume() timeout for $soundFileName');
         });
