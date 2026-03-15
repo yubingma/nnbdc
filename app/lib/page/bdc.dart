@@ -3972,7 +3972,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     setState(() {
       _lastFsrsRating = newRating;
       
-      // 重新计算 FSRS 预览结果 
+      // 重新计算 FSRS 预览结果  
       final lw = _currentGetWordResult?.learningWord;
       if (lw != null) {
         final fsrs = FSRS();
@@ -4010,17 +4010,30 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
           title: const Text('修改今日评分', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
-            children: FsrsRating.values.map((rating) {
-              return ListTile(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                title: Text(rating.label),
-                trailing: _lastFsrsRating == rating ? const Icon(Icons.check, color: AppTheme.primaryColor) : null,
-                onTap: () {
-                  Navigator.of(context).pop();
-                  _updateFsrsRating(rating);
-                },
-              );
-            }).toList(),
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(bottom: 16.0), 
+                child: Text(
+                  '评分将影响该单词今后的复习频率。如果机器的评判不符合您的实际情况，可以在此手动修正：',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.8),
+                    height: 1.4,
+                  ),
+                ),
+              ),
+              ...FsrsRating.values.map((rating) {
+                return ListTile(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  title: Text(rating.label),
+                  trailing: _lastFsrsRating == rating ? const Icon(Icons.check, color: AppTheme.primaryColor) : null,
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    _updateFsrsRating(rating);
+                  },
+                );
+              }),
+            ],
           ),
         );
       },
