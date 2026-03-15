@@ -1194,8 +1194,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       }
     }
 
-    // 停止当前 ASR 任务（Hot Stop），消除硬件切换产生的杂音
-    await asr.stopAsr();
+    // 仅重置 ASR（停止识别但保持引擎运行），消除硬件切换产生的杂音
+    await asr.reset();
     _lastFsrsRating = rating;
 
     // 播放正确提示音
@@ -2028,7 +2028,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
               subtitle,
               textScaler: const TextScaler.linear(1.0),
               style: TextStyle(
-                fontFamily: "NotoSansSC", 
+                fontFamily: "NotoSansSC",
                 fontSize: 12,
                 color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
               ),
@@ -2037,14 +2037,14 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       trailing: customTrailing ??
           Transform.scale(
             scale: 0.5,
-            alignment: Alignment.centerRight, 
+            alignment: Alignment.centerRight,
             child: Switch.adaptive(
               value: value,
               onChanged: onChanged,
               activeTrackColor: Global.highlight,
               materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
-          ), 
+          ),
       onTap: () {
         if (customTrailing == null) {
           onChanged(!value);
@@ -3971,8 +3971,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   void _updateFsrsRating(FsrsRating newRating) {
     setState(() {
       _lastFsrsRating = newRating;
-      
-      // 重新计算 FSRS 预览结果  
+
+      // 重新计算 FSRS 预览结果
       final lw = _currentGetWordResult?.learningWord;
       if (lw != null) {
         final fsrs = FSRS();
@@ -4012,7 +4012,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
             mainAxisSize: MainAxisSize.min,
             children: [
               Padding(
-                padding: const EdgeInsets.only(bottom: 16.0), 
+                padding: const EdgeInsets.only(bottom: 16.0),
                 child: Text(
                   '评分将影响该单词今后的复习频率。如果机器的评判不符合您的实际情况，可以在此手动修正：',
                   style: TextStyle(
@@ -4332,15 +4332,17 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           if (_studyStep != StudyStep.ch2En.json)
-            Text(
-              Util.getWordDefaultPronounce(_currentGetWordResult!.learningWord!.word).isEmpty
-                  ? ''
-                  : '[${Util.getWordDefaultPronounce(_currentGetWordResult!.learningWord!.word)}]',
-              style: TextStyle(
-                color: context.watch<DarkMode>().isDarkMode ? const Color(0xFFD1D5DB) : const Color(0xFF4B5563),
-                fontFamily: "NotoSans",
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
+            Flexible(
+              child: Text(
+                Util.getWordDefaultPronounce(_currentGetWordResult!.learningWord!.word).isEmpty
+                    ? ''
+                    : '[${Util.getWordDefaultPronounce(_currentGetWordResult!.learningWord!.word)}]',
+                style: TextStyle(
+                  color: context.watch<DarkMode>().isDarkMode ? const Color(0xFFD1D5DB) : const Color(0xFF4B5563),
+                  fontFamily: "NotoSans",
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
           if (_studyStep != StudyStep.ch2En.json) buildWordSoundButton(_currentGetWordResult!.learningWord!.word, _audioPlayer),

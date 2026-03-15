@@ -172,7 +172,7 @@ class SoundUtil {
 
         // 等待播放完成
         await completer.future.timeout(Duration(milliseconds: playTimeoutMs));
-        
+
         // 播放完成后增加一小段静音缓冲时间，避免紧接着的音频切换导致的问题
         await Future.delayed(const Duration(milliseconds: 200));
       } finally {
@@ -195,6 +195,9 @@ class SoundUtil {
   /// 播放资产音效（同步模式）
   static Future<void> playAssetSound(
       String soundFileName, double speed, double volume, int timeoutInMilliSeconds, int sleepAfterPlayInMilliSeconds) async {
+    if (!_audioSessionConfigured) {
+      await configureAudioSession();
+    }
     final player = AudioPlayer();
     try {
       player.setPlaybackRate(speed);
@@ -213,6 +216,9 @@ class SoundUtil {
 
   /// 并发播放音效
   static Future<void> playAssetSoundConcurrent(String soundFileName, double speed, double volume) async {
+    if (!_audioSessionConfigured) {
+      await configureAudioSession();
+    }
     final pool = _sfxPools.putIfAbsent(soundFileName, () => [AudioPlayer()]);
     AudioPlayer? player;
     final now = DateTime.now();
@@ -280,6 +286,9 @@ class SoundUtil {
 
   /// 播放音效（限定最大奖励时长）
   static Future<void> playAssetSoundCut(String soundFileName, double speed, double volume, Duration maxPlay) async {
+    if (!_audioSessionConfigured) {
+      await configureAudioSession();
+    }
     final pool = _sfxPools.putIfAbsent(soundFileName, () => [AudioPlayer()]);
     AudioPlayer? player;
     final now = DateTime.now();
