@@ -443,6 +443,9 @@ class Asr {
   /// 用于在进入学习页面时提前启动硬件，消除后续识别任务启动时的切换噪音。
   Future<void> startMicrophone() async {
     if (!PlatformUtils.isAsrSupported()) return;
+    if (_isStarting || state == AsrState.started || state == AsrState.stopping) {
+      return;
+    }
 
     try {
       if (!permissionGranted) {
