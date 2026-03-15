@@ -93,17 +93,13 @@ class _MePageState extends State<MePage> {
         child: Wrap(
           children: [
             ListTile(
-              leading:
-                  Icon(Icons.camera_alt_rounded, color: AppTheme.primaryColor),
-              title:
-                  const Text('拍照', style: TextStyle(fontFamily: 'NotoSansSC')),
+              leading: Icon(Icons.camera_alt_rounded, color: AppTheme.primaryColor),
+              title: const Text('拍照', style: TextStyle(fontFamily: 'NotoSansSC')),
               onTap: () => Navigator.pop(context, ImageSource.camera),
             ),
             ListTile(
-              leading: Icon(Icons.photo_library_rounded,
-                  color: AppTheme.primaryColor),
-              title: const Text('从相册选择',
-                  style: TextStyle(fontFamily: 'NotoSansSC')),
+              leading: Icon(Icons.photo_library_rounded, color: AppTheme.primaryColor),
+              title: const Text('从相册选择', style: TextStyle(fontFamily: 'NotoSansSC')),
               onTap: () => Navigator.pop(context, ImageSource.gallery),
             ),
           ],
@@ -139,22 +135,18 @@ class _MePageState extends State<MePage> {
 
             final ui.PictureRecorder recorder = ui.PictureRecorder();
             final ui.Canvas canvas = ui.Canvas(recorder);
-            final ui.Paint paint = ui.Paint()
-              ..filterQuality = ui.FilterQuality.high;
+            final ui.Paint paint = ui.Paint()..filterQuality = ui.FilterQuality.high;
 
             canvas.drawImageRect(
               image,
-              ui.Rect.fromLTWH(
-                  0, 0, image.width.toDouble(), image.height.toDouble()),
+              ui.Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()),
               ui.Rect.fromLTWH(0, 0, targetWidth, targetHeight),
               paint,
             );
 
             final ui.Picture picture = recorder.endRecording();
-            final ui.Image resizedImage = await picture.toImage(
-                targetWidth.toInt(), targetHeight.toInt());
-            final ByteData? byteData =
-                await resizedImage.toByteData(format: ui.ImageByteFormat.png);
+            final ui.Image resizedImage = await picture.toImage(targetWidth.toInt(), targetHeight.toInt());
+            final ByteData? byteData = await resizedImage.toByteData(format: ui.ImageByteFormat.png);
 
             if (byteData != null) {
               bytes = byteData.buffer.asUint8List();
@@ -163,8 +155,7 @@ class _MePageState extends State<MePage> {
             Global.logger.w('手动压缩失败，使用原始文件: $e');
           }
 
-          Global.logger.d(
-              '🖼️ 准备上传头像, 原始文件名: ${pickedFile.name}, 压缩后大小: ${(bytes.length / 1024).toStringAsFixed(2)} KB');
+          Global.logger.d('🖼️ 准备上传头像, 原始文件名: ${pickedFile.name}, 压缩后大小: ${(bytes.length / 1024).toStringAsFixed(2)} KB');
           final userId = loggedInUser?.id;
 
           if (userId != null) {
@@ -195,8 +186,7 @@ class _MePageState extends State<MePage> {
                   finalAvatar = Config.wordImageBaseUrl + newAvatarFilename;
                 }
 
-                final updatedUser =
-                    user.copyWith(wechatAvatar: drift.Value(finalAvatar));
+                final updatedUser = user.copyWith(wechatAvatar: drift.Value(finalAvatar));
                 await db.usersDao.saveUser(updatedUser, true);
 
                 // 刷新本地缓存并更新 UI
@@ -244,8 +234,7 @@ class _MePageState extends State<MePage> {
     SocketIoClient.instance.registerSocketEventListeners(_socketEventListener);
 
     // 监听订阅更新事件，以便及时刷新UI
-    _subscriptionStreamSubscription =
-        SubscriptionUtil.purchaseUpdatedStream.listen((purchases) {
+    _subscriptionStreamSubscription = SubscriptionUtil.purchaseUpdatedStream.listen((purchases) {
       if (mounted) {
         setState(() {
           // 订阅状态已更新，UI会重新构建并获取最新的订阅状态
@@ -278,8 +267,7 @@ class _MePageState extends State<MePage> {
     Api.setLoadingDisabled(true);
 
     try {
-      final isDarkModeVal =
-          await MyDatabase.instance.localParamsDao.getIsDarkMode();
+      final isDarkModeVal = await MyDatabase.instance.localParamsDao.getIsDarkMode();
       final isLastSyncFailedVal = await SyncLogService().isLastSyncFailed();
 
       UserVo? loggedInUserVal;
@@ -316,48 +304,35 @@ class _MePageState extends State<MePage> {
       final db = MyDatabase.instance;
       User? user = await db.usersDao.getUserById(loggedInUserVal!.id!);
       if (user != null) {
-        var learningDicts = await MyDatabase.instance.learningDictsDao
-            .getLearningDictsOfUser(user.id);
+        var learningDicts = await MyDatabase.instance.learningDictsDao.getLearningDictsOfUser(user.id);
         var totalLearningWords = await (db.select(db.learningWords)
               ..where((lw) => lw.userId.equals(user.id))
-              ..where((lw) => lw.stability
-                  .isSmallerThanValue(Constants.graduationStability)))
+              ..where((lw) => lw.stability.isSmallerThanValue(Constants.graduationStability)))
             .get();
         var globalLearningWordsCount = totalLearningWords.length;
 
         var dictWordIds = await (db.selectOnly(db.dictWords)
               ..addColumns([db.dictWords.wordId])
-              ..where(db.dictWords.dictId
-                  .isIn(learningDicts.map((d) => d.dictId).toList())))
+              ..where(db.dictWords.dictId.isIn(learningDicts.map((d) => d.dictId).toList())))
             .get();
-        var uniqueWordIdsInDicts =
-            dictWordIds.map((row) => row.read(db.dictWords.wordId)!).toSet();
+        var uniqueWordIdsInDicts = dictWordIds.map((row) => row.read(db.dictWords.wordId)!).toSet();
         var rawWordCount = uniqueWordIdsInDicts.length;
 
         var learningWordIds = totalLearningWords.map((w) => w.wordId).toSet();
-        var learningWordsInSelectedDictsCount =
-            learningWordIds.intersection(uniqueWordIdsInDicts).length;
+        var learningWordsInSelectedDictsCount = learningWordIds.intersection(uniqueWordIdsInDicts).length;
 
-        var allMasteredWordIdSet =
-            await db.masteredWordsDao.getMasteredWordIdSet(user.id);
+        var allMasteredWordIdSet = await db.masteredWordsDao.getMasteredWordIdSet(user.id);
         var globalMasteredWordsCount = allMasteredWordIdSet.length;
 
-        var masteredWordIdsInSelectedDicts =
-            allMasteredWordIdSet.intersection(uniqueWordIdsInDicts);
-        var masteredWordsInSelectedDictsCount =
-            masteredWordIdsInSelectedDicts.length;
+        var masteredWordIdsInSelectedDicts = allMasteredWordIdSet.intersection(uniqueWordIdsInDicts);
+        var masteredWordsInSelectedDictsCount = masteredWordIdsInSelectedDicts.length;
 
-        var allDictsFinished = (learningWordsInSelectedDictsCount +
-                masteredWordsInSelectedDictsCount) >=
-            rawWordCount;
-        LevelVo levelVo =
-            LevelUtil.getLevelVoByWordCount(globalMasteredWordsCount);
+        var allDictsFinished = (learningWordsInSelectedDictsCount + masteredWordsInSelectedDictsCount) >= rawWordCount;
+        LevelVo levelVo = LevelUtil.getLevelVoByWordCount(globalMasteredWordsCount);
 
         var allDakas = await db.dakasDao.getDakaRecords(user.id);
         var actualDakaDayCount = allDakas.length;
-        var actualDakaRatio = user.learnedDays > 0
-            ? actualDakaDayCount / user.learnedDays
-            : (actualDakaDayCount > 0 ? 1.0 : 0.0);
+        var actualDakaRatio = user.learnedDays > 0 ? actualDakaDayCount / user.learnedDays : (actualDakaDayCount > 0 ? 1.0 : 0.0);
 
         studyProgressVal = StudyProgress(
           user.learnedDays,
@@ -413,8 +388,7 @@ class _MePageState extends State<MePage> {
           loggedInUser = loggedInUserVal;
           if (loggedInUser != null) {
             email.text = loggedInUser!.email ?? (Global.isGuest ? '未登录' : '');
-            nickname.text =
-                loggedInUser!.displayNickName ?? (Global.isGuest ? '游客' : '');
+            nickname.text = loggedInUser!.displayNickName ?? (Global.isGuest ? '游客' : '');
           }
           studyProgress = studyProgressVal;
           last30DaysDakaStatus = last30DaysDakaStatusVal;
@@ -427,11 +401,9 @@ class _MePageState extends State<MePage> {
       }
     } catch (e, stackTrace) {
       if (ErrorHandler.isNetworkError(e)) {
-        ErrorHandler.handleNetworkError(e, stackTrace,
-            api: 'loadData', showToast: true);
+        ErrorHandler.handleNetworkError(e, stackTrace, api: 'loadData', showToast: true);
       } else {
-        ErrorHandler.handleError(e, stackTrace,
-            userMessage: '加载数据失败，请刷新重试', logPrefix: '加载数据失败', showToast: true);
+        ErrorHandler.handleError(e, stackTrace, userMessage: '加载数据失败，请刷新重试', logPrefix: '加载数据失败', showToast: true);
       }
     } finally {
       Api.setLoadingDisabled(false);
@@ -512,9 +484,7 @@ class _MePageState extends State<MePage> {
 
       // 再下载用户选择的词书
       // 注意：必须重新查询learningDicts，因为上面的同步可能已经从服务器获取了用户的词书数据
-      List<LearningDict> learningDicts = await MyDatabase
-          .instance.learningDictsDao
-          .getLearningDictsOfUser(userId);
+      List<LearningDict> learningDicts = await MyDatabase.instance.learningDictsDao.getLearningDictsOfUser(userId);
       List<DictVo> dictsToDownload = [];
 
       // 收集需要下载的词书
@@ -558,8 +528,7 @@ class _MePageState extends State<MePage> {
         } else {
           // 词书存在，但只有当owner是系统用户(系统词书)时才需要检查是否有单词
           if (existing.ownerId == Global.sysUserId) {
-            bool hasWords =
-                await db.dictWordsDao.hasDictWords(learningDict.dictId);
+            bool hasWords = await db.dictWordsDao.hasDictWords(learningDict.dictId);
             if (!hasWords) {
               // 系统词书中没有单词，需要下载
               Global.logger.i("系统词书存在但没有单词，需要下载: ${learningDict.dictId}");
@@ -575,19 +544,16 @@ class _MePageState extends State<MePage> {
                 isShared: true,
                 isReady: true,
                 visible: true,
-                editable: existing.name == '生词本' ||
-                    (existing.ownerId != Global.sysUserId),
+                editable: existing.name == '生词本' || (existing.ownerId != Global.sysUserId),
                 dictWords: null,
                 wordCount: 0,
                 createTime: AppClock.now(),
               ));
             } else {
-              Global.logger
-                  .i("系统词书已存在且包含单词，无需下载, 词书ID: ${learningDict.dictId}");
+              Global.logger.i("系统词书已存在且包含单词，无需下载, 词书ID: ${learningDict.dictId}");
             }
           } else {
-            Global.logger.i(
-                "非系统词书已存在，无需检查单词数量, 词书ID: ${learningDict.dictId}, 名称: ${existing.name}");
+            Global.logger.i("非系统词书已存在，无需检查单词数量, 词书ID: ${learningDict.dictId}, 名称: ${existing.name}");
           }
         }
       }
@@ -608,8 +574,7 @@ class _MePageState extends State<MePage> {
   int? _parseDurationMillis(String duration) {
     final s = duration.trim();
     if (s.isEmpty) return null;
-    final reg = RegExp(r'^(\d+)\s*(毫秒|ms|秒|s|分钟|分|m|小时|时|h|天|日|d)$',
-        caseSensitive: false);
+    final reg = RegExp(r'^(\d+)\s*(毫秒|ms|秒|s|分钟|分|m|小时|时|h|天|日|d)$', caseSensitive: false);
     final m = reg.firstMatch(s);
     if (m == null) return null;
     final value = int.tryParse(m.group(1)!);
@@ -641,17 +606,11 @@ class _MePageState extends State<MePage> {
 
   Widget renderStudyProgress() {
     final isDarkModeEnabled = context.watch<DarkMode>().isDarkMode;
-    final textColor =
-        isDarkModeEnabled ? Colors.white : const Color(0xFF1E293B);
-    final subtitleColor =
-        isDarkModeEnabled ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
-    final accentColor =
-        isDarkModeEnabled ? const Color(0xFF22D3EE) : const Color(0xFF0EA5E9);
-    final cardColor =
-        isDarkModeEnabled ? const Color(0xFF1E293B) : Colors.white;
-    final borderColor = isDarkModeEnabled
-        ? Colors.white.withValues(alpha: 0.05)
-        : Colors.black.withValues(alpha: 0.02);
+    final textColor = isDarkModeEnabled ? Colors.white : const Color(0xFF1E293B);
+    final subtitleColor = isDarkModeEnabled ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+    final accentColor = isDarkModeEnabled ? const Color(0xFF22D3EE) : const Color(0xFF0EA5E9);
+    final cardColor = isDarkModeEnabled ? const Color(0xFF1E293B) : Colors.white;
+    final borderColor = isDarkModeEnabled ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.02);
 
     return Column(
       children: [
@@ -666,8 +625,7 @@ class _MePageState extends State<MePage> {
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
-                color: Colors.black
-                    .withValues(alpha: isDarkModeEnabled ? 0.3 : 0.05),
+                color: Colors.black.withValues(alpha: isDarkModeEnabled ? 0.3 : 0.05),
                 blurRadius: 20,
                 offset: const Offset(0, 8),
               ),
@@ -693,25 +651,16 @@ class _MePageState extends State<MePage> {
                       padding: const EdgeInsets.all(2),
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        border: Border.all(
-                            color: accentColor.withValues(alpha: 0.3),
-                            width: 2),
+                        border: Border.all(color: accentColor.withValues(alpha: 0.3), width: 2),
                       ),
                       child: CircleAvatar(
-                        radius:
-                            MediaQuery.of(context).size.width > 600 ? 32 : 28,
-                        backgroundColor: isDarkModeEnabled
-                            ? Colors.white10
-                            : const Color(0xFFF1F5F9),
-                        backgroundImage: (loggedInUser?.wechatAvatar != null &&
-                                loggedInUser!.wechatAvatar!.isNotEmpty)
-                            ? CachedNetworkImageProvider(
-                                loggedInUser!.wechatAvatar!)
+                        radius: MediaQuery.of(context).size.width > 600 ? 32 : 28,
+                        backgroundColor: isDarkModeEnabled ? Colors.white10 : const Color(0xFFF1F5F9),
+                        backgroundImage: (loggedInUser?.wechatAvatar != null && loggedInUser!.wechatAvatar!.isNotEmpty)
+                            ? CachedNetworkImageProvider(loggedInUser!.wechatAvatar!)
                             : null,
-                        child: (loggedInUser?.wechatAvatar == null ||
-                                loggedInUser!.wechatAvatar!.isEmpty)
-                            ? Icon(Icons.person_rounded,
-                                color: subtitleColor, size: 30)
+                        child: (loggedInUser?.wechatAvatar == null || loggedInUser!.wechatAvatar!.isEmpty)
+                            ? Icon(Icons.person_rounded, color: subtitleColor, size: 30)
                             : null,
                       ),
                     ),
@@ -740,15 +689,13 @@ class _MePageState extends State<MePage> {
                             ),
                             if (SubscriptionUtil.isPremium()) ...[
                               const SizedBox(width: 6),
-                              const Icon(Icons.verified,
-                                  color: Color(0xFF2196F3), size: 18),
+                              const Icon(Icons.verified, color: Color(0xFF2196F3), size: 18),
                             ],
                           ],
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          LevelUtil.getTitleQuote(
-                              studyProgress!.level.level ?? 1),
+                          LevelUtil.getTitleQuote(studyProgress!.level.level ?? 1),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
@@ -765,12 +712,10 @@ class _MePageState extends State<MePage> {
                   // 右上角浮动气泡/等级
                   GestureDetector(
                     onTap: () {
-                      Get.to(() => LevelPathPage(
-                          currentLevel: studyProgress!.level.level ?? 1));
+                      Get.to(() => LevelPathPage(currentLevel: studyProgress!.level.level ?? 1));
                     },
                     child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
                         color: accentColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
@@ -827,15 +772,12 @@ class _MePageState extends State<MePage> {
                 if (isPremium) {
                   final type = SubscriptionUtil.getSubscriptionType();
                   final expire = SubscriptionUtil.getExpireDate();
-                  final isOverride =
-                      loggedInUser?.premiumOverrideEnabled == true &&
-                          (loggedInUser?.isPremiumIos != true);
+                  final isOverride = loggedInUser?.premiumOverrideEnabled == true && (loggedInUser?.isPremiumIos != true);
 
                   if (type != null && type.isNotEmpty) {
                     final typeText = type == 'monthly' ? '月度会员' : '年度会员';
                     if (expire != null) {
-                      premiumInfoText =
-                          '$typeText，有效期至：${expire.year}年${expire.month}月${expire.day}日';
+                      premiumInfoText = '$typeText，有效期至：${expire.year}年${expire.month}月${expire.day}日';
                     } else {
                       premiumInfoText = typeText;
                     }
@@ -847,10 +789,8 @@ class _MePageState extends State<MePage> {
                     } else if (updateTime != null) {
                       final ms = _parseDurationMillis(duration);
                       if (ms != null && ms > 0) {
-                        final expireTime =
-                            updateTime.add(Duration(milliseconds: ms));
-                        premiumInfoText =
-                            '会员，有效期至：${expireTime.year}年${expireTime.month}月${expireTime.day}日';
+                        final expireTime = updateTime.add(Duration(milliseconds: ms));
+                        premiumInfoText = '会员，有效期至：${expireTime.year}年${expireTime.month}月${expireTime.day}日';
                       } else {
                         premiumInfoText = '会员';
                       }
@@ -865,48 +805,36 @@ class _MePageState extends State<MePage> {
                 if (!isPremium && PlatformUtils.isIOS) {
                   return GestureDetector(
                     onTap: () {
-                      Navigator.of(context)
-                          .push(MaterialPageRoute(
-                              builder: (context) => const SubscriptionPage()))
-                          .then((_) {
+                      Navigator.of(context).push(MaterialPageRoute(builder: (context) => const SubscriptionPage())).then((_) {
                         loadData();
                       });
                     },
                     child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 10),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(12),
-                        color: isDarkModeEnabled
-                            ? Colors.white.withValues(alpha: 0.03)
-                            : Colors.black.withValues(alpha: 0.02),
-                        border: Border.all(
-                            color:
-                                Colors.amber.shade300.withValues(alpha: 0.5)),
+                        color: isDarkModeEnabled ? Colors.white.withValues(alpha: 0.03) : Colors.black.withValues(alpha: 0.02),
+                        border: Border.all(color: Colors.amber.shade300.withValues(alpha: 0.5)),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Row(
                             children: [
-                              Icon(Icons.stars_rounded,
-                                  color: Colors.amber.shade700, size: 18),
+                              Icon(Icons.stars_rounded, color: Colors.amber.shade700, size: 18),
                               const SizedBox(width: 8),
                               Text(
                                 '解锁每日单词上限及更多特权',
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.normal,
-                                  color: isDarkModeEnabled
-                                      ? Colors.amber.shade200
-                                      : Colors.amber.shade900,
+                                  color: isDarkModeEnabled ? Colors.amber.shade200 : Colors.amber.shade900,
                                   fontFamily: 'NotoSansSC',
                                 ),
                               ),
                             ],
                           ),
-                          Icon(Icons.chevron_right,
-                              color: Colors.amber.shade700, size: 16),
+                          Icon(Icons.chevron_right, color: Colors.amber.shade700, size: 16),
                         ],
                       ),
                     ),
@@ -915,16 +843,14 @@ class _MePageState extends State<MePage> {
 
                 if (isPremium && premiumInfoText != null) {
                   return Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(12),
                       color: Colors.blue.withValues(alpha: 0.05),
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.verified_user_rounded,
-                            color: Colors.blue, size: 16),
+                        const Icon(Icons.verified_user_rounded, color: Colors.blue, size: 16),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
@@ -957,8 +883,7 @@ class _MePageState extends State<MePage> {
             border: Border.all(color: borderColor, width: 1.0),
             boxShadow: [
               BoxShadow(
-                color: Colors.black
-                    .withValues(alpha: isDarkModeEnabled ? 0.2 : 0.02),
+                color: Colors.black.withValues(alpha: isDarkModeEnabled ? 0.2 : 0.02),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -998,26 +923,19 @@ class _MePageState extends State<MePage> {
                 width: double.infinity,
                 alignment: Alignment.centerLeft,
                 decoration: BoxDecoration(
-                  color: isDarkModeEnabled
-                      ? Colors.white.withValues(alpha: 0.08)
-                      : const Color(0xFFF1F5F9),
+                  color: isDarkModeEnabled ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFF1F5F9),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: LayoutBuilder(
                   builder: (context, constraints) {
-                    final progress = studyProgress!.rawWordCount > 0
-                        ? studyProgress!.masteredWordsInSelectedDictsCount /
-                            studyProgress!.rawWordCount
-                        : 0.0;
+                    final progress =
+                        studyProgress!.rawWordCount > 0 ? studyProgress!.masteredWordsInSelectedDictsCount / studyProgress!.rawWordCount : 0.0;
                     final clampedProgress = progress > 1.0 ? 1.0 : progress;
                     return Container(
                       width: constraints.maxWidth * clampedProgress,
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
-                          colors: [
-                            accentColor,
-                            accentColor.withValues(alpha: 0.6)
-                          ],
+                          colors: [accentColor, accentColor.withValues(alpha: 0.6)],
                         ),
                         borderRadius: BorderRadius.circular(4),
                         boxShadow: [
@@ -1054,19 +972,15 @@ class _MePageState extends State<MePage> {
                       });
                     },
                     child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                       decoration: BoxDecoration(
-                        color: isDarkModeEnabled
-                            ? Colors.white.withValues(alpha: 0.05)
-                            : const Color(0xFFF8F9FA),
+                        color: isDarkModeEnabled ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF8F9FA),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.add_circle_outline_rounded,
-                              color: subtitleColor, size: 14),
+                          Icon(Icons.add_circle_outline_rounded, color: subtitleColor, size: 14),
                           const SizedBox(width: 4),
                           Text(
                             '选择词书',
@@ -1088,11 +1002,7 @@ class _MePageState extends State<MePage> {
                 future: _learningDictsFuture,
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return Center(
-                        child: CircularProgressIndicator(
-                            color: isDarkModeEnabled
-                                ? Colors.white24
-                                : Colors.black12));
+                    return Center(child: CircularProgressIndicator(color: isDarkModeEnabled ? Colors.white24 : Colors.black12));
                   }
                   if (snapshot.hasError) {
                     return Center(
@@ -1127,8 +1037,7 @@ class _MePageState extends State<MePage> {
             border: Border.all(color: borderColor, width: 1.0),
             boxShadow: [
               BoxShadow(
-                color: Colors.black
-                    .withValues(alpha: isDarkModeEnabled ? 0.2 : 0.02),
+                color: Colors.black.withValues(alpha: isDarkModeEnabled ? 0.2 : 0.02),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -1140,9 +1049,7 @@ class _MePageState extends State<MePage> {
               Row(
                 children: [
                   Icon(
-                    isDarkModeEnabled
-                        ? Icons.dark_mode_rounded
-                        : Icons.light_mode_rounded,
+                    isDarkModeEnabled ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
                     color: accentColor,
                     size: 20,
                   ),
@@ -1164,8 +1071,7 @@ class _MePageState extends State<MePage> {
                   setState(() {
                     isDarkMode = isDarkModeEnabled;
                   });
-                  MyDatabase.instance.localParamsDao
-                      .saveIsDarkMode(isDarkModeEnabled);
+                  MyDatabase.instance.localParamsDao.saveIsDarkMode(isDarkModeEnabled);
                   context.read<DarkMode>().setIsDarkMode(isDarkModeEnabled);
                 },
               ),
@@ -1183,8 +1089,7 @@ class _MePageState extends State<MePage> {
             border: Border.all(color: borderColor, width: 1.0),
             boxShadow: [
               BoxShadow(
-                color: Colors.black
-                    .withValues(alpha: isDarkModeEnabled ? 0.2 : 0.02),
+                color: Colors.black.withValues(alpha: isDarkModeEnabled ? 0.2 : 0.02),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -1234,8 +1139,7 @@ class _MePageState extends State<MePage> {
             border: Border.all(color: borderColor, width: 1.0),
             boxShadow: [
               BoxShadow(
-                color: Colors.black
-                    .withValues(alpha: isDarkModeEnabled ? 0.2 : 0.02),
+                color: Colors.black.withValues(alpha: isDarkModeEnabled ? 0.2 : 0.02),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -1260,14 +1164,11 @@ class _MePageState extends State<MePage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
-                  _buildLegendItem(
-                      '已打卡', dakaStatus2Color(UserDayStatus.dakaed.json)),
+                  _buildLegendItem('已打卡', dakaStatus2Color(UserDayStatus.dakaed.json)),
                   const SizedBox(width: 16),
-                  _buildLegendItem(
-                      '未打卡', dakaStatus2Color(UserDayStatus.studied.json)),
+                  _buildLegendItem('未打卡', dakaStatus2Color(UserDayStatus.studied.json)),
                   const SizedBox(width: 16),
-                  _buildLegendItem(
-                      '未学习', dakaStatus2Color(UserDayStatus.notLogin.json)),
+                  _buildLegendItem('未学习', dakaStatus2Color(UserDayStatus.notLogin.json)),
                 ],
               ),
             ],
@@ -1284,8 +1185,7 @@ class _MePageState extends State<MePage> {
             border: Border.all(color: borderColor, width: 1.0),
             boxShadow: [
               BoxShadow(
-                color: Colors.black
-                    .withValues(alpha: isDarkModeEnabled ? 0.2 : 0.02),
+                color: Colors.black.withValues(alpha: isDarkModeEnabled ? 0.2 : 0.02),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -1329,8 +1229,7 @@ class _MePageState extends State<MePage> {
                   _buildStatBox(
                     isDarkModeEnabled,
                     "学习小时",
-                    (studyProgress!.totalLearningSeconds / 3600.0)
-                        .toStringAsFixed(1),
+                    (studyProgress!.totalLearningSeconds / 3600.0).toStringAsFixed(1),
                     Icons.timer_outlined,
                     const Color(0xFF8B5CF6),
                   ),
@@ -1343,14 +1242,9 @@ class _MePageState extends State<MePage> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: isDarkModeEnabled
-                      ? Colors.white.withValues(alpha: 0.03)
-                      : const Color(0xFFF8FAFC),
+                  color: isDarkModeEnabled ? Colors.white.withValues(alpha: 0.03) : const Color(0xFFF8FAFC),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                      color: isDarkModeEnabled
-                          ? Colors.white.withValues(alpha: 0.05)
-                          : Colors.black.withValues(alpha: 0.02)),
+                  border: Border.all(color: isDarkModeEnabled ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.02)),
                 ),
                 child: Row(
                   children: [
@@ -1374,10 +1268,7 @@ class _MePageState extends State<MePage> {
                                 const TextSpan(text: "掌握: "),
                                 TextSpan(
                                   text: "${studyProgress!.masteredWordsCount}",
-                                  style: TextStyle(
-                                      color: textColor,
-                                      fontWeight: FontWeight.w900,
-                                      fontFamily: 'Roboto'),
+                                  style: TextStyle(color: textColor, fontWeight: FontWeight.w900, fontFamily: 'Roboto'),
                                 ),
                                 const TextSpan(text: " 词"),
                                 const TextSpan(text: "\n领先: "),
@@ -1385,12 +1276,8 @@ class _MePageState extends State<MePage> {
                                   const TextSpan(text: '分析中...')
                                 else ...[
                                   TextSpan(
-                                    text:
-                                        "${studyProgress!.userOrder!.toStringAsFixed(1)}%",
-                                    style: TextStyle(
-                                        color: accentColor,
-                                        fontWeight: FontWeight.w900,
-                                        fontFamily: 'Roboto'),
+                                    text: "${studyProgress!.userOrder!.toStringAsFixed(1)}%",
+                                    style: TextStyle(color: accentColor, fontWeight: FontWeight.w900, fontFamily: 'Roboto'),
                                   ),
                                   const TextSpan(text: " 的用户"),
                                 ],
@@ -1407,13 +1294,8 @@ class _MePageState extends State<MePage> {
                       ),
                     ),
                     const SizedBox(width: 12),
-                    _buildVisualRanking(
-                        studyProgress!.userOrder ?? -1,
-                        accentColor,
-                        isDarkModeEnabled
-                            ? Colors.white.withValues(alpha: 0.05)
-                            : Colors.black.withValues(alpha: 0.02),
-                        accentColor),
+                    _buildVisualRanking(studyProgress!.userOrder ?? -1, accentColor,
+                        isDarkModeEnabled ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.02), accentColor),
                   ],
                 ),
               ),
@@ -1433,8 +1315,7 @@ class _MePageState extends State<MePage> {
             border: Border.all(color: borderColor, width: 1.0),
             boxShadow: [
               BoxShadow(
-                color: Colors.black
-                    .withValues(alpha: isDarkModeEnabled ? 0.2 : 0.02),
+                color: Colors.black.withValues(alpha: isDarkModeEnabled ? 0.2 : 0.02),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -1463,22 +1344,14 @@ class _MePageState extends State<MePage> {
                 title: '意见建议',
                 trailing: msgCount > 0
                     ? Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: unreadMsgCount == 0
-                              ? Colors.grey
-                              : Colors.redAccent,
+                          color: unreadMsgCount == 0 ? Colors.grey : Colors.redAccent,
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Text(
-                          unreadMsgCount == 0
-                              ? msgCount.toString()
-                              : unreadMsgCount.toString(),
-                          style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold),
+                          unreadMsgCount == 0 ? msgCount.toString() : unreadMsgCount.toString(),
+                          style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
                         ),
                       )
                     : null,
@@ -1510,8 +1383,7 @@ class _MePageState extends State<MePage> {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
-                        builder: (context) => const FeatureRequestWallPage()),
+                    MaterialPageRoute(builder: (context) => const FeatureRequestWallPage()),
                   );
                 },
               ),
@@ -1590,8 +1462,7 @@ class _MePageState extends State<MePage> {
   // 图例项组件
   Widget _buildLegendItem(String label, Color color) {
     final isDarkModeEnabled = context.watch<DarkMode>().isDarkMode;
-    final subtitleColor =
-        isDarkModeEnabled ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+    final subtitleColor = isDarkModeEnabled ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
 
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -1619,13 +1490,10 @@ class _MePageState extends State<MePage> {
   }
 
   Future<void> showUpdateUserInfoDlg() async {
-    final isDarkModeEnabled =
-        Provider.of<DarkMode>(context, listen: false).isDarkMode;
-    final backgroundColor =
-        isDarkModeEnabled ? const Color(0xFF2D2D2D) : Colors.white;
+    final isDarkModeEnabled = Provider.of<DarkMode>(context, listen: false).isDarkMode;
+    final backgroundColor = isDarkModeEnabled ? const Color(0xFF2D2D2D) : Colors.white;
     final textColor = isDarkModeEnabled ? Colors.white : Colors.black;
-    final cardColor =
-        isDarkModeEnabled ? const Color(0xFF3D3D3D) : const Color(0xFFF8F9FA);
+    final cardColor = isDarkModeEnabled ? const Color(0xFF3D3D3D) : const Color(0xFFF8F9FA);
 
     final String oldEmail = loggedInUser?.email ?? '';
     final codeController = TextEditingController();
@@ -1638,8 +1506,7 @@ class _MePageState extends State<MePage> {
         context: context,
         builder: (BuildContext context) {
           return StatefulBuilder(builder: (context, setDialogState) {
-            final emailChanged =
-                email.text.isNotEmpty && email.text != oldEmail;
+            final emailChanged = email.text.isNotEmpty && email.text != oldEmail;
             return Dialog(
               backgroundColor: Colors.transparent,
               child: Container(
@@ -1707,10 +1574,7 @@ class _MePageState extends State<MePage> {
                                       controller: email,
                                       label: '邮箱地址',
                                       icon: Icons.email_outlined,
-                                      validator: (value) =>
-                                          EmailValidator.validate(value ?? '')
-                                              ? null
-                                              : "请输入有效的邮箱地址",
+                                      validator: (value) => EmailValidator.validate(value ?? '') ? null : "请输入有效的邮箱地址",
                                       isDarkMode: isDarkModeEnabled,
                                       cardColor: cardColor,
                                       textColor: textColor,
@@ -1718,11 +1582,9 @@ class _MePageState extends State<MePage> {
                                         setDialogState(() {});
                                       },
                                       inputFormatters: [
-                                        FilteringTextInputFormatter.deny(
-                                            RegExp(r'[\s\u2006\u200B]')),
+                                        FilteringTextInputFormatter.deny(RegExp(r'[\s\u2006\u200B]')),
                                       ],
-                                      keyboardType:
-                                          TextInputType.visiblePassword,
+                                      keyboardType: TextInputType.visiblePassword,
                                     ),
                                   ),
                                   if (emailChanged) ...[
@@ -1732,49 +1594,34 @@ class _MePageState extends State<MePage> {
                                       child: ElevatedButton(
                                         style: ElevatedButton.styleFrom(
                                           shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(12),
+                                            borderRadius: BorderRadius.circular(12),
                                           ),
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 12),
+                                          padding: const EdgeInsets.symmetric(horizontal: 12),
                                         ),
-                                        onPressed: (cooldown > 0 ||
-                                                isSendingCode)
+                                        onPressed: (cooldown > 0 || isSendingCode)
                                             ? null
                                             : () async {
-                                                final cleanedEmail = email.text
-                                                    .replaceAll(
-                                                        RegExp(
-                                                            r'[\s\u2006\u200B]'),
-                                                        '');
-                                                final emailRegex = RegExp(
-                                                    r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-                                                if (!emailRegex
-                                                    .hasMatch(cleanedEmail)) {
-                                                  ToastUtil.error(
-                                                      '邮箱格式不正确，请检查');
+                                                final cleanedEmail = email.text.replaceAll(RegExp(r'[\s\u2006\u200B]'), '');
+                                                final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                                                if (!emailRegex.hasMatch(cleanedEmail)) {
+                                                  ToastUtil.error('邮箱格式不正确，请检查');
                                                   return;
                                                 }
-                                                if (!EmailValidator.validate(
-                                                    cleanedEmail)) {
+                                                if (!EmailValidator.validate(cleanedEmail)) {
                                                   ToastUtil.error('请输入有效的邮箱地址');
                                                   return;
                                                 }
                                                 setDialogState(() {
                                                   isSendingCode = true;
                                                 });
-                                                var result = await Api.client
-                                                    .sendEmailCode(cleanedEmail,
-                                                        "BIND_EMAIL");
+                                                var result = await Api.client.sendEmailCode(cleanedEmail, "BIND_EMAIL");
                                                 if (result.success) {
                                                   ToastUtil.info("验证码已发送");
                                                   setDialogState(() {
                                                     cooldown = 60;
                                                     isSendingCode = false;
                                                   });
-                                                  timer = Timer.periodic(
-                                                      const Duration(
-                                                          seconds: 1), (t) {
+                                                  timer = Timer.periodic(const Duration(seconds: 1), (t) {
                                                     setDialogState(() {
                                                       if (cooldown > 0) {
                                                         cooldown--;
@@ -1792,15 +1639,8 @@ class _MePageState extends State<MePage> {
                                                 }
                                               },
                                         child: isSendingCode
-                                            ? const SizedBox(
-                                                width: 20,
-                                                height: 20,
-                                                child:
-                                                    CircularProgressIndicator(
-                                                        strokeWidth: 2))
-                                            : Text(cooldown > 0
-                                                ? '${cooldown}s'
-                                                : '获取验证码'),
+                                            ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                                            : Text(cooldown > 0 ? '${cooldown}s' : '获取验证码'),
                                       ),
                                     ),
                                   ],
@@ -1853,29 +1693,20 @@ class _MePageState extends State<MePage> {
                                     child: _buildDialogButton(
                                       text: '保存',
                                       onPressed: () async {
-                                        if (emailChanged &&
-                                            codeController.text.isEmpty) {
+                                        if (emailChanged && codeController.text.isEmpty) {
                                           ToastUtil.error("需要输入验证码验证新邮箱");
                                           return;
                                         }
 
                                         if (emailChanged) {
                                           Api.setLoadingDisabled(false);
-                                          final cleanedEmail = email.text
-                                              .replaceAll(
-                                                  RegExp(r'[\s\u2006\u200B]'),
-                                                  '');
-                                          var result = await Api.client
-                                              .verifyEmailCode(
-                                                  cleanedEmail,
-                                                  codeController.text,
-                                                  "BIND_EMAIL");
+                                          final cleanedEmail = email.text.replaceAll(RegExp(r'[\s\u2006\u200B]'), '');
+                                          var result = await Api.client.verifyEmailCode(cleanedEmail, codeController.text, "BIND_EMAIL");
                                           Api.setLoadingDisabled(true);
 
                                           if (!context.mounted) return;
                                           if (!result.success) {
-                                            ToastUtil.error(
-                                                result.msg ?? "验证码错误");
+                                            ToastUtil.error(result.msg ?? "验证码错误");
                                             return;
                                           }
                                         }
@@ -1902,13 +1733,9 @@ class _MePageState extends State<MePage> {
         });
 
     if (choice ?? false) {
-      final cleanedEmail =
-          email.text.replaceAll(RegExp(r'[\s\u2006\u200B]'), '');
+      final cleanedEmail = email.text.replaceAll(RegExp(r'[\s\u2006\u200B]'), '');
       // 密码被取消后，传入原来的密码 (这里用空字符串，后端/UserBo里处理空字符串就不修改密码)
-      UserBo()
-          .updateUserInfo(
-              cleanedEmail, nickname.text, '', '', Global.getLoggedInUser()!.id)
-          .then((value) async {
+      UserBo().updateUserInfo(cleanedEmail, nickname.text, '', '', Global.getLoggedInUser()!.id).then((value) async {
         if (value.success) {
           ToastUtil.info("修改成功");
           // 重新加载用户信息并刷新界面
@@ -1947,9 +1774,7 @@ class _MePageState extends State<MePage> {
         color: cardColor,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isDarkMode
-              ? Colors.grey.withValues(alpha: 0.3)
-              : Colors.grey.withValues(alpha: 0.2),
+          color: isDarkMode ? Colors.grey.withValues(alpha: 0.3) : Colors.grey.withValues(alpha: 0.2),
           width: 1,
         ),
       ),
@@ -1980,8 +1805,7 @@ class _MePageState extends State<MePage> {
             size: 18,
           ),
           border: InputBorder.none,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           filled: false,
         ),
       ),
@@ -1998,12 +1822,8 @@ class _MePageState extends State<MePage> {
     return ElevatedButton(
       onPressed: onPressed,
       style: ElevatedButton.styleFrom(
-        backgroundColor: isPrimary
-            ? const Color(0xFF4A90E2)
-            : (isDarkMode ? const Color(0xFF3D3D3D) : const Color(0xFFF0F0F0)),
-        foregroundColor: isPrimary
-            ? Colors.white
-            : (isDarkMode ? Colors.white : Colors.black),
+        backgroundColor: isPrimary ? const Color(0xFF4A90E2) : (isDarkMode ? const Color(0xFF3D3D3D) : const Color(0xFFF0F0F0)),
+        foregroundColor: isPrimary ? Colors.white : (isDarkMode ? Colors.white : Colors.black),
         elevation: 0,
         padding: const EdgeInsets.symmetric(vertical: 12),
         shape: RoundedRectangleBorder(
@@ -2011,9 +1831,7 @@ class _MePageState extends State<MePage> {
           side: isPrimary
               ? BorderSide.none
               : BorderSide(
-                  color: isDarkMode
-                      ? Colors.grey.withValues(alpha: 0.3)
-                      : Colors.grey.withValues(alpha: 0.2),
+                  color: isDarkMode ? Colors.grey.withValues(alpha: 0.3) : Colors.grey.withValues(alpha: 0.2),
                   width: 1,
                 ),
         ),
@@ -2031,10 +1849,8 @@ class _MePageState extends State<MePage> {
   }
 
   Future<void> showUnRegisterDlg() async {
-    final isDarkModeEnabled =
-        Provider.of<DarkMode>(context, listen: false).isDarkMode;
-    final backgroundColor =
-        isDarkModeEnabled ? const Color(0xFF2D2D2D) : Colors.white;
+    final isDarkModeEnabled = Provider.of<DarkMode>(context, listen: false).isDarkMode;
+    final backgroundColor = isDarkModeEnabled ? const Color(0xFF2D2D2D) : Colors.white;
     final textColor = isDarkModeEnabled ? Colors.white : Colors.black;
 
     final TextEditingController confirmController = TextEditingController();
@@ -2118,13 +1934,11 @@ class _MePageState extends State<MePage> {
                                 const SizedBox(height: 16),
                                 TextField(
                                   controller: confirmController,
-                                  style:
-                                      TextStyle(color: textColor, fontSize: 16),
+                                  style: TextStyle(color: textColor, fontSize: 16),
                                   decoration: InputDecoration(
                                     hintText: "输入 okay 确认注销",
                                     border: OutlineInputBorder(),
-                                    contentPadding: EdgeInsets.symmetric(
-                                        horizontal: 12, vertical: 8),
+                                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                   ),
                                 ),
                                 const SizedBox(height: 24),
@@ -2135,8 +1949,7 @@ class _MePageState extends State<MePage> {
                                     Expanded(
                                       child: _buildDialogButton(
                                         text: '取消',
-                                        onPressed: () =>
-                                            Navigator.pop(context, false),
+                                        onPressed: () => Navigator.pop(context, false),
                                         isPrimary: false,
                                         isDarkMode: isDarkModeEnabled,
                                       ),
@@ -2145,32 +1958,24 @@ class _MePageState extends State<MePage> {
                                     Expanded(
                                       child: ElevatedButton(
                                         onPressed: () {
-                                          if (confirmController.text
-                                                  .trim()
-                                                  .toLowerCase() !=
-                                              'okay') {
+                                          if (confirmController.text.trim().toLowerCase() != 'okay') {
                                             ToastUtil.error("请输入 'okay' 以确认注销");
                                             return;
                                           }
                                           Navigator.pop(context, true);
                                         },
                                         style: ElevatedButton.styleFrom(
-                                          backgroundColor:
-                                              const Color(0xFFE74C3C),
+                                          backgroundColor: const Color(0xFFE74C3C),
                                           foregroundColor: Colors.white,
                                           elevation: 0,
-                                          padding: const EdgeInsets.symmetric(
-                                              vertical: 16),
+                                          padding: const EdgeInsets.symmetric(vertical: 16),
                                           shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(12),
+                                            borderRadius: BorderRadius.circular(12),
                                           ),
                                         ),
                                         child: const Text(
                                           '注销',
-                                          style: TextStyle(
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.bold),
+                                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                                         ),
                                       ),
                                     ),
@@ -2228,8 +2033,7 @@ class _MePageState extends State<MePage> {
         const double boxMargin = 1.0;
         // 使用可用宽度而不是屏幕宽度，考虑卡片的内边距
         final availableWidth = constraints.maxWidth;
-        final boxWidth =
-            (availableWidth - 20 * boxMargin) / 10; // 10个盒子，每个盒子左右各有margin
+        final boxWidth = (availableWidth - 20 * boxMargin) / 10; // 10个盒子，每个盒子左右各有margin
         final boxHeight = boxWidth * 0.5; // 高度是宽度的一半
 
         var rows = <Widget>[]; // 每行对应10天，共3行
@@ -2292,8 +2096,7 @@ class _MePageState extends State<MePage> {
   Future<Widget> renderLearningDicts() async {
     var dicts = <Widget>[];
     for (LearningDict learningDict in studyProgress!.learningDicts) {
-      var dictInfo =
-          await MyDatabase.instance.dictsDao.findById(learningDict.dictId);
+      var dictInfo = await MyDatabase.instance.dictsDao.findById(learningDict.dictId);
       if (dictInfo == null) continue;
 
       dicts.add(DictCard(
@@ -2318,20 +2121,15 @@ class _MePageState extends State<MePage> {
   }
 
   // 进度项组件
-  Widget _buildStatBox(
-      bool isDarkMode, String label, String value, IconData icon, Color color) {
+  Widget _buildStatBox(bool isDarkMode, String label, String value, IconData icon, Color color) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 8),
         decoration: BoxDecoration(
-          color: isDarkMode
-              ? Colors.white.withValues(alpha: 0.02)
-              : const Color(0xFFF8FAFC),
+          color: isDarkMode ? Colors.white.withValues(alpha: 0.02) : const Color(0xFFF8FAFC),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isDarkMode
-                ? Colors.white.withValues(alpha: 0.05)
-                : Colors.black.withValues(alpha: 0.02),
+            color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.02),
           ),
         ),
         child: Column(
@@ -2352,9 +2150,7 @@ class _MePageState extends State<MePage> {
             Text(
               label,
               style: TextStyle(
-                color: isDarkMode
-                    ? const Color(0xFF94A3B8)
-                    : const Color(0xFF64748B),
+                color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                 fontSize: 11,
                 fontWeight: FontWeight.bold,
               ),
@@ -2367,10 +2163,8 @@ class _MePageState extends State<MePage> {
 
   Widget _buildProgressItem(String title, String value) {
     final isDarkModeEnabled = context.watch<DarkMode>().isDarkMode;
-    final textColor =
-        isDarkModeEnabled ? Colors.white : const Color(0xFF1E293B);
-    final subtitleColor =
-        isDarkModeEnabled ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+    final textColor = isDarkModeEnabled ? Colors.white : const Color(0xFF1E293B);
+    final subtitleColor = isDarkModeEnabled ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
 
     return Column(
       children: [
@@ -2430,14 +2224,11 @@ class _MePageState extends State<MePage> {
     Color? iconColor,
   }) {
     final isDarkModeEnabled = context.watch<DarkMode>().isDarkMode;
-    final textColor =
-        isDarkModeEnabled ? Colors.white : const Color(0xFF1E293B);
-    final subtitleColor =
-        isDarkModeEnabled ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+    final textColor = isDarkModeEnabled ? Colors.white : const Color(0xFF1E293B);
+    final subtitleColor = isDarkModeEnabled ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
 
     // 如果没有指定颜色，则使用一个更克制的次级文字颜色，避免“花花绿绿”
-    final effectiveIconColor =
-        iconColor ?? (isDestructive ? Colors.redAccent : subtitleColor);
+    final effectiveIconColor = iconColor ?? (isDestructive ? Colors.redAccent : subtitleColor);
 
     return ListTile(
       leading: Container(
@@ -2489,17 +2280,12 @@ class _MePageState extends State<MePage> {
       barrierDismissible: false,
       builder: (context) {
         return AlertDialog(
-          backgroundColor:
-              isDarkModeEnabled ? const Color(0xFF2D2D2D) : Colors.white,
+          backgroundColor: isDarkModeEnabled ? const Color(0xFF2D2D2D) : Colors.white,
           title: const Text('确认重建数据库'),
           content: const Text('清除所有本地数据(服务端数据不受影响)吗？'),
           actions: [
-            TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('取消')),
-            TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text('继续')),
+            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('取消')),
+            TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('继续')),
           ],
         );
       },
@@ -2521,8 +2307,7 @@ class _MePageState extends State<MePage> {
   @override
   Widget build(BuildContext context) {
     final isDarkModeEnabled = context.watch<DarkMode>().isDarkMode;
-    final backgroundColor =
-        isDarkModeEnabled ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9);
+    final backgroundColor = isDarkModeEnabled ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9);
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -2531,8 +2316,7 @@ class _MePageState extends State<MePage> {
           : CustomScrollView(
               slivers: [
                 SliverPadding(
-                  padding: EdgeInsets.fromLTRB(
-                      16, MediaQuery.of(context).padding.top + 16, 16, 0),
+                  padding: EdgeInsets.fromLTRB(16, MediaQuery.of(context).padding.top + 16, 16, 0),
                   sliver: SliverList(
                     delegate: SliverChildListDelegate([
                       renderStudyProgress(),
@@ -2544,8 +2328,7 @@ class _MePageState extends State<MePage> {
     );
   }
 
-  Widget _buildVisualRanking(double percentile, Color markerColor,
-      Color containerColor, Color textColor) {
+  Widget _buildVisualRanking(double percentile, Color markerColor, Color containerColor, Color textColor) {
     return SizedBox(
       width: 80,
       height: 60,
@@ -2615,22 +2398,17 @@ class _DictCardState extends State<DictCard> {
     final userId = widget.learningDict.userId;
 
     // 获取该词书的所有单词ID
-    final dictWords = await (db.select(db.dictWords)
-          ..where((dw) => dw.dictId.equals(dictId)))
-        .get();
+    final dictWords = await (db.select(db.dictWords)..where((dw) => dw.dictId.equals(dictId))).get();
     final wordIds = dictWords.map((dw) => dw.wordId).toSet();
 
     // 获取学习中的单词（stability < graduationStability）
     final learningWords = await (db.select(db.learningWords)
-          ..where((lw) =>
-              lw.userId.equals(userId) &
-              lw.stability.isSmallerThanValue(Constants.graduationStability)))
+          ..where((lw) => lw.userId.equals(userId) & lw.stability.isSmallerThanValue(Constants.graduationStability)))
         .get();
     final learningWordIds = learningWords.map((w) => w.wordId).toSet();
 
     // 获取已掌握的单词
-    final masteredWordIds =
-        await db.masteredWordsDao.getMasteredWordIdSet(userId);
+    final masteredWordIds = await db.masteredWordsDao.getMasteredWordIdSet(userId);
 
     // 计算该词书中学习和掌握的数量
     int learned = 0;
@@ -2655,8 +2433,7 @@ class _DictCardState extends State<DictCard> {
   Future<void> _loadActualWordCount() async {
     if (widget.dictInfo.name == '生词本') {
       final count = await ErrorHandler.safeExecute<int>(
-        () => MyDatabase.instance.dictWordsDao
-            .getDictWordCount(widget.learningDict.dictId),
+        () => MyDatabase.instance.dictWordsDao.getDictWordCount(widget.learningDict.dictId),
         operationName: '获取生词本单词数量',
         showToast: false, // 不显示错误提示，静默失败
       );
@@ -2671,25 +2448,18 @@ class _DictCardState extends State<DictCard> {
 
   @override
   Widget build(BuildContext context) {
-    final totalWords = widget.dictInfo.name == '生词本'
-        ? (actualWordCount ?? 0)
-        : widget.dictInfo.wordCount;
+    final totalWords = widget.dictInfo.name == '生词本' ? (actualWordCount ?? 0) : widget.dictInfo.wordCount;
     final learnedWords = masteredCount;
-    final progress =
-        (totalWords > 0 ? learnedWords / totalWords : 0.0).clamp(0.0, 1.0);
+    final progress = (totalWords > 0 ? learnedWords / totalWords : 0.0).clamp(0.0, 1.0);
     final progressPercent = (progress * 100).toInt();
 
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
 
     final textColor = isDarkMode ? Colors.white : const Color(0xFF1E293B);
-    final subtitleColor =
-        isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
-    final accentColor =
-        isDarkMode ? const Color(0xFF22D3EE) : const Color(0xFF0EA5E9);
+    final subtitleColor = isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+    final accentColor = isDarkMode ? const Color(0xFF22D3EE) : const Color(0xFF0EA5E9);
     final cardBgColor = isDarkMode ? const Color(0xFF1E293B) : Colors.white;
-    final borderColor = isDarkMode
-        ? Colors.white.withValues(alpha: 0.15)
-        : Colors.black.withValues(alpha: 0.08);
+    final borderColor = isDarkMode ? Colors.white.withValues(alpha: 0.15) : Colors.black.withValues(alpha: 0.08);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -2786,10 +2556,8 @@ class _DictCardState extends State<DictCard> {
                   onChanged: (bool? value) async {
                     if (value != null) {
                       try {
-                        final newPrivilegedStatus = await MyDatabase
-                            .instance.learningDictsDao
-                            .togglePrivileged(currentLearningDict.userId,
-                                currentLearningDict.dictId, true);
+                        final newPrivilegedStatus =
+                            await MyDatabase.instance.learningDictsDao.togglePrivileged(currentLearningDict.userId, currentLearningDict.dictId, true);
 
                         if (mounted) {
                           setState(() {
@@ -2823,8 +2591,7 @@ class _DictCardState extends State<DictCard> {
                   color: const Color(0xFF3B82F6),
                   onTap: () async {
                     try {
-                      await toDictWordsListPage(
-                          currentLearningDict.dictId, false);
+                      await toDictWordsListPage(currentLearningDict.dictId, false);
                       widget.onDictChanged();
                     } catch (e) {
                       ToastUtil.error("无法打开词书");
@@ -2857,26 +2624,19 @@ class _DictCardState extends State<DictCard> {
     final dictName = widget.dictInfo.name.replaceAll('.dict', '');
 
     // 1. 获取该词书中的所有单词 ID
-    final dictWords = await (db.select(db.dictWords)
-          ..where((dw) => dw.dictId.equals(currentLearningDict.dictId)))
-        .get();
+    final dictWords = await (db.select(db.dictWords)..where((dw) => dw.dictId.equals(currentLearningDict.dictId))).get();
     final wordIdsInDict = dictWords.map((dw) => dw.wordId).toSet();
 
     // 2. 查询用户所有学习中的单词（stability < graduationStability）
     final learningWords = await (db.select(db.learningWords)
-          ..where((lw) =>
-              lw.userId.equals(user.id) &
-              lw.stability.isSmallerThanValue(Constants.graduationStability)))
+          ..where((lw) => lw.userId.equals(user.id) & lw.stability.isSmallerThanValue(Constants.graduationStability)))
         .get();
 
     if (!mounted) return;
 
     // 3. 获取用户书桌上的所有其他词书 ID
-    final otherLearningDicts = await (db.select(db.learningDicts)
-          ..where((ld) =>
-              ld.userId.equals(user.id) &
-              ld.dictId.isNotValue(currentLearningDict.dictId)))
-        .get();
+    final otherLearningDicts =
+        await (db.select(db.learningDicts)..where((ld) => ld.userId.equals(user.id) & ld.dictId.isNotValue(currentLearningDict.dictId))).get();
     final otherDictIds = otherLearningDicts.map((ld) => ld.dictId).toSet();
 
     if (!mounted) return;
@@ -2887,10 +2647,7 @@ class _DictCardState extends State<DictCard> {
       if (!wordIdsInDict.contains(lw.wordId)) continue;
 
       final otherDicts = await (db.select(db.dictWords)
-            ..where((dw) =>
-                dw.wordId.equals(lw.wordId) &
-                dw.dictId
-                    .isIn(otherDictIds.isEmpty ? [''] : otherDictIds.toList())))
+            ..where((dw) => dw.wordId.equals(lw.wordId) & dw.dictId.isIn(otherDictIds.isEmpty ? [''] : otherDictIds.toList())))
           .get();
 
       if (!mounted) return;
@@ -2907,8 +2664,7 @@ class _DictCardState extends State<DictCard> {
       final confirmResult = await showDialog<bool>(
         context: context,
         builder: (context) => Dialog(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           child: Padding(
             padding: const EdgeInsets.all(24),
             child: Column(
@@ -2921,8 +2677,7 @@ class _DictCardState extends State<DictCard> {
                     color: Colors.orange.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(Icons.warning_amber_rounded,
-                      color: Colors.orange[800], size: 40),
+                  child: Icon(Icons.warning_amber_rounded, color: Colors.orange[800], size: 40),
                 ),
                 const SizedBox(height: 20),
                 const Text(
@@ -2942,23 +2697,18 @@ class _DictCardState extends State<DictCard> {
                   decoration: BoxDecoration(
                     color: Colors.orange.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(12),
-                    border:
-                        Border.all(color: Colors.orange.withValues(alpha: 0.2)),
+                    border: Border.all(color: Colors.orange.withValues(alpha: 0.2)),
                   ),
                   child: Column(
                     children: [
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.info_outline,
-                              size: 16, color: Colors.orange[800]),
+                          Icon(Icons.info_outline, size: 16, color: Colors.orange[800]),
                           const SizedBox(width: 8),
                           Text(
                             '存在学习中单词',
-                            style: TextStyle(
-                                color: Colors.orange[800],
-                                fontWeight: FontWeight.w600,
-                                fontSize: 14),
+                            style: TextStyle(color: Colors.orange[800], fontWeight: FontWeight.w600, fontSize: 14),
                           ),
                         ],
                       ),
@@ -2966,10 +2716,7 @@ class _DictCardState extends State<DictCard> {
                       Text(
                         '该词书中有 ${learningWordsOnlyInThisDict.length} 个单词正在学习。',
                         textAlign: TextAlign.center,
-                        style: TextStyle(
-                            color: Colors.orange[900],
-                            fontSize: 13,
-                            height: 1.4),
+                        style: TextStyle(color: Colors.orange[900], fontSize: 13, height: 1.4),
                       ),
                     ],
                   ),
@@ -2985,8 +2732,7 @@ class _DictCardState extends State<DictCard> {
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       elevation: 0,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
                     child: const Text('停止学习并删除记录'),
                   ),
@@ -3000,8 +2746,7 @@ class _DictCardState extends State<DictCard> {
                       side: BorderSide(color: Colors.grey[400]!, width: 1.2),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       foregroundColor: Colors.grey[800],
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
                     child: const Text('仅停止学习'),
                   ),
@@ -3015,8 +2760,7 @@ class _DictCardState extends State<DictCard> {
                       side: BorderSide(color: Colors.grey[400]!, width: 1.2),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       foregroundColor: Colors.grey[800],
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
                     child: const Text('取消'),
                   ),
@@ -3036,8 +2780,7 @@ class _DictCardState extends State<DictCard> {
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (context) => Dialog(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           child: Padding(
             padding: const EdgeInsets.all(24),
             child: Column(
@@ -3049,8 +2792,7 @@ class _DictCardState extends State<DictCard> {
                     color: AppTheme.primaryColor.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.remove_circle_outline,
-                      color: AppTheme.primaryColor, size: 40),
+                  child: const Icon(Icons.remove_circle_outline, color: AppTheme.primaryColor, size: 40),
                 ),
                 const SizedBox(height: 20),
                 const Text(
@@ -3070,12 +2812,10 @@ class _DictCardState extends State<DictCard> {
                       child: OutlinedButton(
                         onPressed: () => Navigator.of(context).pop(false),
                         style: OutlinedButton.styleFrom(
-                          side:
-                              BorderSide(color: Colors.grey[400]!, width: 1.2),
+                          side: BorderSide(color: Colors.grey[400]!, width: 1.2),
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           foregroundColor: Colors.grey[800],
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10)),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         ),
                         child: const Text('否'),
                       ),
@@ -3088,8 +2828,7 @@ class _DictCardState extends State<DictCard> {
                           backgroundColor: AppTheme.primaryColor,
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           elevation: 0,
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10)),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         ),
                         child: const Text('是'),
                       ),
@@ -3133,28 +2872,16 @@ class _DictCardState extends State<DictCard> {
     final isDarkMode = context.read<DarkMode>().isDarkMode;
 
     final bgColor = isDarkMode
-        ? (isDestructive
-            ? Colors.red.withValues(alpha: 0.12)
-            : const Color(0xFF334155))
-        : (isDestructive
-            ? Colors.red.withValues(alpha: 0.08)
-            : const Color(0xFFF1F5F9));
+        ? (isDestructive ? Colors.red.withValues(alpha: 0.12) : const Color(0xFF334155))
+        : (isDestructive ? Colors.red.withValues(alpha: 0.08) : const Color(0xFFF1F5F9));
 
     final borderColor = isDarkMode
-        ? (isDestructive
-            ? Colors.red.withValues(alpha: 0.3)
-            : Colors.white.withValues(alpha: 0.1))
-        : (isDestructive
-            ? Colors.red.withValues(alpha: 0.15)
-            : Colors.black.withValues(alpha: 0.05));
+        ? (isDestructive ? Colors.red.withValues(alpha: 0.3) : Colors.white.withValues(alpha: 0.1))
+        : (isDestructive ? Colors.red.withValues(alpha: 0.15) : Colors.black.withValues(alpha: 0.05));
 
     final contentColor = isDarkMode
-        ? (isDestructive
-            ? Colors.redAccent
-            : (color ?? const Color(0xFFF1F5F9)))
-        : (isDestructive
-            ? Colors.red[700]!
-            : (color ?? const Color(0xFF334155)));
+        ? (isDestructive ? Colors.redAccent : (color ?? const Color(0xFFF1F5F9)))
+        : (isDestructive ? Colors.red[700]! : (color ?? const Color(0xFF334155)));
 
     return GestureDetector(
       onTap: onTap,
@@ -3172,17 +2899,14 @@ class _DictCardState extends State<DictCard> {
           children: [
             Icon(
               icon,
-              color:
-                  isActive ? contentColor : contentColor.withValues(alpha: 0.4),
+              color: isActive ? contentColor : contentColor.withValues(alpha: 0.4),
               size: 20,
             ),
             const SizedBox(height: 4),
             Text(
               label,
               style: TextStyle(
-                color: isActive
-                    ? contentColor
-                    : contentColor.withValues(alpha: 0.4),
+                color: isActive ? contentColor : contentColor.withValues(alpha: 0.4),
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
                 height: 1.3,
@@ -3202,16 +2926,11 @@ class _DictCardState extends State<DictCard> {
     required ValueChanged<bool?> onChanged,
   }) {
     final isDarkMode = context.read<DarkMode>().isDarkMode;
-    final accentColor =
-        isDarkMode ? const Color(0xFF22D3EE) : const Color(0xFF0EA5E9);
+    final accentColor = isDarkMode ? const Color(0xFF22D3EE) : const Color(0xFF0EA5E9);
 
-    final bgColor =
-        isDarkMode ? const Color(0xFF334155) : const Color(0xFFF1F5F9);
-    final borderColor = isDarkMode
-        ? Colors.white.withValues(alpha: 0.1)
-        : Colors.black.withValues(alpha: 0.05);
-    final contentColor =
-        isDarkMode ? const Color(0xFFF1F5F9) : const Color(0xFF334155);
+    final bgColor = isDarkMode ? const Color(0xFF334155) : const Color(0xFFF1F5F9);
+    final borderColor = isDarkMode ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05);
+    final contentColor = isDarkMode ? const Color(0xFFF1F5F9) : const Color(0xFF334155);
 
     return GestureDetector(
       onTap: () => onChanged(!value),
@@ -3375,8 +3094,7 @@ class RankingPainter extends CustomPainter {
     flagBannerPath.lineTo(fX + 6, fY - 7);
     flagBannerPath.lineTo(fX, fY - 4);
     flagBannerPath.close();
-    canvas.drawPath(
-        flagBannerPath, Paint()..color = curveColor.withValues(alpha: 0.4));
+    canvas.drawPath(flagBannerPath, Paint()..color = curveColor.withValues(alpha: 0.4));
 
     // Marker
     if (percentile >= 0) {
@@ -3395,13 +3113,10 @@ class RankingPainter extends CustomPainter {
       canvas.drawCircle(Offset(xPos, yPos), 4, Paint()..color = markerColor);
 
       // Add a tiny white dot in center for "eye-catching" effect
-      canvas.drawCircle(Offset(xPos, yPos), 1.5,
-          Paint()..color = Colors.white.withValues(alpha: 0.8));
+      canvas.drawCircle(Offset(xPos, yPos), 1.5, Paint()..color = Colors.white.withValues(alpha: 0.8));
     }
   }
 
   @override
-  bool shouldRepaint(covariant RankingPainter oldDelegate) =>
-      oldDelegate.percentile != percentile ||
-      oldDelegate.markerColor != markerColor;
+  bool shouldRepaint(covariant RankingPainter oldDelegate) => oldDelegate.percentile != percentile || oldDelegate.markerColor != markerColor;
 }
