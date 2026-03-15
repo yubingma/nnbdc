@@ -660,6 +660,7 @@ import StoreKit
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             print("IOS: Creating recognition task after delay (0.1s)...")
+            self.isAsrStopped = false // <- FIX: Ensure input processing resumes
             self.recognitionTask = speechRecognizer.recognitionTask(with: recognitionRequest) { [weak self] result, error in
                 guard let self = self else { return }
                 var isFinal = false

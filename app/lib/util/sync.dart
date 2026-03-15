@@ -39,6 +39,11 @@ class CoreDataMissingException extends SyncCoreException {
   CoreDataMissingException(super.message);
 }
 
+/// 同步数据解析/类型检查异常
+class SyncDataParseException extends SyncCoreException {
+  SyncDataParseException(super.message);
+}
+
 /// 同步语义/数据安全违规异常
 class SyncDataSecurityException extends SyncCoreException {
   SyncDataSecurityException(super.message);
@@ -303,6 +308,11 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
               User entity = User.fromJson(entityJson);
               if (log.operate == 'INSERT' || log.operate == 'UPDATE') {
                 await db.usersDao.saveUser(entity, false);
+                
+                // 只要同步到当前用户的修改，立即应用到内存缓存
+                if (Global.currentUserId == entity.id) {
+                  Global.updateUserCache(entity);
+                }
               }
             } else if (log.tblName == 'dicts') {
               entityJson['editable'] ??= true;
@@ -415,6 +425,14 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
           } catch (e, stackTrace) {
             Global.logger.e("❌ 处理表数据失败: ${log.tblName} - $e");
             ErrorHandler.handleDatabaseError(e, stackTrace, db: MyDatabase.instance.usersDao, operation: '处理表数据失败: ${log.tblName}', showToast: false);
+            // 明确拒绝默默吞掉报错行为，抛出包含明确错误源的业务异常阻断同步过程
+            throw SyncDataParseException(
+              '数据解析失败！发现前后端数据结构不匹配。\n\n'
+              '表名: ${log.tblName}\n'
+              '错误: $e\n'
+              '问题数据: ${log.record}\n\n'
+              '请向开发人员报告此问题，或重装应用立刻解决问题。'
+            );
           }
         }
 

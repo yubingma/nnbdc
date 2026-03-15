@@ -192,28 +192,35 @@ class ThrottledDbSyncService {
   void _showCoreDataErrorDialog(dbsync.SyncCoreException error) {
     // 确保在主线程执行 UI 操作
     Future.microtask(() {
+      String dialogTitle = '核心数据异常';
+      if (error is dbsync.SyncDataParseException) {
+        dialogTitle = '同步数据解析失败';
+      }
+
       Get.dialog(
         AlertDialog(
           title: Row(
             children: [
               Icon(Icons.error_outline, color: Colors.red),
               SizedBox(width: 8),
-              Text('核心数据异常', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+              Text(dialogTitle, style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
             ],
           ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(error.message),
-              SizedBox(height: 16),
-              if (error is dbsync.CoreDataMissingException)
-                Text('这种情况通常意味着本地核心词书丢失，可能会导致同步失败。请尝试使用"我的" -> "健康检查"并执行自动修复。', 
-                  style: TextStyle(fontSize: 13, color: Colors.grey[700]))
-              else
-                Text('同步过程中检测到严重的数据一致性或安全问题。如果此问题持续出现，请尝试清空数据重新登录。',
-                  style: TextStyle(fontSize: 13, color: Colors.grey[700])),
-            ],
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(error.message),
+                SizedBox(height: 16),
+                if (error is dbsync.CoreDataMissingException)
+                  Text('这种情况通常意味着本地核心词书丢失，可能会导致同步失败。请尝试使用"我的" -> "健康检查"并执行自动修复。', style: TextStyle(fontSize: 13, color: Colors.grey[700]))
+                else if (error is dbsync.SyncDataParseException)
+                  Text('可能服务端更新了必填字段导致旧版应用不兼容。请记录上述错误并联系管理员，或重装应用。', style: TextStyle(fontSize: 13, color: Colors.grey[700]))
+                else
+                  Text('同步过程中检测到严重的数据一致性或安全问题。如果此问题持续出现，请尝试清空本地数据重新登录。', style: TextStyle(fontSize: 13, color: Colors.grey[700])),
+              ],
+            ),
           ),
           actions: [
             TextButton(
