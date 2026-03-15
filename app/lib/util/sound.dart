@@ -22,10 +22,17 @@ class SoundUtil {
 
   static const int _maxPlayersPerSfx = 6; // 6路并发通道
 
-  /// 配置全局音频会话
-  static Future<void> configureAudioSession() async {
-    if (_audioSessionConfigured) return;
+  static Future<void>? _configureFuture;
 
+  /// 配置全局音频会话
+  static Future<void> configureAudioSession() {
+    if (_audioSessionConfigured) return Future.value();
+    
+    _configureFuture ??= _doConfigureAudioSession();
+    return _configureFuture!;
+  }
+
+  static Future<void> _doConfigureAudioSession() async {
     try {
       final player = AudioPlayer();
       if (PlatformUtils.isIOS) {
@@ -56,6 +63,8 @@ class SoundUtil {
       _prewarmSfx(['thud.mp3', 'correct.mp3', 'fail.mp3', 'bubble-pop.mp3', 'asr_ready_hint.mp3']);
     } catch (e) {
       Global.logger.e('SoundUtil: 配置全局音频会话失败: $e');
+    } finally {
+      _configureFuture = null;
     }
   }
 

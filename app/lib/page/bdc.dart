@@ -1520,6 +1520,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
   Future<void> loadData() async {
     try {
+      // 保证音频会话配置已完成
+      await SoundUtil.configureAudioSession();
+
       final isDarkMode = await MyDatabase.instance.localParamsDao.getIsDarkMode();
       final autoJump = await MyDatabase.instance.localParamsDao.getAutoJumpAfterCorrect();
 
