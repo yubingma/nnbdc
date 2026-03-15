@@ -10,7 +10,7 @@ class StudyConfig {
   bool enableAllWrong;
   bool autoJumpAfterCorrectCh2En;
   bool autoJumpAfterCorrectEn2Ch;
-  int asrPassRule;
+  String asrPassRule;
   Map<String, dynamic>? walkman;
 
   StudyConfig({
@@ -20,7 +20,7 @@ class StudyConfig {
     this.enableAllWrong = false,
     this.autoJumpAfterCorrectCh2En = true,
     this.autoJumpAfterCorrectEn2Ch = false,
-    this.asrPassRule = 60,
+    this.asrPassRule = 'ONE',
     this.walkman,
   });
 
@@ -32,7 +32,7 @@ class StudyConfig {
       enableAllWrong: json['enableAllWrong'] ?? false,
       autoJumpAfterCorrectCh2En: json['autoJumpAfterCorrectCh2En'] ?? true,
       autoJumpAfterCorrectEn2Ch: json['autoJumpAfterCorrectEn2Ch'] ?? false,
-      asrPassRule: json['asrPassRule'] ?? 60,
+      asrPassRule: json['asrPassRule'] ?? 'ONE',
       walkman: json['walkman'],
     );
   }

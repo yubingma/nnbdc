@@ -1585,13 +1585,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     final studyConfig = StudyConfig.fromCurrentUser();
     // _asrPassRuleCache = studyConfig.asrPassRule; // This will be an int (0-100)
     if (mounted) {
-      if (studyConfig.asrPassRule == 100) { // Assuming 100 means ALL
-        _asrPassRuleCache = 'ALL';
-      } else if (studyConfig.asrPassRule == 60) { // Assuming 60 means ONE
-        _asrPassRuleCache = 'ONE';
-      } else if (studyConfig.asrPassRule == 80) { // Assuming 80 means HALF
-        _asrPassRuleCache = 'HALF';
-      }
+      _asrPassRuleCache = studyConfig.asrPassRule;
     }
       setState(() {
         // _isDarkMode = isDarkMode; // This line is now handled by the .then() block above
@@ -1824,13 +1818,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   void handleWord(final GetWordResult? getWordResult, {bool isFromBatchWordList = false}) async {
     // 异步拉取最新 ASR 规则并缓存，避免后续同步处理挂起
     final config = StudyConfig.fromCurrentUser();
-    if (config.asrPassRule == 100) {
-      _asrPassRuleCache = 'ALL';
-    } else if (config.asrPassRule == 80) {
-      _asrPassRuleCache = 'HALF';
-    } else {
-      _asrPassRuleCache = 'ONE';
-    }
+    _asrPassRuleCache = config.asrPassRule;
 
     setState(() {
       _fsrsItem = null;
@@ -2209,12 +2197,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     var localAutoPlaySentence = studyConfig.autoPlaySentence;
     var localShowAnswersDirectly = studyConfig.showAnswersDirectly;
     var localEnableAllWrong = studyConfig.enableAllWrong;
-    var localAsrPassRule = 'ONE';
-    if (studyConfig.asrPassRule == 100) {
-      localAsrPassRule = 'ALL';
-    } else if (studyConfig.asrPassRule == 80) {
-      localAsrPassRule = 'HALF';
-    }
+    var localAsrPassRule = studyConfig.asrPassRule;
     var localAutoJumpAfterCorrectCh2En = studyConfig.autoJumpAfterCorrectCh2En;
     var localAutoJumpAfterCorrectEn2Ch = studyConfig.autoJumpAfterCorrectEn2Ch;
 
@@ -2446,13 +2429,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                             studyConfigToSave.enableAllWrong = localEnableAllWrong;
                             studyConfigToSave.autoJumpAfterCorrectCh2En = localAutoJumpAfterCorrectCh2En;
                             studyConfigToSave.autoJumpAfterCorrectEn2Ch = localAutoJumpAfterCorrectEn2Ch;
-                            if (localAsrPassRule == 'ALL') {
-                              studyConfigToSave.asrPassRule = 100;
-                            } else if (localAsrPassRule == 'HALF') {
-                              studyConfigToSave.asrPassRule = 80;
-                            } else {
-                              studyConfigToSave.asrPassRule = 60;
-                            }
+                            studyConfigToSave.asrPassRule = localAsrPassRule;
                             await studyConfigToSave.saveToCurrentUser();
                           }
 
