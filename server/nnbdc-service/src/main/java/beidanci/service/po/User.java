@@ -175,7 +175,7 @@ public class User extends UuidPo {
     /**
      * 随身听配置 (JSON格式)
      */
-    @Column(name = "walkman_config", columnDefinition = "TEXT")
+    @Column(name = "study_config", columnDefinition = "TEXT")
     private String studyConfig;
 
     
