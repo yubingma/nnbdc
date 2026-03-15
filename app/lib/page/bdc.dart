@@ -595,6 +595,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   /// 正在进行匹配的asr输入，防止重复处理，影响性能
   var _handlingChinese = "";
 
+  /// 标志位：是否正在由[给点提示]/[清除提示]修改文本，避免触发 checkAsrResult
+  bool _isUpdatingByHint = false; 
+
   /// 当前正在学习的单词
   GetWordResult? _currentGetWordResult;
 
@@ -1238,6 +1241,10 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   }
 
   checkAsrResult({String? asrInput}) async {
+    if (asrInput != null) {
+      _isUpdatingByHint = false;
+    }
+    if (_isUpdatingByHint) return;
     String inputText = asrInput ?? _meaningController.text;
 
     Global.logger.d(
@@ -1467,6 +1474,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       if (isMatch) {
         Global.logger.d('BDC CHECK_ASR [ch2En]: Match SUCCESS!');
         if (asrInput != null) {
+          _isUpdatingByHint = true;
           setState(() {
             _meaningController.text = _word!.spell;
             if (_wordWrapper != null) {
@@ -1870,6 +1878,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       _word = getWordResult.learningWord!.word;
       _canLeaveCurrWord = false;
       _isAnswerCorrect = false;
+      _isUpdatingByHint = false;
 
       // 如果仅返回了ID，则本地补全单词详情与释义
       if (_word != null && (_word!.spell.isEmpty)) {
@@ -2104,16 +2113,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       trailing: PopupMenuButton<String>(
         padding: EdgeInsets.zero,
         position: PopupMenuPosition.over,
-        child: SizedBox(
-          width: 48,
-          child: Align(
-            alignment: Alignment.centerRight,
-            child: Icon(
-              Icons.arrow_drop_down,
-              color: Global.highlight,
-            ),
-          ),
-        ),
         onSelected: onChanged,
         itemBuilder: (BuildContext context) {
           return options.entries.map((entry) {
@@ -2129,6 +2128,16 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
             );
           }).toList();
         },
+        child: SizedBox(
+          width: 48,
+          child: Align(
+            alignment: Alignment.centerRight,
+            child: Icon(
+              Icons.arrow_drop_down,
+              color: Global.highlight,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -2621,6 +2630,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                     child: HandwritingBoard(
                       showCloseButton: false,
                       onRecognized: (text) {
+                        _isUpdatingByHint = false;
                         setState(() {
                           _meaningController.text = text;
                         });
@@ -2669,6 +2679,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                       ),
                       textInputAction: TextInputAction.done,
                       onChanged: (value) {
+                        _isUpdatingByHint = false;
                         setState(() {});
                         if (value.isNotEmpty && _word?.spell != null) {
                           if (Util.equalsIgnoreCase(value, _word!.spell)) {
@@ -3356,6 +3367,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         if (word.hintLetterCount > spell.length) {
           word.hintLetterCount = spell.length;
         }
+        _isUpdatingByHint = true;
         _meaningController.text = spell.substring(0, word.hintLetterCount);
       }
     });
@@ -3367,6 +3379,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       word.hintLetterCount = word.word.spell.length;
       // 中英模式：拼写提示
       if (_studyStep == StudyStep.ch2En.json) {
+        _isUpdatingByHint = true;
         _meaningController.text = word.word.spell;
       }
     });
@@ -3376,6 +3389,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     setState(() {
       word.hintLetterCount = 0;
       if (_studyStep == StudyStep.ch2En.json) {
+        _isUpdatingByHint = true;
         _meaningController.text = '';
       }
     });
@@ -3935,7 +3949,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                           children: [
                             InkWell(
                               onTap: () {
-                                // 不再清除，保留提示出的字母
+                                _isUpdatingByHint = true;
+                                _meaningController.clear();
+                                _isUpdatingByHint = false;
                                 setState(() {
                                   _showHandwritingBoard = true;
                                 });
