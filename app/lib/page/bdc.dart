@@ -4812,6 +4812,17 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     final words = await LearningService.getTodayLearningWordsFromDb(user.id);
     final activeSteps = activeUserStudySteps;
 
+    // 获取用户已掌握的单词 ID 集，用于准确反映调度状态 
+    final masteredWords = await MyDatabase.instance.masteredWordsDao.getMasteredWordsForUser(user.id);
+    final masteredWordIds = masteredWords.map((w) => w.wordId).toSet();
+    
+    // 助手函数：判断单词是否已掌握 (调度层的一致性逻辑)
+    bool isEffectivelyMastered(dynamic word) {
+      if (masteredWordIds.contains(word.wordId)) return true;
+      if (word.stability != null && (word.stability ?? 0.0) >= Constants.graduationStability) return true;
+      return false;
+    }
+
     // 获取单词的拼写
     final Map<String, String> spellings = {};
     for (var w in words) {
@@ -5105,11 +5116,11 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                                                     final isCurrentStep =
                                                         _currentGetWordResult?.learningWord?.word.id == w.wordId && w.todayLearnedTimes == sIndex;
                                                     final isNextStep = nextWordId == w.wordId && nextStepIndex == sIndex;
-                                                    // From user's perspective, if I've passed this step, or I am currently on it, it's green.
-                                                    final isStepCompleted = w.todayLearnedTimes > sIndex || isCurrentStep;
+                                                    // 已掌握的唯一标准：稳定度大于等于毕业阈值，或者在已掌握表中
+                                                    final isWordFinished = isEffectivelyMastered(w);
 
-                                                    // 已掌握的唯一标准：稳定度大于等于毕业阈值
-                                                    final isWordFinished = (w.stability ?? 0.0) >= Constants.graduationStability;
+                                                    // 从用户视角看：如果我处于这个环节，或者处于之后的环节，或者单词已掌握，则该格显绿
+                                                    final isStepCompleted = isWordFinished || w.todayLearnedTimes > sIndex || isCurrentStep;
 
                                                     return Container(
                                                       width: 30,

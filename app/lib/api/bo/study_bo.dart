@@ -542,12 +542,7 @@ class StudyBo {
         if (effA != effB) {
           return effA.compareTo(effB);
         }
-        // 次数相同时，练习最后学习时间较早的单词
-        if (a.lastLearningDate == null && b.lastLearningDate == null) return a.learningOrder.compareTo(b.learningOrder);
-        if (a.lastLearningDate == null) return -1;
-        if (b.lastLearningDate == null) return 1;
-        final int dateComp = a.lastLearningDate!.compareTo(b.lastLearningDate!);
-        if (dateComp != 0) return dateComp;
+        // 次数相同时，严格按照既定学习序号排序，确保“从左到右”的直观体验
         return a.learningOrder.compareTo(b.learningOrder);
       });
 
@@ -646,11 +641,7 @@ class StudyBo {
         if (effA != effB) {
           return effA.compareTo(effB);
         }
-        if (a.lastLearningDate == null && b.lastLearningDate == null) return a.learningOrder.compareTo(b.learningOrder);
-        if (a.lastLearningDate == null) return -1;
-        if (b.lastLearningDate == null) return 1;
-        final int dateComp = a.lastLearningDate!.compareTo(b.lastLearningDate!);
-        if (dateComp != 0) return dateComp;
+        // 次数相同时，严格按照既定学习序号排序
         return a.learningOrder.compareTo(b.learningOrder);
       });
 
