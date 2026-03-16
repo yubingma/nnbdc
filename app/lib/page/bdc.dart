@@ -767,7 +767,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   /// 当前单词学习的开始时间
   DateTime? _wordStartTime;
   DateTime? _firstMatchTime;
-  bool _hintUsed = false;
+  int _hintTapCount = 0;
 
   /// Tab控制器，用于管理说/选两个tab
   TabController? _tabController;
@@ -1501,8 +1501,11 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
               }
             }
 
-            // 如果使用了提示，降低一档评分，不再直接判为忘记 (Again)
-            if (_hintUsed) {
+            // 如果点击提示次数 >= 2 (包括长按的 Full Hint)，直接视为不会 (Again)
+            // 如果只有 1 次，则原基础上下降一档
+            if (_hintTapCount >= 2) {
+              rating = FsrsRating.again;
+            } else if (_hintTapCount == 1) {
               if (rating == FsrsRating.easy) {
                 rating = FsrsRating.good;
               } else if (rating == FsrsRating.good) {
@@ -1661,8 +1664,11 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
           }
         }
 
-        // 如果使用了提示，降低一档评分，不再直接判为忘记 (Again)
-        if (_hintUsed) {
+        // 如果点击提示次数 >= 2 (包括长按的 Full Hint)，直接视为不会 (Again)
+        // 如果只有 1 次，则原基础上下降一档
+        if (_hintTapCount >= 2) {
+          rating = FsrsRating.again;
+        } else if (_hintTapCount == 1) {
           if (rating == FsrsRating.easy) {
             rating = FsrsRating.good;
           } else if (rating == FsrsRating.good) {
@@ -1818,7 +1824,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       _handlingChinese = '';
       _currentAsrCandidates = [];
       _firstMatchTime = null;
-      _hintUsed = false;
+      _hintTapCount = 0;
       _highlightedWordImg = null;
       _wordImageEdited = false;
 
@@ -3821,7 +3827,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
   void giveALittleHint(WordWrapper word) {
     setState(() {
-      _hintUsed = true;
+      _hintTapCount++;
       word.hintLetterCount++;
       // 中英模式：拼写提示
       if (_studyStep == StudyStep.ch2En.json) {
@@ -3837,7 +3843,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
   void giveFullHint(WordWrapper word) {
     setState(() {
-      _hintUsed = true;
+      _hintTapCount = 2; // 长按直接视为严重提示
       word.hintLetterCount = word.word.spell.length;
       // 中英模式：拼写提示
       if (_studyStep == StudyStep.ch2En.json) {
@@ -3872,8 +3878,11 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         }
       }
 
-      // 如果使用了提示，降低一档评分，不再直接判为忘记 (Again)
-      if (_hintUsed) {
+      // 如果点击提示次数 >= 2 (包括长按的 Full Hint)，直接记录为不会 (Again)
+      // 如果仅点了一次，下降一档
+      if (_hintTapCount >= 2) {
+        rating = FsrsRating.again;
+      } else if (_hintTapCount == 1) {
         if (rating == FsrsRating.easy) {
           rating = FsrsRating.good;
         } else if (rating == FsrsRating.good) {
