@@ -1179,6 +1179,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   onAsrResult(event) async {
     // 预处理ASR结果，然后更新 meaningController
     String processedResult;
+    int? oldScore = _currentScore;
 
     // 统一处理JSON格式的候选结果（适用于所有模式）
     try {
@@ -1250,6 +1251,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     }
 
     if (mounted) {
+      if (!_isAnswerCorrect && oldScore != _currentScore) {
+        setState(() {}); // 触发 UI 刷新以实时显示最新的发音评分（即使没通过也能让用户看到反馈分数变化）
+      }
       checkAsrResult(asrInput: processedResult);
     }
   }
@@ -1361,13 +1365,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       Global.logger.d(
           'BDC CHECK_ASR: Update _handlingChinese from "$_handlingChinese" to "$inputText"');
       _handlingChinese = inputText;
-
-      // 让 UI 上的输入框实时显示最新识别到的部分文本
-      if (asrInput != null && !isHandwritingOrKeyboard) {
-        if (_meaningController.text != asrInput) {
-          _meaningController.text = asrInput;
-        }
-      }
 
       // No setState here to prevent extreme UI repaints on every partial ASR result
     } else {
