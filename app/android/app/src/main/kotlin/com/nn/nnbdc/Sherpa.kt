@@ -104,6 +104,10 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                     stopAsr()
                     result.success(null)
                 }
+                "stopMicrophone" -> {
+                    stopMicrophone()
+                    result.success(null)
+                }
                 "reset" -> {
                     currentStream?.let { currentModel?.reset(it) }
                     lastSentResult = ""
@@ -320,7 +324,12 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
 
     private fun startMicrophone() {
         if (isRecording) {
-            stopAsr()
+            Log.i(TAG, "Microphone is already running, re-creating stream with hotwords.")
+            currentStream?.release()
+            currentStream = currentModel?.createStreamWithHotwords(pendingHotwords)
+            lastSentResult = ""
+            isAsrStopped = false
+            return
         }
 
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
@@ -461,7 +470,14 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
     }
 
     private fun stopAsr() {
-        Log.i(TAG, "Stopping ASR...")
+        Log.i(TAG, "Stopping ASR (Hot Stop)...")
+        isAsrStopped = true
+        currentStream?.let { currentModel?.reset(it) }
+        lastSentResult = ""
+    }
+
+    private fun stopMicrophone() {
+        Log.i(TAG, "Stopping Microphone (Cold Stop)...")
         isRecording = false
         isAsrStopped = true
         
@@ -490,7 +506,7 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
 
     // 释放资源，如onDestroy时调用
     fun release() {
-        stopAsr()
+        stopMicrophone()
         modelEn?.release()
         modelEn = null
         modelZh?.release()

@@ -343,6 +343,22 @@ class _ChineseAsrInputWidgetState extends State<ChineseAsrInputWidget>
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
     final accentColor = AppTheme.primaryColor;
 
+    // 状态驱动反馈文字
+    String statusText;
+    switch (widget.asrState) {
+      case AsrState.started:
+        statusText = "正在倾听...";
+        break;
+      case AsrState.stopping:
+      case AsrState.unknown:
+        statusText = "正在处理中...";
+        break;
+      case AsrState.initialized:
+      case AsrState.stopped:
+        statusText = "";
+        break;
+    }
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 4),
@@ -356,23 +372,32 @@ class _ChineseAsrInputWidgetState extends State<ChineseAsrInputWidget>
             child: AnimatedBuilder(
               animation: _waveController,
               builder: (context, child) {
-                final bool isListening = widget.asrState == AsrState.started;
                 return Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: List.generate(8, (index) {
-                    double height;
-                    double alpha;
+                    // 默认静止状态（准备就绪/处理中）
+                    double height = 4.0;
+                    double alpha = 0.2;
 
-                    if (isListening && _currentLevel > 0.05) {
-                      // 正在说话：动感波形 
-                      final randomFactor = 0.6 + _random.nextDouble() * 0.8;
-                      height = 4 + (20 * _currentLevel * randomFactor);
-                      if (height > 20) height = 20;
-                      alpha = 0.5 + (0.5 * _currentLevel);
-                    } else {
-                      // 等待或静音：无动作，完全静止为直线
-                      height = 4.0;
-                      alpha = 0.1;
+                    // 动态聆听状态
+                    if (widget.asrState == AsrState.started) {
+                      // 基础呼吸扫描值（用于待机）
+                      final double breath = sin(
+                          (_waveController.value + (index * 0.125)) * pi * 2);
+
+                      if (_currentLevel > 0.01) {
+                        // 正在说话：高敏捷跳动波形
+                        final randomFactor = 0.5 + _random.nextDouble();
+                        // 极大放大微弱音量带来的形变，确保肉眼可见明显反应
+                        height = 6.0 + (100 * _currentLevel * randomFactor);
+                        if (height > 20) height = 20;
+                        alpha = 0.6 + (2.0 * _currentLevel);
+                        if (alpha > 1.0) alpha = 1.0;
+                      } else {
+                        // 待机静音：基础颜色深、振幅明显的呼吸波纹
+                        height = 5.0 + (6.0 * (breath + 1) / 2);
+                        alpha = 0.4 + (0.3 * (breath + 1) / 2);
+                      }
                     }
 
                     return Container(
@@ -391,12 +416,7 @@ class _ChineseAsrInputWidgetState extends State<ChineseAsrInputWidget>
           ),
           const SizedBox(height: 2),
           Text(
-            widget.asrState == AsrState.started
-                ? "正在倾听..."
-                : (widget.asrState == AsrState.initialized ||
-                        widget.asrState == AsrState.stopped)
-                    ? ""
-                    : "正在处理中...",
+            statusText,
             style: TextStyle(
               fontSize: 10,
               color: isDarkMode ? Colors.white38 : Colors.black26,
@@ -467,6 +487,22 @@ class _EnglishAsrInputWidgetState extends State<EnglishAsrInputWidget>
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
     final accentColor = AppTheme.primaryColor;
 
+    // 状态驱动反馈文字
+    String statusText;
+    switch (widget.asrState) {
+      case AsrState.started:
+        statusText = "正在倾听...";
+        break;
+      case AsrState.stopping:
+      case AsrState.unknown:
+        statusText = "正在处理中...";
+        break;
+      case AsrState.initialized:
+      case AsrState.stopped:
+        statusText = "发音评分";
+        break;
+    }
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 4),
@@ -480,23 +516,32 @@ class _EnglishAsrInputWidgetState extends State<EnglishAsrInputWidget>
             child: AnimatedBuilder(
               animation: _waveController,
               builder: (context, child) {
-                final bool isListening = widget.asrState == AsrState.started;
                 return Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: List.generate(8, (index) {
-                    double height;
-                    double alpha;
+                    // 默认静止状态（准备就绪/处理中）
+                    double height = 4.0;
+                    double alpha = 0.2;
 
-                    if (isListening && _currentLevel > 0.05) {
-                      // 正在说话：动感波形
-                      final randomFactor = 0.6 + _random.nextDouble() * 0.8;
-                      height = 4 + (20 * _currentLevel * randomFactor);
-                      if (height > 20) height = 20;
-                      alpha = 0.5 + (0.5 * _currentLevel);
-                    } else {
-                      // 等待或静音：无动作，完全静止为直线
-                      height = 4.0;
-                      alpha = 0.1;
+                    // 动态聆听状态
+                    if (widget.asrState == AsrState.started) {
+                      // 基础呼吸扫描值（用于待机）
+                      final double breath = sin(
+                          (_waveController.value + (index * 0.125)) * pi * 2);
+
+                      if (_currentLevel > 0.01) {
+                        // 正在说话：高敏捷跳动波形
+                        final randomFactor = 0.5 + _random.nextDouble();
+                        // 极大放大微弱音量带来的形变，确保肉眼可见明显反应
+                        height = 6.0 + (100 * _currentLevel * randomFactor);
+                        if (height > 20) height = 20;
+                        alpha = 0.6 + (2.0 * _currentLevel);
+                        if (alpha > 1.0) alpha = 1.0;
+                      } else {
+                        // 待机静音：基础颜色深、振幅明显的呼吸波纹
+                        height = 5.0 + (6.0 * (breath + 1) / 2);
+                        alpha = 0.4 + (0.3 * (breath + 1) / 2);
+                      }
                     }
 
                     return Container(
@@ -518,12 +563,7 @@ class _EnglishAsrInputWidgetState extends State<EnglishAsrInputWidget>
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                widget.asrState == AsrState.started
-                    ? "正在倾听..."
-                    : (widget.asrState == AsrState.initialized ||
-                            widget.asrState == AsrState.stopped)
-                        ? "发音评分"
-                        : "正在处理中...",
+                statusText,
                 style: TextStyle(
                   fontSize: 10,
                   color: isDarkMode ? Colors.white38 : Colors.black26,

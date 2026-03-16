@@ -318,6 +318,9 @@ class Asr {
           'ASR: initAsr 跳过，当前状态为: $_state, isInitializing=$_isInitializing, isStarting=$_isStarting');
       return;
     }
+
+    // 恢复事件分发开关（重要！单例在退出页面后必定为 true，会导致此后再也推不出状态给新页面）
+    _disposed = false;
     _isInitializing = true;
 
     if (!PlatformUtils.isAsrSupported()) {
