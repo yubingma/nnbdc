@@ -597,7 +597,9 @@ public class User extends UuidPo {
      * @return
      */
     public int getExistDays() {
-
+        if (getCreateTime() == null) {
+            return 1;
+        }
         long existTime = Utils.getPureDate(new Date()).getTime() - Utils.getPureDate(getCreateTime()).getTime();
         int existDays = (int) (existTime / 1000 / 60 / 60 / 24) + 1;
 
@@ -611,6 +613,9 @@ public class User extends UuidPo {
      */
     public double getDakaRatio() {
         int existDays = getExistDays();
+        if (existDays == 0 || dakaDayCount == null) {
+            return 0.0;
+        }
         double dakaRatio = (dakaDayCount + 0.0) / existDays;
         return dakaRatio;
     }
@@ -634,7 +639,9 @@ public class User extends UuidPo {
      * @return
      */
     public int getTotalScore() {
-        return getDakaScore() + getGameScore();
+        int dscore = getDakaScore() == null ? 0 : getDakaScore();
+        int gscore = getGameScore() == null ? 0 : getGameScore();
+        return dscore + gscore;
     }
 
     public Boolean getIsSuperAdmin() {

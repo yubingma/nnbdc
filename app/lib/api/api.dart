@@ -643,4 +643,12 @@ abstract class RestClient {
   @POST("/restoreSubscription.do")
   @FormUrlEncoded()
   Future<Result> restoreSubscription(@Field("userId") String userId);
+
+  // 词库导入相关API
+  @POST("/import/submit")
+  @http.Headers(<String, dynamic>{"Content-Type": "application/json"})
+  Future<Result<String>> submitDictImportTask(@Body() JsonMap request);
+
+  @GET("/import/getTaskStatus")
+  Future<Result<JsonMap>> getDictImportTaskStatus(@Query("taskId") String taskId);
 }

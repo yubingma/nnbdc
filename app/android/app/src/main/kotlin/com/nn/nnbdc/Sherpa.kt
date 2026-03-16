@@ -28,8 +28,13 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
     private var meterEvents: EventChannel.EventSink? = null
 
     // Sherpa Onnx Recognizer
-    private var model: OnlineRecognizer? = null
-    private var stream: OnlineStream? = null
+    private var modelEn: OnlineRecognizer? = null
+    private var modelZh: OnlineRecognizer? = null
+    
+    // 当前使用的工作模型指针
+    private var currentModel: OnlineRecognizer? = null
+    private var currentStream: OnlineStream? = null
+    
     // 当前模型语言类型: "zh" or "en"
     private var currentModelType: String = ""
     
@@ -100,9 +105,24 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                     result.success(null)
                 }
                 "reset" -> {
-                    stream?.let { model?.reset(it) }
+                    currentStream?.let { currentModel?.reset(it) }
                     lastSentResult = ""
                     result.success(null)
+                }
+                "preloadModels" -> {
+                    thread {
+                        try {
+                            if (modelZh == null) setupChineseModel()
+                            if (modelEn == null) setupEnglishModel()
+                            activity.runOnUiThread {
+                                result.success(null)
+                            }
+                        } catch (e: Exception) {
+                            activity.runOnUiThread {
+                                result.error("PRELOAD_FAILED", e.message, null)
+                            }
+                        }
+                    }
                 }
                 else -> result.notImplemented()
             }
@@ -111,22 +131,22 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
 
     // 可以在 MainActivity onCreate 中调用初始化默认模型
     fun initModel() {
-        // 默认初始化中文
+        // 默认初始化中文（并且设定为当前模型）
         loadModel("zh")
     }
 
     private fun setLanguage(locale: String) {
         val newType = if (locale.startsWith("en")) "en" else "zh"
 
-        if (newType == currentModelType && model != null) {
+        if (newType == currentModelType && currentModel != null) {
             currentLocale = locale
-            Log.i(TAG, "Model already loaded for $newType")
+            Log.i(TAG, "Model already active for $newType")
             return
         }
 
         Log.i(TAG, "Switching model from '$currentModelType' to '$newType' (locale: $locale)")
         
-        // 如果正在录音，需要重启录音线程以确保模型切换不用锁
+        // 由于需要重建立 Stream，如果正在录音先停止并切断，避免线程抢占旧的流
         val wasRecording = isRecording && !isAsrStopped
         if (wasRecording) {
             stopAsr()
@@ -137,8 +157,8 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
             currentLocale = locale
         } catch (e: Exception) {
             Log.e(TAG, "Failed to switch model to $newType", e)
-            // 尝试回退到中文
-            if (model == null) loadModel("zh")
+            // 尝试回退
+            if (currentModel == null) loadModel(currentModelType.ifEmpty { "zh" })
         }
 
         if (wasRecording) {
@@ -150,19 +170,27 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
     private var activeGain: Float = 2.0f
 
     private fun loadModel(type: String) {
-        // 释放旧资源
-        stream?.release()
-        stream = null
-        model?.release()
-        model = null
+        // 先清理旧的流，释放资源
+        currentStream?.release()
+        currentStream = null
         
+        // 懒加载模式，如果需要切换的目标模型不存在则去初始化
         if (type == "en") {
-            setupEnglishModel()
+            if (modelEn == null) {
+                 setupEnglishModel()
+            }
+            currentModel = modelEn
+            activeGain = 2.5f
         } else {
-            setupChineseModel()
+            if (modelZh == null) {
+                setupChineseModel()
+            }
+            currentModel = modelZh
+            activeGain = 2.0f
         }
         
         currentModelType = type
+        Log.i(TAG, "Switched working model to: $type, Gain: $activeGain")
     }
 
     private fun setupEnglishModel() {
@@ -206,9 +234,8 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                 .setBlankPenalty(0.5f) // 增加轻微惩罚，减少乱码和幻觉
                 .build()
 
-            model = OnlineRecognizer(config)
-            activeGain = 2.5f // 英文稍微调高增益，捕捉轻微尾音
-            Log.i(TAG, "English isolated recipe loaded. Gain: $activeGain")
+            modelEn = OnlineRecognizer(config)
+            Log.i(TAG, "English isolated recipe loaded to memory.")
         } catch (e: Exception) {
             Log.e(TAG, "English model load failed", e)
             throw e
@@ -256,9 +283,8 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                 .setBlankPenalty(1.2f) // 提高惩罚以抑制非法重复 (原0.5)
                 .build()
 
-            model = OnlineRecognizer(config)
-            activeGain = 2.0f // 2.4f可能导致爆音削波，微调回2.0f
-            Log.i(TAG, "Chinese isolated recipe loaded. Gain: $activeGain")
+            modelZh = OnlineRecognizer(config)
+            Log.i(TAG, "Chinese isolated recipe loaded to memory.")
         } catch (e: Exception) {
             Log.e(TAG, "Chinese model load failed", e)
             throw e
@@ -317,9 +343,9 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
         isRecording = true
         isAsrStopped = false
         
-        // 【关键改进】：使用传进来的热词创建流
+        // 使用当前活动模型创建热词流
         Log.i(TAG, "Creating stream with hotwords: '$pendingHotwords'")
-        stream = model?.createStreamWithHotwords(pendingHotwords)
+        currentStream = currentModel?.createStreamWithHotwords(pendingHotwords)
         
         // 重置去重标记
         lastSentResult = ""
@@ -354,8 +380,8 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                 }
 
                 // 2. 识别
-                val s = stream
-                val m = model
+                val s = currentStream
+                val m = currentModel
                 if (!isAsrStopped && m != null && s != null) {
                     // 使用当前配方定义的动态增益
                     val gain = activeGain
@@ -389,7 +415,7 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                         // 周期性音量打印
                         audioBlockCount++
                         if (audioBlockCount % 20 == 0) {
-                            Log.v(TAG, "ASR Monitor: lvl=${String.format("%.4f", norm)}, gain=8x, tokens=${tokens?.size ?: 0}")
+                            Log.v(TAG, "ASR Monitor: lvl=${String.format("%.4f", norm)}, gain=${gain}x, tokens=${tokens?.size ?: 0}")
                         }
 
                         // 无条件发送记录
@@ -447,8 +473,8 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
             audioRecord?.release()
             audioRecord = null
             
-            stream?.release()
-            stream = null
+            currentStream?.release()
+            currentStream = null
         } catch (e: Exception) {
             Log.e(TAG, "Error checking/stopping audio: ${e.message}")
         }
@@ -465,7 +491,10 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
     // 释放资源，如onDestroy时调用
     fun release() {
         stopAsr()
-        model?.release()
-        model = null
+        modelEn?.release()
+        modelEn = null
+        modelZh?.release()
+        modelZh = null
+        currentModel = null
     }
 }

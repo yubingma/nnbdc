@@ -49,8 +49,6 @@ class Asr {
   /// 避免多个已失效的监听器继续处理结果，导致目标单词长期停留在旧值
   StreamSubscription? _eventSubscription;
 
-
-
   /// Meter 流订阅，使用单例模式避免重复订阅导致 iOS 端报错
   StreamSubscription<double>? _meterSubscription;
 
@@ -107,12 +105,23 @@ class Asr {
 
     try {
       Global.logger.i('ASR: 设置语言为: ${language.locale}');
-      await asrMethodChannel.invokeMethod('setLanguage', {'locale': language.locale}).timeout(const Duration(seconds: 5));
+      await asrMethodChannel.invokeMethod('setLanguage',
+          {'locale': language.locale}).timeout(const Duration(seconds: 5));
       Global.logger.i('ASR: 语言设置成功');
     } on PlatformException catch (e) {
       Global.logger.i('ASR: 设置语言失败: ${e.message}');
     } on TimeoutException catch (_) {
       Global.logger.w('ASR: 设置语言超时');
+    }
+  }
+
+  Future<void> preloadModels() async {
+    if (!PlatformUtils.isAsrSupported()) return;
+    try {
+      Global.logger.i('ASR: 预加载模型');
+      await asrMethodChannel.invokeMethod('preloadModels');
+    } catch (e) {
+      Global.logger.e('ASR: 预加载模型失败: $e');
     }
   }
 
@@ -145,7 +154,8 @@ class Asr {
 
     if (Platform.isIOS) {
       try {
-        bool granted = await asrMethodChannel.invokeMethod('requestPermissions');
+        bool granted =
+            await asrMethodChannel.invokeMethod('requestPermissions');
         return granted;
       } catch (e) {
         Global.logger.i('请求权限失败: $e');
@@ -202,8 +212,6 @@ class Asr {
     Global.logger.i('ASR: 麦克风和语音识别权限获取成功');
   }
 
-
-
   /// 打开系统权限设置页面
   Future<void> _openSettings() async {
     if (!PlatformUtils.isAsrSupported()) {
@@ -243,7 +251,8 @@ class Asr {
     bool? result = await Get.dialog<bool>(
       AlertDialog(
         title: const Text('权限申请'),
-        content: Text(Platform.isIOS ? '需要麦克风和语音识别权限来进行发音练习' : '需要麦克风权限来进行语音识别和发音练习'),
+        content: Text(
+            Platform.isIOS ? '需要麦克风和语音识别权限来进行发音练习' : '需要麦克风权限来进行语音识别和发音练习'),
         actions: [
           TextButton(
             onPressed: () => Get.back(result: false),
@@ -279,7 +288,8 @@ class Asr {
   }
 
   /// 获取或创建 meter 订阅，确保全局只有一个有效的 meter 订阅
-  StreamSubscription<double> getOrCreateMeterSubscription(void Function(double level) onLevel) {
+  StreamSubscription<double> getOrCreateMeterSubscription(
+      void Function(double level) onLevel) {
     // 如果已有订阅，先取消旧的（理论上不应该发生）
     if (_meterSubscription != null) {
       Global.logger.w('ASR: 警告：getMeterSubscription 被多次调用，取消旧订阅');
@@ -304,7 +314,8 @@ class Asr {
   /// 初始化语音识别事件监听
   Future<void> initAsr(void Function(dynamic asrResult)? asrListener) async {
     if (_isInitializing || _isStarting || _state == AsrState.started) {
-      Global.logger.w('ASR: initAsr 跳过，当前状态为: $_state, isInitializing=$_isInitializing, isStarting=$_isStarting');
+      Global.logger.w(
+          'ASR: initAsr 跳过，当前状态为: $_state, isInitializing=$_isInitializing, isStarting=$_isStarting');
       return;
     }
     _isInitializing = true;
@@ -326,8 +337,6 @@ class Asr {
       _eventSubscription = null;
       _subscriptionProtected = false;
 
-
-
       if (oldSubscription != null) {
         await oldSubscription.cancel();
       }
@@ -340,20 +349,24 @@ class Asr {
         _eventSubscription = stream.listen(
           (event) {
             final receiveTime = DateTime.now();
-            Global.logger.d('ASR: [Event] Received result from platform at ${receiveTime.toIso8601String()}');
+            Global.logger.d(
+                'ASR: [Event] Received result from platform at ${receiveTime.toIso8601String()}');
             try {
               savedListener(event);
               final processTime = DateTime.now();
-              Global.logger.d('ASR: [Event] Listener callback finished at ${processTime.toIso8601String()} (duration: ${processTime.difference(receiveTime).inMilliseconds}ms)');
+              Global.logger.d(
+                  'ASR: [Event] Listener callback finished at ${processTime.toIso8601String()} (duration: ${processTime.difference(receiveTime).inMilliseconds}ms)');
             } catch (e, stackTrace) {
               Global.logger.e('ASR: 执行监听器回调时出错: $e', stackTrace: stackTrace);
             }
           },
           onError: (error) {
-            Global.logger.e('ASR: 事件通道错误: $error (subscriptionId=$subscriptionId)');
+            Global.logger
+                .e('ASR: 事件通道错误: $error (subscriptionId=$subscriptionId)');
           },
           onDone: () {
-            Global.logger.w('ASR: 事件流已关闭 (onDone, subscriptionId=$subscriptionId)');
+            Global.logger
+                .w('ASR: 事件流已关闭 (onDone, subscriptionId=$subscriptionId)');
           },
           cancelOnError: false,
         );
@@ -410,21 +423,28 @@ class Asr {
 
       if (permissionGranted) {
         try {
-          Global.logger.i('ASR: Updating language first... (instance: $hashCode)');
+          Global.logger
+              .i('ASR: Updating language first... (instance: $hashCode)');
           await _updateLanguage(language);
 
           Global.logger.i('ASR: Starting microphone... (instance: $hashCode)');
-          await asrMethodChannel.invokeMethod('startMicrophone').timeout(const Duration(seconds: 5));
+          await asrMethodChannel
+              .invokeMethod('startMicrophone')
+              .timeout(const Duration(seconds: 5));
 
           Global.logger.i('ASR: Starting ASR... (instance: $hashCode)');
           final startTime = DateTime.now();
-          await asrMethodChannel.invokeMethod('startAsr').timeout(const Duration(seconds: 5));
+          await asrMethodChannel
+              .invokeMethod('startAsr')
+              .timeout(const Duration(seconds: 5));
           final endTime = DateTime.now();
 
           setState(AsrState.started);
-          Global.logger.i('ASR: ASR started successfully (instance: $hashCode, duration: ${endTime.difference(startTime).inMilliseconds}ms)');
+          Global.logger.i(
+              'ASR: ASR started successfully (instance: $hashCode, duration: ${endTime.difference(startTime).inMilliseconds}ms)');
         } on PlatformException catch (e) {
-          Global.logger.e('ASR: Exception during start: ${e.message} (instance: $hashCode)');
+          Global.logger.e(
+              'ASR: Exception during start: ${e.message} (instance: $hashCode)');
           if (e.code == 'PERMISSION_DENIED') {
             ToastUtil.error("权限被拒绝，请在设置中开启麦克风和语音识别权限");
           } else {
@@ -443,7 +463,9 @@ class Asr {
   /// 用于在进入学习页面时提前启动硬件，消除后续识别任务启动时的切换噪音。
   Future<void> startMicrophone() async {
     if (!PlatformUtils.isAsrSupported()) return;
-    if (_isStarting || state == AsrState.started || state == AsrState.stopping) {
+    if (_isStarting ||
+        state == AsrState.started ||
+        state == AsrState.stopping) {
       return;
     }
 
@@ -454,10 +476,13 @@ class Asr {
 
       if (permissionGranted) {
         Global.logger.i('ASR: Pre-warming microphone... (instance: $hashCode)');
-        await asrMethodChannel.invokeMethod('startMicrophone').timeout(const Duration(seconds: 5));
+        await asrMethodChannel
+            .invokeMethod('startMicrophone')
+            .timeout(const Duration(seconds: 5));
       }
     } catch (e) {
-      Global.logger.e('ASR: Pre-warm microphone failed: $e (instance: $hashCode)');
+      Global.logger
+          .e('ASR: Pre-warm microphone failed: $e (instance: $hashCode)');
     }
   }
 
@@ -466,7 +491,8 @@ class Asr {
     if (!PlatformUtils.isAsrSupported()) return;
 
     if (state == AsrState.stopped || state == AsrState.stopping) {
-      Global.logger.w('ASR: ASR is already stopped or stopping (instance: $hashCode)');
+      Global.logger
+          .w('ASR: ASR is already stopped or stopping (instance: $hashCode)');
       return;
     }
 
@@ -476,16 +502,20 @@ class Asr {
       await asrMethodChannel.invokeMethod('stopAsr');
       final endTime = DateTime.now();
       setState(AsrState.stopped);
-      Global.logger.i('ASR: ASR stopped successfully (instance: $hashCode, duration: ${endTime.difference(startTime).inMilliseconds}ms)');
+      Global.logger.i(
+          'ASR: ASR stopped successfully (instance: $hashCode, duration: ${endTime.difference(startTime).inMilliseconds}ms)');
     } on PlatformException catch (e) {
-      Global.logger.e('ASR: Exception during stop: ${e.message} (instance: $hashCode)');
+      Global.logger
+          .e('ASR: Exception during stop: ${e.message} (instance: $hashCode)');
       setState(AsrState.stopped);
     }
   }
-  
+
   /// 完全停止麦克风和 ASR 引擎（彻底关闭音频引擎）
   Future<void> stopMicrophone() async {
-    if (PlatformUtils.isWeb || PlatformUtils.isWindows || PlatformUtils.isMacOS) {
+    if (PlatformUtils.isWeb ||
+        PlatformUtils.isWindows ||
+        PlatformUtils.isMacOS) {
       return;
     }
 
@@ -502,7 +532,9 @@ class Asr {
 
   /// 清空模型中当前的采样数据
   Future<void> reset() async {
-    if (PlatformUtils.isWeb || PlatformUtils.isWindows || PlatformUtils.isMacOS) {
+    if (PlatformUtils.isWeb ||
+        PlatformUtils.isWindows ||
+        PlatformUtils.isMacOS) {
       return;
     }
 
@@ -517,7 +549,8 @@ class Asr {
 
   // 为 iOS 提供上下文短语，提高目标短语的识别概率（仅提示，不强制）
   Future<void> setContextualStrings(List<String> phrases) async {
-    if (PlatformUtils.isWeb || PlatformUtils.isWindows || PlatformUtils.isMacOS) return;
+    if (PlatformUtils.isWeb || PlatformUtils.isWindows || PlatformUtils.isMacOS)
+      return;
     if (!permissionGranted) return;
     try {
       await asrMethodChannel.invokeMethod('setContextualStrings', {

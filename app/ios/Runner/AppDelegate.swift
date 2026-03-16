@@ -217,6 +217,10 @@ import StoreKit
         case "reset":
             reset(result: result)
             
+        case "preloadModels":
+            // iOS natively handles models, no-op needed
+            result(nil)
+            
         default:
             result(FlutterMethodNotImplemented)
         }

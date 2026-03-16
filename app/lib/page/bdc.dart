@@ -597,7 +597,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   var _handlingChinese = "";
 
   /// 标志位：是否正在由[给点提示]/[清除提示]修改文本，避免触发 checkAsrResult
-  bool _isUpdatingByHint = false; 
+  bool _isUpdatingByHint = false;
 
   /// 当前正在学习的单词
   GetWordResult? _currentGetWordResult;
@@ -657,13 +657,13 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   // 当前发音评分
   int? _currentScore;
 
-  /// 答对后是否自动跳转到下一个单词 (极速模式) 
+  /// 答对后是否自动跳转到下一个单词 (极速模式)
   bool _autoJumpAfterCorrectCh2En = true;
   bool _autoJumpAfterCorrectEn2Ch = false;
 
   bool get _autoJumpAfterCorrect {
     if (_studyStep == StudyStep.ch2En.json) {
-      return _autoJumpAfterCorrectCh2En; 
+      return _autoJumpAfterCorrectCh2En;
     }
     return _autoJumpAfterCorrectEn2Ch;
   }
@@ -1280,7 +1280,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     // 如果输入框中的文本与正在处理的文本相同，则直接返回, 避免无谓的性能损耗
     if (inputText != _handlingChinese) {
       Global.logger.d('BDC CHECK_ASR: Update _handlingChinese from "$_handlingChinese" to "$inputText"');
-      _handlingChinese = inputText; 
+      _handlingChinese = inputText;
       if (mounted) setState(() {});
     } else {
       Global.logger.d('BDC CHECK_ASR: _handlingChinese hasn\'t changed ("$_handlingChinese"), returning early.');
@@ -1309,7 +1309,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         }
       }
       return;
-    } 
+    }
 
     final bool wasAlreadyCorrect = _isAnswerCorrect;
 
@@ -1571,22 +1571,65 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
   Future<void> loadData() async {
     try {
+      // 在下一帧显示初始化反馈的提示框
+      BuildContext? dialogContext;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (ctx) {
+            dialogContext = ctx;
+            return AlertDialog(
+              content: Row(
+                children: const [
+                  CircularProgressIndicator(),
+                  SizedBox(width: 16),
+                  Expanded(child: Text("正在初始化语音识别引擎...")),
+                ],
+              ),
+            );
+          },
+        );
+      });
+
+      // 预加载语音识别模型（耗时操作）
+      await asr.preloadModels();
+
+      // 如果模型加载完成且弹窗还在，或者 dialogContext 已赋值，将其关闭
+      // 等待一个极短的时间，确保 postFrameCallback 执行并且 dialog 已经弹出
+      await Future.delayed(const Duration(milliseconds: 50));
+      if (!mounted) return;
+      if (dialogContext != null) {
+        // ignore: use_build_context_synchronously
+        Navigator.of(dialogContext!).pop();
+      } else {
+        // 若上面因为某些原因 dialogContext 还未赋值但 dialog 被弹出了
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          if (dialogContext != null) {
+            Navigator.of(dialogContext!).pop();
+          } else if (context.mounted) {
+            Navigator.of(context, rootNavigator: true).pop();
+          }
+        });
+      }
+
       // 保证音频会话配置已完成
       await SoundUtil.configureAudioSession();
 
       MyDatabase.instance.localParamsDao.getIsDarkMode().then((value) {
-      if (mounted) {
-        setState(() {
-          _isDarkMode = value;
-        });
-      }
-    });
+        if (mounted) {
+          setState(() {
+            _isDarkMode = value;
+          });
+        }
+      });
 
-    final studyConfig = StudyConfig.fromCurrentUser();
-    // _asrPassRuleCache = studyConfig.asrPassRule; // This will be an int (0-100)
-    if (mounted) {
-      _asrPassRuleCache = studyConfig.asrPassRule;
-    }
+      final studyConfig = StudyConfig.fromCurrentUser();
+      // _asrPassRuleCache = studyConfig.asrPassRule; // This will be an int (0-100)
+      if (mounted) {
+        _asrPassRuleCache = studyConfig.asrPassRule;
+      }
       setState(() {
         // _isDarkMode = isDarkMode; // This line is now handled by the .then() block above
         // final studyConfig = StudyConfig.fromCurrentUser(); // Already defined above
@@ -2089,7 +2132,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   Widget _buildSettingItem(String title, bool value, Function(bool) onChanged, {Widget? customTrailing, String? subtitle}) {
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-      visualDensity: const VisualDensity(horizontal: -4, vertical: -4),   
+      visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
       dense: true,
       title: Text(
         title,
@@ -2133,7 +2176,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   Widget _buildAsrPassRuleSelector(String currentValue, Function(String) onChanged) {
     const Map<String, String> options = {
       'ONE': '说出一个意思即可',
-      'HALF': '说出半数意思', 
+      'HALF': '说出半数意思',
       'ALL': '说出全部意思',
     };
 
@@ -2247,7 +2290,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                   ],
                 ),
               ),
-              content: SizedBox( 
+              content: SizedBox(
                 width: min(MediaQuery.of(context).size.width * 0.92, 540),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -2281,10 +2324,10 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                                     });
                                     MyDatabase.instance.localParamsDao.saveIsDarkMode(value);
                                     context.read<DarkMode>().setIsDarkMode(value);
-                                  }, 
+                                  },
                                   customTrailing: Transform.translate(
                                     offset: const Offset(20, 0),
-                                    child: Transform.scale( 
+                                    child: Transform.scale(
                                       scale: 1.8,
                                       alignment: Alignment.centerRight,
                                       child: DayNightSwitcherIcon(
@@ -4053,7 +4096,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                                                 _meaningController.text,
                                                 _word?.spell ?? "",
                                                 _meaningController.text.trim().toLowerCase() != (_word?.spell.toLowerCase() ?? "")
-                                                    ? Colors.red 
+                                                    ? Colors.red
                                                     : (isDarkMode ? Colors.white : Colors.black),
                                                 const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                                               ),
@@ -4817,10 +4860,10 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     final words = await LearningService.getTodayLearningWordsFromDb(user.id);
     final activeSteps = activeUserStudySteps;
 
-    // 获取用户已掌握的单词 ID 集，用于准确反映调度状态 
+    // 获取用户已掌握的单词 ID 集，用于准确反映调度状态
     final masteredWords = await MyDatabase.instance.masteredWordsDao.getMasteredWordsForUser(user.id);
     final masteredWordIds = masteredWords.map((w) => w.wordId).toSet();
-    
+
     // 助手函数：判断单词是否已掌握 (调度层的一致性逻辑)
     bool isEffectivelyMastered(dynamic word) {
       if (masteredWordIds.contains(word.wordId)) return true;
