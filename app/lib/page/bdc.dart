@@ -1485,10 +1485,20 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                       : DateTime.now();
               final responseTime =
                   timeToUse.difference(_wordStartTime!).inSeconds;
-              if (responseTime < 8) {
-                rating = FsrsRating.easy;
-              } else if (responseTime >= 18) {
-                rating = FsrsRating.hard;
+              if (asrInput == null) {
+                // 键盘输入（打字）方式：给予较宽松的时间
+                if (responseTime < 12) {
+                  rating = FsrsRating.easy;
+                } else if (responseTime >= 25) {
+                  rating = FsrsRating.hard;
+                }
+              } else {
+                // 语音输入：标准时间
+                if (responseTime < 8) {
+                  rating = FsrsRating.easy;
+                } else if (responseTime >= 18) {
+                  rating = FsrsRating.hard;
+                }
               }
             }
 
@@ -1622,11 +1632,22 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         } else if (_wordStartTime != null) {
           final responseTime =
               DateTime.now().difference(_wordStartTime!).inSeconds;
-          if (responseTime < 6 &&
-              (_currentScore == null || _currentScore! >= 90)) {
-            rating = FsrsRating.easy; // Easy
-          } else if (responseTime >= 15) {
-            rating = FsrsRating.hard; // Hard
+
+          if (asrInput == null) {
+            // 键盘拼写模式：因为打字慢，所以给予非常宽松的时间
+            if (responseTime < 15) {
+              rating = FsrsRating.easy;
+            } else if (responseTime >= 35) {
+              rating = FsrsRating.hard;
+            }
+          } else {
+            // 语音识别模式：标准时间
+            if (responseTime < 6 &&
+                (_currentScore == null || _currentScore! >= 90)) {
+              rating = FsrsRating.easy; // Easy
+            } else if (responseTime >= 15) {
+              rating = FsrsRating.hard; // Hard
+            }
           }
         }
 
