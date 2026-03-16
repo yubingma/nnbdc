@@ -2075,6 +2075,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       _canLeaveCurrWord = false;
       _isAnswerCorrect = false;
       _isUpdatingByHint = false;
+      _currentScore = null; // 重置发音评分，防止携带上一个单词的分数
 
       // 如果仅返回了ID，则本地补全单词详情与释义
       if (_word != null && (_word!.spell.isEmpty)) {
