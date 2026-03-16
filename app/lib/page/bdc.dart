@@ -1176,89 +1176,82 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
   Timer? _asrDebounceTimer;
 
-  onAsrResult(event) async {
-    if (_asrDebounceTimer != null && _asrDebounceTimer!.isActive) {
-      _asrDebounceTimer!.cancel();
-    }
-    _asrDebounceTimer = Timer(const Duration(milliseconds: 300), () async {
-      // 预处理ASR结果，然后更新 meaningController
-      String processedResult;
+  onAsrResult(event) async { 
+    // 预处理ASR结果，然后更新 meaningController
+    String processedResult;
 
-      // 统一处理JSON格式的候选结果（适用于所有模式）
+    // 统一处理JSON格式的候选结果（适用于所有模式）
+    try {
+      // 尝试解析JSON格式的候选结果
+      Map<String, dynamic>? resultData;
       try {
-        // 尝试解析JSON格式的候选结果
-        Map<String, dynamic>? resultData;
-        try {
-          resultData = jsonDecode(event);
-        } catch (e) {
-          // 如果不是JSON格式，当作单个结果处理
-          resultData = null;
-        }
+        resultData = jsonDecode(event);
+      } catch (e) {
+        // 如果不是JSON格式，当作单个结果处理
+        resultData = null;
+      }
 
-        if (resultData != null && resultData.containsKey('candidates')) {
-          // 处理多个候选结果
-          List<dynamic> candidates = resultData['candidates'];
-          List<String> candidateStrings =
-              candidates.map((e) => e.toString()).toList();
-          String bestCandidate = resultData['best'] ?? candidateStrings.first;
+      if (resultData != null && resultData.containsKey('candidates')) {
+        // 处理多个候选结果
+        List<dynamic> candidates = resultData['candidates'];
+        List<String> candidateStrings =
+            candidates.map((e) => e.toString()).toList();
+        String bestCandidate = resultData['best'] ?? candidateStrings.first;
 
-          _currentAsrCandidates = candidateStrings;
+        _currentAsrCandidates = candidateStrings;
 
-          if (_studyStep == StudyStep.ch2En.json) {
-            if (_word != null) {
-              // 中→英模式：结合拼写相似度和音素相似度的智能选择
-              final result =
-                  await AsrUtil.selectBestCandidateWithPhonemeAndScore(
-                      candidateStrings, _word!.spell);
-              if (!_isAnswerCorrect) _currentScore = result.score;
-              processedResult =
-                  AsrUtil.preprocessEnglish(result.text, _word!.spell);
-              Global.logger.d(
-                  'ASR: Selected & Preprocessed: "$processedResult" (score: ${result.score})');
-            } else {
-              processedResult = bestCandidate;
-              if (!_isAnswerCorrect) _currentScore = null;
-            }
-          } else if (_studyStep == StudyStep.en2Ch.json) {
-            // 英→中模式：UI 显示最佳候选，但背后匹配逻辑会遍历所有 _currentAsrCandidates
-            processedResult = AsrUtil.preprocess(bestCandidate);
-            if (!_isAnswerCorrect) _currentScore = null;
+        if (_studyStep == StudyStep.ch2En.json) {
+          if (_word != null) {
+            // 中→英模式：结合拼写相似度和音素相似度的智能选择
+            final result = await AsrUtil.selectBestCandidateWithPhonemeAndScore(
+                candidateStrings, _word!.spell);
+            if (!_isAnswerCorrect) _currentScore = result.score;
+            processedResult =
+                AsrUtil.preprocessEnglish(result.text, _word!.spell);
             Global.logger.d(
-                'ASR [en2Ch]: Stored ${candidateStrings.length} candidates, showing best: $processedResult');
+                'ASR: Selected & Preprocessed: "$processedResult" (score: ${result.score})');
           } else {
             processedResult = bestCandidate;
             if (!_isAnswerCorrect) _currentScore = null;
           }
+        } else if (_studyStep == StudyStep.en2Ch.json) {
+          // 英→中模式：UI 显示最佳候选，但背后匹配逻辑会遍历所有 _currentAsrCandidates
+          processedResult = AsrUtil.preprocess(bestCandidate);
+          if (!_isAnswerCorrect) _currentScore = null;
+          Global.logger.d(
+              'ASR [en2Ch]: Stored ${candidateStrings.length} candidates, showing best: $processedResult');
         } else {
-          // 单个结果处理
-          _currentAsrCandidates = [event.toString()];
-          if (_studyStep == StudyStep.ch2En.json) {
-            if (_word != null) {
-              final pre = AsrUtil.preprocessEnglish(event, _word!.spell);
-              final result =
-                  await AsrUtil.selectBestCandidateWithPhonemeAndScore(
-                      [pre], _word!.spell);
-              processedResult = result.text;
-              if (!_isAnswerCorrect) _currentScore = result.score;
-            } else {
-              processedResult = event;
-              if (!_isAnswerCorrect) _currentScore = null;
-            }
-          } else {
-            processedResult = AsrUtil.preprocess(event);
-            Global.logger.d('ASR: Chinese processed result: $processedResult');
-          }
+          processedResult = bestCandidate;
+          if (!_isAnswerCorrect) _currentScore = null;
         }
-      } catch (e) {
-        Global.logger.e('ASR: Error processing result: $e');
-        processedResult = AsrUtil.preprocess(event.toString());
+      } else {
+        // 单个结果处理
         _currentAsrCandidates = [event.toString()];
+        if (_studyStep == StudyStep.ch2En.json) {
+          if (_word != null) {
+            final pre = AsrUtil.preprocessEnglish(event, _word!.spell);
+            final result = await AsrUtil.selectBestCandidateWithPhonemeAndScore(
+                [pre], _word!.spell);
+            processedResult = result.text;
+            if (!_isAnswerCorrect) _currentScore = result.score;
+          } else {
+            processedResult = event;
+            if (!_isAnswerCorrect) _currentScore = null;
+          }
+        } else {
+          processedResult = AsrUtil.preprocess(event);
+          Global.logger.d('ASR: Chinese processed result: $processedResult');
+        }
       }
+    } catch (e) {
+      Global.logger.e('ASR: Error processing result: $e');
+      processedResult = AsrUtil.preprocess(event.toString());
+      _currentAsrCandidates = [event.toString()];
+    }
 
-      if (mounted) {
-        checkAsrResult(asrInput: processedResult);
-      }
-    });
+    if (mounted) {
+      checkAsrResult(asrInput: processedResult);
+    }
   }
 
   void _onAnswerCorrect(FsrsRating rating) async {
@@ -1369,6 +1362,14 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       Global.logger.d(
           'BDC CHECK_ASR: Update _handlingChinese from "$_handlingChinese" to "$inputText"');
       _handlingChinese = inputText;
+
+      // 让 UI 上的输入框实时显示最新识别到的部分文本
+      if (asrInput != null && !isHandwritingOrKeyboard) {
+        if (_meaningController.text != asrInput) {
+          _meaningController.text = asrInput;
+        }
+      }
+
       // No setState here to prevent extreme UI repaints on every partial ASR result
     } else {
       Global.logger.d(
