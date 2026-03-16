@@ -1105,12 +1105,19 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     });
 
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: SystemUiOverlay.values);
+    _asrDebounceTimer?.cancel();
     super.dispose();
   }
 
+  Timer? _asrDebounceTimer;
+
   onAsrResult(event) async {
-    // 预处理ASR结果，然后更新 meaningController
-    String processedResult;
+    if (_asrDebounceTimer != null && _asrDebounceTimer!.isActive) {
+      _asrDebounceTimer!.cancel();
+    }
+    _asrDebounceTimer = Timer(const Duration(milliseconds: 300), () async {
+      // 预处理ASR结果，然后更新 meaningController
+      String processedResult;
 
     // 统一处理JSON格式的候选结果（适用于所有模式）
     try {
@@ -1178,6 +1185,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     if (mounted) {
       checkAsrResult(asrInput: processedResult);
     }
+    });
   }
 
   void _onAnswerCorrect(FsrsRating rating) async {
