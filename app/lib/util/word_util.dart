@@ -7,15 +7,21 @@ class SpellingTextEditingController extends TextEditingController {
   final String? Function() getTargetSpell;
   final Color baseColor;
 
-  SpellingTextEditingController({required this.getTargetSpell, required this.baseColor});
+  SpellingTextEditingController(
+      {required this.getTargetSpell, required this.baseColor});
 
   @override
-  TextSpan buildTextSpan({required BuildContext context, TextStyle? style, required bool withComposing}) {
-    return buildSpellingTextSpan(text, getTargetSpell() ?? "", baseColor, style);
+  TextSpan buildTextSpan(
+      {required BuildContext context,
+      TextStyle? style,
+      required bool withComposing}) {
+    return buildSpellingTextSpan(
+        text, getTargetSpell() ?? "", baseColor, style);
   }
 
   /// 静态方法：生成带实时颜色反馈的 TextSpan
-  static TextSpan buildSpellingTextSpan(String input, String target, Color baseColor, TextStyle? style) {
+  static TextSpan buildSpellingTextSpan(
+      String input, String target, Color baseColor, TextStyle? style) {
     final List<TextSpan> children = [];
 
     for (int i = 0; i < input.length; i++) {
@@ -44,7 +50,7 @@ class WordWrapper {
   /// 实际的单词相关对象，比如MasteredWord, LearningWord ...
   dynamic tag;
 
-  /// tag中的Word对象 
+  /// tag中的Word对象
   WordVo word;
 
   FocusNode focusNode = FocusNode();
@@ -64,6 +70,9 @@ class WordWrapper {
   /// asr匹配上的释义项子项(一个词性下，被分号分开的多个部分，称为子项)，一个子项由两个坐标确定：（释义项索引，子项索引）
   List<Pair<int, int>> asrMatchedMeaningItemParts = [];
 
+  /// 仅因为单词通过而在UI上自动呈现出的未匹配释义项（以便做颜色区分）
+  List<Pair<int, int>> asrRevealedMeaningItemParts = [];
+
   /// 说中文 的学习模式下，用户是否已经答出了单词的所有意思
   bool answeredAllMeanings = false;
 
@@ -76,7 +85,11 @@ class WordWrapper {
   WordWrapper(this.word, this.tag);
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is WordWrapper && runtimeType == other.runtimeType && word.id == other.word.id;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WordWrapper &&
+          runtimeType == other.runtimeType &&
+          word.id == other.word.id;
 
   @override
   int get hashCode => word.id.hashCode;
@@ -89,13 +102,15 @@ List<String> splitMeaning2Parts(String meaning) {
 }
 
 /// 在单词的所有释义项子项，以及给定的中文内容(或多候选列表)之间进行匹配，返回释义项子项总数量/匹配上的释义项子项数量/本次新增匹配数量
-MeaningMatchResult matchInputChineseWithMeaningItems(WordWrapper wordWrapper, Object asrInput) {
+MeaningMatchResult matchInputChineseWithMeaningItems(
+    WordWrapper wordWrapper, Object asrInput) {
   var count = 0; // 所有释义项子项数量
   var newMatchCount = 0; //本次匹配新匹配上的释义项数量
   var meaningItems = wordWrapper.word.getMergedMeaningItems();
 
   // 统一转为列表处理
-  final List<String> inputs = asrInput is List<String> ? asrInput : [asrInput.toString()];
+  final List<String> inputs =
+      asrInput is List<String> ? asrInput : [asrInput.toString()];
 
   for (var i = 0; i < meaningItems.length; i++) {
     // 每个元素对应一个词性
@@ -148,7 +163,8 @@ bool _isWholeBracketed(String s) {
   return false;
 }
 
-List<Widget> renderAsrMeaningItems(WordWrapper word, {bool isDarkMode = false}) {
+List<Widget> renderAsrMeaningItems(WordWrapper word,
+    {bool isDarkMode = false}) {
   List<Widget> items = [];
   List<MeaningItemVo> meaningItems = word.word.getMergedMeaningItems();
   for (var i = 0; i < meaningItems.length; i++) {
@@ -163,12 +179,16 @@ List<Widget> renderAsrMeaningItems(WordWrapper word, {bool isDarkMode = false}) 
               meaningItem.ciXing!,
               style: TextStyle(
                 fontSize: 15,
-                color: isDarkMode ? const Color(0xFFD1D5DB) : const Color(0xFF4B5563),
+                color: isDarkMode
+                    ? const Color(0xFFD1D5DB)
+                    : const Color(0xFF4B5563),
                 fontWeight: FontWeight.w600,
               ),
             ),
           ),
-        ...renderMeaningItemParts(meaningItem.meaning!, i, word.hintLetterCount, word.asrMatchedMeaningItemParts, isDarkMode: isDarkMode),
+        ...renderMeaningItemParts(meaningItem.meaning!, i, word.hintLetterCount,
+            word.asrMatchedMeaningItemParts, word.asrRevealedMeaningItemParts,
+            isDarkMode: isDarkMode),
       ],
     ));
   }
@@ -176,7 +196,12 @@ List<Widget> renderAsrMeaningItems(WordWrapper word, {bool isDarkMode = false}) 
 }
 
 /// 渲染一个释义项的子项
-List<Widget> renderMeaningItemParts(String meaning, int meaningIndex, int hintLetterCount, List<Pair<int, int>> asrMatchedMeaningItemParts,
+List<Widget> renderMeaningItemParts(
+    String meaning,
+    int meaningIndex,
+    int hintLetterCount,
+    List<Pair<int, int>> asrMatchedMeaningItemParts,
+    List<Pair<int, int>> asrRevealedMeaningItemParts,
     {bool isDarkMode = false}) {
   // 把释义拆分为子项
   var partWidgets = <Widget>[];
@@ -191,8 +216,24 @@ List<Widget> renderMeaningItemParts(String meaning, int meaningIndex, int hintLe
       var widget = Text(
         part,
         style: TextStyle(
-          color: isDarkMode ? const Color(0xFF4ADE80) : const Color(0xFF16A34A), // 绿色高亮
+          color: isDarkMode
+              ? const Color(0xFF4ADE80)
+              : const Color(0xFF16A34A), // 绿色高亮
           fontSize: 15, // 稍微加大一些，更清晰
+          fontWeight: FontWeight.w400,
+        ),
+      );
+      partWidgets.add(widget);
+    }
+    // 未被用户直接答对，但由于单词通过而自动展现出来的部分（区别标记为蓝色）
+    else if (asrRevealedMeaningItemParts.contains(Pair(meaningIndex, i))) {
+      var widget = Text(
+        part,
+        style: TextStyle(
+          color: isDarkMode
+              ? const Color(0xFF60A5FA)
+              : const Color(0xFF2563EB), // 蓝色高亮，以示区分
+          fontSize: 15,
           fontWeight: FontWeight.w400,
         ),
       );
@@ -201,7 +242,8 @@ List<Widget> renderMeaningItemParts(String meaning, int meaningIndex, int hintLe
     // 释义项尚未被用户答对一会儿没事
     else {
       // 根据"给点提示"的数字，展现相应数量的汉字释义
-      var displayText = part.replaceAll(RegExp(r"[\u4e00-\u9fa5]"), '^'); // 每个汉字用一个^代替
+      var displayText =
+          part.replaceAll(RegExp(r"[\u4e00-\u9fa5]"), '^'); // 每个汉字用一个^代替
       for (var j = 0; j < hintLetterCount; j++) {
         int pos = displayText.indexOf("^");
         if (pos != -1) {
@@ -219,7 +261,9 @@ List<Widget> renderMeaningItemParts(String meaning, int meaningIndex, int hintLe
             width: 16, // 固定宽度，大约等于一个汉字的宽度
             child: Text(
               '＿',
-              style: TextStyle(fontSize: 15, color: isDarkMode ? Colors.white54 : Colors.black38),
+              style: TextStyle(
+                  fontSize: 15,
+                  color: isDarkMode ? Colors.white54 : Colors.black38),
               textAlign: TextAlign.center,
             ),
           ));
@@ -227,7 +271,9 @@ List<Widget> renderMeaningItemParts(String meaning, int meaningIndex, int hintLe
           // 已显示的汉字或其他字符
           finalWidgets.add(Text(
             displayText[i],
-            style: TextStyle(fontSize: 15, color: isDarkMode ? Colors.white : const Color(0xFF1A1A1A)),
+            style: TextStyle(
+                fontSize: 15,
+                color: isDarkMode ? Colors.white : const Color(0xFF1A1A1A)),
           ));
         }
       }
@@ -242,7 +288,8 @@ List<Widget> renderMeaningItemParts(String meaning, int meaningIndex, int hintLe
     if (i != parts.length - 1) {
       partWidgets.add(Text(
         "；",
-        style: TextStyle(fontSize: 15, color: isDarkMode ? Colors.white54 : Colors.black38),
+        style: TextStyle(
+            fontSize: 15, color: isDarkMode ? Colors.white54 : Colors.black38),
       ));
     }
   }

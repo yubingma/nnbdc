@@ -1309,8 +1309,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       for (var i = 0; i < meaningItems.length; i++) {
         var parts = splitMeaning2Parts(meaningItems[i].meaning!);
         for (var j = 0; j < parts.length; j++) {
-          if (!_wordWrapper!.asrMatchedMeaningItemParts.contains(Pair(i, j))) {
-            _wordWrapper!.asrMatchedMeaningItemParts.add(Pair(i, j));
+          if (!_wordWrapper!.asrMatchedMeaningItemParts.contains(Pair(i, j)) &&
+              !_wordWrapper!.asrRevealedMeaningItemParts.contains(Pair(i, j))) {
+            _wordWrapper!.asrRevealedMeaningItemParts.add(Pair(i, j)); 
           }
         }
       }
@@ -1540,8 +1541,10 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                 var parts = splitMeaning2Parts(meaningItems[i].meaning!);
                 for (var j = 0; j < parts.length; j++) {
                   if (!_wordWrapper!.asrMatchedMeaningItemParts
-                      .contains(Pair(i, j))) {
-                    _wordWrapper!.asrMatchedMeaningItemParts.add(Pair(i, j));
+                          .contains(Pair(i, j)) &&
+                      !_wordWrapper!.asrRevealedMeaningItemParts
+                          .contains(Pair(i, j))) {
+                    _wordWrapper!.asrRevealedMeaningItemParts.add(Pair(i, j));
                   }
                 }
               }
@@ -5146,19 +5149,23 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Text(
-                      Util.getWordDefaultPronounce(
-                                  _currentGetWordResult!.learningWord!.word)
-                              .isEmpty
-                          ? ''
-                          : '[${Util.getWordDefaultPronounce(_currentGetWordResult!.learningWord!.word)}]',
-                      style: TextStyle(
-                        color: context.watch<DarkMode>().isDarkMode
-                            ? const Color(0xFFD1D5DB)
-                            : const Color(0xFF4B5563),
-                        fontFamily: "NotoSans",
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
+                    Flexible(
+                      child: Text(
+                        Util.getWordDefaultPronounce(
+                                    _currentGetWordResult!.learningWord!.word)
+                                .isEmpty
+                            ? ''
+                            : '[${Util.getWordDefaultPronounce(_currentGetWordResult!.learningWord!.word)}]',
+                        style: TextStyle(
+                          color: context.watch<DarkMode>().isDarkMode
+                              ? const Color(0xFFD1D5DB)
+                              : const Color(0xFF4B5563),
+                          fontFamily: "NotoSans",
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        softWrap: true,
+                        textAlign: TextAlign.center,
                       ),
                     ),
                     const SizedBox(width: 4),

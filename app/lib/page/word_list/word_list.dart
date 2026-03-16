@@ -1751,6 +1751,7 @@ class WordListPageState extends State<WordListPage>
     for (var word in words) {
       word.hintLetterCount = 0;
       word.asrMatchedMeaningItemParts = [];
+      word.asrRevealedMeaningItemParts = [];
       word.answeredAllMeanings = false;
       word.speakEnglishPassed = false;
       word.pronunciationScore = null;
@@ -1875,26 +1876,14 @@ class WordListPageState extends State<WordListPage>
 
           // 掌握按钮 (针对所有词表, 除了 已掌握 和 系统学习列表, 系统学习列表已用 ActionButton 显示掌握)
           if (args.appBarTitle != '已掌握' &&
-              ![
-                '学习中',
-                '单词列表',
-                '今日错词',
-                '今日新词',
-                '今日旧词',
-                '今日单词'
-              ].contains(args.appBarTitle))
+              !['学习中', '单词列表', '今日错词', '今日新词', '今日旧词', '今日单词']
+                  .contains(args.appBarTitle))
             _buildMasterButton(word, i, learningStatus: learningStatus),
 
           // 删除按钮 或 核心学习列表的“掌握”按钮
           if (args.showDelBtn ||
-              [
-                '学习中',
-                '单词列表',
-                '今日错词',
-                '今日新词',
-                '今日旧词',
-                '今日单词'
-              ].contains(args.appBarTitle))
+              ['学习中', '单词列表', '今日错词', '今日新词', '今日旧词', '今日单词']
+                  .contains(args.appBarTitle))
             _buildActionButton(word, i, learningStatus: learningStatus),
         ],
       ),
@@ -2340,8 +2329,9 @@ class WordListPageState extends State<WordListPage>
                         '[${word.word.mergedPronounce}]',
                         textScaler: TextScaler.linear(1.0),
                         style: TextStyle(
-                          color:
-                              isDarkMode ? const Color(0xFFE5E7EB) : const Color(0xFF4B5563),
+                          color: isDarkMode
+                              ? const Color(0xFFE5E7EB)
+                              : const Color(0xFF4B5563),
                           fontSize: 12,
                           fontFamily: 'NotoSans',
                           fontWeight: FontWeight.w500,
@@ -2392,7 +2382,9 @@ class WordListPageState extends State<WordListPage>
                       '[${word.word.mergedPronounce}]',
                       textScaler: TextScaler.linear(1.0),
                       style: TextStyle(
-                        color: isDarkMode ? const Color(0xFFE5E7EB) : const Color(0xFF4B5563),
+                        color: isDarkMode
+                            ? const Color(0xFFE5E7EB)
+                            : const Color(0xFF4B5563),
                         fontSize: 12,
                         fontFamily: 'NotoSans',
                         fontWeight: FontWeight.w500,
@@ -2460,7 +2452,8 @@ class WordListPageState extends State<WordListPage>
           maxValue: args.wordProgressProvider.getWordProgressMax(word.tag),
           displayText: '',
           direction: Axis.horizontal,
-          displayTextStyle: const TextStyle(color: Color(0x00000000), fontSize: 0),
+          displayTextStyle:
+              const TextStyle(color: Color(0x00000000), fontSize: 0),
           backgroundColor:
               isDarkMode ? const Color(0xFF404040) : const Color(0xFFE5E7EB),
           progressColor: progressColor(word),
@@ -2604,14 +2597,8 @@ class WordListPageState extends State<WordListPage>
           /// 按钮区
           if (args.showDelBtn ||
               (args.appBarTitle != '已掌握' &&
-                  ![
-                    '学习中',
-                    '单词列表',
-                    '今日错词',
-                    '今日新词',
-                    '今日旧词',
-                    '今日单词'
-                  ].contains(args.appBarTitle)) ||
+                  !['学习中', '单词列表', '今日错词', '今日新词', '今日旧词', '今日单词']
+                      .contains(args.appBarTitle)) ||
               ((studyMode == WordListStudyMode.dictation ||
                       studyMode == WordListStudyMode.speakChinese ||
                       studyMode == WordListStudyMode.speakEnglish) &&
