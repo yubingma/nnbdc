@@ -1501,15 +1501,14 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
               }
             }
 
-            // 如果点击提示次数 >= 2 (包括长按的 Full Hint)，直接视为不会 (Again)
-            // 如果只有 1 次，则原基础上下降一档
+            // 英中模式下提示中文字的惩罚极大约束：点2次直接 Again，点1次降两档！
             if (_hintTapCount >= 2) {
               rating = FsrsRating.again;
             } else if (_hintTapCount == 1) {
               if (rating == FsrsRating.easy) {
-                rating = FsrsRating.good;
-              } else if (rating == FsrsRating.good) {
                 rating = FsrsRating.hard;
+              } else if (rating == FsrsRating.good) {
+                rating = FsrsRating.again;
               } else if (rating == FsrsRating.hard) {
                 rating = FsrsRating.again;
               }
