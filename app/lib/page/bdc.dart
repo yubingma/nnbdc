@@ -1142,21 +1142,21 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
           if (_word != null) {
             // 中→英模式：结合拼写相似度和音素相似度的智能选择
             final result = await AsrUtil.selectBestCandidateWithPhonemeAndScore(candidateStrings, _word!.spell);
-            _currentScore = result.score;
+            if (!_isAnswerCorrect) _currentScore = result.score;
             processedResult = AsrUtil.preprocessEnglish(result.text, _word!.spell);
             Global.logger.d('ASR: Selected & Preprocessed: "$processedResult" (score: ${result.score})');
           } else {
             processedResult = bestCandidate;
-            _currentScore = null;
+            if (!_isAnswerCorrect) _currentScore = null;
           }
         } else if (_studyStep == StudyStep.en2Ch.json) {
           // 英→中模式：UI 显示最佳候选，但背后匹配逻辑会遍历所有 _currentAsrCandidates
           processedResult = AsrUtil.preprocess(bestCandidate);
-          _currentScore = null;
+          if (!_isAnswerCorrect) _currentScore = null;
           Global.logger.d('ASR [en2Ch]: Stored ${candidateStrings.length} candidates, showing best: $processedResult');
         } else {
           processedResult = bestCandidate;
-          _currentScore = null;
+          if (!_isAnswerCorrect) _currentScore = null;
         }
       } else {
         // 单个结果处理
@@ -1166,10 +1166,10 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
             final pre = AsrUtil.preprocessEnglish(event, _word!.spell);
             final result = await AsrUtil.selectBestCandidateWithPhonemeAndScore([pre], _word!.spell);
             processedResult = result.text;
-            _currentScore = result.score;
+            if (!_isAnswerCorrect) _currentScore = result.score;
           } else {
             processedResult = event;
-            _currentScore = null;
+            if (!_isAnswerCorrect) _currentScore = null;
           }
         } else {
           processedResult = AsrUtil.preprocess(event);
@@ -1289,7 +1289,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     if (inputText != _handlingChinese) {
       Global.logger.d('BDC CHECK_ASR: Update _handlingChinese from "$_handlingChinese" to "$inputText"');
       _handlingChinese = inputText;
-      if (mounted) setState(() {});
+      // No setState here to prevent extreme UI repaints on every partial ASR result
     } else {
       Global.logger.d('BDC CHECK_ASR: _handlingChinese hasn\'t changed ("$_handlingChinese"), returning early.');
       return;
@@ -1299,23 +1299,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     // 这样做是为了允许用户在答对后，再次打开看板练习拼写，并能触发“拼写正确”的反馈（如自动关闭看板）。
     if (_isAnswerCorrect && !_showHandwritingBoard) {
       Global.logger.d('checkAsrResult: 单词已回答正确且非看板练习模式，跳过后续结果处理');
-      if (asrInput != null) {
-        String inputLower = asrInput.trim().toLowerCase();
-        String spellLower = _word!.spell.toLowerCase();
-        bool isMatch = inputLower == spellLower;
-        if (!isMatch && _studyStep == StudyStep.ch2En.json && _currentScore != null && _currentScore! >= Constants.phonemeMatchThreshold) {
-          isMatch = true;
-        }
-
-        if (isMatch) {
-          _isUpdatingByHint = true;
-          setState(() {
-            _meaningController.text = _word!.spell;
-          });
-          await SoundUtil.playAssetSoundConcurrent('correct.mp3', 1.5, 0.2);
-          await SoundUtil.playPronounceSound2(_word!, _audioPlayer);
-        }
-      }
+      // No double play sound logic here to prevent repeating voice when ASR gives trailing results
       return;
     }
 
