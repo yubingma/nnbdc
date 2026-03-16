@@ -393,6 +393,10 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                     val s = currentStream
                     val m = currentModel
                     if (!isAsrStopped && isRecording && m != null && s != null) {
+                        if (System.currentTimeMillis() < asrResumeTime) {
+                            return@synchronized // Skip decoding to clear hardware reverb
+                        }
+                        
                         // 使用当前配方定义的动态增益
                         val gain = activeGain
                         val samples = FloatArray(ret) { 
@@ -467,8 +471,11 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
         }
     }
 
+    private var asrResumeTime = 0L
+
     private fun startAsr() {
         Log.i(TAG, "Starting ASR...")
+        asrResumeTime = System.currentTimeMillis() + 300 // 空转抛弃接下来 300ms 的收音，防止播放残余混响被录入
         isAsrStopped = false
     }
 
