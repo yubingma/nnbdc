@@ -1311,7 +1311,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         for (var j = 0; j < parts.length; j++) {
           if (!_wordWrapper!.asrMatchedMeaningItemParts.contains(Pair(i, j)) &&
               !_wordWrapper!.asrRevealedMeaningItemParts.contains(Pair(i, j))) {
-            _wordWrapper!.asrRevealedMeaningItemParts.add(Pair(i, j)); 
+            _wordWrapper!.asrRevealedMeaningItemParts.add(Pair(i, j));
           }
         }
       }
@@ -1477,9 +1477,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
           if (!wasAlreadyCorrect) {
             // 同步计算 FSRS 评分
             FsrsRating rating = FsrsRating.good; // 默认 Good
-            if (_hintUsed) {
-              rating = FsrsRating.again;
-            } else if (_wordStartTime != null) {
+            if (_wordStartTime != null) {
               final timeToUse =
                   (_asrPassRuleCache == 'ALL' && _firstMatchTime != null)
                       ? _firstMatchTime!
@@ -1500,6 +1498,17 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                 } else if (responseTime >= 18) {
                   rating = FsrsRating.hard;
                 }
+              }
+            }
+
+            // 如果使用了提示，降低一档评分，不再直接判为忘记 (Again)
+            if (_hintUsed) {
+              if (rating == FsrsRating.easy) {
+                rating = FsrsRating.good;
+              } else if (rating == FsrsRating.good) {
+                rating = FsrsRating.hard;
+              } else if (rating == FsrsRating.hard) {
+                rating = FsrsRating.again;
               }
             }
 
@@ -1630,9 +1639,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
         // 计算 FSRS 评分
         FsrsRating rating = FsrsRating.good; // 默认 Good
-        if (_hintUsed) {
-          rating = FsrsRating.again;
-        } else if (_wordStartTime != null) {
+        if (_wordStartTime != null) {
           final responseTime =
               DateTime.now().difference(_wordStartTime!).inSeconds;
 
@@ -1651,6 +1658,17 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
             } else if (responseTime >= 15) {
               rating = FsrsRating.hard; // Hard
             }
+          }
+        }
+
+        // 如果使用了提示，降低一档评分，不再直接判为忘记 (Again)
+        if (_hintUsed) {
+          if (rating == FsrsRating.easy) {
+            rating = FsrsRating.good;
+          } else if (rating == FsrsRating.good) {
+            rating = FsrsRating.hard;
+          } else if (rating == FsrsRating.hard) {
+            rating = FsrsRating.again;
           }
         }
 
@@ -3851,6 +3869,17 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
           rating = FsrsRating.easy; // Easy
         } else if (responseTime >= 18) {
           rating = FsrsRating.hard; // Hard
+        }
+      }
+
+      // 如果使用了提示，降低一档评分，不再直接判为忘记 (Again)
+      if (_hintUsed) {
+        if (rating == FsrsRating.easy) {
+          rating = FsrsRating.good;
+        } else if (rating == FsrsRating.good) {
+          rating = FsrsRating.hard;
+        } else if (rating == FsrsRating.hard) {
+          rating = FsrsRating.again;
         }
       }
 
