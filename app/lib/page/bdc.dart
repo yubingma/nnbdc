@@ -1304,6 +1304,22 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
     _lastFsrsRating = rating;
 
+    if (!_autoJumpAfterCorrect && _wordWrapper != null) {
+      final meaningItems = _wordWrapper!.word.getMergedMeaningItems();
+      for (var i = 0; i < meaningItems.length; i++) {
+        var parts = splitMeaning2Parts(meaningItems[i].meaning!);
+        for (var j = 0; j < parts.length; j++) {
+          if (!_wordWrapper!.asrMatchedMeaningItemParts.contains(Pair(i, j))) {
+            _wordWrapper!.asrMatchedMeaningItemParts.add(Pair(i, j));
+          }
+        }
+      }
+    }
+
+    if (mounted) {
+      setState(() {}); // 立即显示 FSRS 和完整释义
+    }
+
     if (PlatformUtils.isIOS) {
       // 给 iOS 音频引擎短暂的 150ms 使缓冲队列刷新，避免 ASR 重置与立即起播发生抢占导致声音发抖发颤
       await Future.delayed(const Duration(milliseconds: 150));
@@ -1318,20 +1334,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
       if (_autoJumpAfterCorrect) {
         getNextWord(true, fsrsRating: rating);
-      } else {
-        // 展示所有释义（通过将 asrMatchedMeaningItemParts 填满）
-        if (_wordWrapper != null) {
-          final meaningItems = _wordWrapper!.word.getMergedMeaningItems();
-          for (var i = 0; i < meaningItems.length; i++) {
-            var parts = splitMeaning2Parts(meaningItems[i].meaning!);
-            for (var j = 0; j < parts.length; j++) {
-              if (!_wordWrapper!.asrMatchedMeaningItemParts
-                  .contains(Pair(i, j))) {
-                _wordWrapper!.asrMatchedMeaningItemParts.add(Pair(i, j));
-              }
-            }
-          }
-        }
       }
     });
   }
@@ -1471,6 +1473,72 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
               _showHandwritingBoard = false; // 立即关闭当前输入界面回到当前单词
             });
           }
+          if (!wasAlreadyCorrect) {
+            // 同步计算 FSRS 评分
+            FsrsRating rating = FsrsRating.good; // 默认 Good
+            if (_hintUsed) {
+              rating = FsrsRating.again;
+            } else if (_wordStartTime != null) {
+              final timeToUse =
+                  (_asrPassRuleCache == 'ALL' && _firstMatchTime != null)
+                      ? _firstMatchTime!
+                      : DateTime.now();
+              final responseTime =
+                  timeToUse.difference(_wordStartTime!).inSeconds;
+              if (responseTime < 8) {
+                rating = FsrsRating.easy;
+              } else if (responseTime >= 18) {
+                rating = FsrsRating.hard;
+              }
+            }
+
+            _lastFsrsRating = rating;
+
+            // 计算 FSRS 预览结果
+            final lw = _currentGetWordResult?.learningWord;
+            if (lw != null) {
+              final fsrs = FSRS();
+              _daysSinceLastReview = 0;
+              if (lw.lastLearningDate != null) {
+                final lastDate = DateTime(lw.lastLearningDate!.year,
+                    lw.lastLearningDate!.month, lw.lastLearningDate!.day);
+                final now = DateTime.now();
+                final todayDate = DateTime(now.year, now.month, now.day);
+                _daysSinceLastReview = todayDate.difference(lastDate).inDays;
+              }
+              if (lw.stability == null || lw.stability == 0.0) {
+                _fsrsItem = fsrs.init(rating);
+              } else {
+                final prevItem = FSRSItem(
+                  stability: lw.stability!,
+                  difficulty: lw.difficulty!,
+                  elapsedDays: _daysSinceLastReview ?? 0,
+                  scheduledDays: lw.scheduledDays ?? 0,
+                  reps: lw.reps ?? 0,
+                  lapses: lw.lapses ?? 0,
+                  state: FsrsStateExt.fromInt(lw.state),
+                );
+                _fsrsItem =
+                    fsrs.next(prevItem, rating, _daysSinceLastReview ?? 0);
+              }
+            }
+
+            // 同步展示所有释义
+            if (!_autoJumpAfterCorrect && _wordWrapper != null) {
+              final meaningItems = _wordWrapper!.word.getMergedMeaningItems();
+              for (var i = 0; i < meaningItems.length; i++) {
+                var parts = splitMeaning2Parts(meaningItems[i].meaning!);
+                for (var j = 0; j < parts.length; j++) {
+                  if (!_wordWrapper!.asrMatchedMeaningItemParts
+                      .contains(Pair(i, j))) {
+                    _wordWrapper!.asrMatchedMeaningItemParts.add(Pair(i, j));
+                  }
+                }
+              }
+            }
+
+            if (mounted) setState(() {});
+          }
         }
 
         // 并发播放提示音，支持多个提示音同时播放，互不干扰
@@ -1487,89 +1555,14 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
             'checkAsrResult: 添加提示音到列表，当前有 ${_playingCorrectSounds.length} 个提示音正在播放');
 
         // 等待音频播放完成，然后再等待短暂延迟后执行后续逻辑
-        // 这样用户有机会说出下一个释义, 用户体验会更好一点
         soundFuture.whenComplete(() {
           Future.delayed(const Duration(milliseconds: 150)).then((_) async {
             _playingCorrectSounds.remove(soundFuture);
             if (_playingCorrectSounds.isEmpty && _isAnswerCorrect) {
-              // 如果之前已经答对了，此时是二次匹配（可能是多义词匹配），则不需要重新计算 FSRS 和跳转
-              if (wasAlreadyCorrect) {
-                return;
-              }
+              if (wasAlreadyCorrect) return;
 
-              // 计算 FSRS 评分
-              FsrsRating rating = FsrsRating.good; // 默认 Good
-              if (_hintUsed) {
-                rating = FsrsRating.again;
-              } else if (_wordStartTime != null) {
-                final timeToUse =
-                    (_asrPassRuleCache == 'ALL' && _firstMatchTime != null)
-                        ? _firstMatchTime!
-                        : DateTime.now();
-                final responseTime =
-                    timeToUse.difference(_wordStartTime!).inSeconds;
-                if (responseTime < 8) {
-                  rating = FsrsRating.easy;
-                } else if (responseTime >= 18) {
-                  rating = FsrsRating.hard;
-                }
-              }
-
-              // ⚠️ 注意：此处不调用 _onAnswerCorrect，因为 correct.mp3 在上方已播过。
-              // _onAnswerCorrect 内部会再次播放 correct.mp3 + 单词发音，导致重复。
-              // 直接执行后半段逻辑：更新 FSRS 状态 + 跳转。
-              _isAnswerCorrect = true;
-              _lastFsrsRating = rating;
-
-              // 计算 FSRS 预览结果
-              final lw = _currentGetWordResult?.learningWord;
-              if (lw != null) {
-                final fsrs = FSRS();
-                _daysSinceLastReview = 0;
-                if (lw.lastLearningDate != null) {
-                  final lastDate = DateTime(lw.lastLearningDate!.year,
-                      lw.lastLearningDate!.month, lw.lastLearningDate!.day);
-                  final now = DateTime.now();
-                  final todayDate = DateTime(now.year, now.month, now.day);
-                  _daysSinceLastReview = todayDate.difference(lastDate).inDays;
-                }
-                if (lw.stability == null || lw.stability == 0.0) {
-                  _fsrsItem = fsrs.init(rating);
-                } else {
-                  final prevItem = FSRSItem(
-                    stability: lw.stability!,
-                    difficulty: lw.difficulty!,
-                    elapsedDays: _daysSinceLastReview ?? 0,
-                    scheduledDays: lw.scheduledDays ?? 0,
-                    reps: lw.reps ?? 0,
-                    lapses: lw.lapses ?? 0,
-                    state: FsrsStateExt.fromInt(lw.state),
-                  );
-                  _fsrsItem =
-                      fsrs.next(prevItem, rating, _daysSinceLastReview ?? 0);
-                }
-              }
-
-              if (_autoJumpAfterCorrect) {
-                // en2Ch 模式：correct.mp3 已播，直接跳下一个单词
-                // 不重复播放当前单词发音（用户开头已听过），保持原始行为
-                await getNextWord(true, fsrsRating: rating);
-              } else {
-                // 不自动跳转：显示所有释义，等待用户手动操作
-                if (_wordWrapper != null) {
-                  final meaningItems =
-                      _wordWrapper!.word.getMergedMeaningItems();
-                  for (var i = 0; i < meaningItems.length; i++) {
-                    var parts = splitMeaning2Parts(meaningItems[i].meaning!);
-                    for (var j = 0; j < parts.length; j++) {
-                      if (!_wordWrapper!.asrMatchedMeaningItemParts
-                          .contains(Pair(i, j))) {
-                        _wordWrapper!.asrMatchedMeaningItemParts
-                            .add(Pair(i, j));
-                      }
-                    }
-                  }
-                }
+              if (_autoJumpAfterCorrect && _lastFsrsRating != null) {
+                await getNextWord(true, fsrsRating: _lastFsrsRating!);
               }
             }
           });

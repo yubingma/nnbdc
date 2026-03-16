@@ -389,76 +389,78 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                 }
 
                 // 2. 识别
-                val s = currentStream
-                val m = currentModel
-                if (!isAsrStopped && m != null && s != null) {
-                    // 使用当前配方定义的动态增益
-                    val gain = activeGain
-                    val samples = FloatArray(ret) { 
-                        (buffer[it] / 32768.0f * gain).coerceIn(-1.0f, 1.0f) 
-                    }
-                    
-                    try {
-                        s.acceptWaveform(samples, sampleRateInHz)
-                        
-                        var decodeCount = 0
-                        while (m.isReady(s)) {
-                            m.decode(s)
-                            decodeCount++
+                synchronized(this) {
+                    val s = currentStream
+                    val m = currentModel
+                    if (!isAsrStopped && isRecording && m != null && s != null) {
+                        // 使用当前配方定义的动态增益
+                        val gain = activeGain
+                        val samples = FloatArray(ret) { 
+                            (buffer[it] / 32768.0f * gain).coerceIn(-1.0f, 1.0f) 
                         }
                         
-                        val isEndpoint = m.isEndpoint(s)
-                        val result = m.getResult(s)
-                        val text = result.text.trim().lowercase() // 转小写
-                        
-                        // 【关键修复】：如果检测到端点（静音切断），必须重置流状态
-                        // 否则旧的特征残余会导致后续识别出现“叠词”（如 限限）或无法开启新词识别
-                        if (isEndpoint) {
-                            m.reset(s)
-                            lastSentResult = "" // 端点后重置去重，确保新的一句话能发出
-                            Log.i(TAG, "ASR Endpoint detected: Stream reset.")
-                        }
-                        
-                        val tokens = result.tokens
-                        
-                        // 周期性音量打印
-                        audioBlockCount++
-                        if (audioBlockCount % 20 == 0) {
-                            Log.v(TAG, "ASR Monitor: lvl=${String.format("%.4f", norm)}, gain=${gain}x, tokens=${tokens?.size ?: 0}")
-                        }
+                        try {
+                            s.acceptWaveform(samples, sampleRateInHz)
+                            
+                            var decodeCount = 0
+                            while (m.isReady(s)) {
+                                m.decode(s)
+                                decodeCount++
+                            }
+                            
+                            val isEndpoint = m.isEndpoint(s)
+                            val result = m.getResult(s)
+                            val text = result.text.trim().lowercase() // 转小写
+                            
+                            // 【关键修复】：如果检测到端点（静音切断），必须重置流状态
+                            // 否则旧的特征残余会导致后续识别出现“叠词”（如 限限）或无法开启新词识别
+                            if (isEndpoint) {
+                                m.reset(s)
+                                lastSentResult = "" // 端点后重置去重，确保新的一句话能发出
+                                Log.i(TAG, "ASR Endpoint detected: Stream reset.")
+                            }
+                            
+                            val tokens = result.tokens
+                            
+                            // 周期性音量打印
+                            audioBlockCount++
+                            if (audioBlockCount % 20 == 0) {
+                                Log.v(TAG, "ASR Monitor: lvl=${String.format("%.4f", norm)}, gain=${gain}x, tokens=${tokens?.size ?: 0}")
+                            }
 
-                        // 无条件发送记录
-                        if (tokens != null && tokens.isNotEmpty()) {
-                            Log.d(TAG, "Raw recognition: '$text' (toks=${tokens.size}, endpoint=$isEndpoint)")
-                        }
+                            // 无条件发送记录
+                            if (tokens != null && tokens.isNotEmpty()) {
+                                Log.d(TAG, "Raw recognition: '$text' (toks=${tokens.size}, endpoint=$isEndpoint)")
+                            }
 
-                        // 发送逻辑：如实显示识别到的文字（不再过滤单字符），保留去重
-                        val shouldSend = text.isNotBlank() && text != lastSentResult
+                            // 发送逻辑：如实显示识别到的文字（不再过滤单字符），保留去重
+                            val shouldSend = text.isNotBlank() && text != lastSentResult
 
-                        if (shouldSend) {
-                            lastSentResult = text
-                            Log.i(TAG, ">>> SUCCESS! Sending text: '$text'")
-                            activity.runOnUiThread {
-                                try {
-                                    val resultData = JSONObject().apply {
-                                        put("best", text)
-                                        put("candidates", JSONArray().apply { put(text) })
+                            if (shouldSend) {
+                                lastSentResult = text
+                                Log.i(TAG, ">>> SUCCESS! Sending text: '$text'")
+                                activity.runOnUiThread {
+                                    try {
+                                        val resultData = JSONObject().apply {
+                                            put("best", text)
+                                            put("candidates", JSONArray().apply { put(text) })
+                                        }
+                                        events?.success(resultData.toString())
+                                    } catch (e: Exception) {
+                                        events?.success(text)
                                     }
-                                    events?.success(resultData.toString())
-                                } catch (e: Exception) {
-                                    events?.success(text)
                                 }
                             }
-                        }
 
-                        // 核心补丁：只有识别到了有效文本且触发了静音，才重置
-                        if (isEndpoint && text.isNotBlank()) {
-                            Log.d(TAG, "Recognition finished. Resetting stream.")
-                            m.reset(s)
-                            lastSentResult = ""
+                            // 核心补丁：只有识别到了有效文本且触发了静音，才重置
+                            if (isEndpoint && text.isNotBlank()) {
+                                Log.d(TAG, "Recognition finished. Resetting stream.")
+                                m.reset(s)
+                                lastSentResult = ""
+                            }
+                        } catch (e: Exception) {
+                            Log.e(TAG, "ASR Process Error: ${e.message}", e)
                         }
-                    } catch (e: Exception) {
-                        Log.e(TAG, "ASR Process Error: ${e.message}", e)
                     }
                 }
             }
@@ -466,14 +468,21 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
     }
 
     private fun startAsr() {
+        Log.i(TAG, "Starting ASR...")
         isAsrStopped = false
     }
 
     private fun stopAsr() {
-        Log.i(TAG, "Stopping ASR (Hot Stop)...")
-        isAsrStopped = true
-        currentStream?.let { currentModel?.reset(it) }
-        lastSentResult = ""
+        synchronized(this) {
+            Log.i(TAG, "Stopping ASR (Hot Stop)...")
+            isAsrStopped = true
+            try {
+                currentStream?.let { s -> currentModel?.let { m -> m.reset(s) } }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error during Hot Stop reset: ${e.message}")
+            }
+            lastSentResult = ""
+        }
     }
 
     private fun stopMicrophone() {
@@ -489,12 +498,15 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
             audioRecord?.release()
             audioRecord = null
             
-            currentStream?.release()
-            currentStream = null
+            synchronized(this) {
+                currentStream?.release()
+                currentStream = null
+            }
         } catch (e: Exception) {
             Log.e(TAG, "Error checking/stopping audio: ${e.message}")
         }
     }
+
 
     override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
         this.events = events
