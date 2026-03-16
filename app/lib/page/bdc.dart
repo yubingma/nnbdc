@@ -1176,7 +1176,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
   Timer? _asrDebounceTimer;
 
-  onAsrResult(event) async { 
+  onAsrResult(event) async {
     // 预处理ASR结果，然后更新 meaningController
     String processedResult;
 
@@ -1328,7 +1328,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
             }
           }
         }
-        setState(() {});
       }
     });
   }
@@ -1574,7 +1573,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                     }
                   }
                 }
-                if (mounted) setState(() {});
               }
             }
           });
