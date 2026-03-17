@@ -51,8 +51,9 @@ public class TtsTask {
         for (Sentence sentence : sentences) {
             log.info("开始为例句生成 TTS: {} (英语: {})", sentence.getId(), sentence.getEnglish());
             try {
-                // 生成语音
-                byte[] audioData = aiBo.generateSpeech(sentence.getEnglish());
+                // 生成语音前必须去除可能的 HTML 标签（如高亮用的 <b> 等），否则会被TTS引擎读出来
+                String pureEnglish = sentence.getEnglish().replaceAll("<[^>]*>", "");
+                byte[] audioData = aiBo.generateSpeech(pureEnglish);
                 if (audioData != null && audioData.length > 0) {
                     // 保存到文件系统
                     saveAudioFile(sentence.getEnglishDigest(), audioData);
