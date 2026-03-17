@@ -291,7 +291,14 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text('任务 ID: ${_taskId!.substring(0, 8)}...', style: const TextStyle(color: Colors.grey, fontFamily: 'monospace')),
+                          Expanded(
+                            child: Text( 
+                              '任务 ID: ${_taskId!}', 
+                              style: const TextStyle(color: Colors.grey, fontFamily: 'monospace'),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
                           _buildStatusBadge(_taskDetails!['status'] ?? 'UNKNOWN'),
                         ],
                       ),

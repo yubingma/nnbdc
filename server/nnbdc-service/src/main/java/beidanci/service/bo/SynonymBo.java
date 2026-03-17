@@ -41,4 +41,10 @@ public class SynonymBo extends BaseBo<Synonym> {
 
         return synonymDtos;
     }
+
+    public void deleteByMeaningItem(String meaningItemId) {
+        String sql = "DELETE FROM synonym WHERE meaning_item_id = :meaningItemId";
+        MapSqlParameterSource params = new MapSqlParameterSource("meaningItemId", meaningItemId);
+        namedParameterJdbcTemplate.update(sql, params);
+    }
 }

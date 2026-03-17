@@ -195,7 +195,9 @@ public class DictImportBo {
                     }
                     sentenceBo.deleteByMeaningItem(mi.getId());
                     
-                    // 2. 删除释义项
+                    // 2. 删除同义词
+                    synonymBo.deleteByMeaningItem(mi.getId());
+                    // 3. 删除释义项
                     meaningItemBo.deleteMeaningItem(mi.getId());
                     stats.deletedMeaningCount++;
                     
