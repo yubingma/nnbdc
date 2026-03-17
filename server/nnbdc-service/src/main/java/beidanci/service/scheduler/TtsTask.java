@@ -16,6 +16,7 @@ import beidanci.service.bo.AiBo;
 import beidanci.service.bo.SentenceBo;
 import beidanci.service.bo.SysDbSyncBo;
 import beidanci.service.po.Sentence;
+import beidanci.service.util.SysParamUtil;
 
 @Component
 public class TtsTask {
@@ -32,6 +33,9 @@ public class TtsTask {
 
     @Autowired
     private AiBo aiBo;
+
+    @Autowired
+    private SysParamUtil sysParamUtil;
 
     // 定时检查 waitting_tts 的例句，每10秒执行一次
     @Scheduled(fixedDelay = 10000)
@@ -76,7 +80,7 @@ public class TtsTask {
             return;
         }
 
-        File dir = new File("/var/nnbdc/sound/sentence");
+        File dir = new File(sysParamUtil.getSoundPath() + "/sentence");
         if (!dir.exists()) {
             dir.mkdirs();
         }
