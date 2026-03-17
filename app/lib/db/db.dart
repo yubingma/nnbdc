@@ -732,14 +732,12 @@ class MyDatabase extends _$MyDatabase {
     });
   }
 
-  /// 从版本 27 升级到版本 28：向 Sentences 表添加 english_raw、chinese_raw 和 part_of_speech 字段
+  /// 从版本 27 升级到版本 28：向 Sentences 表添加 part_of_speech 字段
   Future<void> _migrateFromV27ToV28(Migrator m) async {
     await transaction(() async {
       try {
-        await m.addColumn(sentences, sentences.englishRaw);
-        await m.addColumn(sentences, sentences.chineseRaw);
         await m.addColumn(sentences, sentences.partOfSpeech);
-        Global.logger.i('✅ 升级从 V27 到 V28 完成，添加例句 raw 及词性字段');
+        Global.logger.i('✅ 升级从 V27 到 V28 完成，添加例句词性字段');
       } catch (e, stackTrace) {
         Global.logger.e('升级从 V27 到 V28 失败: $e', error: e, stackTrace: stackTrace);
       }

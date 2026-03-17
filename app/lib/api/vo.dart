@@ -387,8 +387,6 @@ class SentenceVo {
   String? partOfSpeech;
 
   String? englishDigest;
-  String? englishRaw;
-  String? chineseRaw;
 
   String theType;
   int footCount;
@@ -397,7 +395,7 @@ class SentenceVo {
 
   bool? voted;
 
-  SentenceVo(this.id, this.english, this.chinese, this.englishDigest, this.englishRaw, this.chineseRaw, this.partOfSpeech, this.theType, this.footCount, this.handCount, this.author);
+  SentenceVo(this.id, this.english, this.chinese, this.englishDigest, this.partOfSpeech, this.theType, this.footCount, this.handCount, this.author);
 
   factory SentenceVo.fromJson(Map<String, dynamic> json) => _$SentenceVoFromJson(json);
 
@@ -785,8 +783,6 @@ class MeaningItemVo {
             sentenceEntry.english, 
             sentenceEntry.chinese, 
             sentenceEntry.englishDigest,
-            sentenceEntry.englishRaw,
-            sentenceEntry.chineseRaw,
             sentenceEntry.partOfSpeech,
             sentenceEntry.theType.isEmpty ? 'tts' : sentenceEntry.theType, 
             sentenceEntry.footCount, 

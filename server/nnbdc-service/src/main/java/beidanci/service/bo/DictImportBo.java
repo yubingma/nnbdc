@@ -328,10 +328,6 @@ public class DictImportBo {
             sentence.setEnglish(aiResult.sentenceEn);
             sentence.setChinese(aiResult.sentenceCn);
             
-            String rawEn = aiResult.sentenceEn.replace("<b>", "").replace("</b>", "");
-            String rawCn = aiResult.sentenceCn.replace("<b>", "").replace("</b>", "");
-            sentence.setEnglishRaw(rawEn);
-            sentence.setChineseRaw(rawCn);
             sentence.setWordMeaning(firstMeaning.getMeaning());
             sentence.setPartOfSpeech(firstMeaning.getCiXing());
             

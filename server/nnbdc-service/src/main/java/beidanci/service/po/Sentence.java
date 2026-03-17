@@ -41,12 +41,6 @@ public class Sentence extends UuidPo {
     @Column(name = "english_digest", length = 32)
     private String englishDigest;
 
-    @Column(name = "english_raw", length = 300)
-    private String englishRaw;
-
-    @Column(name = "chinese_raw", length = 300)
-    private String chineseRaw;
-
     @Column(name = "last_diy_update_time")
     private Date lastDiyUpdateTime;
 
@@ -180,22 +174,6 @@ public class Sentence extends UuidPo {
 
     public void setEnglishDigest(String digest) {
         this.englishDigest = digest;
-    }
-
-    public String getEnglishRaw() {
-        return englishRaw;
-    }
-
-    public void setEnglishRaw(String englishRaw) {
-        this.englishRaw = englishRaw;
-    }
-
-    public String getChineseRaw() {
-        return chineseRaw;
-    }
-
-    public void setChineseRaw(String chineseRaw) {
-        this.chineseRaw = chineseRaw;
     }
 
     public Date getLastDiyUpdateTime() {
