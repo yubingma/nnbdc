@@ -334,7 +334,12 @@ public class DictImportBo {
     }
 
     private AiResult getAiResult(String spell, String manualMeaning, String context) {
-        String systemPrompt = "You are a professional English dictionary assistant. Return JSON only.";
+        String systemPrompt = "You are a professional English dictionary assistant. Return JSON only. " +
+                "IMPORTANT RULES:\n" +
+                "1. 'pos' field MUST be abbreviations (e.g., n., v., adj., adv.).\n" +
+                "2. 'meaning' field MUST be in Chinese, and MUST include all commonly used meanings, separated by commas or semicolons if multiple.\n" +
+                "3. Ensure the sentence is practical and natural.\n" +
+                "4. Use <b>word</b> in sentenceEn to highlight the vocabulary word.";
         StringBuilder userPrompt = new StringBuilder();
         userPrompt.append(String.format("Generating data for word '%s'. ", spell));
         
@@ -343,11 +348,11 @@ public class DictImportBo {
         }
 
         if (manualMeaning == null) {
-            userPrompt.append("{'phonetic': '...', 'pos': '...', 'meaning': '...', 'popularity': 1-10, 'synonyms': ['syn1', 'syn2'], 'sentenceEn': '...', 'sentenceCn': '...'}. " +
-                    "Use <b> word </b> in sentences to highlight the word. provide at most 3 common synonyms.");
+            userPrompt.append("Return in this exact JSON format: {\"phonetic\": \"/xxx/\", \"pos\": \"n.\", \"meaning\": \"中文意思1; 中文意思2\", \"popularity\": 1-10, \"synonyms\": [\"syn1\", \"syn2\"], \"sentenceEn\": \"...\", \"sentenceCn\": \"...\"}. " +
+                    "provide at most 3 common synonyms.");
         } else {
             userPrompt.append(String.format("Given manual meaning '%s', generate phonetics, example sentence and synonyms. " +
-                    "Return: {'phonetic': '...', 'pos': '...', 'meaning': '%s', 'popularity': 5, 'synonyms': ['syn1', 'syn2'], 'sentenceEn': '...', 'sentenceCn': '...'}.", 
+                    "Return: {\"phonetic\": \"/xxx/\", \"pos\": \"n.\", \"meaning\": \"%s\", \"popularity\": 5, \"synonyms\": [\"syn1\", \"syn2\"], \"sentenceEn\": \"...\", \"sentenceCn\": \"...\"}.", 
                     manualMeaning, manualMeaning));
         }
 

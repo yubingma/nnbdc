@@ -18,7 +18,6 @@ import 'package:get_storage/get_storage.dart';
 import 'bdc.dart';
 import '../util/asr.dart';
 
-
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:http/http.dart' as http;
 
@@ -79,6 +78,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
   Future<bool> _getVoteFuture(SentenceVo sentence) {
     return _voteFutures.putIfAbsent(sentence.id, () => sentenceHasBeenVoted(sentence));
   }
+
   bool isWrongWord = false; // 是否是错词
   static const double leftPadding = 16;
   static const double rightPadding = 16;
@@ -123,7 +123,6 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     Asr().stopAsr();
 
     loadData();
-
   }
 
   @override
@@ -635,7 +634,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              IconButton( 
+                              IconButton(
                                 onPressed: () => Get.back(),
                                 icon: Icon(Icons.arrow_back, color: isDarkMode ? Colors.grey[200] : Colors.grey[700]),
                               ),
@@ -1229,19 +1228,83 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                       const SizedBox(height: 12),
 
                       // 例句内容或空状态
-                      if (args.word.sentences != null && args.word.sentences!.isNotEmpty)
-                        // 有例句时显示例句列表
-                        for (var sent in args.word.sentences!)
-                          InkWell(
-                            onTap: () {
-                              if (!(_playingStates[sent.id]!.value)) {
-                                _playWithAnimation(() => SoundUtil.playSentenceSound2(sent.englishDigest!, audioPlayer), sent.id);
-                              }
-                            },
-                            borderRadius: BorderRadius.circular(12),
-                            child: Container(
-                              margin: const EdgeInsets.only(bottom: 10),
-                              padding: const EdgeInsets.all(16),
+                      FutureBuilder<List<SentenceVo>>(
+                        future: args.word.getSentences(),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState == ConnectionState.waiting) {
+                            return const Center(child: CircularProgressIndicator());
+                          }
+                          final sentences = snapshot.data ?? [];
+                          if (sentences.isNotEmpty) {
+                            return Column(
+                              children: [
+                                // 有例句时显示例句列表
+                                for (var sent in sentences)
+                                  InkWell(
+                                    onTap: () {
+                                      if (!(_playingStates[sent.id]!.value)) {
+                                        _playWithAnimation(() => SoundUtil.playSentenceSound2(sent.englishDigest!, audioPlayer), sent.id);
+                                      }
+                                    },
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: Container(
+                                      margin: const EdgeInsets.only(bottom: 10),
+                                      padding: const EdgeInsets.all(16),
+                                      decoration: BoxDecoration(
+                                        color: isDarkMode
+                                            ? const Color(0xFF1E1E2D).withValues(alpha: 0.95)
+                                            : const Color(0xFFFAFAFA).withValues(alpha: 0.95),
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(
+                                          color: isDarkMode ? Colors.grey[800]!.withValues(alpha: 0.3) : Colors.grey[300]!.withValues(alpha: 0.3),
+                                          width: 0.5,
+                                        ),
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  children: [
+                                                    Util.makeEnglishSpanText(
+                                                        sent.english!, args.word.spell, true, context, false, null, false, FontWeight.w400),
+                                                    if (isEditMode)
+                                                      Text.rich(TextSpan(children: [
+                                                        for (var span in renderSentenceEditSpans(sent)) span,
+                                                      ])),
+                                                  ],
+                                                ),
+                                              ),
+                                              AnimatedBuilder(
+                                                animation: _getSentenceController(sent.id),
+                                                builder: (context, child) {
+                                                  return Icon(
+                                                    _playingStates[sent.id]!.value
+                                                        ? (_getSentenceController(sent.id).value < 0.5 ? Icons.volume_up : Icons.volume_down)
+                                                        : Icons.volume_up_outlined,
+                                                    color: _playingStates[sent.id]!.value ? Colors.teal[300] : Colors.grey[400],
+                                                    size: 16,
+                                                  );
+                                                },
+                                              ),
+                                            ],
+                                          ),
+                                          renderSentenceChinese(sent.chinese!, sent.id)
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            );
+                          } else {
+                            // 没有例句时显示空状态提示
+                            return Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(24),
                               decoration: BoxDecoration(
                                 color: isDarkMode ? const Color(0xFF1E1E2D).withValues(alpha: 0.95) : const Color(0xFFFAFAFA).withValues(alpha: 0.95),
                                 borderRadius: BorderRadius.circular(12),
@@ -1251,76 +1314,28 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                 ),
                               ),
                               child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Row(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Util.makeEnglishSpanText(
-                                                sent.english!, args.word.spell, true, context, false, null, false, FontWeight.w400),
-                                            if (isEditMode)
-                                              Text.rich(TextSpan(children: [
-                                                for (var span in renderSentenceEditSpans(sent)) span,
-                                              ])),
-                                          ],
-                                        ),
-                                      ),
-                                      AnimatedBuilder(
-                                        animation: _getSentenceController(sent.id),
-                                        builder: (context, child) {
-                                          return Icon(
-                                            _playingStates[sent.id]!.value
-                                                ? (_getSentenceController(sent.id).value < 0.5 ? Icons.volume_up : Icons.volume_down)
-                                                : Icons.volume_up_outlined,
-                                            color: _playingStates[sent.id]!.value ? Colors.teal[300] : Colors.grey[400],
-                                            size: 16,
-                                          );
-                                        },
-                                      ),
-                                    ],
+                                  Icon(
+                                    Icons.library_books_outlined,
+                                    size: 48,
+                                    color: Colors.grey[400],
                                   ),
-                                  renderSentenceChinese(sent.chinese!, sent.id)
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    '暂无例句',
+                                    style: TextStyle(fontSize: 16, color: Colors.grey[600], fontWeight: FontWeight.w500, fontFamily: 'NotoSansSC'),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    '该单词目前没有例句内容',
+                                    style: TextStyle(fontSize: 14, color: Colors.grey[500], fontFamily: 'NotoSansSC'),
+                                  ),
                                 ],
                               ),
-                            ),
-                          )
-                      else
-                        // 没有例句时显示空状态提示
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(24),
-                          decoration: BoxDecoration(
-                            color: isDarkMode ? const Color(0xFF1E1E2D).withValues(alpha: 0.95) : const Color(0xFFFAFAFA).withValues(alpha: 0.95),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: isDarkMode ? Colors.grey[800]!.withValues(alpha: 0.3) : Colors.grey[300]!.withValues(alpha: 0.3),
-                              width: 0.5,
-                            ),
-                          ),
-                          child: Column(
-                            children: [
-                              Icon(
-                                Icons.library_books_outlined,
-                                size: 48,
-                                color: Colors.grey[400],
-                              ),
-                              const SizedBox(height: 12),
-                              Text(
-                                '暂无例句',
-                                style: TextStyle(fontSize: 16, color: Colors.grey[600], fontWeight: FontWeight.w500, fontFamily: 'NotoSansSC'),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                '该单词目前没有例句内容',
-                                style: TextStyle(fontSize: 14, color: Colors.grey[500], fontFamily: 'NotoSansSC'),
-                              ),
-                            ],
-                          ),
-                        ),
+                            );
+                          }
+                        },
+                      ),
                     ],
                   ),
                 ),
