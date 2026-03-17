@@ -12,6 +12,9 @@ import com.alibaba.dashscope.common.Message;
 import com.alibaba.dashscope.common.Role;
 import com.alibaba.dashscope.exception.InputRequiredException;
 import com.alibaba.dashscope.exception.NoApiKeyException;
+import com.alibaba.dashscope.audio.tts.SpeechSynthesisParam;
+import com.alibaba.dashscope.audio.tts.SpeechSynthesizer;
+import java.nio.ByteBuffer;
 
 import beidanci.service.config.AliyunAiProperties;
 
@@ -80,12 +83,31 @@ public class AiBo {
     public byte[] generateSpeech(String text) {
         logger.info("请求语音合成: [模型: {}, 发音人: {}] 内容: {}", 
                    aiProperties.getTtsModel(), aiProperties.getVoice(), text);
-        // 实现参考：
-        // 1. 使用 SpeechSynthesizer (DashScope SDK)
-        // 2. 设置 apiKey, model, voice, format (mp3)
-        // 3. 调用 call() 并获取 binary data
         
-        // 此处暂存占位，后续根据实际音频存储路径需求（如 OSS 或本地 CDN）接入完整流程
-        return new byte[0]; 
+        String apiKey = aiProperties.getApiKey();
+        if (apiKey == null || apiKey.isEmpty() || apiKey.startsWith("${")) {
+            logger.error("阿里云 AI 调用失败: API Key 未设置或未正确解析");
+            throw new RuntimeException("AI 调用失败: 请设置 dashscope_api_key");
+        }
+
+        try {
+            SpeechSynthesizer synthesizer = new SpeechSynthesizer();
+            SpeechSynthesisParam param = SpeechSynthesisParam.builder()
+                    .apiKey(apiKey)
+                    .model(aiProperties.getTtsModel())
+                    .parameter("voice", aiProperties.getVoice())
+                    .parameter("format", "mp3")
+                    .text(text)
+                    .build();
+            
+            ByteBuffer buffer = synthesizer.call(param);
+            byte[] audioBytes = new byte[buffer.remaining()];
+            buffer.get(audioBytes);
+            
+            return audioBytes;
+        } catch (Exception e) {
+            logger.error("语音合成发生异常", e);
+            throw new RuntimeException("TTS 系统异常", e);
+        }
     }
 }
