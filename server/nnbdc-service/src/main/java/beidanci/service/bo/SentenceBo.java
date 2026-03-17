@@ -102,13 +102,16 @@ public class SentenceBo extends BaseBo<Sentence> {
      */
     public List<SentenceDto> getSentencesOfDict(String dictId) {
         // 通用词典现在是数据库中的实际记录，统一查询
-        String sql = "SELECT s.id, s.english, s.english_digest, s.chinese, s.last_diy_update_time, s.the_type, s.producer, s.need_tts, s.foot_count, s.hand_count, s.author_id, s.meaning_item_id, s.word_meaning, s.create_time, s.update_time FROM sentence s LEFT JOIN meaning_item mi ON mi.id = s.meaning_item_id WHERE mi.dict_id = :dictId";
+        String sql = "SELECT s.id, s.english, s.english_raw, s.chinese, s.chinese_raw, s.part_of_speech, s.english_digest, s.last_diy_update_time, s.the_type, s.producer, s.need_tts, s.foot_count, s.hand_count, s.author_id, s.meaning_item_id, s.word_meaning, s.create_time, s.update_time FROM sentence s LEFT JOIN meaning_item mi ON mi.id = s.meaning_item_id WHERE mi.dict_id = :dictId";
         MapSqlParameterSource params = new MapSqlParameterSource("dictId", dictId);
 
         return namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> {
             SentenceDto sentenceDto = new SentenceDto();
             sentenceDto.setId(rs.getString("id"));
             sentenceDto.setEnglish(rs.getString("english"));
+            sentenceDto.setEnglishRaw(rs.getString("english_raw"));
+            sentenceDto.setChineseRaw(rs.getString("chinese_raw"));
+            sentenceDto.setPartOfSpeech(rs.getString("part_of_speech"));
             sentenceDto.setEnglishDigest(rs.getString("english_digest"));
             sentenceDto.setChinese(rs.getString("chinese"));
             sentenceDto.setLastDiyUpdateTime(rs.getTimestamp("last_diy_update_time"));
@@ -204,6 +207,9 @@ public class SentenceBo extends BaseBo<Sentence> {
         dto.setId(sentence.getId());
         dto.setEnglish(sentence.getEnglish());
         dto.setChinese(sentence.getChinese());
+        dto.setEnglishRaw(sentence.getEnglishRaw());
+        dto.setChineseRaw(sentence.getChineseRaw());
+        dto.setPartOfSpeech(sentence.getPartOfSpeech());
         dto.setEnglishDigest(sentence.getEnglishDigest());
         dto.setTheType(sentence.getTheType());
         dto.setFootCount(sentence.getFootCount());

@@ -8,6 +8,9 @@ public class SentenceDto implements Dto {
     private String chinese;
     private String wordMeaning;
     private String englishDigest;
+    private String englishRaw;
+    private String chineseRaw;
+    private String partOfSpeech;
     private Date lastDiyUpdateTime;
     private String theType;
     private Integer footCount;
@@ -139,6 +142,30 @@ public class SentenceDto implements Dto {
 
     public void setLastDiyUpdateTime(Date lastDiyUpdateTime) {
         this.lastDiyUpdateTime = lastDiyUpdateTime;
+    }
+
+    public String getEnglishRaw() {
+        return englishRaw;
+    }
+
+    public void setEnglishRaw(String englishRaw) {
+        this.englishRaw = englishRaw;
+    }
+
+    public String getChineseRaw() {
+        return chineseRaw;
+    }
+
+    public void setChineseRaw(String chineseRaw) {
+        this.chineseRaw = chineseRaw;
+    }
+
+    public String getPartOfSpeech() {
+        return partOfSpeech;
+    }
+
+    public void setPartOfSpeech(String partOfSpeech) {
+        this.partOfSpeech = partOfSpeech;
     }
 
 }

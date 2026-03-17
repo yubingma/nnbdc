@@ -384,8 +384,11 @@ class SentenceVo {
   String? english;
   String? chinese;
   String? wordMeaning;
+  String? partOfSpeech;
 
   String? englishDigest;
+  String? englishRaw;
+  String? chineseRaw;
 
   String theType;
   int footCount;
@@ -394,7 +397,7 @@ class SentenceVo {
 
   bool? voted;
 
-  SentenceVo(this.id, this.english, this.chinese, this.englishDigest, this.theType, this.footCount, this.handCount, this.author);
+  SentenceVo(this.id, this.english, this.chinese, this.englishDigest, this.englishRaw, this.chineseRaw, this.partOfSpeech, this.theType, this.footCount, this.handCount, this.author);
 
   factory SentenceVo.fromJson(Map<String, dynamic> json) => _$SentenceVoFromJson(json);
 
@@ -777,8 +780,19 @@ class MeaningItemVo {
         final author = UserVo.c2(sentenceEntry.authorId);
 
         // 创建SentenceVo对象
-        final sentenceVo = SentenceVo(sentenceEntry.id, sentenceEntry.english, sentenceEntry.chinese, sentenceEntry.englishDigest,
-            sentenceEntry.theType.isEmpty ? 'tts' : sentenceEntry.theType, sentenceEntry.footCount, sentenceEntry.handCount, author);
+        final sentenceVo = SentenceVo(
+            sentenceEntry.id, 
+            sentenceEntry.english, 
+            sentenceEntry.chinese, 
+            sentenceEntry.englishDigest,
+            sentenceEntry.englishRaw,
+            sentenceEntry.chineseRaw,
+            sentenceEntry.partOfSpeech,
+            sentenceEntry.theType.isEmpty ? 'tts' : sentenceEntry.theType, 
+            sentenceEntry.footCount, 
+            sentenceEntry.handCount, 
+            author);
+        sentenceVo.wordMeaning = sentenceEntry.wordMeaning;
 
         result.add(sentenceVo);
       }

@@ -327,6 +327,14 @@ public class DictImportBo {
             Sentence sentence = new Sentence();
             sentence.setEnglish(aiResult.sentenceEn);
             sentence.setChinese(aiResult.sentenceCn);
+            
+            String rawEn = aiResult.sentenceEn.replace("<b>", "").replace("</b>", "");
+            String rawCn = aiResult.sentenceCn.replace("<b>", "").replace("</b>", "");
+            sentence.setEnglishRaw(rawEn);
+            sentence.setChineseRaw(rawCn);
+            sentence.setWordMeaning(firstMeaning.getMeaning());
+            sentence.setPartOfSpeech(firstMeaning.getCiXing());
+            
             sentence.setMeaningItem(firstMeaning);
             sentence.setNeedTts(true); // 标记需要生成音频
             sentence.setTheType("waitting_tts");
@@ -372,7 +380,7 @@ public class DictImportBo {
                 "1. 'pos' field MUST be abbreviations (e.g., n., v., adj., adv.).\n" +
                 "2. 'meaning' field MUST be in Chinese, and MUST include all commonly used meanings, separated by semicolons if multiple.\n" +
                 "3. Ensure the sentence is practical and natural.\n" +
-                "4. Use <b>word</b> in sentenceEn to highlight the vocabulary word.";
+                "4. Use <b>word</b> in BOTH sentenceEn and sentenceCn to highlight the vocabulary word and its Chinese meaning respectively.";
         StringBuilder userPrompt = new StringBuilder();
         userPrompt.append(String.format("Generating data for word '%s'. ", spell));
         

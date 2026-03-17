@@ -209,7 +209,7 @@ class MyDatabase extends _$MyDatabase {
   // you should bump this number whenever you change or add a table definition. Migrations
   // are covered later in this readme.
   @override
-  int get schemaVersion => 27;
+  int get schemaVersion => 28;
 
   @override
   MigrationStrategy get migration {
@@ -304,6 +304,9 @@ class MyDatabase extends _$MyDatabase {
           }
           if (from < 27) {
             await _migrateFromV26ToV27SwapWalkmanConfigToStudyConfig(m);
+          }
+          if (from < 28) {
+            await _migrateFromV27ToV28(m);
           }
         } catch (e, stackTrace) {
           // 升级失败，记录错误日志
@@ -725,6 +728,20 @@ class MyDatabase extends _$MyDatabase {
         Global.logger.i('✅ 升级用户配置到 study_config 完成');
       } catch (e) {
         Global.logger.w('升级 study_config 发生异常: $e');
+      }
+    });
+  }
+
+  /// 从版本 27 升级到版本 28：向 Sentences 表添加 english_raw、chinese_raw 和 part_of_speech 字段
+  Future<void> _migrateFromV27ToV28(Migrator m) async {
+    await transaction(() async {
+      try {
+        await m.addColumn(sentences, sentences.englishRaw);
+        await m.addColumn(sentences, sentences.chineseRaw);
+        await m.addColumn(sentences, sentences.partOfSpeech);
+        Global.logger.i('✅ 升级从 V27 到 V28 完成，添加例句 raw 及词性字段');
+      } catch (e, stackTrace) {
+        Global.logger.e('升级从 V27 到 V28 失败: $e', error: e, stackTrace: stackTrace);
       }
     });
   }

@@ -423,6 +423,9 @@ class Sentences extends Table {
 
   TextColumn get chinese => text()();
   TextColumn get englishDigest => text()();
+  TextColumn get englishRaw => text().nullable()();
+  TextColumn get chineseRaw => text().nullable()();
+  TextColumn get partOfSpeech => text().nullable()();
   TextColumn get theType => text()();
 
   IntColumn get handCount => integer()();

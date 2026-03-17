@@ -76,7 +76,8 @@ class WordBo {
         for (final s in sentencesMap[miVo.id!]!) {
           final author = UserVo.c2(s.authorId);
           final sentenceVo =
-              SentenceVo(s.id, s.english, s.chinese, s.englishDigest, s.theType.isEmpty ? 'tts' : s.theType, s.footCount, s.handCount, author);
+              SentenceVo(s.id, s.english, s.chinese, s.englishDigest, s.englishRaw, s.chineseRaw, s.partOfSpeech, s.theType.isEmpty ? 'tts' : s.theType, s.footCount, s.handCount, author);
+          sentenceVo.wordMeaning = s.wordMeaning;
           sentenceVos.add(sentenceVo);
         }
         miVo.sentences = sentenceVos;
@@ -739,7 +740,9 @@ class WordBo {
                 List<SentenceVo> sentenceVos = [];
                 for (var s in sentencesMap[mi.id]!) {
                   final author = UserVo.c2(s.authorId);
-                  sentenceVos.add(SentenceVo(s.id, s.english, s.chinese, s.englishDigest, s.theType, s.footCount, s.handCount, author));
+                  final sentenceVo = SentenceVo(s.id, s.english, s.chinese, s.englishDigest, s.englishRaw, s.chineseRaw, s.partOfSpeech, s.theType, s.footCount, s.handCount, author);
+                  sentenceVo.wordMeaning = s.wordMeaning;
+                  sentenceVos.add(sentenceVo);
                 }
                 meaningItemVo.sentences = sentenceVos;
               }
@@ -1310,6 +1313,9 @@ class WordBo {
         sentence.english,
         sentence.chinese,
         sentence.englishDigest,
+        sentence.englishRaw,
+        sentence.chineseRaw,
+        sentence.partOfSpeech,
         sentence.theType,
         sentence.footCount,
         sentence.handCount,
