@@ -44,18 +44,31 @@ class LearningService {
         await db.userWrongWordsDao.clearUserWrongWords(user.id, true);
         Global.logger.d('已清空用户错词');
 
-        // 直接通过数据库更新字段
-        await (db.update(db.users)..where((u) => u.id.equals(user.id))).write(UsersCompanion(
+        // 直接通过 DAO 更新字段，保证 UserDbLogs 能被正常抓取并同步到后端
+        final upgradedUser = user.copyWith(
             lastLearningDate: Value(today),
-            learnedDays: Value(user.learnedDays + 1),
-            todayStudyStarted: const Value(false),
-            learningFinished: const Value(false)));
+            learnedDays: user.learnedDays + 1,
+            learningFinished: const Value(false)); // todayStudyStarted 会在 copyWith 中自动被设为 false
+        await db.usersDao.saveUser(upgradedUser, true);
 
-        // 重置所有单词的今日学习次数和批次ID
-        await (db.update(db.learningWords)..where((u) => u.userId.equals(user.id))).write(const LearningWordsCompanion(
-          todayLearnedTimes: Value(0),
-          batchId: Value(null),
-        ));
+        // 获取所有待重置(昨天被派发过，或产生过学习次数)的单词。重置时，使用带有 genLog 的方法或确保触发 UserDbLogs 从而使得远端服务器知道要清空 batchId，防止重装或者换客户端后被老数据覆盖
+        final needResetWords = await (db.select(db.learningWords)
+          ..where((lw) => lw.userId.equals(user.id) & (lw.todayLearnedTimes.isBiggerThanValue(0) | lw.batchId.isBiggerThanValue(0))))
+          .get();
+
+        if (needResetWords.isNotEmpty) {
+          await db.transaction(() async {
+            for (var word in needResetWords) {
+              await db.learningWordsDao.saveEntity(
+                word.copyWith(
+                  todayLearnedTimes: 0,
+                  batchId: const Value(null),
+                ),
+                true // 强制生成同步记录，更新云端
+              );
+            }
+          });
+        }
 
         // 重新获取更新后的用户信息
         final updatedUser = await db.usersDao.getUserById(user.id);
