@@ -552,8 +552,9 @@ class Asr {
 
   // 为 iOS 提供上下文短语，提高目标短语的识别概率（仅提示，不强制）
   Future<void> setContextualStrings(List<String> phrases) async {
-    if (PlatformUtils.isWeb || PlatformUtils.isWindows || PlatformUtils.isMacOS)
+    if (PlatformUtils.isWeb || PlatformUtils.isWindows || PlatformUtils.isMacOS) {
       return;
+    }
     if (!permissionGranted) return;
     try {
       await asrMethodChannel.invokeMethod('setContextualStrings', {

@@ -5521,9 +5521,13 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
     // 助手函数：判断单词是否已掌握 (调度层的一致性逻辑)
     bool isEffectivelyMastered(dynamic word) {
-      if (masteredWordIds.contains(word.wordId)) return true;
+      if (masteredWordIds.contains(word.wordId)) {
+        return true;
+      }
       if (word.stability != null &&
-          (word.stability ?? 0.0) >= Constants.graduationStability) return true;
+          (word.stability ?? 0.0) >= Constants.graduationStability) {
+        return true;
+      }
       return false;
     }
 

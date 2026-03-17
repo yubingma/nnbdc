@@ -116,9 +116,9 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.5)),
+        border: Border.all(color: color.withValues(alpha: 0.5)),
       ),
       child: Text(
         status,
@@ -131,9 +131,9 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.05),
+        color: color.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.2)),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -175,7 +175,7 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
               elevation: 0,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
-                side: BorderSide(color: Colors.grey.withOpacity(0.2)),
+                side: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
               ),
               child: Padding(
                 padding: const EdgeInsets.all(20.0),
@@ -186,7 +186,7 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
                       children: [
                         Container(
                           padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(color: AppTheme.primaryColor.withOpacity(0.1), shape: BoxShape.circle),
+                          decoration: BoxDecoration(color: AppTheme.primaryColor.withValues(alpha: 0.1), shape: BoxShape.circle),
                           child: const Icon(Icons.science, color: AppTheme.primaryColor),
                         ),
                         const SizedBox(width: 12),
@@ -200,7 +200,7 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
                       spacing: 8,
                       children: ['dog', 'apple'].map((w) => Chip(
                         label: Text(w),
-                        backgroundColor: AppTheme.primaryColor.withOpacity(0.05),
+                        backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.05),
                         side: const BorderSide(color: Colors.transparent),
                       )).toList(),
                     ),
@@ -212,7 +212,7 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
                       decoration: BoxDecoration(
                         color: isDarkMode ? Colors.grey[800] : Colors.grey[50],
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                        border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
                       ),
                       child: DropdownButtonHideUnderline(
                         child: DropdownButton<String>(
@@ -262,7 +262,7 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
                 elevation: 0,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
-                  side: BorderSide(color: Colors.grey.withOpacity(0.2)),
+                  side: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(20.0),
@@ -284,7 +284,7 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
                         const SizedBox(height: 8),
                         const Center(child: Text('AI 正在全力生成中，请耐心等待...', style: TextStyle(fontSize: 12, color: Colors.grey))),
                       ] else if (_taskDetails!['status'] == 'COMPLETED') ...[
-                        LinearProgressIndicator(value: 1.0, color: Colors.green, backgroundColor: Colors.green.withOpacity(0.2)),
+                        LinearProgressIndicator(value: 1.0, color: Colors.green, backgroundColor: Colors.green.withValues(alpha: 0.2)),
                         const SizedBox(height: 8),
                         const Center(child: Text('任务已完成', style: TextStyle(fontSize: 12, color: Colors.green))),
                       ],
@@ -325,7 +325,7 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
                         Container(
                           width: double.infinity,
                           padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(color: Colors.red.withOpacity(0.05), borderRadius: BorderRadius.circular(8)),
+                          decoration: BoxDecoration(color: Colors.red.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(8)),
                           child: Text(_taskDetails!['log'], style: const TextStyle(color: Colors.red, fontSize: 12)),
                         )
                       ]
