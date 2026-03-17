@@ -114,6 +114,7 @@ public class DictImportBo {
             } catch (Exception e) {
                 logger.warn("处理单词失败: " + spell, e);
                 stats.errorCount++;
+                stats.wordDetails.add(new WordDetail(spell, "ERROR", e.getMessage(), null));
                 importTaskBo.updateProgress(task.getId(), i + 1, "Failed: " + spell + " (" + e.getMessage() + ")");
             }
         }
@@ -129,6 +130,7 @@ public class DictImportBo {
             } catch (Exception e) {
                 logger.warn("处理单词失败: " + spell, e);
                 stats.errorCount++;
+                stats.wordDetails.add(new WordDetail(spell, "ERROR", e.getMessage(), null));
                 importTaskBo.updateProgress(task.getId(), i + 1, "Failed: " + spell + " (" + e.getMessage() + ")");
             }
         }
@@ -146,6 +148,7 @@ public class DictImportBo {
             } catch (Exception e) {
                 logger.warn("处理单词失败: " + spell, e);
                 stats.errorCount++;
+                stats.wordDetails.add(new WordDetail(spell, "ERROR", e.getMessage(), null));
                 importTaskBo.updateProgress(task.getId(), i + 1, "Failed: " + spell + " (" + e.getMessage() + ")");
             }
         }
@@ -154,16 +157,18 @@ public class DictImportBo {
     private void processSingleWord(String spell, String manualMeaning, boolean isSystem, User user, String dictId, String strategy, TaskStatistics stats) throws Exception {
         Word word = wordBo.getWordBySpell(spell);
         boolean isNewWord = (word == null);
+        String actionType = "ADDED";
+        AiResult lastAiResult = null;
 
         if (isNewWord) {
             word = new Word();
             word.setSpell(spell);
             word.setPopularity(5); // 默认中等
             // 调用 AI 获取音标（及其它固有属性）
-            AiResult aiResult = getAiResult(spell, null, null);
-            word.setBritishPronounce(aiResult.phonetic);
-            word.setAmericaPronounce(aiResult.phonetic);
-            word.setPronounce(aiResult.phonetic);
+            lastAiResult = getAiResult(spell, null, null);
+            word.setBritishPronounce(lastAiResult.phonetic);
+            word.setAmericaPronounce(lastAiResult.phonetic);
+            word.setPronounce(lastAiResult.phonetic);
             wordBo.createEntity(word);
             stats.addedWordCount++;
             stats.addedAudioCount++; // 统计单词发音资源
@@ -179,8 +184,10 @@ public class DictImportBo {
             if ("SKIP".equalsIgnoreCase(strategy)) {
                 logger.info("单词 {} 在词典 {} 中已存在，跳过", spell, dictId);
                 stats.skippedCount++;
+                stats.wordDetails.add(new WordDetail(spell, "SKIPPED", null, null));
                 return;
             } else if ("RECREATE".equalsIgnoreCase(strategy)) {
+                actionType = "RECREATED";
                 logger.info("单词 {} 在词典 {} 中已存在，执行重刷（删除现有资源）", spell, dictId);
                 stats.recreatedCount++;
                 for (MeaningItemDto mi : existingMeaningsInDict) {
@@ -219,22 +226,22 @@ public class DictImportBo {
         if (isSystem) {
             // 场景 1：加入通用词典
             // 此时 dictId 应该是 "0"
-            AiResult aiResult = getAiResult(spell, null, contextMeanings);
-            saveExtrinsicResources(word, aiResult, Constants.SYS_USER_SYS_ID, Constants.COMMON_DICT_ID, stats);
+            lastAiResult = getAiResult(spell, null, contextMeanings);
+            saveExtrinsicResources(word, lastAiResult, Constants.SYS_USER_SYS_ID, Constants.COMMON_DICT_ID, stats);
         } else {
             // 用户导入
             if (manualMeaning != null) {
                 // 场景 3：单词+外部释义 (私有)
-                AiResult aiResult = getAiResult(spell, manualMeaning, contextMeanings);
-                saveExtrinsicResources(word, aiResult, user.getId(), dictId, stats);
+                lastAiResult = getAiResult(spell, manualMeaning, contextMeanings);
+                saveExtrinsicResources(word, lastAiResult, user.getId(), dictId, stats);
             } else {
                 // 场景 2：仅单词
                 // 如果通用库已有，且不需要强制重刷，则由 DictWord 关联即可。
                 // 但如果 strategy 是 RECREATE 或指定了私有词库，我们倾向于生成资源。
                 boolean hasCommonMeaning = allExistingMeanings.stream().anyMatch(m -> Constants.COMMON_DICT_ID.equals(m.getDictId()));
                 if (!hasCommonMeaning || "RECREATE".equalsIgnoreCase(strategy) || !Constants.COMMON_DICT_ID.equals(dictId)) {
-                    AiResult aiResult = getAiResult(spell, null, contextMeanings);
-                    saveExtrinsicResources(word, aiResult, user.getId(), dictId, stats);
+                    lastAiResult = getAiResult(spell, null, contextMeanings);
+                    saveExtrinsicResources(word, lastAiResult, user.getId(), dictId, stats);
                 }
             }
         }
@@ -259,6 +266,8 @@ public class DictImportBo {
                 dictWordBo.dictBo.updateEntity(dict);
             }
         }
+        
+        stats.wordDetails.add(new WordDetail(spell, actionType, null, lastAiResult));
     }
 
     private void saveExtrinsicResources(Word word, AiResult aiResult, String ownerId, String dictId, TaskStatistics stats) {
@@ -371,6 +380,7 @@ public class DictImportBo {
     }
 
     public static class TaskStatistics {
+        public List<WordDetail> wordDetails = new java.util.ArrayList<>();
         public int addedWordCount = 0;       // 新词入库
         public int addedDictWordCount = 0;   // 词书关联
         public int addedMeaningCount = 0;    // 释义项
@@ -388,6 +398,23 @@ public class DictImportBo {
         public void addSyncLog(String operation, String entity) {
             Map<String, Integer> opMap = syncLogCounts.computeIfAbsent(entity, k -> new java.util.HashMap<>());
             opMap.put(operation, opMap.getOrDefault(operation, 0) + 1);
+        }
+    }
+
+    public static class WordDetail {
+        public String spell;
+        public String status;
+        public String errorMsg;
+        public AiResult aiResult;
+
+        public WordDetail() {
+        }
+
+        public WordDetail(String spell, String status, String errorMsg, AiResult aiResult) {
+            this.spell = spell;
+            this.status = status;
+            this.errorMsg = errorMsg;
+            this.aiResult = aiResult;
         }
     }
 }

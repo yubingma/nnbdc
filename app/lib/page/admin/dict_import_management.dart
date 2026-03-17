@@ -9,6 +9,10 @@ import 'package:nnbdc/util/toast_util.dart';
 import 'package:provider/provider.dart';
 import 'package:nnbdc/state.dart';
 import 'package:nnbdc/api/dto.dart';
+import 'package:nnbdc/services/throttled_sync_service.dart';
+import 'package:nnbdc/api/bo/word_bo.dart';
+import 'package:nnbdc/page/word_detail.dart'; 
+import 'package:get/get.dart';
 
 class DictImportManagementWidget extends StatefulWidget {
   const DictImportManagementWidget({super.key});
@@ -83,6 +87,9 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
             if (status == 'COMPLETED' || status == 'FAILED') {
               timer.cancel();
               ToastUtil.info('任务完成 ($status)');
+              if (status == 'COMPLETED') {
+                ThrottledDbSyncService().requestSync(immediate: true);
+              }
             }
           }
         }
@@ -327,17 +334,64 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
                           builder: (context) {
                             try {
                               final stats = jsonDecode(_taskDetails!['results'] as String);
-                              return Wrap(
-                                spacing: 12,
-                                runSpacing: 12,
+                              final wordDetails = stats['wordDetails'] as List<dynamic>?;
+
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  _buildStatItem('新增单词', stats['addedWordCount'] ?? 0, Icons.add_circle_outline, Colors.blue),
-                                  _buildStatItem('新增释义', stats['addedMeaningCount'] ?? 0, Icons.menu_book, Colors.purple),
-                                  _buildStatItem('生成例句', stats['addedSentenceCount'] ?? 0, Icons.format_quote, Colors.orange),
-                                  _buildStatItem('AI 音频资源', stats['addedAudioCount'] ?? 0, Icons.volume_up, Colors.teal),
-                                  _buildStatItem('词频跳过', stats['skippedCount'] ?? 0, Icons.skip_next, Colors.grey),
-                                  if ((stats['errorCount'] ?? 0) > 0)
-                                    _buildStatItem('处理失败', stats['errorCount'], Icons.error_outline, Colors.red),
+                                  Wrap(
+                                    spacing: 12,
+                                    runSpacing: 12,
+                                    children: [
+                                      _buildStatItem('新增单词', stats['addedWordCount'] ?? 0, Icons.add_circle_outline, Colors.blue),
+                                      _buildStatItem('新增释义', stats['addedMeaningCount'] ?? 0, Icons.menu_book, Colors.purple),
+                                      _buildStatItem('生成例句', stats['addedSentenceCount'] ?? 0, Icons.format_quote, Colors.orange),
+                                      _buildStatItem('AI 音频资源', stats['addedAudioCount'] ?? 0, Icons.volume_up, Colors.teal),
+                                      _buildStatItem('词频跳过', stats['skippedCount'] ?? 0, Icons.skip_next, Colors.grey),
+                                      if ((stats['errorCount'] ?? 0) > 0)
+                                        _buildStatItem('处理失败', stats['errorCount'], Icons.error_outline, Colors.red),
+                                    ],
+                                  ),
+                                  if (wordDetails != null && wordDetails.isNotEmpty) ...[
+                                    const SizedBox(height: 24),
+                                    const Divider(),
+                                    const SizedBox(height: 16),
+                                    const Text('处理单词列表 (点击查看详情)', style: TextStyle(fontWeight: FontWeight.bold)),
+                                    const SizedBox(height: 16),
+                                    Wrap(
+                                      spacing: 8,
+                                      runSpacing: 8,
+                                      children: wordDetails.map((w) {
+                                        final detail = w as Map<String, dynamic>;
+                                        final status = detail['status'] as String? ?? '';
+                                        Color statusColor;
+                                        if (status == 'ADDED' || status == 'RECREATED' || status == 'APPENDED') {
+                                          statusColor = Colors.green;
+                                        } else if (status == 'SKIPPED') {
+                                          statusColor = Colors.orange;
+                                        } else {
+                                          statusColor = Colors.red;
+                                        }
+                                        return ActionChip(
+                                          avatar: Icon(Icons.circle, color: statusColor, size: 12),
+                                          label: Text(detail['spell'] ?? '未知'),
+                                          onPressed: () async {
+                                            final spell = detail['spell'];
+                                            if (spell != null && spell.isNotEmpty) {
+                                              final wordRes = await WordBo().searchWordLocalOnly(spell);
+                                              if (wordRes.word != null) {
+                                                Get.to(() => const WordDetailPage(), arguments: WordDetailPageArgs(wordRes.word!, true, null, false));
+                                              } else {
+                                                ToastUtil.error('未在本地找到单词，可能同步还在进行中');
+                                              }
+                                            }
+                                          },
+                                          backgroundColor: statusColor.withValues(alpha: 0.05),
+                                          side: BorderSide(color: statusColor.withValues(alpha: 0.2)),
+                                        );
+                                      }).toList(),
+                                    ),
+                                  ],
                                 ],
                               );
                             } catch (e) {
