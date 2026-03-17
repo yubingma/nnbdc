@@ -47,6 +47,9 @@ public class DictImportBo {
     private SysDbSyncBo sysDbSyncBo;
 
     @Autowired
+    private UserDbSyncBo userDbSyncBo;
+
+    @Autowired
     private UserBo userBo;
 
     @Autowired
@@ -271,40 +274,78 @@ public class DictImportBo {
     }
 
     private void saveExtrinsicResources(Word word, AiResult aiResult, String ownerId, String dictId, TaskStatistics stats) {
-        // 创建 MeaningItem
-        MeaningItem meaning = new MeaningItem();
-        meaning.setWord(word);
-        meaning.setCiXing(aiResult.pos);
-        meaning.setMeaning(aiResult.meaning);
-        meaning.setPopularity(aiResult.popularity);
-        
-        User owner = new User();
-        owner.setId(ownerId != null ? ownerId : Constants.SYS_USER_SYS_ID);
-        meaning.setOwner(owner);
-
-        if (dictId != null) {
-            Dict dict = new Dict();
-            dict.setId(dictId);
-            meaning.setDict(dict);
+        if (aiResult.meaning == null || aiResult.meaning.trim().isEmpty()) {
+            return;
         }
-        meaningItemBo.createEntity(meaning);
-        stats.addedMeaningCount++;
+
+        String[] meanings = aiResult.meaning.split("[;；]"); // 分割多个释义
+        MeaningItem firstMeaning = null;
+
+        for (int i = 0; i < meanings.length; i++) {
+            String m = meanings[i].trim();
+            if (m.isEmpty()) continue;
+
+            // 创建 MeaningItem
+            MeaningItem meaning = new MeaningItem();
+            meaning.setWord(word);
+            meaning.setCiXing(aiResult.pos);
+            meaning.setMeaning(m);
+            // 多个同词性释义通过 popularity 作微弱区分（如果需要），这里简化处理
+            meaning.setPopularity(aiResult.popularity > i ? aiResult.popularity - i : 1);
+            
+            User owner = new User();
+            owner.setId(ownerId != null ? ownerId : Constants.SYS_USER_SYS_ID);
+            meaning.setOwner(owner);
+
+            if (dictId != null) {
+                Dict dict = new Dict();
+                dict.setId(dictId);
+                meaning.setDict(dict);
+            }
+            meaningItemBo.createEntity(meaning);
+            stats.addedMeaningCount++;
+
+            // 记录同步日志
+            if (Constants.SYS_USER_SYS_ID.equals(ownerId)) {
+                sysDbSyncBo.logOperation("INSERT", "meaning_item", meaning.getId(), JsonUtils.toJson(meaningItemBo.toDto(meaning)));
+                stats.addSyncLog("INSERT", "meaning_item");
+            } else {
+                userDbSyncBo.logUserOperation(ownerId, "meaning_item", "INSERT", meaning.getId(), JsonUtils.toJson(meaningItemBo.toDto(meaning)));
+            }
+
+            if (firstMeaning == null) {
+                firstMeaning = meaning;
+            }
+        }
+
+        if (firstMeaning == null) {
+            return;
+        }
 
         // 创建 Sentence
-        Sentence sentence = new Sentence();
-        sentence.setEnglish(aiResult.sentenceEn);
-        sentence.setChinese(aiResult.sentenceCn);
-        sentence.setMeaningItem(meaning);
-        sentence.setNeedTts(true); // 标记需要生成音频
-        sentence.setTheType("waitting_tts");
-        if (ownerId != null) {
-            User author = new User();
-            author.setId(ownerId);
-            sentence.setAuthor(author);
+        if (aiResult.sentenceEn != null && !aiResult.sentenceEn.trim().isEmpty()) {
+            Sentence sentence = new Sentence();
+            sentence.setEnglish(aiResult.sentenceEn);
+            sentence.setChinese(aiResult.sentenceCn);
+            sentence.setMeaningItem(firstMeaning);
+            sentence.setNeedTts(true); // 标记需要生成音频
+            sentence.setTheType("waitting_tts");
+            sentence.setEnglishDigest(beidanci.service.util.Util.makeSentenceDigest(aiResult.sentenceEn));
+            if (ownerId != null) {
+                User author = new User();
+                author.setId(ownerId);
+                sentence.setAuthor(author);
+            }
+            sentenceBo.createEntity(sentence);
+            stats.addedSentenceCount++;
+            stats.addedAudioCount++; // 统计例句音频资源
+
+            // 记录同步日志（句子为公共资源，使用sysDbSyncBo）
+            sysDbSyncBo.logOperation("INSERT", "sentence", sentence.getId(), JsonUtils.toJson(sentenceBo.toDto(sentence)));
+            if (Constants.SYS_USER_SYS_ID.equals(ownerId)) {
+                stats.addSyncLog("INSERT", "sentence");
+            }
         }
-        sentenceBo.createEntity(sentence);
-        stats.addedSentenceCount++;
-        stats.addedAudioCount++; // 统计例句音频资源
 
         // 创建同义词
         if (aiResult.synonyms != null && !aiResult.synonyms.isEmpty()) {
@@ -313,23 +354,15 @@ public class DictImportBo {
                 if (synWord != null) {
                     Synonym synonym = new Synonym();
                     SynonymId sid = new SynonymId();
-                    sid.setMeaningItemId(meaning.getId());
+                    sid.setMeaningItemId(firstMeaning.getId());
                     sid.setWordId(synWord.getId());
                     synonym.setId(sid);
-                    synonym.setMeaningItem(meaning);
+                    synonym.setMeaningItem(firstMeaning);
                     synonym.setCreateTime(new Date());
                     synonymBo.createEntity(synonym);
                     stats.addedSynonymCount++;
                 }
             }
-        }
-
-        // 如果是记录到通用词典（属于系统管理员），则记录同步日志，以便各分布式节点同步
-        if (Constants.SYS_USER_SYS_ID.equals(ownerId)) {
-            sysDbSyncBo.logOperation("INSERT", "meaning_item", meaning.getId(), JsonUtils.toJson(meaningItemBo.toDto(meaning)));
-            stats.addSyncLog("INSERT", "meaning_item");
-            sysDbSyncBo.logOperation("INSERT", "sentence", sentence.getId(), JsonUtils.toJson(sentenceBo.toDto(sentence)));
-            stats.addSyncLog("INSERT", "sentence");
         }
     }
 
@@ -337,7 +370,7 @@ public class DictImportBo {
         String systemPrompt = "You are a professional English dictionary assistant. Return JSON only. " +
                 "IMPORTANT RULES:\n" +
                 "1. 'pos' field MUST be abbreviations (e.g., n., v., adj., adv.).\n" +
-                "2. 'meaning' field MUST be in Chinese, and MUST include all commonly used meanings, separated by commas or semicolons if multiple.\n" +
+                "2. 'meaning' field MUST be in Chinese, and MUST include all commonly used meanings, separated by semicolons if multiple.\n" +
                 "3. Ensure the sentence is practical and natural.\n" +
                 "4. Use <b>word</b> in sentenceEn to highlight the vocabulary word.";
         StringBuilder userPrompt = new StringBuilder();

@@ -16,15 +16,15 @@ import '../../services/throttled_sync_service.dart';
 
 class WordBo {
   static final WordBo _instance = WordBo._internal();
-  factory WordBo() => _instance;
+  factory WordBo() => _instance; 
   WordBo._internal();
 
   // 只做本地查词（包含大小写与词形多变体）
-  Future<SearchWordResult> searchWordLocalOnly(String spell) async {
+  Future<SearchWordResult> searchWordLocalOnly(String spell, [String? dictId]) async {
     final db = MyDatabase.instance;
     final purifiedSpell = Util.purifySpell(spell);
     try {
-      final SearchWordResult? localHit = await _searchLocallyWithVariants(purifiedSpell, db);
+      final SearchWordResult? localHit = await _searchLocallyWithVariants(purifiedSpell, db, dictId);
       return localHit ?? SearchWordResult(null, null, null, null, null);
     } catch (e, st) {
       ErrorHandler.handleDatabaseError(e, st, operation: '本地查词');
@@ -244,73 +244,73 @@ class WordBo {
     }
   }
 
-  Future<SearchWordResult?> _searchLocallyWithVariants(String purifiedSpell, MyDatabase db) async {
-    var result = await _searchLocalOnly(purifiedSpell, db);
+  Future<SearchWordResult?> _searchLocallyWithVariants(String purifiedSpell, MyDatabase db, [String? dictId]) async {
+    var result = await _searchLocalOnly(purifiedSpell, db, dictId);
     if (result != null) return result;
     if (purifiedSpell.endsWith('s')) {
       var base = purifiedSpell.substring(0, purifiedSpell.length - 1);
-      result = await _searchLocalOnly(base, db);
+      result = await _searchLocalOnly(base, db, dictId);
       if (result != null) return result;
     }
     if (purifiedSpell.endsWith('es')) {
       var base = purifiedSpell.substring(0, purifiedSpell.length - 2);
-      result = await _searchLocalOnly(base, db);
+      result = await _searchLocalOnly(base, db, dictId);
       if (result != null) return result;
     }
     if (purifiedSpell.endsWith("'s")) {
       var base = purifiedSpell.substring(0, purifiedSpell.length - 2);
-      result = await _searchLocalOnly(base, db);
+      result = await _searchLocalOnly(base, db, dictId);
       if (result != null) return result;
     }
     if (purifiedSpell.endsWith('ies')) {
       var base = "${purifiedSpell.substring(0, purifiedSpell.length - 3)}y";
-      result = await _searchLocalOnly(base, db);
+      result = await _searchLocalOnly(base, db, dictId);
       if (result != null) return result;
     }
     if (purifiedSpell.endsWith('ied')) {
       var base = "${purifiedSpell.substring(0, purifiedSpell.length - 3)}y";
-      result = await _searchLocalOnly(base, db);
+      result = await _searchLocalOnly(base, db, dictId);
       if (result != null) return result;
     }
     if (purifiedSpell.endsWith('ed')) {
       var base = purifiedSpell.substring(0, purifiedSpell.length - 2);
-      result = await _searchLocalOnly(base, db);
+      result = await _searchLocalOnly(base, db, dictId);
       if (result != null) return result;
       var basePlusE = "${base}e";
-      result = await _searchLocalOnly(basePlusE, db);
+      result = await _searchLocalOnly(basePlusE, db, dictId);
       if (result != null) return result;
     }
     if (purifiedSpell.endsWith('ing')) {
       var base = purifiedSpell.substring(0, purifiedSpell.length - 3);
-      result = await _searchLocalOnly(base, db);
+      result = await _searchLocalOnly(base, db, dictId);
       if (result != null) return result;
       var basePlusE = "${base}e";
-      result = await _searchLocalOnly(basePlusE, db);
+      result = await _searchLocalOnly(basePlusE, db, dictId);
       if (result != null) return result;
     }
     return null;
   }
 
-  Future<SearchWordResult?> _searchLocalOnly(String spell, MyDatabase db) async {
-    var result = await _tryBuildLocalResultBySpell(spell, db);
+  Future<SearchWordResult?> _searchLocalOnly(String spell, MyDatabase db, [String? dictId]) async {
+    var result = await _tryBuildLocalResultBySpell(spell, db, dictId);
     if (result != null) return result;
 
     var lowerSpell = spell.toLowerCase();
     if (lowerSpell != spell) {
-      result = await _tryBuildLocalResultBySpell(lowerSpell, db);
+      result = await _tryBuildLocalResultBySpell(lowerSpell, db, dictId);
       if (result != null) return result;
     }
 
     var upperSpell = spell.toUpperCase();
     if (upperSpell != spell) {
-      result = await _tryBuildLocalResultBySpell(upperSpell, db);
+      result = await _tryBuildLocalResultBySpell(upperSpell, db, dictId);
       if (result != null) return result;
     }
 
     if (spell.isNotEmpty) {
       var capSpell = spell.substring(0, 1).toUpperCase() + spell.substring(1).toLowerCase();
       if (capSpell != spell && capSpell != lowerSpell) {
-        result = await _tryBuildLocalResultBySpell(capSpell, db);
+        result = await _tryBuildLocalResultBySpell(capSpell, db, dictId);
         if (result != null) return result;
       }
     }
@@ -318,7 +318,7 @@ class WordBo {
     return null;
   }
 
-  Future<SearchWordResult?> _tryBuildLocalResultBySpell(String spell, MyDatabase db) async {
+  Future<SearchWordResult?> _tryBuildLocalResultBySpell(String spell, MyDatabase db, [String? dictId]) async {
     final wordQuery = db.select(db.words)..where((w) => w.spell.equals(spell));
     final localWord = await wordQuery.getSingleOrNull();
 
@@ -336,7 +336,10 @@ class WordBo {
       // 获取释义项
       final currentUser = await Global.refreshLoggedInUser();
       List<MeaningItem> meaningItems;
-      if (currentUser != null && currentUser.id != null) {
+      if (dictId != null) {
+        final miQuery = db.select(db.meaningItems)..where((mi) => mi.wordId.equals(localWord.id) & mi.dictId.equals(dictId));
+        meaningItems = await miQuery.get();
+      } else if (currentUser != null && currentUser.id != null) {
         // 有用户ID，使用现有的 getWordMeaningItems 方法（包含 popularity limit 过滤）
         meaningItems = await getWordMeaningItems(localWord.id, currentUser.id!);
       } else {
@@ -448,8 +451,7 @@ class WordBo {
     try {
       final query = db.select(db.learningWords)
         ..where((tbl) => tbl.userId.equals(userId))
-        ..orderBy(
-            [(tbl) => OrderingTerm(expression: tbl.addTime), (tbl) => OrderingTerm(expression: tbl.wordId)])
+        ..orderBy([(tbl) => OrderingTerm(expression: tbl.addTime), (tbl) => OrderingTerm(expression: tbl.wordId)])
         ..limit(pageSize, offset: fromIndex);
       final learningWords = await query.get();
 
@@ -1061,8 +1063,7 @@ class WordBo {
         Global.logger.d('未找到拼写为 $spell 的单词');
         return Result("SUCCESS", "获取成功", true)..data = -1;
       }
-      final learningWordQuery = db.select(db.learningWords)
-        ..where((tbl) => tbl.userId.equals(userId) & tbl.wordId.equals(word.id));
+      final learningWordQuery = db.select(db.learningWords)..where((tbl) => tbl.userId.equals(userId) & tbl.wordId.equals(word.id));
       final learningWord = await learningWordQuery.getSingleOrNull();
       if (learningWord == null) {
         Global.logger.d('用户未在学习单词 $spell');
@@ -1071,10 +1072,9 @@ class WordBo {
       final countQuery = db.selectOnly(db.learningWords)..addColumns([countAll()]);
       final userIdCondition = db.learningWords.userId.equals(userId);
       final beforeTimeCondition = db.learningWords.addTime.isSmallerThanValue(learningWord.addTime);
-      final sameTimeSmallerWordIdCondition = db.learningWords.addTime.equals(learningWord.addTime) &
-          db.learningWords.wordId.isSmallerThanValue(learningWord.wordId);
-      countQuery.where(userIdCondition &
-          (beforeTimeCondition | sameTimeSmallerWordIdCondition));
+      final sameTimeSmallerWordIdCondition =
+          db.learningWords.addTime.equals(learningWord.addTime) & db.learningWords.wordId.isSmallerThanValue(learningWord.wordId);
+      countQuery.where(userIdCondition & (beforeTimeCondition | sameTimeSmallerWordIdCondition));
       final countResult = await countQuery.getSingle();
       int position = countResult.read(countAll()) ?? 0;
       position += 1;
@@ -1424,7 +1424,7 @@ class WordBo {
       final learningWordsCountQuery = db.selectOnly(db.learningWords)
         ..addColumns([countAll()])
         ..where(db.learningWords.userId.equals(user.id));
-      
+
       final learningWordsCountResult = await learningWordsCountQuery.getSingle();
       wordLists.add(WordList("学习中", learningWordsCountResult.read(countAll()) ?? 0));
 
@@ -1443,7 +1443,7 @@ class WordBo {
       final masteredWordIds = await db.masteredWordsDao.getMasteredWordIdSet(user.id);
       wordLists.add(WordList("已掌握", masteredWordIds.length));
       return Result("SUCCESS", "获取成功", true)..data = wordLists;
-    } catch (e, stackTrace) {
+    } catch (e, stackTrace) { 
       Global.logger.e('获取单词列表失败: $e', stackTrace: stackTrace);
       return Result("ERROR", "获取单词列表失败: ${e.toString()}", false);
     }
