@@ -204,6 +204,25 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
                         side: const BorderSide(color: Colors.transparent),
                       )).toList(),
                     ),
+                    const SizedBox(height: 16), 
+                    const Text('导入目标词典：', style: TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryColor.withValues(alpha: 0.05),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: AppTheme.primaryColor.withValues(alpha: 0.2)),
+                      ),
+                      child: Row(
+                        children: const [
+                          Icon(Icons.library_books, color: AppTheme.primaryColor, size: 20),
+                          SizedBox(width: 8),
+                          Text('通用词典 (ID: 0)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+                        ],
+                      ),
+                    ),
                     const SizedBox(height: 16),
                     const Text('遇到相同单词时的导入覆盖策略：', style: TextStyle(fontWeight: FontWeight.bold)),
                     const SizedBox(height: 8),
