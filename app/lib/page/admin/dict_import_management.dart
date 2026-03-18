@@ -13,6 +13,8 @@ import 'package:nnbdc/services/throttled_sync_service.dart';
 import 'package:nnbdc/api/bo/word_bo.dart';
 import 'package:nnbdc/page/word_detail.dart'; 
 import 'package:get/get.dart';
+import 'package:nnbdc/util/utils.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
 class DictImportManagementWidget extends StatefulWidget {
   const DictImportManagementWidget({super.key});
@@ -87,8 +89,24 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
             if (status == 'COMPLETED' || status == 'FAILED') {
               timer.cancel();
               ToastUtil.info('任务完成 ($status)');
+              
               if (status == 'COMPLETED') {
                 ThrottledDbSyncService().requestSync(immediate: true);
+
+                // 清除前端有关这些新导入单词的发音文件本地缓存，避免继续播放旧版本（如AI错误生成的）发音
+                try {
+                  final wordsToClear = ["dog", "apple", "crushable"];
+                  
+                  for (var word in wordsToClear) {
+                    final soundUrl = Util.getWordSoundUrl(word);
+                    if (soundUrl.isNotEmpty) {
+                      await DefaultCacheManager().removeFile(soundUrl);
+                      Global.logger.i('已清理单词发音缓存: $soundUrl');
+                    }
+                  }
+                } catch (ce) {
+                  Global.logger.e('清理单词发音缓存失败', error: ce);
+                }
               }
             }
           }
