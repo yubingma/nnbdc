@@ -417,7 +417,7 @@ public class DictImportBo {
                                 wordImage.setHand(0);
                                 wordImage.setFoot(0);
                                 wordImageBo.addWordImage(wordImage, user);
-                                logger.info("成功为单词 {} 生成并保存配图，文件: {}", spell, fileName);
+                                logger.info("成功为单词 {} 生成并保存配图，文件: {}", spell, destFile.getAbsolutePath());
                             } else {
                                 logger.error("下载单词配图失败: HTTP {}, {}", response.code(), imgUrl);
                             }
