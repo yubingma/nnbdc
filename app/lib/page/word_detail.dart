@@ -92,7 +92,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
   final List<ChatMessage> _chatMessages = [];
   final TextEditingController _chatInputController = TextEditingController();
   final ScrollController _chatScrollController = ScrollController();
-  String? _aiImageUrl;
+
   bool _aiLoading = false;
   String? _aiError;
   String _aiRawAccum = '';
@@ -234,8 +234,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
   String _cleanAiText(String rawText) {
     String cleaned = rawText;
 
-    // 异步验证并设置图片 URL
-    _validateAndSetImageUrl();
+    // _validateAndSetImageUrl();
 
     // 进一步清理 AI 输出：移除所有特殊 token 和残留的标签
     cleaned = cleaned.replaceAll(RegExp(r'<\|im_start\|>.*?(\n|$)'), '');
@@ -260,46 +259,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     return cleaned;
   }
 
-  /// 验证并设置图片 URL
-  /// 只有当图片确实存在时才设置 _aiImageUrl，避免加载不存在的图片导致 Android ImageDecoder 错误
-  Future<void> _validateAndSetImageUrl() async {
-    try {
-      final imageUrl = '${Config.wordImageBaseUrl}${args.word.spell}';
 
-      // 简化策略：直接设置 URL，但添加一个快速的 HEAD 请求验证
-      // 这样可以在图片不存在时避免 ImageDecoder 错误
-      final urlToCheck = '$imageUrl.png';
-
-      try {
-        final response = await http.head(Uri.parse(urlToCheck)).timeout(
-              const Duration(seconds: 2),
-            );
-
-        // 只有当响应成功且是图片类型时才设置 URL
-        if (response.statusCode == 200) {
-          final contentType = response.headers['content-type'] ?? '';
-          if (contentType.startsWith('image/')) {
-            if (mounted) {
-              setState(() {
-                _aiImageUrl = imageUrl;
-              });
-            }
-            Global.logger.d('图片验证成功: $urlToCheck');
-            return;
-          } else {
-            Global.logger.d('URL 返回非图片内容: $urlToCheck (Content-Type: $contentType)');
-          }
-        } else {
-          Global.logger.d('图片不存在: $urlToCheck (状态码: ${response.statusCode})');
-        }
-      } catch (e) {
-        // 网络请求失败，不设置图片 URL
-        Global.logger.d('无法验证图片: $urlToCheck, 错误: $e');
-      }
-    } catch (e) {
-      Global.logger.d('验证图片 URL 失败: $e');
-    }
-  }
 
   /// 解析 AI 原始输出，分离思考过程 和 最终答案
   void _parseAiOutput(String raw) {
@@ -691,34 +651,40 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                   
                   // 配图展示 (仅对管理员开放)
                   if ((Global.getLoggedInUser()?.isAdmin == true) && args.word.images != null && args.word.images!.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(leftPadding, 16, rightPadding, 8),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('配图', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, letterSpacing: 0.5, fontFamily: 'NotoSansSC')),
-                          const SizedBox(height: 8),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: args.word.images!.map((image) => Container(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
-                              ),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: Image.network(
-                                  '${Config.wordImageBaseUrl}${image.imageFile}',
-                                  width: 120,
-                                  height: 120,
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-                            )).toList(),
-                          )
-                        ],
-                      ),
+                    Builder(
+                      builder: (BuildContext context) {
+                        final screenWidth = MediaQuery.of(context).size.width;
+                        final imageWidth = (screenWidth - leftPadding - rightPadding - 8) / 2.0; // 横排两张的合适宽度
+                        return Padding(
+                          padding: const EdgeInsets.fromLTRB(leftPadding, 16, rightPadding, 8),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('配图', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, letterSpacing: 0.5, fontFamily: 'NotoSansSC')),
+                              const SizedBox(height: 8),
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: args.word.images!.map((image) => Container(
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+                                  ),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Image.network(
+                                      '${Config.wordImageBaseUrl}${image.imageFile}',
+                                      width: imageWidth,
+                                      height: imageWidth * 0.75, // 比例 4:3
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                )).toList(),
+                              )
+                            ],
+                          ),
+                        );
+                      }
                     ),
                     
                   Padding(
@@ -1039,39 +1005,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (isAssistant && _chatMessages.indexOf(msg) == 0 && _aiImageUrl != null)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.network(
-                        _aiImageUrl!.endsWith('.png') ? _aiImageUrl! : '$_aiImageUrl.png',
-                        loadingBuilder: (context, child, loadingProgress) {
-                          if (loadingProgress == null) return child;
-                          return Center(
-                            child: SizedBox(
-                              width: 24,
-                              height: 24,
-                              child: CircularProgressIndicator(
-                                value: loadingProgress.expectedTotalBytes != null
-                                    ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
-                                    : null,
-                                strokeWidth: 2,
-                              ),
-                            ),
-                          );
-                        },
-                        errorBuilder: (c, e, s) {
-                          // 静默处理图像加载错误，避免在日志中显示
-                          Global.logger.d('AI图像加载失败: $_aiImageUrl, 错误: $e');
-                          return Container();
-                        },
-                        // 添加缓存控制以避免重复加载失败的图像
-                        cacheWidth: 800,
-                        cacheHeight: 600,
-                      ),
-                    ),
-                  ),
+                // 已遗弃旧版_aiImageUrl展示机制的残留，这里不再显示旧图
                 if (msg.content.isEmpty && isAssistant && _aiLoading && _chatMessages.lastIndexOf(msg) == _chatMessages.length - 1)
                   const Text('...', style: TextStyle(fontStyle: FontStyle.italic))
                 else if (isAssistant)

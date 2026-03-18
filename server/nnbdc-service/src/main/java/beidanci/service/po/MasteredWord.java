@@ -1,6 +1,5 @@
 package beidanci.service.po;
 
-import java.sql.Timestamp;
 import java.util.Date;
 
 import javax.persistence.Column;
@@ -66,9 +65,7 @@ public class MasteredWord extends Po {
         this.masterAtTime = masterAtTime;
     }
 
-    public void setMasterAtTime(Timestamp masterAtTime) {
-        this.masterAtTime = masterAtTime;
-    }
+
 
     public static MasteredWord fromDto(MasteredWordDto dto) {
         MasteredWord masteredWord = new MasteredWord();

@@ -5407,7 +5407,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                         images: _currentGetWordResult!.images!,
                         isEditMode: _isEditMode,
                         highlightedWordImg: _highlightedWordImg,
-                        maxImages: 0,
+                        maxImages: 2,
                         onImageTap: (image) {
                           Global.logger
                               .d('show dialog for image: ${image.imageFile}');

@@ -398,14 +398,19 @@ public class DictImportBo {
                         
                         try (okhttp3.Response response = client.newCall(request).execute()) {
                             if (response.isSuccessful() && response.body() != null) {
+                                java.io.File tempFile = new java.io.File(sysParamUtil.getImageBaseDir(), fileName + ".tmp");
                                 try (java.io.InputStream is = response.body().byteStream();
-                                     java.io.FileOutputStream fos = new java.io.FileOutputStream(destFile)) {
+                                     java.io.FileOutputStream fos = new java.io.FileOutputStream(tempFile)) {
                                     byte[] buffer = new byte[8192];
                                     int bytesRead;
                                     while ((bytesRead = is.read(buffer)) != -1) {
                                         fos.write(buffer, 0, bytesRead);
                                     }
                                 }
+                                
+                                // 压缩图片，将其缩放至不大于 512x512（保持纵横比），使用 JPEG 压缩存储
+                                beidanci.service.util.MyImage.resizeImage(tempFile, destFile, 512, 512, "JPEG", true);
+                                tempFile.delete();
                                 WordImage wordImage = new WordImage();
                                 wordImage.setWord(word);
                                 wordImage.setImageFile(fileName);
@@ -532,7 +537,7 @@ public class DictImportBo {
                 "3. Ensure the sentence is practical, natural, and grammatically PERFECT.\n" +
                 "4. Use <b>word</b> in BOTH sentenceEn and sentenceCn to highlight the vocabulary word and its Chinese meaning respectively.\n" +
                 "5. CRITICAL GRAMMAR RULE: Pay attention to 'a' vs 'an' articles when highlighting. It should be 'an <b>apple</b>', never 'a <b>apple</b>'!\n" +
-                "6. IMAGE GENERATION: You must also generate 0 to 2 English image generation prompts for the word. Use clean, flat vector art style (start with 'A clean flat vector art style illustration of...'). If the word is too abstract or unsuitable for a picture (e.g., 'the', 'is', 'therefore'), return an empty array [] for imagePrompts.";
+                "6. IMAGE GENERATION: ONLY generate image prompts (1 or 2) if the word is highly visual, such as a physical object, animal, clear physical action, or a visually representable adjective/emotion (e.g., 'apple', 'dog', 'run', 'happy', 'fast'). DO NOT generate images for proper nouns, names, highly abstract concepts, adverbs, or grammar words (e.g., 'the', 'kerry', 'john', 'therefore', 'consider', 'very'). For all unsuitable words, firmly return an empty array [] for imagePrompts. If you DO generate, use clean, flat vector art style (start with 'A clean flat vector art style illustration of...'). DO NOT include any text, letters, UI elements, or the word itself in the image.";
         StringBuilder userPrompt = new StringBuilder();
         userPrompt.append(String.format("Generating data for word '%s'. ", spell));
         
