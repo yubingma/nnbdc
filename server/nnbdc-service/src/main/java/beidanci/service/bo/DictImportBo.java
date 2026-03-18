@@ -191,6 +191,26 @@ public class DictImportBo {
             throw new RuntimeException("无法获取或创建单词对象: " + spell);
         }
 
+        // 如果策略是 RECREATE 并且单词已存在，则重新生成该单词的音标，并触发同步更新
+        if (!isNewWord && "RECREATE".equalsIgnoreCase(strategy)) {
+             try {
+                 lastAiResult = getAiResult(spell, null, null);
+                 word.setPronounce(lastAiResult.phonetic);
+                 word.setBritishPronounce(lastAiResult.phonetic);
+                 word.setAmericaPronounce(lastAiResult.phonetic);
+                 word.setUpdateTime(new java.util.Date());
+                 wordBo.updateEntity(word);
+                 
+                 WordDto wordDto = new WordDto();
+                 org.springframework.beans.BeanUtils.copyProperties(word, wordDto);
+                 sysDbSyncBo.logOperation("UPDATE", "word", word.getId(), beidanci.service.util.JsonUtils.toJson(wordDto));
+                 stats.addSyncLog("UPDATE", "word");
+                 logger.info("重刷策略已更新单词音标: " + spell);
+             } catch (Exception e) {
+                 logger.error("重刷单词音标失败: " + spell, e);
+             }
+        }
+
         // 无论单词是否刚创建，检查其发音文件是否存在，若不存在则补发音
         try {
             String pureSpell = spell.replaceAll("[^a-zA-Z]", "").toLowerCase();
@@ -199,6 +219,14 @@ public class DictImportBo {
                 java.io.File dir = new java.io.File(sysParamUtil.getSoundPath() + "/" + firstChar);
                 if (!dir.exists()) dir.mkdirs();
                 java.io.File soundFile = new java.io.File(dir, pureSpell + ".mp3");
+                
+                if (!isNewWord && "RECREATE".equalsIgnoreCase(strategy)) {
+                    if (soundFile.exists()) {
+                        soundFile.delete();
+                        logger.info("重刷策略已删除旧的发音文件，准备重新获取: " + soundFile.getAbsolutePath());
+                    }
+                }
+
                 if (!soundFile.exists()) {
                     try {
                         String[] urlStrs = {
