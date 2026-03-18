@@ -200,13 +200,39 @@ public class DictImportBo {
                 if (!dir.exists()) dir.mkdirs();
                 java.io.File soundFile = new java.io.File(dir, pureSpell + ".mp3");
                 if (!soundFile.exists()) {
-                    byte[] audioData = aiBo.generateSpeech(spell);
-                    if (audioData != null && audioData.length > 0) {
-                        try (java.io.FileOutputStream fos = new java.io.FileOutputStream(soundFile)) {
-                            fos.write(audioData);
-                            fos.flush();
+                    try {
+                        // 使用有道绝佳的真人英式播报 API，远比大模型直接盲读强且完全免费
+                        String urlStr = "http://dict.youdao.com/dictvoice?type=1&audio=" + java.net.URLEncoder.encode(pureSpell, "UTF-8");
+                        java.net.URL url = new java.net.URL(urlStr);
+                        java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
+                        conn.setRequestMethod("GET");
+                        conn.setConnectTimeout(3000);
+                        conn.setReadTimeout(5000);
+                        
+                        if (conn.getResponseCode() == 200) {
+                            try (java.io.InputStream is = conn.getInputStream();
+                                 java.io.FileOutputStream fos = new java.io.FileOutputStream(soundFile)) {
+                                byte[] buffer = new byte[4096];
+                                int bytesRead;
+                                while ((bytesRead = is.read(buffer)) != -1) {
+                                    fos.write(buffer, 0, bytesRead);
+                                }
+                                fos.flush();
+                            }
+                            logger.info("通过真人词库补上了发音文件: " + soundFile.getAbsolutePath());
+                        } else {
+                            throw new RuntimeException("Http Status " + conn.getResponseCode());
                         }
-                        logger.info("补上了缺失的单词发音文件: " + soundFile.getAbsolutePath());
+                    } catch (Exception e) {
+                        logger.warn("从有道词典下载真人发音失败 (" + pureSpell + ")，自动回退使用大模型 TTS 合成降级补全: " + e.getMessage());
+                        byte[] audioData = aiBo.generateSpeech(spell);
+                        if (audioData != null && audioData.length > 0) {
+                            try (java.io.FileOutputStream fos = new java.io.FileOutputStream(soundFile)) {
+                                fos.write(audioData);
+                                fos.flush();
+                            }
+                            logger.info("通过 AI 大模型补上了缺失的单词发音文件: " + soundFile.getAbsolutePath());
+                        }
                     }
                 }
             }
