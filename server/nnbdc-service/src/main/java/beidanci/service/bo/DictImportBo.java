@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import beidanci.api.model.WordDto;
 import beidanci.api.model.MeaningItemDto;
 import beidanci.service.po.*;
 import beidanci.service.po.DictWordId;
@@ -175,6 +176,12 @@ public class DictImportBo {
             wordBo.createEntity(word);
             stats.addedWordCount++;
             stats.addedAudioCount++; // 统计单词发音资源
+
+            // 新增单词全局可见，必须为客户端插入一条系统同步日志
+            WordDto wordDto = new WordDto();
+            org.springframework.beans.BeanUtils.copyProperties(word, wordDto);
+            sysDbSyncBo.logOperation("INSERT", "word", word.getId(), beidanci.service.util.JsonUtils.toJson(wordDto));
+            stats.addSyncLog("INSERT", "word");
         }
 
         if (word == null) {

@@ -38,11 +38,11 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
     try {
       final request = JsonMap({
         "ownerId": Global.sysUserId,
-        "fileName": "System Dict Import (dog, apple)",
+        "fileName": "System Dict Import (dog, apple, crushable)",
         "config": jsonEncode({
           "isSystemImport": true,
           "dictId": "0",
-          "words": ["dog", "apple"],
+          "words": ["dog", "apple", "crushable"],
           "strategy": _strategy
         })
       });
@@ -205,7 +205,7 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
                     const SizedBox(height: 8),
                     Wrap(
                       spacing: 8,
-                      children: ['dog', 'apple'].map((w) => Chip(
+                      children: ['dog', 'apple', 'crushable'].map((w) => Chip(
                         label: Text(w),
                         backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.05),
                         side: const BorderSide(color: Colors.transparent),
