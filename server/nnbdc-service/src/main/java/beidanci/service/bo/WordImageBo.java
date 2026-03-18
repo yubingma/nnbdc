@@ -228,6 +228,13 @@ public class WordImageBo extends BaseBo<WordImage> {
 
         return new Result<>(true, null, null);
     }
+    
+    public void deleteAllImagesOfWord(String wordId, User user) {
+        List<WordImage> images = listImagesByWordId(wordId);
+        for (WordImage img : images) {
+            deleteWordImage(img.getId(), user, false);
+        }
+    }
 
     /**
      * 将WordImage转为JSON字符串用于日志

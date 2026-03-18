@@ -321,6 +321,9 @@ public class DictImportBo {
                         stats.addSyncLog("DELETE", "meaning_item");
                     }
                 }
+                
+                // 4. 清除现有发音文件与其他附件（如配图将被连带清理）
+                wordImageBo.deleteAllImagesOfWord(word.getId(), user);
             }
         }
 
