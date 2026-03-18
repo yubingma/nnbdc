@@ -56,6 +56,9 @@ public class DictImportBo {
     @Autowired
     private SynonymBo synonymBo;
 
+    @Autowired
+    private beidanci.service.util.SysParamUtil sysParamUtil;
+
     /**
      * 异步执行导入任务
      *
@@ -186,6 +189,29 @@ public class DictImportBo {
 
         if (word == null) {
             throw new RuntimeException("无法获取或创建单词对象: " + spell);
+        }
+
+        // 无论单词是否刚创建，检查其发音文件是否存在，若不存在则补发音
+        try {
+            String pureSpell = spell.replaceAll("[^a-zA-Z]", "").toLowerCase();
+            if (pureSpell.length() > 0) {
+                String firstChar = pureSpell.substring(0, 1);
+                java.io.File dir = new java.io.File(sysParamUtil.getSoundPath() + "/" + firstChar);
+                if (!dir.exists()) dir.mkdirs();
+                java.io.File soundFile = new java.io.File(dir, pureSpell + ".mp3");
+                if (!soundFile.exists()) {
+                    byte[] audioData = aiBo.generateSpeech(spell);
+                    if (audioData != null && audioData.length > 0) {
+                        try (java.io.FileOutputStream fos = new java.io.FileOutputStream(soundFile)) {
+                            fos.write(audioData);
+                            fos.flush();
+                        }
+                        logger.info("补上了缺失的单词发音文件: " + soundFile.getAbsolutePath());
+                    }
+                }
+            }
+        } catch (Exception e) {
+            logger.error("生成单词发音失败: " + spell, e);
         }
 
         // 查找该词在目标词典中的现有释义
