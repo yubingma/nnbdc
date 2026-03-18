@@ -146,4 +146,67 @@ public class AiBo {
         }
         return null;
     }
+
+    /**
+     * 调用视觉大模型进行配图审核
+     * @param wordSpell 对应的单词
+     * @param absoluteImagePath 图片的绝对路径
+     * @return 包含 {"action": "DELETE", "reason": "xxx"} 或 {"action": "KEEP"} 的 JSON 字符串
+     */
+    public String reviewImage(String wordSpell, String absoluteImagePath) {
+        String apiKey = aiProperties.getApiKey();
+        if (apiKey == null || apiKey.isEmpty() || apiKey.startsWith("${")) return "{\"action\":\"KEEP\"}";
+        try {
+            logger.info("开始审图: word={}, path={}", wordSpell, absoluteImagePath);
+            Object conv = Class.forName("com.alibaba.dashscope.aigc.multimodalconversation.MultiModalConversation").getDeclaredConstructor().newInstance();
+            
+            java.util.Map<String, Object> imgMap = new java.util.HashMap<>();
+            imgMap.put("image", "file://" + absoluteImagePath);
+            java.util.Map<String, Object> txtMap = new java.util.HashMap<>();
+            txtMap.put("text", "你是一位严苛的英文单词教学配图审核专家。请仔细查看这张被用来作为英文单词【" + wordSpell + "】配图的图片。\n" + 
+                "只要出现以下任何一种情况，请坚决鉴定为不合格：\n" + 
+                "1. 图片主要内容是与单词拼写相同的商业商标（Logo）、品牌产品（如单词是apple却画了苹果公司的标志或手机），这对于学习单词的本意毫无意义。\n" + 
+                "2. 图片出现了任何色情、擦边、性暗示或是衣着极为暴露的成人内容，这种图绝对不能用来学习单词。\n" + 
+                "3. 图片内部明显出现了任何英文字母文本、单词拼写、单词释义、水印或突兀的UI符号。\n" + 
+                "4. 画面内容与单词的字面普适含义毫无关联，或者是生硬且不知所云的拼凑画面。\n" + 
+                "5. 该单词属于人名、非常纯粹的抽象哲学概念、或缺乏画面的语法虚词，却遭到了毫无意义的强行配图。\n" +
+                "请严格只返回没有任何Markdown格式标注的纯 JSON 对象，格式为：{\"action\":\"DELETE\",\"reason\":\"具体不合格的原因\"}，如果审核通过，则返回 {\"action\":\"KEEP\"}。");
+                
+            com.alibaba.dashscope.common.MultiModalMessage userMessage = com.alibaba.dashscope.common.MultiModalMessage.builder()
+                .role(com.alibaba.dashscope.common.Role.USER.getValue())
+                .content(java.util.Arrays.asList(imgMap, txtMap))
+                .build();
+                
+            com.alibaba.dashscope.aigc.multimodalconversation.MultiModalConversationParam param = com.alibaba.dashscope.aigc.multimodalconversation.MultiModalConversationParam.builder()
+                .apiKey(apiKey)
+                .model("qwen-vl-plus")
+                .message(userMessage)
+                .build();
+                
+            java.lang.reflect.Method callMethod = conv.getClass().getMethod("call", com.alibaba.dashscope.aigc.multimodalconversation.MultiModalConversationParam.class);
+            Object result = callMethod.invoke(conv, param);
+            
+            java.lang.reflect.Method getOutputMethod = result.getClass().getMethod("getOutput");
+            Object output = getOutputMethod.invoke(result);
+            
+            java.lang.reflect.Method getChoicesMethod = output.getClass().getMethod("getChoices");
+            java.util.List choices = (java.util.List) getChoicesMethod.invoke(output);
+            
+            Object choice = choices.get(0);
+            java.lang.reflect.Method getMessageMethod = choice.getClass().getMethod("getMessage");
+            Object message = getMessageMethod.invoke(choice);
+            
+            java.lang.reflect.Method getContentMethod = message.getClass().getMethod("getContent");
+            java.util.List contentList = (java.util.List) getContentMethod.invoke(message);
+            
+            java.util.Map contentMap = (java.util.Map) contentList.get(0);
+            String jsonResult = (String) contentMap.get("text");
+            
+            logger.info("审图结果: " + jsonResult);
+            return jsonResult;
+        } catch (Exception e) {
+            logger.error("审图异常: " + absoluteImagePath, e);
+            return "{\"action\":\"KEEP\"}";
+        }
+    }
 }
