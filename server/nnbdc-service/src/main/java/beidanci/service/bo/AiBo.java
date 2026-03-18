@@ -8,6 +8,9 @@ import org.springframework.stereotype.Service;
 import com.alibaba.dashscope.aigc.generation.Generation;
 import com.alibaba.dashscope.aigc.generation.GenerationParam;
 import com.alibaba.dashscope.aigc.generation.GenerationResult;
+import com.alibaba.dashscope.aigc.imagesynthesis.ImageSynthesis;
+import com.alibaba.dashscope.aigc.imagesynthesis.ImageSynthesisParam;
+import com.alibaba.dashscope.aigc.imagesynthesis.ImageSynthesisResult;
 import com.alibaba.dashscope.common.Message;
 import com.alibaba.dashscope.common.Role;
 import com.alibaba.dashscope.exception.InputRequiredException;
@@ -109,5 +112,38 @@ public class AiBo {
             logger.error("语音合成发生异常", e);
             throw new RuntimeException("TTS 系统异常", e);
         }
+    }
+
+    /**
+     * 调用阿里云 WanX 模型生成图片。
+     * @param prompt 提示词
+     * @return 图片下载链接，失败返回null
+     */
+    public String generateImage(String prompt) {
+        String apiKey = aiProperties.getApiKey();
+        if (apiKey == null || apiKey.isEmpty() || apiKey.startsWith("${")) {
+            logger.warn("未配置DashScope API Key，跳过图片生成。");
+            return null;
+        }
+        try {
+            logger.info("请求图片生成: [模型: wanx-v1] 提示词: {}", prompt);
+            ImageSynthesis is = new ImageSynthesis();
+            ImageSynthesisParam param = ImageSynthesisParam.builder()
+                    .apiKey(apiKey)
+                    .model("wanx-v1")
+                    .prompt(prompt)
+                    .n(1)
+                    .size("1024*1024")
+                    .build();
+            ImageSynthesisResult result = is.call(param);
+            if (result != null && result.getOutput() != null && result.getOutput().getResults() != null && !result.getOutput().getResults().isEmpty()) {
+                String url = result.getOutput().getResults().get(0).get("url");
+                logger.info("图片生成成功: {}", url);
+                return url;
+            }
+        } catch (Exception e) {
+            logger.error("生成图片失败: " + prompt, e);
+        }
+        return null;
     }
 }

@@ -63,6 +63,9 @@ public class DictImportBo {
     @Autowired
     private DictBo dictBo;
 
+    @Autowired
+    private WordImageBo wordImageBo;
+
     /**
      * 异步执行导入任务
      *
@@ -372,6 +375,44 @@ public class DictImportBo {
                 }
             }
         }
+
+        // ----- 生成单词卡通配图 -----
+        if (lastAiResult != null && lastAiResult.imagePrompts != null && !lastAiResult.imagePrompts.isEmpty()) {
+            String pureSpell = spell.replaceAll("[^a-zA-Z]", "").toLowerCase();
+            for (int i = 0; i < Math.min(2, lastAiResult.imagePrompts.size()); i++) {
+                String imgPrompt = lastAiResult.imagePrompts.get(i);
+                try {
+                    String imgUrl = aiBo.generateImage(imgPrompt);
+                    if (imgUrl != null && !imgUrl.isEmpty()) {
+                        String fileName = pureSpell + "_" + java.util.UUID.randomUUID().toString() + ".jpg";
+                        java.io.File destFile = new java.io.File(sysParamUtil.getImageBaseDir(), fileName);
+                        
+                        java.net.HttpURLConnection conn = (java.net.HttpURLConnection) new java.net.URL(imgUrl).openConnection();
+                        conn.setConnectTimeout(5000);
+                        conn.setReadTimeout(10000);
+                        if (conn.getResponseCode() == 200) {
+                            try (java.io.InputStream is = conn.getInputStream();
+                                 java.io.FileOutputStream fos = new java.io.FileOutputStream(destFile)) {
+                                byte[] buffer = new byte[8192];
+                                int bytesRead;
+                                while ((bytesRead = is.read(buffer)) != -1) {
+                                    fos.write(buffer, 0, bytesRead);
+                                }
+                            }
+                            WordImage wordImage = new WordImage();
+                            wordImage.setWord(word);
+                            wordImage.setImageFile(fileName);
+                            wordImage.setHand(0);
+                            wordImage.setFoot(0);
+                            wordImageBo.addWordImage(wordImage, user);
+                            logger.info("成功为单词 {} 生成并保存配图，文件: {}", spell, fileName);
+                        }
+                    }
+                } catch (Exception e) {
+                    logger.error("为单词 " + spell + " 生成配图失败: " + imgPrompt, e);
+                }
+            }
+        }
         
         stats.wordDetails.add(new WordDetail(spell, actionType, null, lastAiResult));
     }
@@ -480,7 +521,8 @@ public class DictImportBo {
                 "2. 'meaning' field MUST be in Chinese, and MUST include all commonly used meanings, separated by semicolons if multiple.\n" +
                 "3. Ensure the sentence is practical, natural, and grammatically PERFECT.\n" +
                 "4. Use <b>word</b> in BOTH sentenceEn and sentenceCn to highlight the vocabulary word and its Chinese meaning respectively.\n" +
-                "5. CRITICAL GRAMMAR RULE: Pay attention to 'a' vs 'an' articles when highlighting. It should be 'an <b>apple</b>', never 'a <b>apple</b>'!";
+                "5. CRITICAL GRAMMAR RULE: Pay attention to 'a' vs 'an' articles when highlighting. It should be 'an <b>apple</b>', never 'a <b>apple</b>'!\n" +
+                "6. IMAGE GENERATION: You must also generate 0 to 2 English image generation prompts for the word. Use cartoon style (start with 'A cute cartoon style illustration of...'). If the word is too abstract or unsuitable for a picture (e.g., 'the', 'is', 'therefore'), return an empty array [] for imagePrompts.";
         StringBuilder userPrompt = new StringBuilder();
         userPrompt.append(String.format("Generating data for word '%s'. ", spell));
         
@@ -489,11 +531,11 @@ public class DictImportBo {
         }
 
         if (manualMeaning == null) {
-            userPrompt.append("Return in this exact JSON format: {\"phonetic\": \"/xxx/\", \"pos\": \"n.\", \"meaning\": \"中文意思1; 中文意思2\", \"popularity\": 1-10, \"synonyms\": [\"syn1\", \"syn2\"], \"sentenceEn\": \"...\", \"sentenceCn\": \"...\"}. " +
+            userPrompt.append("Return in this exact JSON format: {\"phonetic\": \"/xxx/\", \"pos\": \"n.\", \"meaning\": \"中文意思1; 中文意思2\", \"popularity\": 1-10, \"synonyms\": [\"syn1\", \"syn2\"], \"sentenceEn\": \"...\", \"sentenceCn\": \"...\", \"imagePrompts\": [\"...\"]}. " +
                     "provide at most 3 common synonyms.");
         } else {
             userPrompt.append(String.format("Given manual meaning '%s', generate phonetics, example sentence and synonyms. " +
-                    "Return: {\"phonetic\": \"/xxx/\", \"pos\": \"n.\", \"meaning\": \"%s\", \"popularity\": 5, \"synonyms\": [\"syn1\", \"syn2\"], \"sentenceEn\": \"...\", \"sentenceCn\": \"...\"}.", 
+                    "Return: {\"phonetic\": \"/xxx/\", \"pos\": \"n.\", \"meaning\": \"%s\", \"popularity\": 5, \"synonyms\": [\"syn1\", \"syn2\"], \"sentenceEn\": \"...\", \"sentenceCn\": \"...\", \"imagePrompts\": [\"...\"]}.", 
                     manualMeaning, manualMeaning));
         }
 
@@ -516,13 +558,14 @@ public class DictImportBo {
     }
 
     public static class AiResult {
-        String phonetic;
-        String pos;
-        String meaning;
-        Integer popularity;
-        String sentenceEn;
-        String sentenceCn;
-        List<String> synonyms;
+        public String phonetic;
+        public String pos;
+        public String meaning;
+        public Integer popularity;
+        public String sentenceEn;
+        public String sentenceCn;
+        public List<String> synonyms;
+        public List<String> imagePrompts;
     }
 
     public static class TaskStatistics {
