@@ -11,6 +11,7 @@ import beidanci.api.model.MeaningItemDto;
 import beidanci.service.po.*;
 import beidanci.service.po.DictWordId;
 import beidanci.service.util.JsonUtils;
+import beidanci.service.util.SysParamUtil;
 import beidanci.util.Constants;
 
 import java.util.Date;
@@ -57,7 +58,10 @@ public class DictImportBo {
     private SynonymBo synonymBo;
 
     @Autowired
-    private beidanci.service.util.SysParamUtil sysParamUtil;
+    private SysParamUtil sysParamUtil;
+
+    @Autowired
+    private DictBo dictBo;
 
     /**
      * 异步执行导入任务
@@ -361,9 +365,11 @@ public class DictImportBo {
                 stats.addedDictWordCount++;
                 
                 // 更新词书单词计数
-                dict = dictWordBo.dictBo.findById(dictId);
-                dict.setWordCount(dict.getWordCount() + 1);
-                dictWordBo.dictBo.updateEntity(dict);
+                dict = dictBo.findById(dictId);
+                if (dict != null) {
+                    dict.setWordCount(dict.getWordCount() + 1);
+                    dictBo.updateEntity(dict);
+                }
             }
         }
         
