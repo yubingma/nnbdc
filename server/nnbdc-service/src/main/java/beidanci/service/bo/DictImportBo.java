@@ -390,25 +390,32 @@ public class DictImportBo {
                         String fileName = pureSpell + "_" + java.util.UUID.randomUUID().toString() + ".jpg";
                         java.io.File destFile = new java.io.File(sysParamUtil.getImageBaseDir(), fileName);
                         
-                        java.net.HttpURLConnection conn = (java.net.HttpURLConnection) new java.net.URL(imgUrl).openConnection();
-                        conn.setConnectTimeout(5000);
-                        conn.setReadTimeout(10000);
-                        if (conn.getResponseCode() == 200) {
-                            try (java.io.InputStream is = conn.getInputStream();
-                                 java.io.FileOutputStream fos = new java.io.FileOutputStream(destFile)) {
-                                byte[] buffer = new byte[8192];
-                                int bytesRead;
-                                while ((bytesRead = is.read(buffer)) != -1) {
-                                    fos.write(buffer, 0, bytesRead);
+                        okhttp3.OkHttpClient client = new okhttp3.OkHttpClient.Builder()
+                                .connectTimeout(java.time.Duration.ofSeconds(10))
+                                .readTimeout(java.time.Duration.ofSeconds(60))
+                                .build();
+                        okhttp3.Request request = new okhttp3.Request.Builder().url(imgUrl).build();
+                        
+                        try (okhttp3.Response response = client.newCall(request).execute()) {
+                            if (response.isSuccessful() && response.body() != null) {
+                                try (java.io.InputStream is = response.body().byteStream();
+                                     java.io.FileOutputStream fos = new java.io.FileOutputStream(destFile)) {
+                                    byte[] buffer = new byte[8192];
+                                    int bytesRead;
+                                    while ((bytesRead = is.read(buffer)) != -1) {
+                                        fos.write(buffer, 0, bytesRead);
+                                    }
                                 }
+                                WordImage wordImage = new WordImage();
+                                wordImage.setWord(word);
+                                wordImage.setImageFile(fileName);
+                                wordImage.setHand(0);
+                                wordImage.setFoot(0);
+                                wordImageBo.addWordImage(wordImage, user);
+                                logger.info("成功为单词 {} 生成并保存配图，文件: {}", spell, fileName);
+                            } else {
+                                logger.error("下载单词配图失败: HTTP {}, {}", response.code(), imgUrl);
                             }
-                            WordImage wordImage = new WordImage();
-                            wordImage.setWord(word);
-                            wordImage.setImageFile(fileName);
-                            wordImage.setHand(0);
-                            wordImage.setFoot(0);
-                            wordImageBo.addWordImage(wordImage, user);
-                            logger.info("成功为单词 {} 生成并保存配图，文件: {}", spell, fileName);
                         }
                     }
                 } catch (Exception e) {
@@ -525,7 +532,7 @@ public class DictImportBo {
                 "3. Ensure the sentence is practical, natural, and grammatically PERFECT.\n" +
                 "4. Use <b>word</b> in BOTH sentenceEn and sentenceCn to highlight the vocabulary word and its Chinese meaning respectively.\n" +
                 "5. CRITICAL GRAMMAR RULE: Pay attention to 'a' vs 'an' articles when highlighting. It should be 'an <b>apple</b>', never 'a <b>apple</b>'!\n" +
-                "6. IMAGE GENERATION: You must also generate 0 to 2 English image generation prompts for the word. Use cartoon style (start with 'A cute cartoon style illustration of...'). If the word is too abstract or unsuitable for a picture (e.g., 'the', 'is', 'therefore'), return an empty array [] for imagePrompts.";
+                "6. IMAGE GENERATION: You must also generate 0 to 2 English image generation prompts for the word. Use clean, flat vector art style (start with 'A clean flat vector art style illustration of...'). If the word is too abstract or unsuitable for a picture (e.g., 'the', 'is', 'therefore'), return an empty array [] for imagePrompts.";
         StringBuilder userPrompt = new StringBuilder();
         userPrompt.append(String.format("Generating data for word '%s'. ", spell));
         
@@ -557,6 +564,11 @@ public class DictImportBo {
         @SuppressWarnings("unchecked")
         List<String> synonyms = (List<String>) map.get("synonyms");
         res.synonyms = synonyms;
+        
+        @SuppressWarnings("unchecked")
+        List<String> imagePrompts = (List<String>) map.get("imagePrompts");
+        res.imagePrompts = imagePrompts;
+        
         return res;
     }
 
