@@ -205,6 +205,10 @@ class WordBo {
       }
       wordVo.similarWords = similarWordVos;
 
+      // 查询单词配图
+      final images = await db.wordImagesDao.getImagesByWordId(localWord.id);
+      wordVo.images = images.map((i) => WordImageVo(i.id, i.imageFile, i.hand, i.foot, UserVo.c2(i.authorId))).toList();
+
       // 检查是否在用户选择的词书中
       bool isInMySelectedDicts = false;
       if (userId != null && userId.isNotEmpty) {
@@ -354,6 +358,10 @@ class WordBo {
         meaningItemVos.add(miVo);
       }
       wordVo.meaningItems = meaningItemVos;
+
+      // 查询单词配图
+      final images = await db.wordImagesDao.getImagesByWordId(localWord.id);
+      wordVo.images = images.map((i) => WordImageVo(i.id, i.imageFile, i.hand, i.foot, UserVo.c2(i.authorId))).toList();
 
       bool isInMySelectedDicts = false;
       if (currentUser != null && currentUser.id != null) {

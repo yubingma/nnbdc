@@ -858,6 +858,10 @@ class WordImagesDao extends DatabaseAccessor<MyDatabase> with _$WordImagesDaoMix
     return (select(wordImages)..where((wi) => wi.id.equals(id))).getSingleOrNull();
   }
 
+  Future<List<WordImage>> getImagesByWordId(String wordId) {
+    return (select(wordImages)..where((wi) => wi.wordId.equals(wordId))).get();
+  }
+
   Future<void> insertEntity(WordImage entry) async {
     await into(wordImages).insertOnConflictUpdate(entry);
   }
