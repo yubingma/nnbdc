@@ -472,8 +472,9 @@ public class DictImportBo {
                 "IMPORTANT RULES:\n" +
                 "1. 'pos' field MUST be abbreviations (e.g., n., v., adj., adv.).\n" +
                 "2. 'meaning' field MUST be in Chinese, and MUST include all commonly used meanings, separated by semicolons if multiple.\n" +
-                "3. Ensure the sentence is practical and natural.\n" +
-                "4. Use <b>word</b> in BOTH sentenceEn and sentenceCn to highlight the vocabulary word and its Chinese meaning respectively.";
+                "3. Ensure the sentence is practical, natural, and grammatically PERFECT.\n" +
+                "4. Use <b>word</b> in BOTH sentenceEn and sentenceCn to highlight the vocabulary word and its Chinese meaning respectively.\n" +
+                "5. CRITICAL GRAMMAR RULE: Pay attention to 'a' vs 'an' articles when highlighting. It should be 'an <b>apple</b>', never 'a <b>apple</b>'!";
         StringBuilder userPrompt = new StringBuilder();
         userPrompt.append(String.format("Generating data for word '%s'. ", spell));
         
