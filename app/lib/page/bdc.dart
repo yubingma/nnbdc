@@ -5388,8 +5388,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                       ],
                     ),
                   ),
-                // 图片
-                if (_currentGetWordResult?.images != null)
+                // 图片 (仅对管理员开放)
+                if ((Global.getLoggedInUser()?.isAdmin == true) && _currentGetWordResult?.images != null)
                   Column(
                     children: [
                       if (_currentGetWordResult!.images!.isNotEmpty &&

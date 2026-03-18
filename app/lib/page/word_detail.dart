@@ -688,6 +688,39 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                       ],
                     ),
                   ),
+                  
+                  // 配图展示 (仅对管理员开放)
+                  if ((Global.getLoggedInUser()?.isAdmin == true) && args.word.images != null && args.word.images!.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(leftPadding, 16, rightPadding, 8),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('配图', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, letterSpacing: 0.5, fontFamily: 'NotoSansSC')),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: args.word.images!.map((image) => Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.network(
+                                  '${Config.wordImageBaseUrl}${image.imageFile}',
+                                  width: 120,
+                                  height: 120,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                            )).toList(),
+                          )
+                        ],
+                      ),
+                    ),
+                    
                   Padding(
                     padding: const EdgeInsets.fromLTRB(leftPadding, 8, rightPadding, 0),
                     child: Column(
