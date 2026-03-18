@@ -1,6 +1,7 @@
 package beidanci.service.bo;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,9 +16,23 @@ public class ImportTaskBo extends BaseBo<ImportTask> {
     @Autowired
     private beidanci.service.dao.ImportTaskDao importTaskDao;
 
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
     @PostConstruct
     public void init() {
         setDao(importTaskDao);
+        
+        try {
+            int updated = jdbcTemplate.update("UPDATE import_task SET status = 'FAILED', " +
+                    "results = '{\"error\":\"System abruptly restarted.\"}' " +
+                    "WHERE status = 'RUNNING'");
+            if (updated > 0) {
+                System.out.println("⚠️ [System Startup] Automatically cleaned up " + updated + " zombie RUNNING import tasks.");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
     
     public void updateProgress(String taskId, int processedCount, String logAppend) {
