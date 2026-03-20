@@ -5,7 +5,14 @@ START_TIME=$SECONDS
 # Configuration
 # Default Client ID from screenshot, but allow override
 DEFAULT_CLIENT_ID="116685955"
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+# Resolve symlinks to find the real script directory (works on macOS and Linux)
+SOURCE="${BASH_SOURCE[0]}"
+while [ -h "$SOURCE" ]; do
+  DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+  SOURCE="$(readlink "$SOURCE")"
+  [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+done
+SCRIPT_DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 PROJECT_ROOT="$SCRIPT_DIR/../app"
 UPLOAD_SCRIPT="$SCRIPT_DIR/upload_huawei.py"
 PYTHON_EXEC="$SCRIPT_DIR/../.venv/bin/python"
