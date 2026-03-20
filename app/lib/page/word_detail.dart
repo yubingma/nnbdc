@@ -19,7 +19,6 @@ import 'bdc.dart';
 import '../util/asr.dart';
 
 import 'package:flutter_markdown/flutter_markdown.dart';
-import 'package:http/http.dart' as http;
 
 import '../global.dart';
 import '../state.dart';

@@ -140,14 +140,18 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
       // 构建词书分组数据
       dictGroups = [];
 
-      // 2. 基于 root 分组获取其直接子分组（不显示 root 自身）
-      //    优先通过名称为 'root' 的分组定位；若不存在，则取最顶层(parentId==null)作为根
-      final rootGroup = dictGroupsData.firstWhere(
-        (g) => g.name == 'root',
-        orElse: () => dictGroupsData.firstWhere((g) => g.parentId == null),
-      );
-
-      var secondLevelGroups = dictGroupsData.where((g) => g.parentId == rootGroup.id && !["蒲公英", "职称", "少儿", "其他"].contains(g.name)).toList();
+      var secondLevelGroups = [];
+      if (dictGroupsData.isNotEmpty) {
+        try {
+          final rootGroup = dictGroupsData.firstWhere(
+            (g) => g.name == 'root',
+            orElse: () => dictGroupsData.firstWhere((g) => g.parentId == null, orElse: () => dictGroupsData.first),
+          );
+          secondLevelGroups = dictGroupsData.where((g) => g.parentId == rootGroup.id && !["蒲公英", "职称", "少儿", "其他"].contains(g.name)).toList();
+        } catch (e) {
+          Global.logger.w('No root group found in dictGroupsData: $e');
+        }
+      }
 
       // 按 displayIndex 排序
       secondLevelGroups.sort((a, b) => a.displayIndex.compareTo(b.displayIndex));

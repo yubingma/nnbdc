@@ -16,7 +16,7 @@ import 'package:nnbdc/util/wechat_util.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:umeng_common_sdk/umeng_common_sdk.dart';
 import 'package:nnbdc/services/throttled_sync_service.dart';
-
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import '../config.dart';
 import '../global.dart';
 import '../socket_io.dart';
@@ -29,11 +29,13 @@ class LoginPage extends StatefulWidget {
   LoginPageState createState() => LoginPageState();
 }
 
-class LoginPageState extends State<LoginPage> with WidgetsBindingObserver, SingleTickerProviderStateMixin {
+class LoginPageState extends State<LoginPage>
+    with WidgetsBindingObserver, SingleTickerProviderStateMixin {
   late AnimationController _bubbleController;
   bool _approved = false;
   bool _isWechatLoading = false;
-
+  bool _isAppleLoading = false;
+  bool _isGuestLoading = false;
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
@@ -46,7 +48,8 @@ class LoginPageState extends State<LoginPage> with WidgetsBindingObserver, Singl
     if (user != null) {
       // 检查隐私政策版本
       const int currentPrivacyVersion = 20260310;
-      int acceptedVersion = GetStorage().read<int>('accepted_privacy_version') ?? 0;
+      int acceptedVersion =
+          GetStorage().read<int>('accepted_privacy_version') ?? 0;
       if (acceptedVersion >= currentPrivacyVersion) {
         setState(() {
           _approved = true;
@@ -59,7 +62,7 @@ class LoginPageState extends State<LoginPage> with WidgetsBindingObserver, Singl
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    
+
     _bubbleController = AnimationController(
       duration: const Duration(seconds: 10),
       vsync: this,
@@ -70,11 +73,13 @@ class LoginPageState extends State<LoginPage> with WidgetsBindingObserver, Singl
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed && _isWechatLoading) {
+    if (state == AppLifecycleState.resumed &&
+        (_isWechatLoading || _isAppleLoading)) {
       // 重置登录状态，防止死锁
       Future.delayed(const Duration(seconds: 2), () {
-        if (mounted && _isWechatLoading) {
-          setState(() => _isWechatLoading = false);
+        if (mounted) {
+          if (_isWechatLoading) setState(() => _isWechatLoading = false);
+          if (_isAppleLoading) setState(() => _isAppleLoading = false);
         }
       });
     }
@@ -137,7 +142,7 @@ class LoginPageState extends State<LoginPage> with WidgetsBindingObserver, Singl
                 ),
               ),
             ),
-            
+
             // Animated Bubbles
             AnimatedBuilder(
               animation: _bubbleController,
@@ -154,7 +159,7 @@ class LoginPageState extends State<LoginPage> with WidgetsBindingObserver, Singl
                 );
               },
             ),
-            
+
             // Main Content
             SafeArea(
               child: Padding(
@@ -162,7 +167,7 @@ class LoginPageState extends State<LoginPage> with WidgetsBindingObserver, Singl
                 child: Column(
                   children: [
                     const Spacer(flex: 3),
-                    
+
                     // Logo & Title Section
                     GestureDetector(
                       onDoubleTap: _showVersionAndProfileDialog,
@@ -181,7 +186,8 @@ class LoginPageState extends State<LoginPage> with WidgetsBindingObserver, Singl
                                 ),
                               ],
                             ),
-                            child: Image.asset('assets/images/logo.png', width: 76, height: 76),
+                            child: Image.asset('assets/images/logo.png',
+                                width: 76, height: 76),
                           ),
                           const SizedBox(height: 32),
                           const Text(
@@ -215,12 +221,58 @@ class LoginPageState extends State<LoginPage> with WidgetsBindingObserver, Singl
                         ],
                       ),
                     ),
-                    
+
                     const Spacer(flex: 4),
-                    
+
                     // Action Section
                     Column(
                       children: [
+                        if (PlatformUtils.isIOS)
+                          Container(
+                            width: double.infinity,
+                            margin: const EdgeInsets.only(bottom: 12),
+                            decoration: BoxDecoration(
+                              color: Colors.black,
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.25),
+                                  blurRadius: 20,
+                                  offset: const Offset(0, 8),
+                                ),
+                              ],
+                            ),
+                            child: ElevatedButton.icon(
+                              onPressed: (_isWechatLoading ||
+                                      _isAppleLoading ||
+                                      _isGuestLoading)
+                                  ? null
+                                  : appleLoginPressed,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.transparent,
+                                foregroundColor: Colors.white,
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 18),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                elevation: 0,
+                                shadowColor: Colors.transparent,
+                                splashFactory: InkSparkle.splashFactory,
+                              ),
+                              icon: const Icon(Icons.apple,
+                                  color: Colors.white, size: 26),
+                              label: Text(
+                                _isAppleLoading ? '正在连接...' : '通过 Apple 登录',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 0.5,
+                                  fontFamily: 'NotoSansSC',
+                                ),
+                              ),
+                            ),
+                          ),
                         if (PlatformUtils.isIOS || PlatformUtils.isAndroid)
                           Container(
                             width: double.infinity,
@@ -233,18 +285,24 @@ class LoginPageState extends State<LoginPage> with WidgetsBindingObserver, Singl
                               ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: const Color(0xFF07C160).withValues(alpha: 0.25),
+                                  color: const Color(0xFF07C160)
+                                      .withValues(alpha: 0.25),
                                   blurRadius: 20,
                                   offset: const Offset(0, 8),
                                 ),
                               ],
                             ),
                             child: ElevatedButton.icon(
-                              onPressed: _isWechatLoading ? null : wechatLoginPressed,
+                              onPressed: (_isWechatLoading ||
+                                      _isAppleLoading ||
+                                      _isGuestLoading)
+                                  ? null
+                                  : wechatLoginPressed,
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.transparent,
                                 foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 18),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 18),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(20),
                                 ),
@@ -252,11 +310,12 @@ class LoginPageState extends State<LoginPage> with WidgetsBindingObserver, Singl
                                 shadowColor: Colors.transparent,
                                 splashFactory: InkSparkle.splashFactory,
                               ),
-                              icon: const Icon(Icons.wechat, color: Colors.white, size: 26),
+                              icon: const Icon(Icons.wechat,
+                                  color: Colors.white, size: 26),
                               label: Text(
                                 _isWechatLoading ? '正在连接...' : '微信一键登录',
                                 style: const TextStyle(
-                                  fontSize: 16, 
+                                  fontSize: 16,
                                   fontWeight: FontWeight.w900,
                                   letterSpacing: 0.5,
                                   fontFamily: 'NotoSansSC',
@@ -265,7 +324,7 @@ class LoginPageState extends State<LoginPage> with WidgetsBindingObserver, Singl
                             ),
                           ),
                         const SizedBox(height: 20),
-                        
+
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
@@ -274,7 +333,8 @@ class LoginPageState extends State<LoginPage> with WidgetsBindingObserver, Singl
                                 ToastUtil.error("请先同意[使用协议]和[隐私政策]");
                                 return;
                               }
-                              Get.toNamed('/email_login', arguments: {'approved': _approved});
+                              Get.toNamed('/email_login',
+                                  arguments: {'approved': _approved});
                             }),
                             Container(
                               width: 1,
@@ -282,34 +342,51 @@ class LoginPageState extends State<LoginPage> with WidgetsBindingObserver, Singl
                               margin: const EdgeInsets.symmetric(horizontal: 8),
                               color: Colors.white24,
                             ),
-                            _buildMinorButton('先去逛逛', () async {
+                            _buildMinorButton(
+                                _isGuestLoading ? '正在登录...' : '先去逛逛', () async {
+                              if (_isGuestLoading) return;
                               if (!_approved) {
                                 ToastUtil.error("请先同意[使用协议]和[隐私政策]");
                                 return;
                               }
-                              await Global.loginAsGuest();
-                              // 访客也尝试同步（虽然目前 Global.isGuest 为真时 syncUserDb 会跳过，但 syncSysDb 仍有用）
-                              ThrottledDbSyncService().requestSync(immediate: true);
-                              // 记录同意了当前隐私政策版本
-                              GetStorage().write('accepted_privacy_version', 20260310);
-                              
-                              // 访客登录后初始化统计 SDK (如果是 Android/iOS)
-                              if (PlatformUtils.isAndroid || PlatformUtils.isIOS) {
-                                try {
-                  UmengCommonSdk.initCommon(Config.umengAndroidAppKey, Config.umengIosAppKey, Config.umengChannel);
-                                } catch (e) {
-                                  debugPrint('Umeng init error: $e');
+                              setState(() => _isGuestLoading = true);
+                              try {
+                                await Global.loginAsGuest();
+                                // 访客也尝试同步（虽然目前 Global.isGuest 为真时 syncUserDb 会跳过，但 syncSysDb 仍有用）
+                                ThrottledDbSyncService()
+                                    .requestSync(immediate: true);
+                                // 记录同意了当前隐私政策版本
+                                GetStorage().write(
+                                    'accepted_privacy_version', 20260310);
+
+                                // 访客登录后初始化统计 SDK (如果是 Android/iOS)
+                                if (PlatformUtils.isAndroid ||
+                                    PlatformUtils.isIOS) {
+                                  try {
+                                    UmengCommonSdk.initCommon(
+                                        Config.umengAndroidAppKey,
+                                        Config.umengIosAppKey,
+                                        Config.umengChannel);
+                                  } catch (e) {
+                                    debugPrint('Umeng init error: $e');
+                                  }
                                 }
+
+                                await SubscriptionUtil.restorePurchases(
+                                    showToast: false);
+                                Get.offAllNamed('/index');
+                              } catch (e, stackTrace) {
+                                ErrorHandler.handleNetworkError(e, stackTrace,
+                                    api: 'loginAsGuest');
+                                if (mounted)
+                                  setState(() => _isGuestLoading = false);
                               }
-                              
-                              await SubscriptionUtil.restorePurchases(showToast: false);
-                              Get.offAllNamed('/index');
                             }),
                           ],
                         ),
-                        
+
                         const SizedBox(height: 40),
-                        
+
                         // Agreement Section
                         GestureDetector(
                           onTap: () => setState(() => _approved = !_approved),
@@ -325,32 +402,40 @@ class LoginPageState extends State<LoginPage> with WidgetsBindingObserver, Singl
                                   height: 20,
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
-                                    color: _approved ? Colors.white : Colors.white.withValues(alpha: 0.1),
+                                    color: _approved
+                                        ? Colors.white
+                                        : Colors.white.withValues(alpha: 0.1),
                                     border: Border.all(
-                                      color: _approved ? Colors.white : Colors.white.withValues(alpha: 0.4),
+                                      color: _approved
+                                          ? Colors.white
+                                          : Colors.white.withValues(alpha: 0.4),
                                       width: 1.5,
                                     ),
                                   ),
-                                  child: _approved 
-                                    ? const Icon(Icons.check, color: Color(0xFF0284C7), size: 12) 
-                                    : null,
+                                  child: _approved
+                                      ? const Icon(Icons.check,
+                                          color: Color(0xFF0284C7), size: 12)
+                                      : null,
                                 ),
                                 const SizedBox(width: 10),
-                                const Text(
-                                  '同意 ', 
-                                  style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w500)
-                                ),
+                                const Text('同意 ',
+                                    style: TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500)),
                                 _buildLink('《用户协议》', showProtocolPage),
-                                const Text(
-                                  ' 与 ', 
-                                  style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w500)
-                                ),
+                                const Text(' 与 ',
+                                    style: TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500)),
                                 _buildLink('《隐私政策》', showPrivacyPage),
                               ],
                             ),
                           ),
                         ),
-                        SizedBox(height: MediaQuery.of(context).padding.bottom + 20),
+                        SizedBox(
+                            height: MediaQuery.of(context).padding.bottom + 20),
                       ],
                     ),
                   ],
@@ -366,15 +451,25 @@ class LoginPageState extends State<LoginPage> with WidgetsBindingObserver, Singl
   Widget _buildMinorButton(String text, VoidCallback onTap) {
     return TextButton(
       onPressed: onTap,
-      style: TextButton.styleFrom(minimumSize: Size.zero, padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
-      child: Text(text, style: const TextStyle(color: Color(0xFFE0F2FE), fontSize: 13, fontWeight: FontWeight.w500)),
+      style: TextButton.styleFrom(
+          minimumSize: Size.zero,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
+      child: Text(text,
+          style: const TextStyle(
+              color: Color(0xFFE0F2FE),
+              fontSize: 13,
+              fontWeight: FontWeight.w500)),
     );
   }
 
-  Widget _buildFloatingBubble(double leftPercent, double startBottomPercent, double size, double opacity, {required double offset}) {
+  Widget _buildFloatingBubble(double leftPercent, double startBottomPercent,
+      double size, double opacity,
+      {required double offset}) {
     double progress = (_bubbleController.value + offset) % 1.0;
-    double bottom = (startBottomPercent + (1.0 - startBottomPercent) * progress) * MediaQuery.of(context).size.height;
-    
+    double bottom =
+        (startBottomPercent + (1.0 - startBottomPercent) * progress) *
+            MediaQuery.of(context).size.height;
+
     // Fade out as it goes up
     double currentOpacity = opacity * (1.0 - progress * 0.5);
 
@@ -435,23 +530,27 @@ class LoginPageState extends State<LoginPage> with WidgetsBindingObserver, Singl
         cancelable.cancel();
         if (response.code != null) {
           try {
-            final result = await Api.client.loginByWechat(response.code!, getClientType().name, Global.version);
+            final result = await Api.client.loginByWechat(
+                response.code!, getClientType().name, Global.version);
             if (result.success && result.data != null) {
-              final userVo = UserVo.fromJson(result.data as Map<String, dynamic>);
+              final userVo =
+                  UserVo.fromJson(result.data as Map<String, dynamic>);
               userVo.lastLoginTime = AppClock.now();
-              await MyDatabase.instance.usersDao.saveUser(userVo2User(userVo), false);
+              await MyDatabase.instance.usersDao
+                  .saveUser(userVo2User(userVo), false);
               await Global.setLoggedInUser(userVo);
-              
+
               // 微信登录成功后立即触发同步
               ThrottledDbSyncService().requestSync(immediate: true);
-              
+
               // 记录同意了当前隐私政策版本
               GetStorage().write('accepted_privacy_version', 20260310);
-              
+
               // 登录成功后初始化统计 SDK (如果是 Android/iOS)
               if (PlatformUtils.isAndroid || PlatformUtils.isIOS) {
                 try {
-                  UmengCommonSdk.initCommon(Config.umengAndroidAppKey, Config.umengIosAppKey, Config.umengChannel);
+                  UmengCommonSdk.initCommon(Config.umengAndroidAppKey,
+                      Config.umengIosAppKey, Config.umengChannel);
                 } catch (e) {
                   debugPrint('Umeng init error: $e');
                 }
@@ -463,7 +562,8 @@ class LoginPageState extends State<LoginPage> with WidgetsBindingObserver, Singl
             }
             ToastUtil.error(result.msg ?? '微信登录失败');
           } catch (e, stackTrace) {
-            ErrorHandler.handleNetworkError(e, stackTrace, api: 'loginByWechat');
+            ErrorHandler.handleNetworkError(e, stackTrace,
+                api: 'loginByWechat');
           }
         } else {
           ToastUtil.error('微信授权失败');
@@ -478,6 +578,68 @@ class LoginPageState extends State<LoginPage> with WidgetsBindingObserver, Singl
     } catch (e, stackTrace) {
       ErrorHandler.handleNetworkError(e, stackTrace, api: 'loginByWechat');
       setState(() => _isWechatLoading = false);
+    }
+  }
+
+  void appleLoginPressed() async {
+    if (!_approved) {
+      ToastUtil.error("请先同意[使用协议]和[隐私政策]");
+      return;
+    }
+    setState(() => _isAppleLoading = true);
+    try {
+      final credential = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+      );
+
+      String? nickname;
+      if (credential.givenName != null || credential.familyName != null) {
+        nickname =
+            '${credential.givenName ?? ""} ${credential.familyName ?? ""}'
+                .trim();
+      }
+
+      final result = await Api.client.loginByApple(credential.userIdentifier!,
+          credential.email, nickname, getClientType().name, Global.version);
+
+      if (result.success && result.data != null) {
+        final userVo = UserVo.fromJson(result.data as Map<String, dynamic>);
+        userVo.lastLoginTime = AppClock.now();
+        await MyDatabase.instance.usersDao.saveUser(userVo2User(userVo), false);
+        await Global.setLoggedInUser(userVo);
+
+        ThrottledDbSyncService().requestSync(immediate: true);
+
+        GetStorage().write('accepted_privacy_version', 20260310);
+
+        if (PlatformUtils.isAndroid || PlatformUtils.isIOS) {
+          try {
+            UmengCommonSdk.initCommon(Config.umengAndroidAppKey,
+                Config.umengIosAppKey, Config.umengChannel);
+          } catch (e) {
+            debugPrint('Umeng init error: $e');
+          }
+        }
+
+        SubscriptionUtil.restorePurchases(showToast: false);
+        Get.offAllNamed('/index');
+        return;
+      }
+      ToastUtil.error(result.msg ?? '苹果登录失败');
+    } catch (e, stackTrace) {
+      if (e is SignInWithAppleAuthorizationException &&
+          e.code == AuthorizationErrorCode.canceled) {
+        // User canceled
+      } else {
+        ErrorHandler.handleNetworkError(e, stackTrace, api: 'loginByApple');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isAppleLoading = false);
+      }
     }
   }
 
@@ -504,7 +666,8 @@ class LoginPageState extends State<LoginPage> with WidgetsBindingObserver, Singl
                     TextButton(
                       onPressed: () {
                         setState(() {
-                          Config.profileName = (Config.profileName == 'dev' ? 'prod' : 'dev');
+                          Config.profileName =
+                              (Config.profileName == 'dev' ? 'prod' : 'dev');
                           Api.useProdUrl = (Config.profileName == 'prod');
                         });
                         Api.resetClient();
@@ -521,7 +684,11 @@ class LoginPageState extends State<LoginPage> with WidgetsBindingObserver, Singl
               Text('数据库版本: $dbVersion'),
             ],
           ),
-          actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('确定'))],
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('确定'))
+          ],
         ),
       );
     } catch (e) {

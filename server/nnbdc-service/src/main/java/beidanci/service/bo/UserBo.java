@@ -1094,6 +1094,65 @@ public class UserBo extends BaseBo<User> {
     }
 
     /**
+     * 根据 Apple user identifier 查找或创建用户
+     * 
+     * @param userIdentifier 苹果返回的用户标识
+     * @param email 用户的邮箱（可能为空）
+     * @param nickname 用户的昵称（可能为空）
+     * @return 用户对象
+     */
+    @Transactional
+    public User findOrCreateUserByApple(String userIdentifier, String email, String nickname) {
+        try {
+            List<User> users = new ArrayList<>();
+            if (userIdentifier != null && !userIdentifier.trim().isEmpty()) {
+                String sql = "SELECT * FROM \"user\" WHERE apple_user_id = :appleUserId";
+                MapSqlParameterSource params = new MapSqlParameterSource("appleUserId", userIdentifier);
+                users = namedParameterJdbcTemplate.query(sql, params, new EntityRowMapper<>(User.class));
+            }
+
+            if (!users.isEmpty()) {
+                // 用户已存在，更新可能为空的属性
+                User existingUser = users.get(0);
+                boolean changed = false;
+                if (email != null && !email.trim().isEmpty() && (existingUser.getEmail() == null || existingUser.getEmail().isEmpty())) {
+                    existingUser.setEmail(email);
+                    changed = true;
+                }
+                if (nickname != null && !nickname.trim().isEmpty() && existingUser.getNickName().startsWith("apple_user")) {
+                    existingUser.setNickName(nickname);
+                    changed = true;
+                }
+                if (changed) {
+                    updateEntity(existingUser);
+                }
+                existingUser.setLastLoginTime(new Date());
+                updateEntity(existingUser);
+                return existingUser;
+            }
+
+            // 用户不存在，使用统一方法创建新用户。
+            String userName = "ap_" + java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 16);
+            String randomPassword = MD5Utils.md5(userIdentifier + System.currentTimeMillis());
+            
+            if (nickname == null || nickname.trim().isEmpty()) {
+                nickname = "apple_user_" + userName.substring(3, 9);
+            }
+
+            User newUser = createUser(userName, randomPassword, nickname, email, null, false);
+            newUser.setAppleUserId(userIdentifier);
+            updateEntity(newUser);
+
+            logger.info("创建苹果用户成功: userIdentifier={}, nickname={}", userIdentifier, nickname);
+            return newUser;
+
+        } catch (IllegalAccessException | IllegalArgumentException | DataAccessException e) {
+            logger.error("查找或创建苹果用户异常: userIdentifier={}", userIdentifier, e);
+            throw new RuntimeException("查找或创建苹果用户失败: " + e.getMessage(), e);
+        }
+    }
+
+    /**
      * 执行微信登录
      * 
      * @param user          用户对象

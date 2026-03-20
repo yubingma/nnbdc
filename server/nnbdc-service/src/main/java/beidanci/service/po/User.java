@@ -46,6 +46,9 @@ public class User extends UuidPo {
     @Column(name = "wechat_avatar", length = 500)
     private String wechatAvatar;
 
+    @Column(name = "apple_user_id", length = 100, unique = true)
+    private String appleUserId;
+
     @Column(name = "last_learning_date")
     private Date lastLearningDate;
     @Column(name = "learned_days", nullable = false)
@@ -464,6 +467,14 @@ public class User extends UuidPo {
 
     public void setWechatAvatar(String wechatAvatar) {
         this.wechatAvatar = wechatAvatar;
+    }
+
+    public String getAppleUserId() {
+        return appleUserId;
+    }
+
+    public void setAppleUserId(String appleUserId) {
+        this.appleUserId = appleUserId;
     }
 
     public Date getLastLearningDate() {

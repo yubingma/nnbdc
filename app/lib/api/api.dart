@@ -52,19 +52,22 @@ class Api {
       dio = Dio(BaseOptions(
           connectTimeout: Duration(milliseconds: 5000),
           sendTimeout: Duration(milliseconds: 300000), // 5分钟
-          receiveTimeout: Duration(milliseconds: 300000))); // 浏览器会自动协商压缩，禁止手动设置 Accept-Encoding
+          receiveTimeout: Duration(
+              milliseconds: 300000))); // 浏览器会自动协商压缩，禁止手动设置 Accept-Encoding
       (dio.httpClientAdapter as dynamic).withCredentials = true;
     } else {
       dio = Dio(BaseOptions(
           connectTimeout: Duration(milliseconds: 5000),
           sendTimeout: Duration(milliseconds: 300000), // 5分钟
-          receiveTimeout: Duration(milliseconds: 300000))); // 由 Dio/底层库 handle 压缩
+          receiveTimeout:
+              Duration(milliseconds: 300000))); // 由 Dio/底层库 handle 压缩
 
       // 在非 Web 平台上绕过 SSL 证书校验，解决生产环境 HandshakeException
       dio.httpClientAdapter = IOHttpClientAdapter(
         createHttpClient: () {
           final client = HttpClient();
-          client.badCertificateCallback = (X509Certificate cert, String host, int port) => true;
+          client.badCertificateCallback =
+              (X509Certificate cert, String host, int port) => true;
           return client;
         },
       );
@@ -77,25 +80,31 @@ class Api {
       onRequest: (options, handler) {
         // 系统/公共词书资源走 CDN（www + /back 反代）以获得缓存加速
         // 注意：为了让 CDN 更容易缓存，强制不携带 Cookie
-        if (options.path.contains('getSysDictResById.do') || options.path.contains('getUserDictResById.do')) {
+        if (options.path.contains('getSysDictResById.do') ||
+            options.path.contains('getUserDictResById.do')) {
           if (options.path.contains('getSysDictResById.do')) {
-            options.baseUrl = Api.useProdUrl ? Config.profiles["prod"]["cdnBackUrl"] : Config.cdnBackUrl;
+            options.baseUrl = Api.useProdUrl
+                ? Config.profiles["prod"]["cdnBackUrl"]
+                : Config.cdnBackUrl;
           }
           options.headers.remove('cookie');
           options.headers.remove('Cookie');
 
           // 制作黄金母版时，添加时间戳参数以绕过 CDN 缓存，确保获取服务端最新资源
           if (Api.useProdUrl) {
-            options.queryParameters['_t'] = DateTime.now().millisecondsSinceEpoch;
+            options.queryParameters['_t'] =
+                DateTime.now().millisecondsSinceEpoch;
           }
         }
 
         // 简化的请求日志，避免重复构建
-        if (options.path.contains('getSysDictResById.do') || options.path.contains('getUserDictResById.do')) {
+        if (options.path.contains('getSysDictResById.do') ||
+            options.path.contains('getUserDictResById.do')) {
           Global.logger.d('🔄 词典资源请求开始: ${options.uri}');
 
           // 清理无效的 Cookie 头
-          if (options.headers.containsKey('cookie') && options.headers['cookie'] == null) {
+          if (options.headers.containsKey('cookie') &&
+              options.headers['cookie'] == null) {
             options.headers.remove('cookie');
           }
         } else {
@@ -108,14 +117,17 @@ class Api {
           if (existingOnReceiveProgress != null) {
             existingOnReceiveProgress(received, total);
           }
-          if (options.path.contains('getSysDictResById.do') || options.path.contains('getUserDictResById.do')) {
+          if (options.path.contains('getSysDictResById.do') ||
+              options.path.contains('getUserDictResById.do')) {
             // 使用路径+dictId作为资源ID，便于精确监听特定词书的下载进度
             // 确保资源ID格式与downloadADict中构造的一致
             String? dictId = options.queryParameters['dictId'];
             String resourceId;
             if (dictId != null) {
               // 标准化路径格式，确保以/res/开头
-              String normalizedPath = options.path.startsWith('/res/') ? options.path : '/res/${options.path.split('/').last}';
+              String normalizedPath = options.path.startsWith('/res/')
+                  ? options.path
+                  : '/res/${options.path.split('/').last}';
               resourceId = '$normalizedPath?dictId=$dictId';
             } else {
               resourceId = options.path;
@@ -126,14 +138,16 @@ class Api {
         handler.next(options);
       },
       onResponse: (response, handler) async {
-        if (response.requestOptions.path.contains('getSysDictResById.do') || response.requestOptions.path.contains('getUserDictResById.do')) {
+        if (response.requestOptions.path.contains('getSysDictResById.do') ||
+            response.requestOptions.path.contains('getUserDictResById.do')) {
           // 简化的响应日志，只记录关键信息
           String? contentLength = response.headers.value('content-length');
           String? contentEncoding = response.headers.value('content-encoding');
 
           if (contentLength != null) {
             double sizeInMB = int.parse(contentLength) / (1024 * 1024);
-            Global.logger.d('📊 响应大小: ${sizeInMB.toStringAsFixed(2)}MB, 压缩: ${contentEncoding ?? "无"}');
+            Global.logger.d(
+                '📊 响应大小: ${sizeInMB.toStringAsFixed(2)}MB, 压缩: ${contentEncoding ?? "无"}');
           }
 
           Global.logger.d('✅ 响应数据类型: ${response.data.runtimeType}');
@@ -146,7 +160,9 @@ class Api {
     dio.interceptors.add(NetworkInterceptor());
     dio.interceptors.add(CustomInterceptors());
 
-    final baseUrl = Api.useProdUrl ? Config.profiles["prod"]["service_url"] : Config.serviceUrl;
+    final baseUrl = Api.useProdUrl
+        ? Config.profiles["prod"]["service_url"]
+        : Config.serviceUrl;
 
     final client = RestClient(dio, baseUrl: baseUrl);
     _dio = dio;
@@ -164,7 +180,8 @@ class CustomInterceptors extends Interceptor {
   final LoadingService _loadingService = LoadingService();
 
   @override
-  void onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
+  void onRequest(
+      RequestOptions options, RequestInterceptorHandler handler) async {
     if (Api.disableAutoLoading) {
       return super.onRequest(options, handler);
     }
@@ -195,7 +212,9 @@ class CustomInterceptors extends Interceptor {
       int statusCode = response.statusCode ?? 0;
 
       // 只对关键接口记录详细日志
-      if (path.contains('getSysDictResById.do') || path.contains('getUserDictResById.do') || path.contains('getUserDbLogsFromVersion.do')) {
+      if (path.contains('getSysDictResById.do') ||
+          path.contains('getUserDictResById.do') ||
+          path.contains('getUserDbLogsFromVersion.do')) {
         Global.logger.i('📥 收到完整应答 - $path, 状态码: $statusCode');
 
         // 记录响应大小（如果还没有记录过）
@@ -231,21 +250,26 @@ class CustomInterceptors extends Interceptor {
         err.type == DioExceptionType.receiveTimeout ||
         err.type == DioExceptionType.sendTimeout) {
       // 超时错误处理
-      if (err.requestOptions.path.contains('getSysDictResById.do') || err.requestOptions.path.contains('getUserDictResById.do')) {
+      if (err.requestOptions.path.contains('getSysDictResById.do') ||
+          err.requestOptions.path.contains('getUserDictResById.do')) {
         ToastUtil.error('词典数据下载超时: ${err.message}');
         Global.logger.e('❌ 词典资源接口超时: ${err.message}');
         Global.logger.e('❌ 超时类型: ${err.type}');
         Global.logger.e('❌ 请求路径: ${err.requestOptions.path}');
         Global.logger.e('❌ 实际超时配置:');
-        Global.logger.e('   - connectTimeout: ${err.requestOptions.connectTimeout?.inSeconds}秒');
-        Global.logger.e('   - sendTimeout: ${err.requestOptions.sendTimeout?.inSeconds}秒');
-        Global.logger.e('   - receiveTimeout: ${err.requestOptions.receiveTimeout?.inSeconds}秒');
+        Global.logger.e(
+            '   - connectTimeout: ${err.requestOptions.connectTimeout?.inSeconds}秒');
+        Global.logger.e(
+            '   - sendTimeout: ${err.requestOptions.sendTimeout?.inSeconds}秒');
+        Global.logger.e(
+            '   - receiveTimeout: ${err.requestOptions.receiveTimeout?.inSeconds}秒');
       } else {
         ToastUtil.error('请求超时: ${err.message}');
       }
     } else {
       // 非超时/未授权的其他网络错误（如5xx），避免在拦截器里直接弹Toast，交由各调用方统一错误处理
-      Global.logger.e('网络错误: ${err.message}', error: err, stackTrace: err.stackTrace);
+      Global.logger
+          .e('网络错误: ${err.message}', error: err, stackTrace: err.stackTrace);
     }
     return super.onError(err, handler);
   }
@@ -280,7 +304,9 @@ class _DownloadProgress {
     final timeDeltaMs = (nowMs - lastAtMs).abs();
     final bool isDone = (total > 0) && (received >= total);
 
-    if (isDone || bytesDelta >= minBytesDelta || timeDeltaMs >= minTimeDeltaMs) {
+    if (isDone ||
+        bytesDelta >= minBytesDelta ||
+        timeDeltaMs >= minTimeDeltaMs) {
       _lastNotifiedReceived[resourceId] = received;
       _lastNotifiedAtMs[resourceId] = nowMs;
       _notifyListeners(resourceId, received, total);
@@ -372,31 +398,55 @@ abstract class RestClient {
 
   @PUT("/checkUser.do")
   @FormUrlEncoded()
-  Future<Result> checkUser(@Field("checkBy") String checkBy, @Field("email") String? email, @Field("userName") String? userName,
-      @Field("password") String password, @Field("clientType") String clientType, @Field("clientVersion") String clientVersion);
+  Future<Result> checkUser(
+      @Field("checkBy") String checkBy,
+      @Field("email") String? email,
+      @Field("userName") String? userName,
+      @Field("password") String password,
+      @Field("clientType") String clientType,
+      @Field("clientVersion") String clientVersion);
 
   // 邮箱验证码API
   @POST("/sendEmailCode.do")
   @FormUrlEncoded()
-  Future<Result> sendEmailCode(@Field("email") String email, @Field("type") String type);
+  Future<Result> sendEmailCode(
+      @Field("email") String email, @Field("type") String type);
 
   @POST("/verifyEmailCode.do")
   @FormUrlEncoded()
-  Future<Result> verifyEmailCode(@Field("email") String email, @Field("code") String code, @Field("type") String type);
+  Future<Result> verifyEmailCode(@Field("email") String email,
+      @Field("code") String code, @Field("type") String type);
 
   @POST("/loginByEmailCode.do")
   @FormUrlEncoded()
   Future<Result> loginByEmailCode(
-      @Field("email") String email, @Field("code") String code, @Field("clientType") String clientType, @Field("clientVersion") String clientVersion);
+      @Field("email") String email,
+      @Field("code") String code,
+      @Field("clientType") String clientType,
+      @Field("clientVersion") String clientVersion);
 
   // 微信登录API
   @POST("/loginByWechat.do")
   @FormUrlEncoded()
-  Future<Result> loginByWechat(@Field("code") String code, @Field("clientType") String clientType, @Field("clientVersion") String clientVersion);
+  Future<Result> loginByWechat(
+      @Field("code") String code,
+      @Field("clientType") String clientType,
+      @Field("clientVersion") String clientVersion);
+
+  // 苹果登录API
+  @POST("/loginByApple.do")
+  @FormUrlEncoded()
+  Future<Result> loginByApple(
+      @Field("userIdentifier") String userIdentifier,
+      @Field("email") String? email,
+      @Field("nickname") String? nickname,
+      @Field("clientType") String clientType,
+      @Field("clientVersion") String clientVersion);
 
   @POST("/sendAdvice.do")
   @FormUrlEncoded()
-  Future<Result> sendAdvice(@Field("content") String content, @Field("clientType") String clientType, @Query("userId") String userId);
+  Future<Result> sendAdvice(@Field("content") String content,
+      @Field("clientType") String clientType, @Query("userId") String userId);
 
   // 系统/公共词书资源（可走 CDN）
   @GET("/res/getSysDictResById.do")
@@ -416,12 +466,16 @@ abstract class RestClient {
   @POST("/saveSentenceChinese.do")
   @FormUrlEncoded()
   Future<Result<SentenceVo>> saveSentenceChinese(
-      @Field("sentenceId") String sentenceId, @Field("chinese") String chinese, @Query("currWord") String? currWord);
+      @Field("sentenceId") String sentenceId,
+      @Field("chinese") String chinese,
+      @Query("currWord") String? currWord);
 
   @POST("/uploadWordImg.do")
   @FormUrlEncoded()
   Future<Result<WordImageDto>> uploadWordImg(
-      @Field("wordId") String wordId, @Field("imgBase64String") String imgBase64String, @Field("userId") String userId);
+      @Field("wordId") String wordId,
+      @Field("imgBase64String") String imgBase64String,
+      @Field("userId") String userId);
 
   @POST("/uploadImg.do")
   Future<Result<String>> uploadImg(@Body() FormData data);
@@ -429,20 +483,30 @@ abstract class RestClient {
   @POST("/saveErrorReport.do")
   @FormUrlEncoded()
   Future<Result<String>> saveErrorReport(
-      @Field("word") String word, @Field("content") String content, @Field("clientType") String clientType, @Query("userId") String? userId);
+      @Field("word") String word,
+      @Field("content") String content,
+      @Field("clientType") String clientType,
+      @Query("userId") String? userId);
 
   @POST("/saveSentence.do")
   @FormUrlEncoded()
-  Future<Result<SentenceVo>> saveSentence(@Field("english") String english, @Field("chinese") String chinese, @Field("wordId") String wordId,
-      @Field("payCowdung") int payCowdung, @Query("currWord") String? currWord, @Query("userId") String userId);
+  Future<Result<SentenceVo>> saveSentence(
+      @Field("english") String english,
+      @Field("chinese") String chinese,
+      @Field("wordId") String wordId,
+      @Field("payCowdung") int payCowdung,
+      @Query("currWord") String? currWord,
+      @Query("userId") String userId);
 
   @PUT("/handSentence.do")
   @FormUrlEncoded()
-  Future<Result> handSentence(@Field("id") String id, @Query("currWord") String? currWord, @Query("userId") String userId);
+  Future<Result> handSentence(@Field("id") String id,
+      @Query("currWord") String? currWord, @Query("userId") String userId);
 
   @PUT("/footSentence.do")
   @FormUrlEncoded()
-  Future<Result> footSentence(@Field("id") String id, @Query("currWord") String? currWord, @Query("userId") String userId);
+  Future<Result> footSentence(@Field("id") String id,
+      @Query("currWord") String? currWord, @Query("userId") String userId);
 
   @PUT("/handImage.do")
   @FormUrlEncoded()
@@ -453,52 +517,65 @@ abstract class RestClient {
   Future<Result<int>> footWordImage(@Field("id") String id);
 
   @DELETE("/deleteImage.do")
-  Future<Result> deleteWordImage(@Query("id") String id, @Query("userId") String userId);
+  Future<Result> deleteWordImage(
+      @Query("id") String id, @Query("userId") String userId);
 
   @DELETE("/unRegister.do")
   Future<Result> unRegister(@Query("userId") String userId);
 
   @DELETE("/deleteSentence.do")
-  Future<Result> deleteSentence(@Query("id") String rawWordId, @Query("currWord") String? currWord, @Query("userId") String userId);
+  Future<Result> deleteSentence(@Query("id") String rawWordId,
+      @Query("currWord") String? currWord, @Query("userId") String userId);
 
   @GET("/getMsgCounts.do")
   Future<Result<Pair<int, int>>> getMsgCounts(@Query("userId") String userId);
 
   @GET("/getLastestMsgsBetweenUserAndSys.do")
-  Future<List<MsgVo>> getLastestMsgsBetweenUserAndSys(@Query("user") String userId, @Query("msgCount") int msgCount);
+  Future<List<MsgVo>> getLastestMsgsBetweenUserAndSys(
+      @Query("user") String userId, @Query("msgCount") int msgCount);
 
   @PUT("/setMsgsAsViewed.do")
   @FormUrlEncoded()
-  Future<Result> setMsgsAsViewed(@Field("msgIds") List<String> msgIds, @Field("userId") String userId);
+  Future<Result> setMsgsAsViewed(
+      @Field("msgIds") List<String> msgIds, @Field("userId") String userId);
 
   @GET("/getAllAdviceMessages.do")
   Future<List<MsgVo>> getAllAdviceMessages();
 
   @DELETE("/cleanupOldAdvice.do")
-  Future<Result<int>> cleanupOldAdvice(@Query("daysAge") int daysAge, @Query("adminUserId") String adminUserId);
+  Future<Result<int>> cleanupOldAdvice(
+      @Query("daysAge") int daysAge, @Query("adminUserId") String adminUserId);
 
   @POST("/replyAdvice.do")
   @FormUrlEncoded()
-  Future<Result> replyAdvice(@Field("content") String content, @Field("toUserId") String toUserId, @Field("adminUserId") String adminUserId);
+  Future<Result> replyAdvice(
+      @Field("content") String content,
+      @Field("toUserId") String toUserId,
+      @Field("adminUserId") String adminUserId);
 
   @GET("/getUserDbLogsFromVersion.do")
-  Future<Result<List<UserDbLogDto>>> getDbLogsFromVersion(@Query("fromVersion") int fromVersion, @Query("userId") String userId);
+  Future<Result<List<UserDbLogDto>>> getDbLogsFromVersion(
+      @Query("fromVersion") int fromVersion, @Query("userId") String userId);
 
   @POST("/syncUserDb2Back.do")
   @http.Headers(<String, dynamic>{
     "Content-Type": "application/json",
   })
   Future<Result<int>> syncUserDb(
-      @Query("expectedServerDbVersion") int expectedServerDbVersion, @Query("userId") String userId, @Body() List<UserDbLogDto> logs);
+      @Query("expectedServerDbVersion") int expectedServerDbVersion,
+      @Query("userId") String userId,
+      @Body() List<UserDbLogDto> logs);
 
   @GET("/getSysDbVersion.do")
   Future<Result<int>> getSysDbVersion();
 
   @GET("/getSysDbLogs.do")
-  Future<Result<List<SysDbLogDto>>> getNewSysDbLogs(@Query("fromVersion") int fromVersion);
+  Future<Result<List<SysDbLogDto>>> getNewSysDbLogs(
+      @Query("fromVersion") int fromVersion);
 
   @GET("/getUserBaseData.do")
-  Future<Result<UserBaseDataVo>> getUserBaseData(@Query("userId") String userId);
+  Future<Result<UserBaseDataVo>> getUserBaseData(
+      @Query("userId") String userId);
 
   @GET("/getUserDbVersion.do")
   Future<Result<int>> getUserDbVersion(@Query("userId") String userId);
@@ -514,8 +591,12 @@ abstract class RestClient {
 
   @POST("/updateSystemDict.do")
   @FormUrlEncoded()
-  Future<Result<String>> updateSystemDict(@Field("dictId") String dictId, @Field("name") String name, @Field("isReady") bool isReady,
-      @Field("visible") bool visible, @Field("popularityLimit") int? popularityLimit);
+  Future<Result<String>> updateSystemDict(
+      @Field("dictId") String dictId,
+      @Field("name") String name,
+      @Field("isReady") bool isReady,
+      @Field("visible") bool visible,
+      @Field("popularityLimit") int? popularityLimit);
 
   @POST("/updateDictWord.do")
   @FormUrlEncoded()
@@ -531,7 +612,8 @@ abstract class RestClient {
 
   @POST("/removeWordFromDict.do")
   @FormUrlEncoded()
-  Future<Result<String>> removeWordFromDict(@Field("dictId") String dictId, @Field("wordId") String wordId);
+  Future<Result<String>> removeWordFromDict(
+      @Field("dictId") String dictId, @Field("wordId") String wordId);
 
   // 系统健康检查相关API
   @GET("/admin/checkSystemDictIntegrity.do")
@@ -554,22 +636,32 @@ abstract class RestClient {
 
   @POST("/admin/autoFixSystemIssues.do")
   @FormUrlEncoded()
-  Future<Result<SystemHealthFixResult>> autoFixSystemIssues(@Field("issueTypes") List<String> issueTypes);
+  Future<Result<SystemHealthFixResult>> autoFixSystemIssues(
+      @Field("issueTypes") List<String> issueTypes);
 
   // 用户管理相关API
   @GET("/admin/searchUsers.do")
   Future<Result<PagedResults<UserVo>>> searchUsers(
-      @Query("keyword") String? keyword, @Query("pageNo") int pageNo, @Query("pageSize") int pageSize, @Query("filterType") int? filterType);
+      @Query("keyword") String? keyword,
+      @Query("pageNo") int pageNo,
+      @Query("pageSize") int pageSize,
+      @Query("filterType") int? filterType);
 
   @POST("/admin/updateAdminPermission.do")
   @FormUrlEncoded()
-  Future<Result<String>> updateAdminPermission(@Field("userId") String userId, @Field("isAdmin") bool? isAdmin,
-      @Field("isSuperAdmin") bool? isSuperAdmin, @Field("isInputor") bool? isInputor);
+  Future<Result<String>> updateAdminPermission(
+      @Field("userId") String userId,
+      @Field("isAdmin") bool? isAdmin,
+      @Field("isSuperAdmin") bool? isSuperAdmin,
+      @Field("isInputor") bool? isInputor);
 
   @POST("/admin/updatePremiumOverride.do")
   @FormUrlEncoded()
   Future<Result<String>> updatePremiumOverride(
-      @Field("userId") String userId, @Field("enabled") bool? enabled, @Field("reason") String? reason, @Field("duration") String? duration);
+      @Field("userId") String userId,
+      @Field("enabled") bool? enabled,
+      @Field("reason") String? reason,
+      @Field("duration") String? duration);
 
   @DELETE("/admin/deleteUser.do")
   Future<Result<String>> deleteUser(@Query("userId") String userId);
@@ -580,14 +672,16 @@ abstract class RestClient {
   // CDN管理相关API
   @POST("/admin/refreshCdnCache.do")
   @FormUrlEncoded()
-  Future<Result<String>> refreshCdnCache(@Field("urls") String urls, @Field("objectType") String objectType);
+  Future<Result<String>> refreshCdnCache(
+      @Field("urls") String urls, @Field("objectType") String objectType);
 
   @GET("/admin/getCdnRefreshUrls.do")
   Future<Result<JsonMap>> getCdnRefreshUrls();
 
   @POST("/admin/saveCdnRefreshUrls.do")
   @FormUrlEncoded()
-  Future<Result<String>> saveCdnRefreshUrls(@Field("fileUrls") String fileUrls, @Field("dirUrls") String dirUrls);
+  Future<Result<String>> saveCdnRefreshUrls(
+      @Field("fileUrls") String fileUrls, @Field("dirUrls") String dirUrls);
 
   // 阿里云资源查询相关API
   @GET("/admin/queryAliyunBalance.do")
@@ -603,28 +697,37 @@ abstract class RestClient {
   @POST("/createFeatureRequest.do")
   @FormUrlEncoded()
   Future<Result<FeatureRequestVo>> createFeatureRequest(
-      @Field("title") String title, @Field("content") String content, @Field("userId") String userId);
+      @Field("title") String title,
+      @Field("content") String content,
+      @Field("userId") String userId);
 
   @POST("/voteFeatureRequest.do")
   @FormUrlEncoded()
-  Future<Result> voteFeatureRequest(@Field("requestId") String requestId, @Field("userId") String userId);
+  Future<Result> voteFeatureRequest(
+      @Field("requestId") String requestId, @Field("userId") String userId);
 
   @GET("/hasUserVoted.do")
-  Future<Result<bool>> hasUserVoted(@Query("requestId") String requestId, @Query("userId") String userId);
+  Future<Result<bool>> hasUserVoted(
+      @Query("requestId") String requestId, @Query("userId") String userId);
 
   @PUT("/updateFeatureRequestStatus.do")
   @FormUrlEncoded()
   Future<Result> updateFeatureRequestStatus(
-      @Field("requestId") String requestId, @Field("status") String status, @Field("adminUserId") String adminUserId);
+      @Field("requestId") String requestId,
+      @Field("status") String status,
+      @Field("adminUserId") String adminUserId);
 
   @DELETE("/deleteFeatureRequest.do")
-  Future<Result> deleteFeatureRequest(@Query("requestId") String requestId, @Query("adminUserId") String adminUserId);
+  Future<Result> deleteFeatureRequest(@Query("requestId") String requestId,
+      @Query("adminUserId") String adminUserId);
 
   // 需求墙举报相关API
   @POST("/saveFeatureRequestReport.do")
   @FormUrlEncoded()
   Future<Result<String>> saveFeatureRequestReport(
-      @Field("requestId") String requestId, @Field("content") String content, @Field("userId") String userId);
+      @Field("requestId") String requestId,
+      @Field("content") String content,
+      @Field("userId") String userId);
 
   @GET("/getAllFeatureRequestReports.do")
   Future<List<FeatureRequestReportVo>> getAllFeatureRequestReports();
@@ -650,5 +753,6 @@ abstract class RestClient {
   Future<Result<String>> submitDictImportTask(@Body() JsonMap request);
 
   @GET("/import/getTaskStatus")
-  Future<Result<JsonMap>> getDictImportTaskStatus(@Query("taskId") String taskId);
+  Future<Result<JsonMap>> getDictImportTaskStatus(
+      @Query("taskId") String taskId);
 }

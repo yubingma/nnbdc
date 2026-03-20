@@ -190,16 +190,16 @@ public class AiBo {
             Object output = getOutputMethod.invoke(result);
             
             java.lang.reflect.Method getChoicesMethod = output.getClass().getMethod("getChoices");
-            java.util.List choices = (java.util.List) getChoicesMethod.invoke(output);
+            java.util.List<?> choices = (java.util.List<?>) getChoicesMethod.invoke(output);
             
             Object choice = choices.get(0);
             java.lang.reflect.Method getMessageMethod = choice.getClass().getMethod("getMessage");
             Object message = getMessageMethod.invoke(choice);
             
             java.lang.reflect.Method getContentMethod = message.getClass().getMethod("getContent");
-            java.util.List contentList = (java.util.List) getContentMethod.invoke(message);
+            java.util.List<?> contentList = (java.util.List<?>) getContentMethod.invoke(message);
             
-            java.util.Map contentMap = (java.util.Map) contentList.get(0);
+            java.util.Map<?, ?> contentMap = (java.util.Map<?, ?>) contentList.get(0);
             String jsonResult = (String) contentMap.get("text");
             
             logger.info("审图结果: " + jsonResult);

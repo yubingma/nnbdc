@@ -129,6 +129,11 @@ class Global {
     guestVo.isPremiumIos = false;
     guestVo.premiumOverrideEnabled = false;
 
+    // missing initialized fields fix null exceptions
+    guestVo.continuousDakaDayCount = 0;
+    guestVo.dakaDayCount = 0;
+    guestVo.dakaScore = 0; 
+
     // 保存到本地数据库
     final db = MyDatabase.instance;
     await db.usersDao.saveUser(userVo2User(guestVo), false);
