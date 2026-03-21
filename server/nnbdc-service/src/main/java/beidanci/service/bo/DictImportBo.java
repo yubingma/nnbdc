@@ -83,6 +83,7 @@ public class DictImportBo {
 
             Map<String, Object> config = JsonUtils.parseMap(task.getConfig());
             boolean isSystemImport = (boolean) config.getOrDefault("isSystemImport", false);
+            boolean generateWordImage = config.containsKey("generateWordImage") ? (boolean) config.get("generateWordImage") : false;
             String dictId = (String) config.get("dictId");
             String strategy = (String) config.getOrDefault("strategy", "SKIP"); // SKIP, APPEND, RECREATE
             @SuppressWarnings("unchecked")
@@ -94,11 +95,11 @@ public class DictImportBo {
             task.setTotalWords(total);
 
             if (isSystemImport) {
-                processSystemImport(task, dictId, rawWords, strategy, stats);
+                processSystemImport(task, dictId, rawWords, strategy, generateWordImage, stats);
             } else if (rawWords != null) {
-                processUserImportWordsOnly(task, dictId, rawWords, strategy, stats);
+                processUserImportWordsOnly(task, dictId, rawWords, strategy, generateWordImage, stats);
             } else {
-                processUserImportWithMeanings(task, dictId, wordsWithMeanings, strategy, stats);
+                processUserImportWithMeanings(task, dictId, wordsWithMeanings, strategy, generateWordImage, stats);
             }
 
             task = importTaskBo.findById(taskId); // 重新加载以防状态冲突
@@ -118,12 +119,12 @@ public class DictImportBo {
         }
     }
 
-    private void processSystemImport(ImportTask task, String dictId, List<String> words, String strategy, TaskStatistics stats) {
+    private void processSystemImport(ImportTask task, String dictId, List<String> words, String strategy, boolean generateWordImage, TaskStatistics stats) {
         User systemUser = userBo.findById(Constants.SYS_USER_SYS_ID);
         for (int i = 0; i < words.size(); i++) {
             String spell = words.get(i).trim();
             try {
-                processSingleWord(spell, null, true, systemUser, dictId, strategy, stats);
+                processSingleWord(spell, null, true, systemUser, dictId, strategy, generateWordImage, stats);
                 importTaskBo.updateProgress(task.getId(), i + 1, "Processed: " + spell);
             } catch (Exception e) {
                 logger.warn("处理单词失败: " + spell, e);
@@ -134,12 +135,12 @@ public class DictImportBo {
         }
     }
 
-    private void processUserImportWordsOnly(ImportTask task, String dictId, List<String> words, String strategy, TaskStatistics stats) {
+    private void processUserImportWordsOnly(ImportTask task, String dictId, List<String> words, String strategy, boolean generateWordImage, TaskStatistics stats) {
         User owner = task.getOwner();
         for (int i = 0; i < words.size(); i++) {
             String spell = words.get(i).trim();
             try {
-                processSingleWord(spell, null, false, owner, dictId, strategy, stats);
+                processSingleWord(spell, null, false, owner, dictId, strategy, generateWordImage, stats);
                 importTaskBo.updateProgress(task.getId(), i + 1, "Processed: " + spell);
             } catch (Exception e) {
                 logger.warn("处理单词失败: " + spell, e);
@@ -150,14 +151,14 @@ public class DictImportBo {
         }
     }
 
-    private void processUserImportWithMeanings(ImportTask task, String dictId, List<Map<String, String>> words, String strategy, TaskStatistics stats) {
+    private void processUserImportWithMeanings(ImportTask task, String dictId, List<Map<String, String>> words, String strategy, boolean generateWordImage, TaskStatistics stats) {
         User owner = task.getOwner();
         for (int i = 0; i < words.size(); i++) {
             Map<String, String> item = words.get(i);
             String spell = item.get("word").trim();
             String manualMeaning = item.get("meaning");
             try {
-                processSingleWord(spell, manualMeaning, false, owner, dictId, strategy, stats);
+                processSingleWord(spell, manualMeaning, false, owner, dictId, strategy, generateWordImage, stats);
                 importTaskBo.updateProgress(task.getId(), i + 1, "Processed: " + spell);
             } catch (Exception e) {
                 logger.warn("处理单词失败: " + spell, e);
@@ -168,7 +169,7 @@ public class DictImportBo {
         }
     }
 
-    private void processSingleWord(String spell, String manualMeaning, boolean isSystem, User user, String dictId, String strategy, TaskStatistics stats) throws Exception {
+    private void processSingleWord(String spell, String manualMeaning, boolean isSystem, User user, String dictId, String strategy, boolean generateWordImage, TaskStatistics stats) throws Exception {
         Word word = wordBo.getWordBySpell(spell);
         boolean isNewWord = (word == null);
         String actionType = "ADDED";
@@ -179,7 +180,7 @@ public class DictImportBo {
             word.setSpell(spell);
             word.setPopularity(5); // 默认中等
             // 调用 AI 获取音标（及其它固有属性）
-            lastAiResult = getAiResult(spell, null, null);
+            lastAiResult = getAiResult(spell, null, null, generateWordImage);
             word.setBritishPronounce(lastAiResult.phonetic);
             word.setAmericaPronounce(lastAiResult.phonetic);
             word.setPronounce(lastAiResult.phonetic);
@@ -201,7 +202,7 @@ public class DictImportBo {
         // 如果策略是 RECREATE 并且单词已存在，则重新生成该单词的音标，并触发同步更新
         if (!isNewWord && "RECREATE".equalsIgnoreCase(strategy)) {
              try {
-                 lastAiResult = getAiResult(spell, null, null);
+                 lastAiResult = getAiResult(spell, null, null, generateWordImage);
                  word.setPronounce(lastAiResult.phonetic);
                  word.setBritishPronounce(lastAiResult.phonetic);
                  word.setAmericaPronounce(lastAiResult.phonetic);
@@ -336,13 +337,13 @@ public class DictImportBo {
         if (isSystem) {
             // 场景 1：加入通用词典
             // 此时 dictId 应该是 "0"
-            lastAiResult = getAiResult(spell, null, contextMeanings);
+            lastAiResult = getAiResult(spell, null, contextMeanings, generateWordImage);
             saveExtrinsicResources(word, lastAiResult, Constants.SYS_USER_SYS_ID, Constants.COMMON_DICT_ID, stats);
         } else {
             // 用户导入
             if (manualMeaning != null) {
                 // 场景 3：单词+外部释义 (私有)
-                lastAiResult = getAiResult(spell, manualMeaning, contextMeanings);
+                lastAiResult = getAiResult(spell, manualMeaning, contextMeanings, generateWordImage);
                 saveExtrinsicResources(word, lastAiResult, user.getId(), dictId, stats);
             } else {
                 // 场景 2：仅单词
@@ -350,7 +351,7 @@ public class DictImportBo {
                 // 但如果 strategy 是 RECREATE 或指定了私有词库，我们倾向于生成资源。
                 boolean hasCommonMeaning = allExistingMeanings.stream().anyMatch(m -> Constants.COMMON_DICT_ID.equals(m.getDictId()));
                 if (!hasCommonMeaning || "RECREATE".equalsIgnoreCase(strategy) || !Constants.COMMON_DICT_ID.equals(dictId)) {
-                    lastAiResult = getAiResult(spell, null, contextMeanings);
+                    lastAiResult = getAiResult(spell, null, contextMeanings, generateWordImage);
                     saveExtrinsicResources(word, lastAiResult, user.getId(), dictId, stats);
                 }
             }
@@ -380,7 +381,7 @@ public class DictImportBo {
         }
 
         // ----- 生成单词卡通配图 -----
-        if (lastAiResult != null && lastAiResult.imagePrompts != null && !lastAiResult.imagePrompts.isEmpty()) {
+        if (generateWordImage && lastAiResult != null && lastAiResult.imagePrompts != null && !lastAiResult.imagePrompts.isEmpty()) {
             String pureSpell = spell.replaceAll("[^a-zA-Z]", "").toLowerCase();
             for (int i = 0; i < Math.min(2, lastAiResult.imagePrompts.size()); i++) {
                 String imgPrompt = lastAiResult.imagePrompts.get(i);
@@ -529,7 +530,11 @@ public class DictImportBo {
         }
     }
 
-    private AiResult getAiResult(String spell, String manualMeaning, String context) {
+    private AiResult getAiResult(String spell, String manualMeaning, String context, boolean generateWordImage) {
+        String imageRule = generateWordImage 
+                ? "6. IMAGE GENERATION: ONLY generate image prompts (1 or 2) if the word is highly visual, such as a physical object, animal, clear physical action, or a visually representable adjective/emotion (e.g., 'apple', 'dog', 'run', 'happy', 'fast'). DO NOT generate images for proper nouns, names, highly abstract concepts, adverbs, or grammar words (e.g., 'the', 'kerry', 'john', 'therefore', 'consider', 'very'). For all unsuitable words, firmly return an empty array [] for imagePrompts. If you DO generate, use clean, flat vector art style (start with 'A clean flat vector art style illustration of...'). DO NOT include any text, letters, UI elements, or the word itself in the image."
+                : "6. IMAGE GENERATION: DO NOT generate ANY image prompts. Keep the imagePrompts array strictly empty [].";
+
         String systemPrompt = "You are a professional English dictionary assistant. Return JSON only. " +
                 "IMPORTANT RULES:\n" +
                 "1. 'pos' field MUST be abbreviations (e.g., n., v., adj., adv.).\n" +
@@ -537,7 +542,7 @@ public class DictImportBo {
                 "3. Ensure the sentence is practical, natural, and grammatically PERFECT.\n" +
                 "4. Use <b>word</b> in BOTH sentenceEn and sentenceCn to highlight the vocabulary word and its Chinese meaning respectively.\n" +
                 "5. CRITICAL GRAMMAR RULE: Pay attention to 'a' vs 'an' articles when highlighting. It should be 'an <b>apple</b>', never 'a <b>apple</b>'!\n" +
-                "6. IMAGE GENERATION: ONLY generate image prompts (1 or 2) if the word is highly visual, such as a physical object, animal, clear physical action, or a visually representable adjective/emotion (e.g., 'apple', 'dog', 'run', 'happy', 'fast'). DO NOT generate images for proper nouns, names, highly abstract concepts, adverbs, or grammar words (e.g., 'the', 'kerry', 'john', 'therefore', 'consider', 'very'). For all unsuitable words, firmly return an empty array [] for imagePrompts. If you DO generate, use clean, flat vector art style (start with 'A clean flat vector art style illustration of...'). DO NOT include any text, letters, UI elements, or the word itself in the image.";
+                imageRule;
         StringBuilder userPrompt = new StringBuilder();
         userPrompt.append(String.format("Generating data for word '%s'. ", spell));
         

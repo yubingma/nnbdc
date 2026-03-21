@@ -29,6 +29,7 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
   Timer? _timer;
   bool _isSubmitting = false;
   String _strategy = 'RECREATE';
+  bool _generateWordImage = false; 
 
   void _submitTask() async {
     setState(() {
@@ -45,7 +46,8 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
           "isSystemImport": true,
           "dictId": "0",
           "words": ["dog", "apple", "kerry"],
-          "strategy": _strategy
+          "strategy": _strategy,
+          "generateWordImage": _generateWordImage
         })
       });
 
@@ -273,6 +275,25 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
                             }
                           },
                         ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryColor.withValues(alpha: 0.05),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: AppTheme.primaryColor.withValues(alpha: 0.2)),
+                      ),
+                      child: SwitchListTile(
+                        title: const Text('生成单词配图', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                        subtitle: const Text('调用大模型根据单词含义绘画，可能显著增加消耗', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                        value: _generateWordImage,
+                        onChanged: _isSubmitting ? null : (val) {
+                          setState(() {
+                            _generateWordImage = val;
+                          });
+                        },
+                        activeColor: AppTheme.primaryColor,
                       ),
                     ),
                     const SizedBox(height: 24),
