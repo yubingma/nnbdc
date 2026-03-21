@@ -84,8 +84,28 @@ public class AiBo {
      * @return 合成后的音频字节流
      */
     public byte[] generateSpeech(String text) {
+        String[] voices = {"longxiaochun", "longxiaoxia", "longwan", "longshuo"};
+        String voice = voices[new java.util.Random().nextInt(voices.length)];
+        
+        try {
+            return callCosyVoice(text, voice);
+        } catch (Exception e) {
+            String defaultVoice = aiProperties.getVoice();
+            logger.warn("随机音色 {} 合成失败(可能是音色不存在)，尝试回退到保底音色: {}", voice, defaultVoice, e);
+            if (!voice.equals(defaultVoice)) {
+                try {
+                    return callCosyVoice(text, defaultVoice);
+                } catch (Exception fallbackEx) {
+                    throw new RuntimeException("保底 TTS 系统异常", fallbackEx);
+                }
+            }
+            throw new RuntimeException("TTS 系统异常", e);
+        }
+    }
+
+    private byte[] callCosyVoice(String text, String voice) throws Exception {
         logger.info("请求语音合成: [模型: {}, 发音人: {}] 内容: {}", 
-                   aiProperties.getTtsModel(), aiProperties.getVoice(), text);
+                   aiProperties.getTtsModel(), voice, text);
         
         String apiKey = aiProperties.getApiKey();
         if (apiKey == null || apiKey.isEmpty() || apiKey.startsWith("${")) {
@@ -93,25 +113,20 @@ public class AiBo {
             throw new RuntimeException("AI 调用失败: 请设置 dashscope_api_key");
         }
 
-        try {
-            SpeechSynthesizer synthesizer = new SpeechSynthesizer();
-            SpeechSynthesisParam param = SpeechSynthesisParam.builder()
-                    .apiKey(apiKey)
-                    .model(aiProperties.getTtsModel())
-                    .parameter("voice", aiProperties.getVoice())
-                    .parameter("format", "mp3")
-                    .text(text)
-                    .build();
-            
-            ByteBuffer buffer = synthesizer.call(param);
-            byte[] audioBytes = new byte[buffer.remaining()];
-            buffer.get(audioBytes);
-            
-            return audioBytes;
-        } catch (Exception e) {
-            logger.error("语音合成发生异常", e);
-            throw new RuntimeException("TTS 系统异常", e);
-        }
+        SpeechSynthesizer synthesizer = new SpeechSynthesizer();
+        SpeechSynthesisParam param = SpeechSynthesisParam.builder()
+                .apiKey(apiKey)
+                .model(aiProperties.getTtsModel())
+                .parameter("voice", voice)
+                .parameter("format", "mp3")
+                .text(text)
+                .build();
+        
+        ByteBuffer buffer = synthesizer.call(param);
+        byte[] audioBytes = new byte[buffer.remaining()];
+        buffer.get(audioBytes);
+        
+        return audioBytes;
     }
 
     /**
