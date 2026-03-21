@@ -81,6 +81,7 @@ class Tts(private val activity: Activity) : EventChannel.StreamHandler {
     }
 
     fun speak(text: String, utteranceId: String) {
+        if (!::ttobj.isInitialized) return
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             val params = Bundle()
             ttobj.speak(text, TextToSpeech.QUEUE_FLUSH, params, utteranceId)
@@ -93,10 +94,14 @@ class Tts(private val activity: Activity) : EventChannel.StreamHandler {
     }
 
     fun stop() {
-        ttobj.stop()
+        if (::ttobj.isInitialized) {
+            ttobj.stop()
+        }
     }
 
     fun shutdown() {
-        ttobj.shutdown()
+        if (::ttobj.isInitialized) {
+            ttobj.shutdown()
+        }
     }
 } 
