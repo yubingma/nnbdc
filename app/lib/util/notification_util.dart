@@ -127,7 +127,7 @@ class NotificationUtil {
       return msgs[random.nextInt(msgs.length)];
     } else if (currentDay >= 3 && currentDay <= 5) {
       final msgs = [
-        '再不学，连胜就要断了',
+        '再不学，打卡记录就要断了',
         '已经坚持$currentDay天，现在放弃最亏',
         '今天不学 = 前面全白费',
         '你差一点就养成习惯了',
@@ -142,12 +142,12 @@ class NotificationUtil {
       return msgs[random.nextInt(msgs.length)];
     } else {
       // 大于7天，三套方案随机转
-      // A：损失型（断连胜）
+      // A：损失型（断打卡记录）
       // B：成就型（超过别人）
       // C：轻量型（3分钟就够）
       final msgs = [
-        '你的 $currentDay 天连胜千万别断了！',
-        '今天不学 = 前面全白费，花几分钟保住连胜！',
+        '辛辛苦苦坚持了 $currentDay 天，千万别在这里断了！',
+        '今天不学 = 前面全白费，花几分钟保住打卡天数！',
         '你已经坚持$currentDay天，现在放弃最亏！',
         '你已经进入极少数坚持下来的人了，继续保持！',
         '今天完成，继续领先95%的用户！',
