@@ -573,6 +573,9 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
         children: [
           // 单词拼写及释义
           Container(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.5,
+            ),
             decoration: BoxDecoration(
               color: isDarkMode ? const Color(0xFF2A2A3E).withValues(alpha: 0.8) : Colors.white.withValues(alpha: 0.9),
               boxShadow: [
@@ -583,8 +586,9 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                 ),
               ],
             ),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(0, 4, 0, 8),
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(0, 4, 0, 8),
               child: Column(
                 children: [
                   Center(
@@ -738,7 +742,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                     ),
                   ),
                 ],
-              ),
+              ), 
+            ),
             ),
           ),
 
