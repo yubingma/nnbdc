@@ -97,6 +97,9 @@ dependencies:
   flutter_markdown: ^0.7.7+1
   image_picker: ^1.1.2              # 拍照/选图
   sign_in_with_apple: ^7.0.1
+  flutter_local_notifications: ^21.0.0
+  timezone: ^0.11.0
+  flutter_timezone: ^5.0.2
 dev_dependencies:
   analyzer: ^7.7.1
   flutter_test:

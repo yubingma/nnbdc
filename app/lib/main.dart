@@ -49,6 +49,7 @@ import 'package:provider/provider.dart';
 import 'package:toastification/toastification.dart';
 import 'package:nnbdc/page/admin/golden_master_tool.dart';
 import 'package:nnbdc/util/subscription_util.dart';
+import 'package:nnbdc/util/notification_util.dart';
 
 import 'config.dart';
 import 'local_word_cache.dart';
@@ -189,6 +190,14 @@ void main() async {
 
           // 检查并强制执行会员限制（非会员每日单词限额 20）
           await SubscriptionUtil.checkAndEnforceMemberLimits();
+
+          // 初始化通知服务并安排每日提醒
+          try {
+            await NotificationUtil.init();
+            await NotificationUtil.scheduleDailyReminder();
+          } catch (e) {
+            Global.logger.e('初始化通知失败: $e');
+          }
 
           // 初始化 AI 运行时（Apple 平台，如果已下载模型且用户是管理员）
           if ((PlatformUtils.isMacOS || PlatformUtils.isIOS) && Global.getLoggedInUser()?.isAdmin == true) {

@@ -14,6 +14,7 @@ import '../global.dart';
 import '../state.dart';
 import '../theme/app_theme.dart';
 import '../util/platform_util.dart';
+import '../util/notification_util.dart';
 import 'package:provider/provider.dart';
 import 'index.dart';
 
@@ -72,6 +73,13 @@ class FinishPageState extends State<FinishPage> {
 
         // 记录用户打卡操作 (不再提及积分奖励，因为UI上弱化积分)
         await MyDatabase.instance.userOpersDao.recordDaka(user.data!.id!, remark: "用户完成打卡");
+
+        // 精确打击：重置本地通知提醒时间到明天
+        try {
+          await NotificationUtil.scheduleDailyReminder();
+        } catch (e) {
+          Global.logger.e('打卡重置提醒失败: $e');
+        }
 
         todayDakaScore = 10; // 每天固定10分
 
