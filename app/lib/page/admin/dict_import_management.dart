@@ -12,6 +12,7 @@ import 'package:nnbdc/api/dto.dart';
 import 'package:nnbdc/services/throttled_sync_service.dart';
 import 'package:nnbdc/api/bo/word_bo.dart';
 import 'package:nnbdc/page/word_detail.dart'; 
+import 'package:nnbdc/page/admin/admin_image_review_page.dart';
 import 'package:get/get.dart';
 import 'package:nnbdc/util/utils.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
@@ -192,6 +193,13 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
           onPressed: () => Navigator.pop(context),
           icon: const Icon(Icons.arrow_back, color: Colors.white),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.image_search, color: Colors.white),
+            tooltip: 'AI 配图审核',
+            onPressed: () => Get.to(() => const AdminImageReviewPage()),
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),

@@ -49,7 +49,7 @@ public class AdminImageReviewController {
             
             String aiResultStr = aiBo.reviewImage(spell, absolutePath);
             ObjectMapper mapper = new ObjectMapper();
-            Map<String, String> res = mapper.readValue(aiResultStr, Map.class);
+            Map<String, String> res = mapper.readValue(aiResultStr, new com.fasterxml.jackson.core.type.TypeReference<Map<String, String>>(){});
             return Result.success(res);
         } catch(Exception e) {
             logger.error("审图接口异常", e);
