@@ -41,12 +41,12 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
 
     try {
       final request = JsonMap({
-        "ownerId": Global.sysUserId,
-        "fileName": "System Dict Import (dog, apple, kerry)",
+        "ownerId": Global.sysUserId, 
+        "fileName": "System Dict Import (have, apple, kerry)",
         "config": jsonEncode({
           "isSystemImport": true,
           "dictId": "0",
-          "words": ["dog", "apple", "kerry"],
+          "words": ["have", "apple", "kerry"],
           "strategy": _strategy,
           "generateWordImage": _generateWordImage
         })
@@ -98,7 +98,7 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
 
                 // 清除前端有关这些新导入单词的发音文件本地缓存，避免继续播放旧版本（如AI错误生成的）发音
                 try {
-                  final wordsToClear = ["dog", "apple", "kerry"];
+                  final wordsToClear = ["have", "apple", "kerry"];
                   
                   for (var word in wordsToClear) {
                     final soundUrl = Util.getWordSoundUrl(word);
@@ -233,7 +233,7 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
                     const SizedBox(height: 8),
                     Wrap(
                       spacing: 8,
-                      children: ['dog', 'apple', 'kerry'].map((w) => Chip(
+                      children: ['have', 'apple', 'kerry'].map((w) => Chip(
                         label: Text(w),
                         backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.05),
                         side: const BorderSide(color: Colors.transparent),

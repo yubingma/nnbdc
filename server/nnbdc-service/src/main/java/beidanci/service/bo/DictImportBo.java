@@ -471,7 +471,7 @@ public class DictImportBo {
             MeaningItem meaning = new MeaningItem();
             meaning.setWord(word);
             meaning.setCiXing(am.pos);
-            meaning.setMeaning(am.meaning.trim());
+            meaning.setMeaning(am.meaning.trim().replaceAll("[;；]", "，"));
             meaning.setPopularity(aiResult.popularity != null && aiResult.popularity > i ? aiResult.popularity - i : 1);
             
             User owner = new User();
@@ -551,7 +551,7 @@ public class DictImportBo {
                 "IMPORTANT RULES:\n" +
                 "1. Generate a list of 'meanings'. Each meaning MUST represent a distinct part of speech (pos) or distinct sense.\n" +
                 "2. 'pos' field MUST be abbreviations (e.g., n., v., adj., adv.).\n" +
-                "3. 'meaning' field MUST be in Chinese. Group closely related translations but separate drastically different concepts into distinct items.\n" +
+                "3. 'meaning' field MUST be in Chinese. Group closely related translations using COMMAS (e.g., '有, 拥有'), DO NOT use semicolons. Separate drastically different concepts into distinct meaning items.\n" +
                 "4. For EACH meaning item, provide EXACTLY ONE highly practical, natural, and grammatically PERFECT example sentence (sentenceEn & sentenceCn).\n" +
                 "5. Use <b>word</b> in BOTH sentenceEn and sentenceCn to highlight the vocabulary word and its Chinese translation respectively.\n" +
                 "6. CRITICAL GRAMMAR RULE: Pay attention to 'a' vs 'an' articles when highlighting. It should be 'an <b>apple</b>', never 'a <b>apple</b>'!\n" +
