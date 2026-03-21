@@ -190,6 +190,13 @@ jobs:
           pod update sqlite3
         shell: bash
 
+      # 运行 Flutter 单元测试，确保核心逻辑没有退化
+      - name: Flutter Test
+        run: |
+          cd app
+          flutter test
+        shell: bash
+
       # 构建
       - name: Flutter Build
         run: |
