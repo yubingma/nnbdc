@@ -15,6 +15,7 @@ import '../state.dart';
 import '../theme/app_theme.dart';
 import '../util/platform_util.dart';
 import '../util/notification_util.dart';
+import '../util/analytics_util.dart';
 import 'package:provider/provider.dart';
 import 'index.dart';
 
@@ -87,6 +88,9 @@ class FinishPageState extends State<FinishPage> {
         if (result.success) {
           cowDung = result.data!;
           // 不再播放特殊声音，因为不再有翻倍机制
+          
+          // 漏斗：用户成功打卡完成
+          AnalyticsUtil.trackFinishDaka(cowDung, user.data!.continuousDakaDayCount ?? 0);
         } else {
           ToastUtil.error(result.msg!);
         }

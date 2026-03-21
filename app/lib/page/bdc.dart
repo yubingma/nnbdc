@@ -45,6 +45,7 @@ import '../util/learning_service.dart';
 import '../util/fsrs.dart';
 import '../widget/handwriting_board.dart';
 import '../util/study_config.dart';
+import '../util/analytics_util.dart';
 
 class BdcPageArgs {
   /// 从哪个页面进入本页面
@@ -4243,7 +4244,14 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
               color: Colors.transparent,
               child: InkWell(
                 borderRadius: BorderRadius.circular(12),
-                onTap: () => Navigator.pop(context),
+                onTap: () {
+                  if (_currentGetWordResult != null && _currentGetWordResult!.progress != null && _currentGetWordResult!.progress!.length >= 2) {
+                    final completed = _currentGetWordResult!.progress![0];
+                    final total = _currentGetWordResult!.progress![1];
+                    AnalyticsUtil.trackStudyQuitEarly(completed, total - completed);
+                  }
+                  Navigator.pop(context);
+                },
                 child: Icon(
                   Icons.arrow_back_ios_new,
                   color: context.watch<DarkMode>().isDarkMode

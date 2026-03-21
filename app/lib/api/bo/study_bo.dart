@@ -12,6 +12,7 @@ import 'package:drift/drift.dart';
 import 'dart:async';
 import 'dart:math';
 import 'package:nnbdc/util/fsrs.dart';
+import 'package:nnbdc/util/analytics_util.dart';
 import 'package:nnbdc/util/app_clock.dart';
 import 'word_bo.dart';
 import 'package:nnbdc/util/date_utils.dart';
@@ -36,6 +37,9 @@ class StudyBo {
       if (!result.success) {
         return result;
       }
+      
+      // 漏斗：进入背词界面，获取到背词数据（学习开始）
+      AnalyticsUtil.trackStartStudy();
 
       // 同步到后端
       ThrottledDbSyncService().requestSync();

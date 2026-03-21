@@ -50,6 +50,7 @@ import 'package:toastification/toastification.dart';
 import 'package:nnbdc/page/admin/golden_master_tool.dart';
 import 'package:nnbdc/util/subscription_util.dart';
 import 'package:nnbdc/util/notification_util.dart';
+import 'package:nnbdc/util/analytics_util.dart';
 
 import 'config.dart';
 import 'local_word_cache.dart';
@@ -77,8 +78,11 @@ void main() async {
       int acceptedVersion = GetStorage().read<int>('accepted_privacy_version') ?? 0;
       bool hasApprovedRecentPrivacy = (acceptedVersion >= currentPrivacyVersion);
 
-      // 只有在 Android 或 iOS 上处理 Umeng
+      // 只有在 Android 或 iOS 上处理 Umeng 和 自定义分析
       if (PlatformUtils.isAndroid || PlatformUtils.isIOS) {
+        // 更新分析工具的状态
+        AnalyticsUtil.init(hasApprovedRecentPrivacy);
+
         try {
           // 如果用户已经同意过最新版本的隐私协议，则进行正式初始化
           if (hasApprovedRecentPrivacy) {

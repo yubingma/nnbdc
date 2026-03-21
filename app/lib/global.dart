@@ -6,6 +6,7 @@ import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/util/utils.dart';
+import 'package:nnbdc/util/analytics_util.dart';
 
 import 'api/vo.dart';
 
@@ -215,6 +216,9 @@ class Global {
 
     // 设置为当前登录用户
     await setLoggedInUser(guestVo);
+    
+    // 漏斗：无痛登入（游客登录完成）
+    AnalyticsUtil.trackLogin('guest', true);
   }
 }
 

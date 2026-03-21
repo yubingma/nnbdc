@@ -16,6 +16,7 @@ import 'package:nnbdc/services/throttled_sync_service.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:umeng_common_sdk/umeng_common_sdk.dart';
 import 'package:nnbdc/util/platform_util.dart';
+import 'package:nnbdc/util/analytics_util.dart';
 import '../config.dart';
 import '../global.dart';
 import '../util/client_type.dart';
@@ -677,6 +678,9 @@ class EmailLoginPageState extends State<EmailLoginPage> {
 
             // 登录成功后自动触发静默恢复购买
             SubscriptionUtil.restorePurchases(showToast: false);
+            
+            // 漏斗：无痛登入（邮箱登录完成）
+            AnalyticsUtil.trackLogin('email', false);
             Get.offAllNamed('/index');
           } else {
             // 如果服务器验证失败，可能需要重新验证码登录
@@ -760,6 +764,9 @@ class EmailLoginPageState extends State<EmailLoginPage> {
 
       // 登录成功后自动触发静默恢复购买
       SubscriptionUtil.restorePurchases(showToast: false);
+      
+      // 漏斗：无痛登入（验证码登录完成）
+      AnalyticsUtil.trackLogin('email', false);
       Get.offAllNamed('/index');
     } else {
       ToastUtil.error(codeResult.msg ?? '登录失败');

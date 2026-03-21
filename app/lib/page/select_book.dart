@@ -16,6 +16,7 @@ import 'package:nnbdc/util/subscription_util.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/util/error_handler.dart';
 import 'package:nnbdc/util/app_clock.dart';
+import 'package:nnbdc/util/analytics_util.dart';
 import 'package:nnbdc/widget/dict_download_dialog.dart';
 import 'package:provider/provider.dart';
 import 'package:path/path.dart' as p;
@@ -801,6 +802,10 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
                       createTime: AppClock.now(),
                       updateTime: null);
                   await learningDictsDao.saveEntity(learningDict, true);
+                  
+                  // 漏斗：用户成功选择了一本词书
+                  AnalyticsUtil.trackSelectBook('学习词书', dictVo.name ?? '未命名');
+                  
                   Global.logger.i("用户[${user.nickName}]选择了单词书[${dictVo.name}]");
                 }
               } catch (e) {
