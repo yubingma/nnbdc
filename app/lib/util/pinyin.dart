@@ -205,7 +205,7 @@ class PinyinParser {
     // 解析音调
     String lastChar = pinyinWithTone.substring(pinyinWithTone.length - 1);
     String pinyinNormal;
-    if (RegExp(r'[0-9]').hasMatch(lastChar)) {
+    if (_digitRegExp.hasMatch(lastChar)) {
       pinyinNormal = pinyinWithTone.substring(0, pinyinWithTone.length - 1);
       tone = int.parse(lastChar);
     } else {
@@ -369,21 +369,22 @@ double similarityOf2Tone(int tone1, int tone2) {
   return tone1 == tone2 ? 1.0 : 0.0;
 }
 
+final RegExp _digitRegExp = RegExp(r'[0-9]');
+final RegExp _bracketRegExp1 = RegExp(r"[（\(].*[）\)]");
+final RegExp _bracketRegExp2 = RegExp(r"\[.*\]");
+final RegExp _nonChineseRegExp = RegExp(r"[^\u4e00-\u9fa5,，]");
+final RegExp _commaRegExp = RegExp(r"[,，]");
+final RegExp _nonPinyinOrSpaceRegExp = RegExp(r"[^a-z1-5\s]");
+final RegExp _nonPinyinRegExp = RegExp(r"[^a-z1-5]");
+
 /// 计算两个拼音（都对应一个汉字）的发音相似性
 ///
-/// @param pinyin1
-/// @param pinyin2
+/// @param parts1
+/// @param parts2
 /// @return
-double similarityOf2Pinyin(String pinyin1, String pinyin2) {
-  if (pinyin1.isEmpty || pinyin2.isEmpty) {
-    return 0.0;
-  }
-
-  var parts1 = PinyinParser(pinyin1);
-  var parts2 = PinyinParser(pinyin2);
-
+double similarityOf2ParsedPinyin(PinyinParser parts1, PinyinParser parts2) {
   // 某些字特殊处理
-  if (pinyin1 == "de5" && pinyin2 == "de5") {
+  if (parts1.pinyinWithTone == "de5" && parts2.pinyinWithTone == "de5") {
     // 的
     return minSimularityForMatch;
   }
@@ -397,7 +398,16 @@ double similarityOf2Pinyin(String pinyin1, String pinyin2) {
   }
 }
 
-
+/// 计算两个拼音（都对应一个汉字）的发音相似性
+/// (向后兼容方法)
+double similarityOf2Pinyin(String pinyin1, String pinyin2) {
+  if (pinyin1.isEmpty || pinyin2.isEmpty) {
+    return 0.0;
+  }
+  var parts1 = PinyinParser(pinyin1);
+  var parts2 = PinyinParser(pinyin2);
+  return similarityOf2ParsedPinyin(parts1, parts2);
+}
 
 bool fuzzyChineseContains(Object chinese1, String chinese2) {
   if (chinese1 is List<String>) {
@@ -412,31 +422,33 @@ bool fuzzyChineseContains(Object chinese1, String chinese2) {
   var pinyin = chineseToPinyin2(chinese1.toString().replaceAll("  ", " "), true);
 
   var meaning = chinese2;
-  meaning = meaning.replaceAll(RegExp("[（|\\(].*[）|\\)]"), "").replaceAll(RegExp("[\\[].*[\\]]"), ""); //去掉释义中包含在括号中的内容
-  meaning = meaning.toLowerCase().replaceAll(RegExp(r"[^\u4e00-\u9fa5,，]"), "").trim(); // 去掉释义中的非汉字字符
-  var meaningUnits = meaning.split(RegExp("[,，]"));
+  meaning = meaning.replaceAll(_bracketRegExp1, "").replaceAll(_bracketRegExp2, ""); //去掉释义中包含在括号中的内容
+  meaning = meaning.toLowerCase().replaceAll(_nonChineseRegExp, "").trim(); // 去掉释义中的非汉字字符
+  var meaningUnits = meaning.split(_commaRegExp);
 
-  var parts1Str = pinyin.toLowerCase().replaceAll(RegExp("[^a-z1-5\\s]"), "").trim();
+  var parts1Str = pinyin.toLowerCase().replaceAll(_nonPinyinOrSpaceRegExp, "").trim();
   parts1Str = Util.replaceDoubleSpace(parts1Str);
   var parts1 = parts1Str.isEmpty ? <String>[] : parts1Str.split(" ");
   if (parts1.isEmpty) return false;
+
+  List<PinyinParser> parsedParts1 = parts1.map((p) => PinyinParser(p)).toList();
 
   for (var unit in meaningUnits) {
     if (unit.isEmpty) continue;
 
     // 获取 target 的每一个字的可能拼音
-    List<List<String>> targetPinyins = [];
+    List<List<PinyinParser>> targetPinyins = [];
     for (var i = 0; i < unit.length; i++) {
       var hanzi = unit[i];
       var pinyins = hanziToPinyin(hanzi);
-      var cleans = pinyins.map((p) => p.toLowerCase().replaceAll(RegExp("[^a-z1-5]"), "").trim()).where((p) => p.isNotEmpty).toList();
+      var cleans = pinyins.map((p) => p.toLowerCase().replaceAll(_nonPinyinRegExp, "").trim()).where((p) => p.isNotEmpty).toList();
       if (cleans.isEmpty) cleans = [hanzi.toLowerCase()];
-      targetPinyins.add(cleans);
+      targetPinyins.add(cleans.map((p) => PinyinParser(p)).toList());
     }
 
     // DP 求最大分值。这是一个顺序包含的匹配关系，也就是我们需要在 user 识别出的若干发音中，找出和 target按顺序匹配得最好的子集。
     int M = targetPinyins.length;
-    int N = parts1.length;
+    int N = parsedParts1.length;
 
     // dp[i][j] 为 target前i个字匹配 user前j个syllable 的最大分值
     List<List<double>> dp = List.generate(M + 1, (_) => List.filled(N + 1, 0.0));
@@ -446,7 +458,7 @@ bool fuzzyChineseContains(Object chinese1, String chinese2) {
         // 计算 target的第i个字（可能有多个发音）和 user的第j个音节(parts1[j-1])的最大相似度
         double maxSim = 0.0;
         for (var p2 in targetPinyins[i - 1]) {
-          double sim = similarityOf2Pinyin(parts1[j - 1], p2);
+          double sim = similarityOf2ParsedPinyin(parsedParts1[j - 1], p2);
           if (sim > maxSim) maxSim = sim;
         }
 

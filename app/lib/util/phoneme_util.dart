@@ -8,9 +8,14 @@ import 'package:nnbdc/util/edit_distance.dart';
 /// - 提供单词到音素的查找
 /// - 提供音素级编辑距离与相似度评分
 class PhonemeUtil {
-  static const String _assetPath = 'assets/cmudict.dict';
+  static const String _assetPath = 'assets/cmudict.dict'; 
   static bool _loaded = false;
   static final Map<String, List<List<String>>> _wordToPhonemeVariants = {};
+
+  static final RegExp _digitRegExp = RegExp(r'\d+');
+  static final RegExp _cRegExp = RegExp(r'ce|ci|cy');
+  static final RegExp _lowerAlphaRegExp = RegExp(r'[a-z]');
+  static final RegExp _spaceRegExp = RegExp(r'\s+');
 
   /// 懒加载 CMUdict（多次调用安全）
   static Future<void> load() async {
@@ -107,7 +112,10 @@ class PhonemeUtil {
   static List<String> _weakenPhonemes(List<String> phons) {
     const vowels = {"AA", "AE", "AH", "AO", "AW", "AY", "EH", "ER", "EY", "IH", "IY", "OW", "OY", "UH", "UW"};
     // 使用 @ 作为元音占位符，避免与辅音字母 V (v) 冲突
-    return phons.map((p) => vowels.contains(p.replaceAll(RegExp(r'\d+'), '')) ? "@" : p.replaceAll(RegExp(r'\d+'), '')).toList();
+    return phons.map((p) {
+      final parsed = p.replaceAll(_digitRegExp, '');
+      return vowels.contains(parsed) ? "@" : parsed;
+    }).toList();
   }
 
   /// 内部方法：将普通乱码文本转换为伪音素序列（骨架提取）
@@ -123,7 +131,7 @@ class PhonemeUtil {
     w = w.replaceAll('ck', 'k');
     w = w.replaceAll('ng', 'G');
     w = w.replaceAll('qu', 'kw');
-    w = w.replaceAll(RegExp(r'ce|ci|cy'), 's');
+    w = w.replaceAll(_cRegExp, 's');
 
     // 2. 转换为标准音素集映射
     final List<String> res = [];
@@ -139,7 +147,7 @@ class PhonemeUtil {
         res.add("TH");
       } else if (char == 'G') {
         res.add("NG");
-      } else if (RegExp(r'[a-z]').hasMatch(char)) {
+      } else if (_lowerAlphaRegExp.hasMatch(char)) {
         res.add(char.toUpperCase());
       }
     }
@@ -183,7 +191,7 @@ class PhonemeUtil {
       if (line.isEmpty) continue;
       if (line.startsWith(';;;') || line.startsWith('#')) continue;
 
-      final parts = line.split(RegExp(r"\s+"));
+      final parts = line.split(_spaceRegExp);
       if (parts.length < 2) continue;
 
       var head = parts.first;
@@ -194,7 +202,7 @@ class PhonemeUtil {
       }
       final word = head.toLowerCase();
       // 注意：CMU 音素里元音带 0/1/2 重音数字，这里去掉数字以做宽松匹配
-      final phonemes = parts.sublist(1).map((p) => p.replaceAll(RegExp(r"\d+"), '')).toList();
+      final phonemes = parts.sublist(1).map((p) => p.replaceAll(_digitRegExp, '')).toList();
 
       final variants = _wordToPhonemeVariants.putIfAbsent(word, () => <List<String>>[]);
       variants.add(phonemes);
