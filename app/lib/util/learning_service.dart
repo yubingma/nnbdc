@@ -62,7 +62,7 @@ class LearningService {
               await db.learningWordsDao.saveEntity(
                 word.copyWith(
                   todayLearnedTimes: 0,
-                  batchId: const Value(null),
+                  batchId: const Value(0),
                 ),
                 true // 强制生成同步记录，更新云端
               );

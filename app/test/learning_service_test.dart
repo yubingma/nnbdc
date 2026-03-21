@@ -6,6 +6,7 @@ import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/learning_service.dart';
 import 'package:drift/drift.dart';
 import 'package:flutter/services.dart';
+import 'package:get_storage/get_storage.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -14,12 +15,18 @@ void main() {
   final now = AppClock.now();
 
   setUpAll(() {
-    const MethodChannel('plugins.flutter.io/path_provider').setMockMethodCallHandler((MethodCall methodCall) async {
-      return '.';
-    });
-    const MethodChannel('dev.fluttercommunity.plus/connectivity').setMockMethodCallHandler((MethodCall methodCall) async {
-      return 'wifi';
-    });
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+      const MethodChannel('plugins.flutter.io/path_provider'),
+      (MethodCall methodCall) async {
+        return '.';
+      },
+    );
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+      const MethodChannel('dev.fluttercommunity.plus/connectivity'),
+      (MethodCall methodCall) async {
+        return 'wifi';
+      },
+    );
   });
 
   setUp(() async {
@@ -59,6 +66,8 @@ void main() {
     // 塞进 Global 变量缓存
     Global.currentUserId = 'test_user_id';
     Global.updateUserCache(testUser);
+    await GetStorage.init();
+    GetStorage().write('currentUserId', 'test_user_id');
 
     // 2. 生成 Mock 词书和映射
     var dictId = 'mock_dict_1';
@@ -197,8 +206,11 @@ void main() {
 
     test('Shrink 缩小每日单词数计划时的裁剪逻辑', () async {
       // 先产生10个待学习的词赋予今天
-      // 用户的词库目标突然改成了 3
-      testUser = testUser.copyWith(wordsPerDay: 3);
+      // 用户的词库目标突然改成了 3，并确保日期为今天 (不触发新的一天逻辑)
+      testUser = testUser.copyWith(
+        wordsPerDay: 3,
+        lastLearningDate: Value(now),
+      );
       Global.updateUserCache(testUser);
 
       for (int i = 1; i <= 10; i++) {
@@ -209,6 +221,7 @@ void main() {
           addDay: 1,
           batchId: 1,
           lastLearningDate: now,
+          stability: 0.0,
           isTodayNewWord: true,
           learnedTimes: 0,
           todayLearnedTimes: 0, // 都还没学
@@ -253,8 +266,9 @@ void main() {
           addTime: yesterday,
           addDay: 1,
           batchId: 1, // 挂着一个批次
+          stability: 0.0, // 确保有初始值否则 FSRS 查询会跳过它
           isTodayNewWord: true,
-          learnedTimes: 0,
+          learnedTimes: 1, // <--- 已学1遍
           todayLearnedTimes: 1, // 昨天学了1遍但没过
           learningOrder: 1,
           createTime: yesterday,
@@ -270,6 +284,175 @@ void main() {
       expect(updatedWord.todayLearnedTimes, 0);
       // 它作为旧词，被重新发配到了今天的新的BatchId上 (今天生成的所有词 BatchId 也是1起步)
       expect(updatedWord.batchId, 1);
+    });
+
+    test('所有书桌词书都已学完的场景（词汇枯竭）', () async {
+      // 1. 把 setUp 里生成的这 10 个词全部设定为已加入 learning_words 并具有超高 stability（已毕业）
+      for (int i = 1; i <= 10; i++) {
+        await db.into(db.learningWords).insert(LearningWord(
+          userId: testUser.id,
+          wordId: 'word_$i',
+          addTime: now,
+          addDay: 1,
+          batchId: 0,
+          stability: 5.0, // 低于毕业阈值（不被自动清理），但处于复习等待中
+          difficulty: 5.0,
+          elapsedDays: 1,
+          scheduledDays: 999, // 未来很远才会过期的复习计划
+          reps: 1,
+          lapses: 0,
+          state: 2, // 状态2一般是Review
+          lastLearningDate: now, // 核心在于上次学习日期是今天，所以加 999 天绝对不会过期！
+          isTodayNewWord: false,
+          learnedTimes: 5,
+          todayLearnedTimes: 0,
+          learningOrder: 0,
+          createTime: now,
+          updateTime: now,
+        ));
+      }
+
+      // 2. 然后执行取词，由于这10个词虽然在书里，但都毕业了/不需复习。且词书没有其他新词供抓。
+      final result = await LearningService.prepareTodayStudy(true);
+
+      // 业务层返回成功状态为否，并附带错误码
+      expect(result.success, false);
+      expect(result.code, 'NNBDC-0012');
+      expect(result.msg, '未取到足够单词');
+
+      var todayWords = await LearningService.getTodayLearningWordsFromDb(testUser.id);
+      expect(todayWords.length, 0); // 绝对抽不到任何词
+    });
+
+    test('完整生命周期全景模拟：从第一天零进度直到书桌所有词书全部学完（枯竭）', () async {
+      // 准备一个独立的时间线用于精准计算跨天逻辑
+      final fakeClock = FakeClock(DateTime(2026, 1, 1, 8, 0));
+      AppClock.setClock(fakeClock);
+
+      // ===================================
+      // 第 1 天：开始背单词之旅
+      // ===================================
+      var result = await LearningService.prepareTodayStudy(true);
+      expect(result.success, true);
+      expect(result.data![0], 5); // 抓取 5 个新词
+      expect(result.data![1], 0);
+
+      var todayWords = await LearningService.getTodayLearningWordsFromDb(testUser.id);
+      // 精确验证它取的是前 5 个词
+      expect(todayWords.map((w) => w.wordId).toList(), ['word_1', 'word_2', 'word_3', 'word_4', 'word_5']);
+
+      // 模拟用户在第一天认真学完了这 5 个词
+      for (var lw in todayWords) {
+        await db.learningWordsDao.saveEntity(lw.copyWith(
+          stability: const Value(2.0), // 未达到毕业标准 (约大于8-10才毕业)
+          scheduledDays: const Value(2), // FSRS 调度在 2 天后复习
+          lastLearningDate: Value(fakeClock.now()),
+          learnedTimes: 1, // <--- MUST have learnedTimes > 0 to not be a new word!
+          todayLearnedTimes: 1, // 当天产生过学习
+        ), true);
+      }
+
+      // ===================================
+      // 第 2 天：时间推进 1 天
+      // ===================================
+      fakeClock.advanceDays(1);
+      
+      // 第二天备考：昨天的 5 个词 scheduledDays 是 2 天，所以今天还不到期。今天只需取剩余 5 个新词！
+      result = await LearningService.prepareTodayStudy(true);
+      expect(result.success, true);
+      expect(result.data![0], 5); // 5个全新词！
+      expect(result.data![1], 0);
+
+      todayWords = await LearningService.getTodayLearningWordsFromDb(testUser.id);
+      // 精确验证它往下抓了后 5 个新鲜词
+      expect(todayWords.map((w) => w.wordId).toList(), ['word_6', 'word_7', 'word_8', 'word_9', 'word_10']);
+
+      // 模拟用户在第二天痛快地学完了这仅剩的 5 个新词，但基础极差，只配了 1 天的复习期
+      for (var lw in todayWords) {
+        await db.learningWordsDao.saveEntity(lw.copyWith(
+          stability: const Value(1.0), 
+          scheduledDays: const Value(1), // 会导致它们在明天的 "第 3 天" 全员到期
+          lastLearningDate: Value(fakeClock.now()),
+          learnedTimes: 1,
+          todayLearnedTimes: 1,
+        ), true);
+      }
+
+      // ===================================
+      // 第 3 天：时间又推进 1 天
+      // ===================================
+      fakeClock.advanceDays(1);
+
+      // 第三天备考：
+      // - 第 1 天的词 (1-5) 过去了 2 天 (等于它们的 scheduledDays)，到期！
+      // - 第 2 天的词 (6-10) 过去了 1 天 (等于它们的 scheduledDays 1天)，也到期！
+      // 今天这 10 个词全体到期交锋！因为每日计划只有5，应该根据 FSRS 复习优先级选取最急需复习的 5 个词（稳定性越低的单词越需要优先复习）
+      // Day 2 词 stability=1.0, Day 1 词 stability=2.0。先选出 Day 2 词 (6-10)！
+      result = await LearningService.prepareTodayStudy(true);
+      expect(result.success, true);
+      expect(result.data![0], 0); // 没有任何新词了，全是复习
+      expect(result.data![1], 5); 
+
+      todayWords = await LearningService.getTodayLearningWordsFromDb(testUser.id);
+      // 因为 Day 2 的稳定性 1.0 远低于 Day 1 的 2.0，所以被优先抽出！
+      expect(todayWords.map((w) => w.wordId).toList(), ['word_6', 'word_7', 'word_8', 'word_9', 'word_10']);
+
+      // 模拟用户在第三天完美地复习了这 5 个词，并将它们直接干到了“毕业”水平（毕业稳定性常数=Constants.graduationStability，默认可能是10.0或更大）
+      for (var lw in todayWords) {
+        await db.learningWordsDao.saveEntity(lw.copyWith(
+          stability: const Value(15.0), // 超出毕业门槛
+          scheduledDays: const Value(100), // 稳若泰山
+          lastLearningDate: Value(fakeClock.now()),
+          learnedTimes: 2, // 第二次学了
+          todayLearnedTimes: 1,
+        ), true);
+      }
+
+      // ===================================
+      // 第 4 天：时间再推进 1 天
+      // ===================================
+      fakeClock.advanceDays(1);
+
+      // 第四天备考：
+      // 6-10 昨天毕业了。第一批词 1-5 昨天没挤进来，今天严重过期（3>2天）。且目前稳定性还是 2.0，未毕业。
+      // 它将抽出这迟到的前 5 个词作为复习填满计划
+      result = await LearningService.prepareTodayStudy(true);
+      expect(result.success, true);
+      expect(result.data![0], 0); 
+      expect(result.data![1], 5);
+
+      todayWords = await LearningService.getTodayLearningWordsFromDb(testUser.id);
+      // 精准验证！果然轮到了 1-5 词的复习
+      expect(todayWords.map((w) => w.wordId).toList(), ['word_1', 'word_2', 'word_3', 'word_4', 'word_5']);
+
+      // 同样，用户神采奕奕，把这 5 个词也学到了满分毕业点之上
+      for (var lw in todayWords) {
+        await db.learningWordsDao.saveEntity(lw.copyWith(
+          stability: const Value(12.0), // 毕业啦
+          scheduledDays: const Value(100),
+          lastLearningDate: Value(fakeClock.now()),
+          learnedTimes: 2, // 第二次复习
+          todayLearnedTimes: 1,
+        ), true);
+      }
+
+      // ===================================
+      // 第 5 天：大结局
+      // ===================================
+      fakeClock.advanceDays(1);
+
+      // 第五天备考：现在全服没有任何符合复习资格的词（10个全都进入毕业池被隐形删除或不再进入待办池），所有新词库也早榨干。
+      result = await LearningService.prepareTodayStudy(true);
+
+      expect(result.success, false);
+      expect(result.code, 'NNBDC-0012'); // 词书彻底刷穿
+      expect(result.msg, '未取到足够单词');
+
+      todayWords = await LearningService.getTodayLearningWordsFromDb(testUser.id);
+      expect(todayWords.length, 0); // 光秃秃的一片！恭喜结课！
+
+      // 恢复系统时钟，以免影响以后的普通环境运行
+      AppClock.reset();
     });
   });
 }

@@ -378,8 +378,9 @@ class LoginPageState extends State<LoginPage>
                               } catch (e, stackTrace) {
                                 ErrorHandler.handleNetworkError(e, stackTrace,
                                     api: 'loginAsGuest');
-                                if (mounted)
+                                if (mounted) {
                                   setState(() => _isGuestLoading = false);
+                                }
                               }
                             }),
                           ],
