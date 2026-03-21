@@ -13,13 +13,23 @@ class NotificationUtil {
   static Future<void> init() async {
     try {
       tz.initializeTimeZones();
-      final timeZoneInfo = await FlutterTimezone.getLocalTimezone();
-      tz.setLocalLocation(tz.getLocation(timeZoneInfo.toString()));
+      final info = await FlutterTimezone.getLocalTimezone();
+      String timeZoneInfo = info.toString();
+      
+      // Handle formatting like: "TimezoneInfo(Asia/Shanghai, (locale:...))" on macOS
+      if (timeZoneInfo.startsWith('TimezoneInfo(')) {
+        final match = RegExp(r'TimezoneInfo\(([^,]+),').firstMatch(timeZoneInfo);
+        if (match != null && match.groupCount >= 1) {
+          timeZoneInfo = match.group(1)!.trim();
+        }
+      }
+      
+      tz.setLocalLocation(tz.getLocation(timeZoneInfo));
 
       const AndroidInitializationSettings initializationSettingsAndroid =
           AndroidInitializationSettings('@mipmap/ic_launcher');
 
-      const DarwinInitializationSettings initializationSettingsIOS =
+      const DarwinInitializationSettings initializationSettingsDarwin =
           DarwinInitializationSettings(
         requestSoundPermission: true,
         requestBadgePermission: true,
@@ -28,7 +38,8 @@ class NotificationUtil {
 
       const InitializationSettings initializationSettings = InitializationSettings(
         android: initializationSettingsAndroid,
-        iOS: initializationSettingsIOS,
+        iOS: initializationSettingsDarwin,
+        macOS: initializationSettingsDarwin,
       );
 
       await flutterLocalNotificationsPlugin.initialize(
@@ -58,6 +69,7 @@ class NotificationUtil {
     const NotificationDetails platformChannelSpecifics = NotificationDetails(
       android: androidPlatformChannelSpecifics,
       iOS: DarwinNotificationDetails(),
+      macOS: DarwinNotificationDetails(),
     );
 
     String messageBody = _getReminderMessage(user);
