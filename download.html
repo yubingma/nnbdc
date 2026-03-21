@@ -115,6 +115,19 @@
             box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
         }
 
+        .beta-btn {
+            font-size: 0.9rem;
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .beta-btn:hover {
+            color: #5a67d8;
+            text-decoration: underline;
+        }
+
         .footer {
             text-align: center;
             color: white;
@@ -208,6 +221,13 @@
                 <p>支持 Android 5.0 及以上版本</p>
                 <a href="https://www.nnbdc.com/app/nnbdc-android.apk" class="download-btn"
                     download="nnbdc-android.apk">立即下载</a>
+                    
+                <div class="beta-container" style="display: none; margin-top: 15px;">
+                    <a href="https://www.nnbdc.com/app/latest/nnbdc-android.apk" class="beta-btn"
+                        download="nnbdc-android-beta.apk">
+                        ✨ 获取最新测试版 <span class="beta-ver-text"></span>
+                    </a>
+                </div>
             </div>
             <!-- Windows 卡片 -->
             <div class="card">
@@ -221,6 +241,13 @@
                 <p>支持 Windows 10 及以上版本</p>
                 <a href="https://www.nnbdc.com/app/nnbdc-windows.zip" class="download-btn"
                     download="nnbdc-windows.zip">立即下载</a>
+                    
+                <div class="beta-container" style="display: none; margin-top: 15px; margin-bottom: 10px;">
+                    <a href="https://www.nnbdc.com/app/latest/nnbdc-windows.zip" class="beta-btn"
+                        download="nnbdc-windows-beta.zip">
+                        ✨ 获取最新测试版 <span class="beta-ver-text"></span>
+                    </a>
+                </div>
                 <p style="margin-top: 10px; font-size: 0.85rem; color: #999;">下载后请解压 zip 文件，运行 nnbdc-setup.exe 进行安装</p>
             </div>
 
@@ -269,6 +296,13 @@
                 <p>支持 Ubuntu 18.04 及以上版本</p>
                 <a href="https://www.nnbdc.com/app/nnbdc-linux.AppImage" class="download-btn"
                     download="nnbdc-linux.AppImage">立即下载</a>
+                    
+                <div class="beta-container" style="display: none; margin-top: 15px;">
+                    <a href="https://www.nnbdc.com/app/latest/nnbdc-linux.AppImage" class="beta-btn"
+                        download="nnbdc-linux-beta.AppImage">
+                        ✨ 获取最新测试版 <span class="beta-ver-text"></span>
+                    </a>
+                </div>
             </div>
 
 
@@ -284,38 +318,58 @@
     </div>
 
     <script>
-        // 从 ver.json 获取版本号并更新下载链接
+        // 获取版本号并更新下载链接
         async function loadVersionAndUpdateLinks() {
+            const timestamp = new Date().getTime();
+            let stableVerCode = null;
+            
+            // 1. 获取正式版版本信息
             try {
-                // 添加时间戳参数，确保获取最新版本信息
-                const timestamp = new Date().getTime();
                 const response = await fetch('app/ver.json?t=' + timestamp);
                 if (response.ok) {
-                    console.log('获取版本信息成功:', response);
                     const data = await response.json();
-                    console.log('版本信息:', data);
-                    console.log('版本号:', data.verCode);
-                    const verCode = data.verCode;
-                    updateDownloadLinks(verCode);
-                } else {
-                    console.warn('获取版本信息失败，使用默认链接:', response.status);
+                    stableVerCode = data.verCode;
+                    updateLinks('.download-btn[href]', stableVerCode);
                 }
             } catch (error) {
-                console.warn('获取版本信息失败，使用默认链接:', error);
+                console.warn('获取正式版本信息失败:', error);
+            }
+
+            // 2. 获取测试版(latest目录)版本信息
+            try {
+                const betaResponse = await fetch('app/latest/ver.json?t=' + timestamp);
+                if (betaResponse.ok) {
+                    const betaData = await betaResponse.json();
+                    
+                    // 如果测试版本和正式版本不一致，才显示测试版入口
+                    if (betaData.verCode && betaData.verCode !== stableVerCode) {
+                        updateLinks('.beta-btn[href]', betaData.verCode);
+                        
+                        // 在按钮上展示测试版版本号
+                        document.querySelectorAll('.beta-ver-text').forEach(el => {
+                            el.textContent = '(v' + betaData.verCode + ')';
+                        });
+                        
+                        // 显示隐藏的测试版容器
+                        document.querySelectorAll('.beta-container').forEach(el => {
+                            el.style.display = 'block';
+                        });
+                    }
+                }
+            } catch (error) {
+                console.warn('获取测试版本信息失败:', error);
             }
         }
 
-        // 更新所有下载链接，添加版本参数
-        function updateDownloadLinks(verCode) {
-            const downloadButtons = document.querySelectorAll('.download-btn[href]');
-            downloadButtons.forEach(function (button) {
+        // 更新下载链接，添加版本参数
+        function updateLinks(selector, verCode) {
+            const buttons = document.querySelectorAll(selector);
+            buttons.forEach(function (button) {
                 const originalHref = button.getAttribute('href');
                 if (originalHref && originalHref.startsWith('http')) {
-                    // 检查是否已有查询参数
                     const separator = originalHref.includes('?') ? '&' : '?';
                     const newHref = originalHref + separator + 'ver=' + verCode;
                     button.setAttribute('href', newHref);
-                    console.log('更新下载链接:', newHref);
                 }
             });
         }
@@ -344,7 +398,7 @@
             loadVersionAndUpdateLinks();
 
             // 为所有下载链接添加点击事件监听，确保下载完整性
-            const downloadButtons = document.querySelectorAll('.download-btn[download]');
+            const downloadButtons = document.querySelectorAll('.download-btn[download], .beta-btn[download]');
             downloadButtons.forEach(function (button) {
                 button.addEventListener('click', function (e) {
                     // 添加下载开始提示

@@ -90,6 +90,13 @@ class MyDatabase extends _$MyDatabase {
     return _instance!;
   }
 
+  static void setInstanceForTesting(MyDatabase testingInstance) {
+    if (_instance != null) {
+      _instance!.close();
+    }
+    _instance = testingInstance;
+  }
+
   /// 获取本地 SQLite 文件路径（非 Web），并做缓存。
   ///
   /// 说明：getApplicationDocumentsDirectory() 在某些设备/首次调用时可能较慢，
