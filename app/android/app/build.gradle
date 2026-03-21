@@ -48,6 +48,7 @@ android {
     ndkVersion = "27.0.12077973"
     
     compileOptions {
+        coreLibraryDesugaringEnabled true
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
     }
@@ -139,6 +140,9 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.21"
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'androidx.core:core-ktx:1.12.0'
+    
+    // 启用 Java 8/17 的核心库脱糖 (core library desugaring)
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.4'
     
     // 协程支持
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3'
