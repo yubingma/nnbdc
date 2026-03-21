@@ -660,7 +660,10 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                     Builder(
                       builder: (BuildContext context) {
                         final screenWidth = MediaQuery.of(context).size.width;
-                        final imageWidth = (screenWidth - leftPadding - rightPadding - 8) / 2.0; // 横排两张的合适宽度
+                        double imageWidth = (screenWidth - leftPadding - rightPadding - 8) / 2.0; // 横排两张的合适宽度
+                        if (imageWidth > 120.0) {
+                          imageWidth = 120.0; // 限制最大宽度，避免图片过大占用太多纵向空间
+                        }
                         return Padding(
                           padding: const EdgeInsets.fromLTRB(leftPadding, 16, rightPadding, 8),
                           child: Column(
@@ -740,7 +743,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                           )
                       ],
                     ),
-                  ),
+                  ), 
                 ],
               ), 
             ),
