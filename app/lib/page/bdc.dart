@@ -664,7 +664,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   int _correctAnswerIndex = 0;
 
   /// 当前单词是否回答正确
-  bool _isAnswerCorrect = false;
+  bool _hasFinishedAnswering = false;
 
   /// 当前单词是否已经掌握
   bool _isWordMastered = false;
@@ -1206,24 +1206,24 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
             // 中→英模式：结合拼写相似度和音素相似度的智能选择
             final result = await AsrUtil.selectBestCandidateWithPhonemeAndScore(
                 candidateStrings, _word!.spell);
-            if (!_isAnswerCorrect) _currentScore = result.score;
+            if (!_hasFinishedAnswering) _currentScore = result.score;
             processedResult =
                 AsrUtil.preprocessEnglish(result.text, _word!.spell);
             Global.logger.d(
                 'ASR: Selected & Preprocessed: "$processedResult" (score: ${result.score})');
           } else {
             processedResult = bestCandidate;
-            if (!_isAnswerCorrect) _currentScore = null;
+            if (!_hasFinishedAnswering) _currentScore = null;
           }
         } else if (_studyStep == StudyStep.en2Ch.json) {
           // 英→中模式：UI 显示最佳候选，但背后匹配逻辑会遍历所有 _currentAsrCandidates
           processedResult = AsrUtil.preprocess(bestCandidate);
-          if (!_isAnswerCorrect) _currentScore = null;
+          if (!_hasFinishedAnswering) _currentScore = null;
           Global.logger.d(
               'ASR [en2Ch]: Stored ${candidateStrings.length} candidates, showing best: $processedResult');
         } else {
           processedResult = bestCandidate;
-          if (!_isAnswerCorrect) _currentScore = null;
+          if (!_hasFinishedAnswering) _currentScore = null;
         }
       } else {
         // 单个结果处理
@@ -1234,10 +1234,10 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
             final result = await AsrUtil.selectBestCandidateWithPhonemeAndScore(
                 [pre], _word!.spell);
             processedResult = result.text;
-            if (!_isAnswerCorrect) _currentScore = result.score;
+            if (!_hasFinishedAnswering) _currentScore = result.score;
           } else {
             processedResult = event;
-            if (!_isAnswerCorrect) _currentScore = null;
+            if (!_hasFinishedAnswering) _currentScore = null;
           }
         } else {
           processedResult = AsrUtil.preprocess(event);
@@ -1251,7 +1251,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     }
 
     if (mounted) {
-      if (!_isAnswerCorrect && oldScore != _currentScore) {
+      if (!_hasFinishedAnswering && oldScore != _currentScore) {
         setState(() {}); // 触发 UI 刷新以实时显示最新的发音评分（即使没通过也能让用户看到反馈分数变化）
       }
       checkAsrResult(asrInput: processedResult);
@@ -1259,7 +1259,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   }
 
   void _onAnswerCorrect(FsrsRating rating) async {
-    _isAnswerCorrect = true;
+    _hasFinishedAnswering = true;
     _canLeaveCurrWord = true;
 
     if (!_autoJumpAfterCorrect) {
@@ -1378,13 +1378,13 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
     // 如果已经答对，且并未处于练习拼写的看板模式（或者看板是固定模式），则跳过处理。
     // 这样做是为了允许用户在答对后，再次打开看板练习拼写，并能触发“拼写正确”的反馈（如自动关闭看板）。
-    if (_isAnswerCorrect && !_showHandwritingBoard) {
+    if (_hasFinishedAnswering && !_showHandwritingBoard) {
       Global.logger.d('checkAsrResult: 单词已回答正确且非看板练习模式，跳过后续结果处理');
       // No double play sound logic here to prevent repeating voice when ASR gives trailing results
       return;
     }
 
-    final bool wasAlreadyCorrect = _isAnswerCorrect;
+    final bool wasAlreadyCorrect = _hasFinishedAnswering;
 
     if (asr.state != AsrState.started &&
         asr.state != AsrState.initialized &&
@@ -1446,10 +1446,10 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       if (_firstMatchTime == null && matched >= 1) {
         _firstMatchTime = DateTime.now();
       }
-      _isAnswerCorrect = _isAsrPassSync(total, matched);
+      _hasFinishedAnswering = _isAsrPassSync(total, matched);
 
       Global.logger.d(
-          'BDC CHECK_ASR [en2Ch]: result(total=$total, matched=$matched, newMatchCount=${result.newMatchCount}), _isAnswerCorrect=$_isAnswerCorrect, requires pass rule: $_asrPassRuleCache');
+          'BDC CHECK_ASR [en2Ch]: result(total=$total, matched=$matched, newMatchCount=${result.newMatchCount}), _isAnswerCorrect=$_hasFinishedAnswering, requires pass rule: $_asrPassRuleCache');
 
       // 如果本次有新增匹配，播放音效并设置状态
       if (result.newMatchCount > 0) {
@@ -1458,7 +1458,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         });
 
         // 核心修复：如果已完全答对（满足通过规则），在播放提示音前立即停止 ASR，释放音频通道以杜绝反馈音颤抖，并让UI层收到停止状态进而停止波浪动画。
-        if (_isAnswerCorrect) {
+        if (_hasFinishedAnswering) {
           // 彻底停止当前识别会话
           await asr.stopAsr();
 
@@ -1568,7 +1568,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         // 并发播放提示音，支持多个提示音同时播放，互不干扰
         // 将提示音 Future 添加到列表中，用于后续等待所有提示音播放完成
 
-        if (PlatformUtils.isIOS && _isAnswerCorrect) {
+        if (PlatformUtils.isIOS && _hasFinishedAnswering) {
           await Future.delayed(const Duration(milliseconds: 150));
         }
 
@@ -1582,7 +1582,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         soundFuture.whenComplete(() {
           Future.delayed(const Duration(milliseconds: 150)).then((_) async {
             _playingCorrectSounds.remove(soundFuture);
-            if (_playingCorrectSounds.isEmpty && _isAnswerCorrect) {
+            if (_playingCorrectSounds.isEmpty && _hasFinishedAnswering) {
               if (wasAlreadyCorrect) return;
 
               if (_autoJumpAfterCorrect && _lastFsrsRating != null) {
@@ -1637,7 +1637,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
           return;
         }
 
-        _isAnswerCorrect = true;
+        _hasFinishedAnswering = true;
 
         // 计算 FSRS 评分
         FsrsRating rating = FsrsRating.good; // 默认 Good
@@ -2120,7 +2120,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       }
       _word = getWordResult.learningWord!.word;
       _canLeaveCurrWord = false;
-      _isAnswerCorrect = false;
+      _hasFinishedAnswering = false;
       _isUpdatingByHint = false;
       _currentScore = null; // 重置发音评分，防止携带上一个单词的分数
 
@@ -2215,7 +2215,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
     // 自动获取焦点，提升输入效率
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted && !_isAnswerCorrect) {
+      if (mounted && !_hasFinishedAnswering) {
         _meaningFocusNode.requestFocus();
       }
     });
@@ -3430,7 +3430,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (_isAnswerCorrect && !_autoJumpAfterCorrect)
+          // 如果已经完成回答（_isAnswerCorrect），且不是自动跳词（或者本次是打错 Again），则展现出评分面板使用户可见且可调整
+          if (_hasFinishedAnswering &&
+              (!_autoJumpAfterCorrect || _lastFsrsRating == FsrsRating.again))
             _buildFsrsResultPanel(),
           Container(
             // 底部按钮区背景色 - 紫色调
@@ -3863,8 +3865,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   }
 
   onAnswerClicked(var selectedAnswerIndex) async {
-    _isAnswerCorrect = selectedAnswerIndex == _correctAnswerIndex;
-    if (_isAnswerCorrect) {
+    _hasFinishedAnswering = selectedAnswerIndex == _correctAnswerIndex;
+    if (_hasFinishedAnswering) {
       // 计算 FSRS 评分
       FsrsRating rating = FsrsRating.good; // 默认 Good
       if (_wordStartTime != null) {
@@ -3901,6 +3903,43 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   }
 
   showWordDetail(var word, bool isAnswerWrong, {FsrsRating? fsrsRating}) async {
+    // 本次如果确定有评分（如选择了不认识），就算还未跳转下一题，也应立刻结算本地 FSRS 预览，让用户在返回时可以看到评分状态。
+    if (fsrsRating != null) {
+      _lastFsrsRating = fsrsRating;
+      _hasFinishedAnswering = true; // 将界面切入“结束当前作答”状态，以展示下拉按钮
+      _canLeaveCurrWord = true;
+      _meaningFocusNode.unfocus();
+
+      final lw = _currentGetWordResult?.learningWord;
+      if (lw != null) {
+        final fsrs = FSRS();
+        _daysSinceLastReview = 0;
+        if (lw.lastLearningDate != null) {
+          final lastDate = DateTime(lw.lastLearningDate!.year,
+              lw.lastLearningDate!.month, lw.lastLearningDate!.day);
+          final now = DateTime.now();
+          final todayDate = DateTime(now.year, now.month, now.day);
+          _daysSinceLastReview = todayDate.difference(lastDate).inDays;
+        }
+        if (lw.stability == null || lw.stability == 0.0) {
+          _fsrsItem = fsrs.init(fsrsRating);
+        } else {
+          final prevItem = FSRSItem(
+            stability: lw.stability!,
+            difficulty: lw.difficulty!,
+            elapsedDays: _daysSinceLastReview ?? 0,
+            scheduledDays: lw.scheduledDays ?? 0,
+            reps: lw.reps ?? 0,
+            lapses: lw.lapses ?? 0,
+            state: FsrsStateExt.fromInt(lw.state),
+          );
+          _fsrsItem =
+              fsrs.next(prevItem, fsrsRating, _daysSinceLastReview ?? 0);
+        }
+      }
+      if (mounted) setState(() {});
+    }
+
     var bottomBtn = Container(
       decoration: BoxDecoration(
         color: context.read<DarkMode>().isDarkMode
@@ -4225,7 +4264,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                   icon: Icons.check_circle_outline,
                   label: '掌握',
                   onTap: () {
-                    _isAnswerCorrect = true;
+                    _hasFinishedAnswering = true;
                     _isWordMastered = true;
                     ToastUtil.info("不再学习 ${_word!.spell}");
                     getNextWord(true);
@@ -5389,7 +5428,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                     ),
                   ),
                 // 图片 (仅对管理员开放)
-                if ((Global.getLoggedInUser()?.isAdmin == true) && _currentGetWordResult?.images != null)
+                if ((Global.getLoggedInUser()?.isAdmin == true) &&
+                    _currentGetWordResult?.images != null)
                   Column(
                     children: [
                       if (_currentGetWordResult!.images!.isNotEmpty &&
