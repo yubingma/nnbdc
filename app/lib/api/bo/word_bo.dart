@@ -16,7 +16,7 @@ import '../../services/throttled_sync_service.dart';
 
 class WordBo {
   static final WordBo _instance = WordBo._internal();
-  factory WordBo() => _instance; 
+  factory WordBo() => _instance;
   WordBo._internal();
 
   // 只做本地查词（包含大小写与词形多变体）
@@ -75,8 +75,8 @@ class WordBo {
         final sentenceVos = <SentenceVo>[];
         for (final s in sentencesMap[miVo.id!]!) {
           final author = UserVo.c2(s.authorId);
-          final sentenceVo =
-              SentenceVo(s.id, s.english, s.chinese, s.englishDigest, s.partOfSpeech, s.theType.isEmpty ? 'tts' : s.theType, s.footCount, s.handCount, author);
+          final sentenceVo = SentenceVo(
+              s.id, s.english, s.chinese, s.englishDigest, s.partOfSpeech, s.theType.isEmpty ? 'tts' : s.theType, s.footCount, s.handCount, author);
           sentenceVo.wordMeaning = s.wordMeaning;
           sentenceVos.add(sentenceVo);
         }
@@ -748,7 +748,8 @@ class WordBo {
                 List<SentenceVo> sentenceVos = [];
                 for (var s in sentencesMap[mi.id]!) {
                   final author = UserVo.c2(s.authorId);
-                  final sentenceVo = SentenceVo(s.id, s.english, s.chinese, s.englishDigest, s.partOfSpeech, s.theType, s.footCount, s.handCount, author);
+                  final sentenceVo =
+                      SentenceVo(s.id, s.english, s.chinese, s.englishDigest, s.partOfSpeech, s.theType, s.footCount, s.handCount, author);
                   sentenceVo.wordMeaning = s.wordMeaning;
                   sentenceVos.add(sentenceVo);
                 }
@@ -1266,8 +1267,13 @@ class WordBo {
       final startOfDay = DateTime(now.year, now.month, now.day);
       final endOfDay = DateTime(now.year, now.month, now.day, 23, 59, 59, 999);
       final wrongWordsQuery = db.select(db.userWrongWords)
-        ..where((tbl) => tbl.userId.equals(userId) & tbl.createTime.isBiggerOrEqualValue(startOfDay) & tbl.createTime.isSmallerOrEqualValue(endOfDay))
-        ..orderBy([(tbl) => OrderingTerm(expression: tbl.createTime, mode: OrderingMode.desc)]);
+        ..where((tbl) =>
+            tbl.userId.equals(userId) &
+            ((tbl.createTime.isBiggerOrEqualValue(startOfDay) & tbl.createTime.isSmallerOrEqualValue(endOfDay)) |
+                (tbl.updateTime.isBiggerOrEqualValue(startOfDay) & tbl.updateTime.isSmallerOrEqualValue(endOfDay))))
+        ..orderBy([
+          (tbl) => OrderingTerm(expression: coalesce([tbl.updateTime, tbl.createTime]), mode: OrderingMode.desc)
+        ]);
       final wrongWords = await wrongWordsQuery.get();
       List<WordVo> wordVos = [];
       for (final wrongWord in wrongWords) {
@@ -1408,8 +1414,8 @@ class WordBo {
       final wrongWordsQuery = db.selectOnly(db.userWrongWords)
         ..addColumns([countAll()])
         ..where(db.userWrongWords.userId.equals(user.id))
-        ..where(db.userWrongWords.createTime.isBiggerOrEqualValue(startOfDay))
-        ..where(db.userWrongWords.createTime.isSmallerOrEqualValue(endOfDay));
+        ..where((db.userWrongWords.createTime.isBiggerOrEqualValue(startOfDay) & db.userWrongWords.createTime.isSmallerOrEqualValue(endOfDay)) |
+            (db.userWrongWords.updateTime.isBiggerOrEqualValue(startOfDay) & db.userWrongWords.updateTime.isSmallerOrEqualValue(endOfDay)));
       final wrongWordsCount = await wrongWordsQuery.getSingle();
       wordLists.add(WordList("今日错词", wrongWordsCount.read(countAll()) ?? 0));
       final newWordsQuery = db.selectOnly(db.learningWords)
@@ -1455,7 +1461,7 @@ class WordBo {
       final masteredWordIds = await db.masteredWordsDao.getMasteredWordIdSet(user.id);
       wordLists.add(WordList("已掌握", masteredWordIds.length));
       return Result("SUCCESS", "获取成功", true)..data = wordLists;
-    } catch (e, stackTrace) { 
+    } catch (e, stackTrace) {
       Global.logger.e('获取单词列表失败: $e', stackTrace: stackTrace);
       return Result("ERROR", "获取单词列表失败: ${e.toString()}", false);
     }
