@@ -130,60 +130,23 @@ public class SysDbSyncBo extends BaseBo<SysDbLog> {
             return generateFullSysDbLogs(currentVersion);
         }
 
-        // 2. 检查是否存在对应版本的日志
-        if (!hasVersionLogs(fromVersion)) {
-            return generateFullSysDbLogs(currentVersion);
-        }
+        // 对于已经初始化的客户端（fromVersion > 0）：
+        // 绝对不能回退到全量同步 (generateFullSysDbLogs)！
+        // 因为 generateFullSysDbLogs 因数据量过大，专门不包含 word_image, sentence, meaning等核心明细和UGC数据的日志，
+        // 如果 fromVersion > 0 的客户端接收到包含元数据的“残缺”全量同步日志，它把本地版本号提升到最新，
+        // 从而永久跳过并丢失原本该下发所有缺失版本的修改和「删除」日志。
+        // 这会导致客户端本地数据库出现大量无法清理的孤儿数据（如已经被服务端删除的配图和例句不断闪烁/残留）。
 
-        // 3. 检查 fromVersion 对应的日志时间是否过旧（超过30天，可能已被清理）
-        // 获取 fromVersion + 1 的第一条日志的创建时间
-        Date firstLogTime = getFirstLogTimeAfterVersion(fromVersion);
-        if (firstLogTime != null) {
-            Date thirtyDaysAgo = new Date(System.currentTimeMillis() - 30L * 24 * 60 * 60 * 1000);
-            if (firstLogTime.before(thirtyDaysAgo)) {
-                // 日志时间超过30天，可能已被清理，使用全量同步
-                return generateFullSysDbLogs(currentVersion);
-            }
-        }
+        // 所以，即使日志数量过多，或者过旧被清理导致出现了断层缝隙，
+        // 我们也只能下发当前库里所剩的所有增量日志，通过增量同步尽最大可能保持一致。
+        // （已移除 "日志时间过旧" 和 "找不到对应版本" 以及 "超过5w条限制" 回退全量同步的核心错误逻辑）
 
-        // 4. 不再根据增量日志数量进行全量回退，因为全量同步故意不包含配图和例句（数据太大），
-        // 如果已初始化（fromVersion>0）的客户端回退到全量同步，将永久丢失这些资源的删除或更新动作，导致客户端缓存残留死数据。
-        // （已删除之前的 50000 条数量上限逻辑）
-
-        // 5. 增量同步
+        // 2. 增量同步
         String sql = "SELECT * FROM sys_db_log WHERE version > :fromVersion ORDER BY version ASC";
         MapSqlParameterSource params = new MapSqlParameterSource("fromVersion", fromVersion);
         List<SysDbLog> logs = namedParameterJdbcTemplate.query(sql, params,
                 new EntityRowMapper<>(SysDbLog.class));
         return logs.stream().map(this::toDto).collect(Collectors.toList());
-    }
-
-    /**
-     * 检查是否存在指定版本的日志
-     */
-    private boolean hasVersionLogs(int fromVersion) {
-        String sql = "SELECT COUNT(*) FROM sys_db_log WHERE version > :fromVersion";
-        MapSqlParameterSource params = new MapSqlParameterSource("fromVersion", fromVersion);
-        Long count = namedParameterJdbcTemplate.queryForObject(sql, params, Long.class);
-        return count != null && count > 0;
-    }
-
-    /**
-     * 获取 fromVersion 之后第一条日志的创建时间
-     * 用于判断日志是否过旧，可能已被清理
-     * 
-     * @param fromVersion 起始版本号（不包含）
-     * @return 第一条日志的创建时间，如果不存在则返回 null
-     */
-    private Date getFirstLogTimeAfterVersion(int fromVersion) {
-        String sql = "SELECT create_time FROM sys_db_log WHERE version > :fromVersion ORDER BY version ASC LIMIT 1";
-        MapSqlParameterSource params = new MapSqlParameterSource("fromVersion", fromVersion);
-        try {
-            Date createTime = namedParameterJdbcTemplate.queryForObject(sql, params, Date.class);
-            return createTime;
-        } catch (org.springframework.dao.EmptyResultDataAccessException e) {
-            return null;
-        }
     }
 
 

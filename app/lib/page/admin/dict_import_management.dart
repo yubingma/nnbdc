@@ -293,7 +293,7 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
                             _generateWordImage = val;
                           });
                         },
-                        activeColor: AppTheme.primaryColor,
+                        activeThumbColor: AppTheme.primaryColor,
                       ),
                     ),
                     const SizedBox(height: 24),
