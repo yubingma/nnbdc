@@ -265,7 +265,7 @@ Future<void> _runImport({
               imageFile: im.imageFile,
               foot: im.foot,
               hand: im.hand,
-              authorId: im.authorId,
+              authorId: im.authorId ?? "",
               wordId: im.wordId,
               createTime: im.createTime,
               updateTime: im.updateTime));

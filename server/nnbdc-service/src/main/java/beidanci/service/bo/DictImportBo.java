@@ -393,6 +393,7 @@ public class DictImportBo {
                                 wordImage.setImageFile(fileName);
                                 wordImage.setHand(0);
                                 wordImage.setFoot(0);
+                                wordImage.setAuthor(user);
                                 wordImageBo.addWordImage(wordImage, user);
                                 logger.info("成功为单词 {} 生成并保存配图，文件: {}", spell, destFile.getAbsolutePath());
                             } else {

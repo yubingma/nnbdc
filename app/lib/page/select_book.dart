@@ -1246,7 +1246,7 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
             imageFile: image.imageFile,
             foot: image.foot,
             hand: image.hand,
-            authorId: image.authorId,
+            authorId: image.authorId ?? "",
             wordId: image.wordId, // 确保 wordId 是字符串
             createTime: image.createTime,
             updateTime: image.updateTime));

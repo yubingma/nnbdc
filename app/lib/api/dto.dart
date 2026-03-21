@@ -153,7 +153,7 @@ class WordImageDto {
   final String imageFile;
   final int foot;
   final int hand;
-  final String authorId;
+  final String? authorId;
   final String wordId;
   final DateTime createTime;
   final DateTime? updateTime;

@@ -240,7 +240,7 @@ class PicSearchPageState extends State<PicSearchPage> {
                                             imageFile: wordImageDto.imageFile,
                                             foot: wordImageDto.foot,
                                             hand: wordImageDto.hand,
-                                            authorId: wordImageDto.authorId,
+                                            authorId: wordImageDto.authorId ?? "",
                                             wordId: wordImageDto.wordId,
                                             createTime: wordImageDto.createTime,
                                             updateTime: wordImageDto.updateTime,
