@@ -84,7 +84,7 @@ public class AiBo {
      * @return 合成后的音频字节流
      */
     public byte[] generateSpeech(String text) {
-        String[] voices = {"longxiaochun", "longxiaoxia", "longwan", "longshuo"};
+        String[] voices = {"Luca", "Luna", "Stella", "longxiaochun", "longxiaoxia"};
         String voice = voices[new java.util.Random().nextInt(voices.length)];
         
         try {
