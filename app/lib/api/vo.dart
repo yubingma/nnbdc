@@ -532,12 +532,13 @@ class WordVo {
     // 遍历所有的释义项并异步获取例句
     for (MeaningItemVo meaningItem in meaningItems!) {
       // 从每个释义项获取例句并添加到结果中
-      if (meaningItem.sentences != null && meaningItem.sentences!.isNotEmpty) {
-        // 如果已有例句数据，直接使用
+      if (meaningItem.sentences != null) {
+        // 如果已缓存过了（即使为空列表），直接使用
         sentences.addAll(meaningItem.sentences!);
       } else {
-        // 如果没有例句数据，从数据库查询
+        // 如果没有例句数据，从数据库查询并缓存它
         List<SentenceVo> dbSentences = await meaningItem.getSentences();
+        meaningItem.sentences = dbSentences;
         sentences.addAll(dbSentences);
       }
     }

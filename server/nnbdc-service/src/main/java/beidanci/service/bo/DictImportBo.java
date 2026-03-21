@@ -179,8 +179,8 @@ public class DictImportBo {
             word = new Word();
             word.setSpell(spell);
             word.setPopularity(5); // 默认中等
-            // 调用 AI 获取音标（及其它固有属性）
-            lastAiResult = getAiResult(spell, null, null, generateWordImage);
+            // 调用 AI 获取音标（及其它固有属性），对新词初始化无需在第一步请求配图，避免重复调用浪费资源
+            lastAiResult = getAiResult(spell, null, null, false);
             word.setBritishPronounce(lastAiResult.phonetic);
             word.setAmericaPronounce(lastAiResult.phonetic);
             word.setPronounce(lastAiResult.phonetic);
@@ -199,27 +199,42 @@ public class DictImportBo {
             throw new RuntimeException("无法获取或创建单词对象: " + spell);
         }
 
-        // 如果策略是 RECREATE 并且单词已存在，则重新生成该单词的音标，并触发同步更新
-        if (!isNewWord && "RECREATE".equalsIgnoreCase(strategy)) {
-             try {
-                 // 清除现有配图
-                 wordImageBo.deleteAllImagesOfWord(word.getId(), user);
+        // 查找该词在目标词典中的现有释义，以便进行拦截和跳过
+        List<MeaningItemDto> existingMeaningsInDict = meaningItemBo.findMeaningsByWordAndDict(word.getId(), dictId);
+        
+        if (!isNewWord && !existingMeaningsInDict.isEmpty() && "SKIP".equalsIgnoreCase(strategy)) {
+            logger.info("单词 {} 在词典 {} 中已存在，跳过", spell, dictId);
+            stats.skippedCount++;
+            stats.wordDetails.add(new WordDetail(spell, "SKIPPED", null, null));
+            return;
+        }
 
-                 lastAiResult = getAiResult(spell, null, null, generateWordImage);
-                 word.setPronounce(lastAiResult.phonetic);
-                 word.setBritishPronounce(lastAiResult.phonetic);
-                 word.setAmericaPronounce(lastAiResult.phonetic);
-                 word.setUpdateTime(new java.util.Date());
-                 wordBo.updateEntity(word);
-                 
-                 WordDto wordDto = new WordDto();
-                 org.springframework.beans.BeanUtils.copyProperties(word, wordDto);
-                 sysDbSyncBo.logOperation("UPDATE", "word", word.getId(), beidanci.service.util.JsonUtils.toJson(wordDto));
-                 stats.addSyncLog("UPDATE", "word");
-                 logger.info("重刷策略已更新单词音标: " + spell);
-             } catch (Exception e) {
-                 logger.error("重刷单词音标失败: " + spell, e);
-             }
+        // 统一在这一步清理旧资源
+        if (!isNewWord && "RECREATE".equalsIgnoreCase(strategy)) {
+            actionType = "RECREATED";
+            boolean hasMeanings = !existingMeaningsInDict.isEmpty();
+            if (hasMeanings) {
+                stats.recreatedCount++;
+            }
+            clearWordResources(word, spell, dictId, user, existingMeaningsInDict, stats);
+
+            // 重新获取音标属性
+            try {
+                lastAiResult = getAiResult(spell, null, null, false); // 获取音标时无需重复生成配图
+                word.setPronounce(lastAiResult.phonetic);
+                word.setBritishPronounce(lastAiResult.phonetic);
+                word.setAmericaPronounce(lastAiResult.phonetic);
+                word.setUpdateTime(new java.util.Date());
+                wordBo.updateEntity(word);
+                
+                WordDto wordDto = new WordDto();
+                org.springframework.beans.BeanUtils.copyProperties(word, wordDto);
+                sysDbSyncBo.logOperation("UPDATE", "word", word.getId(), beidanci.service.util.JsonUtils.toJson(wordDto));
+                stats.addSyncLog("UPDATE", "word");
+                logger.info("重刷策略已更新单词音标: " + spell);
+            } catch (Exception e) {
+                logger.error("重刷单词音标失败: " + spell, e);
+            }
         }
 
         // 无论单词是否刚创建，检查其发音文件是否存在，若不存在则补发音
@@ -230,13 +245,6 @@ public class DictImportBo {
                 java.io.File dir = new java.io.File(sysParamUtil.getSoundPath() + "/" + firstChar);
                 if (!dir.exists()) dir.mkdirs();
                 java.io.File soundFile = new java.io.File(dir, pureSpell + ".mp3");
-                
-                if (!isNewWord && "RECREATE".equalsIgnoreCase(strategy)) {
-                    if (soundFile.exists()) {
-                        soundFile.delete();
-                        logger.info("重刷策略已删除旧的发音文件，准备重新获取: " + soundFile.getAbsolutePath());
-                    }
-                }
 
                 if (!soundFile.exists()) {
                     try {
@@ -287,45 +295,6 @@ public class DictImportBo {
             }
         } catch (Exception e) {
             logger.error("生成单词发音失败: " + spell, e);
-        }
-
-        // 查找该词在目标词典中的现有释义
-        List<MeaningItemDto> existingMeaningsInDict = meaningItemBo.findMeaningsByWordAndDict(word.getId(), dictId);
-        if (!existingMeaningsInDict.isEmpty()) {
-            if ("SKIP".equalsIgnoreCase(strategy)) {
-                logger.info("单词 {} 在词典 {} 中已存在，跳过", spell, dictId);
-                stats.skippedCount++;
-                stats.wordDetails.add(new WordDetail(spell, "SKIPPED", null, null));
-                return;
-            } else if ("RECREATE".equalsIgnoreCase(strategy)) {
-                actionType = "RECREATED";
-                logger.info("单词 {} 在词典 {} 中已存在，执行重刷（删除现有资源）", spell, dictId);
-                stats.recreatedCount++;
-                for (MeaningItemDto mi : existingMeaningsInDict) {
-                    // 1. 删除例句并在必要时记录日志
-                    List<Sentence> sentences = sentenceBo.findByMeaningItem(mi.getId());
-                    stats.deletedSentenceCount += sentences.size();
-                    if (Constants.COMMON_DICT_ID.equals(dictId)) {
-                        for (Sentence s : sentences) {
-                            sysDbSyncBo.logOperation("DELETE", "sentence", s.getId(), "{}");
-                            stats.addSyncLog("DELETE", "sentence");
-                        }
-                    }
-                    sentenceBo.deleteByMeaningItem(mi.getId());
-                    
-                    // 2. 删除同义词
-                    synonymBo.deleteByMeaningItem(mi.getId());
-                    // 3. 删除释义项
-                    meaningItemBo.deleteMeaningItem(mi.getId());
-                    stats.deletedMeaningCount++;
-                    
-                    // 3. 如果是系统词典，记录删除日志
-                    if (Constants.COMMON_DICT_ID.equals(dictId)) {
-                        sysDbSyncBo.logOperation("DELETE", "meaning_item", mi.getId(), "{}");
-                        stats.addSyncLog("DELETE", "meaning_item");
-                    }
-                }
-            }
         }
 
         // 获取该词在所有词典中的现有释义（为了给 AI 提供上下文参考）
@@ -431,6 +400,55 @@ public class DictImportBo {
         }
         
         stats.wordDetails.add(new WordDetail(spell, actionType, null, lastAiResult));
+    }
+
+    /**
+     * 清空单词在这个目标词典中的全部现有资源（并强清全局发音及配图）
+     */
+    private void clearWordResources(Word word, String spell, String dictId, User user, List<MeaningItemDto> existingMeaningsInDict, TaskStatistics stats) {
+        logger.info("单词 {} 执行重刷策略，正在清空现有相关资源...", spell);
+
+        // 1. 清除全局绑定资源（配图与发音文件）
+        wordImageBo.deleteAllImagesOfWord(word.getId(), user);
+        
+        String pureSpell = spell.replaceAll("[^a-zA-Z]", "").toLowerCase();
+        if (pureSpell.length() > 0) {
+            String firstChar = pureSpell.substring(0, 1);
+            java.io.File dir = new java.io.File(sysParamUtil.getSoundPath() + "/" + firstChar);
+            java.io.File soundFile = new java.io.File(dir, pureSpell + ".mp3");
+            if (soundFile.exists()) {
+                soundFile.delete();
+                logger.info("重刷策略已删除旧的发音文件，准备稍后重新获取: {}", soundFile.getAbsolutePath());
+            }
+        }
+
+        // 2. 删除目标词典中的所有释义、例句与同义词
+        if (existingMeaningsInDict != null && !existingMeaningsInDict.isEmpty()) {
+            for (MeaningItemDto mi : existingMeaningsInDict) {
+                // 删除例句并记录日志
+                List<Sentence> sentences = sentenceBo.findByMeaningItem(mi.getId());
+                stats.deletedSentenceCount += sentences.size();
+                if (Constants.COMMON_DICT_ID.equals(dictId)) {
+                    for (Sentence s : sentences) {
+                        sysDbSyncBo.logOperation("DELETE", "sentence", s.getId(), "{}");
+                        stats.addSyncLog("DELETE", "sentence");
+                    }
+                }
+                sentenceBo.deleteByMeaningItem(mi.getId());
+                
+                // 删除同义词
+                synonymBo.deleteByMeaningItem(mi.getId());
+                
+                // 删除释义项
+                meaningItemBo.deleteMeaningItem(mi.getId());
+                stats.deletedMeaningCount++;
+                
+                if (Constants.COMMON_DICT_ID.equals(dictId)) {
+                    sysDbSyncBo.logOperation("DELETE", "meaning_item", mi.getId(), "{}");
+                    stats.addSyncLog("DELETE", "meaning_item");
+                }
+            }
+        }
     }
 
     private void saveExtrinsicResources(Word word, AiResult aiResult, String ownerId, String dictId, TaskStatistics stats) {

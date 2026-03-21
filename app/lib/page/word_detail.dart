@@ -109,6 +109,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
   };
 
   late WordDetailPageArgs args;
+  Future<List<SentenceVo>>? _sentencesFuture;
 
   @override
   void initState() {
@@ -220,6 +221,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
 
     // 检查是否为管理员
     _isAdmin = Global.getLoggedInUser()?.isAdmin == true;
+
+    _sentencesFuture = args.word.getSentences();
 
     setState(() {
       dataLoaded = true;
@@ -1195,7 +1198,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
 
                       // 例句内容或空状态
                       FutureBuilder<List<SentenceVo>>(
-                        future: args.word.getSentences(),
+                        future: _sentencesFuture,
                         builder: (context, snapshot) {
                           if (snapshot.connectionState == ConnectionState.waiting) {
                             return const Center(child: CircularProgressIndicator());

@@ -146,12 +146,9 @@ public class SysDbSyncBo extends BaseBo<SysDbLog> {
             }
         }
 
-        // 4. 检查增量日志数量（如果数量过大，全量同步可能更快）
-        long incrementalLogCount = getIncrementalLogCount(fromVersion);
-        if (incrementalLogCount > 1000) {
-            // 增量日志数量超过1000条，使用全量同步
-            return generateFullSysDbLogs(currentVersion);
-        }
+        // 4. 不再根据增量日志数量进行全量回退，因为全量同步故意不包含配图和例句（数据太大），
+        // 如果已初始化（fromVersion>0）的客户端回退到全量同步，将永久丢失这些资源的删除或更新动作，导致客户端缓存残留死数据。
+        // （已删除之前的 50000 条数量上限逻辑）
 
         // 5. 增量同步
         String sql = "SELECT * FROM sys_db_log WHERE version > :fromVersion ORDER BY version ASC";
@@ -189,18 +186,7 @@ public class SysDbSyncBo extends BaseBo<SysDbLog> {
         }
     }
 
-    /**
-     * 获取增量日志数量
-     * 
-     * @param fromVersion 起始版本号（不包含）
-     * @return 增量日志数量
-     */
-    private long getIncrementalLogCount(int fromVersion) {
-        String sql = "SELECT COUNT(*) FROM sys_db_log WHERE version > :fromVersion";
-        MapSqlParameterSource params = new MapSqlParameterSource("fromVersion", fromVersion);
-        Long count = namedParameterJdbcTemplate.queryForObject(sql, params, Long.class);
-        return count != null ? count : 0L;
-    }
+
 
     /**
      * 生成系统数据全量日志（动态生成）
