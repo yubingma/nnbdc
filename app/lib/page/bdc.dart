@@ -1206,24 +1206,24 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
             // 中→英模式：结合拼写相似度和音素相似度的智能选择
             final result = await AsrUtil.selectBestCandidateWithPhonemeAndScore(
                 candidateStrings, _word!.spell);
-            if (!_hasFinishedAnswering) _currentScore = result.score;
+            if (!_hasFinishedAnswering || _lastFsrsRating == FsrsRating.again) _currentScore = result.score;
             processedResult =
                 AsrUtil.preprocessEnglish(result.text, _word!.spell);
             Global.logger.d(
                 'ASR: Selected & Preprocessed: "$processedResult" (score: ${result.score})');
           } else {
             processedResult = bestCandidate;
-            if (!_hasFinishedAnswering) _currentScore = null;
+            if (!_hasFinishedAnswering || _lastFsrsRating == FsrsRating.again) _currentScore = null;
           }
         } else if (_studyStep == StudyStep.en2Ch.json) {
           // 英→中模式：UI 显示最佳候选，但背后匹配逻辑会遍历所有 _currentAsrCandidates
           processedResult = AsrUtil.preprocess(bestCandidate);
-          if (!_hasFinishedAnswering) _currentScore = null;
+          if (!_hasFinishedAnswering || _lastFsrsRating == FsrsRating.again) _currentScore = null;
           Global.logger.d(
               'ASR [en2Ch]: Stored ${candidateStrings.length} candidates, showing best: $processedResult');
         } else {
           processedResult = bestCandidate;
-          if (!_hasFinishedAnswering) _currentScore = null;
+          if (!_hasFinishedAnswering || _lastFsrsRating == FsrsRating.again) _currentScore = null;
         }
       } else {
         // 单个结果处理
@@ -1234,10 +1234,10 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
             final result = await AsrUtil.selectBestCandidateWithPhonemeAndScore(
                 [pre], _word!.spell);
             processedResult = result.text;
-            if (!_hasFinishedAnswering) _currentScore = result.score;
+            if (!_hasFinishedAnswering || _lastFsrsRating == FsrsRating.again) _currentScore = result.score;
           } else {
             processedResult = event;
-            if (!_hasFinishedAnswering) _currentScore = null;
+            if (!_hasFinishedAnswering || _lastFsrsRating == FsrsRating.again) _currentScore = null;
           }
         } else {
           processedResult = AsrUtil.preprocess(event);
@@ -1251,7 +1251,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     }
 
     if (mounted) {
-      if (!_hasFinishedAnswering && oldScore != _currentScore) {
+      if ((!_hasFinishedAnswering || _lastFsrsRating == FsrsRating.again) && oldScore != _currentScore) {
         setState(() {}); // 触发 UI 刷新以实时显示最新的发音评分（即使没通过也能让用户看到反馈分数变化）
       }
       checkAsrResult(asrInput: processedResult);
@@ -1377,11 +1377,12 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     }
 
     // 如果已经答对，且并未处于练习拼写的看板模式（或者看板是固定模式），则跳过处理。
-    // 这样做是为了允许用户在答对后，再次打开看板练习拼写，并能触发“拼写正确”的反馈（如自动关闭看板）。
+    // 但是如果是“答错（Again）”的战损状态，我们允许 ASR 活跃，以便用户练习跟读！
     if (_hasFinishedAnswering && !_showHandwritingBoard) {
-      Global.logger.d('checkAsrResult: 单词已回答正确且非看板练习模式，跳过后续结果处理');
-      // No double play sound logic here to prevent repeating voice when ASR gives trailing results
-      return;
+      if (_lastFsrsRating != FsrsRating.again) {
+        Global.logger.d('checkAsrResult: 单词已回答正确且非看板练习模式，跳过后续结果处理');
+        return;
+      }
     }
 
     final bool wasAlreadyCorrect = _hasFinishedAnswering;
@@ -1446,19 +1447,20 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       if (_firstMatchTime == null && matched >= 1) {
         _firstMatchTime = DateTime.now();
       }
-      _hasFinishedAnswering = _isAsrPassSync(total, matched);
+      bool isMatch = _isAsrPassSync(total, matched);
+      _hasFinishedAnswering = wasAlreadyCorrect || isMatch;
 
       Global.logger.d(
-          'BDC CHECK_ASR [en2Ch]: result(total=$total, matched=$matched, newMatchCount=${result.newMatchCount}), _hasFinishedAnswering=$_hasFinishedAnswering, requires pass rule: $_asrPassRuleCache');
+          'BDC CHECK_ASR [en2Ch]: result(total=$total, matched=$matched, newMatchCount=${result.newMatchCount}), isMatch=$isMatch, _hasFinishedAnswering=$_hasFinishedAnswering, requires pass rule: $_asrPassRuleCache');
 
-      // 如果本次有新增匹配，播放音效并设置状态
+      // 如果本次有新增匹配，播放音效并设置状态 
       if (result.newMatchCount > 0) {
         setState(() {
           _canLeaveCurrWord = true;
         });
 
         // 核心修复：如果已完全答对（满足通过规则），在播放提示音前立即停止 ASR，释放音频通道以杜绝反馈音颤抖，并让UI层收到停止状态进而停止波浪动画。
-        if (_hasFinishedAnswering) {
+        if (isMatch) {
           // 彻底停止当前识别会话
           await asr.stopAsr();
 
