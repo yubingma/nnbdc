@@ -77,8 +77,8 @@ aliyun:
   ai:
     api-key: ${dashscope_api_key}
     text-model: qwen-max
-    tts-model: cosyvoice-v3-plus
-    voice: Luca
+    tts-model: cosyvoice-v3-flash
+    voice: longanyang
 
 # 短信验证码配置
 sms:
