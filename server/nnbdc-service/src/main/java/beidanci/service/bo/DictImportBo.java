@@ -13,7 +13,10 @@ import beidanci.service.po.DictWordId;
 import beidanci.service.util.JsonUtils;
 import beidanci.service.util.SysParamUtil;
 import beidanci.util.Constants;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
 
+import java.io.File;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -358,17 +361,21 @@ public class DictImportBo {
                     String imgUrl = aiBo.generateImage(imgPrompt);
                     if (imgUrl != null && !imgUrl.isEmpty()) {
                         String fileName = pureSpell + "_" + java.util.UUID.randomUUID().toString() + ".jpg";
-                        java.io.File destFile = new java.io.File(sysParamUtil.getImageBaseDir(), fileName);
+                        File wordImgDir = new File(sysParamUtil.getImageBaseDir(), "word");
+                        if (!wordImgDir.exists()) {
+                            wordImgDir.mkdirs();
+                        }
+                        File destFile = new File(wordImgDir, fileName);
                         
-                        okhttp3.OkHttpClient client = new okhttp3.OkHttpClient.Builder()
+                        OkHttpClient client = new OkHttpClient.Builder()
                                 .connectTimeout(java.time.Duration.ofSeconds(10))
                                 .readTimeout(java.time.Duration.ofSeconds(60))
                                 .build();
-                        okhttp3.Request request = new okhttp3.Request.Builder().url(imgUrl).build();
+                        Request request = new Request.Builder().url(imgUrl).build();
                         
                         try (okhttp3.Response response = client.newCall(request).execute()) {
                             if (response.isSuccessful() && response.body() != null) {
-                                java.io.File tempFile = new java.io.File(sysParamUtil.getImageBaseDir(), fileName + ".tmp");
+                                File tempFile = new File(wordImgDir, fileName + ".tmp");
                                 try (java.io.InputStream is = response.body().byteStream();
                                      java.io.FileOutputStream fos = new java.io.FileOutputStream(tempFile)) {
                                     byte[] buffer = new byte[8192];
