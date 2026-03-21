@@ -232,8 +232,8 @@ class _WordManagementWidgetState extends State<WordManagementWidget> {
                               GridView.builder(
                                 shrinkWrap: true,
                                 physics: const NeverScrollableScrollPhysics(),
-                                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 2,
+                                gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                                  maxCrossAxisExtent: 200,
                                   crossAxisSpacing: 12,
                                   mainAxisSpacing: 12,
                                   childAspectRatio: 0.85,

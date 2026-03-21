@@ -33,7 +33,7 @@ class _AdminImageReviewPageState extends State<AdminImageReviewPage> {
   Future<void> _fetchImages() async {
     final dictId = _dictIdController.text.trim();
     if (dictId.isEmpty) {
-      ToastUtil.info('请输入词典 ID');
+      ToastUtil.info('请输入词典 ID'); 
       return;
     }
 
