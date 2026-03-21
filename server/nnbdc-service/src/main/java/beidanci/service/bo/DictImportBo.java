@@ -202,6 +202,9 @@ public class DictImportBo {
         // 如果策略是 RECREATE 并且单词已存在，则重新生成该单词的音标，并触发同步更新
         if (!isNewWord && "RECREATE".equalsIgnoreCase(strategy)) {
              try {
+                 // 清除现有配图
+                 wordImageBo.deleteAllImagesOfWord(word.getId(), user);
+
                  lastAiResult = getAiResult(spell, null, null, generateWordImage);
                  word.setPronounce(lastAiResult.phonetic);
                  word.setBritishPronounce(lastAiResult.phonetic);
@@ -322,9 +325,6 @@ public class DictImportBo {
                         stats.addSyncLog("DELETE", "meaning_item");
                     }
                 }
-                
-                // 4. 清除现有发音文件与其他附件（如配图将被连带清理）
-                wordImageBo.deleteAllImagesOfWord(word.getId(), user);
             }
         }
 
