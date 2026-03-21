@@ -460,24 +460,19 @@ public class DictImportBo {
     }
 
     private void saveExtrinsicResources(Word word, AiResult aiResult, String ownerId, String dictId, TaskStatistics stats) {
-        if (aiResult.meaning == null || aiResult.meaning.trim().isEmpty()) {
+        if (aiResult.meanings == null || aiResult.meanings.isEmpty()) {
             return;
         }
 
-        String[] meanings = aiResult.meaning.split("[;；]"); // 分割多个释义
-        MeaningItem firstMeaning = null;
+        for (int i = 0; i < aiResult.meanings.size(); i++) {
+            AiMeaning am = aiResult.meanings.get(i);
+            if (am.meaning == null || am.meaning.trim().isEmpty()) continue;
 
-        for (int i = 0; i < meanings.length; i++) {
-            String m = meanings[i].trim();
-            if (m.isEmpty()) continue;
-
-            // 创建 MeaningItem
             MeaningItem meaning = new MeaningItem();
             meaning.setWord(word);
-            meaning.setCiXing(aiResult.pos);
-            meaning.setMeaning(m);
-            // 多个同词性释义通过 popularity 作微弱区分（如果需要），这里简化处理
-            meaning.setPopularity(aiResult.popularity > i ? aiResult.popularity - i : 1);
+            meaning.setCiXing(am.pos);
+            meaning.setMeaning(am.meaning.trim());
+            meaning.setPopularity(aiResult.popularity != null && aiResult.popularity > i ? aiResult.popularity - i : 1);
             
             User owner = new User();
             owner.setId(ownerId != null ? ownerId : Constants.SYS_USER_SYS_ID);
@@ -499,58 +494,49 @@ public class DictImportBo {
                 userDbSyncBo.logUserOperation(ownerId, "meaning_item", "INSERT", meaning.getId(), JsonUtils.toJson(meaningItemBo.toDto(meaning)));
             }
 
-            if (firstMeaning == null) {
-                firstMeaning = meaning;
+            // 创建 Sentence
+            if (am.sentenceEn != null && !am.sentenceEn.trim().isEmpty()) {
+                Sentence sentence = new Sentence();
+                sentence.setEnglish(am.sentenceEn);
+                sentence.setChinese(am.sentenceCn);
+                
+                sentence.setWordMeaning(am.meaning.trim());
+                sentence.setPartOfSpeech(am.pos);
+                
+                sentence.setMeaningItem(meaning);
+                sentence.setNeedTts(true); // 标记需要生成音频
+                sentence.setTheType("waitting_tts");
+                sentence.setEnglishDigest(beidanci.service.util.Util.makeSentenceDigest(am.sentenceEn));
+                if (ownerId != null) {
+                    sentence.setAuthor(owner);
+                }
+                sentenceBo.createEntity(sentence);
+                stats.addedSentenceCount++;
+                stats.addedAudioCount++; // 统计例句音频资源
+
+                // 记录同步日志（句子为公共资源，使用sysDbSyncBo）
+                sysDbSyncBo.logOperation("INSERT", "sentence", sentence.getId(), JsonUtils.toJson(sentenceBo.toDto(sentence)));
+                if (Constants.SYS_USER_SYS_ID.equals(ownerId)) {
+                    stats.addSyncLog("INSERT", "sentence");
+                }
             }
-        }
 
-        if (firstMeaning == null) {
-            return;
-        }
-
-        // 创建 Sentence
-        if (aiResult.sentenceEn != null && !aiResult.sentenceEn.trim().isEmpty()) {
-            Sentence sentence = new Sentence();
-            sentence.setEnglish(aiResult.sentenceEn);
-            sentence.setChinese(aiResult.sentenceCn);
-            
-            sentence.setWordMeaning(firstMeaning.getMeaning());
-            sentence.setPartOfSpeech(firstMeaning.getCiXing());
-            
-            sentence.setMeaningItem(firstMeaning);
-            sentence.setNeedTts(true); // 标记需要生成音频
-            sentence.setTheType("waitting_tts");
-            sentence.setEnglishDigest(beidanci.service.util.Util.makeSentenceDigest(aiResult.sentenceEn));
-            if (ownerId != null) {
-                User author = new User();
-                author.setId(ownerId);
-                sentence.setAuthor(author);
-            }
-            sentenceBo.createEntity(sentence);
-            stats.addedSentenceCount++;
-            stats.addedAudioCount++; // 统计例句音频资源
-
-            // 记录同步日志（句子为公共资源，使用sysDbSyncBo）
-            sysDbSyncBo.logOperation("INSERT", "sentence", sentence.getId(), JsonUtils.toJson(sentenceBo.toDto(sentence)));
-            if (Constants.SYS_USER_SYS_ID.equals(ownerId)) {
-                stats.addSyncLog("INSERT", "sentence");
-            }
-        }
-
-        // 创建同义词
-        if (aiResult.synonyms != null && !aiResult.synonyms.isEmpty()) {
-            for (String synSpell : aiResult.synonyms) {
-                Word synWord = wordBo.getWordBySpell(synSpell);
-                if (synWord != null) {
-                    Synonym synonym = new Synonym();
-                    SynonymId sid = new SynonymId();
-                    sid.setMeaningItemId(firstMeaning.getId());
-                    sid.setWordId(synWord.getId());
-                    synonym.setId(sid);
-                    synonym.setMeaningItem(firstMeaning);
-                    synonym.setCreateTime(new Date());
-                    synonymBo.createEntity(synonym);
-                    stats.addedSynonymCount++;
+            // 创建同义词
+            if (am.synonyms != null && !am.synonyms.isEmpty()) {
+                for (String synSpell : am.synonyms) {
+                    if (synSpell == null || synSpell.trim().isEmpty()) continue;
+                    Word synWord = wordBo.getWordBySpell(synSpell.trim());
+                    if (synWord != null) {
+                        Synonym synonym = new Synonym();
+                        SynonymId sid = new SynonymId();
+                        sid.setMeaningItemId(meaning.getId());
+                        sid.setWordId(synWord.getId());
+                        synonym.setId(sid);
+                        synonym.setMeaningItem(meaning);
+                        synonym.setCreateTime(new Date());
+                        synonymBo.createEntity(synonym);
+                        stats.addedSynonymCount++;
+                    }
                 }
             }
         }
@@ -563,11 +549,12 @@ public class DictImportBo {
 
         String systemPrompt = "You are a professional English dictionary assistant. Return JSON only. " +
                 "IMPORTANT RULES:\n" +
-                "1. 'pos' field MUST be abbreviations (e.g., n., v., adj., adv.).\n" +
-                "2. 'meaning' field MUST be in Chinese, and MUST include all commonly used meanings, separated by semicolons if multiple.\n" +
-                "3. Ensure the sentence is practical, natural, and grammatically PERFECT.\n" +
-                "4. Use <b>word</b> in BOTH sentenceEn and sentenceCn to highlight the vocabulary word and its Chinese meaning respectively.\n" +
-                "5. CRITICAL GRAMMAR RULE: Pay attention to 'a' vs 'an' articles when highlighting. It should be 'an <b>apple</b>', never 'a <b>apple</b>'!\n" +
+                "1. Generate a list of 'meanings'. Each meaning MUST represent a distinct part of speech (pos) or distinct sense.\n" +
+                "2. 'pos' field MUST be abbreviations (e.g., n., v., adj., adv.).\n" +
+                "3. 'meaning' field MUST be in Chinese. Group closely related translations but separate drastically different concepts into distinct items.\n" +
+                "4. For EACH meaning item, provide EXACTLY ONE highly practical, natural, and grammatically PERFECT example sentence (sentenceEn & sentenceCn).\n" +
+                "5. Use <b>word</b> in BOTH sentenceEn and sentenceCn to highlight the vocabulary word and its Chinese translation respectively.\n" +
+                "6. CRITICAL GRAMMAR RULE: Pay attention to 'a' vs 'an' articles when highlighting. It should be 'an <b>apple</b>', never 'a <b>apple</b>'!\n" +
                 imageRule;
         StringBuilder userPrompt = new StringBuilder();
         userPrompt.append(String.format("Generating data for word '%s'. ", spell));
@@ -577,12 +564,12 @@ public class DictImportBo {
         }
 
         if (manualMeaning == null) {
-            userPrompt.append("Return in this exact JSON format: {\"phonetic\": \"/xxx/\", \"pos\": \"n.\", \"meaning\": \"中文意思1; 中文意思2\", \"popularity\": 1-10, \"synonyms\": [\"syn1\", \"syn2\"], \"sentenceEn\": \"...\", \"sentenceCn\": \"...\", \"imagePrompts\": [\"...\"]}. " +
-                    "provide at most 3 common synonyms.");
+            userPrompt.append("Return in this exact JSON format: {\"phonetic\": \"/xxx/\", \"popularity\": 1-10, \"meanings\": [{\"pos\": \"n.\", \"meaning\": \"中文意思1\", \"sentenceEn\": \"...\", \"sentenceCn\": \"...\", \"synonyms\": [\"syn1\", \"syn2\"]}], \"imagePrompts\": [\"...\"]}. " +
+                    "provide at most 3 common synonyms per meaning.");
         } else {
-            userPrompt.append(String.format("Given manual meaning '%s', generate phonetics, example sentence and synonyms. " +
-                    "Return: {\"phonetic\": \"/xxx/\", \"pos\": \"n.\", \"meaning\": \"%s\", \"popularity\": 5, \"synonyms\": [\"syn1\", \"syn2\"], \"sentenceEn\": \"...\", \"sentenceCn\": \"...\", \"imagePrompts\": [\"...\"]}.", 
-                    manualMeaning, manualMeaning));
+            userPrompt.append(String.format("Given manual meaning '%s', break it down if there are multiple parts of speech or drastically different senses, and generate an example sentence and synonyms for EACH. " +
+                    "Return: {\"phonetic\": \"/xxx/\", \"popularity\": 5, \"meanings\": [{\"pos\": \"n.\", \"meaning\": \"...\", \"sentenceEn\": \"...\", \"sentenceCn\": \"...\", \"synonyms\": [\"syn1\", \"syn2\"]}], \"imagePrompts\": [\"...\"]}.", 
+                    manualMeaning));
         }
 
         String rawJson = aiBo.generateText(systemPrompt, userPrompt.toString());
@@ -592,14 +579,26 @@ public class DictImportBo {
         
         AiResult res = new AiResult();
         res.phonetic = (String) map.get("phonetic");
-        res.pos = (String) map.get("pos");
-        res.meaning = (String) map.get("meaning");
         res.popularity = (Integer) map.getOrDefault("popularity", 5);
-        res.sentenceEn = (String) map.get("sentenceEn");
-        res.sentenceCn = (String) map.get("sentenceCn");
+        
         @SuppressWarnings("unchecked")
-        List<String> synonyms = (List<String>) map.get("synonyms");
-        res.synonyms = synonyms;
+        List<Map<String, Object>> meaningsList = (List<Map<String, Object>>) map.get("meanings");
+        res.meanings = new java.util.ArrayList<>();
+        if (meaningsList != null) {
+            for (Map<String, Object> mObj : meaningsList) {
+                AiMeaning am = new AiMeaning();
+                am.pos = (String) mObj.get("pos");
+                am.meaning = (String) mObj.get("meaning");
+                am.sentenceEn = (String) mObj.get("sentenceEn");
+                am.sentenceCn = (String) mObj.get("sentenceCn");
+                
+                @SuppressWarnings("unchecked")
+                List<String> syn = (List<String>) mObj.get("synonyms");
+                am.synonyms = syn;
+                
+                res.meanings.add(am);
+            }
+        }
         
         @SuppressWarnings("unchecked")
         List<String> imagePrompts = (List<String>) map.get("imagePrompts");
@@ -608,14 +607,18 @@ public class DictImportBo {
         return res;
     }
 
-    public static class AiResult {
-        public String phonetic;
+    public static class AiMeaning {
         public String pos;
         public String meaning;
-        public Integer popularity;
         public String sentenceEn;
         public String sentenceCn;
         public List<String> synonyms;
+    }
+
+    public static class AiResult {
+        public String phonetic;
+        public Integer popularity;
+        public List<AiMeaning> meanings;
         public List<String> imagePrompts;
     }
 
