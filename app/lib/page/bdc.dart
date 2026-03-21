@@ -1449,7 +1449,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       _hasFinishedAnswering = _isAsrPassSync(total, matched);
 
       Global.logger.d(
-          'BDC CHECK_ASR [en2Ch]: result(total=$total, matched=$matched, newMatchCount=${result.newMatchCount}), _isAnswerCorrect=$_hasFinishedAnswering, requires pass rule: $_asrPassRuleCache');
+          'BDC CHECK_ASR [en2Ch]: result(total=$total, matched=$matched, newMatchCount=${result.newMatchCount}), _hasFinishedAnswering=$_hasFinishedAnswering, requires pass rule: $_asrPassRuleCache');
 
       // 如果本次有新增匹配，播放音效并设置状态
       if (result.newMatchCount > 0) {
@@ -3430,7 +3430,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // 如果已经完成回答（_isAnswerCorrect），且不是自动跳词（或者本次是打错 Again），则展现出评分面板使用户可见且可调整
+          // 如果已经完成回答（_hasFinishedAnswering），且不是自动跳词（或者本次是打错 Again），则展现出评分面板使用户可见且可调整
           if (_hasFinishedAnswering &&
               (!_autoJumpAfterCorrect || _lastFsrsRating == FsrsRating.again))
             _buildFsrsResultPanel(),
