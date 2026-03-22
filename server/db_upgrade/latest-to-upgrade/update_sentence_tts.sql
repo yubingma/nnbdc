@@ -10,3 +10,5 @@ ALTER TABLE sentence ADD COLUMN IF NOT EXISTS tts_engine VARCHAR(50);
 
 -- 可选：给之前的记录加上默认标记，否则为空
 -- UPDATE sentence SET tts_engine = 'cosyvoice-v1', tts_voice = 'longxiaochun' WHERE the_type = 'tts' AND tts_engine IS NULL;
+
+ALTER TABLE dict ADD COLUMN IF NOT EXISTS domain VARCHAR(100);

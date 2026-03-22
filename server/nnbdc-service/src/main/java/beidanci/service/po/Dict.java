@@ -58,6 +58,12 @@ public class Dict extends UuidPo {
     private Boolean visible;
 
     /**
+     * 专业领域，值为导入时用户提供的输入
+     */
+    @Column(name = "domain", nullable = true, length = 100)
+    private String domain;
+
+    /**
      * 过滤展示给用户的单词释义，如果某个单词没有该dict的定制释义，从而只能使用通用词典释义时，
      * popularity大于该设定的通用词典释义项(不太常用的释义项)会被用户隐藏，避免释义项过多。
      * 如果为null，表示不限制。
@@ -83,6 +89,14 @@ public class Dict extends UuidPo {
 
     public void setPopularityLimit(Integer popularityLimit) {
         this.popularityLimit = popularityLimit;
+    }
+
+    public String getDomain() {
+        return domain;
+    }
+
+    public void setDomain(String domain) {
+        this.domain = domain;
     }
 
     public Boolean getEditable() {

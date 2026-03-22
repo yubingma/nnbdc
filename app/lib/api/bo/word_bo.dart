@@ -827,6 +827,7 @@ class WordBo {
         ..isReady = d.isReady
         ..isShared = d.isShared
         ..visible = d.visible
+        ..domain = d.domain
         ..owner = UserVo.c2(d.ownerId)
         ..canDelete = d.deletable
         ..canRename = d.deletable);
@@ -1392,6 +1393,7 @@ class WordBo {
       dict.isReady = rawWordDict.isReady;
       dict.isShared = rawWordDict.isShared;
       dict.visible = rawWordDict.visible;
+      dict.domain = rawWordDict.domain;
       return dict;
     } else {
       throw Exception("本地数据库中未找到用户的生词本");

@@ -218,6 +218,8 @@ class Dicts extends Table {
 
   IntColumn get popularityLimit => integer().nullable()();
 
+  TextColumn get domain => text().nullable()();
+
   DateTimeColumn get createTime => dateTime()();
 
   DateTimeColumn get updateTime => dateTime().nullable()();

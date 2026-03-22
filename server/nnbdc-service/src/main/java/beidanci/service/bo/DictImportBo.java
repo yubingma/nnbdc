@@ -107,6 +107,10 @@ public class DictImportBo {
                 Dict existingDict = dictBo.findByName(dictName.trim());
                 if (existingDict != null) {
                     dictId = existingDict.getId();
+                    if (domain != null && !domain.isEmpty()) {
+                        existingDict.setDomain(domain);
+                        dictBo.updateEntity(existingDict);
+                    }
                 } else {
                     Dict newDict = new Dict();
                     newDict.setWordCount(0);
@@ -117,6 +121,9 @@ public class DictImportBo {
                     newDict.setDeletable(false); // 防止非系统用户删除
                     newDict.setPopularityLimit(10);
                     newDict.setName(dictName.trim());
+                    if (domain != null && !domain.isEmpty()) {
+                        newDict.setDomain(domain);
+                    }
                     newDict.setOwner(systemUser);
                     dictBo.createEntity(newDict);
                     

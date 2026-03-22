@@ -112,6 +112,8 @@ class DictVo extends Equatable {
   /// 该单词书的单词数量
   int? wordCount;
 
+  String? domain;
+
   /// 该单词书是否可删除（生词本不可删除）
   bool? canDelete;
 
@@ -135,6 +137,7 @@ class DictVo extends Equatable {
     this.deletable,
     this.dictWords,
     this.wordCount,
+    this.domain,
     this.createTime,
   });
 

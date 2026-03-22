@@ -25,6 +25,7 @@ public class DictVo extends UuidVo {
      * 该单词书的单词数量
      */
     private Integer wordCount;
+    private String domain;
 
     public Boolean getDeletable() {
         return deletable;
@@ -106,6 +107,14 @@ public class DictVo extends UuidVo {
 
     public void setEditable(Boolean editable) {
         this.editable = editable;
+    }
+
+    public String getDomain() {
+        return domain;
+    }
+
+    public void setDomain(String domain) {
+        this.domain = domain;
     }
 
 }
