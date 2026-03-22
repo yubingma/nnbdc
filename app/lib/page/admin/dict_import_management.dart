@@ -30,7 +30,7 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
   Map<String, dynamic>? _taskDetails;
   Timer? _timer;
   bool _isSubmitting = false;
-  bool _generateWordImage = false;  
+  bool _generateWordImage = false;
   final List<String> _availableVoices = ['longanyang', 'longanhuan', 'longxiaochun_v3', 'longxiaoxia_v3', 'longniuniu_v3', 'longhuhu_v3'];
   final List<String> _selectedVoices = ['longanyang', 'longanhuan', 'longxiaochun_v3', 'longxiaoxia_v3', 'longniuniu_v3', 'longhuhu_v3'];
 
