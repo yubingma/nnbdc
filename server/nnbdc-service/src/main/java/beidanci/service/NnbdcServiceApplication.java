@@ -14,6 +14,8 @@ import javax.annotation.PostConstruct;
 import java.util.TimeZone;
 
 
+import org.springframework.scheduling.annotation.EnableAsync;
+
 @SpringBootApplication(exclude = {
         JpaRepositoriesAutoConfiguration.class,
         // 明确禁用 Spring Security 自动配置：即使 classpath 上意外出现 security 依赖，也不启用 401/登录页等行为
@@ -22,6 +24,7 @@ import java.util.TimeZone;
 })
 @EnableSwagger2
 @EnableScheduling
+@EnableAsync
 @ServletComponentScan(basePackages = "beidanci.*")
 public class NnbdcServiceApplication {
     @PostConstruct
