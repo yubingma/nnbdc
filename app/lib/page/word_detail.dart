@@ -82,6 +82,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
   }
 
   bool isWrongWord = false; // 是否是错词
+  bool _isTopDrawerExpanded = true;
   static const double leftPadding = 16;
   static const double rightPadding = 16;
   late final AudioPlayer audioPlayer;
@@ -557,7 +558,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
     return Container(
       decoration: BoxDecoration(
-        gradient: LinearGradient(
+        gradient: LinearGradient( 
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: isDarkMode
@@ -658,95 +659,128 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                     ),
                   ),
                   
-                  // 配图展示 (仅对管理员开放)
-                  if ((Global.getLoggedInUser()?.isAdmin == true) && args.word.images != null && args.word.images!.isNotEmpty)
-                    Builder(
-                      builder: (BuildContext context) {
-                        final screenWidth = MediaQuery.of(context).size.width;
-                        double imageWidth = (screenWidth - leftPadding - rightPadding - 8) / 2.0; // 横排两张的合适宽度
-                        if (imageWidth > 120.0) {
-                          imageWidth = 120.0; // 限制最大宽度，避免图片过大占用太多纵向空间
-                        }
-                        return Padding(
-                          padding: const EdgeInsets.fromLTRB(leftPadding, 16, rightPadding, 8),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('配图', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, letterSpacing: 0.5, fontFamily: 'NotoSansSC')),
-                              const SizedBox(height: 8),
-                              Wrap(
-                                spacing: 8, 
-                                runSpacing: 8,
-                                children: args.word.images!.take(2).map((image) => Container(
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
-                                  ),
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: Image.network(
-                                      '${Config.wordImageBaseUrl}${image.imageFile}',
-                                      width: imageWidth,
-                                      height: imageWidth * 0.75, // 比例 4:3
-                                      fit: BoxFit.cover,
-                                    ),
-                                  ),
-                                )).toList(),
-                              )
-                            ],
-                          ),
-                        );
-                      }
-                    ),
-                    
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(leftPadding, 8, rightPadding, 0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                  AnimatedSize(
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                    alignment: Alignment.topCenter,
+                    child: _isTopDrawerExpanded ? Column(
                       children: [
-                        const Text('释义', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, letterSpacing: 0.5, fontFamily: 'NotoSansSC')),
-                        const SizedBox(height: 8),
-                        for (var meaningItem in args.word.getMergedMeaningItems())
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 4),
-                            child: Row(
+                    // 配图展示 (仅对管理员开放)
+                    if ((Global.getLoggedInUser()?.isAdmin == true) && args.word.images != null && args.word.images!.isNotEmpty)
+                      Builder(
+                        builder: (BuildContext context) {
+                          final screenWidth = MediaQuery.of(context).size.width;
+                          double imageWidth = (screenWidth - leftPadding - rightPadding - 8) / 2.0; // 横排两张的合适宽度
+                          if (imageWidth > 120.0) {
+                            imageWidth = 120.0; // 限制最大宽度，避免图片过大占用太多纵向空间
+                          }
+                          return Padding(
+                            padding: const EdgeInsets.fromLTRB(leftPadding, 16, rightPadding, 8),
+                            child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                if ((meaningItem.ciXing ?? '').isNotEmpty)
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                    margin: const EdgeInsets.only(right: 8),
+                                const Text('配图', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, letterSpacing: 0.5, fontFamily: 'NotoSansSC')),
+                                const SizedBox(height: 8),
+                                Wrap(
+                                  spacing: 8, 
+                                  runSpacing: 8,
+                                  children: args.word.images!.take(2).map((image) => Container(
                                     decoration: BoxDecoration(
-                                      color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                                      borderRadius: BorderRadius.circular(4),
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
                                     ),
-                                    child: Text(
-                                      meaningItem.ciXing!,
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: Image.network(
+                                        '${Config.wordImageBaseUrl}${image.imageFile}',
+                                        width: imageWidth,
+                                        height: imageWidth * 0.75, // 比例 4:3
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                                  )).toList(),
+                                )
+                              ],
+                            ),
+                          );
+                        }
+                      ),
+                      
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(leftPadding, 8, rightPadding, 0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('释义', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, letterSpacing: 0.5, fontFamily: 'NotoSansSC')),
+                          const SizedBox(height: 8),
+                          for (var meaningItem in args.word.getMergedMeaningItems())
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 4),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  if ((meaningItem.ciXing ?? '').isNotEmpty)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      margin: const EdgeInsets.only(right: 8),
+                                      decoration: BoxDecoration(
+                                        color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: Text(
+                                        meaningItem.ciXing!,
+                                        style: TextStyle(
+                                          color: AppTheme.primaryColor,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                  Flexible(
+                                    child: Text.rich(
+                                      TextSpan(
+                                        children: _buildTextSpans(meaningItem.meaning!),
+                                      ),
                                       style: TextStyle(
-                                        color: AppTheme.primaryColor,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w500,
+                                        fontSize: 14,
+                                        height: 1.4,
+                                        color: isDarkMode ? const Color(0xFFD1D5DB) : const Color(0xFF374151),
                                       ),
                                     ),
                                   ),
-                                Flexible(
-                                  child: Text.rich(
-                                    TextSpan(
-                                      children: _buildTextSpans(meaningItem.meaning!),
-                                    ),
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      height: 1.4,
-                                      color: isDarkMode ? const Color(0xFFD1D5DB) : const Color(0xFF374151),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )
+                                ],
+                              ),
+                            )
+                        ],
+                      ),
+                    ), 
                       ],
+                    ) : const SizedBox(width: double.infinity),
+                  ),
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () {
+                      setState(() {
+                        _isTopDrawerExpanded = !_isTopDrawerExpanded;
+                      });
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Center(
+                        child: Container(
+                          width: 32,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).brightness == Brightness.dark
+                                ? Colors.white24
+                                : Colors.black12,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                      ),
                     ),
-                  ), 
+                  ),
                 ],
               ), 
             ),
