@@ -213,9 +213,10 @@ public class DictBo extends BaseBo<Dict> {
     }
 
     public Dict findByName(String dictName) {
-        Dict exam = new Dict();
-        exam.setName(dictName);
-        return queryUnique(exam);
+        String sql = "SELECT * FROM dict WHERE name = :name LIMIT 1";
+        MapSqlParameterSource params = new MapSqlParameterSource("name", dictName);
+        List<Dict> results = namedParameterJdbcTemplate.query(sql, params, new EntityRowMapper<>(Dict.class));
+        return results.isEmpty() ? null : results.get(0);
     }
 
     public Dict getRawWordDict(User user) {
@@ -769,7 +770,6 @@ public class DictBo extends BaseBo<Dict> {
                 }
                 
                 // 1.2 Handle Meaning Item
-                namedParameterJdbcTemplate.update("DELETE FROM event WHERE meaning_item_id = :miId", pMi);
                 namedParameterJdbcTemplate.update("DELETE FROM synonym WHERE meaning_item_id = :miId", pMi);
                 namedParameterJdbcTemplate.update("DELETE FROM meaning_item WHERE id = :miId", pMi);
                 // log
