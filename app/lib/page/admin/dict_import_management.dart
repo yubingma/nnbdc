@@ -388,15 +388,6 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
                       ),
                     ),
                     const SizedBox(height: 12),
-                    TextField(
-                      controller: _domainCtrl,
-                      decoration: InputDecoration(
-                        labelText: '专业领域 (选填，告诉AI按此发散释义，如"医学"、"计算机")',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
                     SizedBox(
                       height: 180, 
                       child: TextField(
@@ -413,6 +404,15 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
                         contentPadding: const EdgeInsets.all(16),
                       ),
                         style: const TextStyle(fontFamily: 'monospace', fontSize: 14),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: _domainCtrl,
+                      decoration: InputDecoration(
+                        labelText: '专业领域 (选填，告诉AI按此发散释义，如"医学"、"计算机")',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       ),
                     ),
                     const SizedBox(height: 16),
