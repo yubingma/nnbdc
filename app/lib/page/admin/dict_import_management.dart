@@ -533,16 +533,34 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
                       ),
                       const SizedBox(height: 24),
                       
-                      // 进度展示 (这里简单模拟：如果有 progress 字段就用，否则按状态)
-                      if (_taskDetails!['status'] == 'RUNNING') ...[
-                        const LinearProgressIndicator(),
-                        const SizedBox(height: 8),
-                        const Center(child: Text('AI 正在全力生成中，请耐心等待...', style: TextStyle(fontSize: 12, color: Colors.grey))),
-                      ] else if (_taskDetails!['status'] == 'COMPLETED') ...[
-                        LinearProgressIndicator(value: 1.0, color: Colors.green, backgroundColor: Colors.green.withValues(alpha: 0.2)),
-                        const SizedBox(height: 8),
-                        const Center(child: Text('任务已完成', style: TextStyle(fontSize: 12, color: Colors.green))),
-                      ],
+                      // 进度展示 
+                      Builder(builder: (context) {
+                        final total = _taskDetails!['totalWords'] ?? 0;
+                        final processed = _taskDetails!['processedWords'] ?? 0;
+                        final double progressVal = total > 0 ? (processed / total) : 0.0;
+                        final bool isRunning = _taskDetails!['status'] == 'RUNNING';
+                        
+                        if (isRunning) {
+                          return Column( 
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              LinearProgressIndicator(value: total > 0 ? progressVal : null),
+                              const SizedBox(height: 8),
+                              Center(child: Text('进度: ${total > 0 ? '$processed / $total' : '计算中'} (AI 正在全力生成中...)', style: const TextStyle(fontSize: 12, color: Colors.grey))),
+                            ],
+                          );
+                        } else if (_taskDetails!['status'] == 'COMPLETED') {
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              LinearProgressIndicator(value: 1.0, color: Colors.green, backgroundColor: Colors.green.withValues(alpha: 0.2)),
+                              const SizedBox(height: 8),
+                              Center(child: Text('任务已完成 (总计处理 $total 个)', style: const TextStyle(fontSize: 12, color: Colors.green))),
+                            ],
+                          );
+                        }
+                        return const SizedBox.shrink();
+                      }),
 
                       const SizedBox(height: 24),
                       const Divider(),
