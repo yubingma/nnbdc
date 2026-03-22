@@ -31,8 +31,8 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
   Timer? _timer;
   bool _isSubmitting = false;
   bool _generateWordImage = false;  
-  final List<String> _availableVoices = ['longanyang', 'longanhuan', 'longxiaochun_v3', 'longxiaoxia_v3'];
-  final List<String> _selectedVoices = ['longanyang', 'longanhuan', 'longxiaochun_v3', 'longxiaoxia_v3'];
+  final List<String> _availableVoices = ['longanyang', 'longanhuan', 'longxiaochun_v3', 'longxiaoxia_v3', 'longniuniu', 'longhuhu'];
+  final List<String> _selectedVoices = ['longanyang', 'longanhuan', 'longxiaochun_v3', 'longxiaoxia_v3', 'longniuniu', 'longhuhu'];
 
   final TextEditingController _dictNameCtrl = TextEditingController(text: "系统词典");
   final TextEditingController _wordsCtrl = TextEditingController(text: "apple|一种甜酸可口的水果\nbanana\ncat");
