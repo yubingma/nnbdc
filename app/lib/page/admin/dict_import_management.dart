@@ -386,10 +386,15 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
                     ),
                     const SizedBox(height: 12),
                     FilledButton.icon(
-                      onPressed: _deleteDict,
-                      icon: const Icon(Icons.delete),
+                      onPressed: _deleteDict, 
+                      icon: const Icon(Icons.delete_forever),
                       label: const Text('彻底粉碎此词书'),
-                      style: FilledButton.styleFrom(backgroundColor: Colors.red, padding: const EdgeInsets.symmetric(vertical: 12)),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: Colors.red.shade600,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
                     )
                   ],
                 ),

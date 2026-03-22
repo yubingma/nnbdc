@@ -143,6 +143,13 @@ public class DictImportBo {
                 }
             }
 
+            // 更新 config 中的 dictId 以便前端展示详情时能够使用 priorityDictId 读取此字典释义
+            if (dictId != null && !dictId.isEmpty()) {
+                config.put("dictId", dictId);
+                task.setConfig(JsonUtils.toJson(config));
+            }
+            importTaskBo.updateEntity(task);
+
             if (isSystemImport) {
                 processSystemImport(task, dictId, dictName, domain, rawWords, generateWordImage, stats);
             } else if (rawWords != null) {
