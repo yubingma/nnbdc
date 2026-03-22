@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import '../theme/app_theme.dart';
 import '../global.dart';
+import '../util/platform_util.dart';
 
 class PrivacyPage extends StatefulWidget {
   const PrivacyPage({super.key});
@@ -41,7 +42,8 @@ class PrivacyPageState extends State<PrivacyPage> {
   }
 
   _loadHtmlFromAssets() async {
-    String fileText = await rootBundle.loadString('assets/privacy.html');
+    String assetPath = PlatformUtils.isAndroid ? 'assets/privacy_android.html' : 'assets/privacy.html';
+    String fileText = await rootBundle.loadString(assetPath);
     fileText = fileText.replaceAll('泡泡单词', Global.appName);
     webViewController!.loadData(data: fileText, mimeType: 'text/html', encoding: 'utf-8');
   }

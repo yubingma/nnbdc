@@ -129,7 +129,9 @@ flutter:
   assets:
     - assets/images/
     - assets/privacy.html
+    - assets/privacy_android.html
     - assets/protocol.html
+    - assets/protocol_android.html
     - assets/audio/
     - assets/video/
     - assets/fonts/
