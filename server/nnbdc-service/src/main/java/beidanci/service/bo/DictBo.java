@@ -841,6 +841,20 @@ public class DictBo extends BaseBo<Dict> {
     }
 
     /**
+     * 搜索系统名下的词书
+     */
+    public List<Map<String, Object>> searchSystemDicts(String keyword) {
+        String sql = "SELECT id, name FROM dict WHERE owner_id = :ownerId ";
+        MapSqlParameterSource params = new MapSqlParameterSource("ownerId", Constants.SYS_USER_SYS_ID);
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            sql += "AND name LIKE :keyword ";
+            params.addValue("keyword", "%" + keyword.trim() + "%");
+        }
+        sql += "ORDER BY create_time DESC LIMIT 50";
+        return namedParameterJdbcTemplate.queryForList(sql, params);
+    }
+
+    /**
      * 检查词典单词序号连续性
      */
     public List<Object[]> checkDictWordSequence(String dictId) {

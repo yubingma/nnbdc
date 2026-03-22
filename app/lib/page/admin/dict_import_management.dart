@@ -181,6 +181,86 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
     });
   }
 
+  void _showDictSearchSheet() {
+    String keyword = '';
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            return Container(
+              height: MediaQuery.of(context).size.height * 0.7,
+              decoration: BoxDecoration(
+                color: Theme.of(context).scaffoldBackgroundColor,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+              ),
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  const Text('搜索系统词书', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 16),
+                  TextField(
+                    decoration: InputDecoration(
+                      hintText: '输入系统词库名称进行查询...',
+                      prefixIcon: const Icon(Icons.search),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                    ),
+                    textInputAction: TextInputAction.search,
+                    onSubmitted: (val) {
+                      setSheetState(() => keyword = val);
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  Expanded(
+                    child: FutureBuilder(
+                      future: Api.client.searchSystemDicts(keyword),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return const Center(child: CircularProgressIndicator());
+                        }
+                        if (snapshot.hasError || !snapshot.hasData || !snapshot.data!.success) {
+                          return const Center(child: Text('搜索失败, 请检查网络'));
+                        }
+                        final list = snapshot.data!.data ?? [];
+                        if (list.isEmpty) {
+                          return const Center(child: Text('未能找到符合条件的系统词书', style: TextStyle(color: Colors.grey)));
+                        }
+                        return ListView.separated(
+                          itemCount: list.length,
+                          separatorBuilder: (_, __) => const Divider(),
+                          itemBuilder: (context, index) {
+                            final dict = list[index] as Map<String, dynamic>;
+                            return ListTile(
+                              leading: const Icon(Icons.library_books, color: AppTheme.primaryColor),
+                              title: Text(dict['name'] ?? '未命名词库', style: const TextStyle(fontWeight: FontWeight.bold)),
+                              subtitle: Text('ID: ${dict['id']}'),
+                              trailing: ElevatedButton(
+                                onPressed: () {
+                                  setState(() {
+                                    _deleteDictIdCtrl.text = dict['id'].toString();
+                                  });
+                                  Navigator.pop(context);
+                                },
+                                child: const Text('选择'),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   Widget _buildStatusBadge(String status) {
     Color color;
     switch (status) {
@@ -258,6 +338,11 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
                         labelText: '要删除的系统词书ID',
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        suffixIcon: IconButton(
+                          icon: const Icon(Icons.search, color: AppTheme.primaryColor),
+                          onPressed: _showDictSearchSheet,
+                          tooltip: '搜索系统自带的词库查询ID',
+                        ),
                       ),
                     ),
                     const SizedBox(height: 12),

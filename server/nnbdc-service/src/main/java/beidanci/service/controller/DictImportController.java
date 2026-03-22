@@ -88,6 +88,15 @@ public class DictImportController {
         }
     }
 
+    @GetMapping("/searchSystemDicts")
+    public Result<java.util.List<java.util.Map<String, Object>>> searchSystemDicts(@RequestParam(required = false) String keyword) {
+        try {
+            return Result.success(dictBo.searchSystemDicts(keyword));
+        } catch (Exception e) {
+            return Result.fail("查询失败: " + e.getMessage());
+        }
+    }
+
     public static class ImportRequest {
         private String ownerId;
         private String fileName;

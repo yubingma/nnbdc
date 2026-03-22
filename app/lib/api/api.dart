@@ -755,6 +755,9 @@ abstract class RestClient {
   @POST("/import/deleteSystemDict")
   Future<Result<String>> deleteSystemDict(@Query("dictId") String dictId);
 
+  @GET("/import/searchSystemDicts")
+  Future<Result<List<dynamic>>> searchSystemDicts(@Query("keyword") String keyword);
+
   @GET("/import/getTaskStatus")
   Future<Result<JsonMap>> getDictImportTaskStatus(
       @Query("taskId") String taskId);
