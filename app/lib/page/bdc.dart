@@ -4372,13 +4372,17 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
       // 添加行间距（除了最后一行）
       if (i < lines.length - 1) {
-        widgets.add(const SizedBox(height: 4));
+        widgets.add(const SizedBox(width: 16));
       }
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: widgets,
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      physics: const BouncingScrollPhysics(),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: widgets,
+      ),
     );
   }
 
@@ -5381,62 +5385,62 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // 释义
-                for (var i = 0;
-                    i <
-                        _currentGetWordResult!.learningWord!.word
-                            .getMergedMeaningItems()
-                            .length;
-                    i++)
-                  Padding(
-                    padding: EdgeInsets.only(
-                        bottom: i ==
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  physics: const BouncingScrollPhysics(),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      for (var i = 0;
+                          i <
+                              _currentGetWordResult!.learningWord!.word
+                                  .getMergedMeaningItems()
+                                  .length;
+                          i++)
+                        Padding(
+                          padding: EdgeInsets.only(
+                              right: i ==
+                                      _currentGetWordResult!.learningWord!.word
+                                              .getMergedMeaningItems()
+                                              .length -
+                                          1
+                                  ? 0
+                                  : 16.0),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Text(
                                 _currentGetWordResult!.learningWord!.word
-                                        .getMergedMeaningItems()
-                                        .length -
-                                    1
-                            ? 4.0
-                            : 4.0),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          width: 50,
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 4),
-                          decoration: null,
-                          child: Text(
-                            _currentGetWordResult!.learningWord!.word
-                                    .getMergedMeaningItems()[i]
-                                    .ciXing ??
-                                '',
-                            style: const TextStyle(
-                                color: Color(0xFF999999),
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600),
-                            textAlign: TextAlign.center,
+                                        .getMergedMeaningItems()[i]
+                                        .ciXing ??
+                                    '',
+                                style: const TextStyle(
+                                    color: Color(0xFF999999),
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                _hideParenthesesContent(_currentGetWordResult!
+                                        .learningWord!.word
+                                        .getMergedMeaningItems()[i]
+                                        .meaning ??
+                                    ''),
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                  color: context.watch<DarkMode>().isDarkMode
+                                      ? Colors.white
+                                      : const Color(0xFF2D3748),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            _hideParenthesesContent(_currentGetWordResult!
-                                    .learningWord!.word
-                                    .getMergedMeaningItems()[i]
-                                    .meaning ??
-                                ''),
-                            style: TextStyle(
-                              fontSize: 16,
-                              height: 1.5,
-                              fontWeight: FontWeight.w500,
-                              color: context.watch<DarkMode>().isDarkMode
-                                  ? Colors.white
-                                  : const Color(0xFF2D3748),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                    ],
                   ),
+                ),
                 // 图片 (仅对管理员开放)
                 if ((Global.getLoggedInUser()?.isAdmin == true) &&
                     _currentGetWordResult?.images != null)

@@ -706,44 +706,53 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                       children: [
                         const Text('释义', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, letterSpacing: 0.5, fontFamily: 'NotoSansSC')),
                         const SizedBox(height: 8),
-                        for (var meaningItem in args.word.getMergedMeaningItems())
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 4),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                if ((meaningItem.ciXing ?? '').isNotEmpty)
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                    margin: const EdgeInsets.only(right: 8),
-                                    decoration: BoxDecoration(
-                                      color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: Text(
-                                      meaningItem.ciXing!,
-                                      style: TextStyle(
-                                        color: AppTheme.primaryColor,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w500,
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          physics: const BouncingScrollPhysics(),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              for (var i = 0; i < args.word.getMergedMeaningItems().length; i++)
+                                Padding(
+                                  padding: EdgeInsets.only(
+                                      right: i == args.word.getMergedMeaningItems().length - 1 ? 0 : 16.0),
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      if ((args.word.getMergedMeaningItems()[i].ciXing ?? '').isNotEmpty)
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                          margin: const EdgeInsets.only(right: 8),
+                                          decoration: BoxDecoration(
+                                            color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                                            borderRadius: BorderRadius.circular(4),
+                                          ),
+                                          child: Text(
+                                            args.word.getMergedMeaningItems()[i].ciXing!,
+                                            style: TextStyle(
+                                              color: AppTheme.primaryColor,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ),
+                                      Text.rich(
+                                        TextSpan(
+                                          children: _buildTextSpans(args.word.getMergedMeaningItems()[i].meaning!),
+                                        ),
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          height: 1.4,
+                                          color: isDarkMode ? const Color(0xFFD1D5DB) : const Color(0xFF374151),
+                                        ),
                                       ),
-                                    ),
-                                  ),
-                                Flexible(
-                                  child: Text.rich(
-                                    TextSpan(
-                                      children: _buildTextSpans(meaningItem.meaning!),
-                                    ),
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      height: 1.4,
-                                      color: isDarkMode ? const Color(0xFFD1D5DB) : const Color(0xFF374151),
-                                    ),
+                                    ],
                                   ),
                                 ),
-                              ],
-                            ),
-                          )
+                            ],
+                          ),
+                        )
                       ],
                     ),
                   ), 
