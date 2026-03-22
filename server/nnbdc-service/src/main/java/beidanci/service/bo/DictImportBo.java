@@ -100,6 +100,7 @@ public class DictImportBo {
 
             int total = rawWords != null ? rawWords.size() : wordsWithMeanings.size();
             task.setTotalWords(total);
+            importTaskBo.updateEntity(task);
 
             // 如果是系统导入且缺少dictId但给定了dictName，尝试按名称查找或新建词典
             if (isSystemImport && (dictId == null || dictId.isEmpty()) && dictName != null && !dictName.trim().isEmpty()) {

@@ -31,7 +31,6 @@ public class ExceptionHandlerFilter extends OncePerRequestFilter {
     @Override
     public void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws ServletException, IOException {
         try {
-            log.info("Request URL: {} {}", request.getMethod(), request.getRequestURI());
             long startTime = System.currentTimeMillis();
             filterChain.doFilter(request, response);
             log.info("Request URL: {} {}, status: {}, 耗时: {}ms",
