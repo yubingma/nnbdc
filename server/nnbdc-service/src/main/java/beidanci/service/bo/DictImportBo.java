@@ -69,6 +69,9 @@ public class DictImportBo {
     @Autowired
     private WordImageBo wordImageBo;
 
+    @Autowired
+    private LearningDictBo learningDictBo;
+
     /**
      * 异步执行导入任务
      *
@@ -88,6 +91,7 @@ public class DictImportBo {
             boolean isSystemImport = (boolean) config.getOrDefault("isSystemImport", false);
             boolean generateWordImage = config.containsKey("generateWordImage") ? (boolean) config.get("generateWordImage") : false;
             String dictId = (String) config.get("dictId");
+            String dictName = (String) config.get("dictName");
             String strategy = (String) config.getOrDefault("strategy", "SKIP"); // SKIP, APPEND, RECREATE
             @SuppressWarnings("unchecked")
             List<String> rawWords = (List<String>) config.get("words"); // 场景2：仅单词
@@ -96,6 +100,40 @@ public class DictImportBo {
 
             int total = rawWords != null ? rawWords.size() : wordsWithMeanings.size();
             task.setTotalWords(total);
+
+            // 如果是系统导入且缺少dictId但给定了dictName，尝试按名称查找或新建词典
+            if (isSystemImport && (dictId == null || dictId.isEmpty()) && dictName != null && !dictName.trim().isEmpty()) {
+                User systemUser = userBo.findById(Constants.SYS_USER_SYS_ID);
+                Dict existingDict = dictBo.findByName(dictName.trim());
+                if (existingDict != null) {
+                    dictId = existingDict.getId();
+                } else {
+                    Dict newDict = new Dict();
+                    newDict.setWordCount(0);
+                    newDict.setIsReady(true);
+                    newDict.setIsShared(true); // 系统词库默认公开且可用
+                    newDict.setVisible(true);
+                    newDict.setEditable(false);
+                    newDict.setDeletable(false); // 防止非系统用户删除
+                    newDict.setPopularityLimit(10);
+                    newDict.setName(dictName.trim());
+                    newDict.setOwner(systemUser);
+                    dictBo.createEntity(newDict);
+                    
+                    beidanci.service.po.LearningDictId ldId = new beidanci.service.po.LearningDictId(systemUser.getId(), newDict.getId());
+                    beidanci.service.po.LearningDict learningDict = new beidanci.service.po.LearningDict(ldId, newDict, systemUser, false, true);
+                    learningDictBo.createEntity(learningDict);
+
+                    dictId = newDict.getId();
+                    
+                    try {
+                        beidanci.api.model.DictDto dictDto = dictBo.toDto(newDict);
+                        sysDbSyncBo.logOperation("INSERT", "dict", dictId, JsonUtils.toJson(dictDto));
+                    } catch (Exception e) {
+                        logger.warn("生成新建系统词典同步日志失败", e);
+                    }
+                }
+            }
 
             if (isSystemImport) {
                 processSystemImport(task, dictId, rawWords, strategy, generateWordImage, stats);
@@ -125,9 +163,18 @@ public class DictImportBo {
     private void processSystemImport(ImportTask task, String dictId, List<String> words, String strategy, boolean generateWordImage, TaskStatistics stats) {
         User systemUser = userBo.findById(Constants.SYS_USER_SYS_ID);
         for (int i = 0; i < words.size(); i++) {
-            String spell = words.get(i).trim();
+            String line = words.get(i).trim();
+            if (line.isEmpty()) continue;
+            String spell = line;
+            String manualMeaning = null;
+            if (line.contains("|")) {
+                String[] parts = line.split("\\|", 2);
+                spell = parts[0].trim();
+                manualMeaning = parts[1].trim();
+                if (manualMeaning.isEmpty()) manualMeaning = null;
+            }
             try {
-                processSingleWord(spell, null, true, systemUser, dictId, strategy, generateWordImage, stats);
+                processSingleWord(spell, manualMeaning, true, systemUser, dictId, strategy, generateWordImage, stats);
                 importTaskBo.updateProgress(task.getId(), i + 1, "Processed: " + spell);
             } catch (Exception e) {
                 logger.warn("处理单词失败: " + spell, e);

@@ -32,7 +32,29 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
   String _strategy = 'RECREATE';
   bool _generateWordImage = false; 
 
+  final TextEditingController _dictNameCtrl = TextEditingController(text: "系统词典");
+  final TextEditingController _wordsCtrl = TextEditingController(text: "apple|一种甜酸可口的水果\nbanana\ncat");
+  final TextEditingController _deleteDictIdCtrl = TextEditingController();
+
+  @override
+  void dispose() {
+    _dictNameCtrl.dispose();
+    _wordsCtrl.dispose();
+    _deleteDictIdCtrl.dispose();
+    _timer?.cancel();
+    super.dispose();
+  }
+
   void _submitTask() async {
+    final lines = _wordsCtrl.text.split('\n');
+    final wordsToImport = lines.map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+    final dictName = _dictNameCtrl.text.trim();
+
+    if (wordsToImport.isEmpty || dictName.isEmpty) {
+      ToastUtil.info("请输入词书名称和单词列表");
+      return;
+    }
+
     setState(() {
       _isSubmitting = true;
       _taskId = null;
@@ -40,26 +62,26 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
     });
 
     try {
-      final wordsToImport = ["have", "apple", "Sensing layer"];  
-      
       // 导入前: 主动清除目标单词在本地缓存的发音，避免跨系统状态污染
       // 对于例句，由于无法直接预知所有旧例句的 englishDigest，这里为了管理员测试能立刻听到全新合成发音，
       // 最暴力的手段是直接调用 emptyCache() 释放手机端全部旧发音。
-      for (var word in wordsToImport) {
-        final soundUrl = Util.getWordSoundUrl(word);
+      for (var wordLine in wordsToImport) {
+        final pureWord = wordLine.split('|')[0].trim();
+        final soundUrl = Util.getWordSoundUrl(pureWord);
         if (soundUrl.isNotEmpty) {
           await DefaultCacheManager().removeFile(soundUrl);
         }
       }
       await DefaultCacheManager().emptyCache();
-      Global.logger.i('已在导入前清理目标单词及例句关联的全部本地媒体缓存，保证播放绝对新版本');
+      Global.logger.i('已在导入前清理目标单词及例句关联的全部本地媒体缓存');
 
       final request = JsonMap({
         "ownerId": Global.sysUserId, 
-        "fileName": "System Dict Import (have, apple, Sensing layer)",
+        "fileName": "词书导入: $dictName",
         "config": jsonEncode({
           "isSystemImport": true,
-          "dictId": "0",
+          "dictId": "",
+          "dictName": dictName,
           "words": wordsToImport,
           "strategy": _strategy,
           "generateWordImage": _generateWordImage
@@ -88,6 +110,24 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
     }
   }
 
+  void _deleteDict() async {
+    final dictId = _deleteDictIdCtrl.text.trim();
+    if (dictId.isEmpty) {
+      ToastUtil.info("请输入要删除的系统词书ID");
+      return;
+    }
+    try {
+      final res = await Api.client.deleteSystemDict(dictId);
+      if (res.success) {
+        ToastUtil.success("系统词典[$dictId]及孤儿文件彻底删除成功");
+      } else {
+        ToastUtil.error("删除词书失败: ${res.msg}");
+      }
+    } catch(e) {
+      ToastUtil.error("删除异常: $e");
+    }
+  }
+
   void _startPolling() {
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 2), (timer) async {
@@ -102,81 +142,64 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
             setState(() {
               _taskDetails = res.data!.data;
             });
-            String status = _taskDetails!['status'] ?? '';
-            if (status == 'COMPLETED' || status == 'FAILED') {
-              timer.cancel();
-              ToastUtil.info('任务完成 ($status)');
-              
-              if (status == 'COMPLETED') {
-                ThrottledDbSyncService().requestSync(immediate: true);
+          }
+          final status = res.data!.data['status'];
+          if (status == 'COMPLETED' || status == 'FAILED' || status == 'SKIPPED') {
+            timer.cancel();
+            
+            if (status == 'COMPLETED') {
+              ThrottledDbSyncService().requestSync(immediate: true);
 
-                // 清除前端有关这些新导入单词的发音文件本地缓存，避免继续播放旧版本（如AI错误生成的）发音
-                try {
-                  final wordsToClear = ["have", "apple", "Sensing layer"];
-                  
-                  for (var word in wordsToClear) {
-                    final soundUrl = Util.getWordSoundUrl(word);
-                    if (soundUrl.isNotEmpty) {
-                      await DefaultCacheManager().removeFile(soundUrl);
-                      Global.logger.i('已清理单词发音缓存: $soundUrl');
+              // 清除前端有关这些新导入单词的发音文件本地缓存，避免继续播放旧版本（如AI错误生成的）发音
+              try {
+                final resultsStr = res.data!.data['results'];
+                if (resultsStr != null) {
+                  final results = jsonDecode(resultsStr);
+                  final List<dynamic>? wordDetails = results['wordDetails'];
+                  if (wordDetails != null) {
+                    final wordsToClear = wordDetails.map((w) => w['spell'].toString()).toList();
+                    for (var word in wordsToClear) {
+                      final soundUrl = Util.getWordSoundUrl(word);
+                      if (soundUrl.isNotEmpty) {
+                        try {
+                          await DefaultCacheManager().removeFile(soundUrl);
+                          Global.logger.i('已清理单词发音缓存: $soundUrl');
+                        } catch(e) { /* ignore */ }
+                      }
                     }
                   }
-                } catch (ce) {
-                  Global.logger.e('清理单词发音缓存失败', error: ce);
                 }
+              } catch (ce) {
+                Global.logger.e('清理导入后缓存异常', error: ce);
               }
             }
           }
         }
       } catch (e) {
-        Global.logger.e('getDictImportTaskStatus failed', error: e);
+        Global.logger.e('polling error', error: e);
       }
     });
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
   }
 
   Widget _buildStatusBadge(String status) {
     Color color;
     switch (status) {
-      case 'COMPLETED':
-        color = Colors.green;
-        break;
-      case 'FAILED':
-        color = Colors.red;
-        break;
-      case 'RUNNING':
-        color = Colors.blue;
-        break;
-      default:
-        color = Colors.orange;
+      case 'COMPLETED': color = Colors.green; break;
+      case 'FAILED': color = Colors.red; break;
+      case 'RUNNING': color = Colors.blue; break;
+      default: color = Colors.orange;
     }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withValues(alpha: 0.5)),
-      ),
-      child: Text(
-        status,
-        style: TextStyle(color: color, fontWeight: FontWeight.bold),
-      ),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(16), border: Border.all(color: color.withValues(alpha: 0.5))),
+      child: Text(status, style: TextStyle(color: color, fontWeight: FontWeight.bold)),
     );
   }
 
   Widget _buildStatItem(String label, int value, IconData icon, Color color) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.2)),
-      ),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(12), border: Border.all(color: color.withValues(alpha: 0.2))),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -202,17 +225,10 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
     return Scaffold(
       backgroundColor: backgroundColor,
       appBar: AppTheme.createGradientAppBar(
-        title: 'AI 词书资源导入',
-        leading: IconButton(
-          onPressed: () => Navigator.pop(context),
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-        ),
+        title: 'AI 词书资源管理',
+        leading: IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.arrow_back, color: Colors.white)),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.image_search, color: Colors.white),
-            tooltip: 'AI 配图审核',
-            onPressed: () => Get.to(() => const AdminImageReviewPage()),
-          ),
+          IconButton(icon: const Icon(Icons.image_search, color: Colors.white), tooltip: 'AI 配图审核', onPressed: () => Get.to(() => const AdminImageReviewPage())),
         ],
       ),
       body: SingleChildScrollView(
@@ -220,6 +236,42 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            Card(
+              elevation: 0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: Colors.grey.withValues(alpha: 0.2))),
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: Colors.red.withValues(alpha: 0.1), shape: BoxShape.circle), child: const Icon(Icons.delete_forever, color: Colors.red)),
+                        const SizedBox(width: 12),
+                        const Text('删除系统词书及垃圾回收', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: _deleteDictIdCtrl,
+                      decoration: InputDecoration(
+                        labelText: '要删除的系统词书ID',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    FilledButton.icon(
+                      onPressed: _deleteDict,
+                      icon: const Icon(Icons.delete),
+                      label: const Text('彻底粉碎此词书'),
+                      style: FilledButton.styleFrom(backgroundColor: Colors.red, padding: const EdgeInsets.symmetric(vertical: 12)),
+                    )
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
             Card(
               elevation: 0,
               shape: RoundedRectangleBorder(
@@ -233,44 +285,32 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
                   children: [
                     Row(
                       children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(color: AppTheme.primaryColor.withValues(alpha: 0.1), shape: BoxShape.circle),
-                          child: const Icon(Icons.science, color: AppTheme.primaryColor),
-                        ),
+                        Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: AppTheme.primaryColor.withValues(alpha: 0.1), shape: BoxShape.circle), child: const Icon(Icons.post_add, color: AppTheme.primaryColor)),
                         const SizedBox(width: 12),
-                        const Text('测试场景：系统级导入', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                        const Text('导入系统词库', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
                       ],
                     ),
                     const SizedBox(height: 16),
-                    const Text('将使用 AI 为以下字典生成音标、词性、例句及同义词：', style: TextStyle(color: Colors.grey)),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      children: ['have', 'apple', 'Sensing layer'].map((w) => Chip(
-                        label: Text(w),
-                        backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.05),
-                        side: const BorderSide(color: Colors.transparent),
-                      )).toList(),
+                    TextField(
+                      controller: _dictNameCtrl,
+                      decoration: InputDecoration(
+                        labelText: '目标词典名称 (如果同名则追加, 否则新建)',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      ),
                     ),
-                    const SizedBox(height: 16), 
-                    const Text('导入目标词典：', style: TextStyle(fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      decoration: BoxDecoration(
-                        color: AppTheme.primaryColor.withValues(alpha: 0.05),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: AppTheme.primaryColor.withValues(alpha: 0.2)),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _wordsCtrl,
+                      maxLines: 8,
+                      decoration: InputDecoration(
+                        labelText: '单词列表 (每行一个，支持"单词|自定义释义")',
+                        hintText: "apple\nbanana|黄色的香蕉",
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        alignLabelWithHint: true,
+                        contentPadding: const EdgeInsets.all(16),
                       ),
-                      child: Row(
-                        children: const [
-                          Icon(Icons.library_books, color: AppTheme.primaryColor, size: 20),
-                          SizedBox(width: 8),
-                          Text('通用词典 (ID: 0)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
-                        ],
-                      ),
+                      style: const TextStyle(fontFamily: 'monospace', fontSize: 14),
                     ),
                     const SizedBox(height: 16),
                     const Text('遇到相同单词时的导入覆盖策略：', style: TextStyle(fontWeight: FontWeight.bold)),

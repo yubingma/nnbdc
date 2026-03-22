@@ -23,6 +23,9 @@ public class DictImportController {
     @Autowired
     private ImportTaskBo importTaskBo;
 
+    @Autowired
+    private beidanci.service.bo.DictBo dictBo;
+
     /**
      * 提交一个导入任务
      *
@@ -64,6 +67,25 @@ public class DictImportController {
             return Result.fail("任务不存在");
         }
         return Result.success(task);
+    }
+
+    @PostMapping("/deleteSystemDict")
+    public Result<String> deleteSystemDict(@RequestParam String dictId) {
+        try {
+            // Because this is a destructive operation, we just call the DictBo locally 
+            // without creating a Task since memory clearing happens synchronously better anyway.
+            beidanci.service.po.Dict dict = dictBo.findById(dictId);
+            if (dict == null) {
+                return Result.fail("找不到系统词库");
+            }
+            if (!beidanci.util.Constants.SYS_USER_SYS_ID.equals(dict.getOwner().getId())) {
+                return Result.fail("只限删除System(管理员)名下的系统公共词典!");
+            }
+            dictBo.deleteSystemDictSafely(dictId);
+            return Result.success("删除成功");
+        } catch (Exception e) {
+            return Result.fail("删除失败: " + e.getMessage());
+        }
     }
 
     public static class ImportRequest {

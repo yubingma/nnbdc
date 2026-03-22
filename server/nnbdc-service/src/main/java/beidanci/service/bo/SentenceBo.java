@@ -171,13 +171,21 @@ public class SentenceBo extends BaseBo<Sentence> {
         // 从缓存清除
         sentenceCache.removeSentenceFromCache(id);
 
-        // 删除物理发音缓存文件
+        // 删除物理发音缓存文件 (仅当没有其他例句共享同一个发音时才删除)
         if (existing.getEnglishDigest() != null) {
-            File soundFile = new File(sysParamUtil.getSoundPath() + "/sentence/" + existing.getEnglishDigest() + ".mp3");
-            if (soundFile.exists()) {
-                boolean deleted = soundFile.delete();
-                if (deleted) {
-                    LoggerFactory.getLogger(SentenceBo.class).info("自动清除了例句发音缓存: {}", soundFile.getAbsolutePath());
+            String checkSql = "SELECT COUNT(id) FROM sentence WHERE english_digest = :digest AND id != :currentId";
+            MapSqlParameterSource p = new MapSqlParameterSource();
+            p.addValue("digest", existing.getEnglishDigest());
+            p.addValue("currentId", existing.getId());
+            Integer count = namedParameterJdbcTemplate.queryForObject(checkSql, p, Integer.class);
+
+            if (count == null || count == 0) {
+                File soundFile = new File(sysParamUtil.getSoundPath() + "/sentence/" + existing.getEnglishDigest() + ".mp3");
+                if (soundFile.exists()) {
+                    boolean deleted = soundFile.delete();
+                    if (deleted) {
+                        LoggerFactory.getLogger(SentenceBo.class).info("自动清除了不再被引用的例句发音缓存: {}", soundFile.getAbsolutePath());
+                    }
                 }
             }
         }
@@ -277,21 +285,38 @@ public class SentenceBo extends BaseBo<Sentence> {
                     LoggerFactory.getLogger(SentenceBo.class).warn("清除例句缓存失败: {}", s.getId(), e);
                 }
                 
-                // 清除物理音频文件
-                if (s.getEnglishDigest() != null) {
-                    File soundFile = new File(sysParamUtil.getSoundPath() + "/sentence/" + s.getEnglishDigest() + ".mp3");
-                    if (soundFile.exists()) {
-                        boolean deleted = soundFile.delete();
-                        if (deleted) {
-                            LoggerFactory.getLogger(SentenceBo.class).info("自动清除了例句发音缓存: {}", soundFile.getAbsolutePath());
-                        }
-                    }
-                }
+                // 清理物理音频文件复用逻辑提取
+                safeDeleteSentenceAudio(s.getId(), s.getEnglishDigest());
             }
         }
 
         String sql = "DELETE FROM sentence WHERE meaning_item_id = :meaningItemId";
         MapSqlParameterSource params = new MapSqlParameterSource("meaningItemId", meaningItemId);
         namedParameterJdbcTemplate.update(sql, params);
+    }
+
+    /**
+     * 安全删除例句的发音物理文件。仅当没有其余例句共享同样发音(基于摘要)时才执行物理删除。
+     * @param excludeSentenceId 当前将要被排除在统计之外的例句ID(若当前例句尚未从数据库中抹除，用于规避计数把自己算入)
+     * @param englishDigest 发音文件的摘要指纹
+     */
+    public void safeDeleteSentenceAudio(String excludeSentenceId, String englishDigest) {
+        if (englishDigest == null || englishDigest.isEmpty()) {
+            return;
+        }
+        String checkSql = "SELECT COUNT(id) FROM sentence WHERE english_digest = :digest"
+                + (excludeSentenceId != null ? " AND id != :excludeId" : "");
+        MapSqlParameterSource p = new MapSqlParameterSource("digest", englishDigest);
+        if (excludeSentenceId != null) {
+            p.addValue("excludeId", excludeSentenceId);
+        }
+
+        Integer count = namedParameterJdbcTemplate.queryForObject(checkSql, p, Integer.class);
+        if (count == null || count == 0) {
+            java.io.File soundFile = new java.io.File(sysParamUtil.getSoundPath() + "/sentence/" + englishDigest + ".mp3");
+            if (soundFile.exists() && soundFile.delete()) {
+                LoggerFactory.getLogger(SentenceBo.class).info("自动清除了不再被引用的例句发音缓存: {}", soundFile.getAbsolutePath());
+            }
+        }
     }
 }

@@ -709,6 +709,131 @@ public class DictBo extends BaseBo<Dict> {
         }
     }
 
+    @Autowired
+    private beidanci.service.util.SysParamUtil sysParamUtil;
+
+    @Autowired
+    @org.springframework.context.annotation.Lazy
+    private beidanci.service.bo.WordImageBo wordImageBo;
+
+    @Autowired
+    @org.springframework.context.annotation.Lazy
+    private beidanci.service.store.SentenceCache sentenceCache;
+
+    @Transactional
+    public void deleteSystemDictSafely(String dictId) {
+        try {
+            log.info("开始系统级清理词典 (以及其独占的翻译/例句/无关联的孤儿单词): dictId={}", dictId);
+            MapSqlParameterSource pDict = new MapSqlParameterSource("dictId", dictId);
+            
+            // 1. 获取要删除的meaningItemIds
+            String sqlMi = "SELECT id, word_id FROM meaning_item WHERE dict_id = :dictId";
+            List<Map<String, Object>> mis = namedParameterJdbcTemplate.queryForList(sqlMi, pDict);
+            
+            for (Map<String, Object> mi : mis) {
+                String miId = (String) mi.get("id");
+                
+                // 1.1 Handle Sentences
+                MapSqlParameterSource pMi = new MapSqlParameterSource("miId", miId);
+                String sqlS = "SELECT id, english_digest FROM sentence WHERE meaning_item_id = :miId";
+                List<Map<String, Object>> sentences = namedParameterJdbcTemplate.queryForList(sqlS, pMi);
+                
+                for (Map<String, Object> s : sentences) {
+                    String sentenceId = (String) s.get("id");
+                    String digest = (String) s.get("english_digest");
+                    MapSqlParameterSource pS = new MapSqlParameterSource("sId", sentenceId);
+                    
+                    // delete sentence dependencies
+                    namedParameterJdbcTemplate.update("DELETE FROM event WHERE sentence_chinese_id IN (SELECT id FROM sentence_chinese WHERE sentence_id = :sId)", pS);
+                    namedParameterJdbcTemplate.update("DELETE FROM sentence_chinese WHERE sentence_id = :sId", pS);
+                    namedParameterJdbcTemplate.update("DELETE FROM word_sentence WHERE sentence_id = :sId", pS);
+                    namedParameterJdbcTemplate.update("DELETE FROM event WHERE sentence_id = :sId", pS);
+                    
+                    // delete sentence itself
+                    namedParameterJdbcTemplate.update("DELETE FROM sentence WHERE id = :sId", pS);
+                    
+                    // clear memory
+                    try {
+                        sentenceCache.removeSentenceFromCache(sentenceId);
+                    } catch (Exception ignore) {}
+                    
+                    // log
+                    sysDbLogBo.logOperation("DELETE", "sentence", sentenceId, "{}");
+                    
+                    // handle physical mp3 sharing collision
+                    if (digest != null) {
+                        MapSqlParameterSource pCheck = new MapSqlParameterSource("digest", digest);
+                        Integer c = namedParameterJdbcTemplate.queryForObject("SELECT COUNT(id) FROM sentence WHERE english_digest = :digest", pCheck, Integer.class);
+                        if (c == null || c == 0) {
+                            java.io.File sf = new java.io.File(sysParamUtil.getSoundPath() + "/sentence/" + digest + ".mp3");
+                            if (sf.exists()) sf.delete();
+                        }
+                    }
+                }
+                
+                // 1.2 Handle Meaning Item
+                namedParameterJdbcTemplate.update("DELETE FROM event WHERE meaning_item_id = :miId", pMi);
+                namedParameterJdbcTemplate.update("DELETE FROM synonym WHERE meaning_item_id = :miId", pMi);
+                namedParameterJdbcTemplate.update("DELETE FROM meaning_item WHERE id = :miId", pMi);
+                // log
+                sysDbLogBo.logOperation("DELETE", "meaning_item", miId, "{}");
+            }
+            
+            // 2. Identify orphaned words (words that now have 0 meaningItems anywhere)
+            for (Map<String, Object> mi : mis) {
+                String wordId = (String) mi.get("word_id");
+                MapSqlParameterSource pW = new MapSqlParameterSource("wordId", wordId);
+                Integer c = namedParameterJdbcTemplate.queryForObject("SELECT COUNT(id) FROM meaning_item WHERE word_id = :wordId", pW, Integer.class);
+                if (c == null || c == 0) {
+                    Map<String, Object> wordRow = null;
+                    try {
+                        wordRow = namedParameterJdbcTemplate.queryForMap("SELECT spell FROM word WHERE id = :wordId", pW);
+                    } catch (org.springframework.dao.EmptyResultDataAccessException ignore) {}
+                    
+                    if (wordRow != null) {
+                        String spell = (String) wordRow.get("spell");
+                        
+                        // A. delete from learning dependencies
+                        namedParameterJdbcTemplate.update("DELETE FROM learning_word WHERE word_id = :wordId", pW);
+                        namedParameterJdbcTemplate.update("DELETE FROM dict_word WHERE word_id = :wordId", pW);
+                        
+                        // B. delete physical word sound mp3
+                        if (spell != null) {
+                            String pureSpell = spell.replaceAll("[^a-zA-Z]", "").toLowerCase();
+                            if (pureSpell.length() > 0) {
+                                String firstChar = pureSpell.substring(0, 1);
+                                java.io.File wf = new java.io.File(sysParamUtil.getSoundPath() + "/" + firstChar + "/" + pureSpell + ".mp3");
+                                if (wf.exists()) wf.delete();
+                            }
+                        }
+                        
+                        // C. delete wordImages & image files & image events
+                        List<String> imageIds = namedParameterJdbcTemplate.queryForList("SELECT id FROM word_image WHERE word_id = :wordId", pW, String.class);
+                        for (String imgId : imageIds) {
+                            wordImageBo.deleteWordImage(imgId, null, false);
+                        }
+                        
+                        // D. delete the word itself
+                        namedParameterJdbcTemplate.update("DELETE FROM word WHERE id = :wordId", pW);
+                        sysDbLogBo.logOperation("DELETE", "word", wordId, "{}");
+                    }
+                }
+            }
+            
+            // 3. Delete dict ties
+            namedParameterJdbcTemplate.update("DELETE FROM learning_dict WHERE dict_id = :dictId", pDict);
+            namedParameterJdbcTemplate.update("DELETE FROM dict_word WHERE dict_id = :dictId", pDict); 
+            // Finally delete the dict
+            namedParameterJdbcTemplate.update("DELETE FROM dict WHERE id = :dictId", pDict);
+            sysDbLogBo.logOperation("DELETE", "dict", dictId, "{}");
+            
+            log.info("完全安全清理系统词典成功: dictId={}", dictId);
+        } catch (DataAccessException e) {
+            log.error("安全删除系统词典失败: dictId={}, 错误: {}", dictId, e.getMessage(), e);
+            throw new RuntimeException("删除系统词典失败: " + e.getMessage(), e);
+        }
+    }
+
     /**
      * 获取用户词典ID列表（只包含可见且就绪的词书）
      */

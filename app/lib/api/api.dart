@@ -752,6 +752,9 @@ abstract class RestClient {
   @http.Headers(<String, dynamic>{"Content-Type": "application/json"})
   Future<Result<String>> submitDictImportTask(@Body() JsonMap request);
 
+  @POST("/import/deleteSystemDict")
+  Future<Result<String>> deleteSystemDict(@Query("dictId") String dictId);
+
   @GET("/import/getTaskStatus")
   Future<Result<JsonMap>> getDictImportTaskStatus(
       @Query("taskId") String taskId);
