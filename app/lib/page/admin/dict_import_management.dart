@@ -16,6 +16,7 @@ import 'package:nnbdc/page/admin/admin_image_review_page.dart';
 import 'package:get/get.dart';
 import 'package:nnbdc/util/utils.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+import 'package:nnbdc/db/db.dart'; 
 
 class DictImportManagementWidget extends StatefulWidget {
   const DictImportManagementWidget({super.key});
@@ -35,6 +36,43 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
   final TextEditingController _wordsCtrl = TextEditingController(text: "apple|一种甜酸可口的水果\nbanana\ncat");
   final TextEditingController _deleteDictIdCtrl = TextEditingController();
   final TextEditingController _domainCtrl = TextEditingController();
+
+  bool _isDictMatched = false;
+  int _matchedDictWordCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkDictMatch(_dictNameCtrl.text);
+  }
+
+  void _checkDictMatch(String name) async {
+    final trimName = name.trim();
+    if (trimName.isEmpty) {
+      if (mounted) setState(() { _isDictMatched = false; });
+      return;
+    }
+    try {
+      final db = MyDatabase.instance;
+      final results = await (db.select(db.dicts)..where((d) => d.name.equals(trimName))).get();
+      if (results.isNotEmpty) {
+        final dict = results.first;
+        if (mounted) {
+          setState(() {
+            _isDictMatched = true;
+            _matchedDictWordCount = dict.wordCount;
+          });
+          if (dict.domain != null && dict.domain!.isNotEmpty) {
+            _domainCtrl.text = dict.domain!;
+          }
+        }
+      } else {
+        if (mounted) setState(() { _isDictMatched = false; });
+      }
+    } catch (e) {
+      Global.logger.e('查询匹配词书失败', error: e);
+    }
+  }
 
   @override
   void dispose() {
@@ -379,12 +417,21 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
                     const SizedBox(height: 16),
                     TextField(
                       controller: _dictNameCtrl,
+                      onChanged: _checkDictMatch,
                       decoration: InputDecoration(
                         labelText: '目标词典名称 (如果同名则追加, 否则新建)',
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       ),
                     ),
+                    if (_isDictMatched)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8, bottom: 4),
+                        child: Text(
+                          '✅ 已找到该词库，当前包含 $_matchedDictWordCount 个单词',
+                          style: const TextStyle(color: Colors.green, fontSize: 13),
+                        ),
+                      ),
                     const SizedBox(height: 12),
                     SizedBox(
                       height: 180, 
