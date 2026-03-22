@@ -44,7 +44,16 @@ public class SystemHealthCheckBo {
     private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
     @Autowired
+    private WordBo wordBo;
+
+    @Autowired
     private UserDbSyncBo userDbSyncBo;
+
+    @Autowired
+    private AiBo aiBo;
+
+    @Autowired
+    private SysDbSyncBo sysDbSyncBo;
 
 
     /**
@@ -305,7 +314,7 @@ public class SystemHealthCheckBo {
                     case "user_dict_integrity" -> fixedCount += fixUserDictIntegrity(fixed);
     
                     case "db_version" -> fixedCount += fixDbVersionConsistency(fixed);
-                    case "common_dict_integrity" -> fixedCount += fixCommonDictIntegrity();
+                    case "common_dict_integrity" -> fixedCount += fixCommonDictIntegrity(fixed);
                     case "user_study_steps" -> fixedCount += fixUserStudySteps(fixed);
                     case "missing_raw_word_dict", "missing_user_dict" -> fixedCount += fixMissingUserDicts(fixed);
                     default -> errors.add("未知的问题类型: " + issueType);
@@ -628,10 +637,81 @@ public class SystemHealthCheckBo {
         return fixedCount;
     }
 
-    private int fixCommonDictIntegrity() {
-        // 通用词典完整性修复比较复杂，需要根据具体业务逻辑实现
-        // 这里暂时返回0，表示暂不支持自动修复
-        return 0;
+    private int fixCommonDictIntegrity(List<String> fixed) {
+        String commonDictId = "0";
+        List<String> meaningsWithoutSentences = sentenceBo.findMeaningsWithoutSentences(commonDictId);
+        if (meaningsWithoutSentences == null || meaningsWithoutSentences.isEmpty()) {
+            return 0;
+        }
+
+        new Thread(() -> {
+            try {
+                org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(SystemHealthCheckBo.class);
+                logger.info("开始后台修复通用词典的 {} 个缺失例句的释义项...", meaningsWithoutSentences.size());
+                
+                String systemPrompt = "你是一个专业的外教，任务是专门给英语单词造例句。给定单词、词性和释义，请生成一条原生地道的英语例句及对应的中文翻译。严格只返回 JSON 对象，格式为：{\"sentenceEn\": \"英文例句\", \"sentenceCn\": \"中文翻译\"}。不要包含 markdown 或其他字符！";
+
+                for (String meaningId : meaningsWithoutSentences) {
+                    try {
+                        beidanci.service.po.MeaningItem mi = meaningItemBo.findById(meaningId);
+                        if (mi == null) continue;
+                        
+                        beidanci.service.po.Word stubWord = mi.getWord();
+                        if (stubWord == null || stubWord.getId() == null) continue;
+                        
+                        beidanci.service.po.Word word = wordBo.findById(stubWord.getId());
+                        if (word == null || word.getSpell() == null) continue;
+                        
+                        String spell = word.getSpell();
+                        String promptText = "单词：[" + spell + "]\n要求：请造一个能准确反映词性[" + (mi.getCiXing() != null ? mi.getCiXing() : "未知") + "] 和释义[" + mi.getMeaning() + "]的例句。只返回JSON。";
+                        
+                        String jsonStr = aiBo.generateText(systemPrompt, promptText);
+                        
+                        if (jsonStr != null) {
+                            int firstBrace = jsonStr.indexOf('{');
+                            int lastBrace = jsonStr.lastIndexOf('}');
+                            if (firstBrace >= 0 && lastBrace >= firstBrace) {
+                                jsonStr = jsonStr.substring(firstBrace, lastBrace + 1);
+                                java.util.Map<String, Object> map = beidanci.service.util.JsonUtils.parseMap(jsonStr);
+                                if (map != null && map.containsKey("sentenceEn")) {
+                                    String sentenceEn = (String) map.get("sentenceEn");
+                                    String sentenceCn = (String) map.get("sentenceCn");
+                                    
+                                    beidanci.service.po.Sentence sentence = new beidanci.service.po.Sentence();
+                                    sentence.setEnglish(sentenceEn);
+                                    sentence.setChinese(sentenceCn);
+                                    sentence.setWordMeaning(mi.getMeaning());
+                                    sentence.setPartOfSpeech(mi.getCiXing());
+                                    sentence.setMeaningItem(mi);
+                                    sentence.setNeedTts(true);
+                                    sentence.setTheType("waitting_tts");
+                                    sentence.setEnglishDigest(beidanci.service.util.Util.makeSentenceDigest(sentenceEn));
+                                    
+                                    beidanci.service.po.User owner = new beidanci.service.po.User();
+                                    owner.setId(beidanci.util.Constants.SYS_USER_SYS_ID);
+                                    sentence.setAuthor(owner);
+                                    
+                                    sentenceBo.createEntity(sentence);
+                                    
+                                    sysDbSyncBo.logOperation("INSERT", "sentence", sentence.getId(), beidanci.service.util.JsonUtils.toJson(sentenceBo.toDto(sentence)));
+                                    logger.info("成功为单词 {} 的释义补充了 AI 例句: {}", spell, sentenceEn);
+                                }
+                            }
+                        }
+                        
+                        Thread.sleep(1500); // 防阿里云限流QPS
+                    } catch (Exception innerE) {
+                        logger.warn("处理释义项 {} 发生异常: {}", meaningId, innerE.getMessage());
+                    }
+                }
+                logger.info("通用词典例句后台补齐任务全部完成！");
+            } catch (Exception e) {
+                org.slf4j.LoggerFactory.getLogger(SystemHealthCheckBo.class).error("后台补齐大异常", e);
+            }
+        }).start();
+
+        fixed.add("缺失例句释义项的 AI 后台补齐任务已提交，进度可在服务器日志中查看，补齐会自动同步到客户端更新。");
+        return meaningsWithoutSentences.size();
     }
 
     private int fixUserStudySteps(List<String> fixed) {
