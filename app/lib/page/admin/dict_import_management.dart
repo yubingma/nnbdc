@@ -35,12 +35,14 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
   final TextEditingController _dictNameCtrl = TextEditingController(text: "系统词典");
   final TextEditingController _wordsCtrl = TextEditingController(text: "apple|一种甜酸可口的水果\nbanana\ncat");
   final TextEditingController _deleteDictIdCtrl = TextEditingController();
+  final TextEditingController _domainCtrl = TextEditingController();
 
   @override
   void dispose() {
     _dictNameCtrl.dispose();
     _wordsCtrl.dispose();
     _deleteDictIdCtrl.dispose();
+    _domainCtrl.dispose();
     _timer?.cancel();
     super.dispose();
   }
@@ -82,6 +84,7 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
           "isSystemImport": true,
           "dictId": "",
           "dictName": dictName,
+          "domain": _domainCtrl.text.trim(),
           "words": wordsToImport,
           "strategy": _strategy,
           "generateWordImage": _generateWordImage
@@ -385,6 +388,15 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
                       ),
                     ),
                     const SizedBox(height: 12),
+                    TextField(
+                      controller: _domainCtrl,
+                      decoration: InputDecoration(
+                        labelText: '专业领域 (选填，告诉AI按此发散释义，如"医学"、"计算机")',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
                     SizedBox(
                       height: 180, 
                       child: TextField(
@@ -404,7 +416,7 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
                       ),
                     ),
                     const SizedBox(height: 16),
-                    const Text('遇到相同单词时的导入覆盖策略：', style: TextStyle(fontWeight: FontWeight.bold)),
+                    const Text('若单词已存在于通用词典中：', style: TextStyle(fontWeight: FontWeight.bold)),
                     const SizedBox(height: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -418,9 +430,8 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
                           value: _strategy,
                           isExpanded: true,
                           items: const [
-                            DropdownMenuItem(value: 'SKIP', child: Text('SKIP (跳过已存在单词)')),
-                            DropdownMenuItem(value: 'RECREATE', child: Text('RECREATE (重新生成全部资源并覆盖)')),
-                            DropdownMenuItem(value: 'APPEND', child: Text('APPEND (保留现有的，并追加新内容)')),
+                            DropdownMenuItem(value: 'REUSE', child: Text('REUSE (重用通用词典单词资源)')),
+                            DropdownMenuItem(value: 'RECREATE', child: Text('RECREATE (生成自己的单词资源)')),
                           ],
                           onChanged: _isSubmitting ? null : (val) {
                             if (val != null) {

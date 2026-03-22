@@ -92,7 +92,8 @@ public class DictImportBo {
             boolean generateWordImage = config.containsKey("generateWordImage") ? (boolean) config.get("generateWordImage") : false;
             String dictId = (String) config.get("dictId");
             String dictName = (String) config.get("dictName");
-            String strategy = (String) config.getOrDefault("strategy", "SKIP"); // SKIP, APPEND, RECREATE
+            String domain = (String) config.get("domain");
+            String strategy = (String) config.getOrDefault("strategy", "REUSE"); // REUSE (原SKIP), RECREATE
             @SuppressWarnings("unchecked")
             List<String> rawWords = (List<String>) config.get("words"); // 场景2：仅单词
             @SuppressWarnings("unchecked")
@@ -136,11 +137,11 @@ public class DictImportBo {
             }
 
             if (isSystemImport) {
-                processSystemImport(task, dictId, rawWords, strategy, generateWordImage, stats);
+                processSystemImport(task, dictId, dictName, domain, rawWords, strategy, generateWordImage, stats);
             } else if (rawWords != null) {
-                processUserImportWordsOnly(task, dictId, rawWords, strategy, generateWordImage, stats);
+                processUserImportWordsOnly(task, dictId, dictName, domain, rawWords, strategy, generateWordImage, stats);
             } else {
-                processUserImportWithMeanings(task, dictId, wordsWithMeanings, strategy, generateWordImage, stats);
+                processUserImportWithMeanings(task, dictId, dictName, domain, wordsWithMeanings, strategy, generateWordImage, stats);
             }
 
             task = importTaskBo.findById(taskId); // 重新加载以防状态冲突
@@ -173,7 +174,7 @@ public class DictImportBo {
         }
     }
 
-    private void processSystemImport(ImportTask task, String dictId, List<String> words, String strategy, boolean generateWordImage, TaskStatistics stats) {
+    private void processSystemImport(ImportTask task, String dictId, String dictName, String domain, List<String> words, String strategy, boolean generateWordImage, TaskStatistics stats) {
         User systemUser = userBo.findById(Constants.SYS_USER_SYS_ID);
         for (int i = 0; i < words.size(); i++) {
             String line = words.get(i).trim();
@@ -187,7 +188,7 @@ public class DictImportBo {
                 if (manualMeaning.isEmpty()) manualMeaning = null;
             }
             try {
-                processSingleWord(spell, manualMeaning, true, systemUser, dictId, strategy, generateWordImage, stats);
+                processSingleWord(spell, manualMeaning, true, systemUser, dictId, dictName, domain, strategy, generateWordImage, stats);
                 importTaskBo.updateProgress(task.getId(), i + 1, "Processed: " + spell);
             } catch (Exception e) {
                 logger.warn("处理单词失败: " + spell, e);
@@ -198,12 +199,12 @@ public class DictImportBo {
         }
     }
 
-    private void processUserImportWordsOnly(ImportTask task, String dictId, List<String> words, String strategy, boolean generateWordImage, TaskStatistics stats) {
+    private void processUserImportWordsOnly(ImportTask task, String dictId, String dictName, String domain, List<String> words, String strategy, boolean generateWordImage, TaskStatistics stats) {
         User owner = task.getOwner();
         for (int i = 0; i < words.size(); i++) {
             String spell = words.get(i).trim();
             try {
-                processSingleWord(spell, null, false, owner, dictId, strategy, generateWordImage, stats);
+                processSingleWord(spell, null, false, owner, dictId, dictName, domain, strategy, generateWordImage, stats);
                 importTaskBo.updateProgress(task.getId(), i + 1, "Processed: " + spell);
             } catch (Exception e) {
                 logger.warn("处理单词失败: " + spell, e);
@@ -214,14 +215,14 @@ public class DictImportBo {
         }
     }
 
-    private void processUserImportWithMeanings(ImportTask task, String dictId, List<Map<String, String>> words, String strategy, boolean generateWordImage, TaskStatistics stats) {
+    private void processUserImportWithMeanings(ImportTask task, String dictId, String dictName, String domain, List<Map<String, String>> words, String strategy, boolean generateWordImage, TaskStatistics stats) {
         User owner = task.getOwner();
         for (int i = 0; i < words.size(); i++) {
             Map<String, String> item = words.get(i);
             String spell = item.get("word").trim();
             String manualMeaning = item.get("meaning");
             try {
-                processSingleWord(spell, manualMeaning, false, owner, dictId, strategy, generateWordImage, stats);
+                processSingleWord(spell, manualMeaning, false, owner, dictId, dictName, domain, strategy, generateWordImage, stats);
                 importTaskBo.updateProgress(task.getId(), i + 1, "Processed: " + spell);
             } catch (Exception e) {
                 logger.warn("处理单词失败: " + spell, e);
@@ -232,7 +233,7 @@ public class DictImportBo {
         }
     }
 
-    private void processSingleWord(String spell, String manualMeaning, boolean isSystem, User user, String dictId, String strategy, boolean generateWordImage, TaskStatistics stats) throws Exception {
+    private void processSingleWord(String spell, String manualMeaning, boolean isSystemDict, User user, String dictId, String dictName, String domain, String strategy, boolean generateWordImage, TaskStatistics stats) throws Exception {
         Word word = wordBo.getWordBySpell(spell);
         boolean isNewWord = (word == null);
         String actionType = "ADDED";
@@ -243,7 +244,7 @@ public class DictImportBo {
             word.setSpell(spell);
             word.setPopularity(5); // 默认中等
             // 调用 AI 获取音标（及其它固有属性），对新词初始化无需在第一步请求配图，避免重复调用浪费资源
-            lastAiResult = getAiResult(spell, null, null, false);
+            lastAiResult = getAiResult(spell, null, null, false, null);
             word.setBritishPronounce(lastAiResult.phonetic);
             word.setAmericaPronounce(lastAiResult.phonetic);
             word.setPronounce(lastAiResult.phonetic);
@@ -262,14 +263,15 @@ public class DictImportBo {
             throw new RuntimeException("无法获取或创建单词对象: " + spell);
         }
 
-        // 查找该词在目标词典中的现有释义，以便进行拦截和跳过
-        List<MeaningItemDto> existingMeaningsInDict = meaningItemBo.findMeaningsByWordAndDict(word.getId(), dictId);
-        
-        if (!isNewWord && !existingMeaningsInDict.isEmpty() && "SKIP".equalsIgnoreCase(strategy)) {
-            logger.info("单词 {} 在词典 {} 中已存在，跳过", spell, dictId);
+        // 对于系统词书导入，需根据其在通用大库托底池（即"通用词典", ID='0'）中的累积情况做策略判定（重用 REUSE / 重刷 RECREATE）。私人导入则针对其专属词典做判定。
+        String targetDictForMeaning = isSystemDict ? Constants.COMMON_DICT_ID : dictId;
+        List<MeaningItemDto> existingMeaningsInDict = meaningItemBo.findMeaningsByWordAndDict(word.getId(), targetDictForMeaning);
+        boolean isReusing = false;
+        if (!isNewWord && !existingMeaningsInDict.isEmpty() && ("SKIP".equalsIgnoreCase(strategy) || "REUSE".equalsIgnoreCase(strategy))) {
+            logger.info("单词 {} 在词典 {} 中已存在资源，采用重用模式（跳过重新生成）", spell, targetDictForMeaning);
             stats.skippedCount++;
-            stats.wordDetails.add(new WordDetail(spell, "SKIPPED", null, null));
-            return;
+            stats.wordDetails.add(new WordDetail(spell, "REUSED", null, null));
+            isReusing = true;
         }
 
         // 统一在这一步清理旧资源
@@ -279,11 +281,11 @@ public class DictImportBo {
             if (hasMeanings) {
                 stats.recreatedCount++;
             }
-            clearWordResources(word, spell, dictId, user, existingMeaningsInDict, stats);
+            clearWordResources(word, spell, targetDictForMeaning, user, existingMeaningsInDict, stats);
 
             // 重新获取音标属性
             try {
-                lastAiResult = getAiResult(spell, null, null, false); // 获取音标时无需重复生成配图
+                lastAiResult = getAiResult(spell, null, null, false, null); // 获取音标时无需重复生成配图
                 word.setPronounce(lastAiResult.phonetic);
                 word.setBritishPronounce(lastAiResult.phonetic);
                 word.setAmericaPronounce(lastAiResult.phonetic);
@@ -366,25 +368,40 @@ public class DictImportBo {
                 .map(m -> (m.getCiXing() != null ? m.getCiXing() : "") + " " + m.getMeaning())
                 .collect(java.util.stream.Collectors.joining("; "));
 
-        if (isSystem) {
-            // 场景 1：加入通用词典
-            // 此时 dictId 应该是 "0"
-            lastAiResult = getAiResult(spell, null, contextMeanings, generateWordImage);
-            saveExtrinsicResources(word, lastAiResult, Constants.SYS_USER_SYS_ID, Constants.COMMON_DICT_ID, stats);
-        } else {
-            // 用户导入
-            if (manualMeaning != null) {
-                // 场景 3：单词+外部释义 (私有)
-                lastAiResult = getAiResult(spell, manualMeaning, contextMeanings, generateWordImage);
-                saveExtrinsicResources(word, lastAiResult, user.getId(), dictId, stats);
+        if (!isReusing) {
+            String aiContext = (domain != null && !domain.trim().isEmpty()) ? domain : dictName;
+            if (isSystemDict) {
+                if (Constants.COMMON_DICT_ID.equals(dictId)) {
+                    // 如果本身就是直接导给通用系统词汇
+                    lastAiResult = getAiResult(spell, null, contextMeanings, generateWordImage, null);
+                    saveExtrinsicResources(word, lastAiResult, Constants.SYS_USER_SYS_ID, Constants.COMMON_DICT_ID, stats);
+                } else {
+                    // 系统词书，如存在某个行业的专业词书。
+                    // 1. 如果通用词典("0")没有释义资源托底，需要先补齐一般释义(不带专业语境)
+                    boolean hasCommonMeaning = allExistingMeanings.stream().anyMatch(m -> Constants.COMMON_DICT_ID.equals(m.getDictId()));
+                    if (!hasCommonMeaning) {
+                        AiResult genericAiResult = getAiResult(spell, null, contextMeanings, generateWordImage, null);
+                        saveExtrinsicResources(word, genericAiResult, Constants.SYS_USER_SYS_ID, Constants.COMMON_DICT_ID, stats);
+                        lastAiResult = genericAiResult;
+                    }
+                    // 2. 将专业释义挂载在此书自身下
+                    AiResult specializedAiResult = getAiResult(spell, null, contextMeanings, generateWordImage, aiContext);
+                    saveExtrinsicResources(word, specializedAiResult, Constants.SYS_USER_SYS_ID, dictId, stats);
+                    lastAiResult = specializedAiResult;
+                }
             } else {
-                // 场景 2：仅单词
-                // 如果通用库已有，且不需要强制重刷，则由 DictWord 关联即可。
-                // 但如果 strategy 是 RECREATE 或指定了私有词库，我们倾向于生成资源。
-                boolean hasCommonMeaning = allExistingMeanings.stream().anyMatch(m -> Constants.COMMON_DICT_ID.equals(m.getDictId()));
-                if (!hasCommonMeaning || "RECREATE".equalsIgnoreCase(strategy) || !Constants.COMMON_DICT_ID.equals(dictId)) {
-                    lastAiResult = getAiResult(spell, null, contextMeanings, generateWordImage);
+                // 用户导入
+                if (manualMeaning != null) {
+                    // 场景 3：单词+外部释义 (私有)
+                    lastAiResult = getAiResult(spell, manualMeaning, contextMeanings, generateWordImage, aiContext);
                     saveExtrinsicResources(word, lastAiResult, user.getId(), dictId, stats);
+                } else {
+                    // 场景 2：仅单词
+                    boolean hasCommonMeaning = allExistingMeanings.stream().anyMatch(m -> Constants.COMMON_DICT_ID.equals(m.getDictId()));
+                    if (!hasCommonMeaning || "RECREATE".equalsIgnoreCase(strategy) || !Constants.COMMON_DICT_ID.equals(dictId)) {
+                        lastAiResult = getAiResult(spell, null, contextMeanings, generateWordImage, aiContext);
+                        saveExtrinsicResources(word, lastAiResult, user.getId(), dictId, stats);
+                    }
                 }
             }
         }
@@ -602,7 +619,7 @@ public class DictImportBo {
         }
     }
 
-    private AiResult getAiResult(String spell, String manualMeaning, String context, boolean generateWordImage) {
+    private AiResult getAiResult(String spell, String manualMeaning, String context, boolean generateWordImage, String dictNameContext) {
         String imageRule = generateWordImage 
                 ? "6. IMAGE GENERATION: ONLY generate image prompts (1 or 2) if the word is highly visual, such as a physical object, animal, clear physical action, or a visually representable adjective/emotion (e.g., 'apple', 'dog', 'run', 'happy', 'fast'). DO NOT generate images for proper nouns, names, highly abstract concepts, adverbs, or grammar words (e.g., 'the', 'kerry', 'john', 'therefore', 'consider', 'very'). For all unsuitable words, firmly return an empty array [] for imagePrompts. If you DO generate, use clean, flat vector art style (start with 'A clean flat vector art style illustration of...'). DO NOT include any text, letters, UI elements, or the word itself in the image."
                 : "6. IMAGE GENERATION: DO NOT generate ANY image prompts. Keep the imagePrompts array strictly empty [].";
@@ -619,8 +636,12 @@ public class DictImportBo {
         StringBuilder userPrompt = new StringBuilder();
         userPrompt.append(String.format("Generating data for word '%s'. ", spell));
         
+        if (dictNameContext != null && !dictNameContext.trim().isEmpty()) {
+            userPrompt.append(String.format("\nTHIS IS A SPECIALIZED DOMAIN DICTIONARY: 《%s》. YOU MUST TAILOR THE MEANINGS, PART OF SPEECH, AND EXAMPLE SENTENCE STRICTLY TO THIS PROFESSIONAL/DOMAIN CONTEXT. ", dictNameContext));
+        }
+
         if (context != null && !context.trim().isEmpty()) {
-            userPrompt.append(String.format("Existing meanings for reference: [%s]. Try to provide better or complementary info if needed. ", context));
+            userPrompt.append(String.format("\nExisting meanings for reference: [%s]. Try to provide better or complementary info if needed. ", context));
         }
 
         if (manualMeaning == null) {
