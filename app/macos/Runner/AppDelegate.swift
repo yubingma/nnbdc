@@ -44,6 +44,10 @@ class AppDelegate: FlutterAppDelegate {
     return true
   }
 
+  override func applicationWillTerminate(_ notification: Notification) {
+    AiInferenceChannel.cleanup()
+  }
+
   override func applicationSupportsSecureRestorableState(_ app: NSApplication) -> Bool {
     return true
   }

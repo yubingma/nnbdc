@@ -106,7 +106,7 @@ class WordBo {
   }
 
   // 根据单词ID和用户ID进行查词，支持词书过滤
-  Future<SearchWordResult> searchWordById(String wordId, String? userId) async {
+  Future<SearchWordResult> searchWordById(String wordId, String? userId, {List<String>? priorityDictIds}) async {
     final db = MyDatabase.instance;
     try {
       final wordQuery = db.select(db.words)..where((w) => w.id.equals(wordId));
@@ -128,11 +128,10 @@ class WordBo {
 
       // 获取释义项
       List<MeaningItem> meaningItems;
-      if (userId != null && userId.isNotEmpty) {
-        // 用户ID不为空，使用现有的 getWordMeaningItems 方法（包含 popularity limit 过滤）
-        meaningItems = await getWordMeaningItems(localWord.id, userId);
+      if ((userId != null && userId.isNotEmpty) || (priorityDictIds != null && priorityDictIds.isNotEmpty)) {
+        meaningItems = await getWordMeaningItems(localWord.id, userId, priorityDictIds: priorityDictIds);
       } else {
-        // 用户ID为空，直接查询通用词典，不做 popularity limit 过滤
+        // 用户ID和优先词书都为空，直接查询通用词典，不做 popularity limit 过滤
         meaningItems = await _getCommonDictMeaningItems(localWord.id);
       }
 
@@ -178,11 +177,10 @@ class WordBo {
 
           // 为形近词查询释义项，根据用户ID决定是否进行词书过滤
           List<MeaningItem> similarMeaningItems;
-          if (userId != null && userId.isNotEmpty) {
-            // 用户ID不为空，使用 getWordMeaningItems 方法进行词书过滤
-            similarMeaningItems = await getWordMeaningItems(similarWord.id, userId);
+          if ((userId != null && userId.isNotEmpty) || (priorityDictIds != null && priorityDictIds.isNotEmpty)) {
+            similarMeaningItems = await getWordMeaningItems(similarWord.id, userId, priorityDictIds: priorityDictIds);
           } else {
-            // 用户ID为空，直接查询通用词典
+            // 无用户信息和优先词书信息，直接查询通用词典
             similarMeaningItems = await _getCommonDictMeaningItems(similarWord.id);
           }
 
@@ -1552,26 +1550,41 @@ class WordBo {
   }
 
   /// 获取单词的释义项，遵循如下规则：
+  /// 0) 若提供了 priorityDictIds，则优先在这些词书中查找释义
   /// 1) 若单词在用户的任一学习词书中有定制释义，则返回这些定制释义的合集（不做 popularity 过滤）
   /// 2) 否则，使用通用释义，并按最大 popularity limit 进行过滤：
   ///    - 情况1：若该单词存在于用户的一个或多个学习词书中，则以这些词书中的最大 popularity limit 过滤
   ///    - 情况2：若该单词不在任何学习词书中，则以用户所有学习词书的最大 popularity limit 过滤
-  Future<List<MeaningItem>> getWordMeaningItems(String wordId, String userId) async {
+  Future<List<MeaningItem>> getWordMeaningItems(String wordId, String? userId, {List<String>? priorityDictIds}) async {
     final db = MyDatabase.instance;
 
-    // 用户的学习词书
-    final learningDictsQuery = db.select(db.learningDicts)..where((tbl) => tbl.userId.equals(userId));
-    final learningDicts = await learningDictsQuery.get();
-    final selectedDictIds = learningDicts.map((d) => d.dictId).toList();
-
-    // 先查定制释义（存在即返回）
-    if (selectedDictIds.isNotEmpty) {
-      final customMiQuery = db.select(db.meaningItems)
-        ..where((mi) => mi.wordId.equals(wordId) & mi.dictId.isIn(selectedDictIds))
+    // 先查优先词书（存在即返回）
+    if (priorityDictIds != null && priorityDictIds.isNotEmpty) {
+      final priorityMiQuery = db.select(db.meaningItems)
+        ..where((mi) => mi.wordId.equals(wordId) & mi.dictId.isIn(priorityDictIds))
         ..orderBy([(mi) => OrderingTerm(expression: mi.popularity)]);
-      final customMeaningItems = await customMiQuery.get();
-      if (customMeaningItems.isNotEmpty) {
-        return customMeaningItems;
+      final priorityMeaningItems = await priorityMiQuery.get();
+      if (priorityMeaningItems.isNotEmpty) {
+        return priorityMeaningItems;
+      }
+    }
+
+    // 用户的学习词书
+    List<String> selectedDictIds = [];
+    if (userId != null && userId.isNotEmpty) {
+      final learningDictsQuery = db.select(db.learningDicts)..where((tbl) => tbl.userId.equals(userId));
+      final learningDicts = await learningDictsQuery.get();
+      selectedDictIds = learningDicts.map((d) => d.dictId).toList();
+
+      // 先查定制释义（存在即返回）
+      if (selectedDictIds.isNotEmpty) {
+        final customMiQuery = db.select(db.meaningItems)
+          ..where((mi) => mi.wordId.equals(wordId) & mi.dictId.isIn(selectedDictIds))
+          ..orderBy([(mi) => OrderingTerm(expression: mi.popularity)]);
+        final customMeaningItems = await customMiQuery.get();
+        if (customMeaningItems.isNotEmpty) {
+          return customMeaningItems;
+        }
       }
     }
 

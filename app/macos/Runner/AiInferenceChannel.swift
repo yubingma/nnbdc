@@ -9,6 +9,8 @@ class AiInferenceChannel: NSObject, FlutterPlugin {
     private var channel: FlutterMethodChannel?
     private let inferenceQueue = DispatchQueue(label: "com.nnbdc.ai_inference_queue", qos: .userInitiated)
     
+    static var shared: AiInferenceChannel?
+    
     static func register(with registrar: FlutterPluginRegistrar) {
         let channel = FlutterMethodChannel(
             name: channelName,
@@ -16,7 +18,13 @@ class AiInferenceChannel: NSObject, FlutterPlugin {
         )
         let instance = AiInferenceChannel()
         instance.channel = channel
+        shared = instance
         registrar.addMethodCallDelegate(instance, channel: channel)
+    }
+    
+    @objc public static func cleanup() {
+        shared?.llamaBridge?.unloadModel()
+        shared?.llamaBridge = nil
     }
     
     func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {

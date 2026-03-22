@@ -457,54 +457,6 @@ public class DictImportBo {
         stats.wordDetails.add(new WordDetail(spell, actionType, null, lastAiResult));
     }
 
-    /**
-     * 清空单词在这个目标词典中的全部现有资源（并强清全局发音及配图）
-     */
-    private void clearWordResources(Word word, String spell, String dictId, User user, List<MeaningItemDto> existingMeaningsInDict, TaskStatistics stats) {
-        logger.info("单词 {} 执行重刷策略，正在清空现有相关资源...", spell);
-
-        // 1. 清除全局绑定资源（配图与发音文件）
-        wordImageBo.deleteAllImagesOfWord(word.getId(), user);
-        
-        String pureSpell = spell.replaceAll("[^a-zA-Z]", "").toLowerCase();
-        if (pureSpell.length() > 0) {
-            String firstChar = pureSpell.substring(0, 1);
-            java.io.File dir = new java.io.File(sysParamUtil.getSoundPath() + "/" + firstChar);
-            java.io.File soundFile = new java.io.File(dir, pureSpell + ".mp3");
-            if (soundFile.exists()) {
-                soundFile.delete();
-                logger.info("重刷策略已删除旧的发音文件，准备稍后重新获取: {}", soundFile.getAbsolutePath());
-            }
-        }
-
-        // 2. 删除目标词典中的所有释义、例句与同义词
-        if (existingMeaningsInDict != null && !existingMeaningsInDict.isEmpty()) {
-            for (MeaningItemDto mi : existingMeaningsInDict) {
-                // 删除例句并记录日志
-                List<Sentence> sentences = sentenceBo.findByMeaningItem(mi.getId());
-                stats.deletedSentenceCount += sentences.size();
-                if (Constants.COMMON_DICT_ID.equals(dictId)) {
-                    for (Sentence s : sentences) {
-                        sysDbSyncBo.logOperation("DELETE", "sentence", s.getId(), "{}");
-                        stats.addSyncLog("DELETE", "sentence");
-                    }
-                }
-                sentenceBo.deleteByMeaningItem(mi.getId());
-                
-                // 删除同义词
-                synonymBo.deleteByMeaningItem(mi.getId());
-                
-                // 删除释义项
-                meaningItemBo.deleteMeaningItem(mi.getId());
-                stats.deletedMeaningCount++;
-                
-                if (Constants.COMMON_DICT_ID.equals(dictId)) {
-                    sysDbSyncBo.logOperation("DELETE", "meaning_item", mi.getId(), "{}");
-                    stats.addSyncLog("DELETE", "meaning_item");
-                }
-            }
-        }
-    }
 
     private void saveExtrinsicResources(Word word, AiResult aiResult, String ownerId, String dictId, TaskStatistics stats) {
         if (aiResult.meanings == null || aiResult.meanings.isEmpty()) {

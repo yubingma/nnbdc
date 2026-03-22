@@ -35,11 +35,14 @@ class WordDetailPageArgs {
   /// 本次是否回答错误
   late bool isThisAnswerWrong;
 
-  WordDetailPageArgs(this.word, this.needReQueryWord, this.bottomBtn, this.isThisAnswerWrong);
+  /// 优先展示这些词库的资源
+  List<String>? priorityDictIds;
+
+  WordDetailPageArgs(this.word, this.needReQueryWord, this.bottomBtn, this.isThisAnswerWrong, {this.priorityDictIds});
 
   @override
   String toString() {
-    return 'WordDetailPageParams{word: $word, needReQueryWord: $needReQueryWord, isThisAnswerWrong: $isThisAnswerWrong}';
+    return 'WordDetailPageParams{word: $word, needReQueryWord: $needReQueryWord, isThisAnswerWrong: $isThisAnswerWrong, priorityDictIds: $priorityDictIds}';
   }
 }
 
@@ -169,8 +172,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     }
     if (args.needReQueryWord) {
       try {
-        // 使用新的根据ID查词方法，传入用户ID进行词书过滤
-        var result = await WordBo().searchWordById(args.word.id!, Global.getLoggedInUser()?.id);
+        // 使用新的根据ID查词方法，传入用户ID进行词书过滤，并支持优先词书
+        var result = await WordBo().searchWordById(args.word.id!, Global.getLoggedInUser()?.id, priorityDictIds: args.priorityDictIds);
         if (result.word == null) {
           ToastUtil.error("单词 ${args.word.spell} 不存在");
         } else {
@@ -204,8 +207,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
 
       if (missingSimilar || missingMeaningItems || missingAnySentences) {
         try {
-          // 使用新的根据ID查词方法，传入用户ID进行词书过滤
-          var result = await WordBo().searchWordById(args.word.id!, Global.getLoggedInUser()?.id);
+          // 使用新的根据ID查词方法，传入用户ID进行词书过滤，并支持优先词书
+          var result = await WordBo().searchWordById(args.word.id!, Global.getLoggedInUser()?.id, priorityDictIds: args.priorityDictIds);
           if (result.word != null) {
             args.word = result.word!;
           }

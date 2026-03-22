@@ -510,6 +510,15 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
                             try {
                               final stats = jsonDecode(_taskDetails!['results'] as String);
                               final wordDetails = stats['wordDetails'] as List<dynamic>?;
+                              String? currentDictId;
+                              try {
+                                if (_taskDetails!['config'] != null) {
+                                  final configJson = jsonDecode(_taskDetails!['config'] as String);
+                                  currentDictId = configJson['dictId']?.toString();
+                                }
+                              } catch(e) {
+                                Global.logger.e('解析任务配置(config)异常', error: e);
+                              }
 
                               return Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -555,7 +564,7 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
                                             if (spell != null && spell.isNotEmpty) {
                                               final wordRes = await WordBo().searchWordLocalOnly(spell);
                                               if (wordRes.word != null) {
-                                                Get.to(() => const WordDetailPage(), arguments: WordDetailPageArgs(wordRes.word!, true, null, false));
+                                                Get.to(() => const WordDetailPage(), arguments: WordDetailPageArgs(wordRes.word!, true, null, false, priorityDictIds: currentDictId != null && currentDictId.isNotEmpty ? [currentDictId] : null));
                                               } else {
                                                 ToastUtil.error('未在本地找到单词，可能同步还在进行中');
                                               }
