@@ -388,6 +388,8 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
                     TextField(
                       controller: _wordsCtrl,
                       maxLines: 8,
+                      keyboardType: TextInputType.multiline,
+                      textAlignVertical: TextAlignVertical.top,
                       decoration: InputDecoration(
                         labelText: '单词列表 (每行一个，支持"单词|自定义释义")',
                         hintText: "apple\nbanana|黄色的香蕉",

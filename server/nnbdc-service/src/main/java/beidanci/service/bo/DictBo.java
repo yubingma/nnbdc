@@ -850,7 +850,7 @@ public class DictBo extends BaseBo<Dict> {
             sql += "AND name LIKE :keyword ";
             params.addValue("keyword", "%" + keyword.trim() + "%");
         }
-        sql += "ORDER BY create_time DESC LIMIT 50";
+        sql += "ORDER BY create_time DESC NULLS LAST LIMIT 50";
         return namedParameterJdbcTemplate.queryForList(sql, params);
     }
 
