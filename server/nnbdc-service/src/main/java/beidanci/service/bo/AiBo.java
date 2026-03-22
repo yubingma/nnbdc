@@ -245,8 +245,10 @@ public class AiBo {
             
             java.util.Map<?, ?> contentMap = (java.util.Map<?, ?>) contentList.get(0);
             String jsonResult = (String) contentMap.get("text");
-            
-            logger.info("审图结果: " + jsonResult);
+            if (jsonResult != null) {
+                jsonResult = jsonResult.replaceAll("^```(?:json)?\\s*", "").replaceAll("\\s*```$", "").trim();
+            }
+            logger.info("审图清理结果: " + jsonResult);
             return jsonResult;
         } catch (Exception e) {
             logger.error("审图异常: " + absoluteImagePath, e);
