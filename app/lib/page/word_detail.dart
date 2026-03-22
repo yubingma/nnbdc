@@ -675,9 +675,9 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                               const Text('配图', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, letterSpacing: 0.5, fontFamily: 'NotoSansSC')),
                               const SizedBox(height: 8),
                               Wrap(
-                                spacing: 8,
+                                spacing: 8, 
                                 runSpacing: 8,
-                                children: args.word.images!.map((image) => Container(
+                                children: args.word.images!.take(2).map((image) => Container(
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(8),
                                     border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),

@@ -85,7 +85,7 @@ class WordImagesWidget extends StatefulWidget {
     required this.isEditMode,
     required this.onImageTap,
     this.highlightedWordImg,
-    this.maxImages = 4,
+    this.maxImages = 2,
   });
 
   @override
