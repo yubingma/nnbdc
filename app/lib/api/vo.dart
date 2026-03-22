@@ -395,7 +395,11 @@ class SentenceVo {
 
   bool? voted;
 
-  SentenceVo(this.id, this.english, this.chinese, this.englishDigest, this.partOfSpeech, this.theType, this.footCount, this.handCount, this.author);
+  String? ttsVoice;
+  String? ttsEngine;
+
+  SentenceVo(this.id, this.english, this.chinese, this.englishDigest, this.partOfSpeech, this.theType, this.footCount, this.handCount, this.author,
+      {this.ttsVoice, this.ttsEngine});
 
   factory SentenceVo.fromJson(Map<String, dynamic> json) => _$SentenceVoFromJson(json);
 

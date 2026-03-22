@@ -76,25 +76,37 @@ public class AiBo {
         }
     }
 
+    public static class TtsResult {
+        public byte[] audioData;
+        public String voice;
+        public String engine;
+
+        public TtsResult(byte[] audioData, String voice, String engine) {
+            this.audioData = audioData;
+            this.voice = voice;
+            this.engine = engine;
+        }
+    }
+
     /**
      * 语音合成 (TTS) - 采用阿里云 CosyVoice
      * 产生的音频文件通常应保存到 /var/www/html/sound 目录下，以便前端访问
      *
      * @param text 需要合成的文本
-     * @return 合成后的音频字节流
+     * @return 合成后的音频信息和字节流
      */
-    public byte[] generateSpeech(String text) {
-        String[] voices = {"longanyang", "longfei", "longzhe", "longanhuan", "longwan", "longfeifei"};
+    public TtsResult generateSpeech(String text) {
+        String[] voices = {"longxiaochun", "longwan", "longcheng", "longhua", "longfei", "longanyang", "longanhuan"};
         String voice = voices[new java.util.Random().nextInt(voices.length)];
         
         try {
-            return callCosyVoice(text, voice);
+            return new TtsResult(callCosyVoice(text, voice), voice, aiProperties.getTtsModel());
         } catch (Exception e) {
             String defaultVoice = aiProperties.getVoice();
             logger.warn("随机音色 {} 合成失败(可能是音色不存在)，尝试回退到保底音色: {}", voice, defaultVoice, e);
             if (!voice.equals(defaultVoice)) {
                 try {
-                    return callCosyVoice(text, defaultVoice);
+                    return new TtsResult(callCosyVoice(text, defaultVoice), defaultVoice, aiProperties.getTtsModel());
                 } catch (Exception fallbackEx) {
                     throw new RuntimeException("保底 TTS 系统异常", fallbackEx);
                 }

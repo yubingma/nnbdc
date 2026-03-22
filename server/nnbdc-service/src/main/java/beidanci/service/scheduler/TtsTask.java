@@ -53,7 +53,8 @@ public class TtsTask {
             try {
                 // 生成语音前必须去除可能的 HTML 标签（如高亮用的 <b> 等），否则会被TTS引擎读出来
                 String pureEnglish = sentence.getEnglish().replaceAll("<[^>]*>", "");
-                byte[] audioData = aiBo.generateSpeech(pureEnglish);
+                AiBo.TtsResult ttsResult = aiBo.generateSpeech(pureEnglish);
+                byte[] audioData = ttsResult.audioData;
                 if (audioData != null && audioData.length > 0) {
                     // 保存到文件系统
                     saveAudioFile(sentence.getEnglishDigest(), audioData);
@@ -61,6 +62,8 @@ public class TtsTask {
                     // 更新数据库状态
                     sentence.setNeedTts(false);
                     sentence.setTheType(Sentence.TTS);
+                    sentence.setTtsVoice(ttsResult.voice);
+                    sentence.setTtsEngine(ttsResult.engine);
                     sentenceBo.updateEntity(sentence);
 
                     // 记录一下系统同步日志

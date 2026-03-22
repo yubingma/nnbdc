@@ -138,8 +138,24 @@ class SentenceDto {
   final DateTime createTime;
   final DateTime? updateTime;
 
-  SentenceDto(this.id, this.english, this.chinese, this.englishDigest, this.theType, this.handCount, this.footCount, this.authorId,
-      this.meaningItemId, this.wordMeaning, this.createTime, this.updateTime);
+  final String? ttsVoice;
+  final String? ttsEngine;
+
+  SentenceDto(
+      this.id,
+      this.english,
+      this.chinese,
+      this.englishDigest,
+      this.theType,
+      this.handCount,
+      this.footCount,
+      this.authorId,
+      this.meaningItemId,
+      this.wordMeaning,
+      this.createTime,
+      this.updateTime,
+      this.ttsVoice,
+      this.ttsEngine);
 
   factory SentenceDto.fromJson(Map<String, dynamic> json) => _$SentenceDtoFromJson(json);
 

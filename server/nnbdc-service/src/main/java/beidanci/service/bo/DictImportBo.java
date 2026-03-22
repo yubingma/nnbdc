@@ -285,7 +285,7 @@ public class DictImportBo {
                         }
                     } catch (Exception e) {
                         logger.warn("从有道词典下载真人发音失败 (" + pureSpell + ")，自动回退使用大模型 TTS 合成降级补全: " + e.getMessage());
-                        byte[] audioData = aiBo.generateSpeech(spell);
+                        byte[] audioData = aiBo.generateSpeech(spell).audioData;
                         if (audioData != null && audioData.length > 0) {
                             try (java.io.FileOutputStream fos = new java.io.FileOutputStream(soundFile)) {
                                 fos.write(audioData);

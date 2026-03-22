@@ -215,4 +215,26 @@ public class Sentence extends UuidPo {
     public void setIsUpdating(Boolean isUpdating) {
         this.isUpdating = isUpdating;
     }
+
+    @Column(name = "tts_voice", length = 50)
+    private String ttsVoice;
+
+    @Column(name = "tts_engine", length = 50)
+    private String ttsEngine;
+
+    public String getTtsVoice() {
+        return ttsVoice;
+    }
+
+    public void setTtsVoice(String ttsVoice) {
+        this.ttsVoice = ttsVoice;
+    }
+
+    public String getTtsEngine() {
+        return ttsEngine;
+    }
+
+    public void setTtsEngine(String ttsEngine) {
+        this.ttsEngine = ttsEngine;
+    }
 }
