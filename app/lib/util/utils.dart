@@ -586,60 +586,60 @@ class Util {
                                     Divider(
                                         height: 1, color: context.read<DarkMode>().isDarkMode ? Colors.grey[700] : Colors.grey[300], thickness: 0.2),
                                     const SizedBox(height: 4),
-                                    Flexible(
-                                      child: ListView(
-                                        shrinkWrap: true,
-                                        padding: EdgeInsets.zero,
-                                        children: [
-                                          Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              // 合并同词性释义并去重
-                                              for (var meaningItem in Util.mergeMeaningItems(searchResult.word!.meaningItems!))
-                                                Padding(
-                                                  padding: const EdgeInsets.only(bottom: 3),
-                                                  child: Row(
-                                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                                    children: [
-                                                      Container(
-                                                        width: 40,
-                                                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                                                        margin: const EdgeInsets.only(right: 6, top: 1),
-                                                        decoration: BoxDecoration(
-                                                          color: const Color(0xFF4A90E2).withValues(alpha: 0.1),
-                                                          borderRadius: BorderRadius.circular(3),
-                                                        ),
-                                                        child: Text(
-                                                          meaningItem.ciXing ?? '',
-                                                          style: const TextStyle(
-                                                            color: Color(0xFF4A90E2),
-                                                            fontSize: 11,
-                                                            fontWeight: FontWeight.w500,
+                                      Flexible(
+                                        child: ListView(
+                                          shrinkWrap: true,
+                                          padding: EdgeInsets.zero,
+                                          children: [
+                                            Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                // 合并同词性释义并去重
+                                                for (var meaningItem in Util.mergeMeaningItems(searchResult.word!.meaningItems!))
+                                                  Padding(
+                                                    padding: const EdgeInsets.only(bottom: 3),
+                                                    child: Row(
+                                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                                      children: [
+                                                        Container(
+                                                          width: 40,
+                                                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                                          margin: const EdgeInsets.only(right: 6, top: 1),
+                                                          decoration: BoxDecoration(
+                                                            color: const Color(0xFF4A90E2).withValues(alpha: 0.1),
+                                                            borderRadius: BorderRadius.circular(3),
                                                           ),
-                                                          textAlign: TextAlign.center,
-                                                          overflow: TextOverflow.ellipsis,
-                                                        ),
-                                                      ),
-                                                      Expanded(
-                                                        child: Text(
-                                                          meaningItem.meaning!,
-                                                          style: TextStyle(
-                                                            fontSize: 13,
-                                                            height: 1.2,
-                                                            color: context.read<DarkMode>().isDarkMode ? Colors.grey[300] : Colors.black87,
+                                                          child: Text(
+                                                            meaningItem.ciXing ?? '',
+                                                            style: const TextStyle(
+                                                              color: Color(0xFF4A90E2),
+                                                              fontSize: 11,
+                                                              fontWeight: FontWeight.w500,
+                                                            ),
+                                                            textAlign: TextAlign.center,
+                                                            overflow: TextOverflow.ellipsis,
                                                           ),
-                                                          overflow: TextOverflow.ellipsis,
-                                                          maxLines: 2,
                                                         ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                )
-                                            ],
-                                          ),
-                                        ],
+                                                        Expanded(
+                                                          child: Text(
+                                                            meaningItem.meaning!,
+                                                            style: TextStyle(
+                                                              fontSize: 13,
+                                                              height: 1.2,
+                                                              color: context.read<DarkMode>().isDarkMode ? Colors.grey[300] : Colors.black87,
+                                                            ),
+                                                            overflow: TextOverflow.ellipsis,
+                                                            maxLines: 2,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  )
+                                              ],
+                                            ),
+                                          ],
+                                        ),
                                       ),
-                                    ),
                                     const SizedBox(height: 6),
                                     Row(
                                       mainAxisAlignment: MainAxisAlignment.end,
