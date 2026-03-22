@@ -720,6 +720,10 @@ public class DictBo extends BaseBo<Dict> {
     @org.springframework.context.annotation.Lazy
     private beidanci.service.store.SentenceCache sentenceCache;
 
+    @Autowired
+    @org.springframework.context.annotation.Lazy
+    private beidanci.service.bo.SentenceBo sentenceBo;
+
     @Transactional
     public void deleteSystemDictSafely(String dictId) {
         try {
@@ -761,14 +765,7 @@ public class DictBo extends BaseBo<Dict> {
                     sysDbLogBo.logOperation("DELETE", "sentence", sentenceId, "{}");
                     
                     // handle physical mp3 sharing collision
-                    if (digest != null) {
-                        MapSqlParameterSource pCheck = new MapSqlParameterSource("digest", digest);
-                        Integer c = namedParameterJdbcTemplate.queryForObject("SELECT COUNT(id) FROM sentence WHERE english_digest = :digest", pCheck, Integer.class);
-                        if (c == null || c == 0) {
-                            java.io.File sf = new java.io.File(sysParamUtil.getSoundPath() + "/sentence/" + digest + ".mp3");
-                            if (sf.exists()) sf.delete();
-                        }
-                    }
+                    sentenceBo.safeDeleteSentenceAudio(null, digest);
                 }
                 
                 // 1.2 Handle Meaning Item

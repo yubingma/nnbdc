@@ -1,6 +1,5 @@
 package beidanci.service.bo;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import javax.annotation.PostConstruct;
@@ -171,24 +170,8 @@ public class SentenceBo extends BaseBo<Sentence> {
         // 从缓存清除
         sentenceCache.removeSentenceFromCache(id);
 
-        // 删除物理发音缓存文件 (仅当没有其他例句共享同一个发音时才删除)
-        if (existing.getEnglishDigest() != null) {
-            String checkSql = "SELECT COUNT(id) FROM sentence WHERE english_digest = :digest AND id != :currentId";
-            MapSqlParameterSource p = new MapSqlParameterSource();
-            p.addValue("digest", existing.getEnglishDigest());
-            p.addValue("currentId", existing.getId());
-            Integer count = namedParameterJdbcTemplate.queryForObject(checkSql, p, Integer.class);
-
-            if (count == null || count == 0) {
-                File soundFile = new File(sysParamUtil.getSoundPath() + "/sentence/" + existing.getEnglishDigest() + ".mp3");
-                if (soundFile.exists()) {
-                    boolean deleted = soundFile.delete();
-                    if (deleted) {
-                        LoggerFactory.getLogger(SentenceBo.class).info("自动清除了不再被引用的例句发音缓存: {}", soundFile.getAbsolutePath());
-                    }
-                }
-            }
-        }
+        // 删除物理发音缓存文件
+        safeDeleteSentenceAudio(existing.getId(), existing.getEnglishDigest());
 
         return Result.success(null);
     }
