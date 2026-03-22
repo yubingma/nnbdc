@@ -96,7 +96,7 @@ public class AiBo {
      * @return 合成后的音频信息和字节流
      */
     public TtsResult generateSpeech(String text) {
-        String[] voices = {"longxiaochun", "longwan", "longcheng", "longhua", "longfei", "longanyang", "longanhuan"};
+        String[] voices = {"longanyang", "longanhuan", "longhuhu_v3", "longxiaochun_v3", "longxiaoxia_v3"};
         String voice = voices[new java.util.Random().nextInt(voices.length)];
         
         try {
