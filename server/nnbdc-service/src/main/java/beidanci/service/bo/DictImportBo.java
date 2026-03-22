@@ -145,6 +145,19 @@ public class DictImportBo {
 
             task = importTaskBo.findById(taskId); // 重新加载以防状态冲突
             task.setResults(JsonUtils.toJson(stats));
+            
+            // 执行导入后的健康检查: 打印无例句的释义项
+            if (isSystemImport && dictId != null && !dictId.isEmpty()) {
+                List<String> meaningIdsWithoutSentences = sentenceBo.findMeaningsWithoutSentences(dictId);
+                if (meaningIdsWithoutSentences != null && !meaningIdsWithoutSentences.isEmpty()) {
+                    String warnStr = "【系统健康检查警告】 发现本词典中存在 " + meaningIdsWithoutSentences.size() + " 个缺少关联例句的释义项! ID=" + meaningIdsWithoutSentences.toString();
+                    logger.warn(warnStr);
+                    task.setLog((task.getLog() == null ? "" : task.getLog() + "\n") + warnStr);
+                    stats.wordDetails.add(new WordDetail("*HEALTH_CHECK*", "WARNING", "存在缺少例句的释义项", null));
+                    task.setResults(JsonUtils.toJson(stats));
+                }
+            }
+
             task.setStatus("COMPLETED");
             importTaskBo.updateEntity(task);
         } catch (Exception e) {
