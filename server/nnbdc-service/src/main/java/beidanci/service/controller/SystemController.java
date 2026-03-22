@@ -40,6 +40,9 @@ public class SystemController {
     @Autowired
     private AliyunResourceUtil aliyunResourceUtil;
 
+    @Autowired
+    private beidanci.service.bo.AiBo aiBo;
+
     /**
      * 获取系统词典列表及其统计信息
      * 返回所有系统词典和每个词典被用户选择的数量
@@ -307,6 +310,31 @@ public class SystemController {
             return Result.success(result);
         } else {
             return Result.fail(result);
+        }
+    }
+
+    /**
+     * 阿里云AI对话
+     * @param messagesJson JSON array of messages [{"role":"system","content":"..."}, ...]
+     * @return 助手回复的纯文本
+     */
+    @PostMapping("/admin/aiChat.do")
+    public Result<String> aiChat(@RequestParam("messagesJson") String messagesJson) {
+        try {
+            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            java.util.List<com.alibaba.dashscope.common.Message> messages = new java.util.ArrayList<>();
+            com.fasterxml.jackson.databind.JsonNode arrayNode = mapper.readTree(messagesJson);
+            for (com.fasterxml.jackson.databind.JsonNode node : arrayNode) {
+                messages.add(com.alibaba.dashscope.common.Message.builder()
+                        .role(node.get("role").asText())
+                        .content(node.get("content").asText())
+                        .build());
+            }
+            // Add method in AiBo to stream or block fetch from DashScope
+            String result = aiBo.chat(messages);
+            return Result.success(result);
+        } catch (Exception e) {
+            return Result.fail("AI服务异常: " + e.getMessage());
         }
     }
 }

@@ -76,6 +76,38 @@ public class AiBo {
         }
     }
 
+    /**
+     * 调用通义千问进行多轮对话
+     *
+     * @param messages 用户和系统消息列表
+     * @return AI 生成的文本
+     */
+    public String chat(java.util.List<Message> messages) {
+        String apiKey = aiProperties.getApiKey();
+        if (apiKey == null || apiKey.isEmpty() || apiKey.startsWith("${")) {
+            logger.error("阿里云 AI 调用失败: API Key 未设置或未正确解析");
+            throw new RuntimeException("AI 调用失败: 请在环境变量或配置文件中设置 dashscope_api_key");
+        }
+
+        try {
+            Generation gen = new Generation();
+            GenerationParam param = GenerationParam.builder()
+                    .apiKey(apiKey)
+                    .model("qwen-plus") // 或者使用 aiProperties.getTextModel()，在此场景中 qwen-plus 最合适
+                    .messages(messages)
+                    .resultFormat(GenerationParam.ResultFormat.MESSAGE)
+                    .build();
+            GenerationResult result = gen.call(param);
+            return result.getOutput().getChoices().get(0).getMessage().getContent();
+        } catch (NoApiKeyException | InputRequiredException e) {
+            logger.error("阿里云 AI 调用失败: 缺少 API Key 或输入错误", e);
+            throw new RuntimeException("AI 调用失败", e);
+        } catch (Exception e) {
+            logger.error("阿里云 AI 调用发生未知异常", e);
+            throw new RuntimeException("AI 系统异常", e);
+        }
+    }
+
     public static class TtsResult {
         public byte[] audioData;
         public String voice;

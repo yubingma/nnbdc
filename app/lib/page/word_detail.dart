@@ -23,6 +23,7 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import '../global.dart';
 import '../state.dart';
 import '../util/utils.dart';
+import '../util/subscription_util.dart';
 
 class WordDetailPageArgs {
   late WordVo word;
@@ -101,7 +102,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
   String _aiRawAccum = '';
   StreamSubscription<String>? _aiPartialSub;
   bool _aiThoughtComplete = false; // 思考内容是否生成完成
-  bool _isAdmin = false;
+  bool _canUseAiAssistant = false;
 
   // Animation controllers
   late final AnimationController _wordSoundController;
@@ -223,8 +224,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     // 使用传入的参数判断本次是否回答错误
     isWrongWord = args.isThisAnswerWrong;
 
-    // 检查是否为管理员
-    _isAdmin = Global.getLoggedInUser()?.isAdmin == true;
+    // AI 助手开关：管理员 或 会员可用
+    _canUseAiAssistant = Global.getLoggedInUser()?.isAdmin == true || SubscriptionUtil.isPremium();
 
     _sentencesFuture = args.word.getSentences();
 
@@ -232,7 +233,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
       dataLoaded = true;
     });
 
-    if (_isAdmin) {
+    if (_canUseAiAssistant) {
       _prefetchAiExplanation();
     }
   }
@@ -427,7 +428,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
   }
 
   Future<void> _prefetchAiExplanation() async {
-    if (!_isAdmin) return;
+    if (!_canUseAiAssistant) return;
     setState(() {
       _aiLoading = true;
       _aiError = null;
@@ -833,7 +834,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                           const Tab(text: '详情'),
                           if (hasSimilarWords()) Tab(text: '形近词(${args.word.similarWords!.length})'),
                           if (hasSynonyms()) Tab(text: "近义词(${calcSynonymCount()})"),
-                          if (_isAdmin)
+                          if (_canUseAiAssistant)
                             const Tab(
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
@@ -873,7 +874,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                             renderDetail(),
                             if (hasSimilarWords()) renderSimilarWords(),
                             if (hasSynonyms()) renderSynonyms(),
-                            if (_isAdmin) renderAiExplanation(),
+                            if (_canUseAiAssistant) renderAiExplanation(),
                           ],
                         ),
                       ),
@@ -907,7 +908,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
       count++;
     }
     // AI 解释 Tab 仅管理员可见
-    if (_isAdmin) {
+    if (_canUseAiAssistant) {
       count++;
     }
     return count;

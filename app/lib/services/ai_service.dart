@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:nnbdc/util/platform_util.dart';
+import 'package:nnbdc/util/subscription_util.dart';
+import 'package:nnbdc/services/ai_runtime_remote.dart';
 
 /// AI 能力等级，用于根据设备和模型情况决定功能开关
 enum AiCapabilityLevel {
@@ -96,10 +98,18 @@ class AiService {
   AiService._internal();
 
   AiRuntime _runtime = NoopAiRuntime();
+  
+  final AiRuntime _remoteRuntime = RemoteAiRuntime();
 
-  AiRuntime get runtime => _runtime;
+  // 根据会员状态动态选择运行时
+  AiRuntime get runtime {
+    if (SubscriptionUtil.isPremium()) {
+      return _remoteRuntime;
+    }
+    return _runtime;
+  }
 
-  AiCapabilityLevel get capabilityLevel => _runtime.capabilityLevel;
+  AiCapabilityLevel get capabilityLevel => runtime.capabilityLevel;
 
   /// 由平台启动代码或模型管理器在合适的时机注入具体运行时
   void setRuntime(AiRuntime runtime) {
@@ -107,6 +117,6 @@ class AiService {
   }
 
   Future<AiResponse> runTask(AiRequest request) {
-    return _runtime.runTask(request);
+    return runtime.runTask(request);
   }
 }

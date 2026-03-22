@@ -639,6 +639,11 @@ abstract class RestClient {
   Future<Result<SystemHealthFixResult>> autoFixSystemIssues(
       @Field("issueTypes") List<String> issueTypes);
 
+  // AI 聊天
+  @POST("/admin/aiChat.do")
+  @FormUrlEncoded()
+  Future<Result<String>> aiChat(@Field("messagesJson") String messagesJson);
+
   // 用户管理相关API
   @GET("/admin/searchUsers.do")
   Future<Result<PagedResults<UserVo>>> searchUsers(
