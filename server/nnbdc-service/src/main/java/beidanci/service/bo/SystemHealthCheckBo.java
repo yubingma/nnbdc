@@ -580,7 +580,7 @@ public class SystemHealthCheckBo {
                 }
             }
         } catch (Exception e) {
-            // 错误已在调用方处理
+            org.slf4j.LoggerFactory.getLogger(SystemHealthCheckBo.class).error("自动修复失败", e);
         }
         return fixedCount;
     }
@@ -601,7 +601,7 @@ public class SystemHealthCheckBo {
                 fixedCount++;
             }
         } catch (Exception e) {
-            // 错误已在调用方处理
+            org.slf4j.LoggerFactory.getLogger(SystemHealthCheckBo.class).error("自动修复失败", e);
         }
         return fixedCount;
     }
@@ -623,7 +623,7 @@ public class SystemHealthCheckBo {
                 }
             }
         } catch (Exception e) {
-            // 错误已在调用方处理
+            org.slf4j.LoggerFactory.getLogger(SystemHealthCheckBo.class).error("自动修复失败", e);
         }
         return fixedCount;
     }
@@ -654,8 +654,8 @@ public class SystemHealthCheckBo {
                 fixed.add(String.format("为 %d 个缺失学习步骤的用户执行了基础数据修复及日志生成", fixedCount));
             }
             
-        } catch (DataAccessException e) {
-            // 错误已在调用方处理
+        } catch (org.springframework.dao.DataAccessException e) {
+            org.slf4j.LoggerFactory.getLogger(SystemHealthCheckBo.class).error("自动修复失败", e);
         }
         return fixedCount;
     }
@@ -709,8 +709,8 @@ public class SystemHealthCheckBo {
                             userName, userId, missingDict, e.getMessage()));
                 }
             }
-        } catch (DataAccessException e) {
-            // 错误已在调用方处理
+        } catch (org.springframework.dao.DataAccessException e) {
+            org.slf4j.LoggerFactory.getLogger(SystemHealthCheckBo.class).error("自动修复失败", e);
         }
         return fixedCount;
     }

@@ -894,13 +894,14 @@ public class DictBo extends BaseBo<Dict> {
      */
     public void fixDictWordSequence(String dictId) {
         String sql = "UPDATE dict_word dw1 " +
-                "JOIN (" +
-                "    SELECT dw2.word_id, ROW_NUMBER() OVER (ORDER BY dw2.seq) as new_seq " +
-                "    FROM dict_word dw2 " +
-                "    WHERE dw2.dict_id = :dictId" +
-                ") ranked ON dw1.word_id = ranked.word_id " +
-                "SET dw1.seq = ranked.new_seq " +
-                "WHERE dw1.dict_id = :dictId";
+                "SET seq = ranked.new_seq " +
+                "FROM (" +
+                "    SELECT word_id, ROW_NUMBER() OVER (ORDER BY seq) as new_seq " +
+                "    FROM dict_word " +
+                "    WHERE dict_id = :dictId" +
+                ") ranked " +
+                "WHERE dw1.word_id = ranked.word_id " +
+                "AND dw1.dict_id = :dictId";
         MapSqlParameterSource params = new MapSqlParameterSource("dictId", dictId);
         namedParameterJdbcTemplate.update(sql, params);
     }
