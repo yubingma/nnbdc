@@ -12,6 +12,7 @@ import 'package:nnbdc/page/admin/system_health_check.dart';
 import 'package:nnbdc/page/admin/user_management.dart';
 import 'package:nnbdc/page/admin/word_management.dart';
 import 'package:nnbdc/page/admin/dict_import_management.dart';
+import 'package:nnbdc/page/admin/admin_image_review_page.dart';
 import 'package:nnbdc/state.dart';
 import 'package:nnbdc/theme/app_theme.dart';
 import 'package:nnbdc/util/loading_utils.dart';
@@ -67,6 +68,12 @@ class _AdminPageState extends State<AdminPage> {
         icon: Icons.search,
         color: const Color(0xFF673AB7),
         onTap: () => _navigateToWordManagement(),
+      ),
+      _buildManagementCard(
+        title: 'AI 配图审阅',
+        icon: Icons.image_search,
+        color: const Color(0xFF00ACC1),
+        onTap: () => _navigateToAdminImageReview(),
       ),
       _buildManagementCard(
         title: '系统健康检查',
@@ -434,6 +441,15 @@ class _AdminPageState extends State<AdminPage> {
       context,
       MaterialPageRoute(
         builder: (context) => const WordManagementWidget(),
+      ),
+    );
+  }
+
+  void _navigateToAdminImageReview() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const AdminImageReviewPage(),
       ),
     );
   }

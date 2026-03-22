@@ -847,16 +847,37 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                         ],
                       ),
                     ),
-                    Expanded(
-                      child: TabBarView(
-                        physics: const BouncingScrollPhysics(),
-                        dragStartBehavior: DragStartBehavior.down,
-                        children: [
-                          renderDetail(),
-                          if (hasSimilarWords()) renderSimilarWords(),
-                          if (hasSynonyms()) renderSynonyms(),
-                          if (_isAdmin) renderAiExplanation(),
-                        ],
+                    Expanded( 
+                      child: NotificationListener<ScrollUpdateNotification>(
+                        onNotification: (ScrollUpdateNotification notification) {
+                          if (notification.metrics.axis == Axis.horizontal) return false;
+                          
+                          // 只有当用户的手指真正拖动时才响应，防止滑到底部的物理反弹触发
+                          if (notification.dragDetails != null && notification.scrollDelta != null) {
+                            if (notification.scrollDelta! > 10.0 && _isTopDrawerExpanded) {
+                              setState(() { _isTopDrawerExpanded = false; });
+                            } else if (notification.scrollDelta! < -10.0 && !_isTopDrawerExpanded) {
+                              setState(() { _isTopDrawerExpanded = true; });
+                            }
+                          }
+                          
+                          // 无论如何，回落到最顶部（或极靠近顶部）时，强制保证展开状态
+                          if (notification.metrics.pixels <= 10.0 && !_isTopDrawerExpanded) {
+                            setState(() { _isTopDrawerExpanded = true; });
+                          }
+                          
+                          return false;
+                        },
+                        child: TabBarView( 
+                          physics: const BouncingScrollPhysics(),
+                          dragStartBehavior: DragStartBehavior.down,
+                          children: [
+                            renderDetail(),
+                            if (hasSimilarWords()) renderSimilarWords(),
+                            if (hasSynonyms()) renderSynonyms(),
+                            if (_isAdmin) renderAiExplanation(),
+                          ],
+                        ),
                       ),
                     ),
                   ],

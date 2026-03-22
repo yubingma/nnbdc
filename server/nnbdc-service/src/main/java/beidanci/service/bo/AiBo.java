@@ -202,8 +202,10 @@ public class AiBo {
             logger.info("开始审图: word={}, path={}", wordSpell, absoluteImagePath);
             Object conv = Class.forName("com.alibaba.dashscope.aigc.multimodalconversation.MultiModalConversation").getDeclaredConstructor().newInstance();
             
+            // 万相大模型等需要标准文件 URL，若路径含空格需进行显式转义
+            String safePath = absoluteImagePath.replace(" ", "%20");
             java.util.Map<String, Object> imgMap = new java.util.HashMap<>();
-            imgMap.put("image", "file://" + absoluteImagePath);
+            imgMap.put("image", "file://" + safePath);
             java.util.Map<String, Object> txtMap = new java.util.HashMap<>();
             txtMap.put("text", "你是一位严苛的英文单词教学配图审核专家。请仔细查看这张被用来作为英文单词【" + wordSpell + "】配图的图片。\n" + 
                 "只要出现以下任何一种情况，请坚决鉴定为不合格：\n" + 

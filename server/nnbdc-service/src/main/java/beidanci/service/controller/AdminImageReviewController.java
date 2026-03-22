@@ -99,4 +99,121 @@ public class AdminImageReviewController {
             return Result.fail(e.getMessage());
         }
     }
+    
+    private AdminImageReviewTask currentTask = new AdminImageReviewTask();
+
+    @PostMapping("/admin/image/startBatchReview.do")
+    public Result<String> startBatchReview(@RequestParam(value="dictId", defaultValue="0") String dictId, 
+                                           @RequestParam(value="autoDelete", defaultValue="false") boolean autoDelete,
+                                           @RequestParam("userId") String userId) {
+        synchronized(currentTask) {
+            if (currentTask.isRunning) {
+                return Result.fail("有一个审核任务正在运行中，请稍后再试");
+            }
+            User user = userBo.findById(userId);
+            if (user == null || !user.getIsAdmin()) return Result.fail("无权限");
+
+            currentTask.reset();
+            currentTask.autoDelete = autoDelete;
+            currentTask.dictId = dictId;
+            currentTask.isRunning = true;
+            
+            new Thread(() -> {
+                try {
+                    logger.info("开始批量图片审核任务: dictId=" + dictId + ", autoDelete=" + autoDelete);
+                    currentTask.statusMsg = "正在获取图片...";
+                    java.util.List<beidanci.api.model.WordImageDto> images = wordBo.getWordImagesOfDict(dictId);
+                    currentTask.totalImages = images.size();
+                    currentTask.statusMsg = "正在扫描中";
+                    
+                    for (int i = 0; i < images.size(); i++) {
+                        if (!currentTask.isRunning) break;
+                        beidanci.api.model.WordImageDto imgDto = images.get(i);
+                        currentTask.currentIndex = i + 1;
+                        
+                        try {
+                            WordImage img = wordImageBo.findById(imgDto.getId());
+                            if (img != null && imgDto.getWordId() != null) {
+                                Word w = wordBo.findById(imgDto.getWordId());
+                                String spell = w != null ? w.getSpell() : null;
+                                String absPath = new File(sysParamUtil.getImageBaseDir() + "/word", img.getImageFile()).getAbsolutePath();
+                                File imgFile = new File(absPath);
+                                if (imgFile.exists() && spell != null) {
+                                    String aiResultStr = aiBo.reviewImage(spell, absPath);
+                                    ObjectMapper mapper = new ObjectMapper();
+                                    Map<String, String> res = mapper.readValue(aiResultStr, new com.fasterxml.jackson.core.type.TypeReference<Map<String, String>>(){});
+                                    if ("DELETE".equals(res.get("action"))) {
+                                        Map<String, Object> markedInfo = new java.util.HashMap<>();
+                                        markedInfo.put("imageId", img.getId());
+                                        markedInfo.put("imageFile", img.getImageFile());
+                                        markedInfo.put("spell", spell);
+                                        markedInfo.put("reason", res.get("reason"));
+                                        
+                                        if (autoDelete) {
+                                            wordImageBo.deleteWordImage(img.getId(), user, true);
+                                            synchronized(currentTask) { currentTask.deletedImages.add(markedInfo); }
+                                        } else {
+                                            synchronized(currentTask) { currentTask.markedImages.add(markedInfo); }
+                                        }
+                                    }
+                                }
+                            }
+                            Thread.sleep(800); 
+                        } catch(Exception e) {
+                            logger.error("审图异常, imgId=" + imgDto.getId(), e);
+                        }
+                    }
+                    if (currentTask.isRunning) currentTask.statusMsg = "任务完成";
+                } catch(Exception e) {
+                    logger.error("批量扫描异常", e); 
+                    currentTask.statusMsg = "任务异常退出: " + e.getMessage();
+                } finally {
+                    currentTask.isRunning = false;
+                }
+            }).start();
+            
+            return Result.success("任务已启动");
+        }
+    }
+
+    @org.springframework.web.bind.annotation.GetMapping("/admin/image/batchReviewStatus.do")
+    public Result<AdminImageReviewTask> getBatchReviewStatus() {
+        return Result.success(currentTask);
+    }
+    
+    @PostMapping("/admin/image/stopBatchReview.do")
+    public Result<String> stopBatchReview(@RequestParam("userId") String userId) {
+        User user = userBo.findById(userId);
+        if (user == null || !user.getIsAdmin()) return Result.fail("无权限");
+        currentTask.isRunning = false;
+        currentTask.statusMsg = "已手动中止";
+        return Result.success("已请求停止任务");
+    }
+
+    @PostMapping("/admin/image/deleteMarked.do")
+    public Result<Integer> deleteMarkedImages(@RequestParam("userId") String userId) {
+        User user = userBo.findById(userId);
+        if (user == null || !user.getIsAdmin()) return Result.fail("无权限");
+        
+        int deleteCount = 0;
+        synchronized(currentTask) {
+            java.util.Iterator<Map<String, Object>> it = currentTask.markedImages.iterator();
+            while(it.hasNext()) {
+                Map<String, Object> info = it.next();
+                try {
+                    String imageId = (String) info.get("imageId");
+                    Result<Object> delRes = wordImageBo.deleteWordImage(imageId, user, true);
+                    if (delRes.isSuccess()) {
+                        info.put("reason", info.get("reason") + " (已应用删除)");
+                        currentTask.deletedImages.add(info);
+                        it.remove();
+                        deleteCount++;
+                    }
+                } catch(Exception e) {
+                    logger.error("删除标记的图片失败", e);
+                }
+            }
+        }
+        return Result.success(deleteCount);
+    }
 }
