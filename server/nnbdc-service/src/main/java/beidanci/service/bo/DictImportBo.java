@@ -93,7 +93,6 @@ public class DictImportBo {
             String dictId = (String) config.get("dictId");
             String dictName = (String) config.get("dictName");
             String domain = (String) config.get("domain");
-            String strategy = (String) config.getOrDefault("strategy", "REUSE"); // REUSE, CREATE_OWN
             @SuppressWarnings("unchecked")
             List<String> rawWords = (List<String>) config.get("words"); // 场景2：仅单词
             @SuppressWarnings("unchecked")
@@ -137,11 +136,11 @@ public class DictImportBo {
             }
 
             if (isSystemImport) {
-                processSystemImport(task, dictId, dictName, domain, rawWords, strategy, generateWordImage, stats);
+                processSystemImport(task, dictId, dictName, domain, rawWords, generateWordImage, stats);
             } else if (rawWords != null) {
-                processUserImportWordsOnly(task, dictId, dictName, domain, rawWords, strategy, generateWordImage, stats);
+                processUserImportWordsOnly(task, dictId, dictName, domain, rawWords, generateWordImage, stats);
             } else {
-                processUserImportWithMeanings(task, dictId, dictName, domain, wordsWithMeanings, strategy, generateWordImage, stats);
+                processUserImportWithMeanings(task, dictId, dictName, domain, wordsWithMeanings, generateWordImage, stats);
             }
 
             task = importTaskBo.findById(taskId); // 重新加载以防状态冲突
@@ -174,7 +173,7 @@ public class DictImportBo {
         }
     }
 
-    private void processSystemImport(ImportTask task, String dictId, String dictName, String domain, List<String> words, String strategy, boolean generateWordImage, TaskStatistics stats) {
+    private void processSystemImport(ImportTask task, String dictId, String dictName, String domain, List<String> words, boolean generateWordImage, TaskStatistics stats) {
         User systemUser = userBo.findById(Constants.SYS_USER_SYS_ID);
         for (int i = 0; i < words.size(); i++) {
             String line = words.get(i).trim();
@@ -188,7 +187,7 @@ public class DictImportBo {
                 if (manualMeaning.isEmpty()) manualMeaning = null;
             }
             try {
-                processSingleWord(spell, manualMeaning, true, systemUser, dictId, dictName, domain, strategy, generateWordImage, stats);
+                processSingleWord(spell, manualMeaning, true, systemUser, dictId, dictName, domain, generateWordImage, stats);
                 importTaskBo.updateProgress(task.getId(), i + 1, "Processed: " + spell);
             } catch (Exception e) {
                 logger.warn("处理单词失败: " + spell, e);
@@ -199,12 +198,12 @@ public class DictImportBo {
         }
     }
 
-    private void processUserImportWordsOnly(ImportTask task, String dictId, String dictName, String domain, List<String> words, String strategy, boolean generateWordImage, TaskStatistics stats) {
+    private void processUserImportWordsOnly(ImportTask task, String dictId, String dictName, String domain, List<String> words, boolean generateWordImage, TaskStatistics stats) {
         User owner = task.getOwner();
         for (int i = 0; i < words.size(); i++) {
             String spell = words.get(i).trim();
             try {
-                processSingleWord(spell, null, false, owner, dictId, dictName, domain, strategy, generateWordImage, stats);
+                processSingleWord(spell, null, false, owner, dictId, dictName, domain, generateWordImage, stats);
                 importTaskBo.updateProgress(task.getId(), i + 1, "Processed: " + spell);
             } catch (Exception e) {
                 logger.warn("处理单词失败: " + spell, e);
@@ -215,14 +214,14 @@ public class DictImportBo {
         }
     }
 
-    private void processUserImportWithMeanings(ImportTask task, String dictId, String dictName, String domain, List<Map<String, String>> words, String strategy, boolean generateWordImage, TaskStatistics stats) {
+    private void processUserImportWithMeanings(ImportTask task, String dictId, String dictName, String domain, List<Map<String, String>> words, boolean generateWordImage, TaskStatistics stats) {
         User owner = task.getOwner();
         for (int i = 0; i < words.size(); i++) {
             Map<String, String> item = words.get(i);
             String spell = item.get("word").trim();
             String manualMeaning = item.get("meaning");
             try {
-                processSingleWord(spell, manualMeaning, false, owner, dictId, dictName, domain, strategy, generateWordImage, stats);
+                processSingleWord(spell, manualMeaning, false, owner, dictId, dictName, domain, generateWordImage, stats);
                 importTaskBo.updateProgress(task.getId(), i + 1, "Processed: " + spell);
             } catch (Exception e) {
                 logger.warn("处理单词失败: " + spell, e);
@@ -233,7 +232,7 @@ public class DictImportBo {
         }
     }
 
-    private void processSingleWord(String spell, String manualMeaning, boolean isSystemDict, User user, String dictId, String dictName, String domain, String strategy, boolean generateWordImage, TaskStatistics stats) throws Exception {
+    private void processSingleWord(String spell, String manualMeaning, boolean isSystemDict, User user, String dictId, String dictName, String domain, boolean generateWordImage, TaskStatistics stats) throws Exception {
         Word word = wordBo.getWordBySpell(spell);
         boolean isNewWord = (word == null);
         String actionType = "ADDED";
@@ -263,46 +262,15 @@ public class DictImportBo {
             throw new RuntimeException("无法获取或创建单词对象: " + spell);
         }
 
-        // 对于系统词书导入，需根据其在通用大库托底池（即"通用词典", ID='0'）中的累积情况做策略判定（重用 REUSE / 重刷 RECREATE）。私人导入则针对其专属词典做判定。
-        String targetDictForMeaning = isSystemDict ? Constants.COMMON_DICT_ID : dictId;
-        List<MeaningItemDto> existingMeaningsInDict = meaningItemBo.findMeaningsByWordAndDict(word.getId(), targetDictForMeaning);
-        boolean isReusing = false;
-        if (!isNewWord && !existingMeaningsInDict.isEmpty() && ("SKIP".equalsIgnoreCase(strategy) || "REUSE".equalsIgnoreCase(strategy))) {
-            logger.info("单词 {} 在词典 {} 中已存在资源，采用重用模式（跳过重新生成）", spell, targetDictForMeaning);
+        List<MeaningItemDto> existingMeaningsInDict = meaningItemBo.findMeaningsByWordAndDict(word.getId(), dictId);
+        boolean isPrivateReusing = false;
+
+        // 对于私有词典：如果当前词典已经有该词的资源，直接跳过生成，实现一致性和防重复
+        if (!isSystemDict && !isNewWord && !existingMeaningsInDict.isEmpty()) {
+            logger.info("单词 {} 在私人词典 {} 中已存在资源，直接重用（跳过生成）", spell, dictId);
             stats.skippedCount++;
             stats.wordDetails.add(new WordDetail(spell, "REUSED", null, null));
-            isReusing = true;
-        }
-
-        // 统一在这一步清理旧资源
-        if (!isNewWord && "CREATE_OWN".equalsIgnoreCase(strategy)) {
-            // "如果单词已经在通用词典有了, 我也创建自己的, 但不会更改通用词典的内容" -> 如果是系统词典(其目标挂载为 "0"），拒绝清理旧资源！
-            if (!isSystemDict) {
-                actionType = "RECREATED";
-                boolean hasMeanings = !existingMeaningsInDict.isEmpty();
-                if (hasMeanings) {
-                    stats.recreatedCount++;
-                }
-                clearWordResources(word, spell, targetDictForMeaning, user, existingMeaningsInDict, stats);
-            }
-
-            // 重新获取音标属性
-            try {
-                lastAiResult = getAiResult(spell, null, null, false, null); // 获取音标时无需重复生成配图
-                word.setPronounce(lastAiResult.phonetic);
-                word.setBritishPronounce(lastAiResult.phonetic);
-                word.setAmericaPronounce(lastAiResult.phonetic);
-                word.setUpdateTime(new java.util.Date());
-                wordBo.updateEntity(word);
-                
-                WordDto wordDto = new WordDto();
-                org.springframework.beans.BeanUtils.copyProperties(word, wordDto);
-                sysDbSyncBo.logOperation("UPDATE", "word", word.getId(), beidanci.service.util.JsonUtils.toJson(wordDto));
-                stats.addSyncLog("UPDATE", "word");
-                logger.info("重刷策略已更新单词音标: " + spell);
-            } catch (Exception e) {
-                logger.error("重刷单词音标失败: " + spell, e);
-            }
+            isPrivateReusing = true;
         }
 
         // 无论单词是否刚创建，检查其发音文件是否存在，若不存在则补发音
@@ -371,54 +339,27 @@ public class DictImportBo {
                 .map(m -> (m.getCiXing() != null ? m.getCiXing() : "") + " " + m.getMeaning())
                 .collect(java.util.stream.Collectors.joining("; "));
 
-        if (!isReusing) {
+        if (!isPrivateReusing) {
             boolean hasDomain = (domain != null && !domain.trim().isEmpty());
             String aiContext = hasDomain ? domain : null;
 
             if (isSystemDict) {
-                if (Constants.COMMON_DICT_ID.equals(dictId)) {
-                    // 如果本身就是直接导给通用系统词汇
-                    boolean hasCommonMeaning = allExistingMeanings.stream().anyMatch(m -> Constants.COMMON_DICT_ID.equals(m.getDictId()));
-                    if (!hasCommonMeaning) {
-                        lastAiResult = getAiResult(spell, null, contextMeanings, generateWordImage, null);
-                        saveExtrinsicResources(word, lastAiResult, Constants.SYS_USER_SYS_ID, Constants.COMMON_DICT_ID, stats);
-                    }
-                } else {
-                    // 系统词书，如存在某个行业的专业词书。
-                    boolean hasCommonMeaning = allExistingMeanings.stream().anyMatch(m -> Constants.COMMON_DICT_ID.equals(m.getDictId()));
-
-                    if (!hasCommonMeaning) {
-                        // 单词在通用字典中不存在
-                        if (!hasDomain) {
-                            // 1. 没有声明专业领域，通用词典补充本单词内容 (无语境)
-                            AiResult genericAiResult = getAiResult(spell, null, contextMeanings, generateWordImage, null);
-                            saveExtrinsicResources(word, genericAiResult, Constants.SYS_USER_SYS_ID, Constants.COMMON_DICT_ID, stats);
-                            lastAiResult = genericAiResult;
-                            // 本词书只添加对改单词的引用，在后面的逻辑里通过 saveExtrinsicResources 以外的地方构建 dictWord 关联。
-                        } else {
-                            // 2. 声明了专业领域，首先为通用词典补充本单词的通用内容(忽略专业领域)
-                            AiResult genericAiResult = getAiResult(spell, null, contextMeanings, generateWordImage, null);
-                            saveExtrinsicResources(word, genericAiResult, Constants.SYS_USER_SYS_ID, Constants.COMMON_DICT_ID, stats);
-                            
-                            // 然后为本词书添加专业领域内容
-                            AiResult specializedAiResult = getAiResult(spell, null, contextMeanings, generateWordImage, aiContext);
-                            saveExtrinsicResources(word, specializedAiResult, Constants.SYS_USER_SYS_ID, dictId, stats);
-                            lastAiResult = specializedAiResult;
-                        }
-                    } else {
-                        // 单词已经在通用词典有了
-                        if ("CREATE_OWN".equalsIgnoreCase(strategy)) {
-                            // "我也创建自己的, 但不会更改通用词典的内容"
-                            if (hasDomain) {
-                                // 如果有专业领域，生成本词书独有的内容
-                                AiResult specializedAiResult = getAiResult(spell, null, contextMeanings, generateWordImage, aiContext);
-                                saveExtrinsicResources(word, specializedAiResult, Constants.SYS_USER_SYS_ID, dictId, stats);
-                                lastAiResult = specializedAiResult;
-                            } else {
-                                // 如果没有声明专业领域，根据规则1“本词书只添加对改单词的引用”
-                                // 在 CREATE_OWN 里，当且仅当存在 domain 才会专门建一套新释义。如果没有 domain，就不创建这套无意义的冗余通用释义了。
-                            }
-                        }
+                // 系统词书，实现绝对一致性状态：无论何时导入，都存在对应的补充内容（按需生成）
+                // 1. 确保通用词库("0")有该词的基础托底释放
+                boolean hasCommonMeaning = allExistingMeanings.stream().anyMatch(m -> Constants.COMMON_DICT_ID.equals(m.getDictId()));
+                if (!hasCommonMeaning) {
+                    AiResult genericAiResult = getAiResult(spell, null, contextMeanings, generateWordImage, null);
+                    saveExtrinsicResources(word, genericAiResult, Constants.SYS_USER_SYS_ID, Constants.COMMON_DICT_ID, stats);
+                    lastAiResult = genericAiResult;
+                }
+                
+                // 2. 如果声明了专业领域，且当前关联词书并非通用库自身，则必须确保该词书有专有资源
+                if (hasDomain && !Constants.COMMON_DICT_ID.equals(dictId)) {
+                    boolean hasSpecializedMeaning = allExistingMeanings.stream().anyMatch(m -> dictId.equals(m.getDictId()));
+                    if (!hasSpecializedMeaning) {
+                        AiResult specializedAiResult = getAiResult(spell, null, contextMeanings, generateWordImage, aiContext);
+                        saveExtrinsicResources(word, specializedAiResult, Constants.SYS_USER_SYS_ID, dictId, stats);
+                        lastAiResult = specializedAiResult;
                     }
                 }
             } else {
@@ -429,11 +370,8 @@ public class DictImportBo {
                     saveExtrinsicResources(word, lastAiResult, user.getId(), dictId, stats);
                 } else {
                     // 场景 2：仅单词
-                    boolean hasCommonMeaning = allExistingMeanings.stream().anyMatch(m -> Constants.COMMON_DICT_ID.equals(m.getDictId()));
-                    if (!hasCommonMeaning || "CREATE_OWN".equalsIgnoreCase(strategy) || !Constants.COMMON_DICT_ID.equals(dictId)) {
-                        lastAiResult = getAiResult(spell, null, contextMeanings, generateWordImage, aiContext);
-                        saveExtrinsicResources(word, lastAiResult, user.getId(), dictId, stats);
-                    }
+                    lastAiResult = getAiResult(spell, null, contextMeanings, generateWordImage, aiContext);
+                    saveExtrinsicResources(word, lastAiResult, user.getId(), dictId, stats);
                 }
             }
         }
