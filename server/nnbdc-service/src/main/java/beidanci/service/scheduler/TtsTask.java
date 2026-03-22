@@ -53,7 +53,7 @@ public class TtsTask {
             try {
                 // 生成语音前必须去除可能的 HTML 标签（如高亮用的 <b> 等），否则会被TTS引擎读出来
                 String pureEnglish = sentence.getEnglish().replaceAll("<[^>]*>", "");
-                AiBo.TtsResult ttsResult = aiBo.generateSpeech(pureEnglish);
+                AiBo.TtsResult ttsResult = aiBo.generateSpeech(pureEnglish, sentence.getTtsVoice());
                 byte[] audioData = ttsResult.audioData;
                 if (audioData != null && audioData.length > 0) {
                     // 保存到文件系统

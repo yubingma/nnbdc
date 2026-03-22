@@ -30,7 +30,9 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
   Map<String, dynamic>? _taskDetails;
   Timer? _timer;
   bool _isSubmitting = false;
-  bool _generateWordImage = false; 
+  bool _generateWordImage = false;  
+  final List<String> _availableVoices = ['longanyang', 'longanhuan', 'longxiaochun_v3', 'longxiaoxia_v3'];
+  final List<String> _selectedVoices = ['longanyang', 'longanhuan', 'longxiaochun_v3', 'longxiaoxia_v3'];
 
   final TextEditingController _dictNameCtrl = TextEditingController(text: "系统词典");
   final TextEditingController _wordsCtrl = TextEditingController(text: "apple|一种甜酸可口的水果\nbanana\ncat");
@@ -122,6 +124,7 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
           "dictId": "",
           "dictName": dictName,
           "domain": _domainCtrl.text.trim(),
+          "ttsVoices": _selectedVoices.join(","),
           "words": wordsToImport,
           "generateWordImage": _generateWordImage
         })
@@ -465,11 +468,47 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
                         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       ),
                     ),
-
+                    const SizedBox(height: 16),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('TTS 发音人选择 (多选，默认随机分配)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8.0,
+                          runSpacing: 4.0,
+                          children: _availableVoices.map((voice) {
+                            final isSelected = _selectedVoices.contains(voice);
+                            return FilterChip(
+                              label: Text(voice, style: TextStyle(fontSize: 13, color: isSelected ? Colors.white : Colors.black87)),
+                              selected: isSelected,
+                              selectedColor: AppTheme.primaryColor,
+                              checkmarkColor: Colors.white,
+                              onSelected: (bool selected) {
+                                setState(() {
+                                  if (selected) {
+                                    _selectedVoices.add(voice);
+                                  } else {
+                                    // 保证至少选一个，不要清空
+                                    if (_selectedVoices.length > 1) {
+                                      _selectedVoices.remove(voice);
+                                    } else {
+                                      ToastUtil.info("至少保留一个发音人");
+                                    }
+                                  }
+                                });
+                              },
+                            );
+                          }).toList(),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
                     Container(
+                      clipBehavior: Clip.hardEdge,
                       decoration: BoxDecoration(
                         color: AppTheme.primaryColor.withValues(alpha: 0.05),
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: AppTheme.primaryColor.withValues(alpha: 0.2)),
                       ),
                       child: SwitchListTile(

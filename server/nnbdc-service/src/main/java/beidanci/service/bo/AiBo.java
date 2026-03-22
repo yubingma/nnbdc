@@ -95,8 +95,12 @@ public class AiBo {
      * @param text 需要合成的文本
      * @return 合成后的音频信息和字节流
      */
-    public TtsResult generateSpeech(String text) {
+    public TtsResult generateSpeech(String text, String preferredVoicesStr) {
         String[] voices = {"longanyang", "longanhuan", "longxiaochun_v3", "longxiaoxia_v3"};
+        if (preferredVoicesStr != null && !preferredVoicesStr.trim().isEmpty()) {
+            voices = preferredVoicesStr.split(",");
+            for (int i = 0; i < voices.length; i++) voices[i] = voices[i].trim();
+        }
         String voice = voices[new java.util.Random().nextInt(voices.length)];
         
         try {

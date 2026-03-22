@@ -150,12 +150,14 @@ public class DictImportBo {
             }
             importTaskBo.updateEntity(task);
 
+            String preferredVoices = (String) config.get("ttsVoices");
+
             if (isSystemImport) {
-                processSystemImport(task, dictId, dictName, domain, rawWords, generateWordImage, stats);
+                processSystemImport(task, dictId, dictName, domain, rawWords, generateWordImage, preferredVoices, stats);
             } else if (rawWords != null) {
-                processUserImportWordsOnly(task, dictId, dictName, domain, rawWords, generateWordImage, stats);
+                processUserImportWordsOnly(task, dictId, dictName, domain, rawWords, generateWordImage, preferredVoices, stats);
             } else {
-                processUserImportWithMeanings(task, dictId, dictName, domain, wordsWithMeanings, generateWordImage, stats);
+                processUserImportWithMeanings(task, dictId, dictName, domain, wordsWithMeanings, generateWordImage, preferredVoices, stats);
             }
 
             task = importTaskBo.findById(taskId); // 重新加载以防状态冲突
@@ -188,7 +190,7 @@ public class DictImportBo {
         }
     }
 
-    private void processSystemImport(ImportTask task, String dictId, String dictName, String domain, List<String> words, boolean generateWordImage, TaskStatistics stats) {
+    private void processSystemImport(ImportTask task, String dictId, String dictName, String domain, List<String> words, boolean generateWordImage, String preferredVoices, TaskStatistics stats) {
         User systemUser = userBo.findById(Constants.SYS_USER_SYS_ID);
         for (int i = 0; i < words.size(); i++) {
             String line = words.get(i).trim();
@@ -202,7 +204,7 @@ public class DictImportBo {
                 if (manualMeaning.isEmpty()) manualMeaning = null;
             }
             try {
-                processSingleWord(spell, manualMeaning, true, systemUser, dictId, dictName, domain, generateWordImage, stats);
+                processSingleWord(spell, manualMeaning, true, systemUser, dictId, dictName, domain, generateWordImage, preferredVoices, stats);
                 importTaskBo.updateProgress(task.getId(), i + 1, "Processed: " + spell);
             } catch (Exception e) {
                 logger.warn("处理单词失败: " + spell, e);
@@ -213,12 +215,12 @@ public class DictImportBo {
         }
     }
 
-    private void processUserImportWordsOnly(ImportTask task, String dictId, String dictName, String domain, List<String> words, boolean generateWordImage, TaskStatistics stats) {
+    private void processUserImportWordsOnly(ImportTask task, String dictId, String dictName, String domain, List<String> words, boolean generateWordImage, String preferredVoices, TaskStatistics stats) {
         User owner = task.getOwner();
         for (int i = 0; i < words.size(); i++) {
             String spell = words.get(i).trim();
             try {
-                processSingleWord(spell, null, false, owner, dictId, dictName, domain, generateWordImage, stats);
+                processSingleWord(spell, null, false, owner, dictId, dictName, domain, generateWordImage, preferredVoices, stats);
                 importTaskBo.updateProgress(task.getId(), i + 1, "Processed: " + spell);
             } catch (Exception e) {
                 logger.warn("处理单词失败: " + spell, e);
@@ -229,14 +231,14 @@ public class DictImportBo {
         }
     }
 
-    private void processUserImportWithMeanings(ImportTask task, String dictId, String dictName, String domain, List<Map<String, String>> words, boolean generateWordImage, TaskStatistics stats) {
+    private void processUserImportWithMeanings(ImportTask task, String dictId, String dictName, String domain, List<Map<String, String>> words, boolean generateWordImage, String preferredVoices, TaskStatistics stats) {
         User owner = task.getOwner();
         for (int i = 0; i < words.size(); i++) {
             Map<String, String> item = words.get(i);
             String spell = item.get("word").trim();
             String manualMeaning = item.get("meaning");
             try {
-                processSingleWord(spell, manualMeaning, false, owner, dictId, dictName, domain, generateWordImage, stats);
+                processSingleWord(spell, manualMeaning, false, owner, dictId, dictName, domain, generateWordImage, preferredVoices, stats);
                 importTaskBo.updateProgress(task.getId(), i + 1, "Processed: " + spell);
             } catch (Exception e) {
                 logger.warn("处理单词失败: " + spell, e);
@@ -247,7 +249,7 @@ public class DictImportBo {
         }
     }
 
-    private void processSingleWord(String spell, String manualMeaning, boolean isSystemDict, User user, String dictId, String dictName, String domain, boolean generateWordImage, TaskStatistics stats) throws Exception {
+    private void processSingleWord(String spell, String manualMeaning, boolean isSystemDict, User user, String dictId, String dictName, String domain, boolean generateWordImage, String preferredVoices, TaskStatistics stats) throws Exception {
         Word word = wordBo.getWordBySpell(spell);
         boolean isNewWord = (word == null);
         String actionType = "ADDED";
@@ -333,7 +335,7 @@ public class DictImportBo {
                         }
                     } catch (Exception e) {
                         logger.warn("从有道词典下载真人发音失败 (" + pureSpell + ")，自动回退使用大模型 TTS 合成降级补全: " + e.getMessage());
-                        byte[] audioData = aiBo.generateSpeech(spell).audioData;
+                        byte[] audioData = aiBo.generateSpeech(spell, preferredVoices).audioData;
                         if (audioData != null && audioData.length > 0) {
                             try (java.io.FileOutputStream fos = new java.io.FileOutputStream(soundFile)) {
                                 fos.write(audioData);
@@ -364,7 +366,7 @@ public class DictImportBo {
                 boolean hasCommonMeaning = allExistingMeanings.stream().anyMatch(m -> Constants.COMMON_DICT_ID.equals(m.getDictId()));
                 if (!hasCommonMeaning) {
                     AiResult genericAiResult = getAiResult(spell, null, contextMeanings, generateWordImage, null);
-                    saveExtrinsicResources(word, genericAiResult, Constants.SYS_USER_SYS_ID, Constants.COMMON_DICT_ID, stats);
+                    saveExtrinsicResources(word, genericAiResult, Constants.SYS_USER_SYS_ID, Constants.COMMON_DICT_ID, preferredVoices, stats);
                     lastAiResult = genericAiResult;
                 }
                 
@@ -373,7 +375,7 @@ public class DictImportBo {
                     boolean hasSpecializedMeaning = allExistingMeanings.stream().anyMatch(m -> dictId.equals(m.getDictId()));
                     if (!hasSpecializedMeaning) {
                         AiResult specializedAiResult = getAiResult(spell, null, contextMeanings, generateWordImage, aiContext);
-                        saveExtrinsicResources(word, specializedAiResult, Constants.SYS_USER_SYS_ID, dictId, stats);
+                        saveExtrinsicResources(word, specializedAiResult, Constants.SYS_USER_SYS_ID, dictId, preferredVoices, stats);
                         lastAiResult = specializedAiResult;
                     }
                 }
@@ -382,11 +384,11 @@ public class DictImportBo {
                 if (manualMeaning != null) {
                     // 场景 3：单词+外部释义 (私有)
                     lastAiResult = getAiResult(spell, manualMeaning, contextMeanings, generateWordImage, aiContext);
-                    saveExtrinsicResources(word, lastAiResult, user.getId(), dictId, stats);
+                    saveExtrinsicResources(word, lastAiResult, user.getId(), dictId, preferredVoices, stats);
                 } else {
                     // 场景 2：仅单词
                     lastAiResult = getAiResult(spell, null, contextMeanings, generateWordImage, aiContext);
-                    saveExtrinsicResources(word, lastAiResult, user.getId(), dictId, stats);
+                    saveExtrinsicResources(word, lastAiResult, user.getId(), dictId, preferredVoices, stats);
                 }
             }
         }
@@ -473,7 +475,7 @@ public class DictImportBo {
     }
 
 
-    private void saveExtrinsicResources(Word word, AiResult aiResult, String ownerId, String dictId, TaskStatistics stats) {
+    private void saveExtrinsicResources(Word word, AiResult aiResult, String ownerId, String dictId, String preferredVoices, TaskStatistics stats) {
         if (aiResult.meanings == null || aiResult.meanings.isEmpty()) {
             return;
         }
@@ -520,6 +522,9 @@ public class DictImportBo {
                 sentence.setMeaningItem(meaning);
                 sentence.setNeedTts(true); // 标记需要生成音频
                 sentence.setTheType("waitting_tts");
+                if (preferredVoices != null && !preferredVoices.trim().isEmpty()) {
+                    sentence.setTtsVoice(preferredVoices);
+                }
                 sentence.setEnglishDigest(beidanci.service.util.Util.makeSentenceDigest(am.sentenceEn));
                 if (ownerId != null) {
                     sentence.setAuthor(owner);
