@@ -96,7 +96,7 @@ public class AiBo {
      * @return 合成后的音频信息和字节流
      */
     public TtsResult generateSpeech(String text, String preferredVoicesStr) {
-        String[] voices = {"longanyang", "longanhuan", "longxiaochun_v3", "longxiaoxia_v3", "longniuniu", "longhuhu"};
+        String[] voices = {"longanyang", "longanhuan", "longxiaochun_v3", "longxiaoxia_v3", "longniuniu_v3", "longhuhu_v3"};
         if (preferredVoicesStr != null && !preferredVoicesStr.trim().isEmpty()) {
             voices = preferredVoicesStr.split(",");
             for (int i = 0; i < voices.length; i++) voices[i] = voices[i].trim();
@@ -106,11 +106,22 @@ public class AiBo {
         try {
             return new TtsResult(callCosyVoice(text, voice), voice, aiProperties.getTtsModel());
         } catch (Exception e) {
-            String defaultVoice = aiProperties.getVoice();
-            logger.warn("随机音色 {} 合成失败(可能是音色不存在)，尝试回退到保底音色: {}", voice, defaultVoice, e);
+            String defaultVoice = voices[0];
+            logger.warn("随机音色 {} 合成失败(可能是音色不存在)，尝试回退到用户首选/兜底音色: {}", voice, defaultVoice, e);
             if (!voice.equals(defaultVoice)) {
                 try {
                     return new TtsResult(callCosyVoice(text, defaultVoice), defaultVoice, aiProperties.getTtsModel());
+                } catch (Exception fallbackEx) {
+                    logger.warn("首选音色也失败了，最后尝试系统全局保底音色: {}", aiProperties.getVoice());
+                    try {
+                        return new TtsResult(callCosyVoice(text, aiProperties.getVoice()), aiProperties.getVoice(), aiProperties.getTtsModel());
+                    } catch (Exception ext) {
+                        throw new RuntimeException("保底 TTS 系统异常", ext);
+                    }
+                }
+            } else if (!voice.equals(aiProperties.getVoice())) {
+                try {
+                    return new TtsResult(callCosyVoice(text, aiProperties.getVoice()), aiProperties.getVoice(), aiProperties.getTtsModel());
                 } catch (Exception fallbackEx) {
                     throw new RuntimeException("保底 TTS 系统异常", fallbackEx);
                 }
