@@ -380,7 +380,7 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
               const Text('升级步骤：', style: TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               const Text('1. 点击下方按钮打开 App Store'),
-              const Text('2. 搜索"泡泡单词"'),
+              Text('2. 搜索"${Global.appName}"'),
               const Text('3. 点击"更新"按钮'),
             ],
           ),
@@ -1449,9 +1449,9 @@ endlocal
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text(
-                    '欢迎使用泡泡单词！在您开始使用前，请务必仔细阅读并理解',
-                    style: TextStyle(fontSize: 14),
+                  Text(
+                    '欢迎使用${Global.appName}！在您开始使用前，请务必仔细阅读并理解',
+                    style: const TextStyle(fontSize: 14),
                   ),
                   Wrap(
                     alignment: WrapAlignment.center,

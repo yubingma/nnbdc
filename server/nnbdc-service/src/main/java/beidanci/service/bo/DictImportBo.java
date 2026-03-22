@@ -93,7 +93,7 @@ public class DictImportBo {
             String dictId = (String) config.get("dictId");
             String dictName = (String) config.get("dictName");
             String domain = (String) config.get("domain");
-            String strategy = (String) config.getOrDefault("strategy", "REUSE"); // REUSE (原SKIP), RECREATE
+            String strategy = (String) config.getOrDefault("strategy", "REUSE"); // REUSE, CREATE_OWN
             @SuppressWarnings("unchecked")
             List<String> rawWords = (List<String>) config.get("words"); // 场景2：仅单词
             @SuppressWarnings("unchecked")
@@ -275,13 +275,16 @@ public class DictImportBo {
         }
 
         // 统一在这一步清理旧资源
-        if (!isNewWord && "RECREATE".equalsIgnoreCase(strategy)) {
-            actionType = "RECREATED";
-            boolean hasMeanings = !existingMeaningsInDict.isEmpty();
-            if (hasMeanings) {
-                stats.recreatedCount++;
+        if (!isNewWord && "CREATE_OWN".equalsIgnoreCase(strategy)) {
+            // "如果单词已经在通用词典有了, 我也创建自己的, 但不会更改通用词典的内容" -> 如果是系统词典(其目标挂载为 "0"），拒绝清理旧资源！
+            if (!isSystemDict) {
+                actionType = "RECREATED";
+                boolean hasMeanings = !existingMeaningsInDict.isEmpty();
+                if (hasMeanings) {
+                    stats.recreatedCount++;
+                }
+                clearWordResources(word, spell, targetDictForMeaning, user, existingMeaningsInDict, stats);
             }
-            clearWordResources(word, spell, targetDictForMeaning, user, existingMeaningsInDict, stats);
 
             // 重新获取音标属性
             try {
@@ -369,25 +372,54 @@ public class DictImportBo {
                 .collect(java.util.stream.Collectors.joining("; "));
 
         if (!isReusing) {
-            String aiContext = (domain != null && !domain.trim().isEmpty()) ? domain : dictName;
+            boolean hasDomain = (domain != null && !domain.trim().isEmpty());
+            String aiContext = hasDomain ? domain : null;
+
             if (isSystemDict) {
                 if (Constants.COMMON_DICT_ID.equals(dictId)) {
                     // 如果本身就是直接导给通用系统词汇
-                    lastAiResult = getAiResult(spell, null, contextMeanings, generateWordImage, null);
-                    saveExtrinsicResources(word, lastAiResult, Constants.SYS_USER_SYS_ID, Constants.COMMON_DICT_ID, stats);
-                } else {
-                    // 系统词书，如存在某个行业的专业词书。
-                    // 1. 如果通用词典("0")没有释义资源托底，需要先补齐一般释义(不带专业语境)
                     boolean hasCommonMeaning = allExistingMeanings.stream().anyMatch(m -> Constants.COMMON_DICT_ID.equals(m.getDictId()));
                     if (!hasCommonMeaning) {
-                        AiResult genericAiResult = getAiResult(spell, null, contextMeanings, generateWordImage, null);
-                        saveExtrinsicResources(word, genericAiResult, Constants.SYS_USER_SYS_ID, Constants.COMMON_DICT_ID, stats);
-                        lastAiResult = genericAiResult;
+                        lastAiResult = getAiResult(spell, null, contextMeanings, generateWordImage, null);
+                        saveExtrinsicResources(word, lastAiResult, Constants.SYS_USER_SYS_ID, Constants.COMMON_DICT_ID, stats);
                     }
-                    // 2. 将专业释义挂载在此书自身下
-                    AiResult specializedAiResult = getAiResult(spell, null, contextMeanings, generateWordImage, aiContext);
-                    saveExtrinsicResources(word, specializedAiResult, Constants.SYS_USER_SYS_ID, dictId, stats);
-                    lastAiResult = specializedAiResult;
+                } else {
+                    // 系统词书，如存在某个行业的专业词书。
+                    boolean hasCommonMeaning = allExistingMeanings.stream().anyMatch(m -> Constants.COMMON_DICT_ID.equals(m.getDictId()));
+
+                    if (!hasCommonMeaning) {
+                        // 单词在通用字典中不存在
+                        if (!hasDomain) {
+                            // 1. 没有声明专业领域，通用词典补充本单词内容 (无语境)
+                            AiResult genericAiResult = getAiResult(spell, null, contextMeanings, generateWordImage, null);
+                            saveExtrinsicResources(word, genericAiResult, Constants.SYS_USER_SYS_ID, Constants.COMMON_DICT_ID, stats);
+                            lastAiResult = genericAiResult;
+                            // 本词书只添加对改单词的引用，在后面的逻辑里通过 saveExtrinsicResources 以外的地方构建 dictWord 关联。
+                        } else {
+                            // 2. 声明了专业领域，首先为通用词典补充本单词的通用内容(忽略专业领域)
+                            AiResult genericAiResult = getAiResult(spell, null, contextMeanings, generateWordImage, null);
+                            saveExtrinsicResources(word, genericAiResult, Constants.SYS_USER_SYS_ID, Constants.COMMON_DICT_ID, stats);
+                            
+                            // 然后为本词书添加专业领域内容
+                            AiResult specializedAiResult = getAiResult(spell, null, contextMeanings, generateWordImage, aiContext);
+                            saveExtrinsicResources(word, specializedAiResult, Constants.SYS_USER_SYS_ID, dictId, stats);
+                            lastAiResult = specializedAiResult;
+                        }
+                    } else {
+                        // 单词已经在通用词典有了
+                        if ("CREATE_OWN".equalsIgnoreCase(strategy)) {
+                            // "我也创建自己的, 但不会更改通用词典的内容"
+                            if (hasDomain) {
+                                // 如果有专业领域，生成本词书独有的内容
+                                AiResult specializedAiResult = getAiResult(spell, null, contextMeanings, generateWordImage, aiContext);
+                                saveExtrinsicResources(word, specializedAiResult, Constants.SYS_USER_SYS_ID, dictId, stats);
+                                lastAiResult = specializedAiResult;
+                            } else {
+                                // 如果没有声明专业领域，根据规则1“本词书只添加对改单词的引用”
+                                // 在 CREATE_OWN 里，当且仅当存在 domain 才会专门建一套新释义。如果没有 domain，就不创建这套无意义的冗余通用释义了。
+                            }
+                        }
+                    }
                 }
             } else {
                 // 用户导入
@@ -398,7 +430,7 @@ public class DictImportBo {
                 } else {
                     // 场景 2：仅单词
                     boolean hasCommonMeaning = allExistingMeanings.stream().anyMatch(m -> Constants.COMMON_DICT_ID.equals(m.getDictId()));
-                    if (!hasCommonMeaning || "RECREATE".equalsIgnoreCase(strategy) || !Constants.COMMON_DICT_ID.equals(dictId)) {
+                    if (!hasCommonMeaning || "CREATE_OWN".equalsIgnoreCase(strategy) || !Constants.COMMON_DICT_ID.equals(dictId)) {
                         lastAiResult = getAiResult(spell, null, contextMeanings, generateWordImage, aiContext);
                         saveExtrinsicResources(word, lastAiResult, user.getId(), dictId, stats);
                     }

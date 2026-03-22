@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import '../theme/app_theme.dart';
+import '../global.dart';
 
 class ProtocolPage extends StatefulWidget {
   const ProtocolPage({super.key});
@@ -42,6 +43,7 @@ class ProtocolPageState extends State<ProtocolPage> {
 
   _loadHtmlFromAssets() async {
     String fileText = await rootBundle.loadString('assets/protocol.html');
+    fileText = fileText.replaceAll('泡泡单词', Global.appName);
     webViewController!.loadData(data: fileText, mimeType: 'text/html', encoding: 'utf-8');
   }
 }

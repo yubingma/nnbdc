@@ -448,7 +448,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     var themeData = context.watch<DarkMode>().isDarkMode ? AppTheme.darkTheme() : AppTheme.lightTheme();
     return GetMaterialApp(
-      title: '泡泡单词',
+      title: Global.appName,
       debugShowCheckedModeBanner: false,
       theme: themeData,
       initialRoute: '/first',

@@ -6,6 +6,7 @@ import 'package:nnbdc/util/toast_util.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:get/get.dart';
+import '../global.dart';
 import '../config.dart';
 
 class UpdateInfo {
@@ -312,7 +313,7 @@ class UpdateService extends GetxController {
             Text('升级步骤：', style: TextStyle(fontWeight: FontWeight.bold)),
             SizedBox(height: 8),
             Text('1. 打开 App Store'),
-            Text('2. 搜索"泡泡单词"'),
+            Text('2. 搜索"${Global.appName}"'),
             Text('3. 点击"更新"按钮'),
             SizedBox(height: 16),
             ElevatedButton(
@@ -343,7 +344,7 @@ class UpdateService extends GetxController {
   Future<void> openAppStore() async {
     try {
       const appStoreId = '6756229006'; // App Store ID
-      const appName = '泡泡单词'; // App 名称，用于搜索
+      final appName = Global.appName; // App 名称，用于搜索
       
       if (Platform.isIOS) {
         // iOS: 优先尝试直接打开 App Store 页面
@@ -377,7 +378,7 @@ class UpdateService extends GetxController {
       }
     } catch (e) {
       debugPrint('打开 App Store 失败: $e');
-      Get.snackbar('提示', '无法打开 App Store，请手动搜索"泡泡单词"进行更新', snackPosition: SnackPosition.TOP);
+      Get.snackbar('提示', '无法打开 App Store，请手动搜索"${Global.appName}"进行更新', snackPosition: SnackPosition.TOP);
     }
   }
 

@@ -29,7 +29,7 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
   Map<String, dynamic>? _taskDetails;
   Timer? _timer;
   bool _isSubmitting = false;
-  String _strategy = 'RECREATE';
+  String _strategy = 'CREATE_OWN';
   bool _generateWordImage = false; 
 
   final TextEditingController _dictNameCtrl = TextEditingController(text: "系统词典");
@@ -431,7 +431,7 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
                           isExpanded: true,
                           items: const [
                             DropdownMenuItem(value: 'REUSE', child: Text('REUSE (重用通用词典单词资源)')),
-                            DropdownMenuItem(value: 'RECREATE', child: Text('RECREATE (生成自己的单词资源)')),
+                            DropdownMenuItem(value: 'CREATE_OWN', child: Text('CREATE_OWN (生成自己的单词资源)')),
                           ],
                           onChanged: _isSubmitting ? null : (val) {
                             if (val != null) {

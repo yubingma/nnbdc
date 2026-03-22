@@ -92,7 +92,7 @@ class NotificationUtil {
 
       await flutterLocalNotificationsPlugin.zonedSchedule(
         id: 0,
-        title: '泡泡单词',
+        title: Global.appName,
         body: messageBody,
         scheduledDate: scheduledDate,
         notificationDetails: platformChannelSpecifics,

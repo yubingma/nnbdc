@@ -7,10 +7,12 @@ import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/util/utils.dart';
 import 'package:nnbdc/util/analytics_util.dart';
+import 'package:nnbdc/util/platform_util.dart';
 
 import 'api/vo.dart';
 
 class Global {
+  static String get appName => PlatformUtils.isAndroid ? '牛牛背单词' : '泡泡单词';
   static String version = 'NONE';
   static const Color highlight = Colors.teal;
 

@@ -190,9 +190,9 @@ class LoginPageState extends State<LoginPage>
                                 width: 76, height: 76),
                           ),
                           const SizedBox(height: 32),
-                          const Text(
-                            '泡泡单词',
-                            style: TextStyle(
+                          Text(
+                            Global.appName,
+                            style: const TextStyle(
                               color: Colors.white,
                               fontSize: 32,
                               fontWeight: FontWeight.w900,
