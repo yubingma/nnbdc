@@ -40,13 +40,27 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
     });
 
     try {
+      final wordsToImport = ["have", "apple", "kerry"];
+      
+      // 导入前: 主动清除目标单词在本地缓存的发音，避免跨系统状态污染
+      // 对于例句，由于无法直接预知所有旧例句的 englishDigest，这里为了管理员测试能立刻听到全新合成发音，
+      // 最暴力的手段是直接调用 emptyCache() 释放手机端全部旧发音。
+      for (var word in wordsToImport) {
+        final soundUrl = Util.getWordSoundUrl(word);
+        if (soundUrl.isNotEmpty) {
+          await DefaultCacheManager().removeFile(soundUrl);
+        }
+      }
+      await DefaultCacheManager().emptyCache();
+      Global.logger.i('已在导入前清理目标单词及例句关联的全部本地媒体缓存，保证播放绝对新版本');
+
       final request = JsonMap({
         "ownerId": Global.sysUserId, 
         "fileName": "System Dict Import (have, apple, kerry)",
         "config": jsonEncode({
           "isSystemImport": true,
           "dictId": "0",
-          "words": ["have", "apple", "kerry"],
+          "words": wordsToImport,
           "strategy": _strategy,
           "generateWordImage": _generateWordImage
         })

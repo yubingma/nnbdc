@@ -1,9 +1,11 @@
 package beidanci.service.bo;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import javax.annotation.PostConstruct;
 
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -24,6 +26,7 @@ import beidanci.service.po.WordSentence;
 import beidanci.service.po.WordSentenceId;
 import beidanci.service.store.SentenceCache;
 import beidanci.service.util.JsonUtils;
+import beidanci.service.util.SysParamUtil;
 import beidanci.service.util.Util;
 
 @Service
@@ -46,6 +49,9 @@ public class SentenceBo extends BaseBo<Sentence> {
 
     @Autowired
     private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
+
+    @Autowired
+    private SysParamUtil sysParamUtil;
 
     @PostConstruct
     public void init() {
@@ -164,6 +170,18 @@ public class SentenceBo extends BaseBo<Sentence> {
 
         // 从缓存清除
         sentenceCache.removeSentenceFromCache(id);
+
+        // 删除物理发音缓存文件
+        if (existing.getEnglishDigest() != null) {
+            File soundFile = new File(sysParamUtil.getSoundPath() + "/sentence/" + existing.getEnglishDigest() + ".mp3");
+            if (soundFile.exists()) {
+                boolean deleted = soundFile.delete();
+                if (deleted) {
+                    LoggerFactory.getLogger(SentenceBo.class).info("自动清除了例句发音缓存: {}", soundFile.getAbsolutePath());
+                }
+            }
+        }
+
         return Result.success(null);
     }
 
@@ -248,6 +266,30 @@ public class SentenceBo extends BaseBo<Sentence> {
     }
 
     public void deleteByMeaningItem(String meaningItemId) {
+        // 先找出即将被删除的例句，把关联的音频缓存文件一并清理掉
+        List<Sentence> sentences = findByMeaningItem(meaningItemId);
+        if (sentences != null) {
+            for (Sentence s : sentences) {
+                // 清除后端内存缓存
+                try {
+                    sentenceCache.removeSentenceFromCache(s.getId());
+                } catch (Exception e) {
+                    LoggerFactory.getLogger(SentenceBo.class).warn("清除例句缓存失败: {}", s.getId(), e);
+                }
+                
+                // 清除物理音频文件
+                if (s.getEnglishDigest() != null) {
+                    File soundFile = new File(sysParamUtil.getSoundPath() + "/sentence/" + s.getEnglishDigest() + ".mp3");
+                    if (soundFile.exists()) {
+                        boolean deleted = soundFile.delete();
+                        if (deleted) {
+                            LoggerFactory.getLogger(SentenceBo.class).info("自动清除了例句发音缓存: {}", soundFile.getAbsolutePath());
+                        }
+                    }
+                }
+            }
+        }
+
         String sql = "DELETE FROM sentence WHERE meaning_item_id = :meaningItemId";
         MapSqlParameterSource params = new MapSqlParameterSource("meaningItemId", meaningItemId);
         namedParameterJdbcTemplate.update(sql, params);
