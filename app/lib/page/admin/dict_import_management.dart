@@ -40,7 +40,7 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
     });
 
     try {
-      final wordsToImport = ["have", "apple", "kerry"];
+      final wordsToImport = ["have", "apple", "Sensing layer"];  
       
       // 导入前: 主动清除目标单词在本地缓存的发音，避免跨系统状态污染
       // 对于例句，由于无法直接预知所有旧例句的 englishDigest，这里为了管理员测试能立刻听到全新合成发音，
@@ -56,7 +56,7 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
 
       final request = JsonMap({
         "ownerId": Global.sysUserId, 
-        "fileName": "System Dict Import (have, apple, kerry)",
+        "fileName": "System Dict Import (have, apple, Sensing layer)",
         "config": jsonEncode({
           "isSystemImport": true,
           "dictId": "0",
@@ -112,7 +112,7 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
 
                 // 清除前端有关这些新导入单词的发音文件本地缓存，避免继续播放旧版本（如AI错误生成的）发音
                 try {
-                  final wordsToClear = ["have", "apple", "kerry"];
+                  final wordsToClear = ["have", "apple", "Sensing layer"];
                   
                   for (var word in wordsToClear) {
                     final soundUrl = Util.getWordSoundUrl(word);
@@ -247,7 +247,7 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
                     const SizedBox(height: 8),
                     Wrap(
                       spacing: 8,
-                      children: ['have', 'apple', 'kerry'].map((w) => Chip(
+                      children: ['have', 'apple', 'Sensing layer'].map((w) => Chip(
                         label: Text(w),
                         backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.05),
                         side: const BorderSide(color: Colors.transparent),
