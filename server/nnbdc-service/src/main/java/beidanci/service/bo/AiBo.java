@@ -16,6 +16,7 @@ import com.alibaba.dashscope.common.Role;
 import com.alibaba.dashscope.exception.InputRequiredException;
 import com.alibaba.dashscope.exception.NoApiKeyException;
 import com.alibaba.dashscope.audio.tts.SpeechSynthesisParam;
+import io.reactivex.Flowable;
 import com.alibaba.dashscope.audio.tts.SpeechSynthesizer;
 import java.nio.ByteBuffer;
 
@@ -99,6 +100,38 @@ public class AiBo {
                     .build();
             GenerationResult result = gen.call(param);
             return result.getOutput().getChoices().get(0).getMessage().getContent();
+        } catch (NoApiKeyException | InputRequiredException e) {
+            logger.error("阿里云 AI 调用失败: 缺少 API Key 或输入错误", e);
+            throw new RuntimeException("AI 调用失败", e);
+        } catch (Exception e) {
+            logger.error("阿里云 AI 调用发生未知异常", e);
+            throw new RuntimeException("AI 系统异常", e);
+        }
+    }
+
+    /**
+     * 调用通义千问进行多轮对话 (流式输出)
+     *
+     * @param messages 用户和系统消息列表
+     * @return AI 生成的文本结果流
+     */
+    public Flowable<GenerationResult> chatStream(java.util.List<Message> messages) {
+        String apiKey = aiProperties.getApiKey();
+        if (apiKey == null || apiKey.isEmpty() || apiKey.startsWith("${")) {
+            logger.error("阿里云 AI 调用失败: API Key 未设置或未正确解析");
+            throw new RuntimeException("AI 调用失败: 请在环境变量或配置文件中设置 dashscope_api_key");
+        }
+
+        try {
+            Generation gen = new Generation();
+            GenerationParam param = GenerationParam.builder()
+                    .apiKey(apiKey)
+                    .model("qwen-plus")
+                    .messages(messages)
+                    .resultFormat(GenerationParam.ResultFormat.MESSAGE)
+                    .incrementalOutput(false)
+                    .build();
+            return gen.streamCall(param);
         } catch (NoApiKeyException | InputRequiredException e) {
             logger.error("阿里云 AI 调用失败: 缺少 API Key 或输入错误", e);
             throw new RuntimeException("AI 调用失败", e);

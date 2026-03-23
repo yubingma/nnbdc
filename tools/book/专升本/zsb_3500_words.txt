@@ -1368,7 +1368,7 @@ goagainst
 goalong
 goaway
 goback
-goby （
+goby
 goinfor
 gointo
 goon

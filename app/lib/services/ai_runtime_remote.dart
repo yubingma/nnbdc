@@ -1,9 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:dio/dio.dart';
+
 import 'package:nnbdc/api/api.dart';
+import 'package:nnbdc/config.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/services/ai_service.dart';
+import 'package:nnbdc/util/loading_utils.dart';
 
 class RemoteAiRuntime implements AiRuntime {
   @override
@@ -13,6 +17,71 @@ class RemoteAiRuntime implements AiRuntime {
 
   @override
   Stream<String> get partialStream => _partialController.stream;
+
+  Future<AiResponse> _streamChat(List<Map<String, String>> messages) async {
+    try {
+      final baseUrl = Api.useProdUrl
+          ? Config.profiles["prod"]["service_url"]
+          : Config.serviceUrl;
+      final url = '$baseUrl/admin/aiChatStream.do';
+
+      final response = await LoadingUtils.withoutApiLoading(() async {
+        return await Api.dio.post<ResponseBody>(
+          url,
+          data: {
+            'messagesJson': jsonEncode(messages),
+          },
+          options: Options(
+            responseType: ResponseType.stream,
+            contentType: Headers.formUrlEncodedContentType,
+          ),
+        );
+      });
+
+      final stream = response.data!.stream;
+      final completer = Completer<AiResponse>();
+      String allText = '';
+
+      stream.cast<List<int>>().transform(utf8.decoder).transform(const LineSplitter()).listen(
+        (line) {
+          if (line.startsWith('data:')) {
+            final dataStr = line.substring(5).trim();
+            if (dataStr.isEmpty) return;
+            try {
+              final json = jsonDecode(dataStr);
+              if (json['success'] == true) {
+                final text = json['data'] as String;
+                allText = text;
+                _partialController.add(text);
+              } else if (json['success'] == false) {
+                if (!completer.isCompleted) {
+                  completer.complete(AiResponse.error(json['msg'] ?? 'AI 服务异常'));
+                }
+              }
+            } catch (e) {
+              // ignore partial json parse error if chunked incorrectly
+            }
+          }
+        },
+        onDone: () {
+          if (!completer.isCompleted) {
+            completer.complete(AiResponse.ok(allText));
+          }
+        },
+        onError: (e) {
+          if (!completer.isCompleted) {
+            completer.complete(AiResponse.error('流出错了: $e'));
+          }
+        },
+        cancelOnError: true,
+      );
+
+      return await completer.future;
+    } catch (e) {
+      Global.logger.e('远程 AI 流式请求失败: $e');
+      return AiResponse.error('远程服务失败: $e');
+    }
+  }
 
   @override
   Future<AiResponse> runTask(AiRequest request) async {
@@ -30,24 +99,11 @@ class RemoteAiRuntime implements AiRuntime {
           {'role': 'user', 'content': userPrompt}
         ];
         
-        final res = await Api.client.aiChat(jsonEncode(messages));
-        if (res.success && res.data != null) {
-          final text = res.data!;
-          _partialController.add(text);
-          return AiResponse.ok(text);
-        } else {
-          return AiResponse.error(res.msg ?? '远程服务异常');
-        }
+        return await _streamChat(messages);
       } else if (request.type == AiTaskType.chat) {
-        final messages = request.payload['messages'] as List<dynamic>? ?? [];
-        final res = await Api.client.aiChat(jsonEncode(messages));
-        if (res.success && res.data != null) {
-          final text = res.data!;
-          _partialController.add(text);
-          return AiResponse.ok(text);
-        } else {
-          return AiResponse.error(res.msg ?? '远程服务异常');
-        }
+        final messagesRaw = request.payload['messages'] as List<dynamic>? ?? [];
+        final messages = messagesRaw.map((e) => {'role': e['role'].toString(), 'content': e['content'].toString()}).toList();
+        return await _streamChat(messages);
       }
       return AiResponse.error('未支持的远程任务');
     } catch (e) {

@@ -314,6 +314,56 @@ public class SystemController {
     }
 
     /**
+     * 阿里云AI对话 (流式输出)
+     * @param messagesJson JSON array of messages [{"role":"system","content":"..."}, ...]
+     * @return 助手回复的流 (Server-Sent Events)
+     */
+    @PostMapping(value = "/admin/aiChatStream.do", produces = org.springframework.http.MediaType.TEXT_EVENT_STREAM_VALUE + ";charset=UTF-8")
+    public org.springframework.web.servlet.mvc.method.annotation.SseEmitter aiChatStream(@RequestParam("messagesJson") String messagesJson) {
+        org.springframework.web.servlet.mvc.method.annotation.SseEmitter emitter = new org.springframework.web.servlet.mvc.method.annotation.SseEmitter(300000L);
+        java.util.concurrent.ExecutorService sseMvcExecutor = java.util.concurrent.Executors.newSingleThreadExecutor();
+        sseMvcExecutor.execute(() -> {
+            try {
+                com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                java.util.List<com.alibaba.dashscope.common.Message> messages = new java.util.ArrayList<>();
+                com.fasterxml.jackson.databind.JsonNode arrayNode = mapper.readTree(messagesJson);
+                for (com.fasterxml.jackson.databind.JsonNode node : arrayNode) {
+                    messages.add(com.alibaba.dashscope.common.Message.builder()
+                            .role(node.get("role").asText())
+                            .content(node.get("content").asText())
+                            .build());
+                }
+
+                io.reactivex.Flowable<com.alibaba.dashscope.aigc.generation.GenerationResult> resultFlowable = aiBo.chatStream(messages);
+                resultFlowable.blockingSubscribe(
+                    result -> {
+                        String content = result.getOutput().getChoices().get(0).getMessage().getContent();
+                        if (content != null) {
+                            beidanci.api.Result<String> rs = beidanci.api.Result.success(content);
+                            emitter.send(java.util.Objects.requireNonNull(rs));
+                        }
+                    },
+                    error -> {
+                        beidanci.api.Result<String> failRs = beidanci.api.Result.fail("AI服务异常: " + error.getMessage());
+                        emitter.send(java.util.Objects.requireNonNull(failRs));
+                        emitter.completeWithError(error);
+                    },
+                    () -> {
+                        emitter.complete();
+                    }
+                );
+            } catch (Exception e) {
+                try {
+                    beidanci.api.Result<String> failRs = beidanci.api.Result.fail("后端系统异常: " + e.getMessage());
+                    emitter.send(java.util.Objects.requireNonNull(failRs));
+                    emitter.completeWithError(e);
+                } catch (Exception ignore) {}
+            }
+        });
+        return emitter;
+    }
+
+    /**
      * 阿里云AI对话
      * @param messagesJson JSON array of messages [{"role":"system","content":"..."}, ...]
      * @return 助手回复的纯文本
