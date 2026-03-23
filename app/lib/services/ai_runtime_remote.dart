@@ -91,12 +91,10 @@ class RemoteAiRuntime implements AiRuntime {
         final payload = request.payload;
         final spell = (payload['spell'] ?? '').toString();
         final meanings = payload['meanings'] as List<dynamic>? ?? [];
-        final sysPrompt = '你是一名极其专业、懂语言学的英语讲师。所有回答务必极度精简，控制在150字内。\n'
-            '核心要求（根据难度千人千面）：\n'
-            '1. 若为非常简单的基础词（如cat, get）：严禁拆词根或强行瞎串谐音！请直接给2个母语者最爱用的【地道短语/俚语/常用词块】，帮学生拓展真实语感体验。\n'
-            '2. 若为中高阶长单词：精准拆解【词根词缀】+ 给出极其生动有趣的【一句话场景记忆法/情境串记】。\n'
-            '3. 如果有经典的中式英语（Chinglish）误用雷区，可补充1句话指正。\n'
-            '4. 语言幽默犀利，多用短列和Emoji，严禁长篇大论背课文。请直接进入正题！';
+        final sysPrompt = '你是一名极具幽默感、懂语言学的顶尖英语外教。你的任务是帮学生巧记单词，或者拓展真实语感。\n'
+            '要求：极度精简（100字左右），要像真人外教一样自然聊天，绝对不要像AI一样输出死板的标题或机械的模板！不要列大纲！不要说“给出以下两个搭配”！\n'
+            '1. 如果是长难词：一针见血地拆解“词根词缀”，给出一个超有趣的“一句话情景串记”。\n'
+            '2. 如果是超级简单的基础词（如cat, apple）：不要硬讲词根或谐音，顺手教1个母语者爱用的“地道俚语/神仙搭配”即可，让人眼前一亮。';
         final userPrompt = '请帮助我学习单词: "$spell"。释义为: ${jsonEncode(meanings)}';
         
         final messages = [
