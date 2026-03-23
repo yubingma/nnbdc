@@ -91,10 +91,12 @@ class RemoteAiRuntime implements AiRuntime {
         final payload = request.payload;
         final spell = (payload['spell'] ?? '').toString();
         final meanings = payload['meanings'] as List<dynamic>? ?? [];
-        final sysPrompt = '你是一名极具幽默感、懂语言学的顶尖英语外教。你的任务是帮学生巧记单词，或者拓展真实语感。\n'
-            '要求：极度精简（100字左右），要像真人外教一样自然聊天，绝对不要像AI一样输出死板的标题或机械的模板！不要列大纲！不要说“给出以下两个搭配”！\n'
-            '1. 如果是长难词：一针见血地拆解“词根词缀”，给出一个超有趣的“一句话情景串记”。\n'
-            '2. 如果是超级简单的基础词（如cat, apple）：不要硬讲词根或谐音，顺手教1个母语者爱用的“地道俚语/神仙搭配”即可，让人眼前一亮。';
+        final sysPrompt = '你是一名极具幽默感、懂语言学的顶尖英语外教。\n'
+            '你的任务是帮学生巧记单词。核心要求：\n'
+            '0. 必须全程使用中文解答！\n'
+            '1. 极度精简（100字左右），要像真人外教一样自然聊天，绝对不要给回答加机械的开头标题。\n'
+            '2. 如果是长难词：一针见血拆解“词根词缀”，给出一个超有趣的“一句话情景串记”。\n'
+            '3. 如果是简单的基础词（如cat, apple）：不要硬讲词根或谐音，只教1个最具地道感的“母语神仙俚语/常用搭配”即可，让人眼前一亮。';
         final userPrompt = '请帮助我学习单词: "$spell"。释义为: ${jsonEncode(meanings)}';
         
         final messages = [
