@@ -91,7 +91,7 @@ public class SystemHealthCheckBo {
         
         try {
             // 使用原生SQL一次性获取所有用户词典信息，参考check_db.py的高效查询
-            String sql = "SELECT d.id, d.name, d.owner_id, d.word_count, d.create_time " +
+            String sql = "SELECT d.id, d.name, d.owner_id, d.word_count, d.base_dict_id, d.create_time " +
                         "FROM dict d " +
                         "WHERE d.visible = 1 AND d.is_ready = 1 AND d.owner_id != :sysUserId " +
                         "ORDER BY d.create_time DESC";
@@ -102,7 +102,8 @@ public class SystemHealthCheckBo {
                     rs.getString("id"),
                     rs.getString("name"),
                     rs.getString("owner_id"),
-                    rs.getObject("wordCount", Integer.class)
+                    rs.getObject("wordCount", Integer.class),
+                    rs.getString("base_dict_id")
                 }
             );
             
@@ -111,9 +112,10 @@ public class SystemHealthCheckBo {
                 String dictName = (String) dict[1];
                 String ownerId = (String) dict[2];
                 Integer wordCount = (Integer) dict[3];
+                String baseDictId = (String) dict[4];
                 
                 // 检查词典单词序号连续性和数量一致性
-                checkDictWordSequenceAndCount(dictId, dictName, ownerId, wordCount, issues);
+                checkDictWordSequenceAndCount(dictId, dictName, ownerId, wordCount, baseDictId, issues);
             }
             
         } catch (DataAccessException e) {
@@ -333,7 +335,10 @@ public class SystemHealthCheckBo {
     /**
      * 检查词典单词序号连续性和数量一致性（参考check_db.py的高效实现）
      */
-    private void checkDictWordSequenceAndCount(String dictId, String dictName, String ownerId, Integer expectedWordCount, List<SystemHealthIssue> issues) {
+    private void checkDictWordSequenceAndCount(String dictId, String dictName, String ownerId, Integer expectedWordCount, String baseDictId, List<SystemHealthIssue> issues) {
+        if (baseDictId != null && !baseDictId.trim().isEmpty()) {
+            return; // 衍生版（乱序版）词书本质上是一个共享源词库实体的空壳，不应该检查 dict_word
+        }
         try {
             // 使用原生SQL一次性获取词典中的所有单词，按seq排序
             String sql = "SELECT dw.word_id, dw.seq, w.spell " +
@@ -451,6 +456,10 @@ public class SystemHealthCheckBo {
                 return;
             }
             
+            if (dict.getBaseDictId() != null && !dict.getBaseDictId().trim().isEmpty()) {
+                return; // 衍生版直接跳过实体检查
+            }
+            
             // 检查空词书
             if (dictWords.isEmpty()) {
                 // 系统用户的生词本和已掌握词书（核心系统词书）允许为空
@@ -539,6 +548,10 @@ public class SystemHealthCheckBo {
                     "dict_word_count"
                 ));
                 return;
+            }
+            
+            if (dict.getBaseDictId() != null && !dict.getBaseDictId().trim().isEmpty()) {
+                return; // 衍生版直接跳过实体数量检查
             }
             
             if (!actualCount.equals(recordedCount.longValue())) {
