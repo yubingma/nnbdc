@@ -7,6 +7,8 @@ import 'package:dio/dio.dart';
 import 'package:drift/drift.dart';
 import 'package:nnbdc/api/api.dart';
 import 'package:nnbdc/services/throttled_sync_service.dart';
+import 'package:nnbdc/util/app_clock.dart';
+import 'package:nnbdc/util/sys_db_sync.dart';
 
 /// 进度回调函数类型
 typedef ProgressCallback = void Function(int step, String message, {IntegrityCheckResult? result});
@@ -167,12 +169,6 @@ class DataIntegrityChecker {
       // 获取用户拥有的词典
       final userDicts = await (_db.dictsDao.select(_db.dicts)..where((d) => d.ownerId.equals(userId))).get();
 
-      // 添加通用词典
-      final commonDict = await _db.dictsDao.findById(Global.commonDictId);
-      if (commonDict != null) {
-        userDicts.add(commonDict);
-      }
-
       for (final dict in userDicts) {
         final wordsList = await (_db.dictWordsDao.select(_db.dictWords)
               ..where((dw) => dw.dictId.equals(dict.id))
@@ -244,12 +240,6 @@ class DataIntegrityChecker {
     try {
       // 获取用户拥有的词典
       final userDicts = await (_db.dictsDao.select(_db.dicts)..where((d) => d.ownerId.equals(userId))).get();
-
-      // 添加通用词典
-      final commonDict = await _db.dictsDao.findById(Global.commonDictId);
-      if (commonDict != null) {
-        userDicts.add(commonDict);
-      }
 
       for (final dict in userDicts) {
         final actualCount = await _db.dictWordsDao.getDictWordCount(dict.id);
@@ -373,6 +363,33 @@ class DataIntegrityChecker {
   /// 检查通用词典完整性
   Future<void> _checkCommonDictIntegrity(IntegrityCheckResult result) async {
     try {
+      final commonDict = await _db.dictsDao.findById(Global.commonDictId);
+      if (commonDict != null) {
+        // 1. 检查记录数量一致性
+        final actualCount = await _db.dictWordsDao.getDictWordCount(Global.commonDictId);
+        if (commonDict.wordCount != actualCount) {
+          result.addIssue('系统单词数量不匹配', '通用兜底词书记录数量: ${commonDict.wordCount}, 实际数量: $actualCount', 'sys_dict_word_count');
+        }
+
+        // 2. 检查序号连续性
+        final wordsList = await (_db.dictWordsDao.select(_db.dictWords)
+              ..where((dw) => dw.dictId.equals(Global.commonDictId))
+              ..orderBy([(dw) => OrderingTerm.asc(dw.seq)]))
+            .get();
+        if (wordsList.isNotEmpty) {
+          if (wordsList.first.seq != 1 || wordsList.last.seq != wordsList.length) {
+            result.addIssue('系统单词序号不连续', '通用兜底词书序号发生断层或未从1开始', 'sys_dict_word_sequence');
+          } else {
+            for (int i = 0; i < wordsList.length; i++) {
+              if (wordsList[i].seq != i + 1) {
+                result.addIssue('系统单词序号不连续', '通用兜底词书序号在位置 ${i + 1} 断层', 'sys_dict_word_sequence');
+                break;
+              }
+            }
+          }
+        }
+      }
+
       // 检查通用词典中的单词是否有释义项
       final wordsList = await (_db.dictWordsDao.select(_db.dictWords)..where((dw) => dw.dictId.equals(Global.commonDictId))).get();
 
@@ -469,6 +486,28 @@ class DataIntegrityChecker {
         await _fixMissingUserDicts(fixResult, userId);
       }
 
+      // 系统级字典如果有数量不对或序号不对的问题
+      if (checkResult.hasIssue('sys_dict_word_count') || checkResult.hasIssue('sys_dict_word_sequence')) {
+        try {
+          // 不改乱公共云端库，而是抹除本地系统版本戳（置为：0），触发系统数据的全量重拉
+          final db = MyDatabase.instance;
+          await db.sysDbVersionDao.saveVersion(
+             SysDbVersionData(
+               id: 'singleton',
+               version: 0,
+               lastSyncTime: AppClock.now(),
+               createTime: AppClock.now(),
+               updateTime: AppClock.now(),
+             ),
+          );
+          
+          await syncSysDb();
+          fixResult.addFixed('检测到系统词库（通用词典）存在缺失，已在本地强制从云端重载系统环境基础数据！');
+        } catch (e) {
+          fixResult.addError('强制重载通用系统数据流失败: $e');
+        }
+      }
+
       // 修复版本号异常问题
       if (checkResult.hasIssue('user_db_version')) {
         await _fixUserDbVersions(fixResult, userId);
@@ -486,8 +525,8 @@ class DataIntegrityChecker {
       final allDicts = await _db.dictsDao.select(_db.dicts).get();
 
       for (final dict in allDicts) {
-        // 安全验证：只修复当前用户的词典或通用词典
-        if (dict.ownerId != currentUserId && dict.id != Global.commonDictId) {
+        // 安全验证：只修复当前用户的词典
+        if (dict.ownerId != currentUserId) {
           Global.logger.w('⚠️ 跳过非当前用户的词典：dictId=${dict.id}, ownerId=${dict.ownerId}, currentUserId=$currentUserId');
           continue;
         }
@@ -526,8 +565,8 @@ class DataIntegrityChecker {
       final allDicts = await _db.dictsDao.select(_db.dicts).get();
 
       for (final dict in allDicts) {
-        // 安全验证：只修复当前用户的词典或通用词典
-        if (dict.ownerId != currentUserId && dict.id != Global.commonDictId) {
+        // 安全验证：只修复当前用户的词典
+        if (dict.ownerId != currentUserId) {
           Global.logger.w('⚠️ 跳过非当前用户的词典：dictId=${dict.id}, ownerId=${dict.ownerId}, currentUserId=$currentUserId');
           continue;
         }
