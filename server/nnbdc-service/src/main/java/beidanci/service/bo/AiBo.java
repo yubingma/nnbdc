@@ -129,7 +129,7 @@ public class AiBo {
                     .model("qwen-plus")
                     .messages(messages)
                     .resultFormat(GenerationParam.ResultFormat.MESSAGE)
-                    .incrementalOutput(false)
+                    .incrementalOutput(true)
                     .build();
             return gen.streamCall(param);
         } catch (NoApiKeyException | InputRequiredException e) {

@@ -51,7 +51,7 @@ class RemoteAiRuntime implements AiRuntime {
               final json = jsonDecode(dataStr);
               if (json['success'] == true) {
                 final text = json['data'] as String;
-                allText = text;
+                allText += text;
                 _partialController.add(text);
               } else if (json['success'] == false) {
                 if (!completer.isCompleted) {
