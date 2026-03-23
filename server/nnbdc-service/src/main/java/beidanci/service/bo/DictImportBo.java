@@ -170,6 +170,24 @@ public class DictImportBo {
                 processUserImportWithMeanings(task, dictId, dictName, domain, wordsWithMeanings, generateWordImage, preferredVoices, stats);
             }
 
+            // 更新原词典的单词总数，并下发 UPDATE 同步日志通知客户端
+            if (dictId != null && !dictId.isEmpty()) {
+                Dict mainDict = dictBo.findById(dictId);
+                if (mainDict != null) {
+                    List<DictWord> currentWords = dictWordBo.findDictWordsByDictId(dictId);
+                    int finalCount = (currentWords != null) ? currentWords.size() : 0;
+                    mainDict.setWordCount(finalCount);
+                    dictBo.updateEntity(mainDict);
+                    if (isSystemImport) {
+                        try {
+                            sysDbSyncBo.logOperation("UPDATE", "dict", dictId, JsonUtils.toJson(dictBo.toDto(mainDict)));
+                        } catch (Exception e) {
+                            logger.warn("生成更新词典同步日志失败", e);
+                        }
+                    }
+                }
+            }
+
             // 处理乱序版
             if (isSystemImport && generateShuffledVersion && dictId != null) {
                 try {
@@ -220,6 +238,11 @@ public class DictImportBo {
                     Dict sDict = dictBo.findById(shuffledDictId);
                     sDict.setWordCount(wc);
                     dictBo.updateEntity(sDict);
+                    try {
+                        sysDbSyncBo.logOperation("UPDATE", "dict", shuffledDictId, JsonUtils.toJson(dictBo.toDto(sDict)));
+                    } catch (Exception e) {
+                        logger.warn("生成更新乱序版词典同步日志失败", e);
+                    }
 
                 } catch (Exception e) {
                     logger.error("生成乱序版本词书壳子失败!", e);
@@ -850,6 +873,14 @@ public class DictImportBo {
             if (count == null || count == 0) {
                 String insertSql = "INSERT INTO group_and_dict_link (group_id, dict_id) VALUES (:groupId, :dictId)";
                 namedParameterJdbcTemplate.update(insertSql, p);
+                
+                // 记录系统同步日志，通知客户端拉取这层关系
+                java.util.Map<String, String> linkDto = new java.util.HashMap<>();
+                linkDto.put("groupId", groupId);
+                linkDto.put("dictId", dictId);
+                sysDbSyncBo.logOperation("INSERT", "group_and_dict_link", groupId + "_" + dictId, 
+                        beidanci.service.util.JsonUtils.toJson(linkDto));
+                        
                 logger.info("系统词库导入：已自动建立词书关联: dictId={}, groupId={}", dictId, groupId);
             }
         } catch (Exception e) {

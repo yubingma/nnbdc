@@ -499,14 +499,23 @@ class _MePageState extends State<MePage> {
 
           // 获取词书名称，如果获取不到则使用ID
           String dictName = '词书 ${learningDict.dictId}';
+          bool dictDeletedOnServer = false;
           try {
             // 这里只是获取名称：使用轻量接口，避免下载完整词书资源
             final result = await Api.client.getDictInfo(learningDict.dictId);
             if (result.success && result.data?.name != null) {
               dictName = result.data!.name;
-            }
+            } else if (!result.success && result.msg == '词典不存在') {
+              dictDeletedOnServer = true;
+            } 
           } catch (e) {
             Global.logger.e("获取词书名称失败: $e");
+          }
+
+          if (dictDeletedOnServer) {
+            Global.logger.w("词书已在服务端被彻底物理删除，由于目前还没有同步相关UserDb日志，在此主动解除本地依赖打破死循环: ${learningDict.dictId}");
+            await db.learningDictsDao.deleteEntity(learningDict, true);
+            continue; // 跳过此无效词库
           }
 
           // 将dictName处理为无后缀的短名称
