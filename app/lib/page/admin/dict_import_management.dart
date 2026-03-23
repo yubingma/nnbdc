@@ -8,7 +8,8 @@ import 'package:nnbdc/theme/app_theme.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:provider/provider.dart';
 import 'package:nnbdc/state.dart';
-import 'package:nnbdc/api/dto.dart';
+import 'package:nnbdc/api/dto.dart'; 
+import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/services/throttled_sync_service.dart';
 import 'package:nnbdc/api/bo/word_bo.dart';
 import 'package:nnbdc/page/word_detail.dart'; 
@@ -32,6 +33,13 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
   bool _isSubmitting = false;
   bool _generateWordImage = false;
   bool _generateShuffledVersion = false;
+
+  List<DictGroup>? _dictGroups;
+  String? _selectedDictGroupId;
+
+  List<HallGroupVo>? _hallGroups;
+  String? _selectedGameHallId;
+
   final List<String> _availableVoices = ['longanyang', 'longanhuan', 'longxiaochun_v3', 'longxiaoxia_v3', 'longniuniu_v3', 'longhuhu_v3', 'longjielidou_v3']; 
   final List<String> _selectedVoices = ['longanyang', 'longanhuan', 'longxiaochun_v3', 'longxiaoxia_v3', 'longniuniu_v3', 'longhuhu_v3', 'longjielidou_v3'];
 
@@ -47,6 +55,36 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
   void initState() {
     super.initState();
     _checkDictMatch(_dictNameCtrl.text);
+    _loadOptions();
+  }
+
+  void _loadOptions() async {
+    try {
+      final db = MyDatabase.instance;
+      // 加载词书大类（选书页面的分类）
+      var dictGroupsData = await db.select(db.dictGroups).get();
+      if (dictGroupsData.isNotEmpty) {
+        final rootGroup = dictGroupsData.firstWhere(
+          (g) => g.name == 'root',
+          orElse: () => dictGroupsData.firstWhere((g) => g.parentId == null, orElse: () => dictGroupsData.first),
+        );
+        var secondLevelGroups = dictGroupsData.where((g) => g.parentId == rootGroup.id && !["蒲公英", "职称", "少儿", "其他"].contains(g.name)).toList();
+        secondLevelGroups.sort((a, b) => a.displayIndex.compareTo(b.displayIndex));
+        
+        // 加载游戏大厅
+        final hallDataRes = await Api.client.getGameHallData();
+        if (mounted) {
+          setState(() {
+            _dictGroups = secondLevelGroups;
+            if (hallDataRes.hallGroups.isNotEmpty) {
+              _hallGroups = hallDataRes.hallGroups;
+            }
+          });
+        }
+      }
+    } catch (e) {
+      Global.logger.e("未能成功加载词书分组或游戏大厅数据", error: e);
+    }
   }
 
   void _checkDictMatch(String name) async {
@@ -128,7 +166,9 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
           "ttsVoices": _selectedVoices.join(","),
           "words": wordsToImport,
           "generateWordImage": _generateWordImage,
-          "generateShuffledVersion": _generateShuffledVersion
+          "generateShuffledVersion": _generateShuffledVersion,
+          "targetDictGroupId": _selectedDictGroupId,
+          "targetGameHallId": _selectedGameHallId
         })
       });
 
@@ -451,13 +491,16 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
                         expands: true,
                         keyboardType: TextInputType.multiline,
                         textAlignVertical: TextAlignVertical.top,
-                      decoration: InputDecoration(
-                        labelText: '单词列表 (每行一个，支持"单词|自定义释义")',
-                        hintText: "",
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                        alignLabelWithHint: true,
-                        contentPadding: const EdgeInsets.all(16),
-                      ),
+                        onChanged: (val) {
+                          setState(() {});
+                        },
+                        decoration: InputDecoration(
+                          labelText: '单词列表 (每行一个，支持"单|义") - 当前输入 ${_wordsCtrl.text.split('\n').where((e) => e.trim().isNotEmpty).length} 行',
+                          hintText: "", 
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          alignLabelWithHint: true,
+                          contentPadding: const EdgeInsets.all(16),
+                        ),
                         style: const TextStyle(fontFamily: 'monospace', fontSize: 14),
                       ),
                     ),
@@ -504,6 +547,65 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
                           }).toList(),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: 16),
+                    // ============= 关联设置 =============
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.blueGrey.withValues(alpha: 0.05),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.blueGrey.withValues(alpha: 0.2)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Row(
+                            children: [
+                              Icon(Icons.link, size: 18, color: Colors.blueGrey),
+                              SizedBox(width: 8),
+                              Text('一键建立公共区域关联 (可选)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          DropdownButtonFormField<String>(
+                            value: _selectedDictGroupId,
+                            isExpanded: true,
+                            decoration: InputDecoration(
+                              labelText: '目标词书分组 (App选书界面的Tab)',
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            ),
+                            items: [
+                              const DropdownMenuItem(value: null, child: Text("不建立关联 (隐藏)")),
+                              if (_dictGroups != null)
+                                ..._dictGroups!.map((g) => DropdownMenuItem(value: g.id, child: Text(g.name))),
+                            ],
+                            onChanged: (val) => setState(() => _selectedDictGroupId = val),
+                          ),
+                          const SizedBox(height: 12),
+                          DropdownButtonFormField<String>(
+                            value: _selectedGameHallId,
+                            isExpanded: true,
+                            decoration: InputDecoration(
+                              labelText: '目标游戏大厅 (挂载到哪个大厅去玩)',
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            ),
+                            items: [
+                              const DropdownMenuItem(value: null, child: Text("不挂载到游戏大厅")),
+                              if (_hallGroups != null)
+                                ..._hallGroups!.expand((group) => group.gameHalls.map((hall) => 
+                                    DropdownMenuItem(value: hall.id, child: Text('${group.groupName} - ${hall.hallName}')))),
+                            ],
+                            onChanged: (val) => setState(() => _selectedGameHallId = val),
+                          ),
+                          const Padding(
+                            padding: EdgeInsets.only(top: 8),
+                            child: Text('注：不仅基础词典会被分配到这里，若生成了（乱序版），它也会跟原词书一起加进“目标词书分组”。游戏大厅则不受衍生乱序版影响。', style: TextStyle(color: Colors.grey, fontSize: 11)),
+                          )
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 16),
                     Container(

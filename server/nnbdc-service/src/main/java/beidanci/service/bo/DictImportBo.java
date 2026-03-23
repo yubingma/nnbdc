@@ -12,6 +12,8 @@ import beidanci.service.po.*;
 import beidanci.service.po.DictWordId;
 import beidanci.service.util.JsonUtils;
 import beidanci.service.util.SysParamUtil;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import beidanci.util.Constants;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -71,6 +73,12 @@ public class DictImportBo {
 
     @Autowired
     private LearningDictBo learningDictBo;
+
+    @Autowired
+    private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
+
+    @Autowired
+    private GameHallBo gameHallBo;
 
     /**
      * 异步执行导入任务
@@ -215,6 +223,32 @@ public class DictImportBo {
 
                 } catch (Exception e) {
                     logger.error("生成乱序版本词书壳子失败!", e);
+                }
+            }
+
+            // 处理词书与分组及大厅的直接绑定
+            if (isSystemImport && dictId != null) {
+                String targetDictGroupId = (String) config.get("targetDictGroupId");
+                String targetGameHallId = (String) config.get("targetGameHallId");
+                
+                if (targetDictGroupId != null && !targetDictGroupId.trim().isEmpty()) {
+                    linkDictToGroup(dictId, targetDictGroupId);
+                }
+                if (targetGameHallId != null && !targetGameHallId.trim().isEmpty()) {
+                    GameHall hall = gameHallBo.findById(targetGameHallId);
+                    if (hall != null && hall.getDictGroup() != null) {
+                        linkDictToGroup(dictId, hall.getDictGroup().getId());
+                    }
+                }
+                
+                if (generateShuffledVersion) {
+                    String shuffledDictName = dictBo.findById(dictId).getName() + " (乱序版)";
+                    Dict sDict = dictBo.findByName(shuffledDictName);
+                    if (sDict != null) {
+                        if (targetDictGroupId != null && !targetDictGroupId.trim().isEmpty()) {
+                            linkDictToGroup(sDict.getId(), targetDictGroupId);
+                        }
+                    }
                 }
             }
 
@@ -739,6 +773,24 @@ public class DictImportBo {
             this.status = status;
             this.errorMsg = errorMsg;
             this.aiResult = aiResult;
+        }
+    }
+
+    private void linkDictToGroup(String dictId, String groupId) {
+        if (dictId == null || groupId == null) return;
+        try {
+            String checkSql = "SELECT count(*) FROM group_and_dict_link WHERE group_id = :groupId AND dict_id = :dictId";
+            MapSqlParameterSource p = new MapSqlParameterSource()
+                    .addValue("groupId", groupId)
+                    .addValue("dictId", dictId);
+            Integer count = namedParameterJdbcTemplate.queryForObject(checkSql, p, Integer.class);
+            if (count == null || count == 0) {
+                String insertSql = "INSERT INTO group_and_dict_link (group_id, dict_id) VALUES (:groupId, :dictId)";
+                namedParameterJdbcTemplate.update(insertSql, p);
+                logger.info("系统词库导入：已自动建立词书关联: dictId={}, groupId={}", dictId, groupId);
+            }
+        } catch (Exception e) {
+            logger.error("自动关联词库至分组时出错", e);
         }
     }
 }
