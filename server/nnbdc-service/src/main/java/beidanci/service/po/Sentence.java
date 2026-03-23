@@ -216,7 +216,7 @@ public class Sentence extends UuidPo {
         this.isUpdating = isUpdating;
     }
 
-    @Column(name = "tts_voice", length = 50)
+    @Column(name = "tts_voice", length = 255)
     private String ttsVoice;
 
     @Column(name = "tts_engine", length = 50)
