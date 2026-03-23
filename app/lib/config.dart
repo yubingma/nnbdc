@@ -1,5 +1,5 @@
 class Config {
-  static String profileName = "dev";
+  static String profileName = "prod";
 
   static final Map profiles = {
     "prod": {
@@ -7,7 +7,7 @@ class Config {
       "service_url": "https://back.nnbdc.com",
       // Socket.IO 走同域 HTTPS，由 nginx 转发到 9191（namespace: /all）
       "socketServerUrl": "https://back.nnbdc.com/all",
-      // 公共资源/共享词书通过 CDN（www + /back 反代）访问
+      // 公共资源/共享词书通过 CDN（www + /back 反代）访问 
       "cdnBackUrl": "https://www.nnbdc.com/back",
       "sound_base_url": "https://www.nnbdc.com/sound/",
       "updateUrl": "https://www.nnbdc.com/app/ver.json",

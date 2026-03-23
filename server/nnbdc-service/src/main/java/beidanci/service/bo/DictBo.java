@@ -715,13 +715,17 @@ public class DictBo extends BaseBo<Dict> {
             String deleteDictWordsSql = "DELETE FROM dict_word WHERE dict_id = :dictId";
             int deletedDictWords = namedParameterJdbcTemplate.update(deleteDictWordsSql, params);
 
+            // 4.5 删除 group_and_dict_link 表中的关联记录
+            String deleteGroupLinkSql = "DELETE FROM group_and_dict_link WHERE dict_id = :dictId";
+            int deletedGroupLinks = namedParameterJdbcTemplate.update(deleteGroupLinkSql, params);
+
             // 5. 最后删除词典本身
             String deleteDictSql = "DELETE FROM dict WHERE id = :dictId";
             int deletedDicts = namedParameterJdbcTemplate.update(deleteDictSql, params);
 
             log.info(
-                    "安全删除词典完成: dictId={}, 删除sentence={}条, meaning_item={}条, learning_dict={}条, dict_word={}条, dict={}条",
-                    dictId, deletedSentences, deletedMeaningItems, deletedLearningDicts, deletedDictWords,
+                    "安全删除词典完成: dictId={}, 删除sentence={}条, meaning_item={}条, learning_dict={}条, dict_word={}条, group_and_dict_link={}条, dict={}条",
+                    dictId, deletedSentences, deletedMeaningItems, deletedLearningDicts, deletedDictWords, deletedGroupLinks,
                     deletedDicts);
 
         } catch (DataAccessException e) {
@@ -848,6 +852,7 @@ public class DictBo extends BaseBo<Dict> {
             // 3. Delete dict ties
             namedParameterJdbcTemplate.update("DELETE FROM learning_dict WHERE dict_id = :dictId", pDict);
             namedParameterJdbcTemplate.update("DELETE FROM dict_word WHERE dict_id = :dictId", pDict); 
+            namedParameterJdbcTemplate.update("DELETE FROM group_and_dict_link WHERE dict_id = :dictId", pDict);
             // Finally delete the dict
             namedParameterJdbcTemplate.update("DELETE FROM dict WHERE id = :dictId", pDict);
             sysDbLogBo.logOperation("DELETE", "dict", dictId, "{}");
