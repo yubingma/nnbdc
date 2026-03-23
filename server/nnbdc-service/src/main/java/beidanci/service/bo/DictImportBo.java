@@ -365,6 +365,49 @@ public class DictImportBo {
             org.springframework.beans.BeanUtils.copyProperties(word, wordDto);
             sysDbSyncBo.logOperation("INSERT", "word", word.getId(), beidanci.service.util.JsonUtils.toJson(wordDto));
             stats.addSyncLog("INSERT", "word");
+
+            // 同步为通用兜底词书（ID="0"）添加关系并更新计数，以免触发数据不一致健康警告
+            DictWord dw0 = new DictWord();
+            dw0.setId(new beidanci.service.po.DictWordId(Constants.COMMON_DICT_ID, word.getId()));
+            Dict commonDict = new Dict();
+            commonDict.setId(Constants.COMMON_DICT_ID);
+            dw0.setDict(commonDict);
+            dw0.setWord(word);
+            dw0.setSeq(dictWordBo.getMaxSeqNo(commonDict) + 1);
+            dw0.setCreateTime(new Date());
+            
+            // 使用 try-catch 忽略数据库层面的触发器唯一键冲突
+            try {
+                dictWordBo.createEntity(dw0);
+            } catch (Exception ignore) {
+            }
+
+            // 无论底层是否通过触发器创建了该记录，都必须为客户端插入一条系统同步日志，否则客户端不会拉取这条 dict_word ！
+            beidanci.api.model.DictWordDto dwDto = new beidanci.api.model.DictWordDto();
+            dwDto.setDictId(Constants.COMMON_DICT_ID);
+            dwDto.setWordId(word.getId());
+            dwDto.setSeq(dw0.getSeq());
+            dwDto.setCreateTime(dw0.getCreateTime());
+            sysDbSyncBo.logOperation("INSERT", "dict_word", Constants.COMMON_DICT_ID + "_" + word.getId(), beidanci.service.util.JsonUtils.toJson(dwDto));
+            stats.addSyncLog("INSERT", "dict_word");
+
+            // 更新 "0" 词书的 wordCount
+            Dict dict0 = dictBo.findById(Constants.COMMON_DICT_ID);
+            if (dict0 != null) {
+                dict0.setWordCount(dict0.getWordCount() + 1);
+                dictBo.updateEntity(dict0);
+            } else {
+                // 回退查找，防止在未提交事务中为空
+                dict0 = new Dict();
+                dict0.setId(Constants.COMMON_DICT_ID);
+                dict0.setWordCount(dictWordBo.getMaxSeqNo(commonDict)); // fallback
+            }
+            
+            // 同样必须同步 dict 表的变更
+            beidanci.api.model.DictDto dictDto = new beidanci.api.model.DictDto();
+            org.springframework.beans.BeanUtils.copyProperties(dict0, dictDto);
+            sysDbSyncBo.logOperation("UPDATE", "dict", Constants.COMMON_DICT_ID, beidanci.service.util.JsonUtils.toJson(dictDto));
+            stats.addSyncLog("UPDATE", "dict");
         }
 
         if (word == null) {
