@@ -60,6 +60,24 @@ public class DictImportController {
         return Result.success(task.getId());
     }
 
+    @PostMapping("/cancel")
+    public Result<String> cancelTask(@RequestParam String taskId) {
+        ImportTask task = importTaskBo.findById(taskId);
+        if (task == null) {
+            return Result.fail("任务不存在");
+        }
+        if ("RUNNING".equals(task.getStatus()) || "PENDING".equals(task.getStatus())) {
+            task.setStatus("CANCELED");
+            try {
+                importTaskBo.updateEntity(task);
+            } catch (IllegalAccessException e) {
+                return Result.fail("取消失败: " + e.getMessage());
+            }
+            return Result.success("已发送取消指令");
+        }
+        return Result.fail("只有 RUNNING 或 PENDING 状态的任务可以被取消");
+    }
+
     @GetMapping("/getTaskStatus")
     public Result<ImportTask> getTaskStatus(@RequestParam String taskId) {
         ImportTask task = importTaskBo.findById(taskId);

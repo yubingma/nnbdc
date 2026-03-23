@@ -212,6 +212,39 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
     }
   }
 
+  Future<void> _cancelTask() async {
+    if (_taskId == null) return;
+
+    bool confirm = await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('终止任务', style: TextStyle(color: Colors.red)),
+        content: const Text('正在运行的导入任务将被强行切断，之前已处理的单词将会保留。确定要终止吗？'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('取消')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('强行终止'),
+          ),
+        ],
+      ),
+    ) ?? false;
+
+    if (!confirm) return;
+
+    try {
+      final res = await Api.client.cancelDictImportTask(_taskId!);
+      if (res.success) {
+        ToastUtil.success('已发送终止指令，任务将在稍后停止');
+      } else {
+        ToastUtil.error('终止失败: ${res.msg}');
+      }
+    } catch (e) {
+      ToastUtil.error('强退指令发送失败: $e');
+    }
+  }
+
   void _startPolling() {
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 2), (timer) async {
@@ -228,7 +261,7 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
             });
           }
           final status = res.data!.data['status'];
-          if (status == 'COMPLETED' || status == 'FAILED' || status == 'SKIPPED') {
+          if (status == 'COMPLETED' || status == 'FAILED' || status == 'SKIPPED' || status == 'CANCELED') {
             timer.cancel();
             
             if (status == 'COMPLETED') {
@@ -723,7 +756,17 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
                             children: [
                               LinearProgressIndicator(value: total > 0 ? progressVal : null),
                               const SizedBox(height: 8),
-                              Center(child: Text('进度: ${total > 0 ? '$processed / $total' : '计算中'} (AI 正在全力生成中...)', style: const TextStyle(fontSize: 12, color: Colors.grey))),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text('进度: ${total > 0 ? '$processed / $total' : '计算中'} (后台处理中...)', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                                  TextButton.icon(
+                                    onPressed: _cancelTask,
+                                    icon: const Icon(Icons.stop_circle, color: Colors.red, size: 16),
+                                    label: const Text('终止', style: TextStyle(color: Colors.red, fontSize: 12)),
+                                  ),
+                                ]
+                              ),
                             ],
                           );
                         } else if (_taskDetails!['status'] == 'COMPLETED') {

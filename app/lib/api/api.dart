@@ -766,4 +766,7 @@ abstract class RestClient {
   @GET("/import/getTaskStatus")
   Future<Result<JsonMap>> getDictImportTaskStatus(
       @Query("taskId") String taskId);
+
+  @POST("/import/cancel")
+  Future<Result> cancelDictImportTask(@Query("taskId") String taskId);
 }

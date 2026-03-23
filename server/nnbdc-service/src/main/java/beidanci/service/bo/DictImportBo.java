@@ -293,6 +293,10 @@ public class DictImportBo {
     private void processSystemImport(ImportTask task, String dictId, String dictName, String domain, List<String> words, boolean generateWordImage, String preferredVoices, TaskStatistics stats) {
         User systemUser = userBo.findById(Constants.SYS_USER_SYS_ID);
         for (int i = 0; i < words.size(); i++) {
+            ImportTask curTask = importTaskBo.findById(task.getId());
+            if (curTask != null && "CANCELED".equals(curTask.getStatus())) {
+                throw new RuntimeException("导入任务已被手动终止");
+            }
             String line = words.get(i).trim();
             if (line.isEmpty()) continue;
             String spell = line;
@@ -318,6 +322,10 @@ public class DictImportBo {
     private void processUserImportWordsOnly(ImportTask task, String dictId, String dictName, String domain, List<String> words, boolean generateWordImage, String preferredVoices, TaskStatistics stats) {
         User owner = task.getOwner();
         for (int i = 0; i < words.size(); i++) {
+            ImportTask curTask = importTaskBo.findById(task.getId());
+            if (curTask != null && "CANCELED".equals(curTask.getStatus())) {
+                throw new RuntimeException("导入任务已被手动终止");
+            }
             String spell = words.get(i).trim();
             try {
                 processSingleWord(spell, null, false, owner, dictId, dictName, domain, generateWordImage, preferredVoices, stats);
@@ -334,6 +342,10 @@ public class DictImportBo {
     private void processUserImportWithMeanings(ImportTask task, String dictId, String dictName, String domain, List<Map<String, String>> words, boolean generateWordImage, String preferredVoices, TaskStatistics stats) {
         User owner = task.getOwner();
         for (int i = 0; i < words.size(); i++) {
+            ImportTask curTask = importTaskBo.findById(task.getId());
+            if (curTask != null && "CANCELED".equals(curTask.getStatus())) {
+                throw new RuntimeException("导入任务已被手动终止");
+            }
             Map<String, String> item = words.get(i);
             String spell = item.get("word").trim();
             String manualMeaning = item.get("meaning");

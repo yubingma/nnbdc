@@ -13,8 +13,8 @@ accord
 accordance
 accordant
 according
-accordingto
-accountfor
+according to
+account for
 accountable
 accusation
 accustom
@@ -23,12 +23,12 @@ acquaint
 activate
 actually
 acupuncture
-adaptto
+adapt to
 addict
 additional
 adept
 adhere
-adhereto
+adhere to
 adjacent
 adjective
 adjoin
@@ -50,16 +50,16 @@ affirmative
 affluent
 afire
 afloat
-afterall
+after all
 aftermath
 aggravate
 aggression
 agitate
 agony
-agreeonsth.
-agreewithsb.
+agree on sth.
+agree with sb.
 aide
-airconditioning
+air conditioning
 airways
 aisle
 alert
@@ -95,19 +95,19 @@ anticancer
 anticipate
 anticipation
 antipathy
-apartfrom
+apart from
 apologise
 app
 apparatus
 apparently
-appealto
+appeal to
 appease
-appetising
+app et ising
 appetizing
 applause
 appliance
 applicable
-applyfor
+apply for
 apposite
 appraise
 appropriately
@@ -144,9 +144,9 @@ assorted
 assortment
 assure
 astray
-atall
+at all
 atleast
-attheend
+at the end
 atomic
 atop
 attachment
@@ -186,7 +186,7 @@ await
 awe
 ax
 axis
-babyboom
+baby boom
 backpack
 backup
 backyard
@@ -203,13 +203,13 @@ banknote
 bankrupt
 banner
 banquet
-bargainfor
+bargain for
 barge
 barn
 baron
 barrel
 barren
-baseon
+base on
 basically
 bass
 batch
@@ -276,7 +276,7 @@ boast
 bold
 bolt
 bombard
-bondwith
+bond with
 bookshop
 bookstore
 boost
@@ -297,13 +297,13 @@ bribe
 bribery
 bridesmaid
 briefcase
-bringabout
-bringback
-bringforward
-bringhometo
-bringin
-bringout
-bringup
+bring about
+bring back
+bring forward
+bring home to
+bring in
+bring out
+bring up
 Britain
 British
 broke
@@ -333,14 +333,14 @@ bureau
 burger
 bust
 buzz
-byaccident
-bychance
-bymeansof
-bymistake
-bytheend
-bythenameof
-byvirtueof
-bywayof
+by accident
+by chance
+by means of
+by mistake
+by the end
+by the name of
+by virtue of
+by way of
 bypass
 bypath
 byproduct
@@ -354,12 +354,12 @@ calculation
 calculator
 calendar
 calf
-callfor
-callin
-calloff
-callon
-callout
-callup
+call for
+call in
+call off
+call on
+call out
+call up
 calling
 calorie
 cameraman
@@ -376,15 +376,15 @@ cardinal
 career
 cargo
 carnation
-carryaway
-carryback
-carryforward
-carryon
+carry away
+carry back
+carry forward
+carry on
 carryout
 cart
 cashier
-catchsightof
-catchupwith
+catch sight of
+catch up with
 causal
 caveman
 cease
@@ -412,7 +412,7 @@ charming
 charter
 chase
 chatter
-checkin
+check in
 checkout
 cheerleader
 cherish
@@ -447,7 +447,7 @@ clasp
 classical
 classification
 clause
-clearup
+clear up
 clearly
 client
 cliff
@@ -483,17 +483,17 @@ colony
 column
 combat
 combination
-comeabout
-comeacross
-comealong
+come about
+come across
+come along
 comeback
-comefrom
-comein
-comeon
-comeout
-cometo
-comeupto
-comeupwith
+come from
+come in
+come on
+come out
+come to
+come up to
+come up with
 comet
 comic
 comma
@@ -527,8 +527,8 @@ competitor
 compile
 complacent
 complain
-complainabout
-complainof
+complain about
+complain of
 complainer
 complaint
 complement
@@ -537,7 +537,7 @@ completion
 complicate
 compliment
 comply
-complywith
+comply with
 compose
 composer
 composite
@@ -553,7 +553,7 @@ conceal
 concede
 conceit
 conceive
-conceiveof
+conceive of
 concentration
 conceptual
 concerning
@@ -575,7 +575,7 @@ confrontation
 Confucian
 Confucius
 confusion
-congratulateon
+congratulate on
 congress
 conjunction
 conquer
@@ -589,7 +589,7 @@ consequent
 consequently
 conserve
 considerable
-consistof
+consist of
 console
 consolidate
 constantly
@@ -599,7 +599,7 @@ constrain
 constraint
 consul
 consulate
-consultwith
+consult with
 consumer
 consumption
 contact
@@ -615,7 +615,7 @@ contraceptive
 contract
 contractor
 contrast
-contributeto
+contribute to
 contrive
 controller
 controversy
@@ -625,9 +625,9 @@ converse
 conversely
 conversion
 convert
-convertto
+convert to
 convict
-convinceof
+convince of
 convincing
 convoy
 cooperate
@@ -635,7 +635,7 @@ cooperation
 coordinate
 cop
 cope
-copewith
+cope with
 copper
 copyright
 cord
@@ -688,7 +688,7 @@ criticism
 criticize
 crocodile
 crossword
-crosswordpuzzle
+crossword puzzle
 crow
 crown
 crucial
@@ -711,7 +711,7 @@ cursor
 curtail
 curve
 custody
-cutdown
+cut down
 cutoff
 cute
 cyberspace
@@ -722,7 +722,7 @@ darling
 daylight
 dazzle
 deadly
-dealwith
+deal with
 dealer
 dean
 debris
@@ -741,7 +741,7 @@ deck
 declaration
 dedicate
 deduce
-deducefrom
+deduce from
 deduct
 deem
 defect
@@ -773,8 +773,8 @@ dent
 dental
 deny
 depart
-dependon
-dependupon
+depend on
+depend upon
 dependant
 dependent
 depict
@@ -788,7 +788,7 @@ depression
 deprive
 deputy
 derive
-derivefrom
+derive from
 descend
 descent
 designate
@@ -823,11 +823,11 @@ diagnose
 dialect
 diameter
 dictate
-dieaway
-diedown
-diefrom
-dieof
-dieoff
+die away
+die down
+die from
+die of
+die off
 differentiate
 digit
 diligent
@@ -871,7 +871,7 @@ displace
 display
 disposable
 dispose
-disposeof
+dispose of
 disposition
 disprove
 dispute
@@ -882,7 +882,7 @@ dissolve
 dissuade
 distinct
 distinguish...from...
-distinguishfrom
+distinguish from
 distort
 distortion
 distract
@@ -894,7 +894,7 @@ divert
 divide...into...
 dividend
 divine
-doawaywith
+do away with
 dock
 doctrine
 documentary
@@ -934,7 +934,7 @@ drown
 drunken
 dual
 dubious
-dueto
+due to
 dumb
 dump
 duplicate
@@ -1027,7 +1027,7 @@ endurance
 endure
 enforce
 engage
-engagein
+engage in
 engagement
 engineering
 England
@@ -1061,7 +1061,7 @@ episode
 epoch
 equate
 equator
-equipwith
+equip with
 equity
 equivalent
 era
@@ -1103,7 +1103,7 @@ exceptional
 excerpt
 excess
 excessive
-exchangefor
+exchange for
 excitement
 exciting
 exclaim
@@ -1166,11 +1166,11 @@ fairy
 faithful
 faithfully
 fake
-fallbehind
+fall behind
 falloff
 fame
 famine
-farcry
+far cry
 farewell
 farther
 fascinate
@@ -1195,14 +1195,14 @@ festive
 fifteen
 fifth
 fifty
-fightagainst
-fightfor
-fightwith
-figureout
+fight against
+fight for
+fight with
+figure out
 filter
 financial
-findfaultwith
-findout
+find fault with
+find out
 finding
 fingerprint
 finite
@@ -1225,17 +1225,17 @@ fluctuate
 fluently
 fluid
 foam
-focuson
+focus on
 foil
 folklore
 following
 footprint
 footstep
-forlackof
-forlife
-forthegoodof
-forthepurposeof
-forthesakeof
+for lack of
+for life
+for the good of
+for the purpose of
+for the sake of
 forceful
 forefather
 foreman
@@ -1267,7 +1267,7 @@ France
 frank
 frantic
 fraud
-freefrom
+free from
 freezer
 freight
 French
@@ -1307,7 +1307,7 @@ gasoline
 gasp
 gaze
 gear
-gearto
+gear to
 gender
 gene
 generally
@@ -1324,29 +1324,29 @@ geometrically
 germ
 German
 Germany
-getabove
-getacross
-getalongwith
+get above
+get across
+get along with
 getaway
-getback
-getcloseto
-getdownto
-getintouchwith
-geton
-getonwith
-getout
-getoutof
-getthrough
+get back
+get close to
+get down to
+get in touch with
+get on
+get on with
+get out
+get out of
+get through
 getup
 ghost
 giant
 giggle
 giveaway
-givein
-giveoff
-giveout
-giveup
-givewayto
+give in
+give off
+give out
+give up
+give way to
 given
 glacier
 glamor
@@ -1363,20 +1363,20 @@ glorious
 glossary
 glow
 glowing
-goafter
-goagainst
-goalong
-goaway
+go after
+go against
+go along
+go away
 goback
 goby
-goinfor
-gointo
-goon
-goout
-goover
-gothrough
+go in for
+go into
+go on
+go out
+go over
+go through
 goup
-gowith
+go with
 goodbye
 goodness
 gorgeous
@@ -1423,12 +1423,12 @@ halfway
 Halloween
 hallway
 halt
-handin
-handoff
+hand in
+hand off
 handout
 handover
-handoverto
-handup
+handover to
+hand up
 handbook
 handicap
 handicraft
@@ -1444,13 +1444,13 @@ haste
 hatred
 haul
 haunt
-haveadayoff
-haveanadvantageover
-haveaneffecton
-haveanimpacton
-haveaninfluenceon
-havenothingtodowith
-havesomethingtodowith
+have a day off
+have an advantage over
+have an effect on
+have an impact on
+have an influence on
+have nothing to do with
+have something to do with
 hay
 hazard
 haze
@@ -1459,8 +1459,8 @@ headquarter
 headquarters
 heal
 heap
-hearfrom
-hearof
+hear from
+hear of
 heartbeat
 heartfelt
 heatstroke
@@ -1531,7 +1531,7 @@ idealistic
 idealize
 identical
 identify
-identifywith
+identify with
 idiot
 idle
 ignite
@@ -1574,48 +1574,48 @@ implication
 implicit
 imply
 impose
-imposeon
+impose on
 impressive
 improper
 improvement
 impulse
 impurity
-inahurry
-inaword
-inaccordancewith
-inadditionto
-inadvance
-inall
-inbrief
-incaseof
-inchargeof
-incommon
+in a hurry
+in a word
+in accordance with
+in addition to
+in advance
+in all
+in brief
+in case of
+in charge of
+in common
 indebt
-indetail
-inexchangefor
-infavorof
-ingeneral
-inhonorof
-inlightof
-inlinewith
-inmemoryof
-inneedof
-inparticular
-inplaceof
-inpossessionof
-inproportionto
-inreplyto
-inrespectof
-inresponseto
-inreturn
-inreturnfor
-inspiteof
-inthecourseof
-intheend
-inthelightof
-inthenameof
+in detail
+in exchange for
+in favor of
+in general
+in honor of
+in light of
+inline with
+in memory of
+in need of
+in particular
+in place of
+in possession of
+in proportion to
+in reply to
+in respect of
+in response to
+in return
+in return for
+in spite of
+in the course of
+in the end
+in the light of
+in the name of
 inturn
-invain
+in vain
 inaccessible
 inaccurate
 inadequate
@@ -1648,7 +1648,7 @@ indoors
 induce
 indulge
 industrial
-industrialise
+industrial is e
 industrialize
 inevitable
 inexpensive
@@ -1666,7 +1666,7 @@ inflation
 inflict
 influential
 influenza
-informof
+in form of
 informsb.ofsth.
 informal
 infrastructure
@@ -1704,12 +1704,12 @@ installment
 instalment
 instance
 instantly
-insteadof
+instead of
 instinct
 insufficient
 insulate
 insult
-insureagainst
+in sure against
 intact
 intake
 intangible
@@ -1798,13 +1798,13 @@ jury
 justify
 karaoke
 keen
-keeparecordof
-keepaneyeon
-keepdown
-keepintouchwith
-keepon
-keeppacewith
-keepupwith
+keep a record of
+keep an eye on
+keep down
+keep in touch with
+keep on
+keep pace with
+keep up with
 kidnap
 kilocycle
 kilowatt
@@ -1840,19 +1840,19 @@ lawsuit
 layer
 layoff
 layout
-leadto
+lead to
 leadership
 leading
 leaflet
 lean
 leap
-learnfrom
+learn from
 learning
 lease
-leavealone
-leavebehind
-leavefor
-leaveout
+leave alone
+leave behind
+leave for
+leave out
 leftover
 legacy
 legend
@@ -1870,7 +1870,7 @@ liberal
 liberate
 licence
 lick
-liein
+lie in
 lifeboat
 lifelong
 lifestyle
@@ -1902,27 +1902,27 @@ logical
 logo
 longevity
 longitude
-lookafter
-lookat
-lookback
-lookdown
-lookdownon
-lookdownupon
-lookfor
-lookforwardto
-lookinto
-lookon
+look after
+look at
+look back
+look down
+look down on
+look down upon
+look for
+look forward to
+look into
+look on
 lookout
-lookover
-lookthrough
-lookup
+look over
+look through
+look up
 loop
 loophole
 loosen
 lord
-losesightof
-losetouchwith
-loseweight
+lose sight of
+lose touch with
+lose weight
 lotion
 lottery
 loudspeaker
@@ -1945,8 +1945,8 @@ mainstream
 maintain
 maintenance
 majesty
-majorin
-makeup
+major in
+make up
 maladjusted
 malefactor
 malformation
@@ -1988,7 +1988,7 @@ measurement
 mechanic
 mechanical
 mechanics
-mechanise
+me ch anise
 mechanism
 mechanize
 mediate
@@ -2084,7 +2084,7 @@ multilateral
 multimedia
 multiparty
 multiple
-multiplechoice
+multiple choice
 multiracial
 multitude
 municipal
@@ -2161,7 +2161,7 @@ nurture
 nylon
 obese
 obesity
-objectto
+object to
 objection
 objective
 obligation
@@ -2194,22 +2194,22 @@ OK
 olive
 omission
 omit
-onaccountof
-onanaverage
-onaverage
-onbehalfof
-onbusiness
-onconditionthat
-onfire
-ononehand
-onpurpose
-onsale
-onschedule
-ontheaverage
-onthecontrary
-ontheonehand
-ontheotherhand
-onthepointof
+on account of
+on an average
+on average
+on behalf of
+on business
+on condition that
+on fire
+on one hand
+on purpose
+on sale
+on schedule
+on the average
+on the contrary
+on the one hand
+on the other hand
+on the point of
 ongoing
 online
 onset
@@ -2235,12 +2235,12 @@ orient
 oriental
 orientation
 original
-originatefrom
-originatein
+originate from
+originate in
 ornament
 orphan
 orthopedics
-oughtto
+ought to
 ounce
 outbreak
 outdated
@@ -2313,9 +2313,9 @@ patriot
 patrol
 pave
 paw
-payavisitto
-payattentionto
-payfor
+pay a visit to
+pay attention to
+pay for
 payoff
 payment
 payroll
@@ -2352,7 +2352,7 @@ pharmacy
 phase
 philosopher
 philosophy
-pickout
+pick out
 pickup
 pierce
 pigeon
@@ -2370,7 +2370,7 @@ plague
 plantation
 plateau
 plausible
-playajokeon
+play a joke on
 player
 plaza
 plead
@@ -2491,18 +2491,18 @@ puncture
 purchaser
 pursue
 pursuit
-putanendto
-putaway
+put an end to
+put away
 putback
-putdown
-putforward
-putin
-putinto
-putoff
-puton
-putout
-putup
-putupwith
+put down
+put forward
+put in
+put into
+put off
+put on
+put out
+put up
+put up with
 qualify
 quantify
 quarantine
@@ -2531,7 +2531,7 @@ rally
 rap
 rape
 rarely
-ratherthan
+rather than
 ratio
 ration
 rational
@@ -2575,7 +2575,7 @@ refund
 refundable
 refusal
 regarding
-regardlessof
+regardless of
 regime
 regiment
 region
@@ -2639,8 +2639,8 @@ restrain
 restraint
 restrict
 restroom
-resultfrom
-resultin
+result from
+result in
 resume
 retail
 retailer
@@ -2731,7 +2731,7 @@ script
 sculpt
 seafood
 seashore
-seatbelt
+seat belt
 secondary
 sector
 seduce
@@ -2746,7 +2746,7 @@ semiconductor
 semifinal
 senate
 senator
-sendout
+send out
 sendsb.for
 sensation
 sensible
@@ -2756,13 +2756,13 @@ sequence
 serial
 series
 seriously
-setabout
-setaside
+set about
+set aside
 setdown
-setfireto
+set fire to
 setoff
-setout
-setup
+set out
+set up
 setback
 seven
 seventeen
@@ -2856,7 +2856,7 @@ solve
 someday
 sometime
 somewhat
-soonerorlater
+sooner or later
 soothe
 sophisticated
 sore
@@ -2915,8 +2915,8 @@ stake
 stale
 stall
 stammer
-standfor
-standup
+stand for
+stand up
 standardization
 standardize
 standby
@@ -2931,17 +2931,17 @@ stationer
 statistic
 statistical
 statute
-stayup
+stay up
 steamer
 steer
 stem
 stepmother
 stereo
 stereotype
-stickout
-stickto
-stickupfor
-stickwith
+stick out
+stick to
+stickup for
+stick with
 sticky
 stiff
 stimulate
@@ -3045,19 +3045,19 @@ synthetic
 tackle
 tactic
 tag
-takeadvantageof
-takeafter
-takeapart
-takeaway
-takeback
+take advantage of
+take after
+take apart
+take away
+take back
 takedown
-takein
-takenoticeof
+take in
+take notice of
 takeout
-takeover
-takepridein
-taketheplaceof
-takeup
+take over
+take pride in
+take the place of
+take up
 tame
 tangible
 teammate
@@ -3087,7 +3087,7 @@ terrorist
 testify
 testimony
 textile
-thanksto
+thanks to
 thanksgiving
 therapy
 thereby
@@ -3095,10 +3095,10 @@ thermometer
 thesis
 thicken
 thickness
-thinkabout
-thinkhighlyof
-thinkof
-thinkover
+think about
+think highly of
+think of
+think over
 third
 thirsty
 thirteen
@@ -3122,7 +3122,7 @@ timber
 timid
 toddle
 toe
-togetherwith
+together with
 token
 tolerance
 tolerant
@@ -3181,16 +3181,16 @@ tumble
 tumor
 tumour
 tunnel
-turnagainst
+turn against
 turnback
 turndown
-turnin
-turninto
+turn in
+turn into
 turnoff
-turnon
-turnout
+turn on
+turn out
 turnover
-turnto
+turn to
 turnup
 turtle
 twelfth
@@ -3240,7 +3240,7 @@ unprecedented
 unsuitable
 untie
 unveil
-upto
+up to
 up-to-date
 upgrade
 uphold
@@ -3249,7 +3249,7 @@ upright
 uprising
 urbanization
 usage
-useup
+use up
 usefulness
 usually
 utilise
@@ -3309,9 +3309,9 @@ volt
 voltage
 volume
 vulnerable
-waggon
+wag gon
 wagon
-waitfor
+wait for
 waken
 walkman
 ware
@@ -3362,7 +3362,7 @@ woolen
 workaholic
 workforce
 workload
-workmate
+work mate
 workout
 workplace
 workshop

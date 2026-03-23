@@ -29,7 +29,7 @@ accident
 accommodation
 accompany
 accomplish
-accordingto
+according to
 account
 accountant
 accumulate
@@ -180,7 +180,7 @@ another
 answer
 ant
 Antarctic
-theAntarctic
+the Antarctic
 Antarctica
 antique
 anxiety
@@ -224,8 +224,8 @@ April
 Arab
 Arabic
 Arctic
-theArctic
-theArcticOcean
+the Arctic
+the Arctic Ocean
 are
 area
 argue
@@ -273,7 +273,7 @@ athlete
 athletic
 athletics
 Atlantic
-theAtlanticOcean
+the Atlantic Ocean
 atmosphere
 atom
 attach
@@ -337,7 +337,7 @@ band
 bandage
 bang
 bank
-bankaccount
+bank account
 bar
 barbecue
 barber
@@ -369,7 +369,7 @@ be
 beach
 beam
 bean
-beancurd
+bean curd
 bear
 beard
 beast
@@ -470,7 +470,7 @@ bookstore
 boom
 boot
 booth
-telephonebooth
+telephone booth
 border
 bored
 boring
@@ -517,7 +517,7 @@ brilliant
 bring
 Britain
 British
-theBritish
+the British
 broad
 broadcast
 brochure
@@ -546,7 +546,7 @@ burn
 burst
 bury
 bus
-busstop
+bus stop
 bush
 business
 businessman
@@ -574,8 +574,8 @@ camera
 camp
 campaign
 can
-agarbagecan
-acanopener
+a garbage can
+a can opener
 Canada
 Canadian
 canal
@@ -593,7 +593,7 @@ caption
 car
 carbon
 card
-cardgames
+card games
 care
 careful
 careless
@@ -642,7 +642,7 @@ certain
 certainly
 certificate
 chain
-chainstore
+chain store
 chair
 chairman
 chairwoman
@@ -667,7 +667,7 @@ cheat
 check
 cheek
 cheer
-Cheerup
+Cheer up
 cheerful
 cheers
 cheese
@@ -697,9 +697,9 @@ chopsticks
 chorus
 Christian
 Christmas
-Christmascard
-Christmastree
-ChristmasEve
+Christmas card
+Christmas tree
+Christmas Eve
 church
 cigar
 cigarette
@@ -797,7 +797,7 @@ comprehension
 compromise
 compulsory
 computer
-computergame
+computer game
 comrade
 concentrate
 concept
@@ -1312,7 +1312,7 @@ fear
 feast
 feather
 February
-federa
+federal
 fee
 feed
 feel
@@ -1356,7 +1356,7 @@ fish
 fisherman
 fist
 fit
-fittingroom
+fitting room
 five
 fix
 flag
@@ -1450,7 +1450,7 @@ front
 frontier
 frost
 fruit
-fruitjuice
+fruit juice
 fry
 fuel
 full
@@ -1583,7 +1583,7 @@ handful
 handkerchief
 handle
 handsome
-handtruck
+hand truck
 handwriting
 handy
 hang
@@ -1643,7 +1643,7 @@ hi
 hibernate
 hibernation
 hide
-hideandseek
+hide and seek
 high
 highway
 hill
@@ -1692,7 +1692,7 @@ howl
 hug
 huge
 human
-humanbeing
+human being
 humorous
 humour
 hundred
@@ -1746,7 +1746,7 @@ industry
 influence
 inform
 information
-informationdesk
+information desk
 initial
 injure
 injury
@@ -1829,8 +1829,8 @@ June
 jungle
 junior
 junk
-junkmail
-junkfood
+junk mail
+junk food
 just
 justice
 kangaroo
@@ -1995,11 +1995,11 @@ manager
 mankind
 man-made
 manner
-tablemanners
+table manners
 many
 map
 maple
-mapleleaves
+maple leaves
 marathon
 marble
 march
@@ -2031,7 +2031,7 @@ meanwhile
 measure
 meat
 medal
-goldmedal
+gold medal
 media
 medical
 medicine
@@ -2067,7 +2067,7 @@ microwave
 mid-autumn
 midday
 middle
-MiddleEast
+Middle East
 midnight
 might
 mild
@@ -2098,7 +2098,7 @@ mix
 mixture
 mm
 mobile
-mobilephone
+mobile phone
 model
 modem
 modern
@@ -2113,7 +2113,7 @@ monkey
 month
 monument
 moon
-mooncake
+moon cake
 mop
 moral
 more
@@ -2189,9 +2189,9 @@ net
 network
 never
 new
-NewYork
-NewZealand
-NewZealander
+New York
+New Zealand
+New Zealander
 news
 newspaper
 next
@@ -2271,7 +2271,7 @@ oilfield
 OK
 old
 Olympic
-OlympicGames
+Olympic Games
 omelette
 on
 once
@@ -2284,7 +2284,7 @@ open
 opener
 opening
 opera
-operahouse
+opera house
 operate
 operation
 operator
@@ -2340,7 +2340,7 @@ ox
 oxygen
 pace
 Pacific
-thePacificOcean
+the Pacific Ocean
 pack
 package
 packet
@@ -2488,7 +2488,7 @@ point
 poison
 poisonous
 pole
-theNorth
+the North
 police
 policeman
 policewoman
@@ -2563,7 +2563,7 @@ preview
 price
 pride
 primary
-primaryschool
+primary school
 primitive
 principle
 print
@@ -2666,7 +2666,7 @@ rat
 rate
 rather
 raw
-rawmaterial
+raw material
 ray
 razor
 reach
@@ -2694,7 +2694,7 @@ recognise
 recognize
 recommend
 record
-recordholder
+record holder
 recorder
 recover
 recreation
@@ -2911,7 +2911,7 @@ secure
 security
 see
 seed
-melonseed
+melon seed
 seek
 seem
 see-saw
@@ -2980,7 +2980,7 @@ shoe
 shoot
 shooting
 shop
-shopassistant
+shop assistant
 shopkeeper
 shopping
 shore
@@ -3002,7 +3002,7 @@ shy
 sick
 sickness
 side
-sideroad
+side road
 sideway
 sideways
 sigh
@@ -3074,7 +3074,7 @@ smoker
 smoking
 smooth
 snack
-snackbar
+snack bar
 snake
 snatch
 sneaker
@@ -3097,7 +3097,7 @@ socket
 sofa
 soft
 software
-softdrink
+soft drink
 softball
 soil
 solar
@@ -3150,7 +3150,7 @@ spit
 splendid
 split
 spoken
-spokenman
+spokesman
 sponsor
 spoon
 spoonful
@@ -3170,7 +3170,7 @@ staff
 stage
 stain
 stainless
-stainlesssteel
+stainless steel
 stair
 stamp
 stand
@@ -3301,7 +3301,7 @@ swell
 swift
 swim
 swimming
-swimmingpool
+swimming pool
 swing
 Swiss
 Switzerland
@@ -3314,7 +3314,7 @@ symptom
 system
 systematic
 table
-tabletennis
+table tennis
 tail
 tailor
 take
@@ -3326,7 +3326,7 @@ tank
 tanker
 tap
 tape
-taperecorder
+tape recorder
 target
 task
 taste
@@ -3423,7 +3423,7 @@ thunderstorm
 Thursday
 thus
 Tibet
-Tibeta
+Tibetan
 tick
 ticket
 tidy
@@ -3483,7 +3483,7 @@ trade
 tradition
 traditional
 traffic
-trafficlights
+traffic lights
 train
 trainer
 training
@@ -3635,7 +3635,7 @@ vice
 victim
 victory
 video
-videophone
+video phone
 view
 viewer
 village
@@ -3831,7 +3831,7 @@ zebra
 zebra-crossing
 zero
 zip
-zipcode
+zip code
 zipper
 zone
 zoo
