@@ -16,13 +16,13 @@ class DictDto {
   bool? deletable;
   int? popularityLimit;
   String? domain;
-  String? parentDictId;
+  String? baseDictId;
   String? sortAlg;
   DateTime createTime;
   DateTime? updateTime;
 
   DictDto(this.id, this.isReady, this.isShared, this.name, this.wordCount, this.ownerId, this.visible, this.popularityLimit, this.createTime,
-      this.updateTime, [this.editable, this.deletable, this.domain, this.parentDictId, this.sortAlg]);
+      this.updateTime, [this.editable, this.deletable, this.domain, this.baseDictId, this.sortAlg]);
 
   factory DictDto.fromJson(Map<String, dynamic> json) => _$DictDtoFromJson(json);
 

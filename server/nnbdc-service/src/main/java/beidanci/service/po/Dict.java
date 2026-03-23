@@ -84,10 +84,10 @@ public class Dict extends UuidPo {
     private Boolean deletable = true;
 
     /**
-     * 如果不为null, 则说明该词书是衍生词书(乱序版就是一种衍生词书)
-     */
-    @Column(name = "parent_dict_id", nullable = true, length = 36)
-    private String parentDictId;
+	 * 对于衍生版词书（例如乱序版词书），指向其基础版词书的ID
+	 */
+	@Column(name = "base_dict_id", length = 50)
+	private String baseDictId;
 
     /**
      * 排序算法, 目前仅支持 md5
@@ -119,14 +119,13 @@ public class Dict extends UuidPo {
         this.editable = editable;
     }
 
-    public String getParentDictId() {
-        return parentDictId;
-    }
+    	public String getBaseDictId() {
+		return baseDictId;
+	}
 
-    public void setParentDictId(String parentDictId) {
-        this.parentDictId = parentDictId;
-    }
-
+	public void setBaseDictId(String baseDictId) {
+		this.baseDictId = baseDictId;
+	}
     public String getSortAlg() {
         return sortAlg;
     }

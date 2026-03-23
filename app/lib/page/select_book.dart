@@ -1205,7 +1205,7 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
                   name: dictRes.dict!.name,
                   wordCount: dictRes.dict!.wordCount,
                   visible: dictRes.dict!.visible,
-                  parentDictId: dictRes.dict!.parentDictId,
+                  baseDictId: dictRes.dict!.baseDictId,
                   sortAlg: dictRes.dict!.sortAlg,
                   editable: dictRes.dict!.editable ?? (dictRes.dict!.name == '生词本' || dictRes.dict!.ownerId != Global.sysUserId),
                   deletable: dictRes.dict!.deletable ?? (dictRes.dict!.name != '生词本' && dictRes.dict!.name != '已掌握' && dictRes.dict!.ownerId != Global.sysUserId),

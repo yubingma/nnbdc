@@ -25,7 +25,7 @@ public class DictDto implements Dto {
     private Date createTime;
     private Date updateTime;
     private String domain;
-    private String parentDictId;
+    private String baseDictId;
     private String sortAlg;
 
     public DictDto() {
@@ -54,9 +54,9 @@ public class DictDto implements Dto {
     }
 
     public DictDto(String id, String name, String ownerId, Boolean isShared, Boolean isReady, Boolean visible,
-            Integer wordCount, Integer popularityLimit, Boolean editable, Boolean deletable, Date createTime, Date updateTime, String domain, String parentDictId, String sortAlg) {
+            Integer wordCount, Integer popularityLimit, Boolean editable, Boolean deletable, Date createTime, Date updateTime, String domain, String baseDictId, String sortAlg) {
         this(id, name, ownerId, isShared, isReady, visible, wordCount, popularityLimit, editable, deletable, createTime, updateTime, domain);
-        this.parentDictId = parentDictId;
+        this.baseDictId = baseDictId;
         this.sortAlg = sortAlg;
     }
 
@@ -164,12 +164,12 @@ public class DictDto implements Dto {
         this.domain = domain;
     }
 
-    public String getParentDictId() {
-        return parentDictId;
+    public String getBaseDictId() {
+        return baseDictId;
     }
 
-    public void setParentDictId(String parentDictId) {
-        this.parentDictId = parentDictId;
+    public void setBaseDictId(String baseDictId) {
+        this.baseDictId = baseDictId;
     }
 
     public String getSortAlg() {

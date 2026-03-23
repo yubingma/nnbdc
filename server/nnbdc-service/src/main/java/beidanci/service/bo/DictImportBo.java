@@ -170,10 +170,8 @@ public class DictImportBo {
                     String shuffledDictId;
                     if (existingShuffledDict != null) {
                         shuffledDictId = existingShuffledDict.getId();
-                        if (domain != null && !domain.isEmpty()) {
-                            existingShuffledDict.setDomain(domain);
-                        }
-                        existingShuffledDict.setParentDictId(dictId);
+                        existingShuffledDict.setDomain(null);
+                        existingShuffledDict.setBaseDictId(dictId);
                         existingShuffledDict.setSortAlg("md5");
                         dictBo.updateEntity(existingShuffledDict);
                     } else {
@@ -187,9 +185,8 @@ public class DictImportBo {
                         newDict.setDeletable(false);
                         newDict.setPopularityLimit(10);
                         newDict.setName(shuffledDictName);
-                        // 使用 domain 存放关联的原始词典信息，方便后续前端读取或排错，不过前端主要靠词典名 "(乱序版)" 判断
-                        newDict.setDomain("baseDict:" + dictId);
-                        newDict.setParentDictId(dictId);
+                        newDict.setDomain(null); // 衍生词典的 domain 为 null, 表示跟随原词典
+                        newDict.setBaseDictId(dictId);
                         newDict.setSortAlg("md5");
                         newDict.setOwner(systemUser);
                         dictBo.createEntity(newDict);

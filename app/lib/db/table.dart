@@ -220,7 +220,7 @@ class Dicts extends Table {
 
   TextColumn get domain => text().nullable()();
 
-  TextColumn get parentDictId => text().nullable()();
+  TextColumn get baseDictId => text().nullable()();
 
   TextColumn get sortAlg => text().nullable()();
 
