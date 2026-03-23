@@ -264,8 +264,14 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     cleaned = cleaned.replaceAll(RegExp(r'\n{3,}'), '\n\n'); // 压缩连续空行
 
     // 处理大模型顽固的中英文标点混用（修复类似 "I’ m", "don’ t", "cat’ s" 的全角加空格问题）
-    cleaned = cleaned.replaceAll(RegExp(r"[’‘”" "`]\s*(s|m|t|ve|re|ll|d)\b", caseSensitive: false), r"'$1");
-    cleaned = cleaned.replaceAll(RegExp(r"([a-zA-Z])\s*[’‘”" "`]\s*([a-zA-Z])"), r"$1'$2");
+    cleaned = cleaned.replaceAllMapped(
+      RegExp(r"[’‘”`]\s*(s|m|t|ve|re|ll|d)\b", caseSensitive: false),
+      (match) => "'${match.group(1)}"
+    );
+    cleaned = cleaned.replaceAllMapped(
+      RegExp(r"([a-zA-Z])\s*[’‘”`]\s*([a-zA-Z])"),
+      (match) => "${match.group(1)}'${match.group(2)}"
+    );
 
     return cleaned;
   }
