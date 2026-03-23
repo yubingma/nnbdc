@@ -688,6 +688,14 @@ public class DictBo extends BaseBo<Dict> {
         try {
             MapSqlParameterSource params = new MapSqlParameterSource("dictId", dictId);
 
+            // 0. 级联删除所有的衍生词典
+            String findDerivedSql = "SELECT id FROM dict WHERE base_dict_id = :dictId";
+            List<String> derivedDictIds = namedParameterJdbcTemplate.queryForList(findDerivedSql, params, String.class);
+            for (String derivedId : derivedDictIds) {
+                log.info("发现衍生词典，准备级联删除: {}", derivedId);
+                deleteDictSafely(derivedId);
+            }
+
             // 1. 先删除 sentence 表中的关联记录（sentence -> meaning_item -> dict）
             String deleteSentencesSql = "DELETE FROM sentence " +
                     "WHERE meaning_item_id IN (" +
@@ -742,6 +750,14 @@ public class DictBo extends BaseBo<Dict> {
         try {
             log.info("开始系统级清理词典 (以及其独占的翻译/例句/无关联的孤儿单词): dictId={}", dictId);
             MapSqlParameterSource pDict = new MapSqlParameterSource("dictId", dictId);
+            
+            // 0. 级联删除所有的衍生词典
+            String findDerivedSql = "SELECT id FROM dict WHERE base_dict_id = :dictId";
+            List<String> derivedDictIds = namedParameterJdbcTemplate.queryForList(findDerivedSql, pDict, String.class);
+            for (String derivedId : derivedDictIds) {
+                log.info("发现衍生词典，准备级联彻底粉碎: {}", derivedId);
+                deleteSystemDictSafely(derivedId);
+            }
             
             // 1. 获取要删除的meaningItemIds
             String sqlMi = "SELECT id, word_id FROM meaning_item WHERE dict_id = :dictId";
