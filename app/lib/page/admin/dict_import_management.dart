@@ -569,7 +569,7 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
                           ),
                           const SizedBox(height: 12),
                           DropdownButtonFormField<String>(
-                            value: _selectedDictGroupId,
+                            initialValue: _selectedDictGroupId,
                             isExpanded: true,
                             decoration: InputDecoration(
                               labelText: '目标词书分组 (App选书界面的Tab)',
