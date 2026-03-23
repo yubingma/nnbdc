@@ -849,26 +849,44 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
       List<DictVo> dictsToDownload = [];
       var db = MyDatabase.instance;
       for (var dictVo in selectedDictVos!) {
+        if (dictVo.name != null && dictVo.name!.endsWith(' (乱序版)')) {
+          final baseName = dictVo.name!.replaceAll(' (乱序版)', '');
+          DictVo? baseVo;
+          if (dictGroups != null) {
+            for (var group in dictGroups!) {
+              final found = group.dicts?.where((d) => d.name == baseName);
+              if (found != null && found.isNotEmpty) {
+                baseVo = found.first;
+                break;
+              }
+            }
+          }
+          if (baseVo != null) {
+            bool hasWords = await db.dictWordsDao.hasDictWords(baseVo.id);
+            if (!hasWords && !dictsToDownload.any((element) => element.id == baseVo!.id)) {
+              dictsToDownload.insert(0, baseVo);
+              Global.logger.i("乱序版依赖原词书，添加原词书下载: ${baseVo.id}");
+            }
+          }
+        }
+
         Dict? existing = await db.dictsDao.findById(dictVo.id);
 
         // 检查词书是否存在，或存在但没有单词
         if (existing == null) {
           // 词书不存在，需要下载
-          Global.logger.i("词书不存在，需要下载: ${dictVo.id}");
-          dictsToDownload.add(dictVo);
+          if (!dictsToDownload.any((element) => element.id == dictVo.id)) {
+            dictsToDownload.add(dictVo);
+          }
         } else {
           // 词书存在，但只有当owner是15118(系统词书)时才需要检查是否有单词
           if (existing.ownerId == "15118") {
             bool hasWords = await db.dictWordsDao.hasDictWords(dictVo.id);
             if (!hasWords) {
-              // 系统词书中没有单词，需要下载
-              Global.logger.i("系统词书存在但没有单词，需要下载: ${dictVo.id}");
-              dictsToDownload.add(dictVo);
-            } else {
-              Global.logger.i("系统词书已存在且包含单词，无需下载: ${dictVo.id}");
+              if (!dictsToDownload.any((element) => element.id == dictVo.id)) {
+                dictsToDownload.add(dictVo);
+              }
             }
-          } else {
-            Global.logger.i("非系统词书已存在，无需检查单词数量: ${dictVo.id}");
           }
         }
       }
@@ -964,6 +982,18 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
               onProgress(0.2 + progress * 0.8);
             }
           });
+
+          // 自动在本地生成乱序版节点（基于原词书生成临时的 DictWord 记录但不上传同步）
+          if (dict.name != null && dict.name!.endsWith(' (乱序版)')) {
+            final baseName = dict.name!.replaceAll(' (乱序版)', '');
+            final db = MyDatabase.instance;
+            final baseDictDb = await (db.select(db.dicts)..where((d) => d.name.equals(baseName))).getSingleOrNull();
+            if (baseDictDb != null) {
+              Global.logger.i('📥 Web端本地动态生成乱序版词书节点: ${dict.id}');
+              await WordBo().generateShuffledDictLocally(dict.id, baseDictDb.id);
+            }
+          }
+
           return true;
         }
 
@@ -1075,9 +1105,24 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
         prepareTimer?.cancel();
         prepareStopwatch?.stop();
 
+        prepareTimer?.cancel();
+        prepareStopwatch?.stop();
+
         if (importError != null) {
           throw importError;
         }
+
+        // 自动在本地生成乱序版节点（基于原词书生成临时的 DictWord 记录但不上传同步）
+        if (dict.name != null && dict.name!.endsWith(' (乱序版)')) {
+          final baseName = dict.name!.replaceAll(' (乱序版)', '');
+          final db = MyDatabase.instance;
+          final baseDictDb = await (db.select(db.dicts)..where((d) => d.name.equals(baseName))).getSingleOrNull();
+          if (baseDictDb != null) {
+            Global.logger.i('📥 本地动态生成乱序版词书节点: ${dict.id}');
+            await WordBo().generateShuffledDictLocally(dict.id, baseDictDb.id);
+          }
+        }
+
         return done;
       } finally {
         // 恢复数据库同步
@@ -1160,6 +1205,8 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
                   name: dictRes.dict!.name,
                   wordCount: dictRes.dict!.wordCount,
                   visible: dictRes.dict!.visible,
+                  parentDictId: dictRes.dict!.parentDictId,
+                  sortAlg: dictRes.dict!.sortAlg,
                   editable: dictRes.dict!.editable ?? (dictRes.dict!.name == '生词本' || dictRes.dict!.ownerId != Global.sysUserId),
                   deletable: dictRes.dict!.deletable ?? (dictRes.dict!.name != '生词本' && dictRes.dict!.name != '已掌握' && dictRes.dict!.ownerId != Global.sysUserId),
                   popularityLimit: dictRes.dict!.popularityLimit,

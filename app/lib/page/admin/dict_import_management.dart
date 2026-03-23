@@ -31,6 +31,7 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
   Timer? _timer;
   bool _isSubmitting = false;
   bool _generateWordImage = false;
+  bool _generateShuffledVersion = false;
   final List<String> _availableVoices = ['longanyang', 'longanhuan', 'longxiaochun_v3', 'longxiaoxia_v3', 'longniuniu_v3', 'longhuhu_v3', 'longjielidou_v3']; 
   final List<String> _selectedVoices = ['longanyang', 'longanhuan', 'longxiaochun_v3', 'longxiaoxia_v3', 'longniuniu_v3', 'longhuhu_v3', 'longjielidou_v3'];
 
@@ -126,7 +127,8 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
           "domain": _domainCtrl.text.trim(),
           "ttsVoices": _selectedVoices.join(","),
           "words": wordsToImport,
-          "generateWordImage": _generateWordImage
+          "generateWordImage": _generateWordImage,
+          "generateShuffledVersion": _generateShuffledVersion
         })
       });
 
@@ -518,6 +520,26 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
                         onChanged: _isSubmitting ? null : (val) {
                           setState(() {
                             _generateWordImage = val;
+                          });
+                        },
+                        activeThumbColor: AppTheme.primaryColor,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      clipBehavior: Clip.hardEdge,
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryColor.withValues(alpha: 0.05),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppTheme.primaryColor.withValues(alpha: 0.2)),
+                      ),
+                      child: SwitchListTile(
+                        title: const Text('同时生成乱序版', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                        subtitle: const Text('将生成一个名称带"(乱序版)"的重复词书，单词按MD5混淆排序，且共享发音原图等资源', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                        value: _generateShuffledVersion,
+                        onChanged: _isSubmitting ? null : (val) {
+                          setState(() {
+                            _generateShuffledVersion = val;
                           });
                         },
                         activeThumbColor: AppTheme.primaryColor,

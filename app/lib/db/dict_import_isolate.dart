@@ -175,6 +175,8 @@ Future<void> _runImport({
                 name: d.name,
                 wordCount: d.wordCount,
                 visible: d.visible,
+                parentDictId: d.parentDictId,
+                sortAlg: d.sortAlg,
                 editable: d.editable ?? (d.name == '生词本' || d.ownerId != Global.sysUserId),
                 deletable: d.deletable ?? (d.name != '生词本' && d.name != '已掌握' && d.ownerId != Global.sysUserId),
                 popularityLimit: d.popularityLimit,

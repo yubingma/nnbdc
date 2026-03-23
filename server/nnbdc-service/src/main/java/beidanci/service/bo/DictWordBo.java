@@ -362,6 +362,12 @@ public class DictWordBo extends BaseBo<DictWord> {
         return dictWordDtos;
     }
 
+    public List<DictWord> findDictWordsByDictId(String dictId) {
+        String sql = "SELECT * FROM dict_word WHERE dict_id = :dictId";
+        MapSqlParameterSource params = new MapSqlParameterSource("dictId", dictId);
+        return namedParameterJdbcTemplate.query(sql, params, new EntityRowMapper<>(DictWord.class));
+    }
+
     /**
      * 获取用户所有生词的DTO列表，用于全量同步
      */

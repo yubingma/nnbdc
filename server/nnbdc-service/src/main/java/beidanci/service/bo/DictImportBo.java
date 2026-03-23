@@ -150,6 +150,8 @@ public class DictImportBo {
             }
             importTaskBo.updateEntity(task);
 
+            boolean generateShuffledVersion = config.containsKey("generateShuffledVersion") ? (boolean) config.get("generateShuffledVersion") : false;
+
             String preferredVoices = (String) config.get("ttsVoices");
 
             if (isSystemImport) {
@@ -158,6 +160,65 @@ public class DictImportBo {
                 processUserImportWordsOnly(task, dictId, dictName, domain, rawWords, generateWordImage, preferredVoices, stats);
             } else {
                 processUserImportWithMeanings(task, dictId, dictName, domain, wordsWithMeanings, generateWordImage, preferredVoices, stats);
+            }
+
+            // 处理乱序版
+            if (isSystemImport && generateShuffledVersion && dictId != null) {
+                try {
+                    String shuffledDictName = dictBo.findById(dictId).getName() + " (乱序版)";
+                    Dict existingShuffledDict = dictBo.findByName(shuffledDictName);
+                    String shuffledDictId;
+                    if (existingShuffledDict != null) {
+                        shuffledDictId = existingShuffledDict.getId();
+                        if (domain != null && !domain.isEmpty()) {
+                            existingShuffledDict.setDomain(domain);
+                        }
+                        existingShuffledDict.setParentDictId(dictId);
+                        existingShuffledDict.setSortAlg("md5");
+                        dictBo.updateEntity(existingShuffledDict);
+                    } else {
+                        User systemUser = userBo.findById(Constants.SYS_USER_SYS_ID);
+                        Dict newDict = new Dict();
+                        newDict.setWordCount(0);
+                        newDict.setIsReady(true);
+                        newDict.setIsShared(true); 
+                        newDict.setVisible(true);
+                        newDict.setEditable(false);
+                        newDict.setDeletable(false);
+                        newDict.setPopularityLimit(10);
+                        newDict.setName(shuffledDictName);
+                        // 使用 domain 存放关联的原始词典信息，方便后续前端读取或排错，不过前端主要靠词典名 "(乱序版)" 判断
+                        newDict.setDomain("baseDict:" + dictId);
+                        newDict.setParentDictId(dictId);
+                        newDict.setSortAlg("md5");
+                        newDict.setOwner(systemUser);
+                        dictBo.createEntity(newDict);
+                        
+                        beidanci.service.po.LearningDictId ldId = new beidanci.service.po.LearningDictId(systemUser.getId(), newDict.getId());
+                        beidanci.service.po.LearningDict learningDict = new beidanci.service.po.LearningDict(ldId, newDict, systemUser, false, true);
+                        learningDictBo.createEntity(learningDict);
+
+                        shuffledDictId = newDict.getId();
+                        
+                        try {
+                            beidanci.api.model.DictDto dictDto = dictBo.toDto(newDict);
+                            sysDbSyncBo.logOperation("INSERT", "dict", shuffledDictId, JsonUtils.toJson(dictDto));
+                        } catch (Exception e) {
+                            logger.warn("生成新建乱序版词典同步日志失败", e);
+                        }
+                    }
+                    
+                    // 此时不真正插入 DictWord 记录，因为通过客户端本地“软绑定”随时可计算出乱序
+                    // 只需令该空壳词典的 wordCount 与源同步即可
+                    List<DictWord> originalDictWords = dictWordBo.findDictWordsByDictId(dictId);
+                    int wc = (originalDictWords != null) ? originalDictWords.size() : 0;
+                    Dict sDict = dictBo.findById(shuffledDictId);
+                    sDict.setWordCount(wc);
+                    dictBo.updateEntity(sDict);
+
+                } catch (Exception e) {
+                    logger.error("生成乱序版本词书壳子失败!", e);
+                }
             }
 
             task = importTaskBo.findById(taskId); // 重新加载以防状态冲突

@@ -216,7 +216,7 @@ class MyDatabase extends _$MyDatabase {
   // you should bump this number whenever you change or add a table definition. Migrations
   // are covered later in this readme.
   @override
-  int get schemaVersion => 28;
+  int get schemaVersion => 29;
 
   @override
   MigrationStrategy get migration {
@@ -314,6 +314,9 @@ class MyDatabase extends _$MyDatabase {
           }
           if (from < 28) {
             await _migrateFromV27ToV28(m);
+          }
+          if (from < 29) {
+            await _migrateFromV28ToV29(m);
           }
         } catch (e, stackTrace) {
           // 升级失败，记录错误日志
@@ -747,6 +750,19 @@ class MyDatabase extends _$MyDatabase {
         Global.logger.i('✅ 升级从 V27 到 V28 完成，添加例句词性字段');
       } catch (e, stackTrace) {
         Global.logger.e('升级从 V27 到 V28 失败: $e', error: e, stackTrace: stackTrace);
+      }
+    });
+  }
+
+  /// 从版本 28 升级到版本 29：向 Dicts 表添加 parent_dict_id 和 sort_alg 字段
+  Future<void> _migrateFromV28ToV29(Migrator m) async {
+    await transaction(() async {
+      try {
+        await m.addColumn(dicts, dicts.parentDictId);
+        await m.addColumn(dicts, dicts.sortAlg);
+        Global.logger.i('✅ 升级从 V28 到 V29 完成，添加字典从属与算法配置');
+      } catch (e, stackTrace) {
+        Global.logger.e('升级从 V28 到 V29 失败: $e', error: e, stackTrace: stackTrace);
       }
     });
   }

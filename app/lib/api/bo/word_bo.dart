@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:convert';
 
+import 'package:crypto/crypto.dart';
 import 'package:drift/drift.dart';
 import 'package:nnbdc/api/result.dart';
 import 'package:nnbdc/api/vo.dart';
@@ -18,6 +20,52 @@ class WordBo {
   static final WordBo _instance = WordBo._internal();
   factory WordBo() => _instance;
   WordBo._internal();
+
+  /// 在本地动态生成乱序版的临时的词库表结构
+  /// 这里的 DictWord 仅存放在本地数据库提供阅读游览，不上云
+  Future<void> generateShuffledDictLocally(String shuffledDictId, String baseDictId) async {
+    final db = MyDatabase.instance;
+    await db.transaction(() async {
+      // 1. 获取原词书的所有单字
+      final baseDictWordsQuery = db.select(db.dictWords).join([
+        innerJoin(db.words, db.words.id.equalsExp(db.dictWords.wordId))
+      ])..where(db.dictWords.dictId.equals(baseDictId));
+
+      final results = await baseDictWordsQuery.get();
+      if (results.isEmpty) return;
+
+      // 2. 将它们读取到内存并用 MD5(spell) 排序
+      final list = results.map((row) {
+        final word = row.readTable(db.words);
+        return {
+          'wordId': word.id,
+          'spell': word.spell,
+          'md5': md5.convert(utf8.encode(word.spell)).toString(),
+        };
+      }).toList();
+
+      list.sort((a, b) => (a['md5'] as String).compareTo(b['md5'] as String));
+
+      // 3. 构造新的 DictWord 列表插入到数据库
+      final newDictWords = <DictWord>[];
+      final createTime = DateTime.now();
+      for (int i = 0; i < list.length; i++) {
+        newDictWords.add(DictWord(
+          dictId: shuffledDictId,
+          wordId: list[i]['wordId'] as String,
+          seq: i + 1,
+          createTime: createTime,
+        ));
+      }
+
+      // 首先清理可能已经存在的旧词，防止主键冲突
+      await (db.delete(db.dictWords)..where((dw) => dw.dictId.equals(shuffledDictId))).go();
+
+      // 批量插入
+      await db.dictWordsDao.insertEntities(newDictWords, false);
+      Global.logger.i('✅ 本地已生成乱序版词书[$shuffledDictId]，共 ${newDictWords.length} 词');
+    });
+  }
 
   // 只做本地查词（包含大小写与词形多变体）
   Future<SearchWordResult> searchWordLocalOnly(String spell, [String? dictId]) async {
@@ -686,9 +734,19 @@ class WordBo {
       final wordEntries = await wordQuery.get();
       final wordMap = {for (var word in wordEntries) word.id: word};
 
-      // 1) 先取本词书(dictId)的定制释义
+      final queryDictIds = [dictId];
+      final currDict = await db.dictsDao.findById(dictId);
+      if (currDict != null && currDict.name.endsWith(' (乱序版)')) {
+        final baseName = currDict.name.replaceAll(' (乱序版)', '');
+        final baseDict = await (db.select(db.dicts)..where((od) => od.name.equals(baseName))).getSingleOrNull();
+        if (baseDict != null) {
+          queryDictIds.add(baseDict.id);
+        }
+      }
+
+      // 1) 先取本词书(dictId)或其基础词书的定制释义
       final dictSpecificMeaningQuery = db.select(db.meaningItems)
-        ..where((mi) => mi.wordId.isIn(wordIds) & mi.dictId.equals(dictId))
+        ..where((mi) => mi.wordId.isIn(wordIds) & mi.dictId.isIn(queryDictIds))
         ..orderBy([(mi) => OrderingTerm(expression: mi.popularity)]);
       final dictSpecificMeaningItems = await dictSpecificMeaningQuery.get();
       final meaningItemsMap = <String, List<MeaningItem>>{};
@@ -700,7 +758,6 @@ class WordBo {
       final wordsWithoutCustom =
           wordIds.where((wordId) => !meaningItemsMap.containsKey(wordId) || (meaningItemsMap[wordId]?.isEmpty ?? true)).toList();
       int? popularityLimit;
-      final currDict = await db.dictsDao.findById(dictId);
       if (currDict != null) {
         popularityLimit = currDict.popularityLimit;
       }
@@ -1562,8 +1619,20 @@ class WordBo {
 
     // 先查优先词书（存在即返回）
     if (priorityDictIds != null && priorityDictIds.isNotEmpty) {
+      final expandedPriorityDictIds = <String>{...priorityDictIds};
+      final dbDicts = await (db.select(db.dicts)..where((d) => d.id.isIn(priorityDictIds))).get();
+      for (final d in dbDicts) {
+        if (d.name.endsWith(' (乱序版)')) {
+          final baseName = d.name.replaceAll(' (乱序版)', '');
+          final baseDict = await (db.select(db.dicts)..where((od) => od.name.equals(baseName))).getSingleOrNull();
+          if (baseDict != null) {
+            expandedPriorityDictIds.add(baseDict.id);
+          }
+        }
+      }
+
       final priorityMiQuery = db.select(db.meaningItems)
-        ..where((mi) => mi.wordId.equals(wordId) & mi.dictId.isIn(priorityDictIds))
+        ..where((mi) => mi.wordId.equals(wordId) & mi.dictId.isIn(expandedPriorityDictIds))
         ..orderBy([(mi) => OrderingTerm(expression: mi.popularity)]);
       final priorityMeaningItems = await priorityMiQuery.get();
       if (priorityMeaningItems.isNotEmpty) {
@@ -1578,8 +1647,21 @@ class WordBo {
       final learningDicts = await learningDictsQuery.get();
       selectedDictIds = learningDicts.map((d) => d.dictId).toList();
 
-      // 先查定制释义（存在即返回）
       if (selectedDictIds.isNotEmpty) {
+        final expandedDictIds = <String>{...selectedDictIds};
+        final dbDicts = await (db.select(db.dicts)..where((d) => d.id.isIn(selectedDictIds))).get();
+        for (final d in dbDicts) {
+          if (d.name.endsWith(' (乱序版)')) {
+            final baseName = d.name.replaceAll(' (乱序版)', '');
+            final baseDict = await (db.select(db.dicts)..where((od) => od.name.equals(baseName))).getSingleOrNull();
+            if (baseDict != null) {
+              expandedDictIds.add(baseDict.id);
+            }
+          }
+        }
+        selectedDictIds = expandedDictIds.toList();
+
+        // 先查定制释义（存在即返回）
         final customMiQuery = db.select(db.meaningItems)
           ..where((mi) => mi.wordId.equals(wordId) & mi.dictId.isIn(selectedDictIds))
           ..orderBy([(mi) => OrderingTerm(expression: mi.popularity)]);

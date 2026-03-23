@@ -83,6 +83,18 @@ public class Dict extends UuidPo {
     @Column(name = "deletable", nullable = false)
     private Boolean deletable = true;
 
+    /**
+     * 如果不为null, 则说明该词书是衍生词书(乱序版就是一种衍生词书)
+     */
+    @Column(name = "parent_dict_id", nullable = true, length = 36)
+    private String parentDictId;
+
+    /**
+     * 排序算法, 目前仅支持 md5
+     */
+    @Column(name = "sort_alg", nullable = true, length = 50)
+    private String sortAlg;
+
     public Integer getPopularityLimit() {
         return popularityLimit;
     }
@@ -105,6 +117,22 @@ public class Dict extends UuidPo {
 
     public void setEditable(Boolean editable) {
         this.editable = editable;
+    }
+
+    public String getParentDictId() {
+        return parentDictId;
+    }
+
+    public void setParentDictId(String parentDictId) {
+        this.parentDictId = parentDictId;
+    }
+
+    public String getSortAlg() {
+        return sortAlg;
+    }
+
+    public void setSortAlg(String sortAlg) {
+        this.sortAlg = sortAlg;
     }
 
     public Boolean getDeletable() {
