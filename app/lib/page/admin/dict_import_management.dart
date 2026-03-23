@@ -38,7 +38,7 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
   String? _selectedDictGroupId;
 
   List<HallGroupVo>? _hallGroups;
-  String? _selectedGameHallId;
+  final List<String> _selectedGameHallIds = [];
 
   final List<String> _availableVoices = ['longanyang', 'longanhuan', 'longxiaochun_v3', 'longxiaoxia_v3', 'longniuniu_v3', 'longhuhu_v3', 'longjielidou_v3']; 
   final List<String> _selectedVoices = ['longanyang', 'longanhuan', 'longxiaochun_v3', 'longxiaoxia_v3', 'longniuniu_v3', 'longhuhu_v3', 'longjielidou_v3'];
@@ -168,7 +168,7 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
           "generateWordImage": _generateWordImage,
           "generateShuffledVersion": _generateShuffledVersion,
           "targetDictGroupId": _selectedDictGroupId,
-          "targetGameHallId": _selectedGameHallId
+          "targetGameHallIds": _selectedGameHallIds.isEmpty ? null : _selectedGameHallIds
         })
       });
 
@@ -583,23 +583,32 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
                             ],
                             onChanged: (val) => setState(() => _selectedDictGroupId = val),
                           ),
-                          const SizedBox(height: 12),
-                          DropdownButtonFormField<String>(
-                            value: _selectedGameHallId,
-                            isExpanded: true,
-                            decoration: InputDecoration(
-                              labelText: '目标游戏大厅 (挂载到哪个大厅去玩)',
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            ),
-                            items: [
-                              const DropdownMenuItem(value: null, child: Text("不挂载到游戏大厅")),
-                              if (_hallGroups != null)
-                                ..._hallGroups!.expand((group) => group.gameHalls.map((hall) => 
-                                    DropdownMenuItem(value: hall.id, child: Text('${group.groupName} - ${hall.hallName}')))),
-                            ],
-                            onChanged: (val) => setState(() => _selectedGameHallId = val),
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 8),
+                            child: Text('目标游戏大厅 (挂载到哪个大厅去玩，可多选)', style: TextStyle(fontSize: 14)),
                           ),
+                          if (_hallGroups != null)
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: _hallGroups!.expand((group) => group.gameHalls.map((hall) {
+                                final isSelected = _selectedGameHallIds.contains(hall.id);
+                                return FilterChip(
+                                  label: Text('${group.groupName} - ${hall.hallName}', style: const TextStyle(fontSize: 12)),
+                                  selected: isSelected,
+                                  selectedColor: AppTheme.primaryColor.withValues(alpha: 0.2),
+                                  onSelected: (bool selected) {
+                                    setState(() {
+                                      if (selected) {
+                                        _selectedGameHallIds.add(hall.id);
+                                      } else {
+                                        _selectedGameHallIds.remove(hall.id);
+                                      }
+                                    });
+                                  },
+                                );
+                              })).toList(),
+                            ),
                           const Padding(
                             padding: EdgeInsets.only(top: 8),
                             child: Text('注：不仅基础词典会被分配到这里，若生成了（乱序版），它也会跟原词书一起加进“目标词书分组”。游戏大厅则不受衍生乱序版影响。', style: TextStyle(color: Colors.grey, fontSize: 11)),

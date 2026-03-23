@@ -229,15 +229,19 @@ public class DictImportBo {
             // 处理词书与分组及大厅的直接绑定
             if (isSystemImport && dictId != null) {
                 String targetDictGroupId = (String) config.get("targetDictGroupId");
-                String targetGameHallId = (String) config.get("targetGameHallId");
+                List<String> targetGameHallIds = (List<String>) config.get("targetGameHallIds");
                 
                 if (targetDictGroupId != null && !targetDictGroupId.trim().isEmpty()) {
                     linkDictToGroup(dictId, targetDictGroupId);
                 }
-                if (targetGameHallId != null && !targetGameHallId.trim().isEmpty()) {
-                    GameHall hall = gameHallBo.findById(targetGameHallId);
-                    if (hall != null && hall.getDictGroup() != null) {
-                        linkDictToGroup(dictId, hall.getDictGroup().getId());
+                if (targetGameHallIds != null && !targetGameHallIds.isEmpty()) {
+                    for (String targetGameHallId : targetGameHallIds) {
+                        if (targetGameHallId != null && !targetGameHallId.trim().isEmpty()) {
+                            GameHall hall = gameHallBo.findById(targetGameHallId);
+                            if (hall != null && hall.getDictGroup() != null) {
+                                linkDictToGroup(dictId, hall.getDictGroup().getId());
+                            }
+                        }
                     }
                 }
                 
