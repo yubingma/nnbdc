@@ -35,6 +35,7 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
     {'id': 5, 'title': '数据库版本一致性', 'step': 5, 'category': 'db_version'},
     {'id': 6, 'title': '通用词典完整性', 'step': 6, 'category': 'common_dict_integrity'},
     {'id': 7, 'title': '用户词书完整性', 'step': 7, 'category': 'missing_user_dict'},
+    {'id': 11, 'title': '底层通用0库缺漏托底', 'step': 11, 'category': 'sys_dict_missing_fallback'},
     {'id': 8, 'title': '网络连接', 'step': 8, 'category': 'network_connectivity'},
     {'id': 9, 'title': '后端服务器连通性', 'step': 9, 'category': 'backend_server'},
     {'id': 10, 'title': '游戏服务器连通性', 'step': 10, 'category': 'game_server'},
@@ -609,6 +610,9 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
       // 7. 检查用户词书完整性（生词本 + 已掌握）
       await _checkMissingUserDicts(result, 7);
 
+      // 11. 检查底层托底完整性
+      await _checkSysDictMissingFallback(result, 11);
+
       // 8. 检查网络连接
       await _checkNetworkConnectivity(result, 8);
 
@@ -865,6 +869,50 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
         'common_dict_integrity',
         stackTrace: stackTrace.toString(),
         logMessage: '通用词典完整性检查: $e',
+      );
+      setState(() {
+        _checkStates[step] = 'failed';
+      });
+    }
+  }
+
+  Future<void> _checkSysDictMissingFallback(SystemHealthResult result, int step) async {
+    setState(() {
+      _checkStates[step] = false; // 进行中
+    });
+
+    try {
+      final apiResult = await Api.client.checkSysDictMissingFallback();
+
+      if (apiResult.success && apiResult.data != null) {
+        final data = apiResult.data!;
+
+        if ((data.isHealthy == false) && data.issues.isNotEmpty) {
+          for (final issue in data.issues) {
+            result.addIssue(issue.type, issue.description, 'sys_dict_missing_fallback');
+          }
+          setState(() {
+            _checkStates[step] = 'failed';
+          });
+        } else {
+          setState(() {
+            _checkStates[step] = true; // 通过
+          });
+        }
+      } else {
+        result.addIssue('系统底座缺失托底', 'API调用失败: ${apiResult.msg}', 'sys_dict_missing_fallback');
+        setState(() {
+          _checkStates[step] = 'failed';
+        });
+      }
+    } catch (e, stackTrace) {
+      Global.logger.e('检查系统底座托底时出错: $e', error: e, stackTrace: stackTrace);
+      result.addIssue(
+        '系统底座缺失托底',
+        '检查系统底座托底时出错: $e',
+        'sys_dict_missing_fallback',
+        stackTrace: stackTrace.toString(),
+        logMessage: '系统底座托底检查: $e',
       );
       setState(() {
         _checkStates[step] = 'failed';

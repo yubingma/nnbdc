@@ -536,7 +536,7 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
                               String md5B = md5.convert(utf8.encode(wordB)).toString();
                               return md5A.compareTo(md5B);
                             });
-                            _wordsCtrl.text = lines.join('\n') + '\n';
+                            _wordsCtrl.text = '${lines.join('\n')}\n';
                             setState(() {
                               _isListShuffledManually = true;
                             });

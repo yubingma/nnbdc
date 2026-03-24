@@ -55,6 +55,9 @@ public class SystemHealthCheckBo {
     @Autowired
     private SysDbSyncBo sysDbSyncBo;
 
+    @Autowired
+    private DictWordBo dictWordBo;
+
 
     /**
      * 检查系统词典完整性
@@ -249,6 +252,30 @@ public class SystemHealthCheckBo {
     }
 
     /**
+     * 检查系统词典是否缺失通用词库（0库）托底
+     */
+    public SystemHealthCheckResult checkSystemDictMissingFallback() {
+        List<SystemHealthIssue> issues = new ArrayList<>();
+        List<String> errors = new ArrayList<>();
+        
+        try {
+            String sql = "SELECT COUNT(DISTINCT word_id) FROM dict_word WHERE word_id NOT IN (SELECT word_id FROM dict_word WHERE dict_id = '0')";
+            Integer missingCount = namedParameterJdbcTemplate.queryForObject(sql, new MapSqlParameterSource(), Integer.class);
+            if (missingCount != null && missingCount > 0) {
+                issues.add(new SystemHealthIssue(
+                    "底层通用词库缺失托底数据",
+                    String.format("系统内有 %d 个在用单词，竟然脱离了基础的0库记录（这会导致客户端读取查无释义的软崩溃），请立即修复。", missingCount),
+                    "sys_dict_missing_fallback"
+                ));
+            }
+        } catch (Exception e) {
+            errors.add("检查底层托底完整性出错: " + e.getMessage());
+        }
+        
+        return new SystemHealthCheckResult(issues.isEmpty() && errors.isEmpty(), issues, errors);
+    }
+
+    /**
      * 检查用户是否缺失生词本或已掌握词书
      */
     public SystemHealthCheckResult checkMissingUserDicts() {
@@ -317,6 +344,7 @@ public class SystemHealthCheckBo {
     
                     case "db_version" -> fixedCount += fixDbVersionConsistency(fixed);
                     case "common_dict_integrity" -> fixedCount += fixCommonDictIntegrity(fixed);
+                    case "sys_dict_missing_fallback" -> fixedCount += fixSystemDictMissingFallback(fixed);
                     case "user_study_steps" -> fixedCount += fixUserStudySteps(fixed);
                     case "missing_raw_word_dict", "missing_user_dict" -> fixedCount += fixMissingUserDicts(fixed);
                     default -> errors.add("未知的问题类型: " + issueType);
@@ -331,6 +359,59 @@ public class SystemHealthCheckBo {
     }
 
     // 私有辅助方法
+
+    /**
+     * 修复单词缺失 0 库托底的问题
+     */
+    private int fixSystemDictMissingFallback(List<String> fixed) {
+        int fixedCount = 0;
+        try {
+            String sqlWords = "SELECT DISTINCT word_id FROM dict_word WHERE word_id NOT IN (SELECT word_id FROM dict_word WHERE dict_id = '0')";
+            List<String> missingWords = namedParameterJdbcTemplate.query(sqlWords, new MapSqlParameterSource(), (rs, rowNum) -> rs.getString("word_id"));
+            
+            if (!missingWords.isEmpty()) {
+                Dict commonDict = dictBo.findById(Constants.COMMON_DICT_ID);
+                int maxSeq = dictWordBo.getMaxSeqNo(commonDict);
+                
+                for (String wordId : missingWords) {
+                    maxSeq++;
+                    beidanci.service.po.DictWord dw0 = new beidanci.service.po.DictWord();
+                    dw0.setId(new beidanci.service.po.DictWordId(Constants.COMMON_DICT_ID, wordId));
+                    dw0.setDict(commonDict);
+                    beidanci.service.po.Word word = new beidanci.service.po.Word();
+                    word.setId(wordId);
+                    dw0.setWord(word);
+                    dw0.setSeq(maxSeq);
+                    dw0.setCreateTime(new java.util.Date());
+                    
+                    try {
+                        dictWordBo.createEntity(dw0);
+                    } catch (Exception ignore) {}
+                    
+                    beidanci.api.model.DictWordDto dwDto = new beidanci.api.model.DictWordDto();
+                    dwDto.setDictId(Constants.COMMON_DICT_ID);
+                    dwDto.setWordId(wordId);
+                    dwDto.setSeq(maxSeq);
+                    dwDto.setCreateTime(dw0.getCreateTime());
+                    
+                    sysDbSyncBo.logOperation("INSERT", "dict_word", Constants.COMMON_DICT_ID + "_" + wordId, beidanci.service.util.JsonUtils.toJson(dwDto));
+                    fixedCount++;
+                }
+                
+                commonDict.setWordCount(maxSeq);
+                dictBo.updateEntity(commonDict);
+                
+                beidanci.api.model.DictDto dictDto = new beidanci.api.model.DictDto();
+                org.springframework.beans.BeanUtils.copyProperties(commonDict, dictDto);
+                sysDbSyncBo.logOperation("UPDATE", "dict", Constants.COMMON_DICT_ID, beidanci.service.util.JsonUtils.toJson(dictDto));
+                
+                fixed.add(String.format("成功为 %d 个游离单词补齐至底层托底0号库，并广播了同步日志", fixedCount));
+            }
+        } catch (Exception e) {
+            fixed.add("修复底层托底数据失败: " + e.getMessage());
+        }
+        return fixedCount;
+    }
 
     /**
      * 检查词典单词序号连续性和数量一致性（参考check_db.py的高效实现）

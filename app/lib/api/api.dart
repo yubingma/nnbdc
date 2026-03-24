@@ -619,6 +619,9 @@ abstract class RestClient {
   @GET("/admin/checkSystemDictIntegrity.do")
   Future<Result<SystemHealthCheckResult>> checkSystemDictIntegrity();
 
+  @GET("/admin/checkSysDictMissingFallback.do")
+  Future<Result<SystemHealthCheckResult>> checkSysDictMissingFallback();
+
   @GET("/admin/checkUserDictIntegrity.do")
   Future<Result<SystemHealthCheckResult>> checkUserDictIntegrity();
 

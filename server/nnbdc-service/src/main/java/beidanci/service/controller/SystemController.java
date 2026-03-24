@@ -122,6 +122,15 @@ public class SystemController {
     }
 
     /**
+     * 检查系统词典是否缺失通用词库（0库）托底
+     */
+    @GetMapping("/admin/checkSysDictMissingFallback.do")
+    public Result<SystemHealthCheckResult> checkSysDictMissingFallback() {
+        SystemHealthCheckResult result = systemHealthCheckBo.checkSystemDictMissingFallback();
+        return Result.success(result);
+    }
+
+    /**
      * 检查用户词典完整性
      */
     @GetMapping("/admin/checkUserDictIntegrity.do")
