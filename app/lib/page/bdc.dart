@@ -746,6 +746,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
   /// 记录当前单词的评分，延后到点击“下一个”或自动跳转时保存
   FsrsRating? _lastFsrsRating;
+  String? _lastFsrsRatingReason;
 
   final Map<String, bool> _playingStates = {
     'word': false, // 单词发音
@@ -1481,6 +1482,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
           if (!wasAlreadyCorrect) {
             // 同步计算 FSRS 评分
             FsrsRating rating = FsrsRating.good; // 默认 Good
+            int? rTime;
             if (_wordStartTime != null) {
               final timeToUse =
                   (_asrPassRuleCache == 'ALL' && _firstMatchTime != null)
@@ -1488,6 +1490,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                       : DateTime.now();
               final responseTime =
                   timeToUse.difference(_wordStartTime!).inSeconds;
+              rTime = responseTime;
               if (asrInput == null) {
                 // 键盘输入（打字）方式：给予较宽松的时间
                 if (responseTime < 12) {
@@ -1518,6 +1521,13 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
               }
             }
 
+            String reason = "回答耗时${rTime ?? '-'}秒";
+            if (_hintTapCount > 0) {
+              reason += "，查看提示$_hintTapCount次";
+            }
+            reason += "，评分: ${rating.label}";
+
+            _lastFsrsRatingReason = reason;
             _lastFsrsRating = rating;
 
             // 计算 FSRS 预览结果
@@ -1645,9 +1655,11 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
         // 计算 FSRS 评分
         FsrsRating rating = FsrsRating.good; // 默认 Good
+        int? rTime;
         if (_wordStartTime != null) {
           final responseTime =
               DateTime.now().difference(_wordStartTime!).inSeconds;
+          rTime = responseTime;
 
           if (asrInput == null) {
             // 键盘拼写模式：因为打字慢，所以给予非常宽松的时间
@@ -1680,6 +1692,14 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
             rating = FsrsRating.again;
           }
         }
+
+        String reason = "回答耗时${rTime ?? '-'}秒";
+        if (_hintTapCount > 0) {
+          reason += "，查看提示$_hintTapCount次";
+        }
+        reason += "，评分: ${rating.label}";
+
+        _lastFsrsRatingReason = reason;
 
         // 在调用 _onAnswerCorrect 前彻底停止当前识别会话，以便让UI层收到停止状态进而停止波浪动画。
         await asr.stopAsr();
@@ -3997,9 +4017,11 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     if (_hasFinishedAnswering) {
       // 计算 FSRS 评分
       FsrsRating rating = FsrsRating.good; // 默认 Good
+      int? rTime;
       if (_wordStartTime != null) {
         final responseTime =
             DateTime.now().difference(_wordStartTime!).inSeconds;
+        rTime = responseTime;
         if (responseTime < 8) {
           rating = FsrsRating.easy; // Easy
         } else if (responseTime >= 18) {
@@ -4021,6 +4043,13 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         }
       }
 
+      String reason = "回答耗时${rTime ?? '-'}秒";
+      if (_hintTapCount > 0) {
+        reason += "，查看提示$_hintTapCount次";
+      }
+      reason += "，评分: ${rating.label}";
+
+      _lastFsrsRatingReason = reason;
       _onAnswerCorrect(rating);
     } else {
       //不认识或答案错误（错误提示音不需要等待，因为不会跳转到下一个单词）
@@ -4819,17 +4848,51 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
             children: [
               Padding(
                 padding: const EdgeInsets.only(bottom: 16.0),
-                child: Text(
-                  '评分将影响该单词今后的复习频率。如果机器的评判不符合您的实际情况，可以在此手动修正：',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Theme.of(context)
-                        .textTheme
-                        .bodySmall
-                        ?.color
-                        ?.withValues(alpha: 0.8),
-                    height: 1.4,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '评分将影响该单词今后的复习频率。如果机器的评判不符合您的实际情况，可以在此手动修正：',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Theme.of(context)
+                            .textTheme
+                            .bodySmall
+                            ?.color
+                            ?.withValues(alpha: 0.8),
+                        height: 1.4,
+                      ),
+                    ),
+                    if (_lastFsrsRatingReason != null) ...[
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryColor.withValues(alpha: 0.05),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: AppTheme.primaryColor.withValues(alpha: 0.2),
+                          ),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                '$_lastFsrsRatingReason',
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  color: AppTheme.primaryColor,
+                                  height: 1.4,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
               ...FsrsRating.values.map((rating) {
