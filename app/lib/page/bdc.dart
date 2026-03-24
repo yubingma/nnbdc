@@ -4851,16 +4851,26 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      '评分将影响该单词今后的复习频率。如果机器的评判不符合您的实际情况，可以在此手动修正：',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Theme.of(context)
-                            .textTheme
-                            .bodySmall
-                            ?.color
-                            ?.withValues(alpha: 0.8),
-                        height: 1.4,
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).dividerColor.withValues(alpha: 0.05),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: Theme.of(context).dividerColor.withValues(alpha: 0.1),
+                        ),
+                      ),
+                      child: Text(
+                        '评分将影响该单词今后的复习频率。如果机器的评判不符合实际情况，可以手动修正：',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Theme.of(context)
+                              .textTheme
+                              .bodySmall
+                              ?.color
+                              ?.withValues(alpha: 0.9),
+                          height: 1.4,
+                        ),
                       ),
                     ),
                     if (_lastFsrsRatingReason != null) ...[
