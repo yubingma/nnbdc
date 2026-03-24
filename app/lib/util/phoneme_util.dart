@@ -36,13 +36,53 @@ class PhonemeUtil {
       await load();
     }
     final key = word.trim().toLowerCase();
-    return _wordToPhonemeVariants[key] ?? const [];
+    if (key.isEmpty) return const [];
+    
+    if (_wordToPhonemeVariants.containsKey(key)) {
+      return _wordToPhonemeVariants[key]!;
+    }
+    
+    // 支持词组：拆分并组合（例如 "in place" -> lookup("in") + lookup("place")）
+    if (key.contains(RegExp(r'[\s\-]+'))) {
+      final parts = key.split(RegExp(r'[\s\-]+'));
+      List<List<List<String>>> allPartsVariants = [];
+      
+      bool allPartsFound = true;
+      for (final p in parts) {
+        if (p.isEmpty) continue;
+        var pVars = _wordToPhonemeVariants[p];
+        if (pVars == null || pVars.isEmpty) {
+           allPartsFound = false;
+           break;
+        }
+        allPartsVariants.add(pVars);
+      }
+      
+      if (allPartsFound && allPartsVariants.isNotEmpty) {
+         // 求笛卡尔积，拼接出完整的词组音素
+         List<List<String>> result = [[]];
+         for (final pVars in allPartsVariants) {
+           List<List<String>> nextResult = [];
+           for (final prefix in result) {
+             for (final suffix in pVars) {
+               nextResult.add([...prefix, ...suffix]);
+             }
+           }
+           result = nextResult;
+         }
+         return result;
+      }
+    }
+    
+    return const [];
   }
 
   /// 返回两个单词的音素相似度(0-100)
   /// 核心改进：利用 cmudict.dict 对“垃圾结果”进行音素骨架提取与对比
   static Future<int> similarity(String a, String b) async {
     if (a.isEmpty || b.isEmpty) return 0;
+    
+    int finalScore = 0;
 
     final aVars = await lookup(a);
     final bVars = await lookup(b);
@@ -68,44 +108,60 @@ class PhonemeUtil {
 
       // 记录骨架对比日志
       Global.logger.d('===== Phonetic compare: "$a"[$bestAWeakened] vs "$b"[$bestBWeakened] score: $best');
-      return best;
-    }
+      finalScore = best;
+    } else {
+      // 情况 B：至少一个词不在字典里（比如 ASR 吐出了乱码 suece）
+      // 逻辑：估算“垃圾词”的拟真音素，并与“目标词”的弱化音素进行骨架对比
+      final List<List<String>> targetPhons = aVars.isNotEmpty ? aVars : bVars;
+      final String garbageWord = aVars.isNotEmpty ? b : a;
 
-    // 情况 B：至少一个词不在字典里（比如 ASR 吐出了乱码 suece）
-    // 逻辑：估算“垃圾词”的拟真音素，并与“目标词”的弱化音素进行骨架对比
-    final List<List<String>> targetPhons = aVars.isNotEmpty ? aVars : bVars;
-    final String garbageWord = aVars.isNotEmpty ? b : a;
-
-    if (targetPhons.isNotEmpty) {
-      final garbagePseudo = _convertToPseudoPhonemes(garbageWord);
-      int best = 0;
-      List<String> bestRef = [];
-      for (final tp in targetPhons) {
-        final weakTP = _weakenPhonemes(tp);
-        final s = _phonemeSimilarity(weakTP, garbagePseudo);
-        if (s > best) {
-          best = s;
-          bestRef = weakTP;
+      if (targetPhons.isNotEmpty) {
+        final garbagePseudo = _convertToPseudoPhonemes(garbageWord);
+        int best = 0;
+        List<String> bestRef = [];
+        for (final tp in targetPhons) {
+          final weakTP = _weakenPhonemes(tp);
+          final s = _phonemeSimilarity(weakTP, garbagePseudo);
+          if (s > best) {
+            best = s;
+            bestRef = weakTP;
+          }
         }
+
+        // 记录骨架对比日志，方便排查由于拼写导致的“听感一致”
+        Global.logger.d('===== Phonetic compare: "$garbageWord"[$garbagePseudo] vs target[$bestRef] score: $best');
+
+        // 降级策略：非字典词的拟真音素对比存在不确定性，上限扣除 5 分
+        // 避免 "nylon" vs "naylan" 这种骨架一致但元音/拼写错误的词拿到 100 分
+        finalScore = best > 95 ? 95 : best;
+      } else {
+        // 情况 C：两个都不在字典里，退化到字符编辑距离
+        final dist = EditDistance.forStrings(a.toLowerCase(), b.toLowerCase());
+        final maxLen = a.length > b.length ? a.length : b.length;
+        if (maxLen == 0) {
+          finalScore = 0;
+        } else {
+          finalScore = ((maxLen - dist) * 100.0 / maxLen).clamp(0.0, 100.0).round();
+        }
+
+        // 记录字符编辑距离日志
+        Global.logger.d('===== Phonetic compare (fallback): "$a" vs "$b" edit-distance score: $finalScore');
       }
-
-      // 记录骨架对比日志，方便排查由于拼写导致的“听感一致”
-      Global.logger.d('===== Phonetic compare: "$garbageWord"[$garbagePseudo] vs target[$bestRef] score: $best');
-
-      // 降级策略：非字典词的拟真音素对比存在不确定性，上限扣除 5 分
-      // 避免 "nylon" vs "naylan" 这种骨架一致但元音/拼写错误的词拿到 100 分
-      return best > 95 ? 95 : best;
     }
 
-    // 情况 C：两个都不在字典里，退化到字符编辑距离
-    final dist = EditDistance.forStrings(a.toLowerCase(), b.toLowerCase());
-    final maxLen = a.length > b.length ? a.length : b.length;
-    if (maxLen == 0) return 0;
-    final score = ((maxLen - dist) * 100.0 / maxLen).clamp(0.0, 100.0).round();
+    // [BugFix] 添加词组词数惩罚：缺少或多出整个单词时，大幅降低相似度
+    // 避免部分匹配导致长短语轻易得高分跳过的严重体验问题（例如 target="in place"(6音素), ASR="place"(4音素) 竟然拿到 66分 > 阈值65分）
+    final aWords = a.trim().split(RegExp(r'[\s\-]+')).where((e) => e.isNotEmpty).length;
+    final bWords = b.trim().split(RegExp(r'[\s\-]+')).where((e) => e.isNotEmpty).length;
+    final wordDiff = (aWords - bWords).abs();
+    if (wordDiff > 0) {
+      final oldScore = finalScore;
+      finalScore -= wordDiff * 15;
+      if (finalScore < 0) finalScore = 0;
+      Global.logger.d('===== Phonetic compare (word penalty): reduced score from $oldScore to $finalScore because wordDiff is $wordDiff');
+    }
 
-    // 记录字符编辑距离日志
-    Global.logger.d('===== Phonetic compare (fallback): "$a" vs "$b" edit-distance score: $score');
-    return score;
+    return finalScore;
   }
 
   /// 内部方法：将真实音素序列（如 [S, W, IH]）弱化处理（合并母音），以便与垃圾词对比
