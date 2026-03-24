@@ -704,8 +704,8 @@ public class DictImportBo {
                 sentence.setEnglish(am.sentenceEn);
                 sentence.setChinese(am.sentenceCn);
                 
-                sentence.setWordMeaning(am.meaning.trim());
-                sentence.setPartOfSpeech(am.pos);
+                sentence.setWordMeaning(am.meaning.trim().replaceAll("[;；]", "，"));
+                sentence.setPartOfSpeech(pos);
                 
                 sentence.setMeaningItem(meaning);
                 sentence.setNeedTts(true); // 标记需要生成音频
