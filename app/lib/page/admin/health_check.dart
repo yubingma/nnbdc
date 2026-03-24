@@ -23,13 +23,28 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
   final Map<int, String?> _checkMessages = {};
 
   static const List<Map<String, dynamic>> _checkItems = [
-    {'id': 1, 'title': '您的词典单词序号连续性', 'step': 1, 'category': 'dict_word_sequence'},
+    {
+      'id': 1,
+      'title': '您的词典单词序号连续性',
+      'step': 1,
+      'category': 'dict_word_sequence'
+    },
     {'id': 2, 'title': '您的词典单词数量一致性', 'step': 2, 'category': 'dict_word_count'},
     {'id': 3, 'title': '您的学习步骤完整性', 'step': 3, 'category': 'user_study_steps'},
     {'id': 4, 'title': '您的数据库版本一致性', 'step': 4, 'category': 'user_db_version'},
-    {'id': 5, 'title': '通用词典完整性', 'step': 5, 'category': 'common_dict_integrity'},
+    {
+      'id': 5,
+      'title': '通用词典完整性',
+      'step': 5,
+      'category': 'common_dict_integrity'
+    },
     {'id': 6, 'title': '您的词书完整性', 'step': 6, 'category': 'missing_user_dict'},
-    {'id': 7, 'title': '书桌系统词库底层托底', 'step': 7, 'category': 'sys_dict_missing_fallback'},
+    {
+      'id': 7,
+      'title': '书桌系统词库底层托底',
+      'step': 7,
+      'category': 'sys_dict_missing_fallback'
+    },
     {'id': 8, 'title': '网络连接', 'step': 8, 'category': 'network_connectivity'},
     {'id': 9, 'title': '后端服务器连通性', 'step': 9, 'category': 'backend_server'},
     {'id': 10, 'title': '游戏服务器连通性', 'step': 10, 'category': 'game_server'},
@@ -38,7 +53,8 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
   @override
   Widget build(BuildContext context) {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    final backgroundColor = isDarkMode ? const Color(0xFF121212) : const Color(0xFFF8F9FA);
+    final backgroundColor =
+        isDarkMode ? const Color(0xFF121212) : const Color(0xFFF8F9FA);
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -68,7 +84,7 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
   }
 
   Widget _buildMainState(bool isDarkMode) {
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -124,7 +140,9 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
             child: ElevatedButton.icon(
               onPressed: _isRunning ? null : _runDiagnostic,
               icon: Icon(_isRunning ? Icons.hourglass_empty : Icons.search),
-              label: Text(_isRunning ? '检查中...' : (_checkResult == null ? '开始检查' : '重新检查')),
+              label: Text(_isRunning
+                  ? '检查中...'
+                  : (_checkResult == null ? '开始检查' : '重新检查')),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.primaryColor,
                 foregroundColor: Colors.white,
@@ -139,7 +157,8 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
 
   Widget _buildResultSummary(bool isDarkMode) {
     // 获取所有检查项的 category
-    final checkItemCategories = _checkItems.map((item) => item['category'] as String).toSet();
+    final checkItemCategories =
+        _checkItems.map((item) => item['category'] as String).toSet();
 
     // 只统计已分类的问题（匹配检查项 category 的问题）
     final categorizedIssues = _checkResult!.issues.where((issue) {
@@ -147,7 +166,8 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
     }).toList();
 
     // 检查是否有检查项失败
-    final hasFailedCheckItem = _checkStates.values.any((state) => state == 'failed');
+    final hasFailedCheckItem =
+        _checkStates.values.any((state) => state == 'failed');
 
     // 统计已分类的问题数量
     final categorizedIssueCount = categorizedIssues.length;
@@ -201,7 +221,8 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
     );
   }
 
-  Widget _buildCheckItemWithStatus(String text, dynamic status, bool isDarkMode, String category) {
+  Widget _buildCheckItemWithStatus(
+      String text, dynamic status, bool isDarkMode, String category) {
     IconData icon;
     Color iconColor;
     bool isFailed = false;
@@ -270,7 +291,9 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
     if (_checkResult == null) return;
 
     // 根据 category 过滤出相关的问题
-    final relatedIssues = _checkResult!.issues.where((issue) => issue.category == category).toList();
+    final relatedIssues = _checkResult!.issues
+        .where((issue) => issue.category == category)
+        .toList();
 
     if (relatedIssues.isEmpty) {
       return;
@@ -434,10 +457,12 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
               } else {
                 // 检查完成，设置结果
                 final String category = checkItem['category'] as String;
-                final hasIssue = result.issues.any((issue) => issue.category == category);
+                final hasIssue =
+                    result.issues.any((issue) => issue.category == category);
 
                 setState(() {
-                  _checkStates[itemId] = hasIssue ? 'failed' : true; // true=通过, 'failed'=有问题
+                  _checkStates[itemId] =
+                      hasIssue ? 'failed' : true; // true=通过, 'failed'=有问题
                 });
               }
             }
@@ -448,26 +473,33 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
       // 检查完成后，统一更新所有项的状态
       setState(() {
         // 获取所有检查项的 category
-        final checkItemCategories = _checkItems.map((item) => item['category'] as String).toSet();
+        final checkItemCategories =
+            _checkItems.map((item) => item['category'] as String).toSet();
 
         // 检查是否有未分类的问题
-        final uncategorizedIssues = checkResult.issues.where((issue) => !checkItemCategories.contains(issue.category)).toList();
+        final uncategorizedIssues = checkResult.issues
+            .where((issue) => !checkItemCategories.contains(issue.category))
+            .toList();
 
         if (uncategorizedIssues.isNotEmpty) {
-          Global.logger.w('发现 ${uncategorizedIssues.length} 个未分类的问题: ${uncategorizedIssues.map((i) => i.category).join(", ")}');
+          Global.logger.w(
+              '发现 ${uncategorizedIssues.length} 个未分类的问题: ${uncategorizedIssues.map((i) => i.category).join(", ")}');
         }
 
         // 检查是否有 errors
         if (checkResult.errors.isNotEmpty) {
-          Global.logger.w('发现 ${checkResult.errors.length} 个错误: ${checkResult.errors.join(", ")}');
+          Global.logger.w(
+              '发现 ${checkResult.errors.length} 个错误: ${checkResult.errors.join(", ")}');
         }
 
         for (var item in _checkItems) {
           final int itemId = item['id'] as int;
           final String category = item['category'] as String;
           // 检查是否有这个类别的问题
-          final hasIssue = checkResult.issues.any((issue) => issue.category == category);
-          _checkStates[itemId] = hasIssue ? 'failed' : true; // true=通过, 'failed'=有问题
+          final hasIssue =
+              checkResult.issues.any((issue) => issue.category == category);
+          _checkStates[itemId] =
+              hasIssue ? 'failed' : true; // true=通过, 'failed'=有问题
         }
 
         _checkResult = checkResult;
@@ -492,7 +524,8 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
         _checkResult = errorResult;
       });
 
-      ErrorHandler.handleError(e, stackTrace, logPrefix: '健康检查', userMessage: '诊断过程中出现错误', showToast: true);
+      ErrorHandler.handleError(e, stackTrace,
+          logPrefix: '健康检查', userMessage: '诊断过程中出现错误', showToast: true);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -506,10 +539,11 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
   }
 
   // 修复特定问题
-  Future<void> _fixIssues(BuildContext context, List<IntegrityIssue> issues) async {
+  Future<void> _fixIssues(
+      BuildContext context, List<IntegrityIssue> issues) async {
     // 关闭详情对话框
     if (mounted) Navigator.pop(context);
-  
+
     // 显示修复确认对话框
     final confirmed = await showDialog<bool>(
       context: context,
@@ -531,24 +565,25 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
         ],
       ),
     );
-  
+
     if (confirmed != true || !mounted) return;
-  
+
     // 获取当前登录用户
     final currentUser = Global.getLoggedInUser();
     if (currentUser == null) {
-      ErrorHandler.handleError(Exception('用户未登录'), StackTrace.current, logPrefix: '修复问题', userMessage: '请先登录', showToast: true);
+      ErrorHandler.handleError(Exception('用户未登录'), StackTrace.current,
+          logPrefix: '修复问题', userMessage: '请先登录', showToast: true);
       return;
     }
-  
+
     // 显示修复进度
     _showFixProgressDialog();
-  
+
     try {
       // 使用本地数据完整性检查器进行修复
       final checker = DataIntegrityChecker();
       final fixResult = await checker.autoFix(_checkResult!, currentUser.id);
-  
+
       // 在异步操作完成后处理 UI
       if (mounted) _handleFixResult(fixResult);
     } catch (e, stackTrace) {
@@ -587,7 +622,9 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('修复完成'),
-        content: Text(fixResult.hasFixed ? '已修复 ${fixResult.fixed.length} 个问题' : '没有需要修复的问题'),
+        content: Text(fixResult.hasFixed
+            ? '已修复 ${fixResult.fixed.length} 个问题'
+            : '没有需要修复的问题'),
         actions: [
           TextButton(
             onPressed: () {
@@ -613,7 +650,8 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
     // 关闭进度对话框
     Navigator.pop(context);
 
-    ErrorHandler.handleError(e, stackTrace, logPrefix: '修复问题', userMessage: '修复过程中出现错误', showToast: true);
+    ErrorHandler.handleError(e, stackTrace,
+        logPrefix: '修复问题', userMessage: '修复过程中出现错误', showToast: true);
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -625,31 +663,34 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
 
   Future<void> _runAutoFix() async {
     if (_checkResult == null) return;
-  
+
     // 获取当前登录用户
     final currentUser = Global.getLoggedInUser();
     if (currentUser == null) {
-      ErrorHandler.handleError(Exception('用户未登录'), StackTrace.current, logPrefix: '自动修复', userMessage: '请先登录', showToast: true);
+      ErrorHandler.handleError(Exception('用户未登录'), StackTrace.current,
+          logPrefix: '自动修复', userMessage: '请先登录', showToast: true);
       return;
     }
-  
+
     setState(() {
       _isRunning = true;
     });
-  
+
     try {
       // 使用本地数据完整性检查器进行自动修复
       final checker = DataIntegrityChecker();
       final fixResult = await checker.autoFix(_checkResult!, currentUser.id);
-  
+
       setState(() {
         _isRunning = false;
       });
-  
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(fixResult.hasFixed ? '已修复 ${fixResult.fixed.length} 个问题' : '没有需要修复的问题'),
+            content: Text(fixResult.hasFixed
+                ? '已修复 ${fixResult.fixed.length} 个问题'
+                : '没有需要修复的问题'),
             backgroundColor: fixResult.hasFixed ? Colors.green : Colors.blue,
           ),
         );
@@ -658,9 +699,10 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
       setState(() {
         _isRunning = false;
       });
-  
-      ErrorHandler.handleError(e, stackTrace, logPrefix: '自动修复', userMessage: '修复过程中出现错误', showToast: true);
-  
+
+      ErrorHandler.handleError(e, stackTrace,
+          logPrefix: '自动修复', userMessage: '修复过程中出现错误', showToast: true);
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

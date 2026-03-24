@@ -29,13 +29,28 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
 
   // 检查项配置
   static const List<Map<String, dynamic>> _checkItems = [
-    {'id': 1, 'title': '系统词典完整性', 'step': 1, 'category': 'system_dict_integrity'},
+    {
+      'id': 1,
+      'title': '系统词典完整性',
+      'step': 1,
+      'category': 'system_dict_integrity'
+    },
     {'id': 2, 'title': '用户词典完整性', 'step': 2, 'category': 'user_dict_integrity'},
     {'id': 4, 'title': '用户学习步骤完整性', 'step': 4, 'category': 'user_study_steps'},
     {'id': 5, 'title': '数据库版本一致性', 'step': 5, 'category': 'db_version'},
-    {'id': 6, 'title': '通用词典完整性', 'step': 6, 'category': 'common_dict_integrity'},
+    {
+      'id': 6,
+      'title': '通用词典完整性',
+      'step': 6,
+      'category': 'common_dict_integrity'
+    },
     {'id': 7, 'title': '用户词书完整性', 'step': 7, 'category': 'missing_user_dict'},
-    {'id': 11, 'title': '底层通用0库缺漏托底', 'step': 11, 'category': 'sys_dict_missing_fallback'},
+    {
+      'id': 11,
+      'title': '底层通用0库缺漏托底',
+      'step': 11,
+      'category': 'sys_dict_missing_fallback'
+    },
     {'id': 8, 'title': '网络连接', 'step': 8, 'category': 'network_connectivity'},
     {'id': 9, 'title': '后端服务器连通性', 'step': 9, 'category': 'backend_server'},
     {'id': 10, 'title': '游戏服务器连通性', 'step': 10, 'category': 'game_server'},
@@ -44,7 +59,8 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
   @override
   Widget build(BuildContext context) {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    final backgroundColor = isDarkMode ? const Color(0xFF121212) : const Color(0xFFF8F9FA);
+    final backgroundColor =
+        isDarkMode ? const Color(0xFF121212) : const Color(0xFFF8F9FA);
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -74,7 +90,7 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
   }
 
   Widget _buildMainState(bool isDarkMode) {
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -87,7 +103,8 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.admin_panel_settings, color: AppTheme.primaryColor),
+                      Icon(Icons.admin_panel_settings,
+                          color: AppTheme.primaryColor),
                       const SizedBox(width: 8),
                       Text(
                         '系统健康检查',
@@ -130,7 +147,9 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
             child: ElevatedButton.icon(
               onPressed: _isRunning ? null : _runSystemDiagnostic,
               icon: Icon(_isRunning ? Icons.hourglass_empty : Icons.search),
-              label: Text(_isRunning ? '检查中...' : (_checkResult == null ? '开始检查' : '重新检查')),
+              label: Text(_isRunning
+                  ? '检查中...'
+                  : (_checkResult == null ? '开始检查' : '重新检查')),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.primaryColor,
                 foregroundColor: Colors.white,
@@ -190,7 +209,8 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
     );
   }
 
-  Widget _buildCheckItemWithStatus(String text, dynamic status, bool isDarkMode, String category) {
+  Widget _buildCheckItemWithStatus(
+      String text, dynamic status, bool isDarkMode, String category) {
     IconData icon;
     Color iconColor;
     bool isFailed = false;
@@ -259,7 +279,9 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
     if (_checkResult == null) return;
 
     // 根据 category 过滤出相关的问题
-    final relatedIssues = _checkResult!.issues.where((issue) => issue.category == category).toList();
+    final relatedIssues = _checkResult!.issues
+        .where((issue) => issue.category == category)
+        .toList();
 
     if (relatedIssues.isEmpty) {
       return;
@@ -336,10 +358,14 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
                           margin: const EdgeInsets.only(bottom: 20),
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: isDarkMode ? const Color(0xFF2D2D2D) : Colors.grey[50],
+                            color: isDarkMode
+                                ? const Color(0xFF2D2D2D)
+                                : Colors.grey[50],
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: isDarkMode ? Colors.grey[700]! : Colors.grey[300]!,
+                              color: isDarkMode
+                                  ? Colors.grey[700]!
+                                  : Colors.grey[300]!,
                               width: 1,
                             ),
                           ),
@@ -361,7 +387,9 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
                                       style: TextStyle(
                                         fontWeight: FontWeight.w400,
                                         fontSize: 16,
-                                        color: isDarkMode ? Colors.white : Colors.black87,
+                                        color: isDarkMode
+                                            ? Colors.white
+                                            : Colors.black87,
                                       ),
                                     ),
                                   ),
@@ -372,10 +400,14 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
                               Container(
                                 padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
-                                  color: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
+                                  color: isDarkMode
+                                      ? const Color(0xFF1E1E1E)
+                                      : Colors.white,
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border.all(
-                                    color: isDarkMode ? Colors.grey[600]! : Colors.grey[200]!,
+                                    color: isDarkMode
+                                        ? Colors.grey[600]!
+                                        : Colors.grey[200]!,
                                   ),
                                 ),
                                 child: Text(
@@ -383,7 +415,9 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
                                   style: TextStyle(
                                     fontSize: 14,
                                     height: 1.5,
-                                    color: isDarkMode ? Colors.grey[300] : Colors.grey[700],
+                                    color: isDarkMode
+                                        ? Colors.grey[300]
+                                        : Colors.grey[700],
                                   ),
                                 ),
                               ),
@@ -400,7 +434,8 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
                                     ),
                                   ),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Row(
                                         children: [
@@ -425,7 +460,8 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
                                         padding: const EdgeInsets.all(8),
                                         decoration: BoxDecoration(
                                           color: Colors.white,
-                                          borderRadius: BorderRadius.circular(6),
+                                          borderRadius:
+                                              BorderRadius.circular(6),
                                           border: Border.all(
                                             color: Colors.blue[100]!,
                                           ),
@@ -457,7 +493,8 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
                                     ),
                                   ),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Row(
                                         children: [
@@ -482,7 +519,8 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
                                         padding: const EdgeInsets.all(8),
                                         decoration: BoxDecoration(
                                           color: Colors.white,
-                                          borderRadius: BorderRadius.circular(6),
+                                          borderRadius:
+                                              BorderRadius.circular(6),
                                           border: Border.all(
                                             color: Colors.red[100]!,
                                           ),
@@ -515,7 +553,8 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: isDarkMode ? const Color(0xFF2D2D2D) : Colors.grey[50],
+                    color:
+                        isDarkMode ? const Color(0xFF2D2D2D) : Colors.grey[50],
                     borderRadius: const BorderRadius.only(
                       bottomLeft: Radius.circular(16),
                       bottomRight: Radius.circular(16),
@@ -527,7 +566,8 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
                       // 修复按钮
                       if (relatedIssues.isNotEmpty) ...[
                         TextButton(
-                          onPressed: () => _fixSystemIssues(context, relatedIssues),
+                          onPressed: () =>
+                              _fixSystemIssues(context, relatedIssues),
                           style: TextButton.styleFrom(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 24,
@@ -597,7 +637,6 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
       // 2. 检查用户词典完整性
       await _checkUserDictIntegrity(result, 2);
 
-    
       // 4. 检查用户学习步骤完整性
       await _checkUserStudySteps(result, 4);
 
@@ -642,7 +681,8 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
     }
   }
 
-  Future<void> _checkSystemDictIntegrity(SystemHealthResult result, int step) async {
+  Future<void> _checkSystemDictIntegrity(
+      SystemHealthResult result, int step) async {
     setState(() {
       _checkStates[step] = false; // 进行中
     });
@@ -651,7 +691,8 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
       final apiResult = await Api.client.checkSystemDictIntegrity();
 
       // 添加更多调试信息
-      Global.logger.d('API调用结果: success=${apiResult.success}, data=${apiResult.data != null}');
+      Global.logger.d(
+          'API调用结果: success=${apiResult.success}, data=${apiResult.data != null}');
       if (apiResult.data != null) {
         Global.logger.d('API数据: ${apiResult.data}');
       }
@@ -660,14 +701,16 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
         final data = apiResult.data!;
 
         // 添加调试日志
-        Global.logger.d('系统词典完整性检查结果: isHealthy=${data.isHealthy}, issuesCount=${data.issues.length}');
+        Global.logger.d(
+            '系统词典完整性检查结果: isHealthy=${data.isHealthy}, issuesCount=${data.issues.length}');
         Global.logger.d('isHealthy类型: ${data.isHealthy.runtimeType}');
         Global.logger.d('isHealthy == false: ${data.isHealthy == false}');
         Global.logger.d('issues.isNotEmpty: ${data.issues.isNotEmpty}');
 
         if ((data.isHealthy == false) && data.issues.isNotEmpty) {
           for (final issue in data.issues) {
-            result.addIssue(issue.type, issue.description, 'system_dict_integrity');
+            result.addIssue(
+                issue.type, issue.description, 'system_dict_integrity');
           }
           setState(() {
             _checkStates[step] = 'failed';
@@ -678,7 +721,8 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
           });
         }
       } else {
-        result.addIssue('系统词典完整性', 'API调用失败: ${apiResult.msg}', 'system_dict_integrity');
+        result.addIssue(
+            '系统词典完整性', 'API调用失败: ${apiResult.msg}', 'system_dict_integrity');
         setState(() {
           _checkStates[step] = 'failed';
         });
@@ -698,7 +742,8 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
     }
   }
 
-  Future<void> _checkUserDictIntegrity(SystemHealthResult result, int step) async {
+  Future<void> _checkUserDictIntegrity(
+      SystemHealthResult result, int step) async {
     setState(() {
       _checkStates[step] = false; // 进行中
     });
@@ -711,7 +756,8 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
 
         if ((data.isHealthy == false) && data.issues.isNotEmpty) {
           for (final issue in data.issues) {
-            result.addIssue(issue.type, issue.description, 'user_dict_integrity');
+            result.addIssue(
+                issue.type, issue.description, 'user_dict_integrity');
           }
           setState(() {
             _checkStates[step] = 'failed';
@@ -722,7 +768,8 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
           });
         }
       } else {
-        result.addIssue('用户词典完整性', 'API调用失败: ${apiResult.msg}', 'user_dict_integrity');
+        result.addIssue(
+            '用户词典完整性', 'API调用失败: ${apiResult.msg}', 'user_dict_integrity');
         setState(() {
           _checkStates[step] = 'failed';
         });
@@ -741,8 +788,6 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
       });
     }
   }
-
-    
 
   Future<void> _checkUserStudySteps(SystemHealthResult result, int step) async {
     setState(() {
@@ -768,7 +813,8 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
           });
         }
       } else {
-        result.addIssue('用户学习步骤完整性', 'API调用失败: ${apiResult.msg}', 'user_study_steps');
+        result.addIssue(
+            '用户学习步骤完整性', 'API调用失败: ${apiResult.msg}', 'user_study_steps');
         setState(() {
           _checkStates[step] = 'failed';
         });
@@ -788,7 +834,8 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
     }
   }
 
-  Future<void> _checkDbVersionConsistency(SystemHealthResult result, int step) async {
+  Future<void> _checkDbVersionConsistency(
+      SystemHealthResult result, int step) async {
     setState(() {
       _checkStates[step] = false; // 进行中
     });
@@ -832,7 +879,8 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
     }
   }
 
-  Future<void> _checkCommonDictIntegrity(SystemHealthResult result, int step) async {
+  Future<void> _checkCommonDictIntegrity(
+      SystemHealthResult result, int step) async {
     setState(() {
       _checkStates[step] = false; // 进行中
     });
@@ -845,7 +893,8 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
 
         if ((data.isHealthy == false) && data.issues.isNotEmpty) {
           for (final issue in data.issues) {
-            result.addIssue(issue.type, issue.description, 'common_dict_integrity');
+            result.addIssue(
+                issue.type, issue.description, 'common_dict_integrity');
           }
           setState(() {
             _checkStates[step] = 'failed';
@@ -856,7 +905,8 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
           });
         }
       } else {
-        result.addIssue('通用词典完整性', 'API调用失败: ${apiResult.msg}', 'common_dict_integrity');
+        result.addIssue(
+            '通用词典完整性', 'API调用失败: ${apiResult.msg}', 'common_dict_integrity');
         setState(() {
           _checkStates[step] = 'failed';
         });
@@ -876,7 +926,8 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
     }
   }
 
-  Future<void> _checkSysDictMissingFallback(SystemHealthResult result, int step) async {
+  Future<void> _checkSysDictMissingFallback(
+      SystemHealthResult result, int step) async {
     setState(() {
       _checkStates[step] = false; // 进行中
     });
@@ -889,7 +940,8 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
 
         if ((data.isHealthy == false) && data.issues.isNotEmpty) {
           for (final issue in data.issues) {
-            result.addIssue(issue.type, issue.description, 'sys_dict_missing_fallback');
+            result.addIssue(
+                issue.type, issue.description, 'sys_dict_missing_fallback');
           }
           setState(() {
             _checkStates[step] = 'failed';
@@ -900,7 +952,8 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
           });
         }
       } else {
-        result.addIssue('系统底座缺失托底', 'API调用失败: ${apiResult.msg}', 'sys_dict_missing_fallback');
+        result.addIssue('系统底座缺失托底', 'API调用失败: ${apiResult.msg}',
+            'sys_dict_missing_fallback');
         setState(() {
           _checkStates[step] = 'failed';
         });
@@ -920,7 +973,8 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
     }
   }
 
-  Future<void> _checkMissingUserDicts(SystemHealthResult result, int step) async {
+  Future<void> _checkMissingUserDicts(
+      SystemHealthResult result, int step) async {
     setState(() {
       _checkStates[step] = false; // 进行中
     });
@@ -944,7 +998,8 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
           });
         }
       } else {
-        result.addIssue('用户词书完整性', 'API调用失败: ${apiResult.msg}', 'missing_user_dict');
+        result.addIssue(
+            '用户词书完整性', 'API调用失败: ${apiResult.msg}', 'missing_user_dict');
         setState(() {
           _checkStates[step] = 'failed';
         });
@@ -964,7 +1019,8 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
     }
   }
 
-  Future<void> _checkNetworkConnectivity(SystemHealthResult result, int step) async {
+  Future<void> _checkNetworkConnectivity(
+      SystemHealthResult result, int step) async {
     setState(() {
       _checkStates[step] = false; // 进行中
     });
@@ -1015,7 +1071,8 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
       // 尝试调用一个简单的API来检查后端连通性
       final response = await dio.get(
         '/getGameHallData.do',
-        options: Options(validateStatus: (status) => status! < 500), // 允许非200状态码
+        options:
+            Options(validateStatus: (status) => status! < 500), // 允许非200状态码
       );
 
       if (response.statusCode != null && response.statusCode! < 500) {
@@ -1024,7 +1081,8 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
           _checkStates[step] = true; // 通过
         });
       } else {
-        result.addIssue('后端服务器无响应', '后端服务器返回错误状态: ${response.statusCode}', 'backend_server');
+        result.addIssue('后端服务器无响应', '后端服务器返回错误状态: ${response.statusCode}',
+            'backend_server');
         setState(() {
           _checkStates[step] = 'failed';
         });
@@ -1097,7 +1155,8 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
   }
 
   // 修复特定系统问题
-  Future<void> _fixSystemIssues(BuildContext context, List<SystemHealthIssue> issues) async {
+  Future<void> _fixSystemIssues(
+      BuildContext context, List<SystemHealthIssue> issues) async {
     // 关闭详情对话框
     Navigator.pop(context);
 
@@ -1183,7 +1242,9 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
         context: context,
         builder: (context) => AlertDialog(
           title: const Text('修复完成'),
-          content: Text(fixResult.fixedCount > 0 ? '已修复 ${fixResult.fixedCount} 个问题' : '没有需要修复的问题'),
+          content: Text(fixResult.fixedCount > 0
+              ? '已修复 ${fixResult.fixedCount} 个问题'
+              : '没有需要修复的问题'),
           actions: [
             TextButton(
               onPressed: () {
@@ -1289,8 +1350,10 @@ class SystemHealthResult {
     errors.add(error);
   }
 
-  void addIssue(String type, String description, String category, {String? stackTrace, String? logMessage}) {
-    issues.add(SystemHealthIssue(type, description, category, stackTrace: stackTrace, logMessage: logMessage));
+  void addIssue(String type, String description, String category,
+      {String? stackTrace, String? logMessage}) {
+    issues.add(SystemHealthIssue(type, description, category,
+        stackTrace: stackTrace, logMessage: logMessage));
   }
 
   bool hasIssue(String category) {
@@ -1312,5 +1375,6 @@ class SystemHealthIssue {
   final String? stackTrace;
   final String? logMessage;
 
-  SystemHealthIssue(this.type, this.description, this.category, {this.stackTrace, this.logMessage});
+  SystemHealthIssue(this.type, this.description, this.category,
+      {this.stackTrace, this.logMessage});
 }
