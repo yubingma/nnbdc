@@ -408,8 +408,15 @@ public class DictImportBo {
             org.springframework.beans.BeanUtils.copyProperties(word, wordDto);
             sysDbSyncBo.logOperation("INSERT", "word", word.getId(), beidanci.service.util.JsonUtils.toJson(wordDto));
             stats.addSyncLog("INSERT", "word");
+        }
 
-            // 同步为通用兜底词书（ID="0"）添加关系并更新计数，以免触发数据不一致健康警告
+        if (word == null) {
+            throw new RuntimeException("无法获取或创建单词对象: " + spell);
+        }
+
+        // 无论单词是刚创建的还是已存在的，都必须确保它被通用兜底词书（ID="0"）收录，以免触发数据不一致健康警告
+        DictWord dw0Check = dictWordBo.findById(new beidanci.service.po.DictWordId(Constants.COMMON_DICT_ID, word.getId()));
+        if (dw0Check == null) {
             DictWord dw0 = new DictWord();
             dw0.setId(new beidanci.service.po.DictWordId(Constants.COMMON_DICT_ID, word.getId()));
             Dict commonDict = new Dict();
@@ -425,7 +432,7 @@ public class DictImportBo {
             } catch (Exception ignore) {
             }
 
-            // 无论底层是否通过触发器创建了该记录，都必须为客户端插入一条系统同步日志，否则客户端不会拉取这条 dict_word ！
+            // 必须为客户端插入一条系统同步日志，否则客户端不会拉取这条 dict_word ！
             beidanci.api.model.DictWordDto dwDto = new beidanci.api.model.DictWordDto();
             dwDto.setDictId(Constants.COMMON_DICT_ID);
             dwDto.setWordId(word.getId());
@@ -451,10 +458,6 @@ public class DictImportBo {
             org.springframework.beans.BeanUtils.copyProperties(dict0, dictDto);
             sysDbSyncBo.logOperation("UPDATE", "dict", Constants.COMMON_DICT_ID, beidanci.service.util.JsonUtils.toJson(dictDto));
             stats.addSyncLog("UPDATE", "dict");
-        }
-
-        if (word == null) {
-            throw new RuntimeException("无法获取或创建单词对象: " + spell);
         }
 
         List<MeaningItemDto> existingMeaningsInDict = meaningItemBo.findMeaningsByWordAndDict(word.getId(), dictId);
