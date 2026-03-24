@@ -120,39 +120,49 @@ class DataIntegrityChecker {
       onProgress?.call(6, '检查用户词书完整性...', result: result);
       await Future.delayed(const Duration(milliseconds: 200));
 
-      // 7. 检查网络连接
-      onProgress?.call(7, '检查网络连接...');
+      // 7. 检查书桌系统词库底层托底
+      onProgress?.call(7, '检查书桌系统词库底层托底...');
       await Future.delayed(const Duration(milliseconds: 100));
       final timer7 = Stopwatch()..start();
-      await _checkNetworkConnectivity(result);
+      await _checkDeskSystemDictWordFallback(result, userId);
       timer7.stop();
-      Global.logger.d('✓ 检查网络连接: ${timer7.elapsedMilliseconds}ms');
-      onProgress?.call(7, '检查网络连接...', result: result);
+      Global.logger.d('✓ 检查书桌系统词库底层托底: ${timer7.elapsedMilliseconds}ms');
+      onProgress?.call(7, '检查书桌系统词库底层托底...', result: result);
       await Future.delayed(const Duration(milliseconds: 200));
 
-      // 8. 检查后端服务器连通性
-      onProgress?.call(8, '检查后端服务器连通性...');
+      // 8. 检查网络连接
+      onProgress?.call(8, '检查网络连接...');
       await Future.delayed(const Duration(milliseconds: 100));
       final timer8 = Stopwatch()..start();
-      await _checkBackendServer(result);
+      await _checkNetworkConnectivity(result);
       timer8.stop();
-      Global.logger.d('✓ 检查后端服务器: ${timer8.elapsedMilliseconds}ms');
-      onProgress?.call(8, '检查后端服务器连通性...', result: result);
+      Global.logger.d('✓ 检查网络连接: ${timer8.elapsedMilliseconds}ms');
+      onProgress?.call(8, '检查网络连接...', result: result);
       await Future.delayed(const Duration(milliseconds: 200));
 
-      // 9. 检查游戏服务器连通性
-      onProgress?.call(9, '检查游戏服务器连通性...');
+      // 9. 检查后端服务器连通性
+      onProgress?.call(9, '检查后端服务器连通性...');
       await Future.delayed(const Duration(milliseconds: 100));
       final timer9 = Stopwatch()..start();
-      await _checkGameServer(result);
+      await _checkBackendServer(result);
       timer9.stop();
-      Global.logger.d('✓ 检查游戏服务器: ${timer9.elapsedMilliseconds}ms');
-      onProgress?.call(9, '检查游戏服务器连通性...', result: result);
+      Global.logger.d('✓ 检查后端服务器: ${timer9.elapsedMilliseconds}ms');
+      onProgress?.call(9, '检查后端服务器连通性...', result: result);
+      await Future.delayed(const Duration(milliseconds: 200));
+
+      // 10. 检查游戏服务器连通性
+      onProgress?.call(10, '检查游戏服务器连通性...');
+      await Future.delayed(const Duration(milliseconds: 100));
+      final timer10 = Stopwatch()..start();
+      await _checkGameServer(result);
+      timer10.stop();
+      Global.logger.d('✓ 检查游戏服务器: ${timer10.elapsedMilliseconds}ms');
+      onProgress?.call(10, '检查游戏服务器连通性...', result: result);
       await Future.delayed(const Duration(milliseconds: 200));
 
       stopwatch.stop();
       Global.logger.d('✓ 健康检查完成，总耗时: ${stopwatch.elapsedMilliseconds}ms');
-      onProgress?.call(9, '检查完成！', result: result);
+      onProgress?.call(10, '检查完成！', result: result);
       await Future.delayed(const Duration(milliseconds: 200)); // 给UI时间显示最后一项的结果
     } catch (e, stackTrace) {
       stopwatch.stop();
@@ -316,6 +326,62 @@ class DataIntegrityChecker {
       }
     } catch (e) {
       result.addError('检查用户词书时出错: $e');
+    }
+  }
+
+  /// 检查书桌上的系统词书，确保每个单词都有通用词典托底
+  Future<void> _checkDeskSystemDictWordFallback(IntegrityCheckResult result, String userId) async {
+    try {
+      // 获取用户书桌上（LearningDict）的所有词书
+      final learningDicts = await (_db.select(_db.learningDicts)..where((ld) => ld.userId.equals(userId))).get();
+      if (learningDicts.isEmpty) return;
+
+      final dictIds = learningDicts.map((e) => e.dictId).toList();
+      
+      // 获取这些词书的详细信息，过滤出系统词书（ownerId 不同于当前用户）
+      final dicts = await (_db.dictsDao.select(_db.dicts)..where((d) => d.id.isIn(dictIds) & d.ownerId.isNotValue(userId))).get();
+      
+      if (dicts.isEmpty) return;
+
+      for (final dict in dicts) {
+         // 忽略特殊内置词书
+         if (dict.name == '生词本' || dict.name == '已掌握') continue;
+
+         // 获取当前系统词书的所有单词
+         final wordsInSysDict = await (_db.dictWordsDao.select(_db.dictWords)..where((dw) => dw.dictId.equals(dict.id))).get();
+         if (wordsInSysDict.isEmpty) continue;
+
+         final sysWordIdsList = wordsInSysDict.map((dw) => dw.wordId).toSet().toList();
+         
+         // 分批查询，防止超长 IN 崩溃
+         const batchSize = 900;
+         final missingWords = <String>[];
+
+         for (int i = 0; i < sysWordIdsList.length; i += batchSize) {
+           final batch = sysWordIdsList.skip(i).take(batchSize).toList();
+           final existingInCommon = await (_db.dictWordsDao.select(_db.dictWords)
+             ..where((dw) => dw.dictId.equals(Global.commonDictId) & dw.wordId.isIn(batch)))
+           .get();
+           final existingIds = existingInCommon.map((dw) => dw.wordId).toSet();
+
+           for (final id in batch) {
+             if (!existingIds.contains(id)) {
+               missingWords.add(id);
+             }
+           }
+         }
+
+         if (missingWords.isNotEmpty) {
+           result.addIssue(
+             '系统词书单词缺失托底', 
+             '词书 "${dict.name}" 有 ${missingWords.length} 个单词在底层通用词典中查无释义 (示例: ${missingWords.take(5).join(', ')})', 
+             'sys_dict_missing_fallback'
+           );
+         }
+      }
+    } catch (e) {
+      result.addError('检查书桌系统词库底层托底时出错: $e');
+      Global.logger.e('检查书桌系统词库底层托底时出错', error: e);
     }
   }
 
@@ -486,8 +552,8 @@ class DataIntegrityChecker {
         await _fixMissingUserDicts(fixResult, userId);
       }
 
-      // 系统级字典如果有数量不对或序号不对的问题
-      if (checkResult.hasIssue('sys_dict_word_count') || checkResult.hasIssue('sys_dict_word_sequence')) {
+      // 系统级字典如果有数量不对或序号不对的问题，或单词缺失托底
+      if (checkResult.hasIssue('sys_dict_word_count') || checkResult.hasIssue('sys_dict_word_sequence') || checkResult.hasIssue('sys_dict_missing_fallback')) {
         try {
           // 不改乱公共云端库，而是抹除本地系统版本戳（置为：0），触发系统数据的全量重拉
           final db = MyDatabase.instance;
