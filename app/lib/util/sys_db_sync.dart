@@ -4,6 +4,7 @@ import 'package:nnbdc/api/dto.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/util/app_clock.dart';
+import 'package:nnbdc/api/bo/word_bo.dart';
 
 /// 同步系统数据库（统一的系统数据同步）
 ///
@@ -80,6 +81,7 @@ Future<void> syncSysDb() async {
 /// 应用系统数据日志到本地数据库
 Future<void> _applySysDbLogs(List<SysDbLogDto> logs) async {
   final db = MyDatabase.instance;
+  Set<String> affectedBaseDictIds = {};
 
   await db.transaction(() async {
     for (var log in logs) {
@@ -128,12 +130,14 @@ Future<void> _applySysDbLogs(List<SysDbLogDto> logs) async {
             if (parts.length == 2) {
               final dictId = parts[0];
               final wordId = parts[1];
+              affectedBaseDictIds.add(dictId);
               // 使用统一删除方法，不传userId（系统词典不涉及用户学习进度）
               await db.dictWordsDao.deleteDictWordWithCleanup(dictId, wordId, null, false);
             }
           } else {
             // INSERT 或 UPDATE 操作
             DictWord entity = DictWord.fromJson(entityJson);
+            affectedBaseDictIds.add(entity.dictId);
             await db.dictWordsDao.insertEntity(entity, false);
           }
         } else if (log.tblName == 'word') {
@@ -188,4 +192,16 @@ Future<void> _applySysDbLogs(List<SysDbLogDto> logs) async {
       }
     }
   });
+
+  // ========== 触发联动乱序版重新生成 ==========
+  if (affectedBaseDictIds.isNotEmpty) {
+    for (var baseDictId in affectedBaseDictIds) {
+      // 找出手机本地拥有的所有派生于这本正序词书的衍生词书（如乱序版等）
+      final derivedDicts = await (db.select(db.dicts)..where((d) => d.baseDictId.equals(baseDictId))).get();
+      for (var derivedDict in derivedDicts) {
+        Global.logger.i('检测到词库 [$baseDictId] 有增删改，自动重构衍生软词书: ${derivedDict.id}');
+        await WordBo().generateShuffledDictLocally(derivedDict.id, baseDictId);
+      }
+    }
+  }
 }

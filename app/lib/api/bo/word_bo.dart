@@ -736,12 +736,8 @@ class WordBo {
 
       final queryDictIds = [dictId];
       final currDict = await db.dictsDao.findById(dictId);
-      if (currDict != null && currDict.name.endsWith(' (乱序版)')) {
-        final baseName = currDict.name.replaceAll(' (乱序版)', '');
-        final baseDict = await (db.select(db.dicts)..where((od) => od.name.equals(baseName))).getSingleOrNull();
-        if (baseDict != null) {
-          queryDictIds.add(baseDict.id);
-        }
+      if (currDict != null && currDict.baseDictId != null && currDict.baseDictId!.isNotEmpty) {
+        queryDictIds.add(currDict.baseDictId!);
       }
 
       // 1) 先取本词书(dictId)或其基础词书的定制释义
@@ -1622,12 +1618,8 @@ class WordBo {
       final expandedPriorityDictIds = <String>{...priorityDictIds};
       final dbDicts = await (db.select(db.dicts)..where((d) => d.id.isIn(priorityDictIds))).get();
       for (final d in dbDicts) {
-        if (d.name.endsWith(' (乱序版)')) {
-          final baseName = d.name.replaceAll(' (乱序版)', '');
-          final baseDict = await (db.select(db.dicts)..where((od) => od.name.equals(baseName))).getSingleOrNull();
-          if (baseDict != null) {
-            expandedPriorityDictIds.add(baseDict.id);
-          }
+        if (d.baseDictId != null && d.baseDictId!.isNotEmpty) {
+          expandedPriorityDictIds.add(d.baseDictId!);
         }
       }
 
@@ -1651,12 +1643,8 @@ class WordBo {
         final expandedDictIds = <String>{...selectedDictIds};
         final dbDicts = await (db.select(db.dicts)..where((d) => d.id.isIn(selectedDictIds))).get();
         for (final d in dbDicts) {
-          if (d.name.endsWith(' (乱序版)')) {
-            final baseName = d.name.replaceAll(' (乱序版)', '');
-            final baseDict = await (db.select(db.dicts)..where((od) => od.name.equals(baseName))).getSingleOrNull();
-            if (baseDict != null) {
-              expandedDictIds.add(baseDict.id);
-            }
+          if (d.baseDictId != null && d.baseDictId!.isNotEmpty) {
+            expandedDictIds.add(d.baseDictId!);
           }
         }
         selectedDictIds = expandedDictIds.toList();

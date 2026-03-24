@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:crypto/crypto.dart';
 
 import 'package:flutter/material.dart';
 import 'package:nnbdc/api/api.dart';
@@ -516,6 +517,34 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
                         ),
                       ),
                     const SizedBox(height: 12),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('单词列表输入区', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.grey[800])),
+                        TextButton.icon(
+                          onPressed: () {
+                            List<String> lines = _wordsCtrl.text.split('\n').where((e) => e.trim().isNotEmpty).toList();
+                            if (lines.isEmpty) {
+                              ToastUtil.info('列表为空，无需打乱');
+                              return;
+                            }
+                            lines.sort((a, b) {
+                              String wordA = Util.purifySpell(a.split('|').first.trim());
+                              String wordB = Util.purifySpell(b.split('|').first.trim());
+                              String md5A = md5.convert(utf8.encode(wordA)).toString();
+                              String md5B = md5.convert(utf8.encode(wordB)).toString();
+                              return md5A.compareTo(md5B);
+                            });
+                            _wordsCtrl.text = lines.join('\n') + '\n';
+                            setState(() {});
+                            ToastUtil.success('已利用 MD5 算法对列表重新打乱排序');
+                          },
+                          icon: const Icon(Icons.shuffle, size: 16),
+                          label: const Text('按MD5打乱排序', style: TextStyle(fontSize: 13)),
+                        )
+                      ],
+                    ),
+                    const SizedBox(height: 4),
                     SizedBox(
                       height: 180, 
                       child: TextField(

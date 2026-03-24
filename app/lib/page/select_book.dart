@@ -849,12 +849,11 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
       List<DictVo> dictsToDownload = [];
       var db = MyDatabase.instance;
       for (var dictVo in selectedDictVos!) {
-        if (dictVo.name != null && dictVo.name!.endsWith(' (乱序版)')) {
-          final baseName = dictVo.name!.replaceAll(' (乱序版)', '');
+        if (dictVo.baseDictId != null && dictVo.baseDictId!.isNotEmpty) {
           DictVo? baseVo;
           if (dictGroups != null) {
             for (var group in dictGroups!) {
-              final found = group.dicts?.where((d) => d.name == baseName);
+              final found = group.dicts?.where((d) => d.id == dictVo.baseDictId!);
               if (found != null && found.isNotEmpty) {
                 baseVo = found.first;
                 break;
@@ -865,7 +864,7 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
             bool hasWords = await db.dictWordsDao.hasDictWords(baseVo.id);
             if (!hasWords && !dictsToDownload.any((element) => element.id == baseVo!.id)) {
               dictsToDownload.insert(0, baseVo);
-              Global.logger.i("乱序版依赖原词书，添加原词书下载: ${baseVo.id}");
+              Global.logger.i("衍生版依赖源词书，添加源词书下载: ${baseVo.id}");
             }
           }
         }
@@ -983,13 +982,12 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
             }
           });
 
-          // 自动在本地生成乱序版节点（基于原词书生成临时的 DictWord 记录但不上传同步）
-          if (dict.name != null && dict.name!.endsWith(' (乱序版)')) {
-            final baseName = dict.name!.replaceAll(' (乱序版)', '');
+          // 自动在本地生成衍生版节点（基于原词书生成临时的 DictWord 记录但不上传同步）
+          if (dict.baseDictId != null && dict.baseDictId!.isNotEmpty) {
             final db = MyDatabase.instance;
-            final baseDictDb = await (db.select(db.dicts)..where((d) => d.name.equals(baseName))).getSingleOrNull();
+            final baseDictDb = await db.dictsDao.findById(dict.baseDictId!);
             if (baseDictDb != null) {
-              Global.logger.i('📥 Web端本地动态生成乱序版词书节点: ${dict.id}');
+              Global.logger.i('📥 Web端本地动态生成衍生版词书节点: ${dict.id}');
               await WordBo().generateShuffledDictLocally(dict.id, baseDictDb.id);
             }
           }
@@ -1112,13 +1110,12 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
           throw importError;
         }
 
-        // 自动在本地生成乱序版节点（基于原词书生成临时的 DictWord 记录但不上传同步）
-        if (dict.name != null && dict.name!.endsWith(' (乱序版)')) {
-          final baseName = dict.name!.replaceAll(' (乱序版)', '');
+        // 自动在本地生成衍生版节点（基于原词书生成临时的 DictWord 记录但不上传同步）
+        if (dict.baseDictId != null && dict.baseDictId!.isNotEmpty) {
           final db = MyDatabase.instance;
-          final baseDictDb = await (db.select(db.dicts)..where((d) => d.name.equals(baseName))).getSingleOrNull();
+          final baseDictDb = await db.dictsDao.findById(dict.baseDictId!);
           if (baseDictDb != null) {
-            Global.logger.i('📥 本地动态生成乱序版词书节点: ${dict.id}');
+            Global.logger.i('📥 本地动态生成衍生版词书节点: ${dict.id}');
             await WordBo().generateShuffledDictLocally(dict.id, baseDictDb.id);
           }
         }
