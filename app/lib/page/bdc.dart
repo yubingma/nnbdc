@@ -1508,8 +1508,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
               }
             }
 
+            bool usedTranslation = _showSentenceTranslation;
             // 英中模式下提示中文字的惩罚极大约束：点2次直接 Again，点1次降两档！
-            if (_hintTapCount >= 2) {
+            if (_hintTapCount >= 2 || usedTranslation) {
               rating = FsrsRating.again;
             } else if (_hintTapCount == 1) {
               if (rating == FsrsRating.easy) {
@@ -1522,7 +1523,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
             }
 
             String reason = "回答耗时${rTime ?? '-'}秒";
-            if (_hintTapCount > 0) {
+            if (usedTranslation) {
+              reason += "，查看了例句翻译";
+            } else if (_hintTapCount > 0) {
               reason += "，查看提示$_hintTapCount次";
             }
             reason += "，评分: ${rating.label}";
@@ -1679,9 +1682,10 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
           }
         }
 
-        // 如果点击提示次数 >= 2 (包括长按的 Full Hint)，直接视为不会 (Again)
+        bool usedTranslation = _showSentenceTranslation;
+        // 如果点击提示次数 >= 2 (包括长按的 Full Hint) 或看了翻译，直接视为不会 (Again)
         // 如果只有 1 次，则原基础上下降一档
-        if (_hintTapCount >= 2) {
+        if (_hintTapCount >= 2 || usedTranslation) {
           rating = FsrsRating.again;
         } else if (_hintTapCount == 1) {
           if (rating == FsrsRating.easy) {
@@ -1694,7 +1698,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         }
 
         String reason = "回答耗时${rTime ?? '-'}秒";
-        if (_hintTapCount > 0) {
+        if (usedTranslation) {
+          reason += "，查看了例句翻译";
+        } else if (_hintTapCount > 0) {
           reason += "，查看提示$_hintTapCount次";
         }
         reason += "，评分: ${rating.label}";
@@ -4029,9 +4035,10 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         }
       }
 
-      // 如果点击提示次数 >= 2 (包括长按的 Full Hint)，直接记录为不会 (Again)
+      bool usedTranslation = _showSentenceTranslation;
+      // 如果点击提示次数 >= 2 (包括长按的 Full Hint) 或看了翻译，直接记录为不会 (Again)
       // 如果仅点了一次，下降一档
-      if (_hintTapCount >= 2) {
+      if (_hintTapCount >= 2 || usedTranslation) {
         rating = FsrsRating.again;
       } else if (_hintTapCount == 1) {
         if (rating == FsrsRating.easy) {
@@ -4044,7 +4051,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       }
 
       String reason = "回答耗时${rTime ?? '-'}秒";
-      if (_hintTapCount > 0) {
+      if (usedTranslation) {
+        reason += "，查看了例句翻译";
+      } else if (_hintTapCount > 0) {
         reason += "，查看提示$_hintTapCount次";
       }
       reason += "，评分: ${rating.label}";
