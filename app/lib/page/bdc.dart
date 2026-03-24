@@ -4631,8 +4631,10 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                       child: InkWell(
                         borderRadius: BorderRadius.circular(12),
                         onTap: () => onAnswerClicked(index + 1),
-                        child: AnimatedCrossFade(
-                          duration: const Duration(milliseconds: 300),
+                        child: Stack(
+                          children: [
+                            AnimatedCrossFade(
+                              duration: const Duration(milliseconds: 300),
                           crossFadeState: _flippedAnswerIndices.contains(index)
                               ? CrossFadeState.showSecond
                               : CrossFadeState.showFirst,
@@ -4654,6 +4656,19 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                                   : (_words?[index].spell.isNotEmpty == true ? _words![index].spell : '无对应英文'),
                             ),
                           ),
+                        ),
+                            if ((_hasFinishedAnswering || _selectedAnswerIndex != null) &&
+                                (_words?[index].spell != "[ 都不对 ]"))
+                              Positioned(
+                                top: 8,
+                                right: 8,
+                                child: Icon(
+                                  Icons.sync,
+                                  size: 16,
+                                  color: isDarkMode ? Colors.white30 : Colors.black26,
+                                ),
+                              ),
+                          ],
                         ),
                       ),
                     ),
