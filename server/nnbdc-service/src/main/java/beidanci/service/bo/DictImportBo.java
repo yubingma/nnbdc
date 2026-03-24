@@ -667,7 +667,14 @@ public class DictImportBo {
 
             MeaningItem meaning = new MeaningItem();
             meaning.setWord(word);
-            meaning.setCiXing(am.pos);
+            
+            String pos = am.pos;
+            if (pos != null && pos.length() > 10) {
+                logger.warn("单词词性超长已被截断: [{}] -> [{}] - word: {}", pos, pos.substring(0, 10), word.getSpell());
+                pos = pos.substring(0, 10);
+            }
+            meaning.setCiXing(pos);
+            
             meaning.setMeaning(am.meaning.trim().replaceAll("[;；]", "，"));
             meaning.setPopularity(aiResult.popularity != null && aiResult.popularity > i ? aiResult.popularity - i : 1);
             

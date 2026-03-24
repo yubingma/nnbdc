@@ -622,6 +622,11 @@ abstract class RestClient {
   @GET("/admin/checkSysDictMissingFallback.do")
   Future<Result<SystemHealthCheckResult>> checkSysDictMissingFallback();
 
+  // 客户端自愈API
+  @POST("/api/getFallbackWordsData.do")
+  @FormUrlEncoded()
+  Future<Result<JsonMap>> getFallbackWordsData(@Field("wordIds") String wordIdsJson);
+
   @GET("/admin/checkUserDictIntegrity.do")
   Future<Result<SystemHealthCheckResult>> checkUserDictIntegrity();
 

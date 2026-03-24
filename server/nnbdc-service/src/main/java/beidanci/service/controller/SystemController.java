@@ -130,6 +130,24 @@ public class SystemController {
         return Result.success(result);
     }
 
+
+
+    /**
+     * 为客户端自愈拉取缺失单词包（非管理员接口）
+     */
+    @PostMapping("/api/getFallbackWordsData.do")
+    public Result<java.util.Map<String, Object>> getFallbackWordsData(@RequestParam("wordIds") String wordIdsJson) {
+        try {
+            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            List<String> ids = mapper.readValue(wordIdsJson, new com.fasterxml.jackson.core.type.TypeReference<List<String>>(){});
+            if (ids.isEmpty()) return Result.success(new java.util.HashMap<>());
+            
+            return Result.success(systemHealthCheckBo.getFallbackWordsData(ids));
+        } catch (Exception e) {
+            return Result.fail("获取基础补丁数据失败: " + e.getMessage());
+        }
+    }
+
     /**
      * 检查用户词典完整性
      */

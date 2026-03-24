@@ -252,7 +252,7 @@ public class SystemHealthCheckBo {
     }
 
     /**
-     * 检查系统词典是否缺失通用词库（0库）托底
+     * 检查系统词典是否缺失通用词库（0库）物理托底数据
      */
     public SystemHealthCheckResult checkSystemDictMissingFallback() {
         List<SystemHealthIssue> issues = new ArrayList<>();
@@ -264,7 +264,7 @@ public class SystemHealthCheckBo {
             if (missingCount != null && missingCount > 0) {
                 issues.add(new SystemHealthIssue(
                     "底层通用词库缺失托底数据",
-                    String.format("系统内有 %d 个在用单词，竟然脱离了基础的0库记录（这会导致客户端读取查无释义的软崩溃），请立即修复。", missingCount),
+                    String.format("管理后台查出有 %d 个在用单词物理脱离了基础的0库记录，这会影响新下发的数据完整性，请立即修复。", missingCount),
                     "sys_dict_missing_fallback"
                 ));
             }
@@ -361,56 +361,95 @@ public class SystemHealthCheckBo {
     // 私有辅助方法
 
     /**
-     * 修复单词缺失 0 库托底的问题
+     * 修复单词缺失 0 库物理托底的问题
      */
     private int fixSystemDictMissingFallback(List<String> fixed) {
         int fixedCount = 0;
         try {
-            String sqlWords = "SELECT DISTINCT word_id FROM dict_word WHERE word_id NOT IN (SELECT word_id FROM dict_word WHERE dict_id = '0')";
-            List<String> missingWords = namedParameterJdbcTemplate.query(sqlWords, new MapSqlParameterSource(), (rs, rowNum) -> rs.getString("word_id"));
+            String sqlWords1 = "SELECT DISTINCT word_id FROM dict_word WHERE word_id NOT IN (SELECT word_id FROM dict_word WHERE dict_id = '0')";
+            List<String> missingPhysical = namedParameterJdbcTemplate.query(sqlWords1, new MapSqlParameterSource(), (rs, rowNum) -> rs.getString("word_id"));
             
-            if (!missingWords.isEmpty()) {
+            if (!missingPhysical.isEmpty()) {
                 Dict commonDict = dictBo.findById(Constants.COMMON_DICT_ID);
                 int maxSeq = dictWordBo.getMaxSeqNo(commonDict);
                 
-                for (String wordId : missingWords) {
-                    maxSeq++;
-                    beidanci.service.po.DictWord dw0 = new beidanci.service.po.DictWord();
-                    dw0.setId(new beidanci.service.po.DictWordId(Constants.COMMON_DICT_ID, wordId));
-                    dw0.setDict(commonDict);
-                    beidanci.service.po.Word word = new beidanci.service.po.Word();
-                    word.setId(wordId);
-                    dw0.setWord(word);
-                    dw0.setSeq(maxSeq);
-                    dw0.setCreateTime(new java.util.Date());
-                    
+                for (String wordId : missingPhysical) {
                     try {
+                        maxSeq++;
+                        beidanci.service.po.DictWord dw0 = new beidanci.service.po.DictWord();
+                        dw0.setId(new beidanci.service.po.DictWordId(Constants.COMMON_DICT_ID, wordId));
+                        dw0.setDict(commonDict);
+                        beidanci.service.po.Word word = new beidanci.service.po.Word();
+                        word.setId(wordId);
+                        dw0.setWord(word);
+                        dw0.setSeq(maxSeq);
+                        dw0.setCreateTime(new java.util.Date());
                         dictWordBo.createEntity(dw0);
+                        
+                        beidanci.api.model.DictWordDto dwDto = new beidanci.api.model.DictWordDto();
+                        dwDto.setDictId(Constants.COMMON_DICT_ID);
+                        dwDto.setWordId(wordId);
+                        dwDto.setSeq(dw0.getSeq());
+                        dwDto.setCreateTime(dw0.getCreateTime());
+                        sysDbSyncBo.logOperation("INSERT", "dict_word", Constants.COMMON_DICT_ID + "_" + wordId, beidanci.service.util.JsonUtils.toJson(dwDto));
+                        fixedCount++;
                     } catch (Exception ignore) {}
-                    
+                }
+                if (fixedCount > 0) {
+                    commonDict.setWordCount(maxSeq);
+                    dictBo.updateEntity(commonDict);
+                    beidanci.api.model.DictDto dictDto = new beidanci.api.model.DictDto();
+                    org.springframework.beans.BeanUtils.copyProperties(commonDict, dictDto);
+                    sysDbSyncBo.logOperation("UPDATE", "dict", Constants.COMMON_DICT_ID, beidanci.service.util.JsonUtils.toJson(dictDto));
+                }
+                fixed.add(String.format("成功为 %d 个物理脱离单词补充并广播到 0 库。", fixedCount));
+            }
+        } catch (Exception e) {
+            fixed.add("修复底层物理托底数据失败: " + e.getMessage());
+        }
+        return fixedCount;
+    }
+
+    /**
+     * 为客户端提供点对点的托底防空洞救转数据，直接打包返回指定单词的全套系统资源
+     */
+    public java.util.Map<String, Object> getFallbackWordsData(List<String> wordIds) {
+        List<beidanci.api.model.DictWordDto> dictWords = new ArrayList<>();
+        List<beidanci.api.model.MeaningItemDto> meaningItems = new ArrayList<>();
+        List<beidanci.api.model.SentenceDto> sentences = new ArrayList<>();
+        
+        if (wordIds != null) {
+            for (String wordId : wordIds) {
+                beidanci.service.po.DictWord dw = dictWordBo.findById(new beidanci.service.po.DictWordId(Constants.COMMON_DICT_ID, wordId));
+                if (dw != null) {
                     beidanci.api.model.DictWordDto dwDto = new beidanci.api.model.DictWordDto();
                     dwDto.setDictId(Constants.COMMON_DICT_ID);
                     dwDto.setWordId(wordId);
-                    dwDto.setSeq(maxSeq);
-                    dwDto.setCreateTime(dw0.getCreateTime());
-                    
-                    sysDbSyncBo.logOperation("INSERT", "dict_word", Constants.COMMON_DICT_ID + "_" + wordId, beidanci.service.util.JsonUtils.toJson(dwDto));
-                    fixedCount++;
+                    dwDto.setSeq(dw.getSeq());
+                    dwDto.setCreateTime(dw.getCreateTime());
+                    dictWords.add(dwDto);
                 }
                 
-                commonDict.setWordCount(maxSeq);
-                dictBo.updateEntity(commonDict);
-                
-                beidanci.api.model.DictDto dictDto = new beidanci.api.model.DictDto();
-                org.springframework.beans.BeanUtils.copyProperties(commonDict, dictDto);
-                sysDbSyncBo.logOperation("UPDATE", "dict", Constants.COMMON_DICT_ID, beidanci.service.util.JsonUtils.toJson(dictDto));
-                
-                fixed.add(String.format("成功为 %d 个游离单词补齐至底层托底0号库，并广播了同步日志", fixedCount));
+                List<beidanci.api.model.MeaningItemDto> mDtos = meaningItemBo.findMeaningsByWordAndDict(wordId, Constants.COMMON_DICT_ID);
+                if (mDtos != null) {
+                    meaningItems.addAll(mDtos);
+                    for (beidanci.api.model.MeaningItemDto mDto : mDtos) {
+                        List<beidanci.service.po.Sentence> sList = sentenceBo.findByMeaningItem(mDto.getId());
+                        if (sList != null) {
+                            for (beidanci.service.po.Sentence s : sList) {
+                                sentences.add(sentenceBo.toDto(s));
+                            }
+                        }
+                    }
+                }
             }
-        } catch (Exception e) {
-            fixed.add("修复底层托底数据失败: " + e.getMessage());
         }
-        return fixedCount;
+        
+        java.util.Map<String, Object> data = new java.util.HashMap<>();
+        data.put("dictWords", dictWords);
+        data.put("meaningItems", meaningItems);
+        data.put("sentences", sentences);
+        return data;
     }
 
     /**

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/config.dart';
@@ -552,8 +553,13 @@ class DataIntegrityChecker {
         await _fixMissingUserDicts(fixResult, userId);
       }
 
-      // 系统级字典如果有数量不对或序号不对的问题，或单词缺失托底
-      if (checkResult.hasIssue('sys_dict_word_count') || checkResult.hasIssue('sys_dict_word_sequence') || checkResult.hasIssue('sys_dict_missing_fallback')) {
+      // 修复单词托底缺失问题 (点对点向云端索取本地查无释义的丢失数据)
+      if (checkResult.hasIssue('sys_dict_missing_fallback')) {
+        await _fixSysDictMissingFallback(fixResult, userId);
+      }
+
+      // 系统级字典如果有数量不对或序号不对的问题
+      if (checkResult.hasIssue('sys_dict_word_count') || checkResult.hasIssue('sys_dict_word_sequence')) {
         try {
           // 不改乱公共云端库，而是抹除本地系统版本戳（置为：0），触发系统数据的全量重拉
           final db = MyDatabase.instance;
@@ -583,6 +589,86 @@ class DataIntegrityChecker {
     }
 
     return fixResult;
+  }
+
+  /// 通过非全局大喇叭的“点对点私房补件”策略，向后端索取缺失的基础托底数据，直接静默入库
+  Future<void> _fixSysDictMissingFallback(IntegrityFixResult fixResult, String userId) async {
+    try {
+      final learningDicts = await (_db.select(_db.learningDicts)..where((ld) => ld.userId.equals(userId))).get();
+      if (learningDicts.isEmpty) return;
+
+      final dictIds = learningDicts.map((e) => e.dictId).toList();
+      final dicts = await (_db.dictsDao.select(_db.dicts)..where((d) => d.id.isIn(dictIds) & d.ownerId.isNotValue(userId))).get();
+      if (dicts.isEmpty) return;
+
+      final allMissingWords = <String>{};
+
+      for (final dict in dicts) {
+         if (dict.name == '生词本' || dict.name == '已掌握') continue;
+         final wordsInSysDict = await (_db.dictWordsDao.select(_db.dictWords)..where((dw) => dw.dictId.equals(dict.id))).get();
+         if (wordsInSysDict.isEmpty) continue;
+
+         final sysWordIdsList = wordsInSysDict.map((dw) => dw.wordId).toSet().toList();
+         const batchSize = 900;
+         for (int i = 0; i < sysWordIdsList.length; i += batchSize) {
+           final batch = sysWordIdsList.skip(i).take(batchSize).toList();
+           final existingInCommon = await (_db.dictWordsDao.select(_db.dictWords)
+             ..where((dw) => dw.dictId.equals(Global.commonDictId) & dw.wordId.isIn(batch)))
+           .get();
+           final existingIds = existingInCommon.map((dw) => dw.wordId).toSet();
+
+           for (final id in batch) {
+             if (!existingIds.contains(id)) {
+               allMissingWords.add(id);
+             }
+           }
+         }
+      }
+
+      if (allMissingWords.isNotEmpty) {
+        String jsonStr = jsonEncode(allMissingWords.toList());
+        final response = await Api.client.getFallbackWordsData(jsonStr);
+        if (response.success && response.data != null) {
+           final data = response.data!.data;
+           int dwCount = 0, mCount = 0, sCount = 0;
+
+           await _db.transaction(() async {
+             // 1. 恢复 DictWord
+             final dwList = data['dictWords'] as List<dynamic>? ?? [];
+             for (final item in dwList) {
+               final Map<String, dynamic> dictWordMap = item as Map<String, dynamic>;
+               final dw = DictWord.fromJson(dictWordMap);
+               await _db.dictWordsDao.insertEntity(dw, false);
+               dwCount++;
+             }
+
+             // 2. 恢复 MeaningItem
+             final mList = data['meaningItems'] as List<dynamic>? ?? [];
+             for (final item in mList) {
+               final Map<String, dynamic> mMap = item as Map<String, dynamic>;
+               final m = MeaningItem.fromJson(mMap);
+               await _db.meaningItemsDao.insertEntity(m, false);
+               mCount++;
+             }
+
+             // 3. 恢复 Sentence
+             final sList = data['sentences'] as List<dynamic>? ?? [];
+             for (final item in sList) {
+               final Map<String, dynamic> sMap = item as Map<String, dynamic>;
+               final s = Sentence.fromJson(sMap);
+               await _db.sentencesDao.insertEntity(s);
+               sCount++;
+             }
+           });
+
+           fixResult.addFixed('成功向云端获取并静默缝合了 ${allMissingWords.length} 个查无释义的丢失托底数据包！(包含 $dwCount 条物理连结，$mCount 条释义，$sCount 条例句)');
+        } else {
+           fixResult.addError('请求云端补件接口失败: ${response.msg}');
+        }
+      }
+    } catch (e) {
+      fixResult.addError('靶向修复底层字典托底碎片时出错: $e');
+    }
   }
 
   /// 修复词典单词序号
