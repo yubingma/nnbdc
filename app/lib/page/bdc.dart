@@ -628,6 +628,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   late List<UserStudyStepVo> activeUserStudySteps;
   var errorReportController = TextEditingController();
   late Asr asr;
+  bool _showSentenceTranslation = false;
 
   /// 释义输入框
   late final SpellingTextEditingController _meaningController =
@@ -1710,6 +1711,39 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
   Future<void> loadData() async {
     try {
+      // 获取5个展示单词
+      List<String> displayWords = [];
+      try {
+        final db = MyDatabase.instance;
+        final user = await db.usersDao.getLastLoggedInUser();
+        if (user != null) {
+          final query = db.select(db.learningWords)
+            ..where((tbl) => tbl.userId.equals(user.id) & tbl.batchId.isBiggerThanValue(0));
+          final todayWords = await query.get();
+          
+          var newWords = todayWords.where((w) => w.state == 0).toList();
+          var reviewWords = todayWords.where((w) => w.state != 0).toList();
+          
+          newWords.shuffle();
+          reviewWords.shuffle();
+          
+          var selectedWords = [];
+          selectedWords.addAll(newWords.take(5));
+          if (selectedWords.length < 5) {
+            selectedWords.addAll(reviewWords.take(5 - selectedWords.length));
+          }
+          
+          for (var w in selectedWords) {
+            final wordItem = await db.wordsDao.getWordById(w.wordId);
+            if (wordItem != null && wordItem.spell.isNotEmpty) {
+              displayWords.add(wordItem.spell);
+            }
+          }
+        }
+      } catch (e) {
+        Global.logger.e('获取展示单词失败: $e');
+      }
+
       // 在下一帧显示初始化反馈的提示框
       BuildContext? dialogContext;
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -1718,13 +1752,102 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
           barrierDismissible: false,
           builder: (ctx) {
             dialogContext = ctx;
-            return AlertDialog(
-              content: Row(
-                children: const [
-                  CircularProgressIndicator(),
-                  SizedBox(width: 16),
-                  Expanded(child: Text("正在初始化语音识别引擎...")),
-                ],
+            final isDark = Theme.of(ctx).brightness == Brightness.dark;
+            final bgColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
+            final textColor = isDark ? Colors.white : Colors.black87;
+            
+            return Dialog(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+              child: Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: bgColor,
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.2),
+                      blurRadius: 15,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 30, horizontal: 20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (displayWords.isNotEmpty) ...[
+
+                      const SizedBox(height: 24),
+                      // 错落有致的展示
+                      ...displayWords.asMap().entries.map((entry) {
+                        int idx = entry.key;
+                        String word = entry.value;
+                        // 为了艺术排版，单词交错且字体大小不同
+                        Alignment align = Alignment.center;
+                        if (idx % 2 == 1) align = Alignment.centerLeft;
+                        if (idx % 2 == 0 && idx != 0) align = Alignment.centerRight;
+                        if (idx == 0 || idx == 4) align = Alignment.center;
+                        
+                        double fontSize = 32.0;
+                        if (idx == 0) fontSize = 38.0;
+                        if (idx == 4) fontSize = 28.0;
+
+                        return Container(
+                          alignment: align,
+                          margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                          child: Text(
+                            word,
+                            style: TextStyle(
+                              fontSize: fontSize,
+                              fontWeight: FontWeight.w800,
+                              fontStyle: FontStyle.italic,
+                              color: textColor.withValues(alpha: 1.0 - (idx * 0.15)),
+                              shadows: [
+                                Shadow(
+                                  offset: const Offset(1, 1),
+                                  blurRadius: 2,
+                                  color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.05),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }),
+                      const SizedBox(height: 32),
+                    ],
+                    Container(
+                      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+                      decoration: BoxDecoration(
+                        color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.5,
+                              color: AppTheme.primaryColor,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Text(
+                            "正在初始化语音识别引擎...",
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: textColor.withValues(alpha: 0.8),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             );
           },
@@ -2124,6 +2247,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       _word = getWordResult.learningWord!.word;
       _canLeaveCurrWord = false;
       _hasFinishedAnswering = false;
+      _showSentenceTranslation = false;
       _isUpdatingByHint = false;
       _currentScore = null; // 重置发音评分，防止携带上一个单词的分数
 
@@ -2180,8 +2304,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
       // 渲染第一个例句
       _englishDigestOfFirstSentence = null; // 先设置为 null
-      if (_word!.sentences != null && _word!.sentences!.isNotEmpty) {
-        _englishDigestOfFirstSentence = _word!.sentences![0].englishDigest;
+      final allSentences = await _word!.getSentences();
+      if (allSentences.isNotEmpty) {
+        _englishDigestOfFirstSentence = allSentences[0].englishDigest;
       }
 
       var user = Global.getLoggedInUserNotNull();
@@ -3194,12 +3319,12 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
             margin: EdgeInsets.fromLTRB(
                 0, MediaQuery.of(context).padding.top + 8, 0, 0),
             padding: const EdgeInsets.symmetric(
-                horizontal: 16, vertical: 12), // 减小垂直间距以压缩空白
+                horizontal: 16, vertical: 4), // 进一步减小垂直间距以整体上移下方元素
             child: Container(
-              height: 6,
+              height: 3, // 从 6 改为 3
               width: double.infinity,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(3),
+                borderRadius: BorderRadius.circular(1.5), // 从 3 改为 1.5
                 color: context.watch<DarkMode>().isDarkMode
                     ? const Color(0xFF2C2C2C)
                     : const Color(0xFFF0F2F5),
@@ -3283,10 +3408,10 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                                     color: getBatchColor(index, totalBatches),
                                     borderRadius: BorderRadius.horizontal(
                                       left: index == 0
-                                          ? const Radius.circular(3)
+                                          ? const Radius.circular(1.5)
                                           : Radius.zero,
                                       right: isLastBatch
-                                          ? const Radius.circular(3)
+                                          ? const Radius.circular(1.5)
                                           : Radius.zero,
                                     ),
                                   ),
@@ -3295,10 +3420,10 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                             ),
                             ClipRRect(
                               borderRadius:
-                                  const BorderRadius.all(Radius.circular(3)),
+                                  const BorderRadius.all(Radius.circular(1.5)),
                               child: FAProgressBar(
                                 borderRadius:
-                                    const BorderRadius.all(Radius.circular(3)),
+                                    const BorderRadius.all(Radius.circular(1.5)),
                                 currentValue: currentProgress,
                                 maxValue: maxValue,
                                 displayText: '',
@@ -4220,7 +4345,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
   Widget _buildTopButtonsRow() {
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0), // 压缩顶部间距，原为 20
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 0), // 完全移除顶部向上的 padding，让按钮更加贴着进度条
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -5271,15 +5396,56 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
-                        child: Util.makeEnglishSpanText(
-                            _word!.sentences![0].english!,
-                            _word!.spell,
-                            true,
-                            context,
-                            false,
-                            null,
-                            true,
-                            FontWeight.w300),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Util.makeEnglishSpanText(
+                                _word!.sentences![0].english!,
+                                _word!.spell,
+                                true,
+                                context,
+                                false,
+                                null,
+                                true,
+                                FontWeight.w300),
+                            if (!_showSentenceTranslation)
+                              Align(
+                                alignment: Alignment.centerRight,
+                                child: InkWell(
+                                  onTap: () {
+                                    setState(() {
+                                      _showSentenceTranslation = true;
+                                    });
+                                  },
+                                  borderRadius: BorderRadius.circular(4),
+                                  child: const Padding(
+                                    padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                    child: Text(
+                                      '显示翻译',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              )
+                            else
+                              Padding(
+                                padding: const EdgeInsets.only(top: 8.0),
+                                child: Util.makeChineseSpanText(
+                                  _word!.sentences![0].chinese ?? '',
+                                  context,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: context.watch<DarkMode>().isDarkMode
+                                        ? Colors.white70
+                                        : Colors.black54,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
                       ),
                       Container(
                         padding: const EdgeInsets.all(4),
