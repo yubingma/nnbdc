@@ -664,6 +664,12 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
   /// 正确答案的索引号
   int _correctAnswerIndex = 0;
+  
+  /// 用户刚点击的选项索引号（用于答题后颜色反馈）
+  int? _selectedAnswerIndex;
+  
+  /// 用户考后翻牌查看翻译的选项索引
+  final Set<int> _flippedAnswerIndices = {};
 
   /// 当前单词是否回答正确
   bool _hasFinishedAnswering = false;
@@ -2273,6 +2279,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       _word = getWordResult.learningWord!.word;
       _canLeaveCurrWord = false;
       _hasFinishedAnswering = false;
+      _selectedAnswerIndex = null;
+      _flippedAnswerIndices.clear();
       _showSentenceTranslation = false;
       _isUpdatingByHint = false;
       _currentScore = null; // 重置发音评分，防止携带上一个单词的分数
@@ -4019,6 +4027,28 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   }
 
   onAnswerClicked(var selectedAnswerIndex) async {
+    if (_hasFinishedAnswering || _selectedAnswerIndex != null) {
+      // 已经选过了，再次点击时触发对应选项的3D翻牌效果，展示另一层释义
+      int wordIndex = selectedAnswerIndex - 1;
+      if (_words != null && wordIndex >= 0 && wordIndex < _words!.length) {
+        WordVo clickedWord = _words![wordIndex];
+        if (clickedWord.spell == "[ 都不对 ]") return;
+        
+        setState(() {
+          if (_flippedAnswerIndices.contains(wordIndex)) {
+            _flippedAnswerIndices.remove(wordIndex);
+          } else {
+            _flippedAnswerIndices.add(wordIndex);
+          }
+        });
+      }
+      return;
+    }
+
+    setState(() {
+      _selectedAnswerIndex = selectedAnswerIndex;
+    });
+
     _hasFinishedAnswering = selectedAnswerIndex == _correctAnswerIndex;
     if (_hasFinishedAnswering) {
       // 计算 FSRS 评分
@@ -4559,42 +4589,78 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     return Column(
       children: [
         for (var index = 0; index < (_words?.length ?? 0); index++)
-          Padding(
-            padding: _studyStep == StudyStep.ch2En.json
-                ? const EdgeInsets.symmetric(vertical: 3)
-                : const EdgeInsets.symmetric(vertical: 6),
-            child: SizedBox(
-              width: double.infinity,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: context.watch<DarkMode>().isDarkMode
-                      ? const Color(0xFF2C2C2C)
-                      : const Color(0xFFF8F9FA),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: context.watch<DarkMode>().isDarkMode
-                        ? Colors.white10
-                        : Colors.black.withValues(alpha: 0.05),
-                    width: 1,
-                  ),
-                ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(12),
-                    onTap: () => onAnswerClicked(index + 1),
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      child: _buildAnswerContent(
-                        _studyStep == StudyStep.ch2En.json
-                            ? (_words?[index].spell ?? '')
-                            : (_words?[index].getMeaningStr() ?? ''),
+          Builder(
+            builder: (context) {
+              Color bgColor;
+              Color borderColor;
+              final isDarkMode = context.watch<DarkMode>().isDarkMode;
+
+              if (_selectedAnswerIndex != null) {
+                if ((index + 1) == _correctAnswerIndex) {
+                  bgColor = Colors.green.withValues(alpha: isDarkMode ? 0.25 : 0.15);
+                  borderColor = Colors.green;
+                } else if ((index + 1) == _selectedAnswerIndex) {
+                  bgColor = Colors.red.withValues(alpha: isDarkMode ? 0.25 : 0.15);
+                  borderColor = Colors.red;
+                } else {
+                  bgColor = isDarkMode ? const Color(0xFF2C2C2C) : const Color(0xFFF8F9FA);
+                  borderColor = isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.05);
+                }
+              } else {
+                bgColor = isDarkMode ? const Color(0xFF2C2C2C) : const Color(0xFFF8F9FA);
+                borderColor = isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.05);
+              }
+
+              return Padding(
+                padding: _studyStep == StudyStep.ch2En.json
+                    ? const EdgeInsets.symmetric(vertical: 3)
+                    : const EdgeInsets.symmetric(vertical: 6),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: bgColor,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: borderColor,
+                        width: 1,
+                      ),
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(12),
+                        onTap: () => onAnswerClicked(index + 1),
+                        child: AnimatedCrossFade(
+                          duration: const Duration(milliseconds: 300),
+                          crossFadeState: _flippedAnswerIndices.contains(index)
+                              ? CrossFadeState.showSecond
+                              : CrossFadeState.showFirst,
+                          firstChild: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(16),
+                            child: _buildAnswerContent(
+                              _studyStep == StudyStep.ch2En.json
+                                  ? (_words?[index].spell.isNotEmpty == true ? _words![index].spell : '无对应英文')
+                                  : (_words?[index].getMeaningStr().isNotEmpty == true ? _words![index].getMeaningStr() : '无对应释义'),
+                            ),
+                          ),
+                          secondChild: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(16),
+                            child: _buildAnswerContent(
+                              _studyStep == StudyStep.ch2En.json
+                                  ? (_words?[index].getMeaningStr().isNotEmpty == true ? _words![index].getMeaningStr() : '无对应释义')
+                                  : (_words?[index].spell.isNotEmpty == true ? _words![index].spell : '无对应英文'),
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-            ),
+              );
+            },
           ),
       ],
     );
@@ -4871,7 +4937,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                         ),
                       ),
                       child: Text(
-                        '评分将影响该单词今后的复习频率。如果机器的评判不符合实际情况，可以手动修正：',
+                        '评分影响该单词今后的复习频率。如果自动评分不合实际，可手动修正：',
                         style: TextStyle(
                           fontSize: 13,
                           color: Theme.of(context)
@@ -4916,12 +4982,35 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                 ),
               ),
               ...FsrsRating.values.map((rating) {
+                Color ratingColor;
+                final isDarkMode = context.read<DarkMode>().isDarkMode;
+                switch (rating) {
+                  case FsrsRating.again:
+                    ratingColor = isDarkMode ? Colors.redAccent : const Color(0xFFD32F2F);
+                    break;
+                  case FsrsRating.hard:
+                    ratingColor = isDarkMode ? Colors.orangeAccent : const Color(0xFFF57C00);
+                    break;
+                  case FsrsRating.easy:
+                    ratingColor = isDarkMode ? Colors.greenAccent : const Color(0xFF2E7D32);
+                    break;
+                  case FsrsRating.good:
+                    ratingColor = AppTheme.primaryColor;
+                    break;
+                }
+
                 return ListTile(
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8)),
-                  title: Text(rating.label),
+                  title: Text(
+                    rating.label,
+                    style: TextStyle(
+                      color: ratingColor,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                   trailing: _lastFsrsRating == rating
-                      ? const Icon(Icons.check, color: AppTheme.primaryColor)
+                      ? Icon(Icons.check, color: ratingColor)
                       : null,
                   onTap: () {
                     Navigator.of(context).pop();
