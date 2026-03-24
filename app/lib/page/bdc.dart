@@ -3622,7 +3622,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                           borderRadius: BorderRadius.circular(12)),
                     ),
                     onPressed: () => showWordDetail(_word, true,
-                        fsrsRating: FsrsRating.again),
+                        fsrsRating: FsrsRating.again, reason: "主动点击了不再认识，评分: 忘记"),
                     child: const Text('不认识',
                         style: TextStyle(fontWeight: FontWeight.w500)),
                   ),
@@ -3643,7 +3643,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                           borderRadius: BorderRadius.circular(12)),
                     ),
                     onPressed: () => showWordDetail(_word, false,
-                        fsrsRating: FsrsRating.good),
+                        fsrsRating: FsrsRating.good, reason: "主动点击了再学学，评分: 良好"),
                     child: const Text('再学学',
                         style: TextStyle(fontWeight: FontWeight.w500)),
                   ),
@@ -4064,14 +4064,15 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       //不认识或答案错误（错误提示音不需要等待，因为不会跳转到下一个单词）
       SoundUtil.playAssetSoundConcurrent('failed.mp3', 1.5, 0.2);
       showWordDetail(_word!, true,
-          fsrsRating: FsrsRating.again); // 传递true表示本次回答错误
+          fsrsRating: FsrsRating.again, reason: "选错了答案，评分: 忘记"); // 传递true表示本次回答错误
     }
   }
 
-  showWordDetail(var word, bool isAnswerWrong, {FsrsRating? fsrsRating}) async {
+  showWordDetail(var word, bool isAnswerWrong, {FsrsRating? fsrsRating, String? reason}) async {
     // 本次如果确定有评分（如选择了不认识），就算还未跳转下一题，也应立刻结算本地 FSRS 预览，让用户在返回时可以看到评分状态。
     if (fsrsRating != null) {
       _lastFsrsRating = fsrsRating;
+      _lastFsrsRatingReason = reason ?? "系统判定错误或不熟，评分: ${fsrsRating.label}";
       _hasFinishedAnswering = true; // 将界面切入“结束当前作答”状态，以展示下拉按钮
       _canLeaveCurrWord = true;
       _meaningFocusNode.unfocus();
