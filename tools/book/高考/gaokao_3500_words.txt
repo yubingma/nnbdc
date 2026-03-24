@@ -3150,7 +3150,7 @@ spit
 splendid
 split
 spoken
-spokenman
+spokesman
 sponsor
 spoon
 spoonful
