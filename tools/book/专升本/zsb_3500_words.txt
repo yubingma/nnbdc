@@ -102,7 +102,7 @@ apparatus
 apparently
 appeal to
 appease
-app et ising
+appetising
 appetizing
 applause
 appliance
@@ -1597,7 +1597,7 @@ in favor of
 in general
 in honor of
 in light of
-inline with
+in line with
 in memory of
 in need of
 in particular
@@ -1648,7 +1648,7 @@ indoors
 induce
 indulge
 industrial
-industrial is e
+industrialise
 industrialize
 inevitable
 inexpensive
@@ -1667,7 +1667,7 @@ inflict
 influential
 influenza
 in form of
-informsb.ofsth.
+inform sb. of sth.
 informal
 infrastructure
 infringe
@@ -1709,7 +1709,7 @@ instinct
 insufficient
 insulate
 insult
-in sure against
+insure against
 intact
 intake
 intangible
@@ -1988,7 +1988,7 @@ measurement
 mechanic
 mechanical
 mechanics
-me ch anise
+mechanise
 mechanism
 mechanize
 mediate
@@ -2747,7 +2747,7 @@ semifinal
 senate
 senator
 send out
-sendsb.for
+send sb. for
 sensation
 sensible
 sentiment
@@ -2940,7 +2940,7 @@ stereo
 stereotype
 stick out
 stick to
-stickup for
+stick up for
 stick with
 sticky
 stiff
@@ -3309,7 +3309,7 @@ volt
 voltage
 volume
 vulnerable
-wag gon
+waggon
 wagon
 wait for
 waken
@@ -3362,7 +3362,7 @@ woolen
 workaholic
 workforce
 workload
-work mate
+workmate
 workout
 workplace
 workshop

@@ -3150,7 +3150,7 @@ spit
 splendid
 split
 spoken
-spokesman
+spokenman
 sponsor
 spoon
 spoonful
@@ -3301,7 +3301,7 @@ swell
 swift
 swim
 swimming
-swimming pool
+swimmingpool
 swing
 Swiss
 Switzerland
@@ -3423,7 +3423,7 @@ thunderstorm
 Thursday
 thus
 Tibet
-Tibetan
+Tibeta
 tick
 ticket
 tidy
@@ -3831,7 +3831,7 @@ zebra
 zebra-crossing
 zero
 zip
-zip code
+zipcode
 zipper
 zone
 zoo
