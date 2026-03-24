@@ -3194,7 +3194,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
             margin: EdgeInsets.fromLTRB(
                 0, MediaQuery.of(context).padding.top + 8, 0, 0),
             padding: const EdgeInsets.symmetric(
-                horizontal: 16, vertical: 20), // 增加到 20 像素，垂直总高度约 46px
+                horizontal: 16, vertical: 12), // 减小垂直间距以压缩空白
             child: Container(
               height: 6,
               width: double.infinity,
@@ -4220,7 +4220,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
   Widget _buildTopButtonsRow() {
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0), // 压缩顶部间距，原为 20
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
