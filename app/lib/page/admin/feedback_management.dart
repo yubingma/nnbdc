@@ -423,7 +423,7 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
       visibleStrings.add(m.viewed ? '已读' : '未读');
 
       // 加上日期字符串
-      visibleStrings.add(DateFormat('yyyy-MM-dd HH:mm').format(m.createTime));
+      visibleStrings.add(DateFormat('yyyy-MM-dd HH:mm').format(m.createTime.toLocal()));
 
       // 拼接成一个大字符串，检查是否包含搜索词
       final fullText = visibleStrings.join(' ').toLowerCase();
@@ -532,7 +532,7 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              DateFormat('yyyy-MM-dd HH:mm').format(message.createTime),
+                              DateFormat('yyyy-MM-dd HH:mm').format(message.createTime.toLocal()),
                               style: TextStyle(
                                 fontSize: 12,
                                 color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
@@ -1072,7 +1072,7 @@ class _ReplyDialogState extends State<_ReplyDialog> {
                                         ),
                                         const SizedBox(height: 4),
                                         Text(
-                                          DateFormat('yyyy-MM-dd HH:mm').format(msg.createTime),
+                                          DateFormat('yyyy-MM-dd HH:mm').format(msg.createTime.toLocal()),
                                           style: TextStyle(
                                             color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
                                             fontSize: 10,
@@ -1100,7 +1100,7 @@ class _ReplyDialogState extends State<_ReplyDialog> {
                                         ),
                                         const SizedBox(height: 4),
                                         Text(
-                                          DateFormat('yyyy-MM-dd HH:mm').format(msg.createTime),
+                                          DateFormat('yyyy-MM-dd HH:mm').format(msg.createTime.toLocal()),
                                           style: const TextStyle(color: Colors.white70, fontSize: 10),
                                         ),
                                       ],

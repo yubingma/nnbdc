@@ -84,7 +84,7 @@ class MsgPageState extends State<MsgPage> {
                 padding: const EdgeInsets.symmetric(vertical: 16.0),
                 child: Column(
                   children: [
-                    Text(DateFormat('yyyy-MM-dd HH:mm').format(msg.createTime), style: const TextStyle(color: Colors.grey)),
+                    Text(DateFormat('yyyy-MM-dd HH:mm').format(msg.createTime.toLocal()), style: const TextStyle(color: Colors.grey)),
                     // 判断是否为管理员回复消息
                     (msg.msgType == 'AdviceReply')
                         ? Row(
