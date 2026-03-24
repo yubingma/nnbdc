@@ -34,6 +34,7 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
   bool _isSubmitting = false;
   bool _generateWordImage = false;
   bool _generateShuffledVersion = false;
+  bool _isListShuffledManually = false;
 
   List<DictGroup>? _dictGroups;
   String? _selectedDictGroupId;
@@ -536,7 +537,9 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
                               return md5A.compareTo(md5B);
                             });
                             _wordsCtrl.text = lines.join('\n') + '\n';
-                            setState(() {});
+                            setState(() {
+                              _isListShuffledManually = true;
+                            });
                             ToastUtil.success('已利用 MD5 算法对列表重新打乱排序');
                           },
                           icon: const Icon(Icons.shuffle, size: 16),
@@ -554,7 +557,9 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
                         keyboardType: TextInputType.multiline,
                         textAlignVertical: TextAlignVertical.top,
                         onChanged: (val) {
-                          setState(() {});
+                          setState(() {
+                            _isListShuffledManually = false;
+                          });
                         },
                         decoration: InputDecoration(
                           labelText: '单词列表 (每行一个，支持"单|义") - 当前输入 ${_wordsCtrl.text.split('\n').where((e) => e.trim().isNotEmpty).length} 行',
@@ -711,6 +716,9 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
                         subtitle: const Text('将生成一个名称带"(乱序版)"的重复词书，单词按MD5混淆排序，且共享发音原图等资源', style: TextStyle(fontSize: 12, color: Colors.grey)),
                         value: _generateShuffledVersion,
                         onChanged: _isSubmitting ? null : (val) {
+                          if (val == true && _isListShuffledManually) {
+                            ToastUtil.info('⚠️您刚才已在文本框内将单词物理打乱，此时再勾选生成衍生乱序版可能失去意义', autoCloseDuration: const Duration(seconds: 4));
+                          }
                           setState(() {
                             _generateShuffledVersion = val;
                           });
