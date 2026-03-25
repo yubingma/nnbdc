@@ -102,7 +102,7 @@ class _HandwritingBoardState extends State<HandwritingBoard> {
     // 寻找内容的边界，以便进行居中和缩放
     double minX = double.infinity, minY = double.infinity;
     double maxX = double.negativeInfinity, maxY = double.negativeInfinity;
- 
+
     for (var line in _lines) {
       for (var point in line) {
         if (point.dx < minX) minX = point.dx;
@@ -301,11 +301,12 @@ class _HandwritingController extends ChangeNotifier {
   Path finishedPath = Path();
   Path? activePath;
   
-  // 核心渲染锚点：这些用于构建 Path 的顶点，包含预测量
+  // 核心视觉连接点 (无预测，保证字迹形状不失真)
   Offset? lastRenderPoint; 
   Offset? midRenderPoint;
 
-  // 核心物理状态：用于维持平滑滤波器的历史状态，不包含预测量，逻辑更稳定
+  // 核心状态：用于平滑和预测的位移矢量
+  Offset lastDelta = Offset.zero;
   Offset? lastSmoothPoint;
 
   _HandwritingController(this.rawLines) {
@@ -336,37 +337,34 @@ class _HandwritingController extends ChangeNotifier {
     lastRenderPoint = p;
     midRenderPoint = p;
     lastSmoothPoint = p;
+    lastDelta = Offset.zero;
     notifyListeners();
   }
 
   void move(Offset p, Offset delta) {
     if (activePath == null || lastRenderPoint == null || lastSmoothPoint == null) return;
 
-    // 1. 极高采样率：保留 0.1 像素级的微小位移，确保存储细节
+    // 1. 动态采样：保留微小细节
     if ((p - lastSmoothPoint!).distanceSquared < 0.1) return;
 
-    // 2. 极致圆润平滑 (Liquid Smoothing)：
-    // 通过降低 alpha (0.45 base)，让笔迹产生更强的惯性感，呈现如“液体墨水”般的圆润效果。
-    final velocity = delta.distance;
-    final alpha = (0.45 + velocity * 0.05).clamp(0.5, 0.9); 
-    
-    // 基于“纯净平滑点”进行迭代，彻底消除预测导致的抖动放大
-    final smoothedPoint = lastSmoothPoint! * (1.0 - alpha) + p * alpha;
+    // 2. 适度平滑滤波 (Stable Smoothing)：
+    // 恢复到 75% 的历史权重。注意：这里不再由于绘制而混入预测量，字迹形状将 100% 真实。
+    final smoothedPoint = lastSmoothPoint! * 0.75 + p * 0.25;
 
-    // 3. 极限预测补偿 (Extreme Lead Prediction)：
-    // 将预测提升至 1.5 帧。因为平滑力度极大（圆润度极高），必须通过强预测将墨水“拉到”笔端。
-    final predictedPoint = smoothedPoint + delta * 1.5;
+    // 3. 数据隔离存储：
     rawLines.last.add(p); 
+    lastDelta = delta; // 仅存储位移量，由绘制器动态应用预测，不破坏路径几何结构
 
-    // 4. 构建超级平滑路径
+    // 4. 构建稳定二阶贝塞尔路径
+    // 使用纯净的平滑点构建路径，彻底解决“字迹变小/变形”的问题
     final newMidPoint =
-        Offset((lastRenderPoint!.dx + predictedPoint.dx) / 2.0, (lastRenderPoint!.dy + predictedPoint.dy) / 2.0);
+        Offset((lastRenderPoint!.dx + smoothedPoint.dx) / 2.0, (lastRenderPoint!.dy + smoothedPoint.dy) / 2.0);
     activePath!.quadraticBezierTo(
         lastRenderPoint!.dx, lastRenderPoint!.dy, newMidPoint.dx, newMidPoint.dy);
 
     midRenderPoint = newMidPoint;
-    lastRenderPoint = predictedPoint;
-    lastSmoothPoint = smoothedPoint; // 平滑状态不带预测，确保历史的一致性和稳定性
+    lastRenderPoint = smoothedPoint;
+    lastSmoothPoint = smoothedPoint;
     notifyListeners();
   }
 
@@ -401,15 +399,18 @@ class _HandwritingPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    // 极致平滑绘制：移除复杂的 MaskFilter 模糊，改用纯净的高性能路径渲染，大幅降低 GPU 耗时
     canvas.drawPath(controller.finishedPath, _linePaint);
 
     if (controller.activePath != null &&
         controller.lastRenderPoint != null &&
         controller.midRenderPoint != null) {
+      // 1. 绘制稳定的历史轨迹
       canvas.drawPath(controller.activePath!, _linePaint);
-      // 笔尖补齐
-      canvas.drawLine(controller.midRenderPoint!, controller.lastRenderPoint!, _linePaint);
+      
+      // 2. 动态预测补齐 (Dynamic Ghost Tip)：
+      // 预测仅作用于“最后一公里”的笔尖连线，给用户 1.5 帧的极速响应错觉，但不改变已生成的字迹形状。
+      final predictedTip = controller.lastRenderPoint! + controller.lastDelta * 1.5;
+      canvas.drawLine(controller.midRenderPoint!, predictedTip, _linePaint);
     }
   }
 
