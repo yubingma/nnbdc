@@ -920,6 +920,15 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       // 当前在"说"tab
       _firstMatchTime = null;
 
+      // 如果正在手写/拼写沉浸模式，或者已经答对正在等待跳转，则严禁启动语音识别提示
+      if (_showHandwritingBoard || _hasFinishedAnswering) {
+        Global.logger.d('BDC: 由于正处于拼写模式或已作答完成，严禁自动启动 ASR (showHandwriting=$_showHandwritingBoard, hasFinished=$_hasFinishedAnswering)');
+        if (asr.state != AsrState.stopped && asr.state != AsrState.initialized) {
+          asr.stopAsr();
+        }
+        return;
+      }
+
       // 如果ASR已经启动且状态正确，计时器已经开始或将在_startAsrWithHint中重置
       if (asr.state == AsrState.started && !_isKeyboardVisible) {
         Global.logger.d('BDC: 当前在"说"tab，ASR已启动，保持计时');
@@ -1120,6 +1129,13 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
   /// 启动ASR并播放提示音
   Future<void> _startAsrWithHint(AsrLanguage language) async {
+    // 严禁正在手写/沉浸拼写模式，或已经答对完成作答时开启 ASR 会话。
+    // 这防止了由键盘监听器或其他侧边回调引起的意外 ASR 提示音爆发。
+    if (_showHandwritingBoard || _hasFinishedAnswering) {
+      Global.logger.d('BDC: 由于正处于拼写沉浸模式或已作答完成，取消 ASR 启动请求 (showHandwriting=$_showHandwritingBoard, hasFinished=$_hasFinishedAnswering)');
+      return;
+    }
+
     // 如果ASR已经在运行中，不需要重复启动
     if (asr.state == AsrState.started) {
       Global.logger.d('BDC: ASR已经在运行中，跳过重复启动');
@@ -4862,6 +4878,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
             setState(() {
               _showHandwritingBoard = true;
             });
+            // 进入手势拼写模式前，务必强制彻底停止 ASR 会话，避免在手写时后台仍在倾听或产生提示音
+            asr.stopAsr();
           },
           borderRadius: BorderRadius.circular(12),
           child: Container(
