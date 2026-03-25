@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:nnbdc/util/ocr_service.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:path_provider/path_provider.dart';
@@ -235,6 +236,9 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
   // 用于防止在一次划动中重复触发区域动作
   bool _rewriteTriggered = false;
   bool _recognizeTriggered = false;
+  
+  // 视觉反馈：当前激活的感应区 (0:无, 1:重写, 2:识别)
+  int _activeZone = 0;
 
   @override
   void initState() {
@@ -260,20 +264,20 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
         final centerX = width / 2;
         
         // 定义中心化的感应区，更加适合平板书写习惯，减少运笔负荷
-        const zoneWidth = 130.0;
-        const zoneHeight = 65.0;
-        const gap = 30.0;
-        const bottomPadding = 15.0;
+       final double zoneWidth = 130;
+    final double zoneHeight = 65;
+    final double bottomMargin = 40; // 调高位置，方便从底部向上方划入触发
+    final double centerGap = 30;
 
         final rewriteZone = Rect.fromLTWH(
-          centerX - zoneWidth - gap / 2, 
-          height - zoneHeight - bottomPadding, 
+          centerX - zoneWidth - centerGap / 2, 
+          height - zoneHeight - bottomMargin, 
           zoneWidth, 
           zoneHeight
         );
         final recognizeZone = Rect.fromLTWH(
-          centerX + gap / 2, 
-          height - zoneHeight - bottomPadding, 
+          centerX + centerGap / 2, 
+          height - zoneHeight - bottomMargin, 
           zoneWidth, 
           zoneHeight
         );
@@ -295,12 +299,26 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
             // 碰撞检测：扫过即触发，但允许笔迹流继续维持
             if (rewriteZone.contains(p) && !_rewriteTriggered) {
               _rewriteTriggered = true;
-              widget.onRewrite();
-              // 注意：这里不再返回，也不再清空 ID，允许用户划过去
+              setState(() => _activeZone = 1);
+              HapticFeedback.lightImpact();
+              
+              // 延时清除，给用户一个视觉反馈缓冲，看到笔迹扫过区域后再消失
+              Future.delayed(const Duration(milliseconds: 250), () {
+                if (mounted) widget.onRewrite();
+                Future.delayed(const Duration(milliseconds: 100), () {
+                  if (mounted) setState(() => _activeZone = 0);
+                });
+              });
             }
             if (recognizeZone.contains(p) && !_recognizeTriggered) {
               _recognizeTriggered = true;
+              setState(() => _activeZone = 2);
+              HapticFeedback.lightImpact();
               widget.onRecognize();
+              
+              Future.delayed(const Duration(milliseconds: 400), () {
+                if (mounted) setState(() => _activeZone = 0);
+              });
             }
 
             _controller.move(p, event.localDelta);
@@ -312,9 +330,23 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
             
             // 点击检测：如果还没因为划过而触发，且抬起位置在感应区内，则视为点击触发
             if (!_rewriteTriggered && rewriteZone.contains(p)) {
-              widget.onRewrite();
+              _rewriteTriggered = true;
+              setState(() => _activeZone = 1);
+              HapticFeedback.lightImpact();
+              Future.delayed(const Duration(milliseconds: 250), () {
+                if (mounted) widget.onRewrite();
+                Future.delayed(const Duration(milliseconds: 100), () {
+                  if (mounted) setState(() => _activeZone = 0);
+                });
+              });
             } else if (!_recognizeTriggered && recognizeZone.contains(p)) {
+              _recognizeTriggered = true;
+              setState(() => _activeZone = 2);
+              HapticFeedback.lightImpact();
               widget.onRecognize();
+              Future.delayed(const Duration(milliseconds: 400), () {
+                if (mounted) setState(() => _activeZone = 0);
+              });
             }
 
             _activePointerId = null;
@@ -342,15 +374,31 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
                   width: zoneWidth,
                   height: zoneHeight,
                   decoration: BoxDecoration(
-                    color: Colors.grey.withOpacity(0.08),
+                    color: _activeZone == 1 
+                      ? Colors.grey.withOpacity(0.2) 
+                      : Colors.grey.withOpacity(0.08),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey.withOpacity(0.1), width: 1),
+                    border: Border.all(
+                      color: _activeZone == 1 ? Colors.grey : Colors.grey.withOpacity(0.1), 
+                      width: _activeZone == 1 ? 1.5 : 1
+                    ),
                   ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.delete_sweep_outlined, color: Colors.grey.withOpacity(0.4), size: 22),
-                      Text('划过重写', style: TextStyle(color: Colors.grey.withOpacity(0.4), fontSize: 11)),
+                      Icon(
+                        Icons.delete_sweep_outlined, 
+                        color: _activeZone == 1 ? Colors.grey : Colors.grey.withOpacity(0.4), 
+                        size: 22
+                      ),
+                      Text(
+                        '划过重写', 
+                        style: TextStyle(
+                          color: _activeZone == 1 ? Colors.grey : Colors.grey.withOpacity(0.4), 
+                          fontSize: 11,
+                          fontWeight: _activeZone == 1 ? FontWeight.bold : FontWeight.normal,
+                        )
+                      ),
                     ],
                   ),
                 ),
@@ -362,15 +410,31 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
                   width: zoneWidth,
                   height: zoneHeight,
                   decoration: BoxDecoration(
-                    color: AppTheme.primaryColor.withOpacity(0.08),
+                    color: _activeZone == 2 
+                      ? AppTheme.primaryColor.withOpacity(0.2) 
+                      : AppTheme.primaryColor.withOpacity(0.08),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppTheme.primaryColor.withOpacity(0.1), width: 1),
+                    border: Border.all(
+                      color: _activeZone == 2 ? AppTheme.primaryColor : AppTheme.primaryColor.withOpacity(0.1), 
+                      width: _activeZone == 2 ? 1.5 : 1
+                    ),
                   ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.check_circle_outline, color: AppTheme.primaryColor.withOpacity(0.4), size: 22),
-                      Text('划过识别', style: TextStyle(color: AppTheme.primaryColor.withOpacity(0.4), fontSize: 11)),
+                      Icon(
+                        Icons.check_circle_outline, 
+                        color: _activeZone == 2 ? AppTheme.primaryColor : AppTheme.primaryColor.withOpacity(0.4), 
+                        size: 22
+                      ),
+                      Text(
+                        '划过识别', 
+                        style: TextStyle(
+                          color: _activeZone == 2 ? AppTheme.primaryColor : AppTheme.primaryColor.withOpacity(0.4), 
+                          fontSize: 11,
+                          fontWeight: _activeZone == 2 ? FontWeight.bold : FontWeight.normal,
+                        )
+                      ),
                     ],
                   ),
                 ),
