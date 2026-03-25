@@ -1,6 +1,4 @@
 import 'dart:io';
-import 'dart:convert';
-import 'dart:math';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:nnbdc/util/ocr_service.dart';
@@ -197,38 +195,13 @@ class _HandwritingBoardState extends State<HandwritingBoard> {
             ),
           ),
 
-          // 画布区域
+          // 画布区域 (独占所有垂直空间，最大化书写面积)
           Expanded(
             child: _HandwritingCanvas(
-              key: ValueKey(_lines),
               lines: _lines,
               isRecognizing: _isRecognizing,
-            ),
-          ),
-
-          // 底部操作栏
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Row(
-              children: [
-                TextButton.icon(
-                  onPressed: _isRecognizing ? null : _clear,
-                  icon: const Icon(Icons.delete_outline, size: 18),
-                  label: const Text('重写'),
-                  style: TextButton.styleFrom(foregroundColor: Colors.grey),
-                ),
-                const Spacer(),
-                ElevatedButton(
-                  onPressed: _isRecognizing ? null : _recognize,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryColor,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                  ),
-                  child: const Text('识别'),
-                ),
-              ],
+              onRewrite: _clear,
+              onRecognize: _recognize,
             ),
           ),
         ],
@@ -240,8 +213,16 @@ class _HandwritingBoardState extends State<HandwritingBoard> {
 class _HandwritingCanvas extends StatefulWidget {
   final List<List<Offset>> lines;
   final bool isRecognizing;
+  final VoidCallback onRewrite;
+  final VoidCallback onRecognize;
 
-  const _HandwritingCanvas({super.key, required this.lines, required this.isRecognizing});
+  const _HandwritingCanvas({
+    super.key,
+    required this.lines,
+    required this.isRecognizing,
+    required this.onRewrite,
+    required this.onRecognize,
+  });
 
   @override
   State<_HandwritingCanvas> createState() => _HandwritingCanvasState();
@@ -249,6 +230,11 @@ class _HandwritingCanvas extends StatefulWidget {
 
 class _HandwritingCanvasState extends State<_HandwritingCanvas> {
   late final _HandwritingController _controller;
+  int? _activePointerId;
+  
+  // 用于防止在一次划动中重复触发区域动作
+  bool _rewriteTriggered = false;
+  bool _recognizeTriggered = false;
 
   @override
   void initState() {
@@ -257,43 +243,142 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
   }
 
   @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
+  void didUpdateWidget(_HandwritingCanvas oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // 如果父组件清空了 _lines，我们需要同步更新控制器的状态，但不通过重建来实现，以维持触控流
+    if (widget.lines.isEmpty && oldWidget.lines.isNotEmpty) {
+      _controller.clear();
+    }
   }
-
-  int? _activePointerId;
 
   @override
   Widget build(BuildContext context) {
-    return Listener(
-      behavior: HitTestBehavior.opaque,
-      onPointerDown: (event) {
-        if (widget.isRecognizing || _activePointerId != null) return;
-        _activePointerId = event.pointer;
-        _controller.start(event.localPosition);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final height = constraints.maxHeight;
+        final width = constraints.maxWidth;
+        final centerX = width / 2;
+        
+        // 定义中心化的感应区，更加适合平板书写习惯，减少运笔负荷
+        const zoneWidth = 130.0;
+        const zoneHeight = 65.0;
+        const gap = 30.0;
+        const bottomPadding = 15.0;
+
+        final rewriteZone = Rect.fromLTWH(
+          centerX - zoneWidth - gap / 2, 
+          height - zoneHeight - bottomPadding, 
+          zoneWidth, 
+          zoneHeight
+        );
+        final recognizeZone = Rect.fromLTWH(
+          centerX + gap / 2, 
+          height - zoneHeight - bottomPadding, 
+          zoneWidth, 
+          zoneHeight
+        );
+
+        return Listener(
+          behavior: HitTestBehavior.opaque,
+          onPointerDown: (event) {
+            if (widget.isRecognizing || _activePointerId != null) return;
+            _activePointerId = event.pointer;
+            _rewriteTriggered = false;
+            _recognizeTriggered = false;
+            _controller.start(event.localPosition);
+          },
+          onPointerMove: (event) {
+            if (widget.isRecognizing || event.pointer != _activePointerId) return;
+            
+            final p = event.localPosition;
+            
+            // 碰撞检测：扫过即触发，但允许笔迹流继续维持
+            if (rewriteZone.contains(p) && !_rewriteTriggered) {
+              _rewriteTriggered = true;
+              widget.onRewrite();
+              // 注意：这里不再返回，也不再清空 ID，允许用户划过去
+            }
+            if (recognizeZone.contains(p) && !_recognizeTriggered) {
+              _recognizeTriggered = true;
+              widget.onRecognize();
+            }
+
+            _controller.move(p, event.localDelta);
+          },
+          onPointerUp: (event) {
+            if (event.pointer != _activePointerId) return;
+
+            final p = event.localPosition;
+            
+            // 点击检测：如果还没因为划过而触发，且抬起位置在感应区内，则视为点击触发
+            if (!_rewriteTriggered && rewriteZone.contains(p)) {
+              widget.onRewrite();
+            } else if (!_recognizeTriggered && recognizeZone.contains(p)) {
+              widget.onRecognize();
+            }
+
+            _activePointerId = null;
+            _controller.end();
+          },
+          onPointerCancel: (event) {
+            if (event.pointer != _activePointerId) return;
+            _activePointerId = null;
+            _controller.end();
+          },
+          child: Stack(
+            children: [
+              RepaintBoundary(
+                child: CustomPaint(
+                  painter: _HandwritingPainter(_controller),
+                  size: Size.infinite,
+                ),
+              ),
+              
+              // 居中显示的感应目标区
+              Positioned(
+                left: rewriteZone.left,
+                top: rewriteZone.top,
+                child: Container(
+                  width: zoneWidth,
+                  height: zoneHeight,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey.withOpacity(0.1), width: 1),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.delete_sweep_outlined, color: Colors.grey.withOpacity(0.4), size: 22),
+                      Text('划过重写', style: TextStyle(color: Colors.grey.withOpacity(0.4), fontSize: 11)),
+                    ],
+                  ),
+                ),
+              ),
+              Positioned(
+                left: recognizeZone.left,
+                top: recognizeZone.top,
+                child: Container(
+                  width: zoneWidth,
+                  height: zoneHeight,
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryColor.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppTheme.primaryColor.withOpacity(0.1), width: 1),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.check_circle_outline, color: AppTheme.primaryColor.withOpacity(0.4), size: 22),
+                      Text('划过识别', style: TextStyle(color: AppTheme.primaryColor.withOpacity(0.4), fontSize: 11)),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
       },
-      onPointerMove: (event) {
-        if (widget.isRecognizing || event.pointer != _activePointerId) return;
-        // 采用增量式平滑与预测绘制合并方案，实现全平台统一的高流畅书写
-        _controller.move(event.localPosition, event.localDelta);
-      },
-      onPointerUp: (event) {
-        if (event.pointer != _activePointerId) return;
-        _activePointerId = null;
-        _controller.end();
-      },
-      onPointerCancel: (event) {
-        if (event.pointer != _activePointerId) return;
-        _activePointerId = null;
-        _controller.end();
-      },
-      child: RepaintBoundary(
-        child: CustomPaint(
-          painter: _HandwritingPainter(_controller),
-          size: Size.infinite,
-        ),
-      ),
     );
   }
 }
