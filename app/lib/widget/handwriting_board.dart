@@ -93,7 +93,7 @@ class _HandwritingBoardState extends State<HandwritingBoard> {
           _isRecognizing = false;
         });
       }
-    }
+    } 
   }
 
   void _drawOnCanvas(Canvas canvas, Paint paint, double width, double height) {
@@ -269,6 +269,7 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
       },
       onPointerMove: (event) {
         if (widget.isRecognizing) return;
+        // 采用增量式平滑与预测绘制合并方案，实现全平台统一的高流畅书写
         _controller.move(event.localPosition, event.localDelta);
       },
       onPointerUp: (event) {
@@ -324,12 +325,21 @@ class _HandwritingController extends ChangeNotifier {
   void move(Offset p, Offset delta) {
     if (activePath == null || lastPoint == null) return;
 
-    if ((p - lastPoint!).distanceSquared < 1.0) return;
+    // 1. 距离过滤
+    if ((p - lastPoint!).distanceSquared < 0.5) return;
 
-    // 预测绘制：通过移动矢量预测 0.4 帧后的位置，补偿触控到显示的固有延迟
-    final predictedPoint = p + delta * 0.4;
-    rawLines.last.add(predictedPoint);
+    // 2. 输入低通滤波 (Input Smoothing)：
+    // 通过移动平均消除采样产生的微小锯齿和抖动，让曲线更加圆润。
+    final smoothedPoint = Offset(
+      lastPoint!.dx * 0.15 + p.dx * 0.85,
+      lastPoint!.dy * 0.15 + p.dy * 0.85,
+    );
 
+    // 3. 极致预测绘制：将预测权重提升至 0.5 帧，实现物理层面的“零延迟”错觉
+    final predictedPoint = smoothedPoint + delta * 0.5;
+    rawLines.last.add(p); // 将原始输入点存入数据队列，保证 OCR 识别的原始精度
+
+    // 4. 增量构建平滑路径
     final newMidPoint =
         Offset((lastPoint!.dx + predictedPoint.dx) / 2.0, (lastPoint!.dy + predictedPoint.dy) / 2.0);
     activePath!.quadraticBezierTo(
@@ -365,7 +375,8 @@ class _HandwritingPainter extends CustomPainter {
       ..strokeJoin = StrokeJoin.round
       ..strokeWidth = 4.8
       ..style = PaintingStyle.stroke
-      ..isAntiAlias = true;
+      ..isAntiAlias = true
+      ..maskFilter = const MaskFilter.blur(BlurStyle.solid, 0.4); // 模拟现实墨水的微小晕染感，提升质感
 
     canvas.drawPath(controller.finishedPath, paint);
 
