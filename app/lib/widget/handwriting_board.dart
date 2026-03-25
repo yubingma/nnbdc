@@ -102,7 +102,7 @@ class _HandwritingBoardState extends State<HandwritingBoard> {
     // 寻找内容的边界，以便进行居中和缩放
     double minX = double.infinity, minY = double.infinity;
     double maxX = double.negativeInfinity, maxY = double.negativeInfinity;
-
+ 
     for (var line in _lines) {
       for (var point in line) {
         if (point.dx < minX) minX = point.dx;
@@ -326,17 +326,22 @@ class _HandwritingController extends ChangeNotifier {
   void move(Offset p, Offset delta) {
     if (activePath == null || lastPoint == null) return;
 
-    // 极致原生化：移除所有平滑滤波器
-    // 虽然平滑会让线条更圆润，但也不可避免地会引入 1-2 帧的物理相位延迟。
-    // 为了对抗原生手写的敏锐感，我们牺牲微小的圆润度，追求绝对的响应速度。
-    if ((p - lastPoint!).distanceSquared < 0.25) return;
+    // 1. 牺牲细节提升流场感：稍微加大过滤阈值以抹平微小抖动
+    if ((p - lastPoint!).distanceSquared < 1.0) return;
 
-    // 极致预测：使用 1.0 帧的完整位移预测
-    // 将视觉落点完全推移到触控点的物理预测位置。
-    final predictedPoint = p + delta * 1.0;
-    rawLines.last.add(p); 
+    // 2. 强力自适应平滑 (Aggressive Smoothing)：
+    // 调低当前点的权重比例（base 0.6），加大历史轨迹的惯性，特别适合单词拼写场景。
+    final velocity = delta.distance;
+    final alpha = (0.55 + velocity * 0.04).clamp(0.6, 0.88); 
+    
+    final smoothedPoint = lastPoint! * (1.0 - alpha) + p * alpha;
 
-    // 增量构建
+    // 3. 强力预测补偿 (High-Lead Prediction)：
+    // 将预测提升至 1.3 帧。因为平滑力度加大，我们必须用更强的超前量来抵消“牵引感”，让墨水依然贴着笔尖走。
+    final predictedPoint = smoothedPoint + delta * 1.3;
+    rawLines.last.add(p); // OCR 原始点保持不变
+
+    // 4. 构建更加流动的贝塞尔路径
     final newMidPoint =
         Offset((lastPoint!.dx + predictedPoint.dx) / 2.0, (lastPoint!.dy + predictedPoint.dy) / 2.0);
     activePath!.quadraticBezierTo(
