@@ -2742,7 +2742,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                                   },
                                 ),
                                 _buildSettingItem(
-                                  '答对自动跳转(中英极速模式)',
+                                  '极速模式：答对后自动跳到下一个单词 (中英)',
                                   localAutoJumpAfterCorrectCh2En,
                                   (value) {
                                     setState(() {
@@ -2751,7 +2751,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                                   },
                                 ),
                                 _buildSettingItem(
-                                  '答对自动跳转(英中极速模式)',
+                                  '极速模式：答对后自动跳到下一个单词 (英中)',
                                   localAutoJumpAfterCorrectEn2Ch,
                                   (value) {
                                     setState(() {
@@ -3085,30 +3085,35 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                     ],
                   ),
                 ),
-                IconButton(
-                  icon: Icon(
-                    _autoJumpAfterCorrect ? Icons.bolt : Icons.bolt_outlined,
-                    color: _autoJumpAfterCorrect
-                        ? Colors.amber
-                        : (isDarkMode ? Colors.white38 : Colors.black38),
-                    size: 20,
+                Tooltip(
+                  message: _autoJumpAfterCorrect ? '极速模式：答对自动跳到下一词' : '极速模式：已关闭 (答对留在此词)',
+                  triggerMode: TooltipTriggerMode.tap,
+                  child: IconButton(
+                    icon: Icon(
+                      _autoJumpAfterCorrect ? Icons.bolt : Icons.bolt_outlined,
+                      color: _autoJumpAfterCorrect
+                          ? Colors.amber
+                          : (isDarkMode ? Colors.white38 : Colors.black38),
+                      size: 20,
+                    ),
+                    onPressed: () async {
+                      setState(() {
+                        _autoJumpAfterCorrect = !_autoJumpAfterCorrect;
+                      });
+                      ToastUtil.info(_autoJumpAfterCorrect 
+                        ? '极速模式：答对自动跳到下一个单词' 
+                        : '极速模式已关闭：答对后留在当前单词');
+                      
+                      // 同步到数据库
+                      final config = StudyConfig.fromCurrentUser();
+                      if (_studyStep == StudyStep.ch2En.json) {
+                        config.autoJumpAfterCorrectCh2En = _autoJumpAfterCorrect;
+                      } else {
+                        config.autoJumpAfterCorrectEn2Ch = _autoJumpAfterCorrect;
+                      }
+                      await config.saveToCurrentUser();
+                    },
                   ),
-                  tooltip:
-                      _autoJumpAfterCorrect ? '极速模式：答对自动下个词' : '极速模式：答对停在当前词',
-                  onPressed: () async {
-                    setState(() {
-                      _autoJumpAfterCorrect = !_autoJumpAfterCorrect;
-                    });
-                    if (_studyStep == StudyStep.ch2En.json) {
-                      var config = StudyConfig.fromCurrentUser();
-                      config.autoJumpAfterCorrectCh2En = _autoJumpAfterCorrect;
-                      await config.saveToCurrentUser();
-                    } else {
-                      var config = StudyConfig.fromCurrentUser();
-                      config.autoJumpAfterCorrectEn2Ch = _autoJumpAfterCorrect;
-                      await config.saveToCurrentUser();
-                    }
-                  },
                 ),
                 IconButton(
                   icon: const Icon(Icons.close),

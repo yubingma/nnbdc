@@ -14,7 +14,6 @@ class HandwritingBoard extends StatefulWidget {
   final bool showCloseButton;
 
   const HandwritingBoard({
-    super.key,
     required this.onRecognized,
     required this.onCancel,
     this.showCloseButton = true,
@@ -219,7 +218,6 @@ class _HandwritingCanvas extends StatefulWidget {
   final VoidCallback onRecognize;
 
   const _HandwritingCanvas({
-    super.key,
     required this.lines,
     required this.isRecognizing,
     required this.onRewrite,
