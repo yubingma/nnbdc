@@ -300,8 +300,13 @@ class _HandwritingController extends ChangeNotifier {
   final List<List<Offset>> rawLines;
   Path finishedPath = Path();
   Path? activePath;
-  Offset? lastPoint;
-  Offset? midPoint;
+  
+  // 核心渲染锚点：这些用于构建 Path 的顶点，包含预测量
+  Offset? lastRenderPoint; 
+  Offset? midRenderPoint;
+
+  // 核心物理状态：用于维持平滑滤波器的历史状态，不包含预测量，逻辑更稳定
+  Offset? lastSmoothPoint;
 
   _HandwritingController(this.rawLines) {
     _rebuildFinishedPath();
@@ -328,47 +333,51 @@ class _HandwritingController extends ChangeNotifier {
     rawLines.add([p]);
     activePath = Path();
     activePath!.moveTo(p.dx, p.dy);
-    lastPoint = p;
-    midPoint = p;
+    lastRenderPoint = p;
+    midRenderPoint = p;
+    lastSmoothPoint = p;
     notifyListeners();
   }
 
   void move(Offset p, Offset delta) {
-    if (activePath == null || lastPoint == null) return;
+    if (activePath == null || lastRenderPoint == null || lastSmoothPoint == null) return;
 
-    // 1. 牺牲细节提升流场感：稍微加大过滤阈值以抹平微小抖动
-    if ((p - lastPoint!).distanceSquared < 1.0) return;
+    // 1. 极高采样率：保留 0.1 像素级的微小位移，确保存储细节
+    if ((p - lastSmoothPoint!).distanceSquared < 0.1) return;
 
-    // 2. 强力自适应平滑 (Aggressive Smoothing)：
-    // 调低当前点的权重比例（base 0.6），加大历史轨迹的惯性，特别适合单词拼写场景。
+    // 2. 极致圆润平滑 (Liquid Smoothing)：
+    // 通过降低 alpha (0.45 base)，让笔迹产生更强的惯性感，呈现如“液体墨水”般的圆润效果。
     final velocity = delta.distance;
-    final alpha = (0.55 + velocity * 0.04).clamp(0.6, 0.88); 
+    final alpha = (0.45 + velocity * 0.05).clamp(0.5, 0.9); 
     
-    final smoothedPoint = lastPoint! * (1.0 - alpha) + p * alpha;
+    // 基于“纯净平滑点”进行迭代，彻底消除预测导致的抖动放大
+    final smoothedPoint = lastSmoothPoint! * (1.0 - alpha) + p * alpha;
 
-    // 3. 强力预测补偿 (High-Lead Prediction)：
-    // 将预测提升至 1.3 帧。因为平滑力度加大，我们必须用更强的超前量来抵消“牵引感”，让墨水依然贴着笔尖走。
-    final predictedPoint = smoothedPoint + delta * 1.3;
-    rawLines.last.add(p); // OCR 原始点保持不变
+    // 3. 极限预测补偿 (Extreme Lead Prediction)：
+    // 将预测提升至 1.5 帧。因为平滑力度极大（圆润度极高），必须通过强预测将墨水“拉到”笔端。
+    final predictedPoint = smoothedPoint + delta * 1.5;
+    rawLines.last.add(p); 
 
-    // 4. 构建更加流动的贝塞尔路径
+    // 4. 构建超级平滑路径
     final newMidPoint =
-        Offset((lastPoint!.dx + predictedPoint.dx) / 2.0, (lastPoint!.dy + predictedPoint.dy) / 2.0);
+        Offset((lastRenderPoint!.dx + predictedPoint.dx) / 2.0, (lastRenderPoint!.dy + predictedPoint.dy) / 2.0);
     activePath!.quadraticBezierTo(
-        lastPoint!.dx, lastPoint!.dy, newMidPoint.dx, newMidPoint.dy);
+        lastRenderPoint!.dx, lastRenderPoint!.dy, newMidPoint.dx, newMidPoint.dy);
 
-    midPoint = newMidPoint;
-    lastPoint = predictedPoint;
+    midRenderPoint = newMidPoint;
+    lastRenderPoint = predictedPoint;
+    lastSmoothPoint = smoothedPoint; // 平滑状态不带预测，确保历史的一致性和稳定性
     notifyListeners();
   }
 
   void end() {
-    if (activePath != null && lastPoint != null) {
-      activePath!.lineTo(lastPoint!.dx, lastPoint!.dy);
+    if (activePath != null && lastRenderPoint != null) {
+      activePath!.lineTo(lastRenderPoint!.dx, lastRenderPoint!.dy);
       finishedPath.addPath(activePath!, Offset.zero);
       activePath = null;
-      lastPoint = null;
-      midPoint = null;
+      lastRenderPoint = null;
+      midRenderPoint = null;
+      lastSmoothPoint = null;
       notifyListeners();
     }
   }
@@ -396,11 +405,11 @@ class _HandwritingPainter extends CustomPainter {
     canvas.drawPath(controller.finishedPath, _linePaint);
 
     if (controller.activePath != null &&
-        controller.lastPoint != null &&
-        controller.midPoint != null) {
+        controller.lastRenderPoint != null &&
+        controller.midRenderPoint != null) {
       canvas.drawPath(controller.activePath!, _linePaint);
       // 笔尖补齐
-      canvas.drawLine(controller.midPoint!, controller.lastPoint!, _linePaint);
+      canvas.drawLine(controller.midRenderPoint!, controller.lastRenderPoint!, _linePaint);
     }
   }
 
