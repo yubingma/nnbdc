@@ -3992,8 +3992,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     setState(() {
       _hintTapCount++;
       word.hintLetterCount++;
-      // 中英模式：拼写提示
-      if (_studyStep == StudyStep.ch2En.json) {
+      // 中英模式 或 正在进行拼写练习：提供英文拼写提示
+      if (_studyStep == StudyStep.ch2En.json || _showHandwritingBoard) {
         final spell = word.word.spell;
         if (word.hintLetterCount > spell.length) {
           word.hintLetterCount = spell.length;
@@ -4008,8 +4008,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     setState(() {
       _hintTapCount = 2; // 长按直接视为严重提示
       word.hintLetterCount = word.word.spell.length;
-      // 中英模式：拼写提示
-      if (_studyStep == StudyStep.ch2En.json) {
+      // 中英模式 或 正在进行拼写练习：拼写提示
+      if (_studyStep == StudyStep.ch2En.json || _showHandwritingBoard) {
         _isUpdatingByHint = true;
         _meaningController.text = word.word.spell;
       }
@@ -4019,7 +4019,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   void clearHint(WordWrapper word) {
     setState(() {
       word.hintLetterCount = 0;
-      if (_studyStep == StudyStep.ch2En.json) {
+      if (_studyStep == StudyStep.ch2En.json || _showHandwritingBoard) {
         _isUpdatingByHint = true;
         _meaningController.text = '';
       }
@@ -4791,6 +4791,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                       children: [
                         ...renderAsrMeaningItems(_wordWrapper!,
                             isDarkMode: context.read<DarkMode>().isDarkMode),
+                        const SizedBox(height: 16),
+                        _buildSpellingExerciseButton(isDarkMode),
                       ],
                     )
                   : Column(
@@ -4808,85 +4810,75 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                         ),
                         const SizedBox(height: 12),
                         // 拼写练习按钮 (替代原来的 TextField)
-                        Column(
-                          children: [
-                            InkWell(
-                              onTap: () {
-                                _isUpdatingByHint = true;
-                                _meaningController.clear();
-                                _isUpdatingByHint = false;
-                                setState(() {
-                                  _showHandwritingBoard = true;
-                                });
-                              },
-                              borderRadius: BorderRadius.circular(12),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                    vertical: 12, horizontal: 0),
-                                decoration: BoxDecoration(
-                                  border: Border(
-                                    bottom: BorderSide(
-                                        color:
-                                            context.watch<DarkMode>().isDarkMode
-                                                ? Colors.white10
-                                                : Colors.black
-                                                    .withValues(alpha: 0.05)),
-                                  ),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.edit_note,
-                                        color: AppTheme.primaryColor
-                                            .withValues(alpha: 0.5)),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: _meaningController.text.isEmpty
-                                          ? Text(
-                                              '拼写练习',
-                                              style: TextStyle(
-                                                fontSize: 20,
-                                                color: (isDarkMode
-                                                        ? Colors.white
-                                                        : Colors.black)
-                                                    .withValues(alpha: 0.2),
-                                                fontWeight: FontWeight.normal,
-                                              ),
-                                            )
-                                          : RichText(
-                                              text:
-                                                  SpellingTextEditingController
-                                                      .buildSpellingTextSpan(
-                                                _meaningController.text,
-                                                _word?.spell ?? "",
-                                                _meaningController.text
-                                                            .trim()
-                                                            .toLowerCase() !=
-                                                        (_word?.spell
-                                                                .toLowerCase() ??
-                                                            "")
-                                                    ? Colors.red
-                                                    : (isDarkMode
-                                                        ? Colors.white
-                                                        : Colors.black),
-                                                const TextStyle(
-                                                    fontSize: 24,
-                                                    fontWeight:
-                                                        FontWeight.bold),
-                                              ),
-                                            ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                          ],
-                        ),
+                        _buildSpellingExerciseButton(isDarkMode),
                       ],
                     ),
             ),
           ),
         ),
+      ],
+    );
+  }
+
+  /// 构建拼写练习按钮
+  Widget _buildSpellingExerciseButton(bool isDarkMode) {
+    return Column(
+      children: [
+        InkWell(
+          onTap: () {
+            _isUpdatingByHint = true;
+            _meaningController.clear();
+            _isUpdatingByHint = false;
+            setState(() {
+              _showHandwritingBoard = true;
+            });
+          },
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 0),
+            decoration: BoxDecoration(
+              border: Border(
+                bottom: BorderSide(
+                    color: context.watch<DarkMode>().isDarkMode
+                        ? Colors.white10
+                        : Colors.black.withValues(alpha: 0.05)),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.edit_note,
+                    color: AppTheme.primaryColor.withValues(alpha: 0.5)),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _meaningController.text.isEmpty
+                      ? Text(
+                          '拼写练习',
+                          style: TextStyle(
+                            fontSize: 20,
+                            color: (isDarkMode ? Colors.white : Colors.black)
+                                .withValues(alpha: 0.2),
+                            fontWeight: FontWeight.normal,
+                          ),
+                        )
+                      : RichText(
+                          text: SpellingTextEditingController
+                              .buildSpellingTextSpan(
+                            _meaningController.text,
+                            _word?.spell ?? "",
+                            _meaningController.text.trim().toLowerCase() !=
+                                    (_word?.spell.toLowerCase() ?? "")
+                                ? Colors.red
+                                : (isDarkMode ? Colors.white : Colors.black),
+                            const TextStyle(
+                                fontSize: 24, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
       ],
     );
   }
