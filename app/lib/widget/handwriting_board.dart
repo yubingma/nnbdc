@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:ui' as ui;
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:nnbdc/util/ocr_service.dart';
@@ -239,11 +240,17 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
   
   // 视觉反馈：当前激活的感应区 (0:无, 1:重写, 2:识别)
   int _activeZone = 0;
+  
+  // 用于取消延时任务，防止划过手势与感应区动作冲突
+  Timer? _pendingRewardTask; 
+  Timer? _pendingRecognizeTask;
 
   @override
-  void initState() {
-    super.initState();
-    _controller = _HandwritingController(widget.lines);
+  void dispose() {
+    _pendingRewardTask?.cancel();
+    _pendingRecognizeTask?.cancel();
+    _controller.dispose();
+    super.dispose();
   }
 
   @override
@@ -273,13 +280,13 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
     final double centerGap = 30;
 
         final rewriteZone = Rect.fromLTWH(
-          centerX - zoneWidth - centerGap / 2, 
+          (width / 3) - (zoneWidth / 2), 
           height - zoneHeight - bottomMargin, 
           zoneWidth, 
           zoneHeight
         );
         final recognizeZone = Rect.fromLTWH(
-          centerX + centerGap / 2, 
+          ((width / 3) * 2) - (zoneWidth / 2), 
           height - zoneHeight - bottomMargin, 
           zoneWidth, 
           zoneHeight
@@ -305,11 +312,11 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
               setState(() => _activeZone = 1);
               HapticFeedback.lightImpact();
               
-              // 延时清除，给用户一个视觉反馈缓冲，看到笔迹扫过区域后再消失
-              Future.delayed(const Duration(milliseconds: 250), () {
+              _pendingRewardTask?.cancel();
+              _pendingRewardTask = Timer(const Duration(milliseconds: 250), () {
                 if (mounted) {
-                  _controller.clear(); // 强制清除本地控制器的路径
-                  widget.onRewrite();  // 清除父组件的 List
+                  _controller.clear(); 
+                  widget.onRewrite();
                   Future.delayed(const Duration(milliseconds: 100), () {
                     if (mounted) setState(() => _activeZone = 0);
                   });
@@ -321,8 +328,8 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
               setState(() => _activeZone = 2);
               HapticFeedback.lightImpact();
               
-              // 延时触发识别，给用户一个视觉反馈缓冲
-              Future.delayed(const Duration(milliseconds: 250), () {
+              _pendingRecognizeTask?.cancel();
+              _pendingRecognizeTask = Timer(const Duration(milliseconds: 250), () {
                 if (mounted) {
                   widget.onRecognize();
                   Future.delayed(const Duration(milliseconds: 400), () {
@@ -339,12 +346,25 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
 
             final p = event.localPosition;
             
+            // 先检查是否有全屏/回退手势
+            final swipeStatus = _controller._detectSwipe(_controller.rawLines.last);
+            if (swipeStatus != 0) {
+              // 如果是手势，取消所有感应区的任务
+              _pendingRewardTask?.cancel();
+              _pendingRecognizeTask?.cancel();
+              setState(() => _activeZone = 0);
+              // 标记为已触发，防止下方点击检测再次触发
+              _rewriteTriggered = true; 
+              _recognizeTriggered = true;
+            }
+
             // 点击检测：如果还没因为划过而触发，且抬起位置在感应区内，则视为点击触发
             if (!_rewriteTriggered && rewriteZone.contains(p)) {
               _rewriteTriggered = true;
               setState(() => _activeZone = 1);
               HapticFeedback.lightImpact();
-              Future.delayed(const Duration(milliseconds: 250), () {
+              _pendingRewardTask?.cancel();
+              _pendingRewardTask = Timer(const Duration(milliseconds: 250), () {
                 if (mounted) {
                   _controller.clear();
                   widget.onRewrite();
@@ -357,7 +377,8 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
               _recognizeTriggered = true;
               setState(() => _activeZone = 2);
               HapticFeedback.lightImpact();
-              Future.delayed(const Duration(milliseconds: 250), () {
+              _pendingRecognizeTask?.cancel();
+              _pendingRecognizeTask = Timer(const Duration(milliseconds: 250), () {
                 if (mounted) {
                   widget.onRecognize();
                   Future.delayed(const Duration(milliseconds: 400), () {
@@ -517,6 +538,15 @@ class _HandwritingController extends ChangeNotifier {
     notifyListeners();
   }
 
+  void removeLast() {
+    if (rawLines.isNotEmpty) {
+      rawLines.removeLast();
+      _rebuildFinishedPath();
+      activePath = null;
+      notifyListeners();
+    }
+  }
+
   void move(Offset p, Offset delta) {
     if (activePath == null || lastRenderPoint == null || lastSmoothPoint == null) return;
 
@@ -549,9 +579,13 @@ class _HandwritingController extends ChangeNotifier {
     if (activePath != null && lastRenderPoint != null) {
       activePath!.lineTo(lastRenderPoint!.dx, lastRenderPoint!.dy);
       
-      // 智能检测：“划掉”手势识别
-      if (_isScribble(rawLines.last)) {
+      // 智能手势识别：反向移动(从右到左)则删除一笔，正向(从左到右)大行程则全清
+      final swipeStatus = _detectSwipe(rawLines.last);
+      if (swipeStatus == 1) { // Left to Right
         clear();
+      } else if (swipeStatus == 2) { // Right to Left
+        rawLines.removeLast(); // 先把当前这根触发手势的线去掉
+        removeLast(); // 再去掉前一笔也就是目标字母
       } else {
         finishedPath.addPath(activePath!, Offset.zero);
       }
@@ -565,12 +599,12 @@ class _HandwritingController extends ChangeNotifier {
   }
 
   /// 简单高效的“划掉”识别：检测到一个贯穿性的长横笔
-  bool _isScribble(List<Offset> stroke) {
-    if (stroke.length < 5) return false;
-
+  /// 手势识别：0:无, 1:从左往右(清除全部), 2:从右往左(删除最后一笔)
+  int _detectSwipe(List<Offset> stroke) {
+    if (stroke.length < 5) return 0;
+    
     double minX = double.infinity, minY = double.infinity;
     double maxX = double.negativeInfinity, maxY = double.negativeInfinity;
-    
     for (var p in stroke) {
       if (p.dx < minX) minX = p.dx;
       if (p.dx > maxX) maxX = p.dx;
@@ -581,10 +615,16 @@ class _HandwritingController extends ChangeNotifier {
     double width = maxX - minX;
     double height = maxY - minY;
 
-    // 判定条件：贯穿性长横笔
-    // 1. 绝对宽度大于 160 (一个明显的长手势)
-    // 2. 宽高比大于 3.0 (允许一定角度的倾斜，增加识别容错)
-    return width > 160 && width > height * 3.0;
+    // 判定条件：长横扫动作
+    if (width > 120 && width > height * 2.5) {
+      // 检查方向：起点在终点右侧一定距离即为反向划动
+      if (stroke.first.dx - stroke.last.dx > 60) {
+        return 2; // Right to Left
+      } else if (stroke.last.dx - stroke.first.dx > 60) {
+        return 1; // Left to Right
+      }
+    }
+    return 0;
   }
 }
 
