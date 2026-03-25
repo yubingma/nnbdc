@@ -48,7 +48,9 @@ class LearningService {
         final upgradedUser = user.copyWith(
             lastLearningDate: Value(today),
             learnedDays: user.learnedDays + 1,
-            learningFinished: const Value(false)); // todayStudyStarted 会在 copyWith 中自动被设为 false
+            learningFinished: const Value(false),
+            todayStudyStarted: false,
+            todayLearningSeconds: const Value(0));
         await db.usersDao.saveUser(upgradedUser, true);
 
         // 获取所有待重置(昨天被派发过，或产生过学习次数)的单词。重置时，使用带有 genLog 的方法或确保触发 UserDbLogs 从而使得远端服务器知道要清空 batchId，防止重装或者换客户端后被老数据覆盖

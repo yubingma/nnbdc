@@ -109,6 +109,13 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
       try {
         prepareResult = await StudyBo().prepareForStudy(forceSupplement);
         
+        // 由于 prepareForStudy 内部可能会重置用户状态（跨天重置），
+        // 必须在准备数据后重新获取最新的用户信息以更新 UI (例如：重置 todayStudyStarted 按钮)
+        final refreshUserResultAfterPrepare = await UserBo().getLoggedInUser();
+        if (refreshUserResultAfterPrepare.success) {
+          user = refreshUserResultAfterPrepare.data;
+        }
+        
         // 如果准备数据失败（提示词书不足/没词书）或者学习环节为空，且是正式用户，且还没尝试过同步
         // 这种情况通常发生在新安装 App 并登录后，后台同步尚未完成
         if ((prepareResult!.code == "NNBDC-0012" || (studySteps?.isEmpty ?? true)) && !Global.isGuest && !_hasTriedSync) {

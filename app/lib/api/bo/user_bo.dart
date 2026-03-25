@@ -126,14 +126,33 @@ class UserBo {
 
       if (user != null) {
         try {
-          final userVo = UserVo.fromUser(user);
-
-          userVo.level = LevelUtil.getLevelVoByWordCount(user.masteredWordsCount);
-
           final today = DateTime(AppClock.now().year, AppClock.now().month, AppClock.now().day);
-          userVo.hasDakaToday = await db.dakasDao.findById(user.id, today) != null;
-
-          Global.currentUserId = user.id;
+          
+          // 额外的跨天检测保护：如果今天是新的一天（基于由 lastLearningDate)，重置今日学习标记
+          if (user.todayStudyStarted && user.lastLearningDate != null && 
+              (user.lastLearningDate!.year != today.year || 
+               user.lastLearningDate!.month != today.month || 
+               user.lastLearningDate!.day != today.day)) {
+             try {
+               Global.logger.d('getLoggedInUser: 检测到持久过的今日状态已过期(跨天)，正在重置... lastLearningDate=${user.lastLearningDate}, today=$today');
+               // 更新数据库中的 User 对象 state
+               final updatedUser = user.copyWith(
+                 todayStudyStarted: false,
+                 todayLearningSeconds: const Value(0),
+               );
+               await db.usersDao.saveUser(updatedUser, true);
+               user = updatedUser; // 更新内存中的 user 对象
+             } catch (e) {
+               Global.logger.e('getLoggedInUser: 重置跨天状态失败: $e');
+             }
+          }
+          
+          final nonNullUser = user!;
+          final userVo = UserVo.fromUser(nonNullUser);
+          userVo.level = LevelUtil.getLevelVoByWordCount(nonNullUser.masteredWordsCount);
+          userVo.hasDakaToday = await db.dakasDao.findById(nonNullUser.id, today) != null;
+          
+          Global.currentUserId = nonNullUser.id;
 
           final result = Result<UserVo>("SUCCESS", "获取成功", true);
           result.data = userVo;

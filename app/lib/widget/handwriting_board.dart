@@ -97,11 +97,11 @@ class _HandwritingBoardState extends State<HandwritingBoard> {
   }
 
   void _drawOnCanvas(Canvas canvas, Paint paint, double width, double height) {
+    if (_lines.isEmpty) return;
+
     // 寻找内容的边界，以便进行居中和缩放
     double minX = double.infinity, minY = double.infinity;
     double maxX = double.negativeInfinity, maxY = double.negativeInfinity;
-
-    if (_lines.isEmpty) return;
 
     for (var line in _lines) {
       for (var point in line) {
@@ -116,28 +116,37 @@ class _HandwritingBoardState extends State<HandwritingBoard> {
     const margin = 50.0;
     double contentWidth = maxX - minX;
     double contentHeight = maxY - minY;
-
-    // 如果内容太小，不进行大幅度缩放以免失真
     if (contentWidth < 10) contentWidth = 10;
     if (contentHeight < 10) contentHeight = 10;
 
     double scaleX = (width - 2 * margin) / contentWidth;
     double scaleY = (height - 2 * margin) / contentHeight;
     double scale = scaleX < scaleY ? scaleX : scaleY;
-    if (scale > 2.0) scale = 2.0; // 避免过度放大噪音
+    if (scale > 2.0) scale = 2.0;
 
     canvas.save();
-    // 移动到中央并缩放
     canvas.translate(
       (width - contentWidth * scale) / 2 - minX * scale,
       (height - contentHeight * scale) / 2 - minY * scale,
     );
     canvas.scale(scale);
 
-    for (var line in _lines) {
-      for (int i = 0; i < line.length - 1; i++) {
-        canvas.drawLine(line[i], line[i + 1], paint);
+    paint.style = PaintingStyle.stroke;
+    paint.strokeJoin = StrokeJoin.round;
+
+    for (final line in _lines) {
+      if (line.isEmpty) continue;
+      final path = Path();
+      path.moveTo(line[0].dx, line[0].dy);
+      for (int i = 1; i < line.length - 1; i++) {
+        final p0 = line[i];
+        final p1 = line[i + 1];
+        path.quadraticBezierTo(p0.dx, p0.dy, (p0.dx + p1.dx) / 2.0, (p0.dy + p1.dy) / 2.0);
       }
+      if (line.length > 1) {
+        path.lineTo(line.last.dx, line.last.dy);
+      }
+      canvas.drawPath(path, paint);
     }
     canvas.restore();
   }
@@ -188,25 +197,9 @@ class _HandwritingBoardState extends State<HandwritingBoard> {
 
           // 画布区域
           Expanded(
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onPanStart: (details) {
-                if (_isRecognizing) return;
-                setState(() {
-                  _lines.add([details.localPosition]);
-                });
-              },
-              onPanUpdate: (details) {
-                if (_isRecognizing) return;
-                setState(() {
-                  _lines.last.add(details.localPosition);
-                });
-              },
-              child: CustomPaint(
-                painter: _HandwritingPainter(_lines),
-                size: Size.infinite,
-                child: Container(),
-              ),
+            child: _HandwritingCanvas(
+              lines: _lines,
+              isRecognizing: _isRecognizing,
             ),
           ),
 
@@ -241,25 +234,150 @@ class _HandwritingBoardState extends State<HandwritingBoard> {
   }
 }
 
-class _HandwritingPainter extends CustomPainter {
+class _HandwritingCanvas extends StatefulWidget {
   final List<List<Offset>> lines;
+  final bool isRecognizing;
 
-  _HandwritingPainter(this.lines);
+  const _HandwritingCanvas({required this.lines, required this.isRecognizing});
+
+  @override
+  State<_HandwritingCanvas> createState() => _HandwritingCanvasState();
+}
+
+class _HandwritingCanvasState extends State<_HandwritingCanvas> {
+  late final _HandwritingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = _HandwritingController(widget.lines);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Listener(
+      behavior: HitTestBehavior.opaque,
+      onPointerDown: (event) {
+        if (widget.isRecognizing) return;
+        _controller.start(event.localPosition);
+      },
+      onPointerMove: (event) {
+        if (widget.isRecognizing) return;
+        _controller.move(event.localPosition, event.localDelta);
+      },
+      onPointerUp: (event) {
+        _controller.end();
+      },
+      child: RepaintBoundary(
+        child: CustomPaint(
+          painter: _HandwritingPainter(_controller),
+          size: Size.infinite,
+        ),
+      ),
+    );
+  }
+}
+
+class _HandwritingController extends ChangeNotifier {
+  final List<List<Offset>> rawLines;
+  Path finishedPath = Path();
+  Path? activePath;
+  Offset? lastPoint;
+  Offset? midPoint;
+
+  _HandwritingController(this.rawLines) {
+    _rebuildFinishedPath();
+  }
+
+  void _rebuildFinishedPath() {
+    finishedPath = Path();
+    for (var line in rawLines) {
+      if (line.isEmpty) continue;
+      finishedPath.moveTo(line[0].dx, line[0].dy);
+      for (int i = 1; i < line.length - 1; i++) {
+        final p0 = line[i];
+        final p1 = line[i + 1];
+        finishedPath.quadraticBezierTo(
+            p0.dx, p0.dy, (p0.dx + p1.dx) / 2.0, (p0.dy + p1.dy) / 2.0);
+      }
+      if (line.length > 1) {
+        finishedPath.lineTo(line.last.dx, line.last.dy);
+      }
+    }
+  }
+
+  void start(Offset p) {
+    rawLines.add([p]);
+    activePath = Path();
+    activePath!.moveTo(p.dx, p.dy);
+    lastPoint = p;
+    midPoint = p;
+    notifyListeners();
+  }
+
+  void move(Offset p, Offset delta) {
+    if (activePath == null || lastPoint == null) return;
+
+    if ((p - lastPoint!).distanceSquared < 1.0) return;
+
+    // 预测绘制：通过移动矢量预测 0.4 帧后的位置，补偿触控到显示的固有延迟
+    final predictedPoint = p + delta * 0.4;
+    rawLines.last.add(predictedPoint);
+
+    final newMidPoint =
+        Offset((lastPoint!.dx + predictedPoint.dx) / 2.0, (lastPoint!.dy + predictedPoint.dy) / 2.0);
+    activePath!.quadraticBezierTo(
+        lastPoint!.dx, lastPoint!.dy, newMidPoint.dx, newMidPoint.dy);
+
+    midPoint = newMidPoint;
+    lastPoint = predictedPoint;
+    notifyListeners();
+  }
+
+  void end() {
+    if (activePath != null && lastPoint != null) {
+      activePath!.lineTo(lastPoint!.dx, lastPoint!.dy);
+      finishedPath.addPath(activePath!, Offset.zero);
+      activePath = null;
+      lastPoint = null;
+      midPoint = null;
+      notifyListeners();
+    }
+  }
+}
+
+class _HandwritingPainter extends CustomPainter {
+  final _HandwritingController controller;
+
+  _HandwritingPainter(this.controller) : super(repaint: controller);
 
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
       ..color = AppTheme.primaryColor
       ..strokeCap = StrokeCap.round
-      ..strokeWidth = 5.0;
+      ..strokeJoin = StrokeJoin.round
+      ..strokeWidth = 4.8
+      ..style = PaintingStyle.stroke
+      ..isAntiAlias = true;
 
-    for (var line in lines) {
-      for (int i = 0; i < line.length - 1; i++) {
-        canvas.drawLine(line[i], line[i + 1], paint);
-      }
+    canvas.drawPath(controller.finishedPath, paint);
+
+    if (controller.activePath != null &&
+        controller.lastPoint != null &&
+        controller.midPoint != null) {
+      canvas.drawPath(controller.activePath!, paint);
+      // 笔尖补齐：连接贝塞尔曲线的末端中点到实际的输入点，消除跟手延迟感
+      canvas.drawLine(controller.midPoint!, controller.lastPoint!, paint);
     }
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+  bool shouldRepaint(covariant _HandwritingPainter oldDelegate) => true;
 }
