@@ -325,21 +325,17 @@ class _HandwritingController extends ChangeNotifier {
   void move(Offset p, Offset delta) {
     if (activePath == null || lastPoint == null) return;
 
-    // 1. 亚像素级距离过滤：平衡性能与细节
+    // 极致原生化：移除所有平滑滤波器
+    // 虽然平滑会让线条更圆润，但也不可避免地会引入 1-2 帧的物理相位延迟。
+    // 为了对抗原生手写的敏锐感，我们牺牲微小的圆润度，追求绝对的响应速度。
     if ((p - lastPoint!).distanceSquared < 0.25) return;
 
-    // 2. 输入低通滤波 (Input Smoothing)
-    final smoothedPoint = Offset(
-      lastPoint!.dx * 0.12 + p.dx * 0.88,
-      lastPoint!.dy * 0.12 + p.dy * 0.88,
-    );
-
-    // 3. 激进式预测 (Aggressive Prediction)：
-    // 将预测权重提升至 0.8 帧，这是专业手写软件常用的阈值，用于完全抵消触控层的延迟感。
-    final predictedPoint = smoothedPoint + delta * 0.8;
+    // 极致预测：使用 1.0 帧的完整位移预测
+    // 将视觉落点完全推移到触控点的物理预测位置。
+    final predictedPoint = p + delta * 1.0;
     rawLines.last.add(p); 
 
-    // 4. 增量构建
+    // 增量构建
     final newMidPoint =
         Offset((lastPoint!.dx + predictedPoint.dx) / 2.0, (lastPoint!.dy + predictedPoint.dy) / 2.0);
     activePath!.quadraticBezierTo(
