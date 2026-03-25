@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'dart:convert';
+import 'dart:math';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:nnbdc/util/ocr_service.dart';
@@ -341,6 +343,13 @@ class _HandwritingController extends ChangeNotifier {
     notifyListeners();
   }
 
+  void clear() {
+    rawLines.clear();
+    finishedPath = Path();
+    activePath = null;
+    notifyListeners();
+  }
+
   void move(Offset p, Offset delta) {
     if (activePath == null || lastRenderPoint == null || lastSmoothPoint == null) return;
 
@@ -372,13 +381,43 @@ class _HandwritingController extends ChangeNotifier {
   void end() {
     if (activePath != null && lastRenderPoint != null) {
       activePath!.lineTo(lastRenderPoint!.dx, lastRenderPoint!.dy);
-      finishedPath.addPath(activePath!, Offset.zero);
+      
+      // 智能检测：“划掉”手势识别
+      if (_isScribble(rawLines.last)) {
+        clear();
+      } else {
+        finishedPath.addPath(activePath!, Offset.zero);
+      }
+
       activePath = null;
       lastRenderPoint = null;
       midRenderPoint = null;
       lastSmoothPoint = null;
       notifyListeners();
     }
+  }
+
+  /// 简单高效的“划掉”识别：检测到一个贯穿性的长横笔
+  bool _isScribble(List<Offset> stroke) {
+    if (stroke.length < 5) return false;
+
+    double minX = double.infinity, minY = double.infinity;
+    double maxX = double.negativeInfinity, maxY = double.negativeInfinity;
+    
+    for (var p in stroke) {
+      if (p.dx < minX) minX = p.dx;
+      if (p.dx > maxX) maxX = p.dx;
+      if (p.dy < minY) minY = p.dy;
+      if (p.dy > maxY) maxY = p.dy;
+    }
+
+    double width = maxX - minX;
+    double height = maxY - minY;
+
+    // 判定条件：贯穿性长横笔
+    // 1. 绝对宽度大于 160 (一个相当长的划屏动作)
+    // 2. 宽高比大于 4.5 (非常平直的横线)
+    return width > 160 && width > height * 4.5;
   }
 }
 
