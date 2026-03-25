@@ -249,7 +249,10 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
   @override
   void didUpdateWidget(_HandwritingCanvas oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // 如果父组件清空了 _lines，我们需要同步更新控制器的状态，但不通过重建来实现，以维持触控流
+    // 同步引用：始终确保控制器的 rawLines 指向父组件最新的 _lines
+    _controller.rawLines = widget.lines;
+    
+    // 如果父组件清空了 _lines，同步清除控制器的内部路径状态
     if (widget.lines.isEmpty && oldWidget.lines.isNotEmpty) {
       _controller.clear();
     }
@@ -304,20 +307,28 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
               
               // 延时清除，给用户一个视觉反馈缓冲，看到笔迹扫过区域后再消失
               Future.delayed(const Duration(milliseconds: 250), () {
-                if (mounted) widget.onRewrite();
-                Future.delayed(const Duration(milliseconds: 100), () {
-                  if (mounted) setState(() => _activeZone = 0);
-                });
+                if (mounted) {
+                  _controller.clear(); // 强制清除本地控制器的路径
+                  widget.onRewrite();  // 清除父组件的 List
+                  Future.delayed(const Duration(milliseconds: 100), () {
+                    if (mounted) setState(() => _activeZone = 0);
+                  });
+                }
               });
             }
             if (recognizeZone.contains(p) && !_recognizeTriggered) {
               _recognizeTriggered = true;
               setState(() => _activeZone = 2);
               HapticFeedback.lightImpact();
-              widget.onRecognize();
               
-              Future.delayed(const Duration(milliseconds: 400), () {
-                if (mounted) setState(() => _activeZone = 0);
+              // 延时触发识别，给用户一个视觉反馈缓冲
+              Future.delayed(const Duration(milliseconds: 250), () {
+                if (mounted) {
+                  widget.onRecognize();
+                  Future.delayed(const Duration(milliseconds: 400), () {
+                    if (mounted) setState(() => _activeZone = 0);
+                  });
+                }
               });
             }
 
@@ -334,18 +345,25 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
               setState(() => _activeZone = 1);
               HapticFeedback.lightImpact();
               Future.delayed(const Duration(milliseconds: 250), () {
-                if (mounted) widget.onRewrite();
-                Future.delayed(const Duration(milliseconds: 100), () {
-                  if (mounted) setState(() => _activeZone = 0);
-                });
+                if (mounted) {
+                  _controller.clear();
+                  widget.onRewrite();
+                  Future.delayed(const Duration(milliseconds: 100), () {
+                    if (mounted) setState(() => _activeZone = 0);
+                  });
+                }
               });
             } else if (!_recognizeTriggered && recognizeZone.contains(p)) {
               _recognizeTriggered = true;
               setState(() => _activeZone = 2);
               HapticFeedback.lightImpact();
-              widget.onRecognize();
-              Future.delayed(const Duration(milliseconds: 400), () {
-                if (mounted) setState(() => _activeZone = 0);
+              Future.delayed(const Duration(milliseconds: 250), () {
+                if (mounted) {
+                  widget.onRecognize();
+                  Future.delayed(const Duration(milliseconds: 400), () {
+                    if (mounted) setState(() => _activeZone = 0);
+                  });
+                }
               });
             }
 
@@ -448,7 +466,7 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
 }
 
 class _HandwritingController extends ChangeNotifier {
-  final List<List<Offset>> rawLines;
+  List<List<Offset>> rawLines;
   Path finishedPath = Path();
   Path? activePath;
   
