@@ -326,7 +326,8 @@ class _ChineseAsrInputWidgetState extends State<ChineseAsrInputWidget>
     _meterSubscription = Asr().meterStream().listen((level) {
       if (mounted) {
         setState(() {
-          _currentLevel = level;
+          // 增加平滑处理，避免剧烈抖动
+          _currentLevel = _currentLevel * 0.8 + level * 0.2;
         });
       }
     });
@@ -386,11 +387,12 @@ class _ChineseAsrInputWidgetState extends State<ChineseAsrInputWidget>
                       final double breath = sin(
                           (_waveController.value + (index * 0.125)) * pi * 2);
 
-                      if (_currentLevel > 0.01) {
+                      // 提高阈值 (原 0.01) 到 0.12 以过滤 iPad 等设备的高灵敏微弱底噪
+                      if (_currentLevel > 0.12) {
                         // 正在说话：高敏捷跳动波形
                         final randomFactor = 0.5 + _random.nextDouble();
-                        // 极大放大微弱音量带来的形变，确保肉眼可见明显反应
-                        height = 6.0 + (100 * _currentLevel * randomFactor);
+                        // 减小放大倍数 (原 100) 到 35，避免动不动就满格，且波形更平滑
+                        height = 6.0 + (35 * _currentLevel * randomFactor);
                         if (height > 20) height = 20;
                         alpha = 0.6 + (2.0 * _currentLevel);
                         if (alpha > 1.0) alpha = 1.0;
@@ -470,7 +472,8 @@ class _EnglishAsrInputWidgetState extends State<EnglishAsrInputWidget>
     _meterSubscription = Asr().meterStream().listen((level) {
       if (mounted) {
         setState(() {
-          _currentLevel = level;
+          // 增加平滑处理，避免剧烈抖动
+          _currentLevel = _currentLevel * 0.8 + level * 0.2;
         });
       }
     });
@@ -530,11 +533,12 @@ class _EnglishAsrInputWidgetState extends State<EnglishAsrInputWidget>
                       final double breath = sin(
                           (_waveController.value + (index * 0.125)) * pi * 2);
 
-                      if (_currentLevel > 0.01) {
+                      // 提高阈值 (原 0.01) 到 0.12 以过滤 iPad 等设备的高灵敏微弱底噪
+                      if (_currentLevel > 0.12) {
                         // 正在说话：高敏捷跳动波形
                         final randomFactor = 0.5 + _random.nextDouble();
-                        // 极大放大微弱音量带来的形变，确保肉眼可见明显反应
-                        height = 6.0 + (100 * _currentLevel * randomFactor);
+                        // 减小放大倍数 (原 100) 到 35，避免动不动就满格，且波形更平滑
+                        height = 6.0 + (35 * _currentLevel * randomFactor);
                         if (height > 20) height = 20;
                         alpha = 0.6 + (2.0 * _currentLevel);
                         if (alpha > 1.0) alpha = 1.0;
