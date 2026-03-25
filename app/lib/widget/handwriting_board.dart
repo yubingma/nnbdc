@@ -582,9 +582,9 @@ class _HandwritingController extends ChangeNotifier {
     double height = maxY - minY;
 
     // 判定条件：贯穿性长横笔
-    // 1. 绝对宽度大于 160 (一个相当长的划屏动作)
-    // 2. 宽高比大于 4.5 (非常平直的横线)
-    return width > 160 && width > height * 4.5;
+    // 1. 绝对宽度大于 160 (一个明显的长手势)
+    // 2. 宽高比大于 3.0 (允许一定角度的倾斜，增加识别容错)
+    return width > 160 && width > height * 3.0;
   }
 }
 
