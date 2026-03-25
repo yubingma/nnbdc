@@ -4944,7 +4944,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                         ),
                       ),
                       child: Text(
-                        '评分影响该单词今后的复习频率。如果自动评分不合实际，可手动修正：',
+                        '评分影响该单词今后的复习频率。如果自动评分不合实际，可手动修正',
                         style: TextStyle(
                           fontSize: 13,
                           color: Theme.of(context)
