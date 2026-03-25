@@ -325,21 +325,21 @@ class _HandwritingController extends ChangeNotifier {
   void move(Offset p, Offset delta) {
     if (activePath == null || lastPoint == null) return;
 
-    // 1. 距离过滤
-    if ((p - lastPoint!).distanceSquared < 0.5) return;
+    // 1. 亚像素级距离过滤：平衡性能与细节
+    if ((p - lastPoint!).distanceSquared < 0.25) return;
 
-    // 2. 输入低通滤波 (Input Smoothing)：
-    // 通过移动平均消除采样产生的微小锯齿和抖动，让曲线更加圆润。
+    // 2. 输入低通滤波 (Input Smoothing)
     final smoothedPoint = Offset(
-      lastPoint!.dx * 0.15 + p.dx * 0.85,
-      lastPoint!.dy * 0.15 + p.dy * 0.85,
+      lastPoint!.dx * 0.12 + p.dx * 0.88,
+      lastPoint!.dy * 0.12 + p.dy * 0.88,
     );
 
-    // 3. 极致预测绘制：将预测权重提升至 0.5 帧，实现物理层面的“零延迟”错觉
-    final predictedPoint = smoothedPoint + delta * 0.5;
-    rawLines.last.add(p); // 将原始输入点存入数据队列，保证 OCR 识别的原始精度
+    // 3. 激进式预测 (Aggressive Prediction)：
+    // 将预测权重提升至 0.8 帧，这是专业手写软件常用的阈值，用于完全抵消触控层的延迟感。
+    final predictedPoint = smoothedPoint + delta * 0.8;
+    rawLines.last.add(p); 
 
-    // 4. 增量构建平滑路径
+    // 4. 增量构建
     final newMidPoint =
         Offset((lastPoint!.dx + predictedPoint.dx) / 2.0, (lastPoint!.dy + predictedPoint.dy) / 2.0);
     activePath!.quadraticBezierTo(
@@ -364,28 +364,31 @@ class _HandwritingController extends ChangeNotifier {
 
 class _HandwritingPainter extends CustomPainter {
   final _HandwritingController controller;
+  
+  // 缓存 Paint 对象，避免每一帧都重新分配内存引发 GC 卡顿
+  late final Paint _linePaint;
 
-  _HandwritingPainter(this.controller) : super(repaint: controller);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
+  _HandwritingPainter(this.controller) : super(repaint: controller) {
+    _linePaint = Paint()
       ..color = AppTheme.primaryColor
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round
       ..strokeWidth = 4.8
       ..style = PaintingStyle.stroke
-      ..isAntiAlias = true
-      ..maskFilter = const MaskFilter.blur(BlurStyle.solid, 0.4); // 模拟现实墨水的微小晕染感，提升质感
+      ..isAntiAlias = true;
+  }
 
-    canvas.drawPath(controller.finishedPath, paint);
+  @override
+  void paint(Canvas canvas, Size size) {
+    // 极致平滑绘制：移除复杂的 MaskFilter 模糊，改用纯净的高性能路径渲染，大幅降低 GPU 耗时
+    canvas.drawPath(controller.finishedPath, _linePaint);
 
     if (controller.activePath != null &&
         controller.lastPoint != null &&
         controller.midPoint != null) {
-      canvas.drawPath(controller.activePath!, paint);
-      // 笔尖补齐：连接贝塞尔曲线的末端中点到实际的输入点，消除跟手延迟感
-      canvas.drawLine(controller.midPoint!, controller.lastPoint!, paint);
+      canvas.drawPath(controller.activePath!, _linePaint);
+      // 笔尖补齐
+      canvas.drawLine(controller.midPoint!, controller.lastPoint!, _linePaint);
     }
   }
 
