@@ -347,9 +347,10 @@ class _HandwritingController extends ChangeNotifier {
     // 1. 动态采样：保留微小细节
     if ((p - lastSmoothPoint!).distanceSquared < 0.1) return;
 
-    // 2. 适度平滑滤波 (Stable Smoothing)：
-    // 恢复到 75% 的历史权重。注意：这里不再由于绘制而混入预测量，字迹形状将 100% 真实。
-    final smoothedPoint = lastSmoothPoint! * 0.75 + p * 0.25;
+    // 2. 高保真平滑滤波 (High-Fidelity Smoothing)：
+    // 将当前点权重提升至 55%，历史权重降至 45%。
+    // 这样笔冒既能保留“几何美感”，又能极度敏锐地跟随您的物理变向，真正做到“尊重原始轨迹”。
+    final smoothedPoint = lastSmoothPoint! * 0.45 + p * 0.55;
 
     // 3. 数据隔离存储：
     rawLines.last.add(p); 
