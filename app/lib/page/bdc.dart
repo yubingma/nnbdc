@@ -587,7 +587,6 @@ class _EnglishAsrInputWidgetState extends State<EnglishAsrInputWidget>
                       color: widget.score! >= 60
                           ? Colors.green.withValues(alpha: 0.1)
                           : Colors.orange.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(6),
                       border: Border.all(
                         color: widget.score! >= 60
                             ? Colors.green.withValues(alpha: 0.5)
@@ -625,6 +624,12 @@ class BdcPage extends StatefulWidget {
 }
 
 class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
+  String _getStudyStageLabel() {
+    final lw = _currentGetWordResult?.learningWord;
+    if (lw == null) return "";
+    return (lw.reps ?? 0) == 0 ? "(测评)" : "(巩固)";
+  }
+
   bool dataLoaded = false;
   static const double leftPadding = 16;
   static const double rightPadding = 16;
@@ -1391,11 +1396,11 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
     // 如果已经答对，且并未处于练习拼写的看板模式（或者看板是固定模式），则跳过处理。
     // 但是如果是“答错（Again）”的战损状态，我们允许 ASR 活跃，以便用户练习跟读！
+    // 如果已经完成作答（_hasFinishedAnswering 为 true），我们仍然允许 ASR 活跃处理结果，
+    // 以便在“再学学”或者其它模式下让用户继续通过 ASR 练习发音并得到正确/失败的反馈。
+    // 这种情况下，后续的 match 逻辑中 wasAlreadyCorrect 为 true，从而仅播放音效而不重新计分。
     if (_hasFinishedAnswering && !_showHandwritingBoard) {
-      if (_lastFsrsRating != FsrsRating.again) {
-        Global.logger.d('checkAsrResult: 单词已回答正确且非看板练习模式，跳过后续结果处理');
-        return;
-      }
+      Global.logger.d('checkAsrResult: 单词已答对/已评价，允许 ASR 结果继续处理以便用户练习跟读。');
     }
 
     final bool wasAlreadyCorrect = _hasFinishedAnswering;
@@ -4031,8 +4036,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   }
 
   onAnswerClicked(var selectedAnswerIndex) async {
-    if (_hasFinishedAnswering || _selectedAnswerIndex != null) {
-      // 已经选过了，再次点击时触发对应选项的3D翻牌效果，展示另一层释义
+    // 已经选过了：再次点击时触发对应选项的3D翻牌效果，展示另一层释义
+    if (_selectedAnswerIndex != null) {
       int wordIndex = selectedAnswerIndex - 1;
       if (_words != null && wordIndex >= 0 && wordIndex < _words!.length) {
         WordVo clickedWord = _words![wordIndex];
@@ -4046,6 +4051,22 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
           }
         });
       }
+      return;
+    }
+
+    // 评分已经通过其它方式（如语音、跳过）出来了，但在本模式还没点击过
+    // 点击时希望能有颜色反馈（点击后再反馈，而非一切换模式就反馈），同时也触发翻牌
+    if (_hasFinishedAnswering) {
+      int wordIndex = selectedAnswerIndex - 1;
+      setState(() {
+        _selectedAnswerIndex = selectedAnswerIndex;
+        if (_words != null && wordIndex >= 0 && wordIndex < _words!.length) {
+          WordVo clickedWord = _words![wordIndex];
+          if (clickedWord.spell != "[ 都不对 ]") {
+            _flippedAnswerIndices.add(wordIndex);
+          }
+        }
+      });
       return;
     }
 
@@ -5080,7 +5101,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                   Icon(Icons.edit_note, size: 14, color: ratingColor),
                   const SizedBox(width: 4),
                   Text(
-                    '今日评分: $ratingLabel',
+                    '今日测评: $ratingLabel',
                     style: TextStyle(
                       fontSize: 11,
                       color: ratingColor,
@@ -5509,7 +5530,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                '英→中',
+                '英→中 ${_getStudyStageLabel()}',
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w400,
@@ -5715,7 +5736,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                '中→英',
+                '中→英 ${_getStudyStageLabel()}',
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w400,
