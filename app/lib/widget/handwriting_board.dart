@@ -260,20 +260,30 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
     super.dispose();
   }
 
+  int? _activePointerId;
+
   @override
   Widget build(BuildContext context) {
     return Listener(
       behavior: HitTestBehavior.opaque,
       onPointerDown: (event) {
-        if (widget.isRecognizing) return;
+        if (widget.isRecognizing || _activePointerId != null) return;
+        _activePointerId = event.pointer;
         _controller.start(event.localPosition);
       },
       onPointerMove: (event) {
-        if (widget.isRecognizing) return;
+        if (widget.isRecognizing || event.pointer != _activePointerId) return;
         // 采用增量式平滑与预测绘制合并方案，实现全平台统一的高流畅书写
         _controller.move(event.localPosition, event.localDelta);
       },
       onPointerUp: (event) {
+        if (event.pointer != _activePointerId) return;
+        _activePointerId = null;
+        _controller.end();
+      },
+      onPointerCancel: (event) {
+        if (event.pointer != _activePointerId) return;
+        _activePointerId = null;
         _controller.end();
       },
       child: RepaintBoundary(
