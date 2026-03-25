@@ -254,6 +254,12 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    _controller = _HandwritingController(widget.lines);
+  }
+
+  @override
   void didUpdateWidget(_HandwritingCanvas oldWidget) {
     super.didUpdateWidget(oldWidget);
     // 同步引用：始终确保控制器的 rawLines 指向父组件最新的 _lines
@@ -271,13 +277,11 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
       builder: (context, constraints) {
         final height = constraints.maxHeight;
         final width = constraints.maxWidth;
-        final centerX = width / 2;
         
         // 定义中心化的感应区，更加适合平板书写习惯，减少运笔负荷
        final double zoneWidth = 130;
     final double zoneHeight = 65;
     final double bottomMargin = 40; // 调高位置，方便从底部向上方划入触发
-    final double centerGap = 30;
 
         final rewriteZone = Rect.fromLTWH(
           (width / 3) - (zoneWidth / 2), 
