@@ -198,6 +198,7 @@ class _HandwritingBoardState extends State<HandwritingBoard> {
           // 画布区域
           Expanded(
             child: _HandwritingCanvas(
+              key: ValueKey(_lines),
               lines: _lines,
               isRecognizing: _isRecognizing,
             ),
@@ -238,7 +239,7 @@ class _HandwritingCanvas extends StatefulWidget {
   final List<List<Offset>> lines;
   final bool isRecognizing;
 
-  const _HandwritingCanvas({required this.lines, required this.isRecognizing});
+  const _HandwritingCanvas({super.key, required this.lines, required this.isRecognizing});
 
   @override
   State<_HandwritingCanvas> createState() => _HandwritingCanvasState();
