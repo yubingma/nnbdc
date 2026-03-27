@@ -13,7 +13,6 @@ import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/state.dart';
-import 'package:nnbdc/util/error_handler.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:provider/provider.dart';
 import 'package:nnbdc/services/throttled_sync_service.dart';
@@ -74,24 +73,31 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
   }
 
   Future<void> loadData({bool forceSupplement = false}) async {
+    Global.logger.d('Entering loadData: forceSupplement=$forceSupplement, _isLoadingData=$_isLoadingData');
     if (!forceSupplement) {
       _hasTriedSupplement = false;
     }
-    if (_isLoadingData) return;
+    if (_isLoadingData) {
+      Global.logger.d('loadData already in progress, returning');
+      return;
+    }
     _isLoadingData = true;
 
     Api.setLoadingDisabled(true);
     await Future.delayed(const Duration(milliseconds: 300));
 
     try {
+      Global.logger.d('Fetching logged in user...');
       var result0 = await UserBo().getLoggedInUser();
       if (result0.success) {
         user = result0.data;
       } else {
+        Global.logger.e('Failed to fetch user: ${result0.msg}');
         ToastUtil.error(result0.msg!);
         return;
       }
 
+      Global.logger.d('Fetching study steps...');
       var result = await StudyBo().getUserStudySteps();
       if (result.success) {
         studySteps = [];
@@ -102,119 +108,120 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
           }
         }
       } else {
+        Global.logger.e('Failed to fetch study steps: ${result.msg}');
         ToastUtil.error(result.msg!);
         return;
       }
 
-      try {
-        prepareResult = await StudyBo().prepareForStudy(forceSupplement);
+      Global.logger.d('Starting prepareForStudy...');
+      prepareResult = await StudyBo().prepareForStudy(forceSupplement);
+      Global.logger.d('prepareForStudy finished: success=${prepareResult?.success}, code=${prepareResult?.code}');
+      
+      // 由于 prepareForStudy 内部可能会重置用户状态（跨天重置），
+      // 必须在准备数据后重新获取最新的用户信息以更新 UI (例如：重置 todayStudyStarted 按钮)
+      final refreshUserResultAfterPrepare = await UserBo().getLoggedInUser();
+      if (refreshUserResultAfterPrepare.success) {
+        user = refreshUserResultAfterPrepare.data;
+      }
+      Global.logger.d('Refreshed user: todayStudyStarted=${user?.todayStudyStarted}');
+      
+      // 如果准备数据失败（提示词书不足/没词书）或者学习环节为空，且是正式用户，且还没尝试过同步
+      // 这种情况通常发生在新安装 App 并登录后，后台同步尚未完成
+      if ((prepareResult!.code == "NNBDC-0012" || (studySteps?.isEmpty ?? true)) && !Global.isGuest && !_hasTriedSync) {
+        Global.logger.i('今日计划单词量不足且尚未同步，尝试从云端同步数据...');
+        setState(() {
+          _isSyncingFromCloud = true;
+        });
         
-        // 由于 prepareForStudy 内部可能会重置用户状态（跨天重置），
-        // 必须在准备数据后重新获取最新的用户信息以更新 UI (例如：重置 todayStudyStarted 按钮)
-        final refreshUserResultAfterPrepare = await UserBo().getLoggedInUser();
-        if (refreshUserResultAfterPrepare.success) {
-          user = refreshUserResultAfterPrepare.data;
-        }
-        
-        // 如果准备数据失败（提示词书不足/没词书）或者学习环节为空，且是正式用户，且还没尝试过同步
-        // 这种情况通常发生在新安装 App 并登录后，后台同步尚未完成
-        if ((prepareResult!.code == "NNBDC-0012" || (studySteps?.isEmpty ?? true)) && !Global.isGuest && !_hasTriedSync) {
-          Global.logger.i('今日计划单词量不足且尚未同步，尝试从云端同步数据...');
-          setState(() {
-            _isSyncingFromCloud = true;
-          });
+        try {
+          // 立即触发一次同步并等待完成
+          await ThrottledDbSyncService().requestSyncAndWait(immediate: true);
+          _hasTriedSync = true;
           
-          try {
-            // 立即触发一次同步并等待完成
-            await ThrottledDbSyncService().requestSyncAndWait(immediate: true);
-            _hasTriedSync = true;
-            
-            // 同步完成后重试加载用户信息和学习步骤
-            var refreshUserResult = await UserBo().getLoggedInUser();
-            if (refreshUserResult.success) {
-              user = refreshUserResult.data;
-            }
-            
-            var refreshStepsResult = await StudyBo().getUserStudySteps();
-            if (refreshStepsResult.success) {
-              studySteps = [];
-              List<UserStudyStepVo> userStudySteps = refreshStepsResult.data!;
-              for (UserStudyStepVo step in userStudySteps) {
-                if (step.studyStep != 'List') {
-                  studySteps!.add(step);
-                }
+          // 同步完成后重试加载用户信息和学习步骤
+          var refreshUserResult = await UserBo().getLoggedInUser();
+          if (refreshUserResult.success) {
+            user = refreshUserResult.data;
+          }
+          
+          var refreshStepsResult = await StudyBo().getUserStudySteps();
+          if (refreshStepsResult.success) {
+            studySteps = [];
+            List<UserStudyStepVo> userStudySteps = refreshStepsResult.data!;
+            for (UserStudyStepVo step in userStudySteps) {
+              if (step.studyStep != 'List') {
+                studySteps!.add(step);
               }
             }
+          }
 
-            // 同步完成后重试准备逻辑
-            prepareResult = await StudyBo().prepareForStudy(forceSupplement || true);
-          } catch (e) {
-            Global.logger.e('尝试自动同步失败: $e');
-          } finally {
-            if (mounted) {
-              setState(() {
-                _isSyncingFromCloud = false;
-              });
-            }
+          // 同步完成后重试准备逻辑
+          prepareResult = await StudyBo().prepareForStudy(forceSupplement || true);
+        } catch (e) {
+          Global.logger.e('尝试自动同步失败: $e');
+        } finally {
+          if (mounted) {
+            setState(() {
+              _isSyncingFromCloud = false;
+            });
+          }
+        }
+      }
+
+      // 检查是否缺少词书资源并下载
+      if (!Global.isGuest && user != null) {
+        final db = MyDatabase.instance;
+        List<LearningDict> learningDicts = await db.learningDictsDao.getLearningDictsOfUser(user!.id!);
+        List<DictVo> dictsToDownload = [];
+        for (var ld in learningDicts) {
+          Dict? existing = await db.dictsDao.findById(ld.dictId);
+          if (existing == null) {
+            dictsToDownload.add(DictVo.c2(ld.dictId));
+          } else if (existing.ownerId == "15118" && !(await db.dictWordsDao.hasDictWords(ld.dictId))) {
+            dictsToDownload.add(DictVo.c2(ld.dictId));
           }
         }
 
-        // 检查是否缺少词书资源并下载
-        if (!Global.isGuest && user != null) {
-          final db = MyDatabase.instance;
-          List<LearningDict> learningDicts = await db.learningDictsDao.getLearningDictsOfUser(user!.id!);
-          List<DictVo> dictsToDownload = [];
-          for (var ld in learningDicts) {
-            Dict? existing = await db.dictsDao.findById(ld.dictId);
-            if (existing == null) {
-              dictsToDownload.add(DictVo.c2(ld.dictId));
-            } else if (existing.ownerId == "15118" && !(await db.dictWordsDao.hasDictWords(ld.dictId))) {
-              dictsToDownload.add(DictVo.c2(ld.dictId));
-            }
-          }
-
-          // 检查并下载通用词典 (ID 为 "0")
-          final commonDictId = Global.commonDictId;
-          Dict? commonDictExisting = await db.dictsDao.findById(commonDictId);
-          if (commonDictExisting == null) {
-            dictsToDownload.add(DictVo.c2(commonDictId));
-          } else if (!(await db.dictWordsDao.hasDictWords(commonDictId))) {
-            dictsToDownload.add(DictVo.c2(commonDictId));
-          }
-
-          if (dictsToDownload.isNotEmpty && mounted) {
-            Global.logger.i('发现缺少的词书资源，准备下载: ${dictsToDownload.map((e) => e.id).toList()}');
-            await showDialog(
-              context: context,
-              barrierDismissible: false,
-              builder: (dialogContext) => DictDownloadDialog(
-                dicts: dictsToDownload,
-                onComplete: () {
-                  if (dialogContext.mounted) {
-                    Navigator.of(dialogContext).pop();
-                  }
-                },
-              ),
-            );
-            // 下载完成后重新准备数据
-            prepareResult = await StudyBo().prepareForStudy(forceSupplement);
-          }
+        // 检查并下载通用词典 (ID 为 "0")
+        final commonDictId = Global.commonDictId;
+        Dict? commonDictExisting = await db.dictsDao.findById(commonDictId);
+        if (commonDictExisting == null) {
+          dictsToDownload.add(DictVo.c2(commonDictId));
+        } else if (!(await db.dictWordsDao.hasDictWords(commonDictId))) {
+          dictsToDownload.add(DictVo.c2(commonDictId));
         }
 
-        if (prepareResult!.success || prepareResult!.code == "NNBDC-0012") {
-          if (forceSupplement) {
-            _hasTriedSupplement = true;
-          }
-          List<int> counts = prepareResult!.data!;
-          newWordCount = counts[0];
-          oldWordCount = counts[1];
-          todayWordCount = newWordCount! + oldWordCount!;
-        } else {
-          ToastUtil.error(prepareResult!.msg!);
-          return;
+        if (dictsToDownload.isNotEmpty && mounted) {
+          Global.logger.i('发现缺少的词书资源，准备下载: ${dictsToDownload.map((e) => e.id).toList()}');
+          await showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (dialogContext) => DictDownloadDialog(
+              dicts: dictsToDownload,
+              onComplete: () {
+                if (dialogContext.mounted) {
+                  Navigator.of(dialogContext).pop();
+                }
+              },
+            ),
+          );
+          // 下载完成后重新准备数据
+          prepareResult = await StudyBo().prepareForStudy(forceSupplement);
         }
-      } catch (e, stackTrace) {
-        ErrorHandler.handleError(e, stackTrace, logPrefix: '准备学习失败', userMessage: '准备学习失败，请稍后重试', showToast: true);
+      }
+
+      if (prepareResult!.success || prepareResult!.code == "NNBDC-0012") {
+        if (forceSupplement) {
+          _hasTriedSupplement = true;
+        }
+        List<int> counts = prepareResult!.data!;
+        newWordCount = counts[0];
+        oldWordCount = counts[1];
+        todayWordCount = newWordCount! + oldWordCount!;
+        Global.logger.d('Counts: new=$newWordCount, old=$oldWordCount, total=$todayWordCount');
+      } else {
+        Global.logger.e('prepareResult failed: ${prepareResult!.msg}');
+        ToastUtil.error(prepareResult!.msg!);
         return;
       }
 
@@ -228,17 +235,24 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
       for (final word in todayWords) {
         _completedStepCount += (word.todayLearnedTimes > activeStepsCount) ? activeStepsCount : word.todayLearnedTimes;
       }
+      Global.logger.d('Progress calculated: $_completedStepCount / $_totalStepCount');
 
+    } catch (e, stackTrace) {
+      if (!mounted) return;
+      Global.logger.e('加载今日学习计划数据失败: $e', stackTrace: stackTrace);
+      ToastUtil.error('加载失败: $e');
+    } finally {
       if (mounted) {
         setState(() {
           dataLoaded = true;
+          _isLoadingData = false;
         });
+        Api.setLoadingDisabled(false);
+        Global.logger.d('loadData finished, dataLoaded=true');
       }
-    } finally {
-      Api.setLoadingDisabled(false);
-      _isLoadingData = false;
     }
   }
+
 
   void reorderData(int oldIndex, int newIndex) {
     if (!mounted) return;

@@ -166,10 +166,8 @@ class LearningService {
         .get();
 
     // 排除今天已经选取要学的单词
-    final List<LearningWord> candidateWords = List.from(allLearningWords);
-    for (var todayWord in todayLearningWords) {
-      candidateWords.removeWhere((word) => word.wordId == todayWord.wordId);
-    }
+    final Set<String> todayWordIds = todayLearningWords.map((e) => e.wordId).toSet();
+    final List<LearningWord> candidateWords = allLearningWords.where((word) => !todayWordIds.contains(word.wordId)).toList();
 
     // 1. 识别到期单词 (Due Words)
     final today = DateTime(now.year, now.month, now.day);
@@ -375,6 +373,8 @@ class LearningService {
       return [];
     }
 
+    Global.logger.d('[FETCH-NEW-WORDS] 开始抓取新词, 目标数量: $countToFetch, 针对日期序号: $todayDayNumber');
+
     final db = MyDatabase.instance;
 
     // 获取用户选择的词书，按优先级排序（优先取词的书排在前面）
@@ -384,16 +384,21 @@ class LearningService {
         .get();
 
     if (learningDicts.isEmpty) {
+      Global.logger.w('[FETCH-NEW-WORDS] 没有已激活的词书，退出抓取');
       return [];
     }
 
-    // 获取用户已掌握的单词
-    final masteredWords = await db.masteredWordsDao.getMasteredWordsForUser(userId);
-    final masteredWordIds = masteredWords.map((w) => w.wordId).toList();
+    // 获取用户已掌握的单词 ID（作为排除项）
+    final masteredWordIdsSet = await db.masteredWordsDao.getMasteredWordIdSet(userId);
 
-    // 获取用户已学习的单词ID
-    final existingLearningWords = await (db.select(db.learningWords)..where((lw) => lw.userId.equals(userId))).get();
-    final existingWordIds = existingLearningWords.map((w) => w.wordId).toSet();
+    // 获取用户已学习的单词 ID（作为排除项）
+    final rows = await (db.selectOnly(db.learningWords)
+          ..addColumns([db.learningWords.wordId])
+          ..where(db.learningWords.userId.equals(userId)))
+        .get();
+    final existingWordIdsSet = rows.map((row) => row.read(db.learningWords.wordId)!).toSet();
+
+    Global.logger.d('[FETCH-NEW-WORDS] 排除项准备完毕: 已掌握 ${masteredWordIdsSet.length} 个, 学习中 ${existingWordIdsSet.length} 个');
 
     // 按优先级顺序处理词书
     List<LearningWord> learningWords = [];
@@ -401,54 +406,75 @@ class LearningService {
     for (var learningDict in learningDicts) {
       if (learningWords.length >= countToFetch) break;
 
-      // 获取词书信息
-      final dict = await db.dictsDao.findById(learningDict.dictId);
-      if (dict == null) continue;
+      Global.logger.d('[FETCH-NEW-WORDS] 正在处理词书: ${learningDict.dictId}');
 
-      // 查询词书所有单词，按 seq 顺序
-      final dictWords = await (db.select(db.dictWords)
-            ..where((dw) => dw.dictId.equals(learningDict.dictId))
-            ..orderBy([(dw) => OrderingTerm.asc(dw.seq)]))
-          .get();
+      // 查询词书单词，按 seq 顺序批量处理
+      const int batchSize = 1000;
+      int offset = 0;
+      bool hasMoreInDict = true;
 
-      for (var dictWord in dictWords) {
-        if (learningWords.length >= countToFetch) break;
+      while (hasMoreInDict && learningWords.length < countToFetch) {
+        final dictWords = await (db.select(db.dictWords)
+              ..where((dw) => dw.dictId.equals(learningDict.dictId))
+              ..orderBy([(dw) => OrderingTerm.asc(dw.seq)])
+              ..limit(batchSize, offset: offset))
+            .get();
 
-        // 判断该单词是否已经在学习中
-        if (existingWordIds.contains(dictWord.wordId)) continue;
+        if (dictWords.isEmpty) {
+          hasMoreInDict = false;
+          break;
+        }
 
-        // 判断该单词是否已经掌握（根据fetchMastered设置决定）
-        if (!learningDict.fetchMastered && masteredWordIds.contains(dictWord.wordId)) continue;
+        Global.logger.d('[FETCH-NEW-WORDS] 从词书 ${learningDict.dictId} 读取到批次 (size=${dictWords.length}, offset=$offset)');
 
-        // 创建新的LearningWord
-        final now = AppClock.now();
-        final learningWord = LearningWord(
-            userId: userId,
-            wordId: dictWord.wordId,
-            addTime: now,
-            addDay: todayDayNumber,
-            stability: null, // FSRS 初始状态设为 null
-            difficulty: null,
-            elapsedDays: null,
-            scheduledDays: null,
-            reps: null,
-            lapses: null,
-            state: 0, // 0: New
-            batchId: 0, // 初始批次设为 0，只有加入今日学习时才分配有效批次
-            lastLearningDate: null, // 与后端逻辑一致，初始化为null
-            learningOrder: 0,
-            isTodayNewWord: false,
-            learnedTimes: 0,
-            todayLearnedTimes: 0,
-            createTime: now,
-            updateTime: now);
+        for (var dictWord in dictWords) {
+          if (learningWords.length >= countToFetch) break;
 
-        // 保存到数据库
-        await db.learningWordsDao.saveEntity(learningWord, true);
-        learningWords.add(learningWord);
+          final wordId = dictWord.wordId;
+
+          // 判断该单词是否已经在学习中 (O(1) lookup in Set)
+          if (existingWordIdsSet.contains(wordId)) continue;
+
+          // 判断该单词是否已经掌握 (O(1) lookup in Set)
+          if (!learningDict.fetchMastered && masteredWordIdsSet.contains(wordId)) continue;
+
+          // 创建新的LearningWord
+          final now = AppClock.now();
+          final learningWord = LearningWord(
+              userId: userId,
+              wordId: wordId,
+              addTime: now,
+              addDay: todayDayNumber,
+              stability: null, // FSRS 初始状态设为 null
+              difficulty: null,
+              elapsedDays: null,
+              scheduledDays: null,
+              reps: null,
+              lapses: null,
+              state: 0, // 0: New
+              batchId: 0,
+              lastLearningDate: null,
+              learningOrder: 0,
+              isTodayNewWord: true, // 这是新抓取的，肯定是今日新词
+              learnedTimes: 0,
+              todayLearnedTimes: 0,
+              createTime: now,
+              updateTime: now);
+
+          // 保存到数据库 (注意：这可能会频繁生成日志，若性能依然不理想，考虑将 batchId 分配挪到外部一并保存)
+          await db.learningWordsDao.saveEntity(learningWord, true);
+          learningWords.add(learningWord);
+        }
+
+        offset += batchSize;
+        if (dictWords.length < batchSize) {
+          hasMoreInDict = false;
+        }
       }
     }
 
+    Global.logger.d('[FETCH-NEW-WORDS] 抓取完成，共抓取到 ${learningWords.length} 个新词');
     return learningWords;
   }
+
 }
