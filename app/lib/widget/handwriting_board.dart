@@ -14,6 +14,7 @@ class HandwritingBoard extends StatefulWidget {
   final bool showCloseButton;
 
   const HandwritingBoard({
+    super.key,
     required this.onRecognized,
     required this.onCancel,
     this.showCloseButton = true,
@@ -416,11 +417,11 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
                   height: zoneHeight,
                   decoration: BoxDecoration(
                     color: _activeZone == 1 
-                      ? Colors.grey.withOpacity(0.2) 
-                      : Colors.grey.withOpacity(0.08),
+                      ? Colors.grey.withValues(alpha: 0.2) 
+                      : Colors.grey.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: _activeZone == 1 ? Colors.grey : Colors.grey.withOpacity(0.1), 
+                      color: _activeZone == 1 ? Colors.grey : Colors.grey.withValues(alpha: 0.1), 
                       width: _activeZone == 1 ? 1.5 : 1
                     ),
                   ),
@@ -429,13 +430,13 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
                     children: [
                       Icon(
                         Icons.delete_sweep_outlined, 
-                        color: _activeZone == 1 ? Colors.grey : Colors.grey.withOpacity(0.4), 
+                        color: _activeZone == 1 ? Colors.grey : Colors.grey.withValues(alpha: 0.4), 
                         size: 22
                       ),
                       Text(
                         '划过重写', 
                         style: TextStyle(
-                          color: _activeZone == 1 ? Colors.grey : Colors.grey.withOpacity(0.4), 
+                          color: _activeZone == 1 ? Colors.grey : Colors.grey.withValues(alpha: 0.4), 
                           fontSize: 11,
                           fontWeight: _activeZone == 1 ? FontWeight.bold : FontWeight.normal,
                         )
@@ -452,11 +453,11 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
                   height: zoneHeight,
                   decoration: BoxDecoration(
                     color: _activeZone == 2 
-                      ? AppTheme.primaryColor.withOpacity(0.2) 
-                      : AppTheme.primaryColor.withOpacity(0.08),
+                      ? AppTheme.primaryColor.withValues(alpha: 0.2) 
+                      : AppTheme.primaryColor.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: _activeZone == 2 ? AppTheme.primaryColor : AppTheme.primaryColor.withOpacity(0.1), 
+                      color: _activeZone == 2 ? AppTheme.primaryColor : AppTheme.primaryColor.withValues(alpha: 0.1), 
                       width: _activeZone == 2 ? 1.5 : 1
                     ),
                   ),
@@ -465,13 +466,13 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
                     children: [
                       Icon(
                         Icons.check_circle_outline, 
-                        color: _activeZone == 2 ? AppTheme.primaryColor : AppTheme.primaryColor.withOpacity(0.4), 
+                        color: _activeZone == 2 ? AppTheme.primaryColor : AppTheme.primaryColor.withValues(alpha: 0.4), 
                         size: 22
                       ),
                       Text(
                         '划过识别', 
                         style: TextStyle(
-                          color: _activeZone == 2 ? AppTheme.primaryColor : AppTheme.primaryColor.withOpacity(0.4), 
+                          color: _activeZone == 2 ? AppTheme.primaryColor : AppTheme.primaryColor.withValues(alpha: 0.4), 
                           fontSize: 11,
                           fontWeight: _activeZone == 2 ? FontWeight.bold : FontWeight.normal,
                         )
