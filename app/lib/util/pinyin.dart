@@ -33,10 +33,11 @@ Map<String, double> shengMuSimularityMap = {
   // 齿龈与边音/鼻音的混淆
   "d-n": 0.60,
   "t-n": 0.55,
-  "n-l": 0.65,
+  "n-l": 0.75, // 边鼻音混淆（提升权重）
   "d-l": 0.50,
   "t-l": 0.50,
-  "l-r": 0.35,
+  "l-r": 0.55, // 边音/卷舌音混淆
+
 
   // 软腭与声门擦音的混淆
   "g-h": 0.35,
@@ -65,6 +66,11 @@ Map<String, double> shengMuSimularityMap = {
   "z-r": 0.35,
   "s-r": 0.35,
   "c-r": 0.35,
+
+  // --- 新增常见混淆 ---
+  "f-h": 0.75, // 常用南方口音（胡/夫不分）
+  "m-n": 0.60, // 鼻音混淆
+  "r-y": 0.40,
 };
 
 Map<String, double> yunMuSimularityMap = {
@@ -106,16 +112,16 @@ Map<String, double> yunMuSimularityMap = {
   "ang-ing": 0.40,
   "ang-ong": 0.60,
   "eng-ing": 0.60,
-  "eng-ong": 0.55,
-  "ing-ong": 0.45,
+  "eng-ong": 0.65, // 从 0.55 略升
+  "ing-ong": 0.55, // 从 0.45 略升
   "iong-ong": 0.60,
   "ong-ou": 0.60,
   "iong-iu": 0.60,
 
   // 近邻/插入元音差异
-  "an-ang": 0.55,
-  "en-eng": 0.55,
-  "in-ing": 0.85,
+  "an-ang": 0.75, // 前后鼻音混淆（提升权重，原 0.55）
+  "en-eng": 0.75, // 前后鼻音混淆（提升权重，原 0.55）
+  "in-ing": 0.80, // 前后鼻音混淆（维持高权重，平衡 consistency）
   "u-ou": 0.50,
   "u-iu": 0.60,
   "v-iu": 0.70,
@@ -131,7 +137,8 @@ Map<String, double> yunMuSimularityMap = {
   "an-uan": 0.70,
   "ian-uan": 0.70,
   "iao-ao": 0.60,
-  "uan-an": 0.50,
+  "uan-an": 0.60, // 从 0.50 略升
+  "ian-an": 0.60, // 新增
 
   "i-yi": 0.95,
   "u-wu": 0.95,
@@ -383,11 +390,6 @@ final RegExp _nonPinyinRegExp = RegExp(r"[^a-z1-5]");
 /// @param parts2
 /// @return
 double similarityOf2ParsedPinyin(PinyinParser parts1, PinyinParser parts2) {
-  // 某些字特殊处理
-  if (parts1.pinyinWithTone == "de5" && parts2.pinyinWithTone == "de5") {
-    // 的
-    return minSimularityForMatch;
-  }
   var shengmuSim = similarityOf2ShengMu(parts1.shengMu, parts2.shengMu);
   var yunmuSim = similarityOf2YunMu(parts1.yunMu, parts2.yunMu);
   var toneSim = similarityOf2Tone(parts1.tone, parts2.tone);
@@ -475,8 +477,9 @@ bool fuzzyChineseContains(Object chinese1, String chinese2) {
     double maxSimSum = dp[M][N];
     double avgSim = maxSimSum / M;
 
-    // 对于短句（3个字及以下），提高匹配门槛，防止被常用字干扰
-    double finalThreshold = M <= 3 ? 0.60 : minSimularityForMatch;
+    // 对于短句（1-2个字），提高匹配门槛，防止被发音接近但完全不同的常用字干扰（误判）
+    // 对于 3 个字及以上，维持现状以保证容错率
+    double finalThreshold = M == 1 ? 0.82 : (M == 2 ? 0.75 : minSimularityForMatch);
 
     if (avgSim > finalThreshold) {
       return true;
