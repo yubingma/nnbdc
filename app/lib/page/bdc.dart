@@ -2292,8 +2292,11 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       // 只有在模式真正改变时，才重新初始化 ASR（防止在相同模式下刷新导致 ASR 意外停止）
       // 注意：getNextWord 已经执行过 stopAsr + reset，此处无需重复，否则会触发额外的
       // iOS Audio Engine tear-down，产生听感噪音。
-      if (oldStudyStep == null || oldStudyStep != _studyStep) {
-        Global.logger.i('BDC: 学习模式从 $oldStudyStep 切换到 $_studyStep，初始化 ASR 监听');
+      if (oldStudyStep == null ||
+          oldStudyStep != _studyStep ||
+          isFromBatchWordList) {
+        Global.logger.i(
+            'BDC: 学习模式改变或从列表返回 (oldStudyStep: $oldStudyStep, currentStep: $_studyStep, fromBatchList: $isFromBatchWordList)，初始化 ASR 监听');
         await asr.initAsr(onAsrResult);
 
         // 临时禁用侵入式的 microphone pre-warm，因为它会与后续即时的 startAsr 产生竞争并打断音频流程
