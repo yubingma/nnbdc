@@ -320,4 +320,35 @@ public class AiBo {
             return "{\"action\":\"KEEP\"}";
         }
     }
+
+    /**
+     * 调用 AI 优化词根解析
+     * @param spell 单词
+     * @param originalExplain 原始解析
+     * @param cigenDescription 词根本身的含义（来自 cigen 表）
+     * @return 优化后的解析
+     */
+    public String optimizeCigenExplain(String spell, String originalExplain, String cigenDescription) {
+        String systemPrompt = "你是一位专业的英语词源学家。请根据提供的词根含义，优化给定单词的词根解析。要求如下：\n" +
+                "1. 必须清晰拆解前缀、词根、后缀（使用 + 连接）。\n" +
+                "2. 必须包含且优先参考提供的【主词库词根含义】。\n" +
+                "3. 使用“→”符号展示从字面义到最终引申义的演变逻辑。\n" +
+                "4. 保持格式为：单词 [词性] 释义（拆解部分→...→最终义）。\n" +
+                "5. 严格只返回优化后的解析文本，不要包含任何前导说明文字。\n" +
+                "\n" +
+                "示例：\n" +
+                "词根含义：[sym- 共同]\n" +
+                "输入单词及原解析：[symmetry n 对称（sym共同+metry测量）]\n" +
+                "返回：symmetry n 对称（sym共同+metry测量→两边测量一样→对称）";
+
+        String userPrompt = "主词库词根含义：[" + cigenDescription + "]\n" +
+                "目标单词：[" + spell + "]\n" +
+                "原始解析：[" + originalExplain + "]";
+        try {
+            return generateText(systemPrompt, userPrompt);
+        } catch (Exception e) {
+            logger.error("AI 优化词根解析常: " + spell, e);
+            return originalExplain;
+        }
+    }
 }
