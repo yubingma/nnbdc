@@ -631,6 +631,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   }
 
   bool dataLoaded = false;
+  bool _isGettingNextWord = false;
   static const double leftPadding = 16;
   static const double rightPadding = 16;
   static const int batchSize = 10;
@@ -1361,13 +1362,15 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     }
 
     // 播放正确提示音
+    final currentWordId = _word?.id;
     final soundFuture =
         SoundUtil.playAssetSoundConcurrent('correct.mp3', 1.5, 0.2);
     soundFuture.whenComplete(() async {
+      if (!mounted) return;
       // 播放一遍单词的标准发音
       await SoundUtil.playPronounceSound2(_word!, _audioPlayer);
 
-      if (_autoJumpAfterCorrect) {
+      if (_autoJumpAfterCorrect && mounted && _word?.id == currentWordId) {
         getNextWord(true, fsrsRating: rating);
       }
     });
@@ -1997,6 +2000,11 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   }
 
   getNextWord(bool gotoNext, {FsrsRating? fsrsRating}) async {
+    if (_isGettingNextWord) {
+      Global.logger.d('getNextWord: 已经在获取中，跳过重复请求');
+      return;
+    }
+    _isGettingNextWord = true;
     try {
       // 停止当前 ASR 任务并确保状态同步（Hot Stop 会在 Native 层处理，此处需保证状态为 Stopped）
       await asr.stopAsr();
@@ -2076,6 +2084,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         // 显示错误提示，并提供重试按钮
         _showErrorWidget('加载单词失败: ${e.toString()}');
       }
+    } finally {
+      _isGettingNextWord = false;
     }
   }
 
@@ -3701,8 +3711,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12)),
                     ),
-                    onPressed: () =>
-                        getNextWord(true, fsrsRating: _lastFsrsRating),
+                    onPressed: _isGettingNextWord
+                        ? null
+                        : () => getNextWord(true, fsrsRating: _lastFsrsRating),
                     child: const Text('下一词',
                         style: TextStyle(fontWeight: FontWeight.bold)),
                   ),
