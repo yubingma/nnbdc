@@ -1204,6 +1204,52 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // 词根解析
+                if (args.word.cigenWordLinks != null && args.word.cigenWordLinks!.isNotEmpty)
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: isDarkMode ? const Color(0xFF1E1E2D).withValues(alpha: 0.95) : const Color(0xFFFAFAFA).withValues(alpha: 0.95),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: AppTheme.primaryColor.withValues(alpha: 0.3),
+                        width: 1,
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.account_tree_outlined, size: 16, color: Color(0xFF4A90E2)),
+                            const SizedBox(width: 8),
+                            const Text('词根助记',
+                                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, letterSpacing: 0.5, fontFamily: 'NotoSansSC')),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              for (var link in args.word.cigenWordLinks!)
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 4),
+                                  child: Text(
+                                    link.theExplain,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: isDarkMode ? const Color(0xFFD1D5DB) : const Color(0xFF374151),
+                                      height: 1.5,
+                                    ),
+                                  ),
+                                ),
+                            ]
+                        )
+                      ],
+                    ),
+                  ),
+
                 // 单词讲解
                 if (args.word.shortDesc != null && args.word.shortDesc!.isNotEmpty)
                   Container(
