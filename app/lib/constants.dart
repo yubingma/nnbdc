@@ -4,7 +4,7 @@ class Constants {
 
   /// 音素匹配判定阈值（0-100）
   /// 当音素相似度 >= 此阈值时，认为识别结果与目标词匹配
-  static const int phonemeMatchThreshold = 50;
+  static const int phonemeMatchThreshold = 60;
 
   // ========== 编辑距离相关常量 ==========
 

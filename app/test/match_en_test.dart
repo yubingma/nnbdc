@@ -1,9 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nnbdc/util/phoneme_util.dart';
 import 'package:nnbdc/constants.dart';
-import 'package:flutter/services.dart';
 import 'dart:convert';
-import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -37,7 +36,7 @@ APPLY  AH0 P L AY1
       const String asrResult = "ye sure";
 
       final int score = await PhonemeUtil.similarity(asrResult, target);
-      print('Phoneme similarity score: $score (threshold: ${Constants.phonemeMatchThreshold})');
+      debugPrint('Phoneme similarity score: $score (threshold: ${Constants.phonemeMatchThreshold})');
 
       // 验证分数是否超过门限 (预期约为 66)
       expect(score, greaterThanOrEqualTo(Constants.phonemeMatchThreshold));
@@ -54,14 +53,14 @@ APPLY  AH0 P L AY1
       const String asrResult = "apply";
 
       final int score = await PhonemeUtil.similarity(asrResult, target);
-      print('Apple vs Apply score: $score');
+      debugPrint('Apple vs Apply score: $score');
       
       expect(score, lessThanOrEqualTo(Constants.phonemeMatchThreshold));
     });
 
     test('confusion group: IH and Y', () async {
       final int score = await PhonemeUtil.similarity("ye sure", "insure");
-      print('Confusion IH/Y score: $score');
+      debugPrint('Confusion IH/Y score: $score');
       // @ N SH @ R vs Y @ SH @ R
       // @ vs Y (0.2)
       // N vs @ (1.0)
