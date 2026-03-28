@@ -251,6 +251,7 @@ class LoginPageState extends State<LoginPage>
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.transparent,
                                 foregroundColor: Colors.white,
+                                disabledForegroundColor: Colors.white.withValues(alpha: 0.7),
                                 padding:
                                     const EdgeInsets.symmetric(vertical: 18),
                                 shape: RoundedRectangleBorder(
@@ -265,6 +266,7 @@ class LoginPageState extends State<LoginPage>
                               label: Text(
                                 _isAppleLoading ? '正在连接...' : '通过 Apple 登录',
                                 style: const TextStyle(
+                                  color: Colors.white,
                                   fontSize: 16,
                                   fontWeight: FontWeight.w900,
                                   letterSpacing: 0.5,
@@ -301,6 +303,7 @@ class LoginPageState extends State<LoginPage>
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.transparent,
                                 foregroundColor: Colors.white,
+                                disabledForegroundColor: Colors.white.withValues(alpha: 0.7),
                                 padding:
                                     const EdgeInsets.symmetric(vertical: 18),
                                 shape: RoundedRectangleBorder(
@@ -315,6 +318,7 @@ class LoginPageState extends State<LoginPage>
                               label: Text(
                                 _isWechatLoading ? '正在连接...' : '微信一键登录',
                                 style: const TextStyle(
+                                  color: Colors.white,
                                   fontSize: 16,
                                   fontWeight: FontWeight.w900,
                                   letterSpacing: 0.5,
@@ -454,10 +458,11 @@ class LoginPageState extends State<LoginPage>
       onPressed: onTap,
       style: TextButton.styleFrom(
           minimumSize: Size.zero,
+          foregroundColor: const Color(0xFFE0F2FE),
+          disabledForegroundColor: const Color(0xFFE0F2FE).withValues(alpha: 0.7),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
       child: Text(text,
           style: const TextStyle(
-              color: Color(0xFFE0F2FE),
               fontSize: 13,
               fontWeight: FontWeight.w500)),
     );
