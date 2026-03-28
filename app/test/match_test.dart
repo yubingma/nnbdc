@@ -8,7 +8,7 @@ void main() {
     String meaning = "n. 引诱";
     
     bool match = fuzzyChineseContains(asrResult, meaning);
-    debugPrint('asrResult: $asrResult, meaning: $meaning, match: $match');
+    debugPrint('~~~~~asrResult: $asrResult, meaning: $meaning, match: $match');
     expect(match, isTrue);
   });
 
@@ -17,7 +17,7 @@ void main() {
     String meaning = "n. 引诱";
     
     bool match = fuzzyChineseContains(asrResult, meaning);
-    debugPrint('asrResult: $asrResult, meaning: $meaning, match: $match');
+    debugPrint('~~~~~asrResult: $asrResult, meaning: $meaning, match: $match');
     expect(match, isTrue);
   });
 
@@ -26,7 +26,7 @@ void main() {
     String meaning = "无球"; // Not a real word, but testing the phonetic match
     
     bool match = fuzzyChineseContains(asrResult, meaning);
-    debugPrint('asrResult: $asrResult, meaning: $meaning, match: $match');
+    debugPrint('~~~~~asrResult: $asrResult, meaning: $meaning, match: $match');
     expect(match, isTrue);
   });
 
@@ -35,7 +35,7 @@ void main() {
     String meaning = "意识到的";
     
     bool match = fuzzyChineseContains(asrResult, meaning);
-    debugPrint('asrResult: $asrResult, meaning: $meaning, match: $match');
+    debugPrint('~~~~~asrResult: $asrResult, meaning: $meaning, match: $match');
     expect(match, isFalse);
   });
 }

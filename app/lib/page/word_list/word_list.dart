@@ -707,7 +707,7 @@ class WordListPageState extends State<WordListPage>
           // 进一步进行英文预处理
           processedEvent = AsrUtil.preprocessEnglish(result.text, target);
           Global.logger.d(
-              'ASR (Phoneme): Selected & Preprocessed: "$processedEvent" (candidates: ${candidateStrings.length}, target: $target, score: ${result.score})');
+              '~~~~~ASR (Phoneme): Selected & Preprocessed: "$processedEvent" (candidates: ${candidateStrings.length}, target: $target, score: ${result.score})');
         } else {
           // 单个结果处理
           // 即使是单结果，也尝试与目标词进行音素匹配 check
@@ -721,7 +721,7 @@ class WordListPageState extends State<WordListPage>
             words[curr].pronunciationScore = result.score;
           }
           Global.logger.d(
-              'ASR (Phoneme): Single result: "$event" -> "$processedEvent" (target: $target, score: ${result.score})');
+              '~~~~~ASR (Phoneme): Single result: "$event" -> "$processedEvent" (target: $target, score: ${result.score})');
         }
 
         // 最后确保做一次标准英文预处理（通常上面的步骤已经覆盖，但为了保险再做一次）
@@ -758,7 +758,7 @@ class WordListPageState extends State<WordListPage>
       newAsrResult = AsrUtil.preprocess(processedEvent);
     }
 
-    Global.logger.d("^^^^^语音识别最终结果: $newAsrResult");
+    Global.logger.d("~~~~~语音识别最终结果: $newAsrResult");
 
     // 仅当结果变化时才触发 setState，减少UI重建
     if (newAsrResult != asrResult) {

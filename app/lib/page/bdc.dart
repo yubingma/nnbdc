@@ -1245,7 +1245,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
             processedResult =
                 AsrUtil.preprocessEnglish(result.text, _word!.spell);
             Global.logger.d(
-                'ASR: Selected & Preprocessed: "$processedResult" (score: ${result.score})');
+                '~~~~~ASR: Selected & Preprocessed: "$processedResult" (score: ${result.score})');
           } else {
             processedResult = bestCandidate;
             if (!_hasFinishedAnswering || _lastFsrsRating == FsrsRating.again) _currentScore = null;
@@ -1255,7 +1255,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
           processedResult = AsrUtil.preprocess(bestCandidate);
           if (!_hasFinishedAnswering || _lastFsrsRating == FsrsRating.again) _currentScore = null;
           Global.logger.d(
-              'ASR [en2Ch]: Stored ${candidateStrings.length} candidates, showing best: $processedResult');
+              '~~~~~ASR [en2Ch]: Stored ${candidateStrings.length} candidates, showing best: $processedResult');
         } else {
           processedResult = bestCandidate;
           if (!_hasFinishedAnswering || _lastFsrsRating == FsrsRating.again) _currentScore = null;
@@ -1276,7 +1276,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
           }
         } else {
           processedResult = AsrUtil.preprocess(event);
-          Global.logger.d('ASR: Chinese processed result: $processedResult');
+          Global.logger.d('~~~~~ASR: Chinese processed result: $processedResult');
         }
       }
     } catch (e) {

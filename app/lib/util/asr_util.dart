@@ -160,7 +160,7 @@ class AsrUtil {
 
     // 注意：不再返回 targetWord，而是返回实际的最佳候选文本
     // 这样 UI 就能显示“实际听到”的最接近词，而不是强行修正
-    Global.logger.d('ASR SELECTION: Best candidate is "$best" with score $bestScore (target: "$lowerTarget")');
+    Global.logger.d('~~~~~ASR SELECTION: Best candidate is "$best" with score $bestScore (target: "$lowerTarget")');
     return AsrCandidateResult(best, bestScore);
   }
 

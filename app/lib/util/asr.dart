@@ -345,7 +345,7 @@ class Asr {
           (event) {
             final receiveTime = DateTime.now();
             Global.logger.d(
-                'ASR: [Event] Received result from platform at ${receiveTime.toIso8601String()}');
+                '~~~~~ASR: [Event] Received result from platform at ${receiveTime.toIso8601String()}: $event');
             try {
               savedListener(event);
               final processTime = DateTime.now();
