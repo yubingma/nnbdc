@@ -92,11 +92,16 @@ class _MemoryCloudPageState extends State<MemoryCloudPage> with TickerProviderSt
         backgroundColor: Colors.transparent,
         actions: [
           IconButton(
+            icon: const Icon(Icons.info_outline_rounded),
+            onPressed: () => _showExplainDialog(context),
+          ),
+          IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () => _loadData(),
           ),
         ],
       ),
+
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : Column(
@@ -182,27 +187,28 @@ class _MemoryCloudPageState extends State<MemoryCloudPage> with TickerProviderSt
     switch (_currentMode) {
       case XAxisMode.stability:
         return [
-          {'label': '不牢固', 'color': Colors.red, 'start': 0.0, 'end': 0.15},
-          {'label': '起步中', 'color': Colors.orange, 'start': 0.15, 'end': 0.4},
-          {'label': '已入门', 'color': Colors.amber, 'start': 0.4, 'end': 0.7},
-          {'label': '很稳固', 'color': Colors.green, 'start': 0.7, 'end': 1.0},
+          {'label': '不牢固', 'color': Colors.red, 'start': 0.0, 'end': 0.25},
+          {'label': '起步中', 'color': Colors.orange, 'start': 0.25, 'end': 0.5},
+          {'label': '已入门', 'color': Colors.amber, 'start': 0.5, 'end': 0.75},
+          {'label': '很稳固', 'color': Colors.green, 'start': 0.75, 'end': 1.0},
         ];
       case XAxisMode.difficulty:
         return [
-          {'label': '送分题', 'color': Colors.green, 'start': 0.0, 'end': 0.3},
-          {'label': '普通', 'color': Colors.blue, 'start': 0.3, 'end': 0.7},
-          {'label': '硬骨头', 'color': Colors.red, 'start': 0.7, 'end': 1.0},
+          {'label': '送分题', 'color': Colors.green, 'start': 0.0, 'end': 0.33},
+          {'label': '普通', 'color': Colors.blue, 'start': 0.33, 'end': 0.66},
+          {'label': '硬骨头', 'color': Colors.red, 'start': 0.66, 'end': 1.0},
         ];
       case XAxisMode.popularity:
         return [
-          {'label': '极罕见', 'color': Colors.blueGrey, 'start': 0.0, 'end': 0.25},
-          {'label': '常用词', 'color': Colors.blue, 'start': 0.25, 'end': 0.65},
-          {'label': '高频词', 'color': Colors.teal, 'start': 0.65, 'end': 1.0},
+          {'label': '罕见词', 'color': Colors.blueGrey, 'start': 0.0, 'end': 0.33},
+          {'label': '常用词', 'color': Colors.blue, 'start': 0.33, 'end': 0.66},
+          {'label': '高频核心', 'color': Colors.teal, 'start': 0.66, 'end': 1.0},
         ];
       case XAxisMode.category:
         return [];
     }
   }
+
 
   Widget _buildModeSelector(bool isDarkMode) {
 
@@ -273,7 +279,26 @@ class _MemoryCloudPageState extends State<MemoryCloudPage> with TickerProviderSt
       ],
     );
   }
+
+  void _showExplainDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('图表说明', style: TextStyle(fontWeight: FontWeight.bold)),
+        content: const Text(
+            '● 每个星点代表您库中的一个“学习中”单词。\n\n'
+            '● 纵向高度：代表下次复习时间。顶部为最紧急的词，向下滚动逐渐进入未来。\n\n'
+            '● 气泡大小：代表复习次数。越大的球表示您已经复习了很多遍，更趋于“熟词”。\n\n'
+            '● 气泡颜色：蓝色代表纯新词，绿色代表学习中，橙色代表复习期，红色代表超期任务。',
+            style: TextStyle(height: 1.6, fontSize: 13)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('我知道了')),
+        ],
+      ),
+    );
+  }
 }
+
 
 class CloudPoint {
   final String word;
@@ -300,16 +325,25 @@ class CloudPoint {
   double getX(XAxisMode mode) {
     switch (mode) {
       case XAxisMode.stability:
-        return min(stability / 50.0, 1.0); // 0 to 50+
+        // 特别稳定度映射：0-10, 10-25, 25-50, 50+
+        if (stability <= 10.0) return (stability / 10.0) * 0.25;
+        if (stability <= 25.0) return 0.25 + ((stability - 10.0) / 15.0) * 0.25;
+        if (stability <= 50.0) return 0.50 + ((stability - 25.0) / 25.0) * 0.25;
+        return 0.75 + min((stability - 50.0) / 150.0, 1.0) * 0.25;
       case XAxisMode.popularity:
-        return min(popularity / 2000.0, 1.0); // 0 to 2000+
+        // 词频分为：罕见(2000+), 常用(500-2000), 高频(0-500)
+        // 注意顺序：最常用的在最右边比较符合操作习惯
+        if (popularity > 2000) return (1.0 - min((popularity - 2000) / 8000.0, 1.0)) * 0.33;
+        if (popularity > 500) return 0.33 + (1.0 - (popularity - 500) / 1500.0) * 0.33;
+        return 0.66 + (1.0 - popularity / 500.0) * 0.34;
       case XAxisMode.difficulty:
-        return (difficulty - 1.0) / 9.0; // 1 to 10
+        return (difficulty - 1.0) / 9.0; // 1 to 10 平分
       case XAxisMode.category:
         return (category.hashCode % 1000) / 1000.0;
     }
   }
 }
+
 
 class CloudPainter extends CustomPainter {
   final List<CloudPoint> points;
