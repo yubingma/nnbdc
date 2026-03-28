@@ -204,6 +204,7 @@ class _AdminCigenOptimizePageState extends State<AdminCigenOptimizePage> {
       padding: const EdgeInsets.all(16),
       itemBuilder: (context, index) {
         final log = reversedLogs[index];
+        final bool isStructured = log['type'] == 'STRUCTURED';
         return Card(
           elevation: 0,
           margin: const EdgeInsets.only(bottom: 12),
@@ -222,16 +223,26 @@ class _AdminCigenOptimizePageState extends State<AdminCigenOptimizePage> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
-                        color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                        color: (isStructured ? Colors.teal : AppTheme.primaryColor).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
                         log['spell'] ?? '未知',
-                        style: TextStyle(color: AppTheme.primaryColor, fontWeight: FontWeight.bold),
+                        style: TextStyle(color: isStructured ? Colors.teal : AppTheme.primaryColor, fontWeight: FontWeight.bold),
                       ),
                     ),
                     const SizedBox(width: 8),
-                    const Text('解析已更新', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        isStructured ? '词根结构化' : '词源解析优化',
+                        style: const TextStyle(fontSize: 10, color: Colors.grey),
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 12),

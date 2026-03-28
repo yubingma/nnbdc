@@ -115,6 +115,7 @@ public class AdminCigenOptimizeController {
                                     log.put("spell", link.getSpell());
                                     log.put("before", original);
                                     log.put("after", optimized);
+                                    log.put("type", "OPTIMIZED"); // 明确标记为解释优化
                                     synchronized (currentTask) {
                                         currentTask.optimizedLogs.add(log);
                                     }
