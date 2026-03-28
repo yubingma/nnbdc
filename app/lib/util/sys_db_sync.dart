@@ -156,6 +156,28 @@ Future<void> _applySysDbLogs(List<SysDbLogDto> logs) async {
             MeaningItem entity = MeaningItem.fromJson(entityJson);
             await db.meaningItemsDao.insertEntity(entity, false);
           }
+        } else if (log.tblName == 'cigen') {
+          // 词根
+          if (log.operate == 'DELETE') {
+            await (db.delete(db.cigens)..where((t) => t.id.equals(log.recordId))).go();
+          } else {
+            Cigen entity = Cigen.fromJson(entityJson);
+            await db.cigensDao.saveEntity(entity);
+          }
+        } else if (log.tblName == 'cigen_word_link') {
+          // 词根单词关联
+          if (log.operate == 'DELETE') {
+            var parts = log.recordId.split('_');
+            if (parts.length == 2) {
+              await (db.delete(db.cigenWordLinks)
+                    ..where((t) => t.cigenId.equals(parts[0]))
+                    ..where((t) => t.wordId.equals(parts[1])))
+                  .go();
+            }
+          } else {
+            CigenWordLink entity = CigenWordLink.fromJson(entityJson);
+            await db.cigenWordLinksDao.saveEntity(entity);
+          }
         }
 
         // === UGC内容表 ===

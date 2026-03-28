@@ -2,6 +2,7 @@ package beidanci.service.bo;
 
 import java.sql.Timestamp;
 import java.util.List;
+import java.util.Map;
 
 import javax.annotation.PostConstruct;
 
@@ -20,6 +21,9 @@ public class CigenBo extends BaseBo<CigenWordLink> {
 
     @Autowired
     private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
+
+    @Autowired
+    private SysDbSyncBo sysDbSyncBo;
 
     @PostConstruct
     public void init() {
@@ -51,14 +55,32 @@ public class CigenBo extends BaseBo<CigenWordLink> {
      * 更新词根解析
      */
     public void updateExplain(String cigenId, String wordId, String newExplain) {
+        Timestamp now = new Timestamp(System.currentTimeMillis());
         String sql = "UPDATE cigen_word_link SET the_explain = :newExplain, update_time = :updateTime " +
                      "WHERE cigen_id = :cigenId AND word_id = :wordId";
         MapSqlParameterSource params = new MapSqlParameterSource()
             .addValue("newExplain", newExplain)
-            .addValue("updateTime", new Timestamp(System.currentTimeMillis()))
+            .addValue("updateTime", now)
             .addValue("cigenId", cigenId)
             .addValue("wordId", wordId);
         namedParameterJdbcTemplate.update(sql, params);
+
+        // 获取更新后的记录，用于同步日志（确保包含 create_time 等所有必需字段）
+        String selectSql = "SELECT * FROM cigen_word_link WHERE cigen_id = :cigenId AND word_id = :wordId";
+        Map<String, Object> record = namedParameterJdbcTemplate.queryForMap(selectSql, params);
+        
+        // 转换日期格式为 ISO-8601 (与 Flutter 兼容)
+        java.text.SimpleDateFormat isoFormat = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+        isoFormat.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
+        
+        Map<String, Object> logRecord = new java.util.HashMap<>();
+        logRecord.put("cigenId", record.get("cigen_id"));
+        logRecord.put("wordId", record.get("word_id"));
+        logRecord.put("theExplain", record.get("the_explain"));
+        logRecord.put("createTime", isoFormat.format(record.get("create_time")));
+        logRecord.put("updateTime", isoFormat.format(record.get("update_time")));
+
+        sysDbSyncBo.logOperation("UPDATE", "cigen_word_link", cigenId + "_" + wordId, beidanci.service.util.JsonUtils.toJson(logRecord));
     }
 
     public static class CigenWordLinkDto {

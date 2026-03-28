@@ -12,9 +12,15 @@ public class MyExceptionListener extends ExceptionListenerAdapter {
 
     @Override
     public boolean exceptionCaught(ChannelHandlerContext ctx, Throwable e) throws Exception {
-        if (e instanceof IOException && e.getMessage() != null
-                && (e.getMessage().contains("Connection reset by peer") || e.getMessage().contains("连接被对方重设"))) {
-            return true;
+        if (e instanceof IOException && e.getMessage() != null) {
+            String msg = e.getMessage().toLowerCase();
+            if (msg.contains("connection reset")
+                    || msg.contains("broken pipe")
+                    || msg.contains("connection timed out")
+                    || msg.contains("eofexception")
+                    || msg.contains("连接被对方重设")) {
+                return true;
+            }
         }
         log.warn("", e);
         ctx.close();

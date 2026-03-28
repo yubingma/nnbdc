@@ -255,6 +255,9 @@ class WordBo {
       final images = await db.wordImagesDao.getImagesByWordId(localWord.id);
       wordVo.images = images.map((i) => WordImageVo(i.id, i.imageFile, i.hand, i.foot, UserVo.c2(i.authorId))).toList();
 
+      // 查询词根解析数据
+      await _loadCigenWordLinks(wordVo);
+
       // 检查是否在用户选择的词书中
       bool isInMySelectedDicts = false;
       if (userId != null && userId.isNotEmpty) {
@@ -384,6 +387,9 @@ class WordBo {
         ..popularity = localWord.popularity
         ..groupInfo = localWord.groupInfo;
 
+      // 加载词根解析数据
+      await _loadCigenWordLinks(wordVo);
+
       // 获取释义项
       final currentUser = await Global.refreshLoggedInUser();
       List<MeaningItem> meaningItems;
@@ -443,6 +449,23 @@ class WordBo {
       return localResult;
     } else {
       return null;
+    }
+  }
+
+  // 加载词根解析数据
+  Future<void> _loadCigenWordLinks(WordVo wordVo) async {
+    final db = MyDatabase.instance;
+    final links = await db.cigenWordLinksDao.getLinksByWordId(wordVo.id!);
+    if (links.isNotEmpty) {
+      final linkVos = <CigenWordLinkVo>[];
+      for (final link in links) {
+        final cigen = await db.cigensDao.getById(link.cigenId);
+        if (cigen != null) {
+          final cigenVo = CigenVo(cigen.id, cigen.description);
+          linkVos.add(CigenWordLinkVo(cigenVo, link.theExplain));
+        }
+      }
+      wordVo.cigenWordLinks = linkVos;
     }
   }
 

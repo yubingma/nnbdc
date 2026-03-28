@@ -726,7 +726,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
         ),
         onPressed: () async {
           if (selectedSteps().isEmpty) {
-            ToastUtil.error('请选择至少一种学习模式');
+            ToastUtil.error('请选择至少一个学习环节');
             return;
           }
 
@@ -852,7 +852,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                '学习模式',
+                '学习环节',
                 style: TextStyle(
                   color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
                   fontSize: 16,
