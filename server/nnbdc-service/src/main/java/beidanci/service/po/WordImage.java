@@ -39,6 +39,12 @@ public class WordImage extends UuidPo {
     @Column(name = "author_id")
     private User author;
 
+    @Column(name = "status")
+    private String status;
+
+    @Column(name = "audit_reason")
+    private String auditReason;
+
     public User getAuthor() {
         return author;
     }
@@ -77,6 +83,22 @@ public class WordImage extends UuidPo {
 
     public void setFoot(Integer foot) {
         this.foot = foot;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public String getAuditReason() {
+        return auditReason;
+    }
+
+    public void setAuditReason(String auditReason) {
+        this.auditReason = auditReason;
     }
 
     public WordImage(String id, Word word, String imageFile, Integer hand, Integer foot, User author) {

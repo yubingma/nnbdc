@@ -16,6 +16,7 @@ import 'package:nnbdc/config.dart';
 import 'package:nnbdc/services/ai_service.dart';
 import 'package:get_storage/get_storage.dart';
 import 'bdc.dart';
+import 'pic_search.dart';
 import '../util/asr.dart';
 
 import 'package:flutter_markdown/flutter_markdown.dart';
@@ -676,8 +677,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                     alignment: Alignment.topCenter,
                     child: _isTopDrawerExpanded ? Column(
                       children: [
-                    // 配图展示 (仅对管理员开放)
-                    if ((Global.getLoggedInUser()?.isAdmin == true) && args.word.images != null && args.word.images!.isNotEmpty)
+                    // 配图展示
+                    if (args.word.images != null && args.word.images!.isNotEmpty)
                       Builder(
                         builder: (BuildContext context) {
                           final screenWidth = MediaQuery.of(context).size.width;
@@ -695,21 +696,80 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                 Wrap(
                                   spacing: 8, 
                                   runSpacing: 8,
-                                  children: args.word.images!.take(2).map((image) => Container(
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
-                                    ),
-                                    child: ClipRRect(
-                                      borderRadius: BorderRadius.circular(8),
-                                      child: Image.network(
-                                        '${Config.wordImageBaseUrl}${image.imageFile}',
-                                        width: imageWidth,
-                                        height: imageWidth * 0.75, // 比例 4:3
-                                        fit: BoxFit.cover,
+                                  children: [
+                                    ...args.word.images!.take(2).map((image) => Stack(
+                                      children: [
+                                        Container(
+                                          decoration: BoxDecoration(
+                                            borderRadius: BorderRadius.circular(8),
+                                            border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+                                          ),
+                                          child: ClipRRect(
+                                            borderRadius: BorderRadius.circular(8),
+                                            child: Image.network(
+                                              '${Config.wordImageBaseUrl}${image.imageFile}',
+                                              width: imageWidth,
+                                              height: imageWidth * 0.75, // 比例 4:3
+                                              fit: BoxFit.cover,
+                                            ),
+                                          ),
+                                        ),
+                                        if (image.status == 'PENDING')
+                                          Positioned.fill(
+                                            child: Container(
+                                              decoration: BoxDecoration(
+                                                color: Colors.black.withValues(alpha: 0.5),
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                              child: const Center(
+                                                child: Column(
+                                                  mainAxisSize: MainAxisSize.min,
+                                                  children: [
+                                                    SizedBox(
+                                                      width: 16,
+                                                      height: 16,
+                                                      child: CircularProgressIndicator(
+                                                        strokeWidth: 2,
+                                                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                                      ),
+                                                    ),
+                                                    SizedBox(height: 4),
+                                                    Text('AI审核中', style: TextStyle(color: Colors.white, fontSize: 10)),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                      ],
+                                    )),
+                                    if (args.word.images!.length < 2)
+                                      InkWell(
+                                        onTap: () {
+                                          Get.toNamed('/pic_search',
+                                                  arguments: PicSearchPageArgs(
+                                                      args.word.id!,
+                                                      args.word.spell))!
+                                              .then((value) => loadData());
+                                        },
+                                        child: Container(
+                                          width: imageWidth,
+                                          height: imageWidth * 0.75,
+                                          decoration: BoxDecoration(
+                                            color: isDarkMode ? Colors.white10 : Colors.grey[100],
+                                            borderRadius: BorderRadius.circular(8),
+                                            border: Border.all(color: Colors.grey.withValues(alpha: 0.2), style: BorderStyle.none),
+                                          ),
+                                          child: Column(
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              Icon(Icons.add_a_photo_outlined, color: Colors.grey[500], size: 28),
+                                              const SizedBox(height: 4),
+                                              Text('添加配图', style: TextStyle(color: Colors.grey[500], fontSize: 11)),
+                                            ],
+                                          ),
+                                        ),
                                       ),
-                                    ),
-                                  )).toList(),
+                                  ],
                                 )
                               ],
                             ),

@@ -1,11 +1,11 @@
 package beidanci.service.bo;
 
-import javax.annotation.PostConstruct;
-
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.TimeZone;
+
+import javax.annotation.PostConstruct;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
@@ -16,23 +16,22 @@ import org.springframework.transaction.annotation.Transactional;
 
 import beidanci.api.Result;
 import beidanci.api.model.EventType;
-import beidanci.api.model.UserVo;
-import beidanci.api.model.WordImageVo;
-import beidanci.service.SessionData;
 import beidanci.service.dao.BaseDao;
 import beidanci.service.po.Event;
 import beidanci.service.po.User;
 import beidanci.service.po.Word;
 import beidanci.service.po.WordImage;
-import beidanci.service.util.BeanUtils;
 import beidanci.service.util.SysParamUtil;
 
 @Service
 @Transactional(rollbackFor = Throwable.class)
 public class WordImageBo extends BaseBo<WordImage> {
     private static final Logger log = LoggerFactory.getLogger(WordImageBo.class);
-    private static final int MAX_IMAGES_PER_WORD = 9;
-    private static final int MAX_IMAGES_FOR_DISPLAY = 9;
+    private static final int MAX_IMAGES_PER_WORD = 2;
+
+    public static final String STATUS_PENDING = "PENDING";
+    public static final String STATUS_APPROVED = "APPROVED";
+    public static final String STATUS_REJECTED = "REJECTED";
 
     @Autowired
     WordBo wordBo;
@@ -48,6 +47,12 @@ public class WordImageBo extends BaseBo<WordImage> {
 
     @Autowired
     SysDbSyncBo sysDbLogBo;
+
+    @Autowired
+    AiBo aiBo;
+
+    @Autowired
+    private WordImageBo self; // Self-injection for @Async proxying
 
     @PostConstruct
     public void init() {
@@ -94,18 +99,6 @@ public class WordImageBo extends BaseBo<WordImage> {
         return new Result<>(true, null, image.getFoot());
     }
 
-    private static void sortWordImages(List<WordImage> wordImages) {
-        wordImages.sort((WordImage o1, WordImage o2) -> {
-            int score1 = o1.getHand() - o1.getFoot();
-            int score2 = o2.getHand() - o2.getFoot();
-            if (score1 == score2) {
-                return (int) (o2.getCreateTime().getTime() - o1.getCreateTime().getTime());
-            } else {
-                return score2 - score1;
-            }
-        });
-    }
-
     /**
      * 注意：BaseDao.pagedQuery(preciseEntity) 会跳过关联对象字段（Po类型字段），
      * 例如 WordImage.word（对应 wordId）不会进入 WHERE 条件。
@@ -118,43 +111,9 @@ public class WordImageBo extends BaseBo<WordImage> {
                 Pair.of("wordId", wordId)).getRows();
     }
 
-    /**
-     * 获取一个单词对应的前10个图片
-     */
-    public WordImageVo[] getImagesOfWord(String wordId, SessionData sessionData) {
 
-        Word word = wordBo.findById(wordId);
-        if (word == null) {
-            return new WordImageVo[0];
-        }
-        List<WordImage> wordImages = listImagesByWordId(wordId);
-        // 补齐关联对象的 spell（JDBC 映射只会填充 wordId -> Word{id}）
-        for (WordImage img : wordImages) {
-            if (img.getWord() != null && img.getWord().getId() != null) {
-                img.getWord().setSpell(word.getSpell());
-            }
-        }
-        sortWordImages(wordImages);
 
-        int total = wordImages.size();
-        WordImageVo[] images = new WordImageVo[Math.min(total, MAX_IMAGES_FOR_DISPLAY)];
-        for (int i = 0; i < images.length; i++) {
-            WordImage po = wordImages.get(i);
-            WordImageVo vo = BeanUtils.makeVo(po, WordImageVo.class,
-                    new String[] { "author", "createTime", "updateTime", "word.^id,spell" });
-            UserVo author = new UserVo();
-            author.setDisplayNickName(po.getAuthor().getDisplayNickName());
-            author.setUserName(po.getAuthor().getUserName());
-            author.setId(po.getAuthor().getId());
-            vo.setAuthor(author);
-
-            images[i] = vo;
-        }
-
-        return images;
-    }
-
-    public void addWordImage(WordImage wordImage, User user) throws IllegalArgumentException, IllegalAccessException {
+    public Result<WordImage> addWordImage(WordImage wordImage, User user) throws IllegalArgumentException, IllegalAccessException {
         // 如果单词的配图已经大于等于上限，则把最后一个图片删掉（末位淘汰制）
         Word word = wordImage.getWord();
         if (word == null) {
@@ -164,32 +123,85 @@ public class WordImageBo extends BaseBo<WordImage> {
             throw new IllegalArgumentException("wordImage.word.id 不能为空");
         }
 
-        // 必须按 wordId 精确查询，避免误查全表导致误删
+        // 检查配图数量限制：如果已经有两张图片了，就不允许再添加配图了
         List<WordImage> images = listImagesByWordId(word.getId());
-        sortWordImages(images);
-
-        while (images.size() >= MAX_IMAGES_PER_WORD) {
-            // 删除数据库记录
-            WordImage lastImage = images.remove(images.size() - 1);
-            Result<Object> del = deleteWordImage(lastImage.getId(), user, false);
-            if (del == null || !del.isSuccess()) {
-                // 说明：如果 event 表存在外键约束（event.wordImageId -> word_image.id），
-                // event 清理失败会导致图片无法删除。此时不再强行淘汰，避免上传失败。
-                log.warn("末位淘汰删除失败，临时放宽配图数量限制。wordId={}, imageId={}, msg={}",
-                        word.getId(), lastImage.getId(), del != null ? del.getMsg() : "null");
-                break;
-            }
+        if (images.size() >= MAX_IMAGES_PER_WORD) {
+            return Result.fail("每个单词最多只能有 " + MAX_IMAGES_PER_WORD + " 张配图");
         }
 
-        // 添加新的单词图片
+        // 设置初始状态
+        if (!user.getIsAdmin() && !user.getIsSuperAdmin()) {
+            wordImage.setStatus(STATUS_PENDING);
+        } else {
+            wordImage.setStatus(STATUS_APPROVED); // 管理员上传直接通过
+        }
+
+        // 入库
         createEntity(wordImage);
 
-        // 记录系统数据日志（新增配图）
+        // 记录系统数据日志（初始状态）
         sysDbLogBo.logOperation("INSERT", "word_image", wordImage.getId(),
                 toJsonForLog(wordImage));
 
         Event event = new Event(EventType.NewWordImage, user, wordImage);
         eventBo.createEntity(event);
+
+        // 如果是普通用户上传，启动异步审核
+        if (STATUS_PENDING.equals(wordImage.getStatus())) {
+            self.asyncReviewImage(wordImage.getId(), word.getSpell(), wordImage.getImageFile());
+        }
+
+        return Result.success(wordImage);
+    }
+
+    /**
+     * 异步审核图片逻辑
+     */
+    @org.springframework.scheduling.annotation.Async
+    public void asyncReviewImage(String wordImageId, String spell, String imageFile) {
+        log.info("📢 开始异步审核图片: imageId={}, word={}", wordImageId, spell);
+        try {
+            WordImage image = findById(wordImageId);
+            if (image == null) return;
+
+            String absolutePath = sysParamUtil.getImageBaseDir() + "/word/" + imageFile;
+            String aiResultJson = aiBo.reviewImage(spell, absolutePath);
+
+            // 解析结果
+            if (aiResultJson.contains("DELETE")) {
+                log.info("🚫 图片审核失败，执行删除: imageId={}, word={}, result={}", wordImageId, spell, aiResultJson);
+                // 删除文件
+                File file = new File(absolutePath);
+                if (file.exists()) {
+                    file.delete();
+                }
+
+                // 从 DB 删除 (不抛出异常以防回滚)
+                deleteEntity(image);
+
+                // 书写删除日志给客户端同步
+                sysDbLogBo.logOperation("DELETE", "word_image", wordImageId, null);
+            } else {
+                log.info("✅ 图片审核通过: imageId={}, word={}", wordImageId, spell);
+                image.setStatus(STATUS_APPROVED);
+                updateEntity(image);
+
+                // 更新日志，提醒客户端该图片已变为 APPROVED（其实目前客户端只展示已通过的，所以这里的 update 也很关键）
+                sysDbLogBo.logOperation("UPDATE", "word_image", wordImageId, toJsonForLog(image));
+            }
+        } catch (Exception e) {
+            log.error("❌ 异步审核图片过程发生异常: " + wordImageId, e);
+            // 容错：如果审核过程挂了，保险起见暂时将其设为 APPROVED 或者继续保持 PENDING 等待下次补审
+            // 考虑用户体验，这里设为 APPROVED
+            try {
+                WordImage image = findById(wordImageId);
+                if (image != null) {
+                    image.setStatus(STATUS_APPROVED);
+                    updateEntity(image);
+                    sysDbLogBo.logOperation("UPDATE", "word_image", wordImageId, toJsonForLog(image));
+                }
+            } catch (Exception ignore) {}
+        }
     }
 
     public Result<Object> deleteWordImage(String imageId, User user, boolean checkPermission) {
@@ -249,13 +261,15 @@ public class WordImageBo extends BaseBo<WordImage> {
             String updateTimeStr = image.getUpdateTime() != null ? isoFormat.format(image.getUpdateTime()) : "";
 
             return String.format(
-                    "{\"id\":\"%s\",\"wordId\":\"%s\",\"imageFile\":\"%s\",\"hand\":%d,\"foot\":%d,\"authorId\":\"%s\",\"createTime\":\"%s\",\"updateTime\":\"%s\"}",
+                    "{\"id\":\"%s\",\"wordId\":\"%s\",\"imageFile\":\"%s\",\"hand\":%d,\"foot\":%d,\"authorId\":\"%s\",\"status\":\"%s\",\"auditReason\":\"%s\",\"createTime\":\"%s\",\"updateTime\":\"%s\"}",
                     image.getId(),
                     image.getWord() != null ? image.getWord().getId() : "",
                     image.getImageFile(),
                     image.getHand(),
                     image.getFoot(),
                     image.getAuthor() != null ? image.getAuthor().getId() : "",
+                    image.getStatus() != null ? image.getStatus() : "",
+                    image.getAuditReason() != null ? image.getAuditReason() : "",
                     createTimeStr,
                     updateTimeStr);
         } catch (Exception e) {

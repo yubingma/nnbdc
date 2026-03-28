@@ -169,7 +169,11 @@ public class WordController {
         // 更新数据库
         Word word2 = wordBo.findById(wordId);
         WordImage wordImage = new WordImage(word2, fileName, 0, 0, user);
-        wordImageBo.addWordImage(wordImage, user);
+        Result<WordImage> addResult = wordImageBo.addWordImage(wordImage, user);
+
+        if (!addResult.isSuccess()) {
+            return Result.fail(addResult.getMsg());
+        }
 
         // 转换为DTO对象返回
         WordImageDto dto = new WordImageDto();
@@ -181,6 +185,7 @@ public class WordController {
         dto.setWordId(wordImage.getWord().getId());
         dto.setCreateTime(wordImage.getCreateTime());
         dto.setUpdateTime(wordImage.getUpdateTime());
+        dto.setStatus(wordImage.getStatus());
 
         return Result.success(dto);
     }

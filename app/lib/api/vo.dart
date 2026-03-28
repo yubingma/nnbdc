@@ -1149,8 +1149,10 @@ class WordImageVo {
   int hand;
   int foot;
   UserVo author;
+  String? status;
+  String? auditReason;
 
-  WordImageVo(this.id, this.imageFile, this.hand, this.foot, this.author);
+  WordImageVo(this.id, this.imageFile, this.hand, this.foot, this.author, {this.status, this.auditReason});
 
   factory WordImageVo.fromJson(Map<String, dynamic> json) => _$WordImageVoFromJson(json);
 

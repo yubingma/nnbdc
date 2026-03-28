@@ -323,6 +323,8 @@ class WordImages extends Table {
   TextColumn get authorId => text()();
 
   TextColumn get wordId => text()();
+  TextColumn get status => text().nullable()();
+  TextColumn get auditReason => text().nullable()();
 
   DateTimeColumn get createTime => dateTime()();
 

@@ -229,6 +229,13 @@ class PicSearchPageState extends State<PicSearchPage> {
                                     }
 
                                     if (imgBase64 != null) {
+                                      // 再次检查本地图片数量，防止在pic_search页面连续添加超出限制
+                                      final localImages = await MyDatabase.instance.wordImagesDao.getImagesByWordId(args.wordId);
+                                      if (localImages.length >= 2) {
+                                        ToastUtil.error('每个单词最多只能有 2 张配图');
+                                        return;
+                                      }
+
                                       final result = await Api.client.uploadWordImg(args.wordId, imgBase64, Global.getLoggedInUser()!.id);
                                       if (result.success) {
                                         ToastUtil.info('添加配图成功');

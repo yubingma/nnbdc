@@ -216,7 +216,7 @@ class MyDatabase extends _$MyDatabase {
   // you should bump this number whenever you change or add a table definition. Migrations
   // are covered later in this readme.
   @override
-  int get schemaVersion => 30;
+  int get schemaVersion => 31;
 
   @override
   MigrationStrategy get migration {
@@ -320,6 +320,9 @@ class MyDatabase extends _$MyDatabase {
           }
           if (from < 30) {
             await _migrateFromV29ToV30AddDomain(m);
+          }
+          if (from < 31) {
+            await _migrateFromV30ToV31(m);
           }
         } catch (e, stackTrace) {
           // 升级失败，记录错误日志
@@ -784,6 +787,18 @@ class MyDatabase extends _$MyDatabase {
         Global.logger.i('✅ 升级从 V29 到 V30 完成，添加 domain 字段');
       } catch (e, stackTrace) {
         Global.logger.e('升级从 V29 到 V30 失败: $e', error: e, stackTrace: stackTrace);
+      }
+    });
+  }
+
+  Future<void> _migrateFromV30ToV31(Migrator m) async {
+    await transaction(() async {
+      try {
+        await customStatement('ALTER TABLE word_images ADD COLUMN status TEXT');
+        await customStatement('ALTER TABLE word_images ADD COLUMN audit_reason TEXT');
+        Global.logger.i('✅ 升级从 V30 到 V31 完成，添加单词配图审核相关字段');
+      } catch (e, stackTrace) {
+        Global.logger.e('升级从 V30 到 V31 失败: $e', error: e, stackTrace: stackTrace);
       }
     });
   }

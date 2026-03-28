@@ -254,7 +254,16 @@ class WordBo {
 
       // 查询单词配图
       final images = await db.wordImagesDao.getImagesByWordId(localWord.id);
-      wordVo.images = images.map((i) => WordImageVo(i.id, i.imageFile, i.hand, i.foot, UserVo.c2(i.authorId))).toList();
+      wordVo.images = images
+          .where((i) {
+            final status = (i as dynamic).status;
+            final isApproved = status == 'APPROVED' || status == null;
+            final isPendingOfUser = status == 'PENDING' && i.authorId == Global.currentUserId;
+            return isApproved || isPendingOfUser;
+          })
+          .map((i) => WordImageVo(i.id, i.imageFile, i.hand, i.foot, UserVo.c2(i.authorId),
+              status: (i as dynamic).status, auditReason: (i as dynamic).auditReason))
+          .toList();
 
       // 查询词根解析数据
       await _loadCigenWordLinks(wordVo);
@@ -414,7 +423,16 @@ class WordBo {
 
       // 查询单词配图
       final images = await db.wordImagesDao.getImagesByWordId(localWord.id);
-      wordVo.images = images.map((i) => WordImageVo(i.id, i.imageFile, i.hand, i.foot, UserVo.c2(i.authorId))).toList();
+      wordVo.images = images
+          .where((i) {
+            final status = (i as dynamic).status;
+            final isApproved = status == 'APPROVED' || status == null;
+            final isPendingOfUser = status == 'PENDING' && i.authorId == Global.currentUserId;
+            return isApproved || isPendingOfUser;
+          })
+          .map((i) => WordImageVo(i.id, i.imageFile, i.hand, i.foot, UserVo.c2(i.authorId),
+              status: (i as dynamic).status, auditReason: (i as dynamic).auditReason))
+          .toList();
 
       bool isInMySelectedDicts = false;
       if (currentUser != null && currentUser.id != null) {

@@ -12,8 +12,26 @@ public class WordImageDto implements Dto {
     private Integer foot;
 
     private String authorId;
+    private String status;
+    private String auditReason;
     private Date createTime;
     private Date updateTime;
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public String getAuditReason() {
+        return auditReason;
+    }
+
+    public void setAuditReason(String auditReason) {
+        this.auditReason = auditReason;
+    }
 
     public String getId() {
         return id;

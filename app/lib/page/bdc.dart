@@ -5883,7 +5883,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                     ],
                   ),
                 // 配图按钮
-                if (_isEditMode)
+                if (_isEditMode && (_currentGetWordResult?.learningWord?.word.images?.length ?? 0) < 2)
                   InkWell(
                     child: Container(
                       margin: const EdgeInsets.fromLTRB(0, 16, 0, 0),

@@ -9,7 +9,25 @@ public class WordImageVo extends UuidVo {
     private Integer foot;
 
     private UserVo author;
+    private String status;
+    private String auditReason;
 
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public String getAuditReason() {
+        return auditReason;
+    }
+
+    public void setAuditReason(String auditReason) {
+        this.auditReason = auditReason;
+    }
 
     public String getImageFile() {
         return imageFile;
