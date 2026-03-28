@@ -189,22 +189,31 @@ class _MemoryCloudPageState extends State<MemoryCloudPage> with TickerProviderSt
           return Stack(
             children: bands.map((band) {
               final startX = (band['start'] as double) * width;
+              final endX = (band['end'] as double) * width;
+              final bandWidth = endX - startX;
+
               return Positioned(
-                left: startX + 12,
-                top: 2, // 将标签居中于顶部的 15px (1个空行)
-                child: Text(
-                  band['label'] as String,
-                  style: TextStyle(
-                    color: (band['color'] as Color).withOpacity(isDarkMode ? 0.8 : 0.9),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w900,
-                    fontFamily: 'NotoSansSC',
-                    shadows: [
-                      Shadow(
-                        color: isDarkMode ? Colors.black.withOpacity(0.5) : Colors.white.withOpacity(0.5),
-                        blurRadius: 4,
-                      ),
-                    ],
+                left: startX,
+                width: bandWidth,
+                height: 15.0, // 对应顶部第 -1 天的条带高度
+                top: 0,
+                child: Center(
+                  child: Text(
+
+                    band['label'] as String,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: (band['color'] as Color).withOpacity(isDarkMode ? 0.8 : 0.9),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w900,
+                      fontFamily: 'NotoSansSC',
+                      shadows: [
+                        Shadow(
+                          color: isDarkMode ? Colors.black.withOpacity(0.5) : Colors.white.withOpacity(0.5),
+                          blurRadius: 4,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               );
@@ -214,6 +223,7 @@ class _MemoryCloudPageState extends State<MemoryCloudPage> with TickerProviderSt
       ),
     );
   }
+
 
 
 
