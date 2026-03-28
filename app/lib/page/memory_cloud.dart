@@ -105,29 +105,34 @@ class _MemoryCloudPageState extends State<MemoryCloudPage> with TickerProviderSt
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    child: SingleChildScrollView(
-                      child: Stack(
-                        children: [
-                          AnimatedBuilder(
+                    child: Stack(
+                      children: [
+                        SingleChildScrollView(
+                          child: AnimatedBuilder(
                             animation: _animationController,
                             builder: (context, child) {
                               const double canvasHeight = 15.0 * 205; // 205 days * 15px/day
                               return CustomPaint(
-                                painter: CloudPainter(
-                                  points: _points,
-                                  mode: _currentMode,
-                                  progress: _animationController.value,
-                                  isDarkMode: isDarkMode,
-                                ),
+                                  painter: CloudPainter(
+                                    points: _points,
+                                    mode: _currentMode,
+                                    progress: _animationController.value,
+                                    isDarkMode: isDarkMode,
+                                    bands: _getBandsForCurrentMode(),
+                                  ),
+
                                 size: const Size(double.infinity, canvasHeight),
                               );
                             },
                           ),
-                        ],
-                      ),
+                        ),
+                        // 浮动 X 轴标签
+                        _buildFloatingXAxisLabels(isDarkMode),
+                      ],
                     ),
                   ),
                 ),
+
 
                 _buildLegend(isDarkMode),
               ],
@@ -136,7 +141,71 @@ class _MemoryCloudPageState extends State<MemoryCloudPage> with TickerProviderSt
   }
 
 
+  Widget _buildFloatingXAxisLabels(bool isDarkMode) {
+    final bands = _getBandsForCurrentMode();
+    if (bands.isEmpty) return const SizedBox.shrink();
+
+    return IgnorePointer(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          double width = constraints.maxWidth;
+          return Stack(
+            children: bands.map((band) {
+              final startX = (band['start'] as double) * width;
+              return Positioned(
+                left: startX + 12,
+                top: 8,
+                child: Text(
+                  band['label'] as String,
+                  style: TextStyle(
+                    color: (band['color'] as Color).withOpacity(isDarkMode ? 0.8 : 0.9),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w900,
+                    fontFamily: 'NotoSansSC',
+                    shadows: [
+                      Shadow(
+                        color: isDarkMode ? Colors.black.withOpacity(0.5) : Colors.white.withOpacity(0.5),
+                        blurRadius: 4,
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }).toList(),
+          );
+        },
+      ),
+    );
+  }
+
+  List<Map<String, dynamic>> _getBandsForCurrentMode() {
+    switch (_currentMode) {
+      case XAxisMode.stability:
+        return [
+          {'label': '不牢固', 'color': Colors.red, 'start': 0.0, 'end': 0.15},
+          {'label': '起步中', 'color': Colors.orange, 'start': 0.15, 'end': 0.4},
+          {'label': '已入门', 'color': Colors.amber, 'start': 0.4, 'end': 0.7},
+          {'label': '很稳固', 'color': Colors.green, 'start': 0.7, 'end': 1.0},
+        ];
+      case XAxisMode.difficulty:
+        return [
+          {'label': '送分题', 'color': Colors.green, 'start': 0.0, 'end': 0.3},
+          {'label': '普通', 'color': Colors.blue, 'start': 0.3, 'end': 0.7},
+          {'label': '硬骨头', 'color': Colors.red, 'start': 0.7, 'end': 1.0},
+        ];
+      case XAxisMode.popularity:
+        return [
+          {'label': '极罕见', 'color': Colors.blueGrey, 'start': 0.0, 'end': 0.25},
+          {'label': '常用词', 'color': Colors.blue, 'start': 0.25, 'end': 0.65},
+          {'label': '高频词', 'color': Colors.teal, 'start': 0.65, 'end': 1.0},
+        ];
+      case XAxisMode.category:
+        return [];
+    }
+  }
+
   Widget _buildModeSelector(bool isDarkMode) {
+
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: SingleChildScrollView(
@@ -247,12 +316,14 @@ class CloudPainter extends CustomPainter {
   final XAxisMode mode;
   final double progress;
   final bool isDarkMode;
+  final List<Map<String, dynamic>> bands;
 
   CloudPainter({
     required this.points,
     required this.mode,
     required this.progress,
     required this.isDarkMode,
+    required this.bands,
   });
 
   @override
@@ -300,36 +371,6 @@ class CloudPainter extends CustomPainter {
   }
 
   void _drawBackgroundBands(Canvas canvas, Size size) {
-    final List<Map<String, dynamic>> bands;
-
-    switch (mode) {
-      case XAxisMode.stability:
-        bands = [
-          {'label': '不牢固', 'color': Colors.red, 'end': 0.15},
-          {'label': '起步中', 'color': Colors.orange, 'end': 0.4},
-          {'label': '已入门', 'color': Colors.amber, 'end': 0.7},
-          {'label': '很稳固', 'color': Colors.green, 'end': 1.0},
-        ];
-        break;
-      case XAxisMode.difficulty:
-        bands = [
-          {'label': '送分题', 'color': Colors.green, 'end': 0.3},
-          {'label': '普通', 'color': Colors.blue, 'end': 0.7},
-          {'label': '硬骨头', 'color': Colors.red, 'end': 1.0},
-        ];
-        break;
-      case XAxisMode.popularity:
-        bands = [
-          {'label': '极罕见', 'color': Colors.blueGrey, 'end': 0.25},
-          {'label': '常用词', 'color': Colors.blue, 'end': 0.65},
-          {'label': '高频词', 'color': Colors.teal, 'end': 1.0},
-        ];
-        break;
-      case XAxisMode.category:
-        bands = []; // 不画条带
-        break;
-    }
-
     double startX = 0;
     for (var band in bands) {
       double endX = (band['end'] as double) * size.width;
@@ -338,21 +379,6 @@ class CloudPainter extends CustomPainter {
         ..style = PaintingStyle.fill;
       
       canvas.drawRect(Rect.fromLTRB(startX, 0, endX, size.height), paint);
-
-      // Draw band label at the top with higher visibility
-      final textSpan = TextSpan(
-        text: band['label'],
-        style: TextStyle(
-          color: (band['color'] as Color).withOpacity(isDarkMode ? 0.7 : 0.8),
-          fontSize: 11,
-          fontWeight: FontWeight.w900,
-          fontFamily: 'NotoSansSC',
-        ),
-      );
-      final textPainter = TextPainter(text: textSpan, textDirection: TextDirection.ltr);
-      textPainter.layout();
-      textPainter.paint(canvas, Offset(startX + 12, 12));
-
       startX = endX;
     }
 
@@ -387,6 +413,7 @@ class CloudPainter extends CustomPainter {
       textPainter.paint(canvas, Offset(2, y - 12));
     }
   }
+
 
 
 
