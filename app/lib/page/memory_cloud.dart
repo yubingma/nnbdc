@@ -69,9 +69,11 @@ class _MemoryCloudPageState extends State<MemoryCloudPage> with TickerProviderSt
           state: (item['state'] as int?) ?? 0,
           category: item['category'] as String,
           yValue: daysDiff.toDouble(),
-          jitterX: (wordRandom.nextDouble() - 0.5) * 0.06, // 基于单词ID的确定性抖动
+          jitterX: (wordRandom.nextDouble() - 0.1) * 0.24, // 散开优化：偏移中心且增大范围，确保填满单元格
           jitterY: (wordRandom.nextDouble() - 0.5) * 0.8,
         );
+
+
 
       }).toList();
       _isLoading = false;
