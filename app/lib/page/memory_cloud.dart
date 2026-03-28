@@ -142,7 +142,9 @@ class _MemoryCloudPageState extends State<MemoryCloudPage> with TickerProviderSt
                               child: AnimatedBuilder(
                                 animation: _animationController,
                                 builder: (context, child) {
-                                  const double canvasHeight = 15.0 * 205; // 205 days * 15px/day
+                                  const double maxY = 200.0;
+                                  const double minY = -1.0;
+                                  const double canvasHeight = 15.0 * (maxY - minY); // 201 days * 15px/day
                                   return CustomPaint(
                                     painter: CloudPainter(
                                       points: _points,
@@ -154,6 +156,8 @@ class _MemoryCloudPageState extends State<MemoryCloudPage> with TickerProviderSt
                                     size: Size(width, canvasHeight),
                                   );
                                 },
+
+
                               ),
                             ),
                             // 浮动 X 轴标签
@@ -187,13 +191,14 @@ class _MemoryCloudPageState extends State<MemoryCloudPage> with TickerProviderSt
               final startX = (band['start'] as double) * width;
               return Positioned(
                 left: startX + 12,
-                top: 8,
+                top: 8, // 垂直居中于顶部的 30px (2个空行)
                 child: Text(
                   band['label'] as String,
                   style: TextStyle(
                     color: (band['color'] as Color).withOpacity(isDarkMode ? 0.8 : 0.9),
-                    fontSize: 11,
+                    fontSize: 12,
                     fontWeight: FontWeight.w900,
+                    letterSpacing: 1.2,
                     fontFamily: 'NotoSansSC',
                     shadows: [
                       Shadow(
@@ -210,6 +215,7 @@ class _MemoryCloudPageState extends State<MemoryCloudPage> with TickerProviderSt
       ),
     );
   }
+
 
 
 
@@ -417,7 +423,8 @@ class CloudPainter extends CustomPainter {
     if (points.isEmpty) return;
 
     const double maxY = 200.0;
-    const double minY = -5.0;
+    const double minY = -2.0;
+
 
     final dotPaint = Paint()..style = PaintingStyle.fill;
     for (var point in points) {
@@ -465,7 +472,7 @@ class CloudPainter extends CustomPainter {
 
   void _drawBackgroundBands(Canvas canvas, Size size) {
     const double maxY = 200.0;
-    const double minY = -5.0;
+    const double minY = -2.0;
     const double totalDays = maxY - minY;
 
     // 1. 画时间轴斑马线效果 (最底层)
@@ -505,9 +512,8 @@ class CloudPainter extends CustomPainter {
       canvas.drawLine(Offset(0, yPos), Offset(size.width, yPos), linePaint);
 
       // 在绘图区内侧绘制标签
-      if (isMajor) {
-        String label = isToday ? "今天" : (day < 0 ? "超期" : "$day天");
-        if (day == -5) label = "-5d";
+      if (isMajor || day < 0) {
+        String label = isToday ? "今天" : (day < 0 ? "${day}d" : "$day天");
 
         final textPainter = TextPainter(
           text: TextSpan(
@@ -526,6 +532,7 @@ class CloudPainter extends CustomPainter {
       }
     }
   }
+
 
 
 
