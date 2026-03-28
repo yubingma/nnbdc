@@ -18,6 +18,7 @@ import 'package:provider/provider.dart';
 import 'package:nnbdc/services/throttled_sync_service.dart';
 import 'package:nnbdc/util/subscription_util.dart';
 import 'package:nnbdc/widget/dict_download_dialog.dart';
+import 'package:nnbdc/constants.dart';
 
 import 'bdc.dart';
 import 'package:nnbdc/page/word_list/today_words.dart';
@@ -230,10 +231,22 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
       // Calculate progress
       final activeStepsCount = selectedSteps().length;
       final todayWords = await LearningService.getTodayLearningWordsFromDb(user!.id!);
+      final db = MyDatabase.instance;
+      final masteredWordIds = (await db.masteredWordsDao.getMasteredWordsForUser(user!.id!))
+          .map((e) => e.wordId)
+          .toSet();
+
       _totalStepCount = (todayWords.length * activeStepsCount).toInt();
       _completedStepCount = 0;
       for (final word in todayWords) {
-        _completedStepCount += (word.todayLearnedTimes > activeStepsCount) ? activeStepsCount : word.todayLearnedTimes;
+        final bool isMastered = masteredWordIds.contains(word.wordId) || 
+            (word.stability != null && word.stability! >= Constants.graduationStability);
+            
+        if (isMastered) {
+          _completedStepCount += activeStepsCount;
+        } else {
+          _completedStepCount += (word.todayLearnedTimes > activeStepsCount) ? activeStepsCount : word.todayLearnedTimes;
+        }
       }
       Global.logger.d('Progress calculated: $_completedStepCount / $_totalStepCount');
 
@@ -496,7 +509,6 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
           if (prepareResult != null &&
               prepareResult!.success &&
               (todayWordCount ?? 0) < (user?.effectiveWordsPerDay ?? 20) &&
-              !(user?.todayStudyStarted ?? false) &&
               !_hasTriedSupplement)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -676,7 +688,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
   Widget renderStartButton() {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
 
-    if (hasDakaToday) {
+    if (hasDakaToday && _totalStepCount > 0 && _completedStepCount >= _totalStepCount) {
       return Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 18),

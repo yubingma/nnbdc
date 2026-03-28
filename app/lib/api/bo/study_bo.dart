@@ -316,7 +316,6 @@ class StudyBo {
             ),
             true);
       } else {
-        Global.logger.d('创建新的打卡记录');
         // 创建新的打卡记录
         final daka = Daka(
           userId: user.id,
@@ -326,6 +325,13 @@ class StudyBo {
           updateTime: now,
         );
         await db.dakasDao.saveDaka(daka, true);
+
+        // 给用户一次掷骰子机会 (仅限每日首次打卡)
+        await db.usersDao.saveUser(
+            user.copyWith(
+              throwDiceChance: user.throwDiceChance + 1,
+            ),
+            true);
       }
 
       // 记录打卡操作
@@ -337,13 +343,6 @@ class StudyBo {
             operTime: now,
             createTime: now,
             updateTime: now,
-          ),
-          true);
-
-      // 给用户一次掷骰子机会
-      await db.usersDao.saveUser(
-          user.copyWith(
-            throwDiceChance: user.throwDiceChance + 1,
           ),
           true);
 
