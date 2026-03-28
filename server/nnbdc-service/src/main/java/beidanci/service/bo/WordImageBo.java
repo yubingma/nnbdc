@@ -52,6 +52,7 @@ public class WordImageBo extends BaseBo<WordImage> {
     AiBo aiBo;
 
     @Autowired
+    @org.springframework.context.annotation.Lazy
     private WordImageBo self; // Self-injection for @Async proxying
 
     @PostConstruct

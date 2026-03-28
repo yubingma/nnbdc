@@ -53,6 +53,7 @@ public class DictBo extends BaseBo<Dict> {
     LearningDictBo learningDictBo;
 
     @Autowired
+    @org.springframework.context.annotation.Lazy
     DictBo dictBo;
 
     @Autowired
