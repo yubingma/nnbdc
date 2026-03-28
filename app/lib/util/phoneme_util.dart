@@ -156,7 +156,7 @@ class PhonemeUtil {
     final wordDiff = (aWords - bWords).abs();
     if (wordDiff > 0) {
       final oldScore = finalScore;
-      finalScore -= wordDiff * 15;
+      finalScore -= wordDiff * 10;
       if (finalScore < 0) finalScore = 0;
       Global.logger.d('===== Phonetic compare (word penalty): reduced score from $oldScore to $finalScore because wordDiff is $wordDiff');
     }
@@ -326,6 +326,11 @@ class PhonemeUtil {
       {"TH", "DH"},
       {"S", "@"}, // 某些情况下元音和擦音混淆
       {"M", "N"},
+      {"IH", "Y"}, // 处理 Y 和 I 的混淆 (比如 ye vs in/i)
+      {"IY", "Y"},
+      {"Y", "@"}, // 半元音 Y 和普通元音 @ 的相似性
+      {"ER", "@"}, // R-colored vowel 跟普通元音混淆
+      {"UW", "W"},
     ];
 
     for (final group in confusionGroups) {
