@@ -921,9 +921,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       // 当前在"说"tab
       _firstMatchTime = null;
 
-      // 如果正在手写/拼写沉浸模式，或者已经答对正在等待跳转，则严禁启动语音识别提示
-      if (_showHandwritingBoard || _hasFinishedAnswering) {
-        Global.logger.d('BDC: 由于正处于拼写模式或已作答完成，严禁自动启动 ASR (showHandwriting=$_showHandwritingBoard, hasFinished=$_hasFinishedAnswering)');
+      // 如果正在手写/拼写沉浸模式，或者正在获取下一词，或者当前页面不是顶层路由（如已进入详情页），则严禁启动语音识别提示
+      if (_showHandwritingBoard || _isGettingNextWord || !(ModalRoute.of(context)?.isCurrent ?? true)) {
+        Global.logger.d('BDC: 由于正处于拼写模式、正在加载下一词或页面不在顶层，严禁自动启动 ASR (showHandwriting=$_showHandwritingBoard, isGettingNext=$_isGettingNextWord, isCurrent=${ModalRoute.of(context)?.isCurrent})');
         if (asr.state != AsrState.stopped && asr.state != AsrState.initialized) {
           asr.stopAsr();
         }
@@ -1130,10 +1130,10 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
   /// 启动ASR并播放提示音
   Future<void> _startAsrWithHint(AsrLanguage language) async {
-    // 严禁正在手写/沉浸拼写模式，或已经答对完成作答时开启 ASR 会话。
+    // 严禁正在手写/沉浸拼写模式，或者正在加载下一词时开启 ASR 会话。
     // 这防止了由键盘监听器或其他侧边回调引起的意外 ASR 提示音爆发。
-    if (_showHandwritingBoard || _hasFinishedAnswering) {
-      Global.logger.d('BDC: 由于正处于拼写沉浸模式或已作答完成，取消 ASR 启动请求 (showHandwriting=$_showHandwritingBoard, hasFinished=$_hasFinishedAnswering)');
+    if (_showHandwritingBoard || _isGettingNextWord) {
+      Global.logger.d('BDC: 由于正处于拼写沉浸模式或正在切换单词，取消 ASR 启动请求 (showHandwriting=$_showHandwritingBoard, isGettingNext=$_isGettingNextWord)');
       return;
     }
 
@@ -1241,24 +1241,24 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
             // 中→英模式：结合拼写相似度和音素相似度的智能选择
             final result = await AsrUtil.selectBestCandidateWithPhonemeAndScore(
                 candidateStrings, _word!.spell);
-            if (!_hasFinishedAnswering || _lastFsrsRating == FsrsRating.again) _currentScore = result.score;
+            _currentScore = result.score;
             processedResult =
                 AsrUtil.preprocessEnglish(result.text, _word!.spell);
             Global.logger.d(
                 '~~~~~ASR: Selected & Preprocessed: "$processedResult" (score: ${result.score})');
           } else {
             processedResult = bestCandidate;
-            if (!_hasFinishedAnswering || _lastFsrsRating == FsrsRating.again) _currentScore = null;
+            _currentScore = null;
           }
         } else if (_studyStep == StudyStep.en2Ch.json) {
           // 英→中模式：UI 显示最佳候选，但背后匹配逻辑会遍历所有 _currentAsrCandidates
           processedResult = AsrUtil.preprocess(bestCandidate);
-          if (!_hasFinishedAnswering || _lastFsrsRating == FsrsRating.again) _currentScore = null;
+          _currentScore = null;
           Global.logger.d(
               '~~~~~ASR [en2Ch]: Stored ${candidateStrings.length} candidates, showing best: $processedResult');
         } else {
           processedResult = bestCandidate;
-          if (!_hasFinishedAnswering || _lastFsrsRating == FsrsRating.again) _currentScore = null;
+          _currentScore = null;
         }
       } else {
         // 单个结果处理
@@ -1269,10 +1269,10 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
             final result = await AsrUtil.selectBestCandidateWithPhonemeAndScore(
                 [pre], _word!.spell);
             processedResult = result.text;
-            if (!_hasFinishedAnswering || _lastFsrsRating == FsrsRating.again) _currentScore = result.score;
+            _currentScore = result.score;
           } else {
             processedResult = event;
-            if (!_hasFinishedAnswering || _lastFsrsRating == FsrsRating.again) _currentScore = null;
+            _currentScore = null;
           }
         } else {
           processedResult = AsrUtil.preprocess(event);
@@ -1286,7 +1286,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     }
 
     if (mounted) {
-      if ((!_hasFinishedAnswering || _lastFsrsRating == FsrsRating.again) && oldScore != _currentScore) {
+      if (oldScore != _currentScore) {
         setState(() {}); // 触发 UI 刷新以实时显示最新的发音评分（即使没通过也能让用户看到反馈分数变化）
       }
       checkAsrResult(asrInput: processedResult);
