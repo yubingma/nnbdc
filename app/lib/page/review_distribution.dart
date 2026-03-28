@@ -115,10 +115,17 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
       backgroundColor: isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
       appBar: AppBar(
         title: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('复习分布图', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+            const Flexible(
+              child: Text(
+                '复习分布图',
+                style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
             if (!_isLoading) ...[
-              const SizedBox(width: 8),
+              const SizedBox(width: 4),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
