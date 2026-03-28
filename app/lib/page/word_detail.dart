@@ -925,7 +925,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                           
                           // 只有当用户往下看内容（上滑手指）时，收起抽屉
                           if (notification.dragDetails != null && notification.scrollDelta != null) {
-                            if (notification.scrollDelta! > 10.0 && _isTopDrawerExpanded) {
+                            if (notification.scrollDelta! > 0.0 && _isTopDrawerExpanded) {
                               setState(() { _isTopDrawerExpanded = false; });
                             }
                           }
