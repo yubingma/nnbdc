@@ -13,6 +13,7 @@ import 'package:nnbdc/util/error_handler.dart';
 import 'package:nnbdc/util/level_util.dart';
 
 import 'package:nnbdc/util/utils.dart';
+import 'package:nnbdc/constants.dart';
 
 import '../../services/throttled_sync_service.dart';
 
@@ -644,6 +645,84 @@ class WordBo {
     final total = countResult.read(countAll()) ?? 0;
     List<LearningWordVo> learningWordVos = [];
     for (final lw in learningWords) {
+      final word = await db.wordsDao.getWordById(lw.wordId);
+      if (word != null) {
+        final userVo = UserVo.c2(userId);
+        userVo.level = LevelUtil.getLevelVoByWordCount(user.masteredWordsCount);
+        final wordVo = WordVo.c2(word.spell)
+          ..id = word.id
+          ..shortDesc = word.shortDesc
+          ..longDesc = word.longDesc
+          ..pronounce = word.pronounce
+          ..americaPronounce = word.americaPronounce
+          ..britishPronounce = word.britishPronounce
+          ..popularity = word.popularity;
+        // 使用 getWordMeaningItems 方法进行词书过滤
+        final meaningItems = await getWordMeaningItems(word.id, userId);
+        List<MeaningItemVo> meaningItemVos = [];
+        for (final mi in meaningItems) {
+          meaningItemVos.add(MeaningItemVo(mi.id, mi.ciXing, mi.meaning, null, null, null));
+        }
+        wordVo.meaningItems = meaningItemVos;
+        final learningWordVo = LearningWordVo(userVo, lw.addTime, lw.addDay, lw.lastLearningDate, lw.learningOrder, lw.learnedTimes, wordVo,
+            lw.batchId, lw.stability, lw.difficulty, lw.elapsedDays, lw.scheduledDays, lw.reps, lw.lapses, lw.state);
+        learningWordVos.add(learningWordVo);
+      }
+    }
+    final result = PagedResults<LearningWordVo>(total);
+    result.rows = learningWordVos;
+    return result;
+  }
+
+  Future<PagedResults<LearningWordVo>> getLearningWordsByBucketForAPage(int bucketKey, int fromIndex, int pageSize, String userId) async {
+    final db = MyDatabase.instance;
+    final user = await db.usersDao.getUserById(userId);
+    if (user == null) {
+      throw Exception('用户不存在');
+    }
+
+    final now = AppClock.now();
+    final nowDate = DateTime(now.year, now.month, now.day);
+
+    // 获取所有正在学习中的单词 (即：尚未毕业的候选人)
+    final allLearningWords = await (db.select(db.learningWords)
+          ..where((lw) => lw.userId.equals(userId) & (lw.stability.isNull() | lw.stability.isSmallerThanValue(Constants.graduationStability))))
+        .get();
+
+    List<LearningWord> bucketWords = [];
+    for (var word in allLearningWords) {
+      final lastDateRaw = word.lastLearningDate ?? now;
+      final scheduledDays = word.scheduledDays ?? 0;
+      final nextDateRaw = DateTime(lastDateRaw.year, lastDateRaw.month, lastDateRaw.day).add(Duration(days: scheduledDays));
+
+      final nextDate = DateTime(nextDateRaw.year, nextDateRaw.month, nextDateRaw.day);
+      final daysDiff = nextDate.difference(nowDate).inDays;
+
+      int key;
+      if (daysDiff >= 0) {
+        key = daysDiff;
+      } else {
+        int overdueDays = -daysDiff;
+        key = -((overdueDays + 9) ~/ 10 * 10);
+      }
+
+      if (key == bucketKey) {
+        bucketWords.add(word);
+      }
+    }
+
+    // 按上次学习日期排序
+    bucketWords.sort((a, b) {
+      final aDate = a.lastLearningDate ?? DateTime(2000);
+      final bDate = b.lastLearningDate ?? DateTime(2000);
+      return aDate.compareTo(bDate);
+    });
+
+    final total = bucketWords.length;
+    final pagedWords = bucketWords.skip(fromIndex).take(pageSize).toList();
+
+    List<LearningWordVo> learningWordVos = [];
+    for (final lw in pagedWords) {
       final word = await db.wordsDao.getWordById(lw.wordId);
       if (word != null) {
         final userVo = UserVo.c2(userId);
@@ -1739,5 +1818,15 @@ class WordBo {
   Future<List<MeaningItemVo>> getMeaningItemsForWord(String wordId, String userId) async {
     final items = await getWordMeaningItems(wordId, userId);
     return items.map((e) => MeaningItemVo(e.id, e.ciXing, e.meaning, null, null, null)).toList();
+  }
+
+  Future<Result<int>> getLearningWordInBucketOrder(String spell, int bucketKey, String userId) async {
+    final results = await getLearningWordsByBucketForAPage(bucketKey, 0, 100000, userId);
+    for (int i = 0; i < results.rows.length; i++) {
+       if (results.rows[i].word.spell == spell) {
+         return Result("SUCCESS", "获取成功", true)..data = i + 1;
+       }
+    }
+    return Result("ERROR", "未找到单词", false);
   }
 }

@@ -3,6 +3,7 @@ import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/theme/app_theme.dart';
 import 'package:nnbdc/util/app_clock.dart';
+import 'package:nnbdc/page/word_list/bucket_words.dart';
 
 class ReviewDistributionPage extends StatefulWidget {
   const ReviewDistributionPage({super.key});
@@ -164,60 +165,68 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
     );
   }
 
+  void _onBarTap(BarChartData data) {
+    toBucketWordsListPage(data.sortKey, data.label)?.then((_) => _loadData());
+  }
+
   Widget _buildBarRow(BarChartData data, bool isDarkMode) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 80,
-            child: Text(
-              data.label,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: data.isToday ? FontWeight.bold : FontWeight.normal,
-                color: data.isToday 
-                  ? AppTheme.primaryColor 
-                  : (data.isOverdue ? Colors.redAccent : (isDarkMode ? Colors.white70 : Colors.black54)),
+    return InkWell(
+      onTap: () => _onBarTap(data),
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 8.0),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 80,
+              child: Text(
+                data.label,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: data.isToday ? FontWeight.bold : FontWeight.normal,
+                  color: data.isToday 
+                    ? AppTheme.primaryColor 
+                    : (data.isOverdue ? Colors.redAccent : (isDarkMode ? Colors.white70 : Colors.black54)),
+                ),
               ),
             ),
-          ),
-          Expanded(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final maxWidth = constraints.maxWidth - 50; 
-                final barWidth = _maxCount == 0 ? 0.0 : (data.totalCount / _maxCount) * maxWidth;
-                
-                return Row(
-                  children: [
-                    Stack(
-                      alignment: Alignment.centerLeft,
-                      children: [
-                        Container(
-                          height: 30,
-                          width: maxWidth,
-                          decoration: BoxDecoration(
-                            color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.02),
+            Expanded(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final maxWidth = constraints.maxWidth - 50; 
+                  final barWidth = _maxCount == 0 ? 0.0 : (data.totalCount / _maxCount) * maxWidth;
+                  
+                  return Row(
+                    children: [
+                      Stack(
+                        alignment: Alignment.centerLeft,
+                        children: [
+                          Container(
+                            height: 30,
+                            width: maxWidth,
+                            decoration: BoxDecoration(
+                              color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.02),
+                            ),
                           ),
-                        ),
-                        _buildSimpleBar(data, barWidth),
-                      ],
-                    ),
-                    const SizedBox(width: 10),
-                    Text(
-                      "${data.totalCount}",
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
-                        color: data.isToday ? AppTheme.primaryColor : (isDarkMode ? Colors.white60 : Colors.black54),
+                          _buildSimpleBar(data, barWidth),
+                        ],
                       ),
-                    ),
-                  ],
-                );
-              },
+                      const SizedBox(width: 10),
+                      Text(
+                        "${data.totalCount}",
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: data.isToday ? AppTheme.primaryColor : (isDarkMode ? Colors.white60 : Colors.black54),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

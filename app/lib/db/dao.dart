@@ -1148,7 +1148,7 @@ class LearningWordsDao extends DatabaseAccessor<MyDatabase> with _$LearningWords
       leftOuterJoin(db.cigenWordLinks, db.cigenWordLinks.wordId.equalsExp(learningWords.wordId)),
       leftOuterJoin(db.cigens, db.cigens.id.equalsExp(db.cigenWordLinks.cigenId)),
     ])
-      ..where(learningWords.userId.equals(userId));
+      ..where(learningWords.userId.equals(userId) & (learningWords.stability.isNull() | learningWords.stability.isSmallerThanValue(Constants.graduationStability)));
 
     final results = await query.get();
     return results.map((row) {
