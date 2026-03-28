@@ -4626,7 +4626,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
       // 添加行间距（除了最后一行）
       if (i < lines.length - 1) {
-        widgets.add(const SizedBox(width: 16));
+        widgets.add(const SizedBox(width: 8));
       }
     }
 
@@ -5812,7 +5812,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                                               .length -
                                           1
                                   ? 0
-                                  : 16.0),
+                                  : 4.0),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             crossAxisAlignment: CrossAxisAlignment.center,
