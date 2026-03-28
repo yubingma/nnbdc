@@ -21,12 +21,21 @@ void main() {
     expect(match, isTrue);
   });
 
-  test('Test fuzzyChineseContainsiong - iu', () {
+  test('Test fuzzyChineseContains - phonetic similarity', () {
     String asrResult = "无穷";
     String meaning = "无球"; // Not a real word, but testing the phonetic match
     
     bool match = fuzzyChineseContains(asrResult, meaning);
     debugPrint('asrResult: $asrResult, meaning: $meaning, match: $match');
     expect(match, isTrue);
+  });
+
+  test('Test fuzzyChineseContains - dissimilar phrases (non-match)', () {
+    String asrResult = "有意义的";
+    String meaning = "意识到的";
+    
+    bool match = fuzzyChineseContains(asrResult, meaning);
+    debugPrint('asrResult: $asrResult, meaning: $meaning, match: $match');
+    expect(match, isFalse);
   });
 }
