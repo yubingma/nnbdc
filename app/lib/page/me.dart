@@ -582,19 +582,53 @@ class _MePageState extends State<MePage> {
               // 将dictName处理为无后缀的短名称
               String shortName = getShortName(existing.name);
 
-              dictsToDownload.add(DictVo(
-                id: learningDict.dictId,
-                name: existing.name,
-                shortName: shortName,
-                owner: null,
-                isShared: true,
-                isReady: true,
-                visible: true,
-                editable: existing.name == '生词本' || (existing.ownerId != Global.sysUserId),
-                dictWords: null,
-                wordCount: 0,
-                createTime: AppClock.now(),
-              ));
+              // 如果是衍生词书，确保其依赖的基础词书也被拉入下载列表（如果基础词书也没单词）
+              if (existing.baseDictId != null && existing.baseDictId!.isNotEmpty) {
+                bool baseHasWords = await db.dictWordsDao.hasDictWords(existing.baseDictId!);
+                if (!baseHasWords && !dictsToDownload.any((d) => d.id == existing.baseDictId)) {
+                  // 获取基础词书名称
+                  String baseDictName = '基础词书';
+                  try {
+                    final baseResult = await Api.client.getDictInfo(existing.baseDictId!);
+                    if (baseResult.success && baseResult.data?.name != null) {
+                      baseDictName = baseResult.data!.name;
+                    }
+                  } catch (e) {
+                    Global.logger.e("获取基础词书名称失败: $e");
+                  }
+
+                  dictsToDownload.add(DictVo(
+                    id: existing.baseDictId!,
+                    name: baseDictName,
+                    shortName: getShortName(baseDictName),
+                    owner: null,
+                    isShared: true,
+                    isReady: true,
+                    visible: true,
+                    editable: false,
+                    dictWords: null,
+                    wordCount: 0,
+                    createTime: AppClock.now(),
+                  ));
+                }
+              }
+
+              if (!dictsToDownload.any((d) => d.id == learningDict.dictId)) {
+                dictsToDownload.add(DictVo(
+                  id: learningDict.dictId,
+                  name: existing.name,
+                  shortName: shortName,
+                  owner: null,
+                  isShared: true,
+                  isReady: true,
+                  visible: true,
+                  editable: existing.name == '生词本' || (existing.ownerId != Global.sysUserId),
+                  dictWords: null,
+                  wordCount: 0,
+                  baseDictId: existing.baseDictId,
+                  createTime: AppClock.now(),
+                ));
+              }
             } else {
               Global.logger.i("系统词书已存在且包含单词，无需下载, 词书ID: ${learningDict.dictId}");
             }

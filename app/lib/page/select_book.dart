@@ -924,9 +924,11 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
       // 判断是用户词书还是系统词书，以确定API路径
       final currUserId = Global.getLoggedInUser()?.id ?? Global.currentUserId;
       String? ownerId = dict.owner?.id;
-      if (ownerId == null) {
+      String? baseDictId = dict.baseDictId;
+      if (ownerId == null || baseDictId == null) {
         final dictMeta = await MyDatabase.instance.dictsDao.findById(dictId);
-        ownerId = dictMeta?.ownerId;
+        ownerId ??= dictMeta?.ownerId;
+        baseDictId ??= dictMeta?.baseDictId;
       }
       final isUserDict = currUserId != null && ownerId == currUserId;
       final apiPath = isUserDict ? '/res/getUserDictResById.do' : '/res/getSysDictResById.do';
@@ -983,11 +985,11 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
           });
 
           // 自动在本地生成衍生版节点（基于原词书生成临时的 DictWord 记录但不上传同步）
-          if (dict.baseDictId != null && dict.baseDictId!.isNotEmpty) {
+          if (baseDictId != null && baseDictId.isNotEmpty) {
             final db = MyDatabase.instance;
-            final baseDictDb = await db.dictsDao.findById(dict.baseDictId!);
+            final baseDictDb = await db.dictsDao.findById(baseDictId);
             if (baseDictDb != null) {
-              Global.logger.i('📥 Web端本地动态生成衍生版词书节点: ${dict.id}');
+              Global.logger.i('📥 Web端本地动态生成衍生版词书节点: ${dict.id}, baseDictId: $baseDictId');
               await WordBo().generateShuffledDictLocally(dict.id, baseDictDb.id);
             }
           }
@@ -1111,11 +1113,11 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
         }
 
         // 自动在本地生成衍生版节点（基于原词书生成临时的 DictWord 记录但不上传同步）
-        if (dict.baseDictId != null && dict.baseDictId!.isNotEmpty) {
+        if (baseDictId != null && baseDictId.isNotEmpty) {
           final db = MyDatabase.instance;
-          final baseDictDb = await db.dictsDao.findById(dict.baseDictId!);
+          final baseDictDb = await db.dictsDao.findById(baseDictId);
           if (baseDictDb != null) {
-            Global.logger.i('📥 本地动态生成衍生版词书节点: ${dict.id}');
+            Global.logger.i('📥 本地动态生成衍生版词书节点: ${dict.id}, baseDictId: $baseDictId');
             await WordBo().generateShuffledDictLocally(dict.id, baseDictDb.id);
           }
         }

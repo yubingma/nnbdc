@@ -179,7 +179,16 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
           if (existing == null) {
             dictsToDownload.add(DictVo.c2(ld.dictId));
           } else if (existing.ownerId == "15118" && !(await db.dictWordsDao.hasDictWords(ld.dictId))) {
-            dictsToDownload.add(DictVo.c2(ld.dictId));
+            // 如果是衍生词书，确保其依赖的基础词书也被拉入下载列表（如果基础词书也没单词）
+            if (existing.baseDictId != null && existing.baseDictId!.isNotEmpty) {
+              bool baseHasWords = await db.dictWordsDao.hasDictWords(existing.baseDictId!);
+              if (!baseHasWords && !dictsToDownload.any((d) => d.id == existing.baseDictId)) {
+                dictsToDownload.add(DictVo.c2(existing.baseDictId!));
+              }
+            }
+            if (!dictsToDownload.any((d) => d.id == ld.dictId)) {
+              dictsToDownload.add(DictVo.c2(ld.dictId));
+            }
           }
         }
 
