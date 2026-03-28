@@ -208,7 +208,6 @@ class _MePageState extends State<MePage> {
           ToastUtil.error('图片文件过大，请选择较小的图片');
           return;
         }
-        ToastUtil.info('正在上传头像...');
         // 使用专用的 uploadImg 接口上传图片 (FormData 方式，永久解决 Retrofit 生成代码缺少文件名的问题)
         final formData = FormData.fromMap({
           'file': MultipartFile.fromBytes(bytes, filename: pickedFile.name),
@@ -236,7 +235,6 @@ class _MePageState extends State<MePage> {
               loggedInUser = updatedUserInfo;
             });
 
-            ToastUtil.success('头像更新成功');
             // 触发同步
             ThrottledDbSyncService().requestSync();
           }
