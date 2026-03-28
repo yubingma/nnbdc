@@ -49,6 +49,7 @@ class _MemoryCloudPageState extends State<MemoryCloudPage> with TickerProviderSt
     final data = await db.learningWordsDao.getLearningWordsForCloud(userId);
     final now = AppClock.now();
 
+
     setState(() {
       _points = data.map((item) {
         final lastDate = item['lastLearningDate'] as DateTime? ?? now;
@@ -56,8 +57,11 @@ class _MemoryCloudPageState extends State<MemoryCloudPage> with TickerProviderSt
         final nextDate = lastDate.add(Duration(days: scheduledDays));
         final daysDiff = nextDate.difference(now).inDays;
 
+        final wordId = (item['word'] as String);
+        final wordRandom = Random(wordId.hashCode);
+
         return CloudPoint(
-          word: item['word'] as String,
+          word: wordId,
           stability: (item['stability'] as double?) ?? 0.0,
           difficulty: (item['difficulty'] as double?) ?? 5.0,
           popularity: (item['popularity'] as int?) ?? 0,
@@ -65,10 +69,14 @@ class _MemoryCloudPageState extends State<MemoryCloudPage> with TickerProviderSt
           state: (item['state'] as int?) ?? 0,
           category: item['category'] as String,
           yValue: daysDiff.toDouble(),
+          jitterX: (wordRandom.nextDouble() - 0.5) * 0.06, // 基于单词ID的确定性抖动
+          jitterY: (wordRandom.nextDouble() - 0.5) * 0.8,
         );
+
       }).toList();
       _isLoading = false;
     });
+
     _animationController.forward(from: 0);
   }
 
@@ -87,7 +95,22 @@ class _MemoryCloudPageState extends State<MemoryCloudPage> with TickerProviderSt
     return Scaffold(
       backgroundColor: isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text('记忆云图', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Row(
+          children: [
+            const Text('记忆云图', style: TextStyle(fontWeight: FontWeight.bold)),
+            if (!_isLoading) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text('${_points.length} 词', style: TextStyle(fontSize: 10, color: AppTheme.primaryColor)),
+              ),
+            ]
+          ],
+        ),
         elevation: 0,
         backgroundColor: Colors.transparent,
         actions: [
@@ -101,8 +124,8 @@ class _MemoryCloudPageState extends State<MemoryCloudPage> with TickerProviderSt
           ),
         ],
       ),
-
       body: _isLoading
+
           ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
@@ -110,33 +133,38 @@ class _MemoryCloudPageState extends State<MemoryCloudPage> with TickerProviderSt
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    child: Stack(
-                      children: [
-                        SingleChildScrollView(
-                          child: AnimatedBuilder(
-                            animation: _animationController,
-                            builder: (context, child) {
-                              const double canvasHeight = 15.0 * 205; // 205 days * 15px/day
-                              return CustomPaint(
-                                  painter: CloudPainter(
-                                    points: _points,
-                                    mode: _currentMode,
-                                    progress: _animationController.value,
-                                    isDarkMode: isDarkMode,
-                                    bands: _getBandsForCurrentMode(),
-                                  ),
-
-                                size: const Size(double.infinity, canvasHeight),
-                              );
-                            },
-                          ),
-                        ),
-                        // 浮动 X 轴标签
-                        _buildFloatingXAxisLabels(isDarkMode),
-                      ],
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final width = constraints.maxWidth;
+                        return Stack(
+                          children: [
+                            SingleChildScrollView(
+                              child: AnimatedBuilder(
+                                animation: _animationController,
+                                builder: (context, child) {
+                                  const double canvasHeight = 15.0 * 205; // 205 days * 15px/day
+                                  return CustomPaint(
+                                    painter: CloudPainter(
+                                      points: _points,
+                                      mode: _currentMode,
+                                      progress: _animationController.value,
+                                      isDarkMode: isDarkMode,
+                                      bands: _getBandsForCurrentMode(),
+                                    ),
+                                    size: Size(width, canvasHeight),
+                                  );
+                                },
+                              ),
+                            ),
+                            // 浮动 X 轴标签
+                            _buildFloatingXAxisLabels(isDarkMode),
+                          ],
+                        );
+                      },
                     ),
                   ),
                 ),
+
 
 
                 _buildLegend(isDarkMode),
@@ -309,6 +337,8 @@ class CloudPoint {
   final int state;
   final String category;
   final double yValue;
+  final double jitterX; // 新增：横向抖动
+  final double jitterY; // 新增：纵向抖动
   Offset? currentPos;
 
   CloudPoint({
@@ -320,29 +350,47 @@ class CloudPoint {
     required this.state,
     required this.category,
     required this.yValue,
+    required this.jitterX,
+    required this.jitterY,
   });
 
   double getX(XAxisMode mode) {
+    double base;
     switch (mode) {
       case XAxisMode.stability:
-        // 特别稳定度映射：0-10, 10-25, 25-50, 50+
-        if (stability <= 10.0) return (stability / 10.0) * 0.25;
-        if (stability <= 25.0) return 0.25 + ((stability - 10.0) / 15.0) * 0.25;
-        if (stability <= 50.0) return 0.50 + ((stability - 25.0) / 25.0) * 0.25;
-        return 0.75 + min((stability - 50.0) / 150.0, 1.0) * 0.25;
+        if (stability <= 10.0) {
+          base = (stability / 10.0) * 0.25;
+        } else if (stability <= 25.0) {
+          base = 0.25 + ((stability - 10.0) / 15.0) * 0.25;
+        } else if (stability <= 50.0) {
+          base = 0.50 + ((stability - 25.0) / 25.0) * 0.25;
+        } else {
+          base = 0.75 + min((stability - 50.0) / 150.0, 1.0) * 0.25;
+        }
+        break;
       case XAxisMode.popularity:
-        // 词频分为：罕见(2000+), 常用(500-2000), 高频(0-500)
-        // 注意顺序：最常用的在最右边比较符合操作习惯
-        if (popularity > 2000) return (1.0 - min((popularity - 2000) / 8000.0, 1.0)) * 0.33;
-        if (popularity > 500) return 0.33 + (1.0 - (popularity - 500) / 1500.0) * 0.33;
-        return 0.66 + (1.0 - popularity / 500.0) * 0.34;
+        if (popularity > 2000) {
+          base = (1.0 - min((popularity - 2000) / 8000.0, 1.0)) * 0.33;
+        } else if (popularity > 500) {
+          base = 0.33 + (1.0 - (popularity - 500.0) / 1500.0) * 0.33;
+        } else {
+          base = 0.66 + (1.0 - popularity / 500.0) * 0.34;
+        }
+        break;
+
       case XAxisMode.difficulty:
-        return (difficulty - 1.0) / 9.0; // 1 to 10 平分
+        base = (difficulty - 1.0) / 9.0;
+        break;
       case XAxisMode.category:
-        return (category.hashCode % 1000) / 1000.0;
+        base = (category.hashCode % 1000) / 1000.0;
+        break;
     }
+
+    // 添加横向随机抖动，确保不重叠
+    return (base + jitterX).clamp(0.01, 0.99);
   }
 }
+
 
 
 class CloudPainter extends CustomPainter {
@@ -366,87 +414,123 @@ class CloudPainter extends CustomPainter {
 
     if (points.isEmpty) return;
 
-    // Fixed Y range: 0 to 200 days (to see mastered words)
     const double maxY = 200.0;
-    const double minY = -5.0; // Overdue
+    const double minY = -5.0;
 
-    final paint = Paint()..strokeWidth = 1.0;
-
+    final dotPaint = Paint()..style = PaintingStyle.fill;
     for (var point in points) {
-      double targetX = point.getX(mode) * size.width;
-      // Y-axis: Top (urgent/overdue) to Bottom (future)
-      double normalizedY = (point.yValue - minY) / (maxY - minY);
-      double targetY = size.height * normalizedY.clamp(0.0, 1.0);
+      double xRatio = point.getX(mode);
+      double yRatio = ((point.yValue + point.jitterY - minY) / (maxY - minY)).clamp(0.0, 1.0);
+
+      double targetX = xRatio * size.width;
+      double targetY = yRatio * size.height;
 
       final color = _getColor(point);
-      final radius = 3.0 + (point.reps.clamp(0, 20) / 4.0);
+      final radius = 2.0 + (point.reps.clamp(0, 40) / 10.0);
+      final double effectiveProgress = progress.clamp(0.0, 1.0);
 
-      canvas.drawCircle(Offset(targetX, targetY), radius * progress, paint..color = color.withOpacity(0.6 * progress));
+      canvas.drawCircle(
+        Offset(targetX, targetY), 
+        radius * effectiveProgress, 
+        dotPaint..color = color.withOpacity(0.55 * effectiveProgress)
+      );
 
-      // 仅为学习次数较多且动画接近完成的点绘制文本
-      if (point.reps > 15 && progress > 0.9) {
-        final textSpan = TextSpan(
-          text: point.word,
-          style: TextStyle(
-            color: color.withOpacity(0.9),
-            fontSize: 9,
-            fontWeight: FontWeight.w500,
-            shadows: [Shadow(color: isDarkMode ? Colors.black : Colors.white, blurRadius: 2)],
-          ),
-        );
+
+
+      if (point.reps > 15 && effectiveProgress > 0.9) {
         final textPainter = TextPainter(
-          text: textSpan,
+          text: TextSpan(
+            text: point.word,
+            style: TextStyle(
+              color: color.withOpacity(0.9),
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+              shadows: [Shadow(color: isDarkMode ? Colors.black : Colors.white, blurRadius: 2)],
+            ),
+          ),
           textDirection: TextDirection.ltr,
-        );
-        textPainter.layout();
+        )..layout();
         textPainter.paint(canvas, Offset(targetX + 6, targetY - 6));
       }
     }
   }
 
+
+
   void _drawBackgroundBands(Canvas canvas, Size size) {
+    const double maxY = 200.0;
+    const double minY = -5.0;
+    const double totalDays = maxY - minY; // 205
+
+    // 1. 先画竖向模式背景条带 (X轴维度)
     double startX = 0;
     for (var band in bands) {
       double endX = (band['end'] as double) * size.width;
       final paint = Paint()
-        ..color = (band['color'] as Color).withOpacity(isDarkMode ? 0.15 : 0.08)
+        ..color = (band['color'] as Color).withOpacity(isDarkMode ? 0.08 : 0.04)
         ..style = PaintingStyle.fill;
-      
       canvas.drawRect(Rect.fromLTRB(startX, 0, endX, size.height), paint);
       startX = endX;
     }
 
-    // --- Y轴时间刻度系统 ---
-    const double maxY = 200.0;
-    const double minY = -5.0;
-    final tickDays = [-5, 0, 7, 15, 30, 45, 60, 90, 120, 150, 180, 200];
+    // 2. 画时间轴斑马线效果 (每一天一个条带)
+    final zebraPaint = Paint()
+      ..color = isDarkMode ? Colors.white.withOpacity(0.04) : Colors.black.withOpacity(0.02)
+      ..style = PaintingStyle.fill;
     
-    final tickPaint = Paint()
-      ..color = isDarkMode ? Colors.white.withOpacity(0.12) : Colors.black.withOpacity(0.12)
-      ..strokeWidth = 0.8;
+    for (int day = minY.toInt(); day <= maxY.toInt(); day++) {
+      if (day % 2 == 0) continue; // 隔天画一条线
+      double yStart = ((day - minY) / totalDays) * size.height;
+      double yEnd = ((day + 1 - minY) / totalDays) * size.height;
+      canvas.drawRect(Rect.fromLTRB(0, yStart, size.width, yEnd), zebraPaint);
+    }
+
+    // 3. 画 Y 轴刻度系统 (每天一个小刻度，每10天一个大刻度)
+    final linePaint = Paint()
+      ..color = isDarkMode ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.08)
+      ..strokeWidth = 0.5;
     
-    for (var day in tickDays) {
-      double normalizedY = (day - minY) / (maxY - minY);
-      double y = size.height * normalizedY.clamp(0.0, 1.0);
+    final majorLinePaint = Paint()
+      ..color = isDarkMode ? Colors.white.withOpacity(0.15) : Colors.black.withOpacity(0.15)
+      ..strokeWidth = 1.0;
+
+    for (int day = minY.toInt(); day <= maxY.toInt(); day++) {
+      double yPos = ((day - minY) / totalDays) * size.height;
       
-      // 画虚线/细线
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), tickPaint);
+      bool isToday = day == 0;
+      bool isMajor = day % 10 == 0 || isToday;
       
-      // 画刻度文本
-      String label = day == 0 ? '今天' : (day < 0 ? '超期' : '$day天');
-      final textSpan = TextSpan(
-        text: label,
-        style: TextStyle(
-          color: isDarkMode ? Colors.white54 : Colors.black45,
-          fontSize: 9,
-          fontWeight: FontWeight.bold,
-        ),
-      );
-      final textPainter = TextPainter(text: textSpan, textDirection: TextDirection.ltr);
-      textPainter.layout();
-      textPainter.paint(canvas, Offset(2, y - 12));
+      // 画横向刻度线
+      if (isMajor) {
+        canvas.drawLine(Offset(0, yPos), Offset(size.width, yPos), majorLinePaint);
+      } else {
+        canvas.drawLine(Offset(0, yPos), Offset(10, yPos), linePaint); // 小刻度只画一小段
+      }
+
+      // 画刻度标签 (居中显示在条带中央)
+      if (isMajor) {
+        String label = isToday ? "今天" : (day < 0 ? "超期" : "$day天");
+        if (day == -5) label = "极超期";
+
+        final textPainter = TextPainter(
+          text: TextSpan(
+            text: label,
+            style: TextStyle(
+              color: isDarkMode ? Colors.white38 : Colors.black38,
+              fontSize: 8,
+              fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
+            ),
+          ),
+          textDirection: TextDirection.ltr,
+        )..layout();
+        
+        // 垂直居中于当天的 15px 条带内
+        double dayHeight = size.height / totalDays;
+        textPainter.paint(canvas, Offset(2, yPos + (dayHeight - textPainter.height) / 2));
+      }
     }
   }
+
 
 
 
