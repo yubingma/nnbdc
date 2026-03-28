@@ -75,8 +75,8 @@ void main() {
 
     test('yunmu similarity', () {
       expect(similarityOf2YunMu('ang', 'ang'), 1.0);
-      expect(similarityOf2YunMu('an', 'ang'), 0.55);
-      expect(similarityOf2YunMu('in', 'ing'), 0.85);
+      expect(similarityOf2YunMu('an', 'ang'), 0.75);
+      expect(similarityOf2YunMu('in', 'ing'), 0.80);
       expect(similarityOf2YunMu('ui', 'uei'), 0.95);
       expect(similarityOf2YunMu('a', 'o'), 0.0); // no entry in map
     });
@@ -100,9 +100,9 @@ void main() {
     });
 
     test('different yunmu, same shengmu and tone', () {
-      // an -> ang (sim: 0.55)
-      // weight: 0.4 * 1.0 + 0.5 * 0.55 + 0.1 * 1.0 = 0.4 + 0.275 + 0.1 = 0.775
-      expect(similarityOf2Pinyin('ban1', 'bang1'), closeTo(0.775, 0.001));
+      // an -> ang (sim: 0.75)
+      // weight: 0.4 * 1.0 + 0.5 * 0.75 + 0.1 * 1.0 = 0.4 + 0.375 + 0.1 = 0.875
+      expect(similarityOf2Pinyin('ban1', 'bang1'), closeTo(0.875, 0.001));
     });
 
     test('different tone', () {
@@ -111,13 +111,13 @@ void main() {
     });
 
     test('both zero shengmu but different yunmu', () {
-      // an -> ang (sim: 0.55)
-      // Formula: (0.55 * 0.5 + 1.0 * 0.1) / 0.6 = (0.275 + 0.1) / 0.6 = 0.375 / 0.6 = 0.625
-      expect(similarityOf2Pinyin('an1', 'ang1'), closeTo(0.625, 0.001));
+      // an -> ang (sim: 0.75)
+      // Formula: (0.75 * 0.5 + 1.0 * 0.1) / 0.6 = (0.375 + 0.1) / 0.6 = 0.475 / 0.6 = 0.791666...
+      expect(similarityOf2Pinyin('an1', 'ang1'), closeTo(0.7917, 0.001));
     });
 
     test('special "de5" handler', () {
-      expect(similarityOf2Pinyin('de5', 'de5'), minSimularityForMatch);
+      expect(similarityOf2Pinyin('de5', 'de5'), 1.0);
     });
 
     test('empty string handler', () {

@@ -28,7 +28,7 @@ void main() {
         .setMockMethodCallHandler(
       const MethodChannel('dev.fluttercommunity.plus/connectivity'),
       (MethodCall methodCall) async {
-        return 'wifi';
+        return [];
       },
     );
   });
