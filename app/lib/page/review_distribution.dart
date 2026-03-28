@@ -14,7 +14,6 @@ class ReviewDistributionPage extends StatefulWidget {
 class BarChartData {
   final String label;
   final int totalCount;
-  final Map<int, int> stateCounts; // state -> count
   final bool isToday;
   final bool isOverdue;
   final int sortKey;
@@ -22,7 +21,6 @@ class BarChartData {
   BarChartData({
     required this.label,
     required this.totalCount,
-    required this.stateCounts,
     this.isToday = false,
     this.isOverdue = false,
     required this.sortKey,
@@ -52,38 +50,36 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
 
     final data = await db.learningWordsDao.getLearningWordsForCloud(userId);
     final now = AppClock.now();
+    final nowDate = DateTime(now.year, now.month, now.day);
 
-    Map<int, Map<int, int>> dayToStateCounts = {};
+    Map<int, int> dayToCounts = {};
     _totalWords = data.length;
 
     for (var item in data) {
-      final lastDate = item['lastLearningDate'] as DateTime? ?? now;
+      final lastDateRaw = item['lastLearningDate'] as DateTime? ?? now;
       final scheduledDays = item['scheduledDays'] as int? ?? 0;
-      final nextDate = lastDate.add(Duration(days: scheduledDays));
-      final daysDiff = nextDate.difference(now).inDays;
-      final state = (item['state'] as int?) ?? 0;
+      final nextDateRaw = lastDateRaw.add(Duration(days: scheduledDays));
+      
+      final nextDate = DateTime(nextDateRaw.year, nextDateRaw.month, nextDateRaw.day);
+      final daysDiff = nextDate.difference(nowDate).inDays;
 
       int key;
       if (daysDiff >= 0) {
         key = daysDiff;
       } else {
-        // Overdue bucket: group by 10 days
         int overdueDays = -daysDiff;
-        key = -((overdueDays + 9) ~/ 10 * 10); // -10, -20, -30...
+        key = -((overdueDays + 9) ~/ 10 * 10);
       }
 
-      dayToStateCounts.putIfAbsent(key, () => {});
-      dayToStateCounts[key]![state] = (dayToStateCounts[key]![state] ?? 0) + 1;
+      dayToCounts[key] = (dayToCounts[key] ?? 0) + 1;
     }
 
-    // Sort keys: oldest overdue (most negative) to furthest future
-    var sortedKeys = dayToStateCounts.keys.toList()..sort();
+    var sortedKeys = dayToCounts.keys.toList()..sort();
 
     _maxCount = 0;
     _barDataList = sortedKeys.map((key) {
-      final counts = dayToStateCounts[key]!;
-      final total = counts.values.fold(0, (a, b) => a + b);
-      if (total > _maxCount) _maxCount = total;
+      final count = dayToCounts[key]!;
+      if (count > _maxCount) _maxCount = count;
 
       String label;
       bool isToday = key == 0;
@@ -99,8 +95,7 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
 
       return BarChartData(
         label: label,
-        totalCount: total,
-        stateCounts: counts,
+        totalCount: count,
         isToday: isToday,
         isOverdue: isOverdue,
         sortKey: key,
@@ -152,19 +147,12 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
           ? const Center(child: CircularProgressIndicator())
           : _barDataList.isEmpty
               ? const Center(child: Text("暂无数据"))
-              : Column(
-                  children: [
-                    Expanded(
-                      child: ListView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                        itemCount: _barDataList.length,
-                        itemBuilder: (context, index) {
-                          return _buildBarRow(_barDataList[index], isDarkMode);
-                        },
-                      ),
-                    ),
-                    _buildLegend(isDarkMode),
-                  ],
+              : ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+                  itemCount: _barDataList.length,
+                  itemBuilder: (context, index) {
+                    return _buildBarRow(_barDataList[index], isDarkMode);
+                  },
                 ),
     );
   }
@@ -174,13 +162,12 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
         children: [
-          // Y轴标签 (时间)
           SizedBox(
             width: 80,
             child: Text(
               data.label,
               style: TextStyle(
-                fontSize: 12,
+                fontSize: 13,
                 fontWeight: data.isToday ? FontWeight.bold : FontWeight.normal,
                 color: data.isToday 
                   ? AppTheme.primaryColor 
@@ -188,11 +175,10 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
               ),
             ),
           ),
-          // X轴柱状图
           Expanded(
             child: LayoutBuilder(
               builder: (context, constraints) {
-                final maxWidth = constraints.maxWidth - 50; // 为数字留出空间
+                final maxWidth = constraints.maxWidth - 50; 
                 final barWidth = _maxCount == 0 ? 0.0 : (data.totalCount / _maxCount) * maxWidth;
                 
                 return Row(
@@ -200,26 +186,23 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
                     Stack(
                       alignment: Alignment.centerLeft,
                       children: [
-                        // 背景条
                         Container(
-                          height: 24,
+                          height: 30,
                           width: maxWidth,
                           decoration: BoxDecoration(
                             color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.02),
                           ),
                         ),
-                        // 实际分段条
-                        _buildStackedBar(data, barWidth),
+                        _buildSimpleBar(data, barWidth),
                       ],
                     ),
-                    const SizedBox(width: 8),
-                    // 单词数标注
+                    const SizedBox(width: 10),
                     Text(
                       "${data.totalCount}",
                       style: TextStyle(
-                        fontSize: 11,
+                        fontSize: 13,
                         fontWeight: FontWeight.bold,
-                        color: data.isToday ? AppTheme.primaryColor : (isDarkMode ? Colors.white38 : Colors.black38),
+                        color: data.isToday ? AppTheme.primaryColor : (isDarkMode ? Colors.white60 : Colors.black54),
                       ),
                     ),
                   ],
@@ -232,96 +215,17 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
     );
   }
 
-  Widget _buildStackedBar(BarChartData data, double totalBarWidth) {
+  Widget _buildSimpleBar(BarChartData data, double totalBarWidth) {
     if (totalBarWidth <= 0) return const SizedBox.shrink();
 
-    // 如果是逾期，主色调设为红色
-    if (data.isOverdue) {
-      return Container(
-        height: 24,
-        width: totalBarWidth,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.redAccent.withValues(alpha: 0.8), Colors.red.withValues(alpha: 0.6)],
-          ),
-          boxShadow: [
-            BoxShadow(color: Colors.red.withValues(alpha: 0.1), blurRadius: 4, spreadRadius: 0)
-          ]
-        ),
-      );
-    }
-
-    // 非逾期，展示分段 (New, Learning, Review)
-    List<Widget> segments = [];
-    final states = [0, 1, 2]; 
-    final colors = [Colors.blue, Colors.green, Colors.orange];
-    
-    // Group states 2 and 3 together into orange (Reviewing)
-    Map<int, int> consolidatedCounts = Map.from(data.stateCounts);
-    if (consolidatedCounts.containsKey(3)) {
-      consolidatedCounts[2] = (consolidatedCounts[2] ?? 0) + consolidatedCounts[3]!;
-      consolidatedCounts.remove(3);
-    }
-    
-    for (int i = 0; i < states.length; i++) {
-        int count = consolidatedCounts[states[i]] ?? 0;
-        if (count > 0) {
-          double segmentWidth = (count / data.totalCount) * totalBarWidth;
-          segments.add(
-            Container(
-              height: 24,
-              width: segmentWidth,
-              color: colors[i].withValues(alpha: 0.7),
-            ),
-          );
-        }
-    }
-
-    return Row(children: segments);
-  }
-
-  Widget _buildLegend(bool isDarkMode) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+      height: 30,
+      width: totalBarWidth,
       decoration: BoxDecoration(
-        color: isDarkMode ? Colors.white.withValues(alpha: 0.03) : Colors.white,
-        border: Border(top: BorderSide(color: isDarkMode ? Colors.white12 : Colors.black.withValues(alpha: 0.05))),
-        boxShadow: [
-          if (!isDarkMode) BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, -5))
-        ]
+        color: data.isToday 
+            ? AppTheme.primaryColor 
+            : (data.isOverdue ? Colors.redAccent : AppTheme.primaryColor.withValues(alpha: 0.5)),
       ),
-      child: SafeArea(
-        top: false,
-        child: Wrap(
-          spacing: 20,
-          runSpacing: 10,
-          alignment: WrapAlignment.center,
-          children: [
-            _legendItem('新词', Colors.blue),
-            _legendItem('学习中', Colors.green),
-            _legendItem('复习中', Colors.orange),
-            _legendItem('已逾期', Colors.redAccent),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _legendItem(String label, Color color) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 12,
-          height: 12,
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.7),
-            borderRadius: BorderRadius.circular(4),
-          ),
-        ),
-        const SizedBox(width: 6),
-        Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
-      ],
     );
   }
 
@@ -339,7 +243,7 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
             const SizedBox(height: 12),
             _dialogDescItem(Icons.bar_chart, '横轴 (X轴)', '代表单词数量。柱状条越长表示该时段复习任务越重。'),
             const SizedBox(height: 12),
-            _dialogDescItem(Icons.color_lens_outlined, '颜色含义', '红色代表逾期，蓝色为新词，绿色为初次学习，橙色为长期复习。'),
+            _dialogDescItem(Icons.color_lens_outlined, '颜色含义', '红色代表逾期，深蓝色代表今天，浅蓝色代表未来。'),
           ],
         ),
         actions: [
