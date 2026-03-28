@@ -38,7 +38,7 @@ public class AdminCigenOptimizeController {
     public Result<String> startBatchOptimize(@RequestParam("userId") String userId) {
         synchronized (currentTask) {
             if (currentTask.isRunning) {
-                return Result.fail("有一个词根优化任务正在运行中，请稍后再试");
+                return Result.fail("有一个词库优化任务正在运行中，请稍后再试");
             }
             User user = userBo.findById(userId);
             if (user == null || !user.getIsAdmin()) return Result.fail("无权限");
@@ -82,6 +82,78 @@ public class AdminCigenOptimizeController {
                     if (currentTask.isRunning) currentTask.statusMsg = "任务完成";
                 } catch (Exception e) {
                     logger.error("批量优化任务异常", e);
+                    currentTask.statusMsg = "任务异常退出: " + e.getMessage();
+                } finally {
+                    currentTask.isRunning = false;
+                }
+            }).start();
+
+            return Result.success("任务已启动");
+        }
+    }
+
+    @PostMapping("/admin/cigen/startBatchStructure.do")
+    public Result<String> startBatchStructure(@RequestParam("userId") String userId) {
+        synchronized (currentTask) {
+            if (currentTask.isRunning) {
+                return Result.fail("有一个任务正在运行中，请稍后再试");
+            }
+            User user = userBo.findById(userId);
+            if (user == null || !user.getIsAdmin()) return Result.fail("无权限");
+
+            currentTask.reset();
+            currentTask.isRunning = true;
+
+            new Thread(() -> {
+                try {
+                    logger.info("开始词根描述结构化任务");
+                    currentTask.statusMsg = "正在获取词根数据...";
+                    List<Map<String, Object>> cigens = cigenBo.getAllCigens();
+                    currentTask.totalIndices = cigens.size();
+                    currentTask.statusMsg = "正在解析中";
+
+                    for (int i = 0; i < cigens.size(); i++) {
+                        if (!currentTask.isRunning) break;
+                        Map<String, Object> cigen = cigens.get(i);
+                        currentTask.currentIndex = i + 1;
+
+                        String id = (String) cigen.get("id");
+                        String description = (String) cigen.get("description");
+
+                        // 如果已经有了 spell，跳过（除非强制重刷，此处暂定跳过已处理的）
+                        // 注意：如果数据库字段刚加，cigen.get("spell") 可能是 null
+                        if (cigen.containsKey("spell") && cigen.get("spell") != null && !cigen.get("spell").toString().isEmpty()) {
+                            continue;
+                        }
+
+                        try {
+                            String json = aiBo.parseCigenDescription(description);
+                            if (json != null) {
+                                Map<String, Object> data = beidanci.service.util.JsonUtils.parseMap(json);
+                                String spell = (String) data.get("spell");
+                                String category = (String) data.get("category");
+                                String meaningCn = (String) data.get("meaningCn");
+                                String meaningEn = (String) data.get("meaningEn");
+
+                                if (spell != null && category != null) {
+                                    cigenBo.updateCigenStructuredInfo(id, spell, category, meaningCn, meaningEn);
+                                    Map<String, Object> log = new HashMap<>();
+                                    log.put("spell", spell);
+                                    log.put("desc", description);
+                                    log.put("status", "SUCCESS");
+                                    synchronized (currentTask) {
+                                        currentTask.optimizedLogs.add(log);
+                                    }
+                                }
+                            }
+                            Thread.sleep(300);
+                        } catch (Exception e) {
+                            logger.error("词根结构化异常: id=" + id, e);
+                        }
+                    }
+                    if (currentTask.isRunning) currentTask.statusMsg = "任务完成";
+                } catch (Exception e) {
+                    logger.error("结构化任务异常", e);
                     currentTask.statusMsg = "任务异常退出: " + e.getMessage();
                 } finally {
                     currentTask.isRunning = false;

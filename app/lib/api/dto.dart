@@ -206,10 +206,14 @@ class VerbTenseDto {
 class CigenDto {
   final String id;
   final String description;
+  final String? spell;
+  final String? category;
+  final String? meaningCn;
+  final String? meaningEn;
   final DateTime createTime;
   final DateTime? updateTime;
 
-  CigenDto(this.id, this.description, this.createTime, this.updateTime);
+  CigenDto(this.id, this.description, this.createTime, this.updateTime, {this.spell, this.category, this.meaningCn, this.meaningEn});
 
   factory CigenDto.fromJson(Map<String, dynamic> json) => _$CigenDtoFromJson(json);
 

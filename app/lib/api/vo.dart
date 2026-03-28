@@ -430,7 +430,15 @@ class CigenVo {
 
   String description;
 
-  CigenVo(this.id, this.description);
+  String? spell;
+
+  String? category;
+
+  String? meaningCn;
+
+  String? meaningEn;
+
+  CigenVo(this.id, this.description, {this.spell, this.category, this.meaningCn, this.meaningEn});
 
   factory CigenVo.fromJson(Map<String, dynamic> json) => _$CigenVoFromJson(json);
 

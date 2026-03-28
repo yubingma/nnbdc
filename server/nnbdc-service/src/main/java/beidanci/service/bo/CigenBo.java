@@ -35,7 +35,8 @@ public class CigenBo extends BaseBo<CigenWordLink> {
      * 获取所有带有解析的词根单词关系
      */
     public List<CigenWordLinkDto> getAllCigenWordLinks() {
-        String sql = "SELECT cl.cigen_id, cl.word_id, cl.the_explain, w.spell, c.description as cigen_description " +
+        String sql = "SELECT cl.cigen_id, cl.word_id, cl.the_explain, w.spell, " + 
+                     "c.description as cigen_description, c.spell as cigen_spell, c.category, c.meaning_cn, c.meaning_en " +
                      "FROM cigen_word_link cl " +
                      "JOIN word w ON cl.word_id = w.id " +
                      "JOIN cigen c ON cl.cigen_id = c.id";
@@ -47,6 +48,10 @@ public class CigenBo extends BaseBo<CigenWordLink> {
             dto.setTheExplain(rs.getString("the_explain"));
             dto.setSpell(rs.getString("spell"));
             dto.setCigenDescription(rs.getString("cigen_description"));
+            dto.setCigenSpell(rs.getString("cigen_spell")); // 避免与单词的 spell 冲突，DTO 中使用 cigenSpell
+            dto.setCategory(rs.getString("category"));
+            dto.setMeaningCn(rs.getString("meaning_cn"));
+            dto.setMeaningEn(rs.getString("meaning_en"));
             return dto;
         });
     }
@@ -83,12 +88,54 @@ public class CigenBo extends BaseBo<CigenWordLink> {
         sysDbSyncBo.logOperation("UPDATE", "cigen_word_link", cigenId + "_" + wordId, beidanci.service.util.JsonUtils.toJson(logRecord));
     }
 
+    /**
+     * 获取所有词根
+     */
+    public List<Map<String, Object>> getAllCigens() {
+        return namedParameterJdbcTemplate.getJdbcTemplate().queryForList("SELECT * FROM cigen");
+    }
+
+    /**
+     * 更新词根结构化信息
+     */
+    public void updateCigenStructuredInfo(String id, String spell, String category, String meaningCn, String meaningEn) {
+        Timestamp now = new Timestamp(System.currentTimeMillis());
+        String sql = "UPDATE cigen SET spell = :spell, category = :category, meaning_cn = :meaningCn, meaning_en = :meaningEn, update_time = :updateTime " +
+                     "WHERE id = :id";
+        MapSqlParameterSource params = new MapSqlParameterSource()
+            .addValue("id", id)
+            .addValue("spell", spell)
+            .addValue("category", category)
+            .addValue("meaningCn", meaningCn)
+            .addValue("meaningEn", meaningEn)
+            .addValue("updateTime", now);
+        namedParameterJdbcTemplate.update(sql, params);
+        
+        // 同步日志
+        Map<String, Object> logRecord = new java.util.HashMap<>();
+        logRecord.put("id", id);
+        logRecord.put("spell", spell);
+        logRecord.put("category", category);
+        logRecord.put("meaningCn", meaningCn);
+        logRecord.put("meaningEn", meaningEn);
+        
+        java.text.SimpleDateFormat isoFormat = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+        isoFormat.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
+        logRecord.put("updateTime", isoFormat.format(now));
+
+        sysDbSyncBo.logOperation("UPDATE", "cigen", id, beidanci.service.util.JsonUtils.toJson(logRecord));
+    }
+
     public static class CigenWordLinkDto {
         private String cigenId;
         private String wordId;
         private String theExplain;
         private String spell;
         private String cigenDescription;
+        private String cigenSpell;
+        private String category;
+        private String meaningCn;
+        private String meaningEn;
 
         public String getCigenId() { return cigenId; }
         public void setCigenId(String cigenId) { this.cigenId = cigenId; }
@@ -100,5 +147,13 @@ public class CigenBo extends BaseBo<CigenWordLink> {
         public void setSpell(String spell) { this.spell = spell; }
         public String getCigenDescription() { return cigenDescription; }
         public void setCigenDescription(String cigenDescription) { this.cigenDescription = cigenDescription; }
+        public String getCigenSpell() { return cigenSpell; }
+        public void setCigenSpell(String cigenSpell) { this.cigenSpell = cigenSpell; }
+        public String getCategory() { return category; }
+        public void setCategory(String category) { this.category = category; }
+        public String getMeaningCn() { return meaningCn; }
+        public void setMeaningCn(String meaningCn) { this.meaningCn = meaningCn; }
+        public String getMeaningEn() { return meaningEn; }
+        public void setMeaningEn(String meaningEn) { this.meaningEn = meaningEn; }
     }
 }

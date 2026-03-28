@@ -351,4 +351,33 @@ public class AiBo {
             return originalExplain;
         }
     }
+
+    /**
+     * 将杂乱的词根描述字符串解析为结构化 JSON
+     * @param description 原始描述 (如: anti-表示\"反对，相反\")
+     * @return JSON 格式: {"spell": "anti", "category": "PREFIX", "meaningCn": "反对，相反", "meaningEn": "against, opposite"}
+     */
+    public String parseCigenDescription(String description) {
+        String systemPrompt = "你是一位精通词源学的专家。请将用户提供的非结构化英文词根描述解析为结构化数据。\n" +
+                "规则：\n" +
+                "1. spell: 提取核心词根/前缀文本（移除连接符 - 或 =）。\n" +
+                "2. category: 判定类型，必须返回 PREFIX (前缀), SUFFIX (后缀), 或 ROOT (词根)。带有 - 在后的通常是 PREFIX，在前的通常是 SUFFIX，不带符号或带 = 的通常是 ROOT。\n" +
+                "3. meaningCn: 提取中文含义，去除多余的标点符号和说明。\n" +
+                "4. meaningEn: 根据上下文提供最准确的英文对应词。\n" +
+                "必须返回纯 JSON 对象，不要包含 Markdown 格式标签。\n" +
+                "示例：\n" +
+                "输入：anti-表示\"反对，相反\"\n" +
+                "返回：{\"spell\": \"anti\", \"category\": \"PREFIX\", \"meaningCn\": \"反对，相反\", \"meaningEn\": \"against, opposite\"}";
+
+        try {
+            String result = generateText(systemPrompt, "待解析描述：[" + description + "]");
+            if (result != null) {
+                return result.replaceAll("^```(?:json)?\\s*", "").replaceAll("\\s*```$", "").trim();
+            }
+            return null;
+        } catch (Exception e) {
+            logger.error("AI 解析词根描述异常: " + description, e);
+            return null;
+        }
+    }
 }
