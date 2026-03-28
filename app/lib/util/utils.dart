@@ -685,7 +685,7 @@ class Util {
                                                   var res = await WordBo().addRawWord(searchResult.word!.spell, '手工添加');
                                                   if (!dialogContext.mounted) return;
                                                   if (res.success) {
-                                                    ToastUtil.info("添加成功");
+                                                    SoundUtil.playAddSuccessSound();
                                                   } else {
                                                     ToastUtil.error(res.msg!);
                                                   }
