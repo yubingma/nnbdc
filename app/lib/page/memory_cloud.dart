@@ -143,8 +143,8 @@ class _MemoryCloudPageState extends State<MemoryCloudPage> with TickerProviderSt
                                 animation: _animationController,
                                 builder: (context, child) {
                                   const double maxY = 200.0;
-                                  const double minY = -1.0;
-                                  const double canvasHeight = 15.0 * (maxY - minY); // 201 days * 15px/day
+                                  const double minY = -2.0;
+                                  const double canvasHeight = 15.0 * (maxY - minY); // 202 days * 15px/day
                                   return CustomPaint(
                                     painter: CloudPainter(
                                       points: _points,
@@ -156,6 +156,7 @@ class _MemoryCloudPageState extends State<MemoryCloudPage> with TickerProviderSt
                                     size: Size(width, canvasHeight),
                                   );
                                 },
+
 
 
                               ),
@@ -195,24 +196,17 @@ class _MemoryCloudPageState extends State<MemoryCloudPage> with TickerProviderSt
               return Positioned(
                 left: startX,
                 width: bandWidth,
-                height: 15.0, // 对应顶部第 -1 天的条带高度
+                height: 30.0, // 将原本两个日期的 15px*2 合并为 30px
                 top: 0,
                 child: Center(
                   child: Text(
-
                     band['label'] as String,
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: (band['color'] as Color).withOpacity(isDarkMode ? 0.8 : 0.9),
-                      fontSize: 11,
-                      fontWeight: FontWeight.w900,
+                      color: (band['color'] as Color).withOpacity(isDarkMode ? 0.7 : 0.8),
+                      fontSize: 9,
+                      fontWeight: FontWeight.w500, // 移除加粗
                       fontFamily: 'NotoSansSC',
-                      shadows: [
-                        Shadow(
-                          color: isDarkMode ? Colors.black.withOpacity(0.5) : Colors.white.withOpacity(0.5),
-                          blurRadius: 4,
-                        ),
-                      ],
                     ),
                   ),
                 ),
@@ -223,6 +217,7 @@ class _MemoryCloudPageState extends State<MemoryCloudPage> with TickerProviderSt
       ),
     );
   }
+
 
 
 
@@ -433,7 +428,8 @@ class CloudPainter extends CustomPainter {
     if (points.isEmpty) return;
 
     const double maxY = 200.0;
-    const double minY = -1.0;
+    const double minY = -2.0;
+
 
 
 
@@ -483,7 +479,7 @@ class CloudPainter extends CustomPainter {
 
   void _drawBackgroundBands(Canvas canvas, Size size) {
     const double maxY = 200.0;
-    const double minY = -1.0;
+    const double minY = -2.0;
     const double totalDays = maxY - minY;
 
     // 1. 画时间轴斑马线效果 (最底层)
@@ -492,6 +488,8 @@ class CloudPainter extends CustomPainter {
       ..style = PaintingStyle.fill;
     
     for (int day = minY.toInt(); day <= maxY.toInt(); day++) {
+      // 头部 2 天合并为一个视觉块
+      if (day == -1) continue; 
       if (day % 2 == 0) continue; 
       double yStart = ((day - minY) / totalDays) * size.height;
       double yEnd = ((day + 1 - minY) / totalDays) * size.height;
@@ -519,12 +517,15 @@ class CloudPainter extends CustomPainter {
       bool isToday = day == 0;
       bool isMajor = day % 10 == 0 || isToday;
       
-      // 画横向刻度线
-      canvas.drawLine(Offset(0, yPos), Offset(size.width, yPos), linePaint);
+      // 画横向条纹，跳过 -1 天的线，让顶部两行看起来是一行
+      if (day != -1) {
+        canvas.drawLine(Offset(0, yPos), Offset(size.width, yPos), linePaint);
+      }
 
-      // 在绘图区内侧绘制标签
+      // 仅显示主要刻度，不显示负数刻度线
       if (isMajor && day >= 0) {
-        String label = isToday ? "今天" : "$day天";
+        String label = isToday ? "今天" : "$day天后";
+
 
         final textPainter = TextPainter(
           text: TextSpan(
@@ -543,6 +544,7 @@ class CloudPainter extends CustomPainter {
       }
     }
   }
+
 
 
 
