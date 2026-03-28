@@ -114,7 +114,7 @@ public class WordImageBo extends BaseBo<WordImage> {
 
 
     public Result<WordImage> addWordImage(WordImage wordImage, User user) throws IllegalArgumentException, IllegalAccessException {
-        // 如果单词的配图已经大于等于上限，则把最后一个图片删掉（末位淘汰制）
+        // 如果单词的配图已经达到上限，则不再允许添加配图
         Word word = wordImage.getWord();
         if (word == null) {
             throw new IllegalArgumentException("wordImage.word 不能为空");
