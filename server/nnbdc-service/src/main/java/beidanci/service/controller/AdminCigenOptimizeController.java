@@ -34,8 +34,8 @@ public class AdminCigenOptimizeController {
 
     private static final CigenOptimizeTask currentTask = new CigenOptimizeTask();
 
-    @PostMapping("/admin/cigen/startBatchOptimize.do")
-    public Result<String> startBatchOptimize(@RequestParam("userId") String userId) {
+    @PostMapping("/admin/cigen/startFullOptimize.do")
+    public Result<String> startFullOptimize(@RequestParam("userId") String userId) {
         synchronized (currentTask) {
             if (currentTask.isRunning) {
                 return Result.fail("有一个词库优化任务正在运行中，请稍后再试");
@@ -48,83 +48,21 @@ public class AdminCigenOptimizeController {
 
             new Thread(() -> {
                 try {
-                    logger.info("开始批量词根解析优化任务");
-                    currentTask.statusMsg = "正在获取词根数据...";
-                    List<CigenBo.CigenWordLinkDto> links = cigenBo.getAllCigenWordLinks();
-                    currentTask.totalIndices = links.size();
-                    currentTask.statusMsg = "正在优化中";
-
-                    for (int i = 0; i < links.size(); i++) {
-                        if (!currentTask.isRunning) break;
-                        CigenBo.CigenWordLinkDto link = links.get(i);
-                        currentTask.currentIndex = i + 1;
-
-                        try {
-                            String original = link.getTheExplain();
-                            String optimized = aiBo.optimizeCigenExplain(link.getSpell(), original, link.getCigenDescription());
-                            
-                            if (optimized != null && !optimized.trim().equals(original.trim())) {
-                                cigenBo.updateExplain(link.getCigenId(), link.getWordId(), optimized);
-                                Map<String, Object> log = new HashMap<>();
-                                log.put("spell", link.getSpell());
-                                log.put("before", original);
-                                log.put("after", optimized);
-                                synchronized (currentTask) {
-                                    currentTask.optimizedLogs.add(log);
-                                }
-                            }
-                            // 控制频率，防止 API 限流或数据库负载波动
-                            Thread.sleep(500); 
-                        } catch (Exception e) {
-                            logger.error("词根优化异常: word=" + link.getSpell(), e);
-                        }
-                    }
-                    if (currentTask.isRunning) currentTask.statusMsg = "任务完成";
-                } catch (Exception e) {
-                    logger.error("批量优化任务异常", e);
-                    currentTask.statusMsg = "任务异常退出: " + e.getMessage();
-                } finally {
-                    currentTask.isRunning = false;
-                }
-            }).start();
-
-            return Result.success("任务已启动");
-        }
-    }
-
-    @PostMapping("/admin/cigen/startBatchStructure.do")
-    public Result<String> startBatchStructure(@RequestParam("userId") String userId) {
-        synchronized (currentTask) {
-            if (currentTask.isRunning) {
-                return Result.fail("有一个任务正在运行中，请稍后再试");
-            }
-            User user = userBo.findById(userId);
-            if (user == null || !user.getIsAdmin()) return Result.fail("无权限");
-
-            currentTask.reset();
-            currentTask.isRunning = true;
-
-            new Thread(() -> {
-                try {
-                    logger.info("开始词根描述结构化任务");
-                    currentTask.statusMsg = "正在获取词根数据...";
+                    // 第一阶段：词库结构化 (Cigen 属性解析)
+                    logger.info("开始词根结构化阶段");
+                    currentTask.statusMsg = "正在获取词根数据进行结构化...";
                     List<Map<String, Object>> cigens = cigenBo.getAllCigens();
                     currentTask.totalIndices = cigens.size();
-                    currentTask.statusMsg = "正在解析中";
-
+                    
                     for (int i = 0; i < cigens.size(); i++) {
                         if (!currentTask.isRunning) break;
                         Map<String, Object> cigen = cigens.get(i);
                         currentTask.currentIndex = i + 1;
-
                         String id = (String) cigen.get("id");
                         String description = (String) cigen.get("description");
 
-                        // 如果已经有了 spell，跳过（除非强制重刷，此处暂定跳过已处理的）
-                        // 注意：如果数据库字段刚加，cigen.get("spell") 可能是 null
-                        if (cigen.containsKey("spell") && cigen.get("spell") != null && !cigen.get("spell").toString().isEmpty()) {
-                            continue;
-                        }
+                        // 跳过已结构化的
+                        if (cigen.get("spell") != null && !cigen.get("spell").toString().isEmpty()) continue;
 
                         try {
                             String json = aiBo.parseCigenDescription(description);
@@ -134,13 +72,15 @@ public class AdminCigenOptimizeController {
                                 String category = (String) data.get("category");
                                 String meaningCn = (String) data.get("meaningCn");
                                 String meaningEn = (String) data.get("meaningEn");
-
                                 if (spell != null && category != null) {
                                     cigenBo.updateCigenStructuredInfo(id, spell, category, meaningCn, meaningEn);
+                                    
+                                    // 添加日志用于前端展示
                                     Map<String, Object> log = new HashMap<>();
                                     log.put("spell", spell);
-                                    log.put("desc", description);
-                                    log.put("status", "SUCCESS");
+                                    log.put("before", description);
+                                    log.put("after", String.format("[%s] %s: %s (%s)", category, spell, meaningCn, meaningEn));
+                                    log.put("type", "STRUCTURED"); // 标记日志类型
                                     synchronized (currentTask) {
                                         currentTask.optimizedLogs.add(log);
                                     }
@@ -151,16 +91,51 @@ public class AdminCigenOptimizeController {
                             logger.error("词根结构化异常: id=" + id, e);
                         }
                     }
-                    if (currentTask.isRunning) currentTask.statusMsg = "任务完成";
+
+                    // 第二阶段：词根解析优化 (CigenWordLink 文本优化)
+                    if (currentTask.isRunning) {
+                        logger.info("开始词根解析优化阶段");
+                        currentTask.statusMsg = "正在获取词根关系数据进行解析优化...";
+                        List<CigenBo.CigenWordLinkDto> links = cigenBo.getAllCigenWordLinks();
+                        currentTask.totalIndices = links.size();
+                        currentTask.currentIndex = 0;
+
+                        for (int i = 0; i < links.size(); i++) {
+                            if (!currentTask.isRunning) break;
+                            CigenBo.CigenWordLinkDto link = links.get(i);
+                            currentTask.currentIndex = i + 1;
+
+                            try {
+                                String original = link.getTheExplain();
+                                String optimized = aiBo.optimizeCigenExplain(link.getSpell(), original, link.getCigenDescription());
+                                
+                                if (optimized != null && !optimized.trim().equals(original.trim())) {
+                                    cigenBo.updateExplain(link.getCigenId(), link.getWordId(), optimized);
+                                    Map<String, Object> log = new HashMap<>();
+                                    log.put("spell", link.getSpell());
+                                    log.put("before", original);
+                                    log.put("after", optimized);
+                                    synchronized (currentTask) {
+                                        currentTask.optimizedLogs.add(log);
+                                    }
+                                }
+                                Thread.sleep(500); 
+                            } catch (Exception e) {
+                                logger.error("词根解析优化异常: word=" + link.getSpell(), e);
+                            }
+                        }
+                    }
+                    
+                    if (currentTask.isRunning) currentTask.statusMsg = "全量优化任务完成";
                 } catch (Exception e) {
-                    logger.error("结构化任务异常", e);
+                    logger.error("全量优化任务异常", e);
                     currentTask.statusMsg = "任务异常退出: " + e.getMessage();
                 } finally {
                     currentTask.isRunning = false;
                 }
             }).start();
 
-            return Result.success("任务已启动");
+            return Result.success("全量优化任务已启动");
         }
     }
 

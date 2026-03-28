@@ -56,31 +56,14 @@ class _AdminCigenOptimizePageState extends State<AdminCigenOptimizePage> {
     }
   }
 
-  Future<void> _startOptimize() async {
+  Future<void> _startFullOptimize() async {
     try {
-      final response = await Api.dio.post('$_baseUrl/admin/cigen/startBatchOptimize.do', queryParameters: {
+      final response = await Api.dio.post('$_baseUrl/admin/cigen/startFullOptimize.do', queryParameters: {
         'userId': Global.getLoggedInUser()?.id,
       });
       final res = response.data;
       if (res['success'] == true) {
-        ToastUtil.success('成功启动后台优化任务');
-        _fetchStatus();
-      } else {
-        ToastUtil.error('启动失败: ${res['msg']}');
-      }
-    } catch (e) {
-      ToastUtil.error('请求异常: $e');
-    }
-  }
-
-  Future<void> _startStructure() async {
-    try {
-      final response = await Api.dio.post('$_baseUrl/admin/cigen/startBatchStructure.do', queryParameters: {
-        'userId': Global.getLoggedInUser()?.id,
-      });
-      final res = response.data;
-      if (res['success'] == true) {
-        ToastUtil.success('成功启动后台结构化任务');
+        ToastUtil.success('成功启动全量优化任务');
         _fetchStatus();
       } else {
         ToastUtil.error('启动失败: ${res['msg']}');
@@ -144,42 +127,21 @@ class _AdminCigenOptimizePageState extends State<AdminCigenOptimizePage> {
                         ),
                       ),
                       const SizedBox(width: 16),
-                      Column(
-                        children: [
-                          ElevatedButton.icon(
-                            onPressed: () {
-                              if (isRunning) {
-                                _stopOptimize();
-                              } else {
-                                _startOptimize();
-                              }
-                            },
-                            icon: Icon(isRunning ? Icons.stop : Icons.auto_awesome),
-                            label: Text(isRunning ? '中止任务' : '开始解析优化'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: isRunning ? Colors.red : AppTheme.primaryColor,
-                              foregroundColor: Colors.white,
-                              minimumSize: const Size(140, 36),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          ElevatedButton.icon(
-                            onPressed: () {
-                              if (isRunning) {
-                                _stopOptimize();
-                              } else {
-                                _startStructure();
-                              }
-                            },
-                            icon: Icon(isRunning ? Icons.stop : Icons.format_list_bulleted),
-                            label: Text(isRunning ? '中止任务' : '开始词根结构化'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: isRunning ? Colors.red : Colors.teal,
-                              foregroundColor: Colors.white,
-                              minimumSize: const Size(140, 36),
-                            ),
-                          ),
-                        ],
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          if (isRunning) {
+                            _stopOptimize();
+                          } else {
+                            _startFullOptimize();
+                          }
+                        },
+                        icon: Icon(isRunning ? Icons.stop : Icons.auto_awesome),
+                        label: Text(isRunning ? '中止任务' : '开始全量自动优化'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: isRunning ? Colors.red : AppTheme.primaryColor,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        ),
                       )
                     ],
                   ),
