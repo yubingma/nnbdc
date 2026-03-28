@@ -180,8 +180,8 @@ class Asr {
         permission: Permission.microphone,
         title: '麦克风权限',
         purpose: Platform.isIOS 
-            ? '泡泡单词需要您的麦克风和语音识别权限，用于进行单词发音练习和评测。' 
-            : '泡泡单词需要您的麦克风权限，用于进行单词发音练习和语音识别评测。',
+            ? '${Global.appName}需要您的麦克风和语音识别权限，用于进行单词发音练习和评测。' 
+            : '${Global.appName}需要您的麦克风权限，用于进行单词发音练习和语音识别评测。',
         icon: Icons.mic_rounded,
         onGranted: () async {
           // 这里再次调用 _requestPermissions 以确保 permissionGranted 为 true

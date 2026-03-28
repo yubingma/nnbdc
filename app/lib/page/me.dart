@@ -100,7 +100,7 @@ class _MePageState extends State<MePage> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
               child: Text(
-                '权限使用说明：泡泡单词需要您的相机和存储权限，用于拍摄或选择照片作为您的个人头像，这些信息不会被挪作他用。',
+                '权限使用说明：${Global.appName}需要您的相机和存储权限，用于拍摄或选择照片作为您的个人头像，这些信息不会被挪作他用。',
                 style: TextStyle(
                   fontSize: 13,
                   color: isDarkMode ? const Color(0xFFE2E8F0) : const Color(0xFF64748B),

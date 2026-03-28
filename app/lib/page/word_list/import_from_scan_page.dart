@@ -61,7 +61,7 @@ class _ImportFromScanPageState extends State<ImportFromScanPage>
     await PermissionUtil.requestWithRationale(
       permission: Permission.camera,
       title: '相机权限',
-      purpose: '用于拍摄书本中的英文单词进行扫描识别，这能帮助您快速导入单词。',
+      purpose: '${Global.appName}需要您的相机权限，用于拍摄书本中的英文单词进行扫描识别，这能帮助您快速导入单词。',
       icon: Icons.camera_alt_rounded,
       onGranted: () async {
         try {
@@ -85,7 +85,7 @@ class _ImportFromScanPageState extends State<ImportFromScanPage>
     await PermissionUtil.requestWithRationale(
       permission: Permission.photos,
       title: '相册/存储权限',
-      purpose: '用于从相册选择包含英文单词的图片进行扫描识别。',
+      purpose: '${Global.appName}需要您的相册/存储权限，用于从相册选择包含英文单词的图片进行扫描识别。',
       icon: Icons.photo_library_rounded,
       onGranted: () async {
         try {
