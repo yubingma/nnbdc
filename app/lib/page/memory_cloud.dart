@@ -211,6 +211,8 @@ class _MemoryCloudPageState extends State<MemoryCloudPage> with TickerProviderSt
     );
   }
 
+
+
   List<Map<String, dynamic>> _getBandsForCurrentMode() {
     switch (_currentMode) {
       case XAxisMode.stability:
@@ -420,10 +422,14 @@ class CloudPainter extends CustomPainter {
     final dotPaint = Paint()..style = PaintingStyle.fill;
     for (var point in points) {
       double xRatio = point.getX(mode);
-      double yRatio = ((point.yValue + point.jitterY - minY) / (maxY - minY)).clamp(0.0, 1.0);
+      // 将点居中于当天的 15px 条带内 (加 0.5)，再应用抖动
+      double yRatio = ((point.yValue + 0.5 + point.jitterY - minY) / (maxY - minY)).clamp(0.0, 1.0);
 
       double targetX = xRatio * size.width;
       double targetY = yRatio * size.height;
+
+
+
 
       final color = _getColor(point);
       final radius = 2.0 + (point.reps.clamp(0, 40) / 10.0);
@@ -460,63 +466,54 @@ class CloudPainter extends CustomPainter {
   void _drawBackgroundBands(Canvas canvas, Size size) {
     const double maxY = 200.0;
     const double minY = -5.0;
-    const double totalDays = maxY - minY; // 205
+    const double totalDays = maxY - minY;
 
-    // 1. 先画竖向模式背景条带 (X轴维度)
-    double startX = 0;
-    for (var band in bands) {
-      double endX = (band['end'] as double) * size.width;
-      final paint = Paint()
-        ..color = (band['color'] as Color).withOpacity(isDarkMode ? 0.08 : 0.04)
-        ..style = PaintingStyle.fill;
-      canvas.drawRect(Rect.fromLTRB(startX, 0, endX, size.height), paint);
-      startX = endX;
-    }
-
-    // 2. 画时间轴斑马线效果 (每一天一个条带)
+    // 1. 画时间轴斑马线效果 (最底层)
     final zebraPaint = Paint()
       ..color = isDarkMode ? Colors.white.withOpacity(0.04) : Colors.black.withOpacity(0.02)
       ..style = PaintingStyle.fill;
     
     for (int day = minY.toInt(); day <= maxY.toInt(); day++) {
-      if (day % 2 == 0) continue; // 隔天画一条线
+      if (day % 2 == 0) continue; 
       double yStart = ((day - minY) / totalDays) * size.height;
       double yEnd = ((day + 1 - minY) / totalDays) * size.height;
       canvas.drawRect(Rect.fromLTRB(0, yStart, size.width, yEnd), zebraPaint);
     }
 
-    // 3. 画 Y 轴刻度系统 (每天一个小刻度，每10天一个大刻度)
+    // 2. 画竖向 X 轴维度条带 (叠加在斑马线上)
+    double startX = 0;
+    for (var band in bands) {
+      double endX = (band['end'] as double) * size.width;
+      final paint = Paint()
+        ..color = (band['color'] as Color).withOpacity(isDarkMode ? 0.12 : 0.08)
+        ..style = PaintingStyle.fill;
+      canvas.drawRect(Rect.fromLTRB(startX, 0, endX, size.height), paint);
+      startX = endX;
+    }
+
+    // 3. 画 Y 轴刻度系统 (在绘图区左边缘绘制标签)
     final linePaint = Paint()
-      ..color = isDarkMode ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.08)
+      ..color = isDarkMode ? Colors.white.withOpacity(0.12) : Colors.black.withOpacity(0.08)
       ..strokeWidth = 0.5;
-    
-    final majorLinePaint = Paint()
-      ..color = isDarkMode ? Colors.white.withOpacity(0.15) : Colors.black.withOpacity(0.15)
-      ..strokeWidth = 1.0;
 
     for (int day = minY.toInt(); day <= maxY.toInt(); day++) {
       double yPos = ((day - minY) / totalDays) * size.height;
-      
       bool isToday = day == 0;
       bool isMajor = day % 10 == 0 || isToday;
       
       // 画横向刻度线
-      if (isMajor) {
-        canvas.drawLine(Offset(0, yPos), Offset(size.width, yPos), majorLinePaint);
-      } else {
-        canvas.drawLine(Offset(0, yPos), Offset(10, yPos), linePaint); // 小刻度只画一小段
-      }
+      canvas.drawLine(Offset(0, yPos), Offset(size.width, yPos), linePaint);
 
-      // 画刻度标签 (居中显示在条带中央)
+      // 在绘图区内侧绘制标签
       if (isMajor) {
         String label = isToday ? "今天" : (day < 0 ? "超期" : "$day天");
-        if (day == -5) label = "极超期";
+        if (day == -5) label = "-5d";
 
         final textPainter = TextPainter(
           text: TextSpan(
             text: label,
             style: TextStyle(
-              color: isDarkMode ? Colors.white38 : Colors.black38,
+              color: isToday ? AppTheme.primaryColor.withOpacity(0.8) : (isDarkMode ? Colors.white38 : Colors.black38),
               fontSize: 8,
               fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
             ),
@@ -524,12 +521,13 @@ class CloudPainter extends CustomPainter {
           textDirection: TextDirection.ltr,
         )..layout();
         
-        // 垂直居中于当天的 15px 条带内
         double dayHeight = size.height / totalDays;
         textPainter.paint(canvas, Offset(2, yPos + (dayHeight - textPainter.height) / 2));
       }
     }
   }
+
+
 
 
 
