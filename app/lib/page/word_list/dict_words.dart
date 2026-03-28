@@ -143,7 +143,7 @@ class DictWordsProvider with WordsProvider implements WordModifier {
 
     // 检查是否在学习中
     final learningQuery = db.select(db.learningWords)
-      ..where((lw) => lw.userId.equals(user.id) & lw.wordId.equals(wordId) & lw.stability.isSmallerThanValue(Constants.graduationStability));
+      ..where((lw) => lw.userId.equals(user.id) & lw.wordId.equals(wordId) & (lw.stability.isNull() | lw.stability.isSmallerThanValue(Constants.graduationStability)));
     final learning = await learningQuery.getSingleOrNull();
     if (learning != null) return false; // 学习中
 

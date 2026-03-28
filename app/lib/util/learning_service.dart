@@ -162,7 +162,7 @@ class LearningService {
 
     // 获取所有正在学习中的单词 (即：尚未毕业的候选人)
     final allLearningWords = await (db.select(db.learningWords)
-          ..where((lw) => lw.userId.equals(userId) & lw.stability.isSmallerThanValue(Constants.graduationStability)))
+          ..where((lw) => lw.userId.equals(userId) & (lw.stability.isNull() | lw.stability.isSmallerThanValue(Constants.graduationStability))))
         .get();
 
     // 排除今天已经选取要学的单词
