@@ -339,7 +339,7 @@ class CloudPainter extends CustomPainter {
       
       canvas.drawRect(Rect.fromLTRB(startX, 0, endX, size.height), paint);
 
-      // Draw band label at the bottom with higher visibility
+      // Draw band label at the top with higher visibility
       final textSpan = TextSpan(
         text: band['label'],
         style: TextStyle(
@@ -351,7 +351,7 @@ class CloudPainter extends CustomPainter {
       );
       final textPainter = TextPainter(text: textSpan, textDirection: TextDirection.ltr);
       textPainter.layout();
-      textPainter.paint(canvas, Offset(startX + 12, size.height - 24));
+      textPainter.paint(canvas, Offset(startX + 12, 12));
 
       startX = endX;
     }
