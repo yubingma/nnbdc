@@ -191,14 +191,13 @@ class _MemoryCloudPageState extends State<MemoryCloudPage> with TickerProviderSt
               final startX = (band['start'] as double) * width;
               return Positioned(
                 left: startX + 12,
-                top: 8, // 垂直居中于顶部的 30px (2个空行)
+                top: 2, // 将标签居中于顶部的 15px (1个空行)
                 child: Text(
                   band['label'] as String,
                   style: TextStyle(
                     color: (band['color'] as Color).withOpacity(isDarkMode ? 0.8 : 0.9),
-                    fontSize: 12,
+                    fontSize: 11,
                     fontWeight: FontWeight.w900,
-                    letterSpacing: 1.2,
                     fontFamily: 'NotoSansSC',
                     shadows: [
                       Shadow(
@@ -215,6 +214,7 @@ class _MemoryCloudPageState extends State<MemoryCloudPage> with TickerProviderSt
       ),
     );
   }
+
 
 
 
@@ -423,7 +423,8 @@ class CloudPainter extends CustomPainter {
     if (points.isEmpty) return;
 
     const double maxY = 200.0;
-    const double minY = -2.0;
+    const double minY = -1.0;
+
 
 
     final dotPaint = Paint()..style = PaintingStyle.fill;
@@ -472,7 +473,7 @@ class CloudPainter extends CustomPainter {
 
   void _drawBackgroundBands(Canvas canvas, Size size) {
     const double maxY = 200.0;
-    const double minY = -2.0;
+    const double minY = -1.0;
     const double totalDays = maxY - minY;
 
     // 1. 画时间轴斑马线效果 (最底层)
@@ -512,8 +513,8 @@ class CloudPainter extends CustomPainter {
       canvas.drawLine(Offset(0, yPos), Offset(size.width, yPos), linePaint);
 
       // 在绘图区内侧绘制标签
-      if (isMajor || day < 0) {
-        String label = isToday ? "今天" : (day < 0 ? "${day}d" : "$day天");
+      if (isMajor && day >= 0) {
+        String label = isToday ? "今天" : "$day天";
 
         final textPainter = TextPainter(
           text: TextSpan(
@@ -532,6 +533,7 @@ class CloudPainter extends CustomPainter {
       }
     }
   }
+
 
 
 
