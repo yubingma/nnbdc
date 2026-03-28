@@ -1140,7 +1140,37 @@ class LearningWordsDao extends DatabaseAccessor<MyDatabase> with _$LearningWords
     }
     return deletedCount;
   }
+
+  /// 获取用于记忆云图展示的数据
+  Future<List<Map<String, dynamic>>> getLearningWordsForCloud(String userId) async {
+    final query = select(learningWords).join([
+      innerJoin(db.words, db.words.id.equalsExp(learningWords.wordId)),
+      leftOuterJoin(db.cigenWordLinks, db.cigenWordLinks.wordId.equalsExp(learningWords.wordId)),
+      leftOuterJoin(db.cigens, db.cigens.id.equalsExp(db.cigenWordLinks.cigenId)),
+    ])
+      ..where(learningWords.userId.equals(userId));
+
+    final results = await query.get();
+    return results.map((row) {
+      final lw = row.readTable(learningWords);
+      final word = row.readTable(db.words);
+      final cigen = row.readTableOrNull(db.cigens);
+
+      return {
+        'word': word.spell,
+        'stability': lw.stability,
+        'difficulty': lw.difficulty,
+        'scheduledDays': lw.scheduledDays,
+        'lastLearningDate': lw.lastLearningDate,
+        'popularity': word.popularity,
+        'reps': lw.reps,
+        'state': lw.state,
+        'category': cigen?.description ?? '',
+      };
+    }).toList();
+  }
 }
+
 
 @DriftAccessor(tables: [DictGroups])
 class DictGroupsDao extends DatabaseAccessor<MyDatabase> with _$DictGroupsDaoMixin {

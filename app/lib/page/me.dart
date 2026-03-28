@@ -22,6 +22,8 @@ import 'package:nnbdc/page/feature_request_wall.dart';
 import 'package:nnbdc/page/level_path_page.dart';
 import 'package:nnbdc/page/subscription.dart';
 import 'package:nnbdc/page/word_list/dict_words.dart';
+import 'package:nnbdc/page/memory_cloud.dart';
+
 
 import 'package:nnbdc/services/sync_log_service.dart';
 import 'package:nnbdc/services/throttled_sync_service.dart';
@@ -752,6 +754,63 @@ class _MePageState extends State<MePage> {
                 ],
               ),
               const SizedBox(height: 24),
+              
+              // 记忆云图入口
+              GestureDetector(
+                onTap: () => Get.to(() => const MemoryCloudPage()),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    color: isDarkModeEnabled ? Colors.white.withValues(alpha: 0.03) : const Color(0xFFF8FAFC),
+                    border: Border.all(
+                      color: accentColor.withValues(alpha: 0.25),
+                      width: 1.5,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: accentColor.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(Icons.bubble_chart_rounded, color: accentColor, size: 24),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '记忆可视化云图',
+                              style: TextStyle(
+                                color: textColor,
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'NotoSansSC',
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              '多维度洞察你的记忆生长状态',
+                              style: TextStyle(
+                                color: subtitleColor,
+                                fontSize: 11,
+                                fontFamily: 'NotoSansSC',
+                                letterSpacing: 0.2,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Icon(Icons.chevron_right_rounded, color: subtitleColor.withValues(alpha: 0.5)),
+                    ],
+                  ),
+                ),
+              ),
+
               // 同步状态指示器
               if (_isSyncing) ...[
                 Row(
