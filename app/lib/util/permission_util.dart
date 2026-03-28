@@ -19,7 +19,7 @@ class PermissionUtil {
     required VoidCallback onGranted,
     VoidCallback? onDenied,
   }) async {
-    final status = await permission.status;
+    final status = await _getEffectivePermission(permission).status;
     
     if (status.isGranted) {
       onGranted();
@@ -105,7 +105,8 @@ class PermissionUtil {
     );
 
     if (result == true) {
-      final newStatus = await permission.request();
+      final effectivePermission = _getEffectivePermission(permission);
+      final newStatus = await effectivePermission.request();
       if (newStatus.isGranted) {
         onGranted();
       } else {
@@ -117,5 +118,17 @@ class PermissionUtil {
     } else {
       if (onDenied != null) onDenied();
     }
+  }
+
+  /// 针对 Android 平台处理权限映射差异
+  static Permission _getEffectivePermission(Permission permission) {
+    if (GetPlatform.isAndroid) {
+      if (permission == Permission.photos) {
+        // 在 Android 上，Permission.storage 兼容性通常更好，且能覆盖相册访问需求
+        // 或者是使用 Permission.photos，但部分设备上 manifest 识别会有问题
+        return Permission.storage;
+      }
+    }
+    return permission;
   }
 }
