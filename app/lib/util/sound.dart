@@ -126,6 +126,11 @@ class SoundUtil {
     unawaited(playAssetSoundConcurrent('asr_ready_hint.mp3', 1.0, 0.4));
   }
 
+  /// 播放添加成功提示音
+  static Future<void> playAddSuccessSound() async {
+    unawaited(playAssetSoundConcurrent('bubble-pop.mp3', 1.0, 0.6));
+  }
+
   static Future<void> playSoundByUrl(String soundUrl, AudioPlayer player, bool disposeWhenFinish,
       {int loadTimeoutMs = 3000, int playTimeoutMs = 10000}) async {
     StreamSubscription? subscription;

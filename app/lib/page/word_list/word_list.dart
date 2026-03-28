@@ -1456,7 +1456,7 @@ class WordListPageState extends State<WordListPage>
                     await wordModifier.addWord(searchResult.word!.id!);
                 if (success) {
                   Get.back();
-                  ToastUtil.info('添加成功');
+                  SoundUtil.playAddSuccessSound();
                   // 刷新列表
                   // 此处必须重置 totalWordCount，否则 doQuery 中的优化逻辑(words.length >= totalWordCount)
                   // 会认为数据已全部加载而跳过本次查询，导致新添加的单词无法显示
