@@ -236,7 +236,7 @@ class _AdminCigenOptimizePageState extends State<AdminCigenOptimizePage> {
                 ),
                 const SizedBox(height: 12),
                 if (log['before'] != null && log['after'] != null)
-                  _buildExplainDiff(log['before'], log['after'], isDarkMode)
+                  _buildExplainDiff(log['before'], log['after'], isDarkMode, type: log['type'])
                 else
                   Text('处理详情: ${log['desc'] ?? '-'} -> ${log['status'] ?? '-'}', 
                        style: TextStyle(fontSize: 13, color: isDarkMode ? Colors.grey[400] : Colors.grey[600])),
@@ -248,13 +248,14 @@ class _AdminCigenOptimizePageState extends State<AdminCigenOptimizePage> {
     );
   }
 
-  Widget _buildExplainDiff(String before, String after, bool isDarkMode) {
+  Widget _buildExplainDiff(String before, String after, bool isDarkMode, {String? type}) {
+    final bool isStructured = type == 'STRUCTURED';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _diffItem('修改前', before, Colors.red, isDarkMode),
+        _diffItem(isStructured ? '原始描述' : '修改前', before, isStructured ? Colors.blueGrey : Colors.red, isDarkMode),
         const SizedBox(height: 8),
-        _diffItem('通过 AI 优化后', after, Colors.green, isDarkMode),
+        _diffItem(isStructured ? '结构化全字段' : '通过 AI 优化后', after, isStructured ? Colors.teal : Colors.green, isDarkMode),
       ],
     );
   }
