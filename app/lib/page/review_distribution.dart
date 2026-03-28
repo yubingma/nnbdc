@@ -4,11 +4,11 @@ import 'package:nnbdc/global.dart';
 import 'package:nnbdc/theme/app_theme.dart';
 import 'package:nnbdc/util/app_clock.dart';
 
-class MemoryCloudPage extends StatefulWidget {
-  const MemoryCloudPage({super.key});
+class ReviewDistributionPage extends StatefulWidget {
+  const ReviewDistributionPage({super.key});
 
   @override
-  State<MemoryCloudPage> createState() => _MemoryCloudPageState();
+  State<ReviewDistributionPage> createState() => _ReviewDistributionPageState();
 }
 
 class BarChartData {
@@ -29,7 +29,7 @@ class BarChartData {
   });
 }
 
-class _MemoryCloudPageState extends State<MemoryCloudPage> {
+class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
   List<BarChartData> _barDataList = [];
   bool _isLoading = true;
   int _maxCount = 0;
@@ -253,21 +253,28 @@ class _MemoryCloudPageState extends State<MemoryCloudPage> {
 
     // 非逾期，展示分段 (New, Learning, Review)
     List<Widget> segments = [];
-    final states = [0, 1, 2, 3]; 
-    final colors = [Colors.blue, Colors.green, Colors.orange, Colors.purple];
+    final states = [0, 1, 2]; 
+    final colors = [Colors.blue, Colors.green, Colors.orange];
+    
+    // Group states 2 and 3 together into orange (Reviewing)
+    Map<int, int> consolidatedCounts = Map.from(data.stateCounts);
+    if (consolidatedCounts.containsKey(3)) {
+      consolidatedCounts[2] = (consolidatedCounts[2] ?? 0) + consolidatedCounts[3]!;
+      consolidatedCounts.remove(3);
+    }
     
     for (int i = 0; i < states.length; i++) {
-      int count = data.stateCounts[states[i]] ?? 0;
-      if (count > 0) {
-        double segmentWidth = (count / data.totalCount) * totalBarWidth;
-        segments.add(
-          Container(
-            height: 24,
-            width: segmentWidth,
-            color: colors[i].withValues(alpha: 0.7),
-          ),
-        );
-      }
+        int count = consolidatedCounts[states[i]] ?? 0;
+        if (count > 0) {
+          double segmentWidth = (count / data.totalCount) * totalBarWidth;
+          segments.add(
+            Container(
+              height: 24,
+              width: segmentWidth,
+              color: colors[i].withValues(alpha: 0.7),
+            ),
+          );
+        }
     }
 
     return Row(children: segments);

@@ -22,7 +22,7 @@ import 'package:nnbdc/page/feature_request_wall.dart';
 import 'package:nnbdc/page/level_path_page.dart';
 import 'package:nnbdc/page/subscription.dart';
 import 'package:nnbdc/page/word_list/dict_words.dart';
-import 'package:nnbdc/page/memory_cloud.dart';
+import 'package:nnbdc/page/review_distribution.dart';
 
 
 import 'package:nnbdc/services/sync_log_service.dart';
@@ -757,7 +757,7 @@ class _MePageState extends State<MePage> {
               
               // 记忆云图入口
               GestureDetector(
-                onTap: () => Get.to(() => const MemoryCloudPage()),
+                onTap: () => Get.to(() => const ReviewDistributionPage()),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   decoration: BoxDecoration(
@@ -784,7 +784,7 @@ class _MePageState extends State<MePage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              '记忆可视化云图',
+                              '复习分布图',
                               style: TextStyle(
                                 color: textColor,
                                 fontSize: 14,
@@ -794,7 +794,7 @@ class _MePageState extends State<MePage> {
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              '多维度洞察你的记忆生长状态',
+                              '洞察你的复习任务分布',
                               style: TextStyle(
                                 color: subtitleColor,
                                 fontSize: 11,
