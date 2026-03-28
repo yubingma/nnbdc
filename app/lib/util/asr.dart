@@ -7,6 +7,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'dart:io' show Platform;
+import '../util/permission_util.dart';
 
 enum AsrState { unknown, initialized, started, stopping, stopped }
 
@@ -146,28 +147,6 @@ class Asr {
     }
   }
 
-  /// 弹出系统权限申请对话框，请求麦克风和语音识别权限
-  Future<bool> _requestPermissions() async {
-    if (!PlatformUtils.isAsrSupported()) {
-      return false;
-    }
-
-    if (Platform.isIOS) {
-      try {
-        bool granted =
-            await asrMethodChannel.invokeMethod('requestPermissions');
-        return granted;
-      } catch (e) {
-        Global.logger.i('请求权限失败: $e');
-        return false;
-      }
-    } else {
-      // Android使用permission_handler
-      var status = await Permission.microphone.request();
-      return status.isGranted;
-    }
-  }
-
   /// 处理权限被拒绝的情况，引导用户去设置
   Future<bool> _handlePermissionDenied() async {
     Global.logger.i('ASR: Permission denied, showing settings dialog...');
@@ -196,20 +175,33 @@ class Asr {
     bool hasPermission = await _checkPermissions();
 
     if (!hasPermission) {
-      // 弹出系统权限申请对话框，请求麦克风和语音识别权限
-      bool granted = await _requestPermissions();
-      if (!granted) {
-        // 处理权限被拒绝的情况
-        bool success = await _handlePermissionDenied();
-        if (success) {
-          Global.logger.i('ASR: 权限最终获取成功');
-        }
-        return;
-      }
+      // 弹出合规的权限申请说明对话框
+      await PermissionUtil.requestWithRationale(
+        permission: Permission.microphone,
+        title: '麦克风权限',
+        purpose: Platform.isIOS 
+            ? '泡泡单词需要您的麦克风和语音识别权限，用于进行单词发音练习和评测。' 
+            : '泡泡单词需要您的麦克风权限，用于进行单词发音练习和语音识别评测。',
+        icon: Icons.mic_rounded,
+        onGranted: () async {
+          // 这里再次调用 _requestPermissions 以确保 permissionGranted 为 true
+          // 实际上 requestWithRationale 已经调用过 request() 了
+          permissionGranted = true;
+          Global.logger.i('ASR: 麦克风和语音识别权限通过 Rationale 获取成功');
+        },
+        onDenied: () async {
+          // 如果用户在 Rationale 对话框拒绝了，或者在系统对话框拒绝了
+          permissionGranted = false;
+          Global.logger.i('ASR: 用户未授予麦克风权限');
+          // 这里可以尝试调用原有的处理逻辑，或者让用户去设置
+          await _handlePermissionDenied();
+        },
+      );
+      return;
     }
 
     permissionGranted = true;
-    Global.logger.i('ASR: 麦克风和语音识别权限获取成功');
+    Global.logger.i('ASR: 麦克风和语音识别权限已存在');
   }
 
   /// 打开系统权限设置页面

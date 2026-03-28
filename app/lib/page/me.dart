@@ -37,6 +37,8 @@ import 'package:nnbdc/util/user_helper.dart';
 import 'package:nnbdc/util/utils.dart';
 import 'package:nnbdc/widget/dict_download_dialog.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
+import '../util/permission_util.dart';
 import 'dart:ui' as ui;
 
 import "package:percent_indicator/percent_indicator.dart";
@@ -92,8 +94,22 @@ class _MePageState extends State<MePage> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) => SafeArea(
-        child: Wrap(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              child: Text(
+                '权限使用说明：泡泡单词需要您的相机和存储权限，用于拍摄或选择照片作为您的个人头像，这些信息不会被挪作他用。',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: isDarkMode ? const Color(0xFFE2E8F0) : const Color(0xFF64748B),
+                  height: 1.5,
+                  fontFamily: 'NotoSansSC',
+                ),
+              ),
+            ),
+            const Divider(height: 1, thickness: 0.2),
             ListTile(
               leading: Icon(Icons.camera_alt_rounded, color: AppTheme.primaryColor),
               title: const Text('拍照', style: TextStyle(fontFamily: 'NotoSansSC')),
@@ -104,112 +120,133 @@ class _MePageState extends State<MePage> {
               title: const Text('从相册选择', style: TextStyle(fontFamily: 'NotoSansSC')),
               onTap: () => Navigator.pop(context, ImageSource.gallery),
             ),
+            const SizedBox(height: 8),
           ],
         ),
       ),
     );
 
     if (source != null) {
-      final XFile? pickedFile = await picker.pickImage(
-        source: source,
-      );
+      if (source == ImageSource.camera) {
+        await PermissionUtil.requestWithRationale(
+          permission: Permission.camera,
+          title: '相机权限',
+          purpose: '用于拍摄您的个人头像图片。',
+          icon: Icons.camera_alt_rounded,
+          onGranted: () async {
+            final XFile? pickedFile = await picker.pickImage(source: source);
+            if (pickedFile != null) {
+              _processAndUploadAvatar(pickedFile);
+            }
+          },
+        );
+      } else {
+        await PermissionUtil.requestWithRationale(
+          permission: Permission.photos,
+          title: '相册/存储权限',
+          purpose: '用于从相册选择图片作为您的个人头像。',
+          icon: Icons.photo_library_rounded,
+          onGranted: () async {
+            final XFile? pickedFile = await picker.pickImage(source: source);
+            if (pickedFile != null) {
+              _processAndUploadAvatar(pickedFile);
+            }
+          },
+        );
+      }
+    }
+  }
 
-      if (pickedFile != null) {
-        try {
-          Uint8List bytes = await pickedFile.readAsBytes();
+  Future<void> _processAndUploadAvatar(XFile pickedFile) async {
+    try {
+      Uint8List bytes = await pickedFile.readAsBytes();
 
-          // 如果文件较大或者为了节省带宽，手动进行二次压缩和缩放
-          // 目标：300x300, 质量 70%, 强制 JPEG
-          try {
-            final ui.Codec codec = await ui.instantiateImageCodec(bytes);
-            final ui.FrameInfo fi = await codec.getNextFrame();
-            final ui.Image image = fi.image;
+      // 如果文件较大或者为了节省带宽，手动进行二次压缩和缩放
+      // 目标：300x300, 质量 70%, 强制 JPEG
+      try {
+        final ui.Codec codec = await ui.instantiateImageCodec(bytes);
+        final ui.FrameInfo fi = await codec.getNextFrame();
+        final ui.Image image = fi.image;
 
-            // 计算等比例缩放后的尺寸
-            double targetWidth = 300;
-            double targetHeight = 300;
-            double ratio = image.width / image.height;
-            if (image.width > image.height) {
-              targetHeight = targetWidth / ratio;
-            } else {
-              targetWidth = targetHeight * ratio;
+        // 计算等比例缩放后的尺寸
+        double targetWidth = 300;
+        double targetHeight = 300;
+        double ratio = image.width / image.height;
+        if (image.width > image.height) {
+          targetHeight = targetWidth / ratio;
+        } else {
+          targetWidth = targetHeight * ratio;
+        }
+
+        final ui.PictureRecorder recorder = ui.PictureRecorder();
+        final ui.Canvas canvas = ui.Canvas(recorder);
+        final ui.Paint paint = ui.Paint()..filterQuality = ui.FilterQuality.high;
+
+        canvas.drawImageRect(
+          image,
+          ui.Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()),
+          ui.Rect.fromLTWH(0, 0, targetWidth, targetHeight),
+          paint,
+        );
+
+        final ui.Picture picture = recorder.endRecording();
+        final ui.Image resizedImage = await picture.toImage(targetWidth.toInt(), targetHeight.toInt());
+        final ByteData? byteData = await resizedImage.toByteData(format: ui.ImageByteFormat.png);
+
+        if (byteData != null) {
+          bytes = byteData.buffer.asUint8List();
+        }
+      } catch (e) {
+        Global.logger.w('手动压缩失败，使用原始文件: $e');
+      }
+
+      Global.logger.d('🖼️ 准备上传头像, 原始文件名: ${pickedFile.name}, 压缩后大小: ${(bytes.length / 1024).toStringAsFixed(2)} KB');
+      final userId = loggedInUser?.id;
+
+      if (userId != null) {
+        if (bytes.length > 1024 * 1024) {
+          ToastUtil.error('图片文件过大，请选择较小的图片');
+          return;
+        }
+        ToastUtil.info('正在上传头像...');
+        // 使用专用的 uploadImg 接口上传图片 (FormData 方式，永久解决 Retrofit 生成代码缺少文件名的问题)
+        final formData = FormData.fromMap({
+          'file': MultipartFile.fromBytes(bytes, filename: pickedFile.name),
+          'userId': userId,
+          'fileName': pickedFile.name,
+        });
+        final result = await Api.client.uploadImg(formData);
+
+        if (result.success && result.data != null) {
+          final newAvatarFilename = result.data!;
+          final db = MyDatabase.instance;
+          final user = await db.usersDao.getUserById(userId);
+          if (user != null) {
+            String finalAvatar = newAvatarFilename;
+            if (!newAvatarFilename.startsWith('http')) {
+              finalAvatar = Config.wordImageBaseUrl + newAvatarFilename;
             }
 
-            final ui.PictureRecorder recorder = ui.PictureRecorder();
-            final ui.Canvas canvas = ui.Canvas(recorder);
-            final ui.Paint paint = ui.Paint()..filterQuality = ui.FilterQuality.high;
+            final updatedUser = user.copyWith(wechatAvatar: drift.Value(finalAvatar));
+            await db.usersDao.saveUser(updatedUser, true);
 
-            canvas.drawImageRect(
-              image,
-              ui.Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()),
-              ui.Rect.fromLTWH(0, 0, targetWidth, targetHeight),
-              paint,
-            );
-
-            final ui.Picture picture = recorder.endRecording();
-            final ui.Image resizedImage = await picture.toImage(targetWidth.toInt(), targetHeight.toInt());
-            final ByteData? byteData = await resizedImage.toByteData(format: ui.ImageByteFormat.png);
-
-            if (byteData != null) {
-              bytes = byteData.buffer.asUint8List();
-            }
-          } catch (e) {
-            Global.logger.w('手动压缩失败，使用原始文件: $e');
-          }
-
-          Global.logger.d('🖼️ 准备上传头像, 原始文件名: ${pickedFile.name}, 压缩后大小: ${(bytes.length / 1024).toStringAsFixed(2)} KB');
-          final userId = loggedInUser?.id;
-
-          if (userId != null) {
-            if (bytes.length > 1024 * 1024) {
-              ToastUtil.error('图片文件过大，请选择较小的图片');
-              return;
-            }
-            ToastUtil.info('正在上传头像...');
-            // 使用专用的 uploadImg 接口上传图片 (FormData 方式，永久解决 Retrofit 生成代码缺少文件名的问题)
-            final formData = FormData.fromMap({
-              'file': MultipartFile.fromBytes(bytes, filename: pickedFile.name),
-              'userId': userId,
-              'fileName': pickedFile.name,
+            // 刷新本地缓存并更新 UI
+            final updatedUserInfo = await Global.refreshLoggedInUser();
+            setState(() {
+              loggedInUser = updatedUserInfo;
             });
-            final result = await Api.client.uploadImg(formData);
 
-            if (result.success && result.data != null) {
-              final newAvatarFilename = result.data!;
-              // 目前后端存储的是相对路径或完整URL。如果是 filename，则拼接 CDN 路径
-              // 这里我们直接更新用户信息的 avatar 字段
-              final db = MyDatabase.instance;
-              final user = await db.usersDao.getUserById(userId);
-              if (user != null) {
-                // 如果后端返回的是 filename，这里可以尝试补全 URL，
-                // 但为了保持一致性（VO转化逻辑会处理或读取），我们根据当前已有的 avatar 格式处理
-                String finalAvatar = newAvatarFilename;
-                if (!newAvatarFilename.startsWith('http')) {
-                  finalAvatar = Config.wordImageBaseUrl + newAvatarFilename;
-                }
-
-                final updatedUser = user.copyWith(wechatAvatar: drift.Value(finalAvatar));
-                await db.usersDao.saveUser(updatedUser, true);
-
-                // 刷新本地缓存并更新 UI
-                final updatedUserInfo = await Global.refreshLoggedInUser();
-                setState(() {
-                  loggedInUser = updatedUserInfo;
-                });
-
-                ToastUtil.success('头像更新成功');
-                // 触发同步
-                ThrottledDbSyncService().requestSync();
-              }
-            } else {
-              ToastUtil.error('头像上传失败: ${result.msg}');
-            }
+            ToastUtil.success('头像更新成功');
+            // 触发同步
+            ThrottledDbSyncService().requestSync();
           }
-        } catch (e, stackTrace) {
-          ErrorHandler.handleError(e, stackTrace, logPrefix: '上传头像失败');
-          ToastUtil.error('上传过程中发生异常');
+        } else {
+          ToastUtil.error('头像上传失败: ${result.msg}');
         }
       }
+    } catch (e, stackTrace) {
+      ErrorHandler.handleError(e, stackTrace, logPrefix: '上传头像失败');
+      ToastUtil.error('上传过程中发生异常');
     }
   }
 

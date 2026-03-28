@@ -5,6 +5,8 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../../util/ocr_service.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
+import '../../util/permission_util.dart';
 import 'package:provider/provider.dart';
 
 import '../../api/bo/word_bo.dart';
@@ -56,33 +58,49 @@ class _ImportFromScanPageState extends State<ImportFromScanPage>
 
   /// 拍照并识别文字
   Future<void> _scanFromCamera() async {
-    try {
-      final XFile? photo = await _picker.pickImage(
-        source: ImageSource.camera,
-        preferredCameraDevice: CameraDevice.rear,
-        imageQuality: 90,
-      );
-      if (photo == null) return; // 用户取消
-      await _recognizeImage(photo.path);
-    } catch (e) {
-      Global.logger.e('拍照失败', error: e);
-      ToastUtil.error('拍照失败，请检查相机权限');
-    }
+    await PermissionUtil.requestWithRationale(
+      permission: Permission.camera,
+      title: '相机权限',
+      purpose: '用于拍摄书本中的英文单词进行扫描识别，这能帮助您快速导入单词。',
+      icon: Icons.camera_alt_rounded,
+      onGranted: () async {
+        try {
+          final XFile? photo = await _picker.pickImage(
+            source: ImageSource.camera,
+            preferredCameraDevice: CameraDevice.rear,
+            imageQuality: 90,
+          );
+          if (photo == null) return; // 用户取消
+          await _recognizeImage(photo.path);
+        } catch (e) {
+          Global.logger.e('拍照失败', error: e);
+          ToastUtil.error('拍照失败，请检查相关权限');
+        }
+      },
+    );
   }
 
   /// 从相册选图并识别
   Future<void> _pickFromGallery() async {
-    try {
-      final XFile? image = await _picker.pickImage(
-        source: ImageSource.gallery,
-        imageQuality: 90,
-      );
-      if (image == null) return;
-      await _recognizeImage(image.path);
-    } catch (e) {
-      Global.logger.e('选图失败', error: e);
-      ToastUtil.error('选图失败');
-    }
+    await PermissionUtil.requestWithRationale(
+      permission: Permission.photos,
+      title: '相册/存储权限',
+      purpose: '用于从相册选择包含英文单词的图片进行扫描识别。',
+      icon: Icons.photo_library_rounded,
+      onGranted: () async {
+        try {
+          final XFile? image = await _picker.pickImage(
+            source: ImageSource.gallery,
+            imageQuality: 90,
+          );
+          if (image == null) return;
+          await _recognizeImage(image.path);
+        } catch (e) {
+          Global.logger.e('选图失败', error: e);
+          ToastUtil.error('选图失败，请检查相关权限');
+        }
+      },
+    );
   }
 
   /// OCR 识别图片中的文字并提取单词（iOS 使用 Vision 框架，Android 使用 Google ML Kit）
