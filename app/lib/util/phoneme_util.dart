@@ -189,6 +189,15 @@ class PhonemeUtil {
     w = w.replaceAll('qu', 'kw');
     w = w.replaceAll(_cRegExp, 's');
 
+    // 处理末尾不发音的 e (如 hardware -> hardwar, base -> bas)
+    // 规则：长度 > 3 且末尾为 e 时，若 e 前面是辅音，则去掉 e
+    if (w.length > 3 && w.endsWith('e')) {
+      final prev = w[w.length - 2];
+      if (!"aeiouy".contains(prev)) {
+        w = w.substring(0, w.length - 1);
+      }
+    }
+
     // 2. 转换为标准音素集映射
     final List<String> res = [];
     for (int i = 0; i < w.length; i++) {
@@ -203,6 +212,10 @@ class PhonemeUtil {
         res.add("TH");
       } else if (char == 'G') {
         res.add("NG");
+      } else if (char == 'h') {
+        res.add("HH");
+      } else if (char == 'j') {
+        res.add("JH");
       } else if (_lowerAlphaRegExp.hasMatch(char)) {
         res.add(char.toUpperCase());
       }
@@ -311,26 +324,33 @@ class PhonemeUtil {
     if (p1 == p2) return 0.0;
 
     // ASR 模型易混淆组（代价设为 0.2，表示 80% 相似度）
-    // 主要是处理 V-L, L-R, B-P, F-V 等经典偏差
+    // 针对中国人发音习惯及 ASR 常见偏差进行优化
     const confusionGroups = [
-      {"V", "L"}, // 解决用户反馈的预算/视频识别偏差
-      {"V", "B"},
-      {"V", "F"},
-      {"L", "R"},
-      {"B", "P"},
-      {"D", "T"},
-      {"G", "K"},
-      {"S", "Z"}, // 增加常见清浊擦音/塞擦音混淆
+      {"V", "L"}, // 经典偏差: video/ledio (南方人常见)
+      {"V", "B"}, // video/bideo
+      {"V", "F"}, // video/fideo
+      {"V", "W"}, // video/wideo (非常常见)
+      {"L", "R"}, // light/right
+      {"B", "P"}, // big/pig
+      {"D", "T"}, // dog/log? no, dog/tok
+      {"G", "K"}, // bag/back
+      {"S", "Z"}, // bus/buzz
       {"SH", "ZH"},
       {"CH", "JH"},
-      {"TH", "DH"},
-      {"S", "@"}, // 某些情况下元音和擦音混淆
-      {"M", "N"},
-      {"IH", "Y"}, // 处理 Y 和 I 的混淆 (比如 ye vs in/i)
-      {"IY", "Y"},
-      {"Y", "@"}, // 半元音 Y 和普通元音 @ 的相似性
-      {"ER", "@"}, // R-colored vowel 跟普通元音混淆
-      {"UW", "W"},
+      {"TH", "DH"}, // think/this (虽然都是 TH，但在 ASR 中可能有不同表现)
+      {"TH", "T"},  // think/tink (常见)
+      {"TH", "D"},  // thin/din (常见)
+      {"TH", "S"},  // think/sink (非常常见)
+      {"DH", "D"},  // this/dis
+      {"DH", "Z"},  // this/zis (常见)
+      {"S", "@"},   // 某些情况下元音和擦音混淆
+      {"M", "N"},   // am/an
+      {"IH", "Y"},  // sit/si
+      {"IY", "Y"},  // see/si
+      {"Y", "@"},   // 半元音 Y 和普通元音 @ 的相似性
+      {"ER", "@"},  // R-colored vowel 跟普通元音混淆
+      {"UW", "W"},  // woo/woo
+      {"W", "@"},   // 增加 W 与元音混淆 (ASR 有时把 W 识别为母音部分)
     ];
 
     for (final group in confusionGroups) {

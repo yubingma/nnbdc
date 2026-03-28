@@ -22,6 +22,7 @@ SURE  SH UH1 R
 YE  Y IY1
 APPLE  AE1 P AH0 L
 APPLY  AH0 P L AY1
+HARDWARE  HH AA1 R D W EH2 R
 ''';
           return ByteData.view(Uint8List.fromList(utf8.encode(content)).buffer);
         }
@@ -68,6 +69,17 @@ APPLY  AH0 P L AY1
       // (5 - 1.2) / 5 = 76. 
       // Penalty 10 -> 66.
       expect(score, greaterThanOrEqualTo(65)); 
+    });
+
+    test('hardware vs hathware - should match (voiced stop vs fricative confusion)', () async {
+      const String target = "hardware";
+      const String asrResult = "hathware";
+      
+      final int score = await PhonemeUtil.similarity(asrResult, target);
+      debugPrint('Hardware vs Hathware score: $score');
+      
+      // Expected around 83 with the new confusion groups
+      expect(score, greaterThanOrEqualTo(Constants.phonemeMatchThreshold));
     });
   });
 }
