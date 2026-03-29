@@ -216,7 +216,7 @@ class MyDatabase extends _$MyDatabase {
   // you should bump this number whenever you change or add a table definition. Migrations
   // are covered later in this readme.
   @override
-  int get schemaVersion => 32;
+  int get schemaVersion => 33;
 
   @override
   MigrationStrategy get migration {
@@ -326,6 +326,9 @@ class MyDatabase extends _$MyDatabase {
           }
           if (from < 32) {
             await _migrateFromV31ToV32(m);
+          }
+          if (from < 33) {
+            await _migrateFromV32ToV33(m);
           }
         } catch (e, stackTrace) {
           // 升级失败，记录错误日志
@@ -813,6 +816,21 @@ class MyDatabase extends _$MyDatabase {
         Global.logger.i('✅ 升级从 V31 到 V32 完成，添加 apple_user_id 字段');
       } catch (e, stackTrace) {
         Global.logger.e('升级从 V31 到 V32 失败: $e', error: e, stackTrace: stackTrace);
+      }
+    });
+  }
+
+  /// 从版本 32 升级到版本 33：向 Cigens 表添加 spell, category, meaning_cn, meaning_en 字段
+  Future<void> _migrateFromV32ToV33(Migrator m) async {
+    await transaction(() async {
+      try {
+        await m.addColumn(cigens, cigens.spell);
+        await m.addColumn(cigens, cigens.category);
+        await m.addColumn(cigens, cigens.meaningCn);
+        await m.addColumn(cigens, cigens.meaningEn);
+        Global.logger.i('✅ 升级从 V32 到 V33 完成，完善 Cigens 字段');
+      } catch (e, stackTrace) {
+        Global.logger.e('升级从 V32 到 V33 失败: $e', error: e, stackTrace: stackTrace);
       }
     });
   }

@@ -385,6 +385,14 @@ class Cigens extends Table {
 
   TextColumn get description => text()();
 
+  TextColumn get spell => text().nullable()();
+
+  TextColumn get category => text().nullable()();
+
+  TextColumn get meaningCn => text().nullable()();
+
+  TextColumn get meaningEn => text().nullable()();
+
   DateTimeColumn get createTime => dateTime()();
 
   DateTimeColumn get updateTime => dateTime().nullable()();
