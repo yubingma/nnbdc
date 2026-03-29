@@ -36,6 +36,11 @@ public class AiBo {
     @Autowired
     private AliyunAiProperties aiProperties;
 
+    @Autowired
+    private beidanci.service.util.SysParamUtil sysParamUtil;
+
+    private final java.util.concurrent.atomic.AtomicInteger activeAiStoryRequests = new java.util.concurrent.atomic.AtomicInteger(0);
+
     /**
      * 调用通义千问产生文本结果
      *
@@ -378,6 +383,39 @@ public class AiBo {
         } catch (Exception e) {
             logger.error("AI 解析词根描述异常: " + description, e);
             return null;
+        }
+    }
+
+    /**
+     * 根据单词列表生成小短文
+     * @param words 单词列表 (拼写)
+     * @return 生成的小短文
+     */
+    public String generateShortStory(java.util.List<String> words) {
+        if (words == null || words.isEmpty()) {
+            return "没有单词可以生成短文。";
+        }
+
+        // 限制并发量，防止瞬间大量请求冲垮服务器
+        int limit = sysParamUtil.getAiStoryConcurrencyLimit();
+        if (activeAiStoryRequests.get() >= limit) {
+            throw new RuntimeException("服务器繁忙，AI 生成并发达到上限，请稍后再试");
+        }
+
+        activeAiStoryRequests.incrementAndGet();
+        try {
+            String systemPrompt = "你是一位出色的创意作家和英语老师。请使用用户提供的英文单词列表，创作一篇短小精悍且富有逻辑的小故事（约 100-200 词）。\n" +
+                    "要求：\n" +
+                    "1. 必须使用列表中所有的单词（忽略大小写差异）。\n" +
+                    "2. 故事内容应当生动有趣，且易于理解。\n" +
+                    "3. 单词应当自然融入背景，加粗显示（如：**apple**）。\n" +
+                    "4. 同时提供对应的中文翻译，放在英文文章之后。\n" +
+                    "5. 最后加上一句鼓励学习的话。";
+
+            String userPrompt = "单词列表：" + String.join(", ", words);
+            return generateText(systemPrompt, userPrompt);
+        } finally {
+            activeAiStoryRequests.decrementAndGet();
         }
     }
 }

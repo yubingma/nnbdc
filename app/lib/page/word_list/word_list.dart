@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:flutter/services.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter_animation_progress_bar/flutter_animation_progress_bar.dart';
 import 'package:get/get.dart';
@@ -27,6 +28,7 @@ import '../../db/db.dart';
 import '../index.dart';
 import '../walkman.dart';
 import '../../util/app_clock.dart';
+import '../../api/api.dart';
 import '../../api/bo/word_bo.dart';
 import 'edit_meaning_dialog.dart';
 import 'import_from_book_page.dart';
@@ -39,6 +41,7 @@ const String menuSpeakEnglish = '说英文';
 const String menuWriteSpell = '拼写练习';
 const String menuImportFromBook = '从词书导入';
 const String menuImportFromScan = '扫描导入';
+const String menuAiStory = 'AI短文';
 
 mixin WordsProvider {
   Future<PagedResults<WordWrapper>> getAPageOfWords(
@@ -207,6 +210,9 @@ class WordListPageState extends State<WordListPage>
   /// 菜单是否打开（用于控制iPad上的弹出菜单稳定性）
   bool isMenuOpen = false;
 
+  /// 已生成的 AI 短文缓存
+  String? _aiStory;
+
   @override
   bool get wantKeepAlive => true; // 保持状态，避免页面重建
 
@@ -226,6 +232,7 @@ class WordListPageState extends State<WordListPage>
     //清空当前查询结果
     words.clear();
     // baseIndex = null;
+    _aiStory = null; // 刷新时也清空已缓存的 AI 短文
   }
 
   Future<void> loadData() async {
@@ -3151,6 +3158,7 @@ class WordListPageState extends State<WordListPage>
                             menuItems.add(menuSpeakEnglish);
                           }
                           menuItems.add(menuWriteSpell);
+                          menuItems.add(menuAiStory);
 
                           // 5. 显示菜单 (使用 RootNavigator)
                           // ignore: use_build_context_synchronously
@@ -3182,6 +3190,9 @@ class WordListPageState extends State<WordListPage>
                                 case menuWriteSpell:
                                   icon = Icons.edit;
                                   break;
+                                case menuAiStory:
+                                  icon = Icons.auto_awesome;
+                                  break;
                                 default:
                                   icon = Icons.help_outline;
                               }
@@ -3209,6 +3220,9 @@ class WordListPageState extends State<WordListPage>
                                       false; // it does not represent a state
                                   break;
                                 case menuImportFromScan:
+                                  isSelected = false;
+                                  break;
+                                case menuAiStory:
                                   isSelected = false;
                                   break;
                               }
@@ -3333,19 +3347,22 @@ class WordListPageState extends State<WordListPage>
                                 _startAsr(decideAsrLanguage());
                                 _subscribeMeterIfNeeded();
                                 break;
-                              case menuWalkman:
-                                if (studyMode ==
-                                        WordListStudyMode.speakChinese ||
-                                    studyMode ==
-                                        WordListStudyMode.speakEnglish) {
-                                  asr.stopAsr();
-                                  asr.reset();
-                                }
-                                Get.toNamed('/walkman',
-                                    arguments:
-                                        WalkmanParams(args.wordsProvider));
-                                break;
-                            }
+                                case menuWalkman:
+                                  if (studyMode ==
+                                          WordListStudyMode.speakChinese ||
+                                      studyMode ==
+                                          WordListStudyMode.speakEnglish) {
+                                    asr.stopAsr();
+                                    asr.reset();
+                                  }
+                                  Get.toNamed('/walkman',
+                                      arguments:
+                                          WalkmanParams(args.wordsProvider));
+                                  break;
+                                case menuAiStory:
+                                  _generateAiStory();
+                                  break;
+                              }
                           }
                         } finally {
                           // 7. 恢复标志位
@@ -3802,6 +3819,72 @@ class WordListPageState extends State<WordListPage>
     } finally {
       isMenuOpen = false;
     }
+  }
+
+  void _generateAiStory() async {
+    if (words.isEmpty) {
+      ToastUtil.error('列表中没有单词');
+      return;
+    }
+
+    if (_aiStory != null) {
+      _showAiStoryDialog(_aiStory!);
+      return;
+    }
+
+    try {
+      // 准备单词列表 JSON
+      final wordSpells = words.map((w) => w.word.spell).toList();
+      final wordsJson = jsonEncode(wordSpells);
+
+      // 显示加载中
+      Api.setLoadingDisabled(false);
+      final result = await Api.client.generateAiShortStory(wordsJson);
+
+      if (result.success) {
+        _aiStory = result.data;
+        _showAiStoryDialog(_aiStory!);
+      } else {
+        ToastUtil.error(result.msg ?? '生成 AI 短文失败');
+      }
+    } catch (e) {
+      Global.logger.e('生成 AI 短文异常', error: e);
+      ToastUtil.error('生成异常: $e');
+    }
+  }
+
+  void _showAiStoryDialog(String story) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            const Icon(Icons.auto_awesome, color: Colors.amber),
+            const SizedBox(width: 8),
+            const Text('AI 单词小短文'),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: SelectableText(
+            story,
+            style: const TextStyle(fontSize: 16, height: 1.5),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: story));
+              ToastUtil.info('已复制到剪贴板');
+            },
+            child: const Text('复制'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('关闭'),
+          ),
+        ],
+      ),
+    );
   }
 }
 

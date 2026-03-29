@@ -14,6 +14,7 @@ import 'package:nnbdc/page/admin/word_management.dart';
 import 'package:nnbdc/page/admin/dict_import_management.dart';
 import 'package:nnbdc/page/admin/admin_image_review_page.dart';
 import 'package:nnbdc/page/admin/admin_cigen_optimize_page.dart';
+import 'package:nnbdc/page/admin/system_settings_page.dart';
 import 'package:nnbdc/state.dart';
 import 'package:nnbdc/theme/app_theme.dart';
 import 'package:nnbdc/util/loading_utils.dart';
@@ -98,7 +99,7 @@ class _AdminPageState extends State<AdminPage> {
         title: '系统设置',
         icon: Icons.settings,
         color: const Color(0xFF9C27B0),
-        onTap: () => _showComingSoon('系统设置'),
+        onTap: () => _navigateToSystemSettings(),
       ),
       _buildManagementCard(
         title: '数据统计',
@@ -475,6 +476,15 @@ class _AdminPageState extends State<AdminPage> {
       context,
       MaterialPageRoute(
         builder: (context) => const FeatureRequestReportManagementWidget(),
+      ),
+    );
+  }
+
+  void _navigateToSystemSettings() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const SystemSettingsPage(),
       ),
     );
   }

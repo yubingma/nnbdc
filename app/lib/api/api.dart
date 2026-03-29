@@ -777,4 +777,15 @@ abstract class RestClient {
 
   @POST("/import/cancel")
   Future<Result> cancelDictImportTask(@Query("taskId") String taskId);
+
+  @POST("/generateAiShortStory.do")
+  @FormUrlEncoded()
+  Future<Result<String>> generateAiShortStory(@Field("wordsJson") String wordsJson);
+
+  @GET("/admin/getAiStoryConfig.do")
+  Future<Result<JsonMap>> getAiStoryConfig();
+
+  @POST("/admin/saveAiStoryConfig.do")
+  @FormUrlEncoded()
+  Future<Result<String>> saveAiStoryConfig(@Field("concurrencyLimit") int concurrencyLimit);
 }

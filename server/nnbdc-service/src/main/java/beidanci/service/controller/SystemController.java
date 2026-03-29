@@ -414,4 +414,35 @@ public class SystemController {
             return Result.fail("AI服务异常: " + e.getMessage());
         }
     }
+
+    /**
+     * 获取 AI 短文生成相关配置
+     */
+    @GetMapping("/admin/getAiStoryConfig.do")
+    public Result<java.util.Map<String, Object>> getAiStoryConfig() {
+        java.util.Map<String, Object> config = new java.util.HashMap<>();
+        int limit = 5;
+        SysParam param = sysParamBo.findById("AiStoryConcurrencyLimit");
+        if (param != null) {
+            limit = Integer.parseInt(param.getParamValue());
+        }
+        config.put("concurrencyLimit", limit);
+        return Result.success(config);
+    }
+
+    /**
+     * 保存 AI 短文生成相关配置
+     */
+    @PostMapping("/admin/saveAiStoryConfig.do")
+    public Result<String> saveAiStoryConfig(@RequestParam("concurrencyLimit") int concurrencyLimit) throws IllegalAccessException {
+        SysParam param = sysParamBo.findById("AiStoryConcurrencyLimit");
+        if (param == null) {
+            param = new SysParam("AiStoryConcurrencyLimit", String.valueOf(concurrencyLimit), "AI 短文生成并发上限");
+            sysParamBo.createEntity(param);
+        } else {
+            param.setParamValue(String.valueOf(concurrencyLimit));
+            sysParamBo.updateEntity(param);
+        }
+        return Result.success("系统配置保存成功");
+    }
 }

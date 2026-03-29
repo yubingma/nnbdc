@@ -1,0 +1,37 @@
+=== AI Scouter Report for Suspicious Words ===
+
+>> --- [A] 物理空格缺失 (WordNinja 分词探测) ---
+
+连词嫌疑: 'appetiser' -> 可能应为: 'app et is er'
+连词嫌疑: 'commercialise' -> 可能应为: 'commercial is e'
+连词嫌疑: 'complicatedadj' -> 可能应为: 'complicated adj'
+连词嫌疑: 'constructiv' -> 可能应为: 'construct iv'
+连词嫌疑: 'engagemen' -> 可能应为: 'engage men'
+连词嫌疑: 'industrialise' -> 可能应为: 'industrial is e'
+连词嫌疑: 'jeopardise' -> 可能应为: 'jeo pardi se'
+连词嫌疑: 'plagiarise' -> 可能应为: 'pla gia rise'
+连词嫌疑: 'refrigeratio' -> 可能应为: 'ref rig e ratio'
+连词嫌疑: 'scrutinise' -> 可能应为: 'sc rut in is e'
+
+>> --- [B] 原生拼写错误 (SpellChecker 探伤) ---
+
+拼写嫌疑: 'apologise' -> 可能应为: 'apologize'
+拼写嫌疑: 'appetiser' -> 可能应为: 'appetizer'
+拼写嫌疑: 'authorise' -> 可能应为: 'authorize'
+拼写嫌疑: 'civilisation' -> 可能应为: 'civilization'
+拼写嫌疑: 'commercialise' -> 可能应为: 'commercialism'
+拼写嫌疑: 'constructiv' -> 可能应为: 'constructive'
+拼写嫌疑: 'engagemen' -> 可能应为: 'engagement'
+拼写嫌疑: 'fertilise' -> 可能应为: 'fertilize'
+拼写嫌疑: 'hybridisation' -> 可能应为: 'hybridization'
+拼写嫌疑: 'industrialise' -> 可能应为: 'industrialist'
+拼写嫌疑: 'jeopardise' -> 可能应为: 'jeopardize'
+拼写嫌疑: 'jewellery' -> 可能应为: 'jeweller'
+拼写嫌疑: 'parlour' -> 可能应为: 'parlor'
+拼写嫌疑: 'plagiarise' -> 可能应为: 'plagiarism'
+拼写嫌疑: 'refrigeratio' -> 可能应为: 'refrigeration'
+拼写嫌疑: 'rumour' -> 可能应为: 'rumor'
+拼写嫌疑: 'scrutinise' -> 可能应为: 'scrutinize'
+拼写嫌疑: 'specialise' -> 可能应为: 'specialist'
+拼写嫌疑: 'utilise' -> 可能应为: 'utilize'
+拼写嫌疑: 'vapour' -> 可能应为: 'vapor'

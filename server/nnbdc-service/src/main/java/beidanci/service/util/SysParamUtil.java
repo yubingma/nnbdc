@@ -1,6 +1,7 @@
 package beidanci.service.util;
 
 import beidanci.service.bo.SysParamBo;
+import beidanci.service.po.SysParam;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -69,5 +70,10 @@ public class SysParamUtil {
 
     public String getExportFileUrl() {
         return sysParamBO.findById("exportFileUrl", false).getParamValue();
+    }
+
+    public int getAiStoryConcurrencyLimit() {
+        SysParam param = sysParamBO.findById("AiStoryConcurrencyLimit", false);
+        return param == null ? 5 : Integer.parseInt(param.getParamValue());
     }
 }
