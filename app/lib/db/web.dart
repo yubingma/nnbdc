@@ -68,7 +68,7 @@ DatabaseConnection connectOnWeb() {
     // If still failing after retries, try IndexedDB-backed WebDatabase explicitly (no localStorage fallback)
     try {
       Global.logger.w('Falling back to IndexedDB WebDatabase after WASM failures');
-      // ignore: deprecated_member_use
+      // ignore: deprecated_member_use, experimental_member_use
       final storage = DriftWebStorage.indexedDb('nnbdc_db');
       // DatabaseConnection.fromExecutor is deprecated in newer drift; use unnamed ctor if available
       // ignore: deprecated_member_use

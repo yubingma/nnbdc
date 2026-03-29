@@ -667,8 +667,7 @@ class MyDatabase extends _$MyDatabase {
           await customStatement('DROP INDEX IF EXISTS idx_learning_words_user_life');
           await customStatement('DROP INDEX IF EXISTS idx_learning_words_add_time_life');
 
-          // 由于 masteryLevel 已经在 table.dart 的 LearningWords 类中删除了，
-          // 调用 m.alterTable(TableMigration(learningWords)) 会自动识别并执行“删除列”的操作
+          // ignore: experimental_member_use
           await m.alterTable(TableMigration(learningWords));
           Global.logger.i('✅ 已成功删除 mastery_level 冗余字段');
         }
