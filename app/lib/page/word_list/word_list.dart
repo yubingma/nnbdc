@@ -1291,8 +1291,9 @@ class WordListPageState extends State<WordListPage>
               ),
               // 底部的按钮，固定在页面底部
               if (args.injectedBtn != null)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16.0, 4.0, 16.0, 0.0),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.fromLTRB(16.0, 12.0, 16.0, 20.0),
                   child: args.injectedBtn,
                 ),
             ],

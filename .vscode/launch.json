@@ -36,7 +36,7 @@
             "request": "launch",
             "type": "dart",
             "program": "${workspaceFolder}/app/lib/main.dart",
-            "deviceId": "9759342B-477D-431E-9A2F-9AD6665B0362",
+            "deviceId": "3A34CE85-3233-452D-880B-E395606F36EA",
             "args": [],
             "flutterMode": "debug"
         },

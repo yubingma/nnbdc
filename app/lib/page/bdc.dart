@@ -2246,9 +2246,12 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
           style: ElevatedButton.styleFrom(
             foregroundColor: Colors.white,
             backgroundColor: Colors.green,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12)),
           ),
-          label: const Text('继续'),
+          label: const Text('继续',
+              style: TextStyle(fontWeight: FontWeight.bold)),
           onPressed: () async {
             Get.back(result: true);
             // 给 UI 一个缓冲时间，确保列表页面完全关闭并清理 ASR 状态后再进入下一步
