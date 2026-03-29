@@ -514,6 +514,7 @@ public class UserDbSyncBo {
                 userFromClient.setWechatUnionId(user.getWechatUnionId());
                 userFromClient.setWechatNickname(user.getWechatNickname());
                 userFromClient.setWechatAvatar(user.getWechatAvatar());
+                userFromClient.setAppleUserId(user.getAppleUserId());
 
                 // 订阅字段仅允许后端维护（客户端同步UserDto不包含这些字段）
                 // 如果不回填，update 时会把字段覆盖成 null/默认值，甚至触发 NOT NULL 约束

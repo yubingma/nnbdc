@@ -277,6 +277,7 @@ public abstract class BaseDao<E extends Po> {
         sql.append(")");
 
         String finalSql = Objects.requireNonNull(sql.toString(), "SQL cannot be null");
+        logger.info("执行 SQL: {}, 参数: {}", finalSql, values);
         jdbcTemplate.update(finalSql, values.toArray());
     }
 
@@ -829,7 +830,9 @@ public abstract class BaseDao<E extends Po> {
             throw new RuntimeException("获取主键值失败", e);
         }
 
-        jdbcTemplate.update(Objects.requireNonNull(sql.toString(), "SQL cannot be null"), values.toArray());
+        String finalSql = Objects.requireNonNull(sql.toString(), "SQL cannot be null");
+        logger.info("执行 UPDATE SQL: {}, 参数: {}", finalSql, values);
+        jdbcTemplate.update(finalSql, values.toArray());
     }
 
     /**

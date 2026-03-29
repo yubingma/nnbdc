@@ -470,6 +470,7 @@ class UserDto {
   int? dakaScore;
   bool? isTodayLearningStarted;
   bool? isTodayLearningFinished;
+  String? appleUserId;
   String? studyConfig;
   DateTime? createTime;
   DateTime? updateTime;

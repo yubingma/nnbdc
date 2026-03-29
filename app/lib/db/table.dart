@@ -142,6 +142,9 @@ class Users extends Table {
   /// 今日学习时长（秒）
   IntColumn get todayLearningSeconds => integer().nullable().withDefault(const Constant(0))();
 
+  // 苹果登录相关字段
+  TextColumn get appleUserId => text().nullable()();
+
   // 订阅相关字段（仅支持iOS平台）
 
   // iOS订阅字段

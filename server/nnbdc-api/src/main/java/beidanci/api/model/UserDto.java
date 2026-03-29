@@ -58,6 +58,7 @@ public class UserDto {
     private Date premiumOverrideUpdateTime;
     private String premiumOverrideReason;
     private String premiumOverrideDuration;
+    private String appleUserId;
 
     private Date createTime;
     private Date updateTime;
@@ -431,5 +432,13 @@ public class UserDto {
 
     public void setStudyConfig(String studyConfig) {
         this.studyConfig = studyConfig;
+    }
+
+    public String getAppleUserId() {
+        return appleUserId;
+    }
+
+    public void setAppleUserId(String appleUserId) {
+        this.appleUserId = appleUserId;
     }
 }

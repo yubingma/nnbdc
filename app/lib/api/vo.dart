@@ -263,6 +263,9 @@ class UserVo {
   /// 随身听配置 (JSON格式)
   String? studyConfig;
 
+  /// Apple ID
+  String? appleUserId;
+
   UserVo(this.id, this.userName);
 
   UserVo.c2(this.id);
@@ -316,6 +319,7 @@ class UserVo {
     userVo.premiumOverrideReason = user.premiumOverrideReason;
     userVo.premiumOverrideDuration = user.premiumOverrideDuration;
     userVo.studyConfig = user.studyConfig;
+    userVo.appleUserId = user.appleUserId;
 
     userVo.password = user.password;
     userVo.lastLoginTime = user.lastLoginTime;
@@ -1275,7 +1279,8 @@ User userVo2User(UserVo userVo) {
       premiumOverrideUpdateTime: userVo.premiumOverrideUpdateTime,
       premiumOverrideReason: userVo.premiumOverrideReason,
       premiumOverrideDuration: userVo.premiumOverrideDuration,
-      studyConfig: userVo.studyConfig);
+      studyConfig: userVo.studyConfig,
+      appleUserId: userVo.appleUserId);
 
   return user;
 }
