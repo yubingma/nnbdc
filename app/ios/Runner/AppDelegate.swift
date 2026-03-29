@@ -122,7 +122,6 @@ import StoreKit
         reviewChannel.setMethodCallHandler { [weak self] (call: FlutterMethodCall, result: @escaping FlutterResult) in
             self?.handleReviewMethodCall(call: call, result: result)
         }
-        
         // 初始化语音识别器
         setupSpeechRecognizer()
         
