@@ -1293,7 +1293,7 @@ class WordListPageState extends State<WordListPage>
               if (args.injectedBtn != null)
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.fromLTRB(16.0, 12.0, 16.0, 20.0),
+                  padding: const EdgeInsets.fromLTRB(16.0, 12.0, 16.0, 24.0),
                   child: args.injectedBtn,
                 ),
             ],

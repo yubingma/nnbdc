@@ -959,10 +959,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
           if (args.bottomBtn != null)
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-              child: Center(
-                child: args.bottomBtn!,
-              ),
+              padding: const EdgeInsets.fromLTRB(16.0, 12.0, 16.0, 24.0),
+              child: args.bottomBtn!,
             ),
         ],
       ),
@@ -1042,9 +1040,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
             ),
           ),
 
-        // 输入框区域
         Container(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
           decoration: BoxDecoration(
             color: isDarkMode ? const Color(0xFF16213E) : Colors.white,
             boxShadow: [

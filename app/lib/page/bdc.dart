@@ -2240,29 +2240,43 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
       // 如果当前学习步骤是列表模式，显示单词列表
       if (currentStep == 'List') {
-        var nextWordBtn = ElevatedButton.icon(
-          icon:
-              const Icon(Icons.navigate_next, size: 24.0, color: Colors.white),
+        var nextWordBtn = ElevatedButton(
           style: ElevatedButton.styleFrom(
             foregroundColor: Colors.white,
             backgroundColor: Colors.green,
-            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+            minimumSize: const Size(double.infinity, 50),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12)),
           ),
-          label: const Text('继续',
-              style: TextStyle(fontWeight: FontWeight.bold)),
           onPressed: () async {
             Get.back(result: true);
             // 给 UI 一个缓冲时间，确保列表页面完全关闭并清理 ASR 状态后再进入下一步
             await Future.delayed(const Duration(milliseconds: 100));
-
+ 
             // 完成当前批次列表学习
             await StudyBo().completeListStepForCurrentBatch();
             _args.fromPage = 'batch_word_list';
             await GetStorage().write("BdcPageArgs", _args.toJson());
             await getNextWord(false);
           },
+          child: const Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Opacity(
+                opacity: 0,
+                child: Icon(Icons.navigate_next, size: 24.0),
+              ),
+              Expanded(
+                child: Text(
+                  '继续',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+              ),
+              Icon(Icons.navigate_next, size: 24.0),
+            ],
+          ),
         );
         // 在获取下一个单词前，停止 ASR 任务（Hot Stop）
         await asr.stopAsr();
@@ -4200,40 +4214,42 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       if (mounted) setState(() {});
     }
 
-    var bottomBtn = Container(
-      decoration: BoxDecoration(
-        color: context.read<DarkMode>().isDarkMode
+    var bottomBtn = ElevatedButton(
+      style: ElevatedButton.styleFrom(
+        foregroundColor: context.read<DarkMode>().isDarkMode
+            ? Colors.black
+            : Colors.white,
+        backgroundColor: context.read<DarkMode>().isDarkMode
             ? Colors.white
             : AppTheme.primaryColor,
-        borderRadius: BorderRadius.circular(12),
+        minimumSize: const Size(double.infinity, 50),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12)),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      child: InkWell(
-        onTap: () {
-          Navigator.pop(context);
-          getNextWord(true, fsrsRating: fsrsRating);
-        },
-        borderRadius: BorderRadius.circular(8),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              '下一词 ',
+      onPressed: () {
+        Get.back();
+        getNextWord(true, fsrsRating: fsrsRating);
+      },
+      child: const Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Opacity(
+            opacity: 0,
+            child: Icon(Icons.arrow_forward, size: 20),
+          ),
+          Expanded(
+            child: Text(
+              '下一词',
+              textAlign: TextAlign.center,
               style: TextStyle(
-                color: context.read<DarkMode>().isDarkMode
-                    ? Colors.black
-                    : Colors.white,
                 fontSize: 16,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.bold,
               ),
             ),
-            Icon(Icons.arrow_forward,
-                color: context.read<DarkMode>().isDarkMode
-                    ? Colors.black
-                    : Colors.white,
-                size: 20),
-          ],
-        ),
+          ),
+          Icon(Icons.arrow_forward, size: 20),
+        ],
       ),
     );
     await Get.toNamed('/word_detail',
