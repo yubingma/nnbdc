@@ -277,7 +277,6 @@ public abstract class BaseDao<E extends Po> {
         sql.append(")");
 
         String finalSql = Objects.requireNonNull(sql.toString(), "SQL cannot be null");
-        logger.info("执行 SQL: {}, 参数: {}", finalSql, values);
         jdbcTemplate.update(finalSql, values.toArray());
     }
 
