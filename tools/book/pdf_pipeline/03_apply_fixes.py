@@ -17,9 +17,22 @@ FINAL_OUT = sys.argv[2]
 # 🔴 在这里粘贴你从 02_suspicious_report.txt 审查并剔除掉乱猜词后的“真实出错映射字典” 🔴
 # 例如:
 MY_WHITELIST = {
-    "bringhometo": "bring home to",
-    "federa": "federal",
-    "spokenman": "spokesman"
+    "comdemn": "condemn",
+    "commemoratv": "commemorative",
+    "complicatedadj": "complicated",
+    "constructiv": "constructive",
+    "demograph": "demography",
+    "demographicadj": "demographic",
+    "engagemen": "engagement",
+    "epartment": "department",
+    "escalato": "escalator",
+    "fasle": "false",
+    "federationn": "federation",
+    "refrigeratio": "refrigeration",
+    "neighbourhoo": "neighbourhood",
+    "significancen": "significance",
+    "simulative adj": "simulative",
+    "father-in-lawn": "father-in-law"
 }
 
 if __name__ == "__main__":

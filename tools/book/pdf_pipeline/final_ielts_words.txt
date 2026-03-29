@@ -600,13 +600,13 @@ colony
 column
 columnist
 combine
-comdemn
+condemn
 comedy
 comet
 comfort
 command
 commander
-commemoratv
+commemorative
 commence
 comment
 commentary
@@ -682,7 +682,7 @@ consortiumn
 conspiracy
 constraint
 construct
-constructiv
+constructive
 consult
 consultant
 consume
@@ -866,7 +866,7 @@ demise
 democracy
 democratic
 democratise
-demograph
+demography
 demographic
 demolish
 demonstrate
@@ -1119,7 +1119,7 @@ enemy
 energetic
 energy
 enforce
-engagemen
+engagement
 engineer
 engineering
 engrave
@@ -1144,7 +1144,7 @@ envelope
 environment
 envy
 enzyme
-epartment
+department
 epic
 epidemic
 equal
@@ -1161,7 +1161,7 @@ erode
 error
 erupt
 escalate
-escalato
+escalator
 escape
 essay
 establish
@@ -1262,11 +1262,11 @@ fare
 farewell
 fascinate
 fashionable
-fasle
+false
 fasten
 fatal
 fate
-father-in-lawn
+father-in-law
 fatigue
 fault
 fauna
@@ -2701,7 +2701,7 @@ reform
 refraction
 refresh
 refreshment
-refrigeratio
+refrigeration
 refrigeratorn
 refuge
 refund
