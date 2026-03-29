@@ -61,6 +61,7 @@ public class UserVo extends UuidVo {
     private Date lastDakaDate;
     private Integer totalScore;
     private Double dakaRatio;
+    private String appleUserId;
 
     // 订阅相关字段（iOS平台）
     /**
@@ -323,6 +324,14 @@ public class UserVo extends UuidVo {
 
     public void setNickName(String nickName) {
         this.nickName = nickName;
+    }
+
+    public String getAppleUserId() {
+        return appleUserId;
+    }
+
+    public void setAppleUserId(String appleUserId) {
+        this.appleUserId = appleUserId;
     }
 
     public String getPassword() {

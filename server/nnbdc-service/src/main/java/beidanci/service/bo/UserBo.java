@@ -885,12 +885,13 @@ public class UserBo extends BaseBo<User> {
      * @return 已持久化的 User 对象
      */
     public User createUser(String userName, String password, String nickName,
-                              String email, User invitedBy, boolean isSysUser) {
+                           String email, User invitedBy, boolean isSysUser, String appleUserId) {
         User user = new User();
         user.setUserName(userName.toLowerCase());
         user.setPassword(password);
         user.setNickName(EmojiFilter.filterEmoji(nickName));
         user.setEmail(email);
+        user.setAppleUserId(appleUserId);
 
         // wordsPerDay 从系统参数读取默认值
         SysParam sysParam = sysParamBo.findById("DefaultWordsPerDay", false);
@@ -920,12 +921,16 @@ public class UserBo extends BaseBo<User> {
 
         // 持久化
         createEntity(user);
-        logger.info("创建了新用户: [{}]", user.getDisplayNickName());
+        logger.info("创建了新用户: [{}], userId={}, appleUserId={}", user.getDisplayNickName(), user.getId(), appleUserId);
 
         createUserBaseData(user);
 
-
         return user;
+    }
+
+    public User createUser(String userName, String password, String nickName,
+                           String email, User invitedBy, boolean isSysUser) {
+        return createUser(userName, password, nickName, email, invitedBy, isSysUser, null);
     }
 
     /**
@@ -1111,27 +1116,42 @@ public class UserBo extends BaseBo<User> {
                 users = namedParameterJdbcTemplate.query(sql, params, new EntityRowMapper<>(User.class));
             }
 
+            if (users.isEmpty() && email != null && !email.trim().isEmpty()) {
+                users = findByEmail(email);
+                if (!users.isEmpty()) {
+                    User userByEmail = users.get(0);
+                    logger.info("找到同邮箱用户，关联苹果账号: userId={}, email={}", userByEmail.getId(), email);
+                    userByEmail.setAppleUserId(userIdentifier);
+                    updateEntity(userByEmail);
+                }
+            }
+
             if (!users.isEmpty()) {
                 // 用户已存在，更新可能为空的属性
                 User existingUser = users.get(0);
                 boolean changed = false;
+                if (userIdentifier != null && !userIdentifier.equals(existingUser.getAppleUserId())) {
+                    existingUser.setAppleUserId(userIdentifier);
+                    changed = true;
+                }
                 if (email != null && !email.trim().isEmpty() && (existingUser.getEmail() == null || existingUser.getEmail().isEmpty())) {
                     existingUser.setEmail(email);
                     changed = true;
                 }
-                if (nickname != null && !nickname.trim().isEmpty() && existingUser.getNickName().startsWith("apple_user")) {
+                if (nickname != null && !nickname.trim().isEmpty() && (existingUser.getNickName() == null || existingUser.getNickName().startsWith("apple_user") || existingUser.getNickName().startsWith("ap_"))) {
                     existingUser.setNickName(nickname);
                     changed = true;
                 }
+                existingUser.setLastLoginTime(new Date());
+                changed = true;
                 if (changed) {
                     updateEntity(existingUser);
                 }
-                existingUser.setLastLoginTime(new Date());
-                updateEntity(existingUser);
                 return existingUser;
             }
 
-            // 用户不存在，使用统一方法创建新用户。
+            // --- 原子化创建带身份标识的新用户 ---
+            // 直接在创建阶段注入 appleUserId，确保数据库记录“落地即完整”，避免二次更新失败
             String userName = "ap_" + java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 16);
             String randomPassword = MD5Utils.md5(userIdentifier + System.currentTimeMillis());
             
@@ -1139,11 +1159,9 @@ public class UserBo extends BaseBo<User> {
                 nickname = "apple_user_" + userName.substring(3, 9);
             }
 
-            User newUser = createUser(userName, randomPassword, nickname, email, null, false);
-            newUser.setAppleUserId(userIdentifier);
-            updateEntity(newUser);
-
-            logger.info("创建苹果用户成功: userIdentifier={}, nickname={}", userIdentifier, nickname);
+            User newUser = createUser(userName, randomPassword, nickname, email, null, false, userIdentifier);
+            
+            logger.info("创建苹果用户成功: userIdentifier={}, userId={}, nickname={}", userIdentifier, newUser.getId(), nickname);
             return newUser;
 
         } catch (IllegalAccessException | IllegalArgumentException | DataAccessException e) {
