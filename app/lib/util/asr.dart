@@ -175,25 +175,36 @@ class Asr {
     bool hasPermission = await _checkPermissions();
 
     if (!hasPermission) {
-      // 弹出合规的权限申请说明对话框
+      if (Platform.isIOS) {
+        // iOS 平台使用原生方法同时请求麦克风和语音识别权限
+        try {
+          permissionGranted = await asrMethodChannel.invokeMethod('requestPermissions');
+          if (!permissionGranted) {
+            Global.logger.i('ASR: 用户未授予麦克风/语音识别权限(iOS)');
+            await _handlePermissionDenied();
+          } else {
+            Global.logger.i('ASR: 麦克风和语音识别权限获取成功(iOS)');
+          }
+        } catch (e) {
+          Global.logger.i('请求权限失败(iOS): $e');
+          permissionGranted = false;
+        }
+        return;
+      }
+
+      // Android 平台弹出合规的权限申请说明对话框
       await PermissionUtil.requestWithRationale(
         permission: Permission.microphone,
         title: '麦克风权限',
-        purpose: Platform.isIOS 
-            ? '${Global.appName}需要您的麦克风和语音识别权限，用于进行单词发音练习和评测。' 
-            : '${Global.appName}需要您的麦克风权限，用于进行单词发音练习和语音识别评测。',
+        purpose: '${Global.appName}需要您的麦克风权限，用于进行单词发音练习和语音识别评测。',
         icon: Icons.mic_rounded,
         onGranted: () async {
-          // 这里再次调用 _requestPermissions 以确保 permissionGranted 为 true
-          // 实际上 requestWithRationale 已经调用过 request() 了
           permissionGranted = true;
-          Global.logger.i('ASR: 麦克风和语音识别权限通过 Rationale 获取成功');
+          Global.logger.i('ASR: 麦克风权限通过 Rationale 获取成功(Android)');
         },
         onDenied: () async {
-          // 如果用户在 Rationale 对话框拒绝了，或者在系统对话框拒绝了
           permissionGranted = false;
-          Global.logger.i('ASR: 用户未授予麦克风权限');
-          // 这里可以尝试调用原有的处理逻辑，或者让用户去设置
+          Global.logger.i('ASR: 用户未授予麦克风权限(Android)');
           await _handlePermissionDenied();
         },
       );

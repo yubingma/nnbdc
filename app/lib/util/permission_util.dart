@@ -26,6 +26,20 @@ class PermissionUtil {
       return;
     }
 
+    if (GetPlatform.isIOS) {
+      final effectivePermission = _getEffectivePermission(permission);
+      final newStatus = await effectivePermission.request();
+      if (newStatus.isGranted) {
+        onGranted();
+      } else {
+        if (newStatus.isPermanentlyDenied) {
+          openAppSettings();
+        }
+        if (onDenied != null) onDenied();
+      }
+      return;
+    }
+
     final isDarkMode = Get.isDarkMode;
 
     // 显示符合合规要求的说明对话框

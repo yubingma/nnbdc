@@ -46,17 +46,39 @@ import StoreKit
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
     ) -> Bool {
-        // Umeng U-APM: Ensure NSURLProtocol is registered before U-APM initialization
-        // This is required when using both U-APM network module and NSURLProtocol
+        // Set up Umeng
         if let umURLProtocolClass = NSClassFromString("UMURLProtocol") as? AnyClass {
             URLProtocol.registerClass(umURLProtocolClass)
         }
-        
         let apmConfig = UMAPMConfig.default()
         apmConfig.networkEnable = true
         UMCrashConfigure.setAPMConfig(apmConfig)
 
-        let controller = window?.rootViewController as! FlutterViewController
+        // DO NOT ACCESS window?.rootViewController BEFORE super.application()
+        // OR WITHOUT CREATING IT, especially if SceneDelegate is not yet taking over correctly.
+        // It's safer to let the engine initialize first.
+        let result = super.application(application, didFinishLaunchingWithOptions: launchOptions)
+        
+        GeneratedPluginRegistrant.register(with: self)
+
+        // Ensure window exists or create it
+        if window == nil {
+            window = UIWindow(frame: UIScreen.main.bounds)
+        }
+        
+        let controller: FlutterViewController
+        if let rootVc = window?.rootViewController as? FlutterViewController {
+            controller = rootVc
+        } else {
+            let storyboard = UIStoryboard(name: "Main", bundle: nil)
+            if let vc = storyboard.instantiateInitialViewController() as? FlutterViewController {
+                controller = vc
+            } else {
+                controller = FlutterViewController()
+            }
+            window?.rootViewController = controller
+        }
+        window?.makeKeyAndVisible()
         
         // 设置 ASR MethodChannel
         let methodChannel = FlutterMethodChannel(
@@ -128,8 +150,6 @@ import StoreKit
         // 初始化 TTS
         setupTts()
         
-        GeneratedPluginRegistrant.register(with: self)
-        
         // Register AI inference channel
         if let registrar = self.registrar(forPlugin: "AiInferenceChannel") {
             AiInferenceChannel.register(with: registrar)
@@ -138,16 +158,9 @@ import StoreKit
         // Register OCR channel
         OcrChannel.register(with: controller.binaryMessenger)
         
-        return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+        return result
     }
-    
-    override func application(
-        _ application: UIApplication,
-        configurationForConnecting connectingSceneSession: UISceneSession,
-        options: UIScene.ConnectionOptions
-    ) -> UISceneConfiguration {
-        return UISceneConfiguration(name: "Default Configuration", sessionRole: connectingSceneSession.role)
-    }
+
     
     // MARK: - ASR Setup
     
