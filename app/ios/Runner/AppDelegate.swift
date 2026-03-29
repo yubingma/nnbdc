@@ -187,6 +187,20 @@ import StoreKit
     
     // MARK: - Method Call Handler
     
+    private func executeWhenActive(_ block: @escaping () -> Void) {
+        if UIApplication.shared.applicationState == .active {
+            block()
+        } else {
+            var token: NSObjectProtocol?
+            token = NotificationCenter.default.addObserver(forName: UIApplication.didBecomeActiveNotification, object: nil, queue: .main) { _ in
+                if let token = token {
+                    NotificationCenter.default.removeObserver(token)
+                }
+                block()
+            }
+        }
+    }
+
     private func handleMethodCall(call: FlutterMethodCall, result: @escaping FlutterResult) {
         switch call.method {
         case "isSimulator":
@@ -200,7 +214,9 @@ import StoreKit
             checkPermissions(result: result)
             
         case "requestPermissions":
-            requestPermissions(result: result)
+            executeWhenActive {
+                self.requestPermissions(result: result)
+            }
             
         case "setLanguage":
             if let args = call.arguments as? [String: Any],
@@ -215,10 +231,14 @@ import StoreKit
             }
             
         case "startMicrophone":
-            startMicrophone(result: result)
+            executeWhenActive {
+                self.startMicrophone(result: result)
+            }
             
         case "startAsr":
-            startAsr(result: result)
+            executeWhenActive {
+                self.startAsr(result: result)
+            }
         case "setContextualStrings":
             if let args = call.arguments as? [String: Any],
                let phrases = args["phrases"] as? [String] {
