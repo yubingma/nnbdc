@@ -31,6 +31,7 @@ class FakeClock implements Clock {
 
 class AppClock {
   static Clock _clock = SystemClock();
+  static Duration _offset = Duration.zero;
 
   static void setClock(Clock clock) {
     _clock = clock;
@@ -38,12 +39,21 @@ class AppClock {
 
   static void reset() {
     _clock = SystemClock();
+    _offset = Duration.zero;
   }
 
-  static DateTime now() => _clock.now();
+  static DateTime now() => _clock.now().add(_offset);
+
+  static void advanceDays(int days) {
+    _offset += Duration(days: days);
+  }
+
+  static int getOffsetDays() {
+    return _offset.inDays;
+  }
 
   static DateTime today() {
-    final n = _clock.now();
+    final n = now();
     return DateTime(n.year, n.month, n.day);
   }
 }

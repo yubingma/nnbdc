@@ -1577,6 +1577,15 @@ class _MePageState extends State<MePage> {
               if (loggedInUser?.isAdmin == true) ...[
                 const Divider(),
                 _buildMenuTile(
+                  icon: Icons.access_time_filled_rounded,
+                  title: '快进时间 (当前: ${AppClock.now().toString().substring(0, 10)})',
+                  onTap: () {
+                    AppClock.advanceDays(1);
+                    setState(() {});
+                    ToastUtil.success('时间已快进1天，新日期: ${AppClock.now().toString().substring(0, 10)}');
+                  },
+                ),
+                _buildMenuTile(
                   icon: Icons.admin_panel_settings_outlined,
                   title: '系统管理',
                   onTap: () => Get.toNamed('/admin'),
