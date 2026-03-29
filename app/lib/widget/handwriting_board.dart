@@ -278,18 +278,18 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
         final width = constraints.maxWidth;
         
         // 定义中心化的感应区，更加适合平板书写习惯，减少运笔负荷
-       final double zoneWidth = 130;
-    final double zoneHeight = 65;
-    final double bottomMargin = 40; // 调高位置，方便从底部向上方划入触发
+        final double zoneWidth = (width * 0.35).clamp(80.0, 140.0);
+        final double zoneHeight = 65;
+        final double bottomMargin = 40; // 调高位置，方便从底部向上方划入触发
 
         final rewriteZone = Rect.fromLTWH(
-          (width / 3) - (zoneWidth / 2), 
+          (width / 2 - zoneWidth) / 2, 
           height - zoneHeight - bottomMargin, 
           zoneWidth, 
           zoneHeight
         );
         final recognizeZone = Rect.fromLTWH(
-          ((width / 3) * 2) - (zoneWidth / 2), 
+          width / 2 + (width / 2 - zoneWidth) / 2, 
           height - zoneHeight - bottomMargin, 
           zoneWidth, 
           zoneHeight
