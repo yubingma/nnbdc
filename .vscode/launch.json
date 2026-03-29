@@ -65,7 +65,10 @@
             "program": "${workspaceFolder}/app/lib/main.dart",
             "deviceId": "00008110-0004692621BB801E",
             "args": [],
-            "flutterMode": "debug"
+            // ⚠️ 必看必看：真机上使用 Debug 模式的 Dart JIT 会被 iOS 内存安全机制（PAC）拦截
+            // 导致 DartWorker 线程偶尔爆发 EXC_BAD_ACCESS (code=50) 崩溃。
+            // 必须使用 profile 或 release 模式（AOT 编译）才能在真机上稳定运行。
+            "flutterMode": "profile" 
         },
         {
             "name": "App-ipad",
