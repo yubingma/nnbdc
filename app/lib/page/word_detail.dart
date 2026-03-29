@@ -691,8 +691,6 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text('配图', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, letterSpacing: 0.5, fontFamily: 'NotoSansSC')),
-                                const SizedBox(height: 8),
                                 Wrap(
                                   spacing: 8, 
                                   runSpacing: 8,
