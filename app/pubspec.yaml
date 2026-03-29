@@ -9,13 +9,13 @@ publish_to: "none" # Remove this line if you wish to publish to pub.dev
 version: 26.03.29+26032901
 
 # 最低支持版本（用于强制升级检查）
-min_ver_code: 26032001
+min_ver_code: 26032901
 
 # 版本更新说明（用于构建脚本生成 ver.json）
 # 格式：每行一个更新项，以 "- " 开头
 changes:
-  - "优化手写体验"
-  - "解决bug"
+  - "优化学习体验"
+  - "修复bug"
 
 environment:
   sdk: ^3.4.0
