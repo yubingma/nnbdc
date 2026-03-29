@@ -2186,7 +2186,7 @@ nurse
 nursery
 nutrient
 nylon
-n•
+
 oar
 oasis
 oath
@@ -2307,7 +2307,7 @@ paradise
 parallel
 paralyse
 parameter
-paraphrasv
+paraphrase
 parasite
 parcel
 parliament
@@ -2488,13 +2488,13 @@ precipitate
 precise
 predator
 predict
-predominatv
+predominate
 preference
 prefix
 pregnancy
 prejudice
 premier
-premiershin
+premiership
 prepare
 preposition
 prerequisite
@@ -2539,7 +2539,7 @@ profession
 professor
 profile
 profound
-programmen
+programme
 programmer
 progress
 prohibit
@@ -3441,7 +3441,7 @@ unbutton
 uncomfortable
 unconscious
 uncover
-underestimatv
+underestimate
 undergo
 underground
 undermine

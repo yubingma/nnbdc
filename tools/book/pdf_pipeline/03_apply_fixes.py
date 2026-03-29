@@ -41,7 +41,13 @@ MY_WHITELIST = {
     "magnetic adj therapy": "magnetic therapy",
     "Mediterraneaadj": "Mediterranean",
     "monumentaadj": "monumental",
-    "neighbourhoon": "neighbourhood"
+    "neighbourhoon": "neighbourhood",
+    "paraphrasv": "paraphrase",
+    "predominatv": "predominate",
+    "premiershin": "premiership",
+    "programmen": "programme",
+    "underestimatv": "underestimate",
+    "n•": ""
 }
 
 if __name__ == "__main__":
