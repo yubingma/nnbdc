@@ -17,7 +17,7 @@ Italian
 Jewish
 Latin
 Marxism
-Mediterranea
+Mediterraneaadj
 New Zealand
 Oceania
 Pope
@@ -187,7 +187,7 @@ arch
 archaeology
 arched
 architect
-architecturen
+architecture
 arctic
 arduous
 arena
@@ -271,7 +271,7 @@ ax
 axis
 bachelor
 backbone
-backgroundn
+background
 backup
 bacteria
 bacterium
@@ -425,7 +425,7 @@ bundle
 burden
 bureau
 bureaucracy
-bureaucratismn
+bureaucratism
 burgeon
 burrow
 bury
@@ -448,7 +448,7 @@ calendar
 calf
 camel
 camera
-camouflagen
+camouflage
 camp
 campaign
 campus
@@ -517,7 +517,6 @@ chamber
 champion
 chance
 chancellor
-chapter
 character
 charcoal
 charming
@@ -618,7 +617,7 @@ committee
 common
 communal
 communicate
-communismn
+communism
 communist
 community
 commuter
@@ -638,7 +637,7 @@ composition
 compound
 comprehend
 compress
-compromisen
+compromise
 compulsory
 compute
 comrade
@@ -664,7 +663,6 @@ conflict
 conform
 confuse
 congratulate
-conj
 conjunction
 connect
 conquer
@@ -678,7 +676,7 @@ considerable
 considerate
 consistent
 consonant
-consortiumn
+consortium
 conspiracy
 constraint
 construct
@@ -723,8 +721,8 @@ core
 corn
 corpus
 correct
-correspondentn
-correspondv
+correspond
+correspondent
 corridor
 cosmetics
 cosmos
@@ -898,7 +896,6 @@ destination
 destitute
 destruct
 destructive
-det
 detach
 detail
 detect
@@ -1138,7 +1135,7 @@ enthusiastic
 entitle
 entity
 entrance
-entrepreneurn
+entrepreneur
 entry
 envelope
 environment
@@ -1502,7 +1499,7 @@ guideline
 guilty
 gulf
 gum
-gunpowdern
+gunpowder
 gush
 gust
 habit
@@ -1518,7 +1515,7 @@ handle
 handout
 handrail
 handsome
-handwritingn
+handwriting
 hang
 happiness
 harass
@@ -1541,7 +1538,7 @@ hazardous
 headache
 heading
 headmaster
-headquartersn
+headquarters
 heal
 health care
 heap
@@ -1621,7 +1618,7 @@ hydrogen
 hydrosphere
 hygiene
 hypertension
-hypothesisn
+hypothesis
 icon
 identical
 ideology
@@ -1904,7 +1901,6 @@ linguistics
 lip
 liquid
 liquor
-list
 literate
 literature
 lithosphere
@@ -2020,7 +2016,7 @@ melon
 melt
 meltdown
 member
-memorandumn
+memorandum
 memorial
 mend
 mental
@@ -2039,7 +2035,7 @@ messenger
 metabolism
 metal
 meteorite
-meteorologyn
+meteorology
 method
 microbe
 microcomputer
@@ -2095,7 +2091,7 @@ monk
 monsoon
 monthly
 monument
-monumenta
+monumentaadj
 mood
 mop
 moral
@@ -2135,8 +2131,6 @@ mutter
 mutton
 mutual
 mysterious
-n-
-n. X
 nail
 naive
 naked
@@ -2187,14 +2181,12 @@ noxious
 nuance
 nuclear
 nuisance
-num
 numerate
 nurse
 nursery
 nutrient
 nylon
 n•
-o do
 oar
 oasis
 oath
@@ -2278,7 +2270,7 @@ overlook
 overnight
 overseas
 oversee
-overshadowv
+overshadow
 overtake
 overweight
 overwhelming
@@ -2472,7 +2464,8 @@ porridge
 portable
 portfolio
 portrait
-positive negative
+positive
+negative
 possess
 possessive
 post
@@ -2547,7 +2540,7 @@ professor
 profile
 profound
 programmen
-programmern
+programmer
 progress
 prohibit
 project
@@ -2676,7 +2669,7 @@ reckon
 reclaim
 recognise
 recollect
-recommendv
+recommend
 reconcile
 record
 recover
@@ -2688,7 +2681,7 @@ rectify
 recycle
 redeem
 reduce
-redundancyn
+redundancy
 redundant
 reed
 reef
@@ -2702,7 +2695,7 @@ refraction
 refresh
 refreshment
 refrigeratio
-refrigeratorn
+refrigerator
 refuge
 refund
 refuse
@@ -2768,7 +2761,7 @@ respect
 respective
 respire
 respond
-respondentn
+respondent
 response
 restless
 restore
@@ -3271,8 +3264,6 @@ syntax
 synthesise
 synthetic
 system
-table
-tablet
 tackle
 tactic
 tag
@@ -3291,7 +3282,7 @@ tasty
 tax
 tease
 technique
-technologyn
+technology
 telescope
 temper
 temperate

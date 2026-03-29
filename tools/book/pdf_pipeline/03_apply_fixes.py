@@ -32,7 +32,16 @@ MY_WHITELIST = {
     "neighbourhoo": "neighbourhood",
     "significancen": "significance",
     "simulative adj": "simulative",
-    "father-in-lawn": "father-in-law"
+    "father-in-lawn": "father-in-law",
+    "independen": "independent",
+    "hydroge": "hydrogen",
+    "manoeuvren": "manoeuvre",
+    "merchandisn": "merchandise",
+    "carbon dioxiden": "carbon dioxide",
+    "magnetic adj therapy": "magnetic therapy",
+    "Mediterraneaadj": "Mediterranean",
+    "monumentaadj": "monumental",
+    "neighbourhoon": "neighbourhood"
 }
 
 if __name__ == "__main__":
