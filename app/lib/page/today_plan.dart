@@ -773,6 +773,12 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
             if (shouldStart != true) {
               return;
             }
+
+            // [二次校验] 开始学习前，强制断言所有今日单词进度为 0
+            final checkWords = await LearningService.getTodayLearningWordsFromDb(user!.id!);
+            for (var w in checkWords) {
+              assert(w.todayLearnedTimes == 0, '数据不一致：点击开始学习时，发现单词 ${w.wordId} 已有今日进度 (${w.todayLearnedTimes})');
+            }
           }
 
           if (user != null) {
