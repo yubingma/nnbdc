@@ -24,6 +24,8 @@ import 'bdc.dart';
 import 'package:nnbdc/page/word_list/today_words.dart';
 import 'package:nnbdc/page/word_list/today_new_words.dart';
 import 'package:nnbdc/page/word_list/today_old_words.dart';
+import 'package:intl/intl.dart';
+import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/learning_service.dart';
 
 class BeforeBdcPage extends StatefulWidget {
@@ -389,7 +391,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '今日目标',
+                      user?.isAdmin == true ? '今日目标 (${DateFormat('yyyy-MM-dd').format(AppClock.now())})' : '今日目标',
                       style: TextStyle(
                         color: isDarkMode ? Colors.white70 : const Color(0xFF64748B),
                         fontSize: 14,
