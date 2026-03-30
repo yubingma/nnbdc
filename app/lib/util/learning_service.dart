@@ -31,56 +31,62 @@ class LearningService {
       // 如果用户的最近学习日期不是今天，重置相关数据
       final today = DateUtils.pureDate(AppClock.now());
       bool isNewDay = user.lastLearningDate == null || !DateUtils.isSameDay(user.lastLearningDate!, today);
-      if (isNewDay) {
-        Global.logger.d('检测到新的学习日期，开始重置用户数据: userId=${user.id}');
 
-        // 新的一天开始时，删除已经掌握的学习中单词
-        await db.learningWordsDao.deleteMasteredLearningWords(user.id);
-
-        // 新的一天开始时，删除已经在 mastered_words 表中的学习单词
-        await db.learningWordsDao.deleteMasteredWords(user.id);
-
-        // 清空用户错词（新的一天开始，清空昨日错词）
-        await db.userWrongWordsDao.clearUserWrongWords(user.id, true);
-        Global.logger.d('已清空用户错词');
-
-        // 直接通过 DAO 更新字段，保证 UserDbLogs 能被正常抓取并同步到后端
-        final upgradedUser = user.copyWith(
-            lastLearningDate: Value(today),
-            learnedDays: user.learnedDays + 1,
-            learningFinished: const Value(false),
-            todayStudyStarted: false,
-            todayLearningSeconds: const Value(0));
-        await db.usersDao.saveUser(upgradedUser, true);
-
-        // 获取所有待重置(昨天被派发过，或产生过学习次数)的单词。重置时，使用带有 genLog 的方法或确保触发 UserDbLogs 从而使得远端服务器知道要清空 batchId，防止重装或者换客户端后被老数据覆盖
-        final needResetWords = await (db.select(db.learningWords)
-              ..where((lw) => lw.userId.equals(user.id) & (lw.todayLearnedTimes.isBiggerThanValue(0) | lw.batchId.isBiggerThanValue(0))))
+      // [核心修复] 自动修复机制：即使日期没变，但如果发现"学习未开始"且"单词已有进度"这种不一致状态，也强制重置。
+      bool needRepair = (user.todayStudyStarted == false);
+      if (needRepair) {
+        final inconsistencyCheck = await (db.select(db.learningWords)
+              ..where((lw) => lw.userId.equals(user.id) & lw.todayLearnedTimes.isBiggerThanValue(0))
+              ..limit(1))
             .get();
-
-        if (needResetWords.isNotEmpty) {
-          await db.transaction(() async {
-            for (var word in needResetWords) {
-              await db.learningWordsDao.saveEntity(
-                  word.copyWith(
-                    todayLearnedTimes: 0,
-                    batchId: const Value(0),
-                  ),
-                  true // 强制生成同步记录，更新云端
-                  );
-            }
-          });
+        needRepair = inconsistencyCheck.isNotEmpty;
+        if (needRepair) {
+          Global.logger.w('检测到数据不一致：日期已对上且学习未开始，但发现存在单词进度。触发强制修复重置修复。');
         }
+      }
 
-        // 重新获取更新后的用户信息
-        final updatedUser = await db.usersDao.getUserById(user.id);
-        if (updatedUser != null) {
-          // 清除缓存并重新加载
-          Global.clearUserCache();
-          await Global.loadUserFromDb();
-        }
+      if (isNewDay || needRepair) {
+        Global.logger.d('开始重置用户每日数据（isNewDay=$isNewDay, repair=$needRepair）: userId=${user.id}');
 
-        Global.logger.d('用户数据重置完成');
+        // 使用事务确保整个重置过程的原子性：要么全部完成，要么全部失败
+        await db.transaction(() async {
+          // 1. 重置所有待同步的单词数据 (昨日计划分配、产生过今日进度的、或是已经掌握的)
+          // 注意：此处必须要清空所有 batch_id > 0 的词，确保重新按 FSRS 进度分配
+          final needResetWords = await (db.select(db.learningWords)
+                ..where((lw) =>
+                    lw.userId.equals(user.id) &
+                    (lw.todayLearnedTimes.isBiggerThanValue(0) | lw.batchId.isBiggerThanValue(0))))
+              .get();
+
+          for (var word in needResetWords) {
+            await db.learningWordsDao.saveEntity(
+                word.copyWith(
+                  todayLearnedTimes: 0,
+                  batchId: const Value(0),
+                ),
+                true // 强制生成同步记录，更新云端
+                );
+          }
+
+          // 2. 清理相关联表 (在此处集中处理)
+          await db.learningWordsDao.deleteMasteredLearningWords(user.id); // 删除已掌握的学习中单词
+          await db.learningWordsDao.deleteMasteredWords(user.id); // 删除已经在 mastered_words 表中的学习单词
+          await db.userWrongWordsDao.clearUserWrongWords(user.id, true); // 清空错词
+
+          // 3. 最后一步：更新用户信息，并标记重置已完成 (这一步完成后，下次重入将不再进入重置逻辑)
+          final upgradedUser = user.copyWith(
+              lastLearningDate: Value(today), // 标记, 防止再次重置
+              learnedDays: isNewDay ? user.learnedDays + 1 : user.learnedDays, // 仅新的一天增加天数
+              learningFinished: const Value(false),
+              todayStudyStarted: false,
+              todayLearningSeconds: const Value(0));
+          await db.usersDao.saveUser(upgradedUser, true);
+        });
+
+        // 刷新缓存
+        Global.clearUserCache();
+        await Global.loadUserFromDb();
+        Global.logger.d('用户每日数据重置成功');
       }
 
       // 尝试从数据库中读取今日学习单词
