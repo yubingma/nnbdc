@@ -94,6 +94,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
   var isEditMode = false;
 
   // AI 解释相关 (已升级为 AI 对话)
+  late TabController _tabController;
   final List<ChatMessage> _chatMessages = [];
   final TextEditingController _chatInputController = TextEditingController();
   final ScrollController _chatScrollController = ScrollController();
@@ -125,6 +126,27 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
       duration: const Duration(milliseconds: 700),
       vsync: this,
     );
+
+    // 初始化 TabController，提供默认长度以免在异常退出 dispose 时报 LateInitializationError
+    _tabController = TabController(length: 1, vsync: this);
+    _tabController.addListener(() {
+      if (mounted) setState(() {});
+    });
+
+    // 同步提取参数以更新 TabController 初始状态
+    if (Get.arguments != null) {
+      args = Get.arguments;
+      _canUseAiAssistant = Global.getLoggedInUser()?.isAdmin == true || SubscriptionUtil.isPremium();
+      final count = calcTabsCount();
+      if (count != 1) {
+        _tabController.dispose();
+        _tabController = TabController(length: count, vsync: this);
+        _tabController.addListener(() {
+          if (mounted) setState(() {});
+        });
+      }
+    }
+
     // 进入详情页时立即主动关闭 ASR，避免在前一页面正在倾听时进入此页导致 ASR 逻辑错误
     Asr().stopAsr();
 
@@ -137,6 +159,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     for (var controller in _sentenceSoundControllers.values) {
       controller.dispose();
     }
+    _tabController.dispose();
     _chatInputController.dispose();
     _chatScrollController.dispose();
 
@@ -225,12 +248,17 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     // 使用传入的参数判断本次是否回答错误
     isWrongWord = args.isThisAnswerWrong;
 
-    // AI 助手开关：管理员 或 会员可用
-    _canUseAiAssistant = Global.getLoggedInUser()?.isAdmin == true || SubscriptionUtil.isPremium();
-
     _sentencesFuture = args.word.getSentences();
 
     setState(() {
+      final newLength = calcTabsCount();
+      if (_tabController.length != newLength) {
+        _tabController.dispose();
+        _tabController = TabController(length: newLength, vsync: this);
+        _tabController.addListener(() {
+          if (mounted) setState(() {});
+        });
+      }
       dataLoaded = true;
     });
 
@@ -626,7 +654,10 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                         ),
                         Text(args.word.spell,
                             style: TextStyle(
-                                color: isWrongWord ? Colors.red : Global.highlight, fontSize: 36, fontWeight: FontWeight.w500, letterSpacing: 0.5)),
+                                color: isWrongWord ? Colors.red : Global.highlight, 
+                                fontSize: _isTopDrawerExpanded ? 36 : 24, 
+                                fontWeight: FontWeight.w500, 
+                                letterSpacing: 0.5)),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
@@ -858,9 +889,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
 
           // 详情/形近词
           Expanded(
-            child: DefaultTabController(
-              length: calcTabsCount(),
-              child: Container(
+            child: Container(
                 margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                 decoration: BoxDecoration(
                   color: isDarkMode ? const Color(0xFF2A2A3E).withValues(alpha: 0.8) : Colors.white.withValues(alpha: 0.9),
@@ -885,6 +914,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                         ),
                       ),
                       child: TabBar(
+                        controller: _tabController,
                         labelStyle: const TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w500,
@@ -928,14 +958,17 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                             }
                           }
                           
-                          // 无论如何，回落到最顶部（或极靠近顶部）时，强制保证展开状态
-                          if (notification.metrics.pixels <= 10.0 && !_isTopDrawerExpanded) {
-                            setState(() { _isTopDrawerExpanded = true; });
+                          // 只有当用户往上回看内容（下滑手指），且已经到最顶部时，才展开启抽屉
+                          if (notification.dragDetails != null && notification.scrollDelta != null) {
+                            if (notification.scrollDelta! < 0.0 && notification.metrics.pixels <= 0.0 && !_isTopDrawerExpanded) {
+                              setState(() { _isTopDrawerExpanded = true; });
+                            }
                           }
                           
                           return false;
                         },
                         child: TabBarView( 
+                          controller: _tabController,
                           physics: const BouncingScrollPhysics(),
                           dragStartBehavior: DragStartBehavior.down,
                           children: [
@@ -951,10 +984,9 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                 ),
               ),
             ),
-          ),
 
-          // 底部下一词按钮
-          if (args.bottomBtn != null)
+          // 底部下一词按钮 (在 AI 抽屉激活时隐藏，以免挤占空间)
+          if (args.bottomBtn != null && !(_canUseAiAssistant && _tabController.index == calcTabsCount() - 1))
             Container(
               width: double.infinity,
               padding: const EdgeInsets.fromLTRB(16.0, 12.0, 16.0, 24.0),
@@ -1039,16 +1071,10 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
           ),
 
         Container(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+          padding: EdgeInsets.fromLTRB(16, 8, 16, MediaQuery.of(context).padding.bottom > 0 ? MediaQuery.of(context).padding.bottom : 8),
           decoration: BoxDecoration(
             color: isDarkMode ? const Color(0xFF16213E) : Colors.white,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                offset: const Offset(0, -2),
-                blurRadius: 10,
-              ),
-            ],
+            border: Border(top: BorderSide(color: isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.05))),
           ),
           child: Row(
             children: [
