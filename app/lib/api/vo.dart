@@ -929,7 +929,7 @@ class LearningWordVo {
   int? scheduledDays;
   int? reps;
   int? lapses;
-  int? state; // 0: New, 1: Learning, 2: Review, 3: Relearning
+  int? state; // FSRS 状态：0: New (新词), 1: Learning (学习中), 2: Review (复习), 3: Relearning (重学)
 
   WordVo word;
 

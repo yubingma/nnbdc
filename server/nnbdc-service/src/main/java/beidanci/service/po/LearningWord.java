@@ -71,6 +71,9 @@ public class LearningWord extends Po {
     @Column(name = "lapses")
     private Integer lapses;
 
+    /**
+     * FSRS 状态: 0: New (新词), 1: Learning (学习中), 2: Review (复习), 3: Relearning (重学)
+     */
     @Column(name = "state")
     private Integer state;
 

@@ -19,6 +19,9 @@ public class LearningWordDto {
     private Integer scheduledDays;
     private Integer reps;
     private Integer lapses;
+    /**
+     * FSRS 状态: 0: New (新词), 1: Learning (学习中), 2: Review (复习), 3: Relearning (重学)
+     */
     private Integer state;
     private Date createTime;
     private Date updateTime;

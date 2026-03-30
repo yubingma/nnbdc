@@ -189,9 +189,19 @@ class LearningService {
     // 到期单词内部排序逻辑：
     // - 处于 Review 状态的优先于新词，稳定性越低的单词越需要优先复习
     dueWords.sort((a, b) {
+      // 1. 状态权重：正在学习/复习中的单词 (state > 0) 优先于全新词 (state == 0)
+      final aIsEstablished = (a.state ?? 0) > 0;
+      final bIsEstablished = (b.state ?? 0) > 0;
+      if (aIsEstablished != bIsEstablished) {
+        return aIsEstablished ? -1 : 1; // 建立过进度的优先
+      }
+
+      // 2. 稳定性权重：稳定性越低(越容易忘记)的优先
       if ((a.stability ?? 0.0) != (b.stability ?? 0.0)) {
         return (a.stability ?? 0.0).compareTo(b.stability ?? 0.0);
       }
+
+      // 3. 时间权重：添加日期更久的优先
       return a.addTime.compareTo(b.addTime);
     });
 
@@ -344,10 +354,17 @@ class LearningService {
 
         // 统一更新日期标记（如果是第一次加入今天的批次）
         // 不再预更新 lastLearningDate，保留其原始值用于 FSRS 间隔计算
-        if (learningWord.isTodayNewWord != (learningWord.learnedTimes == 0)) {
-          learningWord = learningWord.copyWith(
-            isTodayNewWord: learningWord.learnedTimes == 0,
-          );
+        // 只有当单词今天还没产生学习记录时，才修正 isTodayNewWord 标记。
+        // 否则如果白天学过了一次，learnedTimes 变为了 1，这里会导致标记被重置为 false，导致进度统计错误。
+        if (learningWord.todayLearnedTimes == 0) {
+          // 判断是否为今日新词：从未学习过（learnedTimes == 0）且没有 FSRS 进度 (lastLearningDate == null)
+          bool shouldBeNewWord =
+              learningWord.learnedTimes == 0 && learningWord.lastLearningDate == null;
+          if (learningWord.isTodayNewWord != shouldBeNewWord) {
+            learningWord = learningWord.copyWith(
+              isTodayNewWord: shouldBeNewWord,
+            );
+          }
         }
 
         // 重新分配全局连续的学习顺序

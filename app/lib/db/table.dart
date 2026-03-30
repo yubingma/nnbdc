@@ -487,7 +487,7 @@ class LearningWords extends Table {
   IntColumn get scheduledDays => integer().nullable()();
   IntColumn get reps => integer().nullable()();
   IntColumn get lapses => integer().nullable()();
-  IntColumn get state => integer().nullable().withDefault(const Constant(0))(); // 0: New, 1: Learning, 2: Review, 3: Relearning
+  IntColumn get state => integer().nullable().withDefault(const Constant(0))(); // FSRS状态：0: New (新词), 1: Learning (学习中), 2: Review (复习), 3: Relearning (重学)
 
   BoolColumn get isTodayNewWord => boolean()();
   IntColumn get learnedTimes => integer()();
