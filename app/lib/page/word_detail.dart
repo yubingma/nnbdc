@@ -1143,30 +1143,10 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
   Widget _buildChatMessageWidget(ChatMessage msg, bool isDarkMode) {
     final isAssistant = msg.role == MessageRole.assistant;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.only(bottom: 12),
       child: Column(
         crossAxisAlignment: isAssistant ? CrossAxisAlignment.start : CrossAxisAlignment.end,
         children: [
-          // 角色标识
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (isAssistant)
-                Icon(Icons.auto_awesome, size: 14, color: Colors.purple[400])
-              else
-                Icon(Icons.person, size: 14, color: Colors.teal[400]),
-              const SizedBox(width: 4),
-              Text(
-                isAssistant ? 'AI 助教' : '你',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: isAssistant ? Colors.purple[400] : Colors.teal[400],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
 
           // 思考过程 (仅助教且有内容时显示)
           if (isAssistant && msg.thought != null && msg.thought!.isNotEmpty) _buildThoughtWidget(msg, isDarkMode),
