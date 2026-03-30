@@ -105,11 +105,7 @@ class LearningService {
         Global.logger.d('[FETCH-WORD] [prepareTodayStudy] genTodayWords执行后，内存中单词总数: ${todayWords.length}, 计划是否枯竭: $wordExhausted');
       }
 
-      // 重新获取今日学习单词（确保获取的是当前DB中真实分配好batchId的数据）
-      todayWords = await getTodayLearningWordsFromDb(user.id);
-      Global.logger.d('[FETCH-WORD] [prepareTodayStudy] 重新从DB读取确认后的单词数: ${todayWords.length}');
 
-      // 如果今日单词数量超过了设定的目标，需要削减（支持从计划页面调低数量）
       if (todayWords.length > user.effectiveWordsPerDay) {
         Global.logger.d('[FETCH-WORD] [prepareTodayStudy] 溢出报警！当前数 (${todayWords.length}) > 计划数 (${user.effectiveWordsPerDay})，准备进入削减逻辑');
         todayWords = await shrinkTodayWords(user.id, todayWords, user.effectiveWordsPerDay);
@@ -259,8 +255,6 @@ class LearningService {
       }
     }
 
-    // 将今日的学习单词分配好顺序并更新到数据库
-    await updateTodayLearningWords(todayLearningWords, now);
 
     return todayLearningWords;
   }
