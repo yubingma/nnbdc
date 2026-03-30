@@ -269,6 +269,7 @@ class _EditMeaningDialogState extends State<EditMeaningDialog> {
               Expanded(
                 flex: 2,
                 child: DropdownButtonFormField<String>(
+                  isExpanded: true,
                   initialValue: controller.selectedPos,
                   decoration: const InputDecoration(
                     labelText: '词性',
@@ -296,23 +297,23 @@ class _EditMeaningDialogState extends State<EditMeaningDialog> {
                   },
                 ),
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                flex: 2,
-                child: controller.selectedPos == '无'
-                    ? TextField(
-                        controller: controller.cixingController,
-                        decoration: const InputDecoration(
-                          hintText: '输入词性',
-                          labelText: '无词性',
-                          border: OutlineInputBorder(),
-                          isDense: true,
-                          contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-                        ),
-                        onChanged: (_) => _checkDiffFromDefault(null),
-                      )
-                    : const SizedBox.shrink(),
-              ),
+              if (controller.selectedPos == '无') ...[
+                const SizedBox(width: 8),
+                Expanded(
+                  flex: 2,
+                  child: TextField(
+                    controller: controller.cixingController,
+                    decoration: const InputDecoration(
+                      hintText: '输入词性',
+                      labelText: '无词性',
+                      border: OutlineInputBorder(),
+                      isDense: true,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+                    ),
+                    onChanged: (_) => _checkDiffFromDefault(null),
+                  ),
+                ),
+              ],
               const SizedBox(width: 8),
               IconButton(
                 icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
