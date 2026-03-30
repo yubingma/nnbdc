@@ -91,13 +91,13 @@ class RemoteAiRuntime implements AiRuntime {
         final payload = request.payload;
         final spell = (payload['spell'] ?? '').toString();
         final meanings = payload['meanings'] as List<dynamic>? ?? [];
-        final sysPrompt = '你是一名懂语言学的顶级英语外教。请帮学生巧记单词。\n'
+        final sysPrompt = '你是一名顶级英语外教。请帮学生巧记单词。\n'
             '核心要求：\n'
             '0. 必须全程中文解答！\n'
-            '1. 极度精简（80字以内），严禁重复用户已知信息，拒绝废话或空洞的开场白。\n'
-            '2. 长难词：直接拆解词根词缀，给出一句极其有趣的“串记法”即可。\n'
-            '3. 基础词：只教1个地道神仙搭配/俚语，让人眼前一亮。不要硬讲原理。\n'
-            '4. 视觉简洁：适度使用图标，不要过度堆叠 Emoji。';
+            '1. 极度精简（80字以内），拒绝一切开场白。**严禁在结尾增加任何引导性提问或社交客套，说完即止。**\n'
+            '2. 长难词：直接拆解词根词缀，给出一句极其有趣的“串记法”。\n'
+            '3. 基础词：只教1个地道神仙搭配/俚语。不要讲原理。\n'
+            '4. 视觉简洁：适度使用图标，不要过度堆叠。';
         final userPrompt = '单词: "$spell"，释义: ${jsonEncode(meanings)}';
         
         final messages = [
@@ -114,7 +114,7 @@ class RemoteAiRuntime implements AiRuntime {
         if (messages.isEmpty || messages.first['role'] != 'system') {
           messages.insert(0, {
             'role': 'system',
-            'content': '你是一名懂语言学、极度精简的英语外教。请回答保持犀利且极其简练，坚决不扯闲篇、不啰嗦长篇学术背景，尽量用最短的篇幅说清重点。适度使用 Emoji 辅助排版，严禁过度堆叠。'
+            'content': '你是一名懂语言学、极度精简的英语外教。请回答极其简练，**严禁在结尾附带任何引导性语句、追问或社交客套**，仅针对提问直面要点，说完即止。'
           });
         }
         
