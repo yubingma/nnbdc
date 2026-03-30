@@ -220,13 +220,29 @@ public class AiBo {
                 .text(text);
         
         if (voiceInstruction != null && !voiceInstruction.trim().isEmpty()) {
-            // 目前阿里云 CosyVoice 通过特定的 prompt_text/instruction 参数支持语气风格，此处作为 plumbing 接入
+            // 目前仅部分带有 -instruct 后缀的模型支持 instruction 参数。
+            // 对于不支持的模型，我们将捕获 ApiException 并进行自动降级。
             paramBuilder.parameter("instruction", voiceInstruction);
         }
         
         SpeechSynthesisParam param = (SpeechSynthesisParam) paramBuilder.build();
         
-        ByteBuffer buffer = synthesizer.call(param);
+        ByteBuffer buffer;
+        try {
+            buffer = synthesizer.call(param);
+        } catch (com.alibaba.dashscope.exception.ApiException e) {
+            // 特别处理：如果错误代码为 428 (InvalidParameter)，通常意味着模型不支持 instruction 或其它特定参数
+            if (e.getMessage().contains("428") && voiceInstruction != null) {
+                logger.warn("当前 TTS 模型 [{}] 不支持语气指令 [{}], 尝试剥离指令进行降级合成。详情: {}", 
+                           aiProperties.getTtsModel(), voiceInstruction, e.getMessage());
+                paramBuilder.parameter("instruction", null);
+                param = (SpeechSynthesisParam) paramBuilder.build();
+                buffer = synthesizer.call(param);
+            } else {
+                throw e;
+            }
+        }
+        
         byte[] audioBytes = new byte[buffer.remaining()];
         buffer.get(audioBytes);
         
