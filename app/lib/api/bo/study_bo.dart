@@ -472,7 +472,7 @@ class StudyBo {
       final DateTime now = AppClock.now();
       if (user.lastLearningDate != null && !DateUtils.isSameDay(now, user.lastLearningDate!)) {
         Global.logger.d('检测到跨天：user.lastLearningDate=${user.lastLearningDate}, now=$now');
-        return Result<GetWordResult>("NEW_DAY", "已进入新的一天，今天的学习已终止", true);
+        return Result<GetWordResult>("NEW_DAY", "已进入新的一天，今天的学习已终止", false);
       }
 
       // 获取用户的学习步骤配置
