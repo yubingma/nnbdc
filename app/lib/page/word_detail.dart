@@ -866,7 +866,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                     },
                     child: Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
                       child: Center(
                         child: Container(
                           width: 32,
@@ -958,18 +958,16 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                             }
                           }
                           
-                          // 只有当用户往上回看内容（下滑手指），且已经到最顶部时，才展开启抽屉
-                          if (notification.dragDetails != null && notification.scrollDelta != null) {
-                            if (notification.scrollDelta! < 0.0 && notification.metrics.pixels <= 0.0 && !_isTopDrawerExpanded) {
-                              setState(() { _isTopDrawerExpanded = true; });
-                            }
+                          // 当用户往上回看内容（下滑手指），且接近最顶部时，展开启抽屉
+                          if (notification.scrollDelta != null && notification.scrollDelta! < -1.0 && notification.metrics.pixels <= 5.0 && !_isTopDrawerExpanded) {
+                            setState(() { _isTopDrawerExpanded = true; });
                           }
                           
                           return false;
                         },
                         child: TabBarView( 
                           controller: _tabController,
-                          physics: const BouncingScrollPhysics(),
+                          physics: const NeverScrollableScrollPhysics(),
                           dragStartBehavior: DragStartBehavior.down,
                           children: [
                             renderDetail(),
