@@ -130,7 +130,17 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     // 初始化 TabController，提供默认长度以免在异常退出 dispose 时报 LateInitializationError
     _tabController = TabController(length: 1, vsync: this);
     _tabController.addListener(() {
-      if (mounted) setState(() {});
+      if (!mounted) return;
+      // 当切换到 AI 助教 Tab (通常是最后一个) 时，自动收起抽屉
+      if (_canUseAiAssistant && _tabController.index == calcTabsCount() - 1) {
+        if (_isTopDrawerExpanded) {
+          setState(() { _isTopDrawerExpanded = false; });
+        } else {
+          setState(() {});
+        }
+      } else {
+        setState(() {});
+      }
     });
 
     // 同步提取参数以更新 TabController 初始状态
@@ -256,7 +266,17 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
         _tabController.dispose();
         _tabController = TabController(length: newLength, vsync: this);
         _tabController.addListener(() {
-          if (mounted) setState(() {});
+          if (!mounted) return;
+          // 当切换到 AI 助教 Tab (通常是最后一个) 时，自动收起抽屉
+          if (_canUseAiAssistant && _tabController.index == calcTabsCount() - 1) {
+            if (_isTopDrawerExpanded) {
+              setState(() { _isTopDrawerExpanded = false; });
+            } else {
+              setState(() {});
+            }
+          } else {
+            setState(() {});
+          }
         });
       }
       dataLoaded = true;
@@ -381,6 +401,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     });
     _chatInputController.clear();
     _scrollToBottom(force: true);
+    FocusScope.of(context).unfocus();
 
     // 尝试执行推理，带自动减负重试机制
     Future<AiResponse> runWithAutoRetry(List<Map<String, String>> fullHistory) async {
@@ -618,7 +639,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
           // 单词拼写及释义
           Container(
             constraints: BoxConstraints(
-              maxHeight: MediaQuery.of(context).size.height * 0.5,
+              maxHeight: (MediaQuery.of(context).size.height - MediaQuery.of(context).viewInsets.bottom) * 0.45,
             ),
             decoration: BoxDecoration(
               color: isDarkMode ? const Color(0xFF2A2A3E).withValues(alpha: 0.8) : Colors.white.withValues(alpha: 0.9),
@@ -706,7 +727,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                     duration: const Duration(milliseconds: 300),
                     curve: Curves.easeInOut,
                     alignment: Alignment.topCenter,
-                    child: _isTopDrawerExpanded ? Column(
+                    child: (_isTopDrawerExpanded && MediaQuery.of(context).viewInsets.bottom <= 0) ? Column(
                       children: [
                     // 配图展示
                     if (args.word.images != null && args.word.images!.isNotEmpty)
