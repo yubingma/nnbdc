@@ -327,6 +327,14 @@ class LearningService {
     final db = MyDatabase.instance;
     if (todayLearningWords.isEmpty) return;
 
+    // 断言：如果今日尚未开始学习，虽然有了计划，但每个计划中单词的今日学习次数必为零
+    if (Global.getLoggedInUser()?.todayStudyStarted == false) {
+      for (var word in todayLearningWords) {
+        assert(word.todayLearnedTimes == 0,
+            '数据不一致：今日尚未开始学习，但单词 ${word.wordId} 已发现今日进度 (${word.todayLearnedTimes})');
+      }
+    }
+
     // 1. 找出当前最大的 batchId
     int maxBatchId = 1;
     for (var w in todayLearningWords) {
