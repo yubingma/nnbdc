@@ -1090,42 +1090,56 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
           ),
 
         Container(
-          padding: EdgeInsets.fromLTRB(16, 8, 16, MediaQuery.of(context).padding.bottom > 0 ? MediaQuery.of(context).padding.bottom : 8),
+          padding: EdgeInsets.fromLTRB(16, 8, 12, (MediaQuery.of(context).padding.bottom > 0 ? MediaQuery.of(context).padding.bottom : 8)),
           decoration: BoxDecoration(
             color: isDarkMode ? const Color(0xFF16213E) : Colors.white,
-            border: Border(top: BorderSide(color: isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.05))),
+            border: Border(top: BorderSide(color: isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.03))),
           ),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Expanded(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
                   decoration: BoxDecoration(
-                    color: isDarkMode ? const Color(0xFF2A2A3E) : Colors.grey[100],
-                    borderRadius: BorderRadius.circular(24),
+                    color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF5F5F7),
+                    borderRadius: BorderRadius.circular(20),
                   ),
                   child: TextField(
                     controller: _chatInputController,
-                    decoration: const InputDecoration(
-                      hintText: '',
+                    maxLines: 4,
+                    minLines: 1,
+                    decoration: InputDecoration(
+                      hintText: '向助教提问...',
+                      hintStyle: TextStyle(fontSize: 14, color: isDarkMode ? Colors.grey[600] : Colors.grey[400]),
                       border: InputBorder.none,
-                      hintStyle: TextStyle(fontSize: 14),
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 8),
                     ),
-                    onSubmitted: (val) => _sendChatMessage(val),
+                    style: TextStyle(fontSize: 14, color: isDarkMode ? Colors.white : Colors.black87),
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
-              _aiLoading
-                  ? const SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : IconButton(
-                      icon: Icon(Icons.send, color: AppTheme.primaryColor),
-                      onPressed: () => _sendChatMessage(_chatInputController.text),
-                    ),
+              const SizedBox(width: 10),
+              GestureDetector(
+                onTap: _aiLoading ? null : () {
+                  if (_chatInputController.text.trim().isNotEmpty) {
+                    _sendChatMessage(_chatInputController.text.trim());
+                  }
+                },
+                child: Container(
+                  width: 32,
+                  height: 32,
+                  margin: const EdgeInsets.only(bottom: 4),
+                  decoration: BoxDecoration(
+                    color: _aiLoading ? Colors.transparent : AppTheme.primaryColor,
+                    shape: BoxShape.circle,
+                  ),
+                  child: _aiLoading 
+                    ? Center(child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primaryColor)))
+                    : const Icon(Icons.arrow_upward_rounded, color: Colors.white, size: 18),
+                ),
+              ),
             ],
           ),
         ),
