@@ -67,7 +67,10 @@ class ThrottledDbSyncService {
     // 设置定时任务执行同步
     _syncScheduled = true;
     _syncTimer = Timer(delay, () {
-      _performSync();
+      // 确保同步操作在 root 区域执行，避免继承可能已经关闭的事务区域 (Zone)
+      // 否则如果 requestSync 是在事务中触发的，Timer 会维持该事务的 Zone，
+      // 导致同步开始时尝试使用已关闭的事务执行器。
+      Zone.root.run(() => _performSync());
     });
   }
 

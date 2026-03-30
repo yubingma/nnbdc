@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:drift/drift.dart';
@@ -44,27 +45,31 @@ class ErrorHandler {
     dynamic error,
     StackTrace? stackTrace, {
     String? context,
-  }) async {
-    try {
-      final db = MyDatabase.instance;
-      final userId = Global.getLoggedInUser()?.id;
-      final now = AppClock.now();
+  }) {
+    // 强制在 Zone.root 下运行，防止继承自可能正在关闭的事务 zone
+    return Zone.root.run(() async {
+      try {
+        final db = MyDatabase.instance;
+        final userId = Global.getLoggedInUser()?.id; // 避免通过 Global.getLoggedInUser() 可能产生的复杂逻辑
+        final now = AppClock.now();
 
-      final exception = LocalException(
-        id: Util.uuid(),
-        errorType: error.runtimeType.toString(),
-        message: error.toString(),
-        stackTrace: stackTrace?.toString(),
-        context: context,
-        userId: userId,
-        createTime: now,
-      );
+        final exception = LocalException(
+          id: Util.uuid(),
+          errorType: error.runtimeType.toString(),
+          message: error.toString(),
+          stackTrace: stackTrace?.toString(),
+          context: context,
+          userId: userId,
+          createTime: now,
+        );
 
-      await db.localExceptionsDao.insertException(exception);
-    } catch (e) {
-      // 记录异常到数据库失败时，只记录到日志，不抛出异常，避免循环
-      Global.logger.w('记录异常到数据库失败: $e');
-    }
+        await db.localExceptionsDao.insertException(exception);
+      } catch (e) {
+        // 记录异常到数据库失败时，只记录到日志，不抛出异常，避免循环
+        // 注意：这里的 logger 输出也可能伴随着 Bad state，但由于是在 catch 里，且 logger 为 root，不应递归。
+        Global.logger.w('记录异常到数据库失败: $e');
+      }
+    });
   }
 
   /// 处理一般异常，包含日志记录和用户提示
@@ -108,8 +113,8 @@ class ErrorHandler {
     if (_isTableNotFoundError(error)) {
       Global.logger.w('⚠️ 检测到表不存在错误，自动重建数据库...');
       try {
-        // 直接调用 wipeAllTables 来重建数据库
-        await MyDatabase.instance.wipeAllTables();
+        // 直接调用 wipeAllTables 来重建数据库，并在 root zone 中运行
+        await Zone.root.run(() => MyDatabase.instance.wipeAllTables());
         Global.logger.i('✅ 数据库自动重建完成');
         // 重建后不显示错误提示，让操作可以重试
         return;
@@ -125,9 +130,9 @@ class ErrorHandler {
     // 2. 输出到日志文件
     Global.logger.e(errorMessage, error: error, stackTrace: stackTrace);
 
-    // 3. 外键约束失败诊断（仅当db不为null）
+    // 3. 外键约束失败诊断（仅当db不为null），同样确保在 root zone 中运行
     if (db != null && _isForeignKeyConstraintError(error)) {
-      await _logForeignKeyViolations(db);
+      await Zone.root.run(() => _logForeignKeyViolations(db));
     }
 
     // 4. 异步记录异常到数据库（不等待，避免阻塞）
