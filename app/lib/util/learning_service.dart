@@ -55,19 +55,19 @@ class LearningService {
 
         // 获取所有待重置(昨天被派发过，或产生过学习次数)的单词。重置时，使用带有 genLog 的方法或确保触发 UserDbLogs 从而使得远端服务器知道要清空 batchId，防止重装或者换客户端后被老数据覆盖
         final needResetWords = await (db.select(db.learningWords)
-          ..where((lw) => lw.userId.equals(user.id) & (lw.todayLearnedTimes.isBiggerThanValue(0) | lw.batchId.isBiggerThanValue(0))))
-          .get();
+              ..where((lw) => lw.userId.equals(user.id) & (lw.todayLearnedTimes.isBiggerThanValue(0) | lw.batchId.isBiggerThanValue(0))))
+            .get();
 
         if (needResetWords.isNotEmpty) {
           await db.transaction(() async {
             for (var word in needResetWords) {
               await db.learningWordsDao.saveEntity(
-                word.copyWith(
-                  todayLearnedTimes: 0,
-                  batchId: const Value(0),
-                ),
-                true // 强制生成同步记录，更新云端
-              );
+                  word.copyWith(
+                    todayLearnedTimes: 0,
+                    batchId: const Value(0),
+                  ),
+                  true // 强制生成同步记录，更新云端
+                  );
             }
           });
         }
@@ -89,24 +89,28 @@ class LearningService {
 
       // 生成(或补充)今日要学习的单词列表
       bool needAddNewWords = todayWords.isEmpty || (todayWords.length < (user.effectiveWordsPerDay) && addNewWordsIfNotEnough);
-      Global.logger.d('[FETCH-WORD] [prepareTodayStudy] 是否需要补充单词: $needAddNewWords (todayWords.isEmpty: ${todayWords.isEmpty}, addNewWordsIfNotEnough: $addNewWordsIfNotEnough)');
-      
+      Global.logger.d(
+          '[FETCH-WORD] [prepareTodayStudy] 是否需要补充单词: $needAddNewWords (todayWords.isEmpty: ${todayWords.isEmpty}, addNewWordsIfNotEnough: $addNewWordsIfNotEnough)');
+
       bool wordExhausted = false;
       if (needAddNewWords) {
         todayWords = await genTodayWords(user.id, AppClock.now(), todayWords);
-        wordExhausted = todayWords.length < (user.effectiveWordsPerDay); 
+        wordExhausted = todayWords.length < (user.effectiveWordsPerDay);
         Global.logger.d('[FETCH-WORD] [prepareTodayStudy] genTodayWords执行后，内存中单词总数: ${todayWords.length}, 计划是否枯竭: $wordExhausted');
       }
 
-    // 重新获取今日学习单词（确保获取的是当前DB中真实分配好batchId的数据）
-    todayWords = await getTodayLearningWordsFromDb(user.id);
-    Global.logger.d('[FETCH-WORD] [prepareTodayStudy] 重新从DB读取确认后的单词数: ${todayWords.length}');
+      // 重新获取今日学习单词（确保获取的是当前DB中真实分配好batchId的数据）
+      todayWords = await getTodayLearningWordsFromDb(user.id);
+      Global.logger.d('[FETCH-WORD] [prepareTodayStudy] 重新从DB读取确认后的单词数: ${todayWords.length}');
 
       // 如果今日单词数量超过了设定的目标，需要削减（支持从计划页面调低数量）
       if (todayWords.length > user.effectiveWordsPerDay) {
         Global.logger.d('[FETCH-WORD] [prepareTodayStudy] 溢出报警！当前数 (${todayWords.length}) > 计划数 (${user.effectiveWordsPerDay})，准备进入削减逻辑');
         todayWords = await shrinkTodayWords(user.id, todayWords, user.effectiveWordsPerDay);
       }
+
+      // 最后统一校正标记并刷新学习顺序（处理已经分配在DB但需要纠零标记的数据，以及在调整目标后重排顺序）
+      await updateTodayLearningWords(todayWords, AppClock.now());
 
       // 计算今日新词数
       int newWordCount = 0;
@@ -135,16 +139,15 @@ class LearningService {
     // 查询今天的学习单词 (只需按 batchId 过滤，因为新一天开始时 batchId 已重置)
     try {
       final query = db.select(db.learningWords)
-        ..where((lw) =>
-            lw.userId.equals(userId) &
-            lw.batchId.isBiggerThanValue(0))
+        ..where((lw) => lw.userId.equals(userId) & lw.batchId.isBiggerThanValue(0))
         ..orderBy([
           (lw) => OrderingTerm(expression: lw.batchId),
           (lw) => OrderingTerm(expression: lw.learningOrder),
         ]);
 
       final results = await query.get();
-      Global.logger.d('[FETCH-WORD] [getTodayLearningWordsFromDb] SQL查询返回条数: ${results.length}, 关联的BatchIDs: ${results.map((e) => e.batchId).toSet()}');
+      Global.logger
+          .d('[FETCH-WORD] [getTodayLearningWordsFromDb] SQL查询返回条数: ${results.length}, 关联的BatchIDs: ${results.map((e) => e.batchId).toSet()}');
       return results;
     } catch (e) {
       Global.logger.e('获取今日学习单词失败: $e');
@@ -256,7 +259,6 @@ class LearningService {
     return todayLearningWords;
   }
 
-
   /// 削减今日学习单词（当用户调低每日单词量时）
   static Future<List<LearningWord>> shrinkTodayWords(String userId, List<LearningWord> todayWords, int targetCount) async {
     final db = MyDatabase.instance;
@@ -268,14 +270,14 @@ class LearningService {
     // 如果即便把还没学的词全删了，剩下的词依然超过目标（说明用户今天已经学了很多了），那我们也无法强行删除已学的词
     if (learnedWords.length >= targetCount) {
       Global.logger.d('[FETCH-WORD] [shrinkTodayWords] 无法削减！已学单词数 (${learnedWords.length}) 已 >= 目标 ($targetCount)');
-      return todayWords; 
+      return todayWords;
     }
 
     Global.logger.d('[FETCH-WORD] [shrinkTodayWords] 执行削减：当前 ${todayWords.length} -> 目标 $targetCount, 计划移除 ${todayWords.length - targetCount} 个未学单词');
 
     // 2. 计算需要移除的数量
     int needToRemove = todayWords.length - targetCount;
-    
+
     // 3. 排序待移除的单词：按 batchId 降序，然后再按 learningOrder 降序（先移除后面批次的，再移除批次内靠后的）
     untaughtWords.sort((a, b) {
       if (a.batchId != b.batchId) {
@@ -303,7 +305,7 @@ class LearningService {
 
     // 5. 合并并返回剩余的单词
     List<LearningWord> finalWords = [...learnedWords, ...remainingUntaughtWords];
-    
+
     // 重新校正剩余单词的 learningOrder
     finalWords.sort((a, b) {
       if (a.batchId != b.batchId) {
@@ -313,8 +315,8 @@ class LearningService {
     });
 
     for (int i = 0; i < finalWords.length; i++) {
-        finalWords[i] = finalWords[i].copyWith(learningOrder: i + 1);
-        await db.learningWordsDao.saveEntity(finalWords[i], true);
+      finalWords[i] = finalWords[i].copyWith(learningOrder: i + 1);
+      await db.learningWordsDao.saveEntity(finalWords[i], true);
     }
 
     return finalWords;
@@ -358,8 +360,7 @@ class LearningService {
         // 否则如果白天学过了一次，learnedTimes 变为了 1，这里会导致标记被重置为 false，导致进度统计错误。
         if (learningWord.todayLearnedTimes == 0) {
           // 判断是否为今日新词：从未学习过（learnedTimes == 0）且没有 FSRS 进度 (lastLearningDate == null)
-          bool shouldBeNewWord =
-              learningWord.learnedTimes == 0 && learningWord.lastLearningDate == null;
+          bool shouldBeNewWord = learningWord.learnedTimes == 0 && learningWord.lastLearningDate == null;
           if (learningWord.isTodayNewWord != shouldBeNewWord) {
             learningWord = learningWord.copyWith(
               isTodayNewWord: shouldBeNewWord,
@@ -381,8 +382,6 @@ class LearningService {
       rethrow;
     }
   }
-
-
 
   /// 从词书取新词（支持优先级和已掌握过滤）
   static Future<List<LearningWord>> fetchNewWordsToLearn(String userId, int todayDayNumber, int countToFetch) async {
@@ -493,5 +492,4 @@ class LearningService {
     Global.logger.d('[FETCH-NEW-WORDS] 抓取完成，共抓取到 ${learningWords.length} 个新词');
     return learningWords;
   }
-
 }
