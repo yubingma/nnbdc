@@ -51,6 +51,7 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
   final TextEditingController _domainCtrl = TextEditingController();
   final TextEditingController _sentenceRequirementCtrl = TextEditingController();
   final TextEditingController _voiceRequirementCtrl = TextEditingController();
+  final TextEditingController _meaningRequirementCtrl = TextEditingController();
 
   bool _isDictMatched = false;
   int _matchedDictWordCount = 0;
@@ -127,6 +128,7 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
     _domainCtrl.dispose();
     _sentenceRequirementCtrl.dispose();
     _voiceRequirementCtrl.dispose();
+    _meaningRequirementCtrl.dispose();
     _timer?.cancel();
     super.dispose();
   }
@@ -177,6 +179,7 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
           "targetGameHallIds": _selectedGameHallIds.isEmpty ? null : _selectedGameHallIds,
           "sentenceRequirement": _sentenceRequirementCtrl.text.trim(),
           "voiceRequirement": _voiceRequirementCtrl.text.trim(),
+          "meaningRequirement": _meaningRequirementCtrl.text.trim(),
         })
       });
 
@@ -600,6 +603,15 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
                       controller: _voiceRequirementCtrl,
                       decoration: InputDecoration(
                         labelText: '例句配音风格要求 (选填，指导TTS配音，如"情绪饱满")',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: _meaningRequirementCtrl,
+                      decoration: InputDecoration(
+                        labelText: '释义生成要求 (选填，指导AI生成释义，如"偏向地道口语")',
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       ),
