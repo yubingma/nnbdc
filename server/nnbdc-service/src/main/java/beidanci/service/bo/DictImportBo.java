@@ -552,7 +552,7 @@ public class DictImportBo {
                 if (isSystemDict) {
                     boolean hasCommonMeaning = allExistingMeanings.stream().anyMatch(m -> Constants.COMMON_DICT_ID.equals(m.getDictId()));
                     if (!hasCommonMeaning) {
-                        // 托底释义保持通用，不强制使用 manualMeaning，除非手动释义就是通用的
+                        // 托底释义保持通用，不强制使用 manualMeaning，以保留通用词库的全面性
                         AiResult genericAiResult = getAiResult(spell, null, contextMeanings, generateWordImage, null, sentenceRequirement);
                         saveExtrinsicResources(word, genericAiResult, Constants.SYS_USER_SYS_ID, Constants.COMMON_DICT_ID, preferredVoices, voiceRequirement, stats);
                     }
@@ -792,7 +792,12 @@ public class DictImportBo {
             userPrompt.append("Return in this exact JSON format: {\"phonetic\": \"/xxx/\", \"popularity\": 1-10, \"meanings\": [{\"pos\": \"n.\", \"meaning\": \"中文意思1\", \"sentenceEn\": \"...\", \"sentenceCn\": \"...\", \"synonyms\": [\"syn1\", \"syn2\"]}], \"imagePrompts\": [\"...\"]}. " +
                     "provide at most 3 common synonyms per meaning.");
         } else {
-            userPrompt.append(String.format("CRITICAL: The user has provided an EXCLUSIVE manual meaning: '%s' for the word '%s'. You MUST generate resources (POS, example sentences, synonyms) STRICTLY based on this provided meaning. DO NOT add any other unrelated meanings or senses from your own knowledge. Treat this manual meaning as the absolute and only source for the dictionary entry. If the provided meaning text contains multiple parts of speech or senses itself, you may structure them accordingly, but do not exceed the scope of the provided text.", 
+            userPrompt.append(String.format("CRITICAL AND TOTAL RESTRICTION: The user has provided an EXCLUSIVE manual meaning: '%s' for the word '%s'. " +
+                            "You MUST generate resources (POS, example sentences, synonyms) ONLY for this provided meaning. " +
+                            "IT IS STRICTLY FORBIDDEN to add any other unrelated meanings, senses, or parts of speech from your own knowledge. " +
+                            "For example, if the manual meaning is a simple noun, generate ONLY one entry with 'pos': 'n.'. " +
+                            "DO NOT under any circumstances generate multiple entries in the 'meanings' array unless the provided text explicitly contains multiple distinct senses. " +
+                            "Treat this manual meaning as the absolute, single, and only source for the dictionary entry.", 
                     manualMeaning, spell));
             userPrompt.append("\nReturn in this exact JSON format: {\"phonetic\": \"/xxx/\", \"popularity\": 5, \"meanings\": [{\"pos\": \"n.\", \"meaning\": \"...\", \"sentenceEn\": \"...\", \"sentenceCn\": \"...\", \"synonyms\": [\"syn1\", \"syn2\"]}], \"imagePrompts\": [\"...\"]}.");
         }

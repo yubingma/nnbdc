@@ -1733,8 +1733,17 @@ class WordBo {
   Future<List<MeaningItem>> getWordMeaningItems(String wordId, String? userId, {List<String>? priorityDictIds}) async {
     final db = MyDatabase.instance;
 
-    // 先查优先词书（存在即返回）
+    // 先查优先词书（严格排他性查询：若优先词库内有内容，则不再合并父级/通用词库资源，以确保查看到的确实是该词书专有的资源）
     if (priorityDictIds != null && priorityDictIds.isNotEmpty) {
+      final priorityMiQuery = db.select(db.meaningItems)
+        ..where((mi) => mi.wordId.equals(wordId) & mi.dictId.isIn(priorityDictIds))
+        ..orderBy([(mi) => OrderingTerm(expression: mi.popularity)]);
+      final priorityMeaningItems = await priorityMiQuery.get();
+      if (priorityMeaningItems.isNotEmpty) {
+        return priorityMeaningItems;
+      }
+
+      // 如果优先词书里没有，再尝试展开查找其父级词库（如通用词库）
       final expandedPriorityDictIds = <String>{...priorityDictIds};
       final dbDicts = await (db.select(db.dicts)..where((d) => d.id.isIn(priorityDictIds))).get();
       for (final d in dbDicts) {
@@ -1743,12 +1752,12 @@ class WordBo {
         }
       }
 
-      final priorityMiQuery = db.select(db.meaningItems)
+      final expandedMiQuery = db.select(db.meaningItems)
         ..where((mi) => mi.wordId.equals(wordId) & mi.dictId.isIn(expandedPriorityDictIds))
         ..orderBy([(mi) => OrderingTerm(expression: mi.popularity)]);
-      final priorityMeaningItems = await priorityMiQuery.get();
-      if (priorityMeaningItems.isNotEmpty) {
-        return priorityMeaningItems;
+      final expandedMeaningItems = await expandedMiQuery.get();
+      if (expandedMeaningItems.isNotEmpty) {
+        return expandedMeaningItems;
       }
     }
 
