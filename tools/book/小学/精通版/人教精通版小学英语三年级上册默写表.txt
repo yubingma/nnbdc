@@ -49,14 +49,13 @@ purple|紫色的
 brown|棕色的
 white|白色的
 black|黑色的
-orange|橙色的
+orange|橙色的;橙；桔子
 grey|灰色的
 hamburger|汉堡包
 hot dog|热狗
 coke|可乐
 cake|蛋糕
 egg|蛋
-orange|橙；桔子
 pear|梨子
 apple|苹果
 banana|香蕉
