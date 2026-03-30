@@ -237,4 +237,15 @@ public class Sentence extends UuidPo {
     public void setTtsEngine(String ttsEngine) {
         this.ttsEngine = ttsEngine;
     }
+
+    @Column(name = "tts_instruction", length = 255)
+    private String ttsInstruction;
+
+    public String getTtsInstruction() {
+        return ttsInstruction;
+    }
+
+    public void setTtsInstruction(String ttsInstruction) {
+        this.ttsInstruction = ttsInstruction;
+    }
 }

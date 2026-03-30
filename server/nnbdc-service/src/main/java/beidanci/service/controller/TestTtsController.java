@@ -14,7 +14,7 @@ public class TestTtsController {
     @GetMapping("/testTts")
     public String testTts(@RequestParam String voice) {
         try {
-            aiBo.generateSpeech("Hello world", voice);
+            aiBo.generateSpeech("Hello world", voice, null);
             return "SUCCESS: " + voice;
         } catch (Exception e) {
             return "FAILED: " + e.getMessage();

@@ -49,6 +49,8 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
   final TextEditingController _wordsCtrl = TextEditingController(text: "apple|一种甜酸可口的水果\nbanana\ncat");
   final TextEditingController _deleteDictIdCtrl = TextEditingController();
   final TextEditingController _domainCtrl = TextEditingController();
+  final TextEditingController _sentenceRequirementCtrl = TextEditingController();
+  final TextEditingController _voiceRequirementCtrl = TextEditingController();
 
   bool _isDictMatched = false;
   int _matchedDictWordCount = 0;
@@ -123,6 +125,8 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
     _wordsCtrl.dispose();
     _deleteDictIdCtrl.dispose();
     _domainCtrl.dispose();
+    _sentenceRequirementCtrl.dispose();
+    _voiceRequirementCtrl.dispose();
     _timer?.cancel();
     super.dispose();
   }
@@ -170,7 +174,9 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
           "generateWordImage": _generateWordImage,
           "generateShuffledVersion": _generateShuffledVersion,
           "targetDictGroupId": _selectedDictGroupId,
-          "targetGameHallIds": _selectedGameHallIds.isEmpty ? null : _selectedGameHallIds
+          "targetGameHallIds": _selectedGameHallIds.isEmpty ? null : _selectedGameHallIds,
+          "sentenceRequirement": _sentenceRequirementCtrl.text.trim(),
+          "voiceRequirement": _voiceRequirementCtrl.text.trim(),
         })
       });
 
@@ -576,6 +582,24 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
                       controller: _domainCtrl,
                       decoration: InputDecoration(
                         labelText: '专业领域 (选填，告诉AI按此发散释义，如"医学"、"计算机")',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: _sentenceRequirementCtrl,
+                      decoration: InputDecoration(
+                        labelText: '例句内容要求 (选填，指导AI生成句子，如"生动活泼")',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: _voiceRequirementCtrl,
+                      decoration: InputDecoration(
+                        labelText: '例句配音风格要求 (选填，指导TTS配音，如"情绪饱满")',
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       ),

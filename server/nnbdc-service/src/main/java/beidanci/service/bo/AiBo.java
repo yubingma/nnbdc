@@ -163,9 +163,10 @@ public class AiBo {
      * 产生的音频文件通常应保存到 /var/www/html/sound 目录下，以便前端访问
      *
      * @param text 需要合成的文本
+     * @param voiceInstruction 音效/风格指令
      * @return 合成后的音频信息和字节流
      */
-    public TtsResult generateSpeech(String text, String preferredVoicesStr) {
+    public TtsResult generateSpeech(String text, String preferredVoicesStr, String voiceInstruction) {
         String[] voices = {"longanyang", "longanhuan", "longxiaochun_v3", "longxiaoxia_v3", "longniuniu_v3", "longhuhu_v3", "longjielidou_v3"};
         if (preferredVoicesStr != null && !preferredVoicesStr.trim().isEmpty()) {
             voices = preferredVoicesStr.split(",");
@@ -174,24 +175,24 @@ public class AiBo {
         String voice = voices[new java.util.Random().nextInt(voices.length)];
         
         try {
-            return new TtsResult(callCosyVoice(text, voice), voice, aiProperties.getTtsModel());
+            return new TtsResult(callCosyVoice(text, voice, voiceInstruction), voice, aiProperties.getTtsModel());
         } catch (Exception e) {
             String defaultVoice = voices[0];
             logger.warn("随机音色 {} 合成失败(可能是音色不存在)，尝试回退到用户首选/兜底音色: {}", voice, defaultVoice, e);
             if (!voice.equals(defaultVoice)) {
                 try {
-                    return new TtsResult(callCosyVoice(text, defaultVoice), defaultVoice, aiProperties.getTtsModel());
+                    return new TtsResult(callCosyVoice(text, defaultVoice, voiceInstruction), defaultVoice, aiProperties.getTtsModel());
                 } catch (Exception fallbackEx) {
                     logger.warn("首选音色也失败了，最后尝试系统全局保底音色: {}", aiProperties.getVoice());
                     try {
-                        return new TtsResult(callCosyVoice(text, aiProperties.getVoice()), aiProperties.getVoice(), aiProperties.getTtsModel());
+                        return new TtsResult(callCosyVoice(text, aiProperties.getVoice(), voiceInstruction), aiProperties.getVoice(), aiProperties.getTtsModel());
                     } catch (Exception ext) {
                         throw new RuntimeException("保底 TTS 系统异常", ext);
                     }
                 }
             } else if (!voice.equals(aiProperties.getVoice())) {
                 try {
-                    return new TtsResult(callCosyVoice(text, aiProperties.getVoice()), aiProperties.getVoice(), aiProperties.getTtsModel());
+                    return new TtsResult(callCosyVoice(text, aiProperties.getVoice(), voiceInstruction), aiProperties.getVoice(), aiProperties.getTtsModel());
                 } catch (Exception fallbackEx) {
                     throw new RuntimeException("保底 TTS 系统异常", fallbackEx);
                 }
@@ -200,9 +201,9 @@ public class AiBo {
         }
     }
 
-    private byte[] callCosyVoice(String text, String voice) throws Exception {
-        logger.info("请求语音合成: [模型: {}, 发音人: {}] 内容: {}", 
-                   aiProperties.getTtsModel(), voice, text);
+    private byte[] callCosyVoice(String text, String voice, String voiceInstruction) throws Exception {
+        logger.info("请求语音合成: [模型: {}, 发音人: {}, 指令: {}] 内容: {}", 
+                   aiProperties.getTtsModel(), voice, voiceInstruction, text);
         
         String apiKey = aiProperties.getApiKey();
         if (apiKey == null || apiKey.isEmpty() || apiKey.startsWith("${")) {
@@ -211,13 +212,19 @@ public class AiBo {
         }
 
         SpeechSynthesizer synthesizer = new SpeechSynthesizer();
-        SpeechSynthesisParam param = SpeechSynthesisParam.builder()
+        var paramBuilder = SpeechSynthesisParam.builder()
                 .apiKey(apiKey)
                 .model(aiProperties.getTtsModel())
                 .parameter("voice", voice)
                 .parameter("format", "mp3")
-                .text(text)
-                .build();
+                .text(text);
+        
+        if (voiceInstruction != null && !voiceInstruction.trim().isEmpty()) {
+            // 目前阿里云 CosyVoice 通过特定的 prompt_text/instruction 参数支持语气风格，此处作为 plumbing 接入
+            paramBuilder.parameter("instruction", voiceInstruction);
+        }
+        
+        SpeechSynthesisParam param = (SpeechSynthesisParam) paramBuilder.build();
         
         ByteBuffer buffer = synthesizer.call(param);
         byte[] audioBytes = new byte[buffer.remaining()];
