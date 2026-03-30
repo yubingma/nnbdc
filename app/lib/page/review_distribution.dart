@@ -145,10 +145,6 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
             icon: const Icon(Icons.info_outline_rounded, color: Colors.white),
             onPressed: () => _showExplainDialog(context),
           ),
-          IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.white),
-            onPressed: () => _loadData(),
-          ),
         ],
       ),
       body: _isLoading
