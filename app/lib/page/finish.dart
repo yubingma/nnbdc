@@ -30,9 +30,9 @@ class FinishPage extends StatefulWidget {
 
 class FinishPageState extends State<FinishPage> {
   bool dataLoaded = false;
-  late int cowDung;
+  int cowDung = 0; // 初始化为0，防止 LateInitializationError
   late Result<int> dakaResult;
-  late int todayDakaScore; // 今日打卡积分（固定1分）
+  int todayDakaScore = 0; // 今日打卡积分
 
   String? marketAppUrl; // 应用市场的对应Url
 
@@ -92,6 +92,7 @@ class FinishPageState extends State<FinishPage> {
           // 漏斗：用户成功打卡完成
           AnalyticsUtil.trackFinishDaka(cowDung, user.data!.continuousDakaDayCount ?? 0);
         } else {
+          cowDung = 0; // 确保失败时为0
           ToastUtil.error(result.msg!);
         }
 
