@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/services.dart' show rootBundle, ByteData;
 import 'package:drift/drift.dart';
+import 'package:nnbdc/util/app_clock.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:nnbdc/db/dao.dart';
@@ -510,7 +511,7 @@ class MyDatabase extends _$MyDatabase {
       final userIds = rows.map((r) => r.data['user_id'] as String).toSet();
       
       for (final userId in userIds) {
-        final now = DateTime.now();
+        final now = AppClock.now();
         final nowTimestamp = now.millisecondsSinceEpoch ~/ 1000;
         
         // 重建学习步骤:List(预习)-> En2Ch -> Ch2En
@@ -848,7 +849,7 @@ class MyDatabase extends _$MyDatabase {
       for (final user in users) {
         final userId = user.data['id'] as String;
         // 使用 Drift 的 DateTimeType 将 DateTime 转换为 Unix 时间戳(秒)
-        final now = DateTime.now();
+        final now = AppClock.now();
         final nowTimestamp = now.millisecondsSinceEpoch ~/ 1000;
           
         // 重建学习步骤:List(预习)-> En2Ch -> Ch2En

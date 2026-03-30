@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:nnbdc/config.dart';
 import 'package:nnbdc/global.dart';
+import 'package:nnbdc/util/app_clock.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
@@ -111,7 +112,7 @@ class AiModelManager {
   String get _metaUrl {
     // 生产环境：使用服务器配置的 URL
     Global.logger.d('使用服务器模型元数据: ${Config.aiModelUrl}');
-    return '${Config.aiModelUrl}?t=${DateTime.now().millisecondsSinceEpoch}';
+    return '${Config.aiModelUrl}?t=${AppClock.now().millisecondsSinceEpoch}';
   }
 
   Future<Map<AiModelProfile, AiModelMeta>> fetchRemoteMeta() async {
@@ -306,14 +307,14 @@ class AiModelManager {
 
       final sink = file.openWrite();
       var downloaded = 0;
-      var lastLogTime = DateTime.now();
-      var lastCallbackTime = DateTime.now();
+      var lastLogTime = AppClock.now();
+      var lastCallbackTime = AppClock.now();
 
       await for (final chunk in response.stream) {
         sink.add(chunk);
         downloaded += chunk.length;
 
-        final now = DateTime.now();
+        final now = AppClock.now();
 
         // 每 100ms 回调一次进度（给 UI 更新）
         if (onProgress != null && now.difference(lastCallbackTime).inMilliseconds >= 100) {

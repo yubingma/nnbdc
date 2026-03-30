@@ -4,6 +4,7 @@ import 'package:drift/drift.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/models/sync_log.dart';
+import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/utils.dart';
 
 /// 同步日志服务
@@ -140,7 +141,7 @@ class SyncLogService {
     final id = Util.uuid();
     final log = SyncLog.start(
       id: id,
-      startTime: DateTime.now(),
+      startTime: AppClock.now(),
       userId: userId,
     );
     await addLog(log);
@@ -163,7 +164,7 @@ class SyncLogService {
       }
 
       final updatedLog = logs[index].complete(
-        endTime: DateTime.now(),
+        endTime: AppClock.now(),
         uploadCount: uploadCount,
         downloadCount: downloadCount,
       );
@@ -190,7 +191,7 @@ class SyncLogService {
       }
 
       final updatedLog = logs[index].fail(
-        endTime: DateTime.now(),
+        endTime: AppClock.now(),
         errorMessage: errorMessage,
       );
       

@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/ocr_service.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:path_provider/path_provider.dart';
@@ -70,7 +71,7 @@ class _HandwritingBoardState extends State<HandwritingBoard> {
 
       // 2. 保存到临时文件
       final tempDir = await getTemporaryDirectory();
-      final file = File('${tempDir.path}/handwriting_${DateTime.now().millisecondsSinceEpoch}.png');
+      final file = File('${tempDir.path}/handwriting_${AppClock.now().millisecondsSinceEpoch}.png');
       await file.writeAsBytes(byteData.buffer.asUint8List());
 
       // 3. 调用 OCR 识别

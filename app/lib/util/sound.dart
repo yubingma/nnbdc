@@ -4,6 +4,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 // Avoid direct dart:io Platform on web; use PlatformUtils instead
 import 'package:nnbdc/global.dart';
+import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/error_handler.dart';
 import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/util/utils.dart';
@@ -235,7 +236,7 @@ class SoundUtil {
     }
     final pool = _sfxPools.putIfAbsent(soundFileName, () => [AudioPlayer()]);
     AudioPlayer? player;
-    final now = DateTime.now();
+    final now = AppClock.now();
 
     for (int i = 0; i < pool.length; i++) {
       final p = pool[i];
@@ -327,7 +328,7 @@ class SoundUtil {
     }
     final pool = _sfxPools.putIfAbsent(soundFileName, () => [AudioPlayer()]);
     AudioPlayer? player;
-    final now = DateTime.now();
+    final now = AppClock.now();
 
     for (int i = 0; i < pool.length; i++) {
       final p = pool[i];

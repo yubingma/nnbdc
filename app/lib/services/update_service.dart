@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -88,7 +89,7 @@ class UpdateService extends GetxController {
       // 添加时间戳参数避免缓存，确保获取最新版本
       String updateUrl = Config.updateUrl;
       String separator = updateUrl.contains('?') ? '&' : '?';
-      updateUrl = '$updateUrl${separator}t=${DateTime.now().millisecondsSinceEpoch}';
+      updateUrl = '$updateUrl${separator}t=${AppClock.now().millisecondsSinceEpoch}';
 
       final response = await http.get(Uri.parse(updateUrl));
       if (response.statusCode == 200) {
@@ -151,7 +152,7 @@ class UpdateService extends GetxController {
       // 添加时间戳参数避免缓存，确保获取最新版本
       String updateUrl = Config.updateUrl;
       String separator = updateUrl.contains('?') ? '&' : '?';
-      updateUrl = '$updateUrl${separator}t=${DateTime.now().millisecondsSinceEpoch}';
+      updateUrl = '$updateUrl${separator}t=${AppClock.now().millisecondsSinceEpoch}';
 
       final response = await http.get(Uri.parse(updateUrl));
       if (response.statusCode == 200) {

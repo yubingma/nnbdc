@@ -49,7 +49,7 @@ class WordBo {
 
       // 3. 构造新的 DictWord 列表插入到数据库
       final newDictWords = <DictWord>[];
-      final createTime = DateTime.now();
+      final createTime = AppClock.now();
       for (int i = 0; i < list.length; i++) {
         newDictWords.add(DictWord(
           dictId: shuffledDictId,

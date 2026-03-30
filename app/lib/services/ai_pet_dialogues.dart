@@ -1,3 +1,5 @@
+import 'package:nnbdc/util/app_clock.dart';
+
 /// 小宠物对话文案库
 ///
 /// 包含小宠物在不同学习场景下的对话文案，用于AI生成内容的参考
@@ -187,7 +189,7 @@ class AiPetDialogues {
   /// 随机获取指定类型的对话
   static String getRandomDialogue(List<String> dialogues) {
     if (dialogues.isEmpty) return "";
-    return dialogues[DateTime.now().millisecondsSinceEpoch % dialogues.length];
+    return dialogues[AppClock.now().millisecondsSinceEpoch % dialogues.length];
   }
 
   /// 获取带参数的对话（替换占位符）

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:nnbdc/global.dart';
+import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -349,17 +350,17 @@ class Asr {
 
       try {
         final stream = asrEventChannel.receiveBroadcastStream();
-        final subscriptionId = DateTime.now().millisecondsSinceEpoch;
+        final subscriptionId = AppClock.now().millisecondsSinceEpoch;
         final savedListener = asrListener;
 
         _eventSubscription = stream.listen(
           (event) {
-            final receiveTime = DateTime.now();
+            final receiveTime = AppClock.now();
             Global.logger.d(
                 '~~~~~ASR: [Event] Received result from platform at ${receiveTime.toIso8601String()}: $event');
             try {
               savedListener(event);
-              final processTime = DateTime.now();
+              final processTime = AppClock.now();
               Global.logger.d(
                   'ASR: [Event] Listener callback finished at ${processTime.toIso8601String()} (duration: ${processTime.difference(receiveTime).inMilliseconds}ms)');
             } catch (e, stackTrace) {
@@ -439,11 +440,11 @@ class Asr {
               .timeout(const Duration(seconds: 5));
 
           Global.logger.i('ASR: Starting ASR... (instance: $hashCode)');
-          final startTime = DateTime.now();
+          final startTime = AppClock.now();
           await asrMethodChannel
               .invokeMethod('startAsr')
               .timeout(const Duration(seconds: 5));
-          final endTime = DateTime.now();
+          final endTime = AppClock.now();
 
           setState(AsrState.started);
           Global.logger.i(
@@ -503,10 +504,10 @@ class Asr {
     }
 
     setState(AsrState.stopping);
-    final startTime = DateTime.now();
+    final startTime = AppClock.now();
     try {
       await asrMethodChannel.invokeMethod('stopAsr');
-      final endTime = DateTime.now();
+      final endTime = AppClock.now();
       setState(AsrState.stopped);
       Global.logger.i(
           'ASR: ASR stopped successfully (instance: $hashCode, duration: ${endTime.difference(startTime).inMilliseconds}ms)');

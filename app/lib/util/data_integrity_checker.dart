@@ -764,7 +764,7 @@ class DataIntegrityChecker {
               editable: dictDto.editable ?? true,
               deletable: dictDto.deletable ?? false,
               createTime: dictDto.createTime,
-              updateTime: dictDto.updateTime ?? DateTime.now(),
+              updateTime: dictDto.updateTime ?? AppClock.now(),
             );
             await _db.dictsDao.saveEntity(dict, false);
           }
@@ -791,7 +791,7 @@ class DataIntegrityChecker {
               editable: dictDto.editable ?? true,
               deletable: dictDto.deletable ?? false,
               createTime: dictDto.createTime,
-              updateTime: dictDto.updateTime ?? DateTime.now(),
+              updateTime: dictDto.updateTime ?? AppClock.now(),
             );
             await _db.dictsDao.saveEntity(dict, false);
           }
@@ -810,7 +810,7 @@ class DataIntegrityChecker {
                 seq: stepDto.seq,
                 state: stepDto.state,
                 createTime: stepDto.createTime,
-                updateTime: stepDto.updateTime ?? DateTime.now(),
+                updateTime: stepDto.updateTime ?? AppClock.now(),
               )).toList();
           
           if (stepsToInsert.isNotEmpty) {

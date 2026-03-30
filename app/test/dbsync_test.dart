@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/sync.dart';
 
 void main() {
@@ -16,7 +17,7 @@ void main() {
     }
 
     test('简单同步场景：没有冲突的记录', () {
-      var now = DateTime.now();
+      var now = AppClock.now();
       
       List<Map<String, dynamic>> localChanges = [
         createChange('users', '1', 'INSERT', now.subtract(Duration(minutes: 5)), {'id': '1', 'name': 'Alice'}),
@@ -38,7 +39,7 @@ void main() {
     });
 
     test('本地和后端都有相同记录但操作不同 - INSERT vs UPDATE', () {
-      var now = DateTime.now();
+      var now = AppClock.now();
       
       // 场景：本地插入记录，后端更新同一记录，但本地时间更新
       List<Map<String, dynamic>> localChanges = [
@@ -80,7 +81,7 @@ void main() {
     });
 
     test('本地和后端都有相同记录但操作不同 - UPDATE vs DELETE', () {
-      var now = DateTime.now();
+      var now = AppClock.now();
       
       // 场景：本地更新记录，后端删除同一记录，但本地时间更新
       List<Map<String, dynamic>> localChanges = [
@@ -122,7 +123,7 @@ void main() {
     });
 
     test('本地和后端都有相同记录且操作相同 - UPDATE vs UPDATE', () {
-      var now = DateTime.now();
+      var now = AppClock.now();
       
       // 场景：本地和后端都更新记录，但本地时间更新
       List<Map<String, dynamic>> localChanges = [
@@ -164,7 +165,7 @@ void main() {
     });
 
     test('本地和后端都有相同记录但操作不同 - INSERT vs INSERT', () {
-      var now = DateTime.now();
+      var now = AppClock.now();
       
       // 场景：本地和后端都插入记录，但本地时间更新
       List<Map<String, dynamic>> localChanges = [
@@ -206,7 +207,7 @@ void main() {
     });
 
     test('本地和后端都有相同记录但操作不同 - INSERT vs DELETE', () {
-      var now = DateTime.now();
+      var now = AppClock.now();
       
       // 场景：本地插入记录，后端删除同一记录，但本地时间更新
       List<Map<String, dynamic>> localChanges = [
@@ -248,7 +249,7 @@ void main() {
     });
 
     test('多表同步', () {
-      var now = DateTime.now();
+      var now = AppClock.now();
       
       // 场景：同步多个表的记录
       List<Map<String, dynamic>> localChanges = [
@@ -277,7 +278,7 @@ void main() {
     });
 
     test('合并操作移除多余记录', () {
-      var now = DateTime.now();
+      var now = AppClock.now();
       
       // 场景：合并操作应该移除多余的记录
       List<Map<String, dynamic>> localChanges = [
@@ -310,7 +311,7 @@ void main() {
     });
 
     test('打卡记录同步', () {
-      var now = DateTime.now();
+      var now = AppClock.now();
       var yesterday = now.subtract(Duration(days: 1));
       
       // 创建打卡记录ID

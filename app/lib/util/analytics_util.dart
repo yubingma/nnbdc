@@ -1,3 +1,4 @@
+import 'package:nnbdc/util/app_clock.dart';
 import 'package:umeng_common_sdk/umeng_common_sdk.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/util/platform_util.dart';
@@ -56,7 +57,7 @@ class AnalyticsUtil {
   /// 3. 学习行为：开始当天的学习（漏斗起点）
   static void trackStartStudy() {
     trackEvent('study_start', {
-      'time_of_day': DateTime.now().hour.toString(), // 了解用户偏好学习时段
+      'time_of_day': AppClock.now().hour.toString(), // 了解用户偏好学习时段
     });
   }
 

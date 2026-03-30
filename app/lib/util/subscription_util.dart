@@ -10,6 +10,7 @@ import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/services/throttled_sync_service.dart';
+import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/util/toast_util.dart';
 
@@ -474,7 +475,7 @@ class SubscriptionUtil {
 
   /// 有效会员判定（包含“强制视为会员”逻辑；边界情况偏向会员）
   static bool _isPremiumEffective(User user) {
-    final now = DateTime.now();
+    final now = AppClock.now();
 
     // 非ios平台, 暂时都视为会员 
     if (!Platform.isIOS) {

@@ -11,6 +11,7 @@ import 'package:nnbdc/api/dto.dart';
 import 'package:nnbdc/api/result.dart';
 import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/config.dart';
+import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/loading_service.dart';
 import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/util/toast_util.dart';
@@ -93,7 +94,7 @@ class Api {
           // 制作黄金母版时，添加时间戳参数以绕过 CDN 缓存，确保获取服务端最新资源
           if (Api.useProdUrl) {
             options.queryParameters['_t'] =
-                DateTime.now().millisecondsSinceEpoch;
+                AppClock.now().millisecondsSinceEpoch;
           }
         }
 
@@ -292,7 +293,7 @@ class _DownloadProgress {
     // 说明：
     // - 不能使用 received % N == 0 的方式节流：received 的增长步长不固定，几乎不会刚好命中整数倍
     // - 改为：累计增量达到阈值 或 时间间隔达到阈值 或 下载完成 时通知
-    final nowMs = DateTime.now().millisecondsSinceEpoch;
+    final nowMs = AppClock.now().millisecondsSinceEpoch;
     final lastReceived = _lastNotifiedReceived[resourceId] ?? 0;
     final lastAtMs = _lastNotifiedAtMs[resourceId] ?? 0;
 
