@@ -8,6 +8,7 @@ import 'package:nnbdc/global.dart';
 import 'package:nnbdc/page/word_list/word_list.dart';
 import 'package:nnbdc/util/word_util.dart';
 import 'package:nnbdc/util/toast_util.dart';
+import 'package:nnbdc/util/sound.dart';
 
 /// 改进的编辑释义对话框
 /// 显示所有词性的完整释义，每个词性有独立的下拉选择框和编辑框 
@@ -396,7 +397,7 @@ class _EditMeaningDialogState extends State<EditMeaningDialog> {
       }).join("; ");
 
       Get.back();
-      ToastUtil.info('更新成功');
+      SoundUtil.playAddSuccessSound();
       widget.onSuccess();
     }
   }
