@@ -541,7 +541,21 @@ public class DictImportBo {
             boolean hasDomain = (domain != null && !domain.trim().isEmpty());
             String aiContext = hasDomain ? domain : null;
 
-            if (isSystemDict) {
+            if (manualMeaning != null) {
+                // 无论是否为系统词书，只要提供了 manualMeaning，其在目标 dictId 中应具有最高优先级
+                lastAiResult = getAiResult(spell, manualMeaning, contextMeanings, generateWordImage, aiContext);
+                saveExtrinsicResources(word, lastAiResult, user.getId(), dictId, preferredVoices, stats);
+
+                // 如果是系统导入，除目标词书外，还要维护通用的“托底”一致性
+                if (isSystemDict) {
+                    boolean hasCommonMeaning = allExistingMeanings.stream().anyMatch(m -> Constants.COMMON_DICT_ID.equals(m.getDictId()));
+                    if (!hasCommonMeaning) {
+                        // 托底释义保持通用，不强制使用 manualMeaning，除非手动释义就是通用的
+                        AiResult genericAiResult = getAiResult(spell, null, contextMeanings, generateWordImage, null);
+                        saveExtrinsicResources(word, genericAiResult, Constants.SYS_USER_SYS_ID, Constants.COMMON_DICT_ID, preferredVoices, stats);
+                    }
+                }
+            } else if (isSystemDict) {
                 // 系统词书，实现绝对一致性状态：无论何时导入，都存在对应的补充内容（按需生成）
                 // 1. 确保通用词库("0")有该词的基础托底释放
                 boolean hasCommonMeaning = allExistingMeanings.stream().anyMatch(m -> Constants.COMMON_DICT_ID.equals(m.getDictId()));
@@ -550,7 +564,7 @@ public class DictImportBo {
                     saveExtrinsicResources(word, genericAiResult, Constants.SYS_USER_SYS_ID, Constants.COMMON_DICT_ID, preferredVoices, stats);
                     lastAiResult = genericAiResult;
                 }
-                
+
                 // 2. 如果声明了专业领域，且当前关联词书并非通用库自身，则必须确保该词书有专有资源
                 if (hasDomain && !Constants.COMMON_DICT_ID.equals(dictId)) {
                     boolean hasSpecializedMeaning = allExistingMeanings.stream().anyMatch(m -> dictId.equals(m.getDictId()));
@@ -561,16 +575,9 @@ public class DictImportBo {
                     }
                 }
             } else {
-                // 用户导入
-                if (manualMeaning != null) {
-                    // 场景 3：单词+外部释义 (私有)
-                    lastAiResult = getAiResult(spell, manualMeaning, contextMeanings, generateWordImage, aiContext);
-                    saveExtrinsicResources(word, lastAiResult, user.getId(), dictId, preferredVoices, stats);
-                } else {
-                    // 场景 2：仅单词
-                    lastAiResult = getAiResult(spell, null, contextMeanings, generateWordImage, aiContext);
-                    saveExtrinsicResources(word, lastAiResult, user.getId(), dictId, preferredVoices, stats);
-                }
+                // 用户导入 (且 manualMeaning 为空)
+                lastAiResult = getAiResult(spell, null, contextMeanings, generateWordImage, aiContext);
+                saveExtrinsicResources(word, lastAiResult, user.getId(), dictId, preferredVoices, stats);
             }
         }
 
@@ -778,9 +785,9 @@ public class DictImportBo {
             userPrompt.append("Return in this exact JSON format: {\"phonetic\": \"/xxx/\", \"popularity\": 1-10, \"meanings\": [{\"pos\": \"n.\", \"meaning\": \"中文意思1\", \"sentenceEn\": \"...\", \"sentenceCn\": \"...\", \"synonyms\": [\"syn1\", \"syn2\"]}], \"imagePrompts\": [\"...\"]}. " +
                     "provide at most 3 common synonyms per meaning.");
         } else {
-            userPrompt.append(String.format("Given manual meaning '%s', break it down if there are multiple parts of speech or drastically different senses, and generate an example sentence and synonyms for EACH. " +
-                    "Return: {\"phonetic\": \"/xxx/\", \"popularity\": 5, \"meanings\": [{\"pos\": \"n.\", \"meaning\": \"...\", \"sentenceEn\": \"...\", \"sentenceCn\": \"...\", \"synonyms\": [\"syn1\", \"syn2\"]}], \"imagePrompts\": [\"...\"]}.", 
-                    manualMeaning));
+            userPrompt.append(String.format("CRITICAL: The user has provided an EXCLUSIVE manual meaning: '%s' for the word '%s'. You MUST generate resources (POS, example sentences, synonyms) STRICTLY based on this provided meaning. DO NOT add any other unrelated meanings or senses from your own knowledge. Treat this manual meaning as the absolute and only source for the dictionary entry. If the provided meaning text contains multiple parts of speech or senses itself, you may structure them accordingly, but do not exceed the scope of the provided text.", 
+                    manualMeaning, spell));
+            userPrompt.append("\nReturn in this exact JSON format: {\"phonetic\": \"/xxx/\", \"popularity\": 5, \"meanings\": [{\"pos\": \"n.\", \"meaning\": \"...\", \"sentenceEn\": \"...\", \"sentenceCn\": \"...\", \"synonyms\": [\"syn1\", \"syn2\"]}], \"imagePrompts\": [\"...\"]}.");
         }
 
         String rawJson = aiBo.generateText(systemPrompt, userPrompt.toString());
