@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 
 import '../global.dart';
 import '../theme/app_theme.dart';
+import '../util/app_clock.dart';
 
 const List<double> _treeStageStops = [
   0.0,
@@ -111,7 +112,7 @@ class _PlantGrowthSceneState extends State<PlantGrowthScene> {
     _branchSeed = _computeBranchSeed();
     _dayController = TextEditingController(text: '$_stopDay');
     _ensureGrowthTimer();
-    _lastGrowthUpdateTime = DateTime.now();
+    _lastGrowthUpdateTime = AppClock.now();
     _viewController = TransformationController(Matrix4.identity());
     _viewController.addListener(_handleViewMatrixChange);
   }
@@ -224,11 +225,11 @@ class _PlantGrowthSceneState extends State<PlantGrowthScene> {
     if (!_seedPlanted) return;
     if (_stopDay > 0 && _elapsedDays >= _stopDay) {
       _elapsedDays = _stopDay.toDouble();
-      _lastGrowthUpdateTime = DateTime.now();
+      _lastGrowthUpdateTime = AppClock.now();
       return;
     }
 
-    final DateTime now = DateTime.now();
+    final DateTime now = AppClock.now();
     _lastGrowthUpdateTime ??= now;
     final Duration interval = now.difference(_lastGrowthUpdateTime!);
     _lastGrowthUpdateTime = now;
@@ -275,7 +276,7 @@ class _PlantGrowthSceneState extends State<PlantGrowthScene> {
 
     // 如果用户最近交互过（3秒内），不自动调整
     if (_lastUserInteractionTime != null) {
-      final Duration timeSinceInteraction = DateTime.now().difference(_lastUserInteractionTime!);
+      final Duration timeSinceInteraction = AppClock.now().difference(_lastUserInteractionTime!);
       if (timeSinceInteraction.inSeconds < 3) {
         return;
       }
@@ -369,7 +370,7 @@ class _PlantGrowthSceneState extends State<PlantGrowthScene> {
       }
       _elapsedDays = 0.0;
       _displayProgress = 0.0;
-      _lastGrowthUpdateTime = DateTime.now();
+      _lastGrowthUpdateTime = AppClock.now();
     });
 
     if (_seedPlanted) {
@@ -382,14 +383,14 @@ class _PlantGrowthSceneState extends State<PlantGrowthScene> {
       setState(() {
         _displayProgress = 0.0;
         _elapsedDays = 0.0;
-        _lastGrowthUpdateTime = DateTime.now();
+        _lastGrowthUpdateTime = AppClock.now();
       });
     } else {
       setState(() {
         _seedPlanted = true;
         _displayProgress = 0.0;
         _elapsedDays = 0.0;
-        _lastGrowthUpdateTime = DateTime.now();
+        _lastGrowthUpdateTime = AppClock.now();
       });
     }
 
@@ -537,11 +538,11 @@ class _PlantGrowthSceneState extends State<PlantGrowthScene> {
                         clipBehavior: Clip.hardEdge,
                         onInteractionStart: (_) {
                           _userInteractingWithView = true;
-                          _lastUserInteractionTime = DateTime.now();
+                          _lastUserInteractionTime = AppClock.now();
                         },
                         onInteractionEnd: (_) {
                           _userInteractingWithView = false;
-                          _lastUserInteractionTime = DateTime.now();
+                          _lastUserInteractionTime = AppClock.now();
                         },
                         child: SizedBox(
                           width: worldWidth,

@@ -46,6 +46,7 @@ import '../util/fsrs.dart';
 import '../widget/handwriting_board.dart';
 import '../util/study_config.dart';
 import '../util/analytics_util.dart';
+import '../util/app_clock.dart';
 
 class BdcPageArgs {
   /// 从哪个页面进入本页面
@@ -936,7 +937,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         return;
       }
       // 将在此处设置初始计时，防止_startAsrWithHint被跳过或延迟太久
-      _wordStartTime = DateTime.now();
+      _wordStartTime = AppClock.now();
 
       // 启动ASR
       Global.logger.d('BDC: 当前在"说"tab，启动ASR (studyStep=$_studyStep)');
@@ -950,7 +951,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       }
     } else {
       // 当前在"选"tab，从切换这一刻重新开始计时（之前的播放时间或 ASR 等待时间不计入）
-      _wordStartTime = DateTime.now();
+      _wordStartTime = AppClock.now();
       _firstMatchTime = null;
 
       // 如果当前在"选"tab，如果ASR已经停止，不需要再次停止
@@ -1075,7 +1076,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         // 重置今日学习时长（如果不是今天）
         int todaySecs = dbUser.todayLearningSeconds ?? 0;
         if (dbUser.lastLearningDate != null) {
-          final now = DateTime.now();
+          final now = AppClock.now();
           if (dbUser.lastLearningDate!.year != now.year ||
               dbUser.lastLearningDate!.month != now.month ||
               dbUser.lastLearningDate!.day != now.day) {
@@ -1089,7 +1090,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         final updatedDbUser = dbUser.copyWith(
           totalLearningSeconds: drift.Value(newTotal),
           todayLearningSeconds: drift.Value(newToday),
-          lastLearningDate: drift.Value(DateTime.now()),
+          lastLearningDate: drift.Value(AppClock.now()),
         );
 
         await dao.saveUser(updatedDbUser, true);
@@ -1153,7 +1154,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         await Future.delayed(const Duration(milliseconds: 150));
       }
       await SoundUtil.playAsrReadyHintSound();
-      _wordStartTime = DateTime.now();
+      _wordStartTime = AppClock.now();
     } catch (e, stackTrace) {
       Global.logger.e('BDC: ASR启动失败', error: e, stackTrace: stackTrace);
       // 即使启动抛出异常，如果 ASR 状态已经是 started（iOS 上会抛异常但实际已启动），
@@ -1164,7 +1165,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
           await Future.delayed(const Duration(milliseconds: 150));
         }
         await SoundUtil.playAsrReadyHintSound();
-        _wordStartTime = DateTime.now();
+        _wordStartTime = AppClock.now();
       }
     } finally {}
   }
@@ -1316,7 +1317,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       if (lw.lastLearningDate != null) {
         final lastDate = DateTime(lw.lastLearningDate!.year,
             lw.lastLearningDate!.month, lw.lastLearningDate!.day);
-        final now = DateTime.now();
+        final now = AppClock.now();
         final todayDate = DateTime(now.year, now.month, now.day);
         _daysSinceLastReview = todayDate.difference(lastDate).inDays;
       }
@@ -1482,7 +1483,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       final total = result.totalCount;
       final matched = result.matchedCount;
       if (_firstMatchTime == null && matched >= 1) {
-        _firstMatchTime = DateTime.now();
+        _firstMatchTime = AppClock.now();
       }
       bool isMatch = _isAsrPassSync(total, matched);
       _hasFinishedAnswering = wasAlreadyCorrect || isMatch;
@@ -1521,7 +1522,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
               final timeToUse =
                   (_asrPassRuleCache == 'ALL' && _firstMatchTime != null)
                       ? _firstMatchTime!
-                      : DateTime.now();
+                      : AppClock.now();
               final responseTime =
                   timeToUse.difference(_wordStartTime!).inSeconds;
               rTime = responseTime;
@@ -1575,7 +1576,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
               if (lw.lastLearningDate != null) {
                 final lastDate = DateTime(lw.lastLearningDate!.year,
                     lw.lastLearningDate!.month, lw.lastLearningDate!.day);
-                final now = DateTime.now();
+                final now = AppClock.now();
                 final todayDate = DateTime(now.year, now.month, now.day);
                 _daysSinceLastReview = todayDate.difference(lastDate).inDays;
               }
@@ -1695,7 +1696,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         int? rTime;
         if (_wordStartTime != null) {
           final responseTime =
-              DateTime.now().difference(_wordStartTime!).inSeconds;
+              AppClock.now().difference(_wordStartTime!).inSeconds;
           rTime = responseTime;
 
           if (asrInput == null) {
@@ -2426,7 +2427,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       dataLoaded = true;
       // 只有在不在"说"tab时才直接启动计时（"说"tab会等 ASR 准备好以后再启动计时）
       if (!_isInSpeakTab) {
-        _wordStartTime = DateTime.now();
+        _wordStartTime = AppClock.now();
       }
     });
 
@@ -4133,7 +4134,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       int? rTime;
       if (_wordStartTime != null) {
         final responseTime =
-            DateTime.now().difference(_wordStartTime!).inSeconds;
+            AppClock.now().difference(_wordStartTime!).inSeconds;
         rTime = responseTime;
         if (responseTime < 8) {
           rating = FsrsRating.easy; // Easy
@@ -4191,7 +4192,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         if (lw.lastLearningDate != null) {
           final lastDate = DateTime(lw.lastLearningDate!.year,
               lw.lastLearningDate!.month, lw.lastLearningDate!.day);
-          final now = DateTime.now();
+          final now = AppClock.now();
           final todayDate = DateTime(now.year, now.month, now.day);
           _daysSinceLastReview = todayDate.difference(lastDate).inDays;
         }
@@ -4976,7 +4977,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         if (lw.lastLearningDate != null) {
           final lastDate = DateTime(lw.lastLearningDate!.year,
               lw.lastLearningDate!.month, lw.lastLearningDate!.day);
-          final now = DateTime.now();
+          final now = AppClock.now();
           final todayDate = DateTime(now.year, now.month, now.day);
           _daysSinceLastReview = todayDate.difference(lastDate).inDays;
         }
