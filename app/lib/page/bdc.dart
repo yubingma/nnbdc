@@ -2788,7 +2788,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                                   },
                                 ),
                                 _buildSettingItem(
-                                  '极速模式：答对后跳到下一个单词 (中英)',
+                                  '中英极速：答对后直接下一词',
                                   localAutoJumpAfterCorrectCh2En,
                                   (value) {
                                     setState(() {
@@ -2797,7 +2797,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                                   },
                                 ),
                                 _buildSettingItem(
-                                  '极速模式：答对后跳到下一个单词 (英中)',
+                                  '英中极速：答对后直接下一词',
                                   localAutoJumpAfterCorrectEn2Ch,
                                   (value) {
                                     setState(() {
