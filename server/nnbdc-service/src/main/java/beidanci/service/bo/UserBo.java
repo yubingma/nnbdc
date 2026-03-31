@@ -46,7 +46,6 @@ import beidanci.service.po.Dict;
 import beidanci.service.po.LearningDict;
 import beidanci.service.po.LearningDictId;
 import beidanci.service.po.LoginLog;
-import beidanci.service.po.StudyGroup;
 import beidanci.service.po.SysParam;
 import beidanci.service.po.User;
 import beidanci.service.po.UserCowDungLog;
@@ -258,7 +257,7 @@ public class UserBo extends BaseBo<User> {
      */
 
 
-    public void deleteDeadUsers(int idleDays) throws IllegalAccessException {
+    public void deleteDeadUsers(int idleDays) {
         // 查询长期未登录的用户
         String sql = "SELECT * FROM \"user\" WHERE is_sys_user = false AND last_login_time < :time";
         MapSqlParameterSource params = new MapSqlParameterSource("time",
@@ -274,7 +273,7 @@ public class UserBo extends BaseBo<User> {
         }
     }
 
-    public void deleteUser(User user) throws IllegalArgumentException, IllegalAccessException {
+    public void deleteUser(User user) throws IllegalArgumentException {
         trxTemplate.execute((status -> {
             try {
                 // 删除用户选择的单词书（使用批量删除避免OptimisticLockException）
@@ -339,21 +338,11 @@ public class UserBo extends BaseBo<User> {
                 jdbcTemplate.update(sql, sysUser.getId(), user.getId());
 
                 // 退出所在的小组
-                if (user.getCreatedStudyGroups() != null) {
-                    for (StudyGroup group : user.getCreatedStudyGroups()) {
-                        studyGroupBo.exitGroup(user, group.getId());
-                    }
-                }
-                if (user.getStudyGroups() != null) {
-                    for (StudyGroup group : user.getStudyGroups()) {
-                        studyGroupBo.exitGroup(user, group.getId());
-                    }
-                }
-                if (user.getManagedStudyGroups() != null) {
-                    for (StudyGroup group : user.getManagedStudyGroups()) {
-                        studyGroupBo.exitGroup(user, group.getId());
-                    }
-                }
+                // 使用 SQL 确保即便 Hibernate 关联没加载也能清除引用
+                sql = "DELETE FROM study_group_user_link WHERE user_id = ?";
+                jdbcTemplate.update(sql, user.getId());
+                sql = "DELETE FROM study_group_manager_link WHERE user_id = ?";
+                jdbcTemplate.update(sql, user.getId());
 
                 // 删除登录日志
                 loginLogBo.cleanLoginLogs(user);
@@ -367,12 +356,27 @@ public class UserBo extends BaseBo<User> {
                 jdbcTemplate.update(sql, sysUser.getId(), user.getId());
                 sql = "UPDATE sentence SET author_id = ? WHERE author_id = ?";
                 jdbcTemplate.update(sql, sysUser.getId(), user.getId());
-                sql = "DELETE FROM info_vote_log WHERE user_id = ?";
-                jdbcTemplate.update(sql, user.getId());
                 sql = "UPDATE word_image SET author_id = ? WHERE author_id = ?";
                 jdbcTemplate.update(sql, sysUser.getId(), user.getId());
                 sql = "UPDATE word_shortdesc_chinese SET author_id = ? WHERE author_id = ?";
                 jdbcTemplate.update(sql, sysUser.getId(), user.getId());
+
+                // 将用户在小组的学习帖分配给已删除用户
+                sql = "UPDATE study_group_post SET user_id = ? WHERE user_id = ?";
+                jdbcTemplate.update(sql, sysUser.getId(), user.getId());
+                sql = "UPDATE study_group_post_reply SET user_id = ? WHERE user_id = ?";
+                jdbcTemplate.update(sql, sysUser.getId(), user.getId());
+
+                // 分配功能请求给已删除用户
+                sql = "UPDATE feature_request SET creator_id = ? WHERE creator_id = ?";
+                jdbcTemplate.update(sql, sysUser.getId(), user.getId());
+
+                // 分配学习小组给已删除用户 (如果是创建者)
+                sql = "UPDATE study_group SET creator_id = ? WHERE creator_id = ?";
+                jdbcTemplate.update(sql, sysUser.getId(), user.getId());
+
+                sql = "DELETE FROM info_vote_log WHERE user_id = ?";
+                jdbcTemplate.update(sql, user.getId());
 
                 // 不再作为论坛管理员
                 sql = "DELETE FROM forum_and_manager_link WHERE user_id = ?";
@@ -392,6 +396,34 @@ public class UserBo extends BaseBo<User> {
                 sql = "DELETE FROM error_report WHERE user_id = ?";
                 jdbcTemplate.update(sql, user.getId());
 
+                // 删除用户的书签
+                sql = "DELETE FROM book_mark WHERE user_id = ?";
+                jdbcTemplate.update(sql, user.getId());
+
+                // 删除用户的学习记录
+                sql = "DELETE FROM learning_log WHERE user_id = ?";
+                jdbcTemplate.update(sql, user.getId());
+
+                // 删除用户已掌握单词记录
+                sql = "DELETE FROM mastered_word WHERE user_id = ?";
+                jdbcTemplate.update(sql, user.getId());
+
+                // 删除用户操作记录
+                sql = "DELETE FROM user_oper WHERE user_id = ?";
+                jdbcTemplate.update(sql, user.getId());
+
+                // 删除用户数据库异常记录
+                sql = "DELETE FROM user_db_issue WHERE user_id = ?";
+                jdbcTemplate.update(sql, user.getId());
+
+                // 删除用户学习统计记录
+                sql = "DELETE FROM user_study_record WHERE user_id = ?";
+                jdbcTemplate.update(sql, user.getId());
+
+                // 删除用户对功能请求的投票记录
+                sql = "DELETE FROM feature_request_vote WHERE user_id = ?";
+                jdbcTemplate.update(sql, user.getId());
+
                 // 删除用户数据库版本记录
                 sql = "DELETE FROM user_db_version WHERE user_id = ?";
                 jdbcTemplate.update(sql, user.getId());
@@ -399,7 +431,7 @@ public class UserBo extends BaseBo<User> {
                 // 删除用户记录
                 deleteEntity(user);
                 return null;
-            } catch (IllegalAccessException | RuntimeException e) {
+            } catch (RuntimeException e) {
                 logger.error("删除用户异常，事务将回滚: userId={}", user.getId(), e);
                 status.setRollbackOnly();
                 throw new RuntimeException("删除用户异常，事务将回滚", e);
