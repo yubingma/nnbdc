@@ -85,8 +85,8 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
       Global.logger.d('loadData already in progress, returning');
       return;
     }
+    Api.setLoadingDisabled(true);
     _isLoadingData = true;
-
     try {
       // 解决多端同步不一致问题：进入今日计划时，首先立刻同步一次最新数据
       if (!Global.isGuest && !_hasTriedSync) {
