@@ -53,7 +53,6 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
   int _completedStepCount = 0;
   int _totalStepCount = 0;
   List<LearningWord>? _todayWords;
-  Set<String>? _masteredWordIds;
 
   @override
   void initState() {
@@ -77,7 +76,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
     }
   }
 
-  Future<void> loadData({bool forceSupplement = false}) async {
+  Future<void> loadData({bool forceSupplement = false, bool isReturnFromStudy = false}) async {
     Global.logger.d('Entering loadData: forceSupplement=$forceSupplement, _isLoadingData=$_isLoadingData');
     if (!forceSupplement) {
       _hasTriedSupplement = false;
@@ -137,17 +136,19 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
         return;
       }
 
-      Global.logger.d('Starting prepareForStudy...');
-      prepareResult = await StudyBo().prepareForStudy(forceSupplement);
-      Global.logger.d('prepareForStudy finished: success=${prepareResult?.success}, code=${prepareResult?.code}');
-      
-      // 由于 prepareForStudy 内部可能会重置用户状态（跨天重置），
-      // 必须在准备数据后重新获取最新的用户信息以更新 UI (例如：重置 todayStudyStarted 按钮)
-      final refreshUserResultAfterPrepare = await UserBo().getLoggedInUser();
-      if (refreshUserResultAfterPrepare.success) {
-        user = refreshUserResultAfterPrepare.data;
+      if (!isReturnFromStudy || prepareResult == null || !prepareResult!.success) {
+        Global.logger.d('Starting prepareForStudy...');
+        prepareResult = await StudyBo().prepareForStudy(forceSupplement);
+        Global.logger.d('prepareForStudy finished: success=${prepareResult?.success}, code=${prepareResult?.code}');
+        
+        // 由于 prepareForStudy 内部可能会重置用户状态（跨天重置），
+        // 必须在准备数据后重新获取最新的用户信息以更新 UI (例如：重置 todayStudyStarted 按钮)
+        final refreshUserResultAfterPrepare = await UserBo().getLoggedInUser();
+        if (refreshUserResultAfterPrepare.success) {
+          user = refreshUserResultAfterPrepare.data;
+        }
+        Global.logger.d('Refreshed user: todayStudyStarted=${user?.todayStudyStarted}');
       }
-      Global.logger.d('Refreshed user: todayStudyStarted=${user?.todayStudyStarted}');
       
       // 提示：之前此处有一个基于 prepareResult 失败后的重试同步逻辑，
       // 现在已统一移动到 loadData 方法的最开始处执行，以确保进入页面即获得最新状态。
@@ -220,11 +221,17 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
 
       hasDakaToday = (await UserBo().hasDakaToday(user!.id!)).data!;
 
-      // Calculate progress
+      // Calculate progress and counts
       _todayWords = await LearningService.getTodayLearningWordsFromDb(user!.id!);
-      _masteredWordIds = (await MyDatabase.instance.masteredWordsDao.getMasteredWordsForUser(user!.id!))
-          .map((e) => e.wordId)
-          .toSet();
+      
+      // 这里的逻辑必须与 prepareForStudy 返回的 data 保持一致：区分今日新词和旧词
+      int calcNewWordCount = 0;
+      for (var word in _todayWords!) {
+        if (word.isTodayNewWord) calcNewWordCount++;
+      }
+      newWordCount = calcNewWordCount;
+      oldWordCount = _todayWords!.length - newWordCount!;
+      todayWordCount = _todayWords!.length;
 
       _updateProgress();
       Global.logger.d('Progress calculated: $_completedStepCount / $_totalStepCount');
@@ -248,7 +255,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
 
   void _updateProgress() {
     final activeStepsCount = selectedSteps().length;
-    if (_todayWords == null || _masteredWordIds == null) {
+    if (_todayWords == null) {
       _totalStepCount = 0;
       _completedStepCount = 0;
       return;
@@ -257,8 +264,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
     _totalStepCount = (_todayWords!.length * activeStepsCount).toInt();
     _completedStepCount = 0;
     for (final word in _todayWords!) {
-      final bool isMastered = _masteredWordIds!.contains(word.wordId) || 
-          (word.stability != null && word.stability! >= Constants.graduationStability);
+      final bool isMastered = (word.stability != null && word.stability! >= Constants.graduationStability);
           
       if (isMastered) {
         _completedStepCount += activeStepsCount;
@@ -782,7 +788,7 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
           }
           await GetStorage().write("BdcPageArgs", BdcPageArgs('before_bdc').toJson());
           Get.toNamed('/bdc')?.then((value) {
-            if (mounted && !_isLoadingData) loadData();
+            if (mounted && !_isLoadingData) loadData(isReturnFromStudy: true);
           });
         },
         child: Text(
