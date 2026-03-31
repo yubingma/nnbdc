@@ -332,7 +332,7 @@ class _WordItemState extends State<WordItem> {
   Widget _buildWordAndPronounce(bool isDarkMode) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final spellWidth = widget.word.word.spell.length * 11.0;
+        final spellWidth = widget.word.word.spell.length * 14.0;
         final pronounceWidth = widget.word.word.mergedPronounce.isNotEmpty ? (widget.word.word.mergedPronounce.length * 7.0 + 24.0) : 0.0;
         final totalWidth = spellWidth + pronounceWidth + 16.0;
         final shouldWrap = totalWidth > constraints.maxWidth || widget.word.word.mergedPronounce.length > 25;
@@ -343,6 +343,7 @@ class _WordItemState extends State<WordItem> {
             children: [
               Text(
                 widget.word.word.spell,
+                softWrap: false,
                 textScaler: TextScaler.linear(1.0),
                 style: TextStyle(
                   color: widget.isBookmarked ? const Color(0xFF0097A7) : (isDarkMode ? Colors.white : const Color(0xFF1F2937)),
@@ -380,17 +381,16 @@ class _WordItemState extends State<WordItem> {
         } else {
           return Row(
             children: [
-              Flexible(
-                child: Text(
-                  widget.word.word.spell,
-                  textScaler: TextScaler.linear(1.0),
-                  style: TextStyle(
-                    color: widget.isBookmarked ? const Color(0xFF0097A7) : (isDarkMode ? Colors.white : const Color(0xFF1F2937)),
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                    height: 1.3,
-                    letterSpacing: 0.3,
-                  ),
+              Text(
+                widget.word.word.spell,
+                softWrap: false,
+                textScaler: TextScaler.linear(1.0),
+                style: TextStyle(
+                  color: widget.isBookmarked ? const Color(0xFF0097A7) : (isDarkMode ? Colors.white : const Color(0xFF1F2937)),
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  height: 1.3,
+                  letterSpacing: 0.3,
                 ),
               ),
               if (widget.word.word.mergedPronounce.isNotEmpty) ...[
@@ -540,7 +540,7 @@ class _WordItemState extends State<WordItem> {
   Widget _buildPassedWordAndPronounce(bool isDarkMode) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final spellWidth = widget.word.word.spell.length * 11.0;
+        final spellWidth = widget.word.word.spell.length * 14.0;
         final pronounceWidth = widget.word.word.mergedPronounce.isNotEmpty ? (widget.word.word.mergedPronounce.length * 7.0 + 24.0) : 0.0;
         final totalWidth = spellWidth + pronounceWidth + 8.0;
         final shouldWrap =
@@ -553,6 +553,7 @@ class _WordItemState extends State<WordItem> {
             children: [
               Text(
                 widget.word.word.spell,
+                softWrap: false,
                 textScaler: TextScaler.linear(1.0),
                 style: TextStyle(
                   color: widget.isBookmarked ? const Color(0xFF0097A7) : (isDarkMode ? Colors.white : const Color(0xFF1F2937)),
@@ -590,19 +591,18 @@ class _WordItemState extends State<WordItem> {
           return Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Flexible(
-                child: Text(
-                  widget.word.word.spell,
-                  textScaler: TextScaler.linear(1.0),
-                  style: TextStyle(
-                    color: widget.isBookmarked ? const Color(0xFF0097A7) : (isDarkMode ? Colors.white : const Color(0xFF1F2937)),
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.6,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1,
+              Text(
+                widget.word.word.spell,
+                softWrap: false,
+                textScaler: TextScaler.linear(1.0),
+                style: TextStyle(
+                  color: widget.isBookmarked ? const Color(0xFF0097A7) : (isDarkMode ? Colors.white : const Color(0xFF1F2937)),
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.6,
                 ),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
               ),
               if (widget.word.word.mergedPronounce.isNotEmpty) ...[
                 const SizedBox(width: 8),

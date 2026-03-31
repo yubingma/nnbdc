@@ -2035,7 +2035,7 @@ class WordListPageState extends State<WordListPage>
     return LayoutBuilder(
       builder: (context, constraints) {
         // 估算单词和音标所需的宽度
-        final spellWidth = word.word.spell.length * 11.0; // 估算单词宽度
+        final spellWidth = word.word.spell.length * 14.0; // 估算单词宽度
         final pronounceWidth = word.word.mergedPronounce.isNotEmpty
             ? (word.word.mergedPronounce.length * 7.0 +
                 24.0) // 估算音标宽度（包括容器padding）
@@ -2056,6 +2056,7 @@ class WordListPageState extends State<WordListPage>
               // 单词行
               Text(
                 word.word.spell,
+                softWrap: false,
                 textScaler: TextScaler.linear(1.0),
                 style: TextStyle(
                   color: isBookmarked
@@ -2099,21 +2100,20 @@ class WordListPageState extends State<WordListPage>
           return Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Flexible(
-                child: Text(
-                  word.word.spell,
-                  textScaler: TextScaler.linear(1.0),
-                  style: TextStyle(
-                    color: isBookmarked
-                        ? const Color(0xFF0097A7)
-                        : (isDarkMode ? Colors.white : const Color(0xFF1F2937)),
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.6,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1,
+              Text(
+                word.word.spell,
+                softWrap: false,
+                textScaler: TextScaler.linear(1.0),
+                style: TextStyle(
+                  color: isBookmarked
+                      ? const Color(0xFF0097A7)
+                      : (isDarkMode ? Colors.white : const Color(0xFF1F2937)),
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.6,
                 ),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
               ),
               if (word.word.mergedPronounce.isNotEmpty) ...[
                 const SizedBox(width: 8),
@@ -2289,7 +2289,7 @@ class WordListPageState extends State<WordListPage>
     return LayoutBuilder(
       builder: (context, constraints) {
         // 估算单词和音标所需的宽度
-        final spellWidth = word.word.spell.length * 11.0; // 估算单词宽度
+        final spellWidth = word.word.spell.length * 14.0; // 估算单词宽度
         final pronounceWidth = word.word.mergedPronounce.isNotEmpty
             ? (word.word.mergedPronounce.length * 7.0 +
                 24.0) // 估算音标宽度（包括容器padding）
@@ -2308,6 +2308,7 @@ class WordListPageState extends State<WordListPage>
               // 单词行
               Text(
                 word.word.spell,
+                softWrap: false,
                 textScaler: TextScaler.linear(1.0),
                 style: TextStyle(
                   color: isBookmarked
@@ -2361,19 +2362,18 @@ class WordListPageState extends State<WordListPage>
           return Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Flexible(
-                child: Text(
-                  word.word.spell,
-                  textScaler: TextScaler.linear(1.0),
-                  style: TextStyle(
-                    color: isBookmarked
-                        ? const Color(0xFF0097A7)
-                        : (isDarkMode ? Colors.white : const Color(0xFF1F2937)),
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                    height: 1.3,
-                    letterSpacing: 0.3,
-                  ),
+              Text(
+                word.word.spell,
+                softWrap: false,
+                textScaler: TextScaler.linear(1.0),
+                style: TextStyle(
+                  color: isBookmarked
+                      ? const Color(0xFF0097A7)
+                      : (isDarkMode ? Colors.white : const Color(0xFF1F2937)),
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  height: 1.3,
+                  letterSpacing: 0.3,
                 ),
               ),
               if (word.word.mergedPronounce.isNotEmpty) ...[
