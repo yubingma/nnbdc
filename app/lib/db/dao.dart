@@ -1778,16 +1778,34 @@ class BookmarksDao extends DatabaseAccessor<MyDatabase> with _$BookmarksDaoMixin
 
   // 保存书签（新增或更新）
   Future<void> saveBookmark(BookMark entity, bool genLog) async {
-    var bookmark = await getById(entity.id);
-    if (bookmark == null) {
-      await into(bookMarks).insert(entity);
-      if (genLog) {
-        await DbLogUtil.logOperation(entity.userId, 'INSERT', 'bookMarks', entity.id, entity);
+    // 优先通过逻辑唯一键（用户ID + 书签名称）进行查找，避免 UUID 冲突导致的唯一性约束失败
+    final existingByLogicalKey = await findByUserIdAndName(entity.userId, entity.bookMarkName);
+
+    if (existingByLogicalKey != null) {
+      if (existingByLogicalKey.id != entity.id) {
+        // 如果逻辑上是同一个书签但 ID 不同（通常发生在多端同步时），先删除本地旧 ID 的书签再插入新的，以保证与服务端 ID 同步
+        await (delete(bookMarks)..where((b) => b.id.equals(existingByLogicalKey.id))).go();
+        await into(bookMarks).insert(entity);
+      } else {
+        await update(bookMarks).replace(entity);
       }
-    } else {
-      await update(bookMarks).replace(entity);
+
       if (genLog) {
         await DbLogUtil.logOperation(entity.userId, 'UPDATE', 'bookMarks', entity.id, entity);
+      }
+    } else {
+      // 如果按逻辑键没查到，再按物理主键查找一次（兜底逻辑）
+      final bookmark = await getById(entity.id);
+      if (bookmark == null) {
+        await into(bookMarks).insert(entity);
+        if (genLog) {
+          await DbLogUtil.logOperation(entity.userId, 'INSERT', 'bookMarks', entity.id, entity);
+        }
+      } else {
+        await update(bookMarks).replace(entity);
+        if (genLog) {
+          await DbLogUtil.logOperation(entity.userId, 'UPDATE', 'bookMarks', entity.id, entity);
+        }
       }
     }
   }
