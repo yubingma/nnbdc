@@ -52,6 +52,8 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
   bool _isLoadingData = false;
   int _completedStepCount = 0;
   int _totalStepCount = 0;
+  List<LearningWord>? _todayWords;
+  Set<String>? _masteredWordIds;
 
   @override
   void initState() {
@@ -85,9 +87,6 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
       return;
     }
     _isLoadingData = true;
-
-    Api.setLoadingDisabled(true);
-    await Future.delayed(const Duration(milliseconds: 300));
 
     try {
       // 解决多端同步不一致问题：进入今日计划时，首先立刻同步一次最新数据
@@ -222,25 +221,12 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
       hasDakaToday = (await UserBo().hasDakaToday(user!.id!)).data!;
 
       // Calculate progress
-      final activeStepsCount = selectedSteps().length;
-      final todayWords = await LearningService.getTodayLearningWordsFromDb(user!.id!);
-      final db = MyDatabase.instance;
-      final masteredWordIds = (await db.masteredWordsDao.getMasteredWordsForUser(user!.id!))
+      _todayWords = await LearningService.getTodayLearningWordsFromDb(user!.id!);
+      _masteredWordIds = (await MyDatabase.instance.masteredWordsDao.getMasteredWordsForUser(user!.id!))
           .map((e) => e.wordId)
           .toSet();
 
-      _totalStepCount = (todayWords.length * activeStepsCount).toInt();
-      _completedStepCount = 0;
-      for (final word in todayWords) {
-        final bool isMastered = masteredWordIds.contains(word.wordId) || 
-            (word.stability != null && word.stability! >= Constants.graduationStability);
-            
-        if (isMastered) {
-          _completedStepCount += activeStepsCount;
-        } else {
-          _completedStepCount += (word.todayLearnedTimes > activeStepsCount) ? activeStepsCount : word.todayLearnedTimes;
-        }
-      }
+      _updateProgress();
       Global.logger.d('Progress calculated: $_completedStepCount / $_totalStepCount');
 
     } catch (e, stackTrace) {
@@ -259,6 +245,28 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
     }
   }
 
+
+  void _updateProgress() {
+    final activeStepsCount = selectedSteps().length;
+    if (_todayWords == null || _masteredWordIds == null) {
+      _totalStepCount = 0;
+      _completedStepCount = 0;
+      return;
+    }
+    
+    _totalStepCount = (_todayWords!.length * activeStepsCount).toInt();
+    _completedStepCount = 0;
+    for (final word in _todayWords!) {
+      final bool isMastered = _masteredWordIds!.contains(word.wordId) || 
+          (word.stability != null && word.stability! >= Constants.graduationStability);
+          
+      if (isMastered) {
+        _completedStepCount += activeStepsCount;
+      } else {
+        _completedStepCount += (word.todayLearnedTimes > activeStepsCount) ? activeStepsCount : word.todayLearnedTimes;
+      }
+    }
+  }
 
   void reorderData(int oldIndex, int newIndex) {
     if (!mounted) return;
@@ -952,10 +960,8 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
             setState(() {
               step.state = isActive ? StudyStepState.inactive.json : StudyStepState.active.json;
               saveStudyStep();
-              // Re-calculate progress since steps changed
-              final activeStepsCount = selectedSteps().length;
-              _totalStepCount = (todayWordCount ?? 0) * activeStepsCount;
-              loadData(); // Re-fetch to be safe
+              // Fast local update for progress
+              _updateProgress();
             });
           },
           borderRadius: BorderRadius.circular(20),
