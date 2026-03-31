@@ -2361,30 +2361,36 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
             final mis =
                 await WordBo().getMeaningItemsForWord(_word!.id!, user.id);
             _word!.meaningItems = mis;
-          }
 
-          // 本地加载单词配图，填充到 currentGetWordResult.images
-          try {
-            final imgsQuery = db.select(db.wordImages)
-              ..where((tbl) => tbl.wordId.equals(_word!.id!));
-            final imgs = await imgsQuery.get();
-            final imageVos = <WordImageVo>[];
-            for (final img in imgs) {
-              final author = await db.usersDao.getUserById(img.authorId);
-              // WordImageVo 需要非空作者，这里用占位作者避免空指针
-              UserVo authorVo = UserVo.c2(author?.id ?? '0')
-                ..nickName = (author?.nickName ?? '');
-              imageVos.add(WordImageVo(
-                img.id,
-                img.imageFile,
-                img.hand,
-                img.foot,
-                authorVo,
-              ));
+            // 本地加载单词配图，填充到 currentGetWordResult.images
+            try {
+              final imgsQuery = db.select(db.wordImages)
+                ..where((tbl) =>
+                    tbl.wordId.equals(_word!.id!) &
+                    (tbl.status.equals('APPROVED') |
+                        tbl.status.isNull() |
+                        (tbl.status.equals('PENDING') &
+                            tbl.authorId.equals(user.id))));
+              final imgs = await imgsQuery.get();
+              final imageVos = <WordImageVo>[];
+              for (final img in imgs) {
+                final author = await db.usersDao.getUserById(img.authorId);
+                // WordImageVo 需要非空作者，这里用占位作者避免空指针
+                UserVo authorVo = UserVo.c2(author?.id ?? '0')
+                  ..nickName = (author?.nickName ?? '');
+                imageVos.add(WordImageVo(
+                  img.id,
+                  img.imageFile,
+                  img.hand,
+                  img.foot,
+                  authorVo,
+                ));
+              }
+              _currentGetWordResult?.images = imageVos;
+              _word!.images = imageVos;
+            } catch (e) {
+              Global.logger.w('本地加载单词图片失败', error: e);
             }
-            _currentGetWordResult?.images = imageVos;
-          } catch (e) {
-            Global.logger.w('本地加载单词图片失败', error: e);
           }
         } catch (e) {
           Global.logger.w('本地补全单词失败', error: e);
@@ -5870,7 +5876,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                 ),
                 // 图片 (仅对管理员开放)
                 if ((Global.getLoggedInUser()?.isAdmin == true) &&
-                    _currentGetWordResult?.images != null)
+                    _currentGetWordResult?.images != null &&
+                    _currentGetWordResult!.images!.isNotEmpty)
                   Column(
                     children: [
                       if (_currentGetWordResult!.images!.isNotEmpty &&
