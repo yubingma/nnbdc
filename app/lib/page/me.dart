@@ -422,7 +422,7 @@ class _MePageState extends State<MePage> {
       }
 
       // --- 阶段 2: 异步刷新网络数据 (非阻塞) ---
-      if (loggedInUserVal != null && !Global.isGuest) {
+      if (!Global.isGuest) {
         // 1. 获取个人排名
         try {
           var userId = loggedInUserVal.id!;
