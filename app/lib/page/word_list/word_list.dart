@@ -3856,43 +3856,43 @@ class WordListPageState extends State<WordListPage>
   }
 
   void _showAiStoryDialog(String story) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Row(
-          children: [
-            const Icon(Icons.auto_awesome, color: Colors.amber),
-            const SizedBox(width: 8),
-            const Text('AI 单词小短文'),
-          ],
-        ),
-        content: SingleChildScrollView(
-          child: MarkdownBody(
-            data: story,
-            selectable: true,
-            styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context)).copyWith(
-              p: const TextStyle(fontSize: 16, height: 1.5),
-              strong: const TextStyle(
-                  fontSize: 16,
-                  height: 1.5,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.primaryColor), // 加粗并显示主题蓝色，更醒目
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => Scaffold(
+          appBar: AppTheme.createGradientAppBar(
+            title: 'AI 单词小短文',
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.copy),
+                tooltip: '复制',
+                onPressed: () {
+                  Clipboard.setData(ClipboardData(text: story));
+                  ToastUtil.info('已复制到剪贴板');
+                },
+              ),
+            ],
+          ),
+          body: Container(
+            color: Theme.of(context).scaffoldBackgroundColor, // 为背景提供清晰颜色，避免透视
+            child: Markdown(
+              data: story,
+              selectable: true,
+              styleSheet:
+                  MarkdownStyleSheet.fromTheme(Theme.of(context)).copyWith(
+                p: const TextStyle(fontSize: 17, height: 1.6),
+                strong: const TextStyle(
+                    fontSize: 17,
+                    height: 1.6,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.primaryColor),
+                h1: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                h2: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
             ),
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Clipboard.setData(ClipboardData(text: story));
-              ToastUtil.info('已复制到剪贴板');
-            },
-            child: const Text('复制'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('关闭'),
-          ),
-        ],
       ),
     );
   }
