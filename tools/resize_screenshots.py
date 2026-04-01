@@ -10,7 +10,7 @@ FONT_PATH = os.path.join(os.environ['PPDC_SRC_DIR'], 'app/assets/fonts/NotoSansS
 # Highlights mapping for each screenshot
 HIGHLIGHTS = {
     '截屏-学习计划.png': '科学计划，掌握进度',
-    '截屏-单词列表.png': '多维记忆，随心所欲',
+    '截屏-单词列表.png': '多维记忆，词词生根',
     '截屏-词表.png': '灵活巩固，查漏补缺',
     '截屏-说中文.png': '一词多义，尽在掌握',
     '截屏-说英文.png': '脱口而出，自信表达',
@@ -26,10 +26,10 @@ PADDING_SIDE = 50 # Slightly smaller phone
 
 # Phone Frame Constants
 FRAME_BEZEL_THICKNESS = 12
-FRAME_COLOR = (30, 70, 150) # Vibrant sapphire blue
+FRAME_COLOR = (20, 60, 120) # Deep Ocean Blue (clearly blue, very premium)
 FRAME_CORNER_RADIUS = 40 # External radius
 SCREEN_CORNER_RADIUS = 30 # Internal radius (screen)
-BUTTON_COLOR = (50, 100, 200)
+BUTTON_COLOR = (40, 80, 140)
 
 SHADOW_BLUR_RADIUS = 20
 SHADOW_OFFSET = (0, 15)
