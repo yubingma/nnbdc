@@ -24,7 +24,10 @@ class Tts(private val activity: Activity) : EventChannel.StreamHandler {
 
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "nnbdc/tts_commands").setMethodCallHandler { call, result ->
             if (call.method == "speak") {
-                speak(call.argument("text") ?: "", call.argument("utteranceId") ?: "")
+                val text = call.argument<String>("text") ?: ""
+                val utteranceId = call.argument<String>("utteranceId") ?: ""
+                val language = call.argument<String>("language") ?: "en-US"
+                speak(text, utteranceId, language)
                 result.success(null)
             } else if (call.method == "stop") {
                 stop()
@@ -40,7 +43,13 @@ class Tts(private val activity: Activity) : EventChannel.StreamHandler {
 
         ttobj = TextToSpeech(activity) { status ->
             if (status == TextToSpeech.SUCCESS) {
-                ttobj.language = Locale.CHINA
+                // Initialize with a default language, but it will be overridden in speak()
+                val result = ttobj.setLanguage(Locale.US)
+                if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                    Log.e("TTS", "Language is not supported or missing data")
+                }
+            } else {
+                Log.e("TTS", "Initialization failed with status: $status")
             }
 
             activity.runOnUiThread {
@@ -54,24 +63,34 @@ class Tts(private val activity: Activity) : EventChannel.StreamHandler {
         // 不同Android版本使用不同的监听器API
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             ttobj.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
-                override fun onStart(utteranceId: String) {}
+                override fun onStart(utteranceId: String) {
+                    Log.d("TTS", "onStart: $utteranceId")
+                }
                 
                 override fun onDone(utteranceId: String) {
+                    Log.d("TTS", "onDone: $utteranceId")
                     val event: MutableMap<String, Any> = HashMap()
                     event["type"] = "ttsCompleted"
                     event["data"] = utteranceId
-                    activity.runOnUiThread { events.success(event) }
+                    activity.runOnUiThread { events?.success(event) }
                 }
                 
-                override fun onError(utteranceId: String) {}
+                override fun onError(utteranceId: String) {
+                    Log.e("TTS", "onError: $utteranceId")
+                    val event: MutableMap<String, Any> = HashMap()
+                    event["type"] = "ttsCompleted"
+                    event["data"] = utteranceId
+                    activity.runOnUiThread { events?.success(event) }
+                }
             })
         } else {
             @Suppress("DEPRECATION")
             ttobj.setOnUtteranceCompletedListener { utteranceId ->
+                Log.d("TTS", "onUtteranceCompleted: $utteranceId")
                 val event: MutableMap<String, Any> = HashMap()
                 event["type"] = "ttsCompleted"
                 event["data"] = utteranceId
-                activity.runOnUiThread { events.success(event) }
+                activity.runOnUiThread { events?.success(event) }
             }
         }
     }
@@ -80,8 +99,35 @@ class Tts(private val activity: Activity) : EventChannel.StreamHandler {
         this.events = null
     }
 
-    fun speak(text: String, utteranceId: String) {
-        if (!::ttobj.isInitialized) return
+    fun speak(text: String, utteranceId: String, language: String) {
+        if (!::ttobj.isInitialized) {
+            Log.e("TTS", "ttobj not initialized")
+            return
+        }
+
+        // Set language based on the argument from Flutter
+        // Use Locale.CHINA for zh-CN to be more specific (zh_CN), which is usually what's needed for mainland China.
+        val locale = when (language) {
+            "zh-CN" -> Locale.CHINA
+            "en-US" -> Locale.US
+            else -> Locale.US
+        }
+        
+        Log.d("TTS", "Setting language to $locale for text: $text")
+        val result = ttobj.setLanguage(locale)
+        if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+            Log.e("TTS", "Language $language is not supported or missing data (result code: $result)")
+            // Even if language is not supported, we should still try to speak or signal completion
+            // so that the Flutter side doesn't hang for 10 seconds.
+            val event: MutableMap<String, Any> = HashMap()
+            event["type"] = "ttsCompleted"
+            event["data"] = utteranceId
+            activity.runOnUiThread { events?.success(event) }
+            return
+        }
+
+        Log.d("TTS", "Speaking ($language): $text")
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             val params = Bundle()
             ttobj.speak(text, TextToSpeech.QUEUE_FLUSH, params, utteranceId)
