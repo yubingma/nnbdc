@@ -26,10 +26,10 @@ PADDING_SIDE = 50 # Slightly smaller phone
 
 # Phone Frame Constants
 FRAME_BEZEL_THICKNESS = 12
-FRAME_COLOR = (20, 20, 20) # Near black
+FRAME_COLOR = (15, 30, 60) # Harmonious dark navy blue
 FRAME_CORNER_RADIUS = 40 # External radius
 SCREEN_CORNER_RADIUS = 30 # Internal radius (screen)
-BUTTON_COLOR = (40, 40, 40)
+BUTTON_COLOR = (30, 45, 75)
 
 SHADOW_BLUR_RADIUS = 20
 SHADOW_OFFSET = (0, 15)
