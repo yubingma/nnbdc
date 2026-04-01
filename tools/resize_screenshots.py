@@ -185,6 +185,12 @@ def process_image(filename):
     file_path = os.path.join(INPUT_DIR, filename)
     img = Image.open(file_path).convert("RGBA")
 
+    # 1.1 Crop iOS-specific system bars (Status bar at top, Home bar at bottom)
+    # This is essential to pass Huawei/Android reviews
+    top_crop = int(img.height * 0.048) # Removes time, wifi, battery
+    bottom_crop = int(img.height * 0.035) # Removes the black Home Indicator line
+    img = img.crop((0, top_crop, img.width, img.height - bottom_crop))
+
     # 2. Create Artistic Background
     bg = create_gradient(TARGET_SIZE[0], TARGET_SIZE[1], COLOR_START, COLOR_END)
     bg = add_patterns(bg)
