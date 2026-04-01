@@ -9,6 +9,7 @@ import 'package:nnbdc/state.dart';
 import '../api/vo.dart';
 import '../global.dart';
 import '../theme/app_theme.dart';
+import '../util/error_handler.dart';
 
 class GamePage extends StatefulWidget {
   const GamePage({super.key});
@@ -116,29 +117,50 @@ class _GamePageState extends State<GamePage> with TickerProviderStateMixin {
     super.dispose();
   }
 
+  String? errorMessage;
+  bool _isLoading = false;
+
   Future<void> loadData() async {
-    gameHallDataResult = await Api.client.getGameHallData();
-
-    // 把Hall以名字为key组织为Hash map
-    var hallsByName = HashMap<String, HallVo>();
-    for (var hall in gameHallDataResult!.halls) {
-      hallsByName[hall.name] = hall;
-    }
-
-    // 计算大厅分组及每个大厅中的在线人数
-    for (var hallGroup in gameHallDataResult!.hallGroups) {
-      var userCount = 0;
-      for (var gameHall in hallGroup.gameHalls) {
-        var hall = hallsByName[gameHall.hallName];
-        gameHall.userCount = hall == null ? 0 : hall.userCount;
-        userCount += gameHall.userCount;
-      }
-      hallGroup.userCount = userCount;
-    }
-
+    if (_isLoading) return;
     setState(() {
-      // 游戏大厅数据已加载完成，触发UI更新
+      _isLoading = true;
+      errorMessage = null;
     });
+
+    try {
+      gameHallDataResult = await Api.client.getGameHallData();
+
+      // 把Hall以名字为key组织为Hash map
+      var hallsByName = HashMap<String, HallVo>();
+      for (var hall in gameHallDataResult!.halls) {
+        hallsByName[hall.name] = hall;
+      }
+
+      // 计算大厅分组及每个大厅中的在线人数
+      for (var hallGroup in gameHallDataResult!.hallGroups) {
+        var userCount = 0;
+        for (var gameHall in hallGroup.gameHalls) {
+          var hall = hallsByName[gameHall.hallName];
+          gameHall.userCount = hall == null ? 0 : hall.userCount;
+          userCount += gameHall.userCount;
+        }
+        hallGroup.userCount = userCount;
+      }
+
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    } catch (e, stackTrace) {
+      ErrorHandler.handleNetworkError(e, stackTrace, api: 'getGameHallData', showToast: false);
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          errorMessage = '网络连接失败，请检查设置后重试';
+        });
+      }
+    }
   }
 
   // 获取在线状态信息
@@ -729,12 +751,39 @@ class _GamePageState extends State<GamePage> with TickerProviderStateMixin {
             ),
           ),
           SliverToBoxAdapter(
-            child: gameHallDataResult == null
-                ? _buildLoadingIndicator(textColor)
-                : Padding(
-                    padding: const EdgeInsets.fromLTRB(leftPadding, 24, rightPadding, 24),
-                    child: renderHallGroups(),
-                  ),
+            child: errorMessage != null
+                ? Container(
+                    height: 400,
+                    alignment: Alignment.center,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.cloud_off_rounded, size: 64, color: Colors.grey.withValues(alpha: 0.5)),
+                        const SizedBox(height: 16),
+                        Text(
+                          errorMessage!,
+                          style: TextStyle(color: textColor.withValues(alpha: 0.7), fontSize: 16),
+                        ),
+                        const SizedBox(height: 24),
+                        ElevatedButton.icon(
+                          onPressed: loadData,
+                          icon: const Icon(Icons.refresh_rounded),
+                          label: const Text('重试'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.primaryColor,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : (gameHallDataResult == null
+                    ? _buildLoadingIndicator(textColor)
+                    : Padding(
+                        padding: const EdgeInsets.fromLTRB(leftPadding, 24, rightPadding, 24),
+                        child: renderHallGroups(),
+                      )),
           ),
         ],
       ),
