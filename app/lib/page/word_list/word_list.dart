@@ -15,6 +15,7 @@ import 'package:nnbdc/util/utils.dart';
 import 'package:nnbdc/util/error_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'dart:async';
 import 'dart:convert';
 
@@ -3866,9 +3867,17 @@ class WordListPageState extends State<WordListPage>
           ],
         ),
         content: SingleChildScrollView(
-          child: SelectableText(
-            story,
-            style: const TextStyle(fontSize: 16, height: 1.5),
+          child: MarkdownBody(
+            data: story,
+            selectable: true,
+            styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context)).copyWith(
+              p: const TextStyle(fontSize: 16, height: 1.5),
+              strong: const TextStyle(
+                  fontSize: 16,
+                  height: 1.5,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.primaryColor), // 加粗并显示主题蓝色，更醒目
+            ),
           ),
         ),
         actions: [
