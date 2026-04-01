@@ -96,17 +96,16 @@ def create_phone_frame(screenshot):
     # Centered
     device.paste(screen_rounded, (FRAME_BEZEL_THICKNESS, FRAME_BEZEL_THICKNESS), screen_rounded)
     
-    # 5. Add "Notch" or "Dynamic Island"
-    # Simple pill shape at the top
-    notch_w = frame_w * 0.35
-    notch_h = 24
-    notch_x = (frame_w - notch_w) / 2
-    notch_y = FRAME_BEZEL_THICKNESS + 10 # slightly down from top edge of screen
+    # 5. Add "Punch Hole" camera (Generic Android/Huawei style)
+    # Instead of a large Dynamic Island, use a small circle for a more brand-neutral look
+    camera_radius = 6
+    camera_x = frame_w / 2
+    camera_y = FRAME_BEZEL_THICKNESS + 15
     
-    draw.rounded_rectangle(
-        [(notch_x, notch_y), (notch_x + notch_w, notch_y + notch_h)],
-        radius=12,
-        fill=(0, 0, 0, 255) # Pure black hole
+    draw.ellipse(
+        [(camera_x - camera_radius, camera_y - camera_radius), 
+         (camera_x + camera_radius, camera_y + camera_radius)],
+        fill=(0, 0, 0, 255)
     )
     
     return device
