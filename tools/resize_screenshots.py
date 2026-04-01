@@ -1,15 +1,28 @@
 import os
 import random
-from PIL import Image, ImageDraw, ImageFilter, ImageOps
+from PIL import Image, ImageDraw, ImageFilter, ImageOps, ImageFont
 
 INPUT_DIR = os.path.join(os.environ['PPDC_SRC_DIR'], 'devops/应用上架资源/ios')
 OUTPUT_DIR = os.path.join(os.environ['PPDC_SRC_DIR'], 'devops/应用上架资源/huawei')
 TARGET_SIZE = (450, 800)
+FONT_PATH = os.path.join(os.environ['PPDC_SRC_DIR'], 'app/assets/fonts/NotoSansSC-Regular.ttf')
+
+# Highlights mapping for each screenshot
+HIGHLIGHTS = {
+    '截屏-学习计划.png': '科学计划，掌握进度',
+    '截屏-单词列表.png': '词库广泛，一网打尽',
+    '截屏-词表.png': '灵活巩固，随时查漏补缺',
+    '截屏-说中文.png': '语境发音，沉浸体验',
+    '截屏-说英文.png': '多维巩固，练出语感',
+    '截屏-我.png': '学习足迹，见证成长',
+    '截屏-词表说中文.png': '智能解析，听音辩意',
+    '截屏-词表说英文.png': '智能解析，听音辩意'
+}
 
 # Design Constants
-PADDING_TOP = 40
-PADDING_BOTTOM = 40
-PADDING_SIDE = 30
+PADDING_TOP = 140 # More room for text
+PADDING_BOTTOM = 60
+PADDING_SIDE = 50 # Slightly smaller phone
 
 # Phone Frame Constants
 FRAME_BEZEL_THICKNESS = 12
@@ -145,6 +158,25 @@ def create_drop_shadow(size, radius, offset, opacity):
     # Blur
     return shadow.filter(ImageFilter.GaussianBlur(radius))
 
+def draw_headline(bg, filename):
+    """Draws a premium title at the top of the screenshot."""
+    text = HIGHLIGHTS.get(filename, "精品单词，高效学习")
+    draw = ImageDraw.Draw(bg, 'RGBA')
+    
+    # Text Shadow (subtle)
+    try:
+        font = ImageFont.truetype(FONT_PATH, 34)
+    except Exception as e:
+        print(f"Font loading failed: {e}")
+        font = ImageFont.load_default()
+        
+    text_x = TARGET_SIZE[0] // 2
+    text_y = 75 # Standard top height
+    
+    # Draw simple text with subtle drop shadow
+    draw.text((text_x + 2, text_y + 2), text, font=font, anchor='mm', fill=(0, 0, 0, 80)) # Shadow
+    draw.text((text_x, text_y), text, font=font, anchor='mm', fill=(255, 255, 255, 255)) # Main
+
 def process_image(filename):
     if not (filename.lower().endswith('.png') or filename.lower().endswith('.jpg')):
         return
@@ -155,26 +187,25 @@ def process_image(filename):
 
     # 2. Create Artistic Background
     bg = create_gradient(TARGET_SIZE[0], TARGET_SIZE[1], COLOR_START, COLOR_END)
-    bg = add_patterns(bg) # Add decorative bubbles/circles
+    bg = add_patterns(bg)
 
-    # 3. Resize Screenshot to fit with padding AND bezel
-    # Calculate available space for the SCREENSHOT content
-    # The final object will use PADDING_SIDE space.
-    # But the object includes the bezel.
+    # 3. Add Headline
+    draw_headline(bg, filename)
+
+    # 4. Resize Screenshot
     avail_w = TARGET_SIZE[0] - (PADDING_SIDE * 2) - (FRAME_BEZEL_THICKNESS * 2)
     avail_h = TARGET_SIZE[1] - (PADDING_TOP + PADDING_BOTTOM) - (FRAME_BEZEL_THICKNESS * 2)
     
-    # Maintain aspect ratio
     scale = min(avail_w / img.width, avail_h / img.height)
     new_w = int(img.width * scale)
     new_h = int(img.height * scale)
     
     img_resized = img.resize((new_w, new_h), Image.Resampling.LANCZOS)
     
-    # 4. Wrap in Phone Frame
+    # 5. Wrap in Phone Frame
     img_framed = create_phone_frame(img_resized)
 
-    # 5. Create Shadow
+    # 6. Create Shadow
     shadow = create_drop_shadow(
         img_framed.size, 
         SHADOW_BLUR_RADIUS, 
@@ -182,31 +213,22 @@ def process_image(filename):
         SHADOW_OPACITY
     )
 
-    # 6. Composite
-    # Calculate positions
-    # Shadow position: centered + offset
-    # The shadow image is larger than the content by blur_radius*4
-    # Content center
-    center_x = TARGET_SIZE[0] // 2
-    center_y = TARGET_SIZE[1] // 2
+    # 7. Composite (Shoved down to leave room for text)
+    dev_x = (TARGET_SIZE[0] - img_framed.width) // 2
+    dev_y = TARGET_SIZE[1] - PADDING_BOTTOM - img_framed.height
     
-    # Paste shadow
-    shadow_x = center_x - (shadow.width // 2) + SHADOW_OFFSET[0]
-    shadow_y = center_y - (shadow.height // 2) + SHADOW_OFFSET[1]
+    # Shadow Position
+    shadow_x = dev_x - (shadow.width - img_framed.width) // 2 + SHADOW_OFFSET[0]
+    shadow_y = dev_y - (shadow.height - img_framed.height) // 2 + SHADOW_OFFSET[1]
     
-    # Paste straight onto background? No, PIL paste with mask works better
     bg.paste(shadow, (shadow_x, shadow_y), shadow)
     
     # Paste Framed Device
-    dev_x = center_x - (img_framed.width // 2)
-    dev_y = center_y - (img_framed.height // 2)
-    
-    # Use alpha_composite for proper blending if available, or paste with mask
     bg.paste(img_framed, (dev_x, dev_y), img_framed)
 
-    # Save
+    # 8. Save
     output_path = os.path.join(OUTPUT_DIR, filename)
-    bg.convert("RGB").save(output_path) # Convert back to RGB for JPEG/PNG (no alpha needed for final screenshot)
+    bg.convert("RGB").save(output_path)
     print(f"Processed: {filename} -> {output_path}")
 
 def main():
