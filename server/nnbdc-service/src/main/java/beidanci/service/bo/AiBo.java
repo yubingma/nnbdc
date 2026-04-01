@@ -432,8 +432,7 @@ public class AiBo {
                     "1. 必须使用列表中所有的单词（忽略大小写差异）。\n" +
                     "2. 故事内容应当生动有趣，且易于理解。\n" +
                     "3. 单词应当自然融入背景，加粗显示（如：**apple**）。\n" +
-                    "4. 同时提供对应的中文翻译，放在英文文章之后。\n" +
-                    "5. 最后加上一句鼓励学习的话。";
+                    "4. 同时提供对应的中文翻译，放在英文文章之后。";
 
             String userPrompt = "单词列表：" + String.join(", ", words);
             return generateText(systemPrompt, userPrompt);
