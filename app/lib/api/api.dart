@@ -269,8 +269,7 @@ class CustomInterceptors extends Interceptor {
       }
     } else {
       // 非超时/未授权的其他网络错误（如5xx），避免在拦截器里直接弹Toast，交由各调用方统一错误处理
-      Global.logger
-          .e('网络错误: ${err.message}', error: err, stackTrace: err.stackTrace);
+      Global.logger.w('网络错误: ${err.message}');
     }
     return super.onError(err, handler);
   }

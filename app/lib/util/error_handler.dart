@@ -245,7 +245,7 @@ class ErrorHandler {
     dynamic error,
     StackTrace? stackTrace, {
     String? api,
-    bool showToast = true,
+    bool showToast = false,
   }) {
     // 记录统计
     _networkErrorCount++;
@@ -253,13 +253,15 @@ class ErrorHandler {
     final logPrefix = api != null ? '网络请求失败($api)' : '网络请求失败';
     final userMessage = getNetworkErrorMessage(error);
 
-    handleError(
-      error,
-      stackTrace,
-      userMessage: userMessage,
-      logPrefix: logPrefix,
-      showToast: showToast,
-    );
+    // 对于常见网络错误，我们只记录一条简洁的消息，不打印长长的堆栈
+    Global.logger.w('$logPrefix: $userMessage ($error)');
+
+    // 仍记录到数据库以便后台分析
+    _recordExceptionToDb(error, stackTrace, context: logPrefix);
+
+    if (showToast) {
+      ToastUtil.error(userMessage);
+    }
   }
 
   /// 处理文件操作异常

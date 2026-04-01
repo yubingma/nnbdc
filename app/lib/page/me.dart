@@ -393,14 +393,6 @@ class _MePageState extends State<MePage> {
           totalLearningSeconds: user.totalLearningSeconds ?? 0,
           todayLearningSeconds: user.todayLearningSeconds ?? 0,
         );
-
-        // 获取个人排名
-        if (!Global.isGuest) {
-          var result4 = await Api.client.getUserRank(loggedInUserVal.id!);
-          if (result4.success) {
-            studyProgressVal.userOrder = result4.data;
-          }
-        }
       }
 
       var result2 = await UserBo().getDayStatuses(30);
@@ -408,14 +400,6 @@ class _MePageState extends State<MePage> {
         last30DaysDakaStatusVal = result2.data!;
       } else {
         last30DaysDakaStatusVal = List.filled(30, UserDayStatus.notLogin.json);
-      }
-
-      if (!Global.isGuest) {
-        var result3 = await Api.client.getMsgCounts(loggedInUserVal.id!);
-        if (result3.success) {
-          msgCountVal = result3.data!.first;
-          unreadMsgCountVal = result3.data!.second;
-        }
       }
 
       if (mounted) {
@@ -436,9 +420,45 @@ class _MePageState extends State<MePage> {
           _learningDictsFuture = renderLearningDicts();
         });
       }
+
+      // --- 阶段 2: 异步刷新网络数据 (非阻塞) ---
+      if (loggedInUserVal != null && !Global.isGuest) {
+        // 1. 获取个人排名
+        try {
+          var userId = loggedInUserVal.id!;
+          var result4 = await Api.client.getUserRank(userId);
+          if (result4.success && studyProgress != null) {
+            setState(() {
+              studyProgress!.userOrder = result4.data;
+            });
+          }
+        } catch (e) {
+          Global.logger.w('获取个人排名失败 (静默忽略): $e');
+        }
+
+        // 2. 获取消息计数
+        try {
+          var result3 = await Api.client.getMsgCounts(loggedInUserVal.id!);
+          if (result3.success) {
+            setState(() {
+              msgCount = result3.data!.first;
+              unreadMsgCount = result3.data!.second;
+            });
+          }
+        } catch (e) {
+          Global.logger.w('获取消息计数失败 (静默忽略): $e');
+        }
+      }
     } catch (e, stackTrace) {
       if (ErrorHandler.isNetworkError(e)) {
-        ErrorHandler.handleNetworkError(e, stackTrace, api: 'loadData', showToast: true);
+        ErrorHandler.handleNetworkError(e, stackTrace, api: 'loadData', showToast: false);
+        // 如果是因为网络原因失败，我们至少要让 UI 能展示出本地已有的数据（即便可能是旧的）
+        // 如果 studyProgress 还没被赋值，那么我们需要确保 setState 运行一次停止 spinner
+        if (mounted && studyProgress == null) {
+          setState(() {
+            // 触发刷新，显示本地数据
+          });
+        }
       } else {
         ErrorHandler.handleError(e, stackTrace, userMessage: '加载数据失败，请刷新重试', logPrefix: '加载数据失败', showToast: true);
       }
