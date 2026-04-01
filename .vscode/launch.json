@@ -32,6 +32,15 @@
             "flutterMode": "debug"
         },
         {
+            "name": "App-android-ipad",
+            "request": "launch",
+            "type": "dart",
+            "program": "${workspaceFolder}/app/lib/main.dart",
+            "deviceId": "M9YBB19C23101895",
+            "args": [],
+            "flutterMode": "debug"
+        },
+        {
             "name": "App-iphone-simulator",
             "request": "launch",
             "type": "dart",
@@ -77,7 +86,7 @@
             "program": "${workspaceFolder}/app/lib/main.dart",
             "deviceId": "00008120-000A7C523EC2601E",
             "args": [],
-            "flutterMode": "debug"
+            "flutterMode": "profile"
         },
         {
             "name": "App-ipad-old",
