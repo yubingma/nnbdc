@@ -369,6 +369,7 @@ public class UserDbSyncBo {
         final int lastVersion = userDbVersionDao.getUserDbVersionWithLock(jdbcTemplate, userId);
 
         if (expectedServerDbVersion != lastVersion) {
+            logger.error("数据库版本不匹配: userId={}, expected={}, actual={}", userId, expectedServerDbVersion, lastVersion);
             throw new DbVersionNotMatchException(String.format("数据库版本不匹配，期望版本[%d]，当前版本[%d]，本次同步失败（请重试）",
                     expectedServerDbVersion, lastVersion));
         }

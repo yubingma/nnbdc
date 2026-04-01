@@ -84,8 +84,21 @@ class ThrottledDbSyncService {
     return completer.future;
   }
 
+  bool _isPerformingSync = false; // 是否正在执行同步操作
+  bool _needsAnotherSync = false; // 同步期间是否有新的请求，需要完成后再次执行
+
   /// 执行实际的同步操作
   Future<void> _performSync() async {
+    // 防止并发执行同步操作
+    if (_isPerformingSync) {
+      _needsAnotherSync = true;
+      Global.logger.i('⏳ 数据库同步已在进行中，标记为完成后再次执行');
+      return;
+    }
+
+    _isPerformingSync = true;
+    _needsAnotherSync = false;
+
     final startTime = AppClock.now();
     Global.logger.d('🔄 开始执行数据库同步操作');
 
@@ -93,6 +106,7 @@ class ThrottledDbSyncService {
     if (_suspendCount > 0) {
       _syncRequestedWhileSuspended = true;
       Global.logger.d('⏸️ 同步被暂停（导入中），跳过本次执行');
+      _isPerformingSync = false;
       _syncScheduled = false;
       return;
     }
@@ -101,6 +115,7 @@ class ThrottledDbSyncService {
     bool isConnected = await _networkUtil.isConnected();
     if (!isConnected) {
       Global.logger.d('🌐 网络连接不可用，静默跳过同步操作');
+      _isPerformingSync = false;
       _syncScheduled = false;
       return;
     }
@@ -133,7 +148,9 @@ class ThrottledDbSyncService {
 
       rethrow;
     } finally {
+      _isPerformingSync = false;
       _syncScheduled = false;
+      
       // 完成所有等待者
       for (final waiter in _waiters) {
         if (!waiter.isCompleted) {
@@ -141,6 +158,13 @@ class ThrottledDbSyncService {
         }
       }
       _waiters.clear();
+
+      // 如果同步期间又有新的同步请求，安排再一次同步
+      if (_needsAnotherSync) {
+        Global.logger.i('🔄 同步期间有新请求，触发追加同步');
+        // 加入延时，避免服务器压力过大，且给本地数据更新留出微量时间
+        unawaited(requestSync());
+      }
     }
   }
 
