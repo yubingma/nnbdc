@@ -15,7 +15,6 @@ import 'package:nnbdc/util/utils.dart';
 import 'package:nnbdc/util/error_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
-import 'package:flutter_markdown/flutter_markdown.dart';
 import 'dart:async';
 import 'dart:convert';
 
@@ -3875,24 +3874,59 @@ class WordListPageState extends State<WordListPage>
           ),
           body: Container(
             color: Theme.of(context).scaffoldBackgroundColor, // 为背景提供清晰颜色，避免透视
-            child: Markdown(
-              data: story,
-              selectable: true,
-              styleSheet:
-                  MarkdownStyleSheet.fromTheme(Theme.of(context)).copyWith(
-                p: const TextStyle(fontSize: 17, height: 1.6),
-                strong: const TextStyle(
-                    fontSize: 17,
-                    height: 1.6,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.primaryColor),
-                h1: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                h2: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-            ),
+            child: _buildClickableStory(story),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildClickableStory(String story) {
+    // 预处理：将 **word** 替换为 <b>word</b>
+    String processedStory =
+        story.replaceAllMapped(RegExp(r'\*\*(.*?)\*\*'), (match) {
+      return '<b>${match.group(1)}</b>';
+    });
+
+    List<String> paragraphs = processedStory.split('\n');
+    List<Widget> widgets = [];
+
+    for (var p in paragraphs) {
+      if (p.trim().isEmpty) {
+        // 空行作为段落间隔
+        widgets.add(const SizedBox(height: 16));
+        continue;
+      }
+
+      // 判断是否是中文（含有汉字），用于判断是故事还是翻译，或者标题
+      bool hasChinese = RegExp(r'[\u4e00-\u9fa5]').hasMatch(p);
+
+      if (hasChinese) {
+        // 中文部分（翻译或引导句）
+        widgets.add(Util.makeChineseSpanText(p, context,
+            style: const TextStyle(fontSize: 17, height: 1.6)));
+      } else {
+        // 英文部分（故事正文)
+        widgets.add(Util.makeEnglishSpanText(
+          p,
+          '', // highlightWord
+          true, // highlightWordHasBeenTaged
+          context,
+          false, // maskHighlightWord
+          null, // maskTextField
+          false, // isHighlightWordUnClickable
+          FontWeight.w400,
+          fontSize: 17, // 设置与全屏匹配的字体大小
+        ));
+      }
+      widgets.add(const SizedBox(height: 12));
+    }
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: widgets,
       ),
     );
   }

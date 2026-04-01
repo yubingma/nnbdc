@@ -428,7 +428,7 @@ class Util {
 
   /// 把英文句子的每个单词转换为相应的widget，形成一个RichText
   static Text makeEnglishSpanText(String words, String highlightWord, bool highlightWordHasBeenTaged, BuildContext context, bool maskHighlightWord,
-      SizedBox? maskTextField, bool isHighlightWordUnClickable, FontWeight fontWeight) {
+      SizedBox? maskTextField, bool isHighlightWordUnClickable, FontWeight fontWeight, {double fontSize = 14}) {
     words = words.trim();
 
     // 获得所有高亮(加粗)单词的下标
@@ -461,7 +461,7 @@ class Util {
       if (isPunctuation) {
         // 标点符号
         spans.add(TextSpan(
-            text: token, style: TextStyle(color: boldWordIndices.contains(i) ? Global.highlight : null, fontSize: 14, fontWeight: fontWeight)));
+            text: token, style: TextStyle(color: boldWordIndices.contains(i) ? Global.highlight : null, fontSize: fontSize, fontWeight: fontWeight)));
       } else {
         // 单词
         spans.add(boldWordIndices.contains(i) && maskTextField != null
@@ -470,7 +470,7 @@ class Util {
               )
             : TextSpan(
                 text: boldWordIndices.contains(i) && maskHighlightWord ? ''.padRight(token.length, '_') : token,
-                style: TextStyle(color: boldWordIndices.contains(i) ? Global.highlight : null, fontSize: 14, fontWeight: fontWeight),
+                style: TextStyle(color: boldWordIndices.contains(i) ? Global.highlight : null, fontSize: fontSize, fontWeight: fontWeight),
                 recognizer: TapGestureRecognizer()
                   ..onTap = () async {
                     // 高亮单词禁止点击查词
