@@ -1176,4 +1176,17 @@ public class Util {
         return UUID.randomUUID().toString().replaceAll("-", "");
     }
 
+    public static boolean isNetworkException(Throwable e) {
+        if (e == null) return false;
+        String name = e.getClass().getName();
+        String msg = e.getMessage();
+        if (name.contains("ClientAbortException") || name.contains("SocketException") || name.contains("EOFException")) {
+            return true;
+        }
+        if (msg != null && (msg.contains("Broken pipe") || msg.contains("Connection reset"))) {
+            return true;
+        }
+        return isNetworkException(e.getCause());
+    }
+
 }

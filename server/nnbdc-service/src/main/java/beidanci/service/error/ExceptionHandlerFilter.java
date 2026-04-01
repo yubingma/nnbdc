@@ -14,6 +14,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import beidanci.api.Result;
 import beidanci.service.util.JsonUtils;
+import beidanci.service.util.Util;
 
 /**
  * 全局处理Filter链产生的异常<br>
@@ -39,9 +40,13 @@ public class ExceptionHandlerFilter extends OncePerRequestFilter {
                     response.getStatus(),
                     System.currentTimeMillis() - startTime);
         } catch (IOException | ServletException e) {
-            log.error("", e);
-            String errCode = applicationName + "-EXCEPTION";
-            JsonUtils.sendJson(new Result<Void>(errCode, e.getMessage(), null), response);
+            if (Util.isNetworkException(e)) {
+                log.error("Client aborted: {}", e.getMessage());
+            } else {
+                log.error("", e);
+                String errCode = applicationName + "-EXCEPTION";
+                JsonUtils.sendJson(new Result<Void>(errCode, e.getMessage(), null), response);
+            }
         }
     }
 }
