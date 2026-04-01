@@ -1780,25 +1780,32 @@ class _MePageState extends State<MePage> {
                                                 setDialogState(() {
                                                   isSendingCode = true;
                                                 });
-                                                var result = await Api.client.sendEmailCode(cleanedEmail, "BIND_EMAIL");
-                                                if (result.success) {
-                                                  ToastUtil.info("验证码已发送");
-                                                  setDialogState(() {
-                                                    cooldown = 60;
-                                                    isSendingCode = false;
-                                                  });
-                                                  timer = Timer.periodic(const Duration(seconds: 1), (t) {
+                                                try {
+                                                  var result = await Api.client.sendEmailCode(cleanedEmail, "BIND_EMAIL");
+                                                  if (result.success) {
+                                                    ToastUtil.info("验证码已发送");
                                                     setDialogState(() {
-                                                      if (cooldown > 0) {
-                                                        cooldown--;
-                                                      } else {
-                                                        timer?.cancel();
-                                                        timer = null;
-                                                      }
+                                                      cooldown = 60;
+                                                      isSendingCode = false;
                                                     });
-                                                  });
-                                                } else {
-                                                  ToastUtil.error(result.msg!);
+                                                    timer = Timer.periodic(const Duration(seconds: 1), (t) {
+                                                      setDialogState(() {
+                                                        if (cooldown > 0) {
+                                                          cooldown--;
+                                                        } else {
+                                                          timer?.cancel();
+                                                          timer = null;
+                                                        }
+                                                      });
+                                                    });
+                                                  } else {
+                                                    ToastUtil.error(result.msg!);
+                                                    setDialogState(() {
+                                                      isSendingCode = false;
+                                                    });
+                                                  }
+                                                } catch (e, stackTrace) {
+                                                  ErrorHandler.handleNetworkError(e, stackTrace, api: 'sendEmailCode', showToast: true);
                                                   setDialogState(() {
                                                     isSendingCode = false;
                                                   });

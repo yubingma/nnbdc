@@ -603,7 +603,7 @@ class EmailLoginPageState extends State<EmailLoginPage> {
         ToastUtil.error(result.msg ?? '发送验证码失败');
       }
     } catch (e, stackTrace) {
-      ErrorHandler.handleNetworkError(e, stackTrace, api: 'sendEmailCode');
+      ErrorHandler.handleNetworkError(e, stackTrace, api: 'sendEmailCode', showToast: true);
     } finally {
       setState(() {
         _isSendingCode = false;
