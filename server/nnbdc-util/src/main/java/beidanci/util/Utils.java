@@ -34,7 +34,8 @@ public class Utils {
     }
 
     public static String uniformSpellForFilename(String spell) {
-        spell = spell.replaceAll("\\?", "").replace(" ", "").toLowerCase();
+        // 字母、数字、空格、连字符、单引号建议保留，剔除其它文件系统敏感字符
+        spell = spell.replaceAll("[\\?\\!\\:\\*\\#\\/\\\\\\>\\<\\|]", "").toLowerCase();
         spell = uniformString(spell);
         return spell;
     }

@@ -15,6 +15,7 @@ import beidanci.service.util.SysParamUtil;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import beidanci.util.Constants;
+import beidanci.util.Utils;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 
@@ -481,7 +482,7 @@ public class DictImportBo {
 
         // 无论单词是否刚创建，检查其发音文件是否存在，若不存在则补发音
         try {
-            String pureSpell = spell.replaceAll("[^a-zA-Z]", "").toLowerCase();
+            String pureSpell = Utils.uniformSpellForFilename(spell);
             if (pureSpell.length() > 0) {
                 String firstChar = pureSpell.substring(0, 1);
                 java.io.File dir = new java.io.File(sysParamUtil.getSoundPath() + "/" + firstChar);
@@ -614,7 +615,7 @@ public class DictImportBo {
 
         // ----- 生成单词卡通配图 -----
         if (generateWordImage && lastAiResult != null && lastAiResult.imagePrompts != null && !lastAiResult.imagePrompts.isEmpty()) {
-            String pureSpell = spell.replaceAll("[^a-zA-Z]", "").toLowerCase();
+            String pureSpell = Utils.uniformSpellForFilename(spell);
             for (int i = 0; i < Math.min(2, lastAiResult.imagePrompts.size()); i++) {
                 String imgPrompt = lastAiResult.imagePrompts.get(i);
                 try {
