@@ -34,7 +34,7 @@ public class Utils {
     }
 
     public static String uniformSpellForFilename(String spell) {
-        spell = spell.replaceAll("\\?", "").toLowerCase();
+        spell = spell.replaceAll("\\?", "").replace(" ", "").toLowerCase();
         spell = uniformString(spell);
         return spell;
     }

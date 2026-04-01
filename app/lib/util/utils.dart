@@ -24,7 +24,7 @@ class Util {
   /// @param spell
   /// @return
   static String uniformSpellForFilename(String spell) {
-    spell = spell.replaceAll("?", "").toLowerCase();
+    spell = spell.replaceAll("?", "").replaceAll(" ", "").toLowerCase();
     spell = uniformString(spell);
     return spell;
   }
