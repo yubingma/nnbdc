@@ -77,6 +77,7 @@ wait|等待
 take|拿；乘坐
 young|年轻的
 child|（children）孩子（复数）
+children|（children）孩子（复数）
 people|人；人们
 have a bad cold|重感冒
 have a fever|发烧
@@ -123,6 +124,7 @@ play basketball|打篮球
 watch the games|观看比赛
 game|比赛；游戏
 foot|（feet）脚（复数）
+feet|（feet）脚（复数）
 football|足球
 basketball|篮球
 playground|操场
@@ -142,3 +144,4 @@ run fast|跑得快
 run|跑；跑步
 high jump|跳高
 long jump|跳远
+borrowing|借用

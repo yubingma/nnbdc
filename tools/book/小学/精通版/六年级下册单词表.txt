@@ -44,7 +44,8 @@ river|河流
 near|在……附近
 beside|在……旁边
 between|在……中间
-healthy(food)|健康的食品
+healthy|(food) 健康的食品
+food|(food) 健康的食品
 vegetable|蔬菜
 go down this street|顺着这条街走
 turn right at the traffic lights|交通灯处右转
@@ -66,7 +67,6 @@ America|美国
 Shanghai|上海
 Xi’an|西安
 Dalian|大连
-by plane|乘飞机
 by train|乘火车
 by ship|乘轮船
 travel|旅行

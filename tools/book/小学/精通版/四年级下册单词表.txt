@@ -85,18 +85,15 @@ pork|猪肉
 beef|牛肉
 rice|米饭
 chicken|鸡肉
-sing|唱歌
 dance|跳舞
 paint|（用颜料）绘画
 draw|画画
 read|读
 watch|看
-play|玩
 read a book|看书
 watch TV|看电视
 play computer games|玩电脑游戏
 game|游戏
-do|做
 go|去
 shop|购物
 go shopping|去购物

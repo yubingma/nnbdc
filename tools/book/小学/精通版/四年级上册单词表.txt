@@ -60,9 +60,9 @@ cloudy|多云的，阴天的
 windy|有风的，多风的
 rainy|下雨的，多雨的
 snowy|下雪的，多雪的
-cap   (|无边的) 帽子
+cap|(无边的) 帽子
 hat|（有边的）帽子
-T-shirt   T|恤衫
+T-shirt     T|恤衫
 dress|女服，连衣裙
 blouse|女衬衫
 jacket|短上衣，夹克衫
@@ -85,3 +85,4 @@ thin|瘦的
 new|新的
 old|旧的，老的
 happy|幸福的，快乐的
+number|单元标题：号码；数字
