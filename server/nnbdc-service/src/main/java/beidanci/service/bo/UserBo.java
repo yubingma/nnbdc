@@ -918,6 +918,13 @@ public class UserBo extends BaseBo<User> {
      */
     public User createUser(String userName, String password, String nickName,
                            String email, User invitedBy, boolean isSysUser, String appleUserId) {
+        if (email != null && email.trim().isEmpty()) {
+            email = null;
+        }
+        if (nickName != null && nickName.trim().isEmpty()) {
+            nickName = null;
+        }
+
         User user = new User();
         user.setUserName(userName.toLowerCase());
         user.setPassword(password);
@@ -1140,6 +1147,12 @@ public class UserBo extends BaseBo<User> {
      */
     @Transactional
     public User findOrCreateUserByApple(String userIdentifier, String email, String nickname) {
+        if (email != null && email.trim().isEmpty()) {
+            email = null;
+        }
+        if (nickname != null && nickname.trim().isEmpty()) {
+            nickname = null;
+        }
         try {
             List<User> users = new ArrayList<>();
             if (userIdentifier != null && !userIdentifier.trim().isEmpty()) {
