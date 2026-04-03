@@ -82,7 +82,7 @@ for|给；为了
 light|点燃
 the first month of the year|一年里的第一个月
 the second month of the year|一年里的第二个月
-New Year’s Day|元旦
+New Year's Day|元旦
 Spring Festival|春节
 January|一月
 February|二月
@@ -103,12 +103,12 @@ the sixth month of the year|一年里的第六个月
 Labour Day|劳动节
 May|五月
 June|六月
-Mother’s Day|母亲节
-Children’s Day|儿童节
-Father’s Day|父亲节
+Mother's Day|母亲节
+Children's Day|儿童节
+Father's Day|父亲节
 the seventh month of the year|一年里的第七个月
 the eighth month of the year|一年里的第八个月
-the Party’s birthday|党的生日
+the Party's birthday|党的生日
 Army Day|建军节
 July|七月
 August|八月
@@ -119,7 +119,7 @@ the tenth month of the year|一年里的第十个月
 National Day|国庆节
 September|九月
 October|十月
-Teacher’s Day|教师节
+Teacher's Day|教师节
 the eleventh month of the year|一年里的第十一个月
 the twelfth month of the year|一年里的第十二个月
 Thanksgiving|感恩节

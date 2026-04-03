@@ -64,7 +64,7 @@ city|城市
 library|图书馆
 America|美国
 Shanghai|上海
-Xi’an|西安
+Xi'an|西安
 Dalian|大连
 by train|乘火车
 by ship|乘轮船
