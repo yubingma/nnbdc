@@ -52,8 +52,7 @@ actor|演员
 actress|女演员
 a|一个
 an|一个
-parent|（s）父母亲
-s|（s）父母亲
+parent（s）|父母亲
 policeman|警察
 policewoman|女警察
 reporter|记者
@@ -76,10 +75,8 @@ shop|商店
 restaurant|饭馆
 company|公司
 library|图书馆
-grandfather|（grandpa）（外） 祖父
-grandpa|（grandpa）（外） 祖父
-grandmother|（grandma）（外）祖母
-grandma|（grandma）（外）祖母
+grandfather （grandpa）|（外） 祖父
+grandmother （grandma）|（外）祖母
 driver|司机
 schoolbag|书包
 activity book|活动手册
@@ -117,7 +114,7 @@ strawberry|草莓
 star fruit|杨桃
 peach|桃
 food|食品
-noodle|（s）面条
+noodle（s）|面条
 longan|龙眼
 lychee|荔枝
 these|这些
