@@ -44,8 +44,7 @@ river|河流
 near|在……附近
 beside|在……旁边
 between|在……中间
-healthy|(food) 健康的食品
-food|(food) 健康的食品
+healthy(food)|健康的食品
 vegetable|蔬菜
 go down this street|顺着这条街走
 turn right at the traffic lights|交通灯处右转
