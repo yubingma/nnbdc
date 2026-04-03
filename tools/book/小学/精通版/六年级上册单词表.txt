@@ -1,0 +1,156 @@
+get up|起床
+have breakfast|吃早餐
+go to school|去上学
+School begins|开始上课。
+have lunch|吃午饭
+School is over|放学。
+go home|回家
+have dinner|吃晚饭
+watch TV|看电视
+go to bed|睡觉
+breakfast|早餐
+lunch|午餐
+dinner|晚餐
+cook breakfast|做早餐
+teach English|教英语
+take a walk|散步
+read stories|读故事
+walk|走；步行
+every|每一个
+morning|早晨
+afternoon|下午
+evening|晚上；傍晚
+see a film|看电影
+play the piano|弹钢琴
+clean the window|擦窗户
+clean the door|擦门
+clean the floor|擦地板
+often|时常
+easy|容易
+difficult|困难
+collect toy cars|收集玩具汽车
+collect stamps|收集邮票
+collect maps|收集地图
+collect picture cards|收集图片
+open|开；打开
+hobby|爱好
+map|地图
+box|盒子
+colour|颜色
+go fishing|去钓鱼
+plant flowers|种花
+cook meals|做饭
+dad|爸爸
+mum|妈妈
+plant|植物；种植
+flower|花
+drink|喝
+tea|茶
+play computer games|玩电脑游戏
+make dolls|做布娃娃
+take photos|照相
+photo|照片
+kid|小孩
+baby|婴儿
+hungry|饿的
+cry|哭
+invite your friends to your party|邀请朋友参加聚会
+celebrate your birthday with your friends|与朋友庆祝生日
+give a birthday card to your friend|向朋友赠送生日贺卡
+time|时间
+after|在……后
+then|那时
+me|我（I的宾格）
+bye|再见
+star-shaped cake|星形蛋糕
+heart-shaped cake|心形蛋糕
+jelly|果冻
+fruit pie|水果派；水果馅饼
+kind|种类
+chocolate|巧克力
+ice cream|冰激凌
+candy|糖果
+sure|当然
+light the candles|点蜡烛
+sing the birthday song|唱生日歌
+make a wish|许愿
+blow out the candles|吹蜡烛
+cut the cake|切蛋糕
+eat the cake|吃蛋糕
+here|在这里
+for|给；为了
+light|点燃
+the first month of the year|一年里的第一个月
+the second month of the year|一年里的第二个月
+New Year’s Day|元旦
+Spring Festival|春节
+January|一月
+February|二月
+back|回原处；后面
+their|他（她、它）们
+the third month of the year|一年里的第三个月
+the fourth month of the year|一年里的四个月
+Tree Planting Day|植树节
+Easter|复活节
+March|三月
+April|四月
+tree|树；树木
+grass|草；草地
+stop|（使）停止
+egg|蛋；卵
+the fifth month of the year|一年里的第五个月
+the sixth month of the year|一年里的第六个月
+Labour Day|劳动节
+May|五月
+June|六月
+Mother’s Day|母亲节
+Children’s Day|儿童节
+Father’s Day|父亲节
+the seventh month of the year|一年里的第七个月
+the eighth month of the year|一年里的第八个月
+the Party’s birthday|党的生日
+Army Day|建军节
+July|七月
+August|八月
+month|月
+year|年
+the ninth month of the year|一年里的第九个月
+the tenth month of the year|一年里的第十个月
+National Day|国庆节
+September|九月
+October|十月
+Teacher’s Day|教师节
+the eleventh month of the year|一年里的第十一个月
+the twelfth month of the year|一年里的第十二个月
+Thanksgiving|感恩节
+Christmas|圣诞节
+November|十一月
+December|十二月
+farm the land|种地；种田
+go on spring outings|去春游
+fly kites|放风筝
+season|季节
+spring|春天
+little|一点
+green|绿色（的）
+bird|鸟
+fly|飞
+go on a trip|去旅游
+go to a summer trip|去夏令营
+have summer holidays|过暑假
+begin|开始
+close|关；关闭
+summer|夏天
+weather|天气
+heavy|重的
+rain|雨；下雨
+pick apples|摘苹果
+cut rice|割稻子
+make a snowman|堆雪人
+sweep the snow|扫雪
+autumn|秋天
+yellow|黄色（的）
+brown|棕色（的）
+white|白色（的）
+winter|冬天
+snowman|雪人

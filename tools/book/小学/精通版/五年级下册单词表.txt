@@ -1,0 +1,144 @@
+library|图书馆
+borrow|（向某人、从某人）借
+borrow books|借书
+meeting room|会议室
+having a meeting|开会
+welcome|欢迎
+meet|相遇；开会
+our|我们的
+English lesson|英语课
+language lab|语言实验室
+science lesson|科学课
+science lab|科学实验室
+we|我们
+have|有
+all|所有；全部
+like|喜欢
+very much|非常；很
+art club|美术（艺术）俱乐部
+paint a picture|（用颜料）绘画
+music club|音乐俱乐部
+play the piano|弹钢琴
+many|许多
+way|路；道路
+please|请
+also|也；同样
+toy train|玩具火车
+toy plane|玩具飞机
+toy ship|玩具轮船
+toy boat|玩具小船
+can|能
+help|帮助
+want|想；想要
+toy|玩具
+train|火车
+plane|飞机
+ship|轮船
+boat|小船
+motorbike|摩托车
+jeep|吉普车
+coach|长途旅游车
+buy|买
+bike|自行车
+car|小汽车
+bus|公共汽车
+taxi|出租车
+trousers|裤子；长裤
+short pants|短裤
+try|试
+coat|大衣
+clothes|衣服
+ask|问
+answer|回答
+eat|吃
+make|制造；做
+think|想
+late|晚；迟到
+class|班
+school|学校
+question|问题
+actively|积极地
+quiet|安静的
+make noise|喧闹；制造噪音
+keep your room clean|保持房间清洁
+do housework|做家务
+read in bed|在床上看书
+go home late|晚回家
+go home|回家
+get up|起床
+go to bed|去睡觉
+help old people|帮助老人
+keep off the grass|不要进入草地
+take good care of young children|照看好儿童
+play on the street|在街道上玩耍
+pick flowers|摘花
+litter|乱丢杂物
+wait|等待
+take|拿；乘坐
+young|年轻的
+child|（children）孩子（复数）
+people|人；人们
+have a bad cold|重感冒
+have a fever|发烧
+have a headache|头痛
+have a cough|咳嗽
+dear|亲爱的
+ill|有病的
+bad|严重的；厉害的
+afraid|害怕
+worry|担心，着急
+have a toothache|牙痛
+have a stomachache|胃疼痛
+take some medicine|吃点儿药
+take a good rest|好好休息
+wrong|错的
+with|和……一起
+head|头
+face|脸
+ear|耳朵
+arm|胳膊
+chocolate|巧克力
+dragon fruit|火龙果
+bring|带来
+feel|感觉
+get-well card|康复卡
+here|这；这里
+for|为了……；给……
+make a call|打电话
+write an email|写电子邮件
+wash the clothes|洗衣服
+clean the room|打扫房间
+tell a story|讲故事
+sing a song|唱歌
+play the guitar|弹吉他
+play the violin|拉小提琴
+look at the picture|看图片
+talk about|谈论
+stand|站立
+sit|坐；坐下
+cousin|表（堂）兄弟；表（堂）姐妹
+play football|踢足球
+play volleyball|打排球
+play basketball|打篮球
+watch the games|观看比赛
+game|比赛；游戏
+foot|（feet）脚（复数）
+football|足球
+basketball|篮球
+playground|操场
+play badminton|打羽毛球
+play tennis|打网球
+play ping-pong|打乒乓球
+play baseball|打棒球
+Miss|小姐
+Ms|女士
+Mr|先生
+Mrs|太太
+favourite|最喜欢的
+sport|运动
+do the high jump|跳高
+do the long jump|跳远
+run fast|跑得快
+run|跑；跑步
+high jump|跳高
+long jump|跳远
