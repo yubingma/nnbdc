@@ -16,12 +16,14 @@ class AndroidMarket {
   final String packageName;
   final String scheme;
   final Color color;
+  final bool isLive; // 是否已上架
 
   AndroidMarket({
     required this.name,
     required this.packageName,
     required this.scheme,
     this.color = Colors.blue,
+    this.isLive = false,
   });
 }
 
@@ -497,11 +499,11 @@ class UpdateService extends GetxController {
     
     // 检测已安装的市场
     final allMarkets = [
-      AndroidMarket(name: '华为应用市场', packageName: 'com.huawei.appmarket', scheme: 'appmarket://details?id=', color: Colors.green[600]!),
-      AndroidMarket(name: '小米应用商店', packageName: 'com.xiaomi.market', scheme: 'mimarket://details?id=', color: Colors.orange[700]!),
-      AndroidMarket(name: 'OPPO 软件商店', packageName: 'com.oppo.market', scheme: 'oppomarket://details?packagename=', color: Colors.green[700]!),
-      AndroidMarket(name: 'vivo 应用商店', packageName: 'com.bbk.appstore', scheme: 'vivomarket://details?id=', color: Colors.blue[700]!), // bbk 是 vivo 的母公司品牌名
-      AndroidMarket(name: '三星 Galaxy Store', packageName: 'com.sec.android.app.samsungapps', scheme: 'samsungapps://ProductDetail/', color: Colors.blueAccent),
+      AndroidMarket(name: '华为应用市场', packageName: 'com.huawei.appmarket', scheme: 'appmarket://details?id=', color: Colors.green[600]!, isLive: false),
+      AndroidMarket(name: '小米应用商店', packageName: 'com.xiaomi.market', scheme: 'mimarket://details?id=', color: Colors.orange[700]!, isLive: false),
+      AndroidMarket(name: 'OPPO 软件商店', packageName: 'com.oppo.market', scheme: 'oppomarket://details?packagename=', color: Colors.green[700]!, isLive: false),
+      AndroidMarket(name: 'vivo 应用商店', packageName: 'com.bbk.appstore', scheme: 'vivomarket://details?id=', color: Colors.blue[700]!, isLive: false),
+      AndroidMarket(name: '三星 Galaxy Store', packageName: 'com.sec.android.app.samsungapps', scheme: 'samsungapps://ProductDetail/', color: Colors.blueAccent, isLive: false),
     ];
 
     // 备选包名映射 (用于更精准的检测)
@@ -513,6 +515,9 @@ class UpdateService extends GetxController {
     try {
       final appCheck = AppCheck();
       for (var market in allMarkets) {
+        // 如果该市场尚未上架，直接跳过检测
+        if (!market.isLive) continue;
+
         bool isInstalled = await appCheck.isAppInstalled(market.packageName);
         
         // 如果主包名未检测到，尝试备选包名
