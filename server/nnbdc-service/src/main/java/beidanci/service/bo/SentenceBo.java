@@ -262,8 +262,8 @@ public class SentenceBo extends BaseBo<Sentence> {
 
     public List<SentenceDto> getSentencesByWordId(String wordId) {
         String sql = "SELECT s.* FROM sentence s " +
-                "JOIN word_sentence ws ON s.id = ws.sentence_id " +
-                "WHERE ws.word_id = :wordId";
+                "WHERE s.id IN (SELECT sentence_id FROM word_sentence WHERE word_id = :wordId) " +
+                "OR s.meaning_item_id IN (SELECT id FROM meaning_item WHERE word_id = :wordId)";
         MapSqlParameterSource params = new MapSqlParameterSource("wordId", wordId);
         List<Sentence> sentences = namedParameterJdbcTemplate.query(sql, params, new beidanci.service.dao.EntityRowMapper<>(Sentence.class));
         return sentences.stream().map(this::toDto).collect(Collectors.toList());
@@ -298,6 +298,9 @@ public class SentenceBo extends BaseBo<Sentence> {
             for (Sentence s : sentences) {
                 // 清理物理音频文件复用逻辑提取
                 safeDeleteSentenceAudio(s.getId(), s.getEnglishDigest());
+
+                // 记录同步日志（删除例句）
+                sysDbLogBo.logOperation("DELETE", "sentence", s.getId(), "{}");
             }
         }
 

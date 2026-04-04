@@ -9,6 +9,7 @@ import 'package:nnbdc/global.dart';
 import 'package:nnbdc/state.dart';
 import 'package:nnbdc/theme/app_theme.dart';
 import 'package:nnbdc/util/loading_utils.dart';
+import 'package:nnbdc/util/utils.dart';
 import 'package:provider/provider.dart';
 
 // 系统词典管理组件
@@ -1819,7 +1820,6 @@ class _WordSentencesDialogState extends State<_WordSentencesDialog> {
 
   Widget _buildSentenceItem(SentenceVo sentence) {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    final textColor = isDarkMode ? Colors.white : Colors.black87;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
@@ -1829,21 +1829,22 @@ class _WordSentencesDialogState extends State<_WordSentencesDialog> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            Util.makeEnglishSpanText(
               sentence.english ?? '',
-              style: TextStyle(
-                color: textColor,
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-              ),
+              widget.dictWord.word.spell,
+              true,
+              context,
+              false,
+              null,
+              false,
+              FontWeight.w500,
+              fontSize: 16,
             ),
             const SizedBox(height: 4),
-            Text(
+            Util.makeChineseSpanText(
               sentence.chinese ?? '',
-              style: TextStyle(
-                color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                fontSize: 14,
-              ),
+              context,
+              style: const TextStyle(fontSize: 14),
             ),
             const Divider(),
             Row(

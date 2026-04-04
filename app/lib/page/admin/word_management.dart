@@ -340,7 +340,6 @@ class _WordManagementWidgetState extends State<WordManagementWidget> {
 
   Widget _buildSentenceItem(SentenceVo sentence) {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    final textColor = isDarkMode ? Colors.white : Colors.black87;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
@@ -350,21 +349,22 @@ class _WordManagementWidgetState extends State<WordManagementWidget> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            Util.makeEnglishSpanText(
               sentence.english ?? '',
-              style: TextStyle(
-                color: textColor,
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-              ),
+              _currentWord?.spell ?? '',
+              true,
+              context,
+              false,
+              null,
+              false,
+              FontWeight.w500,
+              fontSize: 16,
             ),
             const SizedBox(height: 4),
-            Text(
+            Util.makeChineseSpanText(
               sentence.chinese ?? '',
-              style: TextStyle(
-                color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                fontSize: 14,
-              ),
+              context,
+              style: const TextStyle(fontSize: 14),
             ),
             const Divider(),
             Row(
