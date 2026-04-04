@@ -25,7 +25,6 @@ import beidanci.service.po.Sentence;
 import beidanci.service.po.User;
 import beidanci.service.po.WordSentence;
 import beidanci.service.po.WordSentenceId;
-import beidanci.service.store.SentenceCache;
 import beidanci.service.util.JsonUtils;
 import beidanci.service.util.SysParamUtil;
 import beidanci.service.util.Util;
@@ -35,9 +34,6 @@ import beidanci.service.util.Util;
 public class SentenceBo extends BaseBo<Sentence> {
     @Autowired
     WordSentenceBo wordSentenceBo;
-
-    @Autowired
-    SentenceCache sentenceCache;
 
     @Autowired
     EventBo eventBo;
@@ -169,9 +165,6 @@ public class SentenceBo extends BaseBo<Sentence> {
         // 记录系统数据日志（删除例句）
         sysDbLogBo.logOperation("DELETE", "sentence", id, "{}");
 
-        // 从缓存清除
-        sentenceCache.removeSentenceFromCache(id);
-
         // 删除物理发音缓存文件
         safeDeleteSentenceAudio(existing.getId(), existing.getEnglishDigest());
 
@@ -296,9 +289,6 @@ public class SentenceBo extends BaseBo<Sentence> {
 
         // 记录同步日志
         sysDbLogBo.logOperation("UPDATE", "sentence", id, toJsonForLog(sentence));
-
-        // 清除缓存
-        sentenceCache.removeSentenceFromCache(id);
     }
 
     public void deleteByMeaningItem(String meaningItemId) {
@@ -306,13 +296,6 @@ public class SentenceBo extends BaseBo<Sentence> {
         List<Sentence> sentences = findByMeaningItem(meaningItemId);
         if (sentences != null) {
             for (Sentence s : sentences) {
-                // 清除后端内存缓存
-                try {
-                    sentenceCache.removeSentenceFromCache(s.getId());
-                } catch (Exception e) {
-                    LoggerFactory.getLogger(SentenceBo.class).warn("清除例句缓存失败: {}", s.getId(), e);
-                }
-                
                 // 清理物理音频文件复用逻辑提取
                 safeDeleteSentenceAudio(s.getId(), s.getEnglishDigest());
             }

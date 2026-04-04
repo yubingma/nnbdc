@@ -846,10 +846,6 @@ public class DictBo extends BaseBo<Dict> {
 
     @Autowired
     @org.springframework.context.annotation.Lazy
-    private beidanci.service.store.SentenceCache sentenceCache;
-
-    @Autowired
-    @org.springframework.context.annotation.Lazy
     private beidanci.service.bo.SentenceBo sentenceBo;
 
     @Transactional
@@ -891,11 +887,6 @@ public class DictBo extends BaseBo<Dict> {
                     
                     // delete sentence itself
                     namedParameterJdbcTemplate.update("DELETE FROM sentence WHERE id = :sId", pS);
-                    
-                    // clear memory
-                    try {
-                        sentenceCache.removeSentenceFromCache(sentenceId);
-                    } catch (Exception ignore) {}
                     
                     // log
                     sysDbLogBo.logOperation("DELETE", "sentence", sentenceId, "{}");

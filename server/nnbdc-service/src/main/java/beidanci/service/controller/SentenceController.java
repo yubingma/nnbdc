@@ -22,7 +22,6 @@ import beidanci.service.exception.InvalidMeaningFormatException;
 import beidanci.service.exception.ParseException;
 import beidanci.service.po.Sentence;
 import beidanci.service.po.User;
-import beidanci.service.store.SentenceCache;
 import beidanci.service.store.WordCache;
 import beidanci.service.util.BeanUtils;
 import beidanci.service.util.Util;
@@ -38,9 +37,6 @@ public class SentenceController {
 
     @Autowired
     UserBo userBo;
-
-    @Autowired
-    SentenceCache sentenceCache;
 
     @PostMapping("/saveSentenceChinese.do")
     public Result<SentenceVo> saveSentenceChinese(String sentenceId, String chinese, String currWord)
