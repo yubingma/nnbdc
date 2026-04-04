@@ -289,26 +289,34 @@ exit
 
     Get.dialog(
       AlertDialog(
-        title: Text('发现新版本 ${info.version}'),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('发现新版本 ${info.version}', style: const TextStyle(fontSize: 16)),
+            const SizedBox(height: 4),
+            Text('当前版本: ${_currentVersion.value}', style: const TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.normal)),
+          ],
+        ),
+        contentPadding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (info.releaseNotes.isNotEmpty) ...[
-              const Text('更新内容：', style: TextStyle(fontWeight: FontWeight.bold)),
-              SizedBox(height: 8),
+              const Text('更新内容：', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              const SizedBox(height: 6),
               Text(info.releaseNotes, style: const TextStyle(fontSize: 12)),
             ],
-            const SizedBox(height: 20),
+            const SizedBox(height: 12), // 缩减间距
             ...installed.map((m) => Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
+                  padding: const EdgeInsets.only(bottom: 6), // 市场按钮也变紧凑
                   child: ElevatedButton(
                     onPressed: () {
                       Get.back();
                       openMarket(m);
                     },
                     style: ElevatedButton.styleFrom(
-                        backgroundColor: m.color, foregroundColor: Colors.white, minimumSize: const Size(double.infinity, 44)),
+                        backgroundColor: m.color, foregroundColor: Colors.white, minimumSize: const Size(double.infinity, 40)),
                     child: Text('前往 ${m.name} 更新'),
                   ),
                 )),
@@ -318,13 +326,17 @@ exit
                   Get.back();
                   _downloadAndInstallApk(info);
                 },
-                child: Text(installed.isEmpty ? '从官网下载更新' : '从官网下载更新',
-                    style: const TextStyle(fontSize: 12, decoration: TextDecoration.underline)),
+                child: const Text('从官网下载更新', style: TextStyle(fontSize: 12, decoration: TextDecoration.underline)),
               ),
             ),
           ],
         ),
-        actions: [if (!info.isForce) TextButton(onPressed: () => Get.back(), child: const Text('稍后升级'))],
+        actions: [
+          if (!info.isForce)
+            TextButton(
+                onPressed: () => Get.back(),
+                child: const Text('稍后升级', style: TextStyle(color: Colors.grey, fontSize: 13))),
+        ],
       ),
       barrierDismissible: !info.isForce,
     );
