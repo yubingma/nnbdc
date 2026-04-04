@@ -163,7 +163,7 @@ class UpdateService extends GetxController {
     final progress = 0.0.obs;
     Get.dialog(
       Obx(() => AlertDialog(
-            title: const Text('正在更新 Linux 版本'),
+            title: const Text('正在更新 Linux 版本', style: TextStyle(fontSize: 15)),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -216,7 +216,7 @@ class UpdateService extends GetxController {
 
     Get.dialog(
       Obx(() => AlertDialog(
-            title: const Text('正在更新 Windows 版本'),
+            title: const Text('正在更新 Windows 版本', style: TextStyle(fontSize: 15)),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -349,7 +349,7 @@ exit
     final progress = 0.0.obs;
     Get.dialog(
       Obx(() => AlertDialog(
-            title: const Text('正在下载更新'),
+            title: const Text('正在下载 apk 更新', style: TextStyle(fontSize: 15)),
             content: Column(mainAxisSize: MainAxisSize.min, children: [
               LinearProgressIndicator(value: progress.value),
               SizedBox(height: 10),
