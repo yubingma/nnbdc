@@ -639,6 +639,9 @@ abstract class RestClient {
   @GET("/admin/checkSysDictMissingFallback.do")
   Future<Result<SystemHealthCheckResult>> checkSysDictMissingFallback();
 
+  @GET("/admin/checkWordImageIntegrity.do")
+  Future<Result<SystemHealthCheckResult>> checkWordImageIntegrity();
+
   // 客户端自愈API
   @POST("/api/getFallbackWordsData.do")
   @FormUrlEncoded()

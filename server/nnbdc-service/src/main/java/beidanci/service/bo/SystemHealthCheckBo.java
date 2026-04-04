@@ -58,6 +58,12 @@ public class SystemHealthCheckBo {
     @Autowired
     private DictWordBo dictWordBo;
 
+    @Autowired
+    private WordImageBo wordImageBo;
+
+    @Autowired
+    private beidanci.service.util.SysParamUtil sysParamUtil;
+
 
     /**
      * 检查系统词典完整性
@@ -328,6 +334,50 @@ public class SystemHealthCheckBo {
     }
 
     /**
+     * 检查单词配图完整性 (检查配图文件是否存在)
+     */
+    public SystemHealthCheckResult checkWordImageIntegrity() {
+        List<SystemHealthIssue> issues = new ArrayList<>();
+        List<String> errors = new ArrayList<>();
+        
+        try {
+            // 获取所有配图记录
+            String sql = "SELECT id, image_file FROM word_image";
+            List<Object[]> images = namedParameterJdbcTemplate.query(sql, new MapSqlParameterSource(), (rs, rowNum) -> 
+                new Object[]{
+                    rs.getString("id"),
+                    rs.getString("image_file")
+                }
+            );
+            
+            String baseDir = sysParamUtil.getImageBaseDir() + "/word/";
+            int missingCount = 0;
+            
+            for (Object[] image : images) {
+                String fileName = (String) image[1];
+                
+                java.io.File file = new java.io.File(baseDir + fileName);
+                if (!file.exists()) {
+                    missingCount++;
+                }
+            }
+            
+            if (missingCount > 0) {
+                issues.add(new SystemHealthIssue(
+                    "配图文件缺失",
+                    String.format("发现 %d 条配图记录对应的物理文件不存在", missingCount),
+                    "word_image_integrity"
+                ));
+            }
+            
+        } catch (Exception e) {
+            errors.add("检查单词配图完整性时出错: " + e.getMessage());
+        }
+        
+        return new SystemHealthCheckResult(issues.isEmpty() && errors.isEmpty(), issues, errors);
+    }
+
+    /**
      * 自动修复系统问题
      */
     @Transactional
@@ -347,6 +397,7 @@ public class SystemHealthCheckBo {
                     case "sys_dict_missing_fallback" -> fixedCount += fixSystemDictMissingFallback(fixed);
                     case "user_study_steps" -> fixedCount += fixUserStudySteps(fixed);
                     case "missing_raw_word_dict", "missing_user_dict" -> fixedCount += fixMissingUserDicts(fixed);
+                    case "word_image_integrity" -> fixedCount += fixWordImageIntegrity(fixed);
                     default -> errors.add("未知的问题类型: " + issueType);
                 }
                 // fixedCount += fixLearningProgress(fixed);
@@ -450,6 +501,52 @@ public class SystemHealthCheckBo {
         data.put("meaningItems", meaningItems);
         data.put("sentences", sentences);
         return data;
+    }
+
+    /**
+     * 修复单词配图完整性 (删除对应的 db 记录并记录日志)
+     */
+    private int fixWordImageIntegrity(List<String> fixed) {
+        int fixedCount = 0;
+        try {
+            // 这里为了安全，先查出所有记录，再逐个确认文件缺失
+            String sql = "SELECT id, image_file FROM word_image";
+            List<Object[]> images = namedParameterJdbcTemplate.query(sql, new MapSqlParameterSource(), (rs, rowNum) -> 
+                new Object[]{
+                    rs.getString("id"),
+                    rs.getString("image_file")
+                }
+            );
+            
+            String baseDir = sysParamUtil.getImageBaseDir() + "/word/";
+            
+            for (Object[] image : images) {
+                String id = (String) image[0];
+                String fileName = (String) image[1];
+                
+                java.io.File file = new java.io.File(baseDir + fileName);
+                if (!file.exists()) {
+                    // 文件确实不存在
+                    try {
+                        // 使用 wordImageBo 的删除逻辑，它会记录 sys_db_log 并清理事件记录
+                        // 管理员身份删除 (sys_user_id)
+                        String sysUserId = userBo.getSysUser_sys(false).getId();
+                        User sysUser = userBo.findById(sysUserId);
+                        wordImageBo.deleteWordImage(id, sysUser, false);
+                        fixedCount++;
+                    } catch (Exception e) {
+                        fixed.add("修复记录 [" + id + "] 失败: " + e.getMessage());
+                    }
+                }
+            }
+            
+            if (fixedCount > 0) {
+                fixed.add(String.format("成功清理了 %d 条缺失物理文件的配图记录，并已生成同步日志。", fixedCount));
+            }
+        } catch (Exception e) {
+            fixed.add("修复单词配图完整性时出错: " + e.getMessage());
+        }
+        return fixedCount;
     }
 
     /**

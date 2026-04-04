@@ -148,6 +148,15 @@ public class SystemController {
         return Result.success(result);
     }
 
+    /**
+     * 检查单词配图完整性
+     */
+    @GetMapping("/admin/checkWordImageIntegrity.do")
+    public Result<SystemHealthCheckResult> checkWordImageIntegrity() {
+        SystemHealthCheckResult result = systemHealthCheckBo.checkWordImageIntegrity();
+        return Result.success(result);
+    }
+
 
 
     /**
