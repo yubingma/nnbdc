@@ -8,7 +8,6 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import beidanci.api.model.SystemHealthCheckResult;
 import beidanci.api.model.SystemHealthFixResult;
@@ -380,7 +379,6 @@ public class SystemHealthCheckBo {
     /**
      * 自动修复系统问题
      */
-    @Transactional
     public SystemHealthFixResult autoFixSystemIssues(List<String> issueTypes) {
         List<String> fixed = new ArrayList<>();
         List<String> errors = new ArrayList<>();
