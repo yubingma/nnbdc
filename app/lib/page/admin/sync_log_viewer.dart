@@ -350,14 +350,18 @@ class _SyncLogViewerPageState extends State<SyncLogViewerPage> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            '共 $_totalCount 条同步记录',
-                            style: TextStyle(
-                              color: textColor,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
+                          Expanded(
+                            child: Text(
+                              '共 $_totalCount 条同步记录',
+                              style: TextStyle(
+                                color: textColor,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
+                          const SizedBox(width: 8),
                           Text(
                             '显示最近${_logs.length}条',
                             style: TextStyle(
@@ -400,12 +404,15 @@ class _SyncLogViewerPageState extends State<SyncLogViewerPage> {
                               ),
                               title: Row(
                                 children: [
-                                  Text(
-                                    log.success ? '同步成功' : (log.isWarning ? '同步异常' : '同步失败'),
-                                    style: TextStyle(
-                                      color: log.success ? Colors.green : (log.isWarning ? Colors.orange : Colors.red),
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
+                                  Expanded(
+                                    child: Text(
+                                      log.success ? '同步成功' : (log.isWarning ? '同步异常' : '同步失败'),
+                                      style: TextStyle(
+                                        color: log.success ? Colors.green : (log.isWarning ? Colors.orange : Colors.red),
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
                                   const SizedBox(width: 8),
