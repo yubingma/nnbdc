@@ -318,7 +318,7 @@ exit
                   Get.back();
                   _downloadAndInstallApk(info);
                 },
-                child: Text(installed.isEmpty ? '立即下载 APK 更新' : '仍然选择下载 APK 更新',
+                child: Text(installed.isEmpty ? '从官网下载更新' : '从官网下载更新',
                     style: const TextStyle(fontSize: 12, decoration: TextDecoration.underline)),
               ),
             ),

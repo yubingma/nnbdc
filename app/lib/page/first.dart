@@ -106,8 +106,18 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
   void checkNewVersion() async {
     _setPreparingMessage('正在检查更新…');
     try {
-      final updateService = Get.find<UpdateService>();
-      final currentBuild = int.tryParse(_buildNumber ?? '0') ?? 0;
+      // 防护性注册：如果 Get 还没注册过这个服务，即刻注册
+      UpdateService updateService;
+      try {
+        updateService = Get.find<UpdateService>();
+      } catch (e) {
+        updateService = Get.put(UpdateService());
+      }
+
+      // 重新获取一次 buildNumber，确保最准确
+      final packageInfo = await PackageInfo.fromPlatform();
+      final currentBuild = int.tryParse(packageInfo.buildNumber) ?? 0;
+      
       final info = await updateService.checkForUpdateOnStartup(currentBuild);
 
       if (info != null) {
@@ -130,7 +140,8 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
       } else {
         tryAutoLogin();
       }
-    } catch (e) {
+    } catch (e, stack) {
+      debugPrint('检查更新发生异常: $e\n$stack');
       tryAutoLogin();
     }
   }
