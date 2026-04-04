@@ -289,15 +289,17 @@ exit
 
     Get.dialog(
       AlertDialog(
+        titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 0), // 统一左右边距
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('发现新版本 ${info.version}', style: const TextStyle(fontSize: 16)),
             const SizedBox(height: 4),
-            Text('当前版本: ${_currentVersion.value}', style: const TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.normal)),
+            Text('当前版本: ${_currentVersion.value}',
+                style: const TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.normal)),
           ],
         ),
-        contentPadding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+        contentPadding: const EdgeInsets.fromLTRB(20, 14, 20, 0), // 微调顶部间距
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
