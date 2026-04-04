@@ -10,6 +10,7 @@ import javax.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.Assert;
 
 import beidanci.api.Result;
 import beidanci.api.model.EventType;
@@ -157,6 +158,11 @@ public class WordShortDescChineseBO extends BaseBo<WordShortDescChinese> {
      */
     private String toJsonForLog(WordShortDescChinese chinese) {
         try {
+            // 强校验：核心字段必须存在
+            Assert.notNull(chinese.getId(), "ShortDesc ID must not be null");
+            Assert.notNull(chinese.getWord(), "Word association must not be null for ShortDesc");
+            Assert.notNull(chinese.getWord().getId(), "Word ID must not be null for ShortDesc");
+
             // 用于格式化日期为ISO-8601格式
             SimpleDateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
             isoFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
@@ -167,7 +173,7 @@ public class WordShortDescChineseBO extends BaseBo<WordShortDescChinese> {
             return String.format(
                     "{\"id\":\"%s\",\"wordId\":\"%s\",\"content\":\"%s\",\"hand\":%d,\"foot\":%d,\"author\":\"%s\",\"createTime\":\"%s\",\"updateTime\":\"%s\"}",
                     chinese.getId(),
-                    chinese.getWord() != null ? chinese.getWord().getId() : "",
+                    chinese.getWord().getId(),
                     chinese.getContent() != null ? chinese.getContent().replace("\"", "\\\"") : "",
                     chinese.getHand(),
                     chinese.getFoot(),

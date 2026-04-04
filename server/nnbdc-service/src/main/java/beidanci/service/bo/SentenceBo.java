@@ -10,6 +10,7 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.Assert;
 
 import beidanci.api.Result;
 import beidanci.api.model.EventType;
@@ -211,6 +212,15 @@ public class SentenceBo extends BaseBo<Sentence> {
     }
 
     public SentenceDto toDto(Sentence sentence) {
+        if (sentence == null) {
+            return null;
+        }
+
+        // 强校验：核心字段必须存在
+        Assert.notNull(sentence.getId(), "Sentence ID must not be null");
+        Assert.notNull(sentence.getEnglish(), "Sentence English content must not be null");
+        Assert.notNull(sentence.getTheType(), "Sentence type must not be null");
+
         SentenceDto dto = new SentenceDto();
         dto.setId(sentence.getId());
         dto.setEnglish(sentence.getEnglish());

@@ -12,6 +12,7 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.Assert;
 
 import beidanci.api.model.SysDbLogDto;
 import beidanci.service.dao.BaseDao;
@@ -46,6 +47,22 @@ public class SysDbSyncBo extends BaseBo<SysDbLog> {
      * @param record   记录内容（JSON格式）
      */
     public void logOperation(String operate, String table, String recordId, String record) {
+        // 断言：核心参数不能为空，且在 INSERT/UPDATE 时 record JSON 不能为空
+        Assert.hasText(operate, "SysDbSync: operate must not be blank");
+        Assert.hasText(table, "SysDbSync: table must not be blank");
+        Assert.hasText(recordId, "SysDbSync: recordId must not be blank");
+        Assert.hasText(record, "SysDbSync: record content must not be blank");
+
+        // 针对核心表的业务级预校验 (及早发现由于 DTO 映射导致的数据缺失)
+        if (!operate.equals("DELETE")) {
+            if (table.equals("dict")) {
+                Assert.isTrue(record.contains("\"ownerId\"") || record.contains("\"owner_id\""), 
+                    "SysDbSync [dict] MUST contain ownerId, but got: " + record);
+                Assert.isTrue(record.contains("\"name\""), 
+                    "SysDbSync [dict] MUST contain name, but got: " + record);
+            }
+        }
+
         // 在同一事务中完成：1）记录日志 2）递增版本号
         int currentVersion = getSysDbVersion();
         int nextVersion = currentVersion + 1;
@@ -199,6 +216,11 @@ public class SysDbSyncBo extends BaseBo<SysDbLog> {
             record.put("name", tuple[1]);
             record.put("parentId", tuple[2]);
             record.put("displayIndex", tuple[3]);
+            
+            // 强校验：核心字段必须存在
+            Assert.notNull(tuple[0], "DictGroup ID must not be null");
+            Assert.notNull(tuple[1], "DictGroup Name must not be null");
+
             log.setRecord(JsonUtils.toJson(record));
             log.setCreateTime(new Date());
             logs.add(log);
@@ -225,6 +247,11 @@ public class SysDbSyncBo extends BaseBo<SysDbLog> {
             java.util.Map<String, Object> record = new java.util.HashMap<>();
             record.put("groupId", tuple[0]);
             record.put("dictId", tuple[1]);
+
+            // 强校验：核心字段必须存在
+            Assert.notNull(tuple[0], "GroupAndDictLink groupId must not be null");
+            Assert.notNull(tuple[1], "GroupAndDictLink dictId must not be null");
+
             log.setRecord(JsonUtils.toJson(record));
             log.setCreateTime(new Date());
             logs.add(log);
@@ -281,6 +308,12 @@ public class SysDbSyncBo extends BaseBo<SysDbLog> {
             record.put("deletable", tuple[11] != null ? tuple[11] : true);
             record.put("createTime", createTimeStr);
             record.put("updateTime", updateTimeStr);
+
+            // 强校验：核心字段必须存在
+            Assert.notNull(tuple[0], "Dict ID must not be null");
+            Assert.notNull(tuple[1], "Dict Name must not be null");
+            Assert.notNull(tuple[2], "Dict Owner ID must not be null");
+
             log.setRecord(JsonUtils.toJson(record));
             log.setCreateTime(new Date());
             logs.add(log);

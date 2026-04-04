@@ -24,6 +24,7 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.Assert;
 import org.springframework.util.DigestUtils;
 
 import beidanci.api.model.DictDto;
@@ -761,6 +762,12 @@ public class DictBo extends BaseBo<Dict> {
         if (dict == null) {
             return null;
         }
+
+        // 强校验：核心字段必须存在，否则会导致同步后的客户端崩溃
+        Assert.notNull(dict.getId(), "Dict ID must not be null");
+        Assert.notNull(dict.getName(), "Dict Name must not be null");
+        Assert.notNull(dict.getOwner(), "Dict Owner must not be null");
+
         return new DictDto(
                 dict.getId(),
                 dict.getName(),
