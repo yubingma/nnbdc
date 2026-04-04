@@ -165,7 +165,8 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: const Text('服务协议与隐私政策'),
+        title: const Text('服务协议与隐私政策', style: TextStyle(fontSize: 16)),
+        insetPadding: const EdgeInsets.symmetric(horizontal: 30),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
