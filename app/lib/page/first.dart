@@ -169,11 +169,12 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
         insetPadding: const EdgeInsets.symmetric(horizontal: 30),
         content: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('使用前请先阅读并同意：', style: TextStyle(fontSize: 14)),
+            const Text('请阅读并接受：', style: TextStyle(fontSize: 14)),
             const SizedBox(height: 8),
             Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.start,
               children: [
                 GestureDetector(
                   onTap: () => Get.toNamed('/protocol'),
@@ -187,7 +188,7 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
               ],
             ),
             const SizedBox(height: 16),
-            const Text('点击“同意”即表示您已接受上述协议。', style: TextStyle(fontSize: 12, color: Colors.grey)),
+            const Text('点击“同意并继续”即表示您已阅读并接受上述协议。', style: TextStyle(fontSize: 12, color: Colors.grey)),
           ],
         ),
         actions: [
