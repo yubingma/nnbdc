@@ -168,35 +168,36 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
         title: const Text('服务协议与隐私政策'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('欢迎使用泡泡单词！在您开始使用前，请务必仔细阅读并理解', style: TextStyle(fontSize: 14)),
-            Wrap(
-              alignment: WrapAlignment.center,
-              crossAxisAlignment: WrapCrossAlignment.center,
+            const Text('使用前请先阅读并同意：', style: TextStyle(fontSize: 14)),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                TextButton(
-                  onPressed: () => Get.toNamed('/protocol'),
-                  child: const Text('《用户协议》', style: TextStyle(color: Colors.blue)),
+                GestureDetector(
+                  onTap: () => Get.toNamed('/protocol'),
+                  child: const Text('《用户协议》', style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold)),
                 ),
-                const Text('和'),
-                TextButton(
-                  onPressed: () => Get.toNamed('/privacy'),
-                  child: const Text('《隐私政策》', style: TextStyle(color: Colors.blue)),
+                const Text(' 与 '),
+                GestureDetector(
+                  onTap: () => Get.toNamed('/privacy'),
+                  child: const Text('《隐私政策》', style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold)),
                 ),
               ],
             ),
-            const Text('点击“同意”即代表您已阅读并接受上述协议。', style: TextStyle(fontSize: 12, color: Colors.grey)),
+            const SizedBox(height: 16),
+            const Text('点击“同意”即表示您已接受上述协议。', style: TextStyle(fontSize: 12, color: Colors.grey)),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => exit(0), child: const Text('不同意并退出')),
+          TextButton(onPressed: () => exit(0), child: const Text('不同意', style: TextStyle(color: Colors.grey))),
           ElevatedButton(
             onPressed: () async {
               await GetStorage().write('accepted_privacy_version', 20260310);
               Get.back();
               _initVersion().then((_) => checkNewVersion());
             },
+            style: ElevatedButton.styleFrom(elevation: 0),
             child: const Text('同意并继续'),
           ),
         ],
