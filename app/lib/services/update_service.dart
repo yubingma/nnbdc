@@ -10,6 +10,10 @@ import 'package:get/get.dart';
 import '../global.dart';
 import '../config.dart';
 import 'package:appcheck/appcheck.dart';
+import 'package:dio/dio.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:open_file/open_file.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class AndroidMarket {
   final String name;
@@ -585,9 +589,7 @@ class UpdateService extends GetxController {
             // 如果没有安装任何市场，或者作为备选方案展示下载按钮
             Center(
               child: TextButton(
-                onPressed: installedMarkets.isEmpty 
-                  ? () { Get.back(); launchUrl(Uri.parse(updateInfo.downloadUrl), mode: LaunchMode.externalApplication); }
-                  : () => _confirmDirectDownload(updateInfo.downloadUrl),
+                onPressed: () => _downloadAndInstallApk(updateInfo),
                 child: Text(
                   installedMarkets.isEmpty ? '立即下载 APK 更新' : '仍然选择下载 APK 更新',
                   style: TextStyle(
@@ -612,24 +614,99 @@ class UpdateService extends GetxController {
     );
   }
 
-  /// 确认直接下载
-  void _confirmDirectDownload(String url) {
+  /// 下载并安装 APK (应用内自动升级)
+  Future<void> _downloadAndInstallApk(UpdateInfo updateInfo) async {
+    // 1. 如果不是强制更新，且有市场可选，先做个确认
+    if (!updateInfo.isForce) {
+      bool confirmDownload = await Get.dialog<bool>(
+        AlertDialog(
+          title: Text('建议通过应用市场更新'),
+          content: Text('通过官网直接下载安装可能会被系统拦截。确定要直接下载吗？'),
+          actions: [
+            TextButton(onPressed: () => Get.back(result: false), child: Text('返回市场')),
+            TextButton(
+              onPressed: () => Get.back(result: true), 
+              child: Text('确定下载', style: TextStyle(color: Colors.red))
+            ),
+          ],
+        ),
+      ) ?? false;
+      if (!confirmDownload) return;
+    }
+
+    // 2. 申请安装权限 (Android 8.0+)
+    if (Platform.isAndroid) {
+      var status = await Permission.requestInstallPackages.status;
+      if (!status.isGranted) {
+        status = await Permission.requestInstallPackages.request();
+        if (!status.isGranted) {
+          Get.snackbar('权限提醒', '未获得安装权限，下载后请手动到文件管理器安装', snackPosition: SnackPosition.TOP);
+          // 继续下载，但不一定能自动启动安装
+        }
+      }
+    }
+
+    // 3. 显示下载进度弹窗
+    final RxDouble progress = 0.0.obs;
+    final RxString statusMsg = '正在连接服务器...'.obs;
+
     Get.dialog(
-      AlertDialog(
-        title: Text('建议通过应用市场更新'),
-        content: Text('通过官网直接下载安装可能会被系统拦截或产生多个重复安装包。确定要直接下载吗？'),
+      Obx(() => AlertDialog(
+        title: Text('正在下载更新'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(height: 10),
+            LinearProgressIndicator(value: progress.value, backgroundColor: Colors.grey[200], valueColor: AlwaysStoppedAnimation<Color>(Colors.green)),
+            SizedBox(height: 15),
+            Text(statusMsg.value, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+          ],
+        ),
         actions: [
-          TextButton(onPressed: () => Get.back(), child: Text('返回市场')),
-          TextButton(
-            onPressed: () {
-              Get.back();
-              launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
-            }, 
-            child: Text('确定下载', style: TextStyle(color: Colors.red))
-          ),
+          if (!updateInfo.isForce)
+            TextButton(
+              onPressed: () => Get.back(), 
+              child: Text('后台下载')
+            ),
         ],
-      ),
+      )),
+      barrierDismissible: !updateInfo.isForce,
     );
+
+    try {
+      final dio = Dio();
+      final dir = await getApplicationDocumentsDirectory();
+      final String fileName = updateInfo.downloadUrl.substring(updateInfo.downloadUrl.lastIndexOf("/") + 1);
+      final savePath = "${dir.path}/$fileName";
+
+      await dio.download(
+        updateInfo.downloadUrl,
+        savePath,
+        onReceiveProgress: (rec, total) {
+          if (total != -1) {
+            progress.value = rec / total;
+            statusMsg.value = '下载进度: ${(rec / 1024 / 1024).toStringAsFixed(1)}MB / ${(total / 1024 / 1024).toStringAsFixed(1)}MB';
+          }
+        },
+      );
+
+      statusMsg.value = '下载完成，正在启动安装...';
+      
+      // 关闭进度弹窗 (如果还在的话)
+      if (Get.isDialogOpen ?? false) {
+        Get.back();
+      }
+
+      // 4. 调用安装
+      final result = await OpenFile.open(savePath, type: "application/vnd.android.package-archive");
+      if (result.type != ResultType.done) {
+        Get.snackbar('提醒', '自动安装启动失败：${result.message}，请在文件管理器中找到该安装包进行安装', snackPosition: SnackPosition.TOP);
+      }
+    } catch (e) {
+      if (Get.isDialogOpen ?? false) Get.back();
+      Get.snackbar('下载失败', '发生错误: $e', snackPosition: SnackPosition.TOP);
+      debugPrint('APK下载失败: $e');
+    }
   }
 
   /// 打开指定的应用市场
