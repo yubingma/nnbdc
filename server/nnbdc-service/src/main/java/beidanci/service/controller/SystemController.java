@@ -1,6 +1,8 @@
 package beidanci.service.controller;
 
 import java.util.List;
+import java.io.IOException;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -9,12 +11,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import beidanci.api.Result;
-import beidanci.api.model.DictStatsVo;
-import beidanci.api.model.SystemHealthCheckResult;
-import beidanci.api.model.SystemHealthFixResult;
-import beidanci.service.bo.DictBo;
-import beidanci.service.bo.SysParamBo;
-import beidanci.service.bo.SystemHealthCheckBo;
+import beidanci.api.model.*;
+import beidanci.service.bo.*;
+import beidanci.service.exception.EmptySpellException;
+import beidanci.service.exception.InvalidMeaningFormatException;
+import beidanci.service.exception.ParseException;
 import beidanci.service.po.SysParam;
 import beidanci.service.util.AliyunResourceUtil;
 import beidanci.service.util.AliyunResourceUtil.AccountBalanceInfo;
@@ -27,6 +28,12 @@ public class SystemController {
     
     @Autowired
     private DictBo dictBo;
+
+    @Autowired
+    private SentenceBo sentenceBo;
+
+    @Autowired
+    private UserBo userBo;
     
     @Autowired
     private SystemHealthCheckBo systemHealthCheckBo;
@@ -455,5 +462,56 @@ public class SystemController {
             sysParamBo.updateEntity(param);
         }
         return Result.success("系统配置保存成功");
+    }
+
+    /**
+     * 获取指定单词的所有例句 (管理员接口)
+     */
+    @GetMapping("/admin/getWordSentences.do")
+    public Result<List<SentenceVo>> getWordSentences(@RequestParam("wordId") String wordId) {
+        List<SentenceDto> dtos = sentenceBo.getSentencesByWordId(wordId);
+        List<SentenceVo> vos = dtos.stream().map(dto -> {
+            SentenceVo vo = new SentenceVo();
+            vo.setId(dto.getId());
+            vo.setEnglish(dto.getEnglish());
+            vo.setChinese(dto.getChinese());
+            vo.setTheType(dto.getTheType());
+            vo.setEnglishDigest(dto.getEnglishDigest());
+            vo.setHandCount(dto.getHandCount());
+            vo.setFootCount(dto.getFootCount());
+            if (dto.getAuthorId() != null) {
+                UserVo author = new UserVo();
+                author.setId(dto.getAuthorId());
+                vo.setAuthor(author);
+            }
+            return vo;
+        }).collect(Collectors.toList());
+        return Result.success(vos);
+    }
+
+    /**
+     * 更新单词例句 (管理员接口)
+     */
+    @PostMapping("/admin/updateSentence.do")
+    public Result<String> updateSentence(
+            @RequestParam("id") String id,
+            @RequestParam("english") String english,
+            @RequestParam("chinese") String chinese) throws IllegalAccessException, IOException, InvalidMeaningFormatException, EmptySpellException, ParseException {
+        sentenceBo.updateSentence(id, english, chinese);
+        return Result.success("例句更新成功");
+    }
+
+    /**
+     * 从系统后台删除例句 (管理员接口)
+     */
+    @PostMapping("/admin/deleteSentence.do")
+    public Result<String> deleteSentence(@RequestParam("id") String id) throws InvalidMeaningFormatException, EmptySpellException, ParseException, IOException {
+        String sysUserId = userBo.getSysUser_sys(false).getId();
+        Result<Void> res = sentenceBo.deleteSentence(id, null, sysUserId);
+        if (res.isSuccess()) {
+            return Result.success("例句删除成功");
+        } else {
+            return Result.fail(res.getMsg());
+        }
     }
 }

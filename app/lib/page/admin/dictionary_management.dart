@@ -1286,6 +1286,15 @@ class _WordManagementTabState extends State<_WordManagementTab> {
           mainAxisSize: MainAxisSize.min,
           children: [
             IconButton(
+              onPressed: () => _manageSentences(dictWord),
+              icon: Icon(
+                Icons.translate,
+                size: 20,
+                color: Colors.green,
+              ),
+              tooltip: '例句管理',
+            ),
+            IconButton(
               onPressed: () => _editWord(dictWord),
               icon: Icon(
                 Icons.edit,
@@ -1407,6 +1416,13 @@ class _WordManagementTabState extends State<_WordManagementTab> {
         );
       }
     }
+  }
+
+  void _manageSentences(DictWordVo dictWord) {
+    showDialog(
+      context: context,
+      builder: (context) => _WordSentencesDialog(dictWord: dictWord),
+    );
   }
 }
 
@@ -1717,6 +1733,266 @@ class _EditWordDialogState extends State<_EditWordDialog> {
           _isLoading = false;
         });
       }
+    }
+  }
+}
+// 单词例句管理对话框
+class _WordSentencesDialog extends StatefulWidget {
+  final DictWordVo dictWord;
+
+  const _WordSentencesDialog({required this.dictWord});
+
+  @override
+  State<_WordSentencesDialog> createState() => _WordSentencesDialogState();
+}
+
+class _WordSentencesDialogState extends State<_WordSentencesDialog> {
+  bool _isLoading = true;
+  List<SentenceVo> _sentences = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSentences();
+  }
+
+  Future<void> _loadSentences() async {
+    try {
+      setState(() {
+        _isLoading = true;
+      });
+      final result = await Api.client.getWordSentences(widget.dictWord.word.id!);
+      if (mounted) {
+        setState(() {
+          _sentences = result.data ?? [];
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDarkMode = context.watch<DarkMode>().isDarkMode;
+    final textColor = isDarkMode ? Colors.white : Colors.black87;
+    final backgroundColor = isDarkMode ? const Color(0xFF121212) : const Color(0xFFF8F9FA);
+
+    return AlertDialog(
+      backgroundColor: backgroundColor,
+      title: Text(
+        '例句管理 - ${widget.dictWord.word.spell}',
+        textScaler: const TextScaler.linear(1.0),
+        style: TextStyle(
+          color: textColor,
+          fontFamily: 'NotoSansSC',
+        ),
+      ),
+      content: SizedBox(
+        width: double.maxFinite,
+        height: 400,
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : _sentences.isEmpty
+                ? const Center(child: Text('暂无例句'))
+                : ListView.builder(
+                    itemCount: _sentences.length,
+                    itemBuilder: (context, index) {
+                      final sentence = _sentences[index];
+                      return _buildSentenceItem(sentence);
+                    },
+                  ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('关闭'),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSentenceItem(SentenceVo sentence) {
+    final isDarkMode = context.watch<DarkMode>().isDarkMode;
+    final textColor = isDarkMode ? Colors.white : Colors.black87;
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      color: isDarkMode ? const Color(0xFF2D2D2D) : Colors.white,
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              sentence.english ?? '',
+              style: TextStyle(
+                color: textColor,
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              sentence.chinese ?? '',
+              style: TextStyle(
+                color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                fontSize: 14,
+              ),
+            ),
+            const Divider(),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton.icon(
+                  onPressed: () => _editSentence(sentence),
+                  icon: const Icon(Icons.edit, size: 16),
+                  label: const Text('编辑'),
+                ),
+                TextButton.icon(
+                  onPressed: () => _deleteSentence(sentence),
+                  icon: const Icon(Icons.delete, size: 16, color: Colors.red),
+                  label: const Text('删除', style: TextStyle(color: Colors.red)),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _editSentence(SentenceVo sentence) {
+    showDialog(
+      context: context,
+      builder: (context) => _SentenceEditDialog(
+        sentence: sentence,
+        onUpdated: _loadSentences,
+      ),
+    );
+  }
+
+  void _deleteSentence(SentenceVo sentence) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('确认删除'),
+        content: const Text('确定要删除这条例句吗？删除后相关资源也会被清理。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              final res = await Api.client.deleteAdminSentence(sentence.id!);
+              if (res.success) {
+                _loadSentences();
+              }
+            },
+            child: const Text('删除', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// 例句编辑对话框
+class _SentenceEditDialog extends StatefulWidget {
+  final SentenceVo sentence;
+  final VoidCallback onUpdated;
+
+  const _SentenceEditDialog({required this.sentence, required this.onUpdated});
+
+  @override
+  State<_SentenceEditDialog> createState() => _SentenceEditDialogState();
+}
+
+class _SentenceEditDialogState extends State<_SentenceEditDialog> {
+  late TextEditingController _englishController;
+  late TextEditingController _chineseController;
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _englishController = TextEditingController(text: widget.sentence.english);
+    _chineseController = TextEditingController(text: widget.sentence.chinese);
+  }
+
+  @override
+  void dispose() {
+    _englishController.dispose();
+    _chineseController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDarkMode = context.watch<DarkMode>().isDarkMode;
+    final textColor = isDarkMode ? Colors.white : Colors.black87;
+
+    return AlertDialog(
+      title: const Text('编辑例句'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: _englishController,
+              maxLines: 3,
+              decoration: const InputDecoration(labelText: '英文例句'),
+              style: TextStyle(color: textColor),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _chineseController,
+              maxLines: 3,
+              decoration: const InputDecoration(labelText: '中文翻译'),
+              style: TextStyle(color: textColor),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              '提示：修改后系统会自动通过 AI 重新生成配音、助记等资源。',
+              style: TextStyle(fontSize: 12, color: Colors.orange),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('取消'),
+        ),
+        ElevatedButton(
+          onPressed: _isSaving ? null : _save,
+          child: _isSaving ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('保存'),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _save() async {
+    setState(() => _isSaving = true);
+    try {
+      final res = await Api.client.updateAdminSentence(
+        widget.sentence.id!,
+        _englishController.text,
+        _chineseController.text,
+      );
+      if (res.success) {
+        widget.onUpdated();
+        if (mounted) Navigator.pop(context);
+      }
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
     }
   }
 }

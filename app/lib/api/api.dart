@@ -617,6 +617,21 @@ abstract class RestClient {
   Future<Result<String>> removeWordFromDict(
       @Field("dictId") String dictId, @Field("wordId") String wordId);
 
+  // 管理员例句管理API
+  @GET("/admin/getWordSentences.do")
+  Future<Result<List<SentenceVo>>> getWordSentences(@Query("wordId") String wordId);
+
+  @POST("/admin/updateSentence.do")
+  @FormUrlEncoded()
+  Future<Result<String>> updateAdminSentence(
+      @Field("id") String id,
+      @Field("english") String english,
+      @Field("chinese") String chinese);
+
+  @POST("/admin/deleteSentence.do")
+  @FormUrlEncoded()
+  Future<Result<String>> deleteAdminSentence(@Field("id") String id);
+
   // 系统健康检查相关API
   @GET("/admin/checkSystemDictIntegrity.do")
   Future<Result<SystemHealthCheckResult>> checkSystemDictIntegrity();

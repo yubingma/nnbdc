@@ -2,6 +2,7 @@ package beidanci.service.bo;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 
 import org.slf4j.LoggerFactory;
@@ -264,6 +265,40 @@ public class SentenceBo extends BaseBo<Sentence> {
         String sql = "SELECT * FROM sentence WHERE meaning_item_id = :meaningItemId";
         MapSqlParameterSource params = new MapSqlParameterSource("meaningItemId", meaningItemId);
         return namedParameterJdbcTemplate.query(sql, params, new beidanci.service.dao.EntityRowMapper<>(Sentence.class));
+    }
+
+    public List<SentenceDto> getSentencesByWordId(String wordId) {
+        String sql = "SELECT s.* FROM sentence s " +
+                "JOIN word_sentence ws ON s.id = ws.sentence_id " +
+                "WHERE ws.word_id = :wordId";
+        MapSqlParameterSource params = new MapSqlParameterSource("wordId", wordId);
+        List<Sentence> sentences = namedParameterJdbcTemplate.query(sql, params, new beidanci.service.dao.EntityRowMapper<>(Sentence.class));
+        return sentences.stream().map(this::toDto).collect(Collectors.toList());
+    }
+
+    public void updateSentence(String id, String english, String chinese) throws IllegalAccessException, IOException, InvalidMeaningFormatException, EmptySpellException, ParseException {
+        Sentence sentence = findById(id);
+        Assert.notNull(sentence, "例句不存在");
+
+        boolean englishChanged = !sentence.getEnglish().equals(english);
+        if (englishChanged) {
+            // 清理旧音频
+            safeDeleteSentenceAudio(sentence.getId(), sentence.getEnglishDigest());
+
+            sentence.setEnglish(english);
+            sentence.setEnglishDigest(Util.makeSentenceDigest(english));
+            sentence.setNeedTts(true);
+            sentence.setTheType(Sentence.WAITTING_TTS);
+        }
+
+        sentence.setChinese(chinese);
+        updateEntity(sentence);
+
+        // 记录同步日志
+        sysDbLogBo.logOperation("UPDATE", "sentence", id, toJsonForLog(sentence));
+
+        // 清除缓存
+        sentenceCache.removeSentenceFromCache(id);
     }
 
     public void deleteByMeaningItem(String meaningItemId) {
