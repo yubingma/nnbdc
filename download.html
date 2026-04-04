@@ -52,8 +52,9 @@
         }
 
         .download-cards {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
             gap: 30px;
             margin-bottom: 40px;
         }
@@ -65,6 +66,8 @@
             text-align: center;
             transition: transform 0.3s ease, box-shadow 0.3s ease;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            width: 380px;
+            max-width: 100%;
         }
 
         .card:hover {
@@ -135,11 +138,7 @@
             opacity: 0.8;
         }
 
-        @media (max-width: 1200px) {
-            .download-cards {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
+
 
         @media (max-width: 768px) {
             .header h1 {
@@ -148,10 +147,6 @@
 
             .header p {
                 font-size: 1rem;
-            }
-
-            .download-cards {
-                grid-template-columns: 1fr;
             }
         }
 
@@ -230,7 +225,7 @@
                 </div>
             </div>
             <!-- Windows 卡片 -->
-            <div class="card">
+            <div class="card" style="display: none;">
                 <div class="card-icon">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                         <path fill="white"
@@ -269,7 +264,7 @@
             </div>
 
             <!-- Linux 卡片 -->
-            <div class="card">
+            <div class="card" style="display: none;">
                 <div class="card-icon">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
                         <!-- 身体（白色） -->
