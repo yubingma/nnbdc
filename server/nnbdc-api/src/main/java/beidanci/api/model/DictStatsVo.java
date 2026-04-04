@@ -22,6 +22,10 @@ public class DictStatsVo {
     private Long totalUsers; // 总用户数
     private Double selectionRate; // 选择率
     
+    // 分类信息
+    private String targetDictGroupId; // 关联的选书分组ID
+    private java.util.List<String> targetGameHallIds; // 关联的游戏大厅ID列表
+    
     public DictStatsVo() {
     }
     
@@ -142,5 +146,21 @@ public class DictStatsVo {
     
     public void setSelectionRate(Double selectionRate) {
         this.selectionRate = selectionRate;
+    }
+
+    public String getTargetDictGroupId() {
+        return targetDictGroupId;
+    }
+
+    public void setTargetDictGroupId(String targetDictGroupId) {
+        this.targetDictGroupId = targetDictGroupId;
+    }
+
+    public java.util.List<String> getTargetGameHallIds() {
+        return targetGameHallIds;
+    }
+
+    public void setTargetGameHallIds(java.util.List<String> targetGameHallIds) {
+        this.targetGameHallIds = targetGameHallIds;
     }
 }

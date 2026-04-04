@@ -71,9 +71,20 @@ public class SystemController {
             @RequestParam("name") String name,
             @RequestParam("isReady") boolean isReady,
             @RequestParam("visible") boolean visible,
-            @RequestParam(value = "popularityLimit", required = false) Integer popularityLimit
+            @RequestParam(value = "popularityLimit", required = false) Integer popularityLimit,
+            @RequestParam(value = "targetDictGroupId", required = false) String targetDictGroupId,
+            @RequestParam(value = "targetGameHallIds", required = false) String targetGameHallIdsJson
     ) {
-        dictBo.updateSystemDict(dictId, name, isReady, visible, popularityLimit);
+        List<String> targetGameHallIds = null;
+        if (targetGameHallIdsJson != null && !targetGameHallIdsJson.isEmpty()) {
+            try {
+                com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                targetGameHallIds = mapper.readValue(targetGameHallIdsJson, new com.fasterxml.jackson.core.type.TypeReference<List<String>>(){});
+            } catch (Exception e) {
+                return Result.fail("解析游戏大厅ID列表失败: " + e.getMessage());
+            }
+        }
+        dictBo.updateSystemDict(dictId, name, isReady, visible, popularityLimit, targetDictGroupId, targetGameHallIds);
         return Result.success("词典信息更新成功");
     }
 

@@ -596,7 +596,9 @@ abstract class RestClient {
       @Field("name") String name,
       @Field("isReady") bool isReady,
       @Field("visible") bool visible,
-      @Field("popularityLimit") int? popularityLimit);
+      @Field("popularityLimit") int? popularityLimit,
+      @Field("targetDictGroupId") String? targetDictGroupId,
+      @Field("targetGameHallIds") String? targetGameHallIdsJson);
 
   @POST("/updateDictWord.do")
   @FormUrlEncoded()

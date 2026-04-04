@@ -1416,6 +1416,10 @@ class DictStatsVo {
   final int totalUsers; // 总用户数
   final double selectionRate; // 选择率
 
+  // 分类信息
+  final String? targetDictGroupId; // 关联的选书分组ID
+  final List<String>? targetGameHallIds; // 关联的游戏大厅ID列表
+
   DictStatsVo({
     required this.id,
     required this.name,
@@ -1430,6 +1434,8 @@ class DictStatsVo {
     required this.userSelectionCount,
     required this.totalUsers,
     required this.selectionRate,
+    this.targetDictGroupId,
+    this.targetGameHallIds,
   });
 
   factory DictStatsVo.fromJson(Map<String, dynamic> json) => _$DictStatsVoFromJson(json);

@@ -1,8 +1,11 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:nnbdc/api/api.dart';
 import 'package:nnbdc/api/bo/word_bo.dart';
 import 'package:nnbdc/api/vo.dart';
+import 'package:nnbdc/db/db.dart';
+import 'package:nnbdc/global.dart';
 import 'package:nnbdc/state.dart';
 import 'package:nnbdc/theme/app_theme.dart';
 import 'package:nnbdc/util/loading_utils.dart';
@@ -447,6 +450,12 @@ class _EditDictionaryDialogState extends State<_EditDictionaryDialog> {
   late bool _visible;
   bool _isLoading = false;
 
+  // 分类信息
+  String? _selectedDictGroupId;
+  List<String> _selectedGameHallIds = [];
+  List<DictGroup>? _dictGroups;
+  List<HallGroupVo>? _hallGroups;
+
   @override
   void initState() {
     super.initState();
@@ -454,6 +463,39 @@ class _EditDictionaryDialogState extends State<_EditDictionaryDialog> {
     _popularityLimitController = TextEditingController(text: widget.dict.popularityLimit?.toString() ?? '');
     _isReady = widget.dict.isReady;
     _visible = widget.dict.visible;
+    
+    _selectedDictGroupId = widget.dict.targetDictGroupId;
+    _selectedGameHallIds = List<String>.from(widget.dict.targetGameHallIds ?? []);
+    _loadOptions();
+  }
+
+  void _loadOptions() async {
+    try {
+      final db = MyDatabase.instance;
+      // 加载词书大类（选书页面的分类）
+      var dictGroupsData = await db.select(db.dictGroups).get();
+      if (dictGroupsData.isNotEmpty) {
+        final rootGroup = dictGroupsData.firstWhere(
+          (g) => g.name == 'root',
+          orElse: () => dictGroupsData.firstWhere((g) => g.parentId == null, orElse: () => dictGroupsData.first),
+        );
+        var secondLevelGroups = dictGroupsData.where((g) => g.parentId == rootGroup.id && !["蒲公英", "职称", "少儿", "其他"].contains(g.name)).toList();
+        secondLevelGroups.sort((a, b) => a.displayIndex.compareTo(b.displayIndex));
+        
+        // 加载游戏大厅
+        final hallDataRes = await Api.client.getGameHallData();
+        if (mounted) {
+          setState(() {
+            _dictGroups = secondLevelGroups;
+            if (hallDataRes.hallGroups.isNotEmpty) {
+              _hallGroups = hallDataRes.hallGroups;
+            }
+          });
+        }
+      }
+    } catch (e) {
+      Global.logger.e("未能成功加载词书分组或游戏大厅数据", error: e);
+    }
   }
 
   @override
@@ -744,6 +786,91 @@ class _EditDictionaryDialogState extends State<_EditDictionaryDialog> {
                                     ],
                                   ),
                                 ),
+
+                                const Divider(),
+
+                                // 分类归属设置
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 8),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        '分类归属',
+                                        textScaler: const TextScaler.linear(1.0),
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w400,
+                                          color: textColor,
+                                          fontFamily: 'NotoSansSC',
+                                        ),
+                                      ),
+                                      const SizedBox(height: 16),
+                                      
+                                      // 选书分组
+                                      DropdownButtonFormField<String>(
+                                        value: _selectedDictGroupId,
+                                        decoration: InputDecoration(
+                                          labelText: '选书页面分组',
+                                          labelStyle: TextStyle(color: isDarkMode ? Colors.grey[400] : Colors.grey[600]),
+                                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                                        ),
+                                        items: [
+                                          const DropdownMenuItem<String>(
+                                            value: null,
+                                            child: Text('不加入选书分组'),
+                                          ),
+                                          if (_dictGroups != null)
+                                            ..._dictGroups!.map((g) => DropdownMenuItem(
+                                              value: g.id,
+                                              child: Text(g.name),
+                                            )),
+                                        ],
+                                        onChanged: (val) {
+                                          setState(() => _selectedDictGroupId = val);
+                                        },
+                                      ),
+                                      
+                                      const SizedBox(height: 16),
+                                      
+                                      // 游戏大厅选择
+                                      Text(
+                                        '关联游戏大厅 (受影响的分组会自动加入)',
+                                        textScaler: const TextScaler.linear(1.0),
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                                          fontFamily: 'NotoSansSC',
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      if (_hallGroups != null)
+                                        Wrap(
+                                          spacing: 8,
+                                          children: _hallGroups!.expand((group) => group.gameHalls).map((hall) {
+                                            final isSelected = _selectedGameHallIds.contains(hall.id);
+                                            return FilterChip(
+                                              label: Text(hall.hallName!),
+                                              selected: isSelected,
+                                              onSelected: (selected) {
+                                                setState(() {
+                                                  if (selected) {
+                                                    _selectedGameHallIds.add(hall.id!);
+                                                  } else {
+                                                    _selectedGameHallIds.remove(hall.id);
+                                                  }
+                                                });
+                                              },
+                                              selectedColor: AppTheme.primaryColor.withValues(alpha: 0.2),
+                                              checkmarkColor: AppTheme.primaryColor,
+                                            );
+                                          }).toList(),
+                                        )
+                                      else
+                                        const Center(child: CircularProgressIndicator()),
+                                    ],
+                                  ),
+                                ),
                               ],
                             ),
                           ),
@@ -805,6 +932,8 @@ class _EditDictionaryDialogState extends State<_EditDictionaryDialog> {
         _isReady,
         _visible,
         popularityLimit,
+        _selectedDictGroupId,
+        _selectedGameHallIds.isEmpty ? null : jsonEncode(_selectedGameHallIds),
       );
 
       if (result.success) {

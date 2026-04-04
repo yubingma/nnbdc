@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -445,6 +446,9 @@ public class DictBo extends BaseBo<Dict> {
                 dto.setSelectionRate(0.0);
             }
 
+            // 获取分类关联信息
+            populateCategorization(dto);
+
             result.add(dto);
         }
 
@@ -500,14 +504,50 @@ public class DictBo extends BaseBo<Dict> {
             dto.setSelectionRate(0.0);
         }
 
+        // 获取分类关联信息
+        populateCategorization(dto);
+
         return dto;
+    }
+
+    private void populateCategorization(DictStatsVo dto) {
+        String dictId = dto.getId();
+        // 获取所有关联的分组ID
+        String getLinkedGroupsSql = "SELECT group_id FROM group_and_dict_link WHERE dict_id = :dictId";
+        List<String> linkedGroupIds = namedParameterJdbcTemplate.queryForList(getLinkedGroupsSql, 
+                new MapSqlParameterSource("dictId", dictId), String.class);
+        
+        if (linkedGroupIds.isEmpty()) return;
+
+        // 识别选书分组 (父节点为 root 的分组)
+        String getRootGroupIdSql = "SELECT id FROM dict_group WHERE name = 'root' LIMIT 1";
+        List<String> rootGroupIds = namedParameterJdbcTemplate.getJdbcTemplate().queryForList(getRootGroupIdSql, String.class);
+        if (!rootGroupIds.isEmpty()) {
+            String rootId = rootGroupIds.get(0);
+            String findSelectionGroupSql = "SELECT id FROM dict_group WHERE id IN (:ids) AND parent_id = :rootId LIMIT 1";
+            MapSqlParameterSource p = new MapSqlParameterSource()
+                    .addValue("ids", linkedGroupIds)
+                    .addValue("rootId", rootId);
+            List<String> selectionGroupIds = namedParameterJdbcTemplate.queryForList(findSelectionGroupSql, p, String.class);
+            if (!selectionGroupIds.isEmpty()) {
+                dto.setTargetDictGroupId(selectionGroupIds.get(0));
+            }
+        }
+
+        // 识别游戏大厅 (关联了这些分组的大厅)
+        String findGameHallSql = "SELECT id FROM game_hall WHERE dict_group_id IN (:ids)";
+        List<String> hallIds = namedParameterJdbcTemplate.queryForList(findGameHallSql, 
+                new MapSqlParameterSource("ids", linkedGroupIds), String.class);
+        if (!hallIds.isEmpty()) {
+            dto.setTargetGameHallIds(hallIds);
+        }
     }
 
     /**
      * 更新系统词典信息
      */
     public void updateSystemDict(String dictId, String name, boolean isReady, boolean visible,
-            Integer popularityLimit) {
+            Integer popularityLimit, String targetDictGroupId, List<String> targetGameHallIds) {
         Dict dict = findById(dictId);
         if (dict == null) {
             throw new RuntimeException("词典不存在: " + dictId);
@@ -522,29 +562,84 @@ public class DictBo extends BaseBo<Dict> {
         try {
             updateEntity(dict);
 
-            // 记录系统数据同步日志，使前端能够感知到词典信息的变更
-            DictDto dictDto = new DictDto(
-                    dict.getId(),
-                    dict.getName(),
-                    dict.getOwner().getId(),
-                    dict.getIsShared(),
-                    dict.getIsReady(),
-                    dict.getVisible(),
-                    dict.getWordCount(),
-                    dict.getPopularityLimit(),
-                    dict.getEditable(),
-                    dict.getDeletable(),
-                    dict.getCreateTime(),
-                    dict.getUpdateTime(),
-                    dict.getDomain(),
-                    dict.getBaseDictId(),
-                    dict.getSortAlg());
-
+            // 1. 记录系统数据同步日志，使前端能够感知到词典信息的变更
+            DictDto dictDto = toDto(dict);
             sysDbLogBo.logOperation("UPDATE", "dict", dictId, JsonUtils.toJson(dictDto));
+
+            // 2. 更新分组关联 (Book Selection Groups & Game Halls)
+            // 先清理旧的关联
+            String deleteSql = "DELETE FROM group_and_dict_link WHERE dict_id = :dictId";
+            namedParameterJdbcTemplate.update(deleteSql, new MapSqlParameterSource("dictId", dictId));
+            
+            // 记录删除日志 (批量删除通常很难为每个记录精确写日志，但为了状态同步同步，我们可以记录一次 DELETE 通知清理)
+            // 实际上 linkDictToGroup 里的 INSERT 日志就够了，这里清理后重新插入即可。
+            
+            // 建立新的关联
+            Set<String> targetGroupIds = new HashSet<>();
+            if (targetDictGroupId != null && !targetDictGroupId.trim().isEmpty()) {
+                targetGroupIds.add(targetDictGroupId);
+            }
+            
+            if (targetGameHallIds != null) {
+                for (String hallId : targetGameHallIds) {
+                    // 获取游戏大厅对应的分组
+                    String getHallGroupSql = "SELECT dict_group_id FROM game_hall WHERE id = :hallId";
+                    List<String> hallGroupIds = namedParameterJdbcTemplate.queryForList(getHallGroupSql, 
+                            new MapSqlParameterSource("hallId", hallId), String.class);
+                    if (!hallGroupIds.isEmpty() && hallGroupIds.get(0) != null) {
+                        targetGroupIds.add(hallGroupIds.get(0));
+                    }
+                }
+            }
+            
+            for (String groupId : targetGroupIds) {
+                linkDictToGroup(dictId, groupId);
+            }
+
+            // 3. 处理对应的乱序版 (如果有的话，同步其选书分组)
+            String findShuffledSql = "SELECT id FROM dict WHERE base_dict_id = :dictId AND sort_alg = 'md5'";
+            List<String> shuffledDictIds = namedParameterJdbcTemplate.queryForList(findShuffledSql, 
+                    new MapSqlParameterSource("dictId", dictId), String.class);
+            for (String sDictId : shuffledDictIds) {
+                // 乱序版只入选书分组，不入游戏大厅
+                if (targetDictGroupId != null && !targetDictGroupId.trim().isEmpty()) {
+                    // 先清理旧的
+                    namedParameterJdbcTemplate.update(deleteSql, new MapSqlParameterSource("dictId", sDictId));
+                    linkDictToGroup(sDictId, targetDictGroupId);
+                }
+            }
+
         } catch (IllegalAccessException | IllegalArgumentException e) {
             throw new RuntimeException("更新词典失败: " + e.getMessage(), e);
         }
     }
+
+    private void linkDictToGroup(String dictId, String groupId) {
+        if (dictId == null || groupId == null) return;
+        try {
+            String checkSql = "SELECT count(*) FROM group_and_dict_link WHERE group_id = :groupId AND dict_id = :dictId";
+            MapSqlParameterSource p = new MapSqlParameterSource()
+                    .addValue("groupId", groupId)
+                    .addValue("dictId", dictId);
+            Integer count = namedParameterJdbcTemplate.queryForObject(checkSql, p, Integer.class);
+            if (count == null || count == 0) {
+                String insertSql = "INSERT INTO group_and_dict_link (group_id, dict_id) VALUES (:groupId, :dictId)";
+                namedParameterJdbcTemplate.update(insertSql, p);
+                
+                // 记录系统同步日志，通知客户端拉取这层关系
+                java.util.Map<String, String> linkDto = new java.util.HashMap<>();
+                linkDto.put("groupId", groupId);
+                linkDto.put("dictId", dictId);
+                sysDbLogBo.logOperation("INSERT", "group_and_dict_link", groupId + "_" + dictId, 
+                        beidanci.service.util.JsonUtils.toJson(linkDto));
+                        
+                log.info("建立词书关联同步日志: dictId={}, groupId={}", dictId, groupId);
+            }
+        } catch (Exception e) {
+            log.error("关联词库至分组时出错", e);
+        }
+    }
+
 
     /**
      * 更新词典中的单词信息
