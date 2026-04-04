@@ -21,8 +21,10 @@ import okhttp3.Request;
 
 import java.io.File;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * 词典导入业务类
@@ -747,7 +749,8 @@ public class DictImportBo {
 
             // 创建同义词
             if (am.synonyms != null && !am.synonyms.isEmpty()) {
-                for (String synSpell : am.synonyms) {
+                Set<String> synSet = new HashSet<>(am.synonyms);
+                for (String synSpell : synSet) {
                     if (synSpell == null || synSpell.trim().isEmpty()) continue;
                     Word synWord = wordBo.getWordBySpell(synSpell.trim());
                     if (synWord != null) {
@@ -758,8 +761,12 @@ public class DictImportBo {
                         synonym.setId(sid);
                         synonym.setMeaningItem(meaning);
                         synonym.setCreateTime(new Date());
-                        synonymBo.createEntity(synonym);
-                        stats.addedSynonymCount++;
+                        try {
+                            synonymBo.createEntity(synonym);
+                            stats.addedSynonymCount++;
+                        } catch (Exception e) {
+                            logger.warn("插入同义词失败 (可能已存在): {} - {}", word.getSpell(), synSpell);
+                        }
                     }
                 }
             }
