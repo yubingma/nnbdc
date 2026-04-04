@@ -9,6 +9,21 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:get/get.dart';
 import '../global.dart';
 import '../config.dart';
+import 'package:appcheck/appcheck.dart';
+
+class AndroidMarket {
+  final String name;
+  final String packageName;
+  final String scheme;
+  final Color color;
+
+  AndroidMarket({
+    required this.name,
+    required this.packageName,
+    required this.scheme,
+    this.color = Colors.blue,
+  });
+}
 
 class UpdateInfo {
   final String version;
@@ -49,6 +64,7 @@ class UpdateService extends GetxController {
   final Rx<UpdateInfo?> _updateInfo = Rx<UpdateInfo?>(null);
   final RxString _currentVersion = ''.obs;
   final RxString _currentBuildNumber = ''.obs;
+  final RxString _packageName = ''.obs;
 
   bool get isChecking => _isChecking.value;
   UpdateInfo? get updateInfo => _updateInfo.value;
@@ -66,6 +82,7 @@ class UpdateService extends GetxController {
       final packageInfo = await PackageInfo.fromPlatform();
       _currentVersion.value = packageInfo.version;
       _currentBuildNumber.value = packageInfo.buildNumber;
+      _packageName.value = packageInfo.packageName;
     } catch (e) {
       debugPrint('获取当前版本信息失败: $e');
     }
@@ -178,7 +195,11 @@ class UpdateService extends GetxController {
 
             _updateInfo.value = updateInfo;
             if (showDialog) {
-              _showUpdateDialog(updateInfo);
+              if (Platform.isAndroid) {
+                _showAndroidUpgradeDialog(updateInfo);
+              } else {
+                _showUpdateDialog(updateInfo);
+              }
             }
             return true;
           }
@@ -290,8 +311,11 @@ class UpdateService extends GetxController {
       } else if (Platform.isLinux) {
         // Linux 显示升级说明
         _showLinuxUpgradeDialog(updateInfo);
+      } else if (Platform.isAndroid) {
+        // Android 显示升级说明，引导到华为市场
+        _showAndroidUpgradeDialog(updateInfo);
       } else {
-        // Android 等其他平台
+        // 其他平台
         await launchUrl(Uri.parse(updateInfo.downloadUrl));
         Get.snackbar('下载更新', '正在打开下载页面', snackPosition: SnackPosition.TOP);
       }
@@ -441,6 +465,165 @@ class UpdateService extends GetxController {
         ],
       ),
     );
+  }
+
+  /// 显示 Android 升级说明
+  void _showAndroidUpgradeDialog(UpdateInfo updateInfo) async {
+    List<AndroidMarket> installedMarkets = [];
+    
+    // 检测已安装的市场
+    final allMarkets = [
+      AndroidMarket(name: '华为应用市场', packageName: 'com.huawei.appmarket', scheme: 'appmarket://details?id=', color: Colors.red[600]!),
+      AndroidMarket(name: '小米应用商店', packageName: 'com.xiaomi.market', scheme: 'mimarket://details?id=', color: Colors.orange[700]!),
+      AndroidMarket(name: 'OPPO 软件商店', packageName: 'com.oppo.market', scheme: 'oppomarket://details?packagename=', color: Colors.green[700]!),
+      AndroidMarket(name: 'vivo 应用商店', packageName: 'com.bbk.appstore', scheme: 'vivomarket://details?id=', color: Colors.blue[700]!), // bbk 是 vivo 的母公司品牌名
+      AndroidMarket(name: '三星 Galaxy Store', packageName: 'com.sec.android.app.samsungapps', scheme: 'samsungapps://ProductDetail/', color: Colors.blueAccent),
+    ];
+
+    // 备选包名映射 (用于更精准的检测)
+    final fallbackPackages = {
+      'com.huawei.appmarket': ['com.huawei.market', 'com.huawei.appgallery'],
+      'com.bbk.appstore': ['com.vivo.appstore', 'com.vivo.market'],
+    };
+
+    try {
+      final appCheck = AppCheck();
+      for (var market in allMarkets) {
+        bool isInstalled = await appCheck.isAppInstalled(market.packageName);
+        
+        // 如果主包名未检测到，尝试备选包名
+        if (!isInstalled && fallbackPackages.containsKey(market.packageName)) {
+          for (var fallback in fallbackPackages[market.packageName]!) {
+            if (await appCheck.isAppInstalled(fallback)) {
+              isInstalled = true;
+              break;
+            }
+          }
+        }
+
+        if (isInstalled) {
+          installedMarkets.add(market);
+        }
+      }
+    } catch (e) {
+      debugPrint('检测应用市场安装情况失败: $e');
+    }
+
+    Get.dialog(
+      AlertDialog(
+        title: Text('发现新版本 ${updateInfo.version}'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('当前版本: ${_currentBuildNumber.value}'),
+            Text('最新版本: ${updateInfo.buildNumber}'),
+            SizedBox(height: 12),
+            if (installedMarkets.isNotEmpty)
+              Text('检测到您的手机已安装以下应用市场，建议优先通过应用市场更新：')
+            else
+              Text('由于未检测到主流应用市场，建议直接下载 APK 进行更新：'),
+            
+            if (updateInfo.releaseNotes.isNotEmpty) ...[
+              SizedBox(height: 12),
+              Text('更新内容：', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              Container(
+                constraints: BoxConstraints(maxHeight: 150),
+                child: SingleChildScrollView(
+                  child: Text(updateInfo.releaseNotes, style: TextStyle(fontSize: 12, color: Colors.grey[700])),
+                ),
+              ),
+            ],
+            
+            SizedBox(height: 20),
+            
+            // 展示所有检测到的市场按钮
+            ...installedMarkets.map((market) => Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Center(
+                child: ElevatedButton(
+                  onPressed: () {
+                    Get.back();
+                    openMarket(market);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: market.color,
+                    foregroundColor: Colors.white,
+                    minimumSize: Size(double.infinity, 44),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+                  ),
+                  child: Text('前往 ${market.name} 更新'),
+                ),
+              ),
+            )),
+
+            // 如果没有安装任何市场，或者作为备选方案展示下载按钮
+            Center(
+              child: TextButton(
+                onPressed: installedMarkets.isEmpty 
+                  ? () { Get.back(); launchUrl(Uri.parse(updateInfo.downloadUrl), mode: LaunchMode.externalApplication); }
+                  : () => _confirmDirectDownload(updateInfo.downloadUrl),
+                child: Text(
+                  installedMarkets.isEmpty ? '立即下载 APK 更新' : '仍然选择下载 APK 更新',
+                  style: TextStyle(
+                    color: Colors.grey[600], 
+                    fontSize: 12, 
+                    decoration: TextDecoration.underline
+                  )
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: Text('稍后升级'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 确认直接下载
+  void _confirmDirectDownload(String url) {
+    Get.dialog(
+      AlertDialog(
+        title: Text('建议通过应用市场更新'),
+        content: Text('通过官网直接下载安装可能会被系统拦截或产生多个重复安装包。确定要直接下载吗？'),
+        actions: [
+          TextButton(onPressed: () => Get.back(), child: Text('返回市场')),
+          TextButton(
+            onPressed: () {
+              Get.back();
+              launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+            }, 
+            child: Text('确定下载', style: TextStyle(color: Colors.red))
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 打开指定的应用市场
+  Future<void> openMarket(AndroidMarket market) async {
+    try {
+      final String package = _packageName.value.isNotEmpty ? _packageName.value : "com.nn.nnbdc.android";
+      final String schemaUrl = "${market.scheme}$package";
+
+      final launched = await launchUrl(Uri.parse(schemaUrl), mode: LaunchMode.externalApplication);
+      if (!launched) {
+        // 如果无法通过 Schema 打开，对于华为尝试网页版，其他通用提示
+        if (market.packageName == 'com.huawei.appmarket') {
+          await launchUrl(Uri.parse("https://appgallery.huawei.com/#/app/$package"), mode: LaunchMode.externalApplication);
+        } else {
+          Get.snackbar('提示', '无法自动打开 ${market.name}，请手动搜索"${Global.appName}"进行更新', snackPosition: SnackPosition.TOP);
+        }
+      }
+    } catch (e) {
+      debugPrint('打开市场失败: $e');
+      Get.snackbar('提示', '操作失败，请手动前往市场更新', snackPosition: SnackPosition.TOP);
+    }
   }
 
   /// 自动检查更新（应用启动时调用）

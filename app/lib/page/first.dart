@@ -318,35 +318,24 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
         },
       );
     } else if (PlatformUtils.isAndroid) {
-      // Android 平台：强制升级
-      await showDialog(
-        context: context,
-        barrierDismissible: false, // 不允许点击外部关闭
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text('需要升级'),
-            content: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text("当前版本过低，必须升级到版本 $verCode 才能继续使用"),
-                const SizedBox(height: 8),
-                const Text('更新内容：', style: TextStyle(fontWeight: FontWeight.bold)),
-                for (String change in changes) Text('• $change'),
-              ],
-            ),
-            actions: [
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  downloadApkAndUpgrade();
-                },
-                child: const Text('立即升级'),
-              ),
-            ],
-          );
-        },
+      // Android 平台：引导到应用市场
+      UpdateService? updateService;
+      try {
+        updateService = Get.find<UpdateService>();
+      } catch (e) {
+        updateService = UpdateService();
+        Get.put(updateService);
+      }
+      
+      final updateInfo = UpdateInfo(
+        version: verCode.toString(),
+        buildNumber: verCode.toString(),
+        downloadUrl: Config.apkUrl,
+        size: '0',
+        releaseNotes: changes.join('\n'),
       );
+      
+      await updateService.downloadUpdate(updateInfo);
     }
   }
 
@@ -465,27 +454,29 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
         });
         tryAutoLogin();
       }
-    } else {
-      // Android 平台：保持原有逻辑
-      if (await confirm(
-        context,
-        title: const Text('确认'),
-        content: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [Text("发现新版本 $verCode"), for (String change in changes) Text('• $change'), const Text('\n是否升级？')],
-        ),
-        textOK: const Text('是'),
-        textCancel: const Text('否'),
-      )) {
-        downloadApkAndUpgrade();
-      } else {
-        // 用户选择不升级，标记为已忽略，不显示界面提示
-        setState(() {
-          newVersionIgnored = true;
-        });
-        tryAutoLogin();
+    } else if (PlatformUtils.isAndroid) {
+      // Android 平台：引导到应用市场
+      UpdateService? updateService;
+      try {
+        updateService = Get.find<UpdateService>();
+      } catch (e) {
+        updateService = UpdateService();
+        Get.put(updateService);
       }
+
+      final updateInfo = UpdateInfo(
+        version: verCode.toString(),
+        buildNumber: verCode.toString(),
+        downloadUrl: Config.apkUrl,
+        size: '0',
+        releaseNotes: (changes as List).join('\n'),
+      );
+      
+      // 直接显示市场引导弹窗
+      await updateService.downloadUpdate(updateInfo);
+    } else {
+      // 其他未知平台
+      tryAutoLogin();
     }
   }
 

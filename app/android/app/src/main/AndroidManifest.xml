@@ -4,6 +4,15 @@
 
     <queries>
         <package android:name="com.tencent.mm" />
+        <package android:name="com.huawei.appmarket" />
+        <package android:name="com.huawei.market" />
+        <package android:name="com.huawei.appgallery" />
+        <package android:name="com.xiaomi.market" />
+        <package android:name="com.oppo.market" />
+        <package android:name="com.bbk.appstore" />
+        <package android:name="com.vivo.appstore" />
+        <package android:name="com.vivo.market" />
+        <package android:name="com.sec.android.app.samsungapps" />
     </queries>
 
     <uses-permission android:name="android.permission.INTERNET" />
