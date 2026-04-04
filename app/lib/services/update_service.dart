@@ -497,7 +497,7 @@ class UpdateService extends GetxController {
     
     // 检测已安装的市场
     final allMarkets = [
-      AndroidMarket(name: '华为应用市场', packageName: 'com.huawei.appmarket', scheme: 'appmarket://details?id=', color: Colors.red[600]!),
+      AndroidMarket(name: '华为应用市场', packageName: 'com.huawei.appmarket', scheme: 'appmarket://details?id=', color: Colors.green[600]!),
       AndroidMarket(name: '小米应用商店', packageName: 'com.xiaomi.market', scheme: 'mimarket://details?id=', color: Colors.orange[700]!),
       AndroidMarket(name: 'OPPO 软件商店', packageName: 'com.oppo.market', scheme: 'oppomarket://details?packagename=', color: Colors.green[700]!),
       AndroidMarket(name: 'vivo 应用商店', packageName: 'com.bbk.appstore', scheme: 'vivomarket://details?id=', color: Colors.blue[700]!), // bbk 是 vivo 的母公司品牌名
