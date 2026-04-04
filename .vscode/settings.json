@@ -11,5 +11,13 @@
             150
         ],
     },
-    "cmake.sourceDirectory": "/Volumes/ssd/ppdc/tools/llama.cpp/ggml"
+    "search.exclude": {
+        "tools/llama.cpp/**": true
+    },
+    "files.watcherExclude": {
+        "tools/llama.cpp/**": true
+    },
+    "C_Cpp.files.exclude": {
+        "tools/llama.cpp/**": true
+    }
 }
