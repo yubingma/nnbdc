@@ -2,12 +2,10 @@ import 'dart:io';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:get/get.dart';
-import '../global.dart';
 import '../config.dart';
 import 'package:appcheck/appcheck.dart';
 import 'package:dio/dio.dart';
@@ -20,7 +18,7 @@ class AndroidMarket {
   final String packageName;
   final String scheme;
   final Color color;
-  final bool isLive; // 是否已上架
+  final bool isLive;
 
   AndroidMarket({
     required this.name,
@@ -37,8 +35,6 @@ class UpdateInfo {
   final String downloadUrl;
   final String size;
   final String releaseNotes;
-  final bool requiresRestart;
-  final String installerType;
   final bool isForce;
 
   UpdateInfo({
@@ -47,21 +43,17 @@ class UpdateInfo {
     required this.downloadUrl,
     required this.size,
     required this.releaseNotes,
-    this.requiresRestart = false,
-    this.installerType = 'setup',
     this.isForce = false,
   });
 
   factory UpdateInfo.fromJson(Map<String, dynamic> json) {
     return UpdateInfo(
       version: json['version'] ?? '',
-      buildNumber: json['buildNumber'] ?? '',
-      downloadUrl: json['downloadUrl'] ?? '',
+      buildNumber: json['verCode']?.toString() ?? '',
+      downloadUrl: json['downloadUrl'] ?? Config.apkUrl,
       size: json['size'] ?? '0',
-      releaseNotes: json['releaseNotes'] ?? '',
-      requiresRestart: json['requiresRestart'] ?? false,
-      installerType: json['installerType'] ?? 'setup',
-      isForce: json['isForce'] ?? false,
+      releaseNotes: List<String>.from(json['changes'] ?? []).join('\n'),
+      isForce: false,
     );
   }
 }
@@ -70,670 +62,314 @@ class UpdateService extends GetxController {
   static UpdateService get instance => Get.find<UpdateService>();
 
   final RxBool _isChecking = false.obs;
-  final Rx<UpdateInfo?> _updateInfo = Rx<UpdateInfo?>(null);
-  final RxString _currentVersion = ''.obs;
-  final RxString _currentBuildNumber = ''.obs;
   final RxString _packageName = ''.obs;
+  final RxString _currentVersion = ''.obs;
+  final Rx<UpdateInfo?> _updateInfo = Rx<UpdateInfo?>(null);
 
   bool get isChecking => _isChecking.value;
   UpdateInfo? get updateInfo => _updateInfo.value;
   String get currentVersion => _currentVersion.value;
-  String get currentBuildNumber => _currentBuildNumber.value;
 
   @override
   void onInit() {
     super.onInit();
-    _loadCurrentVersion();
+    _loadPackageInfo();
   }
 
-  Future<void> _loadCurrentVersion() async {
+  Future<void> _loadPackageInfo() async {
     try {
       final packageInfo = await PackageInfo.fromPlatform();
-      _currentVersion.value = packageInfo.version;
-      _currentBuildNumber.value = packageInfo.buildNumber;
       _packageName.value = packageInfo.packageName;
+      _currentVersion.value = packageInfo.version;
     } catch (e) {
-      debugPrint('获取当前版本信息失败: $e');
+      debugPrint('获取包信息失败: $e');
     }
   }
 
-  /// 检查更新（用于启动时检查，返回版本信息但不显示对话框）
-  /// 如果没有新版本或检查失败，返回 null
-  /// 返回结果中包含：
-  /// - hasUpdate: 是否有新版本
-  /// - belowMinVersion: 是否低于最低支持版本
-  /// - verCode: 最新版本号
-  /// - minVerCode: 最低支持版本号
-  /// - verName: 版本名称
-  /// - changes: 更新内容
   Future<Map<String, dynamic>?> checkForUpdateOnStartup(int currentBuildNumber) async {
     if (_isChecking.value) return null;
-
     _isChecking.value = true;
-
     try {
-      // 添加时间戳参数避免缓存，确保获取最新版本
       String updateUrl = Config.updateUrl;
-      String separator = updateUrl.contains('?') ? '&' : '?';
-      updateUrl = '$updateUrl${separator}t=${AppClock.now().millisecondsSinceEpoch}';
-
-      final response = await http.get(Uri.parse(updateUrl));
+      final response = await http.get(Uri.parse('$updateUrl?t=${DateTime.now().millisecondsSinceEpoch}'));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-
-        // 对象格式：{"verCode":25101301,"verName":"25.10.13", "minVerCode":25101301, "changes":["修复已知问题"]}
-        if (data is Map<String, dynamic>) {
-          final verCodeObj = data['verCode'];
-          int? verCode;
-          if (verCodeObj is int) {
-            verCode = verCodeObj;
-          } else if (verCodeObj is String) {
-            verCode = int.tryParse(verCodeObj);
-          }
-
-          // 解析最低支持版本
-          final minVerCodeObj = data['minVerCode'];
-          int? minVerCode;
-          if (minVerCodeObj is int) {
-            minVerCode = minVerCodeObj;
-          } else if (minVerCodeObj is String) {
-            minVerCode = int.tryParse(minVerCodeObj);
-          }
-
-          // 检查是否低于最低支持版本
-          bool belowMinVersion = false;
-          if (minVerCode != null && currentBuildNumber < minVerCode) {
-            belowMinVersion = true;
-          }
-
-          // 检查是否有新版本或低于最低支持版本
-          if (verCode != null && (verCode > currentBuildNumber || belowMinVersion)) {
+        final verCode = (data['verCode'] is String) ? int.tryParse(data['verCode']) : data['verCode'] as int?;
+        final minVerCode = (data['minVerCode'] is String) ? int.tryParse(data['minVerCode']) : data['minVerCode'] as int?;
+        if (verCode != null) {
+          bool hasUpdate = verCode > currentBuildNumber;
+          bool belowMin = (minVerCode != null && currentBuildNumber < minVerCode);
+          if (hasUpdate || belowMin) {
             return {
-              'hasUpdate': verCode > currentBuildNumber,
-              'belowMinVersion': belowMinVersion,
+              'hasUpdate': hasUpdate,
+              'belowMinVersion': belowMin,
               'verCode': verCode,
-              'minVerCode': minVerCode,
-              'verName': data['verName']?.toString() ?? '',
               'changes': List<String>.from(data['changes'] ?? []),
             };
           }
         }
       }
     } catch (e) {
-      debugPrint('启动时检查更新失败: $e');
+      debugPrint('检查更新失败: $e');
     } finally {
       _isChecking.value = false;
     }
-
     return null;
   }
 
-  /// 检查更新
-  Future<bool> checkForUpdate({bool showDialog = true}) async {
-    if (_isChecking.value) return false;
-
-    _isChecking.value = true;
-
-    try {
-      // 添加时间戳参数避免缓存，确保获取最新版本
-      String updateUrl = Config.updateUrl;
-      String separator = updateUrl.contains('?') ? '&' : '?';
-      updateUrl = '$updateUrl${separator}t=${AppClock.now().millisecondsSinceEpoch}';
-
-      final response = await http.get(Uri.parse(updateUrl));
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-
-        // 对象格式：{"verCode":25101301,"verName":"25.10.13", "changes":["修复已知问题，提升稳定性"]}
-        if (data is Map<String, dynamic>) {
-          final newVersion = data['verName']?.toString() ?? '';
-          final newBuildNumberObj = data['verCode'];
-          final minVerCodeObj = data['minVerCode'];
-          
-          int newBuildNumber = 0;
-          if (newBuildNumberObj is int) {
-            newBuildNumber = newBuildNumberObj;
-          } else if (newBuildNumberObj is String) {
-            newBuildNumber = int.tryParse(newBuildNumberObj) ?? 0;
-          }
-          
-          int minVerCode = 0;
-          if (minVerCodeObj is int) {
-            minVerCode = minVerCodeObj;
-          } else if (minVerCodeObj is String) {
-            minVerCode = int.tryParse(minVerCodeObj) ?? 0;
-          }
-
-          final changes = List<String>.from(data['changes'] ?? []);
-          final currentBuildInt = int.tryParse(_currentBuildNumber.value) ?? 0;
-          
-          // 检查是否需要更新或强制更新
-          bool isNewer = _isNewerVersion(newVersion, _currentVersion.value);
-          bool isBelowMin = minVerCode > 0 && currentBuildInt < minVerCode;
-
-          if (isNewer || isBelowMin) {
-            final updateInfo = UpdateInfo(
-              version: newVersion,
-              buildNumber: newBuildNumber.toString(),
-              downloadUrl: _getDownloadUrl(newBuildNumber.toString()),
-              size: '0',
-              releaseNotes: changes.join('\n'),
-              requiresRestart: true,
-              installerType: 'setup',
-              isForce: isBelowMin,
-            );
-
-            _updateInfo.value = updateInfo;
-            if (showDialog) {
-              if (Platform.isAndroid) {
-                _showAndroidUpgradeDialog(updateInfo);
-              } else {
-                _showUpdateDialog(updateInfo);
-              }
-            }
-            return true;
-          }
-        }
-      }
-    } catch (e) {
-      debugPrint('检查更新失败: $e');
-      if (showDialog) {
-        Get.snackbar('检查更新', '检查更新失败，请稍后重试', snackPosition: SnackPosition.TOP);
-      }
-    } finally {
-      _isChecking.value = false;
-    }
-
-    if (showDialog) {
-      Get.snackbar('检查更新', '当前已是最新版本', snackPosition: SnackPosition.TOP);
-    }
-    return false;
-  }
-
-  /// 获取下载链接，添加版本号参数避免 CDN 缓存
-  String _getDownloadUrl(String verCode) {
-    String baseUrl;
-    if (Platform.isWindows) {
-      baseUrl = Config.windowsUrl;
-    } else if (Platform.isLinux) {
-      baseUrl = Config.linuxUrl;
-    } else if (Platform.isAndroid) {
-      baseUrl = Config.apkUrl;
-    } else {
-      ToastUtil.error('不支持的下载平台: ${Platform.operatingSystem}');
-      return '';
-    }
-
-    // 添加版本号参数
-    String separator = baseUrl.contains('?') ? '&' : '?';
-    return '$baseUrl${separator}ver=$verCode';
-  }
-
-  /// 比较版本号
-  bool _isNewerVersion(String newVersion, String currentVersion) {
-    try {
-      final newParts = newVersion.split('.').map(int.parse).toList();
-      final currentParts = currentVersion.split('.').map(int.parse).toList();
-
-      // 补齐版本号长度
-      while (newParts.length < 3) {
-        newParts.add(0);
-      }
-      while (currentParts.length < 3) {
-        currentParts.add(0);
-      }
-
-      for (int i = 0; i < 3; i++) {
-        if (newParts[i] > currentParts[i]) return true;
-        if (newParts[i] < currentParts[i]) return false;
-      }
-      return false;
-    } catch (e) {
-      return false;
-    }
-  }
-
-  /// 显示更新对话框
-  void _showUpdateDialog(UpdateInfo updateInfo) {
-    Get.dialog(
-      AlertDialog(
-        title: Text('发现新版本 ${updateInfo.buildNumber}'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('当前版本: ${_currentBuildNumber.value}'),
-            Text('最新版本: ${updateInfo.buildNumber}'),
-            if (updateInfo.releaseNotes.isNotEmpty) ...[
-              SizedBox(height: 8),
-              Text('更新内容:'),
-              Text(updateInfo.releaseNotes, style: TextStyle(fontSize: 12)),
-            ],
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: Text('稍后更新'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Get.back();
-              downloadUpdate(updateInfo);
-            },
-            child: Text('立即更新'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// 下载更新
-  Future<void> downloadUpdate(UpdateInfo updateInfo) async {
-    try {
+  Future<void> checkForUpdate({bool showToastIfLatest = true}) async {
+    final info = await PackageInfo.fromPlatform();
+    final result = await checkForUpdateOnStartup(int.parse(info.buildNumber));
+    if (result != null) {
+      // 根据平台动态匹配下载链接
+      String downloadUrl = Config.apkUrl;
       if (Platform.isWindows) {
-        // Windows 安装包直接打开下载链接
-        await launchUrl(Uri.parse(updateInfo.downloadUrl));
-        Get.snackbar('下载更新', '正在打开下载页面，请下载并安装新版本', snackPosition: SnackPosition.TOP, duration: Duration(seconds: 5));
-      } else if (Platform.isMacOS) {
-        // macOS 显示升级说明
-        _showMacOSUpgradeDialog(updateInfo);
+        downloadUrl = Config.windowsUrl;
       } else if (Platform.isLinux) {
-        // Linux 显示升级说明
-        _showLinuxUpgradeDialog(updateInfo);
-      } else if (Platform.isAndroid) {
-        // Android 显示升级说明，引导到华为市场
-        _showAndroidUpgradeDialog(updateInfo);
-      } else {
-        // 其他平台
-        await launchUrl(Uri.parse(updateInfo.downloadUrl));
-        Get.snackbar('下载更新', '正在打开下载页面', snackPosition: SnackPosition.TOP);
+        downloadUrl = Config.linuxUrl;
       }
-    } catch (e) {
-      Get.snackbar('下载更新', '打开下载页面失败: $e', snackPosition: SnackPosition.TOP);
+
+      final updateInfo = UpdateInfo(
+        version: result['verCode'].toString(),
+        buildNumber: result['verCode'].toString(),
+        downloadUrl: '$downloadUrl?ver=${result['verCode']}',
+        size: '0',
+        releaseNotes: (result['changes'] as List).join('\n'),
+        isForce: result['belowMinVersion'] ?? false,
+      );
+      _updateInfo.value = updateInfo;
+      await downloadUpdate(updateInfo);
+    } else if (showToastIfLatest) {
+      ToastUtil.success('当前已是最新版本');
     }
   }
 
-  /// 显示 macOS 升级说明
-  void _showMacOSUpgradeDialog(UpdateInfo updateInfo) {
-    Get.dialog(
-      AlertDialog(
-        title: Text('macOS 版本升级'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('新版本 ${updateInfo.version} 已发布！'),
-            SizedBox(height: 16),
-            Text('升级步骤：', style: TextStyle(fontWeight: FontWeight.bold)),
-            SizedBox(height: 8),
-            Text('1. 打开 App Store'),
-            Text('2. 搜索"${Global.appName}"'),
-            Text('3. 点击"更新"按钮'),
-            SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () {
-                Get.back();
-                // 打开 App Store
-                openAppStore();
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                foregroundColor: Colors.white,
-              ),
-              child: Text('前往 App Store'),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: Text('稍后升级'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// 打开 App Store（用于 iOS/macOS）
-  Future<void> openAppStore() async {
-    try {
-      const appStoreId = '6756229006'; // App Store ID
-      final appName = Global.appName; // App 名称，用于搜索
-      
-      if (Platform.isIOS) {
-        // iOS: 优先尝试直接打开 App Store 页面
-        // 如果失败，则使用搜索方式
-        try {
-          // 方法1: 使用 https URL（推荐，跨地区兼容性好）
-          final url = 'https://apps.apple.com/app/id$appStoreId';
-          final launched = await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
-          
-          if (!launched) {
-            // 如果失败，使用搜索方式
-            await _openAppStoreBySearch(appName);
-          }
-        } catch (e) {
-          debugPrint('使用 https URL 打开失败: $e，尝试搜索方式');
-          await _openAppStoreBySearch(appName);
-        }
-      } else if (Platform.isMacOS) {
-        // macOS: 使用 https URL
-        try {
-          final url = 'https://apps.apple.com/app/id$appStoreId';
-          final launched = await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
-          
-          if (!launched) {
-            await _openAppStoreBySearch(appName);
-          }
-        } catch (e) {
-          debugPrint('使用 https URL 打开失败: $e，尝试搜索方式');
-          await _openAppStoreBySearch(appName);
-        }
-      }
-    } catch (e) {
-      debugPrint('打开 App Store 失败: $e');
-      Get.snackbar('提示', '无法打开 App Store，请手动搜索"${Global.appName}"进行更新', snackPosition: SnackPosition.TOP);
-    }
-  }
-
-  /// 通过搜索方式打开 App Store
-  Future<void> _openAppStoreBySearch(String appName) async {
-    try {
-      if (Platform.isIOS) {
-        // iOS: 使用搜索 URL
-        final searchUrl = 'https://apps.apple.com/search?term=${Uri.encodeComponent(appName)}';
-        await launchUrl(Uri.parse(searchUrl), mode: LaunchMode.externalApplication);
-      } else if (Platform.isMacOS) {
-        // macOS: 使用搜索 URL
-        final searchUrl = 'https://apps.apple.com/search?term=${Uri.encodeComponent(appName)}';
-        await launchUrl(Uri.parse(searchUrl), mode: LaunchMode.externalApplication);
-      }
-    } catch (e) {
-      debugPrint('搜索方式打开失败: $e');
-      rethrow;
-    }
-  }
-
-  /// 显示 Linux 升级说明
-  void _showLinuxUpgradeDialog(UpdateInfo updateInfo) {
-    Get.dialog(
-      AlertDialog(
-        title: Text('Linux 版本升级'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('新版本 ${updateInfo.version} 已发布！'),
-            SizedBox(height: 16),
-            Text('升级步骤：', style: TextStyle(fontWeight: FontWeight.bold)),
-            SizedBox(height: 8),
-            Text('1. 下载新版本：'),
-            Text('   • 访问下载页面获取最新版本'),
-            SizedBox(height: 8),
-            Text('2. 安装新版本：'),
-            Text('   • 解压下载的 TAR.GZ 文件'),
-            Text('   • 将新版本复制到安装目录'),
-            Text('   • 替换旧版本文件'),
-            SizedBox(height: 8),
-            Text('3. 重启应用'),
-            SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () {
-                Get.back();
-                launchUrl(Uri.parse('http://www.nnbdc.com/download.html'));
-              },
-              child: Text('前往下载页面'),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: Text('稍后升级'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// 显示 Android 升级说明
-  void _showAndroidUpgradeDialog(UpdateInfo updateInfo) async {
-    List<AndroidMarket> installedMarkets = [];
-    
-    // 检测已安装的市场
-    final allMarkets = [
-      AndroidMarket(name: '华为应用市场', packageName: 'com.huawei.appmarket', scheme: 'appmarket://details?id=', color: Colors.green[600]!, isLive: false),
-      AndroidMarket(name: '小米应用商店', packageName: 'com.xiaomi.market', scheme: 'mimarket://details?id=', color: Colors.orange[700]!, isLive: false),
-      AndroidMarket(name: 'OPPO 软件商店', packageName: 'com.oppo.market', scheme: 'oppomarket://details?packagename=', color: Colors.green[700]!, isLive: false),
-      AndroidMarket(name: 'vivo 应用商店', packageName: 'com.bbk.appstore', scheme: 'vivomarket://details?id=', color: Colors.blue[700]!, isLive: false),
-      AndroidMarket(name: '三星 Galaxy Store', packageName: 'com.sec.android.app.samsungapps', scheme: 'samsungapps://ProductDetail/', color: Colors.blueAccent, isLive: false),
-    ];
-
-    // 备选包名映射 (用于更精准的检测)
-    final fallbackPackages = {
-      'com.huawei.appmarket': ['com.huawei.market', 'com.huawei.appgallery'],
-      'com.bbk.appstore': ['com.vivo.appstore', 'com.vivo.market'],
-    };
-
-    try {
-      final appCheck = AppCheck();
-      for (var market in allMarkets) {
-        // 如果该市场尚未上架，直接跳过检测
-        if (!market.isLive) continue;
-
-        bool isInstalled = await appCheck.isAppInstalled(market.packageName);
-        
-        // 如果主包名未检测到，尝试备选包名
-        if (!isInstalled && fallbackPackages.containsKey(market.packageName)) {
-          for (var fallback in fallbackPackages[market.packageName]!) {
-            if (await appCheck.isAppInstalled(fallback)) {
-              isInstalled = true;
-              break;
-            }
-          }
-        }
-
-        if (isInstalled) {
-          installedMarkets.add(market);
-        }
-      }
-    } catch (e) {
-      debugPrint('检测应用市场安装情况失败: $e');
-    }
-
-    Get.dialog(
-      AlertDialog(
-        title: Text('发现新版本 ${updateInfo.version}'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('当前版本: ${_currentBuildNumber.value}'),
-            Text('最新版本: ${updateInfo.buildNumber}'),
-            SizedBox(height: 12),
-            
-            if (updateInfo.releaseNotes.isNotEmpty) ...[
-              SizedBox(height: 12),
-              Text('更新内容：', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-              Container(
-                constraints: BoxConstraints(maxHeight: 150),
-                child: SingleChildScrollView(
-                  child: Text(updateInfo.releaseNotes, style: TextStyle(fontSize: 12, color: Colors.grey[700])),
-                ),
-              ),
-            ],
-            
-            SizedBox(height: 20),
-            
-            // 展示所有检测到的市场按钮
-            ...installedMarkets.map((market) => Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: Center(
-                child: ElevatedButton(
-                  onPressed: () {
-                    Get.back();
-                    openMarket(market);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: market.color,
-                    foregroundColor: Colors.white,
-                    minimumSize: Size(double.infinity, 44),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-                  ),
-                  child: Text('前往 ${market.name} 更新'),
-                ),
-              ),
-            )),
-
-            // 如果没有安装任何市场，或者作为备选方案展示下载按钮
-            Center(
-              child: TextButton(
-                onPressed: () => _downloadAndInstallApk(updateInfo),
-                child: Text(
-                  installedMarkets.isEmpty ? '立即下载 APK 更新' : '仍然选择下载 APK 更新',
-                  style: TextStyle(
-                    color: Colors.grey[600], 
-                    fontSize: 12, 
-                    decoration: TextDecoration.underline
-                  )
-                ),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          if (!updateInfo.isForce)
-            TextButton(
-              onPressed: () => Get.back(),
-              child: Text('稍后升级'),
-            ),
-        ],
-      ),
-      barrierDismissible: !updateInfo.isForce,
-    );
-  }
-
-  /// 下载并安装 APK (应用内自动升级)
-  Future<void> _downloadAndInstallApk(UpdateInfo updateInfo) async {
-    // 1. 如果不是强制更新，且有市场可选，先做个确认
-    if (!updateInfo.isForce) {
-      bool confirmDownload = await Get.dialog<bool>(
-        AlertDialog(
-          title: Text('建议通过应用市场更新'),
-          content: Text('通过官网直接下载安装可能会被系统拦截。确定要直接下载吗？'),
-          actions: [
-            TextButton(onPressed: () => Get.back(result: false), child: Text('返回市场')),
-            TextButton(
-              onPressed: () => Get.back(result: true), 
-              child: Text('确定下载', style: TextStyle(color: Colors.red))
-            ),
-          ],
-        ),
-      ) ?? false;
-      if (!confirmDownload) return;
-    }
-
-    // 2. 申请安装权限 (Android 8.0+)
+  Future<void> downloadUpdate(UpdateInfo info) async {
     if (Platform.isAndroid) {
-      var status = await Permission.requestInstallPackages.status;
-      if (!status.isGranted) {
-        status = await Permission.requestInstallPackages.request();
-        if (!status.isGranted) {
-          Get.snackbar('权限提醒', '未获得安装权限，下载后请手动到文件管理器安装', snackPosition: SnackPosition.TOP);
-          // 继续下载，但不一定能自动启动安装
-        }
-      }
+      await _showAndroidUpgradeDialog(info);
+    } else if (Platform.isIOS || Platform.isMacOS) {
+      await openAppStore();
+    } else if (Platform.isWindows) {
+      await _downloadAndInstallWindows(info);
+    } else if (Platform.isLinux) {
+      await _downloadAndInstallLinux(info);
+    } else {
+      await launchUrl(Uri.parse(info.downloadUrl));
     }
+  }
 
-    // 3. 显示下载进度弹窗
-    final RxDouble progress = 0.0.obs;
-    final RxString statusMsg = '正在连接服务器...'.obs;
-
+  /// Linux 自动更新逻辑
+  Future<void> _downloadAndInstallLinux(UpdateInfo info) async {
+    final progress = 0.0.obs;
     Get.dialog(
       Obx(() => AlertDialog(
-        title: Text('正在下载更新'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox(height: 10),
-            LinearProgressIndicator(value: progress.value, backgroundColor: Colors.grey[200], valueColor: AlwaysStoppedAnimation<Color>(Colors.green)),
-            SizedBox(height: 15),
-            Text(statusMsg.value, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-          ],
-        ),
-        actions: [
-          if (!updateInfo.isForce)
-            TextButton(
-              onPressed: () => Get.back(), 
-              child: Text('后台下载')
+            title: const Text('正在更新 Linux 版本'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                LinearProgressIndicator(value: progress.value),
+                const SizedBox(height: 10),
+                const Text('正在下载安装包...', style: TextStyle(fontSize: 12)),
+              ],
             ),
-        ],
-      )),
-      barrierDismissible: !updateInfo.isForce,
+          )),
+      barrierDismissible: false,
     );
 
     try {
       final dio = Dio();
       final dir = await getApplicationDocumentsDirectory();
-      final String fileName = updateInfo.downloadUrl.substring(updateInfo.downloadUrl.lastIndexOf("/") + 1);
+      final fileName = info.downloadUrl.substring(info.downloadUrl.lastIndexOf("/") + 1);
       final savePath = "${dir.path}/$fileName";
 
-      await dio.download(
-        updateInfo.downloadUrl,
-        savePath,
-        onReceiveProgress: (rec, total) {
-          if (total != -1) {
-            progress.value = rec / total;
-            statusMsg.value = '下载进度: ${(rec / 1024 / 1024).toStringAsFixed(1)}MB / ${(total / 1024 / 1024).toStringAsFixed(1)}MB';
-          }
-        },
-      );
+      await dio.download(info.downloadUrl, savePath, onReceiveProgress: (rec, total) {
+        if (total != -1) progress.value = rec / total;
+      });
 
-      statusMsg.value = '下载完成，正在启动安装...';
-      
-      // 关闭进度弹窗 (如果还在的话)
-      if (Get.isDialogOpen ?? false) {
-        Get.back();
-      }
+      Get.back();
 
-      // 4. 调用安装
-      final result = await OpenFile.open(savePath, type: "application/vnd.android.package-archive");
-      if (result.type != ResultType.done) {
-        Get.snackbar('提醒', '自动安装启动失败：${result.message}，请在文件管理器中找到该安装包进行安装', snackPosition: SnackPosition.TOP);
+      // Linux 核心补全：加权，启动，自杀
+      try {
+        // 1. 给 AppImage 加执行权限
+        await Process.run('chmod', ['+x', savePath]);
+
+        // 2. 启动新进程
+        await Process.start(savePath, [], runInShell: true);
+
+        // 3. 退出当前版本完成更新
+        exit(0);
+      } catch (e) {
+        // 如果自动加权启动失败，尝试普通打开
+        await OpenFile.open(savePath);
+        ToastUtil.info('由于系统限制无法直接启动，请手动打开安装包');
       }
     } catch (e) {
-      if (Get.isDialogOpen ?? false) Get.back();
-      Get.snackbar('下载失败', '发生错误: $e', snackPosition: SnackPosition.TOP);
-      debugPrint('APK下载失败: $e');
+      Get.back();
+      ToastUtil.error('Linux 更新失败: $e');
     }
   }
 
-  /// 打开指定的应用市场
-  Future<void> openMarket(AndroidMarket market) async {
-    try {
-      final String package = _packageName.value.isNotEmpty ? _packageName.value : "com.nn.nnbdc.android";
-      final String schemaUrl = "${market.scheme}$package";
+  /// Windows 静默安装逻辑
+  Future<void> _downloadAndInstallWindows(UpdateInfo info) async {
+    final progress = 0.0.obs;
+    final status = '正在准备下载...'.obs;
 
-      final launched = await launchUrl(Uri.parse(schemaUrl), mode: LaunchMode.externalApplication);
-      if (!launched) {
-        // 如果无法通过 Schema 打开，对于华为尝试网页版，其他通用提示
-        if (market.packageName == 'com.huawei.appmarket') {
-          await launchUrl(Uri.parse("https://appgallery.huawei.com/#/app/$package"), mode: LaunchMode.externalApplication);
-        } else {
-          Get.snackbar('提示', '无法自动打开 ${market.name}，请手动搜索"${Global.appName}"进行更新', snackPosition: SnackPosition.TOP);
+    Get.dialog(
+      Obx(() => AlertDialog(
+            title: const Text('正在更新 Windows 版本'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                LinearProgressIndicator(value: progress.value),
+                const SizedBox(height: 10),
+                Text(status.value, style: const TextStyle(fontSize: 12)),
+              ],
+            ),
+          )),
+      barrierDismissible: false,
+    );
+
+    try {
+      final dio = Dio();
+      final dir = await getApplicationDocumentsDirectory();
+      final fileName = info.downloadUrl.substring(info.downloadUrl.lastIndexOf("/") + 1);
+      final savePath = "${dir.path}/$fileName";
+
+      status.value = '正在下载安装包...';
+      await dio.download(info.downloadUrl, savePath, onReceiveProgress: (rec, total) {
+        if (total != -1) progress.value = rec / total;
+      });
+
+      status.value = '正在执行静默安装，应用即将重启...';
+      await _performWindowsSilentInstall(savePath);
+    } catch (e) {
+      Get.back();
+      ToastUtil.error('更新失败: $e');
+    }
+  }
+
+  Future<void> _performWindowsSilentInstall(String installerPath) async {
+    final currentPid = pid;
+    final currentExe = Platform.resolvedExecutable;
+    final exeName = currentExe.split(Platform.pathSeparator).last;
+    final dir = await getApplicationDocumentsDirectory();
+    final scriptPath = "${dir.path}/update_installer.bat";
+
+    final script = '''
+@echo off
+timeout /t 2 /nobreak > nul
+taskkill /f /pid $currentPid > nul 2>&1
+taskkill /f /im "$exeName" /t > nul 2>&1
+timeout /t 1 /nobreak > nul
+start /wait "" "$installerPath" /S
+start "" "$currentExe"
+del "%~f0"
+exit
+''';
+    await File(scriptPath).writeAsString(script);
+    await Process.start('cmd', ['/c', 'start', '/min', '""', scriptPath], mode: ProcessStartMode.detached);
+    exit(0);
+  }
+
+  Future<void> _showAndroidUpgradeDialog(UpdateInfo info) async {
+    List<AndroidMarket> installed = [];
+    final all = [
+      AndroidMarket(name: '华为应用市场', packageName: 'com.huawei.appmarket', scheme: 'appmarket://details?id=', color: Colors.green[600]!, isLive: true),
+      AndroidMarket(name: '小米应用商店', packageName: 'com.xiaomi.market', scheme: 'mimarket://details?id=', color: Colors.orange[700]!, isLive: false),
+      AndroidMarket(name: 'vivo 应用商店', packageName: 'com.bbk.appstore', scheme: 'vivomarket://details?id=', color: Colors.blue[700]!, isLive: false),
+    ];
+    try {
+      final appCheck = AppCheck();
+      for (var m in all) {
+        if (m.isLive && await appCheck.isAppInstalled(m.packageName)) {
+          installed.add(m);
         }
       }
+    } catch (_) {}
+
+    Get.dialog(
+      AlertDialog(
+        title: Text('发现新版本 ${info.version}'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (info.releaseNotes.isNotEmpty) ...[
+              const Text('更新内容：', style: TextStyle(fontWeight: FontWeight.bold)),
+              SizedBox(height: 8),
+              Text(info.releaseNotes, style: const TextStyle(fontSize: 12)),
+            ],
+            const SizedBox(height: 20),
+            ...installed.map((m) => Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Get.back();
+                      openMarket(m);
+                    },
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor: m.color, foregroundColor: Colors.white, minimumSize: const Size(double.infinity, 44)),
+                    child: Text('前往 ${m.name} 更新'),
+                  ),
+                )),
+            Center(
+              child: TextButton(
+                onPressed: () {
+                  Get.back();
+                  _downloadAndInstallApk(info);
+                },
+                child: Text(installed.isEmpty ? '立即下载 APK 更新' : '仍然选择下载 APK 更新',
+                    style: const TextStyle(fontSize: 12, decoration: TextDecoration.underline)),
+              ),
+            ),
+          ],
+        ),
+        actions: [if (!info.isForce) TextButton(onPressed: () => Get.back(), child: const Text('稍后升级'))],
+      ),
+      barrierDismissible: !info.isForce,
+    );
+  }
+
+  Future<void> _downloadAndInstallApk(UpdateInfo info) async {
+    if (Platform.isAndroid) await Permission.requestInstallPackages.request();
+    final progress = 0.0.obs;
+    Get.dialog(
+      Obx(() => AlertDialog(
+            title: const Text('正在下载更新'),
+            content: Column(mainAxisSize: MainAxisSize.min, children: [
+              LinearProgressIndicator(value: progress.value),
+              SizedBox(height: 10),
+              Text('${(progress.value * 100).toStringAsFixed(1)}%')
+            ]),
+          )),
+      barrierDismissible: !info.isForce,
+    );
+    try {
+      final dio = Dio();
+      final dir = await getTemporaryDirectory();
+      final path = "${dir.path}/nnbdc_update.apk";
+      await dio.download(info.downloadUrl, path, onReceiveProgress: (rec, total) {
+        if (total != -1) progress.value = rec / total;
+      });
+      if (Get.isDialogOpen ?? false) Get.back();
+      await OpenFile.open(path, type: "application/vnd.android.package-archive");
     } catch (e) {
-      debugPrint('打开市场失败: $e');
-      Get.snackbar('提示', '操作失败，请手动前往市场更新', snackPosition: SnackPosition.TOP);
+      if (Get.isDialogOpen ?? false) Get.back();
+      ToastUtil.error('下载失败: $e');
     }
   }
 
-  /// 自动检查更新（应用启动时调用）
-  Future<void> autoCheckUpdate() async {
-    // 可以添加时间间隔检查逻辑
-    await Future.delayed(Duration(seconds: 3)); // 延迟3秒后检查
-    await checkForUpdate(showDialog: false);
+  Future<void> openMarket(AndroidMarket market) async {
+    final String package = _packageName.value.isNotEmpty ? _packageName.value : "com.nn.nnbdc.android";
+    final url = "${market.scheme}$package";
+    if (!await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication)) {
+      if (market.packageName == 'com.huawei.appmarket') {
+        launchUrl(Uri.parse("https://appgallery.huawei.com/#/app/$package"), mode: LaunchMode.externalApplication);
+      }
+    }
+  }
+
+  Future<void> openAppStore() async {
+    await launchUrl(Uri.parse('https://apps.apple.com/app/id6756229006'), mode: LaunchMode.externalApplication);
   }
 }
