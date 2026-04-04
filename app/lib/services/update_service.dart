@@ -543,10 +543,6 @@ class UpdateService extends GetxController {
             Text('当前版本: ${_currentBuildNumber.value}'),
             Text('最新版本: ${updateInfo.buildNumber}'),
             SizedBox(height: 12),
-            if (installedMarkets.isNotEmpty)
-              Text('检测到您的手机已安装以下应用市场，建议优先通过应用市场更新：')
-            else
-              Text('由于未检测到主流应用市场，建议直接下载 APK 进行更新：'),
             
             if (updateInfo.releaseNotes.isNotEmpty) ...[
               SizedBox(height: 12),
