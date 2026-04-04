@@ -1891,7 +1891,7 @@ class _WordSentencesDialogState extends State<_WordSentencesDialog> {
           TextButton(
             onPressed: () async {
               Navigator.pop(context);
-              final res = await Api.client.deleteAdminSentence(sentence.id!);
+              final res = await Api.client.deleteAdminSentence(sentence.id);
               if (res.success) {
                 _loadSentences();
               }
@@ -1983,7 +1983,7 @@ class _SentenceEditDialogState extends State<_SentenceEditDialog> {
     setState(() => _isSaving = true);
     try {
       final res = await Api.client.updateAdminSentence(
-        widget.sentence.id!,
+        widget.sentence.id,
         _englishController.text,
         _chineseController.text,
       );
