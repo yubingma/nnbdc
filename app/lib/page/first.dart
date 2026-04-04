@@ -333,6 +333,7 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
         downloadUrl: Config.apkUrl,
         size: '0',
         releaseNotes: changes.join('\n'),
+        isForce: true, // 这是强制升级分支
       );
       
       await updateService.downloadUpdate(updateInfo);
@@ -470,6 +471,7 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
         downloadUrl: Config.apkUrl,
         size: '0',
         releaseNotes: (changes as List).join('\n'),
+        isForce: false, // 这是普通升级分支
       );
       
       // 直接显示市场引导弹窗

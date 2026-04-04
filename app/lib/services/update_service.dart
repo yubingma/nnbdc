@@ -33,6 +33,7 @@ class UpdateInfo {
   final String releaseNotes;
   final bool requiresRestart;
   final String installerType;
+  final bool isForce;
 
   UpdateInfo({
     required this.version,
@@ -42,6 +43,7 @@ class UpdateInfo {
     required this.releaseNotes,
     this.requiresRestart = false,
     this.installerType = 'setup',
+    this.isForce = false,
   });
 
   factory UpdateInfo.fromJson(Map<String, dynamic> json) {
@@ -53,6 +55,7 @@ class UpdateInfo {
       releaseNotes: json['releaseNotes'] ?? '',
       requiresRestart: json['requiresRestart'] ?? false,
       installerType: json['installerType'] ?? 'setup',
+      isForce: json['isForce'] ?? false,
     );
   }
 }
@@ -178,19 +181,40 @@ class UpdateService extends GetxController {
         // 对象格式：{"verCode":25101301,"verName":"25.10.13", "changes":["修复已知问题，提升稳定性"]}
         if (data is Map<String, dynamic>) {
           final newVersion = data['verName']?.toString() ?? '';
-          final newBuildNumber = data['verCode']?.toString() ?? '';
-          final changes = List<String>.from(data['changes'] ?? []);
+          final newBuildNumberObj = data['verCode'];
+          final minVerCodeObj = data['minVerCode'];
+          
+          int newBuildNumber = 0;
+          if (newBuildNumberObj is int) {
+            newBuildNumber = newBuildNumberObj;
+          } else if (newBuildNumberObj is String) {
+            newBuildNumber = int.tryParse(newBuildNumberObj) ?? 0;
+          }
+          
+          int minVerCode = 0;
+          if (minVerCodeObj is int) {
+            minVerCode = minVerCodeObj;
+          } else if (minVerCodeObj is String) {
+            minVerCode = int.tryParse(minVerCodeObj) ?? 0;
+          }
 
-          // 比较版本号
-          if (_isNewerVersion(newVersion, _currentVersion.value)) {
+          final changes = List<String>.from(data['changes'] ?? []);
+          final currentBuildInt = int.tryParse(_currentBuildNumber.value) ?? 0;
+          
+          // 检查是否需要更新或强制更新
+          bool isNewer = _isNewerVersion(newVersion, _currentVersion.value);
+          bool isBelowMin = minVerCode > 0 && currentBuildInt < minVerCode;
+
+          if (isNewer || isBelowMin) {
             final updateInfo = UpdateInfo(
               version: newVersion,
-              buildNumber: newBuildNumber,
-              downloadUrl: _getDownloadUrl(newBuildNumber),
+              buildNumber: newBuildNumber.toString(),
+              downloadUrl: _getDownloadUrl(newBuildNumber.toString()),
               size: '0',
               releaseNotes: changes.join('\n'),
               requiresRestart: true,
               installerType: 'setup',
+              isForce: isBelowMin,
             );
 
             _updateInfo.value = updateInfo;
@@ -576,12 +600,14 @@ class UpdateService extends GetxController {
           ],
         ),
         actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: Text('稍后升级'),
-          ),
+          if (!updateInfo.isForce)
+            TextButton(
+              onPressed: () => Get.back(),
+              child: Text('稍后升级'),
+            ),
         ],
       ),
+      barrierDismissible: !updateInfo.isForce,
     );
   }
 
