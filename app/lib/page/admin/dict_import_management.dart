@@ -672,7 +672,10 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
                           ),
                           const SizedBox(height: 12),
                           DropdownButtonFormField<String>(
-                            initialValue: _selectedDictGroupId,
+                            key: ValueKey("${_selectedDictGroupId}_${_dictGroups == null}"),
+                            initialValue: (_dictGroups != null && _dictGroups!.any((g) => g.id == _selectedDictGroupId))
+                                ? _selectedDictGroupId
+                                : null,
                             isExpanded: true,
                             decoration: InputDecoration(
                               labelText: '目标词书分组 (App选书界面的Tab)',
@@ -680,9 +683,9 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
                               contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                             ),
                             items: [
-                              const DropdownMenuItem(value: null, child: Text("不建立关联 (隐藏)")),
+                              const DropdownMenuItem<String>(value: null, child: Text("不建立关联 (隐藏)")),
                               if (_dictGroups != null)
-                                ..._dictGroups!.map((g) => DropdownMenuItem(value: g.id, child: Text(g.name))),
+                                ..._dictGroups!.map((g) => DropdownMenuItem<String>(value: g.id, child: Text(g.name))),
                             ],
                             onChanged: (val) => setState(() => _selectedDictGroupId = val),
                           ),

@@ -809,7 +809,10 @@ class _EditDictionaryDialogState extends State<_EditDictionaryDialog> {
                                       
                                       // 选书分组
                                       DropdownButtonFormField<String>(
-                                        value: _selectedDictGroupId,
+                                        key: ValueKey("${_selectedDictGroupId}_${_dictGroups == null}"),
+                                        initialValue: (_dictGroups != null && _dictGroups!.any((g) => g.id == _selectedDictGroupId))
+                                            ? _selectedDictGroupId
+                                            : null,
                                         decoration: InputDecoration(
                                           labelText: '选书页面分组',
                                           labelStyle: TextStyle(color: isDarkMode ? Colors.grey[400] : Colors.grey[600]),
@@ -821,7 +824,7 @@ class _EditDictionaryDialogState extends State<_EditDictionaryDialog> {
                                             child: Text('不加入选书分组'),
                                           ),
                                           if (_dictGroups != null)
-                                            ..._dictGroups!.map((g) => DropdownMenuItem(
+                                            ..._dictGroups!.map((g) => DropdownMenuItem<String>(
                                               value: g.id,
                                               child: Text(g.name),
                                             )),
@@ -850,12 +853,12 @@ class _EditDictionaryDialogState extends State<_EditDictionaryDialog> {
                                           children: _hallGroups!.expand((group) => group.gameHalls).map((hall) {
                                             final isSelected = _selectedGameHallIds.contains(hall.id);
                                             return FilterChip(
-                                              label: Text(hall.hallName!),
+                                              label: Text(hall.hallName),
                                               selected: isSelected,
                                               onSelected: (selected) {
                                                 setState(() {
                                                   if (selected) {
-                                                    _selectedGameHallIds.add(hall.id!);
+                                                    _selectedGameHallIds.add(hall.id);
                                                   } else {
                                                     _selectedGameHallIds.remove(hall.id);
                                                   }
