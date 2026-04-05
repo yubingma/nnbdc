@@ -867,9 +867,38 @@ public class SystemHealthCheckBo {
 
     private int fixCommonDictIntegrity(List<String> fixed) {
         String commonDictId = "0";
+        int totalFixed = 0;
+
+        // 1. 修复缺失的释义：从其他词库拷贝一份作为 0 库托底
+        List<String> wordsWithoutMeanings = meaningItemBo.findWordsWithoutMeanings(commonDictId);
+        if (wordsWithoutMeanings != null && !wordsWithoutMeanings.isEmpty()) {
+            List<beidanci.api.model.MeaningItemDto> candidates = meaningItemBo.getOneMeaningPerWordFromAnyDict(wordsWithoutMeanings);
+            int fixedMeaningCount = 0;
+            for (beidanci.api.model.MeaningItemDto mDto : candidates) {
+                try {
+                    // 拷贝并修改为 0 库属性，生成新 ID 以确保主键不冲突 (源 ID 可能是共享的但 0 库需要物理实体)
+                    String newId = beidanci.service.util.Util.uuid();
+                    mDto.setId(newId);
+                    mDto.setDictId(commonDictId);
+                    mDto.setOwnerId(beidanci.util.Constants.SYS_USER_SYS_ID);
+                    mDto.setCreateTime(new java.util.Date());
+                    mDto.setUpdateTime(new java.util.Date());
+                    
+                    meaningItemBo.createMeaningItem(mDto);
+                    sysDbSyncBo.logOperation("INSERT", "meaning_item", newId, beidanci.service.util.JsonUtils.toJson(mDto));
+                    fixedMeaningCount++;
+                } catch (Exception ignore) {}
+            }
+            if (fixedMeaningCount > 0) {
+                fixed.add(String.format("成功为 %d 个单词补全了通用词典 0 库释义（从其他词典拷贝）。", fixedMeaningCount));
+                totalFixed += fixedMeaningCount;
+            }
+        }
+
+        // 2. 修复缺失的例句：AI 补齐逻辑
         List<String> meaningsWithoutSentences = sentenceBo.findMeaningsWithoutSentences(commonDictId);
         if (meaningsWithoutSentences == null || meaningsWithoutSentences.isEmpty()) {
-            return 0;
+            return totalFixed;
         }
 
         new Thread(() -> {
