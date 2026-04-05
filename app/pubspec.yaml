@@ -6,7 +6,7 @@ description: 泡泡单词 - 智能背单词应用
 publish_to: "none" # Remove this line if you wish to publish to pub.dev
 
 # 升级时修改这里
-version: 26.04.04+26040401
+version: 26.04.05+26040501
 
 # 最低支持版本（用于强制升级检查）
 min_ver_code: 26033101
@@ -19,6 +19,7 @@ changes:
   - "修复tts发音问题"
   - "修复游戏大厅加载失败问题"
   - "修复AI单词小短文点击查词问题"
+  - "修复闪退问题"
 
 environment:
   sdk: ^3.4.0
