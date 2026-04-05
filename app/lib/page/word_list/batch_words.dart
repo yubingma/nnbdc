@@ -124,5 +124,14 @@ class StageWordsBookMarkProvider implements BookMarkProvider {
 Future<dynamic>? toBatchWordsListPage(String title, bool showDelBtn, Widget nextWorkBtn, BuildContext context) {
   return Get.toNamed('/word_list',
       arguments: WordListPageArgs(
-          title, StageWordsProvider(), true, showDelBtn, true, '掌握度', StageWordsProgressProvider(), StageWordsBookMarkProvider(), nextWorkBtn));
+          title,
+          StageWordsProvider(),
+          true,
+          showDelBtn,
+          true,
+          '掌握度',
+          StageWordsProgressProvider(),
+          StageWordsBookMarkProvider(),
+          nextWorkBtn,
+          showAiStory: true));
 }

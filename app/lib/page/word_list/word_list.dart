@@ -96,12 +96,10 @@ class WordListPageArgs {
   String wordProgressLabel;
   WordProgressProvider wordProgressProvider;
   BookMarkProvider bookMarkProvider;
-
-  /// 外部注入的button，显示在appbar上
   Widget? injectedBtn;
-
   bool canAddWord = false;
   bool canEditWord = false;
+  bool showAiStory;
 
   WordListPageArgs(
       this.appBarTitle,
@@ -112,7 +110,8 @@ class WordListPageArgs {
       this.wordProgressLabel,
       this.wordProgressProvider,
       this.bookMarkProvider,
-      this.injectedBtn);
+      this.injectedBtn,
+      {this.showAiStory = false});
 
   @override
   String toString() {
@@ -3159,7 +3158,9 @@ class WordListPageState extends State<WordListPage>
                             menuItems.add(menuSpeakEnglish);
                           }
                           menuItems.add(menuWriteSpell);
-                          menuItems.add(menuAiStory);
+                          if (args.showAiStory) {
+                            menuItems.add(menuAiStory);
+                          }
 
                           // 5. 显示菜单 (使用 RootNavigator)
                           // ignore: use_build_context_synchronously
