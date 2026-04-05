@@ -23,13 +23,14 @@ class RemoteAiRuntime implements AiRuntime {
       final baseUrl = Api.useProdUrl
           ? Config.profiles["prod"]["service_url"]
           : Config.serviceUrl;
-      final url = '$baseUrl/admin/aiChatStream.do';
+      final url = '$baseUrl/ai/chatStream.do';
 
       final response = await LoadingUtils.withoutApiLoading(() async {
         return await Api.dio.post<ResponseBody>(
           url,
           data: {
             'messagesJson': jsonEncode(messages),
+            'userId': Global.currentUserId!,
           },
           options: Options(
             responseType: ResponseType.stream,

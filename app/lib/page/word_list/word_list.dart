@@ -3841,7 +3841,7 @@ class WordListPageState extends State<WordListPage>
 
       // 显示加载中
       Api.setLoadingDisabled(false);
-      final result = await Api.client.generateAiShortStory(wordsJson);
+      final result = await Api.client.generateAiShortStory(wordsJson, Global.currentUserId!);
 
       if (result.success) {
         _aiStory = result.data;

@@ -2,6 +2,7 @@ package beidanci.service.controller;
 
 import java.util.List;
 import java.io.IOException;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +25,9 @@ import beidanci.service.util.CdnUtil;
 @RestController
 public class SystemController {
 
+    @Autowired
+    private AiController aiController;
+
 
     
     @Autowired
@@ -45,15 +49,7 @@ public class SystemController {
     private SysParamBo sysParamBo;
     
     @Autowired
-    private beidanci.service.util.SysParamUtil sysParamUtil;
-
-    @Autowired
     private AliyunResourceUtil aliyunResourceUtil;
-
-    @Autowired
-    private beidanci.service.bo.AiBo aiBo;
-
-    private final java.util.concurrent.ExecutorService aiChatExecutor = java.util.concurrent.Executors.newFixedThreadPool(50);
 
     /**
      * 获取系统词典列表及其统计信息
@@ -372,150 +368,58 @@ public class SystemController {
         }
     }
 
+
+
     /**
-     * 阿里云AI对话 (流式输出)
-     * @param messagesJson JSON array of messages [{"role":"system","content":"..."}, ...]
-     * @return 助手回复的流 (Server-Sent Events)
+     * 阿里云AI对话 (流式输出) - 遗留接口
      */
     @PostMapping(value = "/admin/aiChatStream.do", produces = org.springframework.http.MediaType.TEXT_EVENT_STREAM_VALUE + ";charset=UTF-8")
-    public org.springframework.web.servlet.mvc.method.annotation.SseEmitter aiChatStream(
+    public org.springframework.web.servlet.mvc.method.annotation.SseEmitter legacyAiChatStream(
             @RequestParam("messagesJson") String messagesJson,
             @RequestParam("userId") String userId) {
-        org.springframework.web.servlet.mvc.method.annotation.SseEmitter emitter = new org.springframework.web.servlet.mvc.method.annotation.SseEmitter(300000L);
-        
-        // 验证用户身份 (ID 检查)
-        beidanci.service.po.User user = userBo.findById(userId);
-        if (user == null) {
-            try {
-                emitter.send(java.util.Objects.requireNonNull(beidanci.api.Result.fail("用户身份验证失败，请重新登录")));
-                emitter.complete();
-            } catch (Exception ignore) {}
-            return emitter;
-        }
-
-        aiChatExecutor.execute(() -> {
-            Runnable releaseToken = null;
-            try {
-                // 并发与流控逻辑
-                releaseToken = aiBo.enterAiChat(userId);
-
-                com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-                java.util.List<com.alibaba.dashscope.common.Message> messages = new java.util.ArrayList<>();
-                com.fasterxml.jackson.databind.JsonNode arrayNode = mapper.readTree(messagesJson);
-                for (com.fasterxml.jackson.databind.JsonNode node : arrayNode) {
-                    messages.add(com.alibaba.dashscope.common.Message.builder()
-                            .role(node.get("role").asText())
-                            .content(node.get("content").asText())
-                            .build());
-                }
-
-                io.reactivex.Flowable<com.alibaba.dashscope.aigc.generation.GenerationResult> resultFlowable = aiBo.chatStream(messages);
-                resultFlowable.blockingSubscribe(
-                    result -> {
-                        String content = result.getOutput().getChoices().get(0).getMessage().getContent();
-                        if (content != null) {
-                            beidanci.api.Result<String> rs = beidanci.api.Result.success(content);
-                            emitter.send(java.util.Objects.requireNonNull(rs));
-                        }
-                    },
-                    error -> {
-                        beidanci.api.Result<String> failRs = beidanci.api.Result.fail("AI服务异常: " + error.getMessage());
-                        try { emitter.send(java.util.Objects.requireNonNull(failRs)); } catch (Exception ignore) {}
-                        emitter.completeWithError(error);
-                    },
-                    () -> {
-                        emitter.complete();
-                    }
-                );
-            } catch (Exception e) {
-                try {
-                    beidanci.api.Result<String> failRs = beidanci.api.Result.fail("后端系统异常: " + e.getMessage());
-                    emitter.send(java.util.Objects.requireNonNull(failRs));
-                    emitter.completeWithError(e);
-                } catch (Exception ignore) {}
-            } finally {
-                if (releaseToken != null) {
-                    releaseToken.run();
-                }
-            }
-        });
-        return emitter;
+        // 直接调用 AiController 的逻辑或重复逻辑。为了解耦，我们在这里重新实现或调用注入的 AiController (后者较少见)。
+        // 既然我们要在 SystemController 保留代码，就直接写在这里。
+        return aiController.aiChatStream(messagesJson, userId);
     }
 
     /**
-     * 阿里云AI对话
-     * @param messagesJson JSON array of messages [{"role":"system","content":"..."}, ...]
-     * @return 助手回复的纯文本
+     * 阿里云AI对话 - 遗留接口
      */
     @PostMapping("/admin/aiChat.do")
-    public Result<String> aiChat(
+    public Result<String> legacyAiChat(
             @RequestParam("messagesJson") String messagesJson,
             @RequestParam("userId") String userId) {
-        try {
-            // 验证用户身份
-            if (userBo.findById(userId) == null) {
-                return Result.fail("用户身份验证失败");
-            }
-
-            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-            java.util.List<com.alibaba.dashscope.common.Message> messages = new java.util.ArrayList<>();
-            com.fasterxml.jackson.databind.JsonNode arrayNode = mapper.readTree(messagesJson);
-            for (com.fasterxml.jackson.databind.JsonNode node : arrayNode) {
-                messages.add(com.alibaba.dashscope.common.Message.builder()
-                        .role(node.get("role").asText())
-                        .content(node.get("content").asText())
-                        .build());
-            }
-            // Add method in AiBo to stream or block fetch from DashScope
-            String result = aiBo.chat(messages);
-            return Result.success(result);
-        } catch (Exception e) {
-            return Result.fail("AI服务异常: " + e.getMessage());
-        }
+        return aiController.aiChat(messagesJson, userId);
     }
 
     /**
-     * 获取 AI 短文生成相关配置
+     * 生成 AI 短文 - 遗留接口
+     */
+    @PostMapping("/generateAiShortStory.do")
+    public Result<String> legacyGenerateAiShortStory(
+            @RequestParam("wordsJson") String wordsJson,
+            @RequestParam("userId") String userId) {
+        return aiController.generateAiShortStory(wordsJson, userId);
+    }
+
+    /**
+     * 获取 AI 相关配置 - 遗留接口
      */
     @GetMapping("/admin/getAiStoryConfig.do")
-    public Result<java.util.Map<String, Object>> getAiStoryConfig() {
-        java.util.Map<String, Object> config = new java.util.HashMap<>();
-        
-        config.put("concurrencyLimit", aiBo.getStoryConcurrencyLimit()); // 从 AiBo 获取
-        config.put("aiChatGlobalLimit", sysParamUtil.getAiChatGlobalLimit());
-        config.put("aiChatUserLimit", sysParamUtil.getAiChatUserLimit());
-        config.put("aiChatUserDailyLimit", sysParamUtil.getAiChatUserDailyLimit());
-
-        return Result.success(config);
+    public Result<Map<String, Object>> legacyGetAiStoryConfig() {
+        return aiController.getAiConfig();
     }
 
     /**
-     * 保存 AI 相关配置
+     * 保存 AI 相关配置 - 遗留接口
      */
     @PostMapping("/admin/saveAiStoryConfig.do")
-    public Result<String> saveAiStoryConfig(
+    public Result<String> legacySaveAiStoryConfig(
             @RequestParam("concurrencyLimit") int concurrencyLimit,
             @RequestParam(value = "aiChatGlobalLimit", defaultValue = "20") int aiChatGlobalLimit,
             @RequestParam(value = "aiChatUserLimit", defaultValue = "2") int aiChatUserLimit,
             @RequestParam(value = "aiChatUserDailyLimit", defaultValue = "100") int aiChatUserDailyLimit) throws IllegalAccessException {
-        
-        saveParam("AiStoryConcurrencyLimit", String.valueOf(concurrencyLimit), "AI 短文生成并发上限");
-        saveParam("AiChatGlobalLimit", String.valueOf(aiChatGlobalLimit), "AI 聊天全局并发上限");
-        saveParam("AiChatUserLimit", String.valueOf(aiChatUserLimit), "AI 聊天单用户并发上限");
-        saveParam("AiChatUserDailyLimit", String.valueOf(aiChatUserDailyLimit), "AI 聊天单用户每日次数上限");
-
-        return Result.success("系统配置保存成功");
-    }
-
-    private void saveParam(String name, String value, String comment) throws IllegalAccessException {
-        SysParam param = sysParamBo.findById(name);
-        if (param == null) {
-            param = new SysParam(name, value, comment);
-            sysParamBo.createEntity(param);
-        } else {
-            param.setParamValue(value);
-            sysParamBo.updateEntity(param);
-        }
+        return aiController.saveAiConfig(concurrencyLimit, aiChatGlobalLimit, aiChatUserLimit, aiChatUserDailyLimit);
     }
 
     /**

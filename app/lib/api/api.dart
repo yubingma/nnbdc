@@ -668,9 +668,10 @@ abstract class RestClient {
       @Field("issueTypes") List<String> issueTypes);
 
   // AI 聊天
-  @POST("/admin/aiChat.do")
+  @POST("/ai/chat.do")
   @FormUrlEncoded()
-  Future<Result<String>> aiChat(@Field("messagesJson") String messagesJson);
+  Future<Result<String>> aiChat(
+      @Field("messagesJson") String messagesJson, @Field("userId") String userId);
 
   // 用户管理相关API
   @GET("/admin/searchUsers.do")
@@ -798,16 +799,21 @@ abstract class RestClient {
   @POST("/import/cancel")
   Future<Result> cancelDictImportTask(@Query("taskId") String taskId);
 
-  @POST("/generateAiShortStory.do")
+  @POST("/ai/generateAiShortStory.do")
   @FormUrlEncoded()
-  Future<Result<String>> generateAiShortStory(@Field("wordsJson") String wordsJson);
+  Future<Result<String>> generateAiShortStory(
+      @Field("wordsJson") String wordsJson, @Field("userId") String userId);
 
-  @GET("/admin/getAiStoryConfig.do")
-  Future<Result<JsonMap>> getAiStoryConfig();
+  @GET("/ai/getConfig.do")
+  Future<Result<Map<String, dynamic>>> getAiStoryConfig();
 
-  @POST("/admin/saveAiStoryConfig.do")
+  @POST("/ai/saveConfig.do")
   @FormUrlEncoded()
-  Future<Result<String>> saveAiStoryConfig(@Field("concurrencyLimit") int concurrencyLimit);
+  Future<Result<String>> saveAiStoryConfig(
+      @Field("concurrencyLimit") int concurrencyLimit,
+      @Field("aiChatGlobalLimit") int aiChatGlobalLimit,
+      @Field("aiChatUserLimit") int aiChatUserLimit,
+      @Field("aiChatUserDailyLimit") int aiChatUserDailyLimit);
 
   @GET("/admin/getAllSysParams.do")
   Future<Result<List<SysParamVo>>> getAllSysParams();
