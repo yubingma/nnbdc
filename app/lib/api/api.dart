@@ -808,4 +808,18 @@ abstract class RestClient {
   @POST("/admin/saveAiStoryConfig.do")
   @FormUrlEncoded()
   Future<Result<String>> saveAiStoryConfig(@Field("concurrencyLimit") int concurrencyLimit);
+
+  @GET("/admin/getAllSysParams.do")
+  Future<Result<List<SysParamVo>>> getAllSysParams();
+
+  @POST("/admin/saveSysParam.do")
+  @FormUrlEncoded()
+  Future<Result<String>> saveSysParam(
+      @Field("paramName") String paramName,
+      @Field("paramValue") String paramValue,
+      @Field("comment") String? comment);
+
+  @POST("/admin/deleteSysParam.do")
+  @FormUrlEncoded()
+  Future<Result<String>> deleteSysParam(@Field("paramName") String paramName);
 }

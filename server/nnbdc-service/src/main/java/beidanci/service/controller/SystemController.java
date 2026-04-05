@@ -523,4 +523,45 @@ public class SystemController {
             return Result.fail(res.getMsg());
         }
     }
+
+    /**
+     * 获取所有系统参数
+     */
+    @GetMapping("/admin/getAllSysParams.do")
+    public Result<List<SysParam>> getAllSysParams() {
+        List<SysParam> params = sysParamBo.queryAll(null, "paramName", "asc", false);
+        return Result.success(params);
+    }
+
+    /**
+     * 保存系统参数
+     */
+    @PostMapping("/admin/saveSysParam.do")
+    public Result<String> saveSysParam(
+            @RequestParam("paramName") String paramName,
+            @RequestParam("paramValue") String paramValue,
+            @RequestParam(value = "comment", required = false) String comment
+    ) throws IllegalAccessException {
+        SysParam param = sysParamBo.findById(paramName);
+        if (param == null) {
+            param = new SysParam(paramName, paramValue, comment);
+            sysParamBo.createEntity(param);
+        } else {
+            param.setParamValue(paramValue);
+            if (comment != null) {
+                param.setComment(comment);
+            }
+            sysParamBo.updateEntity(param);
+        }
+        return Result.success("参数保存成功");
+    }
+
+    /**
+     * 删除系统参数
+     */
+    @PostMapping("/admin/deleteSysParam.do")
+    public Result<String> deleteSysParam(@RequestParam("paramName") String paramName) {
+        sysParamBo.deleteById(paramName);
+        return Result.success("参数删除成功");
+    }
 }

@@ -1566,6 +1566,30 @@ class SubscriptionVo {
   Map<String, dynamic> toJson() => _$SubscriptionVoToJson(this);
 }
 
+class SysParamVo {
+  String paramName;
+  String paramValue;
+  String? comment;
+
+  SysParamVo({required this.paramName, required this.paramValue, this.comment});
+
+  factory SysParamVo.fromJson(Map<String, dynamic> json) {
+    return SysParamVo(
+      paramName: json['paramName'] as String,
+      paramValue: json['paramValue'] as String,
+      comment: json['comment'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'paramName': paramName,
+      'paramValue': paramValue,
+      'comment': comment,
+    };
+  }
+}
+
 @JsonSerializable()
 class UserBaseDataVo {
   final DictDto? rawDict;
