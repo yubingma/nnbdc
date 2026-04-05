@@ -3659,9 +3659,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // 如果已经完成回答（_hasFinishedAnswering），且不是自动跳词（或者本次是打错 Again），则展现出评分面板使用户可见且可调整
-          if (_hasFinishedAnswering &&
-              (!_autoJumpAfterCorrect || _lastFsrsRating == FsrsRating.again))
+          // 对测评结果进行展示（即便在极速模式下也展示一下，方便用户看下评分情况）
+          if (_hasFinishedAnswering)
             _buildFsrsResultPanel(),
           Container(
             // 底部按钮区背景色 - 紫色调
