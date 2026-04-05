@@ -72,6 +72,14 @@ class _DictDownloadDialogState extends State<DictDownloadDialog> {
             _downloadStatus[dict.id] = DownloadStatus.success;
             _downloadProgress[dict.id] = 1;
           });
+          // 下载并处理成功后，本地库中应该已经有 Metadata (name)，尝试重新加载一次
+          if (_dictNames[dict.id] == null) {
+            MyDatabase.instance.dictsDao.findById(dict.id).then((info) {
+              if (info != null && mounted) {
+                setState(() => _dictNames[dict.id] = info.name);
+              }
+            });
+          }
         }
         Global.logger.i('词书下载完成, ID: ${dict.id}, 名称: ${dict.name}');
       } catch (e, stackTrace) {

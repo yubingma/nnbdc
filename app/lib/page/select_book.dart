@@ -230,7 +230,33 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
       customDicts = (await WordBo().getCustomDicts(userId)).where((d) => d.name != '已掌握').toList();
 
       if (!keepSelection) {
-        selectedDictVos = learningDicts.map((e) => DictVo.c2(e.dictId)).toSet();
+        selectedDictVos = learningDicts.map((e) {
+          // 优先从已加载的分组词书中查找，这样可以获取完整的 VO 信息（包括 name 和 baseDictId）
+          if (dictGroups != null) {
+            for (var group in dictGroups!) {
+              for (var dict in group.dicts!) {
+                if (dict.id == e.dictId) return dict;
+              }
+            }
+          }
+          // 其次从自定义词书中查找
+          if (customDicts != null) {
+            for (var dict in customDicts!) {
+              if (dict.id == e.dictId) return dict;
+            }
+          }
+          // 如果都没找到，则从本地 DB 查找，以便补齐 Metadata（name, baseDictId) 用于下载对话框展示
+          final dbDict = dicts.cast<Dict?>().firstWhere((d) => d?.id == e.dictId, orElse: () => null);
+          if (dbDict != null) {
+            var vo = DictVo.c2(dbDict.id, dbDict.wordCount);
+            vo.name = dbDict.name;
+            vo.shortName = getShortName(dbDict.name);
+            vo.baseDictId = dbDict.baseDictId;
+            return vo;
+          }
+          // 最后实在找不到，才返回一个只有 ID 的补白 VO
+          return DictVo.c2(e.dictId);
+        }).toSet();
         initialSelectedDictVos = Set.from(selectedDictVos!); // 保存初始状态
       }
 
