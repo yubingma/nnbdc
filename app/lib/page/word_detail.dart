@@ -1524,54 +1524,91 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     );
   }
 
-  ListView renderSimilarWords() {
+
+  Widget renderSimilarWords() {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-      children: [
-        if (args.word.similarWords != null && args.word.similarWords!.isNotEmpty)
-          // 有形近词时显示列表
-          for (var similarWord in args.word.similarWords!)
-            Container(
-              margin: const EdgeInsets.only(bottom: 16),
-              padding: const EdgeInsets.all(16),
+    final similarWords = args.word.similarWords;
+    if (similarWords != null && similarWords.isNotEmpty) {
+      return ListView.separated(
+        padding: const EdgeInsets.all(16),
+        itemCount: similarWords.length,
+        separatorBuilder: (context, index) => const SizedBox(height: 8),
+        itemBuilder: (context, index) {
+          final word = similarWords[index];
+          return InkWell(
+            onTap: () {
+              // 直接跳转到详情页，不需要中间的抽屉过渡
+              Get.toNamed('/word_detail', 
+                arguments: WordDetailPageArgs(word, true, null, false, priorityDictIds: args.priorityDictIds),
+                preventDuplicates: false,
+              );
+            },
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(
-                color: isDarkMode ? const Color(0xFF1E1E2D).withValues(alpha: 0.95) : const Color(0xFFFAFAFA).withValues(alpha: 0.95),
+                color: isDarkMode 
+                    ? const Color(0xFF1E1E2D).withValues(alpha: 0.8) 
+                    : const Color(0xFFF8F9FA),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: isDarkMode ? Colors.grey[800]!.withValues(alpha: 0.3) : Colors.grey[300]!.withValues(alpha: 0.3),
-                  width: 0.5,
+                  color: isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
+                  width: 1,
                 ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.01),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
-              child: InkWell(
-                onTap: () {
-                  SoundUtil.playPronounceSound(similarWord);
-                },
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      similarWord.spell,
-                      style: const TextStyle(fontSize: 18, color: Color(0xFF4A90E2), fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 8),
-                    for (var meaningItem in Util.mergeMeaningItems(similarWord.meaningItems!))
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 4),
-                        child: Text(
-                          '${meaningItem.ciXing} ${meaningItem.meaning!}',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: isDarkMode ? Colors.grey[300] : Colors.grey[700],
-                          ),
-                        ),
+              child: Row(
+                children: [
+                  Expanded(
+                    flex: 3,
+                    child: Text(
+                      word.spell,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.primaryColor,
                       ),
-                  ],
-                ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    flex: 7,
+                    child: Text(
+                      word.getMeaningStr(),
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                      ),
+                      maxLines: 1,
+                      textAlign: TextAlign.right,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Icon(
+                    Icons.arrow_forward_ios,
+                    size: 10,
+                    color: isDarkMode ? Colors.white24 : Colors.black12,
+                  ),
+                ],
               ),
-            )
-        else
-          // 没有形近词时显示空状态提示
+            ),
+          );
+        },
+      );
+    } else {
+      // 没有形近词时显示空状态提示
+      return ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(24),
@@ -1610,8 +1647,9 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
               ],
             ),
           ),
-      ],
-    );
+        ],
+      );
+    }
   }
 
   ListView renderSynonyms() {
