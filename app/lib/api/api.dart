@@ -805,7 +805,7 @@ abstract class RestClient {
       @Field("wordsJson") String wordsJson, @Field("userId") String userId);
 
   @GET("/ai/getConfig.do")
-  Future<Result<Map<String, dynamic>>> getAiStoryConfig();
+  Future<Result<JsonMap>> getAiStoryConfig();
 
   @POST("/ai/saveConfig.do")
   @FormUrlEncoded()
