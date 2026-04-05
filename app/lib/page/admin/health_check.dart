@@ -8,13 +8,24 @@ import 'package:provider/provider.dart';
 
 /// 健康检查页面
 class HealthCheckPage extends StatefulWidget {
-  const HealthCheckPage({super.key});
+  final bool autoStart;
+  const HealthCheckPage({super.key, this.autoStart = false});
 
   @override
   State<HealthCheckPage> createState() => _HealthCheckPageState();
 }
 
 class _HealthCheckPageState extends State<HealthCheckPage> {
+  @override
+  void initState() {
+    super.initState();
+    if (widget.autoStart) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _runDiagnostic();
+      });
+    }
+  }
+
   bool _isRunning = false;
   IntegrityCheckResult? _checkResult;
 

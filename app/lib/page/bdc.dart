@@ -24,6 +24,7 @@ import 'package:nnbdc/page/word_list/batch_words.dart';
 import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/util/sound.dart';
 import 'package:nnbdc/util/toast_util.dart';
+import 'package:nnbdc/page/admin/health_check.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:nnbdc/util/word_util.dart';
 import 'package:provider/provider.dart';
@@ -2128,13 +2129,14 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
           ElevatedButton(
             onPressed: () {
               Navigator.of(ctx).pop();
-              setState(() {
-                dataLoaded = false;
-              });
-              // 重新加载当前单词
-              getNextWord(false);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const HealthCheckPage(autoStart: true),
+                ),
+              );
             },
-            child: const Text('重试'),
+            child: const Text('尝试修复'),
           ),
         ],
       ),
