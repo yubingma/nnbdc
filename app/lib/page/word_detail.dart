@@ -26,6 +26,7 @@ import '../state.dart';
 import '../util/utils.dart';
 import '../util/subscription_util.dart';
 
+
 class WordDetailPageArgs {
   late WordVo word;
 
@@ -282,8 +283,20 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
       dataLoaded = true;
     });
 
+
     if (_canUseAiAssistant) {
       _prefetchAiExplanation();
+    }
+
+    // 自动播放单词发音
+    if (!_audioPlayerDisposed) {
+      _playWithAnimation(() async {
+        try {
+          await SoundUtil.playPronounceSound2(args.word, audioPlayer);
+        } catch (e) {
+          Global.logger.d("自动播放发音失败: $e");
+        }
+      }, 'word');
     }
   }
 
