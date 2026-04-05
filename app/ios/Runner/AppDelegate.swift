@@ -147,7 +147,7 @@ import StoreKit
         // 初始化语音识别器
         setupSpeechRecognizer()
         
-        // 初始化 TTS
+        // Initialize TTS
         setupTts()
         
         // Register AI inference channel
@@ -158,7 +158,25 @@ import StoreKit
         // Register OCR channel
         OcrChannel.register(with: controller.binaryMessenger)
         
+        // 监听音频引擎配置变化（如蓝牙耳机插拔导致采样率变化）
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleAudioEngineConfigurationChange),
+            name: .AVAudioEngineConfigurationChange,
+            object: audioEngine
+        )
+        
         return result
+    }
+
+    @objc private func handleAudioEngineConfigurationChange(_ notification: Notification) {
+        print("IOS: Audio engine configuration changed notification received")
+        // 如果正在录音/识别，需要重新配置引擎并安装 Tap
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self, self.isRecording else { return }
+            print("IOS: Re-initializing audio engine due to configuration change...")
+            self.resetAudioEngineAndTap()
+        }
     }
 
     
@@ -433,201 +451,120 @@ import StoreKit
             return
         }
         
-        
         // 确保音频会话已正确配置
         setupAudioSession()
         
         // 验证音频会话配置
         let audioSession = AVAudioSession.sharedInstance()
         guard audioSession.sampleRate > 0 && audioSession.inputNumberOfChannels > 0 else {
+            print("IOS: Audio session not ready (rate: \(audioSession.sampleRate), channels: \(audioSession.inputNumberOfChannels))")
             return
         }
         
+        print("IOS: Initializing audio engine. Session sampleRate: \(audioSession.sampleRate)")
         
-        // 配置音频引擎
+        // 核心修复：先停止并重置引擎，确保状态干净
+        if audioEngine.isRunning {
+            audioEngine.stop()
+        }
+        audioEngine.reset()
+        
         let inputNode = audioEngine.inputNode
         
-        // 准备音频引擎
-        audioEngine.prepare()
+        // 移除任何现有的 Tap，防止重复安装
+        inputNode.removeTap(onBus: 0)
         
         // 启动音频引擎
         do {
+            audioEngine.prepare()
             try audioEngine.start()
+            print("IOS: Audio engine started successfully")
         } catch {
+            print("IOS: Failed to start audio engine: \(error)")
             return
         }
         
-        // 获取硬件格式
-        let hardwareFormat = inputNode.outputFormat(forBus: 0)
-        
-        // 使用已知有效的格式
-        let format: AVAudioFormat
-        if hardwareFormat.sampleRate > 0 && hardwareFormat.channelCount > 0 {
-            format = hardwareFormat
-        } else {
-            // 使用音频会话的格式
-            let sessionFormat = AVAudioFormat(
-                standardFormatWithSampleRate: audioSession.sampleRate,
-                channels: AVAudioChannelCount(audioSession.inputNumberOfChannels)
-            )
-            if let sessionFormat = sessionFormat {
-                format = sessionFormat
-            } else {
-                // 最后备选：使用标准格式
-                guard let standardFormat = AVAudioFormat(standardFormatWithSampleRate: 48000, channels: 1) else {
-                    return
-                }
-                format = standardFormat
-            }
-        }
-        
-        // 确保格式兼容性 - 使用单声道，标准采样率
-        let finalFormat: AVAudioFormat
-        if format.channelCount > 1 {
-            // 如果是立体声，转换为单声道
-            guard let monoFormat = AVAudioFormat(standardFormatWithSampleRate: format.sampleRate, channels: 1) else {
-                return
-            }
-            finalFormat = monoFormat
-        } else {
-            finalFormat = format
-        }
-        
-        // 安装 tap
-        do {
-            inputNode.installTap(onBus: 0, bufferSize: 512, format: finalFormat) { [weak self] (buffer, when) in
-                guard let self = self else { 
-                    print("IOS: Tap callback: self is nil")
-                    return 
-                }
-                
-                if self.isAsrStopped {
-                    self.pausedLogCounter += 1
-                    if self.pausedLogCounter % 200 == 0 {
-                        print("IOS: Tap callback: ASR is paused, skipping buffer #\(self.pausedLogCounter)")
-                    }
-                    return
-                }
-                
-                if self.recognitionRequest == nil {
-                    // Only log occasionally to reduce noise
-                    self.skippedBufferCount += 1
-                    if self.skippedBufferCount % 50 == 0 {
-                        print("IOS: Tap callback: recognitionRequest is nil, skipped \(self.skippedBufferCount) buffers")
-                    }
-                    return
-                }
-                
-                self.recognitionRequest?.append(buffer)
-
-                // 计算音量级别并经 meterEventSink 发送（限流至 ~30fps）
-                if let sink = self.meterEventSink {
-                    let now = Date().timeIntervalSince1970
-                    if now - self.lastMeterSentAt >= (1.0 / 30.0) {
-                        let level = self.calculateLevel(from: buffer)
-                        DispatchQueue.main.async {
-                            sink(level)
-                        }
-                        self.lastMeterSentAt = now
-                    }
-                }
-            }
-            print("IOS: Audio tap installed successfully")
-        } catch {
-            print("IOS: Failed to install tap: \(error)")
-            return
-        }
+        // 安装 Tap
+        installTap()
         
         isAudioEngineInitialized = true
         print("IOS: Audio engine initialization completed")
     }
     
     private func resetAudioEngineAndTap() {
+        print("IOS: resetAudioEngineAndTap called")
         let inputNode = audioEngine.inputNode
-        // Remove any existing tap
-        inputNode.removeTap(onBus: 0)
-        print("IOS: Removed existing audio tap")
-        // Stop the audio engine if running
+        
+        // 1. 停止引擎
         if audioEngine.isRunning {
             audioEngine.stop()
-            print("IOS: Stopped audio engine")
         }
-        // Reset the audio engine
+        
+        // 2. 移除 Tap
+        inputNode.removeTap(onBus: 0)
+        
+        // 3. 重置引擎状态
         audioEngine.reset()
-        print("IOS: Reset audio engine")
-        // Reinstall the tap with the correct format
+        
+        // 4. 重新配置并启动
+        setupAudioSession()
+        
+        do {
+            audioEngine.prepare()
+            try audioEngine.start()
+            print("IOS: Audio engine restarted successfully")
+        } catch {
+            print("IOS: Failed to restart audio engine: \(error)")
+            return
+        }
+        
+        // 5. 重新安装 Tap
         installTap()
     }
     
     private func installTap() {
-        let audioSession = AVAudioSession.sharedInstance()
         let inputNode = audioEngine.inputNode
-        // 获取硬件格式
-        let hardwareFormat = inputNode.outputFormat(forBus: 0)
-        // 使用已知有效的格式
-        let format: AVAudioFormat
-        if hardwareFormat.sampleRate > 0 && hardwareFormat.channelCount > 0 {
-            format = hardwareFormat
-            print("IOS: Using hardware format for tap")
-        } else {
-            let sessionFormat = AVAudioFormat(
-                standardFormatWithSampleRate: audioSession.sampleRate,
-                channels: AVAudioChannelCount(audioSession.inputNumberOfChannels)
-            )
-            if let sessionFormat = sessionFormat {
-                format = sessionFormat
-                print("IOS: Using session format for tap - Sample rate: \(format.sampleRate), Channels: \(format.channelCount)")
-            } else {
-                guard let standardFormat = AVAudioFormat(standardFormatWithSampleRate: 48000, channels: 1) else {
-                    print("IOS: Failed to create any valid format for tap")
-                    return
-                }
-                format = standardFormat
-                print("IOS: Using fallback format for tap - Sample rate: \(format.sampleRate), Channels: \(format.channelCount)")
-            }
+        
+        // 彻底解决 "format mismatch" 崩溃的关键：
+        // 1. 必须先 removeTap
+        inputNode.removeTap(onBus: 0)
+        
+        // 2. 获取当前的 native 格式
+        let recordingFormat = inputNode.outputFormat(forBus: 0)
+        
+        // 验证格式是否有效
+        guard recordingFormat.sampleRate > 0 else {
+            print("IOS: Invalid recording format (sampleRate 0), skipping tap")
+            return
         }
-        // 确保格式兼容性 - 使用单声道，标准采样率
-        let finalFormat: AVAudioFormat
-        if format.channelCount > 1 {
-            guard let monoFormat = AVAudioFormat(standardFormatWithSampleRate: format.sampleRate, channels: 1) else {
-                print("IOS: Failed to create mono format for tap")
+        
+        print("IOS: Installing tap with native format: \(recordingFormat)")
+        
+        // 3. 使用 native format 安装 Tap。
+        // SFSpeechAudioBufferRecognitionRequest 会自动处理缓冲区格式转换。
+        inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { [weak self] (buffer, when) in
+            guard let self = self else { return }
+            
+            // 始终计算音量，用于 UI 反馈
+            if let sink = self.meterEventSink {
+                let now = Date().timeIntervalSince1970
+                if now - self.lastMeterSentAt >= (1.0 / 30.0) {
+                    let level = self.calculateLevel(from: buffer)
+                    DispatchQueue.main.async {
+                        sink(level)
+                    }
+                    self.lastMeterSentAt = now
+                }
+            }
+
+            // 如果 ASR 已停止或识请求为空，不喂数据
+            if self.isAsrStopped || self.recognitionRequest == nil {
                 return
             }
-            finalFormat = monoFormat
-            print("IOS: Converting to mono format for tap - Sample rate: \(finalFormat.sampleRate), Channels: \(finalFormat.channelCount)")
-        } else {
-            finalFormat = format
-            print("IOS: Using original format for tap - Sample rate: \(finalFormat.sampleRate), Channels: \(finalFormat.channelCount)")
+            
+            self.recognitionRequest?.append(buffer)
         }
-        // 安装 tap
-        do {
-            var bufferCount = 0
-            inputNode.installTap(onBus: 0, bufferSize: 512, format: finalFormat) { [weak self] (buffer, when) in
-                guard let self = self else { return }
-                
-                // 核心修复：始终推送分贝数据，确保波形图在任何状态下都活跃
-                if let sink = self.meterEventSink {
-                    let now = Date().timeIntervalSince1970
-                    if now - self.lastMeterSentAt >= (1.0 / 30.0) {
-                        let level = self.calculateLevel(from: buffer)
-                        DispatchQueue.main.async {
-                            sink(level)
-                        }
-                        self.lastMeterSentAt = now
-                    }
-                }
-
-                // 如果处于暂停状态或请求为空，不喂数据给识别器
-                if self.isAsrStopped || self.recognitionRequest == nil {
-                    return
-                }
-                
-                self.recognitionRequest?.append(buffer)
-            }
-            print("IOS: Audio tap installed successfully")
-        } catch {
-            print("IOS: Failed to install tap: \(error)")
-        }
+        print("IOS: Audio tap installed successfully on bus 0")
     }
     
     private func startSpeechRecognition() {
