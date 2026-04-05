@@ -32,6 +32,20 @@ class Tts(private val activity: Activity) : EventChannel.StreamHandler {
             } else if (call.method == "stop") {
                 stop()
                 result.success(null)
+            } else if (call.method == "checkLanguageSupport") {
+                val language = call.argument<String>("language") ?: "en-US"
+                val locale = when (language) {
+                    "zh-CN" -> Locale.CHINA
+                    "en-US" -> Locale.US
+                    else -> Locale.US
+                }
+                if (::ttobj.isInitialized) {
+                    val resultVal = ttobj.isLanguageAvailable(locale)
+                    val supported = resultVal >= TextToSpeech.LANG_AVAILABLE
+                    result.success(supported)
+                } else {
+                    result.error("NOT_INITIALIZED", "TTS not initialized", null)
+                }
             } else {
                 result.notImplemented()
             }

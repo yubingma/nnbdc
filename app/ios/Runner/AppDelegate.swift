@@ -955,6 +955,14 @@ extension AppDelegate {
         case "stop":
             stopTts()
             result(nil)
+        case "checkLanguageSupport":
+            if let args = call.arguments as? [String: Any],
+               let language = args["language"] as? String {
+                let voice = AVSpeechSynthesisVoice(language: language)
+                result(voice != nil)
+            } else {
+                result(FlutterError(code: "INVALID_ARGUMENTS", message: "Missing language", details: nil))
+            }
         default:
             result(FlutterMethodNotImplemented)
         }

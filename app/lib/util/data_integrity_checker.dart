@@ -10,6 +10,8 @@ import 'package:nnbdc/api/api.dart';
 import 'package:nnbdc/services/throttled_sync_service.dart';
 import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/sys_db_sync.dart';
+import 'package:nnbdc/util/tts.dart';
+import 'package:nnbdc/util/platform_util.dart';
 
 /// 进度回调函数类型
 typedef ProgressCallback = void Function(int step, String message, {IntegrityCheckResult? result});
@@ -161,9 +163,19 @@ class DataIntegrityChecker {
       onProgress?.call(10, '检查游戏服务器连通性...', result: result);
       await Future.delayed(const Duration(milliseconds: 200));
 
+      // 11. 检查本地TTS功能
+      onProgress?.call(11, '检查本地TTS功能...');
+      await Future.delayed(const Duration(milliseconds: 100));
+      final timer11 = Stopwatch()..start();
+      await _checkTtsFunctionality(result);
+      timer11.stop();
+      Global.logger.d('✓ 检查本地TTS: ${timer11.elapsedMilliseconds}ms');
+      onProgress?.call(11, '检查本地TTS功能...', result: result);
+      await Future.delayed(const Duration(milliseconds: 200));
+
       stopwatch.stop();
       Global.logger.d('✓ 健康检查完成，总耗时: ${stopwatch.elapsedMilliseconds}ms');
-      onProgress?.call(10, '检查完成！', result: result);
+      onProgress?.call(11, '检查完成！', result: result);
       await Future.delayed(const Duration(milliseconds: 200)); // 给UI时间显示最后一项的结果
     } catch (e, stackTrace) {
       stopwatch.stop();
@@ -583,6 +595,11 @@ class DataIntegrityChecker {
       // 修复版本号异常问题
       if (checkResult.hasIssue('user_db_version')) {
         await _fixUserDbVersions(fixResult, userId);
+      }
+
+      // 提示TTS修复方案
+      if (checkResult.hasIssue('local_tts')) {
+        fixResult.addFixed('请检查您的系统设置 -> 辅助功能/语言与输入 -> 文字转语音输出，确保已下载对应的中文/英文语音包。');
       }
     } catch (e) {
       fixResult.addError('自动修复过程中出现错误：$e');
@@ -1024,9 +1041,52 @@ class DataIntegrityChecker {
       try {
         SocketIoClient.instance.disconnect();
       } catch (e, stackTrace) {
-        // 断开连接失败不影响检查结果，但需要记录
         Global.logger.w('断开Socket连接失败', error: e, stackTrace: stackTrace);
       }
+    }
+  }
+
+  /// 检查本地TTS（文字转语音）功能
+  Future<void> _checkTtsFunctionality(IntegrityCheckResult result) async {
+    try {
+      if (!PlatformUtils.isTtsSupported()) {
+        result.addIssue('TTS不支持', '当前设备平台不支持本地TTS语音功能', 'local_tts');
+        return;
+      }
+
+      final tts = Tts();
+      bool ready = await tts.isReady();
+      if (!ready) {
+        result.addIssue('TTS初始化失败', '本地TTS引擎初始化失败，请检查系统语音设置', 'local_tts');
+        return;
+      }
+
+      // 检查中文支持（用户反馈的重点）
+      bool hasChinese = await tts.checkLanguageSupport('zh-CN');
+      if (hasChinese) {
+        // 尝试实地播放一段中文语音，验证引擎是否真的能出声
+        try {
+          await tts.speak('您的词典本地TTS语音功能正常');
+        } catch (e) {
+          result.addIssue('TTS播放失败', '虽然系统报告支持中文TTS，但实际播放时发生错误: $e', 'local_tts');
+        }
+      } else {
+        result.addIssue('缺少中文语音', '本地TTS引擎不支持中文（zh-CN），请在系统设置中下载中文语音包', 'local_tts');
+      }
+
+      // 检查英文支持
+      bool hasEnglish = await tts.checkLanguageSupport('en-US');
+      if (hasEnglish) {
+        try {
+          await tts.speak('Your local TTS is working');
+        } catch (e) {
+          result.addIssue('TTS播放失败', '虽然系统报告支持英文TTS，但实际播放时发生错误: $e', 'local_tts');
+        }
+      } else {
+        result.addIssue('缺少英文语音', '本地TTS引擎不支持英文（en-US），请在系统设置中下载英文语音包', 'local_tts');
+      }
+    } catch (e) {
+      result.addError('检查本地TTS功能时出错: $e');
     }
   }
 }

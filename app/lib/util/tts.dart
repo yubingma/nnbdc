@@ -24,6 +24,21 @@ class Tts {
     }
   }
 
+  Future<bool> isReady() async {
+    if (!PlatformUtils.isTtsSupported()) return false;
+    if (initialized) return true;
+
+    // 如果还没监听，先初始化监听
+    await init();
+
+    // 等待初始化状态返回，最多等待 2 秒
+    for (int i = 0; i < 100; i++) {
+      if (initialized) return true;
+      await Future.delayed(const Duration(milliseconds: 20));
+    }
+    return initialized;
+  }
+
   init() async {
     // 只在支持TTS的平台上初始化
     if (PlatformUtils.isTtsSupported()) {
@@ -140,7 +155,30 @@ class Tts {
     try {
       methodChannel.invokeMethod('stop');
     } catch (e, stackTrace) {
-      ErrorHandler.handleError(e, stackTrace, logPrefix: 'TTS停止异常', showToast: false);
+      ErrorHandler.handleError(e, stackTrace,
+          logPrefix: 'TTS停止异常', showToast: false);
+    }
+  }
+
+  Future<bool> checkLanguageSupport(String language) async {
+    if (!PlatformUtils.isTtsSupported()) {
+      return false;
+    }
+
+    try {
+      // 确保已经初始化
+      bool ready = await isReady();
+      if (!ready) {
+        Global.logger.e('TTS 无法初始化，可能不支持本地TTS');
+        return false;
+      }
+
+      final dynamic result = await methodChannel
+          .invokeMethod('checkLanguageSupport', {'language': language});
+      return result == true;
+    } catch (e) {
+      Global.logger.e("检查TTS语言支持失败 ($language): $e");
+      return false;
     }
   }
 }
