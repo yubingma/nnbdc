@@ -45,10 +45,15 @@ public class SystemController {
     private SysParamBo sysParamBo;
     
     @Autowired
+    private beidanci.service.util.SysParamUtil sysParamUtil;
+
+    @Autowired
     private AliyunResourceUtil aliyunResourceUtil;
 
     @Autowired
     private beidanci.service.bo.AiBo aiBo;
+
+    private final java.util.concurrent.ExecutorService aiChatExecutor = java.util.concurrent.Executors.newFixedThreadPool(50);
 
     /**
      * 获取系统词典列表及其统计信息
@@ -373,11 +378,27 @@ public class SystemController {
      * @return 助手回复的流 (Server-Sent Events)
      */
     @PostMapping(value = "/admin/aiChatStream.do", produces = org.springframework.http.MediaType.TEXT_EVENT_STREAM_VALUE + ";charset=UTF-8")
-    public org.springframework.web.servlet.mvc.method.annotation.SseEmitter aiChatStream(@RequestParam("messagesJson") String messagesJson) {
+    public org.springframework.web.servlet.mvc.method.annotation.SseEmitter aiChatStream(
+            @RequestParam("messagesJson") String messagesJson,
+            @RequestParam("userId") String userId) {
         org.springframework.web.servlet.mvc.method.annotation.SseEmitter emitter = new org.springframework.web.servlet.mvc.method.annotation.SseEmitter(300000L);
-        java.util.concurrent.ExecutorService sseMvcExecutor = java.util.concurrent.Executors.newSingleThreadExecutor();
-        sseMvcExecutor.execute(() -> {
+        
+        // 验证用户身份 (ID 检查)
+        beidanci.service.po.User user = userBo.findById(userId);
+        if (user == null) {
             try {
+                emitter.send(java.util.Objects.requireNonNull(beidanci.api.Result.fail("用户身份验证失败，请重新登录")));
+                emitter.complete();
+            } catch (Exception ignore) {}
+            return emitter;
+        }
+
+        aiChatExecutor.execute(() -> {
+            Runnable releaseToken = null;
+            try {
+                // 并发与流控逻辑
+                releaseToken = aiBo.enterAiChat(userId);
+
                 com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
                 java.util.List<com.alibaba.dashscope.common.Message> messages = new java.util.ArrayList<>();
                 com.fasterxml.jackson.databind.JsonNode arrayNode = mapper.readTree(messagesJson);
@@ -399,7 +420,7 @@ public class SystemController {
                     },
                     error -> {
                         beidanci.api.Result<String> failRs = beidanci.api.Result.fail("AI服务异常: " + error.getMessage());
-                        emitter.send(java.util.Objects.requireNonNull(failRs));
+                        try { emitter.send(java.util.Objects.requireNonNull(failRs)); } catch (Exception ignore) {}
                         emitter.completeWithError(error);
                     },
                     () -> {
@@ -412,6 +433,10 @@ public class SystemController {
                     emitter.send(java.util.Objects.requireNonNull(failRs));
                     emitter.completeWithError(e);
                 } catch (Exception ignore) {}
+            } finally {
+                if (releaseToken != null) {
+                    releaseToken.run();
+                }
             }
         });
         return emitter;
@@ -423,8 +448,15 @@ public class SystemController {
      * @return 助手回复的纯文本
      */
     @PostMapping("/admin/aiChat.do")
-    public Result<String> aiChat(@RequestParam("messagesJson") String messagesJson) {
+    public Result<String> aiChat(
+            @RequestParam("messagesJson") String messagesJson,
+            @RequestParam("userId") String userId) {
         try {
+            // 验证用户身份
+            if (userBo.findById(userId) == null) {
+                return Result.fail("用户身份验证失败");
+            }
+
             com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
             java.util.List<com.alibaba.dashscope.common.Message> messages = new java.util.ArrayList<>();
             com.fasterxml.jackson.databind.JsonNode arrayNode = mapper.readTree(messagesJson);
@@ -448,29 +480,42 @@ public class SystemController {
     @GetMapping("/admin/getAiStoryConfig.do")
     public Result<java.util.Map<String, Object>> getAiStoryConfig() {
         java.util.Map<String, Object> config = new java.util.HashMap<>();
-        int limit = 5;
-        SysParam param = sysParamBo.findById("AiStoryConcurrencyLimit");
-        if (param != null) {
-            limit = Integer.parseInt(param.getParamValue());
-        }
-        config.put("concurrencyLimit", limit);
+        
+        config.put("concurrencyLimit", aiBo.getStoryConcurrencyLimit()); // 从 AiBo 获取
+        config.put("aiChatGlobalLimit", sysParamUtil.getAiChatGlobalLimit());
+        config.put("aiChatUserLimit", sysParamUtil.getAiChatUserLimit());
+        config.put("aiChatUserDailyLimit", sysParamUtil.getAiChatUserDailyLimit());
+
         return Result.success(config);
     }
 
     /**
-     * 保存 AI 短文生成相关配置
+     * 保存 AI 相关配置
      */
     @PostMapping("/admin/saveAiStoryConfig.do")
-    public Result<String> saveAiStoryConfig(@RequestParam("concurrencyLimit") int concurrencyLimit) throws IllegalAccessException {
-        SysParam param = sysParamBo.findById("AiStoryConcurrencyLimit");
+    public Result<String> saveAiStoryConfig(
+            @RequestParam("concurrencyLimit") int concurrencyLimit,
+            @RequestParam(value = "aiChatGlobalLimit", defaultValue = "20") int aiChatGlobalLimit,
+            @RequestParam(value = "aiChatUserLimit", defaultValue = "2") int aiChatUserLimit,
+            @RequestParam(value = "aiChatUserDailyLimit", defaultValue = "100") int aiChatUserDailyLimit) throws IllegalAccessException {
+        
+        saveParam("AiStoryConcurrencyLimit", String.valueOf(concurrencyLimit), "AI 短文生成并发上限");
+        saveParam("AiChatGlobalLimit", String.valueOf(aiChatGlobalLimit), "AI 聊天全局并发上限");
+        saveParam("AiChatUserLimit", String.valueOf(aiChatUserLimit), "AI 聊天单用户并发上限");
+        saveParam("AiChatUserDailyLimit", String.valueOf(aiChatUserDailyLimit), "AI 聊天单用户每日次数上限");
+
+        return Result.success("系统配置保存成功");
+    }
+
+    private void saveParam(String name, String value, String comment) throws IllegalAccessException {
+        SysParam param = sysParamBo.findById(name);
         if (param == null) {
-            param = new SysParam("AiStoryConcurrencyLimit", String.valueOf(concurrencyLimit), "AI 短文生成并发上限");
+            param = new SysParam(name, value, comment);
             sysParamBo.createEntity(param);
         } else {
-            param.setParamValue(String.valueOf(concurrencyLimit));
+            param.setParamValue(value);
             sysParamBo.updateEntity(param);
         }
-        return Result.success("系统配置保存成功");
     }
 
     /**

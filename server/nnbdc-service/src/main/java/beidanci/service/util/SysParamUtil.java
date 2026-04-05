@@ -76,4 +76,19 @@ public class SysParamUtil {
         SysParam param = sysParamBO.findById("AiStoryConcurrencyLimit", false);
         return param == null ? 5 : Integer.parseInt(param.getParamValue());
     }
+
+    public int getAiChatGlobalLimit() {
+        SysParam param = sysParamBO.findById("AiChatGlobalLimit", false);
+        return param == null ? 20 : Integer.parseInt(param.getParamValue());
+    }
+
+    public int getAiChatUserLimit() {
+        SysParam param = sysParamBO.findById("AiChatUserLimit", false);
+        return param == null ? 2 : Integer.parseInt(param.getParamValue());
+    }
+
+    public int getAiChatUserDailyLimit() {
+        SysParam param = sysParamBO.findById("AiChatUserDailyLimit", false);
+        return param == null ? 100 : Integer.parseInt(param.getParamValue());
+    }
 }

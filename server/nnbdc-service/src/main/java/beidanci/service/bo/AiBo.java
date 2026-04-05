@@ -40,6 +40,9 @@ public class AiBo {
     private beidanci.service.util.SysParamUtil sysParamUtil;
 
     private final java.util.concurrent.atomic.AtomicInteger activeAiStoryRequests = new java.util.concurrent.atomic.AtomicInteger(0);
+    private final java.util.concurrent.atomic.AtomicInteger activeAiChatRequests = new java.util.concurrent.atomic.AtomicInteger(0);
+    private final java.util.concurrent.ConcurrentHashMap<String, java.util.concurrent.atomic.AtomicInteger> userAiChatRequests = new java.util.concurrent.ConcurrentHashMap<>();
+    private final java.util.concurrent.ConcurrentHashMap<String, java.util.concurrent.atomic.AtomicInteger> userDailyAiChatRequests = new java.util.concurrent.ConcurrentHashMap<>();
 
     /**
      * 调用通义千问产生文本结果
@@ -115,6 +118,49 @@ public class AiBo {
     }
 
     /**
+     * 进入 AI 聊天计数 (并发限制)
+     * @param userId 用户 ID
+     * @return 释放令牌的 Runnable
+     */
+    public Runnable enterAiChat(String userId) {
+        int globalLimit = sysParamUtil.getAiChatGlobalLimit();
+        int userLimit = sysParamUtil.getAiChatUserLimit();
+        int userDailyLimit = sysParamUtil.getAiChatUserDailyLimit();
+
+        if (activeAiChatRequests.get() >= globalLimit) {
+            throw new RuntimeException("服务器 AI 服务并发达到上限，请稍后再试");
+        }
+
+        java.util.concurrent.atomic.AtomicInteger userCount = userAiChatRequests.computeIfAbsent(userId, k -> new java.util.concurrent.atomic.AtomicInteger(0));
+        if (userCount.get() >= userLimit) {
+            throw new RuntimeException("您的 AI 聊天并发请求过多，请等待上一个回复结束");
+        }
+
+        java.util.concurrent.atomic.AtomicInteger userDailyCount = userDailyAiChatRequests.computeIfAbsent(userId, k -> new java.util.concurrent.atomic.AtomicInteger(0));
+        if (userDailyCount.get() >= userDailyLimit) {
+            throw new RuntimeException("您今日的 AI 聊天次数已达到上限 (" + userDailyLimit + "次)，请明天再试");
+        }
+
+        activeAiChatRequests.incrementAndGet();
+        userCount.incrementAndGet();
+        userDailyCount.incrementAndGet();
+
+        return () -> {
+            activeAiChatRequests.decrementAndGet();
+            userCount.decrementAndGet();
+        };
+    }
+
+    /**
+     * 每日凌晨清空用户调用计数 (流控重置)
+     */
+    @org.springframework.scheduling.annotation.Scheduled(cron = "0 0 0 * * ?")
+    public void resetDailyStats() {
+        logger.info("重置用户 AI 聊天每日调用计数");
+        userDailyAiChatRequests.clear();
+    }
+
+    /**
      * 调用通义千问进行多轮对话 (流式输出)
      *
      * @param messages 用户和系统消息列表
@@ -144,6 +190,10 @@ public class AiBo {
             logger.error("阿里云 AI 调用发生未知异常", e);
             throw new RuntimeException("AI 系统异常", e);
         }
+    }
+
+    public int getStoryConcurrencyLimit() {
+        return sysParamUtil.getAiStoryConcurrencyLimit();
     }
 
     public static class TtsResult {

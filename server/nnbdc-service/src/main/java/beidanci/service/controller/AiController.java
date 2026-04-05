@@ -13,6 +13,9 @@ import beidanci.service.bo.AiBo;
 public class AiController {
 
     @Autowired
+    private beidanci.service.bo.UserBo userBo;
+
+    @Autowired
     private AiBo aiBo;
 
     private static final ObjectMapper mapper = new ObjectMapper();
@@ -23,8 +26,15 @@ public class AiController {
      * @return 生成的小短文
      */
     @PostMapping("/generateAiShortStory.do")
-    public Result<String> generateAiShortStory(@RequestParam("wordsJson") String wordsJson) {
+    public Result<String> generateAiShortStory(
+            @RequestParam("wordsJson") String wordsJson,
+            @RequestParam("userId") String userId) {
         try {
+            // 验证用户身份
+            if (userBo.findById(userId) == null) {
+                return Result.fail("用户身份验证失败");
+            }
+
             List<String> words = mapper.readValue(wordsJson, mapper.getTypeFactory().constructCollectionType(List.class, String.class));
             String story = aiBo.generateShortStory(words);
             return Result.success(story);
