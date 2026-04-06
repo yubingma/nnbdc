@@ -63,12 +63,12 @@ curtain|窗帘
 trash bin|垃圾箱
 closet|壁橱
 mirror|镜子
-end table|床头柜）
+end table|（床头柜）
 look at|看一看
 own|自己的
 flat|公寓
 third|第三的
-bedroom|卧室
+bedroom 'bedru|(:)m] 卧室
 kitchen|厨房
 bathroom|卫生间
 living room|客厅

@@ -3,14 +3,14 @@ shorter|更矮的
 stronger|更强壮的
 older|年龄更大的
 younger|更年轻的
-cm  centimeter|厘米
+cm|(centimeter) 厘米
 than|与…相比较
 funnier|更滑稽的
 bigger|更大的
 heavier|更重的
 longer|更长的
 thinner|更瘦的
-smaller|体型）更小
+smaller|（体型）更小
 feet|脚（复数）
 size|号 码；尺码
 wear|穿
@@ -65,7 +65,7 @@ bounce|反弹
 off|距；离；离开
 another|另一个
 guess|猜测
-win|过去式 won）赢
+win|（过去式 won）赢
 game|比赛
 laugh at|因…而发笑
 watched|看
@@ -81,11 +81,11 @@ went fishing|去钓鱼
 read|读
 went hiking|去郊游
 yesterday|昨天
-study|过去式 studied 学习
+study|（过去式 studied 学习
 Tongue twister|绕口令
-fly|过去式 flew) 飞
+fly|(过去式 flew) 飞
 return|送回；归还
-swim|过去式 swam）游泳
+swim|（过去式 swam）游泳
 sang and danced|唱歌和跳舞
 good food|吃好吃的食物
 pictures|照相

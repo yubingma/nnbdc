@@ -74,10 +74,10 @@ boy|男孩
 girl|女孩
 teacher|教师
 student|学生
-this|弱 ðəs] 这个
+this|这个
 my|我的
 friend|朋友
-I am|我是
+am|我是
 nice|好的；愉快的
 good morning|早上好
 good afternoon|下午好
@@ -91,9 +91,9 @@ mom|妈妈 口语
 man|男人
 woman|女人
 grandmother|外祖母
-grandma|口语(外祖母
-grandfather|外）祖父
-grandpa|口语（外）祖父
+grandma|（口语(外祖母
+grandfather|（外）祖父
+grandpa|(口语（外）祖父
 sister|姐妹
 brother|兄妹
 let us|让我们
@@ -113,6 +113,6 @@ nineteen|十九
 twenty|二十
 how many|多少
 can|能够；可以
-look at|强 æt, 弱ət]看；瞧
+look at|看；瞧
 peach|桃
 pear|梨
