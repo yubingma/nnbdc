@@ -1,4 +1,4 @@
-Pen|钢笔
+pen|钢笔
 pencil|铅笔
 pencil-case|铅笔盒
 ruler|尺子
@@ -46,7 +46,7 @@ bread|面包
 hot dog|热狗
 hamburger|汉堡包
 chicken|鸡肉
-French Fries|炸薯条
+French fries|炸薯条
 Coke|可乐
 juice|果汁
 milk|牛奶

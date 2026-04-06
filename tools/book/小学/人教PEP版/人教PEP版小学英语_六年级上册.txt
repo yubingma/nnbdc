@@ -33,8 +33,8 @@ left|左边的
 if|如果
 must|必须
 know|知道
-Library|图书馆
-Post office|邮局
+library|图书馆
+post office|邮局
 hospital|医院
 cinema|电影院
 bookstore|书店
@@ -78,7 +78,7 @@ take a trip|去旅行
 read a magazine|阅读杂志
 go to the cinema|去看电影
 theme park|主题公园
-the Great Wall|长城
+The Great Wall|长城
 busy|忙碌的
 together|一起地
 comic book|漫画书

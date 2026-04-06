@@ -23,7 +23,7 @@ shark|鲨鱼
 deep|深的
 seal|海豹
 sperm whale|抹香鲸
-Killer whale|虎鲸
+killer whale|虎鲸
 even|甚至
 have a fever|发烧
 have a sore throat|喉咙疼
@@ -83,7 +83,7 @@ read|读
 go hiking|去郊游
 yesterday|昨天
 study|（过去式 studied）学习
-Tongue twister|绕口令
+tongue twister|绕口令
 fly|(过去式 flew) 飞
 return|送回；归还
 swim|（过去式 swam）游泳

@@ -48,12 +48,12 @@ strong|强壮的
 quiet|安静的
 friend|朋友
 Chinese|中文，汉语
-Photo|照片
+photo|照片
 music|音乐
 science|科学
 sports|体育运动
 painting|绘画
-Her|她的
+her|她的
 right|对的；正确的
 study|书房
 bathroom|卫生间

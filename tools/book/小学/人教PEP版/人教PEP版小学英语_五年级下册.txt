@@ -24,9 +24,9 @@ sometimes|有时候
 rain|下雨
 either|也
 next|下一个
-Spring|春天
-Summer|夏天
-Fall|秋天
+spring|春天
+summer|夏天
+fall|秋天
 winter|冬天
 season|季节
 which|哪一个
@@ -60,9 +60,9 @@ October|十月
 November|十一月
 December|十二月
 chart|图表
-Birthday|生日
+birthday|生日
 Uncle|叔叔；舅舅
-Cousin|堂（表）兄弟；堂（表）姐妹
+cousin|堂（表）兄弟；堂（表）姐妹
 first|第一
 second|第二
 third|第三
@@ -80,7 +80,7 @@ everybody|每个人
 then|那么
 date|日期
 talk|讲话
-Children’s Center|儿童活动中心
+children’s center|儿童活动中心
 see you later|再见
 listen to music|听音乐
 clean the room|打扫房间

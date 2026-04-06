@@ -1,4 +1,4 @@
-Young|年轻的
+young|年轻的
 funny|滑稽可笑的
 tall|高的
 strong|强壮的
@@ -54,7 +54,7 @@ lunch|中餐
 we|我们
 menu|菜单
 sound|听起来
-Mew Mew|猫咪
+mew mew|喵喵
 healthy|健康的
 tasty|好吃的
 sweet|甜的
