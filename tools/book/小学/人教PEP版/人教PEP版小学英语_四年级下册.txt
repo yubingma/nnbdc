@@ -70,7 +70,7 @@ ready|准备好的
 hurry|抓紧；赶快
 math|数学
 Chinese|中文，汉语；中国人adj. 中国的，中国人的
-English a|英国的；英国人的；英语的n.英语；英国人
+English|英国的；英国人的；英语的n.英语；英国人
 P.E|体育
 music|音乐
 for|为；给

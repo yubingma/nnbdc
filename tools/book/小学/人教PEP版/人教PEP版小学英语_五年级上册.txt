@@ -72,7 +72,7 @@ lunch|中餐
 we|我们
 menu|菜单
 sound|听起来
-healthy a|健康的;有益健康的
+healthy|健康的;有益健康的
 tasty|好吃的
 sweet|甜的
 sour|酸的
@@ -81,7 +81,7 @@ salty|咸的
 favourite|最喜欢的
 they are|他们是
 fruit|水果
-don’t|不要
+don’t|不
 grape|葡萄
 have to|不得不
 eat|吃
@@ -90,7 +90,7 @@ cook the meals|煮饭
 water the flowers|浇花
 sweep the floor|扫地
 clean the bedroom|打扫卧室
-helpful a|有帮助的,有益的
+helpful|有帮助的,有益的
 at home|
 ill|坏的,有病的
 wash the windows|擦窗户
@@ -112,9 +112,9 @@ closet|壁橱
 mirror|镜子
 end table|床头柜
 look at|看一看
-own a|自己的
+own|自己的
 flat|公寓
-third a|第三的
+third|第三的
 bedroom|卧室
 kitchen|厨房
 bathroom|卫生间
@@ -153,4 +153,4 @@ building|建筑物
 clean|干净的
 air|空气
 run|跑、奔跑
-any . a|任何的
+any|任何的
