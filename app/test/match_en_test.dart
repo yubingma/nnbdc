@@ -30,6 +30,9 @@ THE  DH AH0
 EFFECT  IH0 F EH1 K T
 DEFLECT  D IH0 F L EH1 K T
 THERMAL  TH ER1 M AH0 L
+OHM  OW1 M
+OH  OW1
+MO  M OW1
 ''';
           return ByteData.view(Uint8List.fromList(utf8.encode(content)).buffer);
         }
@@ -118,7 +121,15 @@ THERMAL  TH ER1 M AH0 L
       const String asrResult = "surmo";
       
       final int score = await PhonemeUtil.similarity(asrResult, target);
-      debugPrint('Thermal vs Surmo score: $score');
+      expect(score, greaterThanOrEqualTo(Constants.phonemeMatchThreshold));
+    });
+    
+    test('ohm vs oh mo - should match', () async {
+      const String target = "ohm";
+      const String asrResult = "oh mo";
+      
+      final int score = await PhonemeUtil.similarity(asrResult, target);
+      debugPrint('Ohm vs Oh Mo score: $score');
       
       expect(score, greaterThanOrEqualTo(Constants.phonemeMatchThreshold));
     });

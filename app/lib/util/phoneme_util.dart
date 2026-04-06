@@ -335,11 +335,21 @@ class PhonemeUtil {
     for (var i = 1; i <= n; i++) {
       for (var j = 1; j <= m; j++) {
         // 计算替换代价
-        final cost = _phonemeMatchCost(a[i - 1], b[j - 1]);
+        final subCost = _phonemeMatchCost(a[i - 1], b[j - 1]);
 
-        final del = dp[i - 1][j] + 1.0;
-        final ins = dp[i][j - 1] + 1.0;
-        final sub = dp[i - 1][j - 1] + cost;
+        // 默认增删代价
+        double delCost = 1.0;
+        double insCost = 1.0;
+
+        // 特殊优化：末尾冗余元音（如 ohm 被识成 oh mo, @ M -> @ M @）
+        // 如果 ASR 有尾部多出来的 @，降低代价
+        if (i == n && a[i - 1] == "@" && n > m) delCost = 0.4;
+        // 如果 Target 尾部有 @ 而 ASR 漏了，降低代价
+        if (j == m && b[j - 1] == "@" && m > n) insCost = 0.4;
+
+        final del = dp[i - 1][j] + delCost;
+        final ins = dp[i][j - 1] + insCost;
+        final sub = dp[i - 1][j - 1] + subCost;
 
         dp[i][j] = del < ins ? (del < sub ? del : sub) : (ins < sub ? ins : sub);
       }
