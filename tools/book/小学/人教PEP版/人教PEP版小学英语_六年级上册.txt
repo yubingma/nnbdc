@@ -108,7 +108,7 @@
 748. fun|快乐；乐趣
 749. with|同…
 750. TV reporter|电视台记者
-751. live –lives|居住
+751. live|居住
 752. teaches|教
 753. goes|去
 754. watches|看

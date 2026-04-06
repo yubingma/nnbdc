@@ -14,7 +14,7 @@
 159. new|新的
 160. where|在哪里
 161. computer|计算机
-162. teacher’s desk|讲台
+162. teacher's desk|讲台
 163. wall|墙
 164. fan|扇子；电扇
 165. clean|打扫；清洁；擦干净的
@@ -47,7 +47,7 @@
 192. strong|强壮的
 193. quiet|安静的
 194. friend|朋友
-195. Chinese n.|中文，汉语
+195. Chinese|中文，汉语
 196. Photo|照片
 197. music|音乐
 198. science|科学

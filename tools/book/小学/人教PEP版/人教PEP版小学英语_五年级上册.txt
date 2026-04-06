@@ -22,7 +22,7 @@
 402. quiet|安静的、文静的
 403. very|很、非常
 403. Monday|星期一
-404. but[|t, 弱 bt, bt] 但是
+404. but|但是
 404. Tuesday|星期二
 405. Wednesday|星期三
 406. Thursday|星期四

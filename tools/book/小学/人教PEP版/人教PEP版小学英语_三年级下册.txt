@@ -2,13 +2,13 @@
 75. girl|女孩
 76. teacher|教师
 77. student|学生
-78. this|s] 这个
+78. this|这个
 79. my|我的
 80. friend|朋友
 81. I am|我是
 82. nice|好的；愉快的
 83. good morning|早上好
-84. good afternoon "|下午好
+84. good afternoon|下午好
 85. meet|遇见；碰见
 86. goodbye|再见
 87. too|也；太
@@ -18,10 +18,10 @@
 91. mom|妈妈 口语
 92. man|男人
 93. woman|女人
-94. grandmother|外祖母
-95. grandma|（口语(外祖母
+94. grandmother|（外）祖母
+95. grandma|（外）祖母
 96. grandfather|（外）祖父
-97. grandpa|(口语（外）祖父
+97. grandpa|（外）祖父
 98. sister|姐妹
 99. brother|兄妹
 100. let us|让我们
@@ -41,7 +41,7 @@
 114. twenty|二十
 115. how many|多少
 116. can|能够；可以
-117. look at [|t, 弱t]看；瞧
+117. look at|看；瞧
 118. peach|桃
 119. pear|梨
 120. orange|橙子
@@ -61,7 +61,7 @@
 134. chair|椅子
 135. Walkman|随身听
 136. lamp|台灯
-137. your [j|] 你的；你们的
+137. your|你的；你们的
 138. zoo|动物园
 139. small|小的
 140. big|大的

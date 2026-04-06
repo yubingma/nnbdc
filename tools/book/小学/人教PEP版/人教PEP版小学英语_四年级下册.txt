@@ -1,6 +1,6 @@
 253. playground|操场
 254. garden|花园
-255. teacher,s-office|教师办公室
+255. teacher's office|教师办公室
 256. library|图书馆
 257. canteen|食堂
 258. first|第一
@@ -33,10 +33,10 @@
 286. ready|准备好的
 287. hurry|抓紧；赶快
 288. math|数学
-289. Chinese n.|中文，汉语
-290. china n.|中国;瓷器
-291. England n.|英格兰;英国
-292. English a.|英国的；英国人
+289. Chinese|中文，汉语
+290. china|中国;瓷器
+291. England|英格兰;英国
+292. English|英国的；英国人
 293. P.E.|体育
 294. class|班级；课程
 295. music|音乐
@@ -69,13 +69,13 @@
 322. weather report|天气预报
 323. wear|穿
 324. football|足球
-325. put on|穿上. put on 动词,表示穿上
-326. rain n.|雨 vi.下雨
+325. put on|穿上
+326. rain|雨；下雨
 327. rainy|下雨的
 328. now|现在
-329. snow n.|雪；vi.下雪
+329. snow|雪；下雪
 330. snowy|下雪的
-331. wind n.|风
+331. wind|风
 332. windy|有风的
 333. cloud|云
 334. cloudy|多云的
