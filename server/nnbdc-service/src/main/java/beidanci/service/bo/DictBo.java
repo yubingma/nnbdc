@@ -632,7 +632,7 @@ public class DictBo extends BaseBo<Dict> {
                 linkDto.put("groupId", groupId);
                 linkDto.put("dictId", dictId);
                 sysDbLogBo.logOperation("INSERT", "group_and_dict_link", groupId + "_" + dictId, 
-                        beidanci.service.util.JsonUtils.toJson(linkDto));
+                        JsonUtils.toJson(linkDto));
                         
                 log.info("建立词书关联同步日志: dictId={}, groupId={}", dictId, groupId);
             }

@@ -16,6 +16,7 @@ import beidanci.service.dao.UserDbVersionDao;
 import beidanci.service.po.Dict;
 import beidanci.service.po.User;
 import beidanci.util.Constants;
+import beidanci.service.util.JsonUtils;
 
 /**
  * 系统健康检查业务逻辑
@@ -440,14 +441,14 @@ public class SystemHealthCheckBo {
                         dwDto.setWordId(wordId);
                         dwDto.setSeq(dw0.getSeq());
                         dwDto.setCreateTime(dw0.getCreateTime());
-                        sysDbSyncBo.logOperation("INSERT", "dict_word", Constants.COMMON_DICT_ID + "_" + wordId, beidanci.service.util.JsonUtils.toJson(dwDto));
+                        sysDbSyncBo.logOperation("INSERT", "dict_word", Constants.COMMON_DICT_ID + "_" + wordId, JsonUtils.toJson(dwDto));
                         fixedCount++;
                     } catch (Exception ignore) {}
                 }
                 if (fixedCount > 0) {
                     commonDict.setWordCount(maxSeq);
                     dictBo.updateEntity(commonDict);
-                    sysDbSyncBo.logOperation("UPDATE", "dict", Constants.COMMON_DICT_ID, beidanci.service.util.JsonUtils.toJson(dictBo.toDto(commonDict)));
+                    sysDbSyncBo.logOperation("UPDATE", "dict", Constants.COMMON_DICT_ID, JsonUtils.toJson(dictBo.toDto(commonDict)));
                 }
                 fixed.add(String.format("成功为 %d 个物理脱离单词补充并广播到 0 库。", fixedCount));
             }
@@ -883,7 +884,7 @@ public class SystemHealthCheckBo {
                     mDto.setUpdateTime(new java.util.Date());
                     
                     meaningItemBo.createMeaningItem(mDto);
-                    sysDbSyncBo.logOperation("INSERT", "meaning_item", newId, beidanci.service.util.JsonUtils.toJson(mDto));
+                    sysDbSyncBo.logOperation("INSERT", "meaning_item", newId, JsonUtils.toJson(mDto));
                     fixedMeaningCount++;
                 } catch (Exception ignore) {}
             }
@@ -927,7 +928,7 @@ public class SystemHealthCheckBo {
                             int lastBrace = jsonStr.lastIndexOf('}');
                             if (firstBrace >= 0 && lastBrace >= firstBrace) {
                                 jsonStr = jsonStr.substring(firstBrace, lastBrace + 1);
-                                java.util.Map<String, Object> map = beidanci.service.util.JsonUtils.parseMap(jsonStr);
+                                java.util.Map<String, Object> map = JsonUtils.parseMap(jsonStr);
                                 if (map != null && map.containsKey("sentenceEn")) {
                                     String sentenceEn = (String) map.get("sentenceEn");
                                     String sentenceCn = (String) map.get("sentenceCn");
@@ -948,7 +949,7 @@ public class SystemHealthCheckBo {
                                     
                                     sentenceBo.createEntity(sentence);
                                     
-                                    sysDbSyncBo.logOperation("INSERT", "sentence", sentence.getId(), beidanci.service.util.JsonUtils.toJson(sentenceBo.toDto(sentence)));
+                                    sysDbSyncBo.logOperation("INSERT", "sentence", sentence.getId(), JsonUtils.toJson(sentenceBo.toDto(sentence)));
                                     logger.info("成功为单词 {} 的释义补充了 AI 例句: {}", spell, sentenceEn);
                                 }
                             }

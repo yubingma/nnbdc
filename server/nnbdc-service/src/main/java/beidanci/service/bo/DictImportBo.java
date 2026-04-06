@@ -417,7 +417,7 @@ public class DictImportBo {
             // 新增单词全局可见，必须为客户端插入一条系统同步日志
             WordDto wordDto = new WordDto();
             org.springframework.beans.BeanUtils.copyProperties(word, wordDto);
-            sysDbSyncBo.logOperation("INSERT", "word", word.getId(), beidanci.service.util.JsonUtils.toJson(wordDto));
+            sysDbSyncBo.logOperation("INSERT", "word", word.getId(), JsonUtils.toJson(wordDto));
             stats.addSyncLog("INSERT", "word");
         }
 
@@ -449,7 +449,7 @@ public class DictImportBo {
             dwDto.setWordId(word.getId());
             dwDto.setSeq(dw0.getSeq());
             dwDto.setCreateTime(dw0.getCreateTime());
-            sysDbSyncBo.logOperation("INSERT", "dict_word", Constants.COMMON_DICT_ID + "_" + word.getId(), beidanci.service.util.JsonUtils.toJson(dwDto));
+            sysDbSyncBo.logOperation("INSERT", "dict_word", Constants.COMMON_DICT_ID + "_" + word.getId(), JsonUtils.toJson(dwDto));
             stats.addSyncLog("INSERT", "dict_word");
 
             // 更新 "0" 词书的 wordCount
@@ -473,7 +473,7 @@ public class DictImportBo {
             if (dict0.getName() == null) {
                 dict0.setName("通用词典.dict");
             }
-            sysDbSyncBo.logOperation("UPDATE", "dict", Constants.COMMON_DICT_ID, beidanci.service.util.JsonUtils.toJson(dictBo.toDto(dict0)));
+            sysDbSyncBo.logOperation("UPDATE", "dict", Constants.COMMON_DICT_ID, JsonUtils.toJson(dictBo.toDto(dict0)));
             stats.addSyncLog("UPDATE", "dict");
         }
 
@@ -931,7 +931,7 @@ public class DictImportBo {
                 linkDto.put("groupId", groupId);
                 linkDto.put("dictId", dictId);
                 sysDbSyncBo.logOperation("INSERT", "group_and_dict_link", groupId + "_" + dictId, 
-                        beidanci.service.util.JsonUtils.toJson(linkDto));
+                        JsonUtils.toJson(linkDto));
                         
                 logger.info("系统词库导入：已自动建立词书关联: dictId={}, groupId={}", dictId, groupId);
             }

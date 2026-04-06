@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import beidanci.service.dao.BaseDao;
 import beidanci.service.po.CigenWordLink;
+import beidanci.service.util.JsonUtils;
 
 @Service
 @Transactional(rollbackFor = Throwable.class)
@@ -85,7 +86,7 @@ public class CigenBo extends BaseBo<CigenWordLink> {
         logRecord.put("createTime", isoFormat.format(record.get("create_time")));
         logRecord.put("updateTime", isoFormat.format(record.get("update_time")));
 
-        sysDbSyncBo.logOperation("UPDATE", "cigen_word_link", cigenId + "_" + wordId, beidanci.service.util.JsonUtils.toJson(logRecord));
+        sysDbSyncBo.logOperation("UPDATE", "cigen_word_link", cigenId + "_" + wordId, JsonUtils.toJson(logRecord));
     }
 
     /**
@@ -123,7 +124,7 @@ public class CigenBo extends BaseBo<CigenWordLink> {
         isoFormat.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
         logRecord.put("updateTime", isoFormat.format(now));
 
-        sysDbSyncBo.logOperation("UPDATE", "cigen", id, beidanci.service.util.JsonUtils.toJson(logRecord));
+        sysDbSyncBo.logOperation("UPDATE", "cigen", id, JsonUtils.toJson(logRecord));
     }
 
     public static class CigenWordLinkDto {
