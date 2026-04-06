@@ -232,6 +232,8 @@ class PhonemeUtil {
         res.add("HH");
       } else if (char == 'j') {
         res.add("JH");
+      } else if (char == 'c') {
+        res.add("K");
       } else if (_lowerAlphaRegExp.hasMatch(char)) {
         res.add(char.toUpperCase());
       }
@@ -367,6 +369,7 @@ class PhonemeUtil {
       {"ER", "@"},  // R-colored vowel 跟普通元音混淆
       {"UW", "W"},  // woo/woo
       {"W", "@"},   // 增加 W 与元音混淆 (ASR 有时把 W 识别为母音部分)
+      {"C", "K"},   // carotti/cruelty
     ];
 
     for (final group in confusionGroups) {

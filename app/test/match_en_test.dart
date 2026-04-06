@@ -23,6 +23,7 @@ YE  Y IY1
 APPLE  AE1 P AH0 L
 APPLY  AH0 P L AY1
 HARDWARE  HH AA1 R D W EH2 R
+CRUELTY  K R UW1 L T IY0
 ''';
           return ByteData.view(Uint8List.fromList(utf8.encode(content)).buffer);
         }
@@ -79,6 +80,16 @@ HARDWARE  HH AA1 R D W EH2 R
       debugPrint('Hardware vs Hathware score: $score');
       
       // Expected around 83 with the new confusion groups
+      expect(score, greaterThanOrEqualTo(Constants.phonemeMatchThreshold));
+    });
+    
+    test('cruelty vs carotti - should match', () async {
+      const String target = "cruelty";
+      const String asrResult = "carotti";
+      
+      final int score = await PhonemeUtil.similarity(asrResult, target);
+      debugPrint('Cruelty vs Carotti score: $score');
+      
       expect(score, greaterThanOrEqualTo(Constants.phonemeMatchThreshold));
     });
   });
