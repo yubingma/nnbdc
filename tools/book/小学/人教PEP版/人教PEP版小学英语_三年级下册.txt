@@ -13,9 +13,9 @@ meet|遇见；碰见
 goodbye|再见
 too|也；太
 father|父亲；爸爸
-dad|爸爸 口语
+dad|爸爸
 mother|母亲；妈妈
-mom|妈妈 口语
+mom|妈妈
 man|男人
 woman|女人
 grandmother|（外）祖母
