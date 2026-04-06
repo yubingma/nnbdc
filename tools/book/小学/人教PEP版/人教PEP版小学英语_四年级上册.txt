@@ -59,7 +59,7 @@ colourful|色彩丰富的
 pretty|漂亮的；可爱的
 cheap|便宜的.
 expensive|昂贵的 .
-sixty 'siksti|(:)] 六十
+sixty|六十
 seventy|七十.
 hundred|百
 how much|多少钱
@@ -119,5 +119,5 @@ very|很、非常
 Monday|星期一
 but|但是
 Tuesday|星期二
-Wednesday|（星期三）
+Wednesday|星期三
 Thursday|星期四

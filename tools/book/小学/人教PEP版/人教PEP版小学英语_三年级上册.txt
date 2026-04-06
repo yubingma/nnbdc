@@ -77,7 +77,7 @@ student|学生
 this|这个
 my|我的
 friend|朋友
-am|我是
+I am|我是
 nice|好的；愉快的
 good morning|早上好
 good afternoon|下午好

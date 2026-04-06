@@ -3,7 +3,7 @@ shorter|更矮的
 stronger|更强壮的
 older|年龄更大的
 younger|更年轻的
-cm|(centimeter) 厘米
+cm(centimeter)|厘米
 than|与…相比较
 funnier|更滑稽的
 bigger|更大的

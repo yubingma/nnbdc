@@ -94,7 +94,7 @@ sofa|沙发
 shelf|书架
 fridge|冰箱
 rice|米饭
-noodle|(s) ['nu:dl] 面条（复数）
+noodle(s)|面条（复数）
 soup|汤
 vegetable|蔬菜.
 beef|牛肉
@@ -102,7 +102,7 @@ dinner|晚餐；正餐.
 wait|等.
 hungry|饥饿的
 knife|刀
-chopstick|(s) ['tpstik] 筷子
+chopstick(s)|筷子
 spoon|勺子
 plate|盘子
 plane|飞机
