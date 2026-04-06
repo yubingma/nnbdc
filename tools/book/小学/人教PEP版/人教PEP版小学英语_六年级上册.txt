@@ -7,7 +7,7 @@ how|怎样
 go to school|上学
 traffic|交通
 traffic light|交通灯
-traffic rule|交通规则 ：
+traffic rule|交通规则
 stop|停，停车站
 wait|等待
 get to|到达
@@ -48,10 +48,8 @@ I am going to buy a comic book|我打算买一本漫画书。
 hobby|爱好
 ride a bike|骑自行车
 dive|跳水
-play the violin|
-playing the violin|拉小提琴
-make kites|
-making kites|制作风筝
+play the violin|拉小提琴
+make kites|制作风筝
 collecting stamps|集邮
 live|居住
 teach|教

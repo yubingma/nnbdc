@@ -16,7 +16,6 @@ back|回来
 new|新的
 where|哪里
 you|你；你们
-your|你的；你们的
 America|美国
 see|看见
 say|说；讲
@@ -24,7 +23,7 @@ again|又；再
 class|班级；课程
 we|我们
 today|今天
-watch out|小心；留神
+watch  out|小心；留神
 sorry|对不起
 ant|蚂蚁
 apple|苹果
@@ -122,7 +121,6 @@ lamp|台灯
 zoo|动物园
 play|玩
 game|游戏
-here|这儿；这里
 toy|玩具
 box|盒子
 Under|在…下
@@ -156,9 +154,7 @@ children|儿童
 so|如此；这样
 has|有
 tail|尾巴
-CAN|加拿大
 PRC|中国
 UK|英国
-USA|美国
 M|(a.m.)早上；上午
 P.M|(p.m.)下午

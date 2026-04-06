@@ -38,6 +38,7 @@ up|
 north|北方；向北方
 Halloween|万圣节前夕(指十月三十一日夜晚)
 Thanksgiving|感恩节
+swim|游泳
 fly kites|放风筝
 skate|滑冰；滑冰鞋
 make a snowman|堆雪人
@@ -90,20 +91,18 @@ write an e-mail|写电子邮件
 mom|妈妈
 grandpa|爷爷；外公
 speak to|和…讲话
-hold on|等一下
+hold  on|等一下
 study|书房
 fly|飞
 jump|跳
 walk|走
 run|跑
-swim|游泳
 kangaroo|袋鼠
 truck|象鼻
 climb|往上爬
 fight|打架
 swing|荡；荡秋千
 drink water|喝水
-climber|攀登者
 take pictures|照相
 watch insects|观察昆虫
 pick up leaves|采摘树叶

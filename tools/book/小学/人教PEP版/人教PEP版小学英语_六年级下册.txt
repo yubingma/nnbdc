@@ -29,7 +29,7 @@ happy|高兴的
 bored|无聊的，烦人的
 sad|忧伤的，悲伤的
 What’s the matter?|怎么啦？
-My throat is sore. My nose hurts|我的喉咙痛。我的鼻子疼。
+My throat is sore.  My nose hurts|我的喉咙痛。我的鼻子疼。
 How are you, Liu Yun?You look so happy|刘云，你怎么样你看起来真高兴。
 How are you, Sarah?|萨拉，你好吗？
 You look sad today|你今天看起来很伤心。
@@ -39,7 +39,7 @@ clean|打扫
 play|玩
 visit|看望
 read|读
-do|
+do|做，干
 did last weekend|上一个周末
 go|去
 go to a park|去公园
@@ -55,7 +55,7 @@ leran Chinese|
 learned Chinese|学汉语
 sing and dance|
 sang and danced|唱歌和跳舞
-eat good food|ate good food 吃好吃的食物
+eat good food|吃好吃的食物
 take pictures|照相
 climb|爬
 have|
