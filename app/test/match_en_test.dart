@@ -29,6 +29,7 @@ ANALYTICAL  AE0 N AH0 L IH1 T IH0 K AH0 L
 THE  DH AH0
 EFFECT  IH0 F EH1 K T
 DEFLECT  D IH0 F L EH1 K T
+THERMAL  TH ER1 M AH0 L
 ''';
           return ByteData.view(Uint8List.fromList(utf8.encode(content)).buffer);
         }
@@ -109,7 +110,15 @@ DEFLECT  D IH0 F L EH1 K T
       const String asrResult = "the effect";
       
       final int score = await PhonemeUtil.similarity(asrResult, target);
-      debugPrint('Deflect vs The Effect score: $score');
+      expect(score, greaterThanOrEqualTo(Constants.phonemeMatchThreshold));
+    });
+    
+    test('thermal vs surmo - should match', () async {
+      const String target = "thermal";
+      const String asrResult = "surmo";
+      
+      final int score = await PhonemeUtil.similarity(asrResult, target);
+      debugPrint('Thermal vs Surmo score: $score');
       
       expect(score, greaterThanOrEqualTo(Constants.phonemeMatchThreshold));
     });

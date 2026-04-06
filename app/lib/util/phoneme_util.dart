@@ -178,10 +178,16 @@ class PhonemeUtil {
   static List<String> _weakenPhonemes(List<String> phons) {
     const vowels = {"AA", "AE", "AH", "AO", "AW", "AY", "EH", "ER", "EY", "IH", "IY", "OW", "OY", "UH", "UW"};
     // 去重坍缩（防止叠音干扰，如 the effect -> @ @ -> @）
-    List<String> weakened = phons.map((p) {
+    List<String> weakened = [];
+    for (final p in phons) {
       final parsed = p.replaceAll(_digitRegExp, '');
-      return vowels.contains(parsed) ? "@" : parsed;
-    }).toList();
+      if (parsed == "ER") {
+        weakened.add("@");
+        weakened.add("R");
+      } else {
+        weakened.add(vowels.contains(parsed) ? "@" : parsed);
+      }
+    }
     
     List<String> collapsed = [];
     if (weakened.isNotEmpty) {
