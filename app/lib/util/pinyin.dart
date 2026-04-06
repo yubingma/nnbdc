@@ -485,6 +485,16 @@ bool fuzzyChineseContains(Object chinese1, String chinese2) {
     double maxSimSum = dp[M][N];
     double avgSim = maxSimSum / M;
 
+    // 对于“漏读/未识别全”的情况进行补偿：
+    // 如果用户输入的音节数少于词条字符数，但已输入的音节匹配度极高(>=95%)，
+    // 且输入量过半，则允许一定程度的漏读（以 0.85 的权重折算）
+    if (N < M && N >= (M / 2.0).ceil() && maxSimSum >= N * 0.95) {
+      double altAvgSim = (maxSimSum / N) * 0.85;
+      if (altAvgSim > avgSim) {
+        avgSim = altAvgSim;
+      }
+    }
+
     // 对于短句（1-2个字），提高匹配门槛，防止被发音接近但完全不同的常用字干扰（误判）
     // 对于 3 个字及以上，维持现状以保证容错率
     double finalThreshold = M == 1 ? 0.82 : (M == 2 ? 0.78 : (M == 3 ? 0.76 : (M == 4 ? 0.75 : minSimularityForMatch)));
