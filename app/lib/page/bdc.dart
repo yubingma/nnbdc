@@ -1117,17 +1117,31 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
   /// 设置ASR上下文短语（当前单词的释义子项(说中文)或当前单词的拼写(说英文)）
   void _setAsrContextualPhrases() {
-    // 禁止下发上下文短语，以满足用户“无判断、无偏见”的原始识别需求
-    /*
     try {
-      WordVo? word = _currentGetWordResult?.learningWord?.word;
+      WordVo? word = _word;
       if (word != null) {
-        ...
+        List<String> phrases = [];
+        if (_studyStep == StudyStep.ch2En.json) {
+          // 中→英模式：热词设为英文拼写，这能极大提高 ASR 识别当前单词的准确率
+          phrases.add(word.spell);
+        } else if (_studyStep == StudyStep.en2Ch.json) {
+          // 英→中模式：热词设为该词的所有可能释义项，由于 ASR 模型较小，这能显著矫正发音相近的中文词汇
+          phrases.addAll(AsrUtil.extractContextualPhrases(word.meaningItems ?? []));
+        }
+
+        if (phrases.isNotEmpty) {
+          Global.logger.d('~~~~~BDC: 设置 ASR 上下文热词: $phrases');
+          asr.setContextualStrings(phrases);
+        } else {
+          // 如果没有有效热词（如单词对象为空），则清空之前的热词状态
+          asr.setContextualStrings([]);
+        }
+      } else {
+        asr.setContextualStrings([]);
       }
     } catch (e) {
-      Global.logger.d('设置ASR上下文短语失败: $e');
+      Global.logger.d('BDC: 设置 ASR 上下文短语失败: $e');
     }
-    */
   }
 
   /// 启动ASR并播放提示音
