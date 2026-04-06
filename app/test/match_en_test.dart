@@ -24,6 +24,8 @@ APPLE  AE1 P AH0 L
 APPLY  AH0 P L AY1
 HARDWARE  HH AA1 R D W EH2 R
 CRUELTY  K R UW1 L T IY0
+ANALYTIC  AE0 N AH0 L IH1 T IH0 K
+ANALYTICAL  AE0 N AH0 L IH1 T IH0 K AH0 L
 ''';
           return ByteData.view(Uint8List.fromList(utf8.encode(content)).buffer);
         }
@@ -88,7 +90,15 @@ CRUELTY  K R UW1 L T IY0
       const String asrResult = "carotti";
       
       final int score = await PhonemeUtil.similarity(asrResult, target);
-      debugPrint('Cruelty vs Carotti score: $score');
+      expect(score, greaterThanOrEqualTo(Constants.phonemeMatchThreshold));
+    });
+    
+    test('analytic(al) vs analatic - should match', () async {
+      const String target = "analytic(al)";
+      const String asrResult = "analatic";
+      
+      final int score = await PhonemeUtil.similarity(asrResult, target);
+      debugPrint('Analytic(al) vs Analatic score: $score');
       
       expect(score, greaterThanOrEqualTo(Constants.phonemeMatchThreshold));
     });

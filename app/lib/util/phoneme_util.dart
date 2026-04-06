@@ -51,7 +51,9 @@ class PhonemeUtil {
     if (!_loaded) {
       await load();
     }
-    final key = word.trim().toLowerCase();
+    String key = word.trim().toLowerCase();
+    // 移除括号中的内容，如 analytic(al) -> analytic
+    key = key.replaceAll(RegExp(r'\(.*?\)'), '');
     if (key.isEmpty) return const [];
     
     if (_wordToPhonemeVariants.containsKey(key)) {
