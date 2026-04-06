@@ -236,41 +236,43 @@ class PinyinParser {
     shengMu = "";
     for (var zero in zeroShengMuList) {
       if (pinyinNormal.startsWith(zero)) {
-        // 特殊处理 yi, wu, yu 等，它们本质上是 i, u, v 的零声母形式
-        if (zero == "yi") {
-          yunMu = "i${pinyinNormal.substring(2)}";
-          return;
-        } else if (zero == "wu") {
-          yunMu = "u${pinyinNormal.substring(2)}";
-          return;
-        } else if (zero == "yu") {
-          yunMu = "v${pinyinNormal.substring(2)}";
-          return;
-        } else if (zero == "yin") {
-          yunMu = "in${pinyinNormal.substring(3)}";
-          return;
-        } else if (zero == "yun") {
-          yunMu = "vn${pinyinNormal.substring(3)}";
-          return;
-        } else if (zero == "ying") {
-          yunMu = "ing${pinyinNormal.substring(4)}";
-          return;
-        } else if (zero == "yuan") {
-          yunMu = "van${pinyinNormal.substring(4)}";
-          return;
-        } else if (zero == "yue") {
-          yunMu = "ve${pinyinNormal.substring(3)}";
-          return;
-        } else if (zero == "ye") {
-          yunMu = "ie${pinyinNormal.substring(2)}";
-          return;
-        }
-
-        // 其他情况，只要在 zeroShengMuList 中，shengMu 就是 ""
         shengMu = "";
         yunMu = pinyinNormal;
+        
+        // 特殊处理 yi, wu, yu 等，标准化韵母
+        if (pinyinNormal == "wu") {
+          yunMu = "u";
+        } else if (pinyinNormal == "yi") {
+          yunMu = "i";
+        } else if (pinyinNormal == "yu") {
+          yunMu = "v";
+        } else if (pinyinNormal == "yin") {
+          yunMu = "in";
+        } else if (pinyinNormal == "yun") {
+          yunMu = "vn";
+        } else if (pinyinNormal == "ying") {
+          yunMu = "ing";
+        } else if (pinyinNormal == "yuan") {
+          yunMu = "van";
+        } else if (pinyinNormal == "yue") {
+          yunMu = "ve";
+        } else if (pinyinNormal == "ye") {
+          yunMu = "ie";
+        }
         return;
       }
+    }
+
+    // 处理 w 和 y 开头的零声母变体 (如 wen, wang, yan, yao)
+    if (pinyinNormal.startsWith('w')) {
+      shengMu = "";
+      yunMu = "u${pinyinNormal.substring(1)}";
+      return;
+    }
+    if (pinyinNormal.startsWith('y')) {
+      shengMu = "";
+      yunMu = "i${pinyinNormal.substring(1)}";
+      return;
     }
 
     String prefixDouble = pinyinNormal.length >= 2 ? pinyinNormal.substring(0, 2) : "";
@@ -487,13 +489,16 @@ bool fuzzyChineseContains(Object chinese1, String chinese2) {
           bool hasBridge = false;
           for (var pPrev in targetPinyins[i - 2]) {
             for (var pCurr in targetPinyins[i - 1]) {
-              // 检查前一个字的韵母末尾和当前字的韵母开头（或零声母整体）是否元音相同
-              // 补充：当前字必须是零声母（如 y, w 开头的音节），才满足“发音合并”的特征
-              String lastVowel = pPrev.yunMu.substring(pPrev.yunMu.length - 1);
-              String firstVowel = pCurr.yunMu.substring(0, 1);
-              if (pCurr.shengMu.isEmpty && lastVowel == firstVowel && (lastVowel == 'i' || lastVowel == 'u' || lastVowel == 'v')) {
-                hasBridge = true;
-                break;
+              // 检查当前提议的零声母开头元音能否与前一个字形成音频合并（桥接）
+              // 比如：“吸引”(xi-yin, xi-in), “论文”(lun-wen, lun-uen)
+              String firstVowel = pCurr.yunMu.isNotEmpty ? pCurr.yunMu.substring(0, 1) : "";
+              if (pCurr.shengMu.isEmpty && (firstVowel == 'i' || firstVowel == 'u' || firstVowel == 'v')) {
+                // 如果前一个字的韵母以该元音结尾（如 xi），或者含有该元音且紧跟鼻音（如 lun）
+                if (pPrev.yunMu.endsWith(firstVowel) || 
+                   (pPrev.yunMu.contains(firstVowel) && (pPrev.yunMu.endsWith('n') || pPrev.yunMu.endsWith('g')))) {
+                  hasBridge = true;
+                  break;
+                }
               }
             }
             if (hasBridge) break;
