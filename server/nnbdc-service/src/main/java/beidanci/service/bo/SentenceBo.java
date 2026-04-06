@@ -331,7 +331,7 @@ public class SentenceBo extends BaseBo<Sentence> {
         if (count == null || count == 0) {
             File soundFile = new File(sysParamUtil.getSoundPath() + "/sentence/" + englishDigest + ".mp3");
             if (soundFile.exists() && soundFile.delete()) {
-                LoggerFactory.getLogger(SentenceBo.class).info("自动清除了不再被引用的例句发音缓存: {}", soundFile.getAbsolutePath());
+                LoggerFactory.getLogger(SentenceBo.class).info("自动清除了不再被引用的例句发音文件: {}", soundFile.getAbsolutePath());
             }
         }
     }
