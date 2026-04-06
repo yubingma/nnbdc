@@ -233,7 +233,7 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                 .setEndpointConfig(endpointConfig)
                 .setEnableEndpoint(true)
                 .setDecodingMethod("modified_beam_search")
-                .setMaxActivePaths(4) // 针对 20M 小模型，收窄搜索范围反而更稳定，防止“脑补”离谱词汇
+                .setMaxActivePaths(12) // 针对 66M 模型，恢复搜索范围至 12，提供更好的路径选择
                 .setHotwordsScore(30.0f) // 适度引导
                 .setBlankPenalty(0.5f) // 增加轻微惩罚，减少乱码和幻觉
                 .build()
@@ -282,9 +282,9 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                 .setEndpointConfig(endpointConfig)
                 .setEnableEndpoint(true)
                 .setDecodingMethod("modified_beam_search")
-                .setMaxActivePaths(4) // 收窄搜索范围至4 (同英文)，防止"脑补"离谱叠词 (原12)
+                .setMaxActivePaths(12) // 恢复搜索范围至 12（同 14M 官方推荐），防止搜索空间过窄导致舍弃正确路径
                 .setHotwordsScore(50.0f) // 提高热词权重
-                .setBlankPenalty(1.2f) // 提高惩罚以抑制非法重复 (原0.5)
+                .setBlankPenalty(1.0f) // 恢复标准罚分，防止空过载导致叠词幻觉 (原 1.2 过高)
                 .build()
 
             modelZh = OnlineRecognizer(config)

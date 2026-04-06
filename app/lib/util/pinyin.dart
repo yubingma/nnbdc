@@ -150,7 +150,7 @@ Map<String, double> yunMuSimularityMap = {
   "v-yu": 0.95,
 
   // 低相似示例（保留以区分）
-  "an-ai": 0.30,
+  "an-ai": 0.45,
   "ai-ang": 0.35, // 模糊匹配（如：大概/大纲）
   "a-ai": 0.20,
 };
