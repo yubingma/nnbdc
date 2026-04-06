@@ -3,17 +3,17 @@ go to bed|上床睡觉
 ready|准备好的
 hurry|抓紧；赶快
 math|数学
-Chinese n|中文，汉语
-china n|中国;瓷器
-England n|英格兰;英国
-English a|英国的；英国人
-PE|体育
+Chinese|中文，汉语
+china|中国;瓷器
+England|英格兰;英国
+English|英国的；英国人
+P.E.|体育
 class|班级；课程
 music|音乐
 for|为；给
 jacket|夹克衫
 shirt|衬衫
-T-shirt T|恤衫
+T-shirt|T 恤衫
 skirt|裙子
 dress|连衣裙
 sweater|毛衣
@@ -40,12 +40,12 @@ weather report|天气预报
 wear|穿
 football|足球
 put on|穿上. put on 动词,表示穿上
-rain n|雨 vi.下雨
+rain|雨 vi.下雨
 rainy|下雨的
 now|现在
-snow n|雪；vi.下雪
+snow|雪；vi.下雪
 snowy|下雪的
-wind n|风
+wind|风
 windy|有风的
 cloud|云
 cloudy|多云的
@@ -96,7 +96,7 @@ there be|有
 Young|年轻的
 funny|滑稽可笑的
 tall|高的
-strong|壮的
+strong|强壮的
 kind|和蔼的、亲切的
 old|年老的
 short|矮的

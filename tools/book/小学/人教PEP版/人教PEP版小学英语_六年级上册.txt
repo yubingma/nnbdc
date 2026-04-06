@@ -53,7 +53,7 @@ must|一定；肯定
 fun|快乐；乐趣
 with|同…
 TV reporter|电视台记者
-live lives|居住
+live –lives|居住
 teaches|教
 goes|去
 watches|看

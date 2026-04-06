@@ -14,7 +14,7 @@ desk|课桌
 chair|椅子
 Walkman|随身听
 lamp|台灯
-your j|你的；你们的
+your|你的；你们的
 zoo|动物园
 small|小的
 big|大的
@@ -69,10 +69,10 @@ sorry|对不起
 long hair|长头发
 short hair|短头发
 thin|瘦的
-strong|壮的
+strong|强壮的
 quiet|安静的
 friend|朋友
-Chinese n|中文，汉语
+Chinese|中文，汉语
 Photo|照片
 music|音乐
 science|科学
@@ -130,7 +130,7 @@ farmer|农民
 nurse|护士
 playground|操场
 garden|花园
-teachers-office|教师办公室
+teacher's-office|教师办公室
 library|图书馆
 canteen|食堂
 first|第一
@@ -150,7 +150,7 @@ cool|订好的；酷的
 English class|英语课
 music class|音乐课
 breakfast|早餐
-PE class|体育课
+P.E. class|体育课
 over|结束
 go to the playground|去操场
 just a minute|再多一会
