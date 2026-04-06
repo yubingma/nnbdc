@@ -91,9 +91,9 @@ mom|妈妈 口语
 man|男人
 woman|女人
 grandmother|外祖母
-grandma|（口语(外祖母
+grandma|(外）祖母
 grandfather|（外）祖父
-grandpa|(口语（外）祖父
+grandpa|（外）祖父
 sister|姐妹
 brother|兄妹
 let us|让我们

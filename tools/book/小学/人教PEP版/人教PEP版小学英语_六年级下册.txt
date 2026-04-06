@@ -87,7 +87,7 @@ fly|(过去式 flew) 飞
 return|送回；归还
 swim|（过去式 swam）游泳
 sang and danced|唱歌和跳舞
-good food|吃好吃的食物
+good food|好吃的食物
 pictures|照相
 climbed|爬
 rowed a boat|划船

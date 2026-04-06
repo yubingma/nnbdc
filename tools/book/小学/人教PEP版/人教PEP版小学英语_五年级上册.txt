@@ -90,7 +90,8 @@ play chess|下棋
 have a picnic|举行野餐
 him|他（宾格）
 leave|离开
-us|我们（宾格 over there 在那边
+us|我们
+over there|在那边
 by|经，乘
 foot|脚
 bike|自行车

@@ -39,7 +39,7 @@ weather|天气
 weather report|天气预报
 wear|穿
 football|足球
-put on|穿上. put on 动词,表示穿上
+put on|穿上
 rain|雨 vi.下雨
 rainy|下雨的
 now|现在
