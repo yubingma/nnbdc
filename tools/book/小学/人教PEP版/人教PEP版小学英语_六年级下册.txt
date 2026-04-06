@@ -1,101 +1,123 @@
-taller|更高的
-shorter|更矮的
-stronger|更强壮的
-older|年龄更大的
-younger|更年轻的
-cm(centimeter)|厘米
-than|与…相比较
-funnier|更滑稽的
-bigger|更大的
-heavier|更重的
-longer|更长的
-thinner|更瘦的
-smaller|（体型）更小
-feet|脚（复数）
-size|号 码；尺码
-wear|穿
-meter|米
-ton|吨
-each|各自；每个
-squid|鱿鱼
-lobster|龙虾
-shark|鲨鱼
-deep|深的
-seal|海豹
-sperm whale|抹香鲸
-Killer whale|虎鲸
-even|甚至
-have a fever|发烧
-have a sore throat|喉咙疼
-have a cold|感冒
-have a toothache|牙疼
-have a headache|头疼
-matter|事情，麻烦
-sore|疼的
-feel|感觉
-sick|不舒服的；有病的
-hurt|疼痛
-nose|鼻子
-people|人们
-flu|流感
-know|知道
-might|可以；能
-worry|烦恼；担忧
-medicine|药
-drink|饮料
-stay|在；逗留
-soon|立刻；不久
-tired|疲劳的，累的
-excited|兴奋的
-angry|生气的
-happy|高兴的
-bored|无聊的，烦人的
-sad|忧伤的，悲伤的
-trip|旅行
-fail|不及格；失败
-test|测试
-hear|听见
-match|比赛
-between|在…之间
-pass|传递
-kick|踢
-a little|有些
-goal|得分
-bounce|反弹
-off|距；离；离开
-another|另一个
-guess|猜测
-win|（过去式 won）赢
-game|比赛
-laugh at|因…而发笑
-watched|看
-washed|洗
-cleaned|打扫
-played|玩
-visited|看望
-last weekend|上一个周末
-went|去
-went to a park|去公园
-went swimming|去游泳
-went fishing|去钓鱼
-read|读
-went hiking|去郊游
-yesterday|昨天
-study|（过去式 studied 学习
-Tongue twister|绕口令
-fly|(过去式 flew) 飞
-return|送回；归还
-swim|（过去式 swam）游泳
-sang and danced|唱歌和跳舞
-good food|好吃的食物
-pictures|照相
-climbed|爬
-rowed a boat|划船
-saw elephant|看大象
-went skiing|去滑雪
-how|怎么，如何
-got|到达
-last|上一个的，仅余的
-cousin|堂（表）兄弟
-relax|放松
-prepare|准备
+805. down|向下
+806. into|进入
+807. come out|露出
+808. again|又
+809. seed|种子
+810. soil|土壤
+811. sprout|苗，芽
+812. plant|植物，种植
+813. should|应该
+814. then|然后
+815. garden|花园
+816. easy|简单的
+817. put|放
+818. several|一些
+819. day|天
+820. see|看见
+821. pot|锅碗瓢盆
+822. lovely|可爱的
+823. make sure|核实
+824. month|月份
+825. still|仍然
+826. hardly|几乎不
+827. taller|更高的
+828. shorter|更矮的
+829. stronger|更强壮的
+830. older|年龄更大的
+831. younger|更年轻的
+832. cm(centimeter)|厘米
+833. than|与…相比较
+834. funnier|更滑稽的
+835. bigger|更大的
+836. heavier|更重的
+837. longer|更长的
+838. thinner|更瘦的
+839. smaller|（体型）更小
+840. feet|脚（复数）
+841. size|号 码；尺码
+842. wear|穿
+843. meter|米
+844. ton|吨
+845. each|各自；每个
+846. squid|鱿鱼
+847. lobster|龙虾
+848. shark|鲨鱼
+849. deep|深的
+850. seal|海豹
+851. sperm whale|抹香鲸
+852. Killer whale|虎鲸
+853. even|甚至
+854. have a fever|发烧
+855. have a sore throat|喉咙疼
+856. have a cold|感冒
+857. have a toothache|牙疼
+858. have a headache|头疼
+859. matter|事情，麻烦
+860. sore|疼的
+861. feel|感觉
+862. sick|不舒服的；有病的
+863. hurt|疼痛
+864. nose|鼻子
+865. people|人们
+866. flu|流感
+867. know|知道
+868. might|可以；能
+869. worry|烦恼；担忧
+870. medicine|药
+871. drink|饮料
+872. stay|在；逗留
+874. soon|立刻；不久
+875. tired|疲劳的，累的
+876. excited|兴奋的
+877. angry|生气的
+878. happy|高兴的
+879. bored|无聊的，烦人的
+880. sad|忧伤的，悲伤的
+881. trip|旅行
+882. fail|不及格；失败
+883. test|测试
+884. hear|听见
+885. match|比赛
+886. between|在…之间
+887. pass|传递
+888. kick|踢
+889. a little|有些
+890. goal|得分
+891. bounce|反弹
+892. off|距；离；离开
+893. another|另一个
+894. guess|猜测
+895. win|（过去式 won）赢
+896. game|比赛
+897. laugh at|因…而发笑
+897. watched|看
+898. washed|洗
+899. cleaned|打扫
+900. played|玩
+901. visited|看望
+903. last weekend|上一个周末
+904. went|去
+905. went to a park|去公园
+906. went swimming|去游泳
+907. went fishing|去钓鱼
+908. read|读
+909. went hiking|去郊游
+910. yesterday|昨天
+911. study|（过去式 studied 学习
+912. Tongue twister|绕口令
+913. fly|(过去式 flew) 飞
+914. return|送回；归还
+915. swim|（过去式 swam）游泳
+918. sang and danced|唱歌和跳舞
+920. good food|吃好吃的食物
+922. pictures|照相
+923. climbed|爬
+927. rowed a boat|划船
+929. saw elephant|看大象
+930. went skiing|去滑雪
+933. how|怎么，如何
+934. got|到达
+935. last：|上一个的，仅余的
+936. cousin|堂（表）兄弟
+937. relax|放松
+938. prepare|准备

@@ -1,21 +1,110 @@
-left|左边的
-if|如果
-must|必须
-know|知道
-Library|图书馆
-Post office|邮局
-hospital|医院
-cinema|电影院
-bookstore|书店
-excuse me|对不起
-where|在哪里，到哪里
-please|请
-next to|与…相邻
-far|远
-supermarket|超市
-bank|银行
-after school|放学以后
-want|想要
-buy|买
-a pair of|一双
-shoe store|鞋店
+516. do morning exercises|晨练
+517. eat breakfast|吃早饭
+518. have English class|上英语课
+519. play sports|进行体育运动
+520. eat dinner|吃晚饭
+521. when|什么时候
+522. about|关于；大约
+523. policeman|警察
+524. work|工作
+525. evening|夜晚；晚上
+526. get up|起床
+527. at|在……点钟
+528. usually|通常；一般
+529. noon|中午
+530. tell|告诉；说
+531. climb mountains|爬山
+532. go shopping|购物；买东西
+533. play the piano|弹钢琴
+535. go hiking|去远足
+536. weekend|周末
+537. often|经常
+538. sometimes|有时候
+539. rain|下雨
+540. either|也
+541. next|下一个
+542. Spring|春天
+543. Summer|夏天
+544. Fall|秋天
+545. winter|冬天
+546. season|季节
+547. which|哪一个
+548. best|最；极
+549. always|总是
+550. play with|玩…
+551. snow|雪
+552. leaf|（复数 leaves）叶子
+553. up|至北方或北方城市
+554. north|北方；向北方
+555. Halloween|万圣节之前夕
+557. swim|游泳
+558. fly kites|放风筝
+559. skate|滑冰；滑冰鞋
+560. make a snowman|堆雪人
+561. plant trees|种树
+562. why|为什么
+563. because|因为
+564. sleep|睡觉
+569. May|五月
+570. June|六月
+571. July|七月
+577. chart|图表
+578. Birthday|生日
+579. Uncle|叔叔；舅舅
+580. Cousin|堂（表）兄弟；堂（表）姐妹
+581. first|第一
+582. second|第二
+583. third|第三
+584. forth|第四
+585. fifth|第五
+586. eighth|第八
+587. ninth|第九
+588. twelfth|第十二
+589. twentieth|第二十
+590. send|寄；发送
+591. e-card|电子卡片
+592. her|她的
+593. able|能
+594. everybody|每个人
+595. then|那么
+596. date|日期
+597. talk|讲话
+598. Children’s Center|儿童活动中心
+599. see you later|再见
+600. listen to music|听音乐
+601. clean the room|打扫房间
+602. write a letter|写信
+603. write an e-mail|写电子邮件
+604. mom|妈妈
+605. grandpa|爷爷；外公
+606. speak to|和…讲话
+607. call|打电话
+608. study|书房
+609. fly|飞
+610. jump|跳
+611. walk|走
+612. run|跑
+613. swim|游泳
+614. kangaroo|袋鼠
+615. trunk|象鼻
+616. sleep|睡觉
+617. climb|往上爬
+618. fight|打架
+619. swing|荡；荡秋千
+620. drink water|喝水
+621. climber|攀登者
+622. take pictures|照相
+624. pick up leaves|采摘树叶
+626. catch butterfly|捉蝴蝶
+627. woods|树木
+628. ant|蚂蚁
+630. honey|蜂蜜
+631. thing|东西；物
+632. count insects|数昆虫
+633. collect leaves|收集树叶
+634. wtite a report|写报告
+635. play chess|下棋
+636. have a picnic|举行野餐
+637. him|他（宾格）
+638. leave|离开
+639. us|我们（宾格 over there 在那边

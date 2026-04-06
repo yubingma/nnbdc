@@ -1,118 +1,72 @@
-Pen|钢笔
-pencil|铅笔
-pencil-case|铅笔盒
-ruler|尺子
-eraser|橡皮
-crayon|蜡笔
-book|书
-bag|书包
-sharpener|卷笔刀
-school|学校
-head|头
-face|脸
-nose|鼻子
-mouth|嘴
-eye|眼睛
-ear|耳朵
-arm|胳膊
-finger|手指
-leg|腿
-foot|脚
-body|身体
-red|红色的
-yellow|黄色的
-green|绿色的
-blue|蓝色的
-purple|紫色的
-white|白色的
-black|黑色的
-orange|橙色的
-pink|粉色的
-brown|棕色的
-cat|猫
-dog|狗
-monkey|猴子
-panda|熊猫
-rabbit|兔子
-duck|鸭子
-pig|猪
-bird|鸟
-bear|熊
-elephant|大象
-mouse|老鼠
-squirrel|松鼠
-cake|蛋糕
-bread|面包
-hot dog|热狗
-hamburger|汉堡包
-chicken|鸡肉
-French Fries|炸薯条
-Coke|可乐
-juice|果汁
-milk|牛奶
-water|水
-tea|茶
-coffee|咖啡
-one|一
-two|二
-three|三
-four|四
-five|五
-six|六
-seven|七
-eight|八
-nine|九
-ten|十
-doll|玩具娃娃
-boat|小船
-ball|球
-kite|风筝
-balloon|气球
-car|小汽车
-plane|飞机
-boy|男孩
-girl|女孩
-teacher|教师
-student|学生
-this|这个
-my|我的
-friend|朋友
-I am|我是
-nice|好的；愉快的
-good morning|早上好
-good afternoon|下午好
-meet|遇见；碰见
-goodbye|再见
-too|也；太
-father|父亲；爸爸
-dad|爸爸 口语
-mother|母亲；妈妈
-mom|妈妈 口语
-man|男人
-woman|女人
-grandmother|外祖母
-grandma|(外）祖母
-grandfather|（外）祖父
-grandpa|（外）祖父
-sister|姐妹
-brother|兄妹
-let us|让我们
-great|太好了
-really|真地；确切地
-and|和；并且
-how|多么；怎么样
-eleven|十一
-twelve|十二
-thirteen|十三
-fourteen|十四
-fifteen|十五
-sixteen|十六
-seventeen|十七
-eighteen|十八
-nineteen|十九
-twenty|二十
-how many|多少
-can|能够；可以
-look at|看；瞧
-peach|桃
-pear|梨
+1. Pen|钢笔
+2. pencil|铅笔
+3. pencil-case|铅笔盒
+4. ruler|尺子
+5. eraser|橡皮
+6. crayon|蜡笔
+7. book|书
+8. bag|书包
+9. sharpener|卷笔刀
+10. school|学校
+11. head|头
+12. face|脸
+13. nose|鼻子
+14. mouth|嘴
+15. eye|眼睛
+16. ear|耳朵
+17. arm|胳膊
+18. finger|手指
+19. leg|腿
+20. foot|脚
+21. body|身体
+22. red|红色的
+23. yellow|黄色的
+24. green|绿色的
+25. blue|蓝色的
+26. purple|紫色的
+27. white|白色的
+28. black|黑色的
+29. orange|橙色的
+30. pink|粉色的
+31. brown|棕色的
+32. cat|猫
+33. dog|狗
+34. monkey|猴子
+35. panda|熊猫
+36. rabbit|兔子
+37. duck|鸭子
+38. pig|猪
+39. bird|鸟
+40. bear|熊
+41. elephant|大象
+42. mouse|老鼠
+43. squirrel|松鼠
+44. cake|蛋糕
+45. bread|面包
+47. hot dog|热狗
+48. hamburger|汉堡包
+49. chicken|鸡肉
+50. French Fries|炸薯条
+51. Coke|可乐
+52. juice|果汁
+53. milk|牛奶
+54. water|水
+55. tea|茶
+56. coffee|咖啡
+57. one|一
+58. two|二
+59. three|三
+60. four|四
+61. five|五
+62. six|六
+63. seven|七
+64. eight|八
+65. nine|九
+66. ten|十
+67. doll|玩具娃娃
+68. boat|小船
+69. ball|球
+70. kite|风筝
+71. balloon|气球
+72. car|小汽车
+73. plane|飞机

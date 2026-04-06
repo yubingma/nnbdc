@@ -1,123 +1,105 @@
-go to school|上学
-go to bed|上床睡觉
-ready|准备好的
-hurry|抓紧；赶快
-math|数学
-Chinese|中文，汉语
-china|中国;瓷器
-England|英格兰;英国
-English|英国的；英国人
-P.E.|体育
-class|班级；课程
-music|音乐
-for|为；给
-jacket|夹克衫
-shirt|衬衫
-T-shirt|T 恤衫
-skirt|裙子
-dress|连衣裙
-sweater|毛衣
-whose|谁的
-no|不；不是
-not|不；不是的
-jeans|牛仔裤
-pants|长裤
-parents|父母亲
-socks|袜子
-shoes|鞋子
-shorts|短裤
-these|这些
-those|那些
-what for|为什么
-neighbour|邻居
-colour|颜色
-warm|暖和的
-cold|寒冷的
-cool|凉爽的；酷的
-hot|炎热的
-weather|天气
-weather report|天气预报
-wear|穿
-football|足球
-put on|穿上
-rain|雨 vi.下雨
-rainy|下雨的
-now|现在
-snow|雪；vi.下雪
-snowy|下雪的
-wind|风
-windy|有风的
-cloud|云
-cloudy|多云的
-sun|太阳
-sunny|晴朗的
-not much|没什么
-New York|纽约
-matter|事情；麻烦
-have to|必须；不得不
-colourful|色彩丰富的
-pretty|漂亮的；可爱的
-cheap|便宜的
-expensive|昂贵的
-sixty|六十
-seventy|七十
-hundred|百
-how much|多少钱
-ninety-nine|九十九
-sneakers|胶底帆网球鞋
-slippers|拖鞋
-sandals|凉鞋
-boots|靴子
-want|想要
-pair|一双；一对
-a pair of|一双
-son|儿子
-size|尺码
-take|买
-them|它（他、她）们
-sheep|绵羊
-horse|马
-hen|母鸡
-lamb|小羊；羔羊
-goat|山羊
-cow|奶牛
-donkey|驴子
-key|钥匙
-rabbit|兔子
-pig|猪
-duck|鸭子
-tomoto|西红柿
-cucumber|黄瓜
-potato|土豆
-onion|洋葱
-carrot|胡萝卜
-fresh|新鲜的
-there be|有
-Young|年轻的
-funny|滑稽可笑的
-tall|高的
-strong|强壮的
-kind|和蔼的、亲切的
-old|年老的
-short|矮的
-thin|瘦的
-Mr|先生
-from|从；来自
-Canada|加拿大
-like|像、喜欢
-know|知道
-principal|校长
-strict|严格的
-smart|聪明的、巧妙的
-active|积极的、活跃的
-Miss|小姐
-lady|女士；小姐；夫人
-so much|很；非常
-fun|有趣；逗笑
-quiet|安静的、文静的
-very|很、非常
-Monday|星期一
-but|但是
-Tuesday|星期二
-Wednesday|星期三
-Thursday|星期四
+146. window|窗户
+147. board|写字板
+148. light|灯；管灯
+149. picture|画；图画
+150. door|门
+151. floor|地板
+152. classroom|教室
+153. many|许多的
+154. our|我们的
+155. classmate|同学
+156. have a look|看一看
+157. seat|座位
+158. near|在…的旁边
+159. new|新的
+160. where|在哪里
+161. computer|计算机
+162. teacher’s desk|讲台
+163. wall|墙
+164. fan|扇子；电扇
+165. clean|打扫；清洁；擦干净的
+166. good idea|好主意
+167. all right|好吧；好的
+168. good job|干得好
+169. Chinese book|语文书
+170. English book|英语书
+171. math book|数学书
+172. schoolbag|书包
+173. story-book|故事书
+174. notebook|笔记本
+175. colour|颜色
+176. fat|胖的
+177. may|可以
+178. sure|当然可以
+179. here you are|给你
+180. twenty -one|二十一
+181. thirty|三十
+182. thirty-one|三十一
+183. forty|四十
+184. forty-one|四十一
+185. fifty|五十
+186. too many|太多了
+187. heavy|重的；沉重的
+188. sorry|对不起
+189. long hair|长头发
+190. short hair|短头发
+191. thin|瘦的
+192. strong|强壮的
+193. quiet|安静的
+194. friend|朋友
+195. Chinese n.|中文，汉语
+196. Photo|照片
+197. music|音乐
+198. science|科学
+199. sports|体育运动
+200. painting|绘画
+202. Her|她的
+203. right|对的；正确的
+204. study|书房
+205. bathroom|卫生间
+206. bedroom|卧室
+207. living room|起居室
+208. kitchen|厨房
+209. fish|鱼
+210. room|房间
+211. open|打开
+212. close|关上
+213. phone|电话
+214. sofa|沙发
+215. shelf|书架
+216. fridge|冰箱
+217. rice|米饭
+218. noodle(s)|面条（复数）
+219. soup|汤
+220. vegetable|蔬菜
+221. beef|牛肉
+222. dinner|晚餐；正餐
+223. wait|等
+224. hungry|饥饿的
+225. knife|刀
+226. chopstick(s)|筷子
+227. spoon|勺子
+228. plate|盘子
+229. plane|飞机
+230. fork|叉子
+231. pass|传递
+232. ready|准备好了
+233. try|尝试
+234. help yourself|随便吃
+235. show|展示
+236. yummy|好吃的
+237. use|使用
+238. family|家庭
+239. parents|父母
+240. uncle|叔叔；舅舅
+241. aunt|姨；姑姑；婶
+242. baby|婴儿
+243. people|人
+244. member|成员
+245. only|只有；仅仅
+246. puppy|小狗
+248. driver|司机
+249. doctor|医生
+250. farm|农场
+251. farmer|农民
+252. nurse|护士

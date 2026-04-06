@@ -1,120 +1,126 @@
-Friday|星期五
-Moral Studies|思想品德课
-Social Studies|社会课
-Saturday|星期六
-Sunday|星期天
-day|天
-wait|等等；等待
-tomorrow|明天
-often|经常
-love|爱；热爱
-have|有、吃
-on|在…..时候
-do homework|做作业
-watch TV|看电视
-read books|读书
-cabbage|洋白菜; 卷心菜
-pork|猪肉
-mutton|羊肉
-fish|鱼
-green beans|青豆
-tofu|豆腐
-potato|土豆
-tomato|西红柿
-for|为
-lunch|中餐
-we|我们
-menu|菜单
-sound|听起来
-Mew Mew|猫咪
-healthy|健康的
-tasty|好吃的
-sweet|甜的
-sour|酸的
-fresh|新鲜的
-salty|咸的
-favourite|最喜欢的
-they are|他们是
-fruit|水果
-grape|葡萄
-now|现在
-have to|不得不
-eat|吃
-empty the trash|倒垃圾
-cook the meals|烧饭
-water the flowers|浇花
-sweep the floor|扫地
-helpful|有帮助的
-at home|在家里
-ill|有病的
-just do it|就这么干吧
-do housework|做家务
-make the bed|铺床
-set the table|摆饭桌
-wash the clothes|洗衣服
-do the dishes|洗碗碟
-put away the clothes|收拾衣服
-have a try|试一试
-robot|机器人
-play chess|下棋
-use a computer|使用计算机
-air-conditioner|空调
-curtain|窗帘
-trash bin|垃圾箱
-closet|壁橱
-mirror|镜子
-end table|床头柜
-look at|看一看
-own|自己的
-flat|公寓
-third|第三的
-bedroom|卧室
-kitchen|厨房
-bathroom|卫生间
-living room|客厅
-in|在…里面
-under|在…下面
-near|在..旁边
-behind|在…后边
-over|在…上面
-clothes|衣服
-work|工作
-tell|告诉；说
-sky|天空
-cloud|云
-mountain|山；山脉
-river|河流
-flower|花
-grass|草
-lake|湖泊
-forest|森林
-path|路
-park|公园
-nature park|自然公园
-farm|农场
-holiday|假期
-picture|照片
-village|乡村；村庄
-city|城市
-house|房子
-bridge|桥
-tree|树
-road|公路
-building|建筑物
-clean|干净的
-air|空气
-run|跑；奔跑
-any|任何的；所有的
-do morning exercises|晨练
-eat breakfast|吃早饭
-have English class|上英语课
-play sports|进行体育运动
-eat dinner|吃晚饭
-when|什么时候
-about|关于；大约
-policeman|警察
-evening|夜晚；晚上
-get up|起床
-at|在……点钟
-usually|通常；一般
-noon|中午
+253. playground|操场
+254. garden|花园
+255. teacher,s-office|教师办公室
+256. library|图书馆
+257. canteen|食堂
+258. first|第一
+259. visitor|客人；参观者
+260. there|哪儿；那里
+261. lunch|午餐
+262. this way|这边
+263. that|那；那个
+264. art room|绘画教室
+265. computer room|计算机教室
+266. washroom|卫生间
+267. music room|音乐教室
+268. gym|体育馆
+269. TV room|电视机房
+270. second|第二
+271. cool|订好的；酷的
+272. English class|英语课
+273. music class|音乐课
+274. breakfast|早餐
+275. P.E. class|体育课
+276. over|结束
+277. go to the playground|去操场
+278. just a minute|再多一会
+279. go home|回家
+280. kid|小孩；孩子
+282. run|跑
+283. get up|起床
+284. go to school|上学
+285. go to bed|上床睡觉
+286. ready|准备好的
+287. hurry|抓紧；赶快
+288. math|数学
+289. Chinese n.|中文，汉语
+290. china n.|中国;瓷器
+291. England n.|英格兰;英国
+292. English a.|英国的；英国人
+293. P.E.|体育
+294. class|班级；课程
+295. music|音乐
+296. for|为；给
+297. jacket|夹克衫
+298. shirt|衬衫
+299. T-shirt|T 恤衫
+300. skirt|裙子
+301. dress|连衣裙
+302. sweater|毛衣
+303. whose|谁的
+304. no|不；不是
+305. not|不；不是的
+306. jeans|牛仔裤
+307. pants|长裤
+308. parents|父母亲
+309. socks|袜子
+310. shoes|鞋子
+311. shorts|短裤
+312. these|这些
+313. those|那些
+314. what for|为什么
+315. neighbour|邻居
+316. colour|颜色
+317. warm|暖和的
+318. cold|寒冷的
+319. cool|凉爽的；酷的
+320. hot|炎热的
+321. weather|天气
+322. weather report|天气预报
+323. wear|穿
+324. football|足球
+325. put on|穿上. put on 动词,表示穿上
+326. rain n.|雨 vi.下雨
+327. rainy|下雨的
+328. now|现在
+329. snow n.|雪；vi.下雪
+330. snowy|下雪的
+331. wind n.|风
+332. windy|有风的
+333. cloud|云
+334. cloudy|多云的
+335. sun|太阳
+336. sunny|晴朗的
+337. not much|没什么
+338. New York|纽约
+339. matter|事情；麻烦
+340. have to|必须；不得不
+341. colourful|色彩丰富的
+342. pretty|漂亮的；可爱的
+343. cheap|便宜的
+344. expensive|昂贵的
+345. sixty|六十
+346. seventy|七十
+347. hundred|百
+348. how much|多少钱
+349. ninety-nine|九十九
+350. sneakers|胶底帆网球鞋
+351. slippers|拖鞋
+352. sandals|凉鞋
+353. boots|靴子
+354. want|想要
+355. pair|一双；一对
+356. a pair of|一双
+357. son|儿子
+358. sun|太阳
+359. size|尺码
+360. take|买
+361. them|它（他、她）们
+362. sheep|绵羊
+363. horse|马
+364. hen|母鸡
+365. lamb|小羊；羔羊
+366. goat|山羊
+367. cow|奶牛
+368. donkey|驴子
+369. key|钥匙
+370. rabbit|兔子
+371. pig|猪
+372. duck|鸭子
+373. tomoto|西红柿
+374. cucumber|黄瓜
+375. potato|土豆
+376. onion|洋葱
+377. carrot|胡萝卜
+378. fresh|新鲜的
+379. there be|有
