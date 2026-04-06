@@ -12,7 +12,6 @@ monkey|猴子
 tiger|老虎
 have|有
 Let's…|咱们……
-let's|让咱们
 make|做；制作
 fruit|水果
 salad|色拉

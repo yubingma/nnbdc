@@ -110,7 +110,6 @@ clean|干净的，整洁的
 make|使……变得
 air|空气
 dirty|肮脏的
-smoke|烟雾
 rubbish|垃圾
 messy|肮脏的，乱七八糟的
 dead|死的

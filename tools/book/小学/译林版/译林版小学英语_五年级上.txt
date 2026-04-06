@@ -68,7 +68,6 @@ write|写
 work|工作
 at home|在家
 doctor|医生
-help|帮助
 sick|生病的
 people|人；人们
 factory|工厂
@@ -109,7 +108,6 @@ Internet|网络，互联网
 always|总是，一直
 sometimes|有时
 go to the cinema|去看电影
-there|那里
 a lot|很多
 come out|出来
 get out|出来
@@ -140,7 +138,6 @@ Merry Christmas!|圣诞快乐！
 song|歌曲
 What's wrong with …？  ……|怎么了？
 him|他
-us|我们
 letter|信
 storybook|故事书
 after|在……以后
