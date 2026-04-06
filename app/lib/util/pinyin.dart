@@ -30,6 +30,7 @@ Map<String, double> shengMuSimularityMap = {
   "p-f": 0.60,
   "m-f": 0.40,
   "w-f": 0.25,
+  "m-w": 0.60,
 
   // 齿龈与边音/鼻音的混淆
   "d-n": 0.60,
@@ -95,6 +96,7 @@ Map<String, double> yunMuSimularityMap = {
   "ie-v": 0.65,
   "ve-v": 0.65,
   "ui-uei": 0.95,
+  "ei-uei": 0.90,
   "iu-iou": 0.95,
 
   // 鼻化韵母接近（前鼻/后鼻 & 圆唇差异）
@@ -138,6 +140,9 @@ Map<String, double> yunMuSimularityMap = {
   // 复合韵近似
   "an-ian": 0.70,
   "an-uan": 0.70,
+  "en-un": 0.75,
+  "uan-un": 0.70,
+  "en-uan": 0.50,
   "ian-uan": 0.70,
   "iao-ao": 0.60,
   "uan-an": 0.60, // 从 0.50 略升
