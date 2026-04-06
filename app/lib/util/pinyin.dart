@@ -138,6 +138,7 @@ Map<String, double> yunMuSimularityMap = {
   "ian-uan": 0.70,
   "iao-ao": 0.60,
   "uan-an": 0.60, // 从 0.50 略升
+  "ian-ie": 0.65, // 常用混淆（如：没见/媒介）
   "ian-an": 0.60, // 新增
 
   "i-yi": 0.95,
