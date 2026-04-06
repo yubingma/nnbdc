@@ -41,7 +41,7 @@ Map<String, double> shengMuSimularityMap = {
 
   // 软腭与声门擦音的混淆
   "g-h": 0.35,
-  "k-h": 0.45,
+  "k-h": 0.70, // 常用混淆（如：看/汉，苦/胡）
 
   // 舌面前音组（alveolo-palatal）
   "j-q": 0.80,
