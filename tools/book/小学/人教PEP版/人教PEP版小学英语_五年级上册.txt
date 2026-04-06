@@ -31,11 +31,11 @@ her|她的
 his|他的
 very|很，非常
 but|但是
-Monday|(Mon.) ['mʌndi] 星期一
-Tuesday|(Tue.) ['tju:zdi ]. 星期二
-Wednesday|(Wed.) ['wenzdei] 星期三
-Thursday|(Thu.) ['θə:zdi ] 星期四
-Friday|(Fri.) [ 'fraidi ] 星期五
+Monday|(Mon.) 星期一
+Tuesday|(Tue.) 星期二
+Wednesday|(Wed.) 星期三
+Thursday|(Thu.) 星期四
+Friday|(Fri.) 星期五
 Moral Education|思想品德课
 Social Studies|社会课
 day|天;日子
@@ -45,10 +45,10 @@ tomorrow|明天
 have|有；吃
 on|在……时候
 do homework|做作业
-watch TV|看电视：[wɔtʃ]
+watch TV|看电视：
 read books|读书
-Saturday|(Sat.) ['sætədi]星期六
-Sunday|(Sun.) [ 'sʌndi ]星期天
+Saturday|(Sat.) 星期六
+Sunday|(Sun.) 星期天
 often|常常;经常
 sometimes|有时
 usually|

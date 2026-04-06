@@ -59,7 +59,7 @@ short hair|短头发
 thin|瘦的
 strong|健壮的
 quiet|安静的
-friend|(s)：[frend]朋友（复数）
+friend|(s)：朋友（复数）
 Chinese|中国的
 like|喜欢
 his|他的
@@ -112,7 +112,7 @@ no|不；不是
 desk|课桌；书桌
 chair|椅子
 rice|米饭
-noodle|(s) ：['nu:dl]面条（复数）
+noodle|(s) ：面条（复数）
 beef|牛肉
 vegetable|蔬菜
 soup|汤
@@ -135,7 +135,7 @@ pass|传递
 ready|准备好了
 try|常识；试一下
 help yourself|随便吃
-show|展示[ʃəu]
+show|展示
 yummy|好吃的
 food|食物
 use|使用

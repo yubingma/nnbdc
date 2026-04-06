@@ -30,7 +30,7 @@ fall|秋天
 winter|冬天
 season|季节
 best|最；极
-always|总是[ 'ɔ:lweiz ]
+always|总是
 play with|玩，与…一起玩
 snow|雪
 leaf|（复数leaves）叶子
@@ -98,7 +98,7 @@ jump|跳
 walk|走
 run|跑
 kangaroo|袋鼠
-truck|象鼻[trʌk]
+truck|象鼻
 climb|往上爬
 fight|打架
 swing|荡；荡秋千
