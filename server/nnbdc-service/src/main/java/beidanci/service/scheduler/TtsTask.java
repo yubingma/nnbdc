@@ -17,6 +17,7 @@ import beidanci.service.bo.SentenceBo;
 import beidanci.service.bo.SysDbSyncBo;
 import beidanci.service.po.Sentence;
 import beidanci.service.util.SysParamUtil;
+import beidanci.service.util.JsonUtils;
 
 @Component
 public class TtsTask {
@@ -67,7 +68,7 @@ public class TtsTask {
                     sentenceBo.updateEntity(sentence);
 
                     // 记录一下系统同步日志
-                    sysDbSyncBo.logOperation("UPDATE", "sentence", sentence.getId(), beidanci.service.util.JsonUtils.toJson(sentenceBo.toDto(sentence)));
+                    sysDbSyncBo.logOperation("UPDATE", "sentence", sentence.getId(), JsonUtils.toJson(sentenceBo.toDto(sentence)));
                     log.info("例句 TTS 生成成功并保存: {}", sentence.getId());
                 } else {
                     log.error("TTS 生成失败，获得空的音频数据: {}", sentence.getId());

@@ -13,6 +13,7 @@ import beidanci.service.bo.AiBo;
 import beidanci.service.bo.CigenBo;
 import beidanci.service.bo.UserBo;
 import beidanci.service.po.User;
+import beidanci.service.util.JsonUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -67,7 +68,7 @@ public class AdminCigenOptimizeController {
                         try {
                             String json = aiBo.parseCigenDescription(description);
                             if (json != null) {
-                                Map<String, Object> data = beidanci.service.util.JsonUtils.parseMap(json);
+                                Map<String, Object> data = JsonUtils.parseMap(json);
                                 String spell = (String) data.get("spell");
                                 String category = (String) data.get("category");
                                 String meaningCn = (String) data.get("meaningCn");
