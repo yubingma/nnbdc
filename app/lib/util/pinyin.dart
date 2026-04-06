@@ -91,6 +91,8 @@ Map<String, double> yunMuSimularityMap = {
   "ie-ve": 0.70,
 
   // 省略音节等价（书写差异）
+  "ie-v": 0.65,
+  "ve-v": 0.65,
   "ui-uei": 0.95,
   "iu-iou": 0.95,
 
@@ -476,6 +478,33 @@ bool fuzzyChineseContains(Object chinese1, String chinese2) {
         double v2 = dp[i][j - 1];
         double v3 = dp[i - 1][j - 1] + maxSim;
 
+        // 通用化处理：处理“元音桥接（Vowel Bridge）”情况
+        // 如：“吸引”(xi-yin) 的末尾元音 i 与开头元音 i (y) 相同，在快读时极易合并
+        // 如果当前字 i 与前一个字 i-1 存在元音桥接，且前一个字已经有了不错的匹配
+        if (i >= 2 && dp[i - 1][j] > dp[i - 2][j]) {
+          bool hasBridge = false;
+          for (var pPrev in targetPinyins[i - 2]) {
+            for (var pCurr in targetPinyins[i - 1]) {
+              // 检查前一个字的韵母末尾和当前字的韵母开头（或零声母整体）是否元音相同
+              // 补充：当前字必须是零声母（如 y, w 开头的音节），才满足“发音合并”的特征
+              String lastVowel = pPrev.yunMu.substring(pPrev.yunMu.length - 1);
+              String firstVowel = pCurr.yunMu.substring(0, 1);
+              if (pCurr.shengMu.isEmpty && lastVowel == firstVowel && (lastVowel == 'i' || lastVowel == 'u' || lastVowel == 'v')) {
+                hasBridge = true;
+                break;
+              }
+            }
+            if (hasBridge) break;
+          }
+
+          if (hasBridge) {
+            // 如果存在桥接，允许当前字 i 借用前一个字的匹配成果，但给予 0.8 的“合并扣分”
+            double mergedSim = 0.8;
+            double v4 = dp[i - 1][j] + mergedSim;
+            if (v4 > v3) v3 = v4;
+          }
+        }
+
         double maxV = v1 > v2 ? v1 : v2;
         maxV = maxV > v3 ? maxV : v3;
         dp[i][j] = maxV;
@@ -484,16 +513,6 @@ bool fuzzyChineseContains(Object chinese1, String chinese2) {
 
     double maxSimSum = dp[M][N];
     double avgSim = maxSimSum / M;
-
-    // 对于“漏读/未识别全”的情况进行补偿：
-    // 如果用户输入的音节数少于词条字符数，但已输入的音节匹配度极高(>=95%)，
-    // 且输入量过半，则允许一定程度的漏读（以 0.85 的权重折算）
-    if (N < M && N >= (M / 2.0).ceil() && maxSimSum >= N * 0.95) {
-      double altAvgSim = (maxSimSum / N) * 0.85;
-      if (altAvgSim > avgSim) {
-        avgSim = altAvgSim;
-      }
-    }
 
     // 对于短句（1-2个字），提高匹配门槛，防止被发音接近但完全不同的常用字干扰（误判）
     // 对于 3 个字及以上，维持现状以保证容错率

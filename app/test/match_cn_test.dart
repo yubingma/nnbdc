@@ -78,4 +78,12 @@ void main() {
     debugPrint('~~~~~asrResult: $asrResult, meaning: $meaning, match: $match');
     expect(match, isTrue);
   });
+  test('Test fuzzyChineseContains - 父也-赋予', () {
+    String asrResult = "父也";
+    String meaning = "n. 赋予";
+    
+    bool match = fuzzyChineseContains(asrResult, meaning);
+    debugPrint('~~~~~asrResult: $asrResult, meaning: $meaning, match: $match');
+    expect(match, isTrue);
+  });
 }
