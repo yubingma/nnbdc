@@ -49,8 +49,7 @@ hobby|爱好
 ride a bike|骑自行车
 dive|跳水
 play the violin|拉小提琴
-make kites|
-making kites|制作风筝
+make kites|制作风筝
 collecting stamps|集邮
 live|居住
 teach|教

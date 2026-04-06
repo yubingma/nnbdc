@@ -47,10 +47,12 @@ bag|
 pen|
 twenty-one|二十一
 thirty|
+thirty-one|三十一
 forty|
 forty -one|四十一
 fifty|五十
 heavy|重的；沉重的
+what’s|是什么
 sorry|对不起
 long hair|长头发
 short hair|短头发
@@ -63,6 +65,7 @@ like|喜欢
 his|他的
 photo|照片
 he’s|他是
+has|(他/她)有
 name|名字
 he|他
 teacher|教师
@@ -73,6 +76,8 @@ sports|体育运动
 computer game|电脑游戏
 painting|绘画
 she’s|她是
+her|她的
+you’re|
 she|她
 right|对的；正确的
 boy|男孩
@@ -83,6 +88,7 @@ bedroom|卧室
 living room|客厅
 kitchen|厨房
 it’s|它是
+hey|嘿
 fish|鱼
 isn’t|
 nothere|这里
@@ -91,9 +97,12 @@ school|学校
 phone|电话
 bed|床
 sofa|沙发
+shelf|书架
 fridge|冰箱
 table|桌子
+they|他们
 aren’t|
+they’re|
 key|钥匙
 open|打开
 look|看
@@ -103,6 +112,7 @@ no|不；不是
 desk|课桌；书桌
 chair|椅子
 rice|米饭
+noodle|s) ：面条(复数
 beef|牛肉
 vegetable|蔬菜
 soup|汤
@@ -120,6 +130,7 @@ knife|刀
 chopsticks|筷子(复数)
 spoon|勺子
 plate|盘子
+help|帮助；帮忙
 pass|传递
 ready|准备好了
 try|常识；试一下
@@ -135,14 +146,18 @@ uncle|叔叔；舅舅
 aunt|姑姑；婶；姨
 baby|婴儿
 people|人
+member|成员
+only|只有；仅仅
 puppy|小狗
 gee|用以表示惊奇、赞赏
 come|来
 who|谁
 sister|姐妹
 brother|兄弟
+father|父亲；爸爸
 baseball player|棒球运动员
 driver|司机
 doctor|医生
 farmer|农民
 nurse|护士
+young|年轻的

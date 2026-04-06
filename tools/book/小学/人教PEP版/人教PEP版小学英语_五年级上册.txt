@@ -27,6 +27,7 @@ quiet|安静的，文静的
 she’s|她是
 she|她
 he|他
+her|她的
 his|他的
 very|很，非常
 but|但是
@@ -39,6 +40,7 @@ Moral Education|思想品德课
 Social Studies|社会课
 day|天;日子
 wait|等待;等等
+waiter|侍者,服务员
 tomorrow|明天
 have|有；吃
 on|在……时候
@@ -61,7 +63,9 @@ pork|猪肉
 eggplant|茄子
 fish|鱼
 green beans|青豆
+tofu|豆腐
 potato|土豆
+tomato|西红柿
 I’d like|
 for|为
 lunch|中餐
@@ -132,10 +136,12 @@ river|河流
 flower|花
 grass|草
 lake|湖泊
+forest|森林
 path|路
 park|公园
 nature park|自然公园
 farm|农场,农田
+farmer|农夫
 picture|照片
 village|乡村、村庄
 city|城市

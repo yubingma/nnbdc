@@ -1,4 +1,5 @@
 pen|钢笔
+pencil|铅笔
 pencil-case|铅笔盒
 ruler|尺子
 eraser|橡皮
@@ -39,6 +40,7 @@ ok|好
 to|给,
 mom|
 afternoon|下午午后
+too|也；太
 red|红色的
 yellow|黄色的
 green|绿色的
@@ -106,6 +108,7 @@ doll|玩具娃娃
 boat|小船
 ball|球
 kite|风筝
+balloon|气球
 car|小汽车
 plane|飞机
 friend|朋友

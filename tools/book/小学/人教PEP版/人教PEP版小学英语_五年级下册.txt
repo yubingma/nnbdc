@@ -103,6 +103,7 @@ climb|往上爬
 fight|打架
 swing|荡；荡秋千
 drink water|喝水
+climber|攀登者
 take pictures|照相
 watch insects|观察昆虫
 pick up leaves|采摘树叶
