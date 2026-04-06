@@ -117,7 +117,7 @@ key|钥匙
 rabbit|兔子
 pig|猪
 duck|鸭子
-tomoto|西红柿
+tomato|西红柿
 cucumber|黄瓜
 potato|土豆
 onion|洋葱

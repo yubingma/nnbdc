@@ -62,7 +62,7 @@ right|右边
 left|左边
 straight|成直线地
 then|然后
-twelfth|第二十
+twelfth|第十二
 party|聚会；晚会
 tell|告诉
 start|开始

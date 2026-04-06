@@ -82,7 +82,7 @@ go fishing|去钓鱼
 read|读
 go hiking|去郊游
 yesterday|昨天
-study|（过去式 studied 学习
+study|（过去式 studied）学习
 Tongue twister|绕口令
 fly|(过去式 flew) 飞
 return|送回；归还

@@ -116,7 +116,7 @@ honey|蜂蜜
 thing|东西；物
 count insects|数昆虫
 collect leaves|收集树叶
-wtite a report|写报告
+write a report|写报告
 play chess|下棋
 have a picnic|举行野餐
 him|他（宾格）
