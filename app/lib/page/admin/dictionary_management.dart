@@ -414,15 +414,16 @@ class _DictionaryManagementWidgetState extends State<DictionaryManagementWidget>
     );
   }
 
-  void _editDictionary(DictStatsVo dict) {
+  void _editDictionary(DictStatsVo dict) async {
     // 实现编辑词典功能 - 使用全屏展示
-    Navigator.push(
+    await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => _EditDictionaryDialog(dict: dict),
         fullscreenDialog: true,
       ),
     );
+    _loadDictionaryData();
   }
 
   void _viewDictionaryDetails(DictStatsVo dict) {

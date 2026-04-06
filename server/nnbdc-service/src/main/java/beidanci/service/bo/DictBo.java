@@ -605,6 +605,21 @@ public class DictBo extends BaseBo<Dict> {
             List<String> shuffledDictIds = namedParameterJdbcTemplate.queryForList(findShuffledSql, 
                     new MapSqlParameterSource("dictId", dictId), String.class);
             for (String sDictId : shuffledDictIds) {
+                // 乱序版同步可见性和就绪状态
+                 String updateShuffledSql = "UPDATE dict SET visible = :visible, is_ready = :isReady, update_time = :now WHERE id = :sDictId";
+                 MapSqlParameterSource sParams = new MapSqlParameterSource()
+                         .addValue("visible", visible)
+                         .addValue("isReady", isReady)
+                         .addValue("now", new java.sql.Timestamp(System.currentTimeMillis()))
+                         .addValue("sDictId", sDictId);
+                 namedParameterJdbcTemplate.update(updateShuffledSql, sParams);
+
+                 // 记录系统数据同步日志
+                 Dict sDict = findById(sDictId);
+                 if (sDict != null) {
+                    sysDbLogBo.logOperation("UPDATE", "dict", sDictId, JsonUtils.toJson(toDto(sDict)));
+                 }
+
                 // 乱序版只入选书分组，不入游戏大厅
                 if (targetDictGroupId != null && !targetDictGroupId.trim().isEmpty()) {
                     // 先清理旧的
