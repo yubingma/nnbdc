@@ -30,7 +30,7 @@ good job|干的好
 you|你
 see|看
 me|我
-look at|看……
+look at|看
 Chinese book|语文书
 English book|英语书
 math book|数学书
@@ -118,7 +118,7 @@ vegetable|蔬菜
 soup|汤
 dinner|晚餐；正餐
 wait|等I’d
-l’d like =I would  like|
+l’d like =I would like|
 bread|面包
 milk|牛奶
 egg|蛋

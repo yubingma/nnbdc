@@ -34,12 +34,12 @@ good|好的
 morning|早晨；上午
 this|这；这个
 nice|好的
-meet|见面；遇见；
+meet|见面；遇见
 go|去
 ok|好
 to|给,
 mom|
-afternoon|下午午后.
+afternoon|下午午后
 too|也；太
 red|红色的
 yellow|黄色的
@@ -51,7 +51,7 @@ black|黑色的
 orange|橙色的
 pink|粉色的
 brown|棕色的
-how|如何；怎样 .
+how|如何；怎样
 are|是
 fine|好的
 thank [θæŋk|谢谢
@@ -70,14 +70,14 @@ bear|熊
 elephant|大象
 mouse|老鼠
 squirrel|松鼠
-look  at|
+look at|
 have|有；吃
 super|太棒了 太
 zoo|动物园
 really|真正的；确实
-may|可以；可能 .
+may|可以；可能
 sure|的确,一定
-like|喜欢.
+like|喜欢
 it|它
 cake|蛋糕
 bread|面包
@@ -116,6 +116,6 @@ for|为；给
 happy|快乐的；幸福的
 birthday|生日
 how old|几岁
-eat|吃.
+eat|吃
 how many|许多
 gift|礼物

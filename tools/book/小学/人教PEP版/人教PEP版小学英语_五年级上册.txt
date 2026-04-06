@@ -7,59 +7,59 @@ old|年老的
 short|矮的
 thin|瘦的
 Mr|先生
-from|从;来自. .
+from|从;来自
 Canada|加拿大
-what’s =  what  is|
+what’s = what is|
 like|像……一样；喜欢
-he’s  =  he is|
+he’s = he is|
 know|知道
-now|现在  ※
-no|不.    ※.
+now|现在
+no|不
 principal|校长
-university  student|大学生
+university student|大学生
 strict|严格的
 smart|聪明的，巧妙的
-Miss|小姐.
-Lady    .|女士;小姐’夫人
-so much|很;非常.
-fun|有趣;逗笑. .
+Miss|小姐
+Lady|女士;小姐’夫人
+so much|很;非常
+fun|有趣;逗笑
 quiet|安静的，文静的
-she’s = she  is|
-she|她.    ※
-he   .|他.    ※
-her|她的.  ※
-his|他的   ※
+she’s = she is|
+she|她
+he|他
+her|她的
+his|他的
 very|很，非常
 but|但是
-Monday|(Mon.)  ['mʌndi]   星期一.
+Monday|(Mon.) ['mʌndi] 星期一
 Tuesday|(Tue.) ['tju:zdi ]. 星期二
 Wednesday|(Wed.) ['wenzdei] 星期三
-Thursday|(Thu.) ['θə:zdi ] . 星期四
-Friday|(Fri.) [ 'fraidi ]  星期五
-Moral Education .|思想品德课
-Social Studies   .|社会课
+Thursday|(Thu.) ['θə:zdi ] 星期四
+Friday|(Fri.) [ 'fraidi ] 星期五
+Moral Education|思想品德课
+Social Studies|社会课
 day|天;日子
 wait|等待;等等
-waiter   n.|侍者,服务员  ※
-tomorrow  .|明天
+waiter|侍者,服务员
+tomorrow|明天
 have|有；吃
 on|在……时候
 do homework|做作业
 watch TV|看电视：[wɔtʃ]
 read books|读书
-Saturday|(Sat.)  ['sætədi]星期六
-Sunday|(Sun.)  [ 'sʌndi ]星期天
+Saturday|(Sat.) ['sætədi]星期六
+Sunday|(Sun.) [ 'sʌndi ]星期天
 often|常常;经常
-sometimes|有时 ※
-usually	           ※|
+sometimes|有时
+usually|
 love|爱;热爱
-yeah  .|是;行
+yeah|是;行
 play computer game|玩电脑游戏
-too  .|也;太     .
-to              ※|
+too|也;太
+to|
 do housework|做家务
 cabbage|洋白菜;卷心菜
-pork    n.|猪肉
+pork|猪肉
 eggplant|茄子
 fish|鱼
 green beans|青豆
@@ -70,9 +70,9 @@ I’d like =I would like|
 for|为
 lunch|中餐
 we|我们
-menu   . n.|菜单
+menu|菜单
 sound|听起来
-healthy   a.|健康的;有益健康的
+healthy a|健康的;有益健康的
 tasty|好吃的
 sweet|甜的
 sour|酸的
@@ -83,17 +83,16 @@ they are|他们是
 fruit|水果
 don’t =do not|
 grape|葡萄
-have to  .|不得不
-eat  . v.|吃
+have to|不得不
+eat|吃
 empty the trash|倒垃圾
 cook the meals|煮饭
 water the flowers|浇花
 sweep the floor|扫地
 clean the bedroom|打扫卧室
-helpful a.|有帮助的,有益的
+helpful a|有帮助的,有益的
 at home|
-ill|坏的,有病的.
-at home  .|在家
+ill|坏的,有病的
 wash the windows|擦窗户
 just do it|就这么干, 说做就做
 make the bed|铺床
@@ -101,9 +100,9 @@ set the table|摆饭桌
 wash the clothes|洗衣服
 do the dishes|洗碗碟
 put away the clothes|收拾衣服
-I’d like to =I would like to|我想要干…
+I’d like to =I would like to|我想要干
 robot|机器人
-can’t  =can not|
+can’t =can not|
 play chess|下棋
 use a computer|使用计算机
 air-conditioner|空调
@@ -112,27 +111,27 @@ trash bin|垃圾箱
 closet|壁橱
 mirror|镜子
 end table|床头柜
-look at   .|看一看 .
-own   . a.|自己的
-flat   .|公寓
-third   . a.|第三的
+look at|看一看
+own a|自己的
+flat|公寓
+third a|第三的
 bedroom|卧室
 kitchen|厨房
 bathroom|卫生间
 living room|客厅
-very much   .|非常、很多
+very much|非常、很多
 in|在……里面
 under|在……下面
 near|在……旁边
 behind|在……后边
-over  prep.|在...的上方
+over|在...的上方
 in front of|在…前面
 clothes|衣服
-work.  .|工作
-tell   v.|告诉,说
-sky  n.|天空
-cloud  n.|云
-mountain  n.|山,山脉
+work|工作
+tell|告诉,说
+sky|天空
+cloud|云
+mountain|山,山脉
 river|河流
 flower|花
 grass|草
@@ -140,18 +139,18 @@ lake|湖泊
 forest|森林
 path|路
 park|公园
-nature park|自然公园 .
-farm   . n.|农场,农田
-farmer   . n.|农夫
+nature park|自然公园
+farm|农场,农田
+farmer|农夫
 picture|照片
-village  n.|乡村、村庄
-city  n.|城市
+village|乡村、村庄
+city|城市
 house|房子
 bridge|桥
 tree|树
 road|公路
 building|建筑物
 clean|干净的
-air  n.|空气
+air|空气
 run|跑、奔跑
-any  . . a.|任何的
+any . a|任何的

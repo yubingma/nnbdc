@@ -12,7 +12,7 @@ meet|遇见；碰见
 goodbye|再见
 too|也；太
 welcome|欢迎
-back|回来.
+back|回来
 new|新的
 where|哪里
 you|你；你们
@@ -24,10 +24,10 @@ again|又；再
 class|班级；课程
 we|我们
 today|今天
-watch  out|小心；留神
+watch out|小心；留神
 sorry|对不起
-ant|蚂蚁.
-apple|苹果.
+ant|蚂蚁
+apple|苹果
 Come in|进来
 egg|鸡蛋
 father|爸爸
@@ -48,7 +48,7 @@ really|真地；确切地
 and|和；并且
 how|多么；怎么样
 family|家庭
-come on|鼓励用语.
+come on|鼓励用语
 that|那；那个
 she|她
 he|他
@@ -58,7 +58,7 @@ watch|观看；手表
 TV|电视
 watch TV|看电视
 funny|滑稽可笑的;滑稽
-fun   n.|乐趣,娱乐,嬉戏
+fun|乐趣,娱乐,嬉戏
 big|大的
 ice-cream|冰激凌
 ice|冰
@@ -77,19 +77,19 @@ can|能够；可以
 look at|看；瞧
 fly|飞；放（风筝）
 draw|画画
-picture|图画 .
+picture|图画
 beautiful|美丽的
 jeep|吉普车
 jump|跳
 kangaroo|袋鼠
-key|钥匙 .
+key|钥匙
 guess|猜测
 open|打开
 right|对的；正确的
 lion|狮子
-lock|锁 . .
+lock|锁
 night|夜晚
-nest|鸟窝；巢 .
+nest|鸟窝；巢
 peach|桃
 pear|梨
 watermelon|西瓜
@@ -99,14 +99,14 @@ grape|葡萄
 like|喜欢
 some|一些；某些
 thanks|多谢
-hungry|饥饿的.
-please|请.
+hungry|饥饿的
+please|请
 them|他（她、它）们（宾格）
 very. much|非常；很多的
-taste|品尝.
+taste|品尝
 queen|女王；王后
-quiet|安静的.
-fruit|水果.
+quiet|安静的
+fruit|水果
 certainly|当然；可以
 rainbow|彩虹
 rain|雨；下雨
@@ -120,25 +120,25 @@ chair|椅子
 Walkman|随身听
 lamp|台灯
 zoo|动物园
-play|玩 .
-game|游戏 . .
-here|这儿；这里 .
+play|玩
+game|游戏
+here|这儿；这里
 toy|玩具
-box|盒子.
+box|盒子
 Under|在…下
 On|在…上
-umbrella|伞.
+umbrella|伞
 look .out|当心;留神
-violin|小提琴.
-vest|背心 .
+violin|小提琴
+vest|背心
 window|窗户
 excuse me|对不起
 no. problem|没问题
 here you are|给你的
 use|使用
 fox|狐狸
-us    pron.|我们
-yo-yo|溜溜球.
+us|我们
+yo-yo|溜溜球
 zebra|斑马
 small|小的
 long|长的
@@ -146,19 +146,19 @@ short|短的；矮的
 tall|高的
 giraffe|长颈鹿
 deer|鹿
-dear|亲爱的 .※
-cute|逗人喜爱的 .
-lovely|可爱的 .
-at|在…里 .
+dear|亲爱的
+cute|逗人喜爱的
+lovely|可爱的
+at|在…里
 feed|喂养
-animal|动物.
-children|儿童.
+animal|动物
+children|儿童
 so|如此；这样
-has   .|有
-tail|尾巴.
+has|有
+tail|尾巴
 CAN|加拿大
 PRC|中国
 UK|英国
 USA|美国
-M.|(a.m.)早上；上午
-P.M.|(p.m.)下午
+M|(a.m.)早上；上午
+P.M|(p.m.)下午

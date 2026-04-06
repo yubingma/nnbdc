@@ -9,11 +9,11 @@ long → longer|更长的
 thin → thinner|更瘦的
 small → smaller|体型 更小的
 How tall are you ?|你多高？
-I’m 164 cm tall.|我164厘米高。
-You are 4 cm taller than me.|你比我高4厘米。
+I’m 164 cm tall|我164厘米高。
+You are 4 cm taller than me|你比我高4厘米。
 How heavy are you?|你多重？
-I’m 48 kg.|我48公斤。
-I’m thinner than you, and shorter.|我比你瘦，又矮。
+I’m 48 kg|我48公斤。
+I’m thinner than you, and shorter|我比你瘦，又矮。
 have a fever|发烧
 have a sore throat|喉咙疼
 have a cold|感冒
@@ -29,10 +29,10 @@ happy|高兴的
 bored|无聊的，烦人的
 sad|忧伤的，悲伤的
 What’s the matter?|怎么啦？
-My throat is sore.  My nose hurts.|我的喉咙痛。我的鼻子疼。
-How are you, Liu Yun?You look so happy.|刘云，你怎么样你看起来真高兴。
+My throat is sore. My nose hurts|我的喉咙痛。我的鼻子疼。
+How are you, Liu Yun?You look so happy|刘云，你怎么样你看起来真高兴。
 How are you, Sarah?|萨拉，你好吗？
-You look sad today.|你今天看起来很伤心。
+You look sad today|你今天看起来很伤心。
 watch → watched|看
 wash → washed|洗
 clean → cleaned|打扫
@@ -47,10 +47,10 @@ go swimming → went swimming|去游泳
 go fishing → went fishing|去钓鱼
 go hiking → went hiking|去郊游
 What did you do last weekend?|上周末你做了什么？
-I played football.|我在踢足球。
+I played football|我在踢足球。
 Did you read books?|你看书了吗？
-Yes, I did.|是的，我看了。
-No, I didn’t.|不，我没看。
+Yes, I did|是的，我看了。
+No, I didn’t|不，我没看。
 leran Chinese →|
 learned Chinese|学汉语
 sing and dance →|
@@ -68,6 +68,6 @@ how|怎么，如何
 get → got|到达
 last|上一个的仅余的，留在最后的
 Where did you go on your holiday?|假期里你去过那里？
-I went to Xinjiang.|我去了新疆。
+I went to Xinjiang|我去了新疆。
 How did you go there?|你怎样去那里的？
-I went by train.|我乘火车去的
+I went by train|我乘火车去的

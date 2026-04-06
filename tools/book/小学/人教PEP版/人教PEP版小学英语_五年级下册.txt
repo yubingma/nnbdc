@@ -4,7 +4,7 @@ have English class|上英语课
 play sports|进行体育运动
 eat dinner|吃晚饭
 when|什么时候
-about|关于,大约.
+about|关于,大约
 policeman|警察
 work|工作
 evening|夜晚；晚上
@@ -21,7 +21,7 @@ go hiking|去远足
 weekend|周末
 often|经常
 sometimes|有时候
-rain|下雨. .
+rain|下雨
 either|也
 next|也
 spring|春天
@@ -30,13 +30,13 @@ fall|秋天
 winter|冬天
 season|季节
 best|最；极
-always|总是[ 'ɔ:lweiz ] . .
+always|总是[ 'ɔ:lweiz ]
 play with|玩，与…一起玩
-snow   .|雪
+snow|雪
 leaf|（复数leaves）叶子
-up  . .|
-north|北方；向北方. .
-Halloween.|万圣节前夕（指十月三十一日夜晚）.
+up|
+north|北方；向北方
+Halloween|万圣节前夕（指十月三十一日夜晚）
 Thanksgiving|感恩节
 swim|游泳
 fly kites|放风筝
@@ -46,7 +46,7 @@ plant trees|种树
 why|为什么
 because|因为
 sleep|睡觉
-Jan. / January .|一月
+Jan. / January|一月
 Feb. / February|二月
 Mar. / March|三月
 Apr. / April|四月
@@ -91,7 +91,7 @@ write an e-mail|写电子邮件
 mom|妈妈
 grandpa|爷爷；外公
 speak to|和…讲话
-hold  on|等一下
+hold on|等一下
 study|书房
 fly|飞
 jump|跳
