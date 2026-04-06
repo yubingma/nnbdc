@@ -58,7 +58,7 @@ teach→teaches|教
 go→goes|去
 watch→watches|看
 read→reads|读，看
-does doesn’t=does not|
+does doesn’t|
 What’s your hobby?|（你有什么爱好？）
 I like collecting stamps|（我喜欢集邮。）
 He likes collecting stamps, too|（他也喜欢集邮。）

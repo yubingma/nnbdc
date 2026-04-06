@@ -52,7 +52,7 @@ forty|
 forty -one|四十一
 fifty|五十
 heavy|重的；沉重的
-what’s=what is|
+what’s|是什么
 sorry|对不起
 long hair|长头发
 short hair|短头发
@@ -64,7 +64,7 @@ Chinese|中国的
 like|喜欢
 his|他的
 photo|照片
-he’s=he is|
+he’s|他是
 has|（他/她）有
 name|名字
 he|他
@@ -75,9 +75,9 @@ science|科学
 sports|体育运动
 computer game|电脑游戏
 painting|绘画
-she’s=she is|
+she’s|她是
 her|她的
-you’re=you are|
+you’re|
 she|她
 right|对的；正确的
 boy|男孩
@@ -87,10 +87,10 @@ bathroom|卫生间
 bedroom|卧室
 living room|客厅
 kitchen|厨房
-it’s=it is|
+it’s|它是
 hey|嘿
 fish|鱼
-isn’t=is|
+isn’t|不是
 nothere|这里
 room|房间
 school|学校
@@ -101,8 +101,8 @@ shelf|书架
 fridge|冰箱
 table|桌子
 they|他们
-aren’t=are not|
-they’re=they are|
+aren’t|
+they’re|
 key|钥匙
 open|打开
 look|看
@@ -118,7 +118,7 @@ vegetable|蔬菜
 soup|汤
 dinner|晚餐；正餐
 wait|等I’d
-l’d like =I would like|
+l’d like|
 bread|面包
 milk|牛奶
 egg|蛋

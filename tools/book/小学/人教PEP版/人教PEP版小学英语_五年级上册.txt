@@ -9,9 +9,9 @@ thin|瘦的
 Mr|先生
 from|从;来自
 Canada|加拿大
-what’s = what is|
+what’s|是什么
 like|像……一样；喜欢
-he’s = he is|
+he’s|他是
 know|知道
 now|现在
 no|不
@@ -24,7 +24,7 @@ Lady|女士;小姐’夫人
 so much|很;非常
 fun|有趣;逗笑
 quiet|安静的，文静的
-she’s = she is|
+she’s|她是
 she|她
 he|他
 her|她的
@@ -66,7 +66,7 @@ green beans|青豆
 tofu|豆腐
 potato|土豆
 tomato|西红柿
-I’d like =I would like|
+I’d like|
 for|为
 lunch|中餐
 we|我们
@@ -81,7 +81,7 @@ salty|咸的
 favourite|最喜欢的
 they are|他们是
 fruit|水果
-don’t =do not|
+don’t|不要
 grape|葡萄
 have to|不得不
 eat|吃
@@ -100,9 +100,9 @@ set the table|摆饭桌
 wash the clothes|洗衣服
 do the dishes|洗碗碟
 put away the clothes|收拾衣服
-I’d like to =I would like to|我想要干
+I’d like to|我想要干
 robot|机器人
-can’t =can not|
+can’t|不能
 play chess|下棋
 use a computer|使用计算机
 air-conditioner|空调

@@ -61,7 +61,7 @@ nine|九
 ten|十
 what|什么
 time|时间
-it’s=it is|
+it’s|它是
 o’clock|点钟
 get up|起床
 go to school|上学
@@ -94,7 +94,7 @@ shoes|鞋子
 shorts|短裤
 these|这些
 those|那些
-they’re= they are|
+they’re|
 but|但是
 what .for|为什么
 neighbour|邻居
@@ -107,10 +107,10 @@ weather|天气
 weather report|天气预报
 wear|穿
 today|今天
-can’t = can not|
+can’t|不能
 put on|
 pants|长裤
-let’s=let us|
+let’s|让咱们
 play|玩；踢
 football|足球
 rain|雨vi.下雨
@@ -137,7 +137,7 @@ seventy|七十
 hundred|百
 how much|多少钱
 ninety-nine|九十九
-that’s = that is|
+that’s|那是
 big|大的
 small|小的
 long|长的
@@ -151,7 +151,7 @@ a pair of|一双
 son|儿子
 size|尺码
 all right|
-we’ll =we will|
+we’ll|
 take|买
 them|他们 它们（宾格）
 short|短的
@@ -169,7 +169,7 @@ lamb|小羊；羔羊
 goat|山羊
 cow|奶牛
 farm|
-aren’t=are not cat|猫
+aren’t|猫
 donkey|
 fat|
 cat|

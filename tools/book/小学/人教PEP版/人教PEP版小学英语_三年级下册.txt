@@ -42,7 +42,7 @@ grandfather|（外）祖父
 grandpa|（口语）（外）祖父
 sister|姐妹
 brother|兄妹
-let’s=let us|让我们
+let’s|让我们
 great|太好了
 really|真地；确切地
 and|和；并且
