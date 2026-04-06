@@ -46,7 +46,6 @@ class PhonemeUtil {
     }
   }
 
-  /// 查找单词的音素列表(可能有多个变体)，若无返回空列表
   static Future<List<List<String>>> lookup(String word) async {
     if (!_loaded) {
       await load();
@@ -55,43 +54,36 @@ class PhonemeUtil {
     // 移除括号中的内容，如 analytic(al) -> analytic
     key = key.replaceAll(RegExp(r'\(.*?\)'), '');
     if (key.isEmpty) return const [];
-    
+
     if (_wordToPhonemeVariants.containsKey(key)) {
       return _wordToPhonemeVariants[key]!;
     }
-    
-    // 支持词组：拆分并组合（例如 "in place" -> lookup("in") + lookup("place")）
-    if (key.contains(RegExp(r'[\s\-]+'))) {
-      final parts = key.split(RegExp(r'[\s\-]+'));
-      List<List<List<String>>> allPartsVariants = [];
-      
-      bool allPartsFound = true;
-      for (final p in parts) {
-        if (p.isEmpty) continue;
-        var pVars = _wordToPhonemeVariants[p];
-        if (pVars == null || pVars.isEmpty) {
-           allPartsFound = false;
-           break;
+
+    // 处理多词短语 (e.g., "the effect")
+    final words = key.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
+    if (words.length > 1 && words.length <= 5) {
+      List<List<String>> combinedVariants = [[]];
+      for (final w in words) {
+        final variants = _wordToPhonemeVariants[w];
+        if (variants == null || variants.isEmpty) {
+          return const [];
         }
-        allPartsVariants.add(pVars);
+
+        // 笛卡尔积组合所有变体
+        List<List<String>> nextCombined = [];
+        for (final cv in combinedVariants) {
+          for (final v in variants) {
+            nextCombined.add([...cv, ...v]);
+          }
+        }
+        combinedVariants = nextCombined;
+        if (combinedVariants.length > 32) {
+          combinedVariants = combinedVariants.sublist(0, 32);
+        }
       }
-      
-      if (allPartsFound && allPartsVariants.isNotEmpty) {
-         // 求笛卡尔积，拼接出完整的词组音素
-         List<List<String>> result = [[]];
-         for (final pVars in allPartsVariants) {
-           List<List<String>> nextResult = [];
-           for (final prefix in result) {
-             for (final suffix in pVars) {
-               nextResult.add([...prefix, ...suffix]);
-             }
-           }
-           result = nextResult;
-         }
-         return result;
-      }
+      return combinedVariants;
     }
-    
+
     return const [];
   }
 
@@ -185,11 +177,21 @@ class PhonemeUtil {
   /// 内部方法：将真实音素序列（如 [S, W, IH]）弱化处理（合并母音），以便与垃圾词对比
   static List<String> _weakenPhonemes(List<String> phons) {
     const vowels = {"AA", "AE", "AH", "AO", "AW", "AY", "EH", "ER", "EY", "IH", "IY", "OW", "OY", "UH", "UW"};
-    // 使用 @ 作为元音占位符，避免与辅音字母 V (v) 冲突
-    return phons.map((p) {
+    // 去重坍缩（防止叠音干扰，如 the effect -> @ @ -> @）
+    List<String> weakened = phons.map((p) {
       final parsed = p.replaceAll(_digitRegExp, '');
       return vowels.contains(parsed) ? "@" : parsed;
     }).toList();
+    
+    List<String> collapsed = [];
+    if (weakened.isNotEmpty) {
+      collapsed.add(weakened[0]);
+      for (var i = 1; i < weakened.length; i++) {
+        if (weakened[i] == weakened[i - 1]) continue;
+        collapsed.add(weakened[i]);
+      }
+    }
+    return collapsed;
   }
 
   /// 内部方法：将普通乱码文本转换为伪音素序列（骨架提取）

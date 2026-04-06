@@ -26,6 +26,9 @@ HARDWARE  HH AA1 R D W EH2 R
 CRUELTY  K R UW1 L T IY0
 ANALYTIC  AE0 N AH0 L IH1 T IH0 K
 ANALYTICAL  AE0 N AH0 L IH1 T IH0 K AH0 L
+THE  DH AH0
+EFFECT  IH0 F EH1 K T
+DEFLECT  D IH0 F L EH1 K T
 ''';
           return ByteData.view(Uint8List.fromList(utf8.encode(content)).buffer);
         }
@@ -98,7 +101,15 @@ ANALYTICAL  AE0 N AH0 L IH1 T IH0 K AH0 L
       const String asrResult = "analatic";
       
       final int score = await PhonemeUtil.similarity(asrResult, target);
-      debugPrint('Analytic(al) vs Analatic score: $score');
+      expect(score, greaterThanOrEqualTo(Constants.phonemeMatchThreshold));
+    });
+    
+    test('deflect vs the effect - should match', () async {
+      const String target = "deflect";
+      const String asrResult = "the effect";
+      
+      final int score = await PhonemeUtil.similarity(asrResult, target);
+      debugPrint('Deflect vs The Effect score: $score');
       
       expect(score, greaterThanOrEqualTo(Constants.phonemeMatchThreshold));
     });
