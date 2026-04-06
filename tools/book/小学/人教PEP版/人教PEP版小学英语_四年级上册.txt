@@ -1,7 +1,7 @@
 window|窗户
 board|写字板
 light|灯，灯管
-have|（我们）有
+have|(我们)有
 picture|画，图画
 door|门
 floor|地板
@@ -59,13 +59,13 @@ short hair|短头发
 thin|瘦的
 strong|健壮的
 quiet|安静的
-friend|(s)：朋友（复数）
+friend|s)：朋友(复数
 Chinese|中国的
 like|喜欢
 his|他的
 photo|照片
 he’s|他是
-has|（他/她）有
+has|(他/她)有
 name|名字
 he|他
 teacher|教师
@@ -112,7 +112,7 @@ no|不；不是
 desk|课桌；书桌
 chair|椅子
 rice|米饭
-noodle|(s) ：面条（复数）
+noodle|s) ：面条(复数
 beef|牛肉
 vegetable|蔬菜
 soup|汤
@@ -127,7 +127,7 @@ hungry|饥饿的
 for|为；给
 thank you|谢谢你
 knife|刀
-chopsticks|筷子（复数）
+chopsticks|筷子(复数)
 spoon|勺子
 plate|盘子
 help|帮助；帮忙

@@ -33,10 +33,10 @@ best|最；极
 always|总是
 play with|玩，与…一起玩
 snow|雪
-leaf|（复数leaves）叶子
+leaf|(复数leaves)叶子
 up|
 north|北方；向北方
-Halloween|万圣节前夕（指十月三十一日夜晚）
+Halloween|万圣节前夕(指十月三十一日夜晚)
 Thanksgiving|感恩节
 swim|游泳
 fly kites|放风筝
@@ -118,7 +118,7 @@ collect leaves|收集树叶
 write a report|写报告
 play chess|下棋
 have a picnic|举行野餐
-him|他（宾格）
+him|他(宾格)
 leave|离开
-us|我们（宾格）
+us|我们(宾格)
 over there|在那边

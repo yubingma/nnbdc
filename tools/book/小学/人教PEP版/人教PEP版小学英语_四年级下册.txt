@@ -153,7 +153,7 @@ size|尺码
 all right|
 we’ll|
 take|买
-them|他们 它们（宾格）
+them|他们 它们(宾格)
 short|短的
 apple|苹果
 banana|香蕉
@@ -161,7 +161,7 @@ pear|梨
 orange|橙子
 watermelon|西瓜
 are|是
-they|它他，她们 （主语）
+they|它他，她们 (主语)
 sheep|绵羊
 horse|马
 hen|母鸡

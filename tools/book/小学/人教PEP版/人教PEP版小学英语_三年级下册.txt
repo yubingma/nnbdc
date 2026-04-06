@@ -37,9 +37,9 @@ mom|妈妈口语
 man|男人
 woman|女人
 grandmother|外 祖母
-grandma|（口语）外）祖母
-grandfather|（外）祖父
-grandpa|（口语）（外）祖父
+grandma|(口语)外)祖母
+grandfather|(外)祖父
+grandpa|(口语)(外)祖父
 sister|姐妹
 brother|兄妹
 let’s|让我们
@@ -75,7 +75,7 @@ twenty|二十
 how many|多少
 can|能够；可以
 look at|看；瞧
-fly|飞；放（风筝）
+fly|飞；放(风筝)
 draw|画画
 picture|图画
 beautiful|美丽的
@@ -101,7 +101,7 @@ some|一些；某些
 thanks|多谢
 hungry|饥饿的
 please|请
-them|他（她、它）们（宾格）
+them|他(她、它)们(宾格)
 very. much|非常；很多的
 taste|品尝
 queen|女王；王后

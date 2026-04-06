@@ -14,7 +14,7 @@ I’m|我是
 my|我的
 name|名字
 goodbay|再见
-bye|再见（口语）
+bye|再见(口语)
 what|什么
 is|是
 your|你的；你们的
