@@ -9,9 +9,9 @@ thin|瘦的
 Mr|先生
 from|从;来自
 Canada|加拿大
-what’s|
+what’s|是什么
 like|像……一样；喜欢
-he’s|
+he’s|他是
 know|知道
 now|现在
 no|不
@@ -24,7 +24,7 @@ Lady|女士;小姐’夫人
 so much|很;非常
 fun|有趣;逗笑
 quiet|安静的，文静的
-she’s|
+she’s|她是
 she|她
 he|他
 his|他的
@@ -77,7 +77,7 @@ salty|咸的
 favourite|最喜欢的
 they are|他们是
 fruit|水果
-don’t|
+don’t|不
 grape|葡萄
 have to|不得不
 eat|吃

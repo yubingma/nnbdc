@@ -62,7 +62,7 @@ Chinese|中国的
 like|喜欢
 his|他的
 photo|照片
-he’s|
+he’s|他是
 name|名字
 he|他
 teacher|教师
@@ -72,7 +72,7 @@ science|科学
 sports|体育运动
 computer game|电脑游戏
 painting|绘画
-she’s|
+she’s|她是
 she|她
 right|对的；正确的
 boy|男孩
@@ -82,7 +82,7 @@ bathroom|卫生间
 bedroom|卧室
 living room|客厅
 kitchen|厨房
-it’s|
+it’s|它是
 fish|鱼
 isn’t|
 nothere|这里

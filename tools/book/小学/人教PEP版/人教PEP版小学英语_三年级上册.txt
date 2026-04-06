@@ -9,7 +9,7 @@ sharpener|卷笔刀
 school|学校
 hello|喂
 hi|喂
-I’m|
+I’m|我是
 my|我的
 name|名字
 goodbay|再见
