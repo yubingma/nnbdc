@@ -21,7 +21,7 @@ import beidanci.service.bo.MsgBo;
 import beidanci.service.bo.UserBo;
 import beidanci.service.po.Msg;
 import beidanci.service.po.User;
-import beidanci.service.util.BeanUtils;
+import beidanci.service.util.PoVoUtils;
 
 @RestController
 public class MsgController {
@@ -55,8 +55,8 @@ public class MsgController {
 
     private void shrinkUserInfoForMsgVos(List<MsgVo> vos) throws IllegalAccessException {
         for (MsgVo msgVo : vos) {
-            BeanUtils.setPropertiesToNull(msgVo.getFromUser(), new String[]{"id", "displayNickName"});
-            BeanUtils.setPropertiesToNull(msgVo.getToUser(), new String[]{"id", "displayNickName"});
+            PoVoUtils.setPropertiesToNull(msgVo.getFromUser(), new String[]{"id", "displayNickName"});
+            PoVoUtils.setPropertiesToNull(msgVo.getToUser(), new String[]{"id", "displayNickName"});
         }
     }
 
@@ -69,7 +69,7 @@ public class MsgController {
     public List<MsgVo> getLastestMsgsBetweenUserAndSys(String user, int msgCount) throws IllegalAccessException {
         List<Msg> msgs = msgBo.getLastestMsgsBetweenUserAndSys(user, msgCount, userBo);
 
-        List<MsgVo> vos = BeanUtils.makeVos(msgs, MsgVo.class, new String[]{"invitedBy", "StudyGroupVo.creator",
+        List<MsgVo> vos = PoVoUtils.makeVos(msgs, MsgVo.class, new String[]{"invitedBy", "StudyGroupVo.creator",
                 "StudyGroupVo.users", "StudyGroupVo.managers", "studyGroupPosts", "userGames"});
         shrinkUserInfoForMsgVos(vos);
         return vos;
@@ -113,7 +113,7 @@ public class MsgController {
     @GetMapping("/getAllAdviceMessages.do")
     public List<MsgVo> getAllAdviceMessages() throws IllegalAccessException {
         List<Msg> msgs = msgBo.getAllAdviceMessages();
-        List<MsgVo> vos = BeanUtils.makeVos(msgs, MsgVo.class, new String[]{"invitedBy", "StudyGroupVo.creator",
+        List<MsgVo> vos = PoVoUtils.makeVos(msgs, MsgVo.class, new String[]{"invitedBy", "StudyGroupVo.creator",
                 "StudyGroupVo.users", "StudyGroupVo.managers", "studyGroupPosts", "userGames"});
         // 管理员功能不需要清空用户信息，保留完整的用户数据
         return vos;

@@ -1,7 +1,11 @@
 package beidanci.service.socket.system.game.russia;
 
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -12,6 +16,7 @@ import beidanci.api.ChatObject;
 import beidanci.api.model.UserGameInfo;
 import beidanci.api.model.UserGameVo;
 import beidanci.api.model.UserVo;
+import beidanci.service.Global;
 import beidanci.service.bo.DictBo;
 import beidanci.service.bo.DictWordBo;
 import beidanci.service.bo.LearningDictBo;
@@ -19,6 +24,8 @@ import beidanci.service.bo.SysParamBo;
 import beidanci.service.bo.UserBo;
 import beidanci.service.bo.UserGameBo;
 import beidanci.service.bo.WordBo;
+import beidanci.service.po.User;
+import beidanci.service.po.UserGame;
 import beidanci.service.socket.UserCmd;
 import beidanci.service.socket.system.game.russia.state.EmptyState;
 import beidanci.service.socket.system.game.russia.state.ReadyState;
@@ -210,7 +217,7 @@ public class RussiaRoom {
     private void scheduleBotEntry(UserVo humanUser) {
         // 延迟2-8秒后机器人进入房间，模拟真实用户的行为
         long delayMs = 2000 + (long)(Math.random() * 6000);
-        new java.util.Timer().schedule(new java.util.TimerTask() {
+        new Timer().schedule(new TimerTask() {
             @Override
             public void run() {
                 try {
@@ -234,9 +241,9 @@ public class RussiaRoom {
     private UserVo createBot(UserVo humanUser) {
         UserVo bot = new UserVo();
         // 选取"超过一年未登录且玩过游戏"的真实用户作为机器人，比赛结果会反映到该用户账户
-        beidanci.service.po.User real = null;
+        User real = null;
         try {
-            real = beidanci.service.Global.getUserBo().pickRandomInactiveUser(365, 50);
+            real = Global.getUserBo().pickRandomInactiveUser(365, 50);
         } catch (Exception e) {
             log.error("选取机器人失败", e);
         }
@@ -250,11 +257,11 @@ public class RussiaRoom {
             bot.setNickName(real.getDisplayNickName());
             bot.setCowDung(real.getCowDung());
             bot.setGameScore(real.getGameScore());
-            java.util.List<beidanci.api.model.UserGameVo> games = new java.util.ArrayList<>();
-            java.util.List<beidanci.service.po.UserGame> realGames = beidanci.service.Global.getUserGameBo()
+            List<UserGameVo> games = new ArrayList<>();
+            List<UserGame> realGames = Global.getUserGameBo()
                     .getUserGamesOfUser(real.getId(), true);
-            for (beidanci.service.po.UserGame ug : realGames) {
-                games.add(new beidanci.api.model.UserGameVo(bot, ug.getWinCount(), ug.getLoseCount(), ug.getScore(), ug.getId().getGame()));
+            for (UserGame ug : realGames) {
+                games.add(new UserGameVo(bot, ug.getWinCount(), ug.getLoseCount(), ug.getScore(), ug.getId().getGame()));
             }
             bot.setUserGames(games);
         } else {
@@ -264,7 +271,7 @@ public class RussiaRoom {
             bot.setNickName(Util.getNickNameOfUser(humanUser) + "·朋友");
             bot.setCowDung(0);
             bot.setGameScore(0);
-            bot.setUserGames(new java.util.ArrayList<>());
+            bot.setUserGames(new ArrayList<>());
         }
         
         return bot;

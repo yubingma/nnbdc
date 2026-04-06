@@ -18,7 +18,7 @@ import beidanci.service.bo.EmailVerificationCodeBo;
 import beidanci.service.bo.UserBo;
 import beidanci.service.po.EmailCodeType;
 import beidanci.service.po.User;
-import beidanci.service.util.BeanUtils;
+import beidanci.service.util.PoVoUtils;
 
 @RestController
 public class CheckUserController {
@@ -41,7 +41,7 @@ public class CheckUserController {
         if (result.isSuccess()) {
             User user = result.getData();
             Assert.notNull(user, "用户不存在");
-            UserVo userVo = BeanUtils.makeVo(user, UserVo.class, new String[]{"invitedBy", "StudyGroupVo.creator",
+            UserVo userVo = PoVoUtils.makeVo(user, UserVo.class, new String[]{"invitedBy", "StudyGroupVo.creator",
                     "StudyGroupVo.users", "StudyGroupVo.managers", "StudyGroupVo.studyGroupPosts", "userGames"});
             return new Result<>(true, "验证成功", userVo);
         }
@@ -77,7 +77,7 @@ public class CheckUserController {
         if (result.isSuccess()) {
             User user = result.getData();
             Assert.notNull(user, "用户不存在");
-            UserVo userVo = BeanUtils.makeVo(user, UserVo.class, new String[]{"invitedBy", "StudyGroupVo.creator",
+            UserVo userVo = PoVoUtils.makeVo(user, UserVo.class, new String[]{"invitedBy", "StudyGroupVo.creator",
                     "StudyGroupVo.users", "StudyGroupVo.managers", "StudyGroupVo.studyGroupPosts", "userGames"});
             return new Result<>(true, "登录成功", userVo);
         }

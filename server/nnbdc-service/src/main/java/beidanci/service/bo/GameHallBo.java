@@ -26,7 +26,7 @@ import beidanci.service.po.Dict;
 import beidanci.service.po.DictGroup;
 import beidanci.service.po.GameHall;
 import beidanci.service.po.Word;
-import beidanci.service.util.BeanUtils;
+import beidanci.service.util.PoVoUtils;
 import beidanci.service.util.Util;
 
 @Service
@@ -44,7 +44,7 @@ public class GameHallBo extends BaseBo<GameHall> {
 
     public GameHallVo getGameHallVoById(String id) {
         GameHall gameHall = findById(id);
-        GameHallVo vo = BeanUtils.makeVo(gameHall, GameHallVo.class,
+        GameHallVo vo = PoVoUtils.makeVo(gameHall, GameHallVo.class,
                 new String[]{"GameHallVo.hallGroup", "dictWords"});
         return vo;
     }
@@ -130,7 +130,7 @@ public class GameHallBo extends BaseBo<GameHall> {
 
         Map<String, WordVo> wordsBySpell = new HashMap<>();
         for (Word word : words) {
-            WordVo wordVo = BeanUtils.makeVo(word, WordVo.class,
+            WordVo wordVo = PoVoUtils.makeVo(word, WordVo.class,
                     new String[]{"WordVo.^id,spell,meaningItems", "MeaningItemVo.^ciXing,meaning,dict", "DictVo.^id"});
             
             // 设置 meaningItems

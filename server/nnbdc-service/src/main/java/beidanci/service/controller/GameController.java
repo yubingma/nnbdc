@@ -10,7 +10,7 @@ import beidanci.service.po.HallGroup;
 import beidanci.service.po.UserGame;
 import beidanci.service.socket.system.game.russia.Hall;
 import beidanci.service.socket.system.game.russia.Russia;
-import beidanci.service.util.BeanUtils;
+import beidanci.service.util.PoVoUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -42,7 +42,7 @@ public class GameController {
         // 批量加载每个 HallGroup 的 gameHalls
         hallGroupBo.loadGameHallsForHallGroups(groups);
         
-        List<HallGroupVo> groupVos = BeanUtils.makeVos(groups, HallGroupVo.class,
+        List<HallGroupVo> groupVos = PoVoUtils.makeVos(groups, HallGroupVo.class,
                 new String[]{"hallGroup", "dicts", "allDicts"});
         result.setHallGroups(groupVos);
 
@@ -57,11 +57,11 @@ public class GameController {
 
         // 获取游戏积分榜
         List<UserGame> userGames = userGameBo.getUserGamesWithTopScore(15);
-        List<UserGameVo> userGameVos = BeanUtils.makeVos(userGames, UserGameVo.class,
+        List<UserGameVo> userGameVos = PoVoUtils.makeVos(userGames, UserGameVo.class,
                 new String[]{"studyGroups", "userGames"});
         result.setTopUserGames(userGameVos);
         for (UserGameVo userGameVo : userGameVos) {
-            BeanUtils.setPropertiesToNull(userGameVo.getUser(), new String[]{"displayNickName", "id", "userName"});
+            PoVoUtils.setPropertiesToNull(userGameVo.getUser(), new String[]{"displayNickName", "id", "userName"});
         }
 
         return result;

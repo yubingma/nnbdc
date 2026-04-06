@@ -1,7 +1,8 @@
 package beidanci.service.bo;
 
+import java.io.File;
 import java.io.IOException;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 
@@ -17,6 +18,7 @@ import beidanci.api.Result;
 import beidanci.api.model.EventType;
 import beidanci.api.model.SentenceDto;
 import beidanci.service.dao.BaseDao;
+import beidanci.service.dao.EntityRowMapper;
 import beidanci.service.exception.EmptySpellException;
 import beidanci.service.exception.InvalidMeaningFormatException;
 import beidanci.service.exception.ParseException;
@@ -257,7 +259,7 @@ public class SentenceBo extends BaseBo<Sentence> {
     public List<Sentence> findByMeaningItem(String meaningItemId) {
         String sql = "SELECT * FROM sentence WHERE meaning_item_id = :meaningItemId";
         MapSqlParameterSource params = new MapSqlParameterSource("meaningItemId", meaningItemId);
-        return namedParameterJdbcTemplate.query(sql, params, new beidanci.service.dao.EntityRowMapper<>(Sentence.class));
+        return namedParameterJdbcTemplate.query(sql, params, new EntityRowMapper<>(Sentence.class));
     }
 
     public List<SentenceDto> getSentencesByWordId(String wordId) {
@@ -265,7 +267,7 @@ public class SentenceBo extends BaseBo<Sentence> {
                 "WHERE s.id IN (SELECT sentence_id FROM word_sentence WHERE word_id = :wordId) " +
                 "OR s.meaning_item_id IN (SELECT id FROM meaning_item WHERE word_id = :wordId)";
         MapSqlParameterSource params = new MapSqlParameterSource("wordId", wordId);
-        List<Sentence> sentences = namedParameterJdbcTemplate.query(sql, params, new beidanci.service.dao.EntityRowMapper<>(Sentence.class));
+        List<Sentence> sentences = namedParameterJdbcTemplate.query(sql, params, new EntityRowMapper<>(Sentence.class));
         return sentences.stream().map(this::toDto).collect(Collectors.toList());
     }
 
@@ -327,7 +329,7 @@ public class SentenceBo extends BaseBo<Sentence> {
 
         Integer count = namedParameterJdbcTemplate.queryForObject(checkSql, p, Integer.class);
         if (count == null || count == 0) {
-            java.io.File soundFile = new java.io.File(sysParamUtil.getSoundPath() + "/sentence/" + englishDigest + ".mp3");
+            File soundFile = new File(sysParamUtil.getSoundPath() + "/sentence/" + englishDigest + ".mp3");
             if (soundFile.exists() && soundFile.delete()) {
                 LoggerFactory.getLogger(SentenceBo.class).info("自动清除了不再被引用的例句发音缓存: {}", soundFile.getAbsolutePath());
             }

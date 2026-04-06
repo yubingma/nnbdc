@@ -18,7 +18,7 @@ import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.security.GeneralSecurityException;
-import java.security.NoSuchAlgorithmException;
+import java.security.*;
 import java.security.cert.X509Certificate;
 
 import java.text.ParseException;
@@ -136,7 +136,7 @@ public class Util {
         try {
             sslContext = SSLContext.getInstance("SSLv3"); // 或SSL/TLS
             X509TrustManager[] xtmArray = new X509TrustManager[] { xtm };
-            sslContext.init(null, xtmArray, new java.security.SecureRandom());
+            sslContext.init(null, xtmArray, new SecureRandom());
         } catch (GeneralSecurityException e) {
             log.error("SSLContext initialization failed", e);
         }
@@ -449,7 +449,7 @@ public class Util {
         char hexDigits[] = { // 用来将字节转换成 16 进制表示的字符
                 '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
         try {
-            java.security.MessageDigest md = java.security.MessageDigest.getInstance("MD5");
+            MessageDigest md = MessageDigest.getInstance("MD5");
             md.update(source);
             byte tmp[] = md.digest(); // MD5 的计算结果是一个 128 位的长整数，
             // 用字节表示就是 16 个字节
@@ -1103,7 +1103,7 @@ public class Util {
         List<WordShortDescChineseVo> diyItemVOs = new ArrayList<>(total);
         for (int i = 0; i < total; i++) {
             WordShortDescChinese po = diyItems.get(i);
-            WordShortDescChineseVo vo = beidanci.service.util.BeanUtils.makeVo(po, WordShortDescChineseVo.class,
+            WordShortDescChineseVo vo = PoVoUtils.makeVo(po, WordShortDescChineseVo.class,
                     new String[] { "invitedBy", "word", "userGames", "studyGroups" });
             UserVo author = new UserVo();
             author.setDisplayNickName(po.getAuthor().getDisplayNickName());
@@ -1145,7 +1145,7 @@ public class Util {
         List<DictWordVo> vos = new ArrayList<>(dictWords.getTotal());
         PagedResults<DictWordVo> pagedVos = new PagedResults<>(dictWords.getTotal(), vos);
         for (DictWord dictWord : dictWords.getRows()) {
-            DictWordVo vo = beidanci.service.util.BeanUtils.makeVo(dictWord, DictWordVo.class,
+            DictWordVo vo = PoVoUtils.makeVo(dictWord, DictWordVo.class,
                     new String[] { "dict", "synonyms", "similarWords", "word" });
             vo.setWord(dictWord.getWordVo(wordCache, new String[] {
                     "SynonymVo.meaningItem", "SynonymVo.word", "similarWords", "DictVo.dictWords" }));

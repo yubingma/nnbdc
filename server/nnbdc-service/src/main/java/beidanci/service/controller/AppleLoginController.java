@@ -13,7 +13,7 @@ import beidanci.api.model.ClientType;
 import beidanci.api.model.UserVo;
 import beidanci.service.bo.UserBo;
 import beidanci.service.po.User;
-import beidanci.service.util.BeanUtils;
+import beidanci.service.util.PoVoUtils;
 
 /**
  * 苹果登录控制器
@@ -57,7 +57,7 @@ public class AppleLoginController {
         Result<User> loginResult = userBo.doLoginByWechat(user, clientType, clientVersion, request, response);
 
         if (loginResult.isSuccess()) {
-            UserVo userVo = BeanUtils.makeVo(user, UserVo.class, new String[]{"invitedBy", "StudyGroupVo.creator",
+            UserVo userVo = PoVoUtils.makeVo(user, UserVo.class, new String[]{"invitedBy", "StudyGroupVo.creator",
                     "StudyGroupVo.users", "StudyGroupVo.managers", "StudyGroupVo.studyGroupPosts", "userGames"});
             return new Result<>(true, "登录成功", userVo);
         } else {

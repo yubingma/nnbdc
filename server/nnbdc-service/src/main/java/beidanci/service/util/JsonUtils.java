@@ -3,6 +3,7 @@ package beidanci.service.util;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.*;
 
 import javax.servlet.http.HttpServletResponse;
 
@@ -68,10 +69,10 @@ public class JsonUtils {
     }
 
     @SuppressWarnings("unchecked")
-    public static java.util.Map<String, Object> parseMap(String json) {
+    public static Map<String, Object> parseMap(String json) {
         if (StringUtils.isBlank(json)) {
-            return new java.util.HashMap<>();
+            return new HashMap<>();
         }
-        return makeObject(json, java.util.Map.class);
+        return makeObject(json, Map.class);
     }
 }

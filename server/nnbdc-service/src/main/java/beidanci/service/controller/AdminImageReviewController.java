@@ -1,13 +1,13 @@
 package beidanci.service.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import beidanci.api.Result;
+import beidanci.api.model.*;
 import beidanci.service.bo.AiBo;
 import beidanci.service.bo.WordImageBo;
 import beidanci.service.bo.UserBo;
+import beidanci.service.bo.WordBo;
 import beidanci.service.util.SysParamUtil;
 import beidanci.service.po.WordImage;
 import beidanci.service.po.Word;
@@ -16,7 +16,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.io.File;
-import java.util.Map;
+import java.util.*;
 
 @RestController
 public class AdminImageReviewController {
@@ -58,15 +58,15 @@ public class AdminImageReviewController {
     }
     
     @Autowired
-    private beidanci.service.bo.WordBo wordBo;
+    private WordBo wordBo;
 
-    @org.springframework.web.bind.annotation.GetMapping("/admin/image/getDictImages.do")
-    public Result<java.util.List<Map<String, Object>>> getDictImages(@RequestParam("dictId") String dictId) {
+    @GetMapping("/admin/image/getDictImages.do")
+    public Result<List<Map<String, Object>>> getDictImages(@RequestParam("dictId") String dictId) {
         try {
-            java.util.List<Map<String, Object>> result = new java.util.ArrayList<>();
-            java.util.List<beidanci.api.model.WordImageDto> images = wordBo.getWordImagesOfDict(dictId);
-            for (beidanci.api.model.WordImageDto imgDto : images) {
-                Map<String, Object> map = new java.util.HashMap<>();
+            List<Map<String, Object>> result = new ArrayList<>();
+            List<WordImageDto> images = wordBo.getWordImagesOfDict(dictId);
+            for (WordImageDto imgDto : images) {
+                Map<String, Object> map = new HashMap<>();
                 map.put("imageId", imgDto.getId());
                 map.put("imageFile", imgDto.getImageFile());
                 map.put("wordId", imgDto.getWordId());
@@ -122,13 +122,13 @@ public class AdminImageReviewController {
                 try {
                     logger.info("开始批量图片审核任务: dictId=" + dictId + ", autoDelete=" + autoDelete);
                     currentTask.statusMsg = "正在获取图片...";
-                    java.util.List<beidanci.api.model.WordImageDto> images = wordBo.getWordImagesOfDict(dictId);
+                    List<WordImageDto> images = wordBo.getWordImagesOfDict(dictId);
                     currentTask.totalImages = images.size();
                     currentTask.statusMsg = "正在扫描中";
                     
                     for (int i = 0; i < images.size(); i++) {
                         if (!currentTask.isRunning) break;
-                        beidanci.api.model.WordImageDto imgDto = images.get(i);
+                        WordImageDto imgDto = images.get(i);
                         currentTask.currentIndex = i + 1;
                         
                         try {
@@ -143,7 +143,7 @@ public class AdminImageReviewController {
                                     ObjectMapper mapper = new ObjectMapper();
                                     Map<String, String> res = mapper.readValue(aiResultStr, new com.fasterxml.jackson.core.type.TypeReference<Map<String, String>>(){});
                                     if ("DELETE".equals(res.get("action"))) {
-                                        Map<String, Object> markedInfo = new java.util.HashMap<>();
+                                        Map<String, Object> markedInfo = new HashMap<>();
                                         markedInfo.put("imageId", img.getId());
                                         markedInfo.put("imageFile", img.getImageFile());
                                         markedInfo.put("spell", spell);
@@ -176,7 +176,7 @@ public class AdminImageReviewController {
         }
     }
 
-    @org.springframework.web.bind.annotation.GetMapping("/admin/image/batchReviewStatus.do")
+    @GetMapping("/admin/image/batchReviewStatus.do")
     public Result<AdminImageReviewTask> getBatchReviewStatus() {
         return Result.success(currentTask);
     }
@@ -197,7 +197,7 @@ public class AdminImageReviewController {
         
         int deleteCount = 0;
         synchronized(currentTask) {
-            java.util.Iterator<Map<String, Object>> it = currentTask.markedImages.iterator();
+            Iterator<Map<String, Object>> it = currentTask.markedImages.iterator();
             while(it.hasNext()) {
                 Map<String, Object> info = it.next();
                 try {
@@ -215,5 +215,25 @@ public class AdminImageReviewController {
             }
         }
         return Result.success(deleteCount);
+    }
+
+    public static class AdminImageReviewTask {
+        public boolean isRunning = false;
+        public int totalImages = 0;
+        public int currentIndex = 0;
+        public String statusMsg = "等待中";
+        public String dictId;
+        public boolean autoDelete;
+        public List<Map<String, Object>> markedImages = new ArrayList<>();
+        public List<Map<String, Object>> deletedImages = new ArrayList<>();
+
+        public void reset() {
+            isRunning = false;
+            totalImages = 0;
+            currentIndex = 0;
+            statusMsg = "等待中";
+            markedImages.clear();
+            deletedImages.clear();
+        }
     }
 }

@@ -6,8 +6,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import beidanci.api.model.UserVo;
-import beidanci.api.model.WordVo;
+import beidanci.api.model.*;
 import beidanci.service.socket.UserCmd;
 import beidanci.service.socket.system.game.russia.RussiaRoom;
 import beidanci.service.socket.system.game.russia.UserGameData;
@@ -37,7 +36,7 @@ public final class GetNextWordProcessor {
     public String getSpellByIndex(int index) {
         try {
             if (index >= 0 && index < words.size()) {
-                beidanci.api.model.WordVo w = (beidanci.api.model.WordVo) words.get(index)[0];
+                WordVo w = (WordVo) words.get(index)[0];
                 return w.getSpell();
             }
         } catch (Exception e) {

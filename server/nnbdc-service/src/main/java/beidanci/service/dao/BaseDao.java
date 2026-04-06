@@ -27,7 +27,7 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import beidanci.api.model.PagedResults;
 import beidanci.service.UuidSetter;
 import beidanci.service.po.Po;
-import beidanci.service.util.BeanUtils;
+import beidanci.service.util.PoVoUtils;
 import beidanci.service.util.ReflectionUtil;
 
 /**
@@ -84,7 +84,7 @@ public abstract class BaseDao<E extends Po> {
                 idField.setAccessible(true);
                 Object compositeKey = idField.get(entity);
                 if (compositeKey != null) {
-                    List<Field> keyFields = BeanUtils.getFields(compositeKey.getClass(), true);
+                    List<Field> keyFields = PoVoUtils.getFields(compositeKey.getClass(), true);
                     for (Field keyField : keyFields) {
                         // 复合主键类里可能存在 static/final 字段（如 serialVersionUID），这些不是数据库列
                         int modifiers = keyField.getModifiers();
@@ -109,7 +109,7 @@ public abstract class BaseDao<E extends Po> {
         StringBuilder sql = new StringBuilder("INSERT INTO ");
         sql.append(tableName).append(" (");
 
-        List<Field> fields = BeanUtils.getFields(valueClass, true);
+        List<Field> fields = PoVoUtils.getFields(valueClass, true);
         List<String> columnNames = new ArrayList<>();
         List<Object> values = new ArrayList<>();
 
@@ -123,7 +123,7 @@ public abstract class BaseDao<E extends Po> {
                         Object compositeKey = field.get(entity);
                         if (compositeKey != null) {
                             // 获取复合主键类的所有字段
-                            List<Field> keyFields = BeanUtils.getFields(compositeKey.getClass(), true);
+                            List<Field> keyFields = PoVoUtils.getFields(compositeKey.getClass(), true);
                             for (Field keyField : keyFields) {
                                 // 跳过 static 和 final 字段（如 serialVersionUID）
                                 int modifiers = keyField.getModifiers();
@@ -405,7 +405,7 @@ public abstract class BaseDao<E extends Po> {
 
         // 添加精确查询条件
         if (preciseEntity != null) {
-            List<Field> fields = BeanUtils.getFields(valueClass, true);
+            List<Field> fields = PoVoUtils.getFields(valueClass, true);
             for (Field field : fields) {
                 Object fieldValue = ReflectionUtil.getFieldValue(preciseEntity, field.getName());
 
@@ -423,7 +423,7 @@ public abstract class BaseDao<E extends Po> {
                 }
 
                 // 跳过集合类型字段（这些在查询条件中不需要）
-                if (java.util.Collection.class.isAssignableFrom(field.getType())) {
+                if (Collection.class.isAssignableFrom(field.getType())) {
                     continue;
                 }
 
@@ -516,10 +516,10 @@ public abstract class BaseDao<E extends Po> {
 
         // 添加精确查询条件
         if (preciseEntity != null) {
-            List<Field> fields = BeanUtils.getFields(valueClass, true);
+            List<Field> fields = PoVoUtils.getFields(valueClass, true);
             for (Field field : fields) {
                 // 跳过集合类型字段和关联对象字段（这些在查询条件中不需要）
-                if (java.util.Collection.class.isAssignableFrom(field.getType()) ||
+                if (Collection.class.isAssignableFrom(field.getType()) ||
                         (Po.class.isAssignableFrom(field.getType()) && !field.getName().endsWith("Id"))) {
                     continue;
                 }
@@ -635,7 +635,7 @@ public abstract class BaseDao<E extends Po> {
         StringBuilder sql = new StringBuilder("UPDATE ");
         sql.append(tableName).append(" SET ");
 
-        List<Field> fields = BeanUtils.getFields(valueClass, true);
+        List<Field> fields = PoVoUtils.getFields(valueClass, true);
         List<String> setParts = new ArrayList<>();
         List<Object> values = new ArrayList<>();
 
@@ -648,7 +648,7 @@ public abstract class BaseDao<E extends Po> {
                 Serializable id = (Serializable) idField.get(entity);
                 if (id != null && idField.getType().isInstance(id)) {
                     Object compositeKey = id;
-                    List<Field> keyFields = BeanUtils.getFields(compositeKey.getClass(), true);
+                    List<Field> keyFields = PoVoUtils.getFields(compositeKey.getClass(), true);
                     for (Field keyField : keyFields) {
                         // 跳过 static 和 final 字段
                         int keyFieldModifiers = keyField.getModifiers();
@@ -774,15 +774,15 @@ public abstract class BaseDao<E extends Po> {
                 }
 
                 Object compositeKey = id;
-                List<Field> keyFields = BeanUtils.getFields(compositeKey.getClass(), true);
+                List<Field> keyFields = PoVoUtils.getFields(compositeKey.getClass(), true);
                 StringBuilder whereClause = new StringBuilder();
                 boolean first = true;
 
                 for (Field keyField : keyFields) {
                     // 跳过 static 和 final 字段（如 serialVersionUID）
                     int keyFieldModifiers = keyField.getModifiers();
-                    if (java.lang.reflect.Modifier.isStatic(keyFieldModifiers) ||
-                            java.lang.reflect.Modifier.isFinal(keyFieldModifiers)) {
+                    if (Modifier.isStatic(keyFieldModifiers) ||
+                            Modifier.isFinal(keyFieldModifiers)) {
                         continue;
                     }
 
@@ -860,7 +860,7 @@ public abstract class BaseDao<E extends Po> {
                 }
 
                 Object compositeKey = id;
-                List<Field> keyFields = BeanUtils.getFields(compositeKey.getClass(), true);
+                List<Field> keyFields = PoVoUtils.getFields(compositeKey.getClass(), true);
                 StringBuilder whereClause = new StringBuilder();
                 List<Object> params = new ArrayList<>();
                 boolean first = true;
@@ -868,8 +868,8 @@ public abstract class BaseDao<E extends Po> {
                 for (Field keyField : keyFields) {
                     // 跳过 static 和 final 字段（如 serialVersionUID）
                     int keyFieldModifiers = keyField.getModifiers();
-                    if (java.lang.reflect.Modifier.isStatic(keyFieldModifiers) ||
-                            java.lang.reflect.Modifier.isFinal(keyFieldModifiers)) {
+                    if (Modifier.isStatic(keyFieldModifiers) ||
+                            Modifier.isFinal(keyFieldModifiers)) {
                         continue;
                     }
 
@@ -943,15 +943,15 @@ public abstract class BaseDao<E extends Po> {
                     throw new IllegalArgumentException("复合主键不能为 null");
                 }
 
-                List<Field> keyFields = BeanUtils.getFields(compositeKey.getClass(), true);
+                List<Field> keyFields = PoVoUtils.getFields(compositeKey.getClass(), true);
                 StringBuilder whereClause = new StringBuilder();
                 boolean first = true;
 
                 for (Field keyField : keyFields) {
                     // 跳过 static 和 final 字段（如 serialVersionUID）
                     int modifiers = keyField.getModifiers();
-                    if (java.lang.reflect.Modifier.isStatic(modifiers) ||
-                            java.lang.reflect.Modifier.isFinal(modifiers)) {
+                    if (Modifier.isStatic(modifiers) ||
+                            Modifier.isFinal(modifiers)) {
                         continue;
                     }
 
@@ -1024,7 +1024,7 @@ public abstract class BaseDao<E extends Po> {
         }
 
         // 尝试从实体类中找到对应的字段
-        List<Field> fields = BeanUtils.getFields(valueClass, true);
+        List<Field> fields = PoVoUtils.getFields(valueClass, true);
         for (Field field : fields) {
             if (field.getName().equals(fieldName)) {
                 return EntityTableInfo.getColumnName(field);

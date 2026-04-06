@@ -21,7 +21,7 @@ import beidanci.service.exception.ParseException;
 import beidanci.service.po.SysParam;
 import beidanci.service.util.AliyunResourceUtil;
 import beidanci.service.util.AliyunResourceUtil.AccountBalanceInfo;
-import beidanci.service.util.BeanUtils;
+import beidanci.service.util.PoVoUtils;
 import beidanci.service.po.User;
 import beidanci.service.util.CdnUtil;
 
@@ -330,7 +330,7 @@ public class AdminController {
             @RequestParam(required = false) Integer filterType) throws IllegalAccessException {
         PagedResults<User> pagedResults = userBo.searchUsers(keyword, pageNo, pageSize, filterType);
         List<User> users = pagedResults.getRows();
-        List<UserVo> userVos = BeanUtils.makeVos(users, UserVo.class,
+        List<UserVo> userVos = PoVoUtils.makeVos(users, UserVo.class,
                 new String[] { "invitedBy", "StudyGroupVo.creator", "StudyGroupVo.users",
                         "StudyGroupVo.managers", "studyGroupPosts", "userGames" });
         return Result.success(new PagedResults<>(pagedResults.getTotal(), userVos));
@@ -377,7 +377,7 @@ public class AdminController {
     public Result<UserVo> getUserById(@RequestParam String userId) throws IllegalAccessException {
         User user = userBo.findById(userId);
         if (user == null) return Result.fail("用户不存在");
-        UserVo userVo = BeanUtils.makeVo(user, UserVo.class,
+        UserVo userVo = PoVoUtils.makeVo(user, UserVo.class,
                 new String[] { "invitedBy", "StudyGroupVo.creator", "StudyGroupVo.users",
                         "StudyGroupVo.managers", "studyGroupPosts", "userGames" });
         return Result.success(userVo);

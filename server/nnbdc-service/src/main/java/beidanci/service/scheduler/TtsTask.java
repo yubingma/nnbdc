@@ -18,6 +18,7 @@ import beidanci.service.bo.SysDbSyncBo;
 import beidanci.service.po.Sentence;
 import beidanci.service.util.SysParamUtil;
 import beidanci.service.util.JsonUtils;
+import beidanci.service.dao.EntityRowMapper;
 
 @Component
 public class TtsTask {
@@ -43,7 +44,7 @@ public class TtsTask {
     public void generateSentenceTts() {
         String sql = "SELECT * FROM sentence WHERE need_tts = true OR the_type = 'waitting_tts' LIMIT 10";
         List<Sentence> sentences = jdbcTemplate.query(sql, new MapSqlParameterSource(),
-                new beidanci.service.dao.EntityRowMapper<>(Sentence.class));
+                new EntityRowMapper<>(Sentence.class));
 
         if (sentences.isEmpty()) {
             return;

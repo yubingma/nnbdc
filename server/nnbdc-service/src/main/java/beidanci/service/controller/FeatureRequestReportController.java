@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 import beidanci.api.Result;
 import beidanci.service.bo.FeatureRequestReportBo;
 import beidanci.service.po.FeatureRequestReport;
-import beidanci.service.util.BeanUtils;
+import beidanci.service.util.PoVoUtils;
 import beidanci.api.model.FeatureRequestReportVo;
 
 @RestController
@@ -40,7 +40,7 @@ public class FeatureRequestReportController {
     @GetMapping("/getAllFeatureRequestReports.do")
     public List<FeatureRequestReportVo> getAllFeatureRequestReports() throws IllegalAccessException {
         List<FeatureRequestReport> reports = featureRequestReportBo.getAllReports();
-        return BeanUtils.makeVos(reports, FeatureRequestReportVo.class,
+        return PoVoUtils.makeVos(reports, FeatureRequestReportVo.class,
                 new String[]{"reporter.password", "reporter.invitedBy", "reporter.StudyGroupVo.creator",
                         "reporter.StudyGroupVo.users", "reporter.StudyGroupVo.managers",
                         "reporter.studyGroupPosts", "reporter.userGames",

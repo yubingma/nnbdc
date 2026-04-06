@@ -7,7 +7,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.lang3.NotImplementedException;
 
-import beidanci.api.model.UserVo;
+import org.slf4j.LoggerFactory;
+import beidanci.api.model.*;
 import beidanci.service.bo.DictBo;
 import beidanci.service.bo.DictWordBo;
 import beidanci.service.bo.SysParamBo;
@@ -90,7 +91,7 @@ public class ReadyState extends RoomState {
             // 机器人所依附的“真实玩家”历史胜率（机器人昵称与胜率均来自该玩家）
             double botWinRatio = 0.7;
             try {
-                beidanci.api.model.UserGameVo gameVo = botUserObj.getGameByName("russia");
+                UserGameVo gameVo = botUserObj.getGameByName("russia");
                 int w = gameVo != null && gameVo.getWinCount() != null ? gameVo.getWinCount() : 0;
                 int l = gameVo != null && gameVo.getLoseCount() != null ? gameVo.getLoseCount() : 0;
                 int total = w + l;
@@ -126,7 +127,7 @@ public class ReadyState extends RoomState {
                                 propsCmd.setCmd("USE_PROPS");
                                 propsCmd.setArgs(new String[] { "0" });
                                 room.processUserCmd(botUserObj, propsCmd);
-                                org.slf4j.LoggerFactory.getLogger(ReadyState.class).info("🤖 机器人使用了道具[加一行](攻击)");
+                                LoggerFactory.getLogger(ReadyState.class).info("🤖 机器人使用了道具[加一行](攻击)");
                             }
                         } catch (Exception ignored) {}
                     }
@@ -151,7 +152,7 @@ public class ReadyState extends RoomState {
                                 propsCmd.setCmd("USE_PROPS");
                                 propsCmd.setArgs(new String[] { "1" });
                                 room.processUserCmd(botUserObj, propsCmd);
-                                org.slf4j.LoggerFactory.getLogger(ReadyState.class).info("🤖 机器人使用了道具[减一行](处突)");
+                                LoggerFactory.getLogger(ReadyState.class).info("🤖 机器人使用了道具[减一行](处突)");
                             }
                             botPropsDelayTask = null;
                         } catch (Exception ignored) {
@@ -184,7 +185,7 @@ public class ReadyState extends RoomState {
 
             scheduleBotNext(delay);
         } catch (Exception e) {
-            org.slf4j.LoggerFactory.getLogger(ReadyState.class).error("机器人执行动作失败", e);
+            LoggerFactory.getLogger(ReadyState.class).error("机器人执行动作失败", e);
         }
     }
 
@@ -246,7 +247,7 @@ public class ReadyState extends RoomState {
         UserGameData pd = room.getUserPlayData(user);
         pd.setStackRows(pd.getStackRows() + 1);
         stackAddedOnce.put(user.getId(), Boolean.TRUE);
-        org.slf4j.LoggerFactory.getLogger(ReadyState.class)
+        LoggerFactory.getLogger(ReadyState.class)
                 .info(String.format("🧱 玩家[%s] %s，堆叠+1 => %d",
                         Util.getNickNameOfUser(user), reason, pd.getStackRows()));
 
@@ -309,13 +310,13 @@ public class ReadyState extends RoomState {
 
                                     room.processUserCmd(botUser, startCmd);
 
-                                    org.slf4j.LoggerFactory.getLogger(ReadyState.class)
+                                    LoggerFactory.getLogger(ReadyState.class)
                                             .info(String.format("机器人[%s]自动点击开始按钮完成，已调用processUserCmd",
                                                     Util.getNickNameOfUser(botUser)));
                                 }
                             }
                         } catch (Exception e) {
-                            org.slf4j.LoggerFactory.getLogger(ReadyState.class)
+                            LoggerFactory.getLogger(ReadyState.class)
                                     .error("机器人自动开始失败", e);
                         }
                     }
@@ -323,7 +324,7 @@ public class ReadyState extends RoomState {
 
                 fallTimer.schedule(botAutoStartTask, delayMs);
 
-                org.slf4j.LoggerFactory.getLogger(ReadyState.class)
+                LoggerFactory.getLogger(ReadyState.class)
                         .info(String.format("已调度机器人[%s]在%.1f秒后自动开始",
                                 Util.getNickNameOfUser(botUser), delayMs / 1000.0));
                 break; // 只处理一个机器人
@@ -454,7 +455,7 @@ public class ReadyState extends RoomState {
         // 检查用户是否有足够的魔法泡泡（机器人不需要检查）
         boolean isBot = user.getUserName() != null && user.getUserName().startsWith("bot_");
         if (!isBot && user.getCowDung() < cowDungPerGame) {
-            org.slf4j.LoggerFactory.getLogger(ReadyState.class)
+            LoggerFactory.getLogger(ReadyState.class)
                     .warn(String.format("用户[%s]魔法泡泡不足：需要%d，现有%d",
                             Util.getNickNameOfUser(user), cowDungPerGame, user.getCowDung()));
             room.sendEventToUser(user, "noEnoughCowDung", cowDungPerGame);
@@ -485,7 +486,7 @@ public class ReadyState extends RoomState {
                         // （因为人类已经点击开始，所以离开概率略低于主动开始时的概率）
                         double leaveChance = 0.10;
                         if (Math.random() < leaveChance) {
-                            org.slf4j.LoggerFactory.getLogger(ReadyState.class)
+                            LoggerFactory.getLogger(ReadyState.class)
                                     .info(String.format("机器人[%s]在人类玩家开始后选择离开游戏（延迟%.1f秒后的决定）",
                                             Util.getNickNameOfUser(bot), delayMs / 1000.0));
                             // 让机器人离开房间
@@ -495,7 +496,7 @@ public class ReadyState extends RoomState {
 
                         // 90%概率：先广播机器人点击了开始
                         room.broadcastEvent("userStarted", bot.getId());
-                        org.slf4j.LoggerFactory.getLogger(ReadyState.class)
+                        LoggerFactory.getLogger(ReadyState.class)
                                 .info(String.format("已广播机器人[%s]的userStarted事件",
                                         Util.getNickNameOfUser(bot)));
 
@@ -509,7 +510,7 @@ public class ReadyState extends RoomState {
                             startGame(humanUser, bot, humanPlayData, botPlayData);
                         }
                     } catch (Exception e) {
-                        org.slf4j.LoggerFactory.getLogger(ReadyState.class)
+                        LoggerFactory.getLogger(ReadyState.class)
                                 .error("机器人延迟开始失败", e);
                     }
                 }

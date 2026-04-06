@@ -1,7 +1,6 @@
 package beidanci.service.bo;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
@@ -9,14 +8,13 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 
-import beidanci.api.model.SystemHealthCheckResult;
-import beidanci.api.model.SystemHealthFixResult;
-import beidanci.api.model.SystemHealthIssue;
+import beidanci.api.model.*;
 import beidanci.service.dao.UserDbVersionDao;
-import beidanci.service.po.Dict;
-import beidanci.service.po.User;
+import beidanci.service.po.*;
 import beidanci.util.Constants;
 import beidanci.service.util.JsonUtils;
+import beidanci.service.util.Util;
+import beidanci.service.util.SysParamUtil;
 
 /**
  * 系统健康检查业务逻辑
@@ -62,7 +60,7 @@ public class SystemHealthCheckBo {
     private WordImageBo wordImageBo;
 
     @Autowired
-    private beidanci.service.util.SysParamUtil sysParamUtil;
+    private SysParamUtil sysParamUtil;
 
 
     /**
@@ -426,17 +424,17 @@ public class SystemHealthCheckBo {
                 for (String wordId : missingPhysical) {
                     try {
                         maxSeq++;
-                        beidanci.service.po.DictWord dw0 = new beidanci.service.po.DictWord();
-                        dw0.setId(new beidanci.service.po.DictWordId(Constants.COMMON_DICT_ID, wordId));
+                        DictWord dw0 = new DictWord();
+                        dw0.setId(new DictWordId(Constants.COMMON_DICT_ID, wordId));
                         dw0.setDict(commonDict);
-                        beidanci.service.po.Word word = new beidanci.service.po.Word();
+                        Word word = new Word();
                         word.setId(wordId);
                         dw0.setWord(word);
                         dw0.setSeq(maxSeq);
                         dw0.setCreateTime(new java.util.Date());
                         dictWordBo.createEntity(dw0);
                         
-                        beidanci.api.model.DictWordDto dwDto = new beidanci.api.model.DictWordDto();
+                        DictWordDto dwDto = new DictWordDto();
                         dwDto.setDictId(Constants.COMMON_DICT_ID);
                         dwDto.setWordId(wordId);
                         dwDto.setSeq(dw0.getSeq());
@@ -462,15 +460,15 @@ public class SystemHealthCheckBo {
      * 为客户端提供点对点的托底防空洞救转数据，直接打包返回指定单词的全套系统资源
      */
     public java.util.Map<String, Object> getFallbackWordsData(List<String> wordIds) {
-        List<beidanci.api.model.DictWordDto> dictWords = new ArrayList<>();
-        List<beidanci.api.model.MeaningItemDto> meaningItems = new ArrayList<>();
-        List<beidanci.api.model.SentenceDto> sentences = new ArrayList<>();
+        List<DictWordDto> dictWords = new ArrayList<>();
+        List<MeaningItemDto> meaningItems = new ArrayList<>();
+        List<SentenceDto> sentences = new ArrayList<>();
         
         if (wordIds != null) {
             for (String wordId : wordIds) {
-                beidanci.service.po.DictWord dw = dictWordBo.findById(new beidanci.service.po.DictWordId(Constants.COMMON_DICT_ID, wordId));
+                DictWord dw = dictWordBo.findById(new DictWordId(Constants.COMMON_DICT_ID, wordId));
                 if (dw != null) {
-                    beidanci.api.model.DictWordDto dwDto = new beidanci.api.model.DictWordDto();
+                    DictWordDto dwDto = new DictWordDto();
                     dwDto.setDictId(Constants.COMMON_DICT_ID);
                     dwDto.setWordId(wordId);
                     dwDto.setSeq(dw.getSeq());
@@ -478,13 +476,13 @@ public class SystemHealthCheckBo {
                     dictWords.add(dwDto);
                 }
                 
-                List<beidanci.api.model.MeaningItemDto> mDtos = meaningItemBo.findMeaningsByWordAndDict(wordId, Constants.COMMON_DICT_ID);
+                List<MeaningItemDto> mDtos = meaningItemBo.findMeaningsByWordAndDict(wordId, Constants.COMMON_DICT_ID);
                 if (mDtos != null) {
                     meaningItems.addAll(mDtos);
-                    for (beidanci.api.model.MeaningItemDto mDto : mDtos) {
-                        List<beidanci.service.po.Sentence> sList = sentenceBo.findByMeaningItem(mDto.getId());
+                    for (MeaningItemDto mDto : mDtos) {
+                        List<Sentence> sList = sentenceBo.findByMeaningItem(mDto.getId());
                         if (sList != null) {
-                            for (beidanci.service.po.Sentence s : sList) {
+                            for (Sentence s : sList) {
                                 sentences.add(sentenceBo.toDto(s));
                             }
                         }
@@ -871,15 +869,15 @@ public class SystemHealthCheckBo {
         // 1. 修复缺失的释义：从其他词库拷贝一份作为 0 库托底
         List<String> wordsWithoutMeanings = meaningItemBo.findWordsWithoutMeanings(commonDictId);
         if (wordsWithoutMeanings != null && !wordsWithoutMeanings.isEmpty()) {
-            List<beidanci.api.model.MeaningItemDto> candidates = meaningItemBo.getOneMeaningPerWordFromAnyDict(wordsWithoutMeanings);
+            List<MeaningItemDto> candidates = meaningItemBo.getOneMeaningPerWordFromAnyDict(wordsWithoutMeanings);
             int fixedMeaningCount = 0;
-            for (beidanci.api.model.MeaningItemDto mDto : candidates) {
+            for (MeaningItemDto mDto : candidates) {
                 try {
                     // 拷贝并修改为 0 库属性，生成新 ID 以确保主键不冲突 (源 ID 可能是共享的但 0 库需要物理实体)
-                    String newId = beidanci.service.util.Util.uuid();
+                    String newId = Util.uuid();
                     mDto.setId(newId);
                     mDto.setDictId(commonDictId);
-                    mDto.setOwnerId(beidanci.util.Constants.SYS_USER_SYS_ID);
+                    mDto.setOwnerId(Constants.SYS_USER_SYS_ID);
                     mDto.setCreateTime(new java.util.Date());
                     mDto.setUpdateTime(new java.util.Date());
                     
@@ -909,13 +907,13 @@ public class SystemHealthCheckBo {
 
                 for (String meaningId : meaningsWithoutSentences) {
                     try {
-                        beidanci.service.po.MeaningItem mi = meaningItemBo.findById(meaningId);
+                        MeaningItem mi = meaningItemBo.findById(meaningId);
                         if (mi == null) continue;
                         
-                        beidanci.service.po.Word stubWord = mi.getWord();
+                        Word stubWord = mi.getWord();
                         if (stubWord == null || stubWord.getId() == null) continue;
                         
-                        beidanci.service.po.Word word = wordBo.findById(stubWord.getId());
+                        Word word = wordBo.findById(stubWord.getId());
                         if (word == null || word.getSpell() == null) continue;
                         
                         String spell = word.getSpell();
@@ -933,7 +931,7 @@ public class SystemHealthCheckBo {
                                     String sentenceEn = (String) map.get("sentenceEn");
                                     String sentenceCn = (String) map.get("sentenceCn");
                                     
-                                    beidanci.service.po.Sentence sentence = new beidanci.service.po.Sentence();
+                                    Sentence sentence = new Sentence();
                                     sentence.setEnglish(sentenceEn);
                                     sentence.setChinese(sentenceCn);
                                     sentence.setWordMeaning(mi.getMeaning());
@@ -941,10 +939,10 @@ public class SystemHealthCheckBo {
                                     sentence.setMeaningItem(mi);
                                     sentence.setNeedTts(true);
                                     sentence.setTheType("waitting_tts");
-                                    sentence.setEnglishDigest(beidanci.service.util.Util.makeSentenceDigest(sentenceEn));
+                                    sentence.setEnglishDigest(Util.makeSentenceDigest(sentenceEn));
                                     
-                                    beidanci.service.po.User owner = new beidanci.service.po.User();
-                                    owner.setId(beidanci.util.Constants.SYS_USER_SYS_ID);
+                                    User owner = new User();
+                                    owner.setId(Constants.SYS_USER_SYS_ID);
                                     sentence.setAuthor(owner);
                                     
                                     sentenceBo.createEntity(sentence);

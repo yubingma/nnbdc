@@ -12,9 +12,13 @@ import beidanci.service.bo.UserBo;
 import beidanci.service.bo.SysParamBo;
 import beidanci.service.po.SysParam;
 import beidanci.service.util.SysParamUtil;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+import org.springframework.http.MediaType;
+import com.alibaba.dashscope.common.Message;
+import com.alibaba.dashscope.aigc.generation.GenerationResult;
+import io.reactivex.Flowable;
 
 @RestController
 public class AiController {
@@ -33,7 +37,7 @@ public class AiController {
 
     private static final ObjectMapper mapper = new ObjectMapper();
 
-    private final java.util.concurrent.ExecutorService aiChatExecutor = java.util.concurrent.Executors.newFixedThreadPool(50);
+    private final  ExecutorService aiChatExecutor =  Executors.newFixedThreadPool(50);
 
     /**
      * 根据单词列表生成小短文
@@ -61,16 +65,16 @@ public class AiController {
     /**
      * 阿里云AI对话 (流式输出)
      */
-    @PostMapping(value = "/ai/chatStream.do", produces = org.springframework.http.MediaType.TEXT_EVENT_STREAM_VALUE + ";charset=UTF-8")
-    public org.springframework.web.servlet.mvc.method.annotation.SseEmitter aiChatStream(
+    @PostMapping(value = "/ai/chatStream.do", produces = MediaType.TEXT_EVENT_STREAM_VALUE + ";charset=UTF-8")
+    public SseEmitter aiChatStream(
             @RequestParam("messagesJson") String messagesJson,
             @RequestParam("userId") String userId) {
-        org.springframework.web.servlet.mvc.method.annotation.SseEmitter emitter = new org.springframework.web.servlet.mvc.method.annotation.SseEmitter(300000L);
+        SseEmitter emitter = new SseEmitter(300000L);
         
         // 验证用户身份 (ID 检查)
         if (userBo.findById(userId) == null) {
             try {
-                emitter.send(java.util.Objects.requireNonNull(beidanci.api.Result.fail("用户身份验证失败，请重新登录")));
+                emitter.send(Objects.requireNonNull(Result.fail("用户身份验证失败，请重新登录")));
                 emitter.complete();
             } catch (Exception ignore) {}
             return emitter;
@@ -82,27 +86,27 @@ public class AiController {
                 // 并发与流控逻辑
                 releaseToken = aiBo.enterAiChat(userId);
 
-                java.util.List<com.alibaba.dashscope.common.Message> messages = new java.util.ArrayList<>();
+                 List<Message> messages = new  ArrayList<>();
                 com.fasterxml.jackson.databind.JsonNode arrayNode = mapper.readTree(messagesJson);
                 for (com.fasterxml.jackson.databind.JsonNode node : arrayNode) {
-                    messages.add(com.alibaba.dashscope.common.Message.builder()
+                    messages.add(Message.builder()
                             .role(node.get("role").asText())
                             .content(node.get("content").asText())
                             .build());
                 }
 
-                io.reactivex.Flowable<com.alibaba.dashscope.aigc.generation.GenerationResult> resultFlowable = aiBo.chatStream(messages);
+                Flowable<GenerationResult> resultFlowable = aiBo.chatStream(messages);
                 resultFlowable.blockingSubscribe(
                     result -> {
                         String content = result.getOutput().getChoices().get(0).getMessage().getContent();
                         if (content != null) {
-                            beidanci.api.Result<String> rs = beidanci.api.Result.success(content);
-                            emitter.send(java.util.Objects.requireNonNull(rs));
+                            Result<String> rs = Result.success(content);
+                            emitter.send(Objects.requireNonNull(rs));
                         }
                     },
                     error -> {
-                        beidanci.api.Result<String> failRs = beidanci.api.Result.fail("AI服务异常: " + error.getMessage());
-                        try { emitter.send(java.util.Objects.requireNonNull(failRs)); } catch (Exception ignore) {}
+                        Result<String> failRs = Result.fail("AI服务异常: " + error.getMessage());
+                        try { emitter.send(Objects.requireNonNull(failRs)); } catch (Exception ignore) {}
                         emitter.completeWithError(error);
                     },
                     () -> {
@@ -111,8 +115,8 @@ public class AiController {
                 );
             } catch (Exception e) {
                 try {
-                    beidanci.api.Result<String> failRs = beidanci.api.Result.fail("后端系统异常: " + e.getMessage());
-                    emitter.send(java.util.Objects.requireNonNull(failRs));
+                    Result<String> failRs = Result.fail("后端系统异常: " + e.getMessage());
+                    emitter.send(Objects.requireNonNull(failRs));
                     emitter.completeWithError(e);
                 } catch (Exception ignore) {}
             } finally {
@@ -136,10 +140,10 @@ public class AiController {
                 return Result.fail("用户身份验证失败");
             }
 
-            java.util.List<com.alibaba.dashscope.common.Message> messages = new java.util.ArrayList<>();
+             List<Message> messages = new  ArrayList<>();
             com.fasterxml.jackson.databind.JsonNode arrayNode = mapper.readTree(messagesJson);
             for (com.fasterxml.jackson.databind.JsonNode node : arrayNode) {
-                messages.add(com.alibaba.dashscope.common.Message.builder()
+                messages.add(Message.builder()
                         .role(node.get("role").asText())
                         .content(node.get("content").asText())
                         .build());

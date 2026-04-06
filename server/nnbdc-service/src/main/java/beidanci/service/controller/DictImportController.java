@@ -6,12 +6,14 @@ import org.springframework.web.bind.annotation.*;
 import beidanci.api.Result;
 import beidanci.service.bo.DictImportBo;
 import beidanci.service.bo.ImportTaskBo;
+import beidanci.service.bo.DictBo;
 import beidanci.service.po.ImportTask;
 import beidanci.service.po.User;
+import beidanci.service.po.Dict;
+import beidanci.util.Constants;
+import java.util.*;
 
 import beidanci.service.util.JsonUtils;
-
-import java.util.Date;
 
 @RestController
 @RequestMapping("/import")
@@ -24,7 +26,7 @@ public class DictImportController {
     private ImportTaskBo importTaskBo;
 
     @Autowired
-    private beidanci.service.bo.DictBo dictBo;
+    private DictBo dictBo;
 
     /**
      * 提交一个导入任务
@@ -92,11 +94,11 @@ public class DictImportController {
         try {
             // Because this is a destructive operation, we just call the DictBo locally 
             // without creating a Task since memory clearing happens synchronously better anyway.
-            beidanci.service.po.Dict dict = dictBo.findById(dictId);
+            Dict dict = dictBo.findById(dictId);
             if (dict == null) {
                 return Result.fail("找不到系统词库");
             }
-            if (!beidanci.util.Constants.SYS_USER_SYS_ID.equals(dict.getOwner().getId())) {
+            if (!Constants.SYS_USER_SYS_ID.equals(dict.getOwner().getId())) {
                 return Result.fail("只限删除System(管理员)名下的系统公共词典!");
             }
             dictBo.deleteSystemDictSafely(dictId);
@@ -107,7 +109,7 @@ public class DictImportController {
     }
 
     @GetMapping("/searchSystemDicts")
-    public Result<java.util.List<java.util.Map<String, Object>>> searchSystemDicts(@RequestParam(required = false) String keyword) {
+    public Result<List<Map<String, Object>>> searchSystemDicts(@RequestParam(required = false) String keyword) {
         try {
             return Result.success(dictBo.searchSystemDicts(keyword));
         } catch (Exception e) {

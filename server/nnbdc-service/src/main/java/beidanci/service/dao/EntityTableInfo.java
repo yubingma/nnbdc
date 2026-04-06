@@ -13,7 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import beidanci.service.po.Po;
-import beidanci.service.util.BeanUtils;
+import beidanci.service.util.PoVoUtils;
 
 /**
  * 实体表信息工具类，用于获取表名、主键等信息
@@ -83,7 +83,7 @@ public class EntityTableInfo {
             return cached;
         }
         
-        List<Field> fields = BeanUtils.getFields(entityClass, true);
+        List<Field> fields = PoVoUtils.getFields(entityClass, true);
         for (Field field : fields) {
             if (field.isAnnotationPresent(Id.class)) {
                 idFieldCache.put(entityClass, field);

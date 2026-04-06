@@ -1,30 +1,43 @@
 package beidanci.service.bo;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Async;
-import org.springframework.stereotype.Service;
-
-import beidanci.api.model.WordDto;
-import beidanci.api.model.MeaningItemDto;
-import beidanci.service.po.*;
-import beidanci.service.po.DictWordId;
-import beidanci.service.util.JsonUtils;
-import beidanci.service.util.SysParamUtil;
-import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import beidanci.util.Constants;
-import beidanci.util.Utils;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.time.Duration;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Service;
+
+import beidanci.api.model.MeaningItemDto;
+import beidanci.api.model.WordDto;
+import beidanci.service.po.Dict;
+import beidanci.service.po.DictWord;
+import beidanci.service.po.DictWordId;
+import beidanci.service.po.GameHall;
+import beidanci.service.po.ImportTask;
+import beidanci.service.po.MeaningItem;
+import beidanci.service.po.Sentence;
+import beidanci.service.po.Synonym;
+import beidanci.service.po.SynonymId;
+import beidanci.service.po.User;
+import beidanci.service.po.Word;
+import beidanci.service.po.WordImage;
+import beidanci.service.util.JsonUtils;
+import beidanci.service.util.SysParamUtil;
+import beidanci.util.Constants;
+import beidanci.util.Utils;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
 
 /**
  * 词典导入业务类
@@ -513,8 +526,8 @@ public class DictImportBo {
                             conn.setReadTimeout(5000);
                             
                             if (conn.getResponseCode() == 200) {
-                                try (java.io.InputStream is = conn.getInputStream();
-                                     java.io.FileOutputStream fos = new java.io.FileOutputStream(soundFile)) {
+                                try (InputStream is = conn.getInputStream();
+                                     FileOutputStream fos = new FileOutputStream(soundFile)) {
                                     byte[] buffer = new byte[4096];
                                     int bytesRead;
                                     while ((bytesRead = is.read(buffer)) != -1) {
@@ -535,7 +548,7 @@ public class DictImportBo {
                         logger.warn("从有道词典下载真人发音失败 (" + pureSpell + ")，自动回退使用大模型 TTS 合成降级补全: " + e.getMessage());
                         byte[] audioData = aiBo.generateSpeech(spell, preferredVoices, null).audioData;
                         if (audioData != null && audioData.length > 0) {
-                            try (java.io.FileOutputStream fos = new java.io.FileOutputStream(soundFile)) {
+                            try (FileOutputStream fos = new FileOutputStream(soundFile)) {
                                 fos.write(audioData);
                                 fos.flush();
                             }
@@ -637,16 +650,16 @@ public class DictImportBo {
                         File destFile = new File(wordImgDir, fileName);
                         
                         OkHttpClient client = new OkHttpClient.Builder()
-                                .connectTimeout(java.time.Duration.ofSeconds(10))
-                                .readTimeout(java.time.Duration.ofSeconds(60))
+                                .connectTimeout(Duration.ofSeconds(10))
+                                .readTimeout(Duration.ofSeconds(60))
                                 .build();
                         Request request = new Request.Builder().url(imgUrl).build();
                         
                         try (okhttp3.Response response = client.newCall(request).execute()) {
                             if (response.isSuccessful() && response.body() != null) {
                                 File tempFile = new File(wordImgDir, fileName + ".tmp");
-                                try (java.io.InputStream is = response.body().byteStream();
-                                     java.io.FileOutputStream fos = new java.io.FileOutputStream(tempFile)) {
+                                try (InputStream is = response.body().byteStream();
+                                     FileOutputStream fos = new FileOutputStream(tempFile)) {
                                     byte[] buffer = new byte[8192];
                                     int bytesRead;
                                     while ((bytesRead = is.read(buffer)) != -1) {

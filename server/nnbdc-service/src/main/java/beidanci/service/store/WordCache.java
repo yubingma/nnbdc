@@ -20,7 +20,7 @@ import beidanci.service.exception.InvalidMeaningFormatException;
 import beidanci.service.exception.ParseException;
 import beidanci.service.po.Word;
 import beidanci.service.po.WordSentence;
-import beidanci.service.util.BeanUtils;
+import beidanci.service.util.PoVoUtils;
 import beidanci.service.util.Util;
 
 @Component
@@ -105,7 +105,7 @@ public class WordCache {
 
     public static WordVo genWordVO(
             Word wordPo, String[] excludeFields) {
-        WordVo wordVo = BeanUtils.makeVo(wordPo, WordVo.class, excludeFields);
+        WordVo wordVo = PoVoUtils.makeVo(wordPo, WordVo.class, excludeFields);
 
         // 单词英文描述的中文翻译
         List<WordShortDescChineseVo> shortDescChineses = Util

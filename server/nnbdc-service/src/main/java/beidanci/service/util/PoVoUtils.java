@@ -35,8 +35,8 @@ import beidanci.service.po.Po;
  *
  * @author MaYubing
  */
-public class BeanUtils {
-    private static final Logger log = LoggerFactory.getLogger(BeanUtils.class);
+public class PoVoUtils {
+    private static final Logger log = LoggerFactory.getLogger(PoVoUtils.class);
 
     private static final Map<Class<?>, MethodAccess> methodMap = new ConcurrentHashMap<>();
 
@@ -95,7 +95,7 @@ public class BeanUtils {
 
     public static <T extends Vo> Result<List<T>> makeVosResult(Result<List<? extends Po>> posResult, Class<T> voClass,
                                                                String[] excludeFields) {
-        List<T> vos = BeanUtils.makeVos(posResult.getData(), voClass, excludeFields);
+        List<T> vos = PoVoUtils.makeVos(posResult.getData(), voClass, excludeFields);
         Result<List<T>> result2 = new Result<>(posResult.isSuccess(), posResult.getMsg(), vos);
         return result2;
     }
@@ -451,7 +451,7 @@ public class BeanUtils {
         children.add(cat);
         children.add(mouse);
         dog.setChildren(children);
-        AnimalVo dogVo = BeanUtils.makeVo(dog, AnimalVo.class, new String[]{"AnimalVo.^age,children"});
+        AnimalVo dogVo = PoVoUtils.makeVo(dog, AnimalVo.class, new String[]{"AnimalVo.^age,children"});
         System.out.println(dogVo);
     }
 

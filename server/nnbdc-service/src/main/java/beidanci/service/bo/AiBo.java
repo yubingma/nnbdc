@@ -19,10 +19,14 @@ import com.alibaba.dashscope.audio.tts.SpeechSynthesisParam;
 import io.reactivex.Flowable;
 import com.alibaba.dashscope.audio.tts.SpeechSynthesizer;
 import java.nio.ByteBuffer;
+import java.lang.reflect.Method;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.*;
 
+import org.springframework.scheduling.annotation.Scheduled;
 import beidanci.service.config.AliyunAiProperties;
-
-import java.util.Arrays;
+import beidanci.service.util.SysParamUtil;
 
 /**
  * 阿里云 AI 业务类
@@ -37,12 +41,12 @@ public class AiBo {
     private AliyunAiProperties aiProperties;
 
     @Autowired
-    private beidanci.service.util.SysParamUtil sysParamUtil;
+    private SysParamUtil sysParamUtil;
 
-    private final java.util.concurrent.atomic.AtomicInteger activeAiStoryRequests = new java.util.concurrent.atomic.AtomicInteger(0);
-    private final java.util.concurrent.atomic.AtomicInteger activeAiChatRequests = new java.util.concurrent.atomic.AtomicInteger(0);
-    private final java.util.concurrent.ConcurrentHashMap<String, java.util.concurrent.atomic.AtomicInteger> userAiChatRequests = new java.util.concurrent.ConcurrentHashMap<>();
-    private final java.util.concurrent.ConcurrentHashMap<String, java.util.concurrent.atomic.AtomicInteger> userDailyAiChatRequests = new java.util.concurrent.ConcurrentHashMap<>();
+    private final AtomicInteger activeAiStoryRequests = new AtomicInteger(0);
+    private final AtomicInteger activeAiChatRequests = new AtomicInteger(0);
+    private final ConcurrentHashMap<String, AtomicInteger> userAiChatRequests = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, AtomicInteger> userDailyAiChatRequests = new ConcurrentHashMap<>();
 
     /**
      * 调用通义千问产生文本结果
@@ -91,7 +95,7 @@ public class AiBo {
      * @param messages 用户和系统消息列表
      * @return AI 生成的文本
      */
-    public String chat(java.util.List<Message> messages) {
+    public String chat(List<Message> messages) {
         String apiKey = aiProperties.getApiKey();
         if (apiKey == null || apiKey.isEmpty() || apiKey.startsWith("${")) {
             logger.error("阿里云 AI 调用失败: API Key 未设置或未正确解析");
@@ -131,12 +135,12 @@ public class AiBo {
             throw new RuntimeException("服务器 AI 服务并发达到上限，请稍后再试");
         }
 
-        java.util.concurrent.atomic.AtomicInteger userCount = userAiChatRequests.computeIfAbsent(userId, k -> new java.util.concurrent.atomic.AtomicInteger(0));
+        AtomicInteger userCount = userAiChatRequests.computeIfAbsent(userId, k -> new AtomicInteger(0));
         if (userCount.get() >= userLimit) {
             throw new RuntimeException("您的 AI 聊天并发请求过多，请等待上一个回复结束");
         }
 
-        java.util.concurrent.atomic.AtomicInteger userDailyCount = userDailyAiChatRequests.computeIfAbsent(userId, k -> new java.util.concurrent.atomic.AtomicInteger(0));
+        AtomicInteger userDailyCount = userDailyAiChatRequests.computeIfAbsent(userId, k -> new AtomicInteger(0));
         if (userDailyCount.get() >= userDailyLimit) {
             throw new RuntimeException("您今日的 AI 聊天次数已达到上限 (" + userDailyLimit + "次)，请明天再试");
         }
@@ -154,7 +158,7 @@ public class AiBo {
     /**
      * 每日凌晨清空用户调用计数 (流控重置)
      */
-    @org.springframework.scheduling.annotation.Scheduled(cron = "0 0 0 * * ?")
+    @Scheduled(cron = "0 0 0 * * ?")
     public void resetDailyStats() {
         logger.info("重置用户 AI 聊天每日调用计数");
         userDailyAiChatRequests.clear();
@@ -166,7 +170,7 @@ public class AiBo {
      * @param messages 用户和系统消息列表
      * @return AI 生成的文本结果流
      */
-    public Flowable<GenerationResult> chatStream(java.util.List<Message> messages) {
+    public Flowable<GenerationResult> chatStream(List<Message> messages) {
         String apiKey = aiProperties.getApiKey();
         if (apiKey == null || apiKey.isEmpty() || apiKey.startsWith("${")) {
             logger.error("阿里云 AI 调用失败: API Key 未设置或未正确解析");
@@ -222,7 +226,7 @@ public class AiBo {
             voices = preferredVoicesStr.split(",");
             for (int i = 0; i < voices.length; i++) voices[i] = voices[i].trim();
         }
-        String voice = voices[new java.util.Random().nextInt(voices.length)];
+        String voice = voices[new Random().nextInt(voices.length)];
         
         try {
             return new TtsResult(callCosyVoice(text, voice, voiceInstruction), voice, aiProperties.getTtsModel());
@@ -347,9 +351,9 @@ public class AiBo {
             
             // 万相大模型等需要标准文件 URL，若路径含空格需进行显式转义
             String safePath = absoluteImagePath.replace(" ", "%20");
-            java.util.Map<String, Object> imgMap = new java.util.HashMap<>();
+            Map<String, Object> imgMap = new HashMap<>();
             imgMap.put("image", "file://" + safePath);
-            java.util.Map<String, Object> txtMap = new java.util.HashMap<>();
+            Map<String, Object> txtMap = new HashMap<>();
             txtMap.put("text", "你是一位严苛的英文单词教学配图审核专家。请仔细查看这张被用来作为英文单词【" + wordSpell + "】配图的图片。\n" + 
                 "只要出现以下任何一种情况，请坚决鉴定为不合格：\n" + 
                 "1. 图片主要内容是与单词拼写相同的商业商标（Logo）、品牌产品（如单词是apple却画了苹果公司的标志或手机），这对于学习单词的本意毫无意义。\n" + 
@@ -361,7 +365,7 @@ public class AiBo {
                 
             com.alibaba.dashscope.common.MultiModalMessage userMessage = com.alibaba.dashscope.common.MultiModalMessage.builder()
                 .role(com.alibaba.dashscope.common.Role.USER.getValue())
-                .content(java.util.Arrays.asList(imgMap, txtMap))
+                .content(Arrays.asList(imgMap, txtMap))
                 .build();
                 
             com.alibaba.dashscope.aigc.multimodalconversation.MultiModalConversationParam param = com.alibaba.dashscope.aigc.multimodalconversation.MultiModalConversationParam.builder()
@@ -370,23 +374,23 @@ public class AiBo {
                 .message(userMessage)
                 .build();
                 
-            java.lang.reflect.Method callMethod = conv.getClass().getMethod("call", com.alibaba.dashscope.aigc.multimodalconversation.MultiModalConversationParam.class);
+            Method callMethod = conv.getClass().getMethod("call", com.alibaba.dashscope.aigc.multimodalconversation.MultiModalConversationParam.class);
             Object result = callMethod.invoke(conv, param);
             
-            java.lang.reflect.Method getOutputMethod = result.getClass().getMethod("getOutput");
+            Method getOutputMethod = result.getClass().getMethod("getOutput");
             Object output = getOutputMethod.invoke(result);
             
-            java.lang.reflect.Method getChoicesMethod = output.getClass().getMethod("getChoices");
-            java.util.List<?> choices = (java.util.List<?>) getChoicesMethod.invoke(output);
+            Method getChoicesMethod = output.getClass().getMethod("getChoices");
+            List<?> choices = (List<?>) getChoicesMethod.invoke(output);
             
             Object choice = choices.get(0);
-            java.lang.reflect.Method getMessageMethod = choice.getClass().getMethod("getMessage");
+            Method getMessageMethod = choice.getClass().getMethod("getMessage");
             Object message = getMessageMethod.invoke(choice);
             
-            java.lang.reflect.Method getContentMethod = message.getClass().getMethod("getContent");
-            java.util.List<?> contentList = (java.util.List<?>) getContentMethod.invoke(message);
+            Method getContentMethod = message.getClass().getMethod("getContent");
+            List<?> contentList = (List<?>) getContentMethod.invoke(message);
             
-            java.util.Map<?, ?> contentMap = (java.util.Map<?, ?>) contentList.get(0);
+            Map<?, ?> contentMap = (Map<?, ?>) contentList.get(0);
             String jsonResult = (String) contentMap.get("text");
             if (jsonResult != null) {
                 jsonResult = jsonResult.replaceAll("^```(?:json)?\\s*", "").replaceAll("\\s*```$", "").trim();
@@ -464,7 +468,7 @@ public class AiBo {
      * @param words 单词列表 (拼写)
      * @return 生成的小短文
      */
-    public String generateShortStory(java.util.List<String> words) {
+    public String generateShortStory(List<String> words) {
         if (words == null || words.isEmpty()) {
             return "没有单词可以生成短文。";
         }

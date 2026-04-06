@@ -1,12 +1,7 @@
 package beidanci.service.bo;
 
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,40 +18,15 @@ import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 
-import beidanci.api.model.BookMarkDto;
-import beidanci.api.model.DakaDto;
-import beidanci.api.model.DictDto;
-import beidanci.api.model.DictWordDto;
-import beidanci.api.model.LearningDictDto;
-import beidanci.api.model.LearningWordDto;
-import beidanci.api.model.LearningLogDto;
-import beidanci.api.model.MeaningItemDto;
-import beidanci.api.model.UserCowDungLogDto;
-import beidanci.api.model.UserDbLogDto;
-import beidanci.api.model.UserDto;
-import beidanci.api.model.UserOperDto;
-import beidanci.api.model.UserStudyStepDto;
-import beidanci.api.model.WrongWordDto;
+import beidanci.api.model.*;
 import beidanci.service.dao.UserDbVersionDao;
 import beidanci.service.exception.DbVersionNotMatchException;
 import beidanci.service.exception.RawWordDataErrorException;
-import beidanci.service.po.BookMark;
-import beidanci.service.po.Daka;
-import beidanci.service.po.Dict;
-import beidanci.service.po.DictWord;
-import beidanci.service.po.LearningDict;
-import beidanci.service.po.LearningWord;
-import beidanci.service.po.LearningLog;
-import beidanci.service.po.User;
-import beidanci.service.po.UserCowDungLog;
-import beidanci.service.po.UserDbLog;
-import beidanci.service.po.UserOper;
-import beidanci.service.po.UserStudyStep;
-import beidanci.service.po.UserStudyStepId;
-import beidanci.service.po.WrongWord;
+import beidanci.service.po.*;
 import beidanci.service.util.JsonUtils;
 import beidanci.service.util.UserSorter;
 import beidanci.service.util.Util;
+import beidanci.util.Constants;
 
 @Service
 public class UserDbSyncBo {
@@ -534,7 +504,7 @@ public class UserDbSyncBo {
                 // 防止邮箱冲突：如果客户端同步过来的邮箱已被占用，置空它以防报错阻断同步
                 String clientEmail = userFromClient.getEmail();
                 if (clientEmail != null && !clientEmail.isEmpty()) {
-                    java.util.List<User> existingUsers = userBo.findByEmail(clientEmail);
+                    List<User> existingUsers = userBo.findByEmail(clientEmail);
                     if (existingUsers != null && !existingUsers.isEmpty()) {
                         for (User u : existingUsers) {
                             if (!u.getId().equals(userId)) {
@@ -596,7 +566,7 @@ public class UserDbSyncBo {
                     String name = dictDto.getName();
                     String ownerId = dictDto.getOwnerId();
                     if (dict == null) {
-                        if ("生词本".equals(name) || "已掌握".equals(name) || beidanci.util.Constants.SYS_USER_SYS_ID.equals(ownerId)) {
+                        if ("生词本".equals(name) || "已掌握".equals(name) || Constants.SYS_USER_SYS_ID.equals(ownerId)) {
                             throw new IllegalArgumentException(String.format("禁止通过同步创建核心/系统词书: name=[%s], ownerId=[%s]", name, ownerId));
                         }
                     }
@@ -605,7 +575,7 @@ public class UserDbSyncBo {
                     if (dict != null) {
                         String oldName = dict.getName();
                         String oldOwnerId = dict.getOwner().getId();
-                        if ("生词本".equals(oldName) || "已掌握".equals(oldName) || beidanci.util.Constants.SYS_USER_SYS_ID.equals(oldOwnerId)) {
+                        if ("生词本".equals(oldName) || "已掌握".equals(oldName) || Constants.SYS_USER_SYS_ID.equals(oldOwnerId)) {
                             if (!oldName.equals(name)) {
                                 throw new IllegalArgumentException(String.format("禁止通过同步修改核心/系统词书名称: oldName=[%s], newName=[%s]", oldName, name));
                             }

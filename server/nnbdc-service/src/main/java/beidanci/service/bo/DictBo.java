@@ -1,7 +1,5 @@
 package beidanci.service.bo;
 
-import javax.annotation.PostConstruct;
-
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -9,16 +7,20 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+import javax.annotation.PostConstruct;
+
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -27,10 +29,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 import org.springframework.util.DigestUtils;
 
-import beidanci.api.model.DictDto;
 import beidanci.api.Result;
-import beidanci.api.model.DictVo;
+import beidanci.api.model.DictDto;
 import beidanci.api.model.DictStatsVo;
+import beidanci.api.model.DictVo;
 import beidanci.api.model.DictWordDto;
 import beidanci.service.dao.BaseDao;
 import beidanci.service.dao.EntityRowMapper;
@@ -41,21 +43,22 @@ import beidanci.service.po.LearningDictId;
 import beidanci.service.po.User;
 import beidanci.service.po.Word;
 import beidanci.service.store.WordCache;
-import beidanci.service.util.BeanUtils;
-import beidanci.service.util.Util;
 import beidanci.service.util.JsonUtils;
+import beidanci.service.util.PoVoUtils;
+import beidanci.service.util.SysParamUtil;
+import beidanci.service.util.Util;
 import beidanci.util.Constants;
 
 @Service
 @Transactional(rollbackFor = Throwable.class)
 public class DictBo extends BaseBo<Dict> {
-    private static final Logger log = org.slf4j.LoggerFactory.getLogger(DictBo.class);
+    private static final Logger log = LoggerFactory.getLogger(DictBo.class);
 
     @Autowired
     LearningDictBo learningDictBo;
 
     @Autowired
-    @org.springframework.context.annotation.Lazy
+    @Lazy
     DictBo dictBo;
 
     @Autowired
@@ -209,7 +212,7 @@ public class DictBo extends BaseBo<Dict> {
         dict.setOwner(user);
         createEntity(dict);
 
-        DictVo vo = BeanUtils.makeVo(dict, DictVo.class,
+        DictVo vo = PoVoUtils.makeVo(dict, DictVo.class,
                 new String[] { "invitedBy", "studyGroups", "userGames", "dictWords" });
 
         return new Result<>(true, null, vo);
@@ -838,15 +841,15 @@ public class DictBo extends BaseBo<Dict> {
     }
 
     @Autowired
-    private beidanci.service.util.SysParamUtil sysParamUtil;
+    private SysParamUtil sysParamUtil;
 
     @Autowired
-    @org.springframework.context.annotation.Lazy
-    private beidanci.service.bo.WordImageBo wordImageBo;
+    @Lazy
+    private WordImageBo wordImageBo;
 
     @Autowired
-    @org.springframework.context.annotation.Lazy
-    private beidanci.service.bo.SentenceBo sentenceBo;
+    @Lazy
+    private SentenceBo sentenceBo;
 
     @Transactional
     public void deleteSystemDictSafely(String dictId) {

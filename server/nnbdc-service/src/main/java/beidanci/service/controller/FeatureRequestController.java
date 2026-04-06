@@ -21,7 +21,7 @@ import beidanci.service.bo.FeatureRequestBo;
 import beidanci.service.bo.UserBo;
 import beidanci.service.po.FeatureRequest;
 import beidanci.service.po.User;
-import beidanci.service.util.BeanUtils;
+import beidanci.service.util.PoVoUtils;
 
 @RestController
 public class FeatureRequestController {
@@ -38,7 +38,7 @@ public class FeatureRequestController {
     @GetMapping("/getAllFeatureRequests.do")
     public List<FeatureRequestVo> getAllFeatureRequests() throws IllegalAccessException {
         List<FeatureRequest> requests = featureRequestBo.getAllFeatureRequests();
-        return BeanUtils.makeVos(requests, FeatureRequestVo.class, 
+        return PoVoUtils.makeVos(requests, FeatureRequestVo.class, 
                 new String[]{"creator.password", "creator.invitedBy", "creator.StudyGroupVo.creator",
                         "creator.StudyGroupVo.users", "creator.StudyGroupVo.managers", 
                         "creator.studyGroupPosts", "creator.userGames"});
@@ -66,7 +66,7 @@ public class FeatureRequestController {
         }
         
         FeatureRequest request = featureRequestBo.createFeatureRequest(title, content, user);
-        FeatureRequestVo vo = BeanUtils.makeVo(request, FeatureRequestVo.class,
+        FeatureRequestVo vo = PoVoUtils.makeVo(request, FeatureRequestVo.class,
                 new String[]{"creator.password", "creator.invitedBy", "creator.StudyGroupVo.creator",
                         "creator.StudyGroupVo.users", "creator.StudyGroupVo.managers", 
                         "creator.studyGroupPosts", "creator.userGames"});
@@ -152,7 +152,7 @@ public class FeatureRequestController {
 
     private void shrinkCreatorInfo(FeatureRequestVo vo) throws IllegalAccessException {
         if (vo.getCreator() != null) {
-            BeanUtils.setPropertiesToNull(vo.getCreator(), new String[]{"id", "displayNickName"});
+            PoVoUtils.setPropertiesToNull(vo.getCreator(), new String[]{"id", "displayNickName"});
         }
     }
 }

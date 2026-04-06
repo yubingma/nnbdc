@@ -23,7 +23,7 @@ import beidanci.service.exception.ParseException;
 import beidanci.service.po.Sentence;
 import beidanci.service.po.User;
 import beidanci.service.store.WordCache;
-import beidanci.service.util.BeanUtils;
+import beidanci.service.util.PoVoUtils;
 import beidanci.service.util.Util;
 
 @RestController
@@ -47,7 +47,7 @@ public class SentenceController {
 
         // 返回更新后的例句对象
         Sentence sentence = sentenceBo.findById(sentenceId);
-        SentenceVo vo = BeanUtils.makeVo(sentence, SentenceVo.class,
+        SentenceVo vo = PoVoUtils.makeVo(sentence, SentenceVo.class,
                 new String[]{"invitedBy", "userGames", "studyGroups"});
         shrinkSentenceVo(vo);
 
@@ -55,7 +55,7 @@ public class SentenceController {
     }
 
     private void shrinkSentenceVo(SentenceVo vo) throws IllegalAccessException {
-        BeanUtils.setPropertiesToNull(vo.getAuthor(), new String[]{"id", "displayNickName"});
+        PoVoUtils.setPropertiesToNull(vo.getAuthor(), new String[]{"id", "displayNickName"});
     }
 
     @PostMapping("/saveSentence.do")
@@ -101,7 +101,7 @@ public class SentenceController {
         Sentence sentence = sentenceBo.createSentence(english, chinese, wordId, payCowdung, currWord, userId);
 
         // 返回更新后的例句对象
-        SentenceVo vo = BeanUtils.makeVo(sentence, SentenceVo.class,
+        SentenceVo vo = PoVoUtils.makeVo(sentence, SentenceVo.class,
                 new String[]{"invitedBy", "userGames", "studyGroups"});
         shrinkSentenceVo(vo);
 
