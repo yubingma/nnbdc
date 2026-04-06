@@ -59,6 +59,7 @@ TV|电视
 watch TV|看电视
 funny|滑稽可笑的;滑稽
 fun   n.|乐趣,娱乐,嬉戏
+big|大的
 ice-cream|冰激凌
 ice|冰
 eleven|十一
@@ -140,7 +141,6 @@ us    pron.|我们
 yo-yo|溜溜球.
 zebra|斑马
 small|小的
-big|大的
 long|长的
 short|短的；矮的
 tall|高的

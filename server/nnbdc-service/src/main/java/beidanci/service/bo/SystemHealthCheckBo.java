@@ -447,9 +447,7 @@ public class SystemHealthCheckBo {
                 if (fixedCount > 0) {
                     commonDict.setWordCount(maxSeq);
                     dictBo.updateEntity(commonDict);
-                    beidanci.api.model.DictDto dictDto = new beidanci.api.model.DictDto();
-                    org.springframework.beans.BeanUtils.copyProperties(commonDict, dictDto);
-                    sysDbSyncBo.logOperation("UPDATE", "dict", Constants.COMMON_DICT_ID, beidanci.service.util.JsonUtils.toJson(dictDto));
+                    sysDbSyncBo.logOperation("UPDATE", "dict", Constants.COMMON_DICT_ID, beidanci.service.util.JsonUtils.toJson(dictBo.toDto(commonDict)));
                 }
                 fixed.add(String.format("成功为 %d 个物理脱离单词补充并广播到 0 库。", fixedCount));
             }

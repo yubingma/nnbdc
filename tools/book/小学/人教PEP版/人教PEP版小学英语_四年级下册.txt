@@ -127,6 +127,7 @@ not much|没什么
 New York|纽约
 matter|事情；麻烦
 have to|必须；不得不
+closs|
 colourful|色彩丰富的
 pretty|漂亮的；可爱的
 cheap|便宜的.

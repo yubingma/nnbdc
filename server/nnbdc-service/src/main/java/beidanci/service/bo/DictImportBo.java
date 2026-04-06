@@ -465,9 +465,15 @@ public class DictImportBo {
             }
             
             // 同样必须同步 dict 表的变更
-            beidanci.api.model.DictDto dictDto = new beidanci.api.model.DictDto();
-            org.springframework.beans.BeanUtils.copyProperties(dict0, dictDto);
-            sysDbSyncBo.logOperation("UPDATE", "dict", Constants.COMMON_DICT_ID, beidanci.service.util.JsonUtils.toJson(dictDto));
+            if (dict0.getOwner() == null) {
+                User sysUser = new User();
+                sysUser.setId(Constants.SYS_USER_SYS_ID);
+                dict0.setOwner(sysUser);
+            }
+            if (dict0.getName() == null) {
+                dict0.setName("通用词典.dict");
+            }
+            sysDbSyncBo.logOperation("UPDATE", "dict", Constants.COMMON_DICT_ID, beidanci.service.util.JsonUtils.toJson(dictBo.toDto(dict0)));
             stats.addSyncLog("UPDATE", "dict");
         }
 

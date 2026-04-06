@@ -77,20 +77,7 @@ public class SystemBo {
 
         if (dicts != null) {
             for (Dict dict : dicts) {
-                DictDto dictDto = new DictDto();
-                dictDto.setId(dict.getId());
-                dictDto.setName(dict.getName());
-                dictDto.setOwnerId(dict.getOwner().getId());
-                dictDto.setIsShared(dict.getIsShared());
-                dictDto.setIsReady(dict.getIsReady());
-                dictDto.setVisible(dict.getVisible());
-                dictDto.setWordCount(dict.getWordCount());
-                dictDto.setEditable(dict.getEditable());
-                dictDto.setDeletable(dict.getDeletable());
-                dictDto.setCreateTime(dict.getCreateTime());
-                dictDto.setUpdateTime(dict.getUpdateTime());
-                dictDtos.add(dictDto);
-
+                dictDtos.add(dictBo.toDto(dict));
             }
         }
         systemData.setDicts(dictDtos);
