@@ -59,7 +59,7 @@ short hair|短头发
 thin|瘦的
 strong|健壮的
 quiet|安静的
-friend|s)：朋友(复数
+friend|(s)：朋友(复数)
 Chinese|中国的
 like|喜欢
 his|他的
@@ -90,7 +90,7 @@ kitchen|厨房
 it’s|它是
 hey|嘿
 fish|鱼
-isn’t|不是
+isn’t|
 nothere|这里
 room|房间
 school|学校
@@ -112,7 +112,7 @@ no|不；不是
 desk|课桌；书桌
 chair|椅子
 rice|米饭
-noodle|s) ：面条(复数
+noodle|(s) ：面条(复数)
 beef|牛肉
 vegetable|蔬菜
 soup|汤

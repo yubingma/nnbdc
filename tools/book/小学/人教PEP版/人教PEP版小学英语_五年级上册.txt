@@ -32,9 +32,9 @@ his|他的
 very|很，非常
 but|但是
 Monday|(Mon.) 星期一
-Tuesday|(Tue.) 星期二
+Tuesday|(Tue.) . 星期二
 Wednesday|(Wed.) 星期三
-Thursday|(Thu.) 星期四
+Thursday|(Thu.) . 星期四
 Friday|(Fri.) 星期五
 Moral Education|思想品德课
 Social Studies|社会课
@@ -102,7 +102,7 @@ do the dishes|洗碗碟
 put away the clothes|收拾衣服
 I’d like to|我想要干
 robot|机器人
-can’t|不能
+can’t|
 play chess|下棋
 use a computer|使用计算机
 air-conditioner|空调

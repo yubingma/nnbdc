@@ -1,13 +1,13 @@
-tall → taller|更高的
-short → shorter|更矮的
-strong → stronger|更强壮的
-old → older|年龄更大的
-young → younger|更年轻的
-big → bigger|更大的
-heavy → heavier|更重的
-long → longer|更长的
-thin → thinner|更瘦的
-small → smaller|体型 更小的
+tall|更高的
+short|更矮的
+strong|更强壮的
+old|年龄更大的
+young|更年轻的
+big|更大的
+heavy|更重的
+long|更长的
+thin|更瘦的
+small|体型 更小的
 How tall are you ?|你多高？
 I’m 164 cm tall|我164厘米高。
 You are 4 cm taller than me|你比我高4厘米。
@@ -33,39 +33,39 @@ My throat is sore. My nose hurts|我的喉咙痛。我的鼻子疼。
 How are you, Liu Yun?You look so happy|刘云，你怎么样你看起来真高兴。
 How are you, Sarah?|萨拉，你好吗？
 You look sad today|你今天看起来很伤心。
-watch → watched|看
-wash → washed|洗
-clean → cleaned|打扫
-play → played|玩
-visit → visited|看望
-read → read|读
-do → did|
+watch|看
+wash|洗
+clean|打扫
+play|玩
+visit|看望
+read|读
+do|
 did last weekend|上一个周末
-go → went|去
-go to a park →went to a park|去公园
-go swimming → went swimming|去游泳
-go fishing → went fishing|去钓鱼
-go hiking → went hiking|去郊游
+go|去
+go to a park|去公园
+go swimming|去游泳
+go fishing|去钓鱼
+go hiking|去郊游
 What did you do last weekend?|上周末你做了什么？
 I played football|我在踢足球。
 Did you read books?|你看书了吗？
 Yes, I did|是的，我看了。
 No, I didn’t|不，我没看。
-leran Chinese →|
+leran Chinese|
 learned Chinese|学汉语
-sing and dance →|
+sing and dance|
 sang and danced|唱歌和跳舞
-eat good food →|
+eat good food|
 ate good food|吃好吃的食物
-take pictures → took pictures|照相
-climb → climbed|爬
-have → had|
-buy presents → bought presents|买礼物
-row a boat →rowed a boat|划船
-go skiing → went skiing|去滑雪
-go ice-skating →went ice-skating|去滑冰
+take pictures|照相
+climb|爬
+have|
+buy presents|买礼物
+row a boat|划船
+go skiing|去滑雪
+go ice-skating|去滑冰
 how|怎么，如何
-get → got|到达
+get|到达
 last|上一个的仅余的，留在最后的
 Where did you go on your holiday?|假期里你去过那里？
 I went to Xinjiang|我去了新疆。

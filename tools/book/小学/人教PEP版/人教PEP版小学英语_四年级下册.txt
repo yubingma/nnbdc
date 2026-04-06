@@ -107,7 +107,7 @@ weather|天气
 weather report|天气预报
 wear|穿
 today|今天
-can’t|不能
+can’t|
 put on|
 pants|长裤
 let’s|让咱们
@@ -137,7 +137,7 @@ seventy|七十
 hundred|百
 how much|多少钱
 ninety-nine|九十九
-that’s|那是
+that’s|
 big|大的
 small|小的
 long|长的
