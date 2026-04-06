@@ -11,11 +11,11 @@ traffic rule|交通规则 ：
 stop|停，停车站
 wait|等待
 get to|到达
-How do you go to school, Sarah?|(Sarah，你怎样去上学？)
-Usually I go to school on foot|(我通常走路去上学。)
-Sometimes I go by bike|(有时我骑自行车去上学。)
+How do you go to school, Sarah?|Sarah，你怎样去上学？
+Usually I go to school on foot|我通常走路去上学。
+Sometimes I go by bike|有时我骑自行车去上学。
 How can I get to Zhongshan Park?|(我怎样才能到达中山公园？
-You can go by the No.15 bus|(达你可以坐15路公共汽车去。)
+You can go by the No.15 bus|达你可以坐15路公共汽车去。
 library|图书馆
 post office|邮局
 hospital|医院
@@ -28,9 +28,9 @@ right|右边
 left|左边
 straight|成直线地
 then|然后
-Where is the cinema, please?|(请问，电影院在哪里？)
-It’s next to the hospital|(在医院旁边。)
-Turn left at the cinema, then go straight. It’s on the left|(在电影院向左转，然后直走。它就在左边。)
+Where is the cinema, please?|请问，电影院在哪里？
+It’s next to the hospital|在医院旁边。
+Turn left at the cinema, then go straight. It’s on the left|在电影院向左转，然后直走。它就在左边。
 next week|下周
 this morning|今天上午
 this afternoon|今天下午
@@ -39,12 +39,12 @@ comic book|漫画书
 post card|明信片
 newspaper|报纸
 buy|购买
-What are you going to do this weekend?|(这个周末你打算做什么？)
-I’m going to visit my grandparents this weekend|(这个周末我打算去看望我的爷爷奶奶。)
-Where are you this afternoon?|(今天下午你打算去哪里？)
-I’m going to the bookstore|(我要去书店。)
-What are you going to buy?|(你打算买什么？)
-I am going to buy a comic book|(我打算买一本漫画书。)
+What are you going to do this weekend?|这个周末你打算做什么？
+I’m going to visit my grandparents this weekend|这个周末我打算去看望我的爷爷奶奶。
+Where are you this afternoon?|今天下午你打算去哪里？
+I’m going to the bookstore|我要去书店。
+What are you going to buy?|你打算买什么？
+I am going to buy a comic book|我打算买一本漫画书。
 hobby|爱好
 ride a bike|骑自行车
 dive|跳水
@@ -59,11 +59,11 @@ go|去
 watch|看
 read|读，看
 does doesn’t|
-What’s your hobby?|(你有什么爱好？)
-I like collecting stamps|(我喜欢集邮。)
-He likes collecting stamps, too|(他也喜欢集邮。)
-Does she teach English?|(她是教英语的吗？)
-Yes, she does./ No,she doesn’t|(是的，她是。/ 不，她不是。)
+What’s your hobby?|你有什么爱好？
+I like collecting stamps|我喜欢集邮。
+He likes collecting stamps, too|他也喜欢集邮。
+Does she teach English?|她是教英语的吗？
+Yes, she does./ No,she doesn’t|是的，她是。/ 不，她不是。
 singer|歌唱家，歌手
 writer|作家
 actor|男演员
@@ -76,10 +76,10 @@ policeman|男警察
 salesperson|销售员
 cleaner|清洁工
 work|工作
-What does your mother do?|(你妈妈是做什么的？)
-She is a TV reporter|(她是一名电视台记者。)
-Where does she work?|(她在哪里上班？)
-How does she go to work?|(她怎样去上班？)
+What does your mother do?|你妈妈是做什么的？
+She is a TV reporter|她是一名电视台记者。
+Where does she work?|她在哪里上班？
+How does she go to work?|她怎样去上班？
 rain|雨
 cloud|云
 sun|太阳
@@ -89,7 +89,7 @@ soil|土壤
 sprout|苗，芽
 plant|植物，种植
 should|应该
-Where does the rain come from?|(雨从哪里来？)
-It comes from the clouds|(雨从云里来。)
-How do you do that?|(你是怎么做的？)
-What should you do then?|(然后你应该怎么做？)
+Where does the rain come from?|雨从哪里来？
+It comes from the clouds|雨从云里来。
+How do you do that?|你是怎么做的？
+What should you do then?|然后你应该怎么做？

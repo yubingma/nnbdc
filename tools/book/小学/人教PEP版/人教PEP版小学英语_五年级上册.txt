@@ -9,10 +9,8 @@ thin|瘦的
 Mr|先生
 from|从;来自
 Canada|加拿大
-what’s|是什么
-like|像……一样；喜欢
-he’s|他是
-know|知道
+what’s|like： 像……一样；喜欢
+he’s|know 知道
 now|现在
 no|不
 principal|校长
@@ -24,8 +22,7 @@ Lady|女士;小姐’夫人
 so much|很;非常
 fun|有趣;逗笑
 quiet|安静的，文静的
-she’s|她是
-she|她
+she’s|she 她
 he|他
 her|她的
 his|他的
@@ -51,8 +48,7 @@ Saturday|(Sat.) 星期六
 Sunday|(Sun.) 星期天
 often|常常;经常
 sometimes|有时
-usually|
-love|爱;热爱
+usually|love 爱;热爱
 yeah|是;行
 play computer game|玩电脑游戏
 too|也;太
@@ -66,8 +62,7 @@ green beans|青豆
 tofu|豆腐
 potato|土豆
 tomato|西红柿
-I’d like|
-for|为
+I’d like|for： 为
 lunch|中餐
 we|我们
 menu|菜单
@@ -83,7 +78,6 @@ they are|他们是
 fruit|水果
 don’t|不
 grape|葡萄
-have to|不得不
 eat|吃
 empty the trash|倒垃圾
 cook the meals|煮饭
@@ -91,8 +85,7 @@ water the flowers|浇花
 sweep the floor|扫地
 clean the bedroom|打扫卧室
 helpful|有帮助的,有益的
-at home|
-ill|坏的,有病的
+at home|ill 坏的,有病的
 wash the windows|擦窗户
 just do it|就这么干, 说做就做
 make the bed|铺床

@@ -16,7 +16,6 @@ what|什么
 in|在……里面
 the|这个，这里
 we|我们
-new|新的
 go|去
 where|在哪里
 computer|计算机
@@ -59,13 +58,12 @@ short hair|短头发
 thin|瘦的
 strong|健壮的
 quiet|安静的
-friend|(s)：朋友(复数)
+friend|s)：朋友(复数
 Chinese|中国的
 like|喜欢
 his|他的
 photo|照片
-he’s|他是
-has|(他/她)有
+he’s|has (他/她)有
 name|名字
 he|他
 teacher|教师
@@ -75,10 +73,8 @@ science|科学
 sports|体育运动
 computer game|电脑游戏
 painting|绘画
-she’s|她是
-her|她的
-you’re|
-she|她
+she’s|her 她的
+you’re|she： 她
 right|对的；正确的
 boy|男孩
 girl|女孩
@@ -87,8 +83,7 @@ bathroom|卫生间
 bedroom|卧室
 living room|客厅
 kitchen|厨房
-it’s|它是
-hey|嘿
+it’s|hey： 嘿
 fish|鱼
 isn’t|
 nothere|这里
@@ -102,8 +97,7 @@ fridge|冰箱
 table|桌子
 they|他们
 aren’t|
-they’re|
-key|钥匙
+they’re|key： 钥匙
 open|打开
 look|看
 please|请
@@ -112,7 +106,7 @@ no|不；不是
 desk|课桌；书桌
 chair|椅子
 rice|米饭
-noodle|(s) ：面条(复数)
+noodle|s) ：面条(复数
 beef|牛肉
 vegetable|蔬菜
 soup|汤

@@ -1,6 +1,6 @@
 playground|操场
 garden|花园
-teacher,s-office|
+teacher,s-office|教师办公室
 library|图书馆
 canteen|食堂
 first|第一
@@ -12,8 +12,7 @@ visitor|客人；参观者
 there|哪儿；那里
 class|
 lunch|午餐
-at|
-this way|这边
+at|this way 这边
 please|
 beautiful|
 computer|计算机
@@ -94,8 +93,7 @@ shoes|鞋子
 shorts|短裤
 these|这些
 those|那些
-they’re|
-but|但是
+they’re|but 但是
 what .for|为什么
 neighbour|邻居
 colour|颜色
@@ -110,8 +108,7 @@ today|今天
 can’t|
 put on|
 pants|长裤
-let’s|让咱们
-play|玩；踢
+let’s|play 玩；踢
 football|足球
 rain|雨vi.下雨
 rainy|下雨的
@@ -137,8 +134,7 @@ seventy|七十
 hundred|百
 how much|多少钱
 ninety-nine|九十九
-that’s|
-big|大的
+that’s|big： 大的
 small|小的
 long|长的
 sneakers|胶底帆布鞋；网球鞋
@@ -151,8 +147,7 @@ a pair of|一双
 son|儿子
 size|尺码
 all right|
-we’ll|
-take|买
+we’ll|take 买
 them|他们 它们(宾格)
 short|短的
 apple|苹果

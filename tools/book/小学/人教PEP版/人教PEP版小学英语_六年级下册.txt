@@ -55,8 +55,7 @@ leran Chinese|
 learned Chinese|学汉语
 sing and dance|
 sang and danced|唱歌和跳舞
-eat good food|
-ate good food|吃好吃的食物
+eat good food|ate good food 吃好吃的食物
 take pictures|照相
 climb|爬
 have|
