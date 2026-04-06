@@ -279,6 +279,12 @@ class PinyinParser {
 
     // 解析韵母
     yunMu = pinyinNormal.substring(shengMu.length);
+
+    // 标准拼音中，j q x y 后的 u 实际上是 ü (在这里用 v 表示)
+    if ((shengMu == "j" || shengMu == "q" || shengMu == "x") &&
+        yunMu.startsWith("u")) {
+      yunMu = "v${yunMu.substring(1)}";
+    }
   }
 
   bool isZeroShengMu(String pinyinNormal) {
