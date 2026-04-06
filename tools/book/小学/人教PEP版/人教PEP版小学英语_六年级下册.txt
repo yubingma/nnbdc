@@ -3,17 +3,28 @@ shorter|更矮的
 stronger|更强壮的
 older|年龄更大的
 younger|更年轻的
+cm  centimeter|厘米
+than|与…相比较
+funnier|更滑稽的
 bigger|更大的
 heavier|更重的
 longer|更长的
 thinner|更瘦的
-smaller|体型 更小的
-How tall are you ?|你多高？
-I’m 164 cm tall|我164厘米高。
-You are 4 cm taller than me|你比我高4厘米。
-How heavy are you?|你多重？
-I’m 48 kg|我48公斤。
-I’m thinner than you, and shorter|我比你瘦，又矮。
+smaller|（体型）更小
+feet|脚（复数）
+size|号 码；尺码
+wear|穿
+meter|米
+ton|吨
+each|各自；每个
+squid|鱿鱼
+lobster|龙虾
+shark|鲨鱼
+deep|深的
+seal|海豹
+sperm  whale|抹香鲸
+Killer  whale|虎鲸
+even|甚至
 have a fever|发烧
 have a sore throat|喉咙疼
 have a cold|感冒
@@ -21,52 +32,70 @@ have a toothache|牙疼
 have a headache|头疼
 matter|事情，麻烦
 sore|疼的
+feel|感觉
+sick|不舒服的；有病的
 hurt|疼痛
 nose|鼻子
+people|人们
+flu|流感
+know|知道
+might|可以；能
+worry|烦恼；担忧
+medicine|药
+drink|饮料
+stay|在；逗留
+soon|立刻；不久
 tired|疲劳的，累的
 excited|兴奋的
+angry|生气的
 happy|高兴的
 bored|无聊的，烦人的
 sad|忧伤的，悲伤的
-What’s the matter?|怎么啦？
-My throat is sore.  My nose hurts|我的喉咙痛。我的鼻子疼。
-How are you, Liu Yun?You look so happy|刘云，你怎么样你看起来真高兴。
-How are you, Sarah?|萨拉，你好吗？
-You look sad today|你今天看起来很伤心。
-watch|看
-wash|洗
-clean|打扫
-play|玩
-visit|看望
+trip|旅行
+fail|不及格；失败
+test|测试
+hear|听见
+match|比赛
+between|在…之间
+pass|传递
+kick|踢
+a little|有些
+goal|得分
+bounce|反弹
+off|距；离；离开
+another|另一个
+guess|猜测
+win|（过去式 won）赢
+game|比赛
+laugh  at|因…而发笑
+watched|看
+washed|洗
+cleaned|打扫
+played|玩
+visited|看望
+last weekend|上一个周末
+went|去
+went to a park|去公园
+go swimming--went swimming|去游泳
+went fishing|去钓鱼
 read|读
-do|做，干
-did last weekend|上一个周末
-go|去
-go to a park|去公园
-go swimming|去游泳
-go fishing|去钓鱼
-go hiking|去郊游
-What did you do last weekend?|上周末你做了什么？
-I played football|我在踢足球。
-Did you read books?|你看书了吗？
-Yes, I did|是的，我看了。
-No, I didn’t|不，我没看。
-leran Chinese|
-learned Chinese|学汉语
-sing and dance|
+went hiking|去郊游
+yesterday|昨天
+study|（过去式 studied 学习
+Tongue  twister|绕口令
+fly|过去式 flew) 飞
+return ]|送回；归还
+swim|（过去式 swam）游泳
 sang and danced|唱歌和跳舞
-eat good food|吃好吃的食物
-take pictures|照相
-climb|爬
-have|
-buy presents|买礼物
-row a boat|划船
-go skiing|去滑雪
-go ice-skating|去滑冰
+good food|吃好吃的食物
+pictures|照相
+climbed|爬
+rowed a boat|划船
+saw  elephant|看大象
+went skiing|去滑雪
 how|怎么，如何
-get|到达
-last|上一个的仅余的，留在最后的
-Where did you go on your holiday?|假期里你去过那里？
-I went to Xinjiang|我去了新疆。
-How did you go there?|你怎样去那里的？
-I went by train|我乘火车去的
+got|到达
+last：|上一个的，仅余的，
+cousin|堂（表）兄弟；
+relax|放松
+prepare|准备

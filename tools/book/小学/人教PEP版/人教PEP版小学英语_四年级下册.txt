@@ -1,192 +1,121 @@
-playground|操场
-garden|花园
-teacher,s-office|
-library|图书馆
-canteen|食堂
-first|第一
-floor|层,楼
-weclome|欢迎
-to|给
-many|很多的
-visitor|客人；参观者
-there|哪儿；那里
-class|
-lunch|午餐
-at|
-this way|这边
-please|
-beautiful|
-computer|计算机
-board|写字板
-fan|风扇
-light|灯
-this|这；这个
-is|是
-my|我的
-that|那；那个
-your|你的
-.art room|绘画教室
-computer room|计算机教室
-washroom|卫生间
-music room|音乐教室
-gym|体育馆
-TV room|电视机房
-second|第二
-cool|好的；酷的
-teacher’s desk|讲台
-picture|图画；照片
-wall|墙壁
-yes|是；是的
-it|它
-English class|英语课
-music class|音乐课
-breakfast|早餐
-dinner|晚餐
-P.E. class|体育课
-over|结束
-go to the playground|
-now|现在
-just a minute|再多一会
-go home|回家
-kid|小孩；孩子
-one|一
-two|二
-three|三
-four|四
-five|五
-six|六
-seven|七
-eight|八
-nine|九
-ten|十
-what|什么
-time|时间
-it’s|它是
-o’clock|点钟
-get up|起床
-go to school|上学
-go to bed|上床睡觉
-ready|准备好的
-hurry|抓紧；赶快
-math|数学
-Chinese|中文，汉语；中国人adj. 中国的，中国人的
-English|英国的；英国人的；英语的n.英语；英国人
-P.E|体育
-music|音乐
-for|为；给
-jacket|夹克衫
-shirt|衬衫
-skirt|裙子
-dress|连衣裙
-sweater|毛衣
-T-shirt T|恤衫
-red|红色的
-blue|蓝色的
-yellow|黄色的
-green|绿色的
-white|白色的
-no|不；不是
-not|不；不是的
-whose|谁的
-jeans|牛仔裤
-socks|袜子
-shoes|鞋子
-shorts|短裤
-these|这些
-those|那些
-they’re|
-but|但是
-what .for|为什么
-neighbour|邻居
-colour|颜色
-parents|父母亲
-warm|暖和的
-cold|寒冷的
-hot|炎热的
-weather|天气
-weather report|天气预报
-wear|穿
-today|今天
-can’t|
-put on|
-pants|长裤
-let’s|让咱们
-play|玩；踢
-football|足球
-rain|雨vi.下雨
-rainy|下雨的
-snow|雪；vi.下雪
-snowy|下雪的
-wind|风
-windy|有风的
-cloud|云
-cloudy|多云的
-sun|太阳
-sunny|晴朗的
-not much|没什么
-New York|纽约
-matter|事情；麻烦
-have to|必须；不得不
-closs|人教版小学英语单词表(完整版)全文共28页，当前为第15页。
-colourful|色彩丰富的
-pretty|漂亮的；可爱的
-cheap|便宜的
-expensive|昂贵的
-sixty  [ 'siksti|(:) ]六十
-seventy|七十
-hundred|百
-Assistant help|
-how much|多少钱
-ninety-nine|九十九
-that’s|
-big|大的
-small|小的
-long|长的
-sneakers|胶底帆布鞋；网球鞋
-slippers|拖鞋
-sandals|凉鞋
-boots|靴子
-want|想要
-pair|一双；一对
-a pair of|一双
-son|儿子
-size|尺码
-all right|
-we’ll|
-take|买
-them|他们 它们(宾格)
-short|短的
-apple|苹果
-banana|香蕉
-pear|梨
-orange|橙子
-watermelon|西瓜
-are|是
-they|它他，她们 (主语)
-sheep|绵羊
-horse|马
-hen|母鸡
-lamb|小羊；羔羊
-goat|山羊
-cow|奶牛
-farm|人教版小学英语单词表(完整版)全文共28页，当前为第16页。
-aren’t|猫
-donkey|
-fat|
-cat|
-rabbit|兔子
-pig|猪
-duck|鸭子
-dog|狗
-tomoto|西红柿
-cucumber|黄瓜
+Friday|星期五
+Moral  Studies|思想品德课
+Social  Studies|社会课
+Saturday|星期六
+Sunday|星期天
+day|天
+wait|等等；等待
+tomorrow|明天
+often|经常
+love|爱；热爱
+have|有、吃
+on|在…时候
+do homework|做作业
+watch TV|看电视
+read books|读书
+cabbage]|洋白菜; 卷心菜
+pork|猪肉
+eggplanteplnt,-plnt]|茄子
+mutton|羊肉
+fish|鱼
+green beans|青豆
+tofu|豆腐
 potato|土豆
-onion|洋葱
-carrot|胡萝卜
+tomato|西红柿
+for|为
+lunch|中餐
+we|我们
+menu|菜单
+sound|听起来
+Mew Mew|猫咪
+healthy|健康的
+tasty|好吃的
+sweet ]|甜的
+sour|酸的
 fresh|新鲜的
-eleven|十一
-twelve|十二
-thirteen|十三
-fifteen|十五
-twenty|二十
-how many|多少
+salty|咸的
+favourite|最喜欢的
+they are|他们是
+fruit|水果
+grape|葡萄
+now|现在
+have to|不得不
+eat|吃
+empty  the trash|倒垃圾
+cook the meals|烧饭
+water the flowers|浇花
+sweep  the floor|扫地
+helpful|有帮助的
+at home|在家里
+ill|有病的
+just  do it|就这么干吧
+do housework|做家务
+make  the bed|铺床
+set the table|摆饭桌
+wash  the clothes|洗衣服
+do the dishes|洗碗碟
+put away  the clothes|收拾衣服
+have a try|试一试
+robot|机器人
+play  chess|下棋
+use  a computer|使用计算机
+air-conditioner|空调
+curtain|窗帘
+trash bin|垃圾箱
+closet|壁橱
+mirror|镜子
+end  table|（床头柜）
+look at|看一看
+own|自己的
+flat|公寓
+third|第三的
+bedroom|卧室
+kitchen|厨房
+bathroom|卫生间
+living  room|客厅
+in|在…里面
+under|在…下面
+near|在旁边
+behind|在…后边
+over|在…上面
+clothes|衣服
+work|工作
+tell|告诉；说
+sky|天空
+cloud|云
+mountain|山；山脉
+river|河流
+flower|花
+grass|草
+lake|湖泊
+forest|森林
+path|路
+park|公园
+nature  park|自然公园
+farm|农场
+holiday|假期
+picture|照片
+village|乡村；村庄
+city|城市
+house|房子
+bridge|桥
+tree|树
+road|公路
+building|建筑物
+clean|干净的
+air|空气
+run|跑；奔跑
+any|任何的；所有的
+do morning exercises|晨练
+eat breakfast|吃早饭
+have English class|上英语课
+play sports|进行体育运动
+eat dinner|吃晚饭
+when|什么时候
+about|关于；大约
+policeman|警察
+evening|夜晚；晚上
+get up|起床
+at|在……点钟
+usually|通常；一般
+noon|中午

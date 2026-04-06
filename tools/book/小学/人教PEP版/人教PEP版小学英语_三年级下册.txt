@@ -1,163 +1,160 @@
-boy|男孩
-girl|女孩
-teacher|教师
-student|学生
-this|这个
-my|我的
-friend|朋友
-nice|好的愉快的
-good morning|早上好
-good afternoon|下午好
-meet|遇见；碰见
-goodbye|再见
-too|也；太
-welcome|欢迎
-back|回来
-new|新的
-where|哪里
-you|你；你们
-your|你的；你们的
-America|美国
-see|看见
-say|说；讲
-again|又；再
-class|班级；课程
-we|我们
-today|今天
-watch  out|小心；留神
-sorry|对不起
-ant|蚂蚁
-apple|苹果
-Come in|进来
-egg|鸡蛋
-father|爸爸
-dad|爸爸口语
-mother|母亲；妈妈
-mom|妈妈口语
-man|男人
-woman|女人
-grandmother|外 祖母
-grandma|(口语)外)祖母
-grandfather|(外)祖父
-grandpa|(口语)(外)祖父
-sister|姐妹
-brother|兄妹
-let’s|让我们
-great|太好了
-really|真地；确切地
-and|和；并且
-how|多么；怎么样
-family|家庭
-come on|鼓励用语
-that|那；那个
-she|她
-he|他
-fish|鱼
-goose|鹅
-watch|观看；手表
-TV|电视
-watch TV|看电视
-funny|滑稽可笑的;滑稽
-fun|乐趣,娱乐,嬉戏
-big|大的
-ice-cream|冰激凌
-ice|冰
-eleven|十一
-twelve|十二
-thirteen|十三
-fourteen|十四
-fifteen|十五
-sixteen|十六
-seventeen|十七
-eighteen|十八
-nineteen|十九
-twenty|二十
-how many|多少
-can|能够；可以
-look at|看；瞧
-fly|飞；放(风筝)
-draw|画画
-picture|图画
-beautiful|美丽的
-jeep|吉普车
-jump|跳
-kangaroo|袋鼠
-key|钥匙
-guess|猜测
-open|打开
-right|对的；正确的
-lion|狮子
-lock|锁
-night|夜晚
-nest|鸟窝；巢
-peach|桃
-pear|梨
 watermelon|西瓜
+apple|苹果
 banana|香蕉
 strawberry|草莓
 grape|葡萄
 like|喜欢
 some|一些；某些
 thanks|多谢
-hungry|饥饿的
-please|请
-them|他(她、它)们(宾格)
-very. much|非常；很多的
-taste|品尝
-queen|女王；王后
-quiet|安静的
-fruit|水果
-certainly|当然；可以
-rainbow|彩虹
-rain|雨；下雨
-snake|蛇
-tiger|老虎
-taxi|出租车
 bus|公共汽车
 bike|自行车
+taxi|出租车
+jeep|吉普车
 desk|课桌
 chair|椅子
 Walkman|随身听
 lamp|台灯
+your [j , ju,|弱 jə 你的；你们的
 zoo|动物园
-play|玩
-game|游戏
-here|这儿；这里
-toy|玩具
-box|盒子
-Under|在…下
-On|在…上
-umbrella|伞
-look .out|当心;留神
-violin|小提琴
-vest|背心
-window|窗户
-excuse me|对不起
-no. problem|没问题
-here you are|给你的
-use|使用
-fox|狐狸
-us|我们
-yo-yo|溜溜球
-zebra|斑马
 small|小的
+big|大的
 long|长的
 short|短的；矮的
 tall|高的
 giraffe|长颈鹿
 deer|鹿
-dear|亲爱的
-cute|逗人喜爱的
-lovely|可爱的
-at|在…里
-feed|喂养
-animal|动物
-children|儿童
-so|如此；这样
-has|有
-tail|尾巴
-PRC|中国
-UK|英国
-USA|美国
-M|(a.m.)早上；上午
-P.M|(p.m.)下午
+window|窗户
+board|写字板
+light|灯；管灯
+picture|画；图画
+door|门
+floor|地板
+classroom|教室
+many|许多的
+our|我们的
+classmate|同学
+have a look|看一看
+seat|座位
+near|在…的旁边
+new|新的
+where|在哪里
+computer|计算机
+teacher’s desk|讲台
+wall|墙
+fan|扇子；电扇
+clean|打扫；清洁；擦干净的
+good idea|好主意
+all right|好吧；好的
+good job|干得好
+Chinese book|语文书
+English book|英语书
+math book|数学书
+schoolbag|书包
+story-book|故事书
+notebook|笔记本
+colour|颜色
+fat|胖的
+may|可以
+sure|当然可以
+here you are|给你
+twenty -one|二十一
+thirty|三十
+thirty-one|三十一
+forty|四十
+forty-one|四十一
+fifty|五十
+too many|太多了
+heavy|重的；沉重的
+sorry|对不起
+long hair|长头发
+short hair|短头发
+thin|瘦的
+strong|强壮的
+quiet|安静的
+friend|朋友
+Chinese  n.|中文，汉语；
+Photo|照片
+music|音乐
+science|科学
+sports|体育运动
+painting|绘画
+Her|她的
+right|对的；正确的
+study|书房
+bathroom|卫生间
+bedroom|卧室
+living  room|起居室
+kitchen|厨房
+fish|鱼
+room|房间
+open|打开
+close|关上
+phone|电话
+sofa|沙发
+shelf|书架
+fridge|冰箱
+rice|米饭
+noodle  s|面条（复数）
+soup|汤
+vegetable|蔬菜
+beef|牛肉
+dinner|晚餐；正餐
+wait|等
+hungry|饥饿的
+knife|刀
+chopstick  s|筷子
+spoon|勺子
+plate|盘子
+plane|飞机
+fork|叉子
+pass|传递
+ready|准备好了
+try|尝试
+help yourself|随便吃
+show|展示
+yummy|好吃的
+use|使用
+family|家庭
+parents|父母
+uncle|叔叔；舅舅
+aunt|姨；姑姑；婶；
+baby|婴儿
+people|人
+member|成员
+only|只有；仅仅
+puppy|小狗
+driver|司机
+doctor|医生
+farm|农场
+farmer|农民
+nurse|护士
+playground|操场
+garden|花园
+teacher,s-office|教师办公室
+library|图书馆
+canteen|食堂
+first|第一
+visitor|客人；参观者
+there|哪儿；那里
+lunch|午餐
+this way|这边
+that|那；那个
+art room|绘画教室
+computer room|计算机教室
+washroom|卫生间
+music room|音乐教室
+gym|体育馆
+TV room|电视机房
+second|第二
+cool|订好的；酷的
+English class|英语课
+music class|音乐课
+breakfast|早餐
+P.E. class|体育课
+over|结束
+go to the playground|去操场
+just a minute|再多一会
+go home|回家
+kid|小孩；孩子
+run|跑
+get up|起床

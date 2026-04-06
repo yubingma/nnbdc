@@ -1,156 +1,131 @@
-young|年轻的
-funny|滑稽可笑的
-tall|高的
-strong|强壮的
-kind|和蔼的，亲切的
-old|年老的
-short|矮的
-thin|瘦的
-Mr|先生
-from|从;来自
-Canada|加拿大
-what’s|是什么
-like|像……一样；喜欢
-he’s|他是
-know|知道
-now|现在
-no|不
-principal|校长
-university  student|大学生
-strict|严格的
-smart|聪明的，巧妙的
-Miss|小姐
-Lady|女士;小姐’夫人
-so much|很;非常
-fun|有趣;逗笑
-quiet|安静的，文静的
-she’s|她是
-she|她
-he|他
+climb mountains|爬山
+go shopping|购物；买东西
+play the piano|弹钢琴
+go hiking|去远足
+weekend|周末
+often|经常
+sometimes|有时候
+rain|下雨
+either|也
+next|下一个
+Spring|春天
+Summer|夏天
+Fall|秋天
+winter|冬天
+season|季节
+which|哪一个
+best|最；极
+always|总是
+play with|玩…
+snow|雪
+leaf|（复数 leaves）叶子
+up|至北方或北方城市
+north|北方；向北方
+Halloween|万圣节之前夕
+swim|游泳
+fly kites|放风筝
+skate|滑冰；滑冰鞋
+make a snowman|堆雪人
+plant  trees|种树
+why|为什么
+because|因为
+sleep|睡觉
+Jan.January|一月
+Feb.February|二月
+Mar.March|三月
+Apr.April|四月
+May|五月
+June|六月
+July|七月
+Aug.Augest|八月
+Sept.September|九月
+Oct.October|十月
+Nov.November|十一月
+Dec.December|十二月
+chart|图表
+Birthday|生日
+Uncle|叔叔；舅舅
+Cousin|堂（表）兄弟；堂（表）姐妹
+first|第一
+second|第二
+third|第三
+forth|第四
+fifth|第五
+eighth|第八
+ninth|第九
+twelfth|第十二
+twentieth|第二十
+send|寄；发送
+e-card|电子卡片
 her|她的
-his|他的
-very|很，非常
-but|但是
-Monday|(Mon.)     星期一
-Tuesday|(Tue.) . 星期二
-Wednesday|(Wed.)  星期三
-Thursday|(Thu.)  . 星期四
-Friday|(Fri.)   星期五
-Moral Education|思想品德课
-Social Studies|社会课
-day|天;日子
-wait|等待;等等
-waiter|侍者,服务员
-tomorrow|明天
-have|有；吃
-on|在……时候
-do homework|做作业
-watch TV|看电视
-read books|读书
-Saturday|(Sat.)  星期六
-Sunday|(Sun.)  星期天
-often|常常;经常
-sometimes|有时
-usually|
-love|爱;热爱
-yeah|是;行
-play computer game|玩电脑游戏
-too|也;太
-to|
-do housework|做家务
-cabbage|洋白菜;卷心菜
-pork|猪肉
-eggplant|茄子
-fish|鱼
-green beans|青豆
-tofu|豆腐
-potato|土豆
-tomato|西红柿
-I’d like|
-for|为
-lunch|中餐
-we|我们
-menu|菜单
-sound|听起来
-healthy|健康的;有益健康的
-tasty|好吃的
-sweet|甜的
-sour|酸的
-fresh|新鲜的
-salty|咸的
-favourite|最喜欢的
-they are|他们是
-fruit|水果
-don’t|不
-grape|葡萄
-have to|不得不
-eat|吃
-empty the trash|倒垃圾
-cook the meals|煮饭
-water the flowers|浇花
-sweep the floor|扫地
-clean the bedroom|打扫卧室
-helpful|有帮助的,有益的
-at home|
-ill|坏的,有病的
-wash the windows|擦窗户
-just do it|就这么干, 说做就做
-make the bed|铺床
-set the table|摆饭桌
-wash the clothes|洗衣服
-do the dishes|洗碗碟
-put away the clothes|收拾衣服
-I’d like to|我想要干
-robot|机器人
-can’t|
+able|能
+everybody|每个人
+then|那么
+date|日期
+talk|讲话
+Children’s Center|儿童活动中心
+see you later|再见
+listen  to music|听音乐
+clean  the room|打扫房间
+write  a letter|写信
+write an e-mail|写电子邮件
+mom|妈妈
+grandpa|爷爷；外公
+speak  to|和…讲话
+call|打电话
+study|书房
+fly|飞
+jump|跳
+walk|走
+run|跑
+kangaroo|袋鼠
+trunk|象鼻
+climb|往上爬
+fight|打架
+swing|荡；荡秋千
+drink  water|喝水
+climber|攀登者
+take pictures|照相
+pick  up leaves|采摘树叶
+catch  butterfly|捉蝴蝶
+woods|树木
+ant|蚂蚁
+honey|蜂蜜
+thing|东西；物
+count  insects|数昆虫
+collect  leaves|收集树叶
+wtite a report|写报告
 play chess|下棋
-use a computer|使用计算机
-air-conditioner|空调
-curtain|窗帘
-trash bin|垃圾箱
-closet|壁橱
-mirror|镜子
-end table|床头柜
-look at|看一看
-own|自己的
-flat|公寓
-third|第三的
-bedroom|卧室
-kitchen|厨房
-bathroom|卫生间
-living room|客厅
-very much|非常、很多
-in|在……里面
-under|在……下面
-near|在……旁边
-behind|在……后边
-over|在...的上方
-in front of|在…前面
-clothes|衣服
-work|工作
-tell|告诉,说
-sky|天空
-cloud|云
-mountain|山,山脉
-river|河流
-flower|花
-grass|草
-lake|湖泊
-forest|森林
-path|路
-park|公园
-nature park|自然公园
-farm|农场,农田
-farmer|农夫
-picture|照片
-village|乡村、村庄
-city|城市
-house|房子
-bridge|桥
-tree|树
-road|公路
-building|建筑物
-clean|干净的
-air|空气
-run|跑、奔跑
-any|任何的
+have a picnic|举行野餐
+him|他（宾格）
+leave|离开
+us|我们（宾格 over there 在那边
+by|经，乘
+foot|脚
+bike|自行车
+bus|公共汽车
+train|火车
+plane|飞机
+ship|船；舰
+subway|地铁
+how|怎样
+go to school|上学
+traffic|交通
+traffic light|交通灯
+traffic rule|交通规则
+stop|停，停车站
+wait|等待
+remember|记住
+get to|到达
+find|寻找；找到
+difference|不同；区别
+same|相同的
+every|每个；所有的
+country|国家
+mean|意思是
+drive|驾驶
+right|右边的
+side|边
+England|英国
+Australia|澳大利亚
+however|但是
