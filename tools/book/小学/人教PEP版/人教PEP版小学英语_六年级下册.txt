@@ -1,13 +1,13 @@
-tall|更高的
-short|更矮的
-strong|更强壮的
-old|年龄更大的
-young|更年轻的
-big|更大的
-heavy|更重的
-long|更长的
-thin|更瘦的
-small|体型 更小的
+taller|更高的
+shorter|更矮的
+stronger|更强壮的
+older|年龄更大的
+younger|更年轻的
+bigger|更大的
+heavier|更重的
+longer|更长的
+thinner|更瘦的
+smaller|体型 更小的
 How tall are you ?|你多高？
 I’m 164 cm tall|我164厘米高。
 You are 4 cm taller than me|你比我高4厘米。
