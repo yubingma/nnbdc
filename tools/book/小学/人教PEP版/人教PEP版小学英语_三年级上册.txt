@@ -34,19 +34,19 @@ dog|狗
 monkey|猴子
 panda|熊猫
 rabbit|兔子
-duck dk]|鸭子
+duck|鸭子
 pig|猪
 bird|鸟
 bear|熊
 elephant|大象
-ç
+mouse|老鼠
 squirrel|松鼠
 cake|蛋糕
 bread|面包
 hot dog|热狗
 hamburger|汉堡包
 chicken|鸡肉
-French  Fries|炸薯条
+French Fries|炸薯条
 Coke|可乐
 juice|果汁
 milk|牛奶
@@ -74,13 +74,13 @@ boy|男孩
 girl|女孩
 teacher|教师
 student|学生
-this [is,|弱 ðəs 这个
+this|弱 ðəs] 这个
 my|我的
 friend|朋友
 I am|我是
 nice|好的；愉快的
 good morning|早上好
-good afternoon "|下午好
+good afternoon|下午好
 meet|遇见；碰见
 goodbye|再见
 too|也；太
@@ -91,19 +91,19 @@ mom|妈妈 口语
 man|男人
 woman|女人
 grandmother|外祖母
-grandma|（口语(外祖母
-grandfather|（外）祖父
+grandma|口语(外祖母
+grandfather|外）祖父
 grandpa|口语（外）祖父
 sister|姐妹
 brother|兄妹
-let  us|让我们
+let us|让我们
 great|太好了
 really|真地；确切地
 and|和；并且
 how|多么；怎么样
 eleven|十一
 twelve|十二
-thirteen tin]|十三
+thirteen|十三
 fourteen|十四
 fifteen|十五
 sixteen|十六
@@ -111,8 +111,8 @@ seventeen|十七
 eighteen|十八
 nineteen|十九
 twenty|二十
-how  many|多少
+how many|多少
 can|能够；可以
-look  at [|强 æt, 弱ət看；瞧
+look at|强 æt, 弱ət]看；瞧
 peach|桃
 pear|梨

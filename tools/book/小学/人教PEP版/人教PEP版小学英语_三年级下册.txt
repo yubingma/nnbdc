@@ -14,7 +14,7 @@ desk|课桌
 chair|椅子
 Walkman|随身听
 lamp|台灯
-your [j , ju,|弱 jə 你的；你们的
+your j|弱 jə] 你的；你们的
 zoo|动物园
 small|小的
 big|大的
@@ -27,14 +27,14 @@ window|窗户
 board|写字板
 light|灯；管灯
 picture|画；图画
-door|门
-floor|地板
+door|门 .
+floor|地板.
 classroom|教室
 many|许多的
-our|我们的
+our|我们的.
 classmate|同学
 have a look|看一看
-seat|座位
+seat|座位.
 near|在…的旁边
 new|新的
 where|在哪里
@@ -55,40 +55,40 @@ notebook|笔记本
 colour|颜色
 fat|胖的
 may|可以
-sure|当然可以
+sure|当然可以.
 here you are|给你
 twenty -one|二十一
-thirty|三十
+thirty|三十.
 thirty-one|三十一
 forty|四十
 forty-one|四十一
 fifty|五十
 too many|太多了
-heavy|重的；沉重的
-sorry|对不起
-long hair|长头发
+heavy|重的；沉重的.
+sorry|对不起 .
+long hair|长头发.
 short hair|短头发
 thin|瘦的
 strong|强壮的
-quiet|安静的
-friend|朋友
-Chinese  n.|中文，汉语；
-Photo|照片
+quiet|安静的 .
+friend|朋友.
+Chinese n|中文，汉语；
+Photo|照片.
 music|音乐
 science|科学
-sports|体育运动
+sports|体育运动.
 painting|绘画
 Her|她的
 right|对的；正确的
-study|书房
+study|书房 .
 bathroom|卫生间
 bedroom|卧室
-living  room|起居室
+living room|起居室
 kitchen|厨房
-fish|鱼
+fish|鱼 .
 room|房间
 open|打开
-close|关上
+close|关上.
 phone|电话
 sofa|沙发
 shelf|书架
@@ -96,10 +96,10 @@ fridge|冰箱
 rice|米饭
 noodle  s|面条（复数）
 soup|汤
-vegetable|蔬菜
+vegetable|蔬菜.
 beef|牛肉
-dinner|晚餐；正餐
-wait|等
+dinner|晚餐；正餐.
+wait|等.
 hungry|饥饿的
 knife|刀
 chopstick  s|筷子
@@ -108,53 +108,53 @@ plate|盘子
 plane|飞机
 fork|叉子
 pass|传递
-ready|准备好了
+ready|准备好了.
 try|尝试
 help yourself|随便吃
 show|展示
-yummy|好吃的
+yummy|好吃的.
 use|使用
 family|家庭
 parents|父母
-uncle|叔叔；舅舅
-aunt|姨；姑姑；婶；
-baby|婴儿
+uncle|叔叔；舅舅.
+aunt|姨；姑姑；婶； .
+baby|婴儿. .
 people|人
-member|成员
+member|成员 .
 only|只有；仅仅
 puppy|小狗
-driver|司机
+driver|司机.
 doctor|医生
 farm|农场
 farmer|农民
 nurse|护士
 playground|操场
 garden|花园
-teacher,s-office|教师办公室
-library|图书馆
+teachers-office|教师办公室
+library|图书馆 .
 canteen|食堂
-first|第一
+first|第一 .
 visitor|客人；参观者
 there|哪儿；那里
 lunch|午餐
 this way|这边
-that|那；那个
+that|那；那个 .
 art room|绘画教室
 computer room|计算机教室
 washroom|卫生间
 music room|音乐教室
-gym|体育馆
+gym|体育馆 .
 TV room|电视机房
 second|第二
-cool|订好的；酷的
+cool|订好的；酷的.
 English class|英语课
 music class|音乐课
-breakfast|早餐
-P.E. class|体育课
+breakfast|早餐. .
+PE class|体育课
 over|结束
 go to the playground|去操场
 just a minute|再多一会
 go home|回家
 kid|小孩；孩子
-run|跑
+run|跑 .
 get up|起床

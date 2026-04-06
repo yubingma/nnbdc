@@ -3,11 +3,11 @@ if|如果
 must|必须
 know|知道
 Library|图书馆
-Post  office|邮局
+Post office|邮局
 hospital|医院
 cinema|电影院
 bookstore|书店
-excuse  me|对不起
+excuse me|对不起
 where|在哪里，到哪里
 please|请
 next to|与…相邻

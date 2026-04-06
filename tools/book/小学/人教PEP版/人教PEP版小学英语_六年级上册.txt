@@ -24,12 +24,12 @@ tomorrow|明天
 take a trip|去旅行
 read a magazine|阅读杂志
 go to the cinema|去看电影
-theme  park|主题公园
-the Great  Wall|长城
+theme park|主题公园
+the Great Wall|长城
 busy|忙碌的
 together|一起地
-comic  book|漫画书
-post  card|明信片
+comic book|漫画书
+post card|明信片
 newspaper|报纸
 magazine|杂志
 dictionary|词典 ；字典
@@ -41,7 +41,7 @@ plant|植物
 else|其他；另外
 shop|商店
 hobby|爱好
-ride a bike--riding a bike|骑自行车
+riding a bike|骑自行车
 diving|跳水
 making kites|制作风筝
 show|展览
@@ -53,7 +53,7 @@ must|一定；肯定
 fun|快乐；乐趣
 with|同…
 TV reporter|电视台记者
-live –lives|居住
+live lives|居住
 teaches|教
 goes|去
 watches|看
@@ -98,7 +98,7 @@ shine|照耀
 become|变成
 little|小的
 drop|一滴
-wake  up|醒来
+wake up|醒来
 feel|感觉到
 think|想；思考
 meet|遇见

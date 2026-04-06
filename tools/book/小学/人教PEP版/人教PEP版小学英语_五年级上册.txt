@@ -18,7 +18,7 @@ best|最；极
 always|总是
 play with|玩…
 snow|雪
-leaf|（复数 leaves）叶子
+leaf|复数 leaves）叶子
 up|至北方或北方城市
 north|北方；向北方
 Halloween|万圣节之前夕
@@ -26,22 +26,13 @@ swim|游泳
 fly kites|放风筝
 skate|滑冰；滑冰鞋
 make a snowman|堆雪人
-plant  trees|种树
+plant trees|种树
 why|为什么
 because|因为
 sleep|睡觉
-Jan.January|一月
-Feb.February|二月
-Mar.March|三月
-Apr.April|四月
 May|五月
 June|六月
 July|七月
-Aug.Augest|八月
-Sept.September|九月
-Oct.October|十月
-Nov.November|十一月
-Dec.December|十二月
 chart|图表
 Birthday|生日
 Uncle|叔叔；舅舅
@@ -65,13 +56,13 @@ date|日期
 talk|讲话
 Children’s Center|儿童活动中心
 see you later|再见
-listen  to music|听音乐
-clean  the room|打扫房间
-write  a letter|写信
+listen to music|听音乐
+clean the room|打扫房间
+write a letter|写信
 write an e-mail|写电子邮件
 mom|妈妈
 grandpa|爷爷；外公
-speak  to|和…讲话
+speak to|和…讲话
 call|打电话
 study|书房
 fly|飞
@@ -83,17 +74,17 @@ trunk|象鼻
 climb|往上爬
 fight|打架
 swing|荡；荡秋千
-drink  water|喝水
+drink water|喝水
 climber|攀登者
 take pictures|照相
-pick  up leaves|采摘树叶
-catch  butterfly|捉蝴蝶
+pick up leaves|采摘树叶
+catch butterfly|捉蝴蝶
 woods|树木
 ant|蚂蚁
 honey|蜂蜜
 thing|东西；物
-count  insects|数昆虫
-collect  leaves|收集树叶
+count insects|数昆虫
+collect leaves|收集树叶
 wtite a report|写报告
 play chess|下棋
 have a picnic|举行野餐

@@ -1,22 +1,22 @@
 go to school|上学
 go to bed|上床睡觉
 ready|准备好的
-hurry|抓紧；赶快
+hurry|抓紧；赶快 .
 math|数学
-Chinese  n.|中文，汉语
-china  n.|中国;瓷器
-England  n.|英格兰;英国
-English  a.|英国的；英国人
-P.E.|体育
+Chinese n|中文，汉语
+china n|中国;瓷器
+England n|英格兰;英国
+English a|英国的；英国人
+PE|体育
 class|班级；课程
-music|音乐
-for|为；给
-jacket|夹克衫
-shirt|衬衫
+music|音乐.
+for|为；给.
+jacket|夹克衫 .
+shirt|衬衫 .
 T-shirt T|恤衫
-skirt|裙子
-dress|连衣裙
-sweater|毛衣
+skirt|裙子 .
+dress|连衣裙.
+sweater|毛衣 .
 whose|谁的
 no|不；不是
 not|不；不是的
@@ -26,30 +26,30 @@ parents|父母亲
 socks|袜子
 shoes|鞋子
 shorts|短裤
-these|这些
-those|那些
+these|这些.
+those|那些.
 what for|为什么
 neighbour|邻居
 colour|颜色
 warm|暖和的
 cold|寒冷的
 cool|凉爽的；酷的
-hot|炎热的
-weather|天气
-weather report|天气预报
+hot|炎热的 .
+weather|天气.
+weather report|天气预报.
 wear|穿
-football|足球
-put on|穿上 put on 动词,表示穿上
-rain  n.|雨 vi下雨
-rainy|下雨的
+football|足球 .
+put on|穿上. put on 动词,表示穿上
+rain n|雨 vi.下雨
+rainy|下雨的.
 now|现在
-snow  n.|雪；vi下雪
-snowy|下雪的
-wind  n.|风
+snow n|雪；vi.下雪
+snowy|下雪的 .
+wind n|风
 windy|有风的
 cloud|云
 cloudy|多云的
-sun|太阳
+sun|太阳.
 sunny|晴朗的
 not much|没什么
 New York|纽约
@@ -57,10 +57,10 @@ matter|事情；麻烦
 have to|必须；不得不
 colourful|色彩丰富的
 pretty|漂亮的；可爱的
-cheap|便宜的
-expensive|昂贵的
+cheap|便宜的.
+expensive|昂贵的 .
 sixty|六十
-seventy|七十
+seventy|七十.
 hundred|百
 how much|多少钱
 ninety-nine|九十九
@@ -69,30 +69,30 @@ slippers|拖鞋
 sandals|凉鞋
 boots|靴子
 want|想要
-pair|一双；一对
+pair|一双；一对.
 a pair of|一双
 son|儿子
 size|尺码
-take|买
+take|买.
 them|它（他、她）们
 sheep|绵羊
 horse|马
 hen|母鸡
 lamb|小羊；羔羊
-goat|山羊
-cow|奶牛
+goat|山羊 .
+cow|奶牛 .
 donkey|驴子
-key|钥匙
-rabbit|兔子
+key|钥匙 .
+rabbit|兔子 .
 pig|猪
 duck|鸭子
 tomoto|西红柿
 cucumber|黄瓜
 potato|土豆
-onion|洋葱
+onion|洋葱.
 carrot|胡萝卜
 fresh|新鲜的
-there  be|有
+there be|有
 Young|年轻的
 funny|滑稽可笑的
 tall|高的
@@ -117,7 +117,7 @@ fun|有趣；逗笑
 quiet|安静的、文静的
 very|很、非常
 Monday|星期一
-but[|强 bʌt, 弱 bət, bʌt 但是
+but|强 bʌt, 弱 bət, bʌt] 但是
 Tuesday|星期二
-Wednesday|（星期三）
+Wednesday|星期三）
 Thursday|星期四

@@ -1,6 +1,6 @@
 Friday|星期五
-Moral  Studies|思想品德课
-Social  Studies|社会课
+Moral Studies|思想品德课
+Social Studies|社会课
 Saturday|星期六
 Sunday|星期天
 day|天
@@ -9,13 +9,12 @@ tomorrow|明天
 often|经常
 love|爱；热爱
 have|有、吃
-on|在…时候
+on|在…..时候
 do homework|做作业
 watch TV|看电视
 read books|读书
-cabbage]|洋白菜; 卷心菜
+cabbage|洋白菜; 卷心菜
 pork|猪肉
-eggplanteplnt,-plnt]|茄子
 mutton|羊肉
 fish|鱼
 green beans|青豆
@@ -30,7 +29,7 @@ sound|听起来
 Mew Mew|猫咪
 healthy|健康的
 tasty|好吃的
-sweet ]|甜的
+sweet|甜的
 sour|酸的
 fresh|新鲜的
 salty|咸的
@@ -41,30 +40,30 @@ grape|葡萄
 now|现在
 have to|不得不
 eat|吃
-empty  the trash|倒垃圾
+empty the trash|倒垃圾
 cook the meals|烧饭
 water the flowers|浇花
-sweep  the floor|扫地
+sweep the floor|扫地
 helpful|有帮助的
 at home|在家里
 ill|有病的
-just  do it|就这么干吧
+just do it|就这么干吧
 do housework|做家务
-make  the bed|铺床
+make the bed|铺床
 set the table|摆饭桌
-wash  the clothes|洗衣服
+wash the clothes|洗衣服
 do the dishes|洗碗碟
-put away  the clothes|收拾衣服
+put away the clothes|收拾衣服
 have a try|试一试
 robot|机器人
-play  chess|下棋
-use  a computer|使用计算机
+play chess|下棋
+use a computer|使用计算机
 air-conditioner|空调
 curtain|窗帘
 trash bin|垃圾箱
 closet|壁橱
 mirror|镜子
-end  table|（床头柜）
+end table|床头柜）
 look at|看一看
 own|自己的
 flat|公寓
@@ -72,10 +71,10 @@ third|第三的
 bedroom|卧室
 kitchen|厨房
 bathroom|卫生间
-living  room|客厅
+living room|客厅
 in|在…里面
 under|在…下面
-near|在旁边
+near|在..旁边
 behind|在…后边
 over|在…上面
 clothes|衣服
@@ -91,7 +90,7 @@ lake|湖泊
 forest|森林
 path|路
 park|公园
-nature  park|自然公园
+nature park|自然公园
 farm|农场
 holiday|假期
 picture|照片
