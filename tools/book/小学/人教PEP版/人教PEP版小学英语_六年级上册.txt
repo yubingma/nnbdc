@@ -38,6 +38,7 @@
 677. hospital|医院
 678. cinema|电影院
 679. bookstore|书店
+680. science museum|科技馆
 681. excuse me|对不起
 682. where|在哪里，到哪里
 683. please|请
@@ -95,7 +96,9 @@
 736. hobby|爱好
 737. riding a bike|骑自行车
 738. diving|跳水
+739. play the violin|拉小提琴
 740. making kites|制作风筝
+741. collect stamps|集邮
 742. show|展览
 743. pen pal|笔友
 744. dear|亲爱的
@@ -158,3 +161,25 @@
 802. high|高的
 803. other|其他的
 804. fall|落下
+805. down|向下
+806. into|进入
+807. come out|露出
+808. again|又
+809. seed|种子
+810. soil|土壤
+811. sprout|苗，芽
+812. plant|植物，种植
+813. should|应该
+814. then|然后
+815. garden|花园
+816. easy|简单的
+817. put|放
+818. several|一些
+819. day|天
+820. see|看见
+821. pot|锅碗瓢盆
+822. lovely|可爱的
+823. make sure|核实
+824. month|月份
+825. still|仍然
+826. hardly|几乎不

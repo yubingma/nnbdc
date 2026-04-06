@@ -1,25 +1,3 @@
-805. down|向下
-806. into|进入
-807. come out|露出
-808. again|又
-809. seed|种子
-810. soil|土壤
-811. sprout|苗，芽
-812. plant|植物，种植
-813. should|应该
-814. then|然后
-815. garden|花园
-816. easy|简单的
-817. put|放
-818. several|一些
-819. day|天
-820. see|看见
-821. pot|锅碗瓢盆
-822. lovely|可爱的
-823. make sure|核实
-824. month|月份
-825. still|仍然
-826. hardly|几乎不
 827. taller|更高的
 828. shorter|更矮的
 829. stronger|更强壮的
@@ -66,6 +44,7 @@
 870. medicine|药
 871. drink|饮料
 872. stay|在；逗留
+873. better|更好的
 874. soon|立刻；不久
 875. tired|疲劳的，累的
 876. excited|兴奋的
@@ -90,34 +69,36 @@
 895. win|（过去式 won）赢
 896. game|比赛
 897. laugh at|因…而发笑
-897. watched|看
-898. washed|洗
-899. cleaned|打扫
-900. played|玩
-901. visited|看望
+897. watch|看
+898. wash|洗
+899. clean|打扫
+900. play|玩
+901. visit|看望
 903. last weekend|上一个周末
-904. went|去
-905. went to a park|去公园
-906. went swimming|去游泳
-907. went fishing|去钓鱼
+904. go|去
+905. go to a park|去公园
+906. go swimming|去游泳
+907. go fishing|去钓鱼
 908. read|读
-909. went hiking|去郊游
+909. go hiking|去郊游
 910. yesterday|昨天
 911. study|（过去式 studied 学习
 912. Tongue twister|绕口令
 913. fly|(过去式 flew) 飞
 914. return|送回；归还
 915. swim|（过去式 swam）游泳
-918. sang and danced|唱歌和跳舞
-920. good food|吃好吃的食物
-922. pictures|照相
-923. climbed|爬
-927. rowed a boat|划船
-929. saw elephant|看大象
-930. went skiing|去滑雪
+916. learn Chinese|学中文
+917. sing and dance|唱歌和跳舞
+920. eat good food|吃好吃的食物
+922. take pictures|照相
+923. climb|爬
+925. buy presents|买礼物
+927. row a boat|划船
+929. see elephant|看大象
+930. go skiing|去滑雪
+931. go ice-skating|去滑冰
 933. how|怎么，如何
-934. got|到达
-935. last：|上一个的，仅余的
+935. last|上一个的，仅余的
 936. cousin|堂（表）兄弟
 937. relax|放松
 938. prepare|准备

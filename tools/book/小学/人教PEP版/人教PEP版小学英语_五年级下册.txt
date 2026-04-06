@@ -16,6 +16,7 @@
 531. climb mountains|爬山
 532. go shopping|购物；买东西
 533. play the piano|弹钢琴
+534. visit grandparents|看望祖父母
 535. go hiking|去远足
 536. weekend|周末
 537. often|经常
@@ -37,6 +38,7 @@
 553. up|至北方或北方城市
 554. north|北方；向北方
 555. Halloween|万圣节之前夕
+556. Thanksgiving|感恩节
 557. swim|游泳
 558. fly kites|放风筝
 559. skate|滑冰；滑冰鞋
@@ -45,9 +47,18 @@
 562. why|为什么
 563. because|因为
 564. sleep|睡觉
+565. January|一月
+566. February|二月
+567. March|三月
+568. April|四月
 569. May|五月
 570. June|六月
 571. July|七月
+572. August|八月
+573. September|九月
+574. October|十月
+575. November|十一月
+576. December|十二月
 577. chart|图表
 578. Birthday|生日
 579. Uncle|叔叔；舅舅
@@ -94,10 +105,13 @@
 620. drink water|喝水
 621. climber|攀登者
 622. take pictures|照相
+623. watch insects|观察昆虫
 624. pick up leaves|采摘树叶
+625. do an experiment|做实验
 626. catch butterfly|捉蝴蝶
 627. woods|树木
 628. ant|蚂蚁
+629. interesting|有趣的
 630. honey|蜂蜜
 631. thing|东西；物
 632. count insects|数昆虫
@@ -107,4 +121,5 @@
 636. have a picnic|举行野餐
 637. him|他（宾格）
 638. leave|离开
-639. us|我们（宾格 over there 在那边
+639. us|我们（宾格）
+640. over there 在那边
