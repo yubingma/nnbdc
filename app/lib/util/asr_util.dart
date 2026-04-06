@@ -146,21 +146,26 @@ class AsrUtil {
     if (candidates.isEmpty) return AsrCandidateResult('', 0);
     final lowerTarget = targetWord.toLowerCase().trim();
 
-    // 记录所有候选选手中综合评分最高的那个
-    String best = candidates.first;
-    int bestScore = -1;
+    // 预加载音素库（以防万一）
+    await PhonemeUtil.load();
 
-    for (final c in candidates) {
-      final s = await calculateOverallSimilarity(c, lowerTarget);
-      if (s > bestScore) {
-        bestScore = s;
-        best = c;
+    // 并行计算所有候选词的相似扣
+    final scores = await Future.wait(
+      candidates.map((c) => calculateOverallSimilarity(c, lowerTarget)),
+    );
+
+    String best = candidates[0];
+    int bestScore = scores[0];
+
+    for (int i = 1; i < candidates.length; i++) {
+      if (scores[i] > bestScore) {
+        bestScore = scores[i];
+        best = candidates[i];
       }
     }
 
-    // 注意：不再返回 targetWord，而是返回实际的最佳候选文本
-    // 这样 UI 就能显示“实际听到”的最接近词，而不是强行修正
-    Global.logger.d('~~~~~ASR SELECTION: Best candidate is "$best" with score $bestScore (target: "$lowerTarget")');
+    Global.logger.d(
+        '~~~~~ASR SELECTION: Best candidate is "$best" with score $bestScore (target: "$lowerTarget")');
     return AsrCandidateResult(best, bestScore);
   }
 

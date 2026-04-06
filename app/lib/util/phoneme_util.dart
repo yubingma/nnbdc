@@ -9,6 +9,7 @@ import 'package:nnbdc/util/edit_distance.dart';
 /// - 提供音素级编辑距离与相似度评分
 class PhonemeUtil {
   static const String _assetPath = 'assets/cmudict.dict'; 
+  static Completer<void>? _loadCompleter;
   static bool _loaded = false;
   static final Map<String, List<List<String>>> _wordToPhonemeVariants = {};
 
@@ -20,13 +21,28 @@ class PhonemeUtil {
   /// 懒加载 CMUdict（多次调用安全）
   static Future<void> load() async {
     if (_loaded) return;
+    if (_loadCompleter != null) return _loadCompleter!.future;
+
+    _loadCompleter = Completer<void>();
     try {
+      final startTime = DateTime.now();
+      Global.logger.d('PhonemeUtil: Starting to load $_assetPath');
       final content = await rootBundle.loadString(_assetPath);
+      final readTime = DateTime.now();
+      Global.logger.d(
+          'PhonemeUtil: File read finished in ${readTime.difference(startTime).inMilliseconds}ms, starting to parse...');
       _parse(content);
+      final parseTime = DateTime.now();
+      Global.logger.d(
+          'PhonemeUtil: Parsing finished in ${parseTime.difference(readTime).inMilliseconds}ms');
       _loaded = true;
-      Global.logger.d('PhonemeUtil loaded: ${_wordToPhonemeVariants.length} entries');
+      Global.logger
+          .d('PhonemeUtil loaded: ${_wordToPhonemeVariants.length} entries');
+      _loadCompleter!.complete();
     } catch (e, st) {
       Global.logger.e('Failed to load $_assetPath: $e', error: e, stackTrace: st);
+      _loadCompleter!.completeError(e, st);
+      _loadCompleter = null; // 允许下次重试
     }
   }
 

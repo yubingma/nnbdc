@@ -24,6 +24,7 @@ import '../../util/platform_util.dart';
 import '../../util/sound.dart';
 import '../../util/word_util.dart';
 import '../../theme/app_theme.dart';
+import '../../util/phoneme_util.dart';
 import '../../db/db.dart';
 import '../index.dart';
 import '../walkman.dart';
@@ -581,6 +582,8 @@ class WordListPageState extends State<WordListPage>
   @override
   void initState() {
     super.initState();
+    // 异步预加载音素字典，避免用户说话时才开始解析导致的延迟
+    unawaited(PhonemeUtil.load());
     // 初始化大脑加载动画控制器（脉冲效果）
     _asrModelLoadingController = AnimationController(
       vsync: this,

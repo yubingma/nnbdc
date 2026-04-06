@@ -27,6 +27,7 @@ import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/page/admin/health_check.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:nnbdc/util/word_util.dart';
+import 'package:nnbdc/util/phoneme_util.dart';
 import 'package:provider/provider.dart';
 
 import '../api/enum.dart';
@@ -1026,6 +1027,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     });
 
     asr = Asr();
+    // 异步预加载音素字典，避免用户说话时才开始解析导致的延迟
+    unawaited(PhonemeUtil.load());
     //asr.initAsr(onAsrResult);
     asr.addStateListener((state) {
       if (!mounted) return;
