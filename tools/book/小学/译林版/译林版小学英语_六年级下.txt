@@ -115,3 +115,5 @@ scientist|科学家
 brave|勇敢的
 artist|艺术家
 paint|画画
+PAGE|
+PAGE  14|

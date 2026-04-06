@@ -3,7 +3,7 @@ Hi|你好
 Good afternoon|下午好
 Class|同学们
 I|我
-I'm = I am|我是
+I'm|我是
 are|是
 you|你
 yes|是；对
@@ -14,8 +14,10 @@ Goodbye|再见。
 My|我的
 friend|朋友
 she|她
-she's=she is|he    他
-he's=he is|too    也
+she's|她是
+he|他
+he's|他是
+too|也
 this|这；这个
 is|是
 sister|姐姐；妹妹
@@ -30,7 +32,8 @@ Good evening.|晚上好。
 look at|看；瞧
 T-shirt    T|恤衫
 it|它
-it's=it is|nice    好看的；好的
+it's|它是
+nice|好看的；好的
 skirt|裙子
 How nice!|真好看！
 cap|便帽；帽子
@@ -65,6 +68,7 @@ sweet|糖果
 hot dog|热狗
 look|看；瞧
 what|什么
+what's|是什么
 Happy New Year!|新年快乐！
 uncle|叔父；伯父；舅父；姑父；姨父
 This is for you.|这是给你的。

@@ -12,7 +12,8 @@ monkey|猴子
 tiger|老虎
 have|有
 Let's…|咱们……
-let's = let us|make    做；制作
+let's|让咱们
+make|做；制作
 fruit|水果
 salad|色拉
 pineapple|菠萝
@@ -46,7 +47,8 @@ but|但是
 do|做；干
 basketball|篮球
 well|好
-can't = cannot|have a try    试一试
+can't|不能
+have a try|试一试
 yeah|是的，对的
 football|足球
 jump|跳

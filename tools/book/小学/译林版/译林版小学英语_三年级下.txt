@@ -13,7 +13,7 @@ window|窗,窗户
 blackboard|黑板
 book|书
 rubber|橡皮
-don't = do not|不要
+don't|不要
 listen to|听
 parrot|鹦鹉
 in|在……里
@@ -30,8 +30,8 @@ milk|牛奶
 English|英语
 your|你的；你们的
 pencil|铅笔
-isn't = is not|不是
-that's = that is|那是
+isn't|不是
+that's|那是
 schoolbag|书包
 pen|钢笔
 crayon|蜡笔
@@ -39,7 +39,7 @@ ruler|尺
 pencil case|铅笔盒；铅笔袋
 lunch box|午餐盒
 where|在哪里
-where's = where is|在哪里
+where's|在哪里
 over there|在那里
 bird|鸟
 beautiful|漂亮的；美丽的
@@ -85,11 +85,11 @@ eleven|十一
 twelve|十二
 bag|包；书包
 these|这些
-here's = here is|这里是
+here's|这里是
 farm|农场
 Welcome to ...|欢迎来到……
 they|他们；她们；它们
-they're = they are|他们是；她们是；它们是
+they're|他们是；她们是；它们是
 pig|猪
 those|那些
 cow|奶牛
@@ -100,9 +100,9 @@ duck|鸭子
 orange|橙子
 picture|图画；照片
 who|谁
-who's = who is|谁是
+who's|谁是
 we|我们
-we're = we are|我们是
+we're|我们是
 twin|双胞胎之一
 aunt|姑母；姨母；伯母；婶母；舅母
 girl|女孩
