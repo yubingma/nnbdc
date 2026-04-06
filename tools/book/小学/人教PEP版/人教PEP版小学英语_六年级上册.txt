@@ -84,7 +84,7 @@ help|帮助
 money|钱
 well|好；对；满意地
 enjoy|从…获得乐趣
-tourist|旅行者；
+tourist|旅行者
 way|路；道
 motor cycle|摩托车
 police|警方；警察部门

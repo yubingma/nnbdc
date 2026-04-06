@@ -95,7 +95,7 @@ saw elephant|看大象
 went skiing|去滑雪
 how|怎么，如何
 got|到达
-last|上一个的，仅余的，
-cousin|堂（表）兄弟；
+last|上一个的，仅余的
+cousin|堂（表）兄弟
 relax|放松
 prepare|准备
