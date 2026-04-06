@@ -1,136 +1,136 @@
-380. Young|年轻的
-381. funny|滑稽可笑的
-382. tall|高的
-383. strong|强壮的
-384. kind|和蔼的、亲切的
-385. old|年老的
-386. short|矮的
-387. thin|瘦的
-388. Mr|先生
-389. from|从；来自
-390. Canada|加拿大
-391. like|像、喜欢
-392. know|知道
-393. principal|校长
-395. strict|严格的
-396. smart|聪明的、巧妙的
-397. active|积极的、活跃的
-398. Miss|小姐
-399. lady|女士；小姐；夫人
-400. so much|很；非常
-401. fun|有趣；逗笑
-402. quiet|安静的、文静的
-403. very|很、非常
-403. Monday|星期一
-404. but|但是
-404. Tuesday|星期二
-405. Wednesday|星期三
-406. Thursday|星期四
-407. Friday|星期五
-408. Moral Studies|思想品德课
-409. Social Studies|社会课
-410. Saturday|星期六
-411. Sunday|星期天
-412. day|天
-413. wait|等等；等待
-414. tomorrow|明天
-415. often|经常
-416. love|爱；热爱
-417. have|有、吃
-418. on|在…..时候
-419. do homework|做作业
-420. watch TV|看电视
-421. read books|读书
-422. cabbage|洋白菜; 卷心菜
-423. pork|猪肉
-424. mutton|羊肉
-424. fish|鱼
-425. green beans|青豆
-426. tofu|豆腐
-427. potato|土豆
-428. tomato|西红柿
-429. for|为
-430. lunch|中餐
-431. we|我们
-432. menu|菜单
-433. sound|听起来
-434. Mew Mew|猫咪
-435. healthy|健康的
-436. tasty|好吃的
-437. sweet|甜的
-438. sour|酸的
-439. fresh|新鲜的
-440. salty|咸的
-441. favourite|最喜欢的
-442. they are|他们是
-443. fruit|水果
-444. grape|葡萄
-445. now|现在
-446. have to|不得不
-447. eat|吃
-448. empty the trash|倒垃圾
-449. cook the meals|烧饭
-450. water the flowers|浇花
-451. sweep the floor|扫地
-453. helpful|有帮助的
-454. at home|在家里
-455. ill|有病的
-457. just do it|就这么干吧
-458. do housework|做家务
-459. make the bed|铺床
-460. set the table|摆饭桌
-461. wash the clothes|洗衣服
-462. do the dishes|洗碗碟
-463. put away the clothes|收拾衣服
-464. have a try|试一试
-465. robot|机器人
-466. play chess|下棋
-467. use a computer|使用计算机
-468. air-conditioner|空调
-469. curtain|窗帘
-470. trash bin|垃圾箱
-471. closet|壁橱
-472. mirror|镜子
-473. end table|床头柜
-474. look at|看一看
-475. own|自己的
-476. flat|公寓
-477. third|第三的
-478. bedroom|卧室
-479. kitchen|厨房
-480. bathroom|卫生间
-481. living room|客厅
-482. in|在…里面
-483. on|在…上面
-484. under|在…下面
-485. near|在..旁边
-486. behind|在…后边
-487. over|在…上面
-488. clothes|衣服
-489. work|工作
-490. tell|告诉；说
-491. sky|天空
-492. cloud|云
-493. mountain|山；山脉
-494. river|河流
-495. flower|花
-496. grass|草
-497. lake|湖泊
-498. forest|森林
-499. path|路
-500. park|公园
-501. nature park|自然公园
-502. farm|农场
-503. holiday|假期
-504. picture|照片
-505. village|乡村；村庄
-506. city|城市
-507. house|房子
-508. bridge|桥
-509. tree|树
-510. road|公路
-511. building|建筑物
-512. clean|干净的
-513. air|空气
-514. run|跑；奔跑
-515. any|任何的；所有的
+Young|年轻的
+funny|滑稽可笑的
+tall|高的
+strong|强壮的
+kind|和蔼的、亲切的
+old|年老的
+short|矮的
+thin|瘦的
+Mr|先生
+from|从；来自
+Canada|加拿大
+like|像、喜欢
+know|知道
+principal|校长
+strict|严格的
+smart|聪明的、巧妙的
+active|积极的、活跃的
+Miss|小姐
+lady|女士；小姐；夫人
+so much|很；非常
+fun|有趣；逗笑
+quiet|安静的、文静的
+very|很、非常
+Monday|星期一
+but|但是
+Tuesday|星期二
+Wednesday|星期三
+Thursday|星期四
+Friday|星期五
+Moral Studies|思想品德课
+Social Studies|社会课
+Saturday|星期六
+Sunday|星期天
+day|天
+wait|等等；等待
+tomorrow|明天
+often|经常
+love|爱；热爱
+have|有、吃
+on|在…..时候
+do homework|做作业
+watch TV|看电视
+read books|读书
+cabbage|洋白菜; 卷心菜
+pork|猪肉
+mutton|羊肉
+fish|鱼
+green beans|青豆
+tofu|豆腐
+potato|土豆
+tomato|西红柿
+for|为
+lunch|中餐
+we|我们
+menu|菜单
+sound|听起来
+Mew Mew|猫咪
+healthy|健康的
+tasty|好吃的
+sweet|甜的
+sour|酸的
+fresh|新鲜的
+salty|咸的
+favourite|最喜欢的
+they are|他们是
+fruit|水果
+grape|葡萄
+now|现在
+have to|不得不
+eat|吃
+empty the trash|倒垃圾
+cook the meals|烧饭
+water the flowers|浇花
+sweep the floor|扫地
+helpful|有帮助的
+at home|在家里
+ill|有病的
+just do it|就这么干吧
+do housework|做家务
+make the bed|铺床
+set the table|摆饭桌
+wash the clothes|洗衣服
+do the dishes|洗碗碟
+put away the clothes|收拾衣服
+have a try|试一试
+robot|机器人
+play chess|下棋
+use a computer|使用计算机
+air-conditioner|空调
+curtain|窗帘
+trash bin|垃圾箱
+closet|壁橱
+mirror|镜子
+end table|床头柜
+look at|看一看
+own|自己的
+flat|公寓
+third|第三的
+bedroom|卧室
+kitchen|厨房
+bathroom|卫生间
+living room|客厅
+in|在…里面
+on|在…上面
+under|在…下面
+near|在..旁边
+behind|在…后边
+over|在…上面
+clothes|衣服
+work|工作
+tell|告诉；说
+sky|天空
+cloud|云
+mountain|山；山脉
+river|河流
+flower|花
+grass|草
+lake|湖泊
+forest|森林
+path|路
+park|公园
+nature park|自然公园
+farm|农场
+holiday|假期
+picture|照片
+village|乡村；村庄
+city|城市
+house|房子
+bridge|桥
+tree|树
+road|公路
+building|建筑物
+clean|干净的
+air|空气
+run|跑；奔跑
+any|任何的；所有的

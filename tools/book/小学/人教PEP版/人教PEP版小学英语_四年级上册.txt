@@ -1,105 +1,105 @@
-146. window|窗户
-147. board|写字板
-148. light|灯；管灯
-149. picture|画；图画
-150. door|门
-151. floor|地板
-152. classroom|教室
-153. many|许多的
-154. our|我们的
-155. classmate|同学
-156. have a look|看一看
-157. seat|座位
-158. near|在…的旁边
-159. new|新的
-160. where|在哪里
-161. computer|计算机
-162. teacher's desk|讲台
-163. wall|墙
-164. fan|扇子；电扇
-165. clean|打扫；清洁；擦干净的
-166. good idea|好主意
-167. all right|好吧；好的
-168. good job|干得好
-169. Chinese book|语文书
-170. English book|英语书
-171. math book|数学书
-172. schoolbag|书包
-173. story-book|故事书
-174. notebook|笔记本
-175. colour|颜色
-176. fat|胖的
-177. may|可以
-178. sure|当然可以
-179. here you are|给你
-180. twenty -one|二十一
-181. thirty|三十
-182. thirty-one|三十一
-183. forty|四十
-184. forty-one|四十一
-185. fifty|五十
-186. too many|太多了
-187. heavy|重的；沉重的
-188. sorry|对不起
-189. long hair|长头发
-190. short hair|短头发
-191. thin|瘦的
-192. strong|强壮的
-193. quiet|安静的
-194. friend|朋友
-195. Chinese|中文，汉语
-196. Photo|照片
-197. music|音乐
-198. science|科学
-199. sports|体育运动
-200. painting|绘画
-202. Her|她的
-203. right|对的；正确的
-204. study|书房
-205. bathroom|卫生间
-206. bedroom|卧室
-207. living room|起居室
-208. kitchen|厨房
-209. fish|鱼
-210. room|房间
-211. open|打开
-212. close|关上
-213. phone|电话
-214. sofa|沙发
-215. shelf|书架
-216. fridge|冰箱
-217. rice|米饭
-218. noodle(s)|面条（复数）
-219. soup|汤
-220. vegetable|蔬菜
-221. beef|牛肉
-222. dinner|晚餐；正餐
-223. wait|等
-224. hungry|饥饿的
-225. knife|刀
-226. chopstick(s)|筷子
-227. spoon|勺子
-228. plate|盘子
-229. plane|飞机
-230. fork|叉子
-231. pass|传递
-232. ready|准备好了
-233. try|尝试
-234. help yourself|随便吃
-235. show|展示
-236. yummy|好吃的
-237. use|使用
-238. family|家庭
-239. parents|父母
-240. uncle|叔叔；舅舅
-241. aunt|姨；姑姑；婶
-242. baby|婴儿
-243. people|人
-244. member|成员
-245. only|只有；仅仅
-246. puppy|小狗
-248. driver|司机
-249. doctor|医生
-250. farm|农场
-251. farmer|农民
-252. nurse|护士
+window|窗户
+board|写字板
+light|灯；管灯
+picture|画；图画
+door|门
+floor|地板
+classroom|教室
+many|许多的
+our|我们的
+classmate|同学
+have a look|看一看
+seat|座位
+near|在…的旁边
+new|新的
+where|在哪里
+computer|计算机
+teacher's desk|讲台
+wall|墙
+fan|扇子；电扇
+clean|打扫；清洁；擦干净的
+good idea|好主意
+all right|好吧；好的
+good job|干得好
+Chinese book|语文书
+English book|英语书
+math book|数学书
+schoolbag|书包
+story-book|故事书
+notebook|笔记本
+colour|颜色
+fat|胖的
+may|可以
+sure|当然可以
+here you are|给你
+twenty -one|二十一
+thirty|三十
+thirty-one|三十一
+forty|四十
+forty-one|四十一
+fifty|五十
+too many|太多了
+heavy|重的；沉重的
+sorry|对不起
+long hair|长头发
+short hair|短头发
+thin|瘦的
+strong|强壮的
+quiet|安静的
+friend|朋友
+Chinese|中文，汉语
+Photo|照片
+music|音乐
+science|科学
+sports|体育运动
+painting|绘画
+Her|她的
+right|对的；正确的
+study|书房
+bathroom|卫生间
+bedroom|卧室
+living room|起居室
+kitchen|厨房
+fish|鱼
+room|房间
+open|打开
+close|关上
+phone|电话
+sofa|沙发
+shelf|书架
+fridge|冰箱
+rice|米饭
+noodle(s)|面条（复数）
+soup|汤
+vegetable|蔬菜
+beef|牛肉
+dinner|晚餐；正餐
+wait|等
+hungry|饥饿的
+knife|刀
+chopstick(s)|筷子
+spoon|勺子
+plate|盘子
+plane|飞机
+fork|叉子
+pass|传递
+ready|准备好了
+try|尝试
+help yourself|随便吃
+show|展示
+yummy|好吃的
+use|使用
+family|家庭
+parents|父母
+uncle|叔叔；舅舅
+aunt|姨；姑姑；婶
+baby|婴儿
+people|人
+member|成员
+only|只有；仅仅
+puppy|小狗
+driver|司机
+doctor|医生
+farm|农场
+farmer|农民
+nurse|护士

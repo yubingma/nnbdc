@@ -1,72 +1,72 @@
-74. boy|男孩
-75. girl|女孩
-76. teacher|教师
-77. student|学生
-78. this|这个
-79. my|我的
-80. friend|朋友
-81. I am|我是
-82. nice|好的；愉快的
-83. good morning|早上好
-84. good afternoon|下午好
-85. meet|遇见；碰见
-86. goodbye|再见
-87. too|也；太
-88. father|父亲；爸爸
-89. dad|爸爸 口语
-90. mother|母亲；妈妈
-91. mom|妈妈 口语
-92. man|男人
-93. woman|女人
-94. grandmother|（外）祖母
-95. grandma|（外）祖母
-96. grandfather|（外）祖父
-97. grandpa|（外）祖父
-98. sister|姐妹
-99. brother|兄妹
-100. let us|让我们
-101. great|太好了
-102. really|真地；确切地
-103. and|和；并且
-104. how|多么；怎么样
-105. eleven|十一
-106. twelve|十二
-107. thirteen|十三
-108. fourteen|十四
-109. fifteen|十五
-110. sixteen|十六
-111. seventeen|十七
-112. eighteen|十八
-113. nineteen|十九
-114. twenty|二十
-115. how many|多少
-116. can|能够；可以
-117. look at|看；瞧
-118. peach|桃
-119. pear|梨
-120. orange|橙子
-121. watermelon|西瓜
-122. apple|苹果
-123. banana|香蕉
-124. strawberry|草莓
-125. grape|葡萄
-126. like|喜欢
-127. some|一些；某些
-128. thanks|多谢
-129. bus|公共汽车
-130. bike|自行车
-131. taxi|出租车
-132. jeep|吉普车
-133. desk|课桌
-134. chair|椅子
-135. Walkman|随身听
-136. lamp|台灯
-137. your|你的；你们的
-138. zoo|动物园
-139. small|小的
-140. big|大的
-141. long|长的
-142. short|短的；矮的
-143. tall|高的
-144. giraffe|长颈鹿
-145. deer|鹿
+boy|男孩
+girl|女孩
+teacher|教师
+student|学生
+this|这个
+my|我的
+friend|朋友
+I am|我是
+nice|好的；愉快的
+good morning|早上好
+good afternoon|下午好
+meet|遇见；碰见
+goodbye|再见
+too|也；太
+father|父亲；爸爸
+dad|爸爸 口语
+mother|母亲；妈妈
+mom|妈妈 口语
+man|男人
+woman|女人
+grandmother|（外）祖母
+grandma|（外）祖母
+grandfather|（外）祖父
+grandpa|（外）祖父
+sister|姐妹
+brother|兄妹
+let us|让我们
+great|太好了
+really|真地；确切地
+and|和；并且
+how|多么；怎么样
+eleven|十一
+twelve|十二
+thirteen|十三
+fourteen|十四
+fifteen|十五
+sixteen|十六
+seventeen|十七
+eighteen|十八
+nineteen|十九
+twenty|二十
+how many|多少
+can|能够；可以
+look at|看；瞧
+peach|桃
+pear|梨
+orange|橙子
+watermelon|西瓜
+apple|苹果
+banana|香蕉
+strawberry|草莓
+grape|葡萄
+like|喜欢
+some|一些；某些
+thanks|多谢
+bus|公共汽车
+bike|自行车
+taxi|出租车
+jeep|吉普车
+desk|课桌
+chair|椅子
+Walkman|随身听
+lamp|台灯
+your|你的；你们的
+zoo|动物园
+small|小的
+big|大的
+long|长的
+short|短的；矮的
+tall|高的
+giraffe|长颈鹿
+deer|鹿

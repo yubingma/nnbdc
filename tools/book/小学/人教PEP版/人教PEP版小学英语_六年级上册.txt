@@ -1,185 +1,185 @@
-640. by|经，乘
-641. foot|脚
-642. bike|自行车
-643. bus|公共汽车
-644. train|火车
-645. plane|飞机
-646. ship|船；舰
-647. subway|地铁
-648. how|怎样
-649. go to school|上学
-650. fifth|第五
-651. traffic|交通
-652. traffic light|交通灯
-653. traffic rule|交通规则
-654. stop|停，停车站
-655. wait|等待
-656. remember|记住
-657. get to|到达
-658. find|寻找；找到
-659. difference|不同；区别
-660. same|相同的
-661. every|每个；所有的
-662. country|国家
-663. always|总是
-664. mean|意思是
-665. drive|驾驶
-666. right|右边的
-667. side|边
-668. England|英国
-669. Australia|澳大利亚
-670. however|但是
-671. left|左边的
-672. if|如果
-673. must|必须
-674. know|知道
-675. Library|图书馆
-676. Post office|邮局
-677. hospital|医院
-678. cinema|电影院
-679. bookstore|书店
-680. science museum|科技馆
-681. excuse me|对不起
-682. where|在哪里，到哪里
-683. please|请
-684. next to|与…相邻
-685. far|远
-686. supermarket|超市
-687. bank|银行
-688. after school|放学以后
-689. want|想要
-690. buy|买
-691. a pair of|一双
-692. shoe store|鞋店
-693. get off|下车
-694. minute|分钟
-695. north|北
-696. south|南
-697. east|东
-698. west|西
-699. turn|转弯
-700. right|右边
-701. left|左边
-702. straight|成直线地
-703. then|然后
-704. twelfth|第二十
-705. party|聚会；晚会
-706. tell|告诉
-707. start|开始
-708. take|乘坐
-709. look for|寻找
-710. next week|下周
-712. this morning|今天上午
-713. this afternoon|今天下午
-714. this evening|今天晚上
-715. tonight|今晚
-716. tomorrow|明天
-717. take a trip|去旅行
-718. read a magazine|阅读杂志
-719. go to the cinema|去看电影
-720. theme park|主题公园
-721. the Great Wall|长城
-722. busy|忙碌的
-723. together|一起地
-724. comic book|漫画书
-725. post card|明信片
-726. newspaper|报纸
-727. magazine|杂志
-728. dictionary|词典 ；字典
-729. buy|购买
-730. fruit stand|水果摊
-731. pet shop|宠物商店
-732. need|需要
-733. plant|植物
-734. else|其他；另外
-735. shop|商店
-736. hobby|爱好
-737. riding a bike|骑自行车
-738. diving|跳水
-739. play the violin|拉小提琴
-740. making kites|制作风筝
-741. collect stamps|集邮
-742. show|展览
-743. pen pal|笔友
-744. dear|亲爱的
-745. twin|双胞胎之一
-746. something|某事物
-747. must|一定；肯定
-748. fun|快乐；乐趣
-749. with|同…
-750. TV reporter|电视台记者
-751. live|居住
-752. teaches|教
-753. goes|去
-754. watches|看
-755. reads|读，看
-757. different|不同的
-758. week|星期；周
-759. say|说
-760. soon|不久
-761. excited|兴奋的；激动的
-762. singer|歌唱家，歌手
-763. writer|作家
-764. actor|男演员
-765. actress|女演员
-766. artist|画家
-767. TV reporter|电视台记者
-768. Hong Kong|香港
-769. engineer|工程师
-770. accountant|会计
-771. policeman|男警察
-772. salesperson|销售员
-773. cleaner|清洁工
-774. company|公司
-775. where|在哪里，到哪里
-776. work|工作
-777. factory|工厂
-778. design|设计
-779. tip|有用的小建议
-780. help|帮助
-781. money|钱
-782. well|好；对；满意地
-783. enjoy|从…获得乐趣
-784. tourist|旅行者
-785. way|路；道
-786. motor cycle|摩托车
-787. police|警方；警察部门
-788. rain|雨
-789. cloud|云
-790. vapour|蒸汽；水汽
-791. sun|太阳
-792. stream|河，溪
-793. come from|来自，从…来
-794. shine|照耀
-795. become|变成
-796. little|小的
-797. drop|一滴
-798. wake up|醒来
-799. feel|感觉到
-800. think|想；思考
-801. meet|遇见
-802. high|高的
-803. other|其他的
-804. fall|落下
-805. down|向下
-806. into|进入
-807. come out|露出
-808. again|又
-809. seed|种子
-810. soil|土壤
-811. sprout|苗，芽
-812. plant|植物，种植
-813. should|应该
-814. then|然后
-815. garden|花园
-816. easy|简单的
-817. put|放
-818. several|一些
-819. day|天
-820. see|看见
-821. pot|锅碗瓢盆
-822. lovely|可爱的
-823. make sure|核实
-824. month|月份
-825. still|仍然
-826. hardly|几乎不
+by|经，乘
+foot|脚
+bike|自行车
+bus|公共汽车
+train|火车
+plane|飞机
+ship|船；舰
+subway|地铁
+how|怎样
+go to school|上学
+fifth|第五
+traffic|交通
+traffic light|交通灯
+traffic rule|交通规则
+stop|停，停车站
+wait|等待
+remember|记住
+get to|到达
+find|寻找；找到
+difference|不同；区别
+same|相同的
+every|每个；所有的
+country|国家
+always|总是
+mean|意思是
+drive|驾驶
+right|右边的
+side|边
+England|英国
+Australia|澳大利亚
+however|但是
+left|左边的
+if|如果
+must|必须
+know|知道
+Library|图书馆
+Post office|邮局
+hospital|医院
+cinema|电影院
+bookstore|书店
+science museum|科技馆
+excuse me|对不起
+where|在哪里，到哪里
+please|请
+next to|与…相邻
+far|远
+supermarket|超市
+bank|银行
+after school|放学以后
+want|想要
+buy|买
+a pair of|一双
+shoe store|鞋店
+get off|下车
+minute|分钟
+north|北
+south|南
+east|东
+west|西
+turn|转弯
+right|右边
+left|左边
+straight|成直线地
+then|然后
+twelfth|第二十
+party|聚会；晚会
+tell|告诉
+start|开始
+take|乘坐
+look for|寻找
+next week|下周
+this morning|今天上午
+this afternoon|今天下午
+this evening|今天晚上
+tonight|今晚
+tomorrow|明天
+take a trip|去旅行
+read a magazine|阅读杂志
+go to the cinema|去看电影
+theme park|主题公园
+the Great Wall|长城
+busy|忙碌的
+together|一起地
+comic book|漫画书
+post card|明信片
+newspaper|报纸
+magazine|杂志
+dictionary|词典 ；字典
+buy|购买
+fruit stand|水果摊
+pet shop|宠物商店
+need|需要
+plant|植物
+else|其他；另外
+shop|商店
+hobby|爱好
+riding a bike|骑自行车
+diving|跳水
+play the violin|拉小提琴
+making kites|制作风筝
+collect stamps|集邮
+show|展览
+pen pal|笔友
+dear|亲爱的
+twin|双胞胎之一
+something|某事物
+must|一定；肯定
+fun|快乐；乐趣
+with|同…
+TV reporter|电视台记者
+live|居住
+teaches|教
+goes|去
+watches|看
+reads|读，看
+different|不同的
+week|星期；周
+say|说
+soon|不久
+excited|兴奋的；激动的
+singer|歌唱家，歌手
+writer|作家
+actor|男演员
+actress|女演员
+artist|画家
+TV reporter|电视台记者
+Hong Kong|香港
+engineer|工程师
+accountant|会计
+policeman|男警察
+salesperson|销售员
+cleaner|清洁工
+company|公司
+where|在哪里，到哪里
+work|工作
+factory|工厂
+design|设计
+tip|有用的小建议
+help|帮助
+money|钱
+well|好；对；满意地
+enjoy|从…获得乐趣
+tourist|旅行者
+way|路；道
+motor cycle|摩托车
+police|警方；警察部门
+rain|雨
+cloud|云
+vapour|蒸汽；水汽
+sun|太阳
+stream|河，溪
+come from|来自，从…来
+shine|照耀
+become|变成
+little|小的
+drop|一滴
+wake up|醒来
+feel|感觉到
+think|想；思考
+meet|遇见
+high|高的
+other|其他的
+fall|落下
+down|向下
+into|进入
+come out|露出
+again|又
+seed|种子
+soil|土壤
+sprout|苗，芽
+plant|植物，种植
+should|应该
+then|然后
+garden|花园
+easy|简单的
+put|放
+several|一些
+day|天
+see|看见
+pot|锅碗瓢盆
+lovely|可爱的
+make sure|核实
+month|月份
+still|仍然
+hardly|几乎不
