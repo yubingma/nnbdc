@@ -12,7 +12,7 @@ monkey|猴子
 tiger|老虎
 have|有
 Let's…|咱们……
-let's|让咱们
+let's|
 make|做；制作
 fruit|水果
 salad|色拉
@@ -77,7 +77,7 @@ I'd like…|我想要……
 at|在（某处）
 snack bar|快餐店，小吃店
 hamburger|汉堡包
-a glass of    —|杯
+a glass of|—杯
 noodles|面条
 dad|爸爸
 sandwich|三明治

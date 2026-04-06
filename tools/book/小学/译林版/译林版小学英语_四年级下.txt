@@ -106,6 +106,7 @@ Mrs|夫人,太太
 speak|说话,讲话
 may|可以
 come to school|来学校
+cold|感冒
 fever|发烧
 hear|听到,听见
 take care|保重

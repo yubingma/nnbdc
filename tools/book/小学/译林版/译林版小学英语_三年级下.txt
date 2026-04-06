@@ -73,7 +73,7 @@ It's time for ...|是……的时候了。
 What time is it?|几点了？
 wake up|醒；醒来
 mum|妈妈
-o'clock    ……|点钟
+o'clock|……点钟
 breakfast|早餐；早饭
 Hurry up.|快点。
 class|课；上课

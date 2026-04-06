@@ -30,9 +30,9 @@ grandpa|祖父；外祖父
 grandma|祖母；外祖母
 Good evening.|晚上好。
 look at|看；瞧
-T-shirt    T|恤衫
+T-shirt|T 恤衫
 it|它
-it's|它是
+it's|IT它是
 nice|好看的；好的
 skirt|裙子
 How nice!|真好看！
@@ -40,7 +40,7 @@ cap|便帽；帽子
 great|好极了；很好
 jacket|夹克衫
 new|新的
-What colour …?   ……|是什么颜色的？
+What colour …?|……是什么颜色的？
 red|红色的
 colour|颜色
 orange|橙色的
@@ -61,14 +61,14 @@ a|一个
 pie|馅饼；派.
 Nice to meet you.|很高兴认识你。
 No, thank you.|不，谢谢你。
-What about…?    ……|怎么样？
+What about…?|……怎么样？
 cake|蛋糕；糕饼
 ice cream|冰淇淋
 sweet|糖果
 hot dog|热狗
 look|看；瞧
 what|什么
-what's|是什么
+what's|
 Happy New Year!|新年快乐！
 uncle|叔父；伯父；舅父；姑父；姨父
 This is for you.|这是给你的。

@@ -85,7 +85,7 @@ email|电子邮件
 to|给
 live|住，居住
 UK|英国
-...years old    …|岁
+...years old|…岁
 study|学习
 Australia|澳大利亚
 Canada|加拿大
@@ -109,6 +109,7 @@ Internet|网络，互联网
 always|总是，一直
 sometimes|有时
 go to the cinema|去看电影
+there|那里
 a lot|很多
 come out|出来
 get out|出来
@@ -137,7 +138,7 @@ children|孩子，儿童
 message|信息，消息
 Merry Christmas!|圣诞快乐！
 song|歌曲
-What's wrong with …？  ……|怎么了？
+What's wrong with …？|……怎么了？
 him|他
 us|我们
 letter|信

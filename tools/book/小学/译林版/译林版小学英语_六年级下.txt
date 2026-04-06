@@ -89,6 +89,7 @@ month|月
 summer holiday|暑假
 go back to|回去
 how long|多久
+stay|停留
 sound|听起来，听上去
 Disneyland|迪士尼乐园
 Ocean Park|（香港）海洋公园
