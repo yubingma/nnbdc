@@ -21,6 +21,7 @@ Map<String, double> shengMuSimularityMap = {
   "b-p": 0.85,
   "d-t": 0.85,
   "g-k": 0.85,
+  "b-d": 0.75,
 
   // 双唇音/唇齿音常见混淆
   "b-m": 0.50,
