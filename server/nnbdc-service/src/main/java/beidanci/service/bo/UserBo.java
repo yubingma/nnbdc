@@ -322,13 +322,18 @@ public class UserBo extends BaseBo<User> {
 
                 // 退出所在的小组
                 // 使用 SQL 确保即便 Hibernate 关联没加载也能清除引用
-                try {
+                String checkTableSql = "SELECT count(1) FROM information_schema.tables WHERE table_name = ?";
+                Integer count = jdbcTemplate.queryForObject(checkTableSql, Integer.class, "study_group_user_link");
+                if (count != null && count > 0) {
                     sql = "DELETE FROM study_group_user_link WHERE user_id = ?";
                     jdbcTemplate.update(sql, user.getId());
+                } else {
+                    logger.warn("清理小组关联失败（可能表不存在，忽略）");
+                }
+                count = jdbcTemplate.queryForObject(checkTableSql, Integer.class, "study_group_manager_link");
+                if (count != null && count > 0) {
                     sql = "DELETE FROM study_group_manager_link WHERE user_id = ?";
                     jdbcTemplate.update(sql, user.getId());
-                } catch (DataAccessException e) {
-                    logger.warn("清理小组关联失败（可能表不存在，忽略）: {}", e.getMessage());
                 }
 
                 // 删除登录日志
@@ -366,11 +371,12 @@ public class UserBo extends BaseBo<User> {
                 jdbcTemplate.update(sql, user.getId());
 
                 // 不再作为论坛管理员
-                try {
+                count = jdbcTemplate.queryForObject(checkTableSql, Integer.class, "forum_and_manager_link");
+                if (count != null && count > 0) {
                     sql = "DELETE FROM forum_and_manager_link WHERE user_id = ?";
                     jdbcTemplate.update(sql, user.getId());
-                } catch (DataAccessException e) {
-                    logger.warn("清理论坛管理员关联失败（可能表不存在，忽略）: {}", e.getMessage());
+                } else {
+                    logger.warn("清理论坛管理员关联失败（可能表不存在，忽略）");
                 }
 
                 // 删除用户回复的帖子
@@ -396,11 +402,12 @@ public class UserBo extends BaseBo<User> {
                 jdbcTemplate.update(sql, user.getId());
 
                 // 删除用户已掌握单词记录
-                try {
+                count = jdbcTemplate.queryForObject(checkTableSql, Integer.class, "mastered_word");
+                if (count != null && count > 0) {
                     sql = "DELETE FROM mastered_word WHERE user_id = ?";
                     jdbcTemplate.update(sql, user.getId());
-                } catch (DataAccessException e) {
-                    logger.warn("清理已掌握单词记录失败（可能表不存在，忽略）: {}", e.getMessage());
+                } else {
+                    logger.warn("清理已掌握单词记录失败（可能表不存在，忽略）");
                 }
 
                 // 删除用户操作记录
