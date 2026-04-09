@@ -239,6 +239,15 @@ public class UserBo extends BaseBo<User> {
      * @return
      */
 
+    private void executeUpdateIfColumnExists(String sql, String tableName, String columnName, Object... args) {
+        String checkSql = "SELECT count(1) FROM information_schema.columns WHERE table_name = ? AND column_name = ?";
+        Integer count = jdbcTemplate.queryForObject(checkSql, Integer.class, tableName, columnName);
+        if (count != null && count > 0) {
+            jdbcTemplate.update(sql, args);
+        } else {
+            logger.warn("Skip SQL [{}] because column {}.{} does not exist", sql, tableName, columnName);
+        }
+    }
 
     public void deleteDeadUsers(int idleDays) {
         // 查询长期未登录的用户
@@ -344,28 +353,20 @@ public class UserBo extends BaseBo<User> {
                 jdbcTemplate.update(sql, user.getId());
 
                 // 将用户UGC转让给系统虚拟用户
-                sql = "UPDATE word_additional_info SET user_id = ? WHERE user_id = ?";
-                jdbcTemplate.update(sql, sysUser.getId(), user.getId());
-                sql = "UPDATE sentence SET author_id = ? WHERE author_id = ?";
-                jdbcTemplate.update(sql, sysUser.getId(), user.getId());
-                sql = "UPDATE word_image SET author_id = ? WHERE author_id = ?";
-                jdbcTemplate.update(sql, sysUser.getId(), user.getId());
-                sql = "UPDATE word_shortdesc_chinese SET author_id = ? WHERE author_id = ?";
-                jdbcTemplate.update(sql, sysUser.getId(), user.getId());
+                executeUpdateIfColumnExists("UPDATE word_additional_info SET user_id = ? WHERE user_id = ?", "word_additional_info", "user_id", sysUser.getId(), user.getId());
+                executeUpdateIfColumnExists("UPDATE sentence SET author_id = ? WHERE author_id = ?", "sentence", "author_id", sysUser.getId(), user.getId());
+                executeUpdateIfColumnExists("UPDATE word_image SET author_id = ? WHERE author_id = ?", "word_image", "author_id", sysUser.getId(), user.getId());
+                executeUpdateIfColumnExists("UPDATE word_shortdesc_chinese SET author_id = ? WHERE author_id = ?", "word_shortdesc_chinese", "author_id", sysUser.getId(), user.getId());
 
                 // 将用户在小组的学习帖分配给已删除用户
-                sql = "UPDATE study_group_post SET user_id = ? WHERE user_id = ?";
-                jdbcTemplate.update(sql, sysUser.getId(), user.getId());
-                sql = "UPDATE study_group_post_reply SET user_id = ? WHERE user_id = ?";
-                jdbcTemplate.update(sql, sysUser.getId(), user.getId());
+                executeUpdateIfColumnExists("UPDATE study_group_post SET user_id = ? WHERE user_id = ?", "study_group_post", "user_id", sysUser.getId(), user.getId());
+                executeUpdateIfColumnExists("UPDATE study_group_post_reply SET user_id = ? WHERE user_id = ?", "study_group_post_reply", "user_id", sysUser.getId(), user.getId());
 
                 // 分配功能请求给已删除用户
-                sql = "UPDATE feature_request SET creator_id = ? WHERE creator_id = ?";
-                jdbcTemplate.update(sql, sysUser.getId(), user.getId());
+                executeUpdateIfColumnExists("UPDATE feature_request SET creator_id = ? WHERE creator_id = ?", "feature_request", "creator_id", sysUser.getId(), user.getId());
 
                 // 分配学习小组给已删除用户 (如果是创建者)
-                sql = "UPDATE study_group SET creator_id = ? WHERE creator_id = ?";
-                jdbcTemplate.update(sql, sysUser.getId(), user.getId());
+                executeUpdateIfColumnExists("UPDATE study_group SET creator_id = ? WHERE creator_id = ?", "study_group", "creator_id", sysUser.getId(), user.getId());
 
                 sql = "DELETE FROM info_vote_log WHERE user_id = ?";
                 jdbcTemplate.update(sql, user.getId());
