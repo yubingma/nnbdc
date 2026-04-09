@@ -12,6 +12,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import org.springframework.lang.NonNull;
+
+
 import javax.annotation.PostConstruct;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -239,7 +242,7 @@ public class UserBo extends BaseBo<User> {
      * @return
      */
 
-    private void executeUpdateIfColumnExists(String sql, String tableName, String columnName, Object... args) {
+    private void executeUpdateIfColumnExists(@NonNull String sql, String tableName, String columnName, Object... args) {
         String checkSql = "SELECT count(1) FROM information_schema.columns WHERE table_name = ? AND column_name = ?";
         Integer count = jdbcTemplate.queryForObject(checkSql, Integer.class, tableName, columnName);
         if (count != null && count > 0) {
