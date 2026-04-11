@@ -229,14 +229,20 @@ public class AdminController {
     @PostMapping(value = "/admin/aiChatStream.do", produces = org.springframework.http.MediaType.TEXT_EVENT_STREAM_VALUE + ";charset=UTF-8")
     public org.springframework.web.servlet.mvc.method.annotation.SseEmitter legacyAiChatStream(
             @RequestParam("messagesJson") String messagesJson,
-            @RequestParam("userId") String userId) {
+            @RequestParam(value = "userId", required = false) String userId) {
+        if (userId == null || userId.isEmpty()) {
+            userId = userBo.getSysUser_sys(false).getId();
+        }
         return aiController.aiChatStream(messagesJson, userId);
     }
 
     @PostMapping("/admin/aiChat.do")
     public Result<String> legacyAiChat(
             @RequestParam("messagesJson") String messagesJson,
-            @RequestParam("userId") String userId) {
+            @RequestParam(value = "userId", required = false) String userId) {
+        if (userId == null || userId.isEmpty()) {
+            userId = userBo.getSysUser_sys(false).getId();
+        }
         return aiController.aiChat(messagesJson, userId);
     }
 

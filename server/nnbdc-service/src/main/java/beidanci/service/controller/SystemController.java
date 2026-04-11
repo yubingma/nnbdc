@@ -24,6 +24,9 @@ public class SystemController {
     @Autowired
     private AiController aiController;
 
+    @Autowired
+    private UserBo userBo;
+
     /**
      * 获取系统词典列表及其统计信息
      * 返回所有系统词典和每个词典被用户选择的数量
@@ -65,7 +68,10 @@ public class SystemController {
     @PostMapping("/generateAiShortStory.do")
     public Result<String> legacyGenerateAiShortStory(
             @RequestParam("wordsJson") String wordsJson,
-            @RequestParam("userId") String userId) {
+            @RequestParam(value = "userId", required = false) String userId) {
+        if (userId == null || userId.isEmpty()) {
+            userId = userBo.getSysUser_sys(false).getId();
+        }
         return aiController.generateAiShortStory(wordsJson, userId);
     }
 }
