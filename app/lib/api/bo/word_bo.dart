@@ -173,7 +173,9 @@ class WordBo {
         ..americaPronounce = localWord.americaPronounce
         ..britishPronounce = localWord.britishPronounce
         ..popularity = localWord.popularity
-        ..groupInfo = localWord.groupInfo;
+        ..groupInfo = localWord.groupInfo
+        ..createTime = localWord.createTime
+        ..updateTime = localWord.updateTime;
 
       // 获取释义项
       List<MeaningItem> meaningItems;
@@ -395,7 +397,9 @@ class WordBo {
         ..americaPronounce = localWord.americaPronounce
         ..britishPronounce = localWord.britishPronounce
         ..popularity = localWord.popularity
-        ..groupInfo = localWord.groupInfo;
+        ..groupInfo = localWord.groupInfo
+        ..createTime = localWord.createTime
+        ..updateTime = localWord.updateTime;
 
       // 加载词根解析数据
       await _loadCigenWordLinks(wordVo);

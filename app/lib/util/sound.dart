@@ -88,12 +88,14 @@ class SoundUtil {
   /// 播放单词发音
   static Future<void> playPronounceSound(WordVo word) async {
     var soundUrl = Util.getWordSoundUrl(word.spell, word: word);
+    Global.logger.d('🔊 播放发音 [Spell: ${word.spell}, UpdateTime: ${word.updateTime}] URL: $soundUrl');
     await playSoundByUrl(soundUrl, pronouncePlayer, false);
   }
 
   /// 播放单词发音
   static Future<void> playPronounceSound2(WordVo word, AudioPlayer player) async {
     var soundUrl = Util.getWordSoundUrl(word.spell, word: word);
+    Global.logger.d('🔊 播放发音 (指定播放器) [Spell: ${word.spell}, UpdateTime: ${word.updateTime}] URL: $soundUrl');
     await playSoundByUrl(soundUrl, player, false, loadTimeoutMs: 3000, playTimeoutMs: 5000);
   }
 
