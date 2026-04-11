@@ -11,6 +11,8 @@ class SyncLog {
   final String? errorMessage;
   final int? uploadCount;
   final int? downloadCount;
+  final Map<String, dynamic>? uploadDetails;
+  final Map<String, dynamic>? downloadDetails;
   final String? userId;
 
   SyncLog({
@@ -22,6 +24,8 @@ class SyncLog {
     this.errorMessage,
     this.uploadCount,
     this.downloadCount,
+    this.uploadDetails,
+    this.downloadDetails,
     this.userId,
   });
 
@@ -35,6 +39,8 @@ class SyncLog {
       errorMessage: json['errorMessage'] as String?,
       uploadCount: json['uploadCount'] as int?,
       downloadCount: json['downloadCount'] as int?,
+      uploadDetails: json['uploadDetails'] as Map<String, dynamic>?,
+      downloadDetails: json['downloadDetails'] as Map<String, dynamic>?,
       userId: json['userId'] as String?,
     );
   }
@@ -49,6 +55,8 @@ class SyncLog {
       'errorMessage': errorMessage,
       'uploadCount': uploadCount,
       'downloadCount': downloadCount,
+      'uploadDetails': uploadDetails,
+      'downloadDetails': downloadDetails,
       'userId': userId,
     };
   }
@@ -74,6 +82,8 @@ class SyncLog {
     required DateTime endTime,
     required int uploadCount,
     required int downloadCount,
+    Map<String, dynamic>? uploadDetails,
+    Map<String, dynamic>? downloadDetails,
   }) {
     return SyncLog(
       id: id,
@@ -83,6 +93,8 @@ class SyncLog {
       success: true,
       uploadCount: uploadCount,
       downloadCount: downloadCount,
+      uploadDetails: uploadDetails,
+      downloadDetails: downloadDetails,
       userId: userId,
     );
   }
@@ -107,6 +119,6 @@ class SyncLog {
 
   @override
   String toString() {
-    return 'SyncLog(id: $id, startTime: $startTime, success: $success, isWarning: $isWarning, durationMs: $durationMs, upload: $uploadCount, download: $downloadCount)';
+    return 'SyncLog(id: $id, startTime: $startTime, success: $success, isWarning: $isWarning, durationMs: $durationMs, upload: $uploadCount, download: $downloadCount, uploadDetails: $uploadDetails, downloadDetails: $downloadDetails)';
   }
 }

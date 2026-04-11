@@ -153,6 +153,8 @@ class SyncLogService {
     required String logId,
     required int uploadCount,
     required int downloadCount,
+    Map<String, dynamic>? uploadDetails,
+    Map<String, dynamic>? downloadDetails,
   }) async {
     try {
       final logs = await getAllLogs();
@@ -167,6 +169,8 @@ class SyncLogService {
         endTime: AppClock.now(),
         uploadCount: uploadCount,
         downloadCount: downloadCount,
+        uploadDetails: uploadDetails,
+        downloadDetails: downloadDetails,
       );
       
       logs[index] = updatedLog;

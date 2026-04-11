@@ -165,8 +165,12 @@ class _SyncLogViewerPageState extends State<SyncLogViewerPage> {
                         _buildDetailItem('耗时', '${log.durationMs}ms'),
                       if (log.uploadCount != null)
                         _buildDetailItem('上行记录数', '${log.uploadCount}'),
+                      if (log.uploadDetails != null && log.uploadDetails!.isNotEmpty)
+                        _buildDetailsMap(log.uploadDetails!),
                       if (log.downloadCount != null)
                         _buildDetailItem('下行记录数', '${log.downloadCount}'),
+                      if (log.downloadDetails != null && log.downloadDetails!.isNotEmpty)
+                        _buildDetailsMap(log.downloadDetails!),
                       if (log.userId != null)
                         _buildDetailItem('用户ID', log.userId!),
                       if (log.errorMessage != null) ...[
@@ -232,6 +236,25 @@ class _SyncLogViewerPageState extends State<SyncLogViewerPage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildDetailsMap(Map<String, dynamic> details) {
+    if (details.isEmpty) return const SizedBox.shrink();
+    
+    return Padding(
+      padding: const EdgeInsets.only(left: 100, bottom: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: details.entries.map((e) {
+          final tableMap = e.value as Map<String, dynamic>;
+          final ops = tableMap.entries.map((op) => '${op.key}: ${op.value}').join(', ');
+          return Text(
+            '- ${e.key} ($ops)',
+            style: const TextStyle(fontSize: 12, color: Colors.grey, fontFamily: 'monospace'),
+          );
+        }).toList(),
       ),
     );
   }

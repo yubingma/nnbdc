@@ -53,12 +53,16 @@ class SyncDataSecurityException extends SyncCoreException {
 String? _currentSyncLogId;
 int _uploadCount = 0;
 int _downloadCount = 0;
+Map<String, dynamic>? _uploadDetails;
+Map<String, dynamic>? _downloadDetails;
 
 /// 设置当前同步日志ID
 void setCurrentSyncLogId(String logId) {
   _currentSyncLogId = logId;
   _uploadCount = 0;
   _downloadCount = 0;
+  _uploadDetails = null;
+  _downloadDetails = null;
 }
 
 /// 清除当前同步日志ID
@@ -66,6 +70,8 @@ void clearCurrentSyncLogId() {
   _currentSyncLogId = null;
   _uploadCount = 0;
   _downloadCount = 0;
+  _uploadDetails = null;
+  _downloadDetails = null;
 }
 
 /// 记录上行数量
@@ -78,6 +84,14 @@ void addDownloadCount(int count) {
   _downloadCount += count;
 }
 
+void setUploadDetails(Map<String, dynamic> details) {
+  _uploadDetails = details;
+}
+
+void setDownloadDetails(Map<String, dynamic> details) {
+  _downloadDetails = details;
+}
+
 /// 完成同步日志记录
 Future<void> completeSyncLog({bool success = true, String? errorMessage}) async {
   if (_currentSyncLogId == null) return;
@@ -88,6 +102,8 @@ Future<void> completeSyncLog({bool success = true, String? errorMessage}) async 
       logId: _currentSyncLogId!,
       uploadCount: _uploadCount,
       downloadCount: _downloadCount,
+      uploadDetails: _uploadDetails,
+      downloadDetails: _downloadDetails,
     );
   } else {
     await service.failSync(
@@ -740,6 +756,21 @@ Future<void> syncUserDb(String userId) async {
         // 记录上下行数量
         addUploadCount(localLogs.length);
         addDownloadCount(remoteLogs.length);
+
+        Map<String, dynamic> uDetails = {};
+        for (var log in localLogs) {
+          uDetails.putIfAbsent(log.tblName, () => <String, dynamic>{});
+          uDetails[log.tblName][log.operate] = (uDetails[log.tblName][log.operate] as int? ?? 0) + 1;
+        }
+        setUploadDetails(uDetails);
+        
+        Map<String, dynamic> dDetails = {};
+        for (var log in remoteLogs) {
+          String tblName = Util.remoteTableNameToLocal(log.tblName);
+          dDetails.putIfAbsent(tblName, () => <String, dynamic>{});
+          dDetails[tblName][log.operate] = (dDetails[tblName][log.operate] as int? ?? 0) + 1;
+        }
+        setDownloadDetails(dDetails);
 
         await doSyncUserDb(localLogs, remoteLogs, remoteDbVersion, userId);
         stopwatch.stop();
