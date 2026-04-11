@@ -32,6 +32,7 @@ Future<void> syncSysDb() async {
     int remoteVersion = remoteVersionResult.data!;
 
     // 3. 版本一致，无需同步
+    Global.logger.i("📊 系统数据同步检查 - 本地: $localVersion, 远程: $remoteVersion");
     if (localVersion == remoteVersion) {
       // 容错: 如果版本一致，但表里实际上缺少系统词书数据，可能是异常中止导致的，强制从头拉取
       var sysDicts = await (db.select(db.dicts)..where((d) => d.ownerId.equals('15118'))).get();

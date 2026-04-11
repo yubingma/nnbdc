@@ -30,6 +30,7 @@ import beidanci.service.util.Util;
 @Service
 @Transactional(rollbackFor = Throwable.class)
 public class SysDbSyncBo extends BaseBo<SysDbLog> {
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(SysDbSyncBo.class);
     @Autowired
     private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
@@ -81,19 +82,21 @@ public class SysDbSyncBo extends BaseBo<SysDbLog> {
         int nextVersion = currentVersion + 1;
 
         // 创建日志
-        SysDbLog log = new SysDbLog();
-        log.setId(Util.uuid());
-        log.setVersion(nextVersion);
-        log.setOperate(operate);
-        log.setTable(table);
-        log.setRecordId(recordId);
-        log.setRecord(record);
-        log.setCreateTime(new Date());
+        SysDbLog sysDbLog = new SysDbLog();
+        sysDbLog.setId(Util.uuid());
+        sysDbLog.setVersion(nextVersion);
+        sysDbLog.setOperate(operate);
+        sysDbLog.setTable(table);
+        sysDbLog.setRecordId(recordId);
+        sysDbLog.setRecord(record);
+        sysDbLog.setCreateTime(new Date());
 
-        createEntity(log);
+        log.info("Recording SysDbLog: tbl={}, recordId={}, version={}, operate={}", table, recordId, nextVersion, operate);
+        createEntity(sysDbLog);
 
         // 递增版本号
         incrementSysDbVersion(nextVersion);
+        log.info("SysDbVersion incremented to: {}", nextVersion);
     }
 
     /**
@@ -176,6 +179,7 @@ public class SysDbSyncBo extends BaseBo<SysDbLog> {
         MapSqlParameterSource params = new MapSqlParameterSource("fromVersion", fromVersion);
         List<SysDbLog> logs = namedParameterJdbcTemplate.query(sql, params,
                 new EntityRowMapper<>(SysDbLog.class));
+        log.info("Fetched {} incremental sys_db_logs from version {}", logs.size(), fromVersion);
         return logs.stream().map(this::toDto).collect(Collectors.toList());
     }
 
