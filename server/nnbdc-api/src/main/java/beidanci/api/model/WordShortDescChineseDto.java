@@ -8,7 +8,11 @@ import java.util.Date;
 public class WordShortDescChineseDto implements Dto, Ownerable {
     @Override
     public String getOwnerId() {
-        return authorId;
+        return ownerId != null ? ownerId : beidanci.util.Constants.SYS_USER_SYS_ID;
+    }
+
+    public void setOwnerId(String ownerId) {
+        this.ownerId = ownerId;
     }
     private String id;
     private String wordId;
@@ -16,6 +20,7 @@ public class WordShortDescChineseDto implements Dto, Ownerable {
     private Integer hand;
     private Integer foot;
     private String authorId;
+    private String ownerId;
     private Date createTime;
     private Date updateTime;
 

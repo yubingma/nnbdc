@@ -12,6 +12,7 @@ public class WordImageDto implements Dto, Ownerable {
     private Integer foot;
 
     private String authorId;
+    private String ownerId;
     private String status;
     private String auditReason;
     private Date createTime;
@@ -92,7 +93,11 @@ public class WordImageDto implements Dto, Ownerable {
 
     @Override
     public String getOwnerId() {
-        return authorId;
+        return ownerId != null ? ownerId : beidanci.util.Constants.SYS_USER_SYS_ID;
+    }
+
+    public void setOwnerId(String ownerId) {
+        this.ownerId = ownerId;
     }
 
     public String getAuthorId() {

@@ -274,13 +274,14 @@ public class WordImageBo extends BaseBo<WordImage> {
             String updateTimeStr = image.getUpdateTime() != null ? isoFormat.format(image.getUpdateTime()) : "";
 
             return String.format(
-                    "{\"id\":\"%s\",\"wordId\":\"%s\",\"imageFile\":\"%s\",\"hand\":%d,\"foot\":%d,\"authorId\":\"%s\",\"status\":\"%s\",\"auditReason\":\"%s\",\"createTime\":\"%s\",\"updateTime\":\"%s\"}",
+                    "{\"id\":\"%s\",\"wordId\":\"%s\",\"imageFile\":\"%s\",\"hand\":%d,\"foot\":%d,\"authorId\":\"%s\",\"ownerId\":\"%s\",\"status\":\"%s\",\"auditReason\":\"%s\",\"createTime\":\"%s\",\"updateTime\":\"%s\"}",
                     image.getId(),
                     image.getWord() != null ? image.getWord().getId() : "",
                     image.getImageFile(),
                     image.getHand(),
                     image.getFoot(),
                     image.getAuthor() != null ? image.getAuthor().getId() : "",
+                    image.getOwnerId(),
                     image.getStatus() != null ? image.getStatus() : "",
                     image.getAuditReason() != null ? image.getAuditReason() : "",
                     createTimeStr,

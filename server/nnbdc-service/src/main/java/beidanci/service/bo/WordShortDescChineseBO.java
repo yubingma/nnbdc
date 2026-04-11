@@ -171,13 +171,14 @@ public class WordShortDescChineseBO extends BaseBo<WordShortDescChinese> {
             String updateTimeStr = chinese.getUpdateTime() != null ? isoFormat.format(chinese.getUpdateTime()) : "";
 
             return String.format(
-                    "{\"id\":\"%s\",\"wordId\":\"%s\",\"content\":\"%s\",\"hand\":%d,\"foot\":%d,\"author\":\"%s\",\"createTime\":\"%s\",\"updateTime\":\"%s\"}",
+                    "{\"id\":\"%s\",\"wordId\":\"%s\",\"content\":\"%s\",\"hand\":%d,\"foot\":%d,\"author\":\"%s\",\"ownerId\":\"%s\",\"createTime\":\"%s\",\"updateTime\":\"%s\"}",
                     chinese.getId(),
                     chinese.getWord().getId(),
                     chinese.getContent() != null ? chinese.getContent().replace("\"", "\\\"") : "",
                     chinese.getHand(),
                     chinese.getFoot(),
                     chinese.getAuthor() != null ? chinese.getAuthor().getId() : "",
+                    chinese.getOwnerId(),
                     createTimeStr,
                     updateTimeStr);
         } catch (Exception e) {

@@ -20,7 +20,15 @@ public class WordShortDescChinese extends UuidPo implements Ownerable {
 
     @Override
     public String getOwnerId() {
-        return author != null ? author.getId() : null;
+        return owner != null ? owner.getId() : beidanci.util.Constants.SYS_USER_SYS_ID;
+    }
+
+    public User getOwner() {
+        return owner;
+    }
+
+    public void setOwner(User owner) {
+        this.owner = owner;
     }
 
     @Column(name = "word_id")
@@ -37,6 +45,9 @@ public class WordShortDescChinese extends UuidPo implements Ownerable {
 
     @Column(name = "author_id")
     private User author;
+
+    @Column(name = "owner_id")
+    private User owner;
 
     public Word getWord() {
         return word;

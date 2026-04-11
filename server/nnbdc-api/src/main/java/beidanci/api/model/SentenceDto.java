@@ -21,6 +21,7 @@ public class SentenceDto implements Dto, Ownerable {
 
     /** author id */
     private String authorId;
+    private String ownerId;
 
     public String getProducer() {
         return producer;
@@ -128,7 +129,11 @@ public class SentenceDto implements Dto, Ownerable {
 
     @Override
     public String getOwnerId() {
-        return authorId;
+        return ownerId != null ? ownerId : beidanci.util.Constants.SYS_USER_SYS_ID;
+    }
+
+    public void setOwnerId(String ownerId) {
+        this.ownerId = ownerId;
     }
 
     public String getAuthorId() {

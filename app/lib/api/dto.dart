@@ -85,10 +85,11 @@ class MeaningItemDto {
   final String ciXing;
   final String meaning;
   final int popularity;
+  final String ownerId;
   final DateTime createTime;
   final DateTime? updateTime;
 
-  MeaningItemDto(this.id, this.wordId, this.dictId, this.ciXing, this.meaning, this.popularity, this.createTime, this.updateTime);
+  MeaningItemDto(this.id, this.wordId, this.dictId, this.ciXing, this.meaning, this.popularity, this.ownerId, this.createTime, this.updateTime);
 
   factory MeaningItemDto.fromJson(Map<String, dynamic> json) => _$MeaningItemDtoFromJson(json);
 
@@ -136,6 +137,7 @@ class SentenceDto {
   final int handCount;
   final int footCount;
   final String authorId;
+  final String ownerId;
   final String meaningItemId;
   final String wordMeaning;
   final DateTime createTime;
@@ -153,6 +155,7 @@ class SentenceDto {
       this.handCount,
       this.footCount,
       this.authorId,
+      this.ownerId,
       this.meaningItemId,
       this.wordMeaning,
       this.createTime,
@@ -173,11 +176,12 @@ class WordImageDto {
   final int foot;
   final int hand;
   final String? authorId;
+  final String ownerId;
   final String wordId;
   final DateTime createTime;
   final DateTime? updateTime;
 
-  WordImageDto(this.id, this.imageFile, this.foot, this.hand, this.authorId, this.wordId, this.createTime, this.updateTime);
+  WordImageDto(this.id, this.imageFile, this.foot, this.hand, this.authorId, this.ownerId, this.wordId, this.createTime, this.updateTime);
 
   factory WordImageDto.fromJson(Map<String, dynamic> json) => _$WordImageDtoFromJson(json);
 
@@ -519,6 +523,7 @@ class WordShortDescChineseDto {
   final int hand;
   final int foot;
   final String author;
+  final String ownerId;
   final DateTime createTime;
   final DateTime? updateTime;
 
@@ -529,6 +534,7 @@ class WordShortDescChineseDto {
     this.hand,
     this.foot,
     this.author,
+    this.ownerId,
     this.createTime,
     this.updateTime,
   );

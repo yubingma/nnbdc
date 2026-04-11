@@ -106,7 +106,7 @@ public class SentenceBo extends BaseBo<Sentence> {
      * 获取指定词书的例句，若dict为null，则表示获取词典的例句
      */
     public List<SentenceDto> getSentencesOfDict(String dictId) {
-        String sql = "SELECT s.id, s.english, s.chinese, s.part_of_speech, s.english_digest, s.last_diy_update_time, s.the_type, s.producer, s.need_tts, s.foot_count, s.hand_count, s.author_id, s.meaning_item_id, s.word_meaning, s.create_time, s.update_time, s.tts_voice, s.tts_engine FROM sentence s LEFT JOIN meaning_item mi ON mi.id = s.meaning_item_id WHERE mi.dict_id = :dictId";
+        String sql = "SELECT s.id, s.english, s.chinese, s.part_of_speech, s.english_digest, s.last_diy_update_time, s.the_type, s.producer, s.need_tts, s.foot_count, s.hand_count, s.author_id, s.owner_id, s.meaning_item_id, s.word_meaning, s.create_time, s.update_time, s.tts_voice, s.tts_engine FROM sentence s LEFT JOIN meaning_item mi ON mi.id = s.meaning_item_id WHERE mi.dict_id = :dictId";
         MapSqlParameterSource params = new MapSqlParameterSource("dictId", dictId);
 
         return namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> {
@@ -123,6 +123,7 @@ public class SentenceBo extends BaseBo<Sentence> {
             sentenceDto.setFootCount(rs.getInt("foot_count"));
             sentenceDto.setHandCount(rs.getInt("hand_count"));
             sentenceDto.setAuthorId(rs.getString("author_id"));
+            sentenceDto.setOwnerId(rs.getString("owner_id"));
             sentenceDto.setMeaningItemId(rs.getString("meaning_item_id"));
             sentenceDto.setWordMeaning(rs.getString("word_meaning"));
             sentenceDto.setCreateTime(rs.getTimestamp("create_time"));
@@ -227,6 +228,7 @@ public class SentenceBo extends BaseBo<Sentence> {
         dto.setFootCount(sentence.getFootCount());
         dto.setHandCount(sentence.getHandCount());
         dto.setAuthorId(sentence.getAuthor() != null ? sentence.getAuthor().getId() : null);
+        dto.setOwnerId(sentence.getOwnerId());
         dto.setMeaningItemId(sentence.getMeaningItem() != null ? sentence.getMeaningItem().getId() : null);
         dto.setWordMeaning(sentence.getWordMeaning());
         dto.setCreateTime(sentence.getCreateTime());

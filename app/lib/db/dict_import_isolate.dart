@@ -244,6 +244,7 @@ Future<void> _runImport({
               ciXing: m.ciXing,
               meaning: m.meaning,
               popularity: m.popularity,
+              ownerId: m.ownerId,
               createTime: m.createTime,
               updateTime: m.updateTime));
 
@@ -268,6 +269,7 @@ Future<void> _runImport({
               foot: im.foot,
               hand: im.hand,
               authorId: im.authorId ?? "",
+              ownerId: im.ownerId,
               wordId: im.wordId,
               createTime: im.createTime,
               updateTime: im.updateTime));
@@ -331,6 +333,7 @@ Future<void> _runImport({
               handCount: s.handCount,
               footCount: s.footCount,
               authorId: s.authorId,
+              ownerId: s.ownerId,
               meaningItemId: s.meaningItemId,
               wordMeaning: s.wordMeaning,
               createTime: s.createTime,

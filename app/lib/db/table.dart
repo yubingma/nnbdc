@@ -324,6 +324,7 @@ class WordImages extends Table {
   IntColumn get hand => integer()();
 
   TextColumn get authorId => text()();
+  TextColumn get ownerId => text()();
 
   TextColumn get wordId => text()();
   TextColumn get status => text().nullable()();
@@ -428,6 +429,7 @@ class MeaningItems extends Table {
   IntColumn get popularity => integer().withDefault(const Constant(999))();
 
   DateTimeColumn get createTime => dateTime()();
+  TextColumn get ownerId => text()();
 
   DateTimeColumn get updateTime => dateTime().nullable()();
 
@@ -450,6 +452,7 @@ class Sentences extends Table {
   IntColumn get footCount => integer()();
 
   TextColumn get authorId => text()();
+  TextColumn get ownerId => text()();
 
   TextColumn get meaningItemId => text()();
 
@@ -607,6 +610,7 @@ class WordShortDescChineses extends Table {
   IntColumn get hand => integer()();
   IntColumn get foot => integer()();
   TextColumn get author => text()();
+  TextColumn get ownerId => text()();
   DateTimeColumn get createTime => dateTime()();
   DateTimeColumn get updateTime => dateTime().nullable()();
 
