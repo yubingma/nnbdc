@@ -12,6 +12,7 @@ import 'package:provider/provider.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:nnbdc/util/sound.dart';
 import 'package:nnbdc/util/toast_util.dart';
+import 'package:nnbdc/local_word_cache.dart';
 
 class WordManagementWidget extends StatefulWidget {
   const WordManagementWidget({super.key});
@@ -29,6 +30,10 @@ class _WordManagementWidgetState extends State<WordManagementWidget> {
   List<SentenceVo> _sentences = [];
   final AudioPlayer _audioPlayer = AudioPlayer();
 
+  List<WordVo> _candidates = [];
+  bool _isSearchingCandidates = false;
+  String _lastCandidateQuery = '';
+
   @override
   void dispose() {
     _searchController.dispose();
@@ -36,19 +41,62 @@ class _WordManagementWidgetState extends State<WordManagementWidget> {
     super.dispose();
   }
 
-  Future<void> _searchWord() async {
-    final spell = _searchController.text.trim();
-    if (spell.isEmpty) return;
+  void _onSearchTextChanged(String value) async {
+    final query = value.trim();
+    if (query == _lastCandidateQuery) return;
+    _lastCandidateQuery = query;
+
+    if (query.isEmpty) {
+      if (mounted) {
+        setState(() {
+          _candidates = [];
+          _currentWord = null;
+        });
+      }
+      return;
+    }
+
+    if (_isSearchingCandidates) return;
+    _isSearchingCandidates = true;
+
+    try {
+      final words = await LocalWordCache.instance.fuzzySearchWord(query);
+      if (mounted) {
+        setState(() {
+          _candidates = words;
+          // 如果搜索框内容发生了变化，且当前显示的单词拼写与之不符，则清空当前单词显示，转而显示候选词
+          if (_currentWord != null && _currentWord!.spell.toLowerCase() != query.toLowerCase()) {
+            _currentWord = null;
+          }
+        });
+      }
+    } catch (e) {
+      Global.logger.e("Failed to search candidates: $e");
+    } finally {
+      _isSearchingCandidates = false;
+      // 结束后检查一下，若在查询期间query变了，可以再次触发同步（这里简化处理，下次输入会触发）
+    }
+  }
+
+  Future<void> _searchWord({String? spell}) async {
+    final searchSpell = spell ?? _searchController.text.trim();
+    if (searchSpell.isEmpty) return;
+
+    if (spell != null) {
+      _searchController.text = spell;
+      _lastCandidateQuery = spell; // 同步最后的查询字符串
+    }
 
     setState(() {
       _isLoading = true;
       _currentWord = null;
+      _candidates = []; // 选中后清空候选列表
       _wordImages = [];
       _sentences = [];
     });
 
     try {
-      final searchResult = await WordBo().searchWordLocalOnly(spell);
+      final searchResult = await WordBo().searchWordLocalOnly(searchSpell);
       _currentWord = searchResult.word;
 
       if (_currentWord != null && _currentWord!.id != null) {
@@ -61,7 +109,7 @@ class _WordManagementWidgetState extends State<WordManagementWidget> {
         await _loadSentences();
       }
     } catch (e) {
-      Global.logger.e("Failed to search word: $spell, error: $e");
+      Global.logger.e("Failed to search word: $searchSpell, error: $e");
     } finally {
       if (mounted) {
         setState(() {
@@ -223,6 +271,7 @@ class _WordManagementWidgetState extends State<WordManagementWidget> {
               controller: _searchController,
               style: TextStyle(color: textColor, fontFamily: 'NotoSansSC'),
               onSubmitted: (_) => _searchWord(),
+              onChanged: _onSearchTextChanged,
               decoration: InputDecoration(
                 hintText: '输入要查询的单词拼写...',
                 hintStyle: TextStyle(color: isDarkMode ? Colors.grey[400] : Colors.grey[600]),
@@ -234,6 +283,7 @@ class _WordManagementWidgetState extends State<WordManagementWidget> {
                   icon: Icon(Icons.clear, color: isDarkMode ? Colors.grey[400] : Colors.grey[600]),
                   onPressed: () {
                     _searchController.clear();
+                    _onSearchTextChanged('');
                   },
                 ),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -250,12 +300,82 @@ class _WordManagementWidgetState extends State<WordManagementWidget> {
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : _currentWord == null
-                    ? Center(
-                        child: Text(
-                          _searchController.text.isEmpty ? '请在上方搜索栏输入单词' : '未找到匹配的单词',
-                          style: TextStyle(fontSize: 16, color: isDarkMode ? Colors.grey[400] : Colors.grey[600]),
-                        ),
-                      )
+                    ? _candidates.isNotEmpty
+                        ? ListView.builder(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            itemCount: _candidates.length,
+                            itemBuilder: (context, index) {
+                              final candidate = _candidates[index];
+                              return Container(
+                                margin: const EdgeInsets.only(bottom: 8),
+                                decoration: BoxDecoration(
+                                  color: cardColor,
+                                  borderRadius: BorderRadius.circular(12),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: isDarkMode ? Colors.black.withValues(alpha: 0.2) : Colors.grey.withValues(alpha: 0.1),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                  border: Border.all(
+                                    color: isDarkMode ? Colors.grey[800]!.withValues(alpha: 0.3) : Colors.grey[200]!.withValues(alpha: 0.5),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Material(
+                                  color: Colors.transparent,
+                                  child: InkWell(
+                                    borderRadius: BorderRadius.circular(12),
+                                    onTap: () => _searchWord(spell: candidate.spell),
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.search, color: AppTheme.primaryColor.withValues(alpha: 0.5), size: 20),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  candidate.spell,
+                                                  style: TextStyle(
+                                                    color: AppTheme.primaryColor,
+                                                    fontSize: 16,
+                                                    fontWeight: FontWeight.w600,
+                                                    fontFamily: 'NotoSansSC',
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 4),
+                                                Text(
+                                                  candidate.getMeaningStr(),
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
+                                                  style: TextStyle(
+                                                    color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                                                    fontSize: 13,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          Icon(Icons.arrow_forward_ios, color: Colors.grey[400], size: 14),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          )
+                        : Center(
+                            child: Text(
+                              _searchController.text.isEmpty ? '请在上方搜索栏输入单词' : '未找到匹配的单词',
+                              style: TextStyle(fontSize: 16, color: isDarkMode ? Colors.grey[400] : Colors.grey[600]),
+                            ),
+                          )
+
                     : SingleChildScrollView(
                         padding: const EdgeInsets.all(16),
                         child: Column(
