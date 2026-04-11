@@ -158,6 +158,7 @@ Map<String, double> yunMuSimularityMap = {
   "an-ai": 0.45,
   "ai-ang": 0.35, // 模糊匹配（如：大概/大纲）
   "a-ai": 0.20,
+  "i-ao": 0.20, // 新增：支持“打死” (dǎ sǐ) 匹配 “打扫” (dǎ sǎo)
 };
 
 /// 解析拼音中的声母和韵母
