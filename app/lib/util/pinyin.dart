@@ -528,7 +528,7 @@ bool fuzzyChineseContains(Object chinese1, String chinese2) {
 
     // 对于短句（1-2个字），提高匹配门槛，防止被发音接近但完全不同的常用字干扰（误判）
     // 对于 3 个字及以上，维持现状以保证容错率
-    double finalThreshold = M == 1 ? 0.82 : (M == 2 ? 0.78 : (M == 3 ? 0.76 : (M == 4 ? 0.75 : minSimularityForMatch)));
+    double finalThreshold = M == 1 ? 0.82 : (M == 2 ? 0.78 : (M == 3 ? 0.76 : (M == 4 ? 0.74 : minSimularityForMatch)));
 
     if (avgSim > finalThreshold) {
       return true;

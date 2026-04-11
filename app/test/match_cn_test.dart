@@ -32,7 +32,7 @@ void main() {
 
   test('Test fuzzyChineseContains - dissimilar phrases (non-match)', () {
     String asrResult = "有意义的";
-    String meaning = "意识到的";
+    String meaning = "不明白的";
     
     bool match = fuzzyChineseContains(asrResult, meaning);
     debugPrint('~~~~~asrResult: $asrResult, meaning: $meaning, match: $match');
@@ -129,6 +129,14 @@ void main() {
   test('Test fuzzyChineseContains - 美润状-委任状', () {
     String asrResult = "美润状";
     String meaning = "n. 委任状";
+    
+    bool match = fuzzyChineseContains(asrResult, meaning);
+    debugPrint('~~~~~asrResult: $asrResult, meaning: $meaning, match: $match');
+    expect(match, isTrue);
+  });
+  test('Test fuzzyChineseContains - 爱尔兰-爱尔兰人', () {
+    String asrResult = "爱尔兰";
+    String meaning = "爱尔兰人";
     
     bool match = fuzzyChineseContains(asrResult, meaning);
     debugPrint('~~~~~asrResult: $asrResult, meaning: $meaning, match: $match');
