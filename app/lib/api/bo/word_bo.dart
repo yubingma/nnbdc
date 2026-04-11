@@ -299,7 +299,7 @@ class WordBo {
         null,
         isInMySelectedDicts,
         isInRawWordDict,
-        Util.getWordSoundUrl(localWord.spell),
+        Util.getWordSoundUrl(localWord.spell, word: wordVo),
       );
       return localResult;
     } catch (e, st) {
@@ -463,7 +463,7 @@ class WordBo {
         null,
         isInMySelectedDicts,
         isInRawWordDict,
-        Util.getWordSoundUrl(localWord.spell),
+        Util.getWordSoundUrl(localWord.spell, word: wordVo),
       );
       return localResult;
     } else {

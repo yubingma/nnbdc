@@ -38,6 +38,9 @@ public class AdminController {
     private SentenceBo sentenceBo;
 
     @Autowired
+    private WordBo wordBo;
+
+    @Autowired
     private UserBo userBo;
 
     @Autowired
@@ -284,6 +287,16 @@ public class AdminController {
             @RequestParam("chinese") String chinese) throws IllegalAccessException, IOException, InvalidMeaningFormatException, EmptySpellException, ParseException {
         sentenceBo.updateSentence(id, english, chinese);
         return Result.success("例句更新成功");
+    }
+
+    @PostMapping("/admin/regenerateWordPronunciation.do")
+    public Result<String> regenerateWordPronunciation(@RequestParam("wordId") String wordId) {
+        try {
+            wordBo.regeneratePronunciation(wordId);
+            return Result.success("发音重新生成成功");
+        } catch (Exception e) {
+            return Result.fail("发音重新生成失败: " + e.getMessage());
+        }
     }
 
     @PostMapping("/admin/deleteSentence.do")

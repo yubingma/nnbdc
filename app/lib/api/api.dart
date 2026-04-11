@@ -631,6 +631,10 @@ abstract class RestClient {
   @POST("/admin/deleteSentence.do")
   @FormUrlEncoded()
   Future<Result<String>> deleteAdminSentence(@Field("id") String id);
+  
+  @POST("/admin/regenerateWordPronunciation.do")
+  @FormUrlEncoded()
+  Future<Result<String>> regenerateWordPronunciation(@Field("wordId") String wordId);
 
   // 系统健康检查相关API
   @GET("/admin/checkSystemDictIntegrity.do")

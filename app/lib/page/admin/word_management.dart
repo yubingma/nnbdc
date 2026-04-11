@@ -9,6 +9,9 @@ import 'package:nnbdc/theme/app_theme.dart';
 import 'package:nnbdc/util/utils.dart';
 import 'package:nnbdc/config.dart';
 import 'package:provider/provider.dart';
+import 'package:audioplayers/audioplayers.dart';
+import 'package:nnbdc/util/sound.dart';
+import 'package:nnbdc/util/toast_util.dart';
 
 class WordManagementWidget extends StatefulWidget {
   const WordManagementWidget({super.key});
@@ -20,13 +23,16 @@ class WordManagementWidget extends StatefulWidget {
 class _WordManagementWidgetState extends State<WordManagementWidget> {
   final TextEditingController _searchController = TextEditingController();
   bool _isLoading = false;
+  bool _isRegenerating = false;
   WordVo? _currentWord;
   List<WordImage> _wordImages = [];
   List<SentenceVo> _sentences = [];
+  final AudioPlayer _audioPlayer = AudioPlayer();
 
   @override
   void dispose() {
     _searchController.dispose();
+    _audioPlayer.dispose();
     super.dispose();
   }
 
@@ -76,6 +82,60 @@ class _WordManagementWidgetState extends State<WordManagementWidget> {
       }
     } catch (e) {
       Global.logger.e("Failed to load sentences: $e");
+    }
+  }
+
+  Future<void> _playPronunciation() async {
+    if (_currentWord == null) return;
+    try {
+      await SoundUtil.playPronounceSound2(_currentWord!, _audioPlayer);
+    } catch (e) {
+      ToastUtil.error("播放失败: $e");
+    }
+  }
+
+  Future<void> _regeneratePronunciation() async {
+    if (_currentWord == null || _currentWord!.id == null) return;
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('确认重新生成'),
+        content: const Text('系统将尝试重新从有道词典抓取真人发音，如果失败则使用 AI 生成。这会覆盖现有的音频文件，确定吗？'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('取消')),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('确认'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    setState(() => _isRegenerating = true);
+    try {
+      final res = await Api.client.regenerateWordPronunciation(_currentWord!.id!);
+      if (res.success) {
+        ToastUtil.success("发音重新生成成功");
+        // 更新本地 updateTime 以规避缓存
+        if (_currentWord != null) {
+          setState(() {
+            _currentWord!.updateTime = DateTime.now();
+          });
+        }
+        // 重新播放以验证
+        _playPronunciation();
+      } else {
+        ToastUtil.error(res.msg ?? "生成失败");
+      }
+    } catch (e) {
+      ToastUtil.error("生成异常: $e");
+    } finally {
+      if (mounted) {
+        setState(() => _isRegenerating = false);
+      }
     }
   }
 
@@ -209,17 +269,43 @@ class _WordManagementWidgetState extends State<WordManagementWidget> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Row(
+                                    Wrap(
+                                      crossAxisAlignment: WrapCrossAlignment.center,
+                                      spacing: 8,
+                                      runSpacing: 4,
                                       children: [
                                         Text(
                                           _currentWord!.spell,
                                           style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: textColor),
                                         ),
-                                        const SizedBox(width: 16),
+                                        IconButton(
+                                          icon: Icon(Icons.volume_up, color: AppTheme.primaryColor, size: 22),
+                                          onPressed: _playPronunciation,
+                                          tooltip: '播放发音',
+                                          constraints: const BoxConstraints(),
+                                          padding: const EdgeInsets.all(4),
+                                        ),
                                         Text(
                                           '[${Util.getWordDefaultPronounce(_currentWord!)}]',
                                           style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                                         ),
+                                        _isRegenerating
+                                            ? const Padding(
+                                                padding: EdgeInsets.symmetric(horizontal: 8),
+                                                child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+                                              )
+                                            : TextButton.icon(
+                                                onPressed: _regeneratePronunciation,
+                                                icon: const Icon(Icons.refresh, size: 14),
+                                                label: const Text('重生成发音', style: TextStyle(fontSize: 11)),
+                                                style: TextButton.styleFrom(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                  minimumSize: Size.zero,
+                                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                                  backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.08),
+                                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                                                ),
+                                              ),
                                       ],
                                     ),
                                     const SizedBox(height: 8),

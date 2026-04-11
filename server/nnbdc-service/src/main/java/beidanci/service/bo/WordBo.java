@@ -6,6 +6,8 @@ import java.util.List;
 
 import javax.annotation.PostConstruct;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -32,6 +34,8 @@ import beidanci.util.Utils;
 @Service
 @Transactional(rollbackFor = Throwable.class)
 public class WordBo extends BaseBo<Word> {
+    private static final Logger log = LoggerFactory.getLogger(WordBo.class);
+
     @Autowired
     WordCache wordCache;
 
@@ -39,6 +43,11 @@ public class WordBo extends BaseBo<Word> {
     MeaningItemBo meaningItemBo;
     @Autowired
     SysParamUtil sysParamUtil;
+    @Autowired
+    private AiBo aiBo;
+
+    @Autowired
+    private SysDbSyncBo sysDbSyncBo;
 
 
 
@@ -239,4 +248,89 @@ public class WordBo extends BaseBo<Word> {
         });
     }
 
+    public void regeneratePronunciation(String wordId) throws Exception {
+        Word word = findById(wordId);
+        if (word == null) {
+            throw new RuntimeException("Word not found: " + wordId);
+        }
+
+        String spell = word.getSpell();
+        String pureSpell = Utils.uniformSpellForFilename(spell);
+        if (pureSpell.length() == 0) return;
+
+        String firstChar = pureSpell.substring(0, 1);
+        File dir = new File(sysParamUtil.getSoundPath() + "/" + firstChar);
+        if (!dir.exists()) dir.mkdirs();
+        File soundFile = new File(dir, pureSpell + ".mp3");
+
+        // Try Youdao first
+        try {
+            String[] urlStrs = {
+                    "http://dict.youdao.com/dictvoice?type=2&audio=" + java.net.URLEncoder.encode(pureSpell, "UTF-8"),
+                    "http://dict.youdao.com/dictvoice?type=1&audio=" + java.net.URLEncoder.encode(pureSpell, "UTF-8"),
+                    "http://dict.youdao.com/dictvoice?le=eng&audio=" + java.net.URLEncoder.encode(pureSpell, "UTF-8")
+            };
+
+            boolean success = false;
+            for (String urlStr : urlStrs) {
+                java.net.HttpURLConnection conn = (java.net.HttpURLConnection) new java.net.URL(urlStr).openConnection();
+                conn.setRequestMethod("GET");
+                conn.setConnectTimeout(3000);
+                conn.setReadTimeout(5000);
+
+                if (conn.getResponseCode() == 200) {
+                    try (java.io.InputStream is = conn.getInputStream();
+                         java.io.FileOutputStream fos = new java.io.FileOutputStream(soundFile)) {
+                        byte[] buffer = new byte[4096];
+                        int bytesRead;
+                        while ((bytesRead = is.read(buffer)) != -1) {
+                            fos.write(buffer, 0, bytesRead);
+                        }
+                        fos.flush();
+                    }
+                    log.info("Successfully fetched pronunciation from Youdao for word: " + spell);
+                    success = true;
+                    break;
+                }
+            }
+
+            if (!success) {
+                throw new RuntimeException("All youdao URLs failed");
+            }
+        } catch (Exception e) {
+            log.warn("Failed to fetch pronunciation from Youdao for word: " + spell + ", falling back to AI TTS. Error: " + e.getMessage());
+            // Fallback to AI
+            byte[] audioData = aiBo.generateSpeech(spell, null, null).audioData;
+            if (audioData != null && audioData.length > 0) {
+                try (java.io.FileOutputStream fos = new java.io.FileOutputStream(soundFile)) {
+                    fos.write(audioData);
+                    fos.flush();
+                }
+                log.info("Successfully generated AI pronunciation for word: " + spell);
+            } else {
+                throw new RuntimeException("Failed to generate AI pronunciation for word: " + spell);
+            }
+        }
+
+        // 记录同步日志，并更新数据库中的 update_time
+        word.setUpdateTime(new java.util.Date());
+        updateEntity(word);
+        sysDbSyncBo.logOperation("UPDATE", "word", word.getId(), beidanci.service.util.JsonUtils.toJson(toDto(word)));
+    }
+
+    public WordDto toDto(Word word) {
+        WordDto dto = new WordDto();
+        dto.setId(word.getId());
+        dto.setSpell(word.getSpell());
+        dto.setAmericaPronounce(word.getAmericaPronounce());
+        dto.setBritishPronounce(word.getBritishPronounce());
+        dto.setPronounce(word.getPronounce());
+        dto.setPopularity(word.getPopularity());
+        dto.setGroupInfo(word.getGroupInfo());
+        dto.setShortDesc(word.getShortDesc());
+        dto.setLongDesc(word.getLongDesc());
+        dto.setCreateTime(word.getCreateTime());
+        dto.setUpdateTime(word.getUpdateTime());
+        return dto;
+    }
 }

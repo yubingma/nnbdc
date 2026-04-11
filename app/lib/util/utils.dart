@@ -68,9 +68,13 @@ class Util {
     }
   }
 
-  /// 获取指定单词对应的发音文件Url（
-  static String getWordSoundUrl(String spell) {
-    return "${Config.soundBaseUrl}${Util.getFileNameOfWordSound(spell)}.mp3";
+  /// 获取指定单词对应的发音文件Url
+  static String getWordSoundUrl(String spell, {WordVo? word}) {
+    String url = "${Config.soundBaseUrl}${Util.getFileNameOfWordSound(spell)}.mp3";
+    if (word != null && word.updateTime != null) {
+      url += "?v=${word.updateTime!.millisecondsSinceEpoch}";
+    }
+    return url;
   }
 
   /// 获取指定的例句对应的发音文件Url
