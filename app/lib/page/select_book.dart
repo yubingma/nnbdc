@@ -1299,6 +1299,7 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
             ciXing: meaningItem.ciXing,
             meaning: meaningItem.meaning,
             popularity: meaningItem.popularity,
+            ownerId: meaningItem.ownerId,
             createTime: meaningItem.createTime,
             updateTime: meaningItem.updateTime));
         await yieldToUiIfNeeded(100, i); // 更频繁地让出UI
@@ -1319,6 +1320,7 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
             foot: image.foot,
             hand: image.hand,
             authorId: image.authorId ?? "",
+            ownerId: image.ownerId,
             wordId: image.wordId, // 确保 wordId 是字符串
             createTime: image.createTime,
             updateTime: image.updateTime));
@@ -1377,6 +1379,7 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
             handCount: sentence.handCount,
             footCount: sentence.footCount,
             authorId: sentence.authorId,
+            ownerId: sentence.ownerId,
             meaningItemId: sentence.meaningItemId,
             wordMeaning: sentence.wordMeaning,
             createTime: sentence.createTime,

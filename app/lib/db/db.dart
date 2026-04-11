@@ -217,7 +217,7 @@ class MyDatabase extends _$MyDatabase {
   // you should bump this number whenever you change or add a table definition. Migrations
   // are covered later in this readme.
   @override
-  int get schemaVersion => 33;
+  int get schemaVersion => 34;
 
   @override
   MigrationStrategy get migration {
@@ -330,6 +330,9 @@ class MyDatabase extends _$MyDatabase {
           }
           if (from < 33) {
             await _migrateFromV32ToV33(m);
+          }
+          if (from < 34) {
+            await _migrateFromV33ToV34(m);
           }
         } catch (e, stackTrace) {
           // 升级失败，记录错误日志
@@ -829,9 +832,24 @@ class MyDatabase extends _$MyDatabase {
         await m.addColumn(cigens, cigens.category);
         await m.addColumn(cigens, cigens.meaningCn);
         await m.addColumn(cigens, cigens.meaningEn);
-        Global.logger.i('✅ 升级从 V32 到 V33 完成，完善 Cigens 字段');
+        Global.logger.i('✅ 升级从 V32 到 V33 完成，添加 Cigens 的字段');
       } catch (e, stackTrace) {
         Global.logger.e('升级从 V32 到 V33 失败: $e', error: e, stackTrace: stackTrace);
+      }
+    });
+  }
+
+  /// 从版本 33 升级到版本 34：为各 UGC 表添加 ownerId 字段
+  Future<void> _migrateFromV33ToV34(Migrator m) async {
+    await transaction(() async {
+      try {
+        await m.addColumn(sentences, sentences.ownerId);
+        await m.addColumn(wordImages, wordImages.ownerId);
+        await m.addColumn(meaningItems, meaningItems.ownerId);
+        await m.addColumn(wordShortDescChineses, wordShortDescChineses.ownerId);
+        Global.logger.i('✅ 升级从 V33 到 V34 完成，添加各表 ownerId 字段');
+      } catch (e, stackTrace) {
+        Global.logger.e('升级从 V33 到 V34 失败: $e', error: e, stackTrace: stackTrace);
       }
     });
   }

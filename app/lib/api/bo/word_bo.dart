@@ -1145,6 +1145,7 @@ class WordBo {
               ciXing: cixing,
               meaning: trimmed,
               popularity: popularity++,
+              ownerId: userId!,
               createTime: now,
               updateTime: now,
             );

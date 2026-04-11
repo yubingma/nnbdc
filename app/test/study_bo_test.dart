@@ -149,6 +149,7 @@ void main() {
             ciXing: 'n.',
             meaning: 'apple juice $i',
             popularity: 100,
+            ownerId: Global.sysUserId,
             createTime: now,
             updateTime: now,
           ));
