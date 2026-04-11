@@ -350,11 +350,15 @@ class LearningService {
         return (a.batchId ?? 0).compareTo(b.batchId ?? 0);
       }
       if (a.batchId == maxBatchId) {
-        // 最新批次：掌握度升序
-        return (a.stability ?? 0.0).compareTo(b.stability ?? 0.0);
+        // 最新批次：掌握度升序，增加 wordId 作为稳定分次键，防止排序不稳定导致重复写同步日志
+        final cmp = (a.stability ?? 0.0).compareTo(b.stability ?? 0.0);
+        if (cmp != 0) return cmp;
+        return a.wordId.compareTo(b.wordId);
       }
-      // 旧批次：既有学习顺序升序
-      return a.learningOrder.compareTo(b.learningOrder);
+      // 旧批次：既有学习顺序升序，同样增加 wordId 作为最后兜底
+      final cmp = a.learningOrder.compareTo(b.learningOrder);
+      if (cmp != 0) return cmp;
+      return a.wordId.compareTo(b.wordId);
     });
 
     // 3. 全局刷新 learningOrder 并保存
