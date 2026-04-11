@@ -315,7 +315,7 @@ public class WordBo extends BaseBo<Word> {
         // 记录同步日志，并更新数据库中的 update_time
         word.setUpdateTime(new java.util.Date());
         updateEntity(word);
-        sysDbSyncBo.logOperation("UPDATE", "word", word.getId(), beidanci.service.util.JsonUtils.toJson(toDto(word)));
+        sysDbSyncBo.logOperation(word, "UPDATE", "word", word.getId(), beidanci.service.util.JsonUtils.toJson(toDto(word)));
     }
 
     public WordDto toDto(Word word) {

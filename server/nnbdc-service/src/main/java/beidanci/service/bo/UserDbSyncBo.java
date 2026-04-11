@@ -6,6 +6,7 @@ import java.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.Assert;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -205,6 +206,18 @@ public class UserDbSyncBo {
         if (!ok) {
             throw new RuntimeException("更新 user_db_version 失败（可能存在并发修改），userId=" + userId);
         }
+    }
+
+    /**
+     * 服务端主动修改用户数据后，将单个变更写入 user_db_log (增强安全性版本，包含对象所有权校验)。
+     */
+    public void logUserOperation(Object entity, String userId, String tblName, String operate, String recordId, String recordJson) {
+        if (entity instanceof Ownerable) {
+            String ownerId = ((Ownerable) entity).getOwnerId();
+            Assert.isTrue(userId.equals(ownerId),
+                    "SECURITY ALERT: Attempted to log data belonging to user [" + ownerId + "] to sync log of user [" + userId + "]!");
+        }
+        logUserOperation(userId, tblName, operate, recordId, recordJson);
     }
 
     /**

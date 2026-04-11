@@ -6,10 +6,12 @@ package beidanci.service.po;
 
 import javax.persistence.*;
 
+import beidanci.api.model.Ownerable;
+
 @Entity
 @Table(name = "word_image")
 // @Cache(region = "wordCache", usage = CacheConcurrencyStrategy.READ_WRITE)  // JDBC 不支持缓存
-public class WordImage extends UuidPo {
+public class WordImage extends UuidPo implements Ownerable {
 
     public WordImage(Word word, String imageFile, Integer hand, Integer foot, User author) {
         super();
@@ -39,6 +41,9 @@ public class WordImage extends UuidPo {
     @Column(name = "author_id")
     private User author;
 
+    @Column(name = "owner_id")
+    private User owner;
+
     @Column(name = "status")
     private String status;
 
@@ -47,6 +52,19 @@ public class WordImage extends UuidPo {
 
     public User getAuthor() {
         return author;
+    }
+
+    @Override
+    public String getOwnerId() {
+        return owner != null ? owner.getId() : beidanci.util.Constants.SYS_USER_SYS_ID;
+    }
+
+    public User getOwner() {
+        return owner;
+    }
+
+    public void setOwner(User owner) {
+        this.owner = owner;
     }
 
     public void setAuthor(User author) {

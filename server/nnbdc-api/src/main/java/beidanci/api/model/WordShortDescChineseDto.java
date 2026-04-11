@@ -5,7 +5,11 @@ import java.util.Date;
 /**
  * 单词短描述中文翻译DTO
  */
-public class WordShortDescChineseDto implements Dto {
+public class WordShortDescChineseDto implements Dto, Ownerable {
+    @Override
+    public String getOwnerId() {
+        return authorId;
+    }
     private String id;
     private String wordId;
     private String content;

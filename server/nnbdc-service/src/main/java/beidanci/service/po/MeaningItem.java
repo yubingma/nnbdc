@@ -8,6 +8,8 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Table;
 
+import beidanci.api.model.Ownerable;
+
 // JDBC 不再支持 Hibernate 缓存和 Fetch 注解
 // import org.hibernate.annotations.Cache;
 // import org.hibernate.annotations.CacheConcurrencyStrategy;
@@ -22,7 +24,7 @@ import javax.persistence.Table;
 @Entity
 @Table(name = "meaning_item")
 // @Cache(region = "wordCache", usage = CacheConcurrencyStrategy.READ_WRITE)  // JDBC 不支持缓存
-public class MeaningItem extends UuidPo {
+public class MeaningItem extends UuidPo implements Ownerable {
     
     // no Java serialization
 
@@ -167,6 +169,11 @@ public class MeaningItem extends UuidPo {
 
     public User getOwner() {
         return owner;
+    }
+
+    @Override
+    public String getOwnerId() {
+        return owner != null ? owner.getId() : null;
     }
 
     public void setOwner(User owner) {

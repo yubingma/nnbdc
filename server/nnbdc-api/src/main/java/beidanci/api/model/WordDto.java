@@ -4,7 +4,11 @@ import java.util.Date;
 
 import beidanci.util.Utils;
 
-public class WordDto implements Dto {
+public class WordDto implements Dto, Ownerable {
+    @Override
+    public String getOwnerId() {
+        return beidanci.util.Constants.SYS_USER_SYS_ID;
+    }
     private String id;
     private String spell;
     private String britishPronounce;

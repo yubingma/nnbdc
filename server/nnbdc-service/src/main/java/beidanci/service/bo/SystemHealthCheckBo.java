@@ -439,14 +439,14 @@ public class SystemHealthCheckBo {
                         dwDto.setWordId(wordId);
                         dwDto.setSeq(dw0.getSeq());
                         dwDto.setCreateTime(dw0.getCreateTime());
-                        sysDbSyncBo.logOperation("INSERT", "dict_word", Constants.COMMON_DICT_ID + "_" + wordId, JsonUtils.toJson(dwDto));
+                        sysDbSyncBo.logOperation(dwDto, "INSERT", "dict_word", Constants.COMMON_DICT_ID + "_" + wordId, JsonUtils.toJson(dwDto));
                         fixedCount++;
                     } catch (Exception ignore) {}
                 }
                 if (fixedCount > 0) {
                     commonDict.setWordCount(maxSeq);
                     dictBo.updateEntity(commonDict);
-                    sysDbSyncBo.logOperation("UPDATE", "dict", Constants.COMMON_DICT_ID, JsonUtils.toJson(dictBo.toDto(commonDict)));
+                    sysDbSyncBo.logOperation(commonDict, "UPDATE", "dict", Constants.COMMON_DICT_ID, JsonUtils.toJson(dictBo.toDto(commonDict)));
                 }
                 fixed.add(String.format("成功为 %d 个物理脱离单词补充并广播到 0 库。", fixedCount));
             }

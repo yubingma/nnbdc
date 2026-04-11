@@ -572,7 +572,7 @@ public class DictBo extends BaseBo<Dict> {
 
             // 1. 记录系统数据同步日志，使前端能够感知到词典信息的变更
             DictDto dictDto = toDto(dict);
-            sysDbLogBo.logOperation("UPDATE", "dict", dictId, JsonUtils.toJson(dictDto));
+            sysDbLogBo.logOperation(dict, "UPDATE", "dict", dictId, JsonUtils.toJson(dictDto));
 
             // 2. 更新分组关联 (Book Selection Groups & Game Halls)
             // 先清理旧的关联
@@ -800,10 +800,10 @@ public class DictBo extends BaseBo<Dict> {
                 if (dictDto != null) {
                     if (Constants.SYS_USER_SYS_ID.equals(dictDto.getOwnerId())) {
                         // 系统词书，记录到全局日志
-                        sysDbLogBo.logOperation("UPDATE", "dict", id, JsonUtils.toJson(dictDto));
+                        sysDbLogBo.logOperation(dictDto, "UPDATE", "dict", id, JsonUtils.toJson(dictDto));
                     } else {
                         // 私有词书，仅记录到所属用户的个人同步日志
-                        userDbSyncBo.logUserOperation(dictDto.getOwnerId(), "dict", "UPDATE", id, JsonUtils.toJson(dictDto));
+                        userDbSyncBo.logUserOperation(dictDto, dictDto.getOwnerId(), "dict", "UPDATE", id, JsonUtils.toJson(dictDto));
                     }
                 }
             } catch (Exception e) {

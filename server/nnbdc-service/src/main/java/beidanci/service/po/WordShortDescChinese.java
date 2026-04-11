@@ -6,6 +6,8 @@ package beidanci.service.po;
 
 import javax.persistence.*;
 
+import beidanci.api.model.Ownerable;
+
 /**
  * 用户为单词的英文短描述提供的中文翻译
  *
@@ -14,7 +16,12 @@ import javax.persistence.*;
 @Entity
 @Table(name = "word_shortdesc_chinese")
 // @Cache(region = "wordCache", usage = CacheConcurrencyStrategy.READ_WRITE)  // JDBC 不支持缓存
-public class WordShortDescChinese extends UuidPo {
+public class WordShortDescChinese extends UuidPo implements Ownerable {
+
+    @Override
+    public String getOwnerId() {
+        return author != null ? author.getId() : null;
+    }
 
     @Column(name = "word_id")
     private Word word;

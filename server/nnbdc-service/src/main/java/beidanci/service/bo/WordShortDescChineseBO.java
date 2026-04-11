@@ -74,7 +74,7 @@ public class WordShortDescChineseBO extends BaseBo<WordShortDescChinese> {
         deleteEntity(chinese);
 
         // 记录系统数据日志（删除翻译）
-        sysDbLogBo.logOperation("DELETE", "word_shortdesc_chinese", chineseId, "{}");
+        sysDbLogBo.logOperation(chinese, "DELETE", "word_shortdesc_chinese", chineseId, "{}");
 
         return Result.success(null);
     }
@@ -87,7 +87,7 @@ public class WordShortDescChineseBO extends BaseBo<WordShortDescChinese> {
         updateEntity(chinese);
 
         // 记录系统数据日志（点赞数变化）
-        sysDbLogBo.logOperation("UPDATE", "word_shortdesc_chinese", chineseId, toJsonForLog(chinese));
+        sysDbLogBo.logOperation(chinese, "UPDATE", "word_shortdesc_chinese", chineseId, toJsonForLog(chinese));
 
         // 对作者进行奖励
         userBo.adjustCowDung(chinese.getAuthor(), 1, "单词英文讲解UGC翻译得到了赞");
@@ -106,7 +106,7 @@ public class WordShortDescChineseBO extends BaseBo<WordShortDescChinese> {
         updateEntity(chinese);
 
         // 记录系统数据日志（踩数变化）
-        sysDbLogBo.logOperation("UPDATE", "word_shortdesc_chinese", chineseId, toJsonForLog(chinese));
+        sysDbLogBo.logOperation(chinese, "UPDATE", "word_shortdesc_chinese", chineseId, toJsonForLog(chinese));
 
         // 如果该翻译被踩的次数比被赞的次数多3（或以上），删除该翻译
         if (chinese.getFoot() - chinese.getHand() >= 3) {
@@ -145,7 +145,7 @@ public class WordShortDescChineseBO extends BaseBo<WordShortDescChinese> {
         wordBo.updateEntity(word);
 
         // 记录系统数据日志（新增翻译）
-        sysDbLogBo.logOperation("INSERT", "word_shortdesc_chinese", shortDescChinese.getId(),
+        sysDbLogBo.logOperation(shortDescChinese, "INSERT", "word_shortdesc_chinese", shortDescChinese.getId(),
                 toJsonForLog(shortDescChinese));
 
         Event event = new Event(EventType.NewWordShortDescChinese, user, shortDescChinese);

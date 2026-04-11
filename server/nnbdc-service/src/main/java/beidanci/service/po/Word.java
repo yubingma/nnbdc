@@ -8,6 +8,9 @@ import javax.persistence.Entity;
 import javax.persistence.Index;
 import javax.persistence.Table;
 
+import beidanci.api.model.Ownerable;
+import beidanci.util.Constants;
+
 // JDBC 不再支持 Hibernate 缓存和 Fetch 注解
 // import org.hibernate.annotations.Cache;
 // import org.hibernate.annotations.CacheConcurrencyStrategy;
@@ -21,7 +24,12 @@ import net.sf.json.JsonConfig;
 @Entity
 @Table(name = "word", indexes = {@Index(name = "idx_wordspell", columnList = "spell", unique = true)})
 // @Cache(region = "wordCache", usage = CacheConcurrencyStrategy.READ_WRITE)  // JDBC 不支持缓存
-public class Word extends UuidPo {
+public class Word extends UuidPo implements Ownerable {
+
+    @Override
+    public String getOwnerId() {
+        return Constants.SYS_USER_SYS_ID;
+    }
 
     // serial marker removed; entities are not serialized via Java serialization
 

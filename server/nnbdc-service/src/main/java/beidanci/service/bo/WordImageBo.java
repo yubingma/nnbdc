@@ -71,8 +71,7 @@ public class WordImageBo extends BaseBo<WordImage> {
         updateEntity(image);
 
         // 记录系统数据日志（点赞数变化）
-        sysDbLogBo.logOperation("UPDATE", "word_image", imageId,
-                toJsonForLog(image));
+        sysDbLogBo.logOperation(image, "UPDATE", "word_image", imageId, toJsonForLog(image));
 
         // 对作者进行奖励
         userBo.adjustCowDung(image.getAuthor(), 1, "单词配图UGC得到了赞");
@@ -90,8 +89,7 @@ public class WordImageBo extends BaseBo<WordImage> {
         updateEntity(image);
 
         // 记录系统数据日志（踩数变化）
-        sysDbLogBo.logOperation("UPDATE", "word_image", imageId,
-                toJsonForLog(image));
+        sysDbLogBo.logOperation(image, "UPDATE", "word_image", imageId, toJsonForLog(image));
 
         if (image.getFoot() - image.getHand() >= 3) {// 如果该图片被踩的次数比被赞的次数多3（或以上），删除该图片
             deleteWordImage(imageId, user, false);
@@ -144,7 +142,7 @@ public class WordImageBo extends BaseBo<WordImage> {
         createEntity(wordImage);
 
         // 记录系统数据日志（初始状态）
-        sysDbLogBo.logOperation("INSERT", "word_image", wordImage.getId(),
+        sysDbLogBo.logOperation(wordImage, "INSERT", "word_image", wordImage.getId(),
                 toJsonForLog(wordImage));
 
         // 联动刷新词书版本，确保资源清单同步
@@ -187,7 +185,7 @@ public class WordImageBo extends BaseBo<WordImage> {
                 deleteEntity(image);
 
                 // 书写删除日志给客户端同步
-                sysDbLogBo.logOperation("DELETE", "word_image", wordImageId, null);
+                sysDbLogBo.logOperation(image, "DELETE", "word_image", wordImageId, "{}");
 
                 // 联动刷新词书版本
                 dictBo.updateDictsUpdateTimeByWord(image.getWord().getId());
@@ -197,7 +195,7 @@ public class WordImageBo extends BaseBo<WordImage> {
                 updateEntity(image);
 
                 // 更新日志，提醒客户端该图片已变为 APPROVED（其实目前客户端只展示已通过的，所以这里的 update 也很关键）
-                sysDbLogBo.logOperation("UPDATE", "word_image", wordImageId, toJsonForLog(image));
+                sysDbLogBo.logOperation(image, "UPDATE", "word_image", wordImageId, toJsonForLog(image));
             }
         } catch (Exception e) {
             log.error("❌ 异步审核图片过程发生异常: " + wordImageId, e);
@@ -208,7 +206,7 @@ public class WordImageBo extends BaseBo<WordImage> {
                 if (image != null) {
                     image.setStatus(STATUS_APPROVED);
                     updateEntity(image);
-                    sysDbLogBo.logOperation("UPDATE", "word_image", wordImageId, toJsonForLog(image));
+                    sysDbLogBo.logOperation(image, "UPDATE", "word_image", wordImageId, toJsonForLog(image));
                 }
             } catch (Exception ignore) {}
         }
@@ -242,7 +240,7 @@ public class WordImageBo extends BaseBo<WordImage> {
         deleteEntity(image);
 
         // 记录系统数据日志（删除配图）
-        sysDbLogBo.logOperation("DELETE", "word_image", imageId, "{}");
+        sysDbLogBo.logOperation(image, "DELETE", "word_image", imageId, "{}");
 
         // 联动刷新词书版本
         dictBo.updateDictsUpdateTimeByWord(wordId);

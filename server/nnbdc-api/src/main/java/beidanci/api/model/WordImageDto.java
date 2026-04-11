@@ -2,7 +2,7 @@ package beidanci.api.model;
 
 import java.util.Date;
 
-public class WordImageDto implements Dto {
+public class WordImageDto implements Dto, Ownerable {
     private String id;
     private String wordId;
     private String imageFile;
@@ -88,6 +88,11 @@ public class WordImageDto implements Dto {
 
     public void setUpdateTime(Date updateTime) {
         this.updateTime = updateTime;
+    }
+
+    @Override
+    public String getOwnerId() {
+        return authorId;
     }
 
     public String getAuthorId() {

@@ -2,7 +2,7 @@ package beidanci.api.model;
 
 import java.util.Date;
 
-public class SentenceDto implements Dto {
+public class SentenceDto implements Dto, Ownerable {
     private String english;
     private String id;
     private String chinese;
@@ -124,6 +124,11 @@ public class SentenceDto implements Dto {
 
     public void setHandCount(Integer handCount) {
         this.handCount = handCount;
+    }
+
+    @Override
+    public String getOwnerId() {
+        return authorId;
     }
 
     public String getAuthorId() {

@@ -8,6 +8,8 @@ import javax.persistence.Entity;
 import javax.persistence.Index;
 import javax.persistence.Table;
 
+import beidanci.api.model.Ownerable;
+
 /**
  * 单词书
  *
@@ -15,13 +17,18 @@ import javax.persistence.Table;
  */
 @Entity
 @Table(name = "dict", indexes = {@Index(name = "idx_dictname", columnList = "name", unique = true)})
-public class Dict extends UuidPo {
+public class Dict extends UuidPo implements Ownerable {
 
     @Column(name = "name", nullable = false, length = 50)
     private String name;
 
     @Column(name = "owner_id")
     private User owner;
+
+    @Override
+    public String getOwnerId() {
+        return owner != null ? owner.getId() : null;
+    }
 
     /**
      * 对于用户自定义的单词书，该标志指明该单词书是否已经共享给其他用户

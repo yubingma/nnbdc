@@ -163,7 +163,7 @@ public class DictImportBo {
                     
                     try {
                         beidanci.api.model.DictDto dictDto = dictBo.toDto(newDict);
-                        sysDbSyncBo.logOperation("INSERT", "dict", dictId, JsonUtils.toJson(dictDto));
+                        sysDbSyncBo.logOperation(dictDto, "INSERT", "dict", dictId, JsonUtils.toJson(dictDto));
                     } catch (Exception e) {
                         logger.warn("生成新建系统词典同步日志失败", e);
                     }
@@ -199,7 +199,7 @@ public class DictImportBo {
                     dictBo.updateEntity(mainDict);
                     if (isSystemImport) {
                         try {
-                            sysDbSyncBo.logOperation("UPDATE", "dict", dictId, JsonUtils.toJson(dictBo.toDto(mainDict)));
+                            sysDbSyncBo.logOperation(mainDict, "UPDATE", "dict", dictId, JsonUtils.toJson(dictBo.toDto(mainDict)));
                         } catch (Exception e) {
                             logger.warn("生成更新词典同步日志失败", e);
                         }
@@ -244,7 +244,7 @@ public class DictImportBo {
                         
                         try {
                             beidanci.api.model.DictDto dictDto = dictBo.toDto(newDict);
-                            sysDbSyncBo.logOperation("INSERT", "dict", shuffledDictId, JsonUtils.toJson(dictDto));
+                            sysDbSyncBo.logOperation(dictDto, "INSERT", "dict", shuffledDictId, JsonUtils.toJson(dictDto));
                         } catch (Exception e) {
                             logger.warn("生成新建乱序版词典同步日志失败", e);
                         }
@@ -258,7 +258,7 @@ public class DictImportBo {
                     sDict.setWordCount(wc);
                     dictBo.updateEntity(sDict);
                     try {
-                        sysDbSyncBo.logOperation("UPDATE", "dict", shuffledDictId, JsonUtils.toJson(dictBo.toDto(sDict)));
+                        sysDbSyncBo.logOperation(sDict, "UPDATE", "dict", shuffledDictId, JsonUtils.toJson(dictBo.toDto(sDict)));
                     } catch (Exception e) {
                         logger.warn("生成更新乱序版词典同步日志失败", e);
                     }
@@ -430,7 +430,7 @@ public class DictImportBo {
             // 新增单词全局可见，必须为客户端插入一条系统同步日志
             WordDto wordDto = new WordDto();
             org.springframework.beans.BeanUtils.copyProperties(word, wordDto);
-            sysDbSyncBo.logOperation("INSERT", "word", word.getId(), JsonUtils.toJson(wordDto));
+            sysDbSyncBo.logOperation(wordDto, "INSERT", "word", word.getId(), JsonUtils.toJson(wordDto));
             stats.addSyncLog("INSERT", "word");
         }
 
@@ -462,7 +462,7 @@ public class DictImportBo {
             dwDto.setWordId(word.getId());
             dwDto.setSeq(dw0.getSeq());
             dwDto.setCreateTime(dw0.getCreateTime());
-            sysDbSyncBo.logOperation("INSERT", "dict_word", Constants.COMMON_DICT_ID + "_" + word.getId(), JsonUtils.toJson(dwDto));
+            sysDbSyncBo.logOperation(dwDto, "INSERT", "dict_word", Constants.COMMON_DICT_ID + "_" + word.getId(), JsonUtils.toJson(dwDto));
             stats.addSyncLog("INSERT", "dict_word");
 
             // 更新 "0" 词书的 wordCount
@@ -486,7 +486,7 @@ public class DictImportBo {
             if (dict0.getName() == null) {
                 dict0.setName("通用词典.dict");
             }
-            sysDbSyncBo.logOperation("UPDATE", "dict", Constants.COMMON_DICT_ID, JsonUtils.toJson(dictBo.toDto(dict0)));
+            sysDbSyncBo.logOperation(dict0, "UPDATE", "dict", Constants.COMMON_DICT_ID, JsonUtils.toJson(dictBo.toDto(dict0)));
             stats.addSyncLog("UPDATE", "dict");
         }
 
@@ -729,10 +729,10 @@ public class DictImportBo {
 
             // 记录同步日志
             if (Constants.SYS_USER_SYS_ID.equals(ownerId)) {
-                sysDbSyncBo.logOperation("INSERT", "meaning_item", meaning.getId(), JsonUtils.toJson(meaningItemBo.toDto(meaning)));
+                sysDbSyncBo.logOperation(meaning, "INSERT", "meaning_item", meaning.getId(), JsonUtils.toJson(meaningItemBo.toDto(meaning)));
                 stats.addSyncLog("INSERT", "meaning_item");
             } else {
-                userDbSyncBo.logUserOperation(ownerId, "meaning_item", "INSERT", meaning.getId(), JsonUtils.toJson(meaningItemBo.toDto(meaning)));
+                userDbSyncBo.logUserOperation(meaning, ownerId, "meaning_item", "INSERT", meaning.getId(), JsonUtils.toJson(meaningItemBo.toDto(meaning)));
             }
 
             // 创建 Sentence
@@ -760,7 +760,7 @@ public class DictImportBo {
                 stats.addedAudioCount++; // 统计例句音频资源
 
                 // 记录同步日志（句子为公共资源，使用sysDbSyncBo）
-                sysDbSyncBo.logOperation("INSERT", "sentence", sentence.getId(), JsonUtils.toJson(sentenceBo.toDto(sentence)));
+                sysDbSyncBo.logOperation(sentence, "INSERT", "sentence", sentence.getId(), JsonUtils.toJson(sentenceBo.toDto(sentence)));
                 if (Constants.SYS_USER_SYS_ID.equals(ownerId)) {
                     stats.addSyncLog("INSERT", "sentence");
                 }

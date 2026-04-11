@@ -2,7 +2,7 @@ package beidanci.api.model;
 
 import java.util.Date;
 
-public class MeaningItemDto implements Dto {
+public class MeaningItemDto implements Dto, Ownerable {
     private String id;
     private Date createTime;
     private Date updateTime;

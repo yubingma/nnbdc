@@ -6,9 +6,11 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Table;
 
+import beidanci.api.model.Ownerable;
+
 @Entity
 @Table(name = "sentence")
-public class Sentence extends UuidPo {
+public class Sentence extends UuidPo implements Ownerable {
 
     /**
      * 原声例句(音频)
@@ -59,6 +61,9 @@ public class Sentence extends UuidPo {
     @Column(name = "author_id")
     private User author;
 
+    @Column(name = "owner_id")
+    private User owner;
+
     @Column(name = "meaning_item_id")
     private MeaningItem meaningItem;
 
@@ -97,6 +102,19 @@ public class Sentence extends UuidPo {
 
     public User getAuthor() {
         return author;
+    }
+
+    @Override
+    public String getOwnerId() {
+        return owner != null ? owner.getId() : beidanci.util.Constants.SYS_USER_SYS_ID;
+    }
+
+    public User getOwner() {
+        return owner;
+    }
+
+    public void setOwner(User owner) {
+        this.owner = owner;
     }
 
     public void setAuthor(User author) {

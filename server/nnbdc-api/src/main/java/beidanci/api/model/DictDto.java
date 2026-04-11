@@ -2,7 +2,7 @@ package beidanci.api.model;
 
 import java.util.Date;
 
-public class DictDto implements Dto {
+public class DictDto implements Dto, Ownerable {
     private String id;
     private String name;
     private String ownerId;
