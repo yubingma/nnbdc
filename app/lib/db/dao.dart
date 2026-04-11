@@ -58,10 +58,13 @@ class UsersDao extends DatabaseAccessor<MyDatabase> with _$UsersDaoMixin {
           ThrottledDbSyncService().requestSync();
         }
       } else {
-        await update(users).replace(entry);
-        if (genLog) {
-          await DbLogUtil.logOperation(entry.id, 'UPDATE', 'users', entry.id, entry);
-          ThrottledDbSyncService().requestSync();
+        // [优化] 仅在数据真实发生变化时才更新数据库并产生同步日志
+        if (user != entry) {
+          await update(users).replace(entry);
+          if (genLog) {
+            await DbLogUtil.logOperation(entry.id, 'UPDATE', 'users', entry.id, entry);
+            ThrottledDbSyncService().requestSync();
+          }
         }
       }
     } catch (e, stackTrace) {
@@ -217,9 +220,12 @@ class LearningDictsDao extends DatabaseAccessor<MyDatabase> with _$LearningDicts
           await DbLogUtil.logOperation(entry.userId, 'INSERT', 'learningDicts', '${entry.userId}-${entry.dictId}', entry);
         }
       } else {
-        await update(learningDicts).replace(entry);
-        if (genLog) {
-          await DbLogUtil.logOperation(entry.userId, 'UPDATE', 'learningDicts', '${entry.userId}-${entry.dictId}', entry);
+        // [优化] 仅在数据真实发生变化时才更新数据库并产生同步日志
+        if (dict != entry) {
+          await update(learningDicts).replace(entry);
+          if (genLog) {
+            await DbLogUtil.logOperation(entry.userId, 'UPDATE', 'learningDicts', '${entry.userId}-${entry.dictId}', entry);
+          }
         }
       }
     } catch (e, stackTrace) {
@@ -1055,7 +1061,6 @@ class LearningWordsDao extends DatabaseAccessor<MyDatabase> with _$LearningWords
 
   Future<void> saveEntity(LearningWord entry, bool genLog) async {
     try {
-
       var existing = await getById(entry.userId, entry.wordId);
       if (existing == null) {
         await into(learningWords).insertOnConflictUpdate(entry);
@@ -1063,9 +1068,12 @@ class LearningWordsDao extends DatabaseAccessor<MyDatabase> with _$LearningWords
           await DbLogUtil.logOperation(entry.userId, 'INSERT', 'learningWords', '${entry.userId}-${entry.wordId}', entry);
         }
       } else {
-        await into(learningWords).insertOnConflictUpdate(entry);
-        if (genLog) {
-          await DbLogUtil.logOperation(entry.userId, 'UPDATE', 'learningWords', '${entry.userId}-${entry.wordId}', entry);
+        // [优化] 仅在数据真实发生变化时才更新数据库并产生同步日志，极大节省带宽
+        if (existing != entry) {
+          await into(learningWords).insertOnConflictUpdate(entry);
+          if (genLog) {
+            await DbLogUtil.logOperation(entry.userId, 'UPDATE', 'learningWords', '${entry.userId}-${entry.wordId}', entry);
+          }
         }
       }
     } catch (e, stackTrace) {
@@ -1334,10 +1342,13 @@ class DakasDao extends DatabaseAccessor<MyDatabase> with _$DakasDaoMixin {
         await DbLogUtil.logOperation(record.userId, 'INSERT', 'dakas', '${record.userId}-${Util.formatDate(record.forLearningDate)}', record);
       }
     } else {
-      await update(dakas).replace(record);
-      if (genLog) {
-        await DbLogUtil.logOperation(
-            record.userId, 'UPDATE', 'dakas', '${record.userId}-${Util.formatDate(record.forLearningDate)}', record);
+      // [优化] 仅在数据真实发生变化时才更新数据库并产生同步日志
+      if (existing != record) {
+        await update(dakas).replace(record);
+        if (genLog) {
+          await DbLogUtil.logOperation(
+              record.userId, 'UPDATE', 'dakas', '${record.userId}-${Util.formatDate(record.forLearningDate)}', record);
+        }
       }
     }
   }
