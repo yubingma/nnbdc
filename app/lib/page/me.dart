@@ -3498,7 +3498,7 @@ class _RebuildDatabaseProgressDialogState extends State<_RebuildDatabaseProgress
   Widget _buildStepRow(String label, _StepStatus status, bool isDarkMode, Color subtitleColor, Color textColor) {
     Widget statusIcon;
     Color rowColor = subtitleColor;
-    FontWeight fontWeight = FontWeight.w500;
+    FontWeight fontWeight = FontWeight.normal;
 
     switch (status) {
       case _StepStatus.pending:
@@ -3506,7 +3506,7 @@ class _RebuildDatabaseProgressDialogState extends State<_RebuildDatabaseProgress
         break;
       case _StepStatus.processing:
         rowColor = textColor;
-        fontWeight = FontWeight.w700;
+        fontWeight = FontWeight.normal;
         statusIcon = const SizedBox(
           width: 18,
           height: 18,
@@ -3515,12 +3515,12 @@ class _RebuildDatabaseProgressDialogState extends State<_RebuildDatabaseProgress
         break;
       case _StepStatus.completed:
         rowColor = const Color(0xFF10B981);
-        fontWeight = FontWeight.w700;
+        fontWeight = FontWeight.normal;
         statusIcon = const Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 20);
         break;
       case _StepStatus.error:
         rowColor = const Color(0xFFEF4444);
-        fontWeight = FontWeight.w700;
+        fontWeight = FontWeight.normal;
         statusIcon = const Icon(Icons.error_rounded, color: Color(0xFFEF4444), size: 20);
         break;
     }
