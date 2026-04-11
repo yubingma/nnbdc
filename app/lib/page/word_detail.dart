@@ -771,7 +771,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                           child: ClipRRect(
                                             borderRadius: BorderRadius.circular(8),
                                             child: Image.network(
-                                              '${Config.wordImageBaseUrl}${image.imageFile}',
+                                              Uri.encodeFull('${Config.wordImageBaseUrl}${image.imageFile}'),
                                               width: imageWidth,
                                               height: imageWidth * 0.75, // 比例 4:3
                                               fit: BoxFit.cover,

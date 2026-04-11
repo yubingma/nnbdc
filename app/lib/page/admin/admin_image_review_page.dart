@@ -303,7 +303,7 @@ class _AdminImageReviewPageState extends State<AdminImageReviewPage> {
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(8),
                     child: Image.network(
-                      '${Config.wordImageBaseUrl}${img['imageFile']}',
+                      Uri.encodeFull('${Config.wordImageBaseUrl}${img['imageFile']}'),
                       width: 100,
                       height: 100,
                       fit: BoxFit.cover,

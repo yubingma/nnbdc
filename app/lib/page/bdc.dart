@@ -135,7 +135,7 @@ class _WordImagesWidgetState extends State<WordImagesWidget> {
                     child: IgnorePointer(
                       ignoring: true,
                       child: Image.network(
-                        '${Config.wordImageBaseUrl}${image.imageFile}',
+                        Uri.encodeFull('${Config.wordImageBaseUrl}${image.imageFile}'),
                         width: imageWidth,
                         height: imageHeight,
                         fit: BoxFit.contain,
@@ -221,7 +221,7 @@ void _showImagePreviewWithContext(BuildContext context, WordImageVo image,
                     ),
                     // 大图
                     Image.network(
-                      '${Config.wordImageBaseUrl}${image.imageFile}',
+                      Uri.encodeFull('${Config.wordImageBaseUrl}${image.imageFile}'),
                       width: PlatformUtils.isWeb ? 720.0 : double.infinity,
                       height: PlatformUtils.isWeb ? 480.0 : 360.0,
                       fit: BoxFit.contain,
@@ -3874,7 +3874,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                           Container(
                             margin: const EdgeInsets.fromLTRB(0, 8, 0, 0),
                             child: Image.network(
-                                '${Config.wordImageBaseUrl}${wordImage.imageFile}',
+                                Uri.encodeFull('${Config.wordImageBaseUrl}${wordImage.imageFile}'),
                                 width: PlatformUtils.isWeb ? 400 : 200,
                                 height: PlatformUtils.isWeb ? 300 : 150,
                                 fit: BoxFit.contain, loadingBuilder:

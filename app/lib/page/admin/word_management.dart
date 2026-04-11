@@ -298,7 +298,7 @@ class _WordManagementWidgetState extends State<WordManagementWidget> {
                                       children: [
                                         Expanded(
                                           child: Image.network(
-                                            '${Config.wordImageBaseUrl}${img.imageFile}',
+                                            Uri.encodeFull('${Config.wordImageBaseUrl}${img.imageFile}'),
                                             fit: BoxFit.cover,
                                             errorBuilder: (ctx, err, stack) => const Center(child: Icon(Icons.broken_image, size: 40)),
                                           ),
