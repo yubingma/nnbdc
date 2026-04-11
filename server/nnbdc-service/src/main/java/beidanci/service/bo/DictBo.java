@@ -773,6 +773,37 @@ public class DictBo extends BaseBo<Dict> {
     }
 
     /**
+     * 当单词的资源（如图片、释义）发生变动时，刷新所有包含该单词的词典的更新时间，
+     * 从而强制触发 CDN 和客户端的逻辑过期（Cache Invalidation）。
+     */
+    public void updateDictsUpdateTimeByWord(String wordId) {
+        // 查找所有包含该单词的词书 ID
+        String getDictIdsSql = "SELECT DISTINCT dict_id FROM dict_word WHERE word_id = :wordId";
+        MapSqlParameterSource params = new MapSqlParameterSource("wordId", wordId);
+        List<String> dictIds = namedParameterJdbcTemplate.queryForList(getDictIdsSql, params, String.class);
+
+        // 确保“通用词典(0)”也被包含，因为它是所有词的兜底
+        Set<String> allDictIds = new HashSet<>(dictIds);
+        allDictIds.add(Constants.COMMON_DICT_ID);
+
+        for (String id : allDictIds) {
+            try {
+                String updateSql = "UPDATE dict SET update_time = NOW() WHERE id = :dictId";
+                namedParameterJdbcTemplate.update(updateSql, new MapSqlParameterSource("dictId", id));
+
+                // 记录系统同步日志，通知客户端该词书已更新
+                DictDto dictDto = getDictDto(id);
+                if (dictDto != null) {
+                    sysDbLogBo.logOperation("UPDATE", "dict", id, JsonUtils.toJson(dictDto));
+                }
+            } catch (Exception e) {
+                log.warn("刷新词典 [{}] 版本失败: {}", id, e.getMessage());
+            }
+        }
+        log.info("已完成单词 [{}] 相关词典的版本刷新，涉及 {} 本词书", wordId, allDictIds.size());
+    }
+
+    /**
      * 安全删除词典（处理外键约束）
      * 在删除词典之前，先删除相关的记录，按照正确的顺序处理外键约束
      */

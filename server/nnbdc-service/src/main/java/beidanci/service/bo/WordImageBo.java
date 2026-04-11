@@ -37,6 +37,9 @@ public class WordImageBo extends BaseBo<WordImage> {
     WordBo wordBo;
 
     @Autowired
+    DictBo dictBo;
+
+    @Autowired
     SysParamUtil sysParamUtil;
 
     @Autowired
@@ -144,6 +147,9 @@ public class WordImageBo extends BaseBo<WordImage> {
         sysDbLogBo.logOperation("INSERT", "word_image", wordImage.getId(),
                 toJsonForLog(wordImage));
 
+        // 联动刷新词书版本，确保资源清单同步
+        dictBo.updateDictsUpdateTimeByWord(word.getId());
+
         Event event = new Event(EventType.NewWordImage, user, wordImage);
         eventBo.createEntity(event);
 
@@ -182,6 +188,9 @@ public class WordImageBo extends BaseBo<WordImage> {
 
                 // 书写删除日志给客户端同步
                 sysDbLogBo.logOperation("DELETE", "word_image", wordImageId, null);
+
+                // 联动刷新词书版本
+                dictBo.updateDictsUpdateTimeByWord(image.getWord().getId());
             } else {
                 log.info("✅ 图片审核通过: imageId={}, word={}", wordImageId, spell);
                 image.setStatus(STATUS_APPROVED);
@@ -225,6 +234,8 @@ public class WordImageBo extends BaseBo<WordImage> {
             return new Result<>(false, "系统繁忙，请稍后再试", null);
         }
 
+        String wordId = image.getWord().getId();
+
         // 删除数据库记录
         // JDBC 模式下不维护 Word.images 这种内存关系，直接删记录即可
         image.setWord(null);
@@ -232,6 +243,9 @@ public class WordImageBo extends BaseBo<WordImage> {
 
         // 记录系统数据日志（删除配图）
         sysDbLogBo.logOperation("DELETE", "word_image", imageId, "{}");
+
+        // 联动刷新词书版本
+        dictBo.updateDictsUpdateTimeByWord(wordId);
 
         // 删除图片文件
         File imageFile = new File(sysParamUtil.getImageBaseDir() + "/word/" + image.getImageFile());
