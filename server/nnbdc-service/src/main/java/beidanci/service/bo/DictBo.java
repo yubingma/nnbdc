@@ -74,6 +74,10 @@ public class DictBo extends BaseBo<Dict> {
     SysDbSyncBo sysDbLogBo;
 
     @Autowired
+    @Lazy
+    UserDbSyncBo userDbSyncBo;
+
+    @Autowired
     private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
     @PostConstruct
@@ -791,10 +795,16 @@ public class DictBo extends BaseBo<Dict> {
                 String updateSql = "UPDATE dict SET update_time = NOW() WHERE id = :dictId";
                 namedParameterJdbcTemplate.update(updateSql, new MapSqlParameterSource("dictId", id));
 
-                // 记录系统同步日志，通知客户端该词书已更新
+                // 记录同步日志，通知客户端该词书已更新
                 DictDto dictDto = getDictDto(id);
                 if (dictDto != null) {
-                    sysDbLogBo.logOperation("UPDATE", "dict", id, JsonUtils.toJson(dictDto));
+                    if (Constants.SYS_USER_SYS_ID.equals(dictDto.getOwnerId())) {
+                        // 系统词书，记录到全局日志
+                        sysDbLogBo.logOperation("UPDATE", "dict", id, JsonUtils.toJson(dictDto));
+                    } else {
+                        // 私有词书，仅记录到所属用户的个人同步日志
+                        userDbSyncBo.logUserOperation(dictDto.getOwnerId(), "dict", "UPDATE", id, JsonUtils.toJson(dictDto));
+                    }
                 }
             } catch (Exception e) {
                 log.warn("刷新词典 [{}] 版本失败: {}", id, e.getMessage());
