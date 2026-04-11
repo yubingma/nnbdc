@@ -2455,7 +2455,7 @@ class _MePageState extends State<MePage> {
         return AlertDialog(
           backgroundColor: isDarkModeEnabled ? const Color(0xFF2D2D2D) : Colors.white,
           title: const Text('确认重建数据库'),
-          content: const Text('清除所有本地数据(服务端数据不受影响)吗？\n系统将在清除前自动尝试执行一次云同步。'),
+          content: const Text('清除所有本地数据(服务端数据不受影响)吗？\n系统将在清除前自动备份数据，并展示进度。'),
           actions: [
             TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('取消')),
             TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('继续')),
@@ -2466,26 +2466,17 @@ class _MePageState extends State<MePage> {
 
     if (choice == true) {
       if (!mounted) return;
-      // 1. 先进行同步
-      bool? proceedWithWipe = await showDialog<bool>(
+      // 显示进度弹窗，并在该弹窗内完成同步和清空
+      bool? finished = await showDialog<bool>(
         context: context,
         barrierDismissible: false,
-        builder: (context) => const _SyncBeforeWipeDialog(),
+        builder: (context) => const _RebuildDatabaseProgressDialog(),
       );
 
-      if (proceedWithWipe != true) return;
-      if (!mounted) return;
-
-      // 2. 同步完成后（或用户在同步失败后依然选择完成）执行清空
-      await ErrorHandler.safeExecute(
-        () async {
-          await MyDatabase.instance.wipeAllTables();
-          ToastUtil.info('已重建数据库');
-          // 重建后跳转到登录页面
-          Get.offAllNamed('/login');
-        },
-        operationName: '重建数据库',
-      );
+      if (finished == true) {
+        // 全量清空后，必须回到登录页
+        Get.offAllNamed('/login');
+      }
     }
   }
 
@@ -3306,39 +3297,60 @@ class RankingPainter extends CustomPainter {
   bool shouldRepaint(covariant RankingPainter oldDelegate) => oldDelegate.percentile != percentile || oldDelegate.markerColor != markerColor;
 }
 
-class _SyncBeforeWipeDialog extends StatefulWidget {
-  const _SyncBeforeWipeDialog();
+class _RebuildDatabaseProgressDialog extends StatefulWidget {
+  const _RebuildDatabaseProgressDialog();
 
   @override
-  State<_SyncBeforeWipeDialog> createState() => _SyncBeforeWipeDialogState();
+  State<_RebuildDatabaseProgressDialog> createState() => _RebuildDatabaseProgressDialogState();
 }
 
-class _SyncBeforeWipeDialogState extends State<_SyncBeforeWipeDialog> {
-  bool _isSyncing = true;
-  String _status = '正在同步本地数据...';
+enum _StepStatus { pending, processing, completed, error }
+
+class _RebuildDatabaseProgressDialogState extends State<_RebuildDatabaseProgressDialog> {
+  _StepStatus _syncStatus = _StepStatus.processing;
+  _StepStatus _wipeStatus = _StepStatus.pending;
   String? _error;
 
   @override
   void initState() {
     super.initState();
-    _startSync();
+    _executeProcess();
   }
 
-  Future<void> _startSync() async {
+  Future<void> _executeProcess() async {
+    // 步骤1: 同步备份
     try {
       await ThrottledDbSyncService().requestSyncAndWait(immediate: true);
       if (mounted) {
         setState(() {
-          _isSyncing = false;
-          _status = '同步成功';
+          _syncStatus = _StepStatus.completed;
+          _wipeStatus = _StepStatus.processing;
         });
       }
     } catch (e) {
       if (mounted) {
         setState(() {
-          _isSyncing = false;
-          _status = '同步失败';
-          _error = e.toString();
+          _syncStatus = _StepStatus.error;
+          _error = '备份失败: $e';
+        });
+      }
+      return; 
+    }
+
+    // 步骤2: 清空数据
+    try {
+      await Future.delayed(const Duration(milliseconds: 500));
+      await MyDatabase.instance.wipeAllTables();
+      if (mounted) {
+        setState(() {
+          _wipeStatus = _StepStatus.completed;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _wipeStatus = _StepStatus.error;
+          _error = '清空失败: $e';
         });
       }
     }
@@ -3355,59 +3367,38 @@ class _SyncBeforeWipeDialogState extends State<_SyncBeforeWipeDialog> {
       backgroundColor: Colors.transparent,
       elevation: 0,
       child: Container(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(28),
         decoration: BoxDecoration(
           color: backgroundColor,
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(28),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.2),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
+              blurRadius: 30,
+              offset: const Offset(0, 15),
             ),
           ],
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (_isSyncing)
-              const SizedBox(
-                width: 50,
-                height: 50,
-                child: CircularProgressIndicator(
-                  strokeWidth: 3,
-                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF3B82F6)),
-                ),
-              )
-            else if (_error == null)
-              const Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 60)
-            else
-              const Icon(Icons.error_outline_rounded, color: Color(0xFFEF4444), size: 60),
-
-            const SizedBox(height: 24),
             Text(
-              _status,
+              '正在重建数据库',
               style: TextStyle(
                 color: textColor,
-                fontSize: 20,
+                fontSize: 22,
                 fontWeight: FontWeight.w900,
                 fontFamily: 'NotoSansSC',
               ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              _error != null
-                  ? '部分数据同步失败，继续操作可能会导致数据丢失。'
-                  : (_isSyncing ? '正在将本地更新上传到云端...' : '本地数据已安全备份到云端。'),
               textAlign: TextAlign.center,
-              style: TextStyle(
-                color: subtitleColor,
-                fontSize: 14,
-                fontFamily: 'NotoSansSC',
-              ),
             ),
+            const SizedBox(height: 32),
+            _buildStepRow('1. 备份数据到云端', _syncStatus, isDarkMode, subtitleColor, textColor),
+            const SizedBox(height: 16),
+            _buildStepRow('2. 清空本地数据', _wipeStatus, isDarkMode, subtitleColor, textColor),
             if (_error != null) ...[
-              const SizedBox(height: 12),
+              const SizedBox(height: 24),
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
@@ -3415,36 +3406,139 @@ class _SyncBeforeWipeDialogState extends State<_SyncBeforeWipeDialog> {
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: Colors.red.withValues(alpha: 0.1)),
                 ),
-                child: Text(
-                  _error!,
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: Colors.redAccent, fontSize: 12, fontFamily: 'Roboto'),
+                child: Row(
+                  children: [
+                    const Icon(Icons.warning_amber_rounded, color: Colors.redAccent, size: 18),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        _error!,
+                        style: const TextStyle(color: Colors.redAccent, fontSize: 12, fontFamily: 'Roboto'),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
             const SizedBox(height: 32),
-            if (!_isSyncing)
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: () => Navigator.pop(context, true),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF3B82F6),
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            if (_syncStatus == _StepStatus.error) ...[
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      style: OutlinedButton.styleFrom(
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        side: BorderSide(color: subtitleColor.withValues(alpha: 0.3)),
+                      ),
+                      child: const Text('取消'),
+                    ),
                   ),
-                  child: const Text(
-                    '完成',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, fontFamily: 'NotoSansSC'),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          _syncStatus = _StepStatus.completed; 
+                          _wipeStatus = _StepStatus.processing;
+                          _error = null;
+                        });
+                        _executeWipeOnly();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFEF4444),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      ),
+                      child: const Text('忽略并清空'),
+                    ),
                   ),
+                ],
+              ),
+            ] else if (_wipeStatus == _StepStatus.completed || _wipeStatus == _StepStatus.error)
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context, _wipeStatus == _StepStatus.completed),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF3B82F6),
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                ),
+                child: const Text(
+                  '完成',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, fontFamily: 'NotoSansSC'),
                 ),
               ),
           ],
         ),
       ),
+    );
+  }
+
+  Future<void> _executeWipeOnly() async {
+    try {
+      await MyDatabase.instance.wipeAllTables();
+      if (mounted) {
+        setState(() {
+          _wipeStatus = _StepStatus.completed;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _wipeStatus = _StepStatus.error;
+          _error = '清空失败: $e';
+        });
+      }
+    }
+  }
+
+  Widget _buildStepRow(String label, _StepStatus status, bool isDarkMode, Color subtitleColor, Color textColor) {
+    Widget statusIcon;
+    Color rowColor = subtitleColor;
+    FontWeight fontWeight = FontWeight.w500;
+
+    switch (status) {
+      case _StepStatus.pending:
+        statusIcon = Icon(Icons.circle_outlined, color: subtitleColor.withValues(alpha: 0.3), size: 20);
+        break;
+      case _StepStatus.processing:
+        rowColor = textColor;
+        fontWeight = FontWeight.w700;
+        statusIcon = const SizedBox(
+          width: 18,
+          height: 18,
+          child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF3B82F6))),
+        );
+        break;
+      case _StepStatus.completed:
+        rowColor = const Color(0xFF10B981);
+        fontWeight = FontWeight.w700;
+        statusIcon = const Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 20);
+        break;
+      case _StepStatus.error:
+        rowColor = const Color(0xFFEF4444);
+        fontWeight = FontWeight.w700;
+        statusIcon = const Icon(Icons.error_rounded, color: Color(0xFFEF4444), size: 20);
+        break;
+    }
+
+    return Row(
+      children: [
+        statusIcon,
+        const SizedBox(width: 12),
+        Text(
+          label,
+          style: TextStyle(
+            color: rowColor,
+            fontSize: 16,
+            fontWeight: fontWeight,
+            fontFamily: 'NotoSansSC',
+          ),
+        ),
+      ],
     );
   }
 }
