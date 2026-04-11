@@ -85,7 +85,7 @@ class MeaningItemDto {
   final String ciXing;
   final String meaning;
   final int popularity;
-  final String ownerId;
+  final String? ownerId;
   final DateTime createTime;
   final DateTime? updateTime;
 
@@ -136,8 +136,8 @@ class SentenceDto {
   final String theType;
   final int handCount;
   final int footCount;
-  final String authorId;
-  final String ownerId;
+  final String? authorId;
+  final String? ownerId;
   final String meaningItemId;
   final String wordMeaning;
   final DateTime createTime;
@@ -176,7 +176,7 @@ class WordImageDto {
   final int foot;
   final int hand;
   final String? authorId;
-  final String ownerId;
+  final String? ownerId;
   final String wordId;
   final DateTime createTime;
   final DateTime? updateTime;
