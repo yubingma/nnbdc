@@ -914,6 +914,13 @@ class Util {
       'meaningItems': 'meaning_item',
       'learningLogs': 'learning_log',
       'words': 'word',
+      'dictGroups': 'dict_group',
+      'groupAndDictLinks': 'group_and_dict_link',
+      'cigens': 'cigen',
+      'cigenWordLinks': 'cigen_word_link',
+      'sentences': 'sentence',
+      'wordImages': 'word_image',
+      // word_shortdesc_chineses 已删除，不再映射
     };
 
     if (tableNameMapping.containsKey(localTableName)) {
@@ -939,8 +946,16 @@ class Util {
       'dict_word': 'dictWords',
       'dict': 'dicts',
       'meaning_item': 'meaningItems',
-      'learning_log': 'learning_logs',
+      'learning_log': 'learningLogs',
       'word': 'words',
+      'dict_group': 'dictGroups',
+      'group_and_dict_link': 'groupAndDictLinks',
+      'cigen': 'cigens',
+      'cigen_word_link': 'cigenWordLinks',
+      'sentence': 'sentences',
+      'word_image': 'wordImages',
+      // word_shortdesc_chinese 表已删除，映射到特殊标记而不是实际表，同步时将被跳过
+      'word_shortdesc_chinese': 'IGNORED',
     };
 
     if (specialMappings.containsKey(remoteTableName)) {

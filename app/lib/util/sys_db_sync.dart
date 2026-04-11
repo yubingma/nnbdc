@@ -64,6 +64,7 @@ Future<void> syncSysDb() async {
       Map<String, dynamic> dDetails = {};
       for (var log in remoteLogs) {
         String tblName = Util.remoteTableNameToLocal(log.tblName);
+        if (tblName == 'IGNORED') continue; // 表已删除，跳过
         dDetails.putIfAbsent(tblName, () => <String, dynamic>{});
         dDetails[tblName][log.operate] = (dDetails[tblName][log.operate] as int? ?? 0) + 1;
       }
@@ -214,14 +215,6 @@ Future<void> _applySysDbLogs(List<SysDbLogDto> logs) async {
           } else {
             WordImage entity = WordImage.fromJson(entityJson);
             await db.wordImagesDao.insertEntity(entity);
-          }
-        } else if (log.tblName == 'word_shortdesc_chinese') {
-          // 短描述中文翻译
-          if (log.operate == 'DELETE') {
-            await db.wordShortDescChinesesDao.deleteById(log.recordId);
-          } else {
-            WordShortDescChinese entity = WordShortDescChinese.fromJson(entityJson);
-            await db.wordShortDescChinesesDao.insertEntity(entity);
           }
         } else {
           Global.logger.w('未知的系统数据表: ${log.tblName}');

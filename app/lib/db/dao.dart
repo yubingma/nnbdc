@@ -2024,22 +2024,7 @@ class SysDbVersionDao extends DatabaseAccessor<MyDatabase> with _$SysDbVersionDa
   }
 }
 
-@DriftAccessor(tables: [WordShortDescChineses])
-class WordShortDescChinesesDao extends DatabaseAccessor<MyDatabase> with _$WordShortDescChinesesDaoMixin {
-  WordShortDescChinesesDao(super.db);
 
-  Future<void> insertEntity(WordShortDescChinese entity) async {
-    await into(wordShortDescChineses).insertOnConflictUpdate(entity);
-  }
-
-  Future<void> deleteById(String id) async {
-    await (delete(wordShortDescChineses)..where((t) => t.id.equals(id))).go();
-  }
-
-  Future<List<WordShortDescChinese>> getByWordId(String wordId) async {
-    return (select(wordShortDescChineses)..where((t) => t.wordId.equals(wordId))).get();
-  }
-}
 
 @DriftAccessor(tables: [LocalExceptions])
 class LocalExceptionsDao extends DatabaseAccessor<MyDatabase> with _$LocalExceptionsDaoMixin {

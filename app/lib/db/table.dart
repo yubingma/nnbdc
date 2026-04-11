@@ -602,21 +602,7 @@ class SysDbVersion extends Table {
   Set<Column> get primaryKey => {id};
 }
 
-/// 单词短描述中文翻译表
-class WordShortDescChineses extends Table {
-  TextColumn get id => text()();
-  TextColumn get wordId => text()();
-  TextColumn get content => text()();
-  IntColumn get hand => integer()();
-  IntColumn get foot => integer()();
-  TextColumn get author => text()();
-  TextColumn get ownerId => text().withDefault(const Constant('15118'))();
-  DateTimeColumn get createTime => dateTime()();
-  DateTimeColumn get updateTime => dateTime().nullable()();
 
-  @override
-  Set<Column> get primaryKey => {id};
-}
 
 /// 本地异常记录表
 class LocalExceptions extends Table {

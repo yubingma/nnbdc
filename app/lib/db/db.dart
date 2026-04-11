@@ -43,7 +43,6 @@ part 'db.g.dart';
   UserCowDungLogs,
   UserWrongWords,
   SysDbVersion,
-  WordShortDescChineses,
   LocalExceptions,
   LearningLogs,
 ], daos: [
@@ -76,7 +75,6 @@ part 'db.g.dart';
   UserCowDungLogsDao,
   UserWrongWordsDao,
   SysDbVersionDao,
-  WordShortDescChinesesDao,
   LocalExceptionsDao,
   LearningLogsDao,
 ])
@@ -217,7 +215,7 @@ class MyDatabase extends _$MyDatabase {
   // you should bump this number whenever you change or add a table definition. Migrations
   // are covered later in this readme.
   @override
-  int get schemaVersion => 34;
+  int get schemaVersion => 35;
 
   @override
   MigrationStrategy get migration {
@@ -333,6 +331,9 @@ class MyDatabase extends _$MyDatabase {
           }
           if (from < 34) {
             await _migrateFromV33ToV34(m);
+          }
+          if (from < 35) {
+            await _migrateFromV34ToV35DropWordShortDescChineses(m);
           }
         } catch (e, stackTrace) {
           // 升级失败，记录错误日志
@@ -846,10 +847,27 @@ class MyDatabase extends _$MyDatabase {
         await m.addColumn(sentences, sentences.ownerId);
         await m.addColumn(wordImages, wordImages.ownerId);
         await m.addColumn(meaningItems, meaningItems.ownerId);
-        await m.addColumn(wordShortDescChineses, wordShortDescChineses.ownerId);
+        // word_short_desc_chinese 表已在 V35 删除，这里跳过对它的操作
+        try {
+          await customStatement('ALTER TABLE word_short_desc_chineses ADD COLUMN owner_id TEXT NOT NULL DEFAULT \'15118\'');
+        } catch (e) {
+          // 表可能不存在（新安装）或列已存在，忽略
+        }
         Global.logger.i('✅ 升级从 V33 到 V34 完成，添加各表 ownerId 字段');
       } catch (e, stackTrace) {
         Global.logger.e('升级从 V33 到 V34 失败: $e', error: e, stackTrace: stackTrace);
+      }
+    });
+  }
+
+  /// 从版本 34 升级到版本 35：删除 word_short_desc_chineses 表（无UI展示，纯冗余数据）
+  Future<void> _migrateFromV34ToV35DropWordShortDescChineses(Migrator m) async {
+    await transaction(() async {
+      try {
+        await m.deleteTable('word_short_desc_chineses');
+        Global.logger.i('✅ 升级从 V34 到 V35 完成，删除 word_short_desc_chineses 表');
+      } catch (e, stackTrace) {
+        Global.logger.e('升级从 V34 到 V35 失败: $e', error: e, stackTrace: stackTrace);
       }
     });
   }
