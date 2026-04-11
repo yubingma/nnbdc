@@ -11,6 +11,7 @@ class StudyConfig {
   bool autoJumpAfterCorrectCh2En;
   bool autoJumpAfterCorrectEn2Ch;
   String asrPassRule;
+  bool enableWordImage;
   Map<String, dynamic>? walkman;
 
   StudyConfig({
@@ -21,6 +22,7 @@ class StudyConfig {
     this.autoJumpAfterCorrectCh2En = true,
     this.autoJumpAfterCorrectEn2Ch = false,
     this.asrPassRule = 'ONE',
+    this.enableWordImage = true,
     this.walkman,
   });
 
@@ -33,6 +35,7 @@ class StudyConfig {
       autoJumpAfterCorrectCh2En: _toBool(json['autoJumpAfterCorrectCh2En'], true),
       autoJumpAfterCorrectEn2Ch: _toBool(json['autoJumpAfterCorrectEn2Ch'], false),
       asrPassRule: _toAsrPassRule(json['asrPassRule']),
+      enableWordImage: _toBool(json['enableWordImage'], true),
       walkman: json['walkman'] is Map<String, dynamic> ? json['walkman'] : null,
     );
   }
@@ -64,6 +67,7 @@ class StudyConfig {
       'autoJumpAfterCorrectCh2En': autoJumpAfterCorrectCh2En,
       'autoJumpAfterCorrectEn2Ch': autoJumpAfterCorrectEn2Ch,
       'asrPassRule': asrPassRule,
+      'enableWordImage': enableWordImage,
       if (walkman != null) 'walkman': walkman,
     };
   }

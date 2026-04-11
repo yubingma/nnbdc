@@ -2654,6 +2654,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     var localAutoPlaySentence = studyConfig.autoPlaySentence;
     var localShowAnswersDirectly = studyConfig.showAnswersDirectly;
     var localEnableAllWrong = studyConfig.enableAllWrong;
+    var localEnableWordImage = studyConfig.enableWordImage;
     var localAsrPassRule = studyConfig.asrPassRule;
     var localAutoJumpAfterCorrectCh2En = studyConfig.autoJumpAfterCorrectCh2En;
     var localAutoJumpAfterCorrectEn2Ch = studyConfig.autoJumpAfterCorrectEn2Ch;
@@ -2814,6 +2815,15 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                                   },
                                 ),
                                 _buildSettingItem(
+                                  '显示单词配图',
+                                  localEnableWordImage,
+                                  (value) {
+                                    setState(() {
+                                      localEnableWordImage = value;
+                                    });
+                                  },
+                                ),
+                                _buildSettingItem(
                                   '中英极速：答对后直接下一词',
                                   localAutoJumpAfterCorrectCh2En,
                                   (value) {
@@ -2921,6 +2931,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                             studyConfigToSave.autoJumpAfterCorrectEn2Ch =
                                 localAutoJumpAfterCorrectEn2Ch;
                             studyConfigToSave.asrPassRule = localAsrPassRule;
+                            studyConfigToSave.enableWordImage = localEnableWordImage;
                             await studyConfigToSave.saveToCurrentUser();
                           }
 
@@ -5893,7 +5904,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                   ),
                 ),
                 // 图片 (仅对管理员开放)
-                if ((Global.getLoggedInUser()?.isAdmin == true) &&
+                if (StudyConfig.fromCurrentUser().enableWordImage &&
+                    (Global.getLoggedInUser()?.isAdmin == true) &&
                     _currentGetWordResult?.images != null &&
                     _currentGetWordResult!.images!.isNotEmpty)
                   Column(
@@ -5928,7 +5940,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                     ],
                   ),
                 // 配图按钮
-                if (_isEditMode && (_currentGetWordResult?.learningWord?.word.images?.length ?? 0) < 2)
+                if (StudyConfig.fromCurrentUser().enableWordImage && _isEditMode && (_currentGetWordResult?.learningWord?.word.images?.length ?? 0) < 2)
                   InkWell(
                     child: Container(
                       margin: const EdgeInsets.fromLTRB(0, 16, 0, 0),

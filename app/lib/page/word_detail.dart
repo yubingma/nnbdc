@@ -18,6 +18,7 @@ import 'package:get_storage/get_storage.dart';
 import 'bdc.dart';
 import 'pic_search.dart';
 import '../util/asr.dart';
+import '../util/study_config.dart';
 
 import 'package:flutter_markdown/flutter_markdown.dart';
 
@@ -743,7 +744,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                     child: (_isTopDrawerExpanded && MediaQuery.of(context).viewInsets.bottom <= 0) ? Column(
                       children: [
                     // 配图展示
-                    if (args.word.images != null && args.word.images!.isNotEmpty)
+                    if (StudyConfig.fromCurrentUser().enableWordImage && args.word.images != null && args.word.images!.isNotEmpty)
                       Builder(
                         builder: (BuildContext context) {
                           final screenWidth = MediaQuery.of(context).size.width;
