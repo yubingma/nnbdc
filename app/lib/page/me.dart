@@ -2455,7 +2455,7 @@ class _MePageState extends State<MePage> {
         return AlertDialog(
           backgroundColor: isDarkModeEnabled ? const Color(0xFF2D2D2D) : Colors.white,
           title: const Text('确认重建数据库'),
-          content: const Text('清除所有本地数据(服务端数据不受影响)吗？'),
+          content: const Text('清除所有本地数据(服务端数据不受影响)吗？\n系统将在清除前自动尝试执行一次云同步。'),
           actions: [
             TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('取消')),
             TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('继续')),
@@ -2465,6 +2465,18 @@ class _MePageState extends State<MePage> {
     );
 
     if (choice == true) {
+      if (!mounted) return;
+      // 1. 先进行同步
+      bool? proceedWithWipe = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const _SyncBeforeWipeDialog(),
+      );
+
+      if (proceedWithWipe != true) return;
+      if (!mounted) return;
+
+      // 2. 同步完成后（或用户在同步失败后依然选择完成）执行清空
       await ErrorHandler.safeExecute(
         () async {
           await MyDatabase.instance.wipeAllTables();
@@ -3292,4 +3304,147 @@ class RankingPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant RankingPainter oldDelegate) => oldDelegate.percentile != percentile || oldDelegate.markerColor != markerColor;
+}
+
+class _SyncBeforeWipeDialog extends StatefulWidget {
+  const _SyncBeforeWipeDialog();
+
+  @override
+  State<_SyncBeforeWipeDialog> createState() => _SyncBeforeWipeDialogState();
+}
+
+class _SyncBeforeWipeDialogState extends State<_SyncBeforeWipeDialog> {
+  bool _isSyncing = true;
+  String _status = '正在同步本地数据...';
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _startSync();
+  }
+
+  Future<void> _startSync() async {
+    try {
+      await ThrottledDbSyncService().requestSyncAndWait(immediate: true);
+      if (mounted) {
+        setState(() {
+          _isSyncing = false;
+          _status = '同步成功';
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isSyncing = false;
+          _status = '同步失败';
+          _error = e.toString();
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDarkMode = context.watch<DarkMode>().isDarkMode;
+    final backgroundColor = isDarkMode ? const Color(0xFF1E293B) : Colors.white;
+    final textColor = isDarkMode ? Colors.white : const Color(0xFF1E293B);
+    final subtitleColor = isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.2),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (_isSyncing)
+              const SizedBox(
+                width: 50,
+                height: 50,
+                child: CircularProgressIndicator(
+                  strokeWidth: 3,
+                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF3B82F6)),
+                ),
+              )
+            else if (_error == null)
+              const Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 60)
+            else
+              const Icon(Icons.error_outline_rounded, color: Color(0xFFEF4444), size: 60),
+
+            const SizedBox(height: 24),
+            Text(
+              _status,
+              style: TextStyle(
+                color: textColor,
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
+                fontFamily: 'NotoSansSC',
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              _error != null
+                  ? '部分数据同步失败，继续操作可能会导致数据丢失。'
+                  : (_isSyncing ? '正在将本地更新上传到云端...' : '本地数据已安全备份到云端。'),
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: subtitleColor,
+                fontSize: 14,
+                fontFamily: 'NotoSansSC',
+              ),
+            ),
+            if (_error != null) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.red.withValues(alpha: 0.05),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.red.withValues(alpha: 0.1)),
+                ),
+                child: Text(
+                  _error!,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: Colors.redAccent, fontSize: 12, fontFamily: 'Roboto'),
+                ),
+              ),
+            ],
+            const SizedBox(height: 32),
+            if (!_isSyncing)
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF3B82F6),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                  child: const Text(
+                    '完成',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, fontFamily: 'NotoSansSC'),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
 }
