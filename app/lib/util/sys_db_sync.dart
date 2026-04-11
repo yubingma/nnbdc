@@ -5,6 +5,8 @@ import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/api/bo/word_bo.dart';
+import 'package:nnbdc/util/sync.dart';
+import 'package:nnbdc/util/utils.dart';
 
 /// 同步系统数据库（统一的系统数据同步）
 ///
@@ -55,6 +57,18 @@ Future<void> syncSysDb() async {
 
     List<SysDbLogDto> remoteLogs = logsResult.data!;
     Global.logger.i("📦 收到 ${remoteLogs.length} 条系统数据变更");
+
+    // 记录下行统计
+    if (remoteLogs.isNotEmpty) {
+      addDownloadCount(remoteLogs.length);
+      Map<String, dynamic> dDetails = {};
+      for (var log in remoteLogs) {
+        String tblName = Util.remoteTableNameToLocal(log.tblName);
+        dDetails.putIfAbsent(tblName, () => <String, dynamic>{});
+        dDetails[tblName][log.operate] = (dDetails[tblName][log.operate] as int? ?? 0) + 1;
+      }
+      addDownloadDetails(dDetails);
+    }
 
     // 5. 应用日志到本地数据库
     await _applySysDbLogs(remoteLogs);

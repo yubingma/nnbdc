@@ -84,12 +84,24 @@ void addDownloadCount(int count) {
   _downloadCount += count;
 }
 
-void setUploadDetails(Map<String, dynamic> details) {
-  _uploadDetails = details;
+void addUploadDetails(Map<String, dynamic> details) {
+  _uploadDetails ??= {};
+  details.forEach((tbl, ops) {
+    _uploadDetails!.putIfAbsent(tbl, () => <String, dynamic>{});
+    (ops as Map<String, dynamic>).forEach((op, count) {
+      _uploadDetails![tbl][op] = (_uploadDetails![tbl][op] as int? ?? 0) + (count as int);
+    });
+  });
 }
 
-void setDownloadDetails(Map<String, dynamic> details) {
-  _downloadDetails = details;
+void addDownloadDetails(Map<String, dynamic> details) {
+  _downloadDetails ??= {};
+  details.forEach((tbl, ops) {
+    _downloadDetails!.putIfAbsent(tbl, () => <String, dynamic>{});
+    (ops as Map<String, dynamic>).forEach((op, count) {
+      _downloadDetails![tbl][op] = (_downloadDetails![tbl][op] as int? ?? 0) + (count as int);
+    });
+  });
 }
 
 /// 完成同步日志记录
@@ -762,7 +774,7 @@ Future<void> syncUserDb(String userId) async {
           uDetails.putIfAbsent(log.tblName, () => <String, dynamic>{});
           uDetails[log.tblName][log.operate] = (uDetails[log.tblName][log.operate] as int? ?? 0) + 1;
         }
-        setUploadDetails(uDetails);
+        addUploadDetails(uDetails);
         
         Map<String, dynamic> dDetails = {};
         for (var log in remoteLogs) {
@@ -770,7 +782,7 @@ Future<void> syncUserDb(String userId) async {
           dDetails.putIfAbsent(tblName, () => <String, dynamic>{});
           dDetails[tblName][log.operate] = (dDetails[tblName][log.operate] as int? ?? 0) + 1;
         }
-        setDownloadDetails(dDetails);
+        addDownloadDetails(dDetails);
 
         await doSyncUserDb(localLogs, remoteLogs, remoteDbVersion, userId);
         stopwatch.stop();
