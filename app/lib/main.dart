@@ -51,6 +51,7 @@ import 'package:nnbdc/page/admin/golden_master_tool.dart';
 import 'package:nnbdc/util/subscription_util.dart';
 import 'package:nnbdc/util/notification_util.dart';
 import 'package:nnbdc/util/analytics_util.dart';
+import 'package:nnbdc/services/throttled_sync_service.dart';
 
 import 'config.dart';
 import 'local_word_cache.dart';
@@ -424,7 +425,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         break;
       case AppLifecycleState.resumed:
         // 应用恢复时，重新连接必要的服务
-        Global.logger.d('应用恢复前台');
+        Global.logger.d('应用恢复前台，触发数据库同步');
+        ThrottledDbSyncService().requestSync();
         break;
       case AppLifecycleState.detached:
         // 应用即将关闭时，确保资源清理

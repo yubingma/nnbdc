@@ -145,6 +145,8 @@ Future<void> _applySysDbLogs(List<SysDbLogDto> logs) async {
           if (log.operate == 'DELETE') {
             await (db.delete(db.words)..where((t) => t.id.equals(log.recordId))).go();
           } else {
+            // 兼容性修复：处理可能的时间戳格式（Jackson默认可能序列化为Long）
+            _fixJsonDates(entityJson);
             Word entity = Word.fromJson(entityJson);
             await db.wordsDao.insertEntity(entity);
           }
@@ -224,6 +226,15 @@ Future<void> _applySysDbLogs(List<SysDbLogDto> logs) async {
         Global.logger.i('检测到词库 [$baseDictId] 有增删改，自动重构衍生软词书: ${derivedDict.id}');
         await WordBo().generateShuffledDictLocally(derivedDict.id, baseDictId);
       }
+    }
+  }
+}
+
+/// 兼容性修复：将 JSON 中的时间戳（int/ms）转换为 ISO8601 字符串
+void _fixJsonDates(Map<String, dynamic> json) {
+  for (var key in ['createTime', 'updateTime']) {
+    if (json.containsKey(key) && json[key] is int) {
+      json[key] = DateTime.fromMillisecondsSinceEpoch(json[key]).toIso8601String();
     }
   }
 }
