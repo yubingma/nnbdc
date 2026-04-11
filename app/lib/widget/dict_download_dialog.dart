@@ -130,8 +130,11 @@ class _DictDownloadDialogState extends State<DictDownloadDialog> {
         borderRadius: BorderRadius.circular(16.0),
       ),
       title: Text('导入词书 ($completedCount/${widget.dicts.length})', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-      content: SizedBox(
+      content: Container(
         width: double.maxFinite,
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.6,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
