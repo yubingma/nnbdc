@@ -768,14 +768,26 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                             borderRadius: BorderRadius.circular(8),
                                             border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
                                           ),
-                                          child: ClipRRect(
-                                            borderRadius: BorderRadius.circular(8),
-                                            child: Image.network(
-                                              Uri.encodeFull('${Config.wordImageBaseUrl}${image.imageFile}'),
-                                              width: imageWidth,
-                                              height: imageWidth * 0.75, // 比例 4:3
-                                              fit: BoxFit.cover,
-                                            ),
+                                          child: Builder(
+                                            builder: (context) {
+                                              final imageUrl = Uri.encodeFull('${Config.wordImageBaseUrl}${image.imageFile}');
+                                              Global.logger.d('加载单词图片 [详情页]: $imageUrl');
+                                              return Image.network(
+                                                imageUrl,
+                                                width: imageWidth,
+                                                height: imageWidth * 0.75, // 比例 4:3
+                                                fit: BoxFit.cover,
+                                                errorBuilder: (context, error, stackTrace) {
+                                                  Global.logger.e('图片加载失败 [详情页]: $imageUrl', error: error);
+                                                  return Container(
+                                                    width: imageWidth,
+                                                    height: imageWidth * 0.75,
+                                                    color: Colors.grey[200],
+                                                    child: const Icon(Icons.broken_image, color: Colors.red),
+                                                  );
+                                                },
+                                              );
+                                            }
                                           ),
                                         ),
                                         if (image.status == 'PENDING')

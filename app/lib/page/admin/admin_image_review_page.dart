@@ -302,11 +302,21 @@ class _AdminImageReviewPageState extends State<AdminImageReviewPage> {
                   opacity: isAlreadyDeleted ? 0.3 : 1.0,
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(8),
-                    child: Image.network(
-                      Uri.encodeFull('${Config.wordImageBaseUrl}${img['imageFile']}'),
-                      width: 100,
-                      height: 100,
-                      fit: BoxFit.cover,
+                    child: Builder(
+                      builder: (context) {
+                        final imageUrl = Uri.encodeFull('${Config.wordImageBaseUrl}${img['imageFile']}');
+                        Global.logger.d('加载单词图片 [审核页]: $imageUrl');
+                        return Image.network(
+                          imageUrl,
+                          width: 100,
+                          height: 100,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            Global.logger.e('图片加载失败 [审核页]: $imageUrl', error: error);
+                            return const Center(child: Icon(Icons.broken_image, color: Colors.red));
+                          },
+                        );
+                      }
                     ),
                   ),
                 ),

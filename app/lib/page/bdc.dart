@@ -134,39 +134,46 @@ class _WordImagesWidgetState extends State<WordImagesWidget> {
                     width: imageWidth,
                     child: IgnorePointer(
                       ignoring: true,
-                      child: Image.network(
-                        Uri.encodeFull('${Config.wordImageBaseUrl}${image.imageFile}'),
-                        width: imageWidth,
-                        height: imageHeight,
-                        fit: BoxFit.contain,
-                        loadingBuilder: (context, child, loadingProgress) {
-                          if (loadingProgress == null) return child;
-                          return Center(
-                            child: SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                value: loadingProgress.expectedTotalBytes !=
-                                        null
-                                    ? loadingProgress.cumulativeBytesLoaded /
-                                        loadingProgress.expectedTotalBytes!
-                                    : null,
-                                strokeWidth: 2,
-                                color: Colors.indigoAccent,
-                              ),
-                            ),
+                      child: Builder(
+                        builder: (context) {
+                          final imageUrl = Uri.encodeFull('${Config.wordImageBaseUrl}${image.imageFile}');
+                          Global.logger.d('加载单词图片 [做题区]: $imageUrl');
+                          return Image.network(
+                            imageUrl,
+                            width: imageWidth,
+                            height: imageHeight,
+                            fit: BoxFit.contain,
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) return child;
+                              return Center(
+                                child: SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    value: loadingProgress.expectedTotalBytes !=
+                                            null
+                                        ? loadingProgress.cumulativeBytesLoaded /
+                                            loadingProgress.expectedTotalBytes!
+                                        : null,
+                                    strokeWidth: 2,
+                                    color: Colors.indigoAccent,
+                                  ),
+                                ),
+                              );
+                            },
+                            errorBuilder: (context, error, stackTrace) {
+                              Global.logger.e('图片加载失败 [做题区]: $imageUrl', error: error);
+                              // 图片加载失败，显示错误图标，不尝试解码
+                              return const Center(
+                                child: Icon(
+                                  Icons.broken_image,
+                                  color: Colors.red,
+                                  size: 24,
+                                ),
+                              );
+                            },
                           );
-                        },
-                        errorBuilder: (context, error, stackTrace) {
-                          // 图片加载失败，显示错误图标，不尝试解码
-                          return const Center(
-                            child: Icon(
-                              Icons.broken_image,
-                              color: Colors.red,
-                              size: 24,
-                            ),
-                          );
-                        },
+                        }
                       ),
                     ),
                   ),
@@ -220,23 +227,30 @@ void _showImagePreviewWithContext(BuildContext context, WordImageVo image,
                       ),
                     ),
                     // 大图
-                    Image.network(
-                      Uri.encodeFull('${Config.wordImageBaseUrl}${image.imageFile}'),
-                      width: PlatformUtils.isWeb ? 720.0 : double.infinity,
-                      height: PlatformUtils.isWeb ? 480.0 : 360.0,
-                      fit: BoxFit.contain,
-                      loadingBuilder: (context, child, loadingProgress) {
-                        if (loadingProgress == null) return child;
-                        return const Center(
-                          child: CircularProgressIndicator(color: Colors.white),
+                    Builder(
+                      builder: (context) {
+                        final imageUrl = Uri.encodeFull('${Config.wordImageBaseUrl}${image.imageFile}');
+                        Global.logger.d('加载单词图片 [预览弹窗]: $imageUrl');
+                        return Image.network(
+                          imageUrl,
+                          width: PlatformUtils.isWeb ? 720.0 : double.infinity,
+                          height: PlatformUtils.isWeb ? 480.0 : 360.0,
+                          fit: BoxFit.contain,
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return const Center(
+                              child: CircularProgressIndicator(color: Colors.white),
+                            );
+                          },
+                          errorBuilder: (context, error, stackTrace) {
+                            Global.logger.e('图片加载失败 [预览弹窗]: $imageUrl', error: error);
+                            return const Center(
+                              child: Icon(Icons.broken_image,
+                                  color: Colors.red, size: 48),
+                            );
+                          },
                         );
-                      },
-                      errorBuilder: (context, error, stackTrace) {
-                        return const Center(
-                          child: Icon(Icons.broken_image,
-                              color: Colors.red, size: 48),
-                        );
-                      },
+                      }
                     ),
                   ],
                 ),

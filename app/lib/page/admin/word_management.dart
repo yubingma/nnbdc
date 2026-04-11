@@ -297,10 +297,19 @@ class _WordManagementWidgetState extends State<WordManagementWidget> {
                                       crossAxisAlignment: CrossAxisAlignment.stretch,
                                       children: [
                                         Expanded(
-                                          child: Image.network(
-                                            Uri.encodeFull('${Config.wordImageBaseUrl}${img.imageFile}'),
-                                            fit: BoxFit.cover,
-                                            errorBuilder: (ctx, err, stack) => const Center(child: Icon(Icons.broken_image, size: 40)),
+                                          child: Builder(
+                                            builder: (context) {
+                                              final imageUrl = Uri.encodeFull('${Config.wordImageBaseUrl}${img.imageFile}');
+                                              Global.logger.d('加载单词图片 [管理后台]: $imageUrl');
+                                              return Image.network(
+                                                imageUrl,
+                                                fit: BoxFit.cover,
+                                                errorBuilder: (ctx, err, stack) {
+                                                  Global.logger.e('图片加载失败 [管理后台]: $imageUrl', error: err);
+                                                  return const Center(child: Icon(Icons.broken_image, size: 40));
+                                                },
+                                              );
+                                            }
                                           ),
                                         ),
                                         Padding(
