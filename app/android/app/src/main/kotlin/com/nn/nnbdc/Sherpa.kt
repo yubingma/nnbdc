@@ -282,9 +282,9 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                 .setEndpointConfig(endpointConfig)
                 .setEnableEndpoint(true)
                 .setDecodingMethod("modified_beam_search")
-                .setMaxActivePaths(12) // 恢复搜索范围至 12（同 14M 官方推荐），防止搜索空间过窄导致舍弃正确路径
-                .setHotwordsScore(50.0f) // 提高热词权重
-                .setBlankPenalty(1.0f) // 恢复标准罚分，防止空过载导致叠词幻觉 (原 1.2 过高)
+                .setMaxActivePaths(16) // 稍微扩大搜索范围，针对 14M 模型提供更多备选路径
+                .setHotwordsScore(10.0f) // 【核心优化】：大幅降低热词权重。50.0 过高，易导致解码器在匹配部分音节后陷入局部最优（如“歌”匹配后强行匹配下一个导致叠词“歌歌”）
+                .setBlankPenalty(1.0f) // 保持标准罚分
                 .build()
 
             modelZh = OnlineRecognizer(config)
@@ -438,30 +438,28 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                             }
 
                             // 发送逻辑：如实显示识别到的文字（不再过滤单字符），保留去重
-                            val shouldSend = text.isNotBlank() && text != lastSentResult
+                            val shouldSend = text.isNotBlank() && (text != lastSentResult || isEndpoint)
 
                             if (shouldSend) {
                                 lastSentResult = text
-                                Log.i(TAG, ">>> SUCCESS! Sending text: '$text'")
+                                Log.d(TAG, ">>> SUCCESS! Sending ASR: '$text' (isFinal=$isEndpoint)")
                                 activity.runOnUiThread {
                                     try {
                                         val resultData = JSONObject().apply {
                                             put("best", text)
                                             put("candidates", JSONArray().apply { put(text) })
+                                            put("isFinal", isEndpoint)
                                         }
                                         events?.success(resultData.toString())
                                     } catch (e: Exception) {
                                         events?.success(text)
                                     }
                                 }
+                            } else if (text.isNotBlank()) {
+                                Log.v(TAG, "ASR Result Duplicated (Ignored): '$text'")
                             }
 
-                            // 核心补丁：只有识别到了有效文本且触发了静音，才重置
-                            if (isEndpoint && text.isNotBlank()) {
-                                Log.d(TAG, "Recognition finished. Resetting stream.")
-                                m.reset(s)
-                                lastSentResult = ""
-                            }
+                            // 该逻辑已合并到上方
                         } catch (e: Exception) {
                             Log.e(TAG, "ASR Process Error: ${e.message}", e)
                         }
@@ -477,6 +475,7 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
         Log.i(TAG, "Starting ASR...")
         asrResumeTime = System.currentTimeMillis() + 300 // 空转抛弃接下来 300ms 的收音，防止播放残余混响被录入
         isAsrStopped = false
+        lastSentResult = "" // 开启识别时强制重置上一次结果，避免残留
     }
 
     private fun stopAsr() {
