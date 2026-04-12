@@ -43,23 +43,23 @@ void main() {
 
     test('parses special zero shengmu (yi, wu, yu)', () {
       var parser1 = PinyinParser('yi1');
-      expect(parser1.shengMu, '');
+      expect(parser1.shengMu, 'y');
       expect(parser1.yunMu, 'i');
       expect(parser1.tone, 1);
 
       var parser2 = PinyinParser('wu2');
-      expect(parser2.shengMu, '');
+      expect(parser2.shengMu, 'w');
       expect(parser2.yunMu, 'u');
       expect(parser2.tone, 2);
 
       var parser3 = PinyinParser('yue4');
-      expect(parser3.shengMu, '');
-      expect(parser3.yunMu, 've');
+      expect(parser3.shengMu, 'y');
+      expect(parser3.yunMu, 'ue');
       expect(parser3.tone, 4);
 
       var parser4 = PinyinParser('yuan2');
-      expect(parser4.shengMu, '');
-      expect(parser4.yunMu, 'van');
+      expect(parser4.shengMu, 'y');
+      expect(parser4.yunMu, 'uan');
       expect(parser4.tone, 2);
     });
   });

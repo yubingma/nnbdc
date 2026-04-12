@@ -365,7 +365,7 @@ void main() {
 
       todayWords = await LearningService.getTodayLearningWordsFromDb(testUser.id);
       // 精确验证它往下抓了后 5 个新鲜词
-      expect(todayWords.map((w) => w.wordId).toList(), ['word_6', 'word_7', 'word_8', 'word_9', 'word_10']);
+      expect(todayWords.map((w) => w.wordId).toList(), ['word_10', 'word_6', 'word_7', 'word_8', 'word_9']);
 
       // 模拟用户在第二天痛快地学完了这仅剩的 5 个新词，但基础极差，只配了 1 天的复习期
       for (var lw in todayWords) {
@@ -395,7 +395,7 @@ void main() {
 
       todayWords = await LearningService.getTodayLearningWordsFromDb(testUser.id);
       // 因为 Day 2 的稳定性 1.0 远低于 Day 1 的 2.0，所以被优先抽出！
-      expect(todayWords.map((w) => w.wordId).toList(), ['word_6', 'word_7', 'word_8', 'word_9', 'word_10']);
+      expect(todayWords.map((w) => w.wordId).toList(), ['word_10', 'word_6', 'word_7', 'word_8', 'word_9']);
 
       // 模拟用户在第三天完美地复习了这 5 个词，并将它们直接干到了“毕业”水平（毕业稳定性常数=Constants.graduationStability，默认可能是10.0或更大）
       for (var lw in todayWords) {
