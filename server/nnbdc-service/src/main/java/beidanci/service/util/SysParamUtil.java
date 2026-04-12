@@ -4,6 +4,7 @@ import beidanci.service.bo.SysParamBo;
 import beidanci.service.po.SysParam;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import java.util.*;
 
 @Component
 public class SysParamUtil {
@@ -87,8 +88,61 @@ public class SysParamUtil {
         return param == null ? 2 : Integer.parseInt(param.getParamValue());
     }
 
+
     public int getAiChatUserDailyLimit() {
         SysParam param = sysParamBO.findById("AiChatUserDailyLimit", false);
         return param == null ? 100 : Integer.parseInt(param.getParamValue());
+    }
+
+    /**
+     * 获取代码中预期的所有系统参数及其默认值和描述
+     */
+    public List<SysParam> getAllExpectedParams() {
+        List<SysParam> list = new java.util.ArrayList<>();
+        list.add(new SysParam("IsChatRoomOpen", "false", "聊天室是否开放 (true/false)"));
+        list.add(new SysParam("gameEnabled", "true", "游戏功能是否启用 (true/false)"));
+        list.add(new SysParam("imgBaseDir", "/var/www/html/img", "图片存储基目录"));
+        list.add(new SysParam("SocketServerAddr", "127.0.0.1", "Socket 服务器地址"));
+        list.add(new SysParam("SocketServerPort", "8080", "Socket 服务器端口"));
+        list.add(new SysParam("DefaultWordsPerDay", "30", "每日默认生词学习量"));
+        list.add(new SysParam("AwardCowDungForShare", "10", "分享赠送牛粪数量"));
+        list.add(new SysParam("FetchMsgInterval", "5", "拉取消息时间间隔 (秒)"));
+        list.add(new SysParam("TempDirForUpload", "/tmp", "上传临时目录"));
+        list.add(new SysParam("SaveDirForUpload", "/var/www/uploads", "上传保存目录"));
+        list.add(new SysParam("SoundPath", "/var/www/html/sound", "发音文件路径"));
+        list.add(new SysParam("HolidayCowDungRatio", "1.0", "节日牛粪奖励倍数"));
+        list.add(new SysParam("HolidayCowDungDesc", "", "节日奖励描述"));
+        list.add(new SysParam("exportFileDir", "/var/www/html/export", "导出文件目录"));
+        list.add(new SysParam("exportFileUrl", "http://localhost/export", "导出文件访问URL"));
+        list.add(new SysParam("AiStoryConcurrencyLimit", "5", "AI 短文生成并发上限"));
+        list.add(new SysParam("AiChatGlobalLimit", "20", "AI 聊天全局并发上限"));
+        list.add(new SysParam("AiChatUserLimit", "2", "AI 聊天单用户并发上限"));
+        list.add(new SysParam("AiChatUserDailyLimit", "100", "AI 聊天单用户每日次数上限"));
+        list.add(new SysParam("cdnRefreshFileUrls", "", "CDN文件刷新URL配置"));
+        list.add(new SysParam("cdnRefreshDirUrls", "", "CDN目录刷新URL配置"));
+        list.add(new SysParam("CowDungPerGame", "1", "每局游戏牛粪消耗"));
+        return list;
+    }
+
+    /**
+     * 将数据库中的参数列表与代码中预期的参数列表合并
+     * 如果数据库中缺失某个参数，则使用预期参数中的默认值补全
+     */
+    public List<SysParam> mergeWithDefaults(List<SysParam> dbParams) {
+        java.util.Map<String, SysParam> mergedMap = new java.util.LinkedHashMap<>();
+        
+        // 先按顺序放入所有预期的参数（默认值）
+        for (SysParam expected : getAllExpectedParams()) {
+            mergedMap.put(expected.getParamName(), expected);
+        }
+        
+        // 用数据库中的实际值覆盖默认值
+        if (dbParams != null) {
+            for (SysParam dbParam : dbParams) {
+                mergedMap.put(dbParam.getParamName(), dbParam);
+            }
+        }
+        
+        return new java.util.ArrayList<>(mergedMap.values());
     }
 }

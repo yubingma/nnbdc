@@ -24,6 +24,7 @@ import beidanci.service.util.AliyunResourceUtil.AccountBalanceInfo;
 import beidanci.service.util.PoVoUtils;
 import beidanci.service.po.User;
 import beidanci.service.util.CdnUtil;
+import beidanci.service.util.SysParamUtil;
 
 @RestController
 public class AdminController {
@@ -54,6 +55,9 @@ public class AdminController {
 
     @Autowired
     private AliyunResourceUtil aliyunResourceUtil;
+
+    @Autowired
+    private SysParamUtil sysParamUtil;
 
     // ============================================
     // 系统词典管理相关API (管理员接口)
@@ -318,7 +322,8 @@ public class AdminController {
 
     @GetMapping("/admin/getAllSysParams.do")
     public Result<List<SysParam>> getAllSysParams() {
-        return Result.success(sysParamBo.queryAll(null, "paramName", "asc", false));
+        List<SysParam> dbParams = sysParamBo.queryAll(null, "paramName", "asc", false);
+        return Result.success(sysParamUtil.mergeWithDefaults(dbParams));
     }
 
     @PostMapping("/admin/saveSysParam.do")
