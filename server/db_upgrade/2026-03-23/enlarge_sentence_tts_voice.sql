@@ -1,1 +1,0 @@
-ALTER TABLE sentence ALTER COLUMN tts_voice TYPE VARCHAR(255);
