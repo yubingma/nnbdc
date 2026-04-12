@@ -63,6 +63,7 @@ class LearningService {
                 word.copyWith(
                   todayLearnedTimes: 0,
                   batchId: const Value(0),
+                  learningOrder: 0,
                 ),
                 true // 强制生成同步记录，更新云端
                 );
@@ -226,7 +227,7 @@ class LearningService {
         Global.logger.d('[FETCH-WORD] [genTodayWords] 到期复习词已填满计划 (${user.effectiveWordsPerDay})');
         break;
       }
-      todayLearningWords.add(word.copyWith(batchId: Value(targetBatchId)));
+      todayLearningWords.add(word.copyWith(batchId: Value(targetBatchId), learningOrder: 0));
       dueAddedCount++;
     }
     Global.logger.d('[FETCH-WORD] [genTodayWords] 本批次 ($targetBatchId) 新增复习词: $dueAddedCount, 当前总数: ${todayLearningWords.length}');
@@ -251,7 +252,7 @@ class LearningService {
       final newWords = await fetchNewWordsToLearn(userId, todayDayNumber, needNewCount);
       Global.logger.d('[FETCH-WORD] [genTodayWords] 实际抓取到新词: ${newWords.length} 个');
       for (var word in newWords) {
-        todayLearningWords.add(word.copyWith(batchId: Value(targetBatchId)));
+        todayLearningWords.add(word.copyWith(batchId: Value(targetBatchId), learningOrder: 0));
       }
     }
 
@@ -349,14 +350,19 @@ class LearningService {
       if (a.batchId != b.batchId) {
         return (a.batchId ?? 0).compareTo(b.batchId ?? 0);
       }
-      if (a.batchId == maxBatchId) {
-        // 最新批次：掌握度升序，增加 wordId 作为稳定分次键，防止排序不稳定导致重复写同步日志
-        final cmp = (a.stability ?? 0.0).compareTo(b.stability ?? 0.0);
+
+      // 核心修复逻辑：
+      // 1. 如果已经有学习顺序了（learningOrder > 0），说明该批次之前已经初始化过，
+      //    为了保持学习序列的稳定性（防止在同一天多次重入时，因为单词掌握度变化导致顺序跳变），固定沿用既有顺序。
+      if (a.learningOrder > 0 && b.learningOrder > 0) {
+        final cmp = a.learningOrder.compareTo(b.learningOrder);
         if (cmp != 0) return cmp;
         return a.wordId.compareTo(b.wordId);
       }
-      // 旧批次：既有学习顺序升序，同样增加 wordId 作为最后兜底
-      final cmp = a.learningOrder.compareTo(b.learningOrder);
+
+      // 2. 如果是尚未初始化的新批次（learningOrder == 0），则按掌握度（stability）升序排列，
+      //    确保在该批次内部，用户先学习最陌生的单词。
+      final cmp = (a.stability ?? 0.0).compareTo(b.stability ?? 0.0);
       if (cmp != 0) return cmp;
       return a.wordId.compareTo(b.wordId);
     });
