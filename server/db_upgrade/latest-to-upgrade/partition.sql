@@ -25,7 +25,7 @@ END $$;
 
 -- 3. 创建新的哈希分区主表
 -- 注意：在 PG 分区表中，主键必须包含分区键（user_id）
-CREATE TABLE user_db_log (
+CREATE TABLE IF NOT EXISTS user_db_log (
     id          VARCHAR(32) NOT NULL,
     user_id     VARCHAR(32) NOT NULL,
     version     INT NOT NULL,
@@ -42,9 +42,15 @@ CREATE TABLE user_db_log (
 DO $$
 BEGIN
     FOR i IN 0..63 LOOP
-        IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'user_db_log_p' || i) THEN
+        -- 确定分区表是否已经存在（限定在 public schema 下）
+        IF NOT EXISTS (
+            SELECT 1 
+            FROM information_schema.tables 
+            WHERE table_schema = 'public' 
+              AND table_name = 'user_db_log_p' || i
+        ) THEN
             EXECUTE format(
-                'CREATE TABLE user_db_log_p%s PARTITION OF user_db_log FOR VALUES WITH (MODULUS 64, REMAINDER %s)', 
+                'CREATE TABLE public.user_db_log_p%s PARTITION OF public.user_db_log FOR VALUES WITH (MODULUS 64, REMAINDER %s)', 
                 i, i
             );
         END IF;
