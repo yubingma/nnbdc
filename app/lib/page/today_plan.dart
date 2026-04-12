@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:drift/drift.dart' as drift;
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -782,7 +783,8 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
             await MyDatabase.instance.userOpersDao.recordStartLearn(user!.id!, remark: "开始学习");
             final dbUser = await MyDatabase.instance.usersDao.getUserById(user!.id!);
             if (dbUser != null) {
-              await MyDatabase.instance.usersDao.saveUser(dbUser.copyWith(todayStudyStarted: true), true);
+              await MyDatabase.instance.usersDao.saveUser(
+                  dbUser.copyWith(todayStudyStarted: true, lastLearningDate: drift.Value(AppClock.today())), true);
             }
             await Global.loadUserFromDb();
           }
