@@ -14,6 +14,8 @@ class SyncLog {
   final Map<String, dynamic>? uploadDetails;
   final Map<String, dynamic>? downloadDetails;
   final String? userId;
+  final int? dbVersion;
+  final String? appVersion;
 
   SyncLog({
     required this.id,
@@ -27,6 +29,8 @@ class SyncLog {
     this.uploadDetails,
     this.downloadDetails,
     this.userId,
+    this.dbVersion,
+    this.appVersion,
   });
 
   factory SyncLog.fromJson(Map<String, dynamic> json) {
@@ -42,6 +46,8 @@ class SyncLog {
       uploadDetails: json['uploadDetails'] as Map<String, dynamic>?,
       downloadDetails: json['downloadDetails'] as Map<String, dynamic>?,
       userId: json['userId'] as String?,
+      dbVersion: json['dbVersion'] as int?,
+      appVersion: json['appVersion'] as String?,
     );
   }
 
@@ -58,6 +64,8 @@ class SyncLog {
       'uploadDetails': uploadDetails,
       'downloadDetails': downloadDetails,
       'userId': userId,
+      'dbVersion': dbVersion,
+      'appVersion': appVersion,
     };
   }
 
@@ -68,12 +76,14 @@ class SyncLog {
   }
 
   /// 创建一个新的同步日志（开始同步时调用）
-  factory SyncLog.start({required String id, required DateTime startTime, String? userId}) {
+  factory SyncLog.start({required String id, required DateTime startTime, String? userId, String? appVersion}) {
     return SyncLog(
       id: id,
       startTime: startTime,
       success: false, // 开始时默认为失败，完成后更新
       userId: userId,
+      dbVersion: null,
+      appVersion: appVersion,
     );
   }
 
@@ -84,6 +94,7 @@ class SyncLog {
     required int downloadCount,
     Map<String, dynamic>? uploadDetails,
     Map<String, dynamic>? downloadDetails,
+    int? dbVersion,
   }) {
     return SyncLog(
       id: id,
@@ -96,6 +107,8 @@ class SyncLog {
       uploadDetails: uploadDetails,
       downloadDetails: downloadDetails,
       userId: userId,
+      dbVersion: dbVersion,
+      appVersion: appVersion,
     );
   }
 
@@ -112,6 +125,8 @@ class SyncLog {
       success: false,
       errorMessage: errorMessage,
       userId: userId,
+      dbVersion: null,
+      appVersion: appVersion,
     );
   }
 
@@ -119,6 +134,6 @@ class SyncLog {
 
   @override
   String toString() {
-    return 'SyncLog(id: $id, startTime: $startTime, success: $success, isWarning: $isWarning, durationMs: $durationMs, upload: $uploadCount, download: $downloadCount, uploadDetails: $uploadDetails, downloadDetails: $downloadDetails)';
+    return 'SyncLog(id: $id, startTime: $startTime, success: $success, isWarning: $isWarning, durationMs: $durationMs, upload: $uploadCount, download: $downloadCount, dbVersion: $dbVersion, appVersion: $appVersion, uploadDetails: $uploadDetails, downloadDetails: $downloadDetails)';
   }
 }

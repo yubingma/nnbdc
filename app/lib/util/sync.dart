@@ -105,7 +105,7 @@ void addDownloadDetails(Map<String, dynamic> details) {
 }
 
 /// 完成同步日志记录
-Future<void> completeSyncLog({bool success = true, String? errorMessage}) async {
+Future<void> completeSyncLog({bool success = true, String? errorMessage, int? dbVersion}) async {
   if (_currentSyncLogId == null) return;
 
   final service = SyncLogService();
@@ -116,6 +116,7 @@ Future<void> completeSyncLog({bool success = true, String? errorMessage}) async 
       downloadCount: _downloadCount,
       uploadDetails: _uploadDetails,
       downloadDetails: _downloadDetails,
+      dbVersion: dbVersion,
     );
   } else {
     await service.failSync(
@@ -809,6 +810,7 @@ Future<void> syncUserDb(String userId) async {
 Future<void> syncDb() async {
   final stopwatch = Stopwatch()..start();
   String? syncLogId;
+  UserVo? loggedInUser;
 
   try {
     Global.logger.i("🔄 开始数据库同步流程");
@@ -822,7 +824,7 @@ Future<void> syncDb() async {
     }
 
     // 获取当前登录用户
-    UserVo? loggedInUser = await Global.refreshLoggedInUser();
+    loggedInUser = await Global.refreshLoggedInUser();
     if (loggedInUser == null) {
       Global.logger.e("❌ 用户未登录，同步终止");
       // 不再弹出错误提示，只记录日志
@@ -830,7 +832,10 @@ Future<void> syncDb() async {
     }
 
     // 开始记录同步日志
-    syncLogId = await SyncLogService().startSync(userId: loggedInUser.id);
+    syncLogId = await SyncLogService().startSync(
+      userId: loggedInUser.id,
+      appVersion: Global.version,
+    );
     setCurrentSyncLogId(syncLogId);
 
     // 先同步所有系统数据（静态元数据 + UGC内容）
@@ -845,11 +850,22 @@ Future<void> syncDb() async {
     Global.logger.i("🎉 数据库同步完成 - 总耗时: ${stopwatch.elapsedMilliseconds}ms");
 
     // 完成同步日志记录
-    await completeSyncLog(success: true);
+    int? dbVersion;
+    if (!Global.isGuest && loggedInUser.id != null) {
+      final userDbVersion = await MyDatabase.instance.userDbVersionsDao.getUserDbVersionByUserId(loggedInUser.id!);
+      dbVersion = userDbVersion?.version;
+    }
+    await completeSyncLog(success: true, dbVersion: dbVersion);
   } on DictWordOrderInvalidWarningException catch (e) {
     stopwatch.stop();
     Global.logger.w("⚠️ 数据库同步中止(进入修复计划): $e - 耗时: ${stopwatch.elapsedMilliseconds}ms");
-    await completeSyncLog(success: false, errorMessage: e.message);
+    
+    int? dbVersion;
+    if (!Global.isGuest && loggedInUser?.id != null) {
+      final userDbVersion = await MyDatabase.instance.userDbVersionsDao.getUserDbVersionByUserId(loggedInUser!.id!);
+      dbVersion = userDbVersion?.version;
+    }
+    await completeSyncLog(success: false, errorMessage: e.message, dbVersion: dbVersion);
     rethrow;
   } catch (e, stackTrace) {
     stopwatch.stop();

@@ -158,6 +158,10 @@ class _SyncLogViewerPageState extends State<SyncLogViewerPage> {
                     children: [
                       _buildDetailItem('ID', log.id),
                       _buildDetailItem('状态', log.success ? '成功' : '失败'),
+                      if (log.dbVersion != null)
+                        _buildDetailItem('数据版本', 'v${log.dbVersion}'),
+                      if (log.appVersion != null)
+                        _buildDetailItem('App版本', log.appVersion!),
                       _buildDetailItem('开始时间', _formatDateTime(log.startTime)),
                       if (log.endTime != null)
                         _buildDetailItem('结束时间', _formatDateTime(log.endTime!)),
@@ -438,6 +442,31 @@ class _SyncLogViewerPageState extends State<SyncLogViewerPage> {
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
+                                  if (log.dbVersion != null) ...[
+                                    const SizedBox(width: 8),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 2,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                                        borderRadius: BorderRadius.circular(4),
+                                        border: Border.all(
+                                          color: AppTheme.primaryColor.withValues(alpha: 0.3),
+                                          width: 0.5,
+                                        ),
+                                      ),
+                                      child: Text(
+                                        'v${log.dbVersion}',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold,
+                                          color: AppTheme.primaryColor,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                   const SizedBox(width: 8),
                                   Container(
                                     padding: const EdgeInsets.symmetric(

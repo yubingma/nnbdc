@@ -137,12 +137,13 @@ class SyncLogService {
 
   /// 创建一个新的同步日志并开始记录
   /// 返回日志ID，用于后续完成或失败时更新
-  Future<String> startSync({String? userId}) async {
+  Future<String> startSync({String? userId, String? appVersion}) async {
     final id = Util.uuid();
     final log = SyncLog.start(
       id: id,
       startTime: AppClock.now(),
       userId: userId,
+      appVersion: appVersion,
     );
     await addLog(log);
     return id;
@@ -155,6 +156,7 @@ class SyncLogService {
     required int downloadCount,
     Map<String, dynamic>? uploadDetails,
     Map<String, dynamic>? downloadDetails,
+    int? dbVersion,
   }) async {
     try {
       final logs = await getAllLogs();
@@ -171,6 +173,7 @@ class SyncLogService {
         downloadCount: downloadCount,
         uploadDetails: uploadDetails,
         downloadDetails: downloadDetails,
+        dbVersion: dbVersion,
       );
       
       logs[index] = updatedLog;
