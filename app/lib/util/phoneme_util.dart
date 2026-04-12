@@ -207,6 +207,8 @@ class PhonemeUtil {
 
     // 1. 常见辅音组合简化映射
     w = w.replaceAll('ph', 'f');
+    w = w.replaceAll('tr', 'C'); // tr sounds like ch
+    w = w.replaceAll('dr', 'j'); // dr sounds like jh
     w = w.replaceAll('sh', 'S'); // 临时占位
     w = w.replaceAll('ch', 'C');
     w = w.replaceAll('th', 'T');
@@ -347,6 +349,14 @@ class PhonemeUtil {
         // 如果 Target 尾部有 @ 而 ASR 漏了，降低代价
         if (j == m && b[j - 1] == "@" && m > n) insCost = 0.4;
 
+        // T R -> CH / D R -> JH 优化：当 R 跟在 T/D/CH/JH 后面时，允许其被较容易地忽略或添加
+        if (a[i - 1] == "R" && i > 1 && (a[i - 2] == "T" || a[i - 2] == "D" || a[i - 2] == "CH" || a[i - 2] == "JH")) {
+          delCost = 0.4;
+        }
+        if (b[j - 1] == "R" && j > 1 && (b[j - 2] == "T" || b[j - 2] == "D" || b[j - 2] == "CH" || b[j - 2] == "JH")) {
+          insCost = 0.4;
+        }
+
         final del = dp[i - 1][j] + delCost;
         final ins = dp[i][j - 1] + insCost;
         final sub = dp[i - 1][j - 1] + subCost;
@@ -373,6 +383,8 @@ class PhonemeUtil {
       {"D", "T"}, // dog/log? no, dog/tok
       {"G", "K"}, // bag/back
       {"S", "Z"}, // bus/buzz
+      {"T", "CH"}, // true/chew
+      {"D", "JH"}, // drive/jive
       {"SH", "ZH"},
       {"CH", "JH"},
       {"TH", "DH"}, // think/this (虽然都是 TH，但在 ASR 中可能有不同表现)

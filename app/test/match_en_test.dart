@@ -37,6 +37,8 @@ OILFIELD  OY1 L F IY1 L D
 ALL  AO1 L
 YOUR  Y UH1 R
 FIELD  F IY1 L D
+TRUE  T R UW1
+CHEW  CH UW1
 ''';
           return ByteData.view(Uint8List.fromList(utf8.encode(content)).buffer);
         }
@@ -46,6 +48,15 @@ FIELD  F IY1 L D
   });
 
   group('English Phoneme Matching Tests', () {
+    test('true vs chew - should match', () async {
+      const String target = "true";
+      const String asrResult = "chew";
+      
+      final int score = await PhonemeUtil.similarity(asrResult, target);
+      debugPrint('True vs Chew score: $score');
+      
+      expect(score, greaterThanOrEqualTo(Constants.phonemeMatchThreshold));
+    });
     test('insure vs ye sure - should match under relaxed threshold', () async {
       const String target = "insure";
       const String asrResult = "ye sure";
