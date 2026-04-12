@@ -153,6 +153,7 @@ Map<String, double> yunMuSimularityMap = {
 
   "i-un": 0.35,   // 模糊混淆（如：顺利/视力）
   "ie-ing": 0.40,  // 模糊混淆（如：下令/下列）
+  "ao-o": 0.60,    // 模糊混淆（如：毛型/模型）
   "i-yi": 0.95,
   "u-wu": 0.95,
   "v-yu": 0.95,
