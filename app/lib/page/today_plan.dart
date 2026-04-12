@@ -787,6 +787,8 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
                   dbUser.copyWith(todayStudyStarted: true, lastLearningDate: drift.Value(AppClock.today())), true);
             }
             await Global.loadUserFromDb();
+            // 立刻发起非阻塞同步，确保状态尽快上传云端
+            ThrottledDbSyncService().requestSync(immediate: true);
           }
           await GetStorage().write("BdcPageArgs", BdcPageArgs('before_bdc').toJson());
           Get.toNamed('/bdc')?.then((value) {

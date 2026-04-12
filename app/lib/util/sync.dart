@@ -336,11 +336,16 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
             Map<String, dynamic> entityJson = jsonDecode(log.record);
             if (log.tblName == 'users') {
               User entity = User.fromJson(entityJson);
+              Global.logger.d('📥 [Sync-User] 接收到用户同步: id=${entity.id}, userName=${entity.userName}, '
+                  'todayStudyStarted=${entity.todayStudyStarted}, lastLearningDate=${entity.lastLearningDate}, '
+                  'totalLearning={${entity.totalLearningSeconds}}, todayLearning={${entity.todayLearningSeconds}}');
+                  
               if (log.operate == 'INSERT' || log.operate == 'UPDATE') {
                 await db.usersDao.saveUser(entity, false);
                 
                 // 只要同步到当前用户的修改，立即应用到内存缓存
                 if (Global.currentUserId == entity.id) {
+                  Global.logger.d('📥 [Sync-User] 更新内存缓存: ${entity.userName}');
                   Global.updateUserCache(entity);
                 }
               }
