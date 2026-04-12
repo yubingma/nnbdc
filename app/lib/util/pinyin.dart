@@ -74,6 +74,9 @@ Map<String, double> shengMuSimularityMap = {
   "m-n": 0.60, // 鼻音混淆
   "r-y": 0.40,
   "b-w": 0.50, // 新增：支持“巴苦” (bā kǔ) 匹配 “挖苦” (wā kǔ)
+  "z-c": 0.85,
+  "z-s": 0.80,
+  "c-s": 0.80, // 新增：支持“此时” (cǐ shí) 匹配 “四十” (sì shí)
 };
 
 Map<String, double> yunMuSimularityMap = {
