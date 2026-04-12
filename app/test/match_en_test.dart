@@ -33,6 +33,10 @@ THERMAL  TH ER1 M AH0 L
 OHM  OW1 M
 OH  OW1
 MO  M OW1
+OILFIELD  OY1 L F IY1 L D
+ALL  AO1 L
+YOUR  Y UH1 R
+FIELD  F IY1 L D
 ''';
           return ByteData.view(Uint8List.fromList(utf8.encode(content)).buffer);
         }
@@ -130,6 +134,15 @@ MO  M OW1
       
       final int score = await PhonemeUtil.similarity(asrResult, target);
       debugPrint('Ohm vs Oh Mo score: $score');
+      
+      expect(score, greaterThanOrEqualTo(Constants.phonemeMatchThreshold));
+    });
+    test('oilfield vs all your field - should match', () async {
+      const String target = "oilfield";
+      const String asrResult = "all your field";
+      
+      final int score = await PhonemeUtil.similarity(asrResult, target);
+      debugPrint('Oilfield vs All your field score: $score');
       
       expect(score, greaterThanOrEqualTo(Constants.phonemeMatchThreshold));
     });

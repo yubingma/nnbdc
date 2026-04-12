@@ -166,7 +166,7 @@ class PhonemeUtil {
     final wordDiff = (aWords - bWords).abs();
     if (wordDiff > 0) {
       final oldScore = finalScore;
-      finalScore -= wordDiff * 10;
+      finalScore -= wordDiff * 5;
       if (finalScore < 0) finalScore = 0;
       Global.logger.d('===== Phonetic compare (word penalty): reduced score from $oldScore to $finalScore because wordDiff is $wordDiff');
     }
@@ -176,7 +176,7 @@ class PhonemeUtil {
 
   /// 内部方法：将真实音素序列（如 [S, W, IH]）弱化处理（合并母音），以便与垃圾词对比
   static List<String> _weakenPhonemes(List<String> phons) {
-    const vowels = {"AA", "AE", "AH", "AO", "AW", "AY", "EH", "ER", "EY", "IH", "IY", "OW", "OY", "UH", "UW"};
+    const vowels = {"AA", "AE", "AH", "AO", "AW", "AY", "EH", "ER", "EY", "IH", "IY", "OW", "OY", "UH", "UW", "Y", "W"};
     // 去重坍缩（防止叠音干扰，如 the effect -> @ @ -> @）
     List<String> weakened = [];
     for (final p in phons) {
