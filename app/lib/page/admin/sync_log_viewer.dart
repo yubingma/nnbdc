@@ -442,31 +442,6 @@ class _SyncLogViewerPageState extends State<SyncLogViewerPage> {
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
-                                  if (log.dbVersion != null || log.sysDbVersion != null) ...[
-                                    const SizedBox(width: 8),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 2,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                                        borderRadius: BorderRadius.circular(4),
-                                        border: Border.all(
-                                          color: AppTheme.primaryColor.withValues(alpha: 0.3),
-                                          width: 0.5,
-                                        ),
-                                      ),
-                                      child: Text(
-                                        '${log.dbVersion ?? 0} | ${log.sysDbVersion ?? 0}',
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.bold,
-                                          color: AppTheme.primaryColor,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
                                   const SizedBox(width: 8),
                                   Container(
                                     padding: const EdgeInsets.symmetric(
@@ -493,12 +468,28 @@ class _SyncLogViewerPageState extends State<SyncLogViewerPage> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   const SizedBox(height: 4),
-                                  Text(
-                                    _formatDateTime(log.startTime),
-                                    style: TextStyle(
-                                      color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                                      fontSize: 12,
-                                    ),
+                                  Wrap(
+                                    crossAxisAlignment: WrapCrossAlignment.center,
+                                    spacing: 8,
+                                    runSpacing: 4,
+                                    children: [
+                                      Text(
+                                        _formatDateTime(log.startTime),
+                                        style: TextStyle(
+                                          color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                      if (log.dbVersion != null || log.sysDbVersion != null)
+                                        Text(
+                                          '${log.dbVersion ?? 0} | ${log.sysDbVersion ?? 0}',
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.bold,
+                                            color: AppTheme.primaryColor.withValues(alpha: 0.7),
+                                          ),
+                                        ),
+                                    ],
                                   ),
                                   if (log.success &&
                                       log.uploadCount != null &&
