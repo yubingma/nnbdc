@@ -207,8 +207,6 @@ class PhonemeUtil {
 
     // 1. 常见辅音组合简化映射
     w = w.replaceAll('ph', 'f');
-    w = w.replaceAll('tr', 'C'); // tr sounds like ch
-    w = w.replaceAll('dr', 'j'); // dr sounds like jh
     w = w.replaceAll('sh', 'S'); // 临时占位
     w = w.replaceAll('ch', 'C');
     w = w.replaceAll('th', 'T');
@@ -247,6 +245,14 @@ class PhonemeUtil {
       } else if (char == 'c') {
         res.add("K");
       } else if (_lowerAlphaRegExp.hasMatch(char)) {
+        // [Optimization] Handle syllabic L/R at the end of a word (after a consonant)
+        // e.g. "litre" -> L-I-T-@R, "apple" -> @-P-@L
+        if ((char == 'r' || char == 'l') && i > 0 && i == w.length - 1) {
+          final prev = w[i - 1];
+          if (!"aeiouy".contains(prev)) {
+            res.add("@");
+          }
+        }
         res.add(char.toUpperCase());
       }
     }

@@ -39,6 +39,10 @@ YOUR  Y UH1 R
 FIELD  F IY1 L D
 TRUE  T R UW1
 CHEW  CH UW1
+LATER  L EY1 T ER0
+LITER  L IY1 T ER0
+CENTER  S EH1 N T ER0
+CENTRE  S EH1 N T ER0
 ''';
           return ByteData.view(Uint8List.fromList(utf8.encode(content)).buffer);
         }
@@ -154,6 +158,24 @@ CHEW  CH UW1
       
       final int score = await PhonemeUtil.similarity(asrResult, target);
       debugPrint('Oilfield vs All your field score: $score');
+      
+      expect(score, greaterThanOrEqualTo(Constants.phonemeMatchThreshold));
+    });
+    test('later vs litre - should match', () async {
+      const String target = "later";
+      const String asrResult = "litre";
+      
+      final int score = await PhonemeUtil.similarity(asrResult, target);
+      debugPrint('Later vs Litre score: $score');
+      
+      expect(score, greaterThanOrEqualTo(Constants.phonemeMatchThreshold));
+    });
+    test('centre vs center - should match', () async {
+      const String target = "centre";
+      const String asrResult = "center";
+      
+      final int score = await PhonemeUtil.similarity(asrResult, target);
+      debugPrint('Centre vs Center score: $score');
       
       expect(score, greaterThanOrEqualTo(Constants.phonemeMatchThreshold));
     });
