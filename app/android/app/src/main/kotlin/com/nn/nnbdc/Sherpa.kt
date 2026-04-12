@@ -234,7 +234,7 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                 .setEnableEndpoint(true)
                 .setDecodingMethod("modified_beam_search")
                 .setMaxActivePaths(12) // 针对 66M 模型，恢复搜索范围至 12，提供更好的路径选择
-                .setHotwordsScore(30.0f) // 适度引导
+                .setHotwordsScore(10.0f) // 【关键优化】：大幅降低热词权重，防止在长词识别时出现吞词或叠词。
                 .setBlankPenalty(0.5f) // 增加轻微惩罚，减少乱码和幻觉
                 .build()
 
@@ -283,7 +283,7 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                 .setEnableEndpoint(true)
                 .setDecodingMethod("modified_beam_search")
                 .setMaxActivePaths(16) // 稍微扩大搜索范围，针对 14M 模型提供更多备选路径
-                .setHotwordsScore(10.0f) // 【核心优化】：大幅降低热词权重。50.0 过高，易导致解码器在匹配部分音节后陷入局部最优（如“歌”匹配后强行匹配下一个导致叠词“歌歌”）
+                .setHotwordsScore(1.5f) // 【生死劫】：极度降低热词权重。用户反馈“可可粉”会变成“咯哥哥哥哥”，这是典型的高分陷阱导致的解码死循环。
                 .setBlankPenalty(1.0f) // 保持标准罚分
                 .build()
 

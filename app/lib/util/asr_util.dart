@@ -310,7 +310,7 @@ class AsrUtil {
         final units = text
             .replaceAll(RegExp(r"[（\(].*[）\)]"), '') // 移除括号内容
             .split(RegExp(r"[；;，,]")) // 按分号、逗号拆分
-            .map((e) => e.trim()) // 去除空格
+            .map((e) => e.replaceAll(RegExp(r"[^\u4e00-\u9fa5]"), '').trim()) // 【核心优化】：仅保留汉字，移除 n./adj. 等词性标记和英文字符，避免干扰 ASR 热词匹配
             .where((e) => e.isNotEmpty); // 过滤空字符串
         allowPhrases.addAll(units);
       }
