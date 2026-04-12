@@ -62,6 +62,9 @@ public class UserVo extends UuidVo {
     private Integer totalScore;
     private Double dakaRatio;
     private String appleUserId;
+    private Boolean todayStudyStarted;
+    private Integer totalLearningSeconds;
+    private Integer todayLearningSeconds;
 
     // 订阅相关字段（iOS平台）
     /**
@@ -545,4 +548,27 @@ public class UserVo extends UuidVo {
         isTodayLearningFinished = todayLearningFinished;
     }
 
+    public Boolean getTodayStudyStarted() {
+        return todayStudyStarted;
+    }
+
+    public void setTodayStudyStarted(Boolean todayStudyStarted) {
+        this.todayStudyStarted = todayStudyStarted;
+    }
+
+    public Integer getTotalLearningSeconds() {
+        return totalLearningSeconds;
+    }
+
+    public void setTotalLearningSeconds(Integer totalLearningSeconds) {
+        this.totalLearningSeconds = totalLearningSeconds;
+    }
+
+    public Integer getTodayLearningSeconds() {
+        return todayLearningSeconds;
+    }
+
+    public void setTodayLearningSeconds(Integer todayLearningSeconds) {
+        this.todayLearningSeconds = todayLearningSeconds;
+    }
 }

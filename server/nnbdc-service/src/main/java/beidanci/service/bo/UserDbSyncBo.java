@@ -1128,7 +1128,18 @@ public class UserDbSyncBo {
             // 生成全量日志
             List<UserDbLogDto> logs = new ArrayList<>();
 
-            // 1. 用户词典 (dict)
+            // 1. 本人记录 (users)
+            // 获取最新版本的 user 记录（user 变量在 1086 行已定义）
+            if (user != null) {
+                UserDto userDto = user.toDto();
+                UserDbLogDto log = new UserDbLogDto(Util.uuid(), userId, userDbVersion, "INSERT", "user",
+                        userDto.getId(), JsonUtils.toJson(userDto),
+                        userDto.getCreateTime(),
+                        userDto.getUpdateTime());
+                logs.add(log);
+            }
+
+            // 2. 用户词典 (dict)
             List<DictDto> ownDictDtos = dictBo.getDictDtosOfUser(userId);
             for (DictDto dictDto : ownDictDtos) {
                 UserDbLogDto log = new UserDbLogDto(Util.uuid(), userId, userDbVersion, "INSERT", "dict",
