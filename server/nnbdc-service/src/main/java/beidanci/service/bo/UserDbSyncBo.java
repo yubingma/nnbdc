@@ -1110,12 +1110,13 @@ public class UserDbSyncBo {
         } else {
             // 检查下一条日志的时间是否过旧
             Date firstLogTime = getFirstLogTimeAfterVersion(userId, fromVersion);
-            Date thirtyDaysAgo = new Date(System.currentTimeMillis() - 30L * 24 * 60 * 60 * 1000);
-            if (firstLogTime != null && firstLogTime.before(thirtyDaysAgo)) {
+            Date tenDaysAgo = new Date(System.currentTimeMillis() - 10L * 24 * 60 * 60 * 1000);
+            if (firstLogTime != null && firstLogTime.before(tenDaysAgo)) {
                 needsFullSync = true;
             } else {
                 // 日志没过旧，最后才检查条数，避免无条件执行耗时查询
-                if (getIncrementalLogCount(userId, fromVersion) > 1000) {
+                // 由于实施了 SQL Compaction，2000 条原始记录合并后压力很小
+                if (getIncrementalLogCount(userId, fromVersion) > 2000) {
                     needsFullSync = true;
                 }
             }
