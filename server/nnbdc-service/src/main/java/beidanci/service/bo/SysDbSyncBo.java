@@ -174,15 +174,17 @@ public class SysDbSyncBo extends BaseBo<SysDbLog> {
         // 我们也只能下发当前库里所剩的所有增量日志，通过增量同步尽最大可能保持一致。
         // （已移除 "日志时间过旧" 和 "找不到对应版本" 以及 "超过5w条限制" 回退全量同步的核心错误逻辑）
 
-        // 2. 增量同步 (SQL 层面进行 Compaction 优化，每个实体只下发版本范围内最后一次变更)
+        // 2. 增量同步 (SQL 层面进行 Compaction 优化)
+        // 策略：取每个实体在版本范围内的最后一次变更数据，但按照该实体在该范围内第一次出现的顺序进行排序。
+        // 这样既能合并冗余的 UPDATE，又能保证关联表之间的引用完整性（例如先插入父表再插入子表）。
         String sql = "SELECT s.* FROM sys_db_log s " +
                 "INNER JOIN ( " +
-                "  SELECT tbl_name, record_id, MAX(version) as max_version " +
+                "  SELECT tbl_name, record_id, MAX(version) as last_v, MIN(version) as first_v " +
                 "  FROM sys_db_log " +
                 "  WHERE version > :fromVersion " +
                 "  GROUP BY tbl_name, record_id " +
-                ") m ON s.version = m.max_version " +
-                "ORDER BY s.version ASC";
+                ") m ON s.version = m.last_v " +
+                "ORDER BY m.first_v ASC";
         MapSqlParameterSource params = new MapSqlParameterSource("fromVersion", fromVersion);
         List<SysDbLog> logs = namedParameterJdbcTemplate.query(sql, params,
                 new EntityRowMapper<>(SysDbLog.class));
