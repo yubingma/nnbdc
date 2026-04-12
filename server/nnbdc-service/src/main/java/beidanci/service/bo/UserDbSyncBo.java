@@ -1334,11 +1334,15 @@ public class UserDbSyncBo {
                     userDbVersion + "-" + fromVersion);
 
             return logs;
-        } else { // 增量同步
-            String sql = "SELECT e.id, e.user_id, e.version, e.operate, e.tbl_name, e.record_id, e.record, e.create_time, e.update_time FROM user_db_log e "
-                    +
-                    "WHERE e.user_id = :userId AND e.version > :fromVersion AND e.create_time = " +
-                    "(SELECT MAX(e2.create_time) FROM user_db_log e2 WHERE e2.tbl_name = e.tbl_name AND e2.record_id = e.record_id) ORDER BY e.version ASC, e.create_time ASC";
+        } else { // 增量同步 (SQL 层面进行 Compaction 优化，防止 N+1 子查询导致的大数据量超时)
+            String sql = "SELECT s.* FROM user_db_log s " +
+                    "INNER JOIN ( " +
+                    "  SELECT tbl_name, record_id, MAX(version) as last_v " +
+                    "  FROM user_db_log " +
+                    "  WHERE user_id = :userId AND version > :fromVersion " +
+                    "  GROUP BY tbl_name, record_id " +
+                    ") m ON s.user_id = :userId AND s.version = m.last_v " +
+                    "ORDER BY s.version ASC";
             MapSqlParameterSource params = new MapSqlParameterSource();
             params.addValue("userId", userId);
             params.addValue("fromVersion", fromVersion);
