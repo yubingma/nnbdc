@@ -1,5 +1,4 @@
 import 'package:nnbdc/db/db.dart';
-import 'package:drift/drift.dart';
 import 'package:nnbdc/api/vo.dart';
 
 import 'package:nnbdc/util/user_helper.dart';
@@ -8,186 +7,6 @@ import 'package:nnbdc/util/subscription_util.dart';
 
 /// User类的扩展方法
 extension UserExtensions on User {
-  /// 创建User对象的副本，只修改指定的字段
-  User copyWith({
-    String? id,
-    String? userName,
-    String? nickName,
-    int? gameScore,
-    String? password,
-    int? dakaScore,
-    bool? showAnswersDirectly,
-    bool? autoPlayWord,
-    DateTime? lastLoginTime,
-    DateTime? lastShareTime,
-    String? email,
-    DateTime? lastLearningDate,
-    int? learnedDays,
-    bool? learningFinished,
-    bool? inviteAwardTaken,
-    bool? isSuperAdmin,
-    bool? isAdmin,
-    bool? isInputor,
-    int? wordsPerDay,
-    int? dakaDayCount,
-    int? masteredWordsCount,
-    int? cowDung,
-    int? throwDiceChance,
-    String? invitedById,
-    int? continuousDakaDayCount,
-    int? maxContinuousDakaDayCount,
-    DateTime? lastDakaDate,
-    double? dakaRatio,
-    // iOS订阅字段
-    bool? isPremiumIos,
-    DateTime? subscriptionExpireDateIos,
-    String? subscriptionTypeIos,
-    String? subscriptionStatusIos,
-    String? lastReceiptDataIos,
-
-    // 强制会员字段
-    bool? premiumOverrideEnabled,
-    DateTime? premiumOverrideUpdateTime,
-    String? premiumOverrideReason,
-    String? premiumOverrideDuration,
-  }) {
-    return User(
-      id: id ?? this.id,
-      userName: userName ?? this.userName,
-      nickName: nickName ?? this.nickName,
-      gameScore: gameScore ?? this.gameScore,
-      password: password ?? this.password,
-      dakaScore: dakaScore ?? this.dakaScore,
-      lastLoginTime: lastLoginTime ?? this.lastLoginTime,
-      lastShareTime: lastShareTime ?? this.lastShareTime,
-      email: email ?? this.email,
-      lastLearningDate: lastLearningDate ?? this.lastLearningDate,
-      learnedDays: learnedDays ?? this.learnedDays,
-      learningFinished: learningFinished ?? this.learningFinished,
-      inviteAwardTaken: inviteAwardTaken ?? this.inviteAwardTaken,
-      isSuperAdmin: isSuperAdmin ?? this.isSuperAdmin,
-      isAdmin: isAdmin ?? this.isAdmin,
-      isInputor: isInputor ?? this.isInputor,
-
-      wordsPerDay: wordsPerDay ?? this.wordsPerDay,
-      dakaDayCount: dakaDayCount ?? this.dakaDayCount,
-      masteredWordsCount: masteredWordsCount ?? this.masteredWordsCount,
-      cowDung: cowDung ?? this.cowDung,
-      throwDiceChance: throwDiceChance ?? this.throwDiceChance,
-      invitedById: invitedById ?? this.invitedById,
-
-      continuousDakaDayCount: continuousDakaDayCount ?? this.continuousDakaDayCount,
-      maxContinuousDakaDayCount: maxContinuousDakaDayCount ?? this.maxContinuousDakaDayCount,
-      lastDakaDate: lastDakaDate ?? this.lastDakaDate,
-
-      dakaRatio: dakaRatio ?? this.dakaRatio,
-      // iOS订阅字段
-      isPremiumIos: isPremiumIos ?? this.isPremiumIos,
-      subscriptionExpireDateIos: subscriptionExpireDateIos ?? this.subscriptionExpireDateIos,
-      subscriptionTypeIos: subscriptionTypeIos ?? this.subscriptionTypeIos,
-      subscriptionStatusIos: subscriptionStatusIos ?? this.subscriptionStatusIos,
-      lastReceiptDataIos: lastReceiptDataIos ?? this.lastReceiptDataIos,
-
-      // 强制会员字段
-      premiumOverrideEnabled: premiumOverrideEnabled ?? this.premiumOverrideEnabled,
-      premiumOverrideUpdateTime: premiumOverrideUpdateTime ?? this.premiumOverrideUpdateTime,
-      premiumOverrideReason: premiumOverrideReason ?? this.premiumOverrideReason,
-      premiumOverrideDuration: premiumOverrideDuration ?? this.premiumOverrideDuration, 
-      
-      todayStudyStarted: false,
-    );
-  }
-
-  /// 创建UsersCompanion对象，用于Drift数据库更新
-  UsersCompanion toCompanion() {
-    return UsersCompanion(
-      id: Value(id),
-      userName: Value(userName),
-      nickName: Value(nickName),
-      gameScore: Value(gameScore),
-      password: Value(password),
-      dakaScore: Value(dakaScore),
-      lastLoginTime: Value(lastLoginTime),
-      lastShareTime: Value(lastShareTime),
-      email: Value(email),
-      lastLearningDate: Value(lastLearningDate),
-      learnedDays: Value(learnedDays),
-      learningFinished: Value(learningFinished),
-      inviteAwardTaken: Value(inviteAwardTaken),
-      isSuperAdmin: Value(isSuperAdmin),
-      isAdmin: Value(isAdmin),
-      isInputor: Value(isInputor),
-      wordsPerDay: Value(wordsPerDay),
-      dakaDayCount: Value(dakaDayCount),
-      masteredWordsCount: Value(masteredWordsCount),
-      cowDung: Value(cowDung),
-      throwDiceChance: Value(throwDiceChance),
-      invitedById: Value(invitedById),
-
-      continuousDakaDayCount: Value(continuousDakaDayCount),
-      maxContinuousDakaDayCount: Value(maxContinuousDakaDayCount),
-      lastDakaDate: Value(lastDakaDate),
-      dakaRatio: Value(dakaRatio),
-      // iOS订阅字段
-      isPremiumIos: Value(isPremiumIos),
-      subscriptionExpireDateIos: Value(subscriptionExpireDateIos),
-      subscriptionTypeIos: Value(subscriptionTypeIos),
-      subscriptionStatusIos: Value(subscriptionStatusIos),
-      lastReceiptDataIos: Value(lastReceiptDataIos),
-
-      // 强制会员字段
-      premiumOverrideEnabled: Value(premiumOverrideEnabled),
-      premiumOverrideUpdateTime: Value(premiumOverrideUpdateTime),
-      premiumOverrideReason: Value(premiumOverrideReason),
-      premiumOverrideDuration: Value(premiumOverrideDuration),
-    );
-  }
-
-  /// 创建UsersCompanion对象，用于Drift数据库更新
-  UsersCompanion toCompanionForUpdate() {
-    return UsersCompanion(
-      id: Value(id),
-      userName: Value(userName),
-      nickName: Value(nickName),
-      gameScore: Value(gameScore),
-      password: Value(password),
-      dakaScore: Value(dakaScore),
-      lastLoginTime: Value(lastLoginTime),
-      lastShareTime: Value(lastShareTime),
-      email: Value(email),
-      lastLearningDate: Value(lastLearningDate),
-      learnedDays: Value(learnedDays),
-      learningFinished: Value(learningFinished),
-      inviteAwardTaken: Value(inviteAwardTaken),
-      isSuperAdmin: Value(isSuperAdmin),
-      isAdmin: Value(isAdmin),
-      isInputor: Value(isInputor),
-      wordsPerDay: Value(wordsPerDay),
-      dakaDayCount: Value(dakaDayCount),
-      masteredWordsCount: Value(masteredWordsCount),
-      cowDung: Value(cowDung),
-      throwDiceChance: Value(throwDiceChance),
-      invitedById: Value(invitedById),
-
-      continuousDakaDayCount: Value(continuousDakaDayCount),
-      maxContinuousDakaDayCount: Value(maxContinuousDakaDayCount),
-      lastDakaDate: Value(lastDakaDate),
-      dakaRatio: Value(dakaRatio),
-      // iOS订阅字段
-      isPremiumIos: Value(isPremiumIos),
-      subscriptionExpireDateIos: Value(subscriptionExpireDateIos),
-      subscriptionTypeIos: Value(subscriptionTypeIos),
-      subscriptionStatusIos: Value(subscriptionStatusIos),
-      lastReceiptDataIos: Value(lastReceiptDataIos),
-
-      // 强制会员字段
-      premiumOverrideEnabled: Value(premiumOverrideEnabled),
-      premiumOverrideUpdateTime: Value(premiumOverrideUpdateTime),
-      premiumOverrideReason: Value(premiumOverrideReason),
-      premiumOverrideDuration: Value(premiumOverrideDuration),
-    );
-  }
-
   /// 将User转换为UserVo
   Future<UserVo> toUserVo() async {
     final userVo = UserVo.c2(id);
@@ -211,6 +30,10 @@ extension UserExtensions on User {
     // 魔法泡泡记录
     userVo.cowDung = cowDung;
     userVo.throwDiceChance = throwDiceChance;
+    userVo.todayStudyStarted = todayStudyStarted;
+    userVo.totalLearningSeconds = totalLearningSeconds ?? 0;
+    userVo.todayLearningSeconds = todayLearningSeconds ?? 0;
+    userVo.studyConfig = studyConfig;
 
     // 学习状态
     userVo.isTodayLearningStarted = UserHelper.isTodayLearningStartedFromUser(this);
