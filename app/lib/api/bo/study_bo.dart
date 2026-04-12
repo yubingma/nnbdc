@@ -436,7 +436,7 @@ class StudyBo {
       }
 
       if (anyUpdated) {
-        ThrottledDbSyncService().requestSync();
+        ThrottledDbSyncService().requestSync(immediate: true);
         return Result("SUCCESS", "完成列表学习成功", true);
       } else {
         return Result("SUCCESS", "无需更新", true);
