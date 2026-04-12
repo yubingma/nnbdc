@@ -158,8 +158,8 @@ class _SyncLogViewerPageState extends State<SyncLogViewerPage> {
                     children: [
                       _buildDetailItem('ID', log.id),
                       _buildDetailItem('状态', log.success ? '成功' : '失败'),
-                      if (log.dbVersion != null)
-                        _buildDetailItem('数据版本', 'v${log.dbVersion}'),
+                      if (log.dbVersion != null || log.sysDbVersion != null)
+                        _buildDetailItem('数据版本', '${log.dbVersion ?? 0} | ${log.sysDbVersion ?? 0}'),
                       if (log.appVersion != null)
                         _buildDetailItem('App版本', log.appVersion!),
                       _buildDetailItem('开始时间', _formatDateTime(log.startTime)),
@@ -442,7 +442,7 @@ class _SyncLogViewerPageState extends State<SyncLogViewerPage> {
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
-                                  if (log.dbVersion != null) ...[
+                                  if (log.dbVersion != null || log.sysDbVersion != null) ...[
                                     const SizedBox(width: 8),
                                     Container(
                                       padding: const EdgeInsets.symmetric(
@@ -458,7 +458,7 @@ class _SyncLogViewerPageState extends State<SyncLogViewerPage> {
                                         ),
                                       ),
                                       child: Text(
-                                        'v${log.dbVersion}',
+                                        '${log.dbVersion ?? 0} | ${log.sysDbVersion ?? 0}',
                                         style: TextStyle(
                                           fontSize: 11,
                                           fontWeight: FontWeight.bold,

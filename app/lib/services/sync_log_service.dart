@@ -157,6 +157,7 @@ class SyncLogService {
     Map<String, dynamic>? uploadDetails,
     Map<String, dynamic>? downloadDetails,
     int? dbVersion,
+    int? sysDbVersion,
   }) async {
     try {
       final logs = await getAllLogs();
@@ -174,6 +175,7 @@ class SyncLogService {
         uploadDetails: uploadDetails,
         downloadDetails: downloadDetails,
         dbVersion: dbVersion,
+        sysDbVersion: sysDbVersion,
       );
       
       logs[index] = updatedLog;

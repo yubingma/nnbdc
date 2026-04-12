@@ -105,7 +105,7 @@ void addDownloadDetails(Map<String, dynamic> details) {
 }
 
 /// 完成同步日志记录
-Future<void> completeSyncLog({bool success = true, String? errorMessage, int? dbVersion}) async {
+Future<void> completeSyncLog({bool success = true, String? errorMessage, int? dbVersion, int? sysDbVersion}) async {
   if (_currentSyncLogId == null) return;
 
   final service = SyncLogService();
@@ -117,6 +117,7 @@ Future<void> completeSyncLog({bool success = true, String? errorMessage, int? db
       uploadDetails: _uploadDetails,
       downloadDetails: _downloadDetails,
       dbVersion: dbVersion,
+      sysDbVersion: sysDbVersion,
     );
   } else {
     await service.failSync(
@@ -855,7 +856,9 @@ Future<void> syncDb() async {
       final userDbVersion = await MyDatabase.instance.userDbVersionsDao.getUserDbVersionByUserId(loggedInUser.id!);
       dbVersion = userDbVersion?.version;
     }
-    await completeSyncLog(success: true, dbVersion: dbVersion);
+    final sysVersionData = await MyDatabase.instance.sysDbVersionDao.getVersion();
+    int? sysDbVersion = sysVersionData?.version;
+    await completeSyncLog(success: true, dbVersion: dbVersion, sysDbVersion: sysDbVersion);
   } on DictWordOrderInvalidWarningException catch (e) {
     stopwatch.stop();
     Global.logger.w("⚠️ 数据库同步中止(进入修复计划): $e - 耗时: ${stopwatch.elapsedMilliseconds}ms");
@@ -865,7 +868,9 @@ Future<void> syncDb() async {
       final userDbVersion = await MyDatabase.instance.userDbVersionsDao.getUserDbVersionByUserId(loggedInUser!.id!);
       dbVersion = userDbVersion?.version;
     }
-    await completeSyncLog(success: false, errorMessage: e.message, dbVersion: dbVersion);
+    final sysVersionData = await MyDatabase.instance.sysDbVersionDao.getVersion();
+    int? sysDbVersion = sysVersionData?.version;
+    await completeSyncLog(success: false, errorMessage: e.message, dbVersion: dbVersion, sysDbVersion: sysDbVersion);
     rethrow;
   } catch (e, stackTrace) {
     stopwatch.stop();

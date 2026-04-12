@@ -15,6 +15,7 @@ class SyncLog {
   final Map<String, dynamic>? downloadDetails;
   final String? userId;
   final int? dbVersion;
+  final int? sysDbVersion;
   final String? appVersion;
 
   SyncLog({
@@ -30,6 +31,7 @@ class SyncLog {
     this.downloadDetails,
     this.userId,
     this.dbVersion,
+    this.sysDbVersion,
     this.appVersion,
   });
 
@@ -47,6 +49,7 @@ class SyncLog {
       downloadDetails: json['downloadDetails'] as Map<String, dynamic>?,
       userId: json['userId'] as String?,
       dbVersion: json['dbVersion'] as int?,
+      sysDbVersion: json['sysDbVersion'] as int?,
       appVersion: json['appVersion'] as String?,
     );
   }
@@ -65,6 +68,7 @@ class SyncLog {
       'downloadDetails': downloadDetails,
       'userId': userId,
       'dbVersion': dbVersion,
+      'sysDbVersion': sysDbVersion,
       'appVersion': appVersion,
     };
   }
@@ -83,6 +87,7 @@ class SyncLog {
       success: false, // 开始时默认为失败，完成后更新
       userId: userId,
       dbVersion: null,
+      sysDbVersion: null,
       appVersion: appVersion,
     );
   }
@@ -95,6 +100,7 @@ class SyncLog {
     Map<String, dynamic>? uploadDetails,
     Map<String, dynamic>? downloadDetails,
     int? dbVersion,
+    int? sysDbVersion,
   }) {
     return SyncLog(
       id: id,
@@ -108,6 +114,7 @@ class SyncLog {
       downloadDetails: downloadDetails,
       userId: userId,
       dbVersion: dbVersion,
+      sysDbVersion: sysDbVersion,
       appVersion: appVersion,
     );
   }
@@ -126,6 +133,7 @@ class SyncLog {
       errorMessage: errorMessage,
       userId: userId,
       dbVersion: null,
+      sysDbVersion: null,
       appVersion: appVersion,
     );
   }
@@ -134,6 +142,6 @@ class SyncLog {
 
   @override
   String toString() {
-    return 'SyncLog(id: $id, startTime: $startTime, success: $success, isWarning: $isWarning, durationMs: $durationMs, upload: $uploadCount, download: $downloadCount, dbVersion: $dbVersion, appVersion: $appVersion, uploadDetails: $uploadDetails, downloadDetails: $downloadDetails)';
+    return 'SyncLog(id: $id, startTime: $startTime, success: $success, isWarning: $isWarning, durationMs: $durationMs, upload: $uploadCount, download: $downloadCount, dbVersion: $dbVersion, sysDbVersion: $sysDbVersion, appVersion: $appVersion, uploadDetails: $uploadDetails, downloadDetails: $downloadDetails)';
   }
 }
