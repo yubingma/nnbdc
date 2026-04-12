@@ -71,7 +71,8 @@ Future<void> syncSysDb() async {
       addDownloadDetails(dDetails);
     }
 
-    // 5. 应用日志到本地数据库
+    // 5. 应用日志到本地数据库（应用前按表依赖优先级排序）
+    _sortSysLogs(remoteLogs);
     await _applySysDbLogs(remoteLogs);
 
     // 6. 更新本地版本
@@ -263,4 +264,50 @@ void _fixJsonDates(Map<String, dynamic> json) {
       }
     }
   }
+}
+
+/// 获取系统数据表的同步优先级（用于维护外键关联顺序）
+/// 数字越小优先级越高（越接近父表）
+int _getSysTablePriority(String tblName) {
+  switch (tblName) {
+    case 'dict_group':
+    case 'dict':
+    case 'word':
+    case 'cigen':
+      return 1; // 核心父表
+    case 'group_and_dict_link':
+    case 'dict_word':
+    case 'meaning_item':
+    case 'cigen_word_link':
+    case 'sentence':
+    case 'word_image':
+      return 2; // 关联子表
+    default:
+      return 3;
+  }
+}
+
+/// 对系统同步日志进行排序，确保：
+/// 1. INSERT/UPDATE: 先父表后子表 (正序)
+/// 2. DELETE: 先子表后父表 (逆序)
+/// 3. 混合情况：非删除操作优先（以防腾出空间需求）
+void _sortSysLogs(List<SysDbLogDto> logs) {
+  logs.sort((a, b) {
+    int pA = _getSysTablePriority(a.tblName);
+    int pB = _getSysTablePriority(b.tblName);
+
+    bool isDeleteA = a.operate == 'DELETE';
+    bool isDeleteB = b.operate == 'DELETE';
+
+    if (isDeleteA && isDeleteB) {
+      // 两个都是删除：逆序（优先级数值大的先执行，即先删子再删父）
+      return pB.compareTo(pA);
+    } else if (!isDeleteA && !isDeleteB) {
+      // 两个都是增改：正序（优先级数值小的先执行，即先增父再增子）
+      return pA.compareTo(pB);
+    } else {
+      // 混合情况：非删除操作优先于删除操作
+      return isDeleteA ? 1 : -1;
+    }
+  });
 }
