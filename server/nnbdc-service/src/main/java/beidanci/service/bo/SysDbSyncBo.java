@@ -364,17 +364,23 @@ public class SysDbSyncBo extends BaseBo<SysDbLog> {
     }
 
     /**
-     * 清理旧日志（保留最近30天）
-     * 建议通过定时任务调用
+     * 清理旧日志（保留最近10天）
      */
     public int cleanOldLogs() {
-        Date thirtyDaysAgo = new Date(System.currentTimeMillis() - 30L * 24 * 60 * 60 * 1000);
+        Date cutoff = new Date(System.currentTimeMillis() - 10L * 24 * 60 * 60 * 1000);
         // 为确保版本完整性，如果一个版本中任何一条记录过期，则删除该全局版本的所有记录
         String sql = "DELETE FROM sys_db_log " +
                 "WHERE version IN (" +
                 "  SELECT DISTINCT version FROM sys_db_log WHERE create_time < :date" +
                 ")";
-        MapSqlParameterSource params = new MapSqlParameterSource("date", thirtyDaysAgo);
+        MapSqlParameterSource params = new MapSqlParameterSource("date", cutoff);
         return namedParameterJdbcTemplate.update(sql, params);
+    }
+
+    /**
+     * 执行数据库维护 (VACUUM ANALYZE)
+     */
+    public void vacuumAnalyze() {
+        jdbcTemplate.execute("VACUUM ANALYZE sys_db_log");
     }
 }
