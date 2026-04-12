@@ -1341,7 +1341,7 @@ public class UserDbSyncBo {
                     "  FROM user_db_log " +
                     "  WHERE user_id = :userId AND version > :fromVersion " +
                     "  GROUP BY tbl_name, record_id " +
-                    ") m ON s.user_id = :userId AND s.version = m.last_v " +
+                    ") m ON s.user_id = :userId AND s.tbl_name = m.tbl_name AND s.record_id = m.record_id AND s.version = m.last_v " +
                     "ORDER BY s.version ASC";
             MapSqlParameterSource params = new MapSqlParameterSource();
             params.addValue("userId", userId);
