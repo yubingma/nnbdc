@@ -286,6 +286,7 @@ import StoreKit
 
     private func setContextualStrings(phrases: [String]) {
         contextualPhrases = phrases
+        print("~~~~~ASR HOTWORDS: \(phrases.joined(separator: ", "))")
     }
     
     // MARK: - ASR Methods
@@ -664,7 +665,7 @@ import StoreKit
                     let bestString = result.bestTranscription.formattedString
                     let selectedString = self.selectTranscription(using: result)
                     isFinal = result.isFinal
-                    print("IOS: Speech recognition result: best='\(bestString)' selected='\(selectedString)' (isFinal: \(isFinal))")
+                    print("~~~~~ASR RESULT: '\(selectedString)' (isFinal: \(isFinal))")
                     print("Current locale: \(self.currentLocale)")
                     
                     // 打印 N-best 候选

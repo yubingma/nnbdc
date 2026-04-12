@@ -89,7 +89,7 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                     val phrases = call.argument<List<String>>("phrases") ?: emptyList()
                     // 转换为大写以匹配 tokens.txt 中的 BPE 编码
                     pendingHotwords = phrases.joinToString(" ") { it.uppercase() }
-                    Log.i(TAG, "Hotwords prepared (Space-separated/Uppercased): $pendingHotwords")
+                    Log.i(TAG, "~~~~~ASR HOTWORDS: $pendingHotwords")
                     result.success(null)
                 }
                 "startMicrophone" -> {
@@ -441,8 +441,8 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                             val shouldSend = text.isNotBlank() && (text != lastSentResult || isEndpoint)
 
                             if (shouldSend) {
-                                lastSentResult = text
-                                Log.d(TAG, ">>> SUCCESS! Sending ASR: '$text' (isFinal=$isEndpoint)")
+                                 lastSentResult = text
+                                Log.d(TAG, "~~~~~ASR RESULT: '$text' (isFinal=$isEndpoint)")
                                 activity.runOnUiThread {
                                     try {
                                         val resultData = JSONObject().apply {
