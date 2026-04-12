@@ -73,6 +73,7 @@ Map<String, double> shengMuSimularityMap = {
   "f-h": 0.75, // 常用南方口音（胡/夫不分）
   "m-n": 0.60, // 鼻音混淆
   "r-y": 0.40,
+  "b-w": 0.50, // 新增：支持“巴苦” (bā kǔ) 匹配 “挖苦” (wā kǔ)
 };
 
 Map<String, double> yunMuSimularityMap = {
@@ -193,16 +194,7 @@ class PinyinParser {
     "eng",
     "er",
     "o",
-    "ou",
-    "yi",
-    "wu",
-    "yu",
-    "ye",
-    "yue",
-    "yuan",
-    "yin",
-    "yun",
-    "ying"
+    "ou"
   ];
 
   /// 双字母的声母
@@ -269,15 +261,17 @@ class PinyinParser {
       }
     }
 
-    // 处理 w 和 y 开头的零声母变体 (如 wen, wang, yan, yao)
+    // 处理 w 和 y 开头的音节，将其视为声母 (为了 fuzzy match)
     if (pinyinNormal.startsWith('w')) {
-      shengMu = "";
-      yunMu = "u${pinyinNormal.substring(1)}";
+      shengMu = "w";
+      yunMu = pinyinNormal.substring(1);
+      if (yunMu.isEmpty) yunMu = "u"; // 处理 "wu" -> "w" + "u"
       return;
     }
     if (pinyinNormal.startsWith('y')) {
-      shengMu = "";
-      yunMu = "i${pinyinNormal.substring(1)}";
+      shengMu = "y";
+      yunMu = pinyinNormal.substring(1);
+      if (yunMu.isEmpty) yunMu = "i"; // 处理 "yi" -> "y" + "i"
       return;
     }
 
@@ -293,7 +287,7 @@ class PinyinParser {
     yunMu = pinyinNormal.substring(shengMu.length);
 
     // 标准拼音中，j q x y 后的 u 实际上是 ü (在这里用 v 表示)
-    if ((shengMu == "j" || shengMu == "q" || shengMu == "x") &&
+    if ((shengMu == "j" || shengMu == "q" || shengMu == "x" || shengMu == "y") &&
         yunMu.startsWith("u")) {
       yunMu = "v${yunMu.substring(1)}";
     }
@@ -498,10 +492,18 @@ bool fuzzyChineseContains(Object chinese1, String chinese2) {
               // 检查当前提议的零声母开头元音能否与前一个字形成音频合并（桥接）
               // 比如：“吸引”(xi-yin, xi-in), “论文”(lun-wen, lun-uen)
               String firstVowel = pCurr.yunMu.isNotEmpty ? pCurr.yunMu.substring(0, 1) : "";
-              if (pCurr.shengMu.isEmpty && (firstVowel == 'i' || firstVowel == 'u' || firstVowel == 'v')) {
+              bool isVowelBridgeStart = (pCurr.shengMu.isEmpty && (firstVowel == 'i' || firstVowel == 'u' || firstVowel == 'v')) ||
+                                       (pCurr.shengMu == 'y') || // y 相当于 i/v
+                                       (pCurr.shengMu == 'w');   // w 相当于 u
+              
+              if (isVowelBridgeStart) {
+                // 确定桥接元音
+                String bridgeVowel = pCurr.shengMu == 'w' ? 'u' : (pCurr.shengMu == 'y' ? 'i' : firstVowel);
+                if (pCurr.shengMu == 'y' && pCurr.yunMu.startsWith('v')) bridgeVowel = 'v'; // 特殊处理 y+v (yu)
+
                 // 如果前一个字的韵母以该元音结尾（如 xi），或者含有该元音且紧跟鼻音（如 lun）
-                if (pPrev.yunMu.endsWith(firstVowel) || 
-                   (pPrev.yunMu.contains(firstVowel) && (pPrev.yunMu.endsWith('n') || pPrev.yunMu.endsWith('g')))) {
+                if (pPrev.yunMu.endsWith(bridgeVowel) || 
+                   (pPrev.yunMu.contains(bridgeVowel) && (pPrev.yunMu.endsWith('n') || pPrev.yunMu.endsWith('g')))) {
                   hasBridge = true;
                   break;
                 }
