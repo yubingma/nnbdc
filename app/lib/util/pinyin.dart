@@ -29,7 +29,7 @@ Map<String, double> shengMuSimularityMap = {
   "b-f": 0.50,
   "p-f": 0.60,
   "m-f": 0.40,
-  "w-f": 0.25,
+  "w-f": 0.60,
   "m-w": 0.60,
 
   // 齿龈与边音/鼻音的混淆
