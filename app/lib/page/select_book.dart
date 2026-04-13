@@ -150,7 +150,7 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
       // 如果没有名为 root 的节点，则把所有 parentId 为空的分组作为一级分类
       var topGroups = dictGroupsData.where((g) => 
         (rootId != null ? (g.parentId == rootId) : (g.parentId == null || g.parentId == '')) 
-        && g.name != 'root'
+        && g.name != 'root' && g.name != '其他'
       ).toList();
       topGroups.sort((a, b) => a.displayIndex.compareTo(b.displayIndex));
 
@@ -167,7 +167,7 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
         }
 
         // B. 查找该顶级分类下的所有子分组
-        var children = dictGroupsData.where((g) => g.parentId == topGroup.id).toList();
+        var children = dictGroupsData.where((g) => g.parentId == topGroup.id && g.name != '其他').toList();
         children.sort((a, b) => a.displayIndex.compareTo(b.displayIndex));
 
         for (var child in children) {
