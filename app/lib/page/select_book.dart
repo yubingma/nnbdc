@@ -159,26 +159,49 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
 
       for (var topGroup in topGroups) {
         var subGroupVos = <DictGroupVo>[];
+        var allDictsInThisCategory = <DictVo>[];
+        var addedDictIds = <String>{};
 
-        // A. 查找顶级分类下直属的词书 (如果有，作为一个名为“通用”的二级分组)
+        // A. 收集直属词书
         var directDicts = getGroupDicts(topGroup.id);
-        if (directDicts.isNotEmpty) {
-          subGroupVos.add(DictGroupVo('通用', directDicts));
-        }
-
-        // B. 查找该顶级分类下的所有子分组
-        var children = dictGroupsData.where((g) => g.parentId == topGroup.id && g.name != '其他').toList();
-        children.sort((a, b) => a.displayIndex.compareTo(b.displayIndex));
-
-        for (var child in children) {
-          var childDicts = getGroupDicts(child.id);
-          if (childDicts.isNotEmpty) {
-            subGroupVos.add(DictGroupVo(child.name, childDicts));
+        for (var d in directDicts) {
+          if (addedDictIds.add(d.id)) {
+            allDictsInThisCategory.add(d);
           }
         }
 
-        // 只有当该一级分类下确实有词书内容时，才添加到 Tab 面板
-        if (subGroupVos.isNotEmpty) {
+        // B. 收集子分组及其词书
+        var children = dictGroupsData.where((g) => g.parentId == topGroup.id && g.name != '其他').toList();
+        children.sort((a, b) => a.displayIndex.compareTo(b.displayIndex));
+
+        var validChildrenVos = <DictGroupVo>[];
+        for (var child in children) {
+          var childDicts = getGroupDicts(child.id);
+          if (childDicts.isNotEmpty) {
+            var childVo = DictGroupVo(child.name, childDicts);
+            validChildrenVos.add(childVo);
+            for (var d in childDicts) {
+              if (addedDictIds.add(d.id)) {
+                allDictsInThisCategory.add(d);
+              }
+            }
+          }
+        }
+
+        // C. 组装结果
+        if (allDictsInThisCategory.isNotEmpty) {
+          // 如果有多个子分组，或者既有子分组又有直属词书，则需要展示“全部”胶囊以供切换
+          if (validChildrenVos.length > 1 || (validChildrenVos.isNotEmpty && directDicts.isNotEmpty)) {
+            subGroupVos.add(DictGroupVo('全部', allDictsInThisCategory));
+            subGroupVos.addAll(validChildrenVos);
+          } else if (validChildrenVos.length == 1) {
+            // 只有一个子分组且没有直属词书，直接显示该子分组（UI会隐藏胶囊）
+            subGroupVos.add(validChildrenVos[0]);
+          } else {
+            // 只有直属词书（UI会隐藏胶囊）
+            subGroupVos.add(DictGroupVo(topGroup.name, directDicts));
+          }
+
           var parentVo = DictGroupVo(topGroup.name, []);
           parentVo.childGroups = subGroupVos;
           parentCategories!.add(parentVo);
@@ -439,33 +462,6 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
     );
   }
 
-  Widget _buildBookCover(DictVo dict) {
-    return Container(
-      width: 80,
-      height: 110,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(8),
-        child: dict.coverUrl != null && dict.coverUrl!.isNotEmpty
-            ? Image.network(dict.coverUrl!, fit: BoxFit.cover)
-            : Container(
-                color: const Color(0xFFF2F2F2),
-                child: Center(
-                  child: Icon(Icons.book, color: Colors.grey[400], size: 40),
-                ),
-              ),
-      ),
-    );
-  }
 
   Widget _buildCustomTabContent(bool isDarkMode, Color backgroundColor, Color textColor, Color? subtitleColor) {
     return Column(
