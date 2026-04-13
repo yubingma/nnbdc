@@ -378,7 +378,7 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
                 fontSize: 13,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               ),
-              selectedColor: const Color(0xFFFF6B00),
+              selectedColor: AppTheme.primaryColor,
               backgroundColor: isDarkMode ? const Color(0xFF2C2C2C) : const Color(0xFFF2F2F2),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
               side: BorderSide.none,
@@ -450,7 +450,7 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
                     ),
                   ),
                   if (isSelected)
-                    const Icon(Icons.check_circle, color: Color(0xFFFF6B00), size: 24)
+                    const Icon(Icons.check_circle, color: AppTheme.primaryColor, size: 24)
                   else
                     Icon(Icons.circle_outlined, color: Colors.grey[300], size: 24),
                 ],
@@ -1415,21 +1415,27 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
-          if (_hasUserMadeChanges)
-            Padding(
-              padding: const EdgeInsets.only(right: 8.0),
-              child: TextButton(
-                onPressed: save,
-                child: const Text('保存', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: TextButton(
+              onPressed: save,
+              child: Text(
+                _hasUserMadeChanges ? '完成' : '保存', 
+                style: const TextStyle(
+                  color: AppTheme.primaryColor,
+                  fontWeight: FontWeight.bold, 
+                  fontSize: 16
+                )
               ),
             ),
+          ),
         ],
         bottom: TabBar(
           controller: _primaryTabController,
           isScrollable: true,
-          labelColor: const Color(0xFFFF6B00),
+          labelColor: AppTheme.primaryColor,
           unselectedLabelColor: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-          indicatorColor: const Color(0xFFFF6B00),
+          indicatorColor: AppTheme.primaryColor,
           indicatorSize: TabBarIndicatorSize.label,
           labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
           dividerColor: Colors.transparent,
@@ -1441,40 +1447,6 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
         controller: _primaryTabController,
         children: parentCategories!.map((cat) => _buildPrimaryTabContent(cat, isDarkMode)).toList(),
       ),
-      floatingActionButton: _buildFABs(isDarkMode),
-    );
-  }
-
-
-  Widget _buildFABs(bool isDarkMode) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.end,
-      children: [
-        FloatingActionButton.small(
-          heroTag: 'fab_edit',
-          onPressed: () {
-            ToastUtil.info('创建词书请切换到“自定义”分类');
-          },
-          backgroundColor: isDarkMode ? const Color(0xFF444444) : const Color(0xFF9E9E9E),
-          child: const Icon(Icons.edit, color: Colors.white, size: 18),
-        ),
-        const SizedBox(height: 12),
-        FloatingActionButton.small(
-          heroTag: 'fab_share',
-          onPressed: () {
-            ToastUtil.info('分享功能正在开发中');
-          },
-          backgroundColor: isDarkMode ? const Color(0xFF444444) : const Color(0xFF9E9E9E),
-          child: const Icon(Icons.share, color: Colors.white, size: 18),
-        ),
-        const SizedBox(height: 12),
-        FloatingActionButton(
-          heroTag: 'fab_download',
-          onPressed: save, 
-          backgroundColor: isDarkMode ? const Color(0xFF444444) : const Color(0xFF9E9E9E),
-          child: const Icon(Icons.download, color: Colors.white),
-        ),
-      ],
     );
   }
 
