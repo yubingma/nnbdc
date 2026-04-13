@@ -408,7 +408,7 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          dict.name ?? '',
+                          dict.shortName ?? dict.name ?? '',
                           style: TextStyle(
                             color: textColor,
                             fontSize: 16,
