@@ -215,7 +215,7 @@ class MyDatabase extends _$MyDatabase {
   // you should bump this number whenever you change or add a table definition. Migrations
   // are covered later in this readme.
   @override
-  int get schemaVersion => 35;
+  int get schemaVersion => 36;
 
   @override
   MigrationStrategy get migration {
@@ -334,6 +334,9 @@ class MyDatabase extends _$MyDatabase {
           }
           if (from < 35) {
             await _migrateFromV34ToV35DropWordShortDescChineses(m);
+          }
+          if (from < 36) {
+            await _migrateFromV35ToV36AddCoverUrl(m);
           }
         } catch (e, stackTrace) {
           // 升级失败，记录错误日志
@@ -797,6 +800,18 @@ class MyDatabase extends _$MyDatabase {
         Global.logger.i('✅ 升级从 V29 到 V30 完成，添加 domain 字段');
       } catch (e, stackTrace) {
         Global.logger.e('升级从 V29 到 V30 失败: $e', error: e, stackTrace: stackTrace);
+      }
+    });
+  }
+
+  /// 从版本 35 升级到版本 36：向 Dicts 表添加 cover_url 字段
+  Future<void> _migrateFromV35ToV36AddCoverUrl(Migrator m) async {
+    await transaction(() async {
+      try {
+        await customStatement('ALTER TABLE dicts ADD COLUMN cover_url TEXT');
+        Global.logger.i('✅ 升级从 V35 到 V36 完成，添加词书封面字段');
+      } catch (e, stackTrace) {
+        Global.logger.e('升级从 V35 到 V36 失败: $e', error: e, stackTrace: stackTrace);
       }
     });
   }

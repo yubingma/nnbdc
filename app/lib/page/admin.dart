@@ -15,6 +15,7 @@ import 'package:nnbdc/page/admin/dict_import_management.dart';
 import 'package:nnbdc/page/admin/admin_image_review_page.dart';
 import 'package:nnbdc/page/admin/admin_cigen_optimize_page.dart';
 import 'package:nnbdc/page/admin/system_settings_page.dart';
+import 'package:nnbdc/page/admin/dict_group_management.dart';
 import 'package:nnbdc/state.dart';
 import 'package:nnbdc/theme/app_theme.dart';
 import 'package:nnbdc/util/loading_utils.dart';
@@ -58,6 +59,12 @@ class _AdminPageState extends State<AdminPage> {
         icon: Icons.book,
         color: const Color(0xFF2196F3),
         onTap: () => _navigateToDictionary(),
+      ),
+      _buildManagementCard(
+        title: '词书分组',
+        icon: Icons.account_tree,
+        color: const Color(0xFF4DB6AC),
+        onTap: () => _navigateToDictGroupManagement(),
       ),
       _buildManagementCard(
         title: 'AI 词书导入',
@@ -485,6 +492,15 @@ class _AdminPageState extends State<AdminPage> {
       context,
       MaterialPageRoute(
         builder: (context) => const SystemSettingsPage(),
+      ),
+    );
+  }
+
+  void _navigateToDictGroupManagement() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const DictGroupManagementPage(),
       ),
     );
   }

@@ -832,4 +832,16 @@ abstract class RestClient {
   @POST("/admin/deleteSysParam.do")
   @FormUrlEncoded()
   Future<Result<String>> deleteSysParam(@Field("paramName") String paramName);
+
+  // 词书分组管理API
+  @POST("/admin/saveDictGroup.do")
+  @FormUrlEncoded()
+  Future<Result<String>> saveDictGroup(
+      @Field("id") String? id,
+      @Field("name") String name,
+      @Field("parentId") String? parentId,
+      @Field("displayIndex") int displayIndex);
+
+  @DELETE("/admin/deleteDictGroup.do")
+  Future<Result<String>> deleteDictGroup(@Query("groupId") String groupId);
 }

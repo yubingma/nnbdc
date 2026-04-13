@@ -225,6 +225,8 @@ class Dicts extends Table {
 
   TextColumn get baseDictId => text().nullable()();
 
+  TextColumn get coverUrl => text().nullable()();
+
   TextColumn get sortAlg => text().nullable()();
 
   DateTimeColumn get createTime => dateTime()();

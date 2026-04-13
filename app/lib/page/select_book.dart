@@ -51,8 +51,9 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
   int totalBytes = 0;
   bool _isLoading = false;
   bool _hasUserMadeChanges = false; // 用户是否进行了选择动作
-  TabController? _tabController;
-  int _currentTabIndex = -1; // 记录当前 Tab 索引
+  TabController? _primaryTabController;
+  final Map<String, int> _selectedSubGroupIndex = {}; // 记录每个一级分类下选中的二级分类索引
+  List<DictGroupVo>? parentCategories;
 
   bool isDictSelected(DictVo dict) {
     return selectedDictVos!.contains(dict);
@@ -75,36 +76,19 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
 
   @override
   void dispose() {
-    _tabController?.dispose();
+    _primaryTabController?.dispose();
     super.dispose();
   }
 
   void _initTabController() {
-    final tabsCount = (dictGroups?.length ?? 0) + 1;
-    if (_tabController == null || _tabController!.length != tabsCount) {
-      _tabController?.dispose();
+    final tabsCount = parentCategories?.length ?? 0;
 
-      // 如果还没有记录过索引，则根据之前的逻辑设置初始值（默认第二个Tab，即系统词书第一组）
-      if (_currentTabIndex == -1) {
-        _currentTabIndex = (dictGroups?.isNotEmpty ?? false) ? 1 : 0;
-      }
-
-      // 确保索引不越界
-      if (_currentTabIndex >= tabsCount) {
-        _currentTabIndex = 0;
-      }
-
-      _tabController = TabController(
+    if (_primaryTabController == null || _primaryTabController!.length != tabsCount) {
+      _primaryTabController?.dispose();
+      _primaryTabController = TabController(
         length: tabsCount,
         vsync: this,
-        initialIndex: _currentTabIndex,
       );
-
-      _tabController!.addListener(() {
-        if (!_tabController!.indexIsChanging) {
-          _currentTabIndex = _tabController!.index;
-        }
-      });
     }
   }
 
@@ -138,93 +122,75 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
       var dicts = await db.select(db.dicts).get();
       List<LearningDict> learningDicts = await db.learningDictsDao.getLearningDictsOfUser(userId);
 
-      // 构建词书分组数据
-      dictGroups = [];
-
-      var secondLevelGroups = [];
-      if (dictGroupsData.isNotEmpty) {
-        try {
-          final rootGroup = dictGroupsData.firstWhere(
-            (g) => g.name == 'root',
-            orElse: () => dictGroupsData.firstWhere((g) => g.parentId == null, orElse: () => dictGroupsData.first),
-          );
-          secondLevelGroups = dictGroupsData.where((g) => g.parentId == rootGroup.id && !["蒲公英", "职称", "少儿", "其他"].contains(g.name)).toList();
-        } catch (e) {
-          Global.logger.w('No root group found in dictGroupsData: $e');
-        }
-      }
-
-      // 按 displayIndex 排序
-      secondLevelGroups.sort((a, b) => a.displayIndex.compareTo(b.displayIndex));
-
-      // 3. 为每个第二级分组构建VO
-      for (var group in secondLevelGroups) {
-        // 获取该分组下的所有词书（包括子分组的词书）
-        var allDicts = <DictVo>[];
-        // 记录已添加的词书ID，防止重复添加
-        var addedDictIds = <String>{};
-
-        // 获取直接关联的词书
-        var directLinks = groupAndDictLinks.where((l) => l.groupId == group.id);
-
-        for (var link in directLinks) {
-          // 防止重复添加同一本词书
-          if (addedDictIds.contains(link.dictId)) {
-            continue;
-          }
-
-          var dictList = dicts.where((d) => d.id == link.dictId).toList();
-          if (dictList.isEmpty) {
-            continue;
-          }
-          var dict = dictList.first;
-          // 过滤掉visible为false的词典
-          if (dict.visible == false) {
-            continue;
-          }
-          var vo = DictVo.c2(dict.id);
-          vo.name = dict.name;
-          vo.shortName = getShortName(dict.name);
-          vo.wordCount = dict.wordCount;
-          vo.visible = true;
-          allDicts.add(vo);
-          addedDictIds.add(dict.id);
-        }
-
-        // 获取子分组下的词书
-        var childGroups = dictGroupsData.where((g) => g.parentId == group.id);
-
-        for (var childGroup in childGroups) {
-          var childLinks = groupAndDictLinks.where((l) => l.groupId == childGroup.id);
-
-          for (var link in childLinks) {
-            // 防止重复添加同一本词书
-            if (addedDictIds.contains(link.dictId)) {
-              continue;
-            }
-
-            var dictList = dicts.where((d) => d.id == link.dictId).toList();
-            if (dictList.isEmpty) {
-              continue;
-            }
-            var dict = dictList.first;
-            // 过滤掉visible为false的词典
-            if (dict.visible == false) {
-              continue;
-            }
+      // 内部辅助方法：根据分组 ID 获取词库中的 VO 列表
+      List<DictVo> getGroupDicts(String groupId) {
+        var results = <DictVo>[];
+        var links = groupAndDictLinks.where((l) => l.groupId == groupId).toList();
+        for (var link in links) {
+          var dict = dicts.cast<Dict?>().firstWhere((d) => d?.id == link.dictId, orElse: () => null);
+          if (dict != null && dict.visible != false) {
             var vo = DictVo.c2(dict.id);
             vo.name = dict.name;
             vo.shortName = getShortName(dict.name);
             vo.wordCount = dict.wordCount;
             vo.visible = true;
-            allDicts.add(vo);
-            addedDictIds.add(dict.id);
+            results.add(vo);
+          }
+        }
+        return results;
+      }
+
+      // 1. 确定根节点（ID 或 Name）并筛选出所有一级分类
+      final rootNode = dictGroupsData.cast<DictGroup?>().firstWhere(
+        (g) => g?.name == 'root', 
+        orElse: () => null
+      );
+      final rootId = rootNode?.id;
+
+      // 如果没有名为 root 的节点，则把所有 parentId 为空的分组作为一级分类
+      var topGroups = dictGroupsData.where((g) => 
+        (rootId != null ? (g.parentId == rootId) : (g.parentId == null || g.parentId == '')) 
+        && g.name != 'root'
+      ).toList();
+      topGroups.sort((a, b) => a.displayIndex.compareTo(b.displayIndex));
+
+      // 2. 构建 parentCategories
+      parentCategories = [DictGroupVo('自定义', [])];
+
+      for (var topGroup in topGroups) {
+        var subGroupVos = <DictGroupVo>[];
+
+        // A. 查找顶级分类下直属的词书 (如果有，作为一个名为“通用”的二级分组)
+        var directDicts = getGroupDicts(topGroup.id);
+        if (directDicts.isNotEmpty) {
+          subGroupVos.add(DictGroupVo('通用', directDicts));
+        }
+
+        // B. 查找该顶级分类下的所有子分组
+        var children = dictGroupsData.where((g) => g.parentId == topGroup.id).toList();
+        children.sort((a, b) => a.displayIndex.compareTo(b.displayIndex));
+
+        for (var child in children) {
+          var childDicts = getGroupDicts(child.id);
+          if (childDicts.isNotEmpty) {
+            subGroupVos.add(DictGroupVo(child.name, childDicts));
           }
         }
 
-        // 创建分组VO
-        var groupVo = DictGroupVo(group.name, allDicts);
-        dictGroups!.add(groupVo);
+        // 只有当该一级分类下确实有词书内容时，才添加到 Tab 面板
+        if (subGroupVos.isNotEmpty) {
+          var parentVo = DictGroupVo(topGroup.name, []);
+          parentVo.childGroups = subGroupVos;
+          parentCategories!.add(parentVo);
+        }
+      }
+
+      // 同步给后文使用的 dictGroups 变量
+      dictGroups = parentCategories;
+
+      // 初始化二级分类索引
+      for (var cat in parentCategories!) {
+        _selectedSubGroupIndex[cat.name] ??= 0;
       }
 
       customDicts = (await WordBo().getCustomDicts(userId)).where((d) => d.name != '已掌握').toList();
@@ -326,198 +292,182 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
     return true;
   }
 
-  renderTabs() {
-    var tabs = <Widget>[];
-
-    // 添加自定义 Tab
-    tabs.add(const Tab(text: '自定义'));
-
-    for (var dictGroup in dictGroups!) {
-      final selectedCount = getSelectedDictsOfGroup(dictGroup).length;
-
-      tabs.add(Tab(
-        text: selectedCount > 0 ? '${dictGroup.name}($selectedCount)' : dictGroup.name,
-      ));
-    }
-
-    return tabs;
-  }
-
-  renderTabContents() {
-    final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    final cardColor = isDarkMode ? const Color(0xFF2D2D2D) : Colors.white;
-    final textColor = isDarkMode ? Colors.white : const Color(0xFF2C3E50);
+  Widget _buildPrimaryTabContent(DictGroupVo parentVo, bool isDarkMode) {
+    final backgroundColor = isDarkMode ? const Color(0xFF121212) : const Color(0xFFF8F8F8);
+    final textColor = isDarkMode ? Colors.white : const Color(0xFF333333);
     final subtitleColor = isDarkMode ? Colors.grey[400] : Colors.grey[600];
 
-    var tabs = <Widget>[];
+    if (parentVo.name == '自定义') {
+      return _buildCustomTabContent(isDarkMode, backgroundColor, textColor, subtitleColor);
+    }
 
-    // 添加自定义 Tab 内容
-    tabs.add(_buildCustomTabContent(isDarkMode, cardColor, textColor, subtitleColor));
+    final subGroups = parentVo.childGroups ?? [];
+    if (subGroups.isEmpty) return const Center(child: Text('没有可用的词书'));
 
-    for (var dictGroup in dictGroups!) {
-      var visibleDicts = dictGroup.dicts!.where((dict) => dict.visible!).toList();
+    // 如果只有一个二级分类，直接显示列表
+    if (subGroups.length == 1) {
+      return _buildBookList(subGroups[0].dicts ?? [], isDarkMode);
+    }
 
-      if (visibleDicts.isEmpty) {
-        tabs.add(Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.book_outlined,
-                size: 48,
-                color: textColor.withValues(alpha: 0.3),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                '暂无词书',
-                style: TextStyle(
-                  color: textColor.withValues(alpha: 0.6),
-                  fontSize: 17,
-                  fontWeight: FontWeight.w400,
-                  fontFamily: 'NotoSansSC',
-                  height: 1.3,
-                  letterSpacing: 0.5,
-                ),
-                textScaler: const TextScaler.linear(1.0),
-              ),
-            ],
-          ),
-        ));
-        continue;
-      }
+    // 多个二级分类，显示胶囊选择器
+    final selectedSubIndex = _selectedSubGroupIndex[parentVo.name] ?? 0;
+    
+    // 边界检查
+    final actualIndex = selectedSubIndex < subGroups.length ? selectedSubIndex : 0;
+    final activeSubGroup = subGroups[actualIndex];
 
-      tabs.add(ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: visibleDicts.length,
+    return Column(
+      children: [
+        _buildSubCategoryCapsules(parentVo, subGroups, actualIndex, isDarkMode),
+        Expanded(
+          child: _buildBookList(activeSubGroup.dicts ?? [], isDarkMode),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSubCategoryCapsules(DictGroupVo parentVo, List<DictGroupVo> subGroups, int selectedIndex, bool isDarkMode) {
+    return Container(
+      height: 44,
+      margin: const EdgeInsets.only(top: 12, bottom: 4),
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        itemCount: subGroups.length,
         itemBuilder: (context, index) {
-          final dict = visibleDicts[index];
-          final isSelected = isDictSelected(dict);
+          final group = subGroups[index];
+          final isSelected = index == selectedIndex;
 
-          return Container(
-            margin: const EdgeInsets.only(bottom: 12),
-            decoration: BoxDecoration(
-              color: cardColor,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: isSelected ? AppTheme.primaryColor : (isDarkMode ? Colors.grey[700]! : Colors.grey[200]!),
-                width: isSelected ? 2 : 1,
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: ChoiceChip(
+              label: Text(group.name),
+              selected: isSelected,
+              onSelected: (selected) {
+                if (selected) {
+                  setState(() {
+                    _selectedSubGroupIndex[parentVo.name] = index;
+                  });
+                }
+              },
+              labelStyle: TextStyle(
+                color: isSelected ? Colors.white : (isDarkMode ? Colors.grey[400] : Colors.grey[600]),
+                fontSize: 13,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: (isDarkMode ? Colors.black : Colors.grey).withValues(alpha: 0.1),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                borderRadius: BorderRadius.circular(12),
-                onTap: () {
-                  toggleDictSelectedStatus(dict);
-                },
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    children: [
-                      SizedBox.shrink(key: Key('select_book_item_${dict.id}')),
-                      Container(
-                        width: 24,
-                        height: 24,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: isSelected ? AppTheme.primaryColor : (isDarkMode ? Colors.grey[600]! : Colors.grey[400]!),
-                            width: 2,
-                          ),
-                          color: isSelected ? AppTheme.primaryColor : Colors.transparent,
-                        ),
-                        child: isSelected
-                            ? const Icon(
-                                Icons.check,
-                                size: 16,
-                                color: Colors.white,
-                              )
-                            : null,
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              dict.shortName!,
-                              style: TextStyle(
-                                color: textColor,
-                                fontSize: 17,
-                                fontWeight: FontWeight.w500,
-                                fontFamily: 'NotoSansSC',
-                                height: 1.4,
-                                letterSpacing: 0.5,
-                              ),
-                              textScaler: const TextScaler.linear(1.0),
-                            ),
-                            const SizedBox(height: 4),
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.book,
-                                  size: 14,
-                                  color: subtitleColor,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  '${dict.wordCount} 词',
-                                  style: TextStyle(
-                                    color: subtitleColor,
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w400,
-                                    fontFamily: 'NotoSansSC',
-                                    height: 1.3,
-                                    letterSpacing: 0.3,
-                                  ),
-                                  textScaler: const TextScaler.linear(1.0),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      if (isSelected)
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            '已选择',
-                            style: TextStyle(
-                              color: AppTheme.primaryColor,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                              fontFamily: 'NotoSansSC',
-                              height: 1.2,
-                              letterSpacing: 0.3,
-                            ),
-                            textScaler: const TextScaler.linear(1.0),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              ),
+              selectedColor: const Color(0xFFFF6B00),
+              backgroundColor: isDarkMode ? const Color(0xFF2C2C2C) : const Color(0xFFF2F2F2),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+              side: BorderSide.none,
+              showCheckmark: false,
+              elevation: 0,
+              pressElevation: 0,
             ),
           );
         },
-      ));
-    }
-
-    return tabs;
+      ),
+    );
   }
 
-  Widget _buildCustomTabContent(bool isDarkMode, Color cardColor, Color textColor, Color? subtitleColor) {
+  Widget _buildBookList(List<DictVo> books, bool isDarkMode) {
+    final cardColor = isDarkMode ? const Color(0xFF1E1E1E) : Colors.white;
+    final textColor = isDarkMode ? Colors.white : const Color(0xFF333333);
+    final subtitleColor = isDarkMode ? Colors.grey[400] : Colors.grey[600];
+
+    final visibleBooks = books.where((b) => b.visible == true).toList();
+
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      itemCount: visibleBooks.length,
+      itemBuilder: (context, index) {
+        final dict = visibleBooks[index];
+        final isSelected = isDictSelected(dict);
+
+        return Container(
+          margin: const EdgeInsets.only(bottom: 16),
+          decoration: BoxDecoration(
+            color: cardColor,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: InkWell(
+            onTap: () => toggleDictSelectedStatus(dict),
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          dict.name ?? '',
+                          style: TextStyle(
+                            color: textColor,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '${dict.wordCount} 词',
+                          style: TextStyle(
+                            color: subtitleColor,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (isSelected)
+                    const Icon(Icons.check_circle, color: Color(0xFFFF6B00), size: 24)
+                  else
+                    Icon(Icons.circle_outlined, color: Colors.grey[300], size: 24),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildBookCover(DictVo dict) {
+    return Container(
+      width: 80,
+      height: 110,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: dict.coverUrl != null && dict.coverUrl!.isNotEmpty
+            ? Image.network(dict.coverUrl!, fit: BoxFit.cover)
+            : Container(
+                color: const Color(0xFFF2F2F2),
+                child: Center(
+                  child: Icon(Icons.book, color: Colors.grey[400], size: 40),
+                ),
+              ),
+      ),
+    );
+  }
+
+  Widget _buildCustomTabContent(bool isDarkMode, Color backgroundColor, Color textColor, Color? subtitleColor) {
     return Column(
       children: [
         Padding(
@@ -555,7 +505,7 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
                     return Container(
                       margin: const EdgeInsets.only(bottom: 12),
                       decoration: BoxDecoration(
-                        color: cardColor,
+                        color: backgroundColor,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: isSelected ? AppTheme.primaryColor : (isDarkMode ? Colors.grey[700]! : Colors.grey[200]!),
@@ -1434,232 +1384,101 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
   @override
   Widget build(BuildContext context) {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    final backgroundColor = isDarkMode ? const Color(0xFF1A1A1A) : const Color(0xFFF5F5F5);
-    final textColor = isDarkMode ? Colors.white : const Color(0xFF2C3E50);
+    final backgroundColor = isDarkMode ? const Color(0xFF121212) : Colors.white;
+    final textColor = isDarkMode ? Colors.white : const Color(0xFF333333);
 
-    if (_isLoading) {
+    if (_isLoading && (parentCategories == null || parentCategories!.isEmpty)) {
       return Scaffold(
         backgroundColor: backgroundColor,
-        appBar: AppTheme.createGradientAppBar(
-          title: '选词书',
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () => Navigator.pop(context),
-          ),
-        ),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  isDarkMode ? const Color(0xFF4A90E2) : const Color(0xFF3498DB),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                '正在加载词书...',
-                style: TextStyle(
-                  color: textColor.withValues(alpha: 0.7),
-                  fontSize: 17,
-                  fontWeight: FontWeight.w400,
-                  fontFamily: 'NotoSansSC',
-                  height: 1.3,
-                  letterSpacing: 0.5,
-                ),
-                textScaler: const TextScaler.linear(1.0),
-              ),
-            ],
-          ),
-        ),
-      );
-    } else if (selectedDictVos == null || dictGroups == null || dictGroups!.isEmpty) {
-      return Scaffold(
-        backgroundColor: backgroundColor,
-        appBar: AppTheme.createGradientAppBar(
-          title: '选词书',
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () => Navigator.pop(context),
-          ),
-        ),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.library_books,
-                size: 64,
-                color: textColor.withValues(alpha: 0.5),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                '没有可用的词书',
-                style: TextStyle(
-                  color: textColor,
-                  fontSize: 19,
-                  fontWeight: FontWeight.w500,
-                  fontFamily: 'NotoSansSC',
-                  height: 1.3,
-                  letterSpacing: 0.5,
-                ),
-                textScaler: const TextScaler.linear(1.0),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                '请检查网络连接后重试',
-                style: TextStyle(
-                  color: textColor.withValues(alpha: 0.7),
-                  fontSize: 15,
-                  fontWeight: FontWeight.w400,
-                  fontFamily: 'NotoSansSC',
-                  height: 1.3,
-                  letterSpacing: 0.3,
-                ),
-                textScaler: const TextScaler.linear(1.0),
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton.icon(
-                onPressed: () => loadData(),
-                icon: const Icon(Icons.refresh),
-                label: const Text('重试'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF4A90E2),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
+        body: const Center(child: CircularProgressIndicator()),
       );
     }
 
-    // 只统计在UI分组中可见且被选中的词书数量
-    final selectedCount =
-        dictGroups!.fold<int>(0, (sum, group) => sum + getSelectedDictsOfGroup(group).length) + customDicts!.where((d) => isDictSelected(d)).length;
+    if (parentCategories == null || parentCategories!.isEmpty) {
+      return Scaffold(
+        backgroundColor: backgroundColor,
+        appBar: AppBar(title: const Text('选词书'), centerTitle: true),
+        body: const Center(child: Text('没有可用的词书')),
+      );
+    }
 
     _initTabController();
 
-    return DefaultTabController(
-      length: dictGroups!.length + 1,
-      child: Scaffold(
+    return Scaffold(
+      backgroundColor: backgroundColor,
+      appBar: AppBar(
         backgroundColor: backgroundColor,
-        appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          centerTitle: true,
-          title: const Text(
-            '选词书',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 22,
-              fontWeight: FontWeight.w500,
-              fontFamily: 'NotoSansSC',
-              height: 1.3,
-              letterSpacing: 1.0,
-            ),
-            textScaler: TextScaler.linear(1.0),
-          ),
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () => Navigator.pop(context),
-          ),
-          flexibleSpace: Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [AppTheme.gradientStartColor, AppTheme.gradientEndColor],
-              ),
-            ),
-          ),
-          bottom: TabBar(
-            isScrollable: true,
-            tabAlignment: TabAlignment.start,
-            padding: EdgeInsets.zero,
-            indicatorColor: Colors.white,
-            indicatorWeight: 3,
-            labelColor: Colors.white,
-            unselectedLabelColor: Colors.white.withValues(alpha: 0.7),
-            labelStyle: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w500,
-              fontFamily: 'NotoSansSC',
-              height: 1.4,
-              letterSpacing: 0.5,
-            ),
-            unselectedLabelStyle: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w400,
-              fontFamily: 'NotoSansSC',
-              height: 1.4,
-              letterSpacing: 0.3,
-            ),
-            controller: _tabController,
-            tabs: renderTabs(),
-          ),
+        elevation: 0,
+        centerTitle: true,
+        title: Text(
+          '选词书',
+          style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 18),
         ),
-        body: Column(
-          children: [
-            Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: renderTabContents(),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios_new, color: textColor, size: 20),
+          onPressed: () => Navigator.pop(context),
+        ),
+        actions: [
+          if (_hasUserMadeChanges)
+            Padding(
+              padding: const EdgeInsets.only(right: 8.0),
+              child: TextButton(
+                onPressed: save,
+                child: const Text('保存', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               ),
             ),
-            if (_hasUserMadeChanges)
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: isDarkMode ? const Color(0xFF2D2D2D) : Colors.white,
-                  boxShadow: [
-                    BoxShadow(
-                      color: (isDarkMode ? Colors.black : Colors.grey).withValues(alpha: 0.1),
-                      blurRadius: 8,
-                      offset: const Offset(0, -2),
-                    ),
-                  ],
-                ),
-                child: SafeArea(
-                  top: false,
-                  child: ElevatedButton(
-                    key: const Key('select_book_confirm_btn'),
-                    onPressed: save,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF4A90E2),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 2,
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.check, size: 20),
-                        const SizedBox(width: 8),
-                        Text(
-                          '保存 ($selectedCount)',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                            fontFamily: 'NotoSansSC',
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-          ],
+        ],
+        bottom: TabBar(
+          controller: _primaryTabController,
+          isScrollable: true,
+          labelColor: const Color(0xFFFF6B00),
+          unselectedLabelColor: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+          indicatorColor: const Color(0xFFFF6B00),
+          indicatorSize: TabBarIndicatorSize.label,
+          labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+          dividerColor: Colors.transparent,
+          tabAlignment: TabAlignment.start,
+          tabs: parentCategories!.map((cat) => Tab(text: cat.name)).toList(),
         ),
       ),
+      body: TabBarView(
+        controller: _primaryTabController,
+        children: parentCategories!.map((cat) => _buildPrimaryTabContent(cat, isDarkMode)).toList(),
+      ),
+      floatingActionButton: _buildFABs(isDarkMode),
+    );
+  }
+
+
+  Widget _buildFABs(bool isDarkMode) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        FloatingActionButton.small(
+          heroTag: 'fab_edit',
+          onPressed: () {
+            ToastUtil.info('创建词书请切换到“自定义”分类');
+          },
+          backgroundColor: isDarkMode ? const Color(0xFF444444) : const Color(0xFF9E9E9E),
+          child: const Icon(Icons.edit, color: Colors.white, size: 18),
+        ),
+        const SizedBox(height: 12),
+        FloatingActionButton.small(
+          heroTag: 'fab_share',
+          onPressed: () {
+            ToastUtil.info('分享功能正在开发中');
+          },
+          backgroundColor: isDarkMode ? const Color(0xFF444444) : const Color(0xFF9E9E9E),
+          child: const Icon(Icons.share, color: Colors.white, size: 18),
+        ),
+        const SizedBox(height: 12),
+        FloatingActionButton(
+          heroTag: 'fab_download',
+          onPressed: save, 
+          backgroundColor: isDarkMode ? const Color(0xFF444444) : const Color(0xFF9E9E9E),
+          child: const Icon(Icons.download, color: Colors.white),
+        ),
+      ],
     );
   }
 

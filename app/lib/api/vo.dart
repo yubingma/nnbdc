@@ -121,6 +121,8 @@ class DictVo extends Equatable {
   /// 该单词书是否可重命名（生词本不可重命名）
   bool? canRename;
 
+  String? coverUrl;
+
   DateTime? createTime;
   DateTime? updateTime;
 
@@ -140,6 +142,7 @@ class DictVo extends Equatable {
     this.wordCount,
     this.domain,
     this.baseDictId,
+    this.coverUrl,
     this.createTime,
   });
 
@@ -872,6 +875,7 @@ class DictGroupVo {
   String name;
   List<DictVo>? dicts;
   DictGroupVo? dictGroup;
+  List<DictGroupVo>? childGroups;
   List<DictVo>? allDicts;
 
   DictGroupVo(this.name, this.dicts);
