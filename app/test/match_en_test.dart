@@ -47,6 +47,7 @@ RANGE  R EY1 N JH
 REFUSE  R IH0 F Y UW1 Z
 REPEAT  R IH0 P IY1 T
 REFEREE  R EH2 F ER0 IY1
+RHYME  R AY1 M
 ''';
           return ByteData.view(Uint8List.fromList(utf8.encode(content)).buffer);
         }
@@ -209,6 +210,16 @@ REFEREE  R EH2 F ER0 IY1
 
       final int score = await PhonemeUtil.similarity(asrResult, target);
       debugPrint('Referee vs Refuse score: $score');
+
+      expect(score, lessThan(Constants.phonemeMatchThreshold));
+    });
+
+    test('rhyme vs ru - should not match', () async {
+      const String target = "rhyme";
+      const String asrResult = "ru";
+
+      final int score = await PhonemeUtil.similarity(asrResult, target);
+      debugPrint('Rhyme vs Ru score: $score');
 
       expect(score, lessThan(Constants.phonemeMatchThreshold));
     });

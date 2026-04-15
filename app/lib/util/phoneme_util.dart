@@ -145,9 +145,9 @@ class PhonemeUtil {
         Global.logger.d(
             '===== Phonetic compare: "$garbageWord"[$garbagePseudo] vs target[$bestRef] score: $best');
 
-        // 降级策略：非字典词的拟真音素对比存在不确定性，上限扣除 5 分
-        // 避免 "nylon" vs "naylan" 这种骨架一致但元音/拼写错误的词拿到 100 分
-        finalScore = best > 95 ? 95 : best;
+        // 降级策略：非字典词额外扣分，防止极短的垃圾词（如 ru）匹配长词（如 rhyme）
+        // 基础扣 5 分，如果长度差异大则扣更多
+        finalScore = best - 5;
       } else {
         // 情况 C：两个都不在字典里，退化到字符编辑距离
         final dist = EditDistance.forStrings(a.toLowerCase(), b.toLowerCase());
@@ -193,6 +193,34 @@ class PhonemeUtil {
       if (finalScore < 0) finalScore = 0;
       Global.logger.d(
           '===== Phonetic compare (syllable penalty): reduced score from $oldScore to $finalScore because syllableDiff is $syllableDiff');
+    }
+
+    // [New] 添加音素长度比例惩罚
+    // 专门解决 short vs long 的问题，比如 "ru" (2) vs "rhyme" (3)
+    final aPhonLen = aVars.isNotEmpty
+        ? aVars.first.length
+        : _convertToPseudoPhonemes(a).length;
+    final bPhonLen = bVars.isNotEmpty
+        ? bVars.first.length
+        : _convertToPseudoPhonemes(b).length;
+    final maxPhonLen = aPhonLen > bPhonLen ? aPhonLen : bPhonLen;
+    final minPhonLen = aPhonLen < bPhonLen ? aPhonLen : bPhonLen;
+
+    if (maxPhonLen > 0) {
+      final ratio = minPhonLen / maxPhonLen;
+      // 对于垃圾词对比，长度比例要求更严格
+      final isGarbageInvolved = aVars.isEmpty || bVars.isNotEmpty == false; // 简化判断
+      final threshold = isGarbageInvolved ? 0.75 : 0.6; 
+
+      if (ratio < threshold) {
+        final oldScore = finalScore;
+        // 惩罚力度：垃圾词惩罚更重
+        final penaltyWeight = isGarbageInvolved ? 25 : 15;
+        finalScore -= ((1.0 - ratio) * penaltyWeight).round();
+        if (finalScore < 0) finalScore = 0;
+        Global.logger.d(
+            '===== Phonetic compare (length ratio penalty): reduced score from $oldScore to $finalScore because ratio is $ratio');
+      }
     }
 
     return finalScore;
