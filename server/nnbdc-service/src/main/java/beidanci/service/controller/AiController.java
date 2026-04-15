@@ -23,6 +23,7 @@ import org.springframework.http.MediaType;
 import com.alibaba.dashscope.common.Message;
 import com.alibaba.dashscope.aigc.generation.GenerationResult;
 import io.reactivex.Flowable;
+import org.slf4j.MDC;
 
 @RestController
 public class AiController {
@@ -84,21 +85,12 @@ public class AiController {
             return emitter;
         }
 
-        // 在子线程外提前获取用户信息，避免 request 对象失效
-        String userAgent = request.getHeader("User-Agent");
-        String finalClientType = "Unknown";
-        if (userAgent != null) {
-            String ua = userAgent.toLowerCase();
-            if (ua.contains("iphone") || ua.contains("ipad")) finalClientType = "iOS";
-            else if (ua.contains("android")) finalClientType = "Android";
-            else if (ua.contains("windows")) finalClientType = "Windows";
-            else if (ua.contains("macintosh")) finalClientType = "macOS";
-            else if (ua.contains("mozilla")) finalClientType = "Web";
-        }
-        User user = userBo.findById(userId);
-        String finalUserIdentifier = (user != null) ? (user.getDisplayNickName() + "(" + userId + ")") : userId;
+        final Map<String, String> mdcContext = MDC.getCopyOfContextMap();
+        final String finalUserIdentifier = MDC.get("userContext");
+        final String finalClientType = MDC.get("platform");
 
         aiChatExecutor.execute(() -> {
+            if (mdcContext != null) MDC.setContextMap(mdcContext);
             Result<Runnable> admissionResult = null;
             try {
                 // 并发与流控逻辑
@@ -149,6 +141,7 @@ public class AiController {
                 if (admissionResult != null && admissionResult.isSuccess() && admissionResult.getData() != null) {
                     admissionResult.getData().run();
                 }
+                MDC.clear();
             }
         });
         return emitter;
