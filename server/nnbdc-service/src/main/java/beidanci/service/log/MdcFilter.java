@@ -13,6 +13,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import org.springframework.core.annotation.Order;
+import org.springframework.lang.NonNull;
 
 /**
  * 将用户信息和客户端平台信息注入日志上下文 (MDC)
@@ -25,10 +26,14 @@ public class MdcFilter extends OncePerRequestFilter {
     private UserBo userBo;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+    protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain)
             throws ServletException, IOException {
         
-        String userId = request.getParameter("userId");
+        String userId = request.getHeader("X-User-Id");
+        if (userId == null || userId.isEmpty()) {
+            userId = request.getParameter("userId");
+        }
+
         String userContext = "";
         if (userId != null && !userId.isEmpty()) {
             String shortId = userId.substring(0, Math.min(6, userId.length()));
