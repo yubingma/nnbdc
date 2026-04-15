@@ -417,39 +417,6 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     _scrollToBottom(force: true);
     FocusScope.of(context).unfocus();
 
-    // 尝试执行推理，带自动减负重试机制
-    Future<AiResponse> runWithAutoRetry(List<Map<String, String>> fullHistory) async {
-      final service = AiService();
-      // 策略 1: 尝试 10 条历史
-      var response = await service.runTask(AiRequest(
-        type: AiTaskType.chat,
-        payload: {'messages': fullHistory},
-      ));
-
-      if (response.success) return response;
-
-      // 策略 2: 如果失败且历史较多，减负到 4 条尝试（丢弃更远的记忆）
-      if (fullHistory.length > 4) {
-        Global.logger.w('AI 推理初次尝试失败，尝试减少上下文至 4 条...');
-        final reducedHistory = fullHistory.sublist(fullHistory.length - 4);
-        response = await service.runTask(AiRequest(
-          type: AiTaskType.chat,
-          payload: {'messages': reducedHistory},
-        ));
-        if (response.success) return response;
-      }
-
-      // 策略 3: 如果依然失败，仅保留当前问题
-      Global.logger.w('AI 推理减负重试失败，尝试仅发送当前问题...');
-      response = await service.runTask(AiRequest(
-        type: AiTaskType.chat,
-        payload: {
-          'messages': [fullHistory.last]
-        },
-      ));
-
-      return response;
-    }
 
     try {
       final runtime = AiService().runtime;
@@ -475,8 +442,11 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
         historyPayload = historyPayload.sublist(historyPayload.length - 10);
       }
 
-      // 执行带重试的任务
-      final response = await runWithAutoRetry(historyPayload);
+      // 执行推理任务
+      final response = await AiService().runTask(AiRequest(
+        type: AiTaskType.chat,
+        payload: {'messages': historyPayload},
+      ));
 
       await _aiPartialSub?.cancel();
       _aiPartialSub = null;
