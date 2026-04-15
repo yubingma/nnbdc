@@ -50,6 +50,8 @@ REFEREE  R EH2 F ER0 IY1
 RHYME  R AY1 M
 ROLLER  R OW1 L ER0
 RODER  R OW1 D ER0
+ACT  AE1 K T
+DO  D UW1
 ''';
           return ByteData.view(Uint8List.fromList(utf8.encode(content)).buffer);
         }
@@ -224,6 +226,16 @@ RODER  R OW1 D ER0
       debugPrint('Roller vs Roder score: $score');
 
       expect(score, lessThan(Constants.phonemeMatchThreshold));
+    });
+
+    test('do act vs act - should match despite extra noise', () async {
+      const String target = "act";
+      const String asrResult = "do act";
+
+      final int score = await PhonemeUtil.similarity(asrResult, target);
+      debugPrint('Do act vs Act score: $score');
+
+      expect(score, greaterThanOrEqualTo(Constants.phonemeMatchThreshold));
     });
   });
 }

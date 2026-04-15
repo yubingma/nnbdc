@@ -3,576 +3,157 @@ import 'package:flutter/services.dart' show rootBundle;
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/util/edit_distance.dart';
 
-/// 基于 CMU Pronouncing Dictionary 的音素工具
-/// - 懒加载 assets/cmudict.dict
-/// - 提供单词到音素的查找
-/// - 提供音素级编辑距离与相似度评分
 class PhonemeUtil {
   static const String _assetPath = 'assets/cmudict.dict';
   static Completer<void>? _loadCompleter;
   static bool _loaded = false;
   static final Map<String, List<List<String>>> _wordToPhonemeVariants = {};
+  static final RegExp _digitRegExp = RegExp(r'\d+'), _cRegExp = RegExp(r'ce|ci|cy'), _lowerAlphaRegExp = RegExp(r'[a-z]'), _spaceRegExp = RegExp(r'\s+');
 
-  static final RegExp _digitRegExp = RegExp(r'\d+');
-  static final RegExp _cRegExp = RegExp(r'ce|ci|cy');
-  static final RegExp _lowerAlphaRegExp = RegExp(r'[a-z]');
-  static final RegExp _spaceRegExp = RegExp(r'\s+');
-
-  /// 懒加载 CMUdict（多次调用安全）
   static Future<void> load() async {
     if (_loaded) return;
     if (_loadCompleter != null) return _loadCompleter!.future;
-
     _loadCompleter = Completer<void>();
     try {
-      final startTime = DateTime.now();
-      Global.logger.d('PhonemeUtil: Starting to load $_assetPath');
       final content = await rootBundle.loadString(_assetPath);
-      final readTime = DateTime.now();
-      Global.logger.d(
-          'PhonemeUtil: File read finished in ${readTime.difference(startTime).inMilliseconds}ms, starting to parse...');
-      _parse(content);
-      final parseTime = DateTime.now();
-      Global.logger.d(
-          'PhonemeUtil: Parsing finished in ${parseTime.difference(readTime).inMilliseconds}ms');
-      _loaded = true;
-      Global.logger
-          .d('PhonemeUtil loaded: ${_wordToPhonemeVariants.length} entries');
-      _loadCompleter!.complete();
-    } catch (e, st) {
-      Global.logger
-          .e('Failed to load $_assetPath: $e', error: e, stackTrace: st);
-      _loadCompleter!.completeError(e, st);
-      _loadCompleter = null; // 允许下次重试
-    }
+      _parse(content); _loaded = true; _loadCompleter!.complete();
+    } catch (e, st) { _loadCompleter!.completeError(e, st); _loadCompleter = null; }
   }
 
   static Future<List<List<String>>> lookup(String word) async {
-    if (!_loaded) {
-      await load();
-    }
-    String key = word.trim().toLowerCase();
-    // 移除括号中的内容，如 analytic(al) -> analytic
-    key = key.replaceAll(RegExp(r'\(.*?\)'), '');
+    if (!_loaded) await load();
+    String key = word.trim().toLowerCase().replaceAll(RegExp(r'\(.*?\)'), '');
     if (key.isEmpty) return const [];
-
-    if (_wordToPhonemeVariants.containsKey(key)) {
-      return _wordToPhonemeVariants[key]!;
-    }
-
-    // 处理多词短语 (e.g., "the effect")
+    if (_wordToPhonemeVariants.containsKey(key)) return _wordToPhonemeVariants[key]!;
     final words = key.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
     if (words.length > 1 && words.length <= 5) {
-      List<List<String>> combinedVariants = [[]];
+      List<List<String>> combined = [[]];
       for (final w in words) {
         final variants = _wordToPhonemeVariants[w];
-        if (variants == null || variants.isEmpty) {
-          return const [];
-        }
-
-        // 笛卡尔积组合所有变体
+        if (variants == null || variants.isEmpty) return const [];
         List<List<String>> nextCombined = [];
-        for (final cv in combinedVariants) {
-          for (final v in variants) {
-            nextCombined.add([...cv, ...v]);
-          }
-        }
-        combinedVariants = nextCombined;
-        if (combinedVariants.length > 32) {
-          combinedVariants = combinedVariants.sublist(0, 32);
-        }
+        for (final cv in combined) { for (final v in variants) nextCombined.add([...cv, ...v]); }
+        combined = nextCombined; if (combined.length > 32) combined = combined.sublist(0, 32);
       }
-      return combinedVariants;
+      return combined;
     }
-
     return const [];
   }
 
-  /// 返回两个单词的音素相似度(0-100)
-  /// 核心改进：利用 cmudict.dict 对“垃圾结果”进行音素骨架提取与对比
   static Future<int> similarity(String a, String b) async {
     if (a.isEmpty || b.isEmpty) return 0;
-
-    int finalScore = 0;
-
-    final aVars = await lookup(a);
-    final bVars = await lookup(b);
-
-    // 情况 A：两个词都在字典里，也使用模糊骨架对比（提高容错率）
+    final aC = a.toLowerCase().trim(), bC = b.toLowerCase().trim();
+    if (aC == bC) return 100;
+    final aVars = await lookup(a), bVars = await lookup(b);
+    int finalScore = 0, baseBest = 0;
     if (aVars.isNotEmpty && bVars.isNotEmpty) {
-      int best = 0;
-      List<String> bestAWeakened = [];
-      List<String> bestBWeakened = [];
-
-      for (final ap in aVars) {
-        for (final bp in bVars) {
-          final sReal = _phonemeSimilarity(ap, bp);
-          final sWeak = _phonemeSimilarity(_weakenPhonemes(ap), _weakenPhonemes(bp));
-          // 综合原始音素与骨架音素：既要有“听感”也要有“骨架”
-          final s = (sReal * 0.4 + sWeak * 0.6).round();
-          if (s > best) {
-            best = s;
-            bestAWeakened = _weakenPhonemes(ap);
-            bestBWeakened = _weakenPhonemes(bp);
-          }
+      for (var ap in aVars) {
+        for (var bp in bVars) {
+          final s = (_phonemeSimilarity(ap, bp) * 0.4 + _phonemeSimilarity(_weakenPhonemes(ap), _weakenPhonemes(bp)) * 0.6).round();
+          if (s > baseBest) baseBest = s;
         }
       }
-
-      // 记录对比日志
-      Global.logger.d(
-          '===== Phonetic compare: "$a"[$bestAWeakened] vs "$b"[$bestBWeakened] real/weak combined score: $best');
-      finalScore = best;
+      finalScore = baseBest;
+    } else if (aVars.isNotEmpty || bVars.isNotEmpty) {
+      final tps = aVars.isNotEmpty ? aVars : bVars, gWord = aVars.isNotEmpty ? b : a, gPseudo = _convertToPseudoPhonemes(gWord);
+      for (final tp in tps) {
+        final s = _phonemeSimilarity(_weakenPhonemes(tp), gPseudo);
+        if (s > baseBest) baseBest = s;
+      }
+      finalScore = baseBest - 2;
     } else {
-      // 情况 B：至少一个词不在字典里（比如 ASR 吐出了乱码 suece）
-      // 逻辑：估算“垃圾词”的拟真音素，并与“目标词”的弱化音素进行骨架对比
-      final List<List<String>> targetPhons = aVars.isNotEmpty ? aVars : bVars;
-      final String garbageWord = aVars.isNotEmpty ? b : a;
+      final dist = EditDistance.forStrings(aC, bC), maxL = aC.length > bC.length ? aC.length : bC.length;
+      finalScore = maxL == 0 ? 0 : ((maxL - dist) * 100.0 / maxL).clamp(0.0, 100.0).round();
+      baseBest = finalScore;
+    }
 
-      if (targetPhons.isNotEmpty) {
-        final garbagePseudo = _convertToPseudoPhonemes(garbageWord);
-        int best = 0;
-        List<String> bestRef = [];
-        for (final tp in targetPhons) {
-          final weakTP = _weakenPhonemes(tp);
-          final s = _phonemeSimilarity(weakTP, garbagePseudo);
-          if (s > best) {
-            best = s;
-            bestRef = weakTP;
-          }
-        }
-
-        // 记录骨架对比日志，方便排查由于拼写导致的“听感一致”
-        Global.logger.d(
-            '===== Phonetic compare: "$garbageWord"[$garbagePseudo] vs target[$bestRef] score: $best');
-
-        // 降级策略：非字典词额外扣分，防止极短的垃圾词（如 ru）匹配长词（如 rhyme）
-        // 基础扣 5 分，如果长度差异大则扣更多
-        finalScore = best - 5;
-      } else {
-        // 情况 C：两个都不在字典里，退化到字符编辑距离
-        final dist = EditDistance.forStrings(a.toLowerCase(), b.toLowerCase());
-        final maxLen = a.length > b.length ? a.length : b.length;
-        if (maxLen == 0) {
-          finalScore = 0;
-        } else {
-          finalScore =
-              ((maxLen - dist) * 100.0 / maxLen).clamp(0.0, 100.0).round();
-        }
-
-        // 记录字符编辑距离日志
-        Global.logger.d(
-            '===== Phonetic compare (fallback): "$a" vs "$b" edit-distance score: $finalScore');
+    final wA = aC.split(RegExp(r'[\s\-]+')).where((w) => w.isNotEmpty).toList(), wB = bC.split(RegExp(r'[\s\-]+')).where((w) => w.isNotEmpty).toList();
+    bool isContained = wA.length != wB.length && (wA.join(' ').contains(wB.join(' ')) || wB.join(' ').contains(wA.join(' ')));
+    double penaltyMult = isContained ? 0.3 : (baseBest > 75 ? 0.5 : 1.0);
+    
+    if (isContained) finalScore += 10;
+    finalScore -= ((wA.length - wB.length).abs() * 5 * penaltyMult).round();
+    final aS = aVars.isNotEmpty ? _countSyllables(aVars.first) : _countSyllables(_convertToPseudoPhonemes(a));
+    final bS = bVars.isNotEmpty ? _countSyllables(bVars.first) : _countSyllables(_convertToPseudoPhonemes(b));
+    finalScore -= ((aS - bS).abs() * 8 * penaltyMult).round();
+    
+    final aPL = aVars.isNotEmpty ? aVars.first.length : _convertToPseudoPhonemes(a).length;
+    final bPL = bVars.isNotEmpty ? bVars.first.length : _convertToPseudoPhonemes(b).length;
+    final maxPL = aPL > bPL ? aPL : bPL;
+    if (maxPL > 0) {
+      final ratio = (aPL < bPL ? aPL : bPL) / maxPL;
+      if (!isContained && ratio < (aVars.isEmpty || bVars.isEmpty ? 0.75 : 0.6)) {
+        finalScore -= ((1.0 - ratio) * (aVars.isEmpty || bVars.isEmpty ? 25 : 15) * penaltyMult).round();
       }
     }
-
-    // [BugFix] 添加词组词数惩罚
-    final aWords =
-        a.trim().split(RegExp(r'[\s\-]+')).where((e) => e.isNotEmpty).length;
-    final bWords =
-        b.trim().split(RegExp(r'[\s\-]+')).where((e) => e.isNotEmpty).length;
-    final wordDiff = (aWords - bWords).abs();
-    if (wordDiff > 0) {
-      final oldScore = finalScore;
-      finalScore -= wordDiff * 5;
-      if (finalScore < 0) finalScore = 0;
-      Global.logger.d(
-          '===== Phonetic compare (word penalty): reduced score from $oldScore to $finalScore because wordDiff is $wordDiff');
-    }
-
-    // [New] 添加音节数惩罚
-    final aSyllables = aVars.isNotEmpty
-        ? _countSyllables(aVars.first)
-        : _countSyllables(_convertToPseudoPhonemes(a));
-    final bSyllables = bVars.isNotEmpty
-        ? _countSyllables(bVars.first)
-        : _countSyllables(_convertToPseudoPhonemes(b));
-    final syllableDiff = (aSyllables - bSyllables).abs();
-    if (syllableDiff > 0) {
-      final oldScore = finalScore;
-      finalScore -= syllableDiff * 8; // 中等程度的 8 分惩罚
-      if (finalScore < 0) finalScore = 0;
-      Global.logger.d(
-          '===== Phonetic compare (syllable penalty): reduced score from $oldScore to $finalScore because syllableDiff is $syllableDiff');
-    }
-
-    // [New] 添加音素长度比例惩罚
-    // 专门解决 short vs long 的问题，比如 "ru" (2) vs "rhyme" (3)
-    final aPhonLen = aVars.isNotEmpty
-        ? aVars.first.length
-        : _convertToPseudoPhonemes(a).length;
-    final bPhonLen = bVars.isNotEmpty
-        ? bVars.first.length
-        : _convertToPseudoPhonemes(b).length;
-    final maxPhonLen = aPhonLen > bPhonLen ? aPhonLen : bPhonLen;
-    final minPhonLen = aPhonLen < bPhonLen ? aPhonLen : bPhonLen;
-
-    if (maxPhonLen > 0) {
-      final ratio = minPhonLen / maxPhonLen;
-      // 对于垃圾词对比，长度比例要求更严格
-      final isGarbageInvolved = aVars.isEmpty || bVars.isNotEmpty == false; // 简化判断
-      final threshold = isGarbageInvolved ? 0.75 : 0.6; 
-
-      if (ratio < threshold) {
-        final oldScore = finalScore;
-        // 惩罚力度：垃圾词惩罚更重
-        final penaltyWeight = isGarbageInvolved ? 25 : 15;
-        finalScore -= ((1.0 - ratio) * penaltyWeight).round();
-        if (finalScore < 0) finalScore = 0;
-        Global.logger.d(
-            '===== Phonetic compare (length ratio penalty): reduced score from $oldScore to $finalScore because ratio is $ratio');
-      }
-    }
-
-    return finalScore;
+    return finalScore.clamp(0, 100);
   }
 
-  /// 内部方法：将真实音素序列（如 [S, W, IH]）弱化处理（合并母音），以便与垃圾词对比
   static List<String> _weakenPhonemes(List<String> phons) {
-    const vowels = {
-      "AA",
-      "AE",
-      "AH",
-      "AO",
-      "AW",
-      "AY",
-      "EH",
-      "ER",
-      "EY",
-      "IH",
-      "IY",
-      "OW",
-      "OY",
-      "UH",
-      "UW",
-      "Y",
-      "W"
-    };
-    // 去重坍缩（防止叠音干扰，如 the effect -> @ @ -> @）
-    List<String> weakened = [];
-    for (final p in phons) {
-      final parsed = p.replaceAll(_digitRegExp, '');
-      if (parsed == "ER") {
-        weakened.add("@");
-        weakened.add("R");
-      } else {
-        weakened.add(vowels.contains(parsed) ? "@" : parsed);
-      }
-    }
-
-    List<String> collapsed = [];
-    if (weakened.isNotEmpty) {
-      collapsed.add(weakened[0]);
-      for (var i = 1; i < weakened.length; i++) {
-        if (weakened[i] == weakened[i - 1]) continue;
-        collapsed.add(weakened[i]);
-      }
-    }
-    return collapsed;
+    const v = {"AA", "AE", "AH", "AO", "AW", "AY", "EH", "ER", "EY", "IH", "IY", "OW", "OY", "UH", "UW"};
+    return phons.expand((p) {
+      final base = p.replaceAll(_digitRegExp, '');
+      if (base == "ER") return ["@", "R"];
+      if (v.contains(base)) return ["@"];
+      return [base];
+    }).toList();
   }
 
-  /// 内部方法：将普通乱码文本转换为伪音素序列（骨架提取）
   static List<String> _convertToPseudoPhonemes(String word) {
-    String w = word.toLowerCase().trim();
-    if (w.isEmpty) return [];
-
-    // 1. 常见辅音组合简化映射
-    w = w.replaceAll('ph', 'f');
-    w = w.replaceAll('sh', 'S'); // 临时占位
-    w = w.replaceAll('ch', 'C');
-    w = w.replaceAll('th', 'T');
-    w = w.replaceAll('ck', 'k');
-    w = w.replaceAll('ng', 'G');
-    w = w.replaceAll('qu', 'kw');
-    w = w.replaceAll(_cRegExp, 's');
-
-    // 处理末尾不发音的 e (如 hardware -> hardwar, base -> bas)
-    // 规则：长度 > 3 且末尾为 e 时，若 e 前面是辅音，则去掉 e
-    if (w.length > 3 && w.endsWith('e')) {
-      final prev = w[w.length - 2];
-      if (!"aeiouy".contains(prev)) {
-        w = w.substring(0, w.length - 1);
-      }
-    }
-
-    // 2. 转换为标准音素集映射
-    final List<String> res = [];
+    final w = word.toLowerCase(); List<String> res = [];
     for (int i = 0; i < w.length; i++) {
-      final char = w[i];
-      if ("aeiouy".contains(char)) {
-        res.add("@"); // 统一标识为母音 (@ 不会与任何辅音字母冲突)
-      } else if (char == 'S') {
-        res.add("SH");
-      } else if (char == 'C') {
-        res.add("CH");
-      } else if (char == 'T') {
-        res.add("TH");
-      } else if (char == 'G') {
-        res.add("NG");
-      } else if (char == 'h') {
-        res.add("HH");
-      } else if (char == 'j') {
-        res.add("JH");
-      } else if (char == 'c') {
-        res.add("K");
-      } else if (_lowerAlphaRegExp.hasMatch(char)) {
-        // [Optimization] Handle syllabic L/R at the end of a word (after a consonant)
-        // e.g. "litre" -> L-I-T-@R, "apple" -> @-P-@L
-        if ((char == 'r' || char == 'l') && i > 0 && i == w.length - 1) {
-          final prev = w[i - 1];
-          if (!"aeiouy".contains(prev)) {
-            res.add("@");
-          }
-        }
-        res.add(char.toUpperCase());
+      final c = w[i]; if ("aeiouy".contains(c)) res.add("@");
+      else if ("rmnpbtdszfvkwy".contains(c)) res.add(c.toUpperCase());
+      else if (c == 'g' && i + 1 < w.length && _cRegExp.hasMatch(w[i + 1])) res.add("JH");
+      else if (c == 'c' && i + 1 < w.length && _cRegExp.hasMatch(w[i + 1])) res.add("S");
+      else if (c == 'x') { res.add("K"); res.add("S"); }
+      else if (_lowerAlphaRegExp.hasMatch(c)) {
+        if ("rl".contains(c) && i > 0 && i == w.length - 1 && !"aeiouy".contains(w[i - 1])) res.add("@");
+        res.add(c.toUpperCase());
       }
     }
-
-    // 3. 去重坍缩（防止叠音干扰，如 ttt -> T）
-    List<String> collapsed = [];
-    if (res.isNotEmpty) {
-      collapsed.add(res[0]);
-      for (var i = 1; i < res.length; i++) {
-        if (res[i] == res[i - 1]) continue;
-        collapsed.add(res[i]);
-      }
-    }
+    List<String> collapsed = []; if (res.isNotEmpty) { collapsed.add(res[0]); for (var i = 1; i < res.length; i++) { if (res[i] != res[i - 1]) collapsed.add(res[i]); } }
     return collapsed;
   }
-
-  /// 在候选集中按音素相似度选最佳项，返回原候选串
-  static Future<String> bestMatch(List<String> candidates, String target) async {
-    if (candidates.isEmpty) return '';
-    int bestScore = -1;
-    String best = candidates.first;
-    for (final c in candidates) {
-      final s = await similarity(c, target);
-      if (s > bestScore) {
-        bestScore = s;
-        best = c;
-      }
-    }
-    return best;
-  }
-
-  // ---------- 内部实现 ----------
 
   static void _parse(String content) {
-    // CMUdict 每行格式: WORD  PH1 PH2 PH3 ...
-    // 允许注释与空行；带有 (1)/(2) 变体的词，去掉括号编号作为同词的不同变体
-    final lines = content.split('\n');
-    for (final rawLine in lines) {
-      final line = rawLine.trim();
-      if (line.isEmpty) continue;
-      if (line.startsWith(';;;') || line.startsWith('#')) continue;
-
-      final parts = line.split(_spaceRegExp);
-      if (parts.length < 2) continue;
-
-      var head = parts.first;
-      // 处理变体：WORD(1)
-      final paren = head.indexOf('(');
-      if (paren > 0 && head.endsWith(')')) {
-        head = head.substring(0, paren);
-      }
-      final word = head.toLowerCase();
-      // 注意：CMU 音素里元音带 0/1/2 重音数字，这里去掉数字以做宽松匹配
-      final phonemes =
-          parts.sublist(1).map((p) => p.replaceAll(_digitRegExp, '')).toList();
-
-      final variants =
-          _wordToPhonemeVariants.putIfAbsent(word, () => <List<String>>[]);
-      variants.add(phonemes);
+    for (var line in content.split('\n')) {
+      line = line.trim(); if (line.isEmpty || line.startsWith(';') || line.startsWith('#')) continue;
+      final parts = line.split(_spaceRegExp); if (parts.length < 2) continue;
+      var head = parts.first; final pn = head.indexOf('('); if (pn > 0 && head.endsWith(')')) head = head.substring(0, pn);
+      _wordToPhonemeVariants.putIfAbsent(head.toLowerCase(), () => []).add(parts.sublist(1).map((a) => a.replaceAll(_digitRegExp, '')).toList());
     }
   }
 
-  /// 将两个音素序列的距离映射为 0-100 相似度
   static int _phonemeSimilarity(List<String> a, List<String> b) {
     if (a.isEmpty || b.isEmpty) return 0;
-
-    // 使用加权编辑距离，考虑常见的识别混淆
-    final dist = _weightedPhonemeDistance(a, b);
-    final maxLen = a.length > b.length ? a.length : b.length;
-    final score = ((maxLen - dist) * 100.0 / maxLen).clamp(0.0, 100.0).round();
-    return score;
+    final d = _weightedPhonemeDistance(a, b), m = a.length > b.length ? a.length : b.length;
+    return ((m - d) * 100.0 / m).clamp(0.0, 100.0).round();
   }
 
-  /// 针对英语音素特性的加权编辑距离
   static double _weightedPhonemeDistance(List<String> a, List<String> b) {
-    final n = a.length;
-    final m = b.length;
-    if (n == 0) return m.toDouble();
-    if (m == 0) return n.toDouble();
-
-    final dp = List.generate(n + 1, (_) => List<double>.filled(m + 1, 0.0));
-
-    // 计算特定位置的删除/插入代价
-    double getDelCost(int i, int j) {
-      double cost = 1.0;
-      // 末尾冗余元音或 R
-      if (i == n &&
-          (a[i - 1] == "@" || (a[i - 1] == "R" && i > 1 && a[i - 2] == "@")) &&
-          n > m &&
-          j == m) {
-        cost = 0.4;
-      }
-      // T R -> CH / D R -> JH 中的 R
-      if (a[i - 1] == "R" &&
-          i > 1 &&
-          (a[i - 2] == "T" ||
-              a[i - 2] == "D" ||
-              a[i - 2] == "CH" ||
-              a[i - 2] == "JH")) {
-        cost = 0.4;
-      }
-      // 开头的静音 W (如 wrenger -> range)
-      if (i == 1 && a[i - 1] == "W" && n > m && n > 1 && a[i] == "R") {
-        cost = 0.4;
-      }
-      return cost;
-    }
-
-    double getInsCost(int i, int j) {
-      double cost = 1.0;
-      if (j == m && b[j - 1] == "@" && m > n && i == n) {
-        cost = 0.4;
-      }
-      if (b[j - 1] == "R" &&
-          j > 1 &&
-          (b[j - 2] == "T" ||
-              b[j - 2] == "D" ||
-              b[j - 2] == "CH" ||
-              b[j - 2] == "JH")) {
-        cost = 0.4;
-      }
-      return cost;
-    }
-
-    // 初始化第一层（考虑位置相关的代价）
-    dp[0][0] = 0;
-    for (var i = 1; i <= n; i++) {
-      dp[i][0] = dp[i - 1][0] + getDelCost(i, 0);
-    }
-    for (var j = 1; j <= m; j++) {
-      dp[0][j] = dp[0][j - 1] + getInsCost(0, j);
-    }
-
-    for (var i = 1; i <= n; i++) {
-      for (var j = 1; j <= m; j++) {
-        final subCost = _phonemeMatchCost(a[i - 1], b[j - 1]);
-        final delCost = getDelCost(i, j);
-        final insCost = getInsCost(i, j);
-
-        final del = dp[i - 1][j] + delCost;
-        final ins = dp[i][j - 1] + insCost;
-        final sub = dp[i - 1][j - 1] + subCost;
-
-        dp[i][j] = del < ins ? (del < sub ? del : sub) : (ins < sub ? ins : sub);
-      }
-    }
+    final n = a.length, m = b.length, dp = List.generate(n + 1, (_) => List<double>.filled(m + 1, 0.0));
+    double getC(List<String> l, int i) { if (i == l.length - 1 && l[i] == "@") return 0.4; if (l[i] == "R" && i > 0 && "TD".contains(l[i - 1])) return 0.4; return 1.0; }
+    for (var i = 1; i <= n; i++) dp[i][0] = dp[i - 1][0] + getC(a, i - 1);
+    for (var j = 1; j <= m; j++) dp[0][j] = dp[0][j - 1] + getC(b, j - 1);
+    for (var i = 1; i <= n; i++) { for (var j = 1; j <= m; j++) {
+      final s = dp[i - 1][j - 1] + _phonemeMatchCost(a[i - 1], b[j - 1]), d = dp[i - 1][j] + getC(a, i - 1), ins = dp[i][j - 1] + getC(b, j - 1);
+      dp[i][j] = [s, d, ins].reduce((v, e) => v < e ? v : e);
+    } }
     return dp[n][m];
   }
 
-  /// 定义音素之间的匹配代价
   static double _phonemeMatchCost(String p1, String p2) {
     if (p1 == p2) return 0.0;
-
-    // ASR 模型易混淆组（代价设为 0.2，表示 80% 相似度）
-    // 针对中国人发音习惯及 ASR 常见偏差进行优化
-    const confusionGroups = [
-      {"V", "L"},
-      {"V", "B"},
-      {"V", "F"},
-      {"V", "W"},
-      {"L", "R"},
-      {"B", "P"},
-      {"D", "T"},
-      {"G", "K"},
-      {"S", "Z"},
-      {"T", "CH"},
-      {"D", "JH"},
-      {"SH", "ZH"},
-      {"CH", "JH"},
-      {"IY", "IH", "Y"}, // High front
-      {"EY", "EH", "AE", "@"}, // Mid/Low front
-      {"AA", "AH", "AO"}, // Back vowels
-      {"UH", "UW", "W"}, // High back
-      {"OW", "OY", "AO"},
-      {"M", "N", "NG"}, // Nasals
-      {"Y", "@"},
-      {"W", "@"},
-      {"R", "@"},
-      {"L", "@"},
-      {"ER", "@"},
-      {"L", "R"}, // L vs R
-      {"V", "W"}, // V vs W
-      {"TH", "S"}, // TH as S
-      {"TH", "T"}, // TH as T
-      {"TH", "F"}, // TH as F
-      {"DH", "Z"}, // DH as Z
-      {"DH", "D"}, // DH as D
-      {"DH", "V"}, // DH as V
-      {"S", "SH", "CH"}, 
-      {"Z", "ZH", "JH"},
-      {"C", "K", "G"},
-      {"JH", "NG", "G"},
-      {"JH", "@"},
-    ];
-
-    for (final group in confusionGroups) {
-      if (group.contains(p1) && group.contains(p2)) return 0.2;
-    }
-
-    // [New] 分类辅音惩罚逻辑
-    const liquids = {"L", "R", "W", "Y"};
-    const nasals = {"M", "N", "NG"};
-    const obstruents = {
-      "P", "B", "T", "D", "K", "G", "CH", "JH",
-      "F", "V", "TH", "DH", "S", "Z", "SH", "ZH", "HH"
-    };
-
-    bool isL1 = liquids.contains(p1);
-    bool isL2 = liquids.contains(p2);
-    bool isN1 = nasals.contains(p1);
-    bool isN2 = nasals.contains(p2);
-    bool isO1 = obstruents.contains(p1);
-    bool isO2 = obstruents.contains(p2);
-
-    // 跨大类替换（如 L vs D, M vs S），惩罚最重
-    if ((isL1 && (isN2 || isO2)) || (isL2 && (isN1 || isO1)) || (isN1 && isO2) || (isN2 && isO1)) {
-      return 2.0; 
-    }
-
-    return 1.2; // 默认无关音素代价
+    const g = [{"V", "L", "B", "F", "W"}, {"L", "R", "ER"}, {"B", "P"}, {"D", "T"}, {"G", "K"}, {"S", "Z"}, {"T", "CH", "SH"}, {"D", "JH"}, {"IY", "IH", "Y"}, {"EY", "EH", "AE", "@"}, {"AA", "AH", "AO"}, {"UH", "UW", "W"}, {"OW", "OY", "AO"}, {"M", "N", "NG"}, {"Y", "@"}, {"W", "@"}, {"R", "@"}, {"L", "@"}, {"ER", "@"}, {"TH", "S", "T", "F"}, {"DH", "Z", "D", "V"}];
+    for (final gi in g) if (gi.contains(p1) && gi.contains(p2)) return 0.2;
+    const l = {"L", "R", "ER", "W", "Y"}, n = {"M", "N", "NG"}, o = {"P", "B", "T", "D", "K", "G", "CH", "JH", "F", "V", "TH", "DH", "S", "Z", "SH", "ZH", "HH"};
+    if ((l.contains(p1) && (n.contains(p2) || o.contains(p2))) || (l.contains(p2) && (n.contains(p1) || o.contains(p1))) || (n.contains(p1) && o.contains(p2)) || (n.contains(p2) && o.contains(p1))) return 1.9;
+    return 1.2;
   }
 
-  /// 统计音素列表中的音节数（元音数）
-  static int _countSyllables(List<String> phons) {
-    if (phons.isEmpty) return 0;
-    const vowels = {
-      "AA",
-      "AE",
-      "AH",
-      "AO",
-      "AW",
-      "AY",
-      "EH",
-      "ER",
-      "EY",
-      "IH",
-      "IY",
-      "OW",
-      "OY",
-      "UH",
-      "UW",
-      "@", // 弱化后的标记也算
-    };
-    int count = 0;
-    for (final p in phons) {
-      final parsed = p.replaceAll(_digitRegExp, '');
-      if (vowels.contains(parsed)) {
-        count++;
-      }
-    }
-    return count;
+  static int _countSyllables(List<String> p) {
+    const v = {"AA", "AE", "AH", "AO", "AW", "AY", "EH", "ER", "EY", "IH", "IY", "OW", "OY", "UH", "UW", "@"};
+    return p.where((x) => v.contains(x.replaceAll(_digitRegExp, ''))).length;
   }
 }
