@@ -80,7 +80,7 @@ class RemoteAiRuntime implements AiRuntime {
       return await completer.future;
     } catch (e) {
       Global.logger.e('远程 AI 流式请求失败: $e');
-      return AiResponse.error('远程服务失败: $e');
+      return AiResponse.error(e.toString());
     }
   }
 
@@ -124,7 +124,7 @@ class RemoteAiRuntime implements AiRuntime {
       return AiResponse.error('未支持的远程任务');
     } catch (e) {
       Global.logger.e('远程 AI 请求失败: $e');
-      return AiResponse.error('远程服务失败: $e');
+      return AiResponse.error(e.toString());
     }
   }
 }

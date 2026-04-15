@@ -488,14 +488,14 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
         });
       } else {
         setState(() {
-          _aiError = response.errorMessage ?? 'AI 助教服务暂时不可用';
+          _aiError = response.errorMessage;
           _aiLoading = false;
         });
       }
     } catch (e, st) {
       Global.logger.e('Chat error', error: e, stackTrace: st);
       setState(() {
-        _aiError = 'AI 助教服务异常 ($e)';
+        _aiError = e.toString();
         _aiLoading = false;
       });
     }
@@ -572,7 +572,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
       } else {
         if (mounted) {
           setState(() {
-            _aiError = response.errorMessage ?? 'AI 解释失败';
+            _aiError = response.errorMessage;
             _aiLoading = false;
           });
         }
@@ -583,7 +583,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
       Global.logger.e('AI explainWord exception', error: e, stackTrace: st);
       if (mounted) {
         setState(() {
-          _aiError = 'AI 解释失败: $e';
+          _aiError = e.toString();
           _aiLoading = false;
         });
       }
@@ -1108,8 +1108,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.refresh, size: 16),
-                  onPressed: () => _prefetchAiExplanation(),
+                  icon: const Icon(Icons.close, size: 16),
+                  onPressed: () => setState(() => _aiError = null),
                 )
               ],
             ),
