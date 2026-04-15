@@ -43,6 +43,7 @@ LATER  L EY1 T ER0
 LITER  L IY1 T ER0
 CENTER  S EH1 N T ER0
 CENTRE  S EH1 N T ER0
+RANGE  R EY1 N JH
 ''';
           return ByteData.view(Uint8List.fromList(utf8.encode(content)).buffer);
         }
@@ -177,6 +178,15 @@ CENTRE  S EH1 N T ER0
       final int score = await PhonemeUtil.similarity(asrResult, target);
       debugPrint('Centre vs Center score: $score');
       
+      expect(score, greaterThanOrEqualTo(Constants.phonemeMatchThreshold));
+    });
+    test('range vs wrenger - should match', () async {
+      const String target = "range";
+      const String asrResult = "wrenger";
+
+      final int score = await PhonemeUtil.similarity(asrResult, target);
+      debugPrint('Range vs Wrenger score: $score');
+
       expect(score, greaterThanOrEqualTo(Constants.phonemeMatchThreshold));
     });
   });

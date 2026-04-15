@@ -8,7 +8,7 @@ import 'package:nnbdc/util/edit_distance.dart';
 /// - 提供单词到音素的查找
 /// - 提供音素级编辑距离与相似度评分
 class PhonemeUtil {
-  static const String _assetPath = 'assets/cmudict.dict'; 
+  static const String _assetPath = 'assets/cmudict.dict';
   static Completer<void>? _loadCompleter;
   static bool _loaded = false;
   static final Map<String, List<List<String>>> _wordToPhonemeVariants = {};
@@ -40,7 +40,8 @@ class PhonemeUtil {
           .d('PhonemeUtil loaded: ${_wordToPhonemeVariants.length} entries');
       _loadCompleter!.complete();
     } catch (e, st) {
-      Global.logger.e('Failed to load $_assetPath: $e', error: e, stackTrace: st);
+      Global.logger
+          .e('Failed to load $_assetPath: $e', error: e, stackTrace: st);
       _loadCompleter!.completeError(e, st);
       _loadCompleter = null; // 允许下次重试
     }
@@ -91,7 +92,7 @@ class PhonemeUtil {
   /// 核心改进：利用 cmudict.dict 对“垃圾结果”进行音素骨架提取与对比
   static Future<int> similarity(String a, String b) async {
     if (a.isEmpty || b.isEmpty) return 0;
-    
+
     int finalScore = 0;
 
     final aVars = await lookup(a);
@@ -117,7 +118,8 @@ class PhonemeUtil {
       }
 
       // 记录骨架对比日志
-      Global.logger.d('===== Phonetic compare: "$a"[$bestAWeakened] vs "$b"[$bestBWeakened] score: $best');
+      Global.logger.d(
+          '===== Phonetic compare: "$a"[$bestAWeakened] vs "$b"[$bestBWeakened] score: $best');
       finalScore = best;
     } else {
       // 情况 B：至少一个词不在字典里（比如 ASR 吐出了乱码 suece）
@@ -139,7 +141,8 @@ class PhonemeUtil {
         }
 
         // 记录骨架对比日志，方便排查由于拼写导致的“听感一致”
-        Global.logger.d('===== Phonetic compare: "$garbageWord"[$garbagePseudo] vs target[$bestRef] score: $best');
+        Global.logger.d(
+            '===== Phonetic compare: "$garbageWord"[$garbagePseudo] vs target[$bestRef] score: $best');
 
         // 降级策略：非字典词的拟真音素对比存在不确定性，上限扣除 5 分
         // 避免 "nylon" vs "naylan" 这种骨架一致但元音/拼写错误的词拿到 100 分
@@ -151,24 +154,29 @@ class PhonemeUtil {
         if (maxLen == 0) {
           finalScore = 0;
         } else {
-          finalScore = ((maxLen - dist) * 100.0 / maxLen).clamp(0.0, 100.0).round();
+          finalScore =
+              ((maxLen - dist) * 100.0 / maxLen).clamp(0.0, 100.0).round();
         }
 
         // 记录字符编辑距离日志
-        Global.logger.d('===== Phonetic compare (fallback): "$a" vs "$b" edit-distance score: $finalScore');
+        Global.logger.d(
+            '===== Phonetic compare (fallback): "$a" vs "$b" edit-distance score: $finalScore');
       }
     }
 
     // [BugFix] 添加词组词数惩罚：缺少或多出整个单词时，大幅降低相似度
     // 避免部分匹配导致长短语轻易得高分跳过的严重体验问题（例如 target="in place"(6音素), ASR="place"(4音素) 竟然拿到 66分 > 阈值65分）
-    final aWords = a.trim().split(RegExp(r'[\s\-]+')).where((e) => e.isNotEmpty).length;
-    final bWords = b.trim().split(RegExp(r'[\s\-]+')).where((e) => e.isNotEmpty).length;
+    final aWords =
+        a.trim().split(RegExp(r'[\s\-]+')).where((e) => e.isNotEmpty).length;
+    final bWords =
+        b.trim().split(RegExp(r'[\s\-]+')).where((e) => e.isNotEmpty).length;
     final wordDiff = (aWords - bWords).abs();
     if (wordDiff > 0) {
       final oldScore = finalScore;
       finalScore -= wordDiff * 5;
       if (finalScore < 0) finalScore = 0;
-      Global.logger.d('===== Phonetic compare (word penalty): reduced score from $oldScore to $finalScore because wordDiff is $wordDiff');
+      Global.logger.d(
+          '===== Phonetic compare (word penalty): reduced score from $oldScore to $finalScore because wordDiff is $wordDiff');
     }
 
     return finalScore;
@@ -176,7 +184,25 @@ class PhonemeUtil {
 
   /// 内部方法：将真实音素序列（如 [S, W, IH]）弱化处理（合并母音），以便与垃圾词对比
   static List<String> _weakenPhonemes(List<String> phons) {
-    const vowels = {"AA", "AE", "AH", "AO", "AW", "AY", "EH", "ER", "EY", "IH", "IY", "OW", "OY", "UH", "UW", "Y", "W"};
+    const vowels = {
+      "AA",
+      "AE",
+      "AH",
+      "AO",
+      "AW",
+      "AY",
+      "EH",
+      "ER",
+      "EY",
+      "IH",
+      "IY",
+      "OW",
+      "OY",
+      "UH",
+      "UW",
+      "Y",
+      "W"
+    };
     // 去重坍缩（防止叠音干扰，如 the effect -> @ @ -> @）
     List<String> weakened = [];
     for (final p in phons) {
@@ -188,7 +214,7 @@ class PhonemeUtil {
         weakened.add(vowels.contains(parsed) ? "@" : parsed);
       }
     }
-    
+
     List<String> collapsed = [];
     if (weakened.isNotEmpty) {
       collapsed.add(weakened[0]);
@@ -283,7 +309,6 @@ class PhonemeUtil {
     }
     return best;
   }
-// ... 剩下的解析代码保持不变
 
   // ---------- 内部实现 ----------
 
@@ -307,9 +332,11 @@ class PhonemeUtil {
       }
       final word = head.toLowerCase();
       // 注意：CMU 音素里元音带 0/1/2 重音数字，这里去掉数字以做宽松匹配
-      final phonemes = parts.sublist(1).map((p) => p.replaceAll(_digitRegExp, '')).toList();
+      final phonemes =
+          parts.sublist(1).map((p) => p.replaceAll(_digitRegExp, '')).toList();
 
-      final variants = _wordToPhonemeVariants.putIfAbsent(word, () => <List<String>>[]);
+      final variants =
+          _wordToPhonemeVariants.putIfAbsent(word, () => <List<String>>[]);
       variants.add(phonemes);
     }
   }
@@ -333,35 +360,63 @@ class PhonemeUtil {
     if (m == 0) return n.toDouble();
 
     final dp = List.generate(n + 1, (_) => List<double>.filled(m + 1, 0.0));
-    for (var i = 0; i <= n; i++) {
-      dp[i][0] = i.toDouble();
+
+    // 计算特定位置的删除/插入代价
+    double getDelCost(int i, int j) {
+      double cost = 1.0;
+      // 末尾冗余元音或 R
+      if (i == n &&
+          (a[i - 1] == "@" || (a[i - 1] == "R" && i > 1 && a[i - 2] == "@")) &&
+          n > m &&
+          j == m) {
+        cost = 0.4;
+      }
+      // T R -> CH / D R -> JH 中的 R
+      if (a[i - 1] == "R" &&
+          i > 1 &&
+          (a[i - 2] == "T" ||
+              a[i - 2] == "D" ||
+              a[i - 2] == "CH" ||
+              a[i - 2] == "JH")) {
+        cost = 0.4;
+      }
+      // 开头的静音 W (如 wrenger -> range)
+      if (i == 1 && a[i - 1] == "W" && n > m && n > 1 && a[i] == "R") {
+        cost = 0.4;
+      }
+      return cost;
     }
-    for (var j = 0; j <= m; j++) {
-      dp[0][j] = j.toDouble();
+
+    double getInsCost(int i, int j) {
+      double cost = 1.0;
+      if (j == m && b[j - 1] == "@" && m > n && i == n) {
+        cost = 0.4;
+      }
+      if (b[j - 1] == "R" &&
+          j > 1 &&
+          (b[j - 2] == "T" ||
+              b[j - 2] == "D" ||
+              b[j - 2] == "CH" ||
+              b[j - 2] == "JH")) {
+        cost = 0.4;
+      }
+      return cost;
+    }
+
+    // 初始化第一层（考虑位置相关的代价）
+    dp[0][0] = 0;
+    for (var i = 1; i <= n; i++) {
+      dp[i][0] = dp[i - 1][0] + getDelCost(i, 0);
+    }
+    for (var j = 1; j <= m; j++) {
+      dp[0][j] = dp[0][j - 1] + getInsCost(0, j);
     }
 
     for (var i = 1; i <= n; i++) {
       for (var j = 1; j <= m; j++) {
-        // 计算替换代价
         final subCost = _phonemeMatchCost(a[i - 1], b[j - 1]);
-
-        // 默认增删代价
-        double delCost = 1.0;
-        double insCost = 1.0;
-
-        // 特殊优化：末尾冗余元音（如 ohm 被识成 oh mo, @ M -> @ M @）
-        // 如果 ASR 有尾部多出来的 @，降低代价
-        if (i == n && a[i - 1] == "@" && n > m) delCost = 0.4;
-        // 如果 Target 尾部有 @ 而 ASR 漏了，降低代价
-        if (j == m && b[j - 1] == "@" && m > n) insCost = 0.4;
-
-        // T R -> CH / D R -> JH 优化：当 R 跟在 T/D/CH/JH 后面时，允许其被较容易地忽略或添加
-        if (a[i - 1] == "R" && i > 1 && (a[i - 2] == "T" || a[i - 2] == "D" || a[i - 2] == "CH" || a[i - 2] == "JH")) {
-          delCost = 0.4;
-        }
-        if (b[j - 1] == "R" && j > 1 && (b[j - 2] == "T" || b[j - 2] == "D" || b[j - 2] == "CH" || b[j - 2] == "JH")) {
-          insCost = 0.4;
-        }
+        final delCost = getDelCost(i, j);
+        final insCost = getInsCost(i, j);
 
         final del = dp[i - 1][j] + delCost;
         final ins = dp[i][j - 1] + insCost;
@@ -380,34 +435,38 @@ class PhonemeUtil {
     // ASR 模型易混淆组（代价设为 0.2，表示 80% 相似度）
     // 针对中国人发音习惯及 ASR 常见偏差进行优化
     const confusionGroups = [
-      {"V", "L"}, // 经典偏差: video/ledio (南方人常见)
-      {"V", "B"}, // video/bideo
-      {"V", "F"}, // video/fideo
-      {"V", "W"}, // video/wideo (非常常见)
-      {"L", "R"}, // light/right
-      {"B", "P"}, // big/pig
-      {"D", "T"}, // dog/log? no, dog/tok
-      {"G", "K"}, // bag/back
-      {"S", "Z"}, // bus/buzz
-      {"T", "CH"}, // true/chew
-      {"D", "JH"}, // drive/jive
+      {"V", "L"},
+      {"V", "B"},
+      {"V", "F"},
+      {"V", "W"},
+      {"L", "R"},
+      {"B", "P"},
+      {"D", "T"},
+      {"G", "K"},
+      {"S", "Z"},
+      {"T", "CH"},
+      {"D", "JH"},
       {"SH", "ZH"},
       {"CH", "JH"},
-      {"TH", "DH"}, // think/this (虽然都是 TH，但在 ASR 中可能有不同表现)
-      {"TH", "T"},  // think/tink (常见)
-      {"TH", "D"},  // thin/din (常见)
-      {"TH", "S"},  // think/sink (非常常见)
-      {"DH", "D"},  // this/dis
-      {"DH", "Z"},  // this/zis (常见)
-      {"S", "@"},   // 某些情况下元音和擦音混淆
-      {"M", "N"},   // am/an
-      {"IH", "Y"},  // sit/si
-      {"IY", "Y"},  // see/si
-      {"Y", "@"},   // 半元音 Y 和普通元音 @ 的相似性
-      {"ER", "@"},  // R-colored vowel 跟普通元音混淆
-      {"UW", "W"},  // woo/woo
-      {"W", "@"},   // 增加 W 与元音混淆 (ASR 有时把 W 识别为母音部分)
-      {"C", "K"},   // carotti/cruelty
+      {"TH", "DH"},
+      {"TH", "T"},
+      {"TH", "D"},
+      {"TH", "S"},
+      {"DH", "D"},
+      {"DH", "Z"},
+      {"S", "@"},
+      {"M", "N"},
+      {"IH", "Y"},
+      {"IY", "Y"},
+      {"Y", "@"},
+      {"ER", "@"},
+      {"UW", "W"},
+      {"W", "@"},
+      {"C", "K"},
+      {"JH", "NG"},
+      {"JH", "G"},
+      {"N", "NG"},
+      {"JH", "@"},
     ];
 
     for (final group in confusionGroups) {
