@@ -14,6 +14,8 @@ import beidanci.service.po.SysParam;
 import beidanci.service.util.SysParamUtil;
 import java.util.*;
 import java.util.concurrent.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import org.springframework.http.MediaType;
 import com.alibaba.dashscope.common.Message;
@@ -22,6 +24,7 @@ import io.reactivex.Flowable;
 
 @RestController
 public class AiController {
+    private static final Logger log = LoggerFactory.getLogger(AiController.class);
 
     @Autowired
     private UserBo userBo;
@@ -58,7 +61,7 @@ public class AiController {
             String story = aiBo.generateShortStory(words);
             return Result.success(story);
         } catch (Exception e) {
-            return Result.fail("获取 AI 短文失败: " + e.getMessage());
+            return Result.fail(e.getMessage());
         }
     }
 
@@ -105,19 +108,21 @@ public class AiController {
                         }
                     },
                     error -> {
-                        Result<String> failRs = Result.fail("AI服务异常: " + error.getMessage());
+                        log.error("AI 聊天流发生错误", error);
+                        Result<String> failRs = Result.fail(error.getMessage());
                         try { emitter.send(Objects.requireNonNull(failRs)); } catch (Exception ignore) {}
-                        emitter.completeWithError(error);
+                        emitter.complete();
                     },
                     () -> {
                         emitter.complete();
                     }
                 );
             } catch (Exception e) {
+                log.error("AI 聊天处理发生异常", e);
                 try {
-                    Result<String> failRs = Result.fail("后端系统异常: " + e.getMessage());
+                    Result<String> failRs = Result.fail(e.getMessage());
                     emitter.send(Objects.requireNonNull(failRs));
-                    emitter.completeWithError(e);
+                    emitter.complete();
                 } catch (Exception ignore) {}
             } finally {
                 if (releaseToken != null) {
@@ -151,7 +156,7 @@ public class AiController {
             String result = aiBo.chat(messages);
             return Result.success(result);
         } catch (Exception e) {
-            return Result.fail("AI服务异常: " + e.getMessage());
+            return Result.fail(e.getMessage());
         }
     }
 

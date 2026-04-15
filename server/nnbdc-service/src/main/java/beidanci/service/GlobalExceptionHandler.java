@@ -33,10 +33,14 @@ public class GlobalExceptionHandler implements HandlerExceptionResolver {
         log.error(String.format("访问[%s]时出现异常", request.getRequestURI()), e);
 
         try {
-            response.setStatus(500);
-            Util.sendBooleanResponse(false, "系统异常:" + e.getMessage(), null, response);
+            if (!response.isCommitted()) {
+                response.setStatus(500);
+                Util.sendBooleanResponse(false, e.getMessage(), null, response);
+            } else {
+                log.warn("无法通过 GlobalExceptionHandler 发送错误响应，响应已提交: {}", request.getRequestURI());
+            }
         } catch (IOException e1) {
-            log.error("", e1);
+            log.error("发送异常响应时发生 I/O 错误", e1);
         }
         return new ModelAndView(); // 这里new一个空的ModelAndView而不是返回null，是为了告诉底层异常已被处理了。
 

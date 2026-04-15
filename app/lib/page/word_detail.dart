@@ -488,14 +488,14 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
         });
       } else {
         setState(() {
-          _aiError = 'AI 助教刚才开小差了，请再试一次。';
+          _aiError = response.errorMessage ?? 'AI 助教服务暂时不可用';
           _aiLoading = false;
         });
       }
     } catch (e, st) {
       Global.logger.e('Chat error', error: e, stackTrace: st);
       setState(() {
-        _aiError = 'AI 助教遇到了一点小意外 (推理服务暂不可用)';
+        _aiError = 'AI 助教服务异常 ($e)';
         _aiLoading = false;
       });
     }
