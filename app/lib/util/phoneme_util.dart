@@ -464,10 +464,11 @@ class PhonemeUtil {
       {"D", "JH"},
       {"SH", "ZH"},
       {"CH", "JH"},
-      {"IY", "IH", "Y", "@"}, // High front + Schwa
-      {"EY", "EH", "AE", "@"}, // Mid/Low front + Schwa
-      {"AA", "AH", "AO", "OW", "OY"}, // Back/Mid vowels
-      {"UH", "UW", "W", "OW"}, // High Back
+      {"IY", "IH", "Y"}, // High front
+      {"EY", "EH", "AE", "@"}, // Mid/Low front
+      {"AA", "AH", "AO"}, // Back vowels
+      {"UH", "UW", "W"}, // High back
+      {"OW", "OY", "AO"},
       {"M", "N", "NG"}, // Nasals
       {"Y", "@"},
       {"W", "@"},
@@ -475,13 +476,17 @@ class PhonemeUtil {
       {"L", "@"},
       {"ER", "@"},
       {"L", "R"}, // L vs R
-      {"N", "NG"}, // N vs NG
       {"V", "W"}, // V vs W
-      {"TH", "DH", "S", "Z", "T", "D", "F"}, // TH variations
-      {"S", "SH", "CH"}, // S vs SH
-      {"Z", "ZH", "JH"}, // Z vs ZH
+      {"TH", "S"}, // TH as S
+      {"TH", "T"}, // TH as T
+      {"TH", "F"}, // TH as F
+      {"DH", "Z"}, // DH as Z
+      {"DH", "D"}, // DH as D
+      {"DH", "V"}, // DH as V
+      {"S", "SH", "CH"}, 
+      {"Z", "ZH", "JH"},
       {"C", "K", "G"},
-      {"JH", "NG", "G", "D"},
+      {"JH", "NG", "G"},
       {"JH", "@"},
     ];
 
