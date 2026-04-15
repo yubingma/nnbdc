@@ -106,20 +106,21 @@ class PhonemeUtil {
 
       for (final ap in aVars) {
         for (final bp in bVars) {
-          final weakAP = _weakenPhonemes(ap);
-          final weakBP = _weakenPhonemes(bp);
-          final s = _phonemeSimilarity(weakAP, weakBP);
+          final sReal = _phonemeSimilarity(ap, bp);
+          final sWeak = _phonemeSimilarity(_weakenPhonemes(ap), _weakenPhonemes(bp));
+          // 综合原始音素与骨架音素：既要有“听感”也要有“骨架”
+          final s = (sReal * 0.4 + sWeak * 0.6).round();
           if (s > best) {
             best = s;
-            bestAWeakened = weakAP;
-            bestBWeakened = weakBP;
+            bestAWeakened = _weakenPhonemes(ap);
+            bestBWeakened = _weakenPhonemes(bp);
           }
         }
       }
 
-      // 记录骨架对比日志
+      // 记录对比日志
       Global.logger.d(
-          '===== Phonetic compare: "$a"[$bestAWeakened] vs "$b"[$bestBWeakened] score: $best');
+          '===== Phonetic compare: "$a"[$bestAWeakened] vs "$b"[$bestBWeakened] real/weak combined score: $best');
       finalScore = best;
     } else {
       // 情况 B：至少一个词不在字典里（比如 ASR 吐出了乱码 suece）
@@ -164,8 +165,7 @@ class PhonemeUtil {
       }
     }
 
-    // [BugFix] 添加词组词数惩罚：缺少或多出整个单词时，大幅降低相似度
-    // 避免部分匹配导致长短语轻易得高分跳过的严重体验问题（例如 target="in place"(6音素), ASR="place"(4音素) 竟然拿到 66分 > 阈值65分）
+    // [BugFix] 添加词组词数惩罚
     final aWords =
         a.trim().split(RegExp(r'[\s\-]+')).where((e) => e.isNotEmpty).length;
     final bWords =
@@ -177,6 +177,22 @@ class PhonemeUtil {
       if (finalScore < 0) finalScore = 0;
       Global.logger.d(
           '===== Phonetic compare (word penalty): reduced score from $oldScore to $finalScore because wordDiff is $wordDiff');
+    }
+
+    // [New] 添加音节数惩罚
+    final aSyllables = aVars.isNotEmpty
+        ? _countSyllables(aVars.first)
+        : _countSyllables(_convertToPseudoPhonemes(a));
+    final bSyllables = bVars.isNotEmpty
+        ? _countSyllables(bVars.first)
+        : _countSyllables(_convertToPseudoPhonemes(b));
+    final syllableDiff = (aSyllables - bSyllables).abs();
+    if (syllableDiff > 0) {
+      final oldScore = finalScore;
+      finalScore -= syllableDiff * 8; // 中等程度的 8 分惩罚
+      if (finalScore < 0) finalScore = 0;
+      Global.logger.d(
+          '===== Phonetic compare (syllable penalty): reduced score from $oldScore to $finalScore because syllableDiff is $syllableDiff');
     }
 
     return finalScore;
@@ -462,6 +478,10 @@ class PhonemeUtil {
       {"ER", "@"},
       {"UW", "W"},
       {"W", "@"},
+      {"R", "@"},
+      {"L", "@"},
+      {"Y", "@"},
+      {"ER", "@"},
       {"C", "K"},
       {"JH", "NG"},
       {"JH", "G"},
@@ -474,5 +494,36 @@ class PhonemeUtil {
     }
 
     return 1.0; // 完全不相关的音素，替换代价为 1
+  }
+
+  /// 统计音素列表中的音节数（元音数）
+  static int _countSyllables(List<String> phons) {
+    if (phons.isEmpty) return 0;
+    const vowels = {
+      "AA",
+      "AE",
+      "AH",
+      "AO",
+      "AW",
+      "AY",
+      "EH",
+      "ER",
+      "EY",
+      "IH",
+      "IY",
+      "OW",
+      "OY",
+      "UH",
+      "UW",
+      "@", // 弱化后的标记也算
+    };
+    int count = 0;
+    for (final p in phons) {
+      final parsed = p.replaceAll(_digitRegExp, '');
+      if (vowels.contains(parsed)) {
+        count++;
+      }
+    }
+    return count;
   }
 }
