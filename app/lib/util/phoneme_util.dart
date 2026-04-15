@@ -522,7 +522,27 @@ class PhonemeUtil {
       if (group.contains(p1) && group.contains(p2)) return 0.2;
     }
 
-    return 1.0; // 完全不相关的音素，替换代价为 1
+    // [New] 分类辅音惩罚逻辑
+    const liquids = {"L", "R", "W", "Y"};
+    const nasals = {"M", "N", "NG"};
+    const obstruents = {
+      "P", "B", "T", "D", "K", "G", "CH", "JH",
+      "F", "V", "TH", "DH", "S", "Z", "SH", "ZH", "HH"
+    };
+
+    bool isL1 = liquids.contains(p1);
+    bool isL2 = liquids.contains(p2);
+    bool isN1 = nasals.contains(p1);
+    bool isN2 = nasals.contains(p2);
+    bool isO1 = obstruents.contains(p1);
+    bool isO2 = obstruents.contains(p2);
+
+    // 跨大类替换（如 L vs D, M vs S），惩罚最重
+    if ((isL1 && (isN2 || isO2)) || (isL2 && (isN1 || isO1)) || (isN1 && isO2) || (isN2 && isO1)) {
+      return 2.0; 
+    }
+
+    return 1.2; // 默认无关音素代价
   }
 
   /// 统计音素列表中的音节数（元音数）

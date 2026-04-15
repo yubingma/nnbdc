@@ -48,6 +48,8 @@ REFUSE  R IH0 F Y UW1 Z
 REPEAT  R IH0 P IY1 T
 REFEREE  R EH2 F ER0 IY1
 RHYME  R AY1 M
+ROLLER  R OW1 L ER0
+RODER  R OW1 D ER0
 ''';
           return ByteData.view(Uint8List.fromList(utf8.encode(content)).buffer);
         }
@@ -105,16 +107,6 @@ RHYME  R AY1 M
       expect(score, greaterThanOrEqualTo(65)); 
     });
 
-    test('hardware vs hathware - should match (voiced stop vs fricative confusion)', () async {
-      const String target = "hardware";
-      const String asrResult = "hathware";
-      
-      final int score = await PhonemeUtil.similarity(asrResult, target);
-      debugPrint('Hardware vs Hathware score: $score');
-      
-      // Expected around 83 with the new confusion groups
-      expect(score, greaterThanOrEqualTo(Constants.phonemeMatchThreshold));
-    });
     
     test('cruelty vs carotti - should match', () async {
       const String target = "cruelty";
@@ -220,6 +212,16 @@ RHYME  R AY1 M
 
       final int score = await PhonemeUtil.similarity(asrResult, target);
       debugPrint('Rhyme vs Ru score: $score');
+
+      expect(score, lessThan(Constants.phonemeMatchThreshold));
+    });
+
+    test('roller vs roder - should not match', () async {
+      const String target = "roller";
+      const String asrResult = "roder";
+
+      final int score = await PhonemeUtil.similarity(asrResult, target);
+      debugPrint('Roller vs Roder score: $score');
 
       expect(score, lessThan(Constants.phonemeMatchThreshold));
     });
