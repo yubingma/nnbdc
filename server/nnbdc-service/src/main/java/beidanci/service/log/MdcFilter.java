@@ -12,6 +12,8 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import org.springframework.core.annotation.Order;
 import org.springframework.lang.NonNull;
 
@@ -22,9 +24,6 @@ import org.springframework.lang.NonNull;
 @Order(-110)
 public class MdcFilter extends OncePerRequestFilter {
 
-    @Autowired
-    private UserBo userBo;
-
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain)
             throws ServletException, IOException {
@@ -34,17 +33,21 @@ public class MdcFilter extends OncePerRequestFilter {
             userId = request.getParameter("userId");
         }
 
+        String nickname = request.getHeader("X-User-Nickname");
+        if (nickname != null && !nickname.isEmpty()) {
+            try {
+                nickname = URLDecoder.decode(nickname, StandardCharsets.UTF_8.name());
+            } catch (Exception ignore) {}
+        }
+
         String userContext = "";
         if (userId != null && !userId.isEmpty()) {
             String shortId = userId.substring(0, Math.min(6, userId.length()));
-            try {
-                User user = userBo.findById(userId);
-                if (user != null) {
-                    userContext = user.getDisplayNickName() + "(" + shortId + ")";
-                } else {
-                    userContext = shortId;
-                }
-            } catch (Exception ignore) {}
+            if (nickname != null && !nickname.isEmpty()) {
+                userContext = nickname + "(" + shortId + ")";
+            } else {
+                userContext = shortId;
+            }
         }
         MDC.put("userContext", userContext);
 

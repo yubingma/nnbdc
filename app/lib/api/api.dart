@@ -79,10 +79,13 @@ class Api {
 
     dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) {
-        // 注入平台信息和用户ID，供后端日志 MDC 精确显示
+        // 注入平台信息、用户ID和昵称，供后端日志 MDC 精确显示 (避免后端查表，提高性能)
         options.headers['X-Client-Platform'] = PlatformUtils.platformLabel;
-        if (Global.currentUserId != null) {
-          options.headers['X-User-Id'] = Global.currentUserId;
+        final user = Global.getLoggedInUser();
+        if (user != null) {
+          options.headers['X-User-Id'] = user.id;
+          // 昵称可能包含中文/特殊字符，进行 URL 编码
+          options.headers['X-User-Nickname'] = Uri.encodeComponent(user.displayNickName ?? "");
         }
 
         // 系统/公共词书资源走 CDN（www + /back 反代）以获得缓存加速
