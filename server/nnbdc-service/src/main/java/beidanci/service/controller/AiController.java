@@ -11,7 +11,9 @@ import beidanci.service.bo.AiBo;
 import beidanci.service.bo.UserBo;
 import beidanci.service.bo.SysParamBo;
 import beidanci.service.po.SysParam;
+import beidanci.service.po.User;
 import beidanci.service.util.SysParamUtil;
+import javax.servlet.http.HttpServletRequest;
 import java.util.*;
 import java.util.concurrent.*;
 import org.slf4j.Logger;
@@ -82,11 +84,25 @@ public class AiController {
             return emitter;
         }
 
+        // 在子线程外提前获取用户信息，避免 request 对象失效
+        String userAgent = request.getHeader("User-Agent");
+        String finalClientType = "Unknown";
+        if (userAgent != null) {
+            String ua = userAgent.toLowerCase();
+            if (ua.contains("iphone") || ua.contains("ipad")) finalClientType = "iOS";
+            else if (ua.contains("android")) finalClientType = "Android";
+            else if (ua.contains("windows")) finalClientType = "Windows";
+            else if (ua.contains("macintosh")) finalClientType = "macOS";
+            else if (ua.contains("mozilla")) finalClientType = "Web";
+        }
+        User user = userBo.findById(userId);
+        String finalUserIdentifier = (user != null) ? (user.getDisplayNickName() + "(" + userId + ")") : userId;
+
         aiChatExecutor.execute(() -> {
             Result<Runnable> admissionResult = null;
             try {
                 // 并发与流控逻辑
-                admissionResult = aiBo.enterAiChat(userId);
+                admissionResult = aiBo.enterAiChat(userId, finalUserIdentifier, finalClientType);
                 if (!admissionResult.isSuccess()) {
                     Result<String> failRs = Result.fail(admissionResult.getMsg());
                     emitter.send(Objects.requireNonNull(failRs));

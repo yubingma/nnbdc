@@ -126,27 +126,29 @@ public class AiBo {
     /**
      * 进入 AI 聊天计数 (并发限制)
      * @param userId 用户 ID
+     * @param userIdentifier 用户标识 (用于日志，如 "昵称(ID)")
+     * @param clientType 客户端类型 (如 "iOS", "Android", "Web")
      * @return AI 聊天资源进入结果 (成功则包含释放资源的 Runnable)
      */
-    public Result<Runnable> enterAiChat(String userId) {
+    public Result<Runnable> enterAiChat(String userId, String userIdentifier, String clientType) {
         int globalLimit = sysParamUtil.getAiChatGlobalLimit();
         int userLimit = sysParamUtil.getAiChatUserLimit();
         int userDailyLimit = sysParamUtil.getAiChatUserDailyLimit();
 
         if (activeAiChatRequests.get() >= globalLimit) {
-            logger.warn("AI 全局并发达到上限: {}", globalLimit);
+            logger.warn("AI 全局并发达到上限: {}, 用户: {}, 平台: {}", globalLimit, userIdentifier, clientType);
             return Result.fail("服务器 AI 服务并发达到上限，请稍后再试");
         }
 
         AtomicInteger userCount = userAiChatRequests.computeIfAbsent(userId, k -> new AtomicInteger(0));
         if (userCount.get() >= userLimit) {
-            logger.warn("用户 {} AI 并发达到上限: {}", userId, userLimit);
+            logger.warn("用户 {}/{} AI 并发达到上限: {}, 平台: {}", userIdentifier, userId, userLimit, clientType);
             return Result.fail("您的 AI 聊天并发请求过多，请等待上一个回复结束");
         }
 
         AtomicInteger userDailyCount = userDailyAiChatRequests.computeIfAbsent(userId, k -> new AtomicInteger(0));
         if (userDailyCount.get() >= userDailyLimit) {
-            logger.warn("用户 {} 今日 AI 聊天次数达到上限: {}", userId, userDailyLimit);
+            logger.warn("用户 {}/{} 今日 AI 聊天次数达到上限: {}, 平台: {}", userIdentifier, userId, userDailyLimit, clientType);
             return Result.fail("您今日的 AI 聊天次数已达到上限 (" + userDailyLimit + "次)，请明天再试");
         }
 
