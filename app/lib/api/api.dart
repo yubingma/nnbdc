@@ -85,7 +85,8 @@ class Api {
         if (user != null) {
           options.headers['X-User-Id'] = user.id;
           // 昵称可能包含中文/特殊字符，进行 URL 编码
-          options.headers['X-User-Nickname'] = Uri.encodeComponent(user.displayNickName ?? "");
+          String nickname = user.nickName ?? user.userName;
+          options.headers['X-User-Nickname'] = Uri.encodeComponent(nickname);
         }
 
         // 系统/公共词书资源走 CDN（www + /back 反代）以获得缓存加速

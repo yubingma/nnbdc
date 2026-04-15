@@ -1,24 +1,32 @@
 package beidanci.service.log;
 
-import beidanci.service.bo.UserBo;
-import beidanci.service.po.User;
-import org.slf4j.MDC;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-import org.springframework.web.filter.OncePerRequestFilter;
+import java.io.IOException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
+
+import org.slf4j.MDC;
 import org.springframework.core.annotation.Order;
 import org.springframework.lang.NonNull;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
- * 将用户信息和客户端平台信息注入日志上下文 (MDC)
+ * Mapped Diagnostic Context (MDC) 过滤器。
+ * <p>
+ * MDC 是日志框架（SLF4J/Logback）提供的一种机制，用于在多线程环境下管理诊断上下文信息。
+ * 本过滤器在请求进入后端时，从 HTTP 头部提取用户信息（ID、昵称）和客户端平台信息，并将其存入 MDC。
+ * </p>
+ * <p>
+ * 核心作用：
+ * 1. 自动增强日志：使所有业务日志（Service/DAO层）都能自动包含用户信息，无需手动传递参数。
+ * 2. 跨线程传播：配合 {@code MDC.getCopyOfContextMap()} 可将环境信息传递给异步子线程（如 AI 聊天执行器）。
+ * 3. 性能优化：直接从 Headers 读取，避免了每条请求都去数据库查询用户信息。
+ * </p>
  */
 @Component
 @Order(-110)
