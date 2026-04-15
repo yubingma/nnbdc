@@ -1,5 +1,7 @@
 package beidanci.service.bo;
 
+import beidanci.api.Result;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -124,35 +126,35 @@ public class AiBo {
     /**
      * 进入 AI 聊天计数 (并发限制)
      * @param userId 用户 ID
-     * @return 释放令牌的 Runnable
+     * @return AI 聊天资源进入结果 (成功则包含释放资源的 Runnable)
      */
-    public Runnable enterAiChat(String userId) {
+    public Result<Runnable> enterAiChat(String userId) {
         int globalLimit = sysParamUtil.getAiChatGlobalLimit();
         int userLimit = sysParamUtil.getAiChatUserLimit();
         int userDailyLimit = sysParamUtil.getAiChatUserDailyLimit();
 
         if (activeAiChatRequests.get() >= globalLimit) {
-            throw new RuntimeException("服务器 AI 服务并发达到上限，请稍后再试");
+            return Result.fail("服务器 AI 服务并发达到上限，请稍后再试");
         }
 
         AtomicInteger userCount = userAiChatRequests.computeIfAbsent(userId, k -> new AtomicInteger(0));
         if (userCount.get() >= userLimit) {
-            throw new RuntimeException("您的 AI 聊天并发请求过多，请等待上一个回复结束");
+            return Result.fail("您的 AI 聊天并发请求过多，请等待上一个回复结束");
         }
 
         AtomicInteger userDailyCount = userDailyAiChatRequests.computeIfAbsent(userId, k -> new AtomicInteger(0));
         if (userDailyCount.get() >= userDailyLimit) {
-            throw new RuntimeException("您今日的 AI 聊天次数已达到上限 (" + userDailyLimit + "次)，请明天再试");
+            return Result.fail("您今日的 AI 聊天次数已达到上限 (" + userDailyLimit + "次)，请明天再试");
         }
 
         activeAiChatRequests.incrementAndGet();
         userCount.incrementAndGet();
         userDailyCount.incrementAndGet();
 
-        return () -> {
+        return Result.success(null, () -> {
             activeAiChatRequests.decrementAndGet();
             userCount.decrementAndGet();
-        };
+        });
     }
 
     /**
@@ -466,17 +468,17 @@ public class AiBo {
     /**
      * 根据单词列表生成小短文
      * @param words 单词列表 (拼写)
-     * @return 生成的小短文
+     * @return 生成结果 (含短文或错误信息)
      */
-    public String generateShortStory(List<String> words) {
+    public Result<String> generateShortStory(List<String> words) {
         if (words == null || words.isEmpty()) {
-            return "没有单词可以生成短文。";
+            return Result.fail("没有单词可以生成短文。");
         }
 
         // 限制并发量，防止瞬间大量请求冲垮服务器
         int limit = sysParamUtil.getAiStoryConcurrencyLimit();
         if (activeAiStoryRequests.get() >= limit) {
-            throw new RuntimeException("服务器繁忙，AI 生成并发达到上限，请稍后再试");
+            return Result.fail("服务器繁忙，AI 生成并发达到上限，请稍后再试");
         }
 
         activeAiStoryRequests.incrementAndGet();
@@ -489,7 +491,10 @@ public class AiBo {
                     "4. 同时提供对应的中文翻译，放在英文文章之后。";
 
             String userPrompt = "单词列表：" + String.join(", ", words);
-            return generateText(systemPrompt, userPrompt);
+            String story = generateText(systemPrompt, userPrompt);
+            return Result.success(story);
+        } catch (Exception e) {
+            return Result.fail(e.getMessage());
         } finally {
             activeAiStoryRequests.decrementAndGet();
         }

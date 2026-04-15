@@ -58,8 +58,7 @@ public class AiController {
             }
 
             List<String> words = mapper.readValue(wordsJson, mapper.getTypeFactory().constructCollectionType(List.class, String.class));
-            String story = aiBo.generateShortStory(words);
-            return Result.success(story);
+            return aiBo.generateShortStory(words);
         } catch (Exception e) {
             return Result.fail(e.getMessage());
         }
@@ -84,10 +83,16 @@ public class AiController {
         }
 
         aiChatExecutor.execute(() -> {
-            Runnable releaseToken = null;
+            Result<Runnable> admissionResult = null;
             try {
                 // 并发与流控逻辑
-                releaseToken = aiBo.enterAiChat(userId);
+                admissionResult = aiBo.enterAiChat(userId);
+                if (!admissionResult.isSuccess()) {
+                    Result<String> failRs = Result.fail(admissionResult.getMsg());
+                    emitter.send(Objects.requireNonNull(failRs));
+                    emitter.complete();
+                    return;
+                }
 
                  List<Message> messages = new  ArrayList<>();
                 com.fasterxml.jackson.databind.JsonNode arrayNode = mapper.readTree(messagesJson);
@@ -125,8 +130,8 @@ public class AiController {
                     emitter.complete();
                 } catch (Exception ignore) {}
             } finally {
-                if (releaseToken != null) {
-                    releaseToken.run();
+                if (admissionResult != null && admissionResult.isSuccess() && admissionResult.getData() != null) {
+                    admissionResult.getData().run();
                 }
             }
         });
