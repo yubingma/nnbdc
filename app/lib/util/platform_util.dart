@@ -63,4 +63,14 @@ class PlatformUtils {
   static bool isTtsSupported() {
     return isAndroid || isIOS;
   }
+
+  static String get platformLabel {
+    if (isWeb) return 'Web';
+    if (isAndroid) return 'Android';
+    if (isIOS) return 'iOS';
+    if (isMacOS) return 'macOS';
+    if (isWindows) return 'Windows';
+    if (isLinux) return 'Linux';
+    return 'Unknown';
+  }
 }

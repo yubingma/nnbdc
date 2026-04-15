@@ -31,26 +31,34 @@ public class MdcFilter extends OncePerRequestFilter {
         String userId = request.getParameter("userId");
         String userContext = "";
         if (userId != null && !userId.isEmpty()) {
+            String shortId = userId.substring(0, Math.min(6, userId.length()));
             try {
                 User user = userBo.findById(userId);
                 if (user != null) {
-                    userContext = user.getDisplayNickName() + "(" + userId + ")";
+                    userContext = user.getDisplayNickName() + "(" + shortId + ")";
                 } else {
-                    userContext = userId;
+                    userContext = shortId;
                 }
             } catch (Exception ignore) {}
         }
         MDC.put("userContext", userContext);
 
-        String userAgent = request.getHeader("User-Agent");
-        String platform = "Unknown";
-        if (userAgent != null) {
-            String ua = userAgent.toLowerCase();
-            if (ua.contains("iphone") || ua.contains("ipad")) platform = "iOS";
-            else if (ua.contains("android")) platform = "Android";
-            else if (ua.contains("windows")) platform = "Windows";
-            else if (ua.contains("macintosh")) platform = "macOS";
-            else if (ua.contains("mozilla")) platform = "Web";
+        String platform = request.getHeader("X-Client-Platform");
+        if (platform == null || platform.isEmpty() || platform.equalsIgnoreCase("Unknown")) {
+            String userAgent = request.getHeader("User-Agent");
+            if (userAgent != null) {
+                String ua = userAgent.toLowerCase();
+                if (ua.contains("iphone") || ua.contains("ipad")) platform = "iOS";
+                else if (ua.contains("android")) platform = "Android";
+                else if (ua.contains("windows")) platform = "Windows";
+                else if (ua.contains("macintosh") || ua.contains("mac os x")) platform = "macOS";
+                else if (ua.contains("dart")) platform = "MobileApp";
+                else if (ua.contains("mozilla")) platform = "Web";
+                else if (ua.contains("postman") || ua.contains("insomnia")) platform = "DevTool";
+                else platform = "Unknown";
+            } else {
+                platform = "Unknown";
+            }
         }
         MDC.put("platform", platform);
 

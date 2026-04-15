@@ -79,6 +79,9 @@ class Api {
 
     dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) {
+        // 注入平台信息，供后端日志 MDC 精确显示客户端类型
+        options.headers['X-Client-Platform'] = PlatformUtils.platformLabel;
+
         // 系统/公共词书资源走 CDN（www + /back 反代）以获得缓存加速
         // 注意：为了让 CDN 更容易缓存，强制不携带 Cookie
         if (options.path.contains('getSysDictResById.do') ||
