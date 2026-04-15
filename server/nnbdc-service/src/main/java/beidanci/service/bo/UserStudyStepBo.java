@@ -229,10 +229,10 @@ public class UserStudyStepBo extends BaseBo<UserStudyStep> {
 
             int deletedCount = namedParameterJdbcTemplate
                     .update(Objects.requireNonNull(sql.toString(), "SQL cannot be null"), params);
-            System.out.println("批量删除user_study_step记录完成，用户ID: " + userId + ", 删除数量: " + deletedCount);
+            System.out.println("批量删除user_study_step记录完成，删除数量: " + deletedCount);
 
         } catch (DataAccessException e) {
-            logger.error("批量删除user_study_step记录失败: userId={}", userId, e);
+            logger.error("批量删除user_study_step记录失败", e);
             throw new RuntimeException("批量删除user_study_step记录失败: " + e.getMessage(), e);
         }
     }

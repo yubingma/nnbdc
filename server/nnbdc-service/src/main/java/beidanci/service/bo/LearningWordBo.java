@@ -106,10 +106,10 @@ public class LearningWordBo extends BaseBo<LearningWord> {
             }
             
             int deletedCount = namedParameterJdbcTemplate.update(Objects.requireNonNull(sql.toString(), "SQL cannot be null"), params);
-            log.info("批量删除学习单词记录完成，用户ID: {}, 删除数量: {}", userId, deletedCount);
+            log.info("批量删除学习单词记录完成，删除数量: {}", deletedCount);
             
         } catch (DataAccessException e) {
-            log.error("批量删除学习单词记录失败，用户ID: {}, 错误: {}", userId, e.getMessage(), e);
+            log.error("批量删除学习单词记录失败，错误: {}", e.getMessage(), e);
             throw new RuntimeException("批量删除学习单词记录失败: " + e.getMessage(), e);
         }
     }

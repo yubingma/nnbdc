@@ -77,7 +77,7 @@ public class LearningLogBo extends BaseBo<LearningLog> {
             logger.info("批量删除learning_log记录完成，用户ID: {}, 删除数量: {}", userId, deletedCount);
 
         } catch (DataAccessException e) {
-            logger.error("批量删除learning_log记录失败: userId={}", userId, e);
+            logger.error("批量删除learning_log记录失败", e);
             throw new RuntimeException("批量删除learning_log记录失败: " + e.getMessage(), e);
         }
     }

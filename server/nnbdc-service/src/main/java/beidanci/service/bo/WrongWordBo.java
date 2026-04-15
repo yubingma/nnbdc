@@ -124,10 +124,10 @@ public class WrongWordBo extends BaseBo<WrongWord> {
             }
             
             int deletedCount = namedParameterJdbcTemplate.update(Objects.requireNonNull(sql.toString(), "SQL cannot be null"), params);
-            System.out.println("批量删除user_wrong_word记录完成，用户ID: " + userId + ", 删除数量: " + deletedCount);
+            System.out.println("批量删除user_wrong_word记录完成，删除数量: " + deletedCount);
             
         } catch (DataAccessException e) {
-            System.err.println("批量删除user_wrong_word记录失败，用户ID: " + userId + ", 错误: " + e.getMessage());
+            System.err.println("批量删除user_wrong_word记录失败，错误: " + e.getMessage());
             throw new RuntimeException("批量删除user_wrong_word记录失败: " + e.getMessage(), e);
         }
     }

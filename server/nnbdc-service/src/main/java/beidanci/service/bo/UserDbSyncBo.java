@@ -352,7 +352,7 @@ public class UserDbSyncBo {
         final int lastVersion = userDbVersionDao.getUserDbVersionWithLock(jdbcTemplate, userId);
 
         if (expectedServerDbVersion != lastVersion) {
-            logger.error("数据库版本不匹配: userId={}, expected={}, actual={}", userId, expectedServerDbVersion, lastVersion);
+            logger.error("数据库版本不匹配: expected={}, actual={}", expectedServerDbVersion, lastVersion);
             throw new DbVersionNotMatchException(String.format("数据库版本不匹配，期望版本[%d]，当前版本[%d]，本次同步失败（请重试）",
                     expectedServerDbVersion, lastVersion));
         }
@@ -383,7 +383,7 @@ public class UserDbSyncBo {
             case "mastered_word" -> {
                 // 已废弃：mastered_word 表已迁移到 dict + dict_word 体系
                 // 保留此 case 以兼容老客户端可能发送的旧格式日志，直接忽略
-                logger.info("忽略已废弃的 mastered_word 同步日志: userId={}, operation={}", userId, operation);
+                logger.info("忽略已废弃的 mastered_word 同步日志: operation={}", operation);
             }
             case "user_cow_dung_log" -> processUserCowDungLogSync(userId, recordJson, operation);
             case "meaning_item" -> processMeaningItemSync(userId, recordJson, operation);
@@ -484,7 +484,7 @@ public class UserDbSyncBo {
             UserDto userDto = JsonUtils.makeObject(recordJson, UserDto.class);
             User user = userBo.findById(userId);
             if (user != null) {
-                logger.info("收到用户同步请求: userId={}, recordJson={}", userId, recordJson);
+                logger.info("收到用户同步请求: recordJson={}", recordJson);
                 User userFromClient = User.fromDto(userDto);
 
                 // 保护敏感字段：isAdmin、isSuperAdmin、isSysUser 只允许后端同步到前端
@@ -530,7 +530,7 @@ public class UserDbSyncBo {
                 }
 
                 userBo.updateEntity(userFromClient);
-                logger.info("同步更新用户成功: userId={}, userName={}", userId, userFromClient.getUserName());
+                logger.info("同步更新用户成功: userName={}", userFromClient.getUserName());
             }
         } else {
             String errorMsg = String.format("不支持的用户表操作: %s", operation);
@@ -634,7 +634,7 @@ public class UserDbSyncBo {
                     Dict dict = dictBo.findById(dictDto.getId());
                     if (dict != null) {
                         if (!isOwner) {
-                            String errorMsg = String.format("用户%s尝试删除不属于自己的词书: dictId=%s", userId, dictDto.getId());
+                            String errorMsg = String.format("尝试删除不属于自己的词书: dictId=%s", dictDto.getId());
                             logger.warn(errorMsg);
                             throw new IllegalArgumentException(errorMsg);
                         }
@@ -708,7 +708,7 @@ public class UserDbSyncBo {
             switch (operation) {
                 case "INSERT" -> {
                     // 【校验三】禁止通过同步创建学习步骤
-                    throw new IllegalArgumentException(String.format("禁止通过同步创建学习步骤: userId=[%s], step=[%s]", userId, stepDto.getStudyStep()));
+                    throw new IllegalArgumentException(String.format("禁止通过同步创建学习步骤: step=[%s]", stepDto.getStudyStep()));
                 }
                 case "UPDATE" -> {
                     // 检查记录是否存在，不存在则创建
@@ -924,7 +924,7 @@ public class UserDbSyncBo {
                 }
                 // 注意：魔法泡泡日志通常只支持INSERT操作
             } else {
-                String errorMsg = String.format("魔法泡泡日志关联的用户不存在: userId=%s", cowDungLogDto.getUserId());
+                String errorMsg = "魔法泡泡日志关联的用户不存在";
                 logger.error(errorMsg);
                 throw new IllegalArgumentException(errorMsg);
             }
@@ -997,13 +997,13 @@ public class UserDbSyncBo {
             // CAS 更新失败，说明版本号在同步过程中被其他事务修改了
             // 这种情况理论上不应该发生，因为我们在 validateUserAndVersion 中已经加了行锁
             // 但为了安全起见，还是要处理这种情况
-            logger.error("使用 CAS 更新版本号失败，用户[{}]，期望版本[{}]，新版本[{}]",
-                    userId, lastVersion, newVersion);
+            logger.error("使用 CAS 更新版本号失败，期望版本[{}]，新版本[{}]",
+                    lastVersion, newVersion);
             throw new DbVersionNotMatchException(String.format(
                     "更新数据库版本失败，期望版本[%d]，可能存在并发修改", lastVersion));
         }
 
-        logger.info("用户[{}]数据库版本更新成功：{} -> {}", userId, lastVersion, newVersion);
+        logger.info("数据库版本更新成功：{} -> {}", lastVersion, newVersion);
     }
 
     /**
@@ -1022,7 +1022,7 @@ public class UserDbSyncBo {
                     List<User> changedUsers = new ArrayList<>();
                     changedUsers.add(updatedUser);
                     userSorter.onUserChanged(changedUsers);
-                    logger.info("用户[{}]数据同步后，排名已更新", userId);
+                    logger.info("数据同步后，排名已更新");
                 }
             } catch (Exception e) {
                 logger.error("更新用户排名失败，将回滚整个事务：" + e.getMessage(), e);
@@ -1092,11 +1092,11 @@ public class UserDbSyncBo {
 
         // 获取用户数据库版本
         int userDbVersion = userDbVersionDao.getUserDbVersion(jdbcTemplate, userId);
-        logger.info("查询用户数据库日志: userId={}, serverVersion={}, clientFromVersion={}", userId, userDbVersion, fromVersion);
+        logger.info("查询用户数据库日志: serverVersion={}, clientFromVersion={}", userDbVersion, fromVersion);
 
         // 1. 如果前后端版本一致，无需任何同步
         if (userDbVersion <= fromVersion && fromVersion > 0) {
-            logger.info("前后端版本一致且不为0，无需同步: userId={}", userId);
+            logger.info("前后端版本一致且不为0，无需同步");
             return new ArrayList<>();
         }
 
@@ -1122,7 +1122,7 @@ public class UserDbSyncBo {
             }
         }
         
-        logger.info("同步决策: userId={}, needsFullSync={}", userId, needsFullSync);
+        logger.info("同步决策: needsFullSync={}", needsFullSync);
 
         if (needsFullSync) {
             // 生成全量日志
@@ -1338,11 +1338,11 @@ public class UserDbSyncBo {
                 }
             }
             if (!extra.isEmpty()) {
-                logger.info("为用户{}进行全量同步分类统计(其他明细): {}", userId, extra);
+                logger.info("进行全量同步分类统计(其他明细): {}", extra);
             }
-            logger.info("为用户{}进行全量同步分类统计: {}", userId, ordered);
+            logger.info("进行全量同步分类统计: {}", ordered);
 
-            logger.info("为用户{}进行全量同步, 共生成{}条同步日志, 服务端/客户端数据版本号为{}", userId, logs.size(),
+            logger.info("进行全量同步, 共生成{}条同步日志, 服务端/客户端数据版本号为{}", logs.size(),
                     userDbVersion + "-" + fromVersion);
 
             return logs;
@@ -1372,7 +1372,7 @@ public class UserDbSyncBo {
                 return log;
             });
 
-            logger.info("为用户{}进行增量同步, 共生成{}条同步日志, 服务端/客户端数据版本号为{}", userId, logs.size(),
+            logger.info("进行增量同步, 共生成{}条同步日志, 服务端/客户端数据版本号为{}", logs.size(),
                     userDbVersion + "-" + fromVersion);
             return logs;
         }
@@ -1395,17 +1395,17 @@ public class UserDbSyncBo {
                 @SuppressWarnings("unchecked")
                 List<Map<String, String>> meanings = (List<Map<String, String>>) data.get("meanings");
                 meaningItemBo.updateMeanings(dictId, wordId, meanings, userId);
-                logger.info("同步更新单词释义成功: userId={}, dictId={}, wordId={}", userId, dictId, wordId);
+                logger.info("同步更新单词释义成功: dictId={}, wordId={}", dictId, wordId);
             }
             case "INSERT" ->                 {
                     MeaningItemDto meaningItemDto = JsonUtils.makeObject(recordJson, MeaningItemDto.class);
                     meaningItemBo.createMeaningItem(meaningItemDto);
-                    logger.info("同步插入单词释义成功: userId={}, id={}", userId, meaningItemDto.getId());
+                    logger.info("同步插入单词释义成功: id={}", meaningItemDto.getId());
                 }
             case "DELETE" ->                 {
                     MeaningItemDto meaningItemDto = JsonUtils.makeObject(recordJson, MeaningItemDto.class);
                     meaningItemBo.deleteMeaningItem(meaningItemDto.getId());
-                    logger.info("同步删除单词释义成功: userId={}, id={}", userId, meaningItemDto.getId());
+                    logger.info("同步删除单词释义成功: id={}", meaningItemDto.getId());
                 }
             default -> {
                 String errorMsg = String.format("不支持的释义表操作: %s", operation);

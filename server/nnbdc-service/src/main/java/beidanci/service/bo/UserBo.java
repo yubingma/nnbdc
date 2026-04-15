@@ -438,7 +438,7 @@ public class UserBo extends BaseBo<User> {
                 deleteEntity(user);
                 return null;
             } catch (RuntimeException e) {
-                logger.error("删除用户异常，事务将回滚: userId={}", user.getId(), e);
+                logger.error("删除用户异常，事务将回滚", e);
                 status.setRollbackOnly();
                 throw new RuntimeException("删除用户异常，事务将回滚", e);
             }
@@ -652,14 +652,14 @@ public class UserBo extends BaseBo<User> {
             // 如果用户掷骰子的机会数都为0了，用户还在掷骰子，这样的情况应该不存在，
             // 但也可能是客户端采取了某些特殊手段
             if (user.getThrowDiceChance() == 0) {
-                logger.warn("发现异常情况：用户掷骰子的机会数都为0了，用户还在掷骰子, user: " + user.getUserName());
+                logger.warn("发现异常情况：用户掷骰子的机会数都为0了，用户还在掷骰子");
                 return "保存魔法泡泡失败";
             }
 
             user.setThrowDiceChance(user.getThrowDiceChance() - 1);
             updateEntity(user);
 
-            logger.info(String.format("用户[%s]打卡后掷骰子得到[%d]个魔法泡泡", Util.getNickNameOfUser(user), delta));
+            logger.info(String.format("打卡后掷骰子得到[%d]个魔法泡泡", delta));
         }
 
         // 更新用户的魔法泡泡数
@@ -861,7 +861,7 @@ public class UserBo extends BaseBo<User> {
             }
         }
         userVo.setUserGames(gameVos);
-        logger.info(String.format("📖 [USER_LOAD] 用户[%s]加载完成, 游戏记录数: %d", userVo.getUserName(), gameVos.size()));
+        logger.info(String.format("📖 [USER_LOAD] 加载完成, 游戏记录数: %d", gameVos.size()));
 
         return userVo;
     }
@@ -1171,7 +1171,7 @@ public class UserBo extends BaseBo<User> {
                 users = findByEmail(email);
                 if (!users.isEmpty()) {
                     User userByEmail = users.get(0);
-                    logger.info("找到同邮箱用户，关联苹果账号: userId={}, email={}", userByEmail.getId(), email);
+                    logger.info("找到同邮箱用户，关联苹果账号: email={}", email);
                     userByEmail.setAppleUserId(userIdentifier);
                     updateEntity(userByEmail);
                 }

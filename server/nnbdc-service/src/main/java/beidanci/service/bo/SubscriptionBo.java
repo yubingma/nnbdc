@@ -84,8 +84,8 @@ public class SubscriptionBo extends BaseBo<User> {
     public Result<SubscriptionVo> verifySubscription(String userId, String receiptData, String productId, String transactionId, String platform, boolean updateBackend) {
         try {
             // 记录接收到的参数
-            logger.info("开始验证订阅: userId={}, productId={}, transactionId={}, platform={}, updateBackend={}, receiptDataLength={}", 
-                    userId, productId, transactionId, platform, updateBackend, receiptData != null ? receiptData.length() : 0);
+            logger.info("开始验证订阅: productId={}, transactionId={}, platform={}, updateBackend={}, receiptDataLength={}", 
+                    productId, transactionId, platform, updateBackend, receiptData != null ? receiptData.length() : 0);
             
             // 验证收据数据是否为空
             if (receiptData == null || receiptData.trim().isEmpty()) {
@@ -102,7 +102,7 @@ public class SubscriptionBo extends BaseBo<User> {
                     return new Result<>(false, "用户不存在", null);
                 }
             } else {
-                logger.info("游客模式下的收据验证: userId={}", userId);
+                logger.info("游客模式下的收据验证");
             }
 
             // 验证平台参数（只支持iOS）
@@ -141,8 +141,8 @@ public class SubscriptionBo extends BaseBo<User> {
                 }
             }
 
-            logger.info("订阅验证成功: userId={}, productId={}, expireDate={}", 
-                    userId, verificationResult.productId, verificationResult.expiresDate);
+            logger.info("订阅验证成功: productId={}, expireDate={}", 
+                    verificationResult.productId, verificationResult.expiresDate);
 
             // 根据验证结果计算当前是否有效
             Date now = new Date();
@@ -609,8 +609,8 @@ public class SubscriptionBo extends BaseBo<User> {
         user.setSubscriptionTypeIos(verificationResult.subscriptionType);
         user.setSubscriptionStatusIos(isActive ? "active" : "expired");
 
-        logger.info("更新用户订阅状态: userId={}, platform=ios, isPremium={}, expireDate={}, type={}", 
-                user.getId(), isActive, expiresDate, verificationResult.subscriptionType);
+        logger.info("更新用户订阅状态: platform=ios, isPremium={}, expireDate={}, type={}", 
+                isActive, expiresDate, verificationResult.subscriptionType);
     }
 
     /**
@@ -632,7 +632,7 @@ public class SubscriptionBo extends BaseBo<User> {
                         updateUserSubscription(user, verificationResult);
                         try {
                             userBo.updateEntity(user);
-                            logger.info("iOS订阅恢复成功: userId={}", userId);
+                            logger.info("iOS订阅恢复成功");
                             return new Result<>(true, "恢复购买成功", null);
                         } catch (IllegalAccessException e) {
                             logger.error("更新iOS订阅状态失败", e);

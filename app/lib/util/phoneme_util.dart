@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/services.dart' show rootBundle;
-import 'package:nnbdc/global.dart';
 import 'package:nnbdc/util/edit_distance.dart';
 
 class PhonemeUtil {
@@ -32,7 +31,11 @@ class PhonemeUtil {
         final variants = _wordToPhonemeVariants[w];
         if (variants == null || variants.isEmpty) return const [];
         List<List<String>> nextCombined = [];
-        for (final cv in combined) { for (final v in variants) nextCombined.add([...cv, ...v]); }
+        for (final cv in combined) {
+          for (final v in variants) {
+            nextCombined.add([...cv, ...v]);
+          }
+        }
         combined = nextCombined; if (combined.length > 32) combined = combined.sublist(0, 32);
       }
       return combined;
@@ -102,11 +105,16 @@ class PhonemeUtil {
   static List<String> _convertToPseudoPhonemes(String word) {
     final w = word.toLowerCase(); List<String> res = [];
     for (int i = 0; i < w.length; i++) {
-      final c = w[i]; if ("aeiouy".contains(c)) res.add("@");
-      else if ("rmnpbtdszfvkwy".contains(c)) res.add(c.toUpperCase());
-      else if (c == 'g' && i + 1 < w.length && _cRegExp.hasMatch(w[i + 1])) res.add("JH");
-      else if (c == 'c' && i + 1 < w.length && _cRegExp.hasMatch(w[i + 1])) res.add("S");
-      else if (c == 'x') { res.add("K"); res.add("S"); }
+      final c = w[i];
+      if ("aeiouy".contains(c)) {
+        res.add("@");
+      } else if ("rmnpbtdszfvkwy".contains(c)) {
+        res.add(c.toUpperCase());
+      } else if (c == 'g' && i + 1 < w.length && _cRegExp.hasMatch(w[i + 1])) {
+        res.add("JH");
+      } else if (c == 'c' && i + 1 < w.length && _cRegExp.hasMatch(w[i + 1])) {
+        res.add("S");
+      } else if (c == 'x') { res.add("K"); res.add("S"); }
       else if (_lowerAlphaRegExp.hasMatch(c)) {
         if ("rl".contains(c) && i > 0 && i == w.length - 1 && !"aeiouy".contains(w[i - 1])) res.add("@");
         res.add(c.toUpperCase());
@@ -134,8 +142,12 @@ class PhonemeUtil {
   static double _weightedPhonemeDistance(List<String> a, List<String> b) {
     final n = a.length, m = b.length, dp = List.generate(n + 1, (_) => List<double>.filled(m + 1, 0.0));
     double getC(List<String> l, int i) { if (i == l.length - 1 && l[i] == "@") return 0.4; if (l[i] == "R" && i > 0 && "TD".contains(l[i - 1])) return 0.4; return 1.0; }
-    for (var i = 1; i <= n; i++) dp[i][0] = dp[i - 1][0] + getC(a, i - 1);
-    for (var j = 1; j <= m; j++) dp[0][j] = dp[0][j - 1] + getC(b, j - 1);
+    for (var i = 1; i <= n; i++) {
+      dp[i][0] = dp[i - 1][0] + getC(a, i - 1);
+    }
+    for (var j = 1; j <= m; j++) {
+      dp[0][j] = dp[0][j - 1] + getC(b, j - 1);
+    }
     for (var i = 1; i <= n; i++) { for (var j = 1; j <= m; j++) {
       final s = dp[i - 1][j - 1] + _phonemeMatchCost(a[i - 1], b[j - 1]), d = dp[i - 1][j] + getC(a, i - 1), ins = dp[i][j - 1] + getC(b, j - 1);
       dp[i][j] = [s, d, ins].reduce((v, e) => v < e ? v : e);
@@ -146,7 +158,11 @@ class PhonemeUtil {
   static double _phonemeMatchCost(String p1, String p2) {
     if (p1 == p2) return 0.0;
     const g = [{"V", "L", "B", "F", "W"}, {"L", "R", "ER"}, {"B", "P"}, {"D", "T"}, {"G", "K"}, {"S", "Z"}, {"T", "CH", "SH"}, {"D", "JH"}, {"IY", "IH", "Y"}, {"EY", "EH", "AE", "@"}, {"AA", "AH", "AO"}, {"UH", "UW", "W"}, {"OW", "OY", "AO"}, {"M", "N", "NG"}, {"Y", "@"}, {"W", "@"}, {"R", "@"}, {"L", "@"}, {"ER", "@"}, {"TH", "S", "T", "F"}, {"DH", "Z", "D", "V"}];
-    for (final gi in g) if (gi.contains(p1) && gi.contains(p2)) return 0.2;
+    for (final gi in g) {
+      if (gi.contains(p1) && gi.contains(p2)) {
+        return 0.2;
+      }
+    }
     const l = {"L", "R", "ER", "W", "Y"}, n = {"M", "N", "NG"}, o = {"P", "B", "T", "D", "K", "G", "CH", "JH", "F", "V", "TH", "DH", "S", "Z", "SH", "ZH", "HH"};
     if ((l.contains(p1) && (n.contains(p2) || o.contains(p2))) || (l.contains(p2) && (n.contains(p1) || o.contains(p1))) || (n.contains(p1) && o.contains(p2)) || (n.contains(p2) && o.contains(p1))) return 1.9;
     return 1.2;
