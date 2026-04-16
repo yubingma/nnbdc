@@ -804,6 +804,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   int _historyIndex = -1; // -1 表示当前词
   GetWordResult? _presentWord;
   bool? _savedAutoJumpValue;
+  double _slideDirection = 1.0; // 1.0 为向后（显示新内容从右进入），-1.0 为向前（显示旧内容从左进入）
   Timer? _progressBarTapTimer;
 
   /// 当前单词学习的开始时间
@@ -2047,6 +2048,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     // 历史模式处理
     if (_historyIndex != -1) {
       if (gotoNext) {
+        _slideDirection = 1.0;
         _historyIndex++;
         if (_historyIndex >= _history.length) {
           // 回到“当前”状态
@@ -2091,6 +2093,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
       // 如果要获取下一个单词，先将当前单词存入历史
       if (gotoNext && _currentGetWordResult != null) {
+        _slideDirection = 1.0;
         // 只有非“已完成”且非“无词”的结果才存入历史
         if (!_currentGetWordResult!.finished && !_currentGetWordResult!.noWord) {
           _history.add(_currentGetWordResult!);
@@ -2177,6 +2180,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     // 停止当前任务的 ASR 和发音
     await asr.stopAsr();
     await _audioPlayer.stop();
+
+    _slideDirection = -1.0;
 
     if (_historyIndex == -1) {
       // 从“当前”进入历史模式
@@ -3759,13 +3764,37 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         // 题目区 - 使用flex=3（增大高度，便于显示较长题目）
         Expanded(
           flex: 3,
-          child: Stack(
-            children: [
-              // 题目内容区域
-              _buildQuestionContent(),
-              // 浮动的TabBar
-              _buildFloatingTabBar(),
-            ],
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 400),
+            switchInCurve: Curves.easeInOutCubic,
+            switchOutCurve: Curves.easeInOutCubic,
+            transitionBuilder: (Widget child, Animation<double> animation) {
+              // 判断当前 child 是否为新进入的卡片
+              final isIncoming = child.key == ValueKey('word_card_${_word?.id}_${_historyIndex}');
+              
+              // 进场动画：由 _slideDirection 滑向原点 (0, 0)
+              // 出场动画：由原点 (0, 0) 滑向 -_slideDirection (即相反方向出去)
+              final slideTween = isIncoming
+                  ? Tween<Offset>(begin: Offset(_slideDirection, 0.0), end: Offset.zero)
+                  : Tween<Offset>(begin: Offset(-_slideDirection, 0.0), end: Offset.zero);
+
+              return SlideTransition(
+                position: slideTween.animate(animation),
+                child: FadeTransition(
+                  opacity: animation,
+                  child: child,
+                ),
+              );
+            },
+            child: Stack(
+              key: ValueKey('word_card_${_word?.id}_${_historyIndex}'),
+              children: [
+                // 题目内容区域
+                _buildQuestionContent(),
+                // 浮动的TabBar
+                _buildFloatingTabBar(),
+              ],
+            ),
           ),
         ),
         // 题目区和做题区之间的统一间距
