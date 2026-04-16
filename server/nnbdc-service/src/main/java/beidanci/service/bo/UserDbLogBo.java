@@ -10,12 +10,13 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import beidanci.service.dao.BaseDao;
 import beidanci.service.po.UserDbLog;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Transactional(rollbackFor = Throwable.class)
 public class UserDbLogBo extends BaseBo<UserDbLog> {
-        @Autowired
+    @Autowired
     private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
     @PostConstruct
@@ -42,6 +43,7 @@ public class UserDbLogBo extends BaseBo<UserDbLog> {
      * 执行数据库维护 (VACUUM ANALYZE)
      * 该操作在 PostgreSQL 中可显著提升清理后的空间利用率和查询性能
      */
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public void vacuumAnalyze() {
         jdbcTemplate.execute("VACUUM ANALYZE user_db_log");
     }

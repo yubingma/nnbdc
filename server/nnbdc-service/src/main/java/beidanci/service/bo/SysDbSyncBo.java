@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
@@ -380,6 +381,7 @@ public class SysDbSyncBo extends BaseBo<SysDbLog> {
     /**
      * 执行数据库维护 (VACUUM ANALYZE)
      */
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public void vacuumAnalyze() {
         jdbcTemplate.execute("VACUUM ANALYZE sys_db_log");
     }
