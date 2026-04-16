@@ -1975,9 +1975,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       // 预加载语音识别模型（耗时操作）
       await asr.preloadModels();
 
-      // DEBUG: 临时增加10秒延时，方便查看界面效果
-      await Future.delayed(const Duration(seconds: 10));
-
       // 如果模型加载完成且弹窗还在，或者 dialogContext 已赋值，将其关闭
       // 等待一个极短的时间，确保 postFrameCallback 执行并且 dialog 已经弹出
       await Future.delayed(const Duration(milliseconds: 50));
