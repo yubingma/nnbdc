@@ -806,6 +806,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   bool? _savedAutoJumpValue;
   double _slideDirection = 1.0; // 1.0 为向后（显示新内容从右进入），-1.0 为向前（显示旧内容从左进入）
   Timer? _progressBarTapTimer;
+  double _dragOffset = 0;
+  bool _dragTriggered = false;
 
   /// 当前单词学习的开始时间
   DateTime? _wordStartTime;
@@ -1850,103 +1852,118 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         showDialog(
           context: context,
           barrierDismissible: false,
+          barrierColor: Colors.black.withValues(alpha: 0.1),
           builder: (ctx) {
             dialogContext = ctx;
             final isDark = Theme.of(ctx).brightness == Brightness.dark;
-            final bgColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
             final textColor = isDark ? Colors.white : Colors.black87;
             
-            return Dialog(
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-              child: Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: bgColor,
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.2),
-                      blurRadius: 15,
-                      offset: const Offset(0, 5),
+            return BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+              child: Dialog(
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                insetPadding: const EdgeInsets.symmetric(horizontal: 40),
+                child: Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: isDark 
+                        ? const Color(0xFF1E1E1E).withValues(alpha: 0.75) 
+                        : Colors.white.withValues(alpha: 0.8),
+                    borderRadius: BorderRadius.circular(32),
+                    border: Border.all(
+                      color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
+                      width: 1.5,
                     ),
-                  ],
-                ),
-                padding: const EdgeInsets.symmetric(vertical: 30, horizontal: 20),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (displayWords.isNotEmpty) ...[
-
-                      const SizedBox(height: 24),
-                      // 错落有致的展示
-                      ...displayWords.asMap().entries.map((entry) {
-                        int idx = entry.key;
-                        String word = entry.value;
-                        // 为了艺术排版，单词交错且字体大小不同
-                        Alignment align = Alignment.center;
-                        if (idx % 2 == 1) align = Alignment.centerLeft;
-                        if (idx % 2 == 0 && idx != 0) align = Alignment.centerRight;
-                        if (idx == 0 || idx == 4) align = Alignment.center;
-                        
-                        double fontSize = 32.0;
-                        if (idx == 0) fontSize = 38.0;
-                        if (idx == 4) fontSize = 28.0;
-
-                        return Container(
-                          alignment: align,
-                          margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                          child: Text(
-                            word,
-                            style: TextStyle(
-                              fontSize: fontSize,
-                              fontWeight: FontWeight.w800,
-                              fontStyle: FontStyle.italic,
-                              color: textColor.withValues(alpha: 1.0 - (idx * 0.15)),
-                              shadows: [
-                                Shadow(
-                                  offset: const Offset(1, 1),
-                                  blurRadius: 2,
-                                  color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.05),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      }),
-                      const SizedBox(height: 32),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.1),
+                        blurRadius: 30,
+                        offset: const Offset(0, 10),
+                      ),
                     ],
-                    Container(
-                      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
-                      decoration: BoxDecoration(
-                        color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          SizedBox(
-                            width: 20,
-                            height: 20,
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Loading Animation Header
+                      Container(
+                        width: 72,
+                        height: 72,
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Center(
+                          child: SizedBox(
+                            width: 36,
+                            height: 36,
                             child: CircularProgressIndicator(
-                              strokeWidth: 2.5,
-                              color: AppTheme.primaryColor,
+                              strokeWidth: 3.5,
+                              valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
                             ),
                           ),
-                          const SizedBox(width: 16),
-                          Text(
-                            "正在初始化语音识别引擎...",
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                              color: textColor.withValues(alpha: 0.8),
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 28),
+                      Text(
+                        "语音识别引擎",
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: textColor,
+                          letterSpacing: 1.0,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        "正在准备离线识别模型...",
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: textColor.withValues(alpha: 0.5),
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                      
+                      if (displayWords.isNotEmpty) ...[
+                        const SizedBox(height: 32),
+                        Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: displayWords.asMap().entries.map((entry) {
+                            int idx = entry.key;
+                            String word = entry.value;
+                            
+                            return TweenAnimationBuilder<double>(
+                              duration: Duration(milliseconds: 600 + (idx * 100)),
+                              curve: Curves.easeOutQuart,
+                              tween: Tween(begin: 0.0, end: 1.0),
+                              builder: (context, value, child) {
+                                return Opacity(
+                                  opacity: value,
+                                  child: Transform.translate(
+                                    offset: Offset(0, 15 * (1 - value)),
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(vertical: 5),
+                                      child: Text(
+                                        word,
+                                        style: const TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.w600,
+                                          color: AppTheme.primaryColor,
+                                          letterSpacing: 0.8,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                            );
+                          }).toList(),
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
               ),
             );
@@ -1956,6 +1973,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
       // 预加载语音识别模型（耗时操作）
       await asr.preloadModels();
+
+      // DEBUG: 临时增加10秒延时，方便查看界面效果
+      await Future.delayed(const Duration(seconds: 10));
 
       // 如果模型加载完成且弹窗还在，或者 dialogContext 已赋值，将其关闭
       // 等待一个极短的时间，确保 postFrameCallback 执行并且 dialog 已经弹出
@@ -3206,13 +3226,33 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
             Expanded(
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
-                onHorizontalDragEnd: (details) {
-                  // 向右滑动，查看上一个单词
-                  if (details.primaryVelocity != null && details.primaryVelocity! > 500) {
+                onHorizontalDragStart: (_) {
+                  _dragOffset = 0;
+                  _dragTriggered = false;
+                },
+                onHorizontalDragUpdate: (details) {
+                  if (_dragTriggered) return;
+                  _dragOffset += details.delta.dx;
+
+                  // 灵敏度逻辑：只要移动距离超过 80 像素，立即触发翻页，无需等手指抬起
+                  if (_dragOffset > 80) {
+                    _dragTriggered = true;
                     _goToPreviousWord();
+                  } else if (_dragOffset < -80) {
+                    if (_historyIndex != -1) {
+                      _dragTriggered = true;
+                      getNextWord(true);
+                    }
                   }
-                  // 向左滑动，查看下一个单词（如果是在历史记录中的话）
-                  else if (details.primaryVelocity != null && details.primaryVelocity! < -500) {
+                },
+                onHorizontalDragEnd: (details) {
+                  if (_dragTriggered) return;
+                  
+                  final velocity = details.velocity.pixelsPerSecond.dx;
+                  // 备用逻辑：如果是快速轻扫（Flick），即便距离没到 80 也触发
+                  if (velocity > 300) {
+                    _goToPreviousWord();
+                  } else if (velocity < -300) {
                     if (_historyIndex != -1) {
                       getNextWord(true);
                     }
@@ -3765,29 +3805,41 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         Expanded(
           flex: 3,
           child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 400),
-            switchInCurve: Curves.easeInOutCubic,
-            switchOutCurve: Curves.easeInOutCubic,
+            duration: const Duration(milliseconds: 350),
+            switchInCurve: Curves.fastOutSlowIn,
+            switchOutCurve: Curves.fastOutSlowIn,
             transitionBuilder: (Widget child, Animation<double> animation) {
-              // 判断当前 child 是否为新进入的卡片
-              final isIncoming = child.key == ValueKey('word_card_${_word?.id}_${_historyIndex}');
+              final isIncoming = child.key == ValueKey('word_card_${_word?.id}_$_historyIndex');
               
-              // 进场动画：由 _slideDirection 滑向原点 (0, 0)
-              // 出场动画：由原点 (0, 0) 滑向 -_slideDirection (即相反方向出去)
-              final slideTween = isIncoming
-                  ? Tween<Offset>(begin: Offset(_slideDirection, 0.0), end: Offset.zero)
-                  : Tween<Offset>(begin: Offset(-_slideDirection, 0.0), end: Offset.zero);
-
+              // 模拟纸张揭起的复合动画
               return SlideTransition(
-                position: slideTween.animate(animation),
-                child: FadeTransition(
-                  opacity: animation,
-                  child: child,
+                // 入场从侧方稍偏下的位置划入，出场向侧方稍偏上的位置滑出，模拟揭页的轨迹
+                position: Tween<Offset>(
+                  begin: isIncoming ? Offset(_slideDirection, 0.02) : Offset(-_slideDirection, -0.02),
+                  end: Offset.zero,
+                ).animate(animation),
+                child: RotationTransition(
+                  // 模拟纸张边角的轻微翘起旋转 (约 3-5 度)
+                  turns: Tween<double>(
+                    begin: isIncoming ? _slideDirection * 0.015 : -_slideDirection * 0.01,
+                    end: 0,
+                  ).animate(animation),
+                  child: ScaleTransition(
+                    // 模拟纸张揭起时的缩放变化
+                    scale: Tween<double>(begin: 0.96, end: 1.0).animate(animation),
+                    child: FadeTransition(
+                      opacity: CurvedAnimation(
+                        parent: animation,
+                        curve: const Interval(0.4, 1.0), // 延迟淡入，让揭页感更强
+                      ),
+                      child: child,
+                    ),
+                  ),
                 ),
               );
             },
             child: Stack(
-              key: ValueKey('word_card_${_word?.id}_${_historyIndex}'),
+              key: ValueKey('word_card_${_word?.id}_$_historyIndex'),
               children: [
                 // 题目内容区域
                 _buildQuestionContent(),
