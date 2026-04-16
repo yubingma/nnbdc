@@ -1812,6 +1812,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   }
 
   Future<void> loadData() async {
+    Api.setLoadingDisabled(true);
     try {
       // 获取5个展示单词
       List<String> displayWords = [];
@@ -1887,26 +1888,26 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Loading Animation Header
+                      // 专属加载图标
                       Container(
-                        width: 72,
-                        height: 72,
+                        width: 64,
+                        height: 64,
                         decoration: BoxDecoration(
                           color: AppTheme.primaryColor.withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                         ),
                         child: Center(
                           child: SizedBox(
-                            width: 36,
-                            height: 36,
+                            width: 32,
+                            height: 32,
                             child: CircularProgressIndicator(
-                              strokeWidth: 3.5,
+                              strokeWidth: 3,
                               valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
                             ),
                           ),
                         ),
                       ),
-                      const SizedBox(height: 28),
+                      const SizedBox(height: 24),
                       Text(
                         "语音识别引擎",
                         style: TextStyle(
@@ -2043,6 +2044,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     } catch (e, stackTrace) {
       Global.logger.e('loadData: 发生未捕获异常', error: e, stackTrace: stackTrace);
       ErrorHandler.handleError(e, stackTrace, logPrefix: 'loadData');
+    } finally {
+      Api.setLoadingDisabled(false);
     }
   }
 
