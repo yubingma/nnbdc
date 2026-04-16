@@ -141,7 +141,7 @@ class PhonemeUtil {
 
   static double _weightedPhonemeDistance(List<String> a, List<String> b) {
     final n = a.length, m = b.length, dp = List.generate(n + 1, (_) => List<double>.filled(m + 1, 0.0));
-    double getC(List<String> l, int i) { if (i == l.length - 1 && l[i] == "@") return 0.4; if (l[i] == "R" && i > 0 && "TD".contains(l[i - 1])) return 0.4; return 1.0; }
+    double getC(List<String> l, int i) { if (l[i] == "@") return i == l.length - 1 ? 0.4 : 0.8; if (l[i] == "R" && i > 0 && ("TD".contains(l[i - 1]) || l[i - 1] == "@")) return 0.4; return 1.0; }
     for (var i = 1; i <= n; i++) {
       dp[i][0] = dp[i - 1][0] + getC(a, i - 1);
     }
@@ -157,7 +157,7 @@ class PhonemeUtil {
 
   static double _phonemeMatchCost(String p1, String p2) {
     if (p1 == p2) return 0.0;
-    const g = [{"V", "L", "B", "F", "W"}, {"L", "R", "ER"}, {"B", "P"}, {"D", "T"}, {"G", "K"}, {"S", "Z"}, {"T", "CH", "SH"}, {"D", "JH"}, {"IY", "IH", "Y"}, {"EY", "EH", "AE", "@"}, {"AA", "AH", "AO"}, {"UH", "UW", "W"}, {"OW", "OY", "AO"}, {"M", "N", "NG"}, {"Y", "@"}, {"W", "@"}, {"R", "@"}, {"L", "@"}, {"ER", "@"}, {"TH", "S", "T", "F"}, {"DH", "Z", "D", "V"}];
+    const g = [{"V", "L", "B", "F", "W"}, {"L", "R", "ER", "D"}, {"B", "P"}, {"D", "T"}, {"G", "K"}, {"S", "Z"}, {"T", "CH", "SH"}, {"D", "JH"}, {"IY", "IH", "Y"}, {"EY", "EH", "AE", "@"}, {"AA", "AH", "AO"}, {"UH", "UW", "W"}, {"OW", "OY", "AO"}, {"M", "N", "NG"}, {"Y", "@"}, {"W", "@"}, {"R", "@"}, {"L", "@"}, {"ER", "@"}, {"AH", "@"}, {"TH", "S", "T", "F"}, {"DH", "Z", "D", "V"}];
     for (final gi in g) {
       if (gi.contains(p1) && gi.contains(p2)) {
         return 0.2;

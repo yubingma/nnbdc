@@ -798,6 +798,11 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
   /// 进度条连击计数，用于触发调试浮窗
   int _progressBarTapCount = 0;
+
+  /// 历史记录
+  final List<GetWordResult> _history = [];
+  int _historyIndex = -1; // -1 表示当前词
+  GetWordResult? _presentWord;
   Timer? _progressBarTapTimer;
 
   /// 当前单词学习的开始时间
@@ -2037,6 +2042,31 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       Global.logger.d('getNextWord: 已经在获取中，跳过重复请求');
       return;
     }
+
+    // 历史模式处理
+    if (_historyIndex != -1) {
+      if (gotoNext) {
+        _historyIndex++;
+        if (_historyIndex >= _history.length) {
+          // 回到“当前”状态
+          _historyIndex = -1;
+          _currentGetWordResult = _presentWord;
+          handleWord(_currentGetWordResult);
+          return;
+        } else {
+          // 查看历史记录中的下一个
+          _currentGetWordResult = _history[_historyIndex];
+          handleWord(_currentGetWordResult);
+          return;
+        }
+      } else {
+        // 刷新当前历史记录页 (不常见，但作为防御)
+        _currentGetWordResult = _history[_historyIndex];
+        handleWord(_currentGetWordResult);
+        return;
+      }
+    }
+
     _isGettingNextWord = true;
     try {
       // 停止当前 ASR 任务并确保状态同步（Hot Stop 会在 Native 层处理，此处需保证状态为 Stopped）
@@ -2050,6 +2080,17 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       _hintTapCount = 0;
       _highlightedWordImg = null;
       _wordImageEdited = false;
+
+      // 如果要获取下一个单词，先将当前单词存入历史
+      if (gotoNext && _currentGetWordResult != null) {
+        // 只有非“已完成”且非“无词”的结果才存入历史
+        if (!_currentGetWordResult!.finished && !_currentGetWordResult!.noWord) {
+          _history.add(_currentGetWordResult!);
+          if (_history.length > 20) {
+            _history.removeAt(0);
+          }
+        }
+      }
 
       //如果是从批次单词列表跳转来的，则第一次从服务端取单词时，通知服务端进入下一个学习批次
       bool isFromBatchWordList = false;
@@ -2120,6 +2161,29 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     } finally {
       _isGettingNextWord = false;
     }
+  }
+
+  _goToPreviousWord() async {
+    if (_history.isEmpty) return;
+
+    // 停止当前任务的 ASR 和发音
+    await asr.stopAsr();
+    await _audioPlayer.stop();
+
+    if (_historyIndex == -1) {
+      // 从“当前”进入历史模式
+      _presentWord = _currentGetWordResult;
+      _historyIndex = _history.length - 1;
+    } else if (_historyIndex > 0) {
+      // 在历史中继续向后回退
+      _historyIndex--;
+    } else {
+      // 已经到历史最顶端
+      return;
+    }
+
+    _currentGetWordResult = _history[_historyIndex];
+    handleWord(_currentGetWordResult);
   }
 
   /// 显示错误提示界面，提供重试和返回选项
@@ -3117,12 +3181,68 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       return _buildFullscreenImmersiveInputMode();
     }
 
-    return Column(
+    return Stack(
       children: [
-        Expanded(
-          child: _buildMainContent(),
+        Column(
+          children: [
+            Expanded(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onHorizontalDragEnd: (details) {
+                  // 向右滑动，查看上一个单词
+                  if (details.primaryVelocity != null && details.primaryVelocity! > 500) {
+                    _goToPreviousWord();
+                  }
+                  // 向左滑动，查看下一个单词（如果是在历史记录中的话）
+                  else if (details.primaryVelocity != null && details.primaryVelocity! < -500) {
+                    if (_historyIndex != -1) {
+                      getNextWord(true);
+                    }
+                  }
+                },
+                child: _buildMainContent(),
+              ),
+            ),
+            _buildBottomButtons(),
+          ],
         ),
-        _buildBottomButtons(),
+        if (_historyIndex != -1)
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 4,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withValues(alpha: 0.9),
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.1),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.history, size: 12, color: Colors.white),
+                    SizedBox(width: 4),
+                    Text(
+                      '回顾模式',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
       ],
     );
   }
@@ -4592,6 +4712,14 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
               spacing: 6,
               runSpacing: 4,
               children: [
+                // 上一个按钮
+                if (_history.isNotEmpty)
+                  _buildTopActionButton(
+                    icon: Icons.skip_previous_outlined,
+                    label: '回看',
+                    onTap: () => _goToPreviousWord(),
+                  ),
+
                 // 已掌握按钮
                 _buildTopActionButton(
                   icon: Icons.check_circle_outline,

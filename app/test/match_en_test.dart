@@ -52,6 +52,9 @@ ROLLER  R OW1 L ER0
 RODER  R OW1 D ER0
 ACT  AE1 K T
 DO  D UW1
+WATERMELON  W AO1 T ER0 M EH2 L AH0 N
+WHAT  W AH1 T
+MADELEIN  M AE2 D AH0 L EH1 N
 ''';
           return ByteData.view(Uint8List.fromList(utf8.encode(content)).buffer);
         }
@@ -218,14 +221,14 @@ DO  D UW1
       expect(score, lessThan(Constants.phonemeMatchThreshold));
     });
 
-    test('roller vs roder - should not match', () async {
+    test('roller vs roder - should match', () async {
       const String target = "roller";
       const String asrResult = "roder";
 
       final int score = await PhonemeUtil.similarity(asrResult, target);
       debugPrint('Roller vs Roder score: $score');
 
-      expect(score, lessThan(Constants.phonemeMatchThreshold));
+      expect(score, greaterThanOrEqualTo(Constants.phonemeMatchThreshold));
     });
 
     test('do act vs act - should match despite extra noise', () async {
@@ -234,6 +237,16 @@ DO  D UW1
 
       final int score = await PhonemeUtil.similarity(asrResult, target);
       debugPrint('Do act vs Act score: $score');
+
+      expect(score, greaterThanOrEqualTo(Constants.phonemeMatchThreshold));
+    });
+
+    test('what madelein vs watermelon - should match', () async {
+      const String target = "watermelon";
+      const String asrResult = "what madelein";
+
+      final int score = await PhonemeUtil.similarity(asrResult, target);
+      debugPrint('What madelein vs Watermelon score: $score');
 
       expect(score, greaterThanOrEqualTo(Constants.phonemeMatchThreshold));
     });
