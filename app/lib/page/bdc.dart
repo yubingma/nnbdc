@@ -803,6 +803,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   final List<GetWordResult> _history = [];
   int _historyIndex = -1; // -1 表示当前词
   GetWordResult? _presentWord;
+  bool? _savedAutoJumpValue;
   Timer? _progressBarTapTimer;
 
   /// 当前单词学习的开始时间
@@ -2050,6 +2051,13 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         if (_historyIndex >= _history.length) {
           // 回到“当前”状态
           _historyIndex = -1;
+          
+          // 恢复闪电模式状态
+          if (_savedAutoJumpValue != null) {
+            _autoJumpAfterCorrect = _savedAutoJumpValue!;
+            _savedAutoJumpValue = null;
+          }
+
           _currentGetWordResult = _presentWord;
           handleWord(_currentGetWordResult);
           return;
@@ -2173,6 +2181,11 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     if (_historyIndex == -1) {
       // 从“当前”进入历史模式
       _presentWord = _currentGetWordResult;
+      
+      // 保存并关闭闪电模式（回顾模式下不应自动跳转）
+      _savedAutoJumpValue = _autoJumpAfterCorrect;
+      _autoJumpAfterCorrect = false;
+
       _historyIndex = _history.length - 1;
     } else if (_historyIndex > 0) {
       // 在历史中继续向后回退
@@ -3213,18 +3226,39 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
             right: 0,
             child: Container(
               padding: EdgeInsets.only(
-                  top: MediaQuery.of(context).padding.top, bottom: 2),
+                  top: MediaQuery.of(context).padding.top,
+                  bottom: 2,
+                  left: 20,
+                  right: 20),
               color: Colors.orange.withValues(alpha: 0.9),
-              child: const Center(
-                child: Text(
-                  '回 顾 模 式',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 2,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Center(
+                      child: Text(
+                        '回顾模式',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 2,
+                        ),
+                      ),
+                    ),
                   ),
-                ),
+                  Expanded(
+                    child: Center(
+                      child: Text(
+                        '-${_history.length - _historyIndex}',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.8),
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
