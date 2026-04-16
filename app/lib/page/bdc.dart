@@ -3208,37 +3208,22 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         ),
         if (_historyIndex != -1)
           Positioned(
-            top: MediaQuery.of(context).padding.top + 4,
+            top: 0,
             left: 0,
             right: 0,
-            child: Center(
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.orange.withValues(alpha: 0.9),
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.1),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.history, size: 12, color: Colors.white),
-                    SizedBox(width: 4),
-                    Text(
-                      '回顾模式',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
+            child: Container(
+              padding: EdgeInsets.only(
+                  top: MediaQuery.of(context).padding.top, bottom: 2),
+              color: Colors.orange.withValues(alpha: 0.9),
+              child: const Center(
+                child: Text(
+                  '回 顾 模 式',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 2,
+                  ),
                 ),
               ),
             ),
