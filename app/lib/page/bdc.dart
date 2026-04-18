@@ -1086,6 +1086,14 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         // 停止 ASR
         Global.logger.d('BDC: 输入框获取焦点，停止 ASR');
         asr.stopMicrophone(); // 彻底停止 ASR
+
+        // 记录用户偏好：使用键盘输入
+        final config = StudyConfig.fromCurrentUser();
+        if (!config.preferKeyboardInSpelling) {
+          config.preferKeyboardInSpelling = true;
+          config.saveToCurrentUser();
+        }
+
         setState(() {}); // 触发进入沉浸式模式
       } else {
         setState(() {}); // 触发退出沉浸式模式
@@ -2646,10 +2654,12 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       }
     });
 
-    // 自动获取焦点，提升输入效率
+    // 自动获取焦点，提升输入效率 (仅在用户偏好键盘模式时自动触发)
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted && !_hasFinishedAnswering) {
-        _meaningFocusNode.requestFocus();
+        if (StudyConfig.fromCurrentUser().preferKeyboardInSpelling) {
+          _meaningFocusNode.requestFocus();
+        }
       }
     });
 
@@ -3494,6 +3504,14 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                       showCloseButton: false,
                       onRecognized: (text) {
                         _isUpdatingByHint = false;
+
+                        // 记录用户偏好：使用手写输入
+                        final config = StudyConfig.fromCurrentUser();
+                        if (config.preferKeyboardInSpelling) {
+                          config.preferKeyboardInSpelling = false;
+                          config.saveToCurrentUser();
+                        }
+
                         setState(() {
                           _meaningController.text = text;
                         });
@@ -3525,7 +3543,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                     child: TextField(
                       controller: _meaningController,
                       focusNode: _meaningFocusNode,
-                      autofocus: true,
+                      autofocus: StudyConfig.fromCurrentUser().preferKeyboardInSpelling,
                       keyboardType: TextInputType.visiblePassword,
                       autocorrect: false,
                       enableSuggestions: false,
