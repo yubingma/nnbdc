@@ -2549,9 +2549,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       _isUpdatingByHint = false;
       _currentScore = null; // 重置发音评分，防止携带上一个单词的分数
 
-      if (getWordResult != null) {
-        _restoreWordState(getWordResult);
-      }
+      _restoreWordState(getWordResult);
 
       // 重新初始化TabController以适应动态tabs，此时已恢复了之前的 _currentTabIndex
       _reinitializeTabController();
@@ -3623,7 +3621,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                       onPressed: () {
                         setState(() {
                           _isUpdatingByHint = true;
-                          _meaningController.text = _word?.wordSpell ?? "";
+                          _meaningController.text = _word?.spell ?? "";
                           _isUpdatingByHint = false;
                         });
                         checkAsrResult();
