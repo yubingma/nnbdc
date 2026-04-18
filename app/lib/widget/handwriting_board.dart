@@ -279,9 +279,10 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
         final width = constraints.maxWidth;
         
         // 定义中心化的感应区，更加适合平板书写习惯，减少运笔负荷
+        final bool isNarrow = width < 500;
         final double zoneWidth = (width * 0.35).clamp(80.0, 140.0);
-        final double zoneHeight = 65;
-        final double bottomMargin = 40; // 调高位置，方便从底部向上方划入触发
+        final double zoneHeight = isNarrow ? 56 : 65;
+        final double bottomMargin = isNarrow ? 20 : 40; // 窄屏下稍微靠下一点，留出更多书写空间
 
         final rewriteZone = Rect.fromLTWH(
           (width / 2 - zoneWidth) / 2, 
@@ -303,15 +304,29 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
             _activePointerId = event.pointer;
             _rewriteTriggered = false;
             _recognizeTriggered = false;
-            _controller.start(event.localPosition);
+
+            final p = event.localPosition;
+            // 窄屏下，如果在感应区内按下，先给予视觉反馈且不立即开始绘画
+            if (isNarrow) {
+              if (rewriteZone.contains(p)) {
+                setState(() => _activeZone = 1);
+                return;
+              }
+              if (recognizeZone.contains(p)) {
+                setState(() => _activeZone = 2);
+                return;
+              }
+            }
+            
+            _controller.start(p);
           },
           onPointerMove: (event) {
             if (widget.isRecognizing || event.pointer != _activePointerId) return;
             
             final p = event.localPosition;
             
-            // 碰撞检测：扫过即触发，但允许笔迹流继续维持
-            if (rewriteZone.contains(p) && !_rewriteTriggered) {
+            // 碰撞检测：扫过即触发，但允许笔迹流继续维持 (窄屏下改为点击触发，此处不再自动触发)
+            if (!isNarrow && rewriteZone.contains(p) && !_rewriteTriggered) {
               _rewriteTriggered = true;
               setState(() => _activeZone = 1);
               HapticFeedback.lightImpact();
@@ -327,7 +342,7 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
                 }
               });
             }
-            if (recognizeZone.contains(p) && !_recognizeTriggered) {
+            if (!isNarrow && recognizeZone.contains(p) && !_recognizeTriggered) {
               _recognizeTriggered = true;
               setState(() => _activeZone = 2);
               HapticFeedback.lightImpact();
@@ -394,11 +409,17 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
 
             _activePointerId = null;
             _controller.end();
+            
+            // 如果最终没有触发任何动作，确保重置激活区状态
+            if (!_rewriteTriggered && !_recognizeTriggered) {
+              setState(() => _activeZone = 0);
+            }
           },
           onPointerCancel: (event) {
             if (event.pointer != _activePointerId) return;
             _activePointerId = null;
             _controller.end();
+            setState(() => _activeZone = 0);
           },
           child: Stack(
             children: [
@@ -435,10 +456,10 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
                         size: 22
                       ),
                       Text(
-                        '划过重写', 
+                        isNarrow ? '重写' : '划过重写', 
                         style: TextStyle(
                           color: _activeZone == 1 ? Colors.grey : Colors.grey.withValues(alpha: 0.4), 
-                          fontSize: 11,
+                          fontSize: isNarrow ? 12 : 11,
                           fontWeight: _activeZone == 1 ? FontWeight.bold : FontWeight.normal,
                         )
                       ),
@@ -471,10 +492,10 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
                         size: 22
                       ),
                       Text(
-                        '划过识别', 
+                        isNarrow ? '识别' : '划过识别', 
                         style: TextStyle(
                           color: _activeZone == 2 ? AppTheme.primaryColor : AppTheme.primaryColor.withValues(alpha: 0.4), 
-                          fontSize: 11,
+                          fontSize: isNarrow ? 12 : 11,
                           fontWeight: _activeZone == 2 ? FontWeight.bold : FontWeight.normal,
                         )
                       ),
