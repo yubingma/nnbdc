@@ -75,12 +75,12 @@ class _HandwritingBoardState extends State<HandwritingBoard> {
         return;
       }
 
-      const double margin = 50.0; // 紧凑边距，让字符在图中占比更大
+      const double margin = 60.0; // 适当收缩边距
       double contentWidth = maxX - minX;
       double contentHeight = maxY - minY;
       
-      // 设定目标宽度为 1000px (大多数移动端 OCR 模型的最佳识别尺寸)
-      const double targetWidth = 1000.0;
+      // 设定目标宽度为 800px (极致采样，适合单词识别)
+      const double targetWidth = 800.0;
       double scale = (targetWidth - 2 * margin) / contentWidth;
       
       // 动态计算高度，保持比例
@@ -96,13 +96,27 @@ class _HandwritingBoardState extends State<HandwritingBoard> {
         ..strokeCap = StrokeCap.round
         ..strokeJoin = StrokeJoin.round
         ..isAntiAlias = true
-        ..strokeWidth = 25.0 / scale; // 大幅加粗笔触 (25px)，模拟粗体印刷效果，极大提升 OCR 稳定性
+        ..strokeWidth = 24.0 / scale; // 极大加粗 (24px)，进一步提升信号强度
 
       // 背景白色 (按需分配尺寸)
       canvas.drawRect(
         Rect.fromLTWH(0, 0, targetWidth, targetHeight),
-        Paint()..color = Colors.white,
+        Paint()
+          ..color = const Color(0xFFFAFAFA)
+          ..style = PaintingStyle.fill,
       );
+
+      // --- 诊断测试：在图片顶部画一个印刷体的 Hello ---
+      final textPainter = TextPainter(
+        text: const TextSpan(
+          text: 'Hello',
+          style: TextStyle(color: Colors.black, fontSize: 80, fontWeight: FontWeight.bold),
+        ),
+        textDirection: TextDirection.ltr,
+      );
+      textPainter.layout();
+      textPainter.paint(canvas, const Offset(20, 20)); // 画在左上角
+      // -------------------------------------------
 
       // 将内容绘制在动态区域中心
       canvas.save();
@@ -146,11 +160,15 @@ class _HandwritingBoardState extends State<HandwritingBoard> {
       if (await file.exists()) await file.delete();
 
       // 4. 后处理识别结果
-      // 调试：记录原始结果
-      debugPrint('OCR Raw Text: "$text"');
+      // 分离原生层传回的诊断信息 (格式: "Text ||| [Native...]")
+      List<String> parts = text.split(" ||| ");
+      String rawOcrText = parts[0];
+      String nativeInfo = parts.length > 1 ? parts[1] : "";
+
+      debugPrint('OCR Raw Text: "$rawOcrText", Info: "$nativeInfo"');
 
       // 针对手写识别的常见错误进行“视觉近形词”替换 (如 1 -> l, 0 -> o)
-      String processedText = text
+      String processedText = rawOcrText
           .replaceAll('1', 'l')
           .replaceAll('0', 'o')
           .replaceAll('5', 's')
@@ -162,10 +180,10 @@ class _HandwritingBoardState extends State<HandwritingBoard> {
       String result = processedText.replaceAll(RegExp(r'[^a-zA-Z\s]'), '').replaceAll(RegExp(r'\s+'), ' ').trim();
 
       if (result.isEmpty) {
-        ToastUtil.info('未能从图片中识别到字母');
+        ToastUtil.info('[V-TEST-HELLO] 未能识别到字母 (Raw: "$rawOcrText", $nativeInfo)');
       } else {
-        // 重要：显示识别结果，方便用户确认 OCR 是否成功
-        ToastUtil.info('识别结果: $result');
+        // 重要：显示识别结果，并带上原生层传回的诊断信息
+        ToastUtil.info('[V-TEST-HELLO] 结果: $result (Raw: "$rawOcrText", $nativeInfo)');
         widget.onRecognized(result);
       }
     } catch (e) {

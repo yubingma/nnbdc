@@ -1,6 +1,7 @@
 package com.nn.nnbdc
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.net.Uri
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
@@ -51,14 +52,22 @@ class OcrChannel(private val context: Context) {
             }
             
             // 2. 从 Bitmap 创建 InputImage
-            val image = InputImage.fromBitmap(bitmap, 0)
-            val options = TextRecognizerOptions.Builder()
-                .build() // 默认拉丁文识别器
+            // 强制转换为 ARGB_8888 并填充白色背景，防止透明 PNG 被识别为黑色
+            val whiteBitmap = Bitmap.createBitmap(bitmap.width, bitmap.height, Bitmap.Config.ARGB_8888)
+            val canvas = android.graphics.Canvas(whiteBitmap)
+            canvas.drawColor(android.graphics.Color.WHITE)
+            canvas.drawBitmap(bitmap, 0f, 0f, null)
+
+            val image = InputImage.fromBitmap(whiteBitmap, 0)
+            val options = TextRecognizerOptions.Builder().build()
             val recognizer = TextRecognition.getClient(options)
 
             recognizer.process(image)
                 .addOnSuccessListener { visionText ->
-                    result.success(visionText.text)
+                    val pixel = whiteBitmap.getPixel(whiteBitmap.width / 2, whiteBitmap.height / 2)
+                    val info = "[Native ${whiteBitmap.width}x${whiteBitmap.height} Px:${Integer.toHexString(pixel)}]"
+                    // 使用 ||| 作为分隔符，方便 Flutter 端拆分诊断信息
+                    result.success("${visionText.text} ||| $info")
                 }
                 .addOnFailureListener { e ->
                     result.error("OCR_ERROR", "文字识别失败: ${e.message}", null)
