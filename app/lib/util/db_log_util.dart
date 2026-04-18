@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:drift/drift.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/db/db.dart';
@@ -28,9 +29,26 @@ class DbLogUtil {
     }
 
     // 将原始对象转换为JSON字符串
+    Object? recordToLog = record;
+    if (table == 'users' && record is User) {
+      // 【优化】对于用户表，移除体积巨大且服务端会自行覆盖的字段（头像、收据等），以极大减小同步包体积
+      // 同时如果头像是一个长字符串（Base64），也不记录到日志中，只保留正常的 URL。
+      recordToLog = record.copyWith(
+        wechatAvatar: (record.wechatAvatar != null && record.wechatAvatar!.length > 1000)
+            ? const Value(null)
+            : Value(record.wechatAvatar),
+        lastReceiptDataIos: const Value(null),
+        // 以下敏感字段同样建议设为 null，因为服务端会自行从权威数据库补全，避免客户端篡改
+        wechatOpenId: const Value(null),
+        wechatUnionId: const Value(null),
+        wechatNickname: const Value(null),
+        appleUserId: const Value(null),
+      );
+    }
+
     final String recordJson;
     try {
-      recordJson = jsonEncode(record);
+      recordJson = jsonEncode(recordToLog);
     } catch (e) {
       throw Exception('【快速失败】无法将记录对象转换为JSON：表: $table, 操作: $operate, userId: $userId, recordId: $recordId, 错误: $e');
     }

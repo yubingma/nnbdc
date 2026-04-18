@@ -497,7 +497,11 @@ public class UserDbSyncBo {
                 userFromClient.setWechatOpenId(user.getWechatOpenId());
                 userFromClient.setWechatUnionId(user.getWechatUnionId());
                 userFromClient.setWechatNickname(user.getWechatNickname());
-                userFromClient.setWechatAvatar(user.getWechatAvatar());
+                // 头像允许由客户端同步（仅当客户端提供了非空值，例如手动设置头像场景），
+                // 否则回填服务端的值防止老客户端误将字段写空。
+                if (userDto.getWechatAvatar() == null || userDto.getWechatAvatar().isEmpty()) {
+                    userFromClient.setWechatAvatar(user.getWechatAvatar());
+                }
                 userFromClient.setAppleUserId(user.getAppleUserId());
 
                 // 订阅字段仅允许后端维护（客户端同步UserDto不包含这些字段）
