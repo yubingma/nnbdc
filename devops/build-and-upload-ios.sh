@@ -81,6 +81,7 @@ BUILD_ONLY=false
 UPLOAD_ONLY=false
 CLEAN_BUILD=true
 CONFIG_BACKUP_FILE=""  # 配置文件备份路径
+INFOPLIST_BACKUP_FILE="" # Info.plist 备份路径
 
 # 显示使用说明
 show_usage() {
@@ -349,6 +350,78 @@ ensure_prod_config() {
     fi
 }
 
+# 移除 Info.plist 中的调试专用权限（本地网络权限）
+clean_debug_permissions() {
+    print_step "检查并移除 Info.plist 中的调试权限..."
+    local plist_file="$IOS_DIR/Runner/Info.plist"
+    
+    if [ ! -f "$plist_file" ]; then
+        print_error "Info.plist 不存在: $plist_file"
+        exit 1
+    fi
+
+    # 备份 Info.plist
+    local backup_file="${plist_file}.bak"
+    cp "$plist_file" "$backup_file"
+    INFOPLIST_BACKUP_FILE="$backup_file"
+    print_info "已备份 Info.plist: $backup_file"
+
+    # 使用 python3 脚本精确处理 Plist (比 sed 更可靠)
+    # 移除 NSLocalNetworkUsageDescription 和 NSBonjourServices
+    python3 - <<EOF
+import sys
+import plistlib
+
+plist_path = "$plist_file"
+try:
+    with open(plist_path, 'rb') as f:
+        pl = plistlib.load(f)
+    
+    modified = False
+    if 'NSLocalNetworkUsageDescription' in pl:
+        del pl['NSLocalNetworkUsageDescription']
+        modified = True
+    if 'NSBonjourServices' in pl:
+        del pl['NSBonjourServices']
+        modified = True
+        
+    if modified:
+        with open(plist_path, 'wb') as f:
+            plistlib.dump(pl, f)
+        print("已成功移除调试专用权限 (NSLocalNetworkUsageDescription, NSBonjourServices)")
+    else:
+        print("未发现调试专用权限，无需修改")
+except Exception as e:
+    print(f"处理 Info.plist 失败: {e}")
+    sys.exit(1)
+EOF
+    if [ $? -ne 0 ]; then
+        print_error "处理 Info.plist 失败"
+        restore_debug_permissions
+        exit 1
+    fi
+}
+
+# 恢复 Info.plist
+restore_debug_permissions() {
+    if [ -n "$INFOPLIST_BACKUP_FILE" ] && [ -f "$INFOPLIST_BACKUP_FILE" ]; then
+        print_step "恢复 Info.plist 到原始状态..."
+        local plist_file="$IOS_DIR/Runner/Info.plist"
+        if mv "$INFOPLIST_BACKUP_FILE" "$plist_file" 2>/dev/null; then
+            print_info "Info.plist 已恢复"
+            INFOPLIST_BACKUP_FILE=""
+        else
+            print_warn "Info.plist 恢复失败，请手动检查"
+        fi
+    fi
+}
+
+# 恢复所有备份（配置和权限）
+restore_all_backups() {
+    restore_config
+    restore_debug_permissions
+}
+
 # 恢复配置文件
 restore_config() {
     if [ -n "$CONFIG_BACKUP_FILE" ] && [ -f "$CONFIG_BACKUP_FILE" ]; then
@@ -373,6 +446,9 @@ build_ipa() {
     # 确保使用 prod 配置
     ensure_prod_config
     
+    # 移除调试权限
+    clean_debug_permissions
+    
     # 构建 IPA
     if flutter build ipa --release; then
         # 检查 IPA 文件是否存在
@@ -393,7 +469,7 @@ build_ipa() {
     fi
     
     # 构建成功后恢复配置
-    restore_config
+    restore_all_backups
 }
 
 # 上传到 App Store Connect
@@ -500,7 +576,7 @@ main() {
     local start_time=$(date +%s)
     
     # 设置退出时恢复配置的 trap（确保即使脚本被中断也能恢复）
-    trap 'restore_config' EXIT INT TERM
+    trap 'restore_all_backups' EXIT INT TERM
     
     print_info "========================================="
     print_info "iOS App 构建和上传脚本"
@@ -557,7 +633,7 @@ main() {
     fi
     
     # 确保配置文件已恢复
-    restore_config
+    restore_all_backups
     
     # 移除 trap（配置已恢复，脚本正常结束）
     trap - EXIT INT TERM
