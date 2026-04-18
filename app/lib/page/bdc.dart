@@ -75,6 +75,32 @@ class BdcPageArgs {
   }
 }
 
+class WordUIState {
+  final bool hasFinishedAnswering;
+  final bool canLeaveCurrWord;
+  final bool showSentenceTranslation;
+  final int? selectedAnswerIndex;
+  final Set<int> flippedAnswerIndices;
+  final int tabIndex;
+  final int? currentScore;
+  final String meaningText;
+  final List<WordVo>? words;
+  final int correctAnswerIndex;
+
+  WordUIState({
+    required this.hasFinishedAnswering,
+    required this.canLeaveCurrWord,
+    required this.showSentenceTranslation,
+    this.selectedAnswerIndex,
+    required this.flippedAnswerIndices,
+    required this.tabIndex,
+    this.currentScore,
+    required this.meaningText,
+    this.words,
+    required this.correctAnswerIndex,
+  });
+}
+
 class WordImagesWidget extends StatefulWidget {
   final List<WordImageVo> images;
   final bool isEditMode;
@@ -801,7 +827,43 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
   /// 历史记录
   final List<GetWordResult> _history = [];
+  /// 缓存每个单词的 UI 状态，用于在回顾模式中恢复
+  final Map<GetWordResult, WordUIState> _wordUIStates = {};
   int _historyIndex = -1; // -1 表示当前词
+
+  void _saveCurrentWordState() {
+    if (_currentGetWordResult != null) {
+      _wordUIStates[_currentGetWordResult!] = WordUIState(
+        hasFinishedAnswering: _hasFinishedAnswering,
+        canLeaveCurrWord: _canLeaveCurrWord,
+        showSentenceTranslation: _showSentenceTranslation,
+        selectedAnswerIndex: _selectedAnswerIndex,
+        flippedAnswerIndices: Set<int>.from(_flippedAnswerIndices),
+        tabIndex: _tabController?.index ?? _currentTabIndex,
+        currentScore: _currentScore,
+        meaningText: _meaningController.text,
+        words: _words != null ? List<WordVo>.from(_words!) : null,
+        correctAnswerIndex: _correctAnswerIndex,
+      );
+    }
+  }
+
+  void _restoreWordState(GetWordResult result) {
+    final state = _wordUIStates[result];
+    if (state != null) {
+      _hasFinishedAnswering = state.hasFinishedAnswering;
+      _canLeaveCurrWord = state.canLeaveCurrWord;
+      _showSentenceTranslation = state.showSentenceTranslation;
+      _selectedAnswerIndex = state.selectedAnswerIndex;
+      _flippedAnswerIndices.clear();
+      _flippedAnswerIndices.addAll(state.flippedAnswerIndices);
+      _currentTabIndex = state.tabIndex;
+      _currentScore = state.currentScore;
+      _meaningController.text = state.meaningText;
+      _words = state.words != null ? List<WordVo>.from(state.words!) : null;
+      _correctAnswerIndex = state.correctAnswerIndex;
+    }
+  }
   GetWordResult? _presentWord;
   bool? _savedAutoJumpValue;
   double _slideDirection = 1.0; // 1.0 为向后（显示新内容从右进入），-1.0 为向前（显示旧内容从左进入）
@@ -2065,6 +2127,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       return;
     }
 
+    _saveCurrentWordState();
+
     // 历史模式处理
     if (_historyIndex != -1) {
       if (gotoNext) {
@@ -2118,7 +2182,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         if (!_currentGetWordResult!.finished && !_currentGetWordResult!.noWord) {
           _history.add(_currentGetWordResult!);
           if (_history.length > 20) {
-            _history.removeAt(0);
+            final removed = _history.removeAt(0);
+            _wordUIStates.remove(removed);
           }
         }
       }
@@ -2196,6 +2261,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
   _goToPreviousWord() async {
     if (_history.isEmpty) return;
+
+    _saveCurrentWordState();
 
     // 停止当前任务的 ASR 和发音
     await asr.stopAsr();
@@ -2458,8 +2525,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         // }
       }
 
-      // 重新初始化TabController以适应动态tabs
-      _reinitializeTabController();
 
       if (getWordResult.learningWord?.word == null) {
         Global.logger.e(
@@ -2475,6 +2540,13 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       _showSentenceTranslation = false;
       _isUpdatingByHint = false;
       _currentScore = null; // 重置发音评分，防止携带上一个单词的分数
+
+      if (getWordResult != null) {
+        _restoreWordState(getWordResult);
+      }
+
+      // 重新初始化TabController以适应动态tabs，此时已恢复了之前的 _currentTabIndex
+      _reinitializeTabController();
 
       // 如果仅返回了ID，则本地补全单词详情与释义
       if (_word != null && (_word!.spell.isEmpty)) {
@@ -2547,7 +2619,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       } else if (_studyStep == StudyStep.ch2En.json) {
         playWordAndFirstSentence(await user.toUserVo(), true, false);
       }
-      _initChoiceData(getWordResult, user);
+      if (!_wordUIStates.containsKey(getWordResult)) {
+        _initChoiceData(getWordResult, user);
+      }
     } catch (e, stackTrace) {
       ErrorHandler.handleDatabaseError(e, stackTrace, operation: '处理单词');
       ToastUtil.error('处理单词时出错');

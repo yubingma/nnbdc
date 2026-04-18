@@ -55,6 +55,8 @@
 		<string>需要相册权限来更新头像</string>
 		<key>NSSpeechRecognitionUsageDescription</key>
 		<string>需要语音识别权限来进行发音练习和单词识别</string>
+		<key>NSUserTrackingUsageDescription</key>
+		<string>该标识符将用于向您发送个性化词汇推荐，并用于统计学习进度及优化应用体验。</string>
 		<key>CFBundleURLTypes</key>
 		<array>
 			<dict>

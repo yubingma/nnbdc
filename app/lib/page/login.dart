@@ -21,6 +21,8 @@ import '../config.dart';
 import '../global.dart';
 import '../socket_io.dart';
 import '../util/client_type.dart';
+import 'package:app_tracking_transparency/app_tracking_transparency.dart';
+
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -36,6 +38,8 @@ class LoginPageState extends State<LoginPage>
   bool _isWechatLoading = false;
   bool _isAppleLoading = false;
   bool _isGuestLoading = false;
+  bool _isWechatInstalled = true; // 默认显示，后续异步检测
+
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
@@ -69,6 +73,34 @@ class LoginPageState extends State<LoginPage>
     )..repeat();
 
     loadData();
+    _checkWechatInstallation();
+    _requestTrackingPermission();
+  }
+
+  Future<void> _checkWechatInstallation() async {
+    if (PlatformUtils.isIOS) {
+      bool installed = await WechatUtil.isWechatInstalled();
+      if (mounted) {
+        setState(() {
+          _isWechatInstalled = installed;
+        });
+      }
+    }
+  }
+
+  Future<void> _requestTrackingPermission() async {
+    if (PlatformUtils.isIOS) {
+      try {
+        final status = await AppTrackingTransparency.trackingAuthorizationStatus;
+        if (status == TrackingStatus.notDetermined) {
+          // 等待一秒钟，确保页面已经渲染
+          await Future.delayed(const Duration(milliseconds: 1000));
+          await AppTrackingTransparency.requestTrackingAuthorization();
+        }
+      } catch (e) {
+        debugPrint('Error requesting tracking permission: $e');
+      }
+    }
   }
 
   @override
@@ -276,7 +308,8 @@ class LoginPageState extends State<LoginPage>
                             ),
                           ),
                         if (PlatformUtils.isIOS || PlatformUtils.isAndroid)
-                          Container(
+                          if (!PlatformUtils.isIOS || _isWechatInstalled)
+                            Container(
                             width: double.infinity,
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(20),

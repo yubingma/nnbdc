@@ -6,10 +6,10 @@ description: 泡泡单词 - 智能背单词应用
 publish_to: "none" # Remove this line if you wish to publish to pub.dev
 
 # 升级时修改这里
-version: 26.04.13+26041301
+version: 26.04.18+26041801
 
 # 最低支持版本（用于强制升级检查）
-min_ver_code: 26041301
+min_ver_code: 26041801
 
 # 版本更新说明（用于构建脚本生成 ver.json）
 # 格式：每行一个更新项，以 "- " 开头
@@ -20,6 +20,7 @@ changes:
   - "修复游戏大厅加载失败问题"
   - "修复AI单词小短文点击查词问题"
   - "修复闪退问题"
+  - "可回顾上一单词"
 
 environment:
   sdk: ^3.4.0
@@ -104,6 +105,7 @@ dependencies:
   flutter_local_notifications: ^21.0.0
   timezone: ^0.11.0
   flutter_timezone: ^5.0.2
+  app_tracking_transparency: ^2.0.4
 dev_dependencies:
   analyzer: ^7.7.1
   flutter_test:
