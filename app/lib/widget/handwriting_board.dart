@@ -75,7 +75,7 @@ class _HandwritingBoardState extends State<HandwritingBoard> {
         return;
       }
 
-      const double margin = 60.0; // 适当收缩边距
+      const double margin = 100.0; // 增加垂直空间，适配手写体的长柄字母
       double contentWidth = maxX - minX;
       double contentHeight = maxY - minY;
       
@@ -96,7 +96,7 @@ class _HandwritingBoardState extends State<HandwritingBoard> {
         ..strokeCap = StrokeCap.round
         ..strokeJoin = StrokeJoin.round
         ..isAntiAlias = true
-        ..strokeWidth = 24.0 / scale; // 极大加粗 (24px)，进一步提升信号强度
+        ..strokeWidth = 16.0 / scale; // 适中笔触 (16px)，防止字母粘连导致 mis-recognition
 
       // 背景白色 (按需分配尺寸)
       canvas.drawRect(
@@ -105,18 +105,8 @@ class _HandwritingBoardState extends State<HandwritingBoard> {
           ..color = const Color(0xFFFAFAFA)
           ..style = PaintingStyle.fill,
       );
-
-      // --- 诊断测试：在图片顶部画一个印刷体的 Hello ---
-      final textPainter = TextPainter(
-        text: const TextSpan(
-          text: 'Hello',
-          style: TextStyle(color: Colors.black, fontSize: 80, fontWeight: FontWeight.bold),
-        ),
-        textDirection: TextDirection.ltr,
-      );
-      textPainter.layout();
-      textPainter.paint(canvas, const Offset(20, 20)); // 画在左上角
-      // -------------------------------------------
+      
+      // (诊断测试已移除，Hello 已卸载)
 
       // 将内容绘制在动态区域中心
       canvas.save();
@@ -180,10 +170,10 @@ class _HandwritingBoardState extends State<HandwritingBoard> {
       String result = processedText.replaceAll(RegExp(r'[^a-zA-Z\s]'), '').replaceAll(RegExp(r'\s+'), ' ').trim();
 
       if (result.isEmpty) {
-        ToastUtil.info('[V-TEST-HELLO] 未能识别到字母 (Raw: "$rawOcrText", $nativeInfo)');
+        ToastUtil.info('[V-STABLE-800] 未能识别到字母 (Raw: "$rawOcrText", $nativeInfo)');
       } else {
         // 重要：显示识别结果，并带上原生层传回的诊断信息
-        ToastUtil.info('[V-TEST-HELLO] 结果: $result (Raw: "$rawOcrText", $nativeInfo)');
+        ToastUtil.info('[V-STABLE-800] 结果: $result (Raw: "$rawOcrText", $nativeInfo)');
         widget.onRecognized(result);
       }
     } catch (e) {
