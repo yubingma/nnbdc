@@ -14,13 +14,17 @@ class HandwritingBoard extends StatefulWidget {
   final VoidCallback onCancel;
   final VoidCallback? onStartWriting;
   final bool showCloseButton;
-  
+  final bool showHeader;
+  final bool useBoxDecoration;
+
   const HandwritingBoard({
     super.key,
     required this.onRecognized,
     required this.onCancel,
     this.onStartWriting,
     this.showCloseButton = true,
+    this.showHeader = true,
+    this.useBoxDecoration = true,
   });
 
   @override
@@ -159,7 +163,7 @@ class _HandwritingBoardState extends State<HandwritingBoard> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(
+      decoration: widget.useBoxDecoration ? BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
@@ -169,36 +173,37 @@ class _HandwritingBoardState extends State<HandwritingBoard> {
             offset: const Offset(0, 4),
           ),
         ],
-      ),
+      ) : null,
       child: Column(
         children: [
           // 顶部标题
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Row(
-              children: [
-                const Icon(Icons.gesture, size: 20, color: AppTheme.primaryColor),
-                const SizedBox(width: 8),
-                const Text(
-                  '手写板',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black87),
-                ),
-                const Spacer(),
-                if (_isRecognizing)
-                  const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primaryColor),
+          if (widget.showHeader)
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                children: [
+                  const Icon(Icons.gesture, size: 20, color: AppTheme.primaryColor),
+                  const SizedBox(width: 8),
+                  const Text(
+                    '手写板',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black87),
                   ),
-                const SizedBox(width: 12),
-                if (widget.showCloseButton)
-                  GestureDetector(
-                    onTap: widget.onCancel,
-                    child: const Icon(Icons.close, size: 20, color: Colors.grey),
-                  ),
-              ],
+                  const Spacer(),
+                  if (_isRecognizing)
+                    const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primaryColor),
+                    ),
+                  const SizedBox(width: 12),
+                  if (widget.showCloseButton)
+                    GestureDetector(
+                      onTap: widget.onCancel,
+                      child: const Icon(Icons.close, size: 20, color: Colors.grey),
+                    ),
+                ],
+              ),
             ),
-          ),
 
           // 画布区域 (独占所有垂直空间，最大化书写面积)
           Expanded(

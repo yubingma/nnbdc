@@ -3398,6 +3398,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   }
 
   /// 构建全屏沉浸式输入模式（支持手写和键盘）
+  /// 构建全屏沉浸式输入模式（支持手写和键盘）
   Widget _buildFullscreenImmersiveInputMode() {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
 
@@ -3411,204 +3412,238 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       color: isDarkMode ? const Color(0xFF121212) : Colors.white,
       child: Column(
         children: [
-          // 顶部显示一行中文释义
-          Container(
-            padding: EdgeInsets.fromLTRB(
-                16, MediaQuery.of(context).padding.top + 8, 8, 8),
-            decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(
-                  color: isDarkMode
-                      ? Colors.white10
-                      : Colors.black.withValues(alpha: 0.05),
-                  width: 1,
-                ),
-              ),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        '请拼写单词：',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: isDarkMode ? Colors.white38 : Colors.black38,
-                        ),
-                      ),
-                      Text(
-                        combinedMeaning,
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: isDarkMode ? Colors.white : Colors.black,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
-                Tooltip(
-                  message: _autoJumpAfterCorrect ? '极速模式：答对自动跳到下一词' : '极速模式：已关闭 (答对留在此词)',
-                  triggerMode: TooltipTriggerMode.tap,
-                  child: IconButton(
-                    icon: Icon(
-                      _autoJumpAfterCorrect ? Icons.bolt : Icons.bolt_outlined,
-                      color: _autoJumpAfterCorrect
-                          ? Colors.amber
-                          : (isDarkMode ? Colors.white38 : Colors.black38),
-                      size: 20,
-                    ),
-                    onPressed: () async {
-                      setState(() {
-                        _autoJumpAfterCorrect = !_autoJumpAfterCorrect;
-                      });
-                      ToastUtil.info(_autoJumpAfterCorrect 
-                        ? '极速模式：答对自动跳到下一个单词' 
-                        : '极速模式已关闭：答对后留在当前单词');
-                      
-                      // 同步到数据库
-                      final config = StudyConfig.fromCurrentUser();
-                      if (_studyStep == StudyStep.ch2En.json) {
-                        config.autoJumpAfterCorrectCh2En = _autoJumpAfterCorrect;
-                      } else {
-                        config.autoJumpAfterCorrectEn2Ch = _autoJumpAfterCorrect;
-                      }
-                      await config.saveToCurrentUser();
-                    },
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () {
-                    _meaningFocusNode.unfocus();
-                    setState(() {
-                      _showHandwritingBoard = false;
-                    });
-                  },
-                ),
-              ],
-            ),
-          ),
-          // 全屏输入区：打字与手写结合
+          // 1. 顶部手写与释义区 (使用 Stack 实现手写板全屏覆盖且释义浮动)
           Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Column(
-                children: [
-                  // 1. 手写板区域
-                  Expanded(
-                    child: HandwritingBoard(
-                      showCloseButton: false,
-                      onStartWriting: () {
-                        // 一旦用户开始手写，立即收起键盘
-                        if (_meaningFocusNode.hasFocus) {
-                          _meaningFocusNode.unfocus();
-                          // 同时记录偏好：既然开始了手写，下次默认就不弹出键盘了
-                          final config = StudyConfig.fromCurrentUser();
-                          if (config.preferKeyboardInSpelling) {
-                            config.preferKeyboardInSpelling = false;
-                            config.saveToCurrentUser();
-                          }
-                        }
-                      },
-                      onRecognized: (text) {
-                        _isUpdatingByHint = false;
-
-                        // 记录用户偏好：使用手写输入
+            child: Stack(
+              children: [
+                // 底层：手写板 (去除边框和内部标题，最大化感应面积)
+                Positioned.fill(
+                  child: HandwritingBoard(
+                    showCloseButton: false,
+                    showHeader: false, // 隐藏内部自带的标题栏
+                    useBoxDecoration: false, // 隐藏内部背景和圆角，直接使用外层背景
+                    onStartWriting: () {
+                      // 一旦用户开始手写，立即收起键盘
+                      if (_meaningFocusNode.hasFocus) {
+                        _meaningFocusNode.unfocus();
+                        // 同时记录偏好：既然开始了手写，下次默认就不弹出键盘了
                         final config = StudyConfig.fromCurrentUser();
                         if (config.preferKeyboardInSpelling) {
                           config.preferKeyboardInSpelling = false;
                           config.saveToCurrentUser();
                         }
+                      }
+                    },
+                    onRecognized: (text) {
+                      _isUpdatingByHint = false;
 
-                        setState(() {
-                          _meaningController.text = text;
-                        });
-                        checkAsrResult();
-                      },
-                      onCancel: () {
-                        _meaningFocusNode.unfocus();
-                        setState(() {
-                          _showHandwritingBoard = false;
-                        });
-                      },
-                    ),
+                      // 记录用户偏好：使用手写输入
+                      final config = StudyConfig.fromCurrentUser();
+                      if (config.preferKeyboardInSpelling) {
+                        config.preferKeyboardInSpelling = false;
+                        config.saveToCurrentUser();
+                      }
+
+                      setState(() {
+                        _meaningController.text = text;
+                      });
+                      checkAsrResult();
+                    },
+                    onCancel: () {
+                      _meaningFocusNode.unfocus();
+                      setState(() {
+                        _showHandwritingBoard = false;
+                      });
+                    },
                   ),
-                  const SizedBox(height: 12),
-                  // 2. 打字输入框
-                  Container(
+                ),
+
+                // 顶层：浮动释义头部 (采用渐变背景确保文字清晰，且支持笔触穿透)
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: Container(
+                    padding: EdgeInsets.fromLTRB(
+                        16, MediaQuery.of(context).padding.top + 8, 8, 16),
                     decoration: BoxDecoration(
-                      color: isDarkMode
-                          ? const Color(0xFF1E1E1E)
-                          : const Color(0xFFF8F9FA),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: _meaningFocusNode.hasFocus
-                            ? AppTheme.primaryColor.withValues(alpha: 0.3)
-                            : Colors.transparent,
-                        width: 1,
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          (isDarkMode ? const Color(0xFF121212) : Colors.white)
+                              .withValues(alpha: 0.85),
+                          (isDarkMode ? const Color(0xFF121212) : Colors.white)
+                              .withValues(alpha: 0.0),
+                        ],
+                        stops: const [0.6, 1.0],
                       ),
                     ),
-                    child: TextField(
-                      controller: _meaningController,
-                      focusNode: _meaningFocusNode,
-                      autofocus: StudyConfig.fromCurrentUser().preferKeyboardInSpelling,
-                      keyboardType: TextInputType.visiblePassword,
-                      autocorrect: false,
-                      enableSuggestions: false,
-                      style: TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                        // 移除这里的动态颜色设定，由 Controller 内部控制
-                      ),
-                      decoration: InputDecoration(
-                        hintText: '在此键入单词...',
-                        hintStyle: TextStyle(
-                          fontSize: 32,
-                          color: (isDarkMode ? Colors.white : Colors.black)
-                              .withValues(alpha: 0.2),
-                          fontWeight: FontWeight.normal,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: IgnorePointer(
+                            // 使用 IgnorePointer 让用户可以在释义文字区域直接起笔书写
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  '请拼写单词：',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: isDarkMode ? Colors.white38 : Colors.black38,
+                                  ),
+                                ),
+                                Text(
+                                  combinedMeaning,
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: isDarkMode ? Colors.white : Colors.black,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 12),
-                      ),
-                      textInputAction: TextInputAction.done,
-                      onChanged: (value) {
-                        _isUpdatingByHint = false;
-                        setState(() {});
-                        if (value.isNotEmpty && _word?.spell != null) {
-                          if (Util.equalsIgnoreCase(value, _word!.spell)) {
-                            checkAsrResult();
+                        // 功能按钮 (不被 IgnorePointer 包裹，确保可点击)
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Tooltip(
+                              message: _autoJumpAfterCorrect ? '极速模式：答对自动跳到下一词' : '极速模式：已关闭 (答对留在此词)',
+                              triggerMode: TooltipTriggerMode.tap,
+                              child: IconButton(
+                                icon: Icon(
+                                  _autoJumpAfterCorrect ? Icons.bolt : Icons.bolt_outlined,
+                                  color: _autoJumpAfterCorrect
+                                      ? Colors.amber
+                                      : (isDarkMode ? Colors.white38 : Colors.black38),
+                                  size: 20,
+                                ),
+                                onPressed: () async {
+                                  setState(() {
+                                    _autoJumpAfterCorrect = !_autoJumpAfterCorrect;
+                                  });
+                                  ToastUtil.info(_autoJumpAfterCorrect 
+                                    ? '极速模式：答对自动跳到下一个单词' 
+                                    : '极速模式已关闭：答对后留在当前单词');
+                                  
+                                  final config = StudyConfig.fromCurrentUser();
+                                  if (_studyStep == StudyStep.ch2En.json) {
+                                    config.autoJumpAfterCorrectCh2En = _autoJumpAfterCorrect;
+                                  } else {
+                                    config.autoJumpAfterCorrectEn2Ch = _autoJumpAfterCorrect;
+                                  }
+                                  await config.saveToCurrentUser();
+                                },
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.close),
+                              onPressed: () {
+                                _meaningFocusNode.unfocus();
+                                setState(() {
+                                  _showHandwritingBoard = false;
+                                });
+                              },
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // 2. 底部输入与提示区
+          Container(
+            padding: EdgeInsets.fromLTRB(16, 8, 16, MediaQuery.of(context).padding.bottom + 16),
+            decoration: BoxDecoration(
+              color: isDarkMode ? const Color(0xFF1E1E1E) : const Color(0xFFF9FAFB),
+              border: Border(
+                top: BorderSide(
+                  color: isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
+                  width: 1,
+                ),
+              ),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _meaningController,
+                        focusNode: _meaningFocusNode,
+                        autofocus: StudyConfig.fromCurrentUser().preferKeyboardInSpelling,
+                        keyboardType: TextInputType.visiblePassword,
+                        autocorrect: false,
+                        enableSuggestions: false,
+                        style: const TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        decoration: InputDecoration(
+                          hintText: '在此键入单词...',
+                          hintStyle: TextStyle(
+                            fontSize: 32,
+                            color: (isDarkMode ? Colors.white : Colors.black)
+                                .withValues(alpha: 0.2),
+                            fontWeight: FontWeight.normal,
+                          ),
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                        textInputAction: TextInputAction.done,
+                        onChanged: (value) {
+                          _isUpdatingByHint = false;
+                          setState(() {});
+                          if (value.isNotEmpty && _word?.spell != null) {
+                            if (Util.equalsIgnoreCase(value, _word!.spell)) {
+                              checkAsrResult();
+                            }
                           }
-                        }
-                      },
-                      onSubmitted: (value) {
-                        _meaningFocusNode.unfocus();
+                        },
+                        onSubmitted: (value) {
+                          _meaningFocusNode.unfocus();
+                          checkAsrResult();
+                        },
+                      ),
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.lightbulb_outline, color: AppTheme.primaryColor),
+                      onPressed: () {
+                        setState(() {
+                          _isUpdatingByHint = true;
+                          _meaningController.text = _word?.wordSpell ?? "";
+                          _isUpdatingByHint = false;
+                        });
                         checkAsrResult();
                       },
                     ),
+                  ],
+                ),
+                Container(
+                  height: 2,
+                  color: AppTheme.primaryColor.withValues(alpha: 0.3),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '支持键盘输入与手写混合使用',
+                  style: TextStyle(
+                    color: (isDarkMode ? Colors.white : Colors.black).withValues(alpha: 0.24),
+                    fontSize: 10,
                   ),
-                  // 底部提示
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: Text(
-                      '支持键盘输入与手写混合使用',
-                      style: TextStyle(
-                        color: isDarkMode
-                            ? Colors.white.withValues(alpha: 0.24)
-                            : Colors.black.withValues(alpha: 0.24),
-                        fontSize: 10,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ],
